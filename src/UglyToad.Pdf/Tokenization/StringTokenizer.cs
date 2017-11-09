@@ -28,7 +28,7 @@
 
             bool octalModeActive = false;
 
-            byte[] octal = { 0, 0, 0 };
+            short[] octal = { 0, 0, 0 };
             int octalsRead = 0;
 
             while (inputBytes.MoveNext())
@@ -36,35 +36,41 @@
                 var b = inputBytes.CurrentByte;
                 var c = (char)b;
 
-                if (octalModeActive && c >= '0' && c <= '7')
+                if (octalModeActive)
                 {
-                    if (octalsRead == 3)
+                    var nextCharacterOctal = c >= '0' && c <= '7';
+
+                    if (nextCharacterOctal)
+                    {
+                        // left shift the octals.
+                        LeftShiftOctal(c, octalsRead, octal);
+                        octalsRead++;
+                    }
+
+                    if (octalsRead == 3 || !nextCharacterOctal)
                     {
                         var characterCode = FromOctal(octal);
 
                         // For now :(
-                        // TODO: I have a sneaking suspicion this is wrong...
+                        // TODO: I have a sneaking suspicion this is wrong, not sure what behaviour is for large octal numbers
                         builder.Append((char)characterCode);
 
                         octal[0] = 0;
                         octal[1] = 0;
                         octal[2] = 0;
                         octalsRead = 0;
+                        octalModeActive = false;
                     }
-                    else
-                    {
-                        // left shift the octals.
-                        LeftShiftOctal(b, octalsRead, octal);
 
-                        octal[octalsRead] = b;
-                        octalsRead++;
+                    if (nextCharacterOctal)
+                    {
+                        continue;
                     }
                 }
 
                 switch (c)
                 {
                     case ')':
-                        octalModeActive = false;
                         isLineBreaking = false;
                         if (!isEscapeActive)
                         {
@@ -85,7 +91,6 @@
 
                         break;
                     case '(':
-                        octalModeActive = false;
                         isLineBreaking = false;
 
 
@@ -99,7 +104,6 @@
                         break;
                     // Escape
                     case '\\':
-                        octalModeActive = false;
                         isLineBreaking = false;
                         // Escaped backslash
                         if (isEscapeActive)
@@ -112,7 +116,6 @@
                         }
                         break;
                     default:
-                        octalModeActive = false;
                         if (isLineBreaking)
                         {
                             if (ReadHelper.IsEndOfLine(c))
@@ -142,14 +145,16 @@
             return true;
         }
 
-        private static void LeftShiftOctal(byte nextOctalByte, int octalsRead, byte[] octals)
+        private static void LeftShiftOctal(char nextOctalChar, int octalsRead, short[] octals)
         {
             for (int i = octalsRead; i > 0; i--)
             {
                 octals[i] = octals[i - 1];
             }
 
-            octals[0] = nextOctalByte;
+            var value = OctalCharacterToShort(nextOctalChar);
+
+            octals[0] = value;
         }
 
         //private static int CheckForEndOfString(IRandomAccessRead reader, int bracesParameter)
@@ -180,7 +185,7 @@
         //}
         //}
 
-        private static void ProcessEscapedCharacter(char c, StringBuilder builder, byte[] octal, ref bool isOctalActive,
+        private static void ProcessEscapedCharacter(char c, StringBuilder builder, short[] octal, ref bool isOctalActive,
             ref int octalsRead, ref bool isLineBreaking)
         {
             switch (c)
@@ -208,7 +213,7 @@
                 case '5':
                 case '6':
                 case '7':
-                    octal[0] = (byte)c;
+                    octal[0] = OctalCharacterToShort(c);
                     isOctalActive = true;
                     octalsRead = 1;
                     break;
@@ -231,7 +236,36 @@
             }
         }
 
-        private static int FromOctal(byte[] octal)
+        private static short OctalCharacterToShort(char c)
+        {
+            switch (c)
+            {
+                case '0':
+                    return 0;
+                case '1':
+                    return 1;
+                case '2':
+                    return 2;
+                case '3':
+                    return 3;
+                case '4':
+                    return 4;
+                case '5':
+                    return 5;
+                case '6':
+                    return 6;
+                case '7':
+                    return 7;
+                case '8':
+                    return 8;
+                case '9':
+                    return 9;
+                default:
+                    return 0;
+            }
+        }
+
+        private static int FromOctal(short[] octal)
         {
             int Power(int x, int pow)
             {
@@ -248,9 +282,9 @@
             }
 
             int sum = 0;
-            for (int i = 0; i < octal.Length; i++)
+            for (int i = octal.Length - 1; i >= 0; i--)
             {
-                var power = 2 - i;
+                var power = i;
                 sum += octal[i] * Power(8, power);
             }
 

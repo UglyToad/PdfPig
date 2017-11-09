@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.Pdf.Tests.Tokenization
 {
-    using System.Linq;
     using IO;
     using Pdf.Tokenization;
     using Pdf.Tokenization.Tokens;
@@ -45,19 +44,13 @@
         {
             const string s = "(this string \\)contains escaped \\( parentheses)";
 
-            var input = new ByteArrayInputBytes(s.Select(x => (byte) x).ToArray());
-
-            input.MoveNext();
-            var initialByte = input.CurrentByte;
+            var input = StringBytesTestConverter.Convert(s);
             
-            var result = tokenizer.TryTokenize(initialByte, input, out var token);
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
 
             Assert.True(result);
-            Assert.NotNull(token);
 
-            var stringToken = Assert.IsType<StringToken>(token);
-
-            Assert.Equal(@"this string )contains escaped ( parentheses", stringToken.Data);
+            Assert.Equal(@"this string )contains escaped ( parentheses", AssertStringToken(token).Data);
         }
 
         [Theory]
@@ -68,18 +61,13 @@
         [InlineData("()", "")]
         public void CanReadValidStrings(string s, string expected)
         {
-            var input = new ByteArrayInputBytes(s.Select(x => (byte)x).ToArray());
+            var input = StringBytesTestConverter.Convert(s);
 
-            input.MoveNext();
-            var initialByte = input.CurrentByte;
-
-            var result = tokenizer.TryTokenize(initialByte, input, out var token);
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
 
             Assert.True(result);
-            Assert.NotNull(token);
-            var stringToken = Assert.IsType<StringToken>(token);
 
-            Assert.Equal(expected, stringToken.Data);
+            Assert.Equal(expected, AssertStringToken(token).Data);
         }
         
         [Fact]
@@ -87,19 +75,13 @@
         {
             const string s = "(this string (contains nested (two levels)) parentheses)";
 
-            var input = new ByteArrayInputBytes(s.Select(x => (byte)x).ToArray());
+            var input = StringBytesTestConverter.Convert(s);
 
-            input.MoveNext();
-            var initialByte = input.CurrentByte;
-
-            var result = tokenizer.TryTokenize(initialByte, input, out var token);
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
 
             Assert.True(result);
-            Assert.NotNull(token);
 
-            var stringToken = Assert.IsType<StringToken>(token);
-
-            Assert.Equal("this string (contains nested (two levels)) parentheses", stringToken.Data);
+            Assert.Equal("this string (contains nested (two levels)) parentheses", AssertStringToken(token).Data);
         }
         
         [Fact]
@@ -107,19 +89,13 @@
         {
             const string s = "(this string <contains>)";
 
-            var input = new ByteArrayInputBytes(s.Select(x => (byte)x).ToArray());
+            var input = StringBytesTestConverter.Convert(s);
 
-            input.MoveNext();
-            var initialByte = input.CurrentByte;
-
-            var result = tokenizer.TryTokenize(initialByte, input, out var token);
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
 
             Assert.True(result);
-            Assert.NotNull(token);
 
-            var stringToken = Assert.IsType<StringToken>(token);
-
-            Assert.Equal("this string <contains>", stringToken.Data);
+            Assert.Equal("this string <contains>", AssertStringToken(token).Data);
         }
 
         [Fact]
@@ -130,20 +106,14 @@ two strings \
 are the same.)";
 
             const string expected = "These two strings are the same.";
+            
+            var input = StringBytesTestConverter.Convert(s);
 
-            var input = new ByteArrayInputBytes(s.Select(x => (byte)x).ToArray());
-
-            input.MoveNext();
-            var initialByte = input.CurrentByte;
-
-            var result = tokenizer.TryTokenize(initialByte, input, out var token);
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
 
             Assert.True(result);
-            Assert.NotNull(token);
 
-            var stringToken = Assert.IsType<StringToken>(token);
-
-            Assert.Equal(expected, stringToken.Data);
+            Assert.Equal(expected, AssertStringToken(token).Data);
         }
 
         [Fact]
@@ -153,19 +123,76 @@ are the same.)";
 
             const string expected = "So does this one.\n";
 
-            var input = new ByteArrayInputBytes(s.Select(x => (byte)x).ToArray());
+            var input = StringBytesTestConverter.Convert(s);
 
-            input.MoveNext();
-            var initialByte = input.CurrentByte;
-
-            var result = tokenizer.TryTokenize(initialByte, input, out var token);
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
 
             Assert.True(result);
+
+            Assert.Equal(expected, AssertStringToken(token).Data);
+        }
+
+        [Fact]
+        public void ConvertsFullOctal()
+        {
+            const string s = @"(This string contains \245two octal characters\307.)";
+
+            var input = StringBytesTestConverter.Convert(s);
+
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            Assert.True(result);
+
+            Assert.Equal("This string contains ¥two octal charactersÇ.", AssertStringToken(token).Data);
+        }
+
+        [Fact]
+        public void ConvertsFullOctalFollowedByNormalNumber()
+        {
+            const string s = @"(This string contains \2451 octal character.)";
+
+            var input = StringBytesTestConverter.Convert(s);
+
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            Assert.True(result);
+
+            Assert.Equal("This string contains ¥1 octal character.", AssertStringToken(token).Data);
+        }
+
+        [Fact]
+        public void ConvertsPartialOctal()
+        {
+            const string s = @"(This string has a plus: \53 as octal)";
+
+            var input = StringBytesTestConverter.Convert(s);
+
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            Assert.True(result);
+
+            Assert.Equal("This string has a plus: + as octal", AssertStringToken(token).Data);
+        }
+
+        [Fact]
+        public void ConvertsTwoPartialOctalsInARow()
+        {
+            const string s = @"(This string has two \53\326ctals)";
+
+            var input = StringBytesTestConverter.Convert(s);
+
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            Assert.True(result);
+            
+            Assert.Equal("This string has two +Öctals", AssertStringToken(token).Data);
+        }
+
+        private static StringToken AssertStringToken(IToken token)
+        {
             Assert.NotNull(token);
-
             var stringToken = Assert.IsType<StringToken>(token);
-
-            Assert.Equal(expected, stringToken.Data);
+            return stringToken;
         }
     }
 }

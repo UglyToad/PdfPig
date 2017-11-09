@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.Pdf.Tokenization
 {
     using IO;
+    using Parser.Parts;
     using Tokens;
 
     public class HexStringTokenizer : ITokenizer
@@ -17,6 +18,11 @@
             while (inputBytes.MoveNext())
             {
                 var current = inputBytes.CurrentByte;
+
+                if (ReadHelper.IsWhitespace(current))
+                {
+                    continue;
+                }
 
                 if (!IsValidHexCharacter(current))
                 {
