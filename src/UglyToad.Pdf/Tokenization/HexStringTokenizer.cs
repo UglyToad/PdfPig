@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.Pdf.Tokenization
 {
+    using System.Text;
     using IO;
     using Parser.Parts;
     using Tokens;
@@ -15,6 +16,8 @@
                 return false;
             }
 
+            var characters = new StringBuilder();
+
             while (inputBytes.MoveNext())
             {
                 var current = inputBytes.CurrentByte;
@@ -24,18 +27,22 @@
                     continue;
                 }
 
+                if (current == '>')
+                {
+                    break;
+                }
+
                 if (!IsValidHexCharacter(current))
                 {
                     return false;
                 }
 
-                if (current == '>')
-                {
-                    return true;
-                }
+                characters.Append((char)current);
             }
 
-            return false;
+            token = new HexToken(characters.ToString());
+
+            return true;
         }
 
         private static bool IsValidHexCharacter(byte b)
