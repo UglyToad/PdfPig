@@ -4,9 +4,9 @@
     using Pdf.Tokenization.Tokens;
     using Xunit;
 
-    public class HexStringTokenizerTests
+    public class HexTokenizerTests
     {
-        private readonly HexStringTokenizer tokenizer = new HexStringTokenizer();
+        private readonly HexTokenizer tokenizer = new HexTokenizer();
 
         [Theory]
         [InlineData(">not hex")]

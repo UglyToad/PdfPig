@@ -5,7 +5,7 @@
     using Parser.Parts;
     using Tokens;
 
-    public class HexStringTokenizer : ITokenizer
+    public class HexTokenizer : ITokenizer
     {
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
         {

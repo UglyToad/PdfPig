@@ -6,7 +6,7 @@
     using Text.Operators;
     using Tokenization.Tokens;
 
-    public class NumericTokenizer : ITokenizer
+    public class NumericTokenizer
     {
         private static readonly HashSet<byte> SupportedCharacterSet = new HashSet<byte>
         {
@@ -51,24 +51,6 @@
 
             return new OperandComponent(new NumericOperand(bytes), TextObjectComponentType.Numeric);
         }
-
-        public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
-        {
-            token = null;
-
-            var bytes = new List<byte> { currentByte };
-
-            while (inputBytes.MoveNext() && !BaseTextComponentApproach.IsEmpty(inputBytes.CurrentByte))
-            {
-                if (!SupportedCharacterSet.Contains(inputBytes.CurrentByte))
-                {
-                    return false;
-                }
-
-                bytes.Add(inputBytes.CurrentByte);
-            }
-
-            return true;
-        }
+        
     }
 }

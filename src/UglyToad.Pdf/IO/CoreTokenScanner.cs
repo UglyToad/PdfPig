@@ -15,7 +15,7 @@
         private readonly IInputBytes inputBytes;
         private readonly List<byte> currentBuffer = new List<byte>();
 
-        private static readonly HexStringTokenizer HexStringTokenizer = new HexStringTokenizer();
+        private static readonly HexTokenizer HexTokenizer = new HexTokenizer();
         private static readonly StringTokenizer StringTokenizer = new StringTokenizer();
         private static readonly NumericTokenizer NumericTokenizer = new NumericTokenizer();
         private static readonly NameTokenizer NameTokenizer = new NameTokenizer();
@@ -68,7 +68,7 @@
                         }
                         else
                         {
-                            tokenizer = HexStringTokenizer;
+                            tokenizer = HexTokenizer;
                         }
                         break;
                     case '/':
@@ -87,7 +87,7 @@
                     case '-':
                     case '+':
                     case '.':
-                        tokenizer = NumericTokenizer;
+                        tokenizer = null;
                         break;
                 }
 
