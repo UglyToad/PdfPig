@@ -1,13 +1,13 @@
 ﻿namespace UglyToad.Pdf.Tests
 {
-    using System.Linq;
+    using System.Text;
     using IO;
 
     public static class StringBytesTestConverter
     {
         public static Result Convert(string s)
         {
-            var input = new ByteArrayInputBytes(s.Select(x => (byte)x).ToArray());
+            var input = new ByteArrayInputBytes(Encoding.UTF8.GetBytes(s));
 
             input.MoveNext();
             var initialByte = input.CurrentByte;

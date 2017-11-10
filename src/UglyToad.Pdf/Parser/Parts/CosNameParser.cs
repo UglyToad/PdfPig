@@ -81,7 +81,7 @@ namespace UglyToad.Pdf.Parser.Parts
                 }
 
                 byte[] bytes = memoryStream.ToArray();
-                var str = ReadHelper.IsValidUTF8(bytes) ? Encoding.UTF8.GetString(memoryStream.ToArray()) : Encoding.GetEncoding("windows-1252").GetString(memoryStream.ToArray());
+                var str = ReadHelper.IsValidUtf8(bytes) ? Encoding.UTF8.GetString(memoryStream.ToArray()) : Encoding.GetEncoding("windows-1252").GetString(memoryStream.ToArray());
                 return CosName.Create(str);
             }
         }

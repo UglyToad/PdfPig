@@ -314,17 +314,18 @@ namespace UglyToad.Pdf.Parser.Parts
             return char.IsDigit(ch) || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
         }
 
-        public static bool IsValidUTF8(byte[] input)
+        public static bool IsValidUtf8(byte[] input)
         {
             try
             {
-                Decoder d = Encoding.UTF8.GetDecoder();
+                var d = Encoding.UTF8.GetDecoder();
+
                 var charLength = d.GetCharCount(input, 0, input.Length);
                 var chars = new char[charLength];
                 d.Convert(input, 0, input.Length, chars, 0, charLength, true, out _, out _, out _);
                 return true;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return false;
             }

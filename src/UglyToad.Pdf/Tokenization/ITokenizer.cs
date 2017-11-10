@@ -1,6 +1,7 @@
-﻿namespace UglyToad.Pdf.IO
+﻿namespace UglyToad.Pdf.Tokenization
 {
-    using Tokenization.Tokens;
+    using IO;
+    using Tokens;
 
     internal interface ITokenizer
     {
