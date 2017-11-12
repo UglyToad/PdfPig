@@ -130,6 +130,53 @@ namespace UglyToad.Pdf.Tests.Tokenization
             AssertDictionaryEntry<NameToken, CosName, StringToken, string>(subDictionaryValue, 2, CosName.Create("LastItem"), "not!");
             AssertDictionaryEntry<NameToken, CosName, StringToken, string>(subDictionaryValue, 3, CosName.Create("VeryLastItem"), "OK");
         }
+        
+        [Fact]
+        public void ExitsDictionaryParsingSingleLevel()
+        {
+            var input = StringBytesTestConverter.Convert(@"<< /Pages 69 0 R /Type /Catalog >>
+endobj
+5 0 obj");
+
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            Assert.True(result);
+
+            var dictionary = AssertDictionaryToken(token);
+
+            var reference = new IndirectReference(69, 0);
+
+            AssertDictionaryEntry<NameToken, CosName, IndirectReferenceToken, IndirectReference>(dictionary, 0, CosName.PAGES, reference);
+            AssertDictionaryEntry<NameToken, CosName, NameToken, CosName>(dictionary, 1, CosName.TYPE, CosName.CATALOG);
+
+            Assert.Equal(2, dictionary.Data.Count);
+        }
+
+        [Fact]
+        public void ParseNestedDictionary()
+        {
+            var input = StringBytesTestConverter.Convert(@"<< /Count 12 /Definition << /Name (Glorp)>> /Type /Catalog >>");
+
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            Assert.True(result);
+
+            var dictionary = AssertDictionaryToken(token);
+
+            AssertDictionaryEntry<NameToken, CosName, NumericToken, decimal>(dictionary, 0, CosName.COUNT, 12);
+
+            var subDictionaryToken = GetIndex(1, dictionary);
+
+            Assert.Equal(CosName.Create("Definition"), Assert.IsType<NameToken>(subDictionaryToken.Key).Data);
+
+            var subDictionary = Assert.IsType<DictionaryToken>(subDictionaryToken.Value);
+
+            AssertDictionaryEntry<NameToken, CosName, StringToken, string>(subDictionary, 0, CosName.NAME, "Glorp");
+
+            AssertDictionaryEntry<NameToken, CosName, NameToken, CosName>(dictionary, 2, CosName.TYPE, CosName.CATALOG);
+
+            Assert.Equal(3, dictionary.Data.Count);
+        }
 
         private static void AssertDictionaryEntry<TKey, TKeyData, TValue, TValueData>(
             DictionaryToken dictionary, int index, TKeyData key,
