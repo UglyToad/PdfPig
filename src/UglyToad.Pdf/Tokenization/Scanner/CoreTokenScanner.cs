@@ -8,28 +8,33 @@
     using Tokenization;
     using Tokens;
 
+    internal enum ScannerScope
+    {
+        None,
+        Array,
+        Dictionary
+    }
+
     public class CoreTokenScanner : ITokenScanner
     {
-        private readonly CosDictionaryParser dictionaryParser;
-        private readonly CosArrayParser arrayParser;
-        private readonly IInputBytes inputBytes;
-        private readonly List<byte> currentBuffer = new List<byte>();
-
         private static readonly HexTokenizer HexTokenizer = new HexTokenizer();
         private static readonly StringTokenizer StringTokenizer = new StringTokenizer();
         private static readonly Tokenization.NumericTokenizer NumericTokenizer = new Tokenization.NumericTokenizer();
         private static readonly NameTokenizer NameTokenizer = new NameTokenizer();
         private static readonly PlainTokenizer PlainTokenizer = new PlainTokenizer();
+        private static readonly ArrayTokenizer ArrayTokenizer = new ArrayTokenizer();
+
+        private readonly ScannerScope scope;
+        private readonly IInputBytes inputBytes;
+        private readonly List<byte> currentBuffer = new List<byte>();
         
         public IToken CurrentToken { get; private set; }
 
         private bool hasBytePreRead;
 
-        internal CoreTokenScanner(IInputBytes inputBytes, CosDictionaryParser dictionaryParser,
-            CosArrayParser arrayParser)
+        internal CoreTokenScanner(IInputBytes inputBytes, ScannerScope scope = ScannerScope.None)
         {
-            this.dictionaryParser = dictionaryParser;
-            this.arrayParser = arrayParser;
+            this.scope = scope;
             this.inputBytes = inputBytes ?? throw new ArgumentNullException(nameof(inputBytes));
         }
 
@@ -37,12 +42,15 @@
         {
             currentBuffer.Clear();
 
+            var endAngleBracesRead = 0;
+
             bool isSkippingSymbol = false;
             while ((hasBytePreRead && !inputBytes.IsAtEnd()) || inputBytes.MoveNext())
             {
                 hasBytePreRead = false;
                 var currentByte = inputBytes.CurrentByte;
-
+                var c = (char) currentByte;
+                
                 if (BaseTextComponentApproach.IsEmpty(currentByte)
                     || ReadHelper.IsWhitespace(currentByte))
                 {
@@ -57,7 +65,7 @@
                 }
 
                 ITokenizer tokenizer = null;
-                switch ((char) currentByte)
+                switch (c)
                 {
                     case '(':
                         tokenizer = StringTokenizer;
@@ -74,9 +82,18 @@
                             tokenizer = HexTokenizer;
                         }
                         break;
-                    case '[':
-                        // TODO: Array tokenizer
+                    case '>' when scope == ScannerScope.Dictionary:
+                        endAngleBracesRead++;
+                        if (endAngleBracesRead == 2)
+                        {
+                            return false;
+                        }
                         break;
+                    case '[':
+                        tokenizer = ArrayTokenizer;
+                        break;
+                    case ']' when scope == ScannerScope.Array:
+                        return false;
                     case '/':
                         tokenizer = NameTokenizer;
                         break;

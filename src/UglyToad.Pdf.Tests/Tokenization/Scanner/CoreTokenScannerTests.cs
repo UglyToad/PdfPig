@@ -4,23 +4,18 @@ namespace UglyToad.Pdf.Tests.Tokenization.Scanner
     using System;
     using System.Collections.Generic;
     using IO;
-    using Parser.Parts;
     using Pdf.Cos;
-    using Pdf.Parser.Parts;
     using Pdf.Tokenization.Scanner;
     using Pdf.Tokenization.Tokens;
     using Xunit;
 
     public class CoreTokenScannerTests
     {
-        private readonly CosDictionaryParser dictionaryParser = new CosDictionaryParser(new CosNameParser(), new TestingLog());
-        private readonly CosArrayParser arrayParser = new CosArrayParser();
-
         private readonly Func<IInputBytes, CoreTokenScanner> scannerFactory;
 
         public CoreTokenScannerTests()
         {
-            scannerFactory = x => new CoreTokenScanner(x, dictionaryParser, arrayParser);
+            scannerFactory = x => new CoreTokenScanner(x);
         }
 
         [Fact]

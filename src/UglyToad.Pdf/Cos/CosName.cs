@@ -600,7 +600,7 @@ namespace UglyToad.Pdf.Cos
 
         public override string ToString()
         {
-            return $"CosName{{{Name}}}";
+            return $"/{Name}";
         }
 
         public void WriteToPdfStream(StreamWriter output)
