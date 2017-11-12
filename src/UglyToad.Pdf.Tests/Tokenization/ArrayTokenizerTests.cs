@@ -53,6 +53,23 @@
             Assert.Equal(dataValue, ((dynamic)token).Data[0].Data);
         }
 
+        [Theory]
+        [InlineData("[]")]
+        [InlineData("[ ]")]
+        [InlineData("[\r\n\r\n\t]")]
+        public void EmptyArray(string s)
+        {
+            var input = StringBytesTestConverter.Convert(s);
+
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            Assert.True(result);
+
+            var array = AssertArrayToken(token);
+
+            Assert.Empty(array.Data);
+        }
+
         [Fact]
         public void NestedArray()
         {
@@ -116,6 +133,26 @@
             Assert.Equal(15m, AssertDataToken<NumericToken, decimal>(0, firstFirstSecondInner).Data);
         }
 
+        [Fact]
+        public void SpecificationExampleArray()
+        {
+            const string s = "[549 3.14 false (Ralph) /SomeName]";
+
+            var input = StringBytesTestConverter.Convert(s);
+
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            Assert.True(result);
+
+            var array = AssertArrayToken(token);
+
+            Assert.Equal(549m, AssertDataToken<NumericToken, decimal>(0, array).Data);
+            Assert.Equal(3.14m, AssertDataToken<NumericToken, decimal>(1, array).Data);
+            Assert.False(AssertDataToken<BooleanToken, bool>(2, array).Data);
+            Assert.Equal("Ralph", AssertDataToken<StringToken, string>(3, array).Data);
+            Assert.Equal(CosName.Create("SomeName"), AssertDataToken<NameToken, CosName>(4, array).Data);
+        }
+        
         private static ArrayToken AssertArrayToken(IToken token)
         {
             Assert.NotNull(token);

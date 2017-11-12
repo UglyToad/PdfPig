@@ -92,7 +92,29 @@ endobj";
             Assert.Equal(tokens[4], ObjectDelimiterToken.EndObject);
         }
 
+        [Fact]
+        public void ScansArrayInSequence()
+        {
+            const string s = @"/Bounds [12 15 19 1455.3]/Font /F1 /Name (Bob)[16]";
 
+            var tokens = new List<IToken>();
+
+            var scanner = scannerFactory(StringBytesTestConverter.Convert(s, false).Bytes);
+
+            while (scanner.MoveNext())
+            {
+                tokens.Add(scanner.CurrentToken);
+            }
+
+            AssertCorrectToken<NameToken, CosName>(tokens[0], CosName.Create("Bounds"));
+            Assert.IsType<ArrayToken>(tokens[1]);
+            AssertCorrectToken<NameToken, CosName>(tokens[2], CosName.Create("Font"));
+            AssertCorrectToken<NameToken, CosName>(tokens[3], CosName.Create("F1"));
+            AssertCorrectToken<NameToken, CosName>(tokens[4], CosName.Create("Name"));
+            AssertCorrectToken<StringToken, string>(tokens[5], "Bob");
+            Assert.IsType<ArrayToken>(tokens[6]);
+        }
+        
         private static void AssertCorrectToken<T, TData>(IToken token, TData expected) where T : IDataToken<TData>
         {
             var cast = Assert.IsType<T>(token);
