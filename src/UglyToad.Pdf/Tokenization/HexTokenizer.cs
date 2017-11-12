@@ -7,6 +7,8 @@
 
     public class HexTokenizer : ITokenizer
     {
+        public bool ReadsNextByte { get; } = false;
+
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
         {
             token = null;

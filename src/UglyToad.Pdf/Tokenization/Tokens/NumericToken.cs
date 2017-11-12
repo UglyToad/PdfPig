@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Tokenization.Tokens
 {
+    using System.Globalization;
+
     public class NumericToken : IDataToken<decimal>
     {
         public decimal Data { get; }
@@ -16,6 +18,11 @@
             IsWhole = decimal.Floor(value) == value;
             Int = (int) value;
             Long = (long) value;
+        }
+
+        public override string ToString()
+        {
+            return Data.ToString(NumberFormatInfo.InvariantInfo);
         }
     }
 }

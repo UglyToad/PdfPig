@@ -9,6 +9,8 @@
 
     public class NameTokenizer : ITokenizer
     {
+        public bool ReadsNextByte { get; } = true;
+
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
         {
             token = null;

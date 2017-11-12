@@ -9,5 +9,7 @@
         byte CurrentByte { get; }
 
         byte? Peek();
+        
+        bool IsAtEnd();
     }
 }

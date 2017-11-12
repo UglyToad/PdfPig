@@ -1,12 +1,12 @@
-﻿namespace UglyToad.Pdf.IO
+﻿namespace UglyToad.Pdf.Tokenization.Scanner
 {
     using System;
     using System.Collections.Generic;
+    using IO;
     using Parser.Parts;
     using Text.Operators;
     using Tokenization;
-    using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
 
     public class CoreTokenScanner : ITokenScanner
     {
@@ -17,15 +17,13 @@
 
         private static readonly HexTokenizer HexTokenizer = new HexTokenizer();
         private static readonly StringTokenizer StringTokenizer = new StringTokenizer();
-        private static readonly NumericTokenizer NumericTokenizer = new NumericTokenizer();
+        private static readonly Tokenization.NumericTokenizer NumericTokenizer = new Tokenization.NumericTokenizer();
         private static readonly NameTokenizer NameTokenizer = new NameTokenizer();
-
-        private static readonly IReadOnlyDictionary<byte, ITokenizer> Tokenizers = new Dictionary<byte, ITokenizer>
-        {
-            {(byte) '(', new StringTokenizer()}
-        };
-
+        private static readonly PlainTokenizer PlainTokenizer = new PlainTokenizer();
+        
         public IToken CurrentToken { get; private set; }
+
+        private bool hasBytePreRead;
 
         internal CoreTokenScanner(IInputBytes inputBytes, CosDictionaryParser dictionaryParser,
             CosArrayParser arrayParser)
@@ -40,16 +38,19 @@
             currentBuffer.Clear();
 
             bool isSkippingSymbol = false;
-            while (inputBytes.MoveNext())
+            while ((hasBytePreRead && !inputBytes.IsAtEnd()) || inputBytes.MoveNext())
             {
+                hasBytePreRead = false;
                 var currentByte = inputBytes.CurrentByte;
 
-                if (BaseTextComponentApproach.IsEmpty(currentByte))
+                if (BaseTextComponentApproach.IsEmpty(currentByte)
+                    || ReadHelper.IsWhitespace(currentByte))
                 {
                     isSkippingSymbol = false;
                     continue;
                 }
 
+                // If we failed to read the symbol for whatever reason we pass over it.
                 if (isSkippingSymbol)
                 {
                     continue;
@@ -65,11 +66,16 @@
                         var following = inputBytes.Peek();
                         if (following == '<')
                         {
+                            isSkippingSymbol = true;
+                            // TODO: Dictionary tokenizer
                         }
                         else
                         {
                             tokenizer = HexTokenizer;
                         }
+                        break;
+                    case '[':
+                        // TODO: Array tokenizer
                         break;
                     case '/':
                         tokenizer = NameTokenizer;
@@ -87,17 +93,27 @@
                     case '-':
                     case '+':
                     case '.':
-                        tokenizer = null;
+                        tokenizer = NumericTokenizer;
+                        break;
+                    default:
+                        tokenizer = PlainTokenizer;
                         break;
                 }
 
                 if (tokenizer == null || !tokenizer.TryTokenize(currentByte, inputBytes, out var token))
                 {
                     isSkippingSymbol = true;
+                    hasBytePreRead = false;
                     continue;
                 }
 
                 CurrentToken = token;
+
+                /* 
+                 * Some tokenizers need to read the symbol of the next token to know if they have ended
+                 * so we don't want to move on to the next byte, we would lose a byte, e.g.: /NameOne/NameTwo or /Name(string)                
+                 */
+                hasBytePreRead = tokenizer.ReadsNextByte;
 
                 return true;
             }

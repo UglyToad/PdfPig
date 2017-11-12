@@ -7,6 +7,8 @@
 
     public class StringTokenizer : ITokenizer
     {
+        public bool ReadsNextByte { get; } = false;
+
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
         {
             var builder = new StringBuilder();
@@ -137,6 +139,11 @@
                         }
 
                         break;
+                }
+
+                if (numberOfBrackets <= 0)
+                {
+                    break;
                 }
             }
 

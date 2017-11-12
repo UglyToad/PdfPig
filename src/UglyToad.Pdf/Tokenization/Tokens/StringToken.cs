@@ -8,5 +8,10 @@ namespace UglyToad.Pdf.Tokenization.Tokens
         {
             Data = data;
         }
+
+        public override string ToString()
+        {
+            return Data;
+        }
     }
 }

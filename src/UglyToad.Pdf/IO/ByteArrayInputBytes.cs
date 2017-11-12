@@ -37,5 +37,10 @@
 
             return bytes[CurrentOffset + 1];
         }
+
+        public bool IsAtEnd()
+        {
+            return CurrentOffset == bytes.Count - 1;
+        }
     }
 }

@@ -5,13 +5,17 @@
 
     public static class StringBytesTestConverter
     {
-        public static Result Convert(string s)
+        public static Result Convert(string s, bool readFirst = true)
         {
             var input = new ByteArrayInputBytes(Encoding.UTF8.GetBytes(s));
 
-            input.MoveNext();
-            var initialByte = input.CurrentByte;
-
+            byte initialByte = 0;
+            if (readFirst)
+            {
+                input.MoveNext();
+                initialByte = input.CurrentByte;
+            }
+            
             return new Result
             {
                 First = initialByte,
