@@ -87,9 +87,9 @@ endobj";
 
             AssertCorrectToken<NumericToken, decimal>(tokens[0], 12);
             AssertCorrectToken<NumericToken, decimal>(tokens[1], 0);
-            Assert.Equal(tokens[2], ObjectDelimiterToken.StartObject);
+            Assert.Equal(tokens[2], OperatorToken.StartObject);
             AssertCorrectToken<StringToken, string>(tokens[3], "Brillig");
-            Assert.Equal(tokens[4], ObjectDelimiterToken.EndObject);
+            Assert.Equal(tokens[4], OperatorToken.EndObject);
         }
 
         [Fact]

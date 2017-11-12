@@ -28,7 +28,8 @@
                 }
 
                 if (inputBytes.CurrentByte == '<' || inputBytes.CurrentByte == '['
-                    || inputBytes.CurrentByte == '/')
+                    || inputBytes.CurrentByte == '/' || inputBytes.CurrentByte == ']'
+                    || inputBytes.CurrentByte == '>')
                 {
                     break;
                 }
@@ -49,20 +50,8 @@
                 case "null":
                     token = NullToken.Instance;
                     break;
-                case "endstream":
-                    token = ObjectDelimiterToken.EndStream;
-                    break;
-                case "stream":
-                    token = ObjectDelimiterToken.StartStream;
-                    break;
-                case "obj":
-                    token = ObjectDelimiterToken.StartObject;
-                    break;
-                case "endobj":
-                    token = ObjectDelimiterToken.EndObject;
-                    break;
                 default:
-                    token = new OperatorToken(text);
+                    token = OperatorToken.Create(text);
                     break;
             }
 

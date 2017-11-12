@@ -23,6 +23,7 @@
         private static readonly NameTokenizer NameTokenizer = new NameTokenizer();
         private static readonly PlainTokenizer PlainTokenizer = new PlainTokenizer();
         private static readonly ArrayTokenizer ArrayTokenizer = new ArrayTokenizer();
+        private static readonly DictionaryTokenizer DictionaryTokenizer = new DictionaryTokenizer();
 
         private readonly ScannerScope scope;
         private readonly IInputBytes inputBytes;
@@ -59,7 +60,7 @@
                 }
 
                 // If we failed to read the symbol for whatever reason we pass over it.
-                if (isSkippingSymbol)
+                if (isSkippingSymbol && c != '>')
                 {
                     continue;
                 }
@@ -75,7 +76,7 @@
                         if (following == '<')
                         {
                             isSkippingSymbol = true;
-                            // TODO: Dictionary tokenizer
+                            tokenizer = DictionaryTokenizer;
                         }
                         else
                         {
