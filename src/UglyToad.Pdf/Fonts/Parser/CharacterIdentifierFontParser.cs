@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.Pdf.Fonts.Parser
 {
     using System;
+    using Cmap;
     using ContentStream;
     using ContentStream.TypedAccessors;
     using Cos;

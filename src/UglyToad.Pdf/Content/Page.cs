@@ -41,6 +41,11 @@
             var pee = new TextSectionParser(new NoOpLog()).ReadTextObjects(new ByteTextScanner(rw));
             var font0 = parsingArguments.CachingProviders.ObjectPool.Get(new CosObjectKey(16, 0));
             var cmpa = parsingArguments.CachingProviders.ObjectPool.Get(new CosObjectKey(9, 0));
+            var toad = parsingArguments.Container.Get<DynamicParser>()
+                .Parse(parsingArguments, new CosObjectKey(9, 0), false);
+            var bigsby = (toad as RawCosStream).Decode(parsingArguments.Container.Get<IFilterProvider>());
+
+            var ssss = OtherEncodings.BytesAsLatin1String(bigsby);
         }
     }
 

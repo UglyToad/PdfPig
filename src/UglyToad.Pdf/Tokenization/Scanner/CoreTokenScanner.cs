@@ -24,6 +24,7 @@
         private static readonly PlainTokenizer PlainTokenizer = new PlainTokenizer();
         private static readonly ArrayTokenizer ArrayTokenizer = new ArrayTokenizer();
         private static readonly DictionaryTokenizer DictionaryTokenizer = new DictionaryTokenizer();
+        private static readonly CommentTokenizer CommentTokenizer = new CommentTokenizer();
 
         private readonly ScannerScope scope;
         private readonly IInputBytes inputBytes;
@@ -97,6 +98,9 @@
                         return false;
                     case '/':
                         tokenizer = NameTokenizer;
+                        break;
+                    case '%':
+                        tokenizer = CommentTokenizer;
                         break;
                     case '0':
                     case '1':

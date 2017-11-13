@@ -43,5 +43,10 @@
                     return new OperatorToken(data);
             }
         }
+
+        public override string ToString()
+        {
+            return Data;
+        }
     }
 }
