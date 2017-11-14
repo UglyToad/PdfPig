@@ -1,5 +1,10 @@
 ﻿namespace UglyToad.Pdf.Fonts.Cmap
 {
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using Util;
+
     /// <summary>
     /// A mutable class used when parsing and generating a <see cref="CMap"/>.
     /// </summary>
@@ -44,5 +49,39 @@
         /// Defined as required.
         /// </remarks>
         public int Type { get; set; } = -1;
+
+        public IReadOnlyList<CodespaceRange> CodespaceRanges { get; set; }
+
+        public Dictionary<int, string> BaseFontCharacterMap { get; } = new Dictionary<int, string>();
+
+        public void AddBaseFontCharacter(IReadOnlyList<byte> bytes, IReadOnlyList<byte> value)
+        {
+            AddBaseFontCharacter(bytes, CreateStringFromBytes(value.ToArray()));
+        }
+
+        public void AddBaseFontCharacter(IReadOnlyList<byte> bytes, string value)
+        {
+            var code = GetCodeFromArray(bytes, bytes.Count);
+
+            BaseFontCharacterMap[code] = value;
+        }
+
+        private int GetCodeFromArray(IReadOnlyList<byte> data, int length)
+        {
+            int code = 0;
+            for (int i = 0; i < length; i++)
+            {
+                code <<= 8;
+                code |= (data[i] + 256) % 256;
+            }
+            return code;
+        }
+
+        private string CreateStringFromBytes(byte[] bytes)
+        {
+            return bytes.Length == 1
+                ? OtherEncodings.BytesAsLatin1String(bytes)
+                : Encoding.BigEndianUnicode.GetString(bytes);
+        }
     }
 }

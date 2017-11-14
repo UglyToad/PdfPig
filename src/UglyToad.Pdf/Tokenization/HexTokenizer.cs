@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.Pdf.Tokenization
 {
-    using System.Text;
+    using System.Collections.Generic;
     using IO;
     using Parser.Parts;
     using Tokens;
@@ -17,8 +17,8 @@
             {
                 return false;
             }
-
-            var characters = new StringBuilder();
+            
+            var characters = new List<char>();
 
             while (inputBytes.MoveNext())
             {
@@ -39,10 +39,10 @@
                     return false;
                 }
 
-                characters.Append((char)current);
+                characters.Add((char)current);
             }
 
-            token = new HexToken(characters.ToString());
+            token = new HexToken(characters);
 
             return true;
         }

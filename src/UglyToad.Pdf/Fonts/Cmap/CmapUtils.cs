@@ -4,7 +4,7 @@
 
     internal static class CmapUtils
     {
-        public static int ToInt(this byte[] data, int length)
+        public static int ToInt(this IReadOnlyList<byte> data, int length)
         {
             int code = 0;
             for (int i = 0; i < length; ++i)

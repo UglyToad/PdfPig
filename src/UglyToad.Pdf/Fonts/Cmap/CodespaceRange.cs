@@ -1,68 +1,34 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace UglyToad.Pdf.Fonts.Cmap
+﻿namespace UglyToad.Pdf.Fonts.Cmap
 {
+    using System.Collections.Generic;
+
     /// <summary>
     ///  A codespace range is specified by a pair of codes of some particular length giving the lower and upper bounds of that range.
     /// </summary>
     public class CodespaceRange
     {
-        private byte[] start;
-        private byte[] end;
-        private int startInt;
-        private int endInt;
+        public IReadOnlyList<byte> Start { get; }
 
-        public int CodeLength { get; private set; }
+        public IReadOnlyList<byte> End { get; }
 
-        /**
-         * Creates a new instance of CodespaceRange.
-         */
-        public CodespaceRange()
+        public int StartInt { get; }
+
+        public int EndInt { get; }
+        
+        public int CodeLength { get; }
+        
+        /// <summary>
+        /// Creates a new instance of <see cref="CodespaceRange"/>.
+        /// </summary>
+        public CodespaceRange(IReadOnlyList<byte> start, IReadOnlyList<byte> end)
         {
+            Start = start;
+            End = end;
+            StartInt = start.ToInt(start.Count);
+            EndInt = end.ToInt(end.Count);
+            CodeLength = start.Count;
         }
         
-
-        /** Getter for property end.
-         * @return Value of property end.
-         *
-         */
-        public byte[] getEnd()
-        {
-            return end;
-        }
-
-        /** Setter for property end.
-         * @param endBytes New value of property end.
-         *
-         */
-        void setEnd(byte[] endBytes)
-        {
-            end = endBytes;
-            endInt = endBytes.ToInt(endBytes.Length);
-        }
-
-        /** Getter for property start.
-         * @return Value of property start.
-         *
-         */
-        public byte[] getStart()
-        {
-            return start;
-        }
-
-        /** Setter for property start.
-         * @param startBytes New value of property start.
-         *
-         */
-        void setStart(byte[] startBytes)
-        {
-            start = startBytes;
-            CodeLength = start.Length;
-            startInt = startBytes.ToInt(startBytes.Length);
-        }
-
         /**
          * Returns true if the given code bytes match this codespace range.
          */
@@ -80,7 +46,7 @@ namespace UglyToad.Pdf.Fonts.Cmap
             if (codeLen == CodeLength)
             {
                 int value = code.ToInt(codeLen);
-                if (value >= startInt && value <= endInt)
+                if (value >= StartInt && value <= EndInt)
                 {
                     return true;
                 }

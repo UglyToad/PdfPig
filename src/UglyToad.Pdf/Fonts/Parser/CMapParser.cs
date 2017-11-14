@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.Pdf.Fonts.Parser
 {
     using System;
+    using System.Collections.Generic;
     using System.Globalization;
     using Cmap;
     using Cos;
@@ -27,7 +28,38 @@
                 {
                     switch (operatorToken.Data)
                     {
-                        default:
+                        case "usecmap":
+                            throw new NotImplementedException("External CMap files not yet supported, please submit a pull request!");
+                        case "begincodespacerange":
+                            {
+                                if (previousToken is NumericToken numeric)
+                                {
+                                    ParseCodespaceRange(numeric, scanner, builder);
+                                }
+                                else
+                                {
+                                    throw new InvalidOperationException("Unexpected token preceding start of codespace range: " + previousToken);
+                                }
+
+                            }
+                            break;
+                        case "beginbfchar":
+                            {
+                                if (previousToken is NumericToken numeric)
+                                {
+                                    ParseBaseFontCharacters(numeric, scanner, builder);
+                                }
+                                else
+                                {
+                                    throw new InvalidOperationException("Unexpected token preceding start of base font characters: " + previousToken);
+                                }
+                            }
+                            break;
+                        case "beginbfrange":
+                            break;
+                        case "begincidchar":
+                            break;
+                        case "begingcidrange":
                             break;
                     }
                 }
@@ -40,6 +72,66 @@
             }
 
             return null;
+        }
+
+        private static void ParseCodespaceRange(NumericToken count, ITokenScanner tokenScanner, CharacterMapBuilder builder)
+        {
+            /*
+             * For example:
+             3 begincodespacerange
+                <00>    <80>
+                <8140>  <9ffc>
+                <a0>    <de>
+             endcodespacerange
+             */
+
+            var ranges = new List<CodespaceRange>(count.Int);
+
+            for (var i = 0; i < count.Int; i++)
+            {
+                if (!tokenScanner.MoveNext() || !(tokenScanner.CurrentToken is HexToken start))
+                {
+                    throw new InvalidOperationException("Codespace range contains an unexpected token: " + tokenScanner.CurrentToken);
+                }
+
+                if (!tokenScanner.MoveNext() || !(tokenScanner.CurrentToken is HexToken end))
+                {
+                    throw new InvalidOperationException("Codespace range contains an unexpected token: " + tokenScanner.CurrentToken);
+                }
+
+                ranges.Add(new CodespaceRange(start.Bytes, end.Bytes));
+            }
+
+            builder.CodespaceRanges = ranges;
+        }
+
+        private static void ParseBaseFontCharacters(NumericToken numeric, ITokenScanner tokenScanner, CharacterMapBuilder builder)
+        {
+            for (var i = 0; i < numeric.Int; i++)
+            {
+                if (!tokenScanner.MoveNext() || !(tokenScanner.CurrentToken is HexToken inputCode))
+                {
+                    throw new InvalidOperationException($"Base font characters definition contains invalid item at index {i}: {tokenScanner.CurrentToken}");
+                }
+
+                if (!tokenScanner.MoveNext())
+                {
+                    throw new InvalidOperationException($"Base font characters definition contains invalid item at index {i}: {tokenScanner.CurrentToken}");
+                }
+
+                if (tokenScanner.CurrentToken is NameToken characterName)
+                {
+                    builder.AddBaseFontCharacter(inputCode.Bytes, characterName.Data.Name);
+                }
+                else if (tokenScanner.CurrentToken is HexToken characterCode)
+                {
+                    builder.AddBaseFontCharacter(inputCode.Bytes, characterCode.Bytes);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Base font characters definition contains invalid item at index {i}: {tokenScanner.CurrentToken}");
+                }
+            }
         }
 
         private static void ParseName(NameToken nameToken, CoreTokenScanner scanner, CharacterMapBuilder builder, bool isLenientParsing)
