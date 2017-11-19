@@ -7,5 +7,7 @@
         bool MoveNext();
 
         IToken CurrentToken { get; }
+
+        bool TryReadToken<T>(out T token) where T : class, IToken;
     }
 }

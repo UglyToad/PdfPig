@@ -31,6 +31,23 @@
         private readonly List<byte> currentBuffer = new List<byte>();
         
         public IToken CurrentToken { get; private set; }
+        public bool TryReadToken<T>(out T token) where T : class, IToken
+        {
+            token = default(T);
+
+            if (!MoveNext())
+            {
+                return false;
+            }
+
+            if (CurrentToken is T canCast)
+            {
+                token = canCast;
+                return true;
+            }
+
+            return false;
+        }
 
         private bool hasBytePreRead;
 

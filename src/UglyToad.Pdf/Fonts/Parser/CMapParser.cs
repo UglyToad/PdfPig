@@ -56,10 +56,33 @@
                             }
                             break;
                         case "beginbfrange":
+                            {
+                                if (previousToken is NumericToken numeric)
+                                {
+                                    var parser = new BaseFontRangeParser();
+                                    parser.Parse(numeric, scanner, builder);
+                                }
+                                else
+                                {
+                                    throw new InvalidOperationException("Unexpected token preceding start of base font character ranges: " + previousToken);
+                                }
+                            }
                             break;
                         case "begincidchar":
-                            break;
-                        case "begingcidrange":
+                            {
+                                if (previousToken is NumericToken numeric)
+                                {
+                                    var characters = ParseCidCharacters(numeric, scanner);
+
+                                    builder.CidCharacterMappings = characters;
+                                }
+                                else
+                                {
+                                    throw new InvalidOperationException("Unexpected token preceding start of Cid character mapping: " + previousToken);
+                                }
+                                break;
+                            }
+                        case "begincidrange":
                             break;
                     }
                 }
@@ -134,7 +157,32 @@
             }
         }
 
-        private static void ParseName(NameToken nameToken, CoreTokenScanner scanner, CharacterMapBuilder builder, bool isLenientParsing)
+        private static IReadOnlyList<CidCharacterMapping> ParseCidCharacters(NumericToken numeric, ITokenScanner scanner)
+        {
+            var results = new List<CidCharacterMapping>();
+
+            for (var i = 0; i < numeric.Int; i++)
+            {
+                if (!scanner.TryReadToken(out HexToken sourceCode))
+                {
+                    throw new InvalidOperationException("The first token in a line for Cid Characters should be a hex, instead it was: " + scanner.CurrentToken);
+                }
+
+                if (!scanner.TryReadToken(out NumericToken destinationCode))
+                {
+                    throw new InvalidOperationException("The destination token in a line for Cid Character should be an integer, instead it was: " + scanner.CurrentToken);
+                }
+
+                var sourceInteger = sourceCode.Bytes.ToInt(sourceCode.Bytes.Count);
+                var mapping = new CidCharacterMapping(sourceInteger, destinationCode.Int);
+
+                results.Add(mapping);
+            }
+
+            return results;
+        }
+
+        private static void ParseName(NameToken nameToken, ITokenScanner scanner, CharacterMapBuilder builder, bool isLenientParsing)
         {
             switch (nameToken.Data.Name)
             {

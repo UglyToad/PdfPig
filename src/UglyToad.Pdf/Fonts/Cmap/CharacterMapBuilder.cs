@@ -52,6 +52,8 @@
 
         public IReadOnlyList<CodespaceRange> CodespaceRanges { get; set; }
 
+        public IReadOnlyList<CidCharacterMapping> CidCharacterMappings { get; set; }
+
         public Dictionary<int, string> BaseFontCharacterMap { get; } = new Dictionary<int, string>();
 
         public void AddBaseFontCharacter(IReadOnlyList<byte> bytes, IReadOnlyList<byte> value)
