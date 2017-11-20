@@ -40,11 +40,49 @@ end";
         private readonly CMapParser cMapParser = new CMapParser(); 
 
         [Fact]
-        public void CanParseCMap()
+        public void CanParseCidSystemInfoAndOtherInformation()
         {
             var input = StringBytesTestConverter.Convert(GoogleDocToUnicodeCmap, false);
 
             var cmap = cMapParser.Parse(input.Bytes, false);
+
+            Assert.Equal("Adobe", cmap.Info.Registry);
+            Assert.Equal("UCS", cmap.Info.Ordering);
+            Assert.Equal(0, cmap.Info.Supplement);
+
+            Assert.Equal("Adobe-Identity-UCS", cmap.Name);
+            Assert.Equal(2, cmap.Type);
+        }
+
+        [Fact]
+        public void CanParseCodespaceRange()
+        {
+            var input = StringBytesTestConverter.Convert(GoogleDocToUnicodeCmap, false);
+
+            var cmap = cMapParser.Parse(input.Bytes, false);
+
+            Assert.Equal(1, cmap.CodespaceRanges.Count);
+
+            Assert.Equal(0, cmap.CodespaceRanges[0].StartInt);
+            Assert.Equal(65535, cmap.CodespaceRanges[0].EndInt);
+            Assert.Equal(2, cmap.CodespaceRanges[0].CodeLength);
+        }
+
+        [Fact]
+        public void CanParseBaseFontCharacters()
+        {
+            var input = StringBytesTestConverter.Convert(GoogleDocToUnicodeCmap, false);
+
+            var cmap = cMapParser.Parse(input.Bytes, false);
+
+            Assert.True(cmap.BaseFontCharacterMap.Count >= 6);
+
+            Assert.Equal(" ", cmap.BaseFontCharacterMap[3]);
+            Assert.Equal(".", cmap.BaseFontCharacterMap[17]);
+            Assert.Equal("A", cmap.BaseFontCharacterMap[36]);
+            Assert.Equal("T", cmap.BaseFontCharacterMap[55]);
+            Assert.Equal("a", cmap.BaseFontCharacterMap[68]);
+            Assert.Equal("x", cmap.BaseFontCharacterMap[91]);
         }
     }
 }

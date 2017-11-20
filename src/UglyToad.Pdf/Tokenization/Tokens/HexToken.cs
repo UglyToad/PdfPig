@@ -70,5 +70,19 @@ namespace UglyToad.Pdf.Tokenization.Tokens
             Bytes = bytes;
             Data = builder.ToString();
         }
+
+        public static int ConvertHexBytesToInt(HexToken token)
+        {
+            var bytes = token.Bytes;
+
+            var value = bytes[0] & 0xFF;
+            if (bytes.Count == 2)
+            {
+                value <<= 8;
+                value += bytes[1] & 0xFF;
+            }
+
+            return value;
+        }
     }
 }

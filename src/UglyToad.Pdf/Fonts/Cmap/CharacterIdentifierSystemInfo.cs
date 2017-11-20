@@ -26,5 +26,10 @@
             Ordering = ordering;
             Supplement = supplement;
         }
+
+        public override string ToString()
+        {
+            return $"{Registry} | {Ordering} | {Supplement}";
+        }
     }
 }

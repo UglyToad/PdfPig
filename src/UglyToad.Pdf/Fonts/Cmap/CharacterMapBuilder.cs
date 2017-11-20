@@ -54,6 +54,8 @@
 
         public IReadOnlyList<CidCharacterMapping> CidCharacterMappings { get; set; }
 
+        public IReadOnlyList<CidRange> CidRanges { get; set; }
+
         public Dictionary<int, string> BaseFontCharacterMap { get; } = new Dictionary<int, string>();
 
         public void AddBaseFontCharacter(IReadOnlyList<byte> bytes, IReadOnlyList<byte> value)
@@ -68,6 +70,15 @@
             BaseFontCharacterMap[code] = value;
         }
 
+        public CMap Build()
+        {
+            return new CMap(CharacterIdentifierSystemInfo, Type, WMode, Name, Version,
+                BaseFontCharacterMap ?? new Dictionary<int, string>(),
+                CodespaceRanges ?? new CodespaceRange[0],
+                CidRanges ?? new CidRange[0],
+                CidCharacterMappings ?? new CidCharacterMapping[0]);
+        }
+
         private int GetCodeFromArray(IReadOnlyList<byte> data, int length)
         {
             int code = 0;
@@ -79,7 +90,7 @@
             return code;
         }
 
-        private string CreateStringFromBytes(byte[] bytes)
+        private static string CreateStringFromBytes(byte[] bytes)
         {
             return bytes.Length == 1
                 ? OtherEncodings.BytesAsLatin1String(bytes)

@@ -1,4 +1,4 @@
-﻿namespace UglyToad.Pdf.Fonts.Parser
+﻿namespace UglyToad.Pdf.Fonts.Parser.Parts
 {
     using System;
     using System.Collections.Generic;
@@ -7,9 +7,9 @@
     using Tokenization.Scanner;
     using Tokenization.Tokens;
 
-    internal class BaseFontRangeParser
+    internal class BaseFontRangeParser : ICidFontPartParser<NumericToken>
     {
-        public void Parse(NumericToken numeric, ITokenScanner scanner, CharacterMapBuilder builder)
+        public void Parse(NumericToken numeric, ITokenScanner scanner, CharacterMapBuilder builder, bool isLenientParsing)
         {
             for (var i = 0; i < numeric.Int; i++)
             {
