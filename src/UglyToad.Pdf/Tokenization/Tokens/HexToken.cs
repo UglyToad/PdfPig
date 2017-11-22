@@ -64,7 +64,11 @@ namespace UglyToad.Pdf.Tokenization.Tokens
 
                 var b = Convert(high, low);
                 bytes.Add(b);
-                builder.Append((char)b);
+
+                if (b != '\0')
+                {
+                    builder.Append((char)b);
+                }
             }
 
             Bytes = bytes;

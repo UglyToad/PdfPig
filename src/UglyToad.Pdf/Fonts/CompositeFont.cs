@@ -1,20 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace UglyToad.Pdf.Fonts
+﻿namespace UglyToad.Pdf.Fonts
 {
+    using System;
+    using System.Collections.Generic;
     using Cmap;
     using Cos;
 
-    public class CompositeFont
-    {
-        public bool IsSimple { get; } = false;
+    //public class CompositeFont
+    //{
+    //    public bool IsSimple { get; } = false;
 
-        public CosName SubType { get; } = CosName.TYPE0;
+    //    public CosName SubType { get; } = CosName.TYPE0;
 
-        public CharacterIdentifierFont Descendant { get; }
-    }
+    //    public CharacterIdentifierFont Descendant { get; }
+    //}
 
     /// <summary>
     /// Equivalent to the DW2 array in the font dictionary for vertical fonts.
@@ -49,7 +47,7 @@ namespace UglyToad.Pdf.Fonts
     public class CharacterIdentifierFont
     {
         public const int DefaultWidthWhenUndeclared = 1000;
-        
+
         public CidFontType Subtype { get; }
 
         public CosName BaseFont { get; }
@@ -66,10 +64,10 @@ namespace UglyToad.Pdf.Fonts
 
         public CharacterIdentifierToGlyphIdentifierMap CidToGidMap { get; }
 
-        public CharacterIdentifierFont(CidFontType subtype, CosName baseFont, CharacterIdentifierSystemInfo systemInfo, 
-            CosObjectKey fontDescriptor, 
+        public CharacterIdentifierFont(CidFontType subtype, CosName baseFont, CharacterIdentifierSystemInfo systemInfo,
+            CosObjectKey fontDescriptor,
             int defaultWidth,
-            COSArray widths, 
+            COSArray widths,
             CharacterIdentifierToGlyphIdentifierMap cidToGidMap)
         {
             Subtype = subtype;
@@ -81,7 +79,7 @@ namespace UglyToad.Pdf.Fonts
             CidToGidMap = cidToGidMap;
         }
 
-        
+
     }
 
     public class CharacterIdentifierFontBuilder
@@ -98,7 +96,7 @@ namespace UglyToad.Pdf.Fonts
         private readonly CharacterIdentifierSystemInfo systemInfo;
         private readonly CosObjectKey fontDescriptorKey;
 
-        public CharacterIdentifierFontBuilder(CosName subType, CosName baseFont, 
+        public CharacterIdentifierFontBuilder(CosName subType, CosName baseFont,
             CharacterIdentifierSystemInfo systemInfo,
             CosObjectKey fontDescriptorKey)
         {
@@ -126,11 +124,6 @@ namespace UglyToad.Pdf.Fonts
 
     public class CharacterIdentifierToGlyphIdentifierMap
     {
-        
-    }
 
-    public class CharacterMap
-    {
-        
     }
 }

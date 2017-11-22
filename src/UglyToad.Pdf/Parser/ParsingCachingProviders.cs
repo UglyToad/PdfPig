@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.Pdf.Parser
 {
     using System;
+    using Content;
     using Cos;
     using Parts;
 
@@ -13,10 +14,13 @@
 
         public BruteForceSearcher BruteForceSearcher { get; }
 
-        public ParsingCachingProviders(CosObjectPool objectPool, BruteForceSearcher bruteForceSearcher)
+        public ResourceContainer ResourceContainer { get; }
+
+        public ParsingCachingProviders(CosObjectPool objectPool, BruteForceSearcher bruteForceSearcher, ResourceContainer resourceContainer)
         {
             ObjectPool = objectPool ?? throw new ArgumentNullException(nameof(objectPool));
             BruteForceSearcher = bruteForceSearcher ?? throw new ArgumentNullException(nameof(bruteForceSearcher));
+            ResourceContainer = resourceContainer ?? throw new ArgumentNullException(nameof(resourceContainer));
         }
     }
 }

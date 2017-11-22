@@ -8,7 +8,7 @@
         [Theory]
         [InlineData("AE", "®")]
         [InlineData("61", "a")]
-        [InlineData("0061", "\0a")]
+        [InlineData("0061", "a")]
         [InlineData("7465787420736f", "text so")]
         public void MapsCorrectlyToString(string input, string expected)
         {

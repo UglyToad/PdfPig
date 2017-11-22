@@ -1,8 +1,6 @@
-﻿using System;
-using System.Text;
-
-namespace UglyToad.Pdf.Parser.PageTree
+﻿namespace UglyToad.Pdf.Parser.PageTree
 {
+    using System;
     using Content;
     using ContentStream;
     using ContentStream.TypedAccessors;
@@ -29,14 +27,7 @@ namespace UglyToad.Pdf.Parser.PageTree
                 throw new InvalidOperationException("Expected a Dictionary of Type Page, instead got this: " + dictionary);
             }
 
-            var resources = dictionary.GetDictionaryOrDefault(CosName.RESOURCES);
-
-            var resourceDictionary = arguments.Container.Get<ResourceDictionaryParser>()
-                .Parse(resources, arguments);
-
-            var font = resourceDictionary.GetFont(CosName.Create("F0"), arguments, out var fontValue);
-
-            return new Page(number, dictionary, arguments);
+            return new Page(number, dictionary, new PageTreeMembers(), arguments);
         }
     }
 
@@ -56,7 +47,7 @@ namespace UglyToad.Pdf.Parser.PageTree
                 var simpleFont = arguments.Container.Get<SimpleFontParser>()
                     .Parse(dictionary, arguments);
             }
-            
+
             return new Font();
         }
     }
@@ -112,11 +103,11 @@ namespace UglyToad.Pdf.Parser.PageTree
 
     public class SimpleFont
     {
-        
+
     }
 
     public class Font
     {
-        
+
     }
 }

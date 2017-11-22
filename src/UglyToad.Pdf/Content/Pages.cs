@@ -60,7 +60,7 @@
         {
             if (locatedPages.TryGetValue(pageNumber, out ContentStreamDictionary targetPageDictionary))
             {
-                return new Page(pageNumber, targetPageDictionary, arguments);
+                return new Page(pageNumber, targetPageDictionary, new PageTreeMembers(), arguments);
             }
 
             var observed = new List<int>();

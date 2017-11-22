@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.Pdf.Util
 {
     using Filters;
+    using Graphics;
     using Logging;
     using Parser;
     using Parser.PageTree;
@@ -47,6 +48,8 @@
             var simpleFontParser = new SimpleFontParser();
             var compositeFontParser = new CompositeFontParser();
             var fontParser = new FontParser();
+            var pageContentParser = new PageContentParser();
+            var operationFactory = new ReflectionGraphicsStateOperationFactory();
 
             var container = new Container();
             container.Register(headerParser);
@@ -65,6 +68,8 @@
             container.Register(simpleFontParser);
             container.Register(compositeFontParser);
             container.Register(fontParser);
+            container.Register(pageContentParser);
+            container.Register(operationFactory);
 
             return container;
         }

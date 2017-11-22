@@ -1,89 +1,101 @@
 ﻿namespace UglyToad.Pdf.Content
 {
     using System;
+    using System.Diagnostics;
     using ContentStream;
-    using ContentStream.TypedAccessors;
     using Cos;
     using Filters;
-    using Logging;
+    using Geometry;
+    using Graphics;
+    using IO;
     using Parser;
-    using Text;
     using Util;
 
     public class Page
     {
         private readonly ParsingArguments parsingArguments;
         private readonly ContentStreamDictionary dictionary;
+
+        /// <summary>
+        /// The 1 indexed page number.
+        /// </summary>
         public int Number { get; }
 
-        public bool Loaded { get; private set; }
+        public MediaBox MediaBox { get; }
 
-        internal Page(int number, ContentStreamDictionary dictionary, ParsingArguments parsingArguments)
+        public PageContent Content { get; }
+
+        internal Page(int number, ContentStreamDictionary dictionary, PageTreeMembers pageTreeMembers, ParsingArguments parsingArguments)
         {
             if (number <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(number), "Page number cannot be 0 or negative.");
             }
-
-            Number = number;
-            Loaded = false;
+            
             this.dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
             this.parsingArguments = parsingArguments ?? throw new ArgumentNullException(nameof(parsingArguments));
 
-            var mediabox = dictionary.GetDictionaryObject(CosName.MEDIA_BOX) as COSArray;
-            var contents = dictionary.GetItemOrDefault(CosName.CONTENTS);
-            var raw = contents as RawCosStream;
-            var obj = parsingArguments.CachingProviders.ObjectPool.Get(new CosObjectKey(7, 0));
-            var parser = parsingArguments.Container.Get<DynamicParser>()
-                .Parse(parsingArguments, obj, false) as RawCosStream;
-            var rw = parser.Decode(parsingArguments.Container.Get<IFilterProvider>());
-            var format = OtherEncodings.BytesAsLatin1String(rw);
-            var pee = new TextSectionParser(new NoOpLog()).ReadTextObjects(new ByteTextScanner(rw));
-            var font0 = parsingArguments.CachingProviders.ObjectPool.Get(new CosObjectKey(16, 0));
-            var cmpa = parsingArguments.CachingProviders.ObjectPool.Get(new CosObjectKey(9, 0));
-            var toad = parsingArguments.Container.Get<DynamicParser>()
-                .Parse(parsingArguments, new CosObjectKey(9, 0), false);
-            var bigsby = (toad as RawCosStream).Decode(parsingArguments.Container.Get<IFilterProvider>());
+            Number = number;
 
-            var ssss = OtherEncodings.BytesAsLatin1String(bigsby);
+            var type = dictionary.GetName(CosName.TYPE);
+
+            if (type != null && !type.Equals(CosName.PAGE) && !parsingArguments.IsLenientParsing)
+            {
+                throw new InvalidOperationException($"Created page number {number} but its type was specified as {type} rather than 'Page'.");
+            }
+
+            if (dictionary.TryGetItemOfType(CosName.MEDIA_BOX, out COSArray mediaboxArray))
+            {
+                var x1 = mediaboxArray.getInt(0);
+                var y1 = mediaboxArray.getInt(1);
+                var x2 = mediaboxArray.getInt(2);
+                var y2 = mediaboxArray.getInt(3);
+
+                MediaBox = new MediaBox(new PdfRectangle(x1, y1, x2, y2));
+            }
+            else
+            {
+                MediaBox = pageTreeMembers.GetMediaBox();
+
+                if (MediaBox == null)
+                {
+                    if (parsingArguments.IsLenientParsing)
+                    {
+                        MediaBox = MediaBox.A4;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("No mediabox was present for page: " + number);
+                    }
+                }
+            }
+
+            if (dictionary.GetItemOrDefault(CosName.RESOURCES) is ContentStreamDictionary resource)
+            {
+                parsingArguments.CachingProviders.ResourceContainer.LoadResourceDictionary(resource, parsingArguments);
+            }
+
+            var contentObject = dictionary.GetItemOrDefault(CosName.CONTENTS) as CosObject;
+            if (contentObject != null)
+            {
+                var contentStream = parsingArguments.Container.Get<DynamicParser>()
+                    .Parse(parsingArguments, contentObject, false) as RawCosStream;
+
+                if (contentStream == null)
+                {
+                    throw new InvalidOperationException("Failed to parse the content for the page: " + number);
+                }
+
+                var contents = contentStream.Decode(parsingArguments.Container.Get<IFilterProvider>());
+
+                if (Debugger.IsAttached)
+                {
+                    var textContents = OtherEncodings.BytesAsLatin1String(contents);
+                }
+
+                Content = parsingArguments.Container.Get<PageContentParser>()
+                    .Parse(parsingArguments.Container.Get<IGraphicsStateOperationFactory>(), new ByteArrayInputBytes(contents));
+            }
         }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <remarks>
-    ///  The positive x axis extends horizontally to the right and the positive y axis vertically upward, as in standard mathematical practice
-    /// </remarks>
-    public struct Rectangle
-    {
-        public decimal Width { get; }
-
-        public decimal Height { get; }
-
-        public decimal Left { get; }
-
-        public decimal Top { get; }
-
-        public decimal Right { get; }
-
-        public decimal Bottom { get; }
-
-        public Rectangle(decimal x1, decimal y1, decimal x2, decimal y2)
-        {
-            Width = 0;
-            Height = 0;
-            Top = 0;
-            Left = 0;
-            Right = 0;
-            Bottom = 0;
-        }
-    }
-
-    public struct Coordinate
-    {
-        public decimal X { get; set; }
-
-        public decimal Y { get; set; }
     }
 }

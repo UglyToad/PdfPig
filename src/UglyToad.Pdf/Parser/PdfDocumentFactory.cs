@@ -48,6 +48,7 @@
 
             var dynamicParser = container.Get<DynamicParser>();
             var bruteForceSearcher = new BruteForceSearcher(reader);
+            var resourceContainer = new ResourceContainer();
 
             var root = ParseTrailer(reader, crossReferenceTable, dynamicParser, bruteForceSearcher, pool,
                 isLenientParsing);
@@ -63,7 +64,7 @@
                 rootDictionary.Set(CosName.TYPE, CosName.CATALOG);
             }
 
-            var caching = new ParsingCachingProviders(pool, bruteForceSearcher);
+            var caching = new ParsingCachingProviders(pool, bruteForceSearcher, resourceContainer);
 
             return new PdfDocument(reader, version, crossReferenceTable, container, isLenientParsing, caching, new Catalog(rootDictionary));
         }

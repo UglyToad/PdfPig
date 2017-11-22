@@ -24,7 +24,7 @@
         }
 
         [Theory]
-        [InlineData("<00>", "\0")]
+        [InlineData("<00>", "")]
         [InlineData("<A1>", "¡")]
         public void TokenizesHexStringsCorrectly(string s, string expected)
         {

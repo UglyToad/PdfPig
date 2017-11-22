@@ -50,6 +50,18 @@
             return null;
         }
 
+        public bool TryGetItemOfType<T>(CosName key, out T item) where T : CosBase
+        {
+            item = null;
+            if (inner.TryGetValue(key, out var value) && value is T t)
+            {
+                item = t;
+                return true;
+            }
+
+            return false;
+        }
+
         public void Set(CosName key, CosBase value)
         {
             if (key == null)
@@ -74,6 +86,5 @@
             throw new NotImplementedException();
         }
         #endregion
-
     }
 }

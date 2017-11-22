@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using IO;
     using Parser.Parts;
-    using Text.Operators;
     using Tokenization;
     using Tokens;
 
@@ -19,7 +18,7 @@
     {
         private static readonly HexTokenizer HexTokenizer = new HexTokenizer();
         private static readonly StringTokenizer StringTokenizer = new StringTokenizer();
-        private static readonly Tokenization.NumericTokenizer NumericTokenizer = new Tokenization.NumericTokenizer();
+        private static readonly NumericTokenizer NumericTokenizer = new NumericTokenizer();
         private static readonly NameTokenizer NameTokenizer = new NameTokenizer();
         private static readonly PlainTokenizer PlainTokenizer = new PlainTokenizer();
         private static readonly ArrayTokenizer ArrayTokenizer = new ArrayTokenizer();
@@ -70,8 +69,7 @@
                 var currentByte = inputBytes.CurrentByte;
                 var c = (char) currentByte;
                 
-                if (BaseTextComponentApproach.IsEmpty(currentByte)
-                    || ReadHelper.IsWhitespace(currentByte))
+                if (IsEmpty(currentByte) || ReadHelper.IsWhitespace(currentByte))
                 {
                     isSkippingSymbol = false;
                     continue;
@@ -158,6 +156,11 @@
             }
 
             return false;
+        }
+
+        private static bool IsEmpty(byte b)
+        {
+            return b == ' ' || b == '\r' || b == '\n' || b == 0;
         }
     }
 }

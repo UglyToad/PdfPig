@@ -64,24 +64,6 @@
 
         private bool closed = false;
         
-        private readonly ScratchFile scratchFile;
-        
-        public COSDocument() : this(ScratchFile.getMainMemoryOnlyInstance())
-        {
-        }
-
-        /**
-         * Constructor that will use the provide memory handler for storage of the
-         * PDF streams.
-         *
-         * @param scratchFile memory handler for buffering of PDF streams
-         * 
-         */
-        public COSDocument(ScratchFile scratchFile)
-        {
-            this.scratchFile = scratchFile;
-        }
-
         /**
          * Creates a new COSStream using the current configuration for scratch files.
          * 
@@ -380,7 +362,6 @@
                 {
                     stream.Dispose();
                 }
-                scratchFile?.Dispose();
                 closed = true;
             }
         }
