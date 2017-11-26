@@ -98,7 +98,7 @@
         {
             return new CurrentGraphicsState
             {
-                FontState = FontState.DeepClone(),
+                FontState = FontState?.DeepClone(),
                 RenderingIntent = RenderingIntent
             };
         }
