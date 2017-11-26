@@ -1,0 +1,176 @@
+﻿namespace UglyToad.Pdf.Graphics
+{
+    using System;
+    using System.Collections.Generic;
+    using Core;
+    using Geometry;
+    using Operations;
+
+    internal class CurrentGraphicsState : IDeepCloneable<CurrentGraphicsState>
+    {
+        /// <summary>
+        /// The <see cref="CurrentFontState"/> for this graphics state.
+        /// </summary>
+        public CurrentFontState FontState { get; set; }
+
+        /// <summary>
+        /// Thickness in user space units of path to be stroked.
+        /// </summary>
+        public decimal LineWidth { get; set; } = 1;
+
+        /// <summary>
+        /// Specifies the shape of line ends for open stroked paths.
+        /// </summary>
+        public LineCapStyle CapStyle { get; set; } = LineCapStyle.Butt;
+
+        /// <summary>
+        /// Specifies the shape of joins between connected stroked path segments.
+        /// </summary>
+        public LineJoinStyle JoinStyle { get; set; } = LineJoinStyle.Miter;
+
+        /// <summary>
+        /// Maximum length of mitered line joins for paths before becoming a bevel.
+        /// </summary>
+        public decimal MiterLimit { get; set; } = 10;
+
+        /// <summary>
+        /// The pattern to be used for stroked lines.
+        /// </summary>
+        public LineDashPattern LineDashPattern { get; set; } = LineDashPattern.Solid;
+
+        /// <summary>
+        /// The rendering intent to use when converting CIE-based colors to device colors.
+        /// </summary>
+        public RenderingIntent RenderingIntent { get; set; } = RenderingIntent.RelativeColorimetric;
+
+        /// <summary>
+        /// Should a correction for rasterization effects be applied?
+        /// </summary>
+        public bool StrokeAdjustment { get; set; } = false;
+
+        /// <summary>
+        /// Opacity value to be used for transparent imaging.
+        /// </summary>
+        public decimal AlphaConstant { get; set; } = 1;
+
+        /// <summary>
+        /// Should soft mask and alpha constant values be interpreted as shape (<see langword="true"/>) or opacity (<see langword="false"/>) values?
+        /// </summary>
+        public bool AlphaSource { get; set; } = false;
+
+        /// <summary>
+        /// Maps positions from user coordinates to device coordinates.
+        /// </summary>
+        public TransformationMatrix CurrentTransformationMatrix { get; set; } = TransformationMatrix.Default;
+
+        #region Device Dependent
+
+        /// <summary>
+        /// Should painting in a colorant set erase (<see langword="false"/>)
+        /// or leave unchanged (<see langword="true"/>) areas of other colorant sets?
+        /// </summary>
+        public bool Overprint { get; set; } = false;
+
+        /// <summary>
+        /// As for <see cref="Overprint"/> but with non-stroking operations.
+        /// </summary>
+        public bool NonStrokingOverprint { get; set; } = false;
+
+        /// <summary>
+        /// In DeviceCMYK color space a value of 0 for a component will erase a component (0)
+        /// or leave it unchanged (1) for overprinting.
+        /// </summary>
+        public decimal OverprintMode { get; set; }
+
+        /// <summary>
+        /// The precision for rendering curves, smaller numbers give smoother curves.
+        /// </summary>
+        public decimal Flatness { get; set; } = 1;
+
+        /// <summary>
+        /// The precision for rendering color gradients on the output device.
+        /// </summary>
+        public decimal Smoothness { get; set; } = 0;
+
+        #endregion
+
+        public CurrentGraphicsState DeepClone()
+        {
+            return new CurrentGraphicsState
+            {
+                FontState = FontState.DeepClone(),
+                RenderingIntent = RenderingIntent
+            };
+        }
+    }
+
+    internal interface IOperationContext
+    {
+        CurrentGraphicsState GetCurrentState();
+
+        TextMatrices TextMatrices { get; }
+
+        int StackSize { get; }
+
+        void PopState();
+
+        void PushState();
+    }
+
+    internal class TextMatrices
+    {
+        public TransformationMatrix TextMatrix { get; set; }
+
+        public TransformationMatrix TextLineMatrix { get; set; }
+    }
+
+    internal class ContentStreamProcessor : IOperationContext
+    {
+        private readonly Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
+
+        public TextMatrices TextMatrices { get; private set; } = new TextMatrices();
+
+        public int StackSize => graphicsStack.Count;
+
+
+        public ContentStreamProcessor(PdfRectangle cropBox)
+        {
+
+        }
+
+        public void Process(IReadOnlyList<IGraphicsStateOperation> operations)
+        {
+            var currentState = CloneAllStates();
+
+
+        }
+
+        private void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
+        {
+            foreach (var stateOperation in operations)
+            {
+                // stateOperation.Run();
+            }
+        }
+
+        private Stack<CurrentGraphicsState> CloneAllStates()
+        {
+            throw new NotImplementedException();
+        }
+
+        public CurrentGraphicsState GetCurrentState()
+        {
+            return graphicsStack.Peek();
+        }
+
+        public void PopState()
+        {
+            graphicsStack.Pop();
+        }
+
+        public void PushState()
+        {
+            graphicsStack.Push(graphicsStack.Peek().DeepClone());
+        }
+    }
+}

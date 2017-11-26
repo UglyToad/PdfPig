@@ -1,12 +1,19 @@
 ﻿namespace UglyToad.Pdf.Tests.Parser
 {
-    using Graphics;
+    using Pdf.Cos;
+    using Pdf.Graphics;
+    using Pdf.Graphics.Operations.General;
+    using Pdf.Graphics.Operations.TextObjects;
+    using Pdf.Graphics.Operations.TextPositioning;
+    using Pdf.Graphics.Operations.TextShowing;
+    using Pdf.Graphics.Operations.TextState;
     using Pdf.Parser;
     using Xunit;
 
     public class PageContentParserTests
     {
         private readonly PageContentParser parser = new PageContentParser();
+        private readonly IGraphicsStateOperationFactory operationFactory = new ReflectionGraphicsStateOperationFactory();
 
         [Fact]
         public void CorrectlyExtractsOperations()
@@ -14,6 +21,70 @@
             var input = StringBytesTestConverter.Convert(SimpleGoogleDocPageContent, false);
 
             var result = parser.Parse(new ReflectionGraphicsStateOperationFactory(), input.Bytes);
+        }
+
+        [Fact]
+        public void CorrectlyExtractsOptionsInTextContext()
+        {
+            const string s = @"BT
+/F13 48 Tf
+20 38 Td
+1 Tr
+2 w
+(ABC) Tj
+ET";
+            var input = StringBytesTestConverter.Convert(s, false);
+
+            var result = parser.Parse(operationFactory, input.Bytes);
+
+            Assert.Equal(7, result.GraphicsStateOperations.Count);
+
+            Assert.Equal(BeginText.Value, result.GraphicsStateOperations[0]);
+
+            var font = Assert.IsType<SetFontSize>(result.GraphicsStateOperations[1]);
+            Assert.Equal(CosName.Create("F13"), font.Font);
+            Assert.Equal(48, font.Size);
+
+            var nextLine = Assert.IsType<MoveToNextLineWithOffset>(result.GraphicsStateOperations[2]);
+            Assert.Equal(20, nextLine.Tx);
+            Assert.Equal(38, nextLine.Ty);
+
+            var renderingMode = Assert.IsType<SetTextRenderingMode>(result.GraphicsStateOperations[3]);
+            Assert.Equal(RenderingMode.Stroke, renderingMode.Mode);
+
+            var lineWidth = Assert.IsType<SetLineWidth>(result.GraphicsStateOperations[4]);
+            Assert.Equal(2, lineWidth.Width);
+
+            var text = Assert.IsType<ShowText>(result.GraphicsStateOperations[5]);
+            Assert.Equal("ABC", text.Text);
+
+            Assert.Equal(EndText.Value, result.GraphicsStateOperations[6]);
+        }
+
+        [Fact]
+        public void SkipsComments()
+        {
+            const string s = @"BT
+21 32 Td %A comment here
+0 Tr
+ET";
+
+            var input = StringBytesTestConverter.Convert(s, false);
+
+            var result = parser.Parse(operationFactory, input.Bytes);
+
+            Assert.Equal(4, result.GraphicsStateOperations.Count);
+
+            Assert.Equal(BeginText.Value, result.GraphicsStateOperations[0]);
+
+            var moveLine = Assert.IsType<MoveToNextLineWithOffset>(result.GraphicsStateOperations[1]);
+            Assert.Equal(21, moveLine.Tx);
+            Assert.Equal(32, moveLine.Ty);
+
+            var renderingMode = Assert.IsType<SetTextRenderingMode>(result.GraphicsStateOperations[2]);
+            Assert.Equal(RenderingMode.Fill, renderingMode.Mode);
+
+            Assert.Equal(EndText.Value, result.GraphicsStateOperations[3]);
         }
 
         private const string SimpleGoogleDocPageContent = @"
