@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations.TextState
 {
+    using Content;
+
     internal class SetWordSpacing : IGraphicsStateOperation
     {
         public const string Symbol = "Tw";
@@ -11,6 +13,13 @@
         public SetWordSpacing(decimal spacing)
         {
             Spacing = spacing;
+        }
+
+        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        {
+            var currentState = operationContext.GetCurrentState();
+
+            currentState.FontState.WordSpacing = Spacing;
         }
 
         public override string ToString()

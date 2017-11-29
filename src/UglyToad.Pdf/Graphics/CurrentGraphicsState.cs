@@ -61,7 +61,7 @@
         /// <summary>
         /// Maps positions from user coordinates to device coordinates.
         /// </summary>
-        public TransformationMatrix CurrentTransformationMatrix { get; set; } = TransformationMatrix.Default;
+        public TransformationMatrix CurrentTransformationMatrix { get; set; } = TransformationMatrix.Identity;
 
         #region Device Dependent
 

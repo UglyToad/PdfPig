@@ -41,7 +41,7 @@ ET";
 
             Assert.Equal(BeginText.Value, result.GraphicsStateOperations[0]);
 
-            var font = Assert.IsType<SetFontSize>(result.GraphicsStateOperations[1]);
+            var font = Assert.IsType<SetFontAndSize>(result.GraphicsStateOperations[1]);
             Assert.Equal(CosName.Create("F13"), font.Font);
             Assert.Equal(48, font.Size);
 

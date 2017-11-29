@@ -16,8 +16,8 @@
 
         public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
-            operationContext.TextMatrices.TextMatrix = TransformationMatrix.Default;
-            operationContext.TextMatrices.TextLineMatrix = TransformationMatrix.Default;
+            operationContext.TextMatrices.TextMatrix = TransformationMatrix.Identity;
+            operationContext.TextMatrices.TextLineMatrix = TransformationMatrix.Identity;
         }
 
         public override string ToString()

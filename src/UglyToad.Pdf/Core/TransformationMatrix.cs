@@ -8,7 +8,7 @@
     /// </summary>
     internal struct TransformationMatrix
     {
-        public static TransformationMatrix Default = new TransformationMatrix(new decimal[]
+        public static TransformationMatrix Identity = new TransformationMatrix(new decimal[]
         {
             1,0,0,
             0,1,0,
@@ -23,6 +23,44 @@
         public decimal D => value[4];
         public decimal E => value[6];
         public decimal F => value[7];
+
+        public decimal this[int row, int col]
+        {
+            get
+            {
+                if (row >= Rows)
+                {
+                    throw new ArgumentOutOfRangeException($"The transformation matrix only contains {Rows} rows and is zero indexed, you tried to access row {row}.");
+                }
+
+                if (row < 0)
+                {
+                    throw new ArgumentOutOfRangeException("Cannot access negative rows in a matrix.");
+                }
+
+                if (col >= Columns)
+                {
+                    throw new ArgumentOutOfRangeException($"The transformation matrix only contains {Columns} columns and is zero indexed, you tried to access column {col}.");
+                }
+
+                if (col < 0)
+                {
+                    throw new ArgumentOutOfRangeException("Cannot access negative columns in a matrix.");
+                }
+
+                var resultIndex = row * Rows + col;
+
+                if (resultIndex > value.Length - 1)
+                {
+                    throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} mapped to the index {resultIndex} which was not in the value array.");
+                }
+
+                return value[resultIndex];
+            }
+        }
+
+        public const int Rows = 3;
+        public const int Columns = 3;
         
         public TransformationMatrix(decimal[] value)
         {
@@ -46,8 +84,8 @@
 
             return new PdfPoint(x, y);
         }
-
-        public static TransformationMatrix FromArray(decimal[] values)
+        
+        public static TransformationMatrix FromArray(params decimal[] values)
         {
             if (values.Length == 9)
             {
@@ -65,6 +103,52 @@
             }
 
             throw new ArgumentException("The array must either define all 9 elements of the matrix or all 6 key elements. Instead array was: " + values);
+        }
+
+        public TransformationMatrix Multiply(TransformationMatrix matrix)
+        {
+            var result = new decimal[9];
+
+            for (int i = 0; i < Rows; i++)
+            {
+                for (int j = 0; j < Columns; j++)
+                {
+                    var index = (i * Rows) + j;
+
+                    for (int x = 0; x < Rows; x++)
+                    {
+                        result[index] += this[i, x] * matrix[x, j];
+                    }
+                }
+            }
+
+            return new TransformationMatrix(result);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is TransformationMatrix m))
+            {
+                return false;
+            }
+
+            return Equals(this, m);
+        }
+
+        public static bool Equals(TransformationMatrix a, TransformationMatrix b)
+        {
+            for (int i = 0; i < Rows; i++)
+            {
+                for (int j = 0; j < Columns; j++)
+                {
+                    if (a[i, j] != b[i, j])
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
 
         public override string ToString()

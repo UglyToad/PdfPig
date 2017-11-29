@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations.TextState
 {
+    using Content;
+
     internal class SetTextRise : IGraphicsStateOperation
     {
         public const string Symbol = "Ts";
@@ -11,6 +13,13 @@
         public SetTextRise(decimal rise)
         {
             Rise = rise;
+        }
+        
+        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        {
+            var currentState = operationContext.GetCurrentState();
+
+            currentState.FontState.Rise = Rise;
         }
 
         public override string ToString()
