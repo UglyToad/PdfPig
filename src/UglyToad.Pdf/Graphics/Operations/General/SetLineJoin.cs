@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations.General
 {
     using System;
+    using Content;
 
     internal class SetLineJoin : IGraphicsStateOperation
     {
@@ -19,6 +20,11 @@
             }
 
             Join = join;
+        }
+
+        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        {
+            operationContext.GetCurrentState().JoinStyle = Join;
         }
 
         public override string ToString()

@@ -1,8 +1,10 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations.SpecialGraphicsState
 {
     using System;
+    using Content;
+    using Core;
 
-    internal class ModifyTransformationMatrix : IGraphicsStateOperation
+    internal class ModifyCurrentTransformationMatrix : IGraphicsStateOperation
     {
         public const string Symbol = "cm";
 
@@ -10,7 +12,7 @@
 
         public decimal[] Value { get; }
 
-        public ModifyTransformationMatrix(decimal[] value)
+        public ModifyCurrentTransformationMatrix(decimal[] value)
         {
             if (value == null)
             {
@@ -22,6 +24,17 @@
                 throw new ArgumentException("The cm operator must pass 6 numbers. Instead got: " + value);
             }
             Value = value;
+        }
+
+        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        {
+            var newMatrix = TransformationMatrix.FromArray(Value);
+
+            var ctm = operationContext.GetCurrentState().CurrentTransformationMatrix;
+
+            var newCtm = newMatrix.Multiply(ctm);
+
+            operationContext.GetCurrentState().CurrentTransformationMatrix = newCtm;
         }
 
         public override string ToString()

@@ -84,8 +84,10 @@
 
             return new PdfPoint(x, y);
         }
-        
-        public static TransformationMatrix FromArray(params decimal[] values)
+
+        public static TransformationMatrix FromValues(decimal a, decimal b, decimal c, decimal d, decimal e, decimal f)
+            => FromArray(new[] {a, b, c, d, e, f});
+        public static TransformationMatrix FromArray(decimal[] values)
         {
             if (values.Length == 9)
             {

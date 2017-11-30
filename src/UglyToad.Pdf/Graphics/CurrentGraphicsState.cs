@@ -5,6 +5,7 @@
     using Core;
     using Geometry;
     using Operations;
+    using Operations.SpecialGraphicsState;
 
     internal class CurrentGraphicsState : IDeepCloneable<CurrentGraphicsState>
     {
@@ -12,6 +13,11 @@
         /// The <see cref="CurrentFontState"/> for this graphics state.
         /// </summary>
         public CurrentFontState FontState { get; set; }
+
+        /// <summary>
+        /// Map positions from user coordinates to device coordinates. Values set by <see cref="ModifyCurrentTransformationMatrix"/> (cm).
+        /// </summary>
+        public TransformationMatrix CurrentTransformationText { get; set; } = TransformationMatrix.Identity;
 
         /// <summary>
         /// Thickness in user space units of path to be stroked.

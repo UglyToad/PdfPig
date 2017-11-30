@@ -18,6 +18,7 @@
         public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
             var currentState = operationContext.GetCurrentState();
+
             currentState.LineWidth = Width;
         }
 

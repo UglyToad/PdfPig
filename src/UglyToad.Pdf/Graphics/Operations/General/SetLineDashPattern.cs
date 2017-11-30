@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations.General
 {
+    using Content;
+
     internal class SetLineDashPattern : IGraphicsStateOperation
     {
         public const string Symbol = "d";
@@ -8,10 +10,14 @@
 
         public LineDashPattern Pattern { get; }
         
-
         public SetLineDashPattern(decimal[] array, int phase)
         {
             Pattern = new LineDashPattern(phase, array);
+        }
+
+        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        {
+            operationContext.GetCurrentState().LineDashPattern = Pattern;
         }
 
         public override string ToString()

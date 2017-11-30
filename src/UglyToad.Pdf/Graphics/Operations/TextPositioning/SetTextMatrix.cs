@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations.TextPositioning
 {
     using System;
+    using Content;
+    using Core;
 
     internal class SetTextMatrix : IGraphicsStateOperation
     {
@@ -18,6 +20,14 @@
             }
 
             Value = value;
+        }
+        
+        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        {
+            var newMatrix = TransformationMatrix.FromArray(Value);
+
+            operationContext.TextMatrices.TextMatrix = newMatrix;
+            operationContext.TextMatrices.TextLineMatrix = newMatrix;
         }
 
         public override string ToString()

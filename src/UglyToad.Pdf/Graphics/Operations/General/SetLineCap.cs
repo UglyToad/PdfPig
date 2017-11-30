@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations.General
 {
     using System;
+    using Content;
 
     internal class SetLineCap : IGraphicsStateOperation
     {
@@ -19,6 +20,11 @@
             }
 
             Cap = cap;
+        }
+
+        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        {
+            operationContext.GetCurrentState().CapStyle = Cap;
         }
 
         public override string ToString()
