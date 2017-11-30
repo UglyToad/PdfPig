@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations.PathConstruction
 {
+    using Content;
     using Geometry;
 
     internal class AppendEndControlPointBezierCurve : IGraphicsStateOperation
@@ -16,6 +17,10 @@
         {
             ControlPoint1 = new PdfPoint(x1, y1);
             End = new PdfPoint(x3, y3);
+        }
+
+        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        {
         }
 
         public override string ToString()

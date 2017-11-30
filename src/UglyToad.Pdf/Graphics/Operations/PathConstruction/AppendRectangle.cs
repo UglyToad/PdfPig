@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations.PathConstruction
 {
+    using Content;
     using Geometry;
 
     internal class AppendRectangle : IGraphicsStateOperation
@@ -20,6 +21,10 @@
 
             Width = width;
             Height = height;
+        }
+
+        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        {
         }
 
         public override string ToString()

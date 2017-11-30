@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations
 {
+    using Content;
+
     internal class FillPathNonZeroWindingAndStroke : IGraphicsStateOperation
     {
         public const string Symbol = "B";
@@ -9,6 +11,10 @@
         public string Operator => Symbol;
 
         private FillPathNonZeroWindingAndStroke()
+        {
+        }
+
+        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
         }
 

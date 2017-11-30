@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations
 {
+    using Content;
+
     internal class SetNonStrokeColorDeviceCmyk : IGraphicsStateOperation
     {
         public const string Symbol = "K";
@@ -20,6 +22,10 @@
             M = m;
             Y = y;
             K = k;
+        }
+
+        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        {
         }
 
         public override string ToString()

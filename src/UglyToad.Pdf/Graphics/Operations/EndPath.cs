@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations
 {
+    using Content;
+
     internal class EndPath : IGraphicsStateOperation
     {
         public const string Symbol = "n";
@@ -9,6 +11,10 @@
         public string Operator => Symbol;
 
         private EndPath()
+        {
+        }
+
+        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
         }
 

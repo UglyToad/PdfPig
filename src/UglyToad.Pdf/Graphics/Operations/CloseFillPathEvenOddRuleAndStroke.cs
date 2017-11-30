@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations
 {
+    using Content;
+
     internal class CloseFillPathEvenOddRuleAndStroke : IGraphicsStateOperation
     {
         public const string Symbol = "b*";
@@ -9,6 +11,10 @@
         public string Operator => Symbol;
 
         private CloseFillPathEvenOddRuleAndStroke()
+        {
+        }
+
+        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
         }
 

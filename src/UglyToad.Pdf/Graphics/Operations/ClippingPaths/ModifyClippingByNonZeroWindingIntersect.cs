@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations.ClippingPaths
 {
+    using Content;
+
     internal class ModifyClippingByNonZeroWindingIntersect : IGraphicsStateOperation
     {
         public const string Symbol = "W";
@@ -9,6 +11,10 @@
         public string Operator => Symbol;
 
         private ModifyClippingByNonZeroWindingIntersect()
+        {
+        }
+
+        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
         }
 

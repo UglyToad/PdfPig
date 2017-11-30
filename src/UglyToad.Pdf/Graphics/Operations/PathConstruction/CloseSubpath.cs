@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations.PathConstruction
 {
+    using Content;
+
     internal class CloseSubpath : IGraphicsStateOperation
     {
         public const string Symbol = "h";
@@ -9,6 +11,10 @@
         public string Operator => Symbol;
 
         private CloseSubpath()
+        {
+        }
+
+        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
         }
 

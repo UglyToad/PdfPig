@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations
 {
+    using Content;
+
     internal class SetStrokeColorDeviceGray : IGraphicsStateOperation
     {
         public const string Symbol = "G";
@@ -11,6 +13,10 @@
         public SetStrokeColorDeviceGray(decimal gray)
         {
             Gray = gray;
+        }
+
+        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        {
         }
 
         public override string ToString()

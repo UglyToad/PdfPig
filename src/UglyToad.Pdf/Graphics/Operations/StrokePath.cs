@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations
 {
+    using Content;
+
     internal class StrokePath : IGraphicsStateOperation
     {
         public const string Symbol = "S";
@@ -9,6 +11,10 @@
         public string Operator => Symbol;
 
         private StrokePath()
+        {
+        }
+
+        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
         }
 
