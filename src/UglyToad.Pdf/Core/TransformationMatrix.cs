@@ -2,6 +2,7 @@
 {
     using System;
     using Geometry;
+    using System.Collections.Generic;
 
     /// <summary>
     /// Specifies the conversion from the transformed coordinate space to the original untransformed coordinate space.
@@ -151,6 +152,14 @@
             }
 
             return true;
+        }
+
+        public override int GetHashCode()
+        {
+            var hashCode = 1113510858;
+            hashCode = hashCode * -1521134295 + base.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<decimal[]>.Default.GetHashCode(value);
+            return hashCode;
         }
 
         public override string ToString()
