@@ -2,6 +2,7 @@
 {
     using Pdf.Cos;
     using Pdf.Graphics;
+    using Pdf.Graphics.Core;
     using Pdf.Graphics.Operations.General;
     using Pdf.Graphics.Operations.TextObjects;
     using Pdf.Graphics.Operations.TextPositioning;

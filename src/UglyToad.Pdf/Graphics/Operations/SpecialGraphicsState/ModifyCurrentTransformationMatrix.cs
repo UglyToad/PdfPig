@@ -2,7 +2,7 @@
 {
     using System;
     using Content;
-    using Core;
+    using Pdf.Core;
 
     internal class ModifyCurrentTransformationMatrix : IGraphicsStateOperation
     {

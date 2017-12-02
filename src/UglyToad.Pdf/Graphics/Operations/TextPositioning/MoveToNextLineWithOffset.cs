@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations.TextPositioning
 {
     using Content;
-    using Core;
+    using Pdf.Core;
 
     /// <summary>
     /// Move to the start of the next line offset by Tx Ty.

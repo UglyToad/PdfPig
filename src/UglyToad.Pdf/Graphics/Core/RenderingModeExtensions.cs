@@ -1,4 +1,4 @@
-﻿namespace UglyToad.Pdf.Graphics
+﻿namespace UglyToad.Pdf.Graphics.Core
 {
     internal static class RenderingModeExtensions
     {

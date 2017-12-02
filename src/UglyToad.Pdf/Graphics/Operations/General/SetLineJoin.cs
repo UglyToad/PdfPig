@@ -2,6 +2,7 @@
 {
     using System;
     using Content;
+    using Core;
 
     internal class SetLineJoin : IGraphicsStateOperation
     {

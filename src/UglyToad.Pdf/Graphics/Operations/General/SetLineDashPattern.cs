@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations.General
 {
     using Content;
+    using Core;
 
     internal class SetLineDashPattern : IGraphicsStateOperation
     {

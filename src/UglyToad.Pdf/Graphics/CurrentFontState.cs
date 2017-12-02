@@ -3,6 +3,7 @@ namespace UglyToad.Pdf.Graphics
 {
     using Core;
     using Cos;
+    using Pdf.Core;
 
     /// <summary>
     /// The current state of text related parameters for a content stream.

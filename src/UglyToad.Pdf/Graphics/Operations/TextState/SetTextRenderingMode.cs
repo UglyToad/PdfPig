@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations.TextState
 {
     using Content;
+    using Core;
 
     internal class SetTextRenderingMode : IGraphicsStateOperation
     {

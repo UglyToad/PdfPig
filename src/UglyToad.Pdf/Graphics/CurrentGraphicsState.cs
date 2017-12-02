@@ -1,23 +1,21 @@
 ﻿namespace UglyToad.Pdf.Graphics
 {
-    using System;
-    using System.Collections.Generic;
     using Core;
-    using Geometry;
-    using Operations;
     using Operations.SpecialGraphicsState;
+    using Pdf.Core;
 
+    /// <summary>
+    /// The state of the current graphics control parameters.
+    /// </summary>
+    /// <remarks>
+    /// Initialized per page.
+    /// </remarks>
     internal class CurrentGraphicsState : IDeepCloneable<CurrentGraphicsState>
     {
         /// <summary>
         /// The <see cref="CurrentFontState"/> for this graphics state.
         /// </summary>
         public CurrentFontState FontState { get; set; }
-
-        /// <summary>
-        /// Map positions from user coordinates to device coordinates. Values set by <see cref="ModifyCurrentTransformationMatrix"/> (cm).
-        /// </summary>
-        public TransformationMatrix CurrentTransformationText { get; set; } = TransformationMatrix.Identity;
 
         /// <summary>
         /// Thickness in user space units of path to be stroked.
@@ -105,78 +103,22 @@
             return new CurrentGraphicsState
             {
                 FontState = FontState?.DeepClone(),
-                RenderingIntent = RenderingIntent
+                RenderingIntent = RenderingIntent,
+                LineDashPattern = LineDashPattern,
+                CurrentTransformationMatrix = CurrentTransformationMatrix,
+                LineWidth = LineWidth,
+                JoinStyle = JoinStyle,
+                Overprint = Overprint,
+                CapStyle = CapStyle,
+                MiterLimit = MiterLimit,
+                Flatness = Flatness,
+                AlphaConstant = AlphaConstant,
+                AlphaSource = AlphaSource,
+                NonStrokingOverprint = NonStrokingOverprint,
+                OverprintMode = OverprintMode,
+                Smoothness = Smoothness,
+                StrokeAdjustment = StrokeAdjustment
             };
-        }
-    }
-
-    internal interface IOperationContext
-    {
-        CurrentGraphicsState GetCurrentState();
-
-        TextMatrices TextMatrices { get; }
-
-        int StackSize { get; }
-
-        void PopState();
-
-        void PushState();
-    }
-
-    internal class TextMatrices
-    {
-        public TransformationMatrix TextMatrix { get; set; }
-
-        public TransformationMatrix TextLineMatrix { get; set; }
-    }
-
-    internal class ContentStreamProcessor : IOperationContext
-    {
-        private readonly Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
-
-        public TextMatrices TextMatrices { get; private set; } = new TextMatrices();
-
-        public int StackSize => graphicsStack.Count;
-
-
-        public ContentStreamProcessor(PdfRectangle cropBox)
-        {
-
-        }
-
-        public void Process(IReadOnlyList<IGraphicsStateOperation> operations)
-        {
-            var currentState = CloneAllStates();
-
-
-        }
-
-        private void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
-        {
-            foreach (var stateOperation in operations)
-            {
-                // stateOperation.Run();
-            }
-        }
-
-        private Stack<CurrentGraphicsState> CloneAllStates()
-        {
-            throw new NotImplementedException();
-        }
-
-        public CurrentGraphicsState GetCurrentState()
-        {
-            return graphicsStack.Peek();
-        }
-
-        public void PopState()
-        {
-            graphicsStack.Pop();
-        }
-
-        public void PushState()
-        {
-            graphicsStack.Push(graphicsStack.Peek().DeepClone());
         }
     }
 }

@@ -2,6 +2,9 @@
 {
     using System.Collections.Generic;
     using Content;
+    using IO;
+    using Pdf.Cos;
+    using Pdf.Fonts;
     using Pdf.Graphics;
 
     internal class TestOperationContext : IOperationContext
@@ -33,10 +36,17 @@
         {
             StateStack.Push(StateStack.Peek().DeepClone());
         }
+
+        public void ShowText(IInputBytes bytes)
+        {
+        }
     }
 
     internal class TestResourceStore : IResourceStore
     {
-        
+        public IFont GetFont(CosName name)
+        {
+            return null;
+        }
     }
 }

@@ -9,7 +9,7 @@
 
     public interface IResourceStore
     {
-        
+        IFont GetFont(CosName name);
     }
 
     public class ResourceContainer : IResourceStore
@@ -51,6 +51,11 @@
 
                 loadedFonts[pair.Key] = font;
             }
+        }
+
+        public IFont GetFont(CosName name)
+        {
+            throw new NotImplementedException();
         }
     }
 }

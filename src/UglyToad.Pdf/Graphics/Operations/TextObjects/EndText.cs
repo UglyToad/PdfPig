@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.Pdf.Graphics.Operations.TextObjects
 {
     using Content;
-    using Core;
+    using Pdf.Core;
 
     internal class EndText : IGraphicsStateOperation
     {
