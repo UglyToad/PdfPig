@@ -93,8 +93,10 @@
                     var textContents = OtherEncodings.BytesAsLatin1String(contents);
                 }
 
-                Content = parsingArguments.Container.Get<PageContentParser>()
+                var operations = parsingArguments.Container.Get<PageContentParser>()
                     .Parse(parsingArguments.Container.Get<IGraphicsStateOperationFactory>(), new ByteArrayInputBytes(contents));
+
+
             }
         }
     }

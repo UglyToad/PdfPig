@@ -3,43 +3,50 @@
     using System;
     using System.Collections.Generic;
     using Content;
+    using Fonts;
     using Geometry;
     using IO;
     using Operations;
+    using Pdf.Core;
 
     internal class ContentStreamProcessor : IOperationContext
     {
         private readonly IResourceStore resourceStore;
-        private readonly Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
+
+        private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
 
         public TextMatrices TextMatrices { get; } = new TextMatrices();
 
         public int StackSize => graphicsStack.Count;
-
-
+        
         public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore)
         {
             this.resourceStore = resourceStore;
         }
 
-        public void Process(IReadOnlyList<IGraphicsStateOperation> operations)
+        public PageContent Process(IReadOnlyList<IGraphicsStateOperation> operations)
         {
             var currentState = CloneAllStates();
 
-
+            ProcessOperations(operations);
+            
+            return new PageContent();
         }
 
         private void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
         {
             foreach (var stateOperation in operations)
             {
-                // stateOperation.Run();
+                stateOperation.Run(this, resourceStore);
             }
         }
 
         private Stack<CurrentGraphicsState> CloneAllStates()
         {
-            throw new NotImplementedException();
+            var saved = graphicsStack;
+            graphicsStack = new Stack<CurrentGraphicsState>();
+            graphicsStack.Push(saved.Peek().DeepClone());
+            return saved;
         }
 
         public CurrentGraphicsState GetCurrentState()
@@ -59,9 +66,57 @@
 
         public void ShowText(IInputBytes bytes)
         {
-            var renderingMatrix = TextMatrices.GetRenderingMatrix(GetCurrentState());
-
             var font = resourceStore.GetFont(GetCurrentState().FontState.FontName);
+
+            var fontSize = GetCurrentState().FontState.FontSize;
+            var horizontalScaling = GetCurrentState().FontState.HorizontalScaling;
+            var characterSpacing = GetCurrentState().FontState.CharacterSpacing;
+
+            while (bytes.MoveNext())
+            {
+                var code = font.ReadCharacterCode(bytes, out int codeLength);
+
+                var unicode = font.GetUnicode(code);
+
+                var wordSpacing = 0m;
+                if (code == ' ' && codeLength == 1)
+                {
+                    wordSpacing += GetCurrentState().FontState.WordSpacing;
+                }
+                
+                var renderingMatrix = TextMatrices.GetRenderingMatrix(GetCurrentState());
+
+                if (font.IsVertical)
+                {
+                    throw new NotImplementedException("Vertical fonts are currently unsupported, please submit a pull request.");
+                }
+
+                var displacement = font.GetDisplacement(code);
+
+                ShowGlyph(renderingMatrix, font, code, unicode, displacement);
+
+                decimal tx, ty;
+                if (font.IsVertical)
+                {
+                    tx = 0;
+                    ty = displacement.Y * fontSize + characterSpacing + wordSpacing;
+                }
+                else
+                {
+                    tx = (displacement.X * fontSize + characterSpacing + wordSpacing) * horizontalScaling;
+                    ty = 0;
+                }
+
+                var translate = TransformationMatrix.GetTranslationMatrix(tx, ty);
+
+                TextMatrices.TextMatrix = translate.Multiply(TextMatrices.TextMatrix);
+            }
+        }
+
+        private void ShowGlyph(TransformationMatrix renderingMatrix, IFont font, 
+            int characterCode, string unicode, PdfVector displacement)
+        {
+            throw new NotImplementedException();
         }
     }
 }

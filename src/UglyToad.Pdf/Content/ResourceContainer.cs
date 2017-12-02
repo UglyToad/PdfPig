@@ -7,12 +7,12 @@
     using Fonts;
     using Parser;
 
-    public interface IResourceStore
+    internal interface IResourceStore
     {
         IFont GetFont(CosName name);
     }
 
-    public class ResourceContainer : IResourceStore
+    internal class ResourceContainer : IResourceStore
     {
         private readonly Dictionary<CosName, IFont> loadedFonts = new Dictionary<CosName, IFont>();
 

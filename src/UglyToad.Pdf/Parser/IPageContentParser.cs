@@ -1,11 +1,12 @@
 ﻿namespace UglyToad.Pdf.Parser
 {
-    using Content;
+    using System.Collections.Generic;
     using Graphics;
+    using Graphics.Operations;
     using IO;
 
     internal interface IPageContentParser
     {
-        PageContent Parse(IGraphicsStateOperationFactory operationFactory, IInputBytes inputBytes);
+        IReadOnlyList<IGraphicsStateOperation> Parse(IGraphicsStateOperationFactory operationFactory, IInputBytes inputBytes);
     }
 }

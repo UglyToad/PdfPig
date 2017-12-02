@@ -166,5 +166,15 @@
         {
             return $"{A}, {B}, 0\r\n{C}, {D}, 0\r\n{E}, {F}, 1";
         }
+
+        public static TransformationMatrix GetTranslationMatrix(decimal x, decimal y)
+        {
+            return new TransformationMatrix(new []
+            {
+                1, 0, 0,
+                0, 1, 0,
+                x, y, 1
+            });
+        }
     }
 }

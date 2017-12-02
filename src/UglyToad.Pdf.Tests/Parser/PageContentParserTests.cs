@@ -38,28 +38,28 @@ ET";
 
             var result = parser.Parse(operationFactory, input.Bytes);
 
-            Assert.Equal(7, result.GraphicsStateOperations.Count);
+            Assert.Equal(7, result.Count);
 
-            Assert.Equal(BeginText.Value, result.GraphicsStateOperations[0]);
+            Assert.Equal(BeginText.Value, result[0]);
 
-            var font = Assert.IsType<SetFontAndSize>(result.GraphicsStateOperations[1]);
+            var font = Assert.IsType<SetFontAndSize>(result[1]);
             Assert.Equal(CosName.Create("F13"), font.Font);
             Assert.Equal(48, font.Size);
 
-            var nextLine = Assert.IsType<MoveToNextLineWithOffset>(result.GraphicsStateOperations[2]);
+            var nextLine = Assert.IsType<MoveToNextLineWithOffset>(result[2]);
             Assert.Equal(20, nextLine.Tx);
             Assert.Equal(38, nextLine.Ty);
 
-            var renderingMode = Assert.IsType<SetTextRenderingMode>(result.GraphicsStateOperations[3]);
+            var renderingMode = Assert.IsType<SetTextRenderingMode>(result[3]);
             Assert.Equal(RenderingMode.Stroke, renderingMode.Mode);
 
-            var lineWidth = Assert.IsType<SetLineWidth>(result.GraphicsStateOperations[4]);
+            var lineWidth = Assert.IsType<SetLineWidth>(result[4]);
             Assert.Equal(2, lineWidth.Width);
 
-            var text = Assert.IsType<ShowText>(result.GraphicsStateOperations[5]);
+            var text = Assert.IsType<ShowText>(result[5]);
             Assert.Equal("ABC", text.Text);
 
-            Assert.Equal(EndText.Value, result.GraphicsStateOperations[6]);
+            Assert.Equal(EndText.Value, result[6]);
         }
 
         [Fact]
@@ -74,18 +74,18 @@ ET";
 
             var result = parser.Parse(operationFactory, input.Bytes);
 
-            Assert.Equal(4, result.GraphicsStateOperations.Count);
+            Assert.Equal(4, result.Count);
 
-            Assert.Equal(BeginText.Value, result.GraphicsStateOperations[0]);
+            Assert.Equal(BeginText.Value, result[0]);
 
-            var moveLine = Assert.IsType<MoveToNextLineWithOffset>(result.GraphicsStateOperations[1]);
+            var moveLine = Assert.IsType<MoveToNextLineWithOffset>(result[1]);
             Assert.Equal(21, moveLine.Tx);
             Assert.Equal(32, moveLine.Ty);
 
-            var renderingMode = Assert.IsType<SetTextRenderingMode>(result.GraphicsStateOperations[2]);
+            var renderingMode = Assert.IsType<SetTextRenderingMode>(result[2]);
             Assert.Equal(RenderingMode.Fill, renderingMode.Mode);
 
-            Assert.Equal(EndText.Value, result.GraphicsStateOperations[3]);
+            Assert.Equal(EndText.Value, result[3]);
         }
 
         private const string SimpleGoogleDocPageContent = @"

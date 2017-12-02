@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.Pdf.Parser
 {
     using System.Collections.Generic;
-    using Content;
     using Graphics;
     using Graphics.Operations;
     using IO;
@@ -10,7 +9,7 @@
 
     internal class PageContentParser : IPageContentParser
     {
-        public PageContent Parse(IGraphicsStateOperationFactory operationFactory, IInputBytes inputBytes)
+        public IReadOnlyList<IGraphicsStateOperation> Parse(IGraphicsStateOperationFactory operationFactory, IInputBytes inputBytes)
         {
             var scanner = new CoreTokenScanner(inputBytes);
 
@@ -41,10 +40,7 @@
                 }
             }
 
-            return new PageContent
-            {
-                GraphicsStateOperations = graphicsStateOperations
-            };
+            return graphicsStateOperations;
         }
     }
 }
