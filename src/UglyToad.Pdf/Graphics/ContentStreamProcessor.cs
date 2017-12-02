@@ -125,6 +125,11 @@
         private void ShowGlyph(TransformationMatrix renderingMatrix, IFont font, 
             int characterCode, string unicode, PdfVector displacement)
         {
+            if (unicode.Length == 1 && (unicode[0] == '\0' || unicode[0] == '\u200B'))
+            {
+                return;
+            }
+            var location = new PdfPoint(renderingMatrix.E, renderingMatrix.F);
             Texts.Add(unicode);
         }
     }

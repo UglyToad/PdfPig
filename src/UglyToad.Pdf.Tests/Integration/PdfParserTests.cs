@@ -7,12 +7,8 @@
     using System.Linq;
     using System.Text;
     using ContentStream;
-    using Filters;
-    using IO;
     using Pdf.Cos;
     using Pdf.Filters;
-    using Pdf.Parser;
-    using Util;
     using Xunit;
 
     /*
@@ -59,6 +55,10 @@
 
                 var page = document.Pages.GetPage(1);
                 Assert.Equal(1, page.Number);
+
+                var text = string.Join(string.Empty, page.Content.Text);
+
+                Assert.Equal("This is the document title There is some lede text here And then another line of text.".Replace(" ", string.Empty), text.Replace(" ", string.Empty));
             }
         }
 
