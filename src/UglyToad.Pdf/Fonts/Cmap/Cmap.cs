@@ -2,6 +2,8 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
+    using IO;
     using Util.JetBrains.Annotations;
 
     public class CMap
@@ -32,6 +34,9 @@
 
         public bool HasUnicodeMappings => BaseFontCharacterMap.Count > 0;
 
+        private readonly int minCodeLength = 4;
+        private readonly int maxCodeLength;
+
         public CMap(CharacterIdentifierSystemInfo info, int type, int wMode, string name, string version, IReadOnlyDictionary<int, string> baseFontCharacterMap, IReadOnlyList<CodespaceRange> codespaceRanges, IReadOnlyList<CidRange> cidRanges, IReadOnlyList<CidCharacterMapping> cidCharacterMappings)
         {
             Info = info;
@@ -43,6 +48,8 @@
             CodespaceRanges = codespaceRanges ?? throw new ArgumentNullException(nameof(codespaceRanges));
             CidRanges = cidRanges ?? throw new ArgumentNullException(nameof(cidRanges));
             CidCharacterMappings = cidCharacterMappings ?? throw new ArgumentNullException(nameof(cidCharacterMappings));
+            maxCodeLength = CodespaceRanges.Max(x => x.CodeLength);
+            minCodeLength = CodespaceRanges.Min(x => x.CodeLength);
         }
 
         private int wmode = 0;
@@ -54,8 +61,6 @@
         private string ordering = null;
         private int supplement = 0;
 
-        private int minCodeLength = 4;
-        private int maxCodeLength;
         
         // CID mappings
         private readonly Dictionary<int, int> codeToCid = new Dictionary<int, int>();
@@ -77,38 +82,6 @@
             return found;
         }
 
-        /**
-         * Reads a character code from a string in the content stream.
-         * <p>See "CMap Mapping" and "Handling Undefined Characters" in PDF32000 for more details.
-         *
-         * @param in string stream
-         * @return character code
-         * @throws IOException if there was an error reading the stream or CMap
-         */
-        //public int readCode(InputStream input)
-        //{
-        //    byte[] bytes = new byte[maxCodeLength];
-        //    input.read(bytes, 0, minCodeLength);
-        //    for (int i = minCodeLength - 1; i < maxCodeLength; i++)
-        //    {
-        //        var byteCount = i + 1;
-        //        foreach (var range in codespaceRanges)
-        //        {
-        //            if (range.isFullMatch(bytes, byteCount))
-        //            {
-        //                return toInt(bytes, byteCount);
-        //            }
-        //        }
-        //        if (byteCount < maxCodeLength)
-        //        {
-        //            bytes[byteCount] = (byte)input.read();
-        //        }
-        //    }
-
-        //    throw new InvalidOperationException("CMap is invalid");
-        //}
-
-       
         /**
          * Returns the CID for the given character code.
          *
@@ -139,6 +112,57 @@
         {
             return cmapName;
         }
-    }
 
+        public int ReadCode(IInputBytes bytes)
+        {
+            byte[] result = new byte[maxCodeLength];
+
+            result[0] = bytes.CurrentByte;
+
+            for (int i = 1; i < minCodeLength; i++)
+            {
+                result[i] = ReadByte(bytes);
+            }
+
+            for (int i = minCodeLength - 1; i < maxCodeLength; i++)
+            {
+                int byteCount = i + 1;
+                foreach (CodespaceRange range in CodespaceRanges)
+                {
+                    if (range.isFullMatch(result, byteCount))
+                    {
+                        return ByteArrayToInt(result, byteCount);
+                    }
+                }
+                if (byteCount < maxCodeLength)
+                {
+                    result[byteCount] = ReadByte(bytes);
+                }
+            }
+
+            throw new InvalidOperationException("CMap is invalid");
+        }
+
+        private static byte ReadByte(IInputBytes bytes)
+        {
+            if (!bytes.MoveNext())
+            {
+                throw new InvalidOperationException("Read byte called on input bytes which was at end of byte set. Current offset: " + bytes.CurrentOffset);
+            }
+
+            return bytes.CurrentByte;
+        }
+
+        private static int ByteArrayToInt(byte[] data, int dataLen)
+        {
+            int code = 0;
+            for (int i = 0; i < dataLen; ++i)
+            {
+                code <<= 8;
+                code |= (data[i] & 0xFF);
+            }
+            return code;
+        }
+
+    }
 }

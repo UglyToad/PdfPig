@@ -15,7 +15,7 @@
         /// <summary>
         /// The <see cref="CurrentFontState"/> for this graphics state.
         /// </summary>
-        public CurrentFontState FontState { get; set; }
+        public CurrentFontState FontState { get; set; } = new CurrentFontState();
 
         /// <summary>
         /// Thickness in user space units of path to be stroked.

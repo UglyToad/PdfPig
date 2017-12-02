@@ -87,16 +87,15 @@
                 }
 
                 var contents = contentStream.Decode(parsingArguments.Container.Get<IFilterProvider>());
-
-                if (Debugger.IsAttached)
-                {
-                    var textContents = OtherEncodings.BytesAsLatin1String(contents);
-                }
-
+                
                 var operations = parsingArguments.Container.Get<PageContentParser>()
                     .Parse(parsingArguments.Container.Get<IGraphicsStateOperationFactory>(), new ByteArrayInputBytes(contents));
 
+                var context = new ContentStreamProcessor(MediaBox.Bounds, parsingArguments.CachingProviders.ResourceContainer);
 
+                var content = context.Process(operations);
+
+                Content = content;
             }
         }
     }

@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using Content;
     using Fonts;
     using Geometry;
@@ -19,9 +20,12 @@
 
         public int StackSize => graphicsStack.Count;
         
+        public List<string> Texts = new List<string>();
+
         public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore)
         {
             this.resourceStore = resourceStore;
+            graphicsStack.Push(new CurrentGraphicsState());
         }
 
         public PageContent Process(IReadOnlyList<IGraphicsStateOperation> operations)
@@ -30,7 +34,11 @@
 
             ProcessOperations(operations);
             
-            return new PageContent();
+            return new PageContent
+            {
+                GraphicsStateOperations = operations,
+                Text = Texts
+            };
         }
 
         private void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
@@ -49,6 +57,7 @@
             return saved;
         }
 
+        [DebuggerStepThrough]
         public CurrentGraphicsState GetCurrentState()
         {
             return graphicsStack.Peek();
@@ -116,7 +125,7 @@
         private void ShowGlyph(TransformationMatrix renderingMatrix, IFont font, 
             int characterCode, string unicode, PdfVector displacement)
         {
-            throw new NotImplementedException();
+            Texts.Add(unicode);
         }
     }
 }

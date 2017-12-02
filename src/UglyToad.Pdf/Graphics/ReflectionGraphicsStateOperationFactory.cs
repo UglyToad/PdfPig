@@ -2,9 +2,11 @@ namespace UglyToad.Pdf.Graphics
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Reflection;
     using Cos;
     using Operations;
+    using Operations.TextShowing;
     using Tokenization.Tokens;
 
     internal class ReflectionGraphicsStateOperationFactory : IGraphicsStateOperationFactory
@@ -39,6 +41,28 @@ namespace UglyToad.Pdf.Graphics
 
         public IGraphicsStateOperation Create(OperatorToken op, IReadOnlyList<IToken> operands)
         {
+            switch (op.Data)
+            {
+                case ShowText.Symbol:
+                    if (operands.Count != 1)
+                    {
+                        throw new InvalidOperationException($"Attempted to create a show text operation with {operands.Count} operands.");
+                    }
+
+                    if (operands[0] is StringToken s)
+                    {
+                        return new ShowText(s.Data);
+                    }
+                    else if (operands[0] is HexToken h)
+                    {
+                        return new ShowText(h.Bytes.ToArray());
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Tried to create a show text operation with operand type: {operands[0]?.GetType().Name ?? "null"}");
+                    }
+            }
+
             if (!operations.TryGetValue(op.Data, out Type operationType))
             {
                 return null;

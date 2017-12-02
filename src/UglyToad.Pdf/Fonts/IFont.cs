@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Fonts
 {
+    using System;
+    using System.Collections.Generic;
     using Cmap;
     using Cos;
     using Geometry;
@@ -24,28 +26,53 @@
 
     internal class CompositeFont : IFont
     {
-        public CosName Name { get; }
+        private readonly Dictionary<int, decimal> codeToWidthMap = new Dictionary<int, decimal>();
 
-        public CosName SubType { get; }
+        public CosName Name { get; set; }
+
+        public CosName SubType { get; set; }
 
         public string BaseFontType { get; }
+
         public bool IsVertical { get; }
 
-        public CMap ToUnicode { get; }
+        public CMap ToUnicode { get; set; }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)
         {
-            throw new System.NotImplementedException();
+            var current = bytes.CurrentOffset;
+
+            var code = ToUnicode.ReadCode(bytes);
+
+            codeLength = bytes.CurrentOffset - current;
+
+            return code;
         }
 
         public string GetUnicode(int characterCode)
         {
-            throw new System.NotImplementedException();
+            if (ToUnicode != null)
+            {
+                if (ToUnicode.TryConvertToUnicode(characterCode, out string s)) return s;
+            }
+
+            throw new NotImplementedException($"Could not locate the unicode for the character code {characterCode} in font {Name}.");
         }
 
         public PdfVector GetDisplacement(int characterCode)
         {
-            throw new System.NotImplementedException();
+            var width = GetCharacterWidth(characterCode);
+            return new PdfVector(width / 1000, 0);
+        }
+
+        private decimal GetCharacterWidth(int characterCode)
+        {
+            if (codeToWidthMap.TryGetValue(characterCode, out var width))
+            {
+                return width;
+            }
+
+            return 12000;
         }
     }
 }

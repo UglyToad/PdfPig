@@ -13,5 +13,7 @@
     public class PageContent
     {
         internal IReadOnlyList<IGraphicsStateOperation> GraphicsStateOperations { get; set; }
+
+        public IReadOnlyList<string> Text { get; set; }
     }
 }
