@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.Pdf.Content
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using ContentStream;
     using Cos;
@@ -23,7 +24,9 @@
 
         public MediaBox MediaBox { get; }
 
-        public PageContent Content { get; }
+        internal PageContent Content { get; }
+
+        public IReadOnlyList<string> Text => Content?.Text ?? new string[0];
 
         internal Page(int number, ContentStreamDictionary dictionary, PageTreeMembers pageTreeMembers, ParsingArguments parsingArguments)
         {

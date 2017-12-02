@@ -10,6 +10,7 @@
     using Fonts.Parser;
     using IO;
     using Parser;
+    using Util.JetBrains.Annotations;
 
     internal interface IResourceStore
     {
@@ -47,7 +48,7 @@
                     throw new InvalidOperationException($"The font with name {pair.Key} did not link to an object key. Value was: {pair.Value}.");
                 }
 
-                var dynamicParser = arguments.Container.Get<DynamicParser>();
+                var dynamicParser = arguments.Get<DynamicParser>();
 
                 var fontObject = dynamicParser.Parse(arguments, objectKey, false) as ContentStreamDictionary;
 
@@ -56,35 +57,10 @@
                     throw new InvalidOperationException($"Could not retrieve the font with name: {pair.Key} which should have been object {objectKey.GetObjectNumber()}");
                 }
 
-                CMap toUnicodeCMap = null;
-                if (fontObject.ContainsKey(CosName.TO_UNICODE))
-                {
-                    var toUnicodeValue = fontObject[CosName.TO_UNICODE];
-
-                    var toUnicode = dynamicParser.Parse(arguments, toUnicodeValue as CosObject, false) as RawCosStream;
-
-                    var decodedUnicodeCMap = toUnicode?.Decode(arguments.Container.Get<IFilterProvider>());
-
-                    if (decodedUnicodeCMap != null)
-                    {
-                        toUnicodeCMap = arguments.Container.Get<CMapParser>()
-                            .Parse(new ByteArrayInputBytes(decodedUnicodeCMap), arguments.IsLenientParsing);
-                    }
-
-                    
-                }
-
-                var font = new CompositeFont
-                {
-                    Name = pair.Key,
-                    SubType = fontObject.GetName(CosName.SUBTYPE),
-                    ToUnicode = toUnicodeCMap
-                };
-
-                loadedFonts[pair.Key] = font;
+                loadedFonts[pair.Key] = arguments.Get<FontFactory>().GetFont(fontObject, arguments);
             }
         }
-
+        
         public IFont GetFont(CosName name)
         {
             loadedFonts.TryGetValue(name, out var font);

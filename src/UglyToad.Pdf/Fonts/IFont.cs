@@ -32,11 +32,13 @@
 
         public CosName SubType { get; set; }
 
-        public string BaseFontType { get; }
+        public string BaseFontType { get; set; }
 
-        public bool IsVertical { get; }
+        public bool IsVertical => ToUnicode?.WMode == 1;
 
         public CMap ToUnicode { get; set; }
+
+        public CosName BaseFont { get; set; }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)
         {

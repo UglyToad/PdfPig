@@ -3,6 +3,7 @@
     using System;
     using Cos;
     using IO;
+    using Logging;
     using Util;
 
     internal class ParsingArguments
@@ -17,6 +18,10 @@
 
         public bool IsLenientParsing { get; }
 
+        public ILog Log { get; }
+
+        public T Get<T>() => Container.Get<T>();
+
         public ParsingArguments(IRandomAccessRead reader, CrossReferenceTable crossReferenceTable, ParsingCachingProviders cachingProviders, IContainer container, bool isLenientParsing)
         {
             Reader = reader ?? throw new ArgumentNullException(nameof(reader));
@@ -24,6 +29,7 @@
             CachingProviders = cachingProviders ?? throw new ArgumentNullException(nameof(cachingProviders));
             Container = container ?? throw new ArgumentNullException(nameof(container));
             IsLenientParsing = isLenientParsing;
+            Log = new NoOpLog();
         }
     }
 

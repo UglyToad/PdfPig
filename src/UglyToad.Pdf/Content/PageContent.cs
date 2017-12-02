@@ -10,7 +10,7 @@
     /// This should contain a replayable stack of drawing instructions for page content
     /// from a content stream in addition to lazily evaluated state such as text on the page or images.
     /// </remarks>
-    public class PageContent
+    internal class PageContent
     {
         internal IReadOnlyList<IGraphicsStateOperation> GraphicsStateOperations { get; set; }
 

@@ -4,4 +4,45 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Remove="Resources\AdobeFontMetrics\Courier-Bold.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Courier-BoldOblique.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Courier-Oblique.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Courier.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Helvetica-Bold.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Helvetica-BoldOblique.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Helvetica-Oblique.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Helvetica.afm" />
+    <None Remove="Resources\AdobeFontMetrics\MustRead.html" />
+    <None Remove="Resources\AdobeFontMetrics\Symbol.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Times-Bold.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Times-BoldItalic.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Times-Italic.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Times-Roman.afm" />
+    <None Remove="Resources\AdobeFontMetrics\ZapfDingbats.afm" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Resources\AdobeFontMetrics\MustRead.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Courier-Bold.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Courier-BoldOblique.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Courier-Oblique.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Courier.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Helvetica-Bold.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Helvetica-BoldOblique.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Helvetica-Oblique.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Helvetica.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Symbol.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Times-Bold.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Times-BoldItalic.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Times-Italic.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Times-Roman.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\ZapfDingbats.afm" />
+  </ItemGroup>
+
 </Project>
