@@ -7,6 +7,7 @@
     using Parser.Handlers;
     using Parser.Parts;
     using Pdf.Parser;
+    using TrueType.Parser;
 
     internal class FontFactory
     {
@@ -16,7 +17,7 @@
         {
             Handlers = new Dictionary<CosName, IFontHandler>
             {
-                {CosName.TYPE0, new Type0FontHandler(new CidFontFactory(new FontDescriptorFactory()))}
+                {CosName.TYPE0, new Type0FontHandler(new CidFontFactory(new FontDescriptorFactory(), new TrueTypeFontParser()))}
             };
         }
 

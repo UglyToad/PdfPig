@@ -7,10 +7,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Fonts\TrueType\google-simple-doc.ttf" />
+    <None Remove="Fonts\TrueType\Roboto-Regular.ttf" />
     <None Remove="Integration\Documents\Single Page Simple - from google drive.pdf" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Fonts\TrueType\google-simple-doc.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Fonts\TrueType\Roboto-Regular.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
     <Content Include="Integration\Documents\Single Page Simple - from google drive.pdf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

@@ -8,16 +8,21 @@
     using Cos;
     using Filters;
     using Geometry;
+    using IO;
     using Pdf.Parser;
+    using TrueType;
+    using TrueType.Parser;
     using Util;
 
     internal class CidFontFactory
     {
         private readonly FontDescriptorFactory descriptorFactory;
+        private readonly TrueTypeFontParser trueTypeFontParser;
 
-        public CidFontFactory(FontDescriptorFactory descriptorFactory)
+        public CidFontFactory(FontDescriptorFactory descriptorFactory, TrueTypeFontParser trueTypeFontParser)
         {
             this.descriptorFactory = descriptorFactory;
+            this.trueTypeFontParser = trueTypeFontParser;
         }
 
         public ICidFont Generate(PdfDictionary dictionary, ParsingArguments arguments, bool isLenientParsing)
@@ -75,7 +80,7 @@
             return true;
         }
 
-        private static void ReadDescriptorFile(FontDescriptor descriptor, ParsingArguments arguments)
+        private void ReadDescriptorFile(FontDescriptor descriptor, ParsingArguments arguments)
         {
             if (descriptor?.FontFile == null)
             {
@@ -90,6 +95,18 @@
             }
 
             var fontFile = fontFileStream.Decode(arguments.Get<IFilterProvider>());
+
+            File.WriteAllBytes("C:\\git\\google-simple-doc.ttf", fontFile);
+
+            switch (descriptor.FontFile.FileType)
+            {
+                case DescriptorFontFile.FontFileType.TrueType:
+                    var input = new TrueTypeDataBytes(new ByteArrayInputBytes(fontFile));
+                    trueTypeFontParser.Parse(input);
+                    break;
+                default:
+                    throw new NotSupportedException("Currently only TrueType fonts are supported.");
+            }
         }
 
         private static IReadOnlyDictionary<int, decimal> ReadWidths(PdfDictionary dict)
