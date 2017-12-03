@@ -1,4 +1,4 @@
-﻿namespace UglyToad.Pdf.Text
+﻿namespace UglyToad.Pdf.Fonts
 {
     public enum TextObjectComponentType
     {

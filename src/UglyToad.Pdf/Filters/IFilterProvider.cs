@@ -9,7 +9,7 @@
 
     internal interface IFilterProvider
     {
-        IReadOnlyList<IFilter> GetFilters(ContentStreamDictionary streamDictionary);
+        IReadOnlyList<IFilter> GetFilters(PdfDictionary streamDictionary);
 
         IReadOnlyList<IFilter> GetAllFilters();
     }
@@ -29,7 +29,7 @@
             };
         }
 
-        public IReadOnlyList<IFilter> GetFilters(ContentStreamDictionary streamDictionary)
+        public IReadOnlyList<IFilter> GetFilters(PdfDictionary streamDictionary)
         {
             if (streamDictionary == null)
             {

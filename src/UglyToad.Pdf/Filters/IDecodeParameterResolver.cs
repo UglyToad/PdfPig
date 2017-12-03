@@ -4,6 +4,6 @@
 
     public interface IDecodeParameterResolver
     {
-        ContentStreamDictionary GetFilterParameters(ContentStreamDictionary streamDictionary, int index);
+        PdfDictionary GetFilterParameters(PdfDictionary streamDictionary, int index);
     }
 }

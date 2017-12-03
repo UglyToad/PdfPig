@@ -10,7 +10,7 @@
 
     internal class PageParser
     {
-        public Page Parse(int number, ContentStreamDictionary dictionary, ParsingArguments arguments)
+        public Page Parse(int number, PdfDictionary dictionary, ParsingArguments arguments)
         {
             if (dictionary == null)
             {
@@ -33,7 +33,7 @@
 
     internal class FontParser
     {
-        public Font Parse(ContentStreamDictionary dictionary, ParsingArguments arguments)
+        public Font Parse(PdfDictionary dictionary, ParsingArguments arguments)
         {
             var type = dictionary.GetName(CosName.SUBTYPE);
 
@@ -54,7 +54,7 @@
 
     internal class CompositeFontParser
     {
-        public CompositeFont Parse(ContentStreamDictionary dictionary, ParsingArguments arguments)
+        public CompositeFont Parse(PdfDictionary dictionary, ParsingArguments arguments)
         {
             var descendants = dictionary.GetItemOrDefault(CosName.DESCENDANT_FONTS) as COSArray;
 
@@ -95,7 +95,7 @@
 
     internal class SimpleFontParser
     {
-        public SimpleFont Parse(ContentStreamDictionary dictionary, ParsingArguments arguments)
+        public SimpleFont Parse(PdfDictionary dictionary, ParsingArguments arguments)
         {
             return new SimpleFont();
         }

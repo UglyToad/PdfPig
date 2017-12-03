@@ -3,10 +3,11 @@
     using System;
     using System.Collections.Generic;
     using System.Collections;
+    using System.Text;
     using Cos;
     using Util.JetBrains.Annotations;
 
-    public class ContentStreamDictionary : CosBase, IReadOnlyDictionary<CosName, CosBase>
+    public class PdfDictionary : CosBase, IReadOnlyDictionary<CosName, CosBase>
     {
         private readonly Dictionary<CosName, CosBase> inner = new Dictionary<CosName, CosBase>();
 
@@ -19,6 +20,13 @@
             }
 
             return name;
+        }
+
+        public bool TryGetName(CosName key, out CosName value)
+        {
+            value = GetName(key);
+
+            return value != null;
         }
 
         public bool IsType(CosName expectedType)
@@ -70,6 +78,17 @@
             }
 
             inner[key] = value ?? throw new ArgumentNullException(nameof(value));
+        }
+
+        public override string ToString()
+        {
+            var builder = new StringBuilder();
+            foreach (var cosBase in inner)
+            {
+                builder.Append($"({cosBase.Key}, {cosBase.Value}) ");
+            }
+
+            return builder.ToString();
         }
 
         #region Interface Members

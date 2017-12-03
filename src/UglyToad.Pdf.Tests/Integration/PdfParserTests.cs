@@ -108,11 +108,11 @@
 
             var streamBytes = BytesBetween(streamPosition.end + 1, endStreamPosition.start - 1, bytes);
             
-            var paramsDict = new ContentStreamDictionary();
+            var paramsDict = new PdfDictionary();
             paramsDict.Set(CosName.PREDICTOR, new CosFloat("12"));
             paramsDict.Set(CosName.COLUMNS, new CosFloat("4"));
 
-            var dict = new ContentStreamDictionary();
+            var dict = new PdfDictionary();
             dict.Set(CosName.FILTER, CosName.FLATE_DECODE);
             dict.Set(CosName.DECODE_PARMS, paramsDict);
             var filter = new FlateFilter(new DecodeParameterResolver(null), new PngPredictor(), null);

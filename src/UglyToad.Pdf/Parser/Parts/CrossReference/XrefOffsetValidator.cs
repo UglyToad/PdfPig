@@ -276,7 +276,7 @@
                         ReadHelper.ReadExpectedString(source, "obj", true);
 
                         // check the dictionary to avoid false positives
-                        ContentStreamDictionary dict = dictionaryParser.Parse(source, baseParser, pool);
+                        PdfDictionary dict = dictionaryParser.Parse(source, baseParser, pool);
                         source.Seek(startXRefOffset);
                         
                         if (dict.IsType(CosName.XREF))

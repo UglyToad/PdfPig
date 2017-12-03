@@ -177,5 +177,10 @@ namespace UglyToad.Pdf.Cos
         {
             return (long) value;
         }
+
+        public decimal AsDecimal()
+        {
+            return value;
+        }
     }
 }

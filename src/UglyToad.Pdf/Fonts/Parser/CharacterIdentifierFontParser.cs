@@ -1,14 +1,14 @@
 ﻿namespace UglyToad.Pdf.Fonts.Parser
 {
     using System;
-    using Cmap;
+    using CidFonts;
     using ContentStream;
     using ContentStream.TypedAccessors;
     using Cos;
 
-    public class CharacterIdentifierFontParser
+    internal class CharacterIdentifierFontParser
     {
-        public CharacterIdentifierFont Parse(ContentStreamDictionary dictionary, bool isLenientParsing)
+        public CharacterIdentifierFont Parse(PdfDictionary dictionary, bool isLenientParsing)
         {
             if (dictionary == null)
             {

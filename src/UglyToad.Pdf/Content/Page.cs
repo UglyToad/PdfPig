@@ -15,7 +15,7 @@
     public class Page
     {
         private readonly ParsingArguments parsingArguments;
-        private readonly ContentStreamDictionary dictionary;
+        private readonly PdfDictionary dictionary;
 
         /// <summary>
         /// The 1 indexed page number.
@@ -28,7 +28,7 @@
 
         public IReadOnlyList<string> Text => Content?.Text ?? new string[0];
 
-        internal Page(int number, ContentStreamDictionary dictionary, PageTreeMembers pageTreeMembers, ParsingArguments parsingArguments)
+        internal Page(int number, PdfDictionary dictionary, PageTreeMembers pageTreeMembers, ParsingArguments parsingArguments)
         {
             if (number <= 0)
             {
@@ -73,7 +73,7 @@
                 }
             }
 
-            if (dictionary.GetItemOrDefault(CosName.RESOURCES) is ContentStreamDictionary resource)
+            if (dictionary.GetItemOrDefault(CosName.RESOURCES) is PdfDictionary resource)
             {
                 parsingArguments.CachingProviders.ResourceContainer.LoadResourceDictionary(resource, parsingArguments);
             }

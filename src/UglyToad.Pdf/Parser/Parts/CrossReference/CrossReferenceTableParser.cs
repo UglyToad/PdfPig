@@ -135,7 +135,7 @@
             return true;
         }
 
-        private bool TryParseTrailer(IRandomAccessRead source, bool isLenientParsing, CosObjectPool pool, out ContentStreamDictionary trailer)
+        private bool TryParseTrailer(IRandomAccessRead source, bool isLenientParsing, CosObjectPool pool, out PdfDictionary trailer)
         {
             trailer = null;
             // parse the last trailer.
@@ -187,7 +187,7 @@
             // Acrobat reader can also deal with this.
             ReadHelper.SkipSpaces(source);
 
-            ContentStreamDictionary parsedTrailer = dictionaryParser.Parse(source, baseParser, pool);
+            PdfDictionary parsedTrailer = dictionaryParser.Parse(source, baseParser, pool);
 
             trailer = parsedTrailer;
 

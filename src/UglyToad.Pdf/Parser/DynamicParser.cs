@@ -164,7 +164,7 @@
             bool isLenientParsing,
             out string endObjectKey)
         {
-            if (currentBase is ContentStreamDictionary dictionary)
+            if (currentBase is PdfDictionary dictionary)
             {
                 RawCosStream stream = streamParser.Parse(reader, dictionary, isLenientParsing);
 

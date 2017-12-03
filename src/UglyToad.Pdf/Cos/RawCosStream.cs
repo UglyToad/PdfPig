@@ -8,16 +8,16 @@
     {
         private static readonly object Lock = new object();
 
-        private readonly byte[] streamBytes;
+        public readonly byte[] streamBytes;
 
         private byte[] decodedBytes;
 
-        public ContentStreamDictionary Dictionary { get; }
+        public PdfDictionary Dictionary { get; }
         
         /// <summary>
         /// Combines the dictionary for the stream with the raw, encoded/filtered bytes.
         /// </summary>
-        public RawCosStream(byte[] streamBytes, ContentStreamDictionary streamDictionary)
+        public RawCosStream(byte[] streamBytes, PdfDictionary streamDictionary)
         {
             this.streamBytes = streamBytes;
 

@@ -32,7 +32,7 @@
             this.log = log;
         }
 
-        public RawCosStream Parse(IRandomAccessRead reader, ContentStreamDictionary streamDictionary, bool isLenientParsing)
+        public RawCosStream Parse(IRandomAccessRead reader, PdfDictionary streamDictionary, bool isLenientParsing)
         {
             RawCosStream result;
 

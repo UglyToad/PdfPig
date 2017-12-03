@@ -1,5 +1,7 @@
-﻿namespace UglyToad.Pdf.Fonts.Cmap
+﻿namespace UglyToad.Pdf.Fonts
 {
+    using CidFonts;
+
     /// <summary>
     /// Specifies the character collection associated with the <see cref="CharacterIdentifierFont"/> (CIDFont).
     /// </summary>

@@ -540,7 +540,7 @@ namespace UglyToad.Pdf.Parser
             if (endObjectKey.Equals(STREAM_string))
             {
                 source.Rewind(OtherEncodings.StringAsLatin1Bytes(endObjectKey).Length);
-                if (pb is ContentStreamDictionary dict)
+                if (pb is PdfDictionary dict)
                 {
                     RawCosStream stream = streamParser.Parse(source, dict, isLenient);
 

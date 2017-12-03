@@ -53,7 +53,7 @@
             var root = ParseTrailer(reader, crossReferenceTable, dynamicParser, bruteForceSearcher, pool,
                 isLenientParsing);
 
-            if (!(root is ContentStreamDictionary rootDictionary))
+            if (!(root is PdfDictionary rootDictionary))
             {
                 throw new InvalidOperationException("Expected root dictionary, but got this: " + root);
             }

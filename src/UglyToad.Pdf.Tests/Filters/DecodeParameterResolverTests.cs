@@ -22,7 +22,7 @@
         [Fact]
         public void NegativeIndex_Throws()
         {
-            Action action = () => resolver.GetFilterParameters(new ContentStreamDictionary(), -1);
+            Action action = () => resolver.GetFilterParameters(new PdfDictionary(), -1);
 
             Assert.Throws<ArgumentOutOfRangeException>(action);
         }
@@ -30,7 +30,7 @@
         [Fact]
         public void EmptyDictionary_ReturnsEmptyDictionary()
         {
-            var result = resolver.GetFilterParameters(new ContentStreamDictionary(), 0);
+            var result = resolver.GetFilterParameters(new PdfDictionary(), 0);
 
             Assert.Empty(result);
         }

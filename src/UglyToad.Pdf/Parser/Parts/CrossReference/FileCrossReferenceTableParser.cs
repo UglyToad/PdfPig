@@ -68,7 +68,7 @@
                         throw new InvalidOperationException($"Expected trailer object at position: {reader.GetPosition()}");
                     }
 
-                    ContentStreamDictionary trailer = tableBuilder.Dictionary;
+                    PdfDictionary trailer = tableBuilder.Dictionary;
                     CrossReferenceTablePart streamPart = null;
                     // check for a XRef stream, it may contain some object ids of compressed objects 
                     if (trailer.ContainsKey(CosName.XREF_STM))
@@ -174,7 +174,7 @@
 
             ReadHelper.ReadExpectedString(reader, "obj", true);
 
-            ContentStreamDictionary dict = dictionaryParser.Parse(reader, baseParser, pool);
+            PdfDictionary dict = dictionaryParser.Parse(reader, baseParser, pool);
 
             RawCosStream xrefStream = streamParser.Parse(reader, dict, isLenientParsing);
             CrossReferenceTablePart xrefTablePart = crossReferenceStreamParser.Parse(objByteOffset, xrefStream);

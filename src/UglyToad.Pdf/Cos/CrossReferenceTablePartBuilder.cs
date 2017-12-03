@@ -11,7 +11,7 @@
 
         public long Previous { get; set; }
 
-        public ContentStreamDictionary Dictionary { get; set; }
+        public PdfDictionary Dictionary { get; set; }
 
         public CrossReferenceType XRefType { get; set; }
 

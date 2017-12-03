@@ -9,5 +9,7 @@
         int AsInt();
 
         long AsLong();
+
+        decimal AsDecimal();
     }
 }

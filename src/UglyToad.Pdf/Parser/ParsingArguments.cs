@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.Pdf.Parser
 {
     using System;
+    using System.Diagnostics;
     using Cos;
     using IO;
     using Logging;
@@ -20,6 +21,7 @@
 
         public ILog Log { get; }
 
+        [DebuggerStepThrough]
         public T Get<T>() => Container.Get<T>();
 
         public ParsingArguments(IRandomAccessRead reader, CrossReferenceTable crossReferenceTable, ParsingCachingProviders cachingProviders, IContainer container, bool isLenientParsing)

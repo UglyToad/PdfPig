@@ -6,9 +6,9 @@
 
     public class Catalog
     {
-        private readonly ContentStreamDictionary catalogDictionary;
+        private readonly PdfDictionary catalogDictionary;
 
-        internal Catalog(ContentStreamDictionary catalogDictionary)
+        internal Catalog(PdfDictionary catalogDictionary)
         {
             this.catalogDictionary = catalogDictionary ?? throw new ArgumentNullException(nameof(catalogDictionary));
         }

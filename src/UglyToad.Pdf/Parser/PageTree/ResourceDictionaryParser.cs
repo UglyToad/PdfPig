@@ -7,7 +7,7 @@
 
     internal class ResourceDictionaryParser
     {
-        public ResourceDictionary Parse(ContentStreamDictionary dictionary, ParsingArguments arguments)
+        public ResourceDictionary Parse(PdfDictionary dictionary, ParsingArguments arguments)
         {
             var fontDictionary = dictionary.GetDictionaryOrDefault(CosName.FONT);
 

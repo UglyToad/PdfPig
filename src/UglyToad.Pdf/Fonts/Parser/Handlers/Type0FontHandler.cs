@@ -1,16 +1,24 @@
-﻿namespace UglyToad.Pdf.Fonts.Parser
+﻿namespace UglyToad.Pdf.Fonts.Parser.Handlers
 {
+    using System;
     using Cmap;
     using ContentStream;
     using Cos;
     using Filters;
     using IO;
+    using Parts;
     using Pdf.Parser;
-    using Util.JetBrains.Annotations;
 
     internal class Type0FontHandler : IFontHandler
     {
-        public IFont Generate(ContentStreamDictionary dictionary, ParsingArguments arguments)
+        private readonly CidFontFactory cidFontFactory;
+
+        public Type0FontHandler(CidFontFactory cidFontFactory)
+        {
+            this.cidFontFactory = cidFontFactory;
+        }
+
+        public IFont Generate(PdfDictionary dictionary, ParsingArguments arguments)
         {
             var dynamicParser = arguments.Get<DynamicParser>();
 
@@ -19,6 +27,11 @@
             if (TryGetFirstDescendant(dictionary, out var descendantObject))
             {
                 var parsed = dynamicParser.Parse(arguments, descendantObject, false);
+
+                if (parsed is PdfDictionary descendantFontDictionary)
+                {
+                    ParseDescendant(descendantFontDictionary, arguments);
+                }
             }
 
             CMap toUnicodeCMap = null;
@@ -46,10 +59,8 @@
 
             return font;
         }
-
-
-        [CanBeNull]
-        private bool TryGetFirstDescendant(ContentStreamDictionary dictionary, out CosObject descendant)
+        
+        private static bool TryGetFirstDescendant(PdfDictionary dictionary, out CosObject descendant)
         {
             descendant = null;
 
@@ -72,10 +83,16 @@
 
             return false;
         }
-    }
 
-    internal interface IFontHandler
-    {
-        IFont Generate(ContentStreamDictionary dictionary, ParsingArguments parsingArguments);
+        private void ParseDescendant(PdfDictionary dictionary, ParsingArguments arguments)
+        {
+            var type = dictionary.GetName(CosName.TYPE);
+            if (!CosName.FONT.Equals(type))
+            {
+                throw new InvalidOperationException($"Expected \'Font\' dictionary but found \'{type.Name}\'");
+            }
+
+            cidFontFactory.Generate(dictionary, arguments, arguments.IsLenientParsing);
+        }
     }
 }

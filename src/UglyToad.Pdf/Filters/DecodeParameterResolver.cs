@@ -15,7 +15,7 @@
             this.log = log;
         }
 
-        public ContentStreamDictionary GetFilterParameters(ContentStreamDictionary streamDictionary, int index)
+        public PdfDictionary GetFilterParameters(PdfDictionary streamDictionary, int index)
         {
             if (streamDictionary == null)
             {
@@ -34,7 +34,7 @@
             switch (filter)
             {
                 case CosName _:
-                    if (parameters is ContentStreamDictionary dict)
+                    if (parameters is PdfDictionary dict)
                     {
                         return dict;
                     }
@@ -42,7 +42,7 @@
                 case COSArray array:
                     if (parameters is COSArray arr)
                     {
-                        if (index < arr.size() && array.getObject(index) is ContentStreamDictionary dictionary)
+                        if (index < arr.size() && array.getObject(index) is PdfDictionary dictionary)
                         {
                             return dictionary;
                         }
@@ -56,7 +56,7 @@
                     break;
             }
 
-            return new ContentStreamDictionary();
+            return new PdfDictionary();
         }
     }
 }

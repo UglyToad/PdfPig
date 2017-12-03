@@ -142,5 +142,10 @@ namespace UglyToad.Pdf.Cos
         {
             return value;
         }
+
+        public decimal AsDecimal()
+        {
+            return value;
+        }
     }
 }

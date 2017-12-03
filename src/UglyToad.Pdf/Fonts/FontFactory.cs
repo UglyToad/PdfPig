@@ -4,7 +4,8 @@
     using System.Collections.Generic;
     using ContentStream;
     using Cos;
-    using Parser;
+    using Parser.Handlers;
+    using Parser.Parts;
     using Pdf.Parser;
 
     internal class FontFactory
@@ -15,11 +16,11 @@
         {
             Handlers = new Dictionary<CosName, IFontHandler>
             {
-                {CosName.TYPE0, new Type0FontHandler()}
+                {CosName.TYPE0, new Type0FontHandler(new CidFontFactory(new FontDescriptorFactory()))}
             };
         }
 
-        public IFont GetFont(ContentStreamDictionary dictionary, ParsingArguments arguments)
+        public IFont GetFont(PdfDictionary dictionary, ParsingArguments arguments)
         {
             var type = dictionary.GetName(CosName.TYPE);
 

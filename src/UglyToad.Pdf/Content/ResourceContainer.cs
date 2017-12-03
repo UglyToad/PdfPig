@@ -10,7 +10,6 @@
     using Fonts.Parser;
     using IO;
     using Parser;
-    using Util.JetBrains.Annotations;
 
     internal interface IResourceStore
     {
@@ -21,15 +20,15 @@
     {
         private readonly Dictionary<CosName, IFont> loadedFonts = new Dictionary<CosName, IFont>();
 
-        internal void LoadResourceDictionary(ContentStreamDictionary dictionary, ParsingArguments arguments)
+        internal void LoadResourceDictionary(PdfDictionary dictionary, ParsingArguments arguments)
         {
-            if (dictionary.TryGetValue(CosName.FONT, out var fontBase) && fontBase is ContentStreamDictionary fontDictionary)
+            if (dictionary.TryGetValue(CosName.FONT, out var fontBase) && fontBase is PdfDictionary fontDictionary)
             {
                 LoadFontDictionary(fontDictionary, arguments);
             }
         }
 
-        private void LoadFontDictionary(ContentStreamDictionary fontDictionary, ParsingArguments arguments)
+        private void LoadFontDictionary(PdfDictionary fontDictionary, ParsingArguments arguments)
         {
             foreach (var pair in fontDictionary)
             {
@@ -50,7 +49,7 @@
 
                 var dynamicParser = arguments.Get<DynamicParser>();
 
-                var fontObject = dynamicParser.Parse(arguments, objectKey, false) as ContentStreamDictionary;
+                var fontObject = dynamicParser.Parse(arguments, objectKey, false) as PdfDictionary;
 
                 if (fontObject == null)
                 {

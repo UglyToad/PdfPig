@@ -51,7 +51,7 @@
             }
 
             var dictionary = arguments.Container.Get<DynamicParser>()
-                .Parse(arguments, key, false) as ContentStreamDictionary;
+                .Parse(arguments, key, false) as PdfDictionary;
 
             if (dictionary == null)
             {

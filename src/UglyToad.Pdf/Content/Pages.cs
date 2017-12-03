@@ -14,8 +14,8 @@
     {
         private readonly Catalog catalog;
         private readonly ParsingArguments arguments;
-        private readonly ContentStreamDictionary rootPageDictionary;
-        private readonly Dictionary<int, ContentStreamDictionary> locatedPages = new Dictionary<int, ContentStreamDictionary>();
+        private readonly PdfDictionary rootPageDictionary;
+        private readonly Dictionary<int, PdfDictionary> locatedPages = new Dictionary<int, PdfDictionary>();
 
         public int Count { get; }
 
@@ -40,7 +40,7 @@
 
             var pageObject = arguments.Container.Get<DynamicParser>().Parse(arguments, pages, false);
 
-            if (!(pageObject is ContentStreamDictionary catalogPageDictionary))
+            if (!(pageObject is PdfDictionary catalogPageDictionary))
             {
                 throw new InvalidOperationException("Could not find the root pages object: " + pages);
             }
@@ -58,7 +58,7 @@
 
         public Page GetPage(int pageNumber)
         {
-            if (locatedPages.TryGetValue(pageNumber, out ContentStreamDictionary targetPageDictionary))
+            if (locatedPages.TryGetValue(pageNumber, out PdfDictionary targetPageDictionary))
             {
                 return new Page(pageNumber, targetPageDictionary, new PageTreeMembers(), arguments);
             }
@@ -91,7 +91,7 @@
             return pages[pages.Count - 1] + 1;
         }
 
-        public bool FindPage(ContentStreamDictionary currentPageDictionary, int soughtPageNumber, List<int> pageNumbersObserved)
+        public bool FindPage(PdfDictionary currentPageDictionary, int soughtPageNumber, List<int> pageNumbersObserved)
         {
             var type = currentPageDictionary.GetName(CosName.TYPE);
 
@@ -120,7 +120,7 @@
             foreach (var kid in kids.OfType<CosObject>())
             {
                 // todo: exit early
-                var child = arguments.Container.Get<DynamicParser>().Parse(arguments, kid, false) as ContentStreamDictionary;
+                var child = arguments.Container.Get<DynamicParser>().Parse(arguments, kid, false) as PdfDictionary;
 
                 var thisPageMatches = FindPage(child, soughtPageNumber, pageNumbersObserved);
 

@@ -34,7 +34,7 @@
             this.log = log;
         }
 
-        public byte[] Decode(byte[] input, ContentStreamDictionary streamDictionary, int filterIndex)
+        public byte[] Decode(byte[] input, PdfDictionary streamDictionary, int filterIndex)
         {
             if (input == null)
             {

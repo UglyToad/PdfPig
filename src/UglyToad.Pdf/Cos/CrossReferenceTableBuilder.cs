@@ -31,7 +31,7 @@
         public CrossReferenceTable Build(long startXrefOffset, ILog log)
         {
             CrossReferenceType type = CrossReferenceType.Table;
-            ContentStreamDictionary trailerDictionary = new ContentStreamDictionary();
+            PdfDictionary trailerDictionary = new PdfDictionary();
             Dictionary<CosObjectKey, long> objectOffsets = new Dictionary<CosObjectKey, long>();
 
             List<long> xrefSeqBytePos = new List<long>();

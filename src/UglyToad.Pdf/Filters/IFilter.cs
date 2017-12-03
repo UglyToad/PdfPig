@@ -4,6 +4,6 @@
 
     public interface IFilter
     {
-        byte[] Decode(byte[] input, ContentStreamDictionary streamDictionary, int filterIndex);
+        byte[] Decode(byte[] input, PdfDictionary streamDictionary, int filterIndex);
     }
 }

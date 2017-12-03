@@ -15,9 +15,9 @@
         public IReadOnlyDictionary<CosObjectKey, long> ObjectOffsets => objectOffsets;
 
         [NotNull]
-        public ContentStreamDictionary Dictionary { get; }
+        public PdfDictionary Dictionary { get; }
 
-        public CrossReferenceTable(CrossReferenceType type, IReadOnlyDictionary<CosObjectKey, long> objectOffsets, ContentStreamDictionary dictionary)
+        public CrossReferenceTable(CrossReferenceType type, IReadOnlyDictionary<CosObjectKey, long> objectOffsets, PdfDictionary dictionary)
         {
             if (objectOffsets == null)
             {

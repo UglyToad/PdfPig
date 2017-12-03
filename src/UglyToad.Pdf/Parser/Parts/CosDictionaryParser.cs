@@ -34,7 +34,7 @@
             this.nameParser = nameParser ?? throw new ArgumentNullException();
         }
 
-        public ContentStreamDictionary Parse(IRandomAccessRead reader, CosBaseParser baseParser, CosObjectPool pool)
+        public PdfDictionary Parse(IRandomAccessRead reader, CosBaseParser baseParser, CosObjectPool pool)
         {
             if (reader == null)
             {
@@ -55,7 +55,7 @@
             ReadHelper.ReadExpectedChar(reader, '<');
             ReadHelper.SkipSpaces(reader);
             
-            var dictionary = new ContentStreamDictionary();
+            var dictionary = new PdfDictionary();
 
             var done = false;
             while (!done)
@@ -81,7 +81,7 @@
                     default:
                         if (ReadUntilEnd(reader))
                         {
-                            return new ContentStreamDictionary();
+                            return new PdfDictionary();
                         }
                         break;
                 }
