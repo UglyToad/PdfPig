@@ -2,7 +2,7 @@
 {
     using System;
 
-    internal class HorizontalHeaderTable
+    internal class HorizontalHeaderTable : ITable
     {
         public string Tag => TrueTypeHeaderTable.Hhea;
 

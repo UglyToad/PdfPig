@@ -67,6 +67,13 @@
 
             var horizontalHeader = HorizontalHeaderTable.Load(data, hHead);
 
+            if (!tables.TryGetValue(TrueTypeHeaderTable.Maxp, out var maxHeaderTable))
+            {
+                throw new InvalidOperationException("The maximum profile table is required.");
+            }
+
+            var maximumProfile = BasicMaximumProfileTable.Load(data, maxHeaderTable);
+
             return new TrueTypeFont(version, header);
         }
     }
