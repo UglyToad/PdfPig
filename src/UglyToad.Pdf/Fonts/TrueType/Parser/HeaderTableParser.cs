@@ -2,12 +2,13 @@
 {
     using Tables;
 
-    internal class HeaderTableParser : ITrueTypeTableParser
+    internal class HeaderTableParser
     {
         public string Tag => TrueTypeFontTable.Head;
 
-        public ITable Parse(TrueTypeDataBytes data, TrueTypeFontTable table)
+        public HeaderTable Parse(TrueTypeDataBytes data, TrueTypeFontTable table)
         {
+            data.Seek(table.Offset - 1);
             var version = data.Read32Fixed();
             var fontRevision = data.Read32Fixed();
             var checkSumAdjustment = data.ReadUnsignedInt();

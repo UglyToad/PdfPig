@@ -8,15 +8,11 @@
     {
         private const int TagLength = 4;
 
-        private static readonly IReadOnlyDictionary<string, ITrueTypeTableParser> parsers =
-            new Dictionary<string, ITrueTypeTableParser>
-            {
-                {TrueTypeFontTable.Head, new HeaderTableParser()}
-            };
-
-        public void Parse(TrueTypeDataBytes data)
+        private static readonly HeaderTableParser HeaderTableParser = new HeaderTableParser();
+        
+        public TrueTypeFont Parse(TrueTypeDataBytes data)
         {
-            var version = data.Read32Fixed();
+            var version = (decimal)data.Read32Fixed();
             int numberOfTables = data.ReadUnsignedShort();
             int searchRange = data.ReadUnsignedShort();
             int entrySelector = data.ReadUnsignedShort();
@@ -34,9 +30,9 @@
                 }
             }
 
-            ParseTables(tables, data);
+            var result = ParseTables(version, tables, data);
 
-            return;
+            return result;
         }
 
         [CanBeNull]
@@ -56,7 +52,7 @@
             return new TrueTypeFontTable(tag, checksum, offset, length);
         }
 
-        private static void ParseTables(IReadOnlyDictionary<string, TrueTypeFontTable> tables, TrueTypeDataBytes data)
+        private static TrueTypeFont ParseTables(decimal version, IReadOnlyDictionary<string, TrueTypeFontTable> tables, TrueTypeDataBytes data)
         {
             var isPostScript = tables.ContainsKey(TrueTypeFontTable.Cff);
 
@@ -65,7 +61,9 @@
                 throw new InvalidOperationException($"The {TrueTypeFontTable.Head} table is required.");
             }
 
-            var header = parsers[TrueTypeFontTable.Head].Parse(data, table);
+            var header = HeaderTableParser.Parse(data, table);
+
+            return new TrueTypeFont(version, header);
         }
     }
 }

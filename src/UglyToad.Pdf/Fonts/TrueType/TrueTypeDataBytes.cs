@@ -135,8 +135,15 @@
             var date = new DateTime(1904, 1, 1, 0, 0, 0, 0, new GregorianCalendar());
 
             var result = date.AddSeconds(secondsSince1904);
+            result = result.AddMonths(1);
+            result = result.AddDays(1);
 
             return result;
+        }
+
+        public void Seek(long position)
+        {
+            inputBytes.Seek(position);
         }
     }
 }

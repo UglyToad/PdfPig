@@ -42,5 +42,11 @@
         {
             return CurrentOffset == bytes.Count - 1;
         }
+
+        public void Seek(long position)
+        {
+            CurrentOffset = (int)position;
+            CurrentByte = bytes[CurrentOffset];
+        }
     }
 }

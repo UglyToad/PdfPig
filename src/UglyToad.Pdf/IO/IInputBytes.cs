@@ -11,5 +11,7 @@
         byte? Peek();
         
         bool IsAtEnd();
+
+        void Seek(long position);
     }
 }
