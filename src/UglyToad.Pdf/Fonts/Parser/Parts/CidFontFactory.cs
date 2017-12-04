@@ -95,9 +95,7 @@
             }
 
             var fontFile = fontFileStream.Decode(arguments.Get<IFilterProvider>());
-
-            File.WriteAllBytes("C:\\git\\google-simple-doc.ttf", fontFile);
-
+            
             switch (descriptor.FontFile.FileType)
             {
                 case DescriptorFontFile.FontFileType.TrueType:
