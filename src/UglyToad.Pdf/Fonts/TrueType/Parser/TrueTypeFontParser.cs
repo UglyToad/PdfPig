@@ -74,6 +74,20 @@
 
             var maximumProfile = BasicMaximumProfileTable.Load(data, maxHeaderTable);
 
+            var postScriptTable = default(PostScriptTable);
+            if (tables.TryGetValue(TrueTypeHeaderTable.Post, out var postscriptHeaderTable))
+            {
+                postScriptTable = PostScriptTable.Load(data, table, maximumProfile);
+            }
+
+            if (!isPostScript)
+            {
+                if (!tables.TryGetValue(TrueTypeHeaderTable.Loca, out var indexToLocationHeaderTable))
+                {
+                    throw new InvalidOperationException("The location to index table is required for non-PostScript fonts.");
+                }
+            }
+
             return new TrueTypeFont(version, header);
         }
     }

@@ -36,6 +36,14 @@
             return (internalBuffer[0] << 8) + (internalBuffer[1] << 0);
         }
 
+        public int ReadUnsignedByte()
+        {
+            ReadBuffered(internalBuffer, 1);
+
+            // TODO: the cast from int -> byte -> int here suggest we are treating data incorrectly.
+            return internalBuffer[0];
+        }
+
         private void ReadBuffered(byte[] buffer, int length)
         {
             var numberRead = 0;
@@ -69,7 +77,7 @@
         public long ReadUnsignedInt()
         {
             ReadBuffered(internalBuffer, 4);
-            
+
             return (internalBuffer[0] << 24) + (internalBuffer[1] << 16) + (internalBuffer[2] << 8) + (internalBuffer[3] << 0);
         }
 
@@ -93,7 +101,7 @@
         {
             // TODO: this returns the wrong value, investigate...
             long secondsSince1904 = ReadLong();
-            
+
             var date = new DateTime(1904, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
             var result = date.AddSeconds(secondsSince1904);
@@ -117,6 +125,13 @@
             }
 
             return ret;
+        }
+
+        public int ReadSignedByte()
+        {
+            ReadBuffered(internalBuffer, 1);
+            var signedByte = internalBuffer[0];
+            return signedByte < 127 ? signedByte : signedByte - 256;
         }
     }
 }
