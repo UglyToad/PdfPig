@@ -4,6 +4,6 @@
     {
         string Tag { get; }
 
-        TrueTypeFontTable DirectoryTable { get; }
+        TrueTypeHeaderTable DirectoryTable { get; }
     }
 }

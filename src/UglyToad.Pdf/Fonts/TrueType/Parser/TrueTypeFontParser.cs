@@ -2,14 +2,11 @@
 {
     using System;
     using System.Collections.Generic;
+    using Tables;
     using Util.JetBrains.Annotations;
 
     internal class TrueTypeFontParser
     {
-        private const int TagLength = 4;
-
-        private static readonly HeaderTableParser HeaderTableParser = new HeaderTableParser();
-        
         public TrueTypeFont Parse(TrueTypeDataBytes data)
         {
             var version = (decimal)data.Read32Fixed();
@@ -18,15 +15,15 @@
             int entrySelector = data.ReadUnsignedShort();
             int rangeShift = data.ReadUnsignedShort();
 
-            var tables = new Dictionary<string, TrueTypeFontTable>();
+            var tables = new Dictionary<string, TrueTypeHeaderTable>();
 
             for (var i = 0; i < numberOfTables; i++)
             {
                 var table = ReadTable(data);
 
-                if (table != null)
+                if (table.HasValue)
                 {
-                    tables[table.Tag] = table;
+                    tables[table.Value.Tag] = table.Value;
                 }
             }
 
@@ -36,32 +33,39 @@
         }
 
         [CanBeNull]
-        private static TrueTypeFontTable ReadTable(TrueTypeDataBytes data)
+        private static TrueTypeHeaderTable? ReadTable(TrueTypeDataBytes data)
         {
-            var tag = data.ReadString(TagLength);
+            var tag = data.ReadTag();
             var checksum = data.ReadUnsignedInt();
             var offset = data.ReadUnsignedInt();
             var length = data.ReadUnsignedInt();
 
             // skip tables with zero length (except glyf)
-            if (length == 0 && !string.Equals(tag, TrueTypeFontTable.Glyf))
+            if (length == 0 && !string.Equals(tag, TrueTypeHeaderTable.Glyf))
             {
                 return null;
             }
 
-            return new TrueTypeFontTable(tag, checksum, offset, length);
+            return new TrueTypeHeaderTable(tag, checksum, offset, length);
         }
 
-        private static TrueTypeFont ParseTables(decimal version, IReadOnlyDictionary<string, TrueTypeFontTable> tables, TrueTypeDataBytes data)
+        private static TrueTypeFont ParseTables(decimal version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tables, TrueTypeDataBytes data)
         {
-            var isPostScript = tables.ContainsKey(TrueTypeFontTable.Cff);
+            var isPostScript = tables.ContainsKey(TrueTypeHeaderTable.Cff);
 
-            if (!tables.TryGetValue(TrueTypeFontTable.Head, out var table))
+            if (!tables.TryGetValue(TrueTypeHeaderTable.Head, out var table))
             {
-                throw new InvalidOperationException($"The {TrueTypeFontTable.Head} table is required.");
+                throw new InvalidOperationException($"The {TrueTypeHeaderTable.Head} table is required.");
             }
 
-            var header = HeaderTableParser.Parse(data, table);
+            var header = HeaderTable.Load(data, table);
+
+            if (!tables.TryGetValue(TrueTypeHeaderTable.Hhea, out var hHead))
+            {
+                throw new InvalidOperationException("The horizontal header table is required.");
+            }
+
+            var horizontalHeader = HorizontalHeaderTable.Load(data, hHead);
 
             return new TrueTypeFont(version, header);
         }

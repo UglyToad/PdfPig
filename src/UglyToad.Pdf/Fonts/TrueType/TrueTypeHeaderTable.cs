@@ -3,7 +3,7 @@
     /// <summary>
     /// A table directory entry from the TrueType font file.
     /// </summary>
-    internal class TrueTypeFontTable
+    internal struct TrueTypeHeaderTable
     {
         #region RequiredTableTags
         /// <summary>
@@ -178,7 +178,7 @@
         /// </summary>
         public long Length { get; }
 
-        public TrueTypeFontTable(string tag, long checkSum, long offset, long length)
+        public TrueTypeHeaderTable(string tag, long checkSum, long offset, long length)
         {
             Tag = tag;
             CheckSum = checkSum;

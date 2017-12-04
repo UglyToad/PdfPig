@@ -7,19 +7,9 @@
     /// </summary>
     internal class HeaderTable : ITable
     {
-        public string Tag => TrueTypeFontTable.Head;
+        public string Tag => TrueTypeHeaderTable.Head;
         
-        /// <summary>
-        /// Bold macStyle flag.
-        /// </summary>
-        public const int MacStyleBold = 1;
-        
-        /// <summary>
-        /// Italic macStyle flag.
-        /// </summary>
-        public const int MacStyleItalic = 2;
-
-        public TrueTypeFontTable DirectoryTable { get; }
+        public TrueTypeHeaderTable DirectoryTable { get; }
 
         public decimal Version { get; }
 
@@ -45,7 +35,7 @@
 
         public short YMax { get; }
 
-        public int MacStyle { get; }
+        public HeaderMacStyle MacStyle { get; }
 
         /// <summary>
         /// Smallest readable size in pixels.
@@ -64,7 +54,7 @@
         /// </summary>
         public short GlyphDataFormat { get; }
 
-        public HeaderTable(TrueTypeFontTable directoryTable, decimal version, decimal revision, long checkSumAdjustment, 
+        public HeaderTable(TrueTypeHeaderTable directoryTable, decimal version, decimal revision, long checkSumAdjustment, 
             long magicNumber, int flags, int unitsPerEm, 
             DateTime created, DateTime modified, 
             short xMin, short yMin, 
@@ -75,7 +65,7 @@
             short indexToLocFormat, 
             short glyphDataFormat)
         {
-            DirectoryTable = directoryTable ?? throw new ArgumentNullException(nameof(directoryTable));
+            DirectoryTable = directoryTable;
             Version = version;
             Revision = revision;
             CheckSumAdjustment = checkSumAdjustment;
@@ -88,11 +78,50 @@
             YMin = yMin;
             XMax = xMax;
             YMax = yMax;
-            MacStyle = macStyle;
+            MacStyle = (HeaderMacStyle)macStyle;
             LowestRecommendedPpem = lowestRecommendedPpem;
             FontDirectionHint = (FontDirection)fontDirectionHint;
             IndexToLocFormat = indexToLocFormat;
             GlyphDataFormat = glyphDataFormat;
+        }
+
+        public static HeaderTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table)
+        {
+            data.Seek(table.Offset - 1);
+            var version = data.Read32Fixed();
+            var fontRevision = data.Read32Fixed();
+            var checkSumAdjustment = data.ReadUnsignedInt();
+            var magicNumber = data.ReadUnsignedInt();
+
+            if (magicNumber != 0x5F0F3CF5)
+            {
+                throw new InvalidOperationException("The magic number for this TrueType font was incorrect. Value was: " + magicNumber);
+            }
+
+            var flags = data.ReadUnsignedShort();
+            var unitsPerEm = data.ReadUnsignedShort();
+
+            if (unitsPerEm < 16 || unitsPerEm > 16384)
+            {
+                throw new InvalidOperationException($"The units per em for this TrueType font was incorrect, value should be between 16 and 16384 but found {unitsPerEm} istead.");
+            }
+
+            var created = data.ReadInternationalDate();
+            var modified = data.ReadInternationalDate();
+            var xMin = data.ReadSignedShort();
+            var yMin = data.ReadSignedShort();
+            var xMax = data.ReadSignedShort();
+            var yMax = data.ReadSignedShort();
+            var macStyle = data.ReadUnsignedShort();
+            var lowestRecPpem = data.ReadUnsignedShort();
+            var fontDirectionHint = data.ReadSignedShort();
+            var indexToLocFormat = data.ReadSignedShort();
+            var glyphDataFormat = data.ReadSignedShort();
+
+            return new HeaderTable(table, (decimal)version, (decimal)fontRevision, checkSumAdjustment,
+                magicNumber, flags, unitsPerEm, created, modified,
+                xMin, yMin, xMax, yMax, macStyle, lowestRecPpem,
+                fontDirectionHint, indexToLocFormat, glyphDataFormat);
         }
 
         public enum FontDirection
@@ -102,6 +131,19 @@
             FullyMixedDirectional = 0,
             StronglyLeftToRight = 1,
             StronglyLeftToRightWithNeutrals = 2
+        }
+
+        [Flags]
+        internal enum HeaderMacStyle : ushort
+        {
+            None = 0,
+            Bold = 1 << 0,
+            Italic = 1 << 1,
+            Underline = 1 << 2,
+            Outline = 1 << 3,
+            Shadow = 1 << 4,
+            Condensed = 1 << 5,
+            Extended = 1 << 6,
         }
     }
 }

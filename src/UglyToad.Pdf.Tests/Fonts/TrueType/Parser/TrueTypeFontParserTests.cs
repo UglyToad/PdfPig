@@ -69,7 +69,7 @@
             Assert.Equal(2396, font.HeaderTable.XMax);
             Assert.Equal(2163, font.HeaderTable.YMax);
 
-            Assert.Equal(0, font.HeaderTable.MacStyle);
+            Assert.Equal(HeaderTable.HeaderMacStyle.None, font.HeaderTable.MacStyle);
             Assert.Equal(9, font.HeaderTable.LowestRecommendedPpem);
 
             Assert.Equal(HeaderTable.FontDirection.StronglyLeftToRightWithNeutrals, font.HeaderTable.FontDirectionHint);
