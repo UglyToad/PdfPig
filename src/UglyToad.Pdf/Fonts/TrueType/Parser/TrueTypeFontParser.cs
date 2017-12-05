@@ -86,6 +86,9 @@
                 {
                     throw new InvalidOperationException("The location to index table is required for non-PostScript fonts.");
                 }
+
+                var indexToLocationTable =
+                    IndexToLocationTable.Load(data, indexToLocationHeaderTable, header, maximumProfile);
             }
 
             return new TrueTypeFont(version, header);

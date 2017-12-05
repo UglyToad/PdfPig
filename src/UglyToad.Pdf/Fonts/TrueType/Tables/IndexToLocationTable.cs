@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Fonts.TrueType.Tables
 {
+    using System;
+
     /// <summary>
     /// Stores the offset to the glyph locations relative to the start of the glyph data table.
     /// Index zero points to the "missing character" which is used for characters not provided by the font.
@@ -11,6 +13,9 @@
 
         public TrueTypeHeaderTable DirectoryTable { get; }
 
+        /// <summary>
+        /// The glyph offsets relative to the start of the glyph data table.
+        /// </summary>
         public long[] GlyphOffsets { get; }
 
         public IndexToLocationTable(TrueTypeHeaderTable directoryTable, long[] glyphOffsets)
@@ -19,11 +24,37 @@
             GlyphOffsets = glyphOffsets;
         }
 
-        public static IndexToLocationTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table)
+        public static IndexToLocationTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, HeaderTable headerTable, BasicMaximumProfileTable maximumProfileTable)
         {
+            const short shortFormat = 0;
+            const short longFormat = 1;
+
             data.Seek(table.Offset);
 
-            return null;
+            var format = headerTable.IndexToLocFormat;
+
+            var glyphCount = maximumProfileTable.NumberOfGlyphs;
+
+            var offsets = new long[glyphCount];
+
+            for (int i = 0; i < glyphCount; i++)
+            {
+                switch (format)
+                {
+                    case shortFormat:
+                        // The local offset divided by 2 is stored.
+                        offsets[i] = data.ReadUnsignedShort() * 2;
+                        break;
+                    case longFormat:
+                        // The actual offset is stored.
+                        offsets[i] = data.ReadLong();
+                        break;
+                    default:
+                        throw new InvalidOperationException($"The format {format} was invalid for the index to location (loca) table.");
+                }
+            }
+            
+            return new IndexToLocationTable(table, offsets);
         }
     }
 }
