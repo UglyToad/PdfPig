@@ -1,0 +1,1 @@
+C:\git\UglyToad.Pdf\src\UglyToad.Pdf.Tests>..\opencover\OpenCover.Console.exe -register:user -target:"C:\Program Files\dotnet\dotnet.exe" -output:report.xml -targetargs:"test"

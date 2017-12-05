@@ -1,0 +1,1 @@
+OpenCover.Console.exe -register:user -target:Samples\x86\OpenCover.Simple.Target.exe -filter:+[*]* -output:output.xml

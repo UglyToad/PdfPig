@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <DebugType>full</DebugType> 
   </PropertyGroup>
 
   <ItemGroup>
@@ -44,5 +45,5 @@
     <EmbeddedResource Include="Resources\AdobeFontMetrics\Times-Roman.afm" />
     <EmbeddedResource Include="Resources\AdobeFontMetrics\ZapfDingbats.afm" />
   </ItemGroup>
-
+  
 </Project>
