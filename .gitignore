@@ -241,3 +241,5 @@ _Pvt_Extensions
 # FAKE - F# Make
 .fake/
 
+/src/CodeCoverage/OpenCover.4.6.519
+/src/test-results.xml
