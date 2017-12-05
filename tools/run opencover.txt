@@ -1,1 +1,7 @@
-C:\git\UglyToad.Pdf\src\UglyToad.Pdf.Tests>..\opencover\OpenCover.Console.exe -register:user -target:"C:\Program Files\dotnet\dotnet.exe" -output:report.xml -targetargs:"test"
+src\CodeCoverage\CodeCoverage.cmd
+
+pwd
+
+Expand-Archive tools\Codecov.zip -DestinationPath "tools"
+
+tools\Codecov\codecov.exe -f "src\test-results.xml"
