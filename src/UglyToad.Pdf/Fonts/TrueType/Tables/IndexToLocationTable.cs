@@ -33,27 +33,31 @@
 
             var format = headerTable.IndexToLocFormat;
 
-            var glyphCount = maximumProfileTable.NumberOfGlyphs;
+            var glyphCount = maximumProfileTable.NumberOfGlyphs + 1;
 
             var offsets = new long[glyphCount];
 
-            for (int i = 0; i < glyphCount; i++)
+            switch (format)
             {
-                switch (format)
-                {
-                    case shortFormat:
-                        // The local offset divided by 2 is stored.
-                        offsets[i] = data.ReadUnsignedShort() * 2;
+                case shortFormat:
+                    { // The local offset divided by 2 is stored.
+                        for (int i = 0; i < glyphCount; i++)
+                        {
+                            offsets[i] = data.ReadUnsignedShort() * 2;
+                        }
                         break;
-                    case longFormat:
+                    }
+                case longFormat:
+                    {
                         // The actual offset is stored.
-                        offsets[i] = data.ReadLong();
+                        data.ReadUnsignedIntArray(offsets, glyphCount);
                         break;
-                    default:
-                        throw new InvalidOperationException($"The format {format} was invalid for the index to location (loca) table.");
-                }
+                    }
+                default:
+                    throw new InvalidOperationException($"The format {format} was invalid for the index to location (loca) table.");
             }
-            
+
+
             return new IndexToLocationTable(table, offsets);
         }
     }

@@ -185,5 +185,10 @@
             Offset = offset;
             Length = length;
         }
+
+        public override string ToString()
+        {
+            return $"{Tag} {Offset} {Length} {CheckSum}";
+        }
     }
 }

@@ -46,7 +46,7 @@
         public void Seek(long position)
         {
             CurrentOffset = (int)position;
-            CurrentByte = bytes[CurrentOffset];
+            CurrentByte = CurrentOffset < 0 ? (byte)0 : bytes[CurrentOffset];
         }
     }
 }

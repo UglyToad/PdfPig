@@ -79,6 +79,62 @@
         }
 
         [Fact]
+        public void RobotoHeaderReadCorrectly()
+        {
+            var data = new[]
+            {
+                // key, offset, length, checksum
+                "DSIG 158596 8 1",
+                "GDEF 316 72 408950881",
+                "GPOS 388 35744 355098641",
+                "GSUB 36132 662 3357985284",
+                "OS/2 36796 96 3097700805",
+                "cmap 36892 1750 298470964",
+                "cvt  156132 38 119085513",
+                "fpgm 156172 2341 2494100564",
+                "gasp 156124 8 16",
+                "glyf 38644 88820 3302131736",
+                "head 127464 54 346075833",
+                "hhea 127520 36 217516755",
+                "hmtx 127556 4148 1859679943",
+                "kern 131704 12306 2002873469",
+                "loca 144012 2076 77421448",
+                "maxp 146088 32 89459325",
+                "name 146120 830 44343214",
+                "post 146952 9171 3638780613",
+                "prep 158516 77 251381919"
+            };
+
+            var bytes = GetFileBytes("Roboto-Regular");
+
+            var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
+
+            var font = parser.Parse(input);
+
+            foreach (var s in data)
+            {
+                var parts = s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                var name = parts[0];
+
+                if (name == "cvt")
+                {
+                    name = "cvt ";
+                }
+
+                var match = font.Tables[name];
+
+                var offset = long.Parse(parts[1]);
+                var length = long.Parse(parts[2]);
+                var checksum = long.Parse(parts[3]);
+
+                Assert.Equal(offset, match.Offset);
+                Assert.Equal(length, match.Length);
+                Assert.Equal(checksum, match.CheckSum);
+            }
+        }
+
+        [Fact]
         public void ParseEmbeddedSimpleGoogleDocssGautmi()
         {
             var bytes = GetFileBytes("google-simple-doc");

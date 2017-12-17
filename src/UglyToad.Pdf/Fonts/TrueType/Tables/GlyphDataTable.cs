@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.Pdf.Fonts.TrueType.Tables
 {
     using System;
+    using System.Collections.Generic;
+    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// Describes the glyphs in the font.
@@ -10,6 +12,15 @@
         public string Tag => TrueTypeHeaderTable.Glyf;
 
         public TrueTypeHeaderTable DirectoryTable { get; }
+
+        [ItemCanBeNull]
+        public IReadOnlyList<IGlyphDescription> Glyphs { get; }
+
+        public GlyphDataTable(TrueTypeHeaderTable directoryTable, IReadOnlyList<IGlyphDescription> glyphs)
+        {
+            DirectoryTable = directoryTable;
+            Glyphs = glyphs ?? throw new ArgumentNullException(nameof(glyphs));
+        }
 
         public static GlyphDataTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, HeaderTable headerTable,
             IndexToLocationTable indexToLocationTable)
@@ -22,7 +33,7 @@
 
             var glyphCount = entryCount - 1;
 
-            var glyphs = new object[glyphCount];
+            var glyphs = new IGlyphDescription[glyphCount];
 
             for (var i = 0; i < glyphCount; i++)
             {
@@ -32,7 +43,7 @@
                     continue;
                 }
 
-                data.Seek(offsets[i] - 1);
+                data.Seek(offsets[i] - 1 + table.Offset);
 
                 var contourCount = data.ReadSignedShort();
 
@@ -50,20 +61,94 @@
                 }
                 else
                 {
-                    
+
                 }
             }
 
-            throw new NotImplementedException();
+            return new GlyphDataTable(table, glyphs);
         }
 
         private static SimpleGlyphDescription ReadSimpleGlyph(TrueTypeDataBytes data, short contourCount, TrueTypeGlyphBounds bounds)
         {
-            throw new NotImplementedException("Reading simple glyphs not supported yet.");
+            var endPointsOfContours = data.ReadUnsignedShortArray(contourCount);
+
+            var instructionLength = data.ReadUnsignedShort();
+
+            data.ReadByteArray(instructionLength);
+
+            var pointCount = 0;
+            if (contourCount > 0)
+            {
+                pointCount = endPointsOfContours[contourCount - 1] + 1;
+            }
+
+            var flags = ReadFlags(data, pointCount);
+
+            var xCoordinates = ReadCoordinates(data, pointCount, flags, SimpleGlyphFlags.XShortVector,
+                SimpleGlyphFlags.XSignOrSame);
+
+            var yCoordinates = ReadCoordinates(data, pointCount, flags, SimpleGlyphFlags.YShortVector,
+                SimpleGlyphFlags.YSignOrSame);
+
+            return new SimpleGlyphDescription(instructionLength, endPointsOfContours, flags, xCoordinates, yCoordinates);
+        }
+
+        private static SimpleGlyphFlags[] ReadFlags(TrueTypeDataBytes data, int pointCount)
+        {
+            var result = new SimpleGlyphFlags[pointCount];
+
+            for (var i = 0; i < pointCount; i++)
+            {
+                result[i] = (SimpleGlyphFlags)data.ReadByte();
+            }
+
+            return result;
+        }
+
+        private static short[] ReadCoordinates(TrueTypeDataBytes data, int pointCount, SimpleGlyphFlags[] flags, SimpleGlyphFlags isByte, SimpleGlyphFlags signOrSame)
+        {
+            var xs = new short[pointCount];
+            var x = 0;
+            for (var i = 0; i < pointCount; i++)
+            {
+                int dx;
+                if (flags[i].HasFlag(isByte))
+                {
+                    var b = data.ReadByte();
+                    dx = flags[i].HasFlag(signOrSame) ? b : -b;
+                }
+                else
+                {
+                    if (flags[i].HasFlag(signOrSame))
+                    {
+                        dx = 0;
+                    }
+                    else
+                    {
+                        dx = data.ReadSignedShort();
+                    }
+                }
+
+                x += dx;
+
+                // TODO: overflow?
+                xs[i] = (short)x;
+            }
+
+            return xs;
         }
     }
 
-    internal class SimpleGlyphDescription
+    internal interface IGlyphDescription
+    {
+        bool IsSimple { get; }
+
+        SimpleGlyphDescription SimpleGlyph { get; }
+
+        object CompositeGlyph { get; }
+    }
+
+    internal class SimpleGlyphDescription : IGlyphDescription
     {
         /// <summary>
         /// The total number of bytes for instructions.
@@ -100,6 +185,12 @@
             XCoordinates = xCoordinates;
             YCoordinates = yCoordinates;
         }
+
+        public bool IsSimple { get; } = true;
+
+        public SimpleGlyphDescription SimpleGlyph => this;
+
+        public object CompositeGlyph { get; } = null;
     }
 
     [Flags]

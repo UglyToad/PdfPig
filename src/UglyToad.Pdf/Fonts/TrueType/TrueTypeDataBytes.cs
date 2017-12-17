@@ -59,6 +59,13 @@
             }
         }
 
+        public byte ReadByte()
+        {
+            ReadBuffered(internalBuffer, 1);
+
+            return internalBuffer[0];
+        }
+
         /// <summary>
         /// Reads the 4 character tag from the TrueType file.
         /// </summary>
@@ -78,7 +85,7 @@
         {
             ReadBuffered(internalBuffer, 4);
 
-            return (internalBuffer[0] << 24) + (internalBuffer[1] << 16) + (internalBuffer[2] << 8) + (internalBuffer[3] << 0);
+            return ((long)internalBuffer[0] << 24) + ((long)internalBuffer[1] << 16) + (internalBuffer[2] << 8) + (internalBuffer[3] << 0);
         }
 
         public int ReadSignedInt()
@@ -130,8 +137,39 @@
         public int ReadSignedByte()
         {
             ReadBuffered(internalBuffer, 1);
+
             var signedByte = internalBuffer[0];
+
             return signedByte < 127 ? signedByte : signedByte - 256;
+        }
+
+        public int[] ReadUnsignedShortArray(int length)
+        {
+            var result = new int[length];
+
+            for (int i = 0; i < length; i++)
+            {
+                result[i] = ReadUnsignedShort();
+            }
+
+            return result;
+        }
+
+        public byte[] ReadByteArray(int length)
+        {
+            var result = new byte[length];
+
+            ReadBuffered(result, length);
+
+            return result;
+        }
+
+        public void ReadUnsignedIntArray(long[] offsets, int length)
+        {
+            for (int i = 0; i < length; i++)
+            {
+                offsets[i] = ReadUnsignedInt();
+            }
         }
     }
 }

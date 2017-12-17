@@ -89,9 +89,16 @@
 
                 var indexToLocationTable =
                     IndexToLocationTable.Load(data, indexToLocationHeaderTable, header, maximumProfile);
+
+                if (!tables.TryGetValue(TrueTypeHeaderTable.Glyf, out var glyphHeaderTable))
+                {
+                    throw new InvalidOperationException("The glpyh table is required for non-PostScript fonts.");
+                }
+
+                var glyphTable = GlyphDataTable.Load(data, glyphHeaderTable, header, indexToLocationTable);
             }
 
-            return new TrueTypeFont(version, header);
+            return new TrueTypeFont(version, tables, header);
         }
     }
 }
