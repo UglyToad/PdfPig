@@ -1,5 +1,9 @@
 ﻿namespace UglyToad.Pdf.Tests.Fonts.Parser
 {
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.IO;
+    using IO;
     using Pdf.Fonts.Parser;
     using Xunit;
 
@@ -83,6 +87,43 @@ end";
             Assert.Equal("T", cmap.BaseFontCharacterMap[55]);
             Assert.Equal("a", cmap.BaseFontCharacterMap[68]);
             Assert.Equal("x", cmap.BaseFontCharacterMap[91]);
+        }
+
+        [Theory]
+        [MemberData(nameof(PredefinedCMaps))]
+        public void CanParseAllPredefinedCMaps(string resourceName)
+        {
+            Debug.WriteLine("Parsing: " + resourceName);
+            
+            var input = new ByteArrayInputBytes(ReadResourceBytes(resourceName));
+
+            var cmap = cMapParser.Parse(input, false);
+
+            Assert.NotNull(cmap);
+        }
+
+        private static byte[] ReadResourceBytes(string name)
+        {
+            using (var resource = typeof(CMapParser).Assembly.GetManifestResourceStream(name))
+            using (var memoryStream = new MemoryStream())
+            {
+                resource.CopyTo(memoryStream);
+
+                return memoryStream.ToArray();
+            }
+        }
+
+        public static IEnumerable<object[]> PredefinedCMaps()
+        {
+            var resources = typeof(CMapParser).Assembly.GetManifestResourceNames();
+
+            foreach (var resource in resources)
+            {
+                if (resource.Contains(".CMap."))
+                {
+                    yield return new object[] {resource};
+                }
+            }
         }
     }
 }

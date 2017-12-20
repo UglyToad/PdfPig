@@ -34,7 +34,19 @@
                     switch (operatorToken.Data)
                     {
                         case "usecmap":
-                            throw new NotImplementedException("External CMap files not yet supported, please submit a pull request!");
+                            {
+                                if (previousToken is NameToken name)
+                                {
+                                    var external = ParseExternal(name.Data.Name);
+
+                                    builder.UseCMap(external);
+                                }
+                                else
+                                {
+                                    throw new InvalidOperationException("Unexpected token preceding external cmap call: " + previousToken);
+                                }
+                                break;
+                            }
                         case "begincodespacerange":
                             {
                                 if (previousToken is NumericToken numeric)

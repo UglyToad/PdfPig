@@ -97,6 +97,45 @@
             throw new InvalidOperationException("The Character Identifier System Information was never set.");
         }
 
+        public void UseCMap(CMap other)
+        {
+            CodespaceRanges = Combine(CodespaceRanges, other.CodespaceRanges);
+            CidCharacterMappings = Combine(CidCharacterMappings, other.CidCharacterMappings);
+            CidRanges = Combine(CidRanges, other.CidRanges);
+
+            if (other.BaseFontCharacterMap != null)
+            {
+                foreach (var keyValuePair in other.BaseFontCharacterMap)
+                {
+                    BaseFontCharacterMap[keyValuePair.Key] = keyValuePair.Value;
+                }
+            }
+        }
+
+        private static IReadOnlyList<T> Combine<T>(IReadOnlyList<T> a, IReadOnlyList<T> b)
+        {
+            if (a == null && b == null)
+            {
+                return new T[0];
+            }
+
+            if (a == null)
+            {
+                return b;
+            }
+
+            if (b == null)
+            {
+                return a;
+            }
+
+            var result = new List<T>(a);
+
+            result.AddRange(b);
+
+            return result;
+        }
+
         private int GetCodeFromArray(IReadOnlyList<byte> data, int length)
         {
             int code = 0;
