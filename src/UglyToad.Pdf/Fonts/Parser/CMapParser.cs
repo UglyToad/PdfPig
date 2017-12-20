@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.Pdf.Fonts.Parser
 {
     using System;
+    using System.IO;
+    using System.Linq;
     using Cmap;
     using IO;
     using Parts;
@@ -104,6 +106,30 @@
             }
 
             return builder.Build();
+        }
+
+        public CMap ParseExternal(string name)
+        {
+            var resources = typeof(CMapParser).Assembly.GetManifestResourceNames();
+
+            var resource = resources.FirstOrDefault(x =>
+                x.EndsWith("CMap." + name, StringComparison.InvariantCultureIgnoreCase));
+
+            if (resource == null)
+            {
+                throw new InvalidOperationException("Could not find the referenced CMap: " + name);
+            }
+
+            byte[] bytes;
+            using (var stream = typeof(CMapParser).Assembly.GetManifestResourceStream(resource))
+            using (var memoryStream = new MemoryStream())
+            {
+                stream.CopyTo(memoryStream);
+
+                bytes = memoryStream.ToArray();
+            }
+
+            return Parse(new ByteArrayInputBytes(bytes), true);
         }
     }
 }

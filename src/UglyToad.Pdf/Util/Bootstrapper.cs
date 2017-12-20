@@ -3,6 +3,9 @@
     using Filters;
     using Fonts;
     using Fonts.Parser;
+    using Fonts.Parser.Handlers;
+    using Fonts.Parser.Parts;
+    using Fonts.TrueType.Parser;
     using Graphics;
     using Logging;
     using Parser;
@@ -55,7 +58,9 @@
 
             var cmapParser = new CMapParser();
             var afmParser = new AdobeFontMetricsParser();
-            var fontFactory = new FontFactory();
+
+            var type0FontFactory = new Type0FontHandler(new CidFontFactory(new FontDescriptorFactory(), new TrueTypeFontParser()), new CMapCache(cmapParser));
+            var fontFactory = new FontFactory(type0FontFactory);
 
             var container = new Container();
             container.Register(headerParser);

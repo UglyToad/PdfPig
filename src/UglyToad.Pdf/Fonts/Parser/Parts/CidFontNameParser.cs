@@ -58,15 +58,27 @@
                     }
                 case "Registry":
                     {
-                        throw new NotImplementedException("Registry should be in a dictionary");
+                        if (scanner.TryReadToken(out StringToken stringToken))
+                        {
+                            builder.SystemInfoBuilder.Registry = stringToken.Data;
+                        }
+                        break;
                     }
                 case "Ordering":
                     {
-                        throw new NotImplementedException("Ordering should be in a dictionary");
+                        if (scanner.TryReadToken(out StringToken stringToken))
+                        {
+                            builder.SystemInfoBuilder.Ordering = stringToken.Data;
+                        }
+                        break;
                     }
                 case "Supplement":
                     {
-                        throw new NotImplementedException("Supplement should be in a dictionary");
+                        if (scanner.TryReadToken(out NumericToken numericToken))
+                        {
+                            builder.SystemInfoBuilder.Supplement = numericToken.Int;
+                        }
+                        break;
                     }
                 case "CIDSystemInfo":
                     {

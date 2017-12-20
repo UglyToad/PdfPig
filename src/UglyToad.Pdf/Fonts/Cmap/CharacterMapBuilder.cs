@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.Pdf.Fonts.Cmap
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
@@ -14,6 +15,8 @@
         ///  Defines the character collection associated CIDFont/s for this CMap.
         /// </summary>
         public CharacterIdentifierSystemInfo CharacterIdentifierSystemInfo { get; set; }
+
+        public CharacterIdentifierSystemInfoBuilder SystemInfoBuilder { get; } = new CharacterIdentifierSystemInfoBuilder();
 
         /// <summary>
         /// An <see langword="int"/> that determines the writing mode for any CIDFont combined with this CMap.
@@ -72,11 +75,26 @@
 
         public CMap Build()
         {
-            return new CMap(CharacterIdentifierSystemInfo, Type, WMode, Name, Version,
+            return new CMap(GetCidSystemInfo(), Type, WMode, Name, Version,
                 BaseFontCharacterMap ?? new Dictionary<int, string>(),
                 CodespaceRanges ?? new CodespaceRange[0],
                 CidRanges ?? new CidRange[0],
                 CidCharacterMappings ?? new CidCharacterMapping[0]);
+        }
+
+        private CharacterIdentifierSystemInfo GetCidSystemInfo()
+        {
+            if (CharacterIdentifierSystemInfo.Registry != null)
+            {
+                return CharacterIdentifierSystemInfo;
+            }
+
+            if (SystemInfoBuilder.HasOrdering && SystemInfoBuilder.HasRegistry && SystemInfoBuilder.HasSupplement)
+            {
+                return new CharacterIdentifierSystemInfo(SystemInfoBuilder.Registry, SystemInfoBuilder.Ordering, SystemInfoBuilder.Supplement);
+            }
+
+            throw new InvalidOperationException("The Character Identifier System Information was never set.");
         }
 
         private int GetCodeFromArray(IReadOnlyList<byte> data, int length)

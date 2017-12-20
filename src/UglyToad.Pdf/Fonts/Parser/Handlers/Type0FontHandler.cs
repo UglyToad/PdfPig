@@ -12,10 +12,12 @@
     internal class Type0FontHandler : IFontHandler
     {
         private readonly CidFontFactory cidFontFactory;
+        private readonly CMapCache cMapCache;
 
-        public Type0FontHandler(CidFontFactory cidFontFactory)
+        public Type0FontHandler(CidFontFactory cidFontFactory, CMapCache cMapCache)
         {
             this.cidFontFactory = cidFontFactory;
+            this.cMapCache = cMapCache;
         }
 
         public IFont Generate(PdfDictionary dictionary, ParsingArguments arguments)
@@ -23,6 +25,8 @@
             var dynamicParser = arguments.Get<DynamicParser>();
 
             var baseFont = dictionary.GetName(CosName.BASE_FONT);
+
+            ReadEncoding(dictionary);
 
             if (TryGetFirstDescendant(dictionary, out var descendantObject))
             {
@@ -93,6 +97,30 @@
             }
 
             cidFontFactory.Generate(dictionary, arguments, arguments.IsLenientParsing);
+        }
+
+        private void ReadEncoding(PdfDictionary dictionary)
+        {
+            if (dictionary.TryGetValue(CosName.ENCODING, out var value))
+            {
+                if (value is CosName encodingName)
+                {
+                    var cmap = cMapCache.Get(encodingName.Name);
+
+                    if (cmap == null)
+                    {
+                        throw new InvalidOperationException("Missing CMap for " + encodingName.Name);
+                    }
+                }
+                else if (value is RawCosStream stream)
+                {
+                    
+                }
+                else
+                {
+                    throw new InvalidOperationException("Could not read the encoding, expected a name or a stream but got a: " + value.GetType().Name);
+                }
+            }
         }
     }
 }

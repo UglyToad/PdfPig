@@ -5,19 +5,17 @@
     using ContentStream;
     using Cos;
     using Parser.Handlers;
-    using Parser.Parts;
     using Pdf.Parser;
-    using TrueType.Parser;
 
     internal class FontFactory
     {
-        private static readonly IReadOnlyDictionary<CosName, IFontHandler> Handlers;
+        private readonly IReadOnlyDictionary<CosName, IFontHandler> handlers;
 
-        static FontFactory()
+        public FontFactory(Type0FontHandler type0FontHandler)
         {
-            Handlers = new Dictionary<CosName, IFontHandler>
+            handlers = new Dictionary<CosName, IFontHandler>
             {
-                {CosName.TYPE0, new Type0FontHandler(new CidFontFactory(new FontDescriptorFactory(), new TrueTypeFontParser()))}
+                {CosName.TYPE0, type0FontHandler}
             };
         }
 
@@ -41,12 +39,12 @@
 
             var subtype = dictionary.GetName(CosName.SUBTYPE);
 
-            if (Handlers.TryGetValue(subtype, out var handler))
+            if (handlers.TryGetValue(subtype, out var handler))
             {
                 return handler.Generate(dictionary, arguments);
             }
 
-            throw new NotImplementedException($"Parsing not implemented for fonts of type: {subtype}, please submit a pull request.");
+            throw new NotImplementedException($"Parsing not implemented for fonts of type: {subtype}, please submit a pull request or an issue.");
         }
     }
 
