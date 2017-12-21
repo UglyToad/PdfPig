@@ -59,7 +59,7 @@
             var cmapParser = new CMapParser();
             var afmParser = new AdobeFontMetricsParser();
 
-            var type0FontFactory = new Type0FontHandler(new CidFontFactory(new FontDescriptorFactory(), new TrueTypeFontParser()), new CMapCache(cmapParser));
+            var type0FontFactory = new Type0FontHandler(new CidFontFactory(new FontDescriptorFactory(), new TrueTypeFontParser()), new CMapCache(cmapParser), filterProvider);
             var fontFactory = new FontFactory(type0FontFactory);
 
             var container = new Container();

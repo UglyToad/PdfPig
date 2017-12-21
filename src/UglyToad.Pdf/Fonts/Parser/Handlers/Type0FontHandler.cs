@@ -13,11 +13,13 @@
     {
         private readonly CidFontFactory cidFontFactory;
         private readonly CMapCache cMapCache;
+        private readonly IFilterProvider filterProvider;
 
-        public Type0FontHandler(CidFontFactory cidFontFactory, CMapCache cMapCache)
+        public Type0FontHandler(CidFontFactory cidFontFactory, CMapCache cMapCache, IFilterProvider filterProvider)
         {
             this.cidFontFactory = cidFontFactory;
             this.cMapCache = cMapCache;
+            this.filterProvider = filterProvider;
         }
 
         public IFont Generate(PdfDictionary dictionary, ParsingArguments arguments)
@@ -26,7 +28,7 @@
 
             var baseFont = dictionary.GetName(CosName.BASE_FONT);
 
-            ReadEncoding(dictionary);
+            var cMap = ReadEncoding(dictionary, out var isCMapPredefined);
 
             if (TryGetFirstDescendant(dictionary, out var descendantObject))
             {
@@ -38,6 +40,8 @@
                 }
             }
 
+            var ucs2CMap = GetUcs2CMap(dictionary, isCMapPredefined, false);
+
             CMap toUnicodeCMap = null;
             if (dictionary.ContainsKey(CosName.TO_UNICODE))
             {
@@ -45,12 +49,11 @@
 
                 var toUnicode = dynamicParser.Parse(arguments, toUnicodeValue as CosObject, false) as RawCosStream;
 
-                var decodedUnicodeCMap = toUnicode?.Decode(arguments.Container.Get<IFilterProvider>());
+                var decodedUnicodeCMap = toUnicode?.Decode(filterProvider);
 
                 if (decodedUnicodeCMap != null)
                 {
-                    toUnicodeCMap = arguments.Container.Get<CMapParser>()
-                        .Parse(new ByteArrayInputBytes(decodedUnicodeCMap), arguments.IsLenientParsing);
+                    toUnicodeCMap = cMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap), arguments.IsLenientParsing);
                 }
             }
 
@@ -99,28 +102,65 @@
             cidFontFactory.Generate(dictionary, arguments, arguments.IsLenientParsing);
         }
 
-        private void ReadEncoding(PdfDictionary dictionary)
+        private CMap ReadEncoding(PdfDictionary dictionary, out bool isCMapPredefined)
         {
+            isCMapPredefined = false;
+            CMap result = default(CMap);
+
             if (dictionary.TryGetValue(CosName.ENCODING, out var value))
             {
                 if (value is CosName encodingName)
                 {
                     var cmap = cMapCache.Get(encodingName.Name);
 
-                    if (cmap == null)
-                    {
-                        throw new InvalidOperationException("Missing CMap for " + encodingName.Name);
-                    }
+                    result = cmap ?? throw new InvalidOperationException("Missing CMap for " + encodingName.Name);
+
+                    isCMapPredefined = true;
                 }
                 else if (value is RawCosStream stream)
                 {
-                    
+                    var decoded = stream.Decode(filterProvider);
+
+                    var cmap = cMapCache.Parse(new ByteArrayInputBytes(decoded), false);
+
+                    result = cmap ?? throw new InvalidOperationException("Could not read CMap for " + dictionary);
                 }
                 else
                 {
                     throw new InvalidOperationException("Could not read the encoding, expected a name or a stream but got a: " + value.GetType().Name);
                 }
             }
+
+            return result;
+        }
+
+        private static CMap GetUcs2CMap(PdfDictionary dictionary, bool isCMapPredefined, bool usesDescendantAdobeFont)
+        {
+            if (!isCMapPredefined)
+            {
+                return null;
+            }
+
+            /*
+             * If the font is a composite font that uses one of the predefined CMaps except Identity–H and Identity–V or whose descendant
+             * CIDFont uses the Adobe-GB1, Adobe-CNS1, Adobe-Japan1, or Adobe-Korea1 character collection use a UCS2 CMap.
+             */
+
+            var encodingName = dictionary.GetName(CosName.ENCODING);
+
+            if (encodingName == null)
+            {
+                return null;
+            }
+
+            var isPredefinedIdentityMap = encodingName.Equals(CosName.IDENTITY_H) || encodingName.Equals(CosName.IDENTITY_V);
+
+            if (isPredefinedIdentityMap && !usesDescendantAdobeFont)
+            {
+                return null;
+            }
+
+            throw new NotSupportedException("Support for UCS2 CMaps are not implemented yet. Please raise an issue.");
         }
     }
 }
