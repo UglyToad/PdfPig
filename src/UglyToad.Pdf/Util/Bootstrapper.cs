@@ -4,7 +4,6 @@
     using Fonts.Parser;
     using Logging;
     using Parser;
-    using Parser.PageTree;
     using Parser.Parts;
     using Parser.Parts.CrossReference;
 
@@ -42,11 +41,7 @@
 
             var crossReferenceTableParser = new FileCrossReferenceTableParser(logger, dictionaryParser, baseParser, streamParser, crossReferenceParser,
                 new CrossReferenceTableParser(logger, dictionaryParser, baseParser));
-
-            var resourceDictionaryParser = new ResourceDictionaryParser();
-            var simpleFontParser = new SimpleFontParser();
-            var compositeFontParser = new CompositeFontParser();
-
+            
             var cmapParser = new CMapParser();
             var afmParser = new AdobeFontMetricsParser();
             
@@ -62,9 +57,6 @@
             container.Register(dynamicParser);
             container.Register(objectStreamParser);
             container.Register(filterProvider);
-            container.Register(resourceDictionaryParser);
-            container.Register(simpleFontParser);
-            container.Register(compositeFontParser);
             container.Register(cmapParser);
             container.Register(afmParser);
             container.Register(logger);
