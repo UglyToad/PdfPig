@@ -2,6 +2,7 @@
 {
     using System.Collections.Generic;
     using Content;
+    using ContentStream;
     using IO;
     using Pdf.Cos;
     using Pdf.Fonts;
@@ -44,6 +45,10 @@
 
     internal class TestResourceStore : IResourceStore
     {
+        public void LoadResourceDictionary(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        {
+        }
+
         public IFont GetFont(CosName name)
         {
             return null;

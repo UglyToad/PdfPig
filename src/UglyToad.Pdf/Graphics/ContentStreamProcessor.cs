@@ -85,7 +85,7 @@
             {
                 var code = font.ReadCharacterCode(bytes, out int codeLength);
 
-                var unicode = font.GetUnicode(code);
+                font.TryGetUnicode(code, out var unicode);
 
                 var wordSpacing = 0m;
                 if (code == ' ' && codeLength == 1)

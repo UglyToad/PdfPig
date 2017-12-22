@@ -1,10 +1,10 @@
 ﻿namespace UglyToad.Pdf.Fonts.Parser.Handlers
 {
     using ContentStream;
-    using Pdf.Parser;
+    using IO;
 
     internal interface IFontHandler
     {
-        IFont Generate(PdfDictionary dictionary, ParsingArguments parsingArguments);
+        IFont Generate(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing);
     }
 }

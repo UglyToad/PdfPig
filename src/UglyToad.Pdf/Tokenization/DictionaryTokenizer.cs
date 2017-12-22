@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.Pdf.Tokenization
 {
     using System.Collections.Generic;
+    using ContentStream;
     using IO;
     using Parser.Parts;
     using Scanner;
@@ -79,7 +80,7 @@
 
                     if (r == OperatorToken.R)
                     {
-                        result[key] = new IndirectReferenceToken(new IndirectReference(num.Long, gen.Long));
+                        result[key] = new IndirectReferenceToken(new IndirectReference(num.Long, gen.Int));
                         i = i + 2;
                     }
                 }

@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Tokenization.Tokens
 {
+    using ContentStream;
+
     public class IndirectReferenceToken : IDataToken<IndirectReference>
     {
         public IndirectReference Data { get; }
@@ -10,16 +12,4 @@
         }
     }
 
-    public struct IndirectReference
-    {
-        public long ObjectNumber { get; }
-
-        public long Generation { get; }
-
-        public IndirectReference(long objectNumber, long generation)
-        {
-            ObjectNumber = objectNumber;
-            Generation = generation;
-        }
-    }
 }

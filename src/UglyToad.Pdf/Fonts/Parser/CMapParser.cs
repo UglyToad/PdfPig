@@ -9,7 +9,7 @@
     using Tokenization.Scanner;
     using Tokenization.Tokens;
 
-    public class CMapParser
+    internal class CMapParser
     {
         private static readonly BaseFontRangeParser BaseFontRangeParser = new BaseFontRangeParser();
         private static readonly BaseFontCharacterParser BaseFontCharacterParser = new BaseFontCharacterParser();

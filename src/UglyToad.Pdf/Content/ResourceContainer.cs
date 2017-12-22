@@ -4,31 +4,32 @@
     using System.Collections.Generic;
     using ContentStream;
     using Cos;
-    using Filters;
     using Fonts;
-    using Fonts.Cmap;
-    using Fonts.Parser;
     using IO;
     using Parser;
 
-    internal interface IResourceStore
-    {
-        IFont GetFont(CosName name);
-    }
-
     internal class ResourceContainer : IResourceStore
     {
+        private readonly IPdfObjectParser pdfObjectParser;
+        private readonly IFontFactory fontFactory;
+
         private readonly Dictionary<CosName, IFont> loadedFonts = new Dictionary<CosName, IFont>();
 
-        internal void LoadResourceDictionary(PdfDictionary dictionary, ParsingArguments arguments)
+        public ResourceContainer(IPdfObjectParser pdfObjectParser, IFontFactory fontFactory)
+        {
+            this.pdfObjectParser = pdfObjectParser;
+            this.fontFactory = fontFactory;
+        }
+
+        public void LoadResourceDictionary(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
         {
             if (dictionary.TryGetValue(CosName.FONT, out var fontBase) && fontBase is PdfDictionary fontDictionary)
             {
-                LoadFontDictionary(fontDictionary, arguments);
+                LoadFontDictionary(fontDictionary, reader, isLenientParsing);
             }
         }
 
-        private void LoadFontDictionary(PdfDictionary fontDictionary, ParsingArguments arguments)
+        private void LoadFontDictionary(PdfDictionary fontDictionary, IRandomAccessRead reader, bool isLenientParsing)
         {
             foreach (var pair in fontDictionary)
             {
@@ -39,24 +40,22 @@
 
                 if (!(pair.Value is CosObject objectKey))
                 {
-                    if (arguments.IsLenientParsing)
+                    if (isLenientParsing)
                     {
                         continue;
                     }
 
                     throw new InvalidOperationException($"The font with name {pair.Key} did not link to an object key. Value was: {pair.Value}.");
                 }
-
-                var dynamicParser = arguments.Get<DynamicParser>();
-
-                var fontObject = dynamicParser.Parse(arguments, objectKey, false) as PdfDictionary;
+                
+                var fontObject = pdfObjectParser.Parse(objectKey.ToIndirectReference(), reader, false) as PdfDictionary;
 
                 if (fontObject == null)
                 {
                     throw new InvalidOperationException($"Could not retrieve the font with name: {pair.Key} which should have been object {objectKey.GetObjectNumber()}");
                 }
 
-                loadedFonts[pair.Key] = arguments.Get<FontFactory>().GetFont(fontObject, arguments);
+                loadedFonts[pair.Key] = fontFactory.Get(fontObject, reader, isLenientParsing);
             }
         }
         

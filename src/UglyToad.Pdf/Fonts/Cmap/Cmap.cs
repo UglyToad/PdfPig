@@ -6,7 +6,7 @@
     using IO;
     using Util.JetBrains.Annotations;
 
-    public class CMap
+    internal class CMap
     {
         public CharacterIdentifierSystemInfo Info { get; }
 
@@ -30,6 +30,8 @@
         [NotNull]
         public IReadOnlyList<CidCharacterMapping> CidCharacterMappings { get; }
 
+        public WritingMode WritingMode { get; }
+
         public bool HasCidMappings => CidCharacterMappings.Count > 0 || CidRanges.Count > 0;
 
         public bool HasUnicodeMappings => BaseFontCharacterMap.Count > 0;
@@ -41,7 +43,7 @@
         {
             Info = info;
             Type = type;
-            WMode = wMode;
+            WritingMode = (WritingMode)wMode;
             Name = name;
             Version = version;
             BaseFontCharacterMap = baseFontCharacterMap ?? throw new ArgumentNullException(nameof(baseFontCharacterMap));
@@ -51,8 +53,7 @@
             maxCodeLength = CodespaceRanges.Max(x => x.CodeLength);
             minCodeLength = CodespaceRanges.Min(x => x.CodeLength);
         }
-
-        private int wmode = 0;
+        
         private string cmapName = null;
         private string cmapVersion = null;
         private int cmapType = -1;

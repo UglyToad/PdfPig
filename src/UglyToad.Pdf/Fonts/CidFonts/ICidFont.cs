@@ -32,5 +32,7 @@
         /// The definition of the character collection for the font.
         /// </summary>
         CharacterIdentifierSystemInfo SystemInfo { get; }
+
+        CidFontType CidFontType { get; }
     }
 }

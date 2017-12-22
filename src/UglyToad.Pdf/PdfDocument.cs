@@ -4,6 +4,7 @@
     using Content;
     using Cos;
     using IO;
+    using Logging;
     using Parser;
     using Parser.Parts;
     using Util;
@@ -17,8 +18,8 @@
         private readonly HeaderVersion version;
         [NotNull]
         private readonly CrossReferenceTable crossReferenceTable;
-        [NotNull]
-        private readonly IContainer container;
+
+        private readonly ILog log;
         private readonly bool isLenientParsing;
         [NotNull]
         private readonly ParsingCachingProviders cachingProviders;
@@ -29,21 +30,21 @@
         [NotNull]
         public Pages Pages { get; }
 
-        internal PdfDocument(IRandomAccessRead reader, HeaderVersion version, CrossReferenceTable crossReferenceTable, 
-            IContainer container, 
+        internal PdfDocument(ILog log, IRandomAccessRead reader, HeaderVersion version, CrossReferenceTable crossReferenceTable,
             bool isLenientParsing, 
             ParsingCachingProviders cachingProviders,
+            IPageFactory pageFactory,
+            IPdfObjectParser pdfObjectParser,
             Catalog catalog)
         {
+            this.log = log;
             this.reader = reader ?? throw new ArgumentNullException(nameof(reader));
             this.version = version ?? throw new ArgumentNullException(nameof(version));
             this.crossReferenceTable = crossReferenceTable ?? throw new ArgumentNullException(nameof(crossReferenceTable));
-            this.container = container ?? throw new ArgumentNullException(nameof(container));
             this.isLenientParsing = isLenientParsing;
             this.cachingProviders = cachingProviders ?? throw new ArgumentNullException(nameof(cachingProviders));
             Catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
-            var arguments = new ParsingArguments(reader, crossReferenceTable, cachingProviders, container, isLenientParsing);
-            Pages = new Pages(Catalog, arguments);
+            Pages = new Pages(log, Catalog, pdfObjectParser, pageFactory, reader, isLenientParsing);
         }
 
         public static PdfDocument Open(byte[] fileBytes, ParsingOptions options = null) => PdfDocumentFactory.Open(fileBytes, options);

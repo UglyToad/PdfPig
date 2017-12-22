@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Cos
 {
+    using ContentStream;
+
     public class CosObject : CosBase, ICosUpdateInfo
     {
         private CosBase baseObject;
@@ -124,5 +126,10 @@
         }
 
         public bool NeedsToBeUpdated { get; set; }
+
+        public IndirectReference ToIndirectReference()
+        {
+            return new IndirectReference(objectNumber, generationNumber);
+        }
     }
 }

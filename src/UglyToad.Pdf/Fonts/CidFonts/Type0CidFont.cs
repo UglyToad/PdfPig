@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.Pdf.Fonts.CidFonts
 {
-    using Cmap;
     using Cos;
 
     /// <inheritdoc/>
@@ -14,5 +13,6 @@
         public CosName SubType { get; }
         public CosName BaseFont { get; }
         public CharacterIdentifierSystemInfo SystemInfo { get; }
+        public CidFontType CidFontType => CidFontType.Type0;
     }
 }

@@ -1,12 +1,7 @@
 ﻿namespace UglyToad.Pdf.Util
 {
     using Filters;
-    using Fonts;
     using Fonts.Parser;
-    using Fonts.Parser.Handlers;
-    using Fonts.Parser.Parts;
-    using Fonts.TrueType.Parser;
-    using Graphics;
     using Logging;
     using Parser;
     using Parser.PageTree;
@@ -49,19 +44,12 @@
                 new CrossReferenceTableParser(logger, dictionaryParser, baseParser));
 
             var resourceDictionaryParser = new ResourceDictionaryParser();
-            var pageParser = new PageParser();
             var simpleFontParser = new SimpleFontParser();
             var compositeFontParser = new CompositeFontParser();
-            var fontParser = new FontParser();
-            var pageContentParser = new PageContentParser();
-            var operationFactory = new ReflectionGraphicsStateOperationFactory();
 
             var cmapParser = new CMapParser();
             var afmParser = new AdobeFontMetricsParser();
-
-            var type0FontFactory = new Type0FontHandler(new CidFontFactory(new FontDescriptorFactory(), new TrueTypeFontParser()), new CMapCache(cmapParser), filterProvider);
-            var fontFactory = new FontFactory(type0FontFactory);
-
+            
             var container = new Container();
             container.Register(headerParser);
             container.Register(trailerParser);
@@ -75,15 +63,11 @@
             container.Register(objectStreamParser);
             container.Register(filterProvider);
             container.Register(resourceDictionaryParser);
-            container.Register(pageParser);
             container.Register(simpleFontParser);
             container.Register(compositeFontParser);
-            container.Register(fontParser);
-            container.Register(pageContentParser);
-            container.Register(operationFactory);
             container.Register(cmapParser);
             container.Register(afmParser);
-            container.Register(fontFactory);
+            container.Register(logger);
 
             return container;
         }

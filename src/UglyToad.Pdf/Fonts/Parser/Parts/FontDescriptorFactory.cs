@@ -141,7 +141,7 @@
                     throw new NotSupportedException("We currently expect the FontFile to be an object reference.");
                 }
 
-                return new DescriptorFontFile(obj.GetObjectKey(), DescriptorFontFile.FontFileType.Type1);
+                return new DescriptorFontFile(obj.ToIndirectReference(), DescriptorFontFile.FontFileType.Type1);
             }
 
             if (dictionary.TryGetValue(CosName.FONT_FILE2, out value))
@@ -151,7 +151,7 @@
                     throw new NotSupportedException("We currently expect the FontFile2 to be an object reference.");
                 }
 
-                return new DescriptorFontFile(obj.GetObjectKey(), DescriptorFontFile.FontFileType.TrueType);
+                return new DescriptorFontFile(obj.ToIndirectReference(), DescriptorFontFile.FontFileType.TrueType);
             }
 
             if (dictionary.TryGetValue(CosName.FONT_FILE3, out value))
@@ -161,7 +161,7 @@
                     throw new NotSupportedException("We currently expect the FontFile3 to be an object reference.");
                 }
 
-                return new DescriptorFontFile(obj.GetObjectKey(), DescriptorFontFile.FontFileType.FromSubtype);
+                return new DescriptorFontFile(obj.ToIndirectReference(), DescriptorFontFile.FontFileType.FromSubtype);
             }
 
             return null;

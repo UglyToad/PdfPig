@@ -3,6 +3,7 @@ namespace UglyToad.Pdf.Tests.Tokenization
 {
     using System;
     using System.Collections.Generic;
+    using ContentStream;
     using Pdf.Cos;
     using Pdf.Tokenization;
     using Pdf.Tokenization.Tokens;

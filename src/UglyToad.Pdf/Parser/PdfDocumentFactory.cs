@@ -5,7 +5,15 @@
     using Content;
     using ContentStream;
     using Cos;
+    using Filters;
+    using Fonts;
+    using Fonts.Parser;
+    using Fonts.Parser.Handlers;
+    using Fonts.Parser.Parts;
+    using Fonts.TrueType.Parser;
+    using Graphics;
     using IO;
+    using Logging;
     using Parts;
     using Parts.CrossReference;
     using Util;
@@ -37,6 +45,8 @@
 
         private static PdfDocument OpenDocument(IRandomAccessRead reader, IContainer container, bool isLenientParsing)
         {
+            var log = container.Get<ILog>();
+
             var version = container.Get<FileHeaderParser>().ReadHeader(reader, isLenientParsing);
 
             var crossReferenceOffset = container.Get<FileTrailerParser>().GetXrefOffset(reader, isLenientParsing);
@@ -46,9 +56,27 @@
             var crossReferenceTable = container.Get<FileCrossReferenceTableParser>()
                 .Parse(reader, isLenientParsing, crossReferenceOffset, pool);
 
-            var dynamicParser = container.Get<DynamicParser>();
+            var filterProvider = container.Get<IFilterProvider>();
             var bruteForceSearcher = new BruteForceSearcher(reader);
-            var resourceContainer = new ResourceContainer();
+            var pdfObjectParser = new PdfObjectParser(container.Get<ILog>(), container.Get<CosBaseParser>(),
+                container.Get<CosStreamParser>(), crossReferenceTable, bruteForceSearcher, pool, container.Get<ObjectStreamParser>());
+
+            var trueTypeFontParser = new TrueTypeFontParser();
+            var fontDescriptorFactory = new FontDescriptorFactory();
+
+            var cidFontFactory = new CidFontFactory(fontDescriptorFactory, trueTypeFontParser, pdfObjectParser, filterProvider);
+
+            var cMapCache = new CMapCache(new CMapParser());
+
+            var fontFactory = new FontFactory(container.Get<ILog>(), new Type0FontHandler(cidFontFactory,
+                cMapCache, 
+                filterProvider,
+                pdfObjectParser));
+
+            var dynamicParser = container.Get<DynamicParser>();
+            var resourceContainer = new ResourceContainer(pdfObjectParser, fontFactory);
+
+            var pageFactory = new PageFactory(resourceContainer, pdfObjectParser, filterProvider, new PageContentParser(new ReflectionGraphicsStateOperationFactory()));
 
             var root = ParseTrailer(reader, crossReferenceTable, dynamicParser, bruteForceSearcher, pool,
                 isLenientParsing);
@@ -66,7 +94,7 @@
 
             var caching = new ParsingCachingProviders(pool, bruteForceSearcher, resourceContainer);
 
-            return new PdfDocument(reader, version, crossReferenceTable, container, isLenientParsing, caching, new Catalog(rootDictionary));
+            return new PdfDocument(log, reader, version, crossReferenceTable, isLenientParsing, caching, pageFactory, pdfObjectParser, new Catalog(rootDictionary));
         }
 
         private static CosBase ParseTrailer(IRandomAccessRead reader, CrossReferenceTable crossReferenceTable,

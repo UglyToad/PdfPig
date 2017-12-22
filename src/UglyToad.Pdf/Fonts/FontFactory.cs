@@ -4,22 +4,26 @@
     using System.Collections.Generic;
     using ContentStream;
     using Cos;
+    using Exceptions;
+    using IO;
+    using Logging;
     using Parser.Handlers;
-    using Pdf.Parser;
 
-    internal class FontFactory
+    internal class FontFactory : IFontFactory
     {
+        private readonly ILog log;
         private readonly IReadOnlyDictionary<CosName, IFontHandler> handlers;
 
-        public FontFactory(Type0FontHandler type0FontHandler)
+        public FontFactory(ILog log, Type0FontHandler type0FontHandler)
         {
+            this.log = log;
             handlers = new Dictionary<CosName, IFontHandler>
             {
                 {CosName.TYPE0, type0FontHandler}
             };
         }
 
-        public IFont GetFont(PdfDictionary dictionary, ParsingArguments arguments)
+        public IFont Get(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
         {
             var type = dictionary.GetName(CosName.TYPE);
 
@@ -27,13 +31,13 @@
             {
                 var message = "The font dictionary did not have type 'Font'. " + dictionary;
 
-                if (arguments.IsLenientParsing)
+                if (isLenientParsing)
                 {
-                    arguments.Log.Error(message);
+                    log?.Error(message);
                 }
                 else
                 {
-                    throw new InvalidOperationException(message);
+                    throw new InvalidFontFormatException(message);
                 }
             }
 
@@ -41,7 +45,7 @@
 
             if (handlers.TryGetValue(subtype, out var handler))
             {
-                return handler.Generate(dictionary, arguments);
+                return handler.Generate(dictionary, reader, isLenientParsing);
             }
 
             throw new NotImplementedException($"Parsing not implemented for fonts of type: {subtype}, please submit a pull request or an issue.");
@@ -49,3 +53,4 @@
     }
 
 }
+

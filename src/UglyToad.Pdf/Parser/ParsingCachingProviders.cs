@@ -14,9 +14,9 @@
 
         public BruteForceSearcher BruteForceSearcher { get; }
 
-        public ResourceContainer ResourceContainer { get; }
+        public IResourceStore ResourceContainer { get; }
 
-        public ParsingCachingProviders(CosObjectPool objectPool, BruteForceSearcher bruteForceSearcher, ResourceContainer resourceContainer)
+        public ParsingCachingProviders(CosObjectPool objectPool, BruteForceSearcher bruteForceSearcher, IResourceStore resourceContainer)
         {
             ObjectPool = objectPool ?? throw new ArgumentNullException(nameof(objectPool));
             BruteForceSearcher = bruteForceSearcher ?? throw new ArgumentNullException(nameof(bruteForceSearcher));

@@ -1,9 +1,12 @@
 ﻿namespace UglyToad.Pdf.Fonts.Parser.Handlers
 {
     using System;
+    using CidFonts;
     using Cmap;
+    using Composite;
     using ContentStream;
     using Cos;
+    using Exceptions;
     using Filters;
     using IO;
     using Parts;
@@ -14,30 +17,34 @@
         private readonly CidFontFactory cidFontFactory;
         private readonly CMapCache cMapCache;
         private readonly IFilterProvider filterProvider;
+        private readonly IPdfObjectParser pdfObjectParser;
 
-        public Type0FontHandler(CidFontFactory cidFontFactory, CMapCache cMapCache, IFilterProvider filterProvider)
+        public Type0FontHandler(CidFontFactory cidFontFactory, CMapCache cMapCache, IFilterProvider filterProvider, IPdfObjectParser pdfObjectParser)
         {
             this.cidFontFactory = cidFontFactory;
             this.cMapCache = cMapCache;
             this.filterProvider = filterProvider;
+            this.pdfObjectParser = pdfObjectParser;
         }
 
-        public IFont Generate(PdfDictionary dictionary, ParsingArguments arguments)
+        public IFont Generate(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
         {
-            var dynamicParser = arguments.Get<DynamicParser>();
-
             var baseFont = dictionary.GetName(CosName.BASE_FONT);
 
             var cMap = ReadEncoding(dictionary, out var isCMapPredefined);
 
             if (TryGetFirstDescendant(dictionary, out var descendantObject))
             {
-                var parsed = dynamicParser.Parse(arguments, descendantObject, false);
+                var parsed = pdfObjectParser.Parse(descendantObject.ToIndirectReference(), reader, isLenientParsing);
 
                 if (parsed is PdfDictionary descendantFontDictionary)
                 {
-                    ParseDescendant(descendantFontDictionary, arguments);
+                    ParseDescendant(descendantFontDictionary, reader, isLenientParsing);
                 }
+            }
+            else
+            {
+                throw new InvalidFontFormatException("No descendant font dictionary was declared for this Type 0 font. This dictionary should contain the CIDFont for the Type 0 font. " + dictionary);
             }
 
             var ucs2CMap = GetUcs2CMap(dictionary, isCMapPredefined, false);
@@ -47,22 +54,17 @@
             {
                 var toUnicodeValue = dictionary[CosName.TO_UNICODE];
 
-                var toUnicode = dynamicParser.Parse(arguments, toUnicodeValue as CosObject, false) as RawCosStream;
+                var toUnicode = pdfObjectParser.Parse(((CosObject)toUnicodeValue).ToIndirectReference(), reader, isLenientParsing) as RawCosStream;
 
                 var decodedUnicodeCMap = toUnicode?.Decode(filterProvider);
 
                 if (decodedUnicodeCMap != null)
                 {
-                    toUnicodeCMap = cMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap), arguments.IsLenientParsing);
+                    toUnicodeCMap = cMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap), isLenientParsing);
                 }
             }
 
-            var font = new CompositeFont
-            {
-                SubType = CosName.TYPE0,
-                ToUnicode = toUnicodeCMap,
-                BaseFont = baseFont
-            };
+            var font = new Type0Font(baseFont, new Type0CidFont(), cMap, toUnicodeCMap);
 
             return font;
         }
@@ -91,7 +93,7 @@
             return false;
         }
 
-        private void ParseDescendant(PdfDictionary dictionary, ParsingArguments arguments)
+        private void ParseDescendant(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
         {
             var type = dictionary.GetName(CosName.TYPE);
             if (!CosName.FONT.Equals(type))
@@ -99,7 +101,7 @@
                 throw new InvalidOperationException($"Expected \'Font\' dictionary but found \'{type.Name}\'");
             }
 
-            cidFontFactory.Generate(dictionary, arguments, arguments.IsLenientParsing);
+            cidFontFactory.Generate(dictionary, reader, isLenientParsing);
         }
 
         private CMap ReadEncoding(PdfDictionary dictionary, out bool isCMapPredefined)

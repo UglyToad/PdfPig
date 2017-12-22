@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.Pdf.Fonts
 {
+    using ContentStream;
     using Cos;
 
     /// <summary>
@@ -13,13 +14,13 @@
     /// </remarks>
     internal class DescriptorFontFile
     {
-        public CosObjectKey ObjectKey { get; }
+        public IndirectReference ObjectKey { get; }
 
         public byte[] FileBytes { get; }
 
         public FontFileType FileType { get; }
 
-        public DescriptorFontFile(CosObjectKey key, FontFileType fileType)
+        public DescriptorFontFile(IndirectReference key, FontFileType fileType)
         {
             ObjectKey = key;
             FileBytes = new byte[0];

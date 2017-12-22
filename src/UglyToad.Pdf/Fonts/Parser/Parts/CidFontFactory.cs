@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using CidFonts;
     using ContentStream;
     using Cos;
@@ -12,20 +11,25 @@
     using Pdf.Parser;
     using TrueType;
     using TrueType.Parser;
-    using Util;
 
     internal class CidFontFactory
     {
         private readonly FontDescriptorFactory descriptorFactory;
         private readonly TrueTypeFontParser trueTypeFontParser;
+        private readonly IPdfObjectParser pdfObjectParser;
+        private readonly IFilterProvider filterProvider;
 
-        public CidFontFactory(FontDescriptorFactory descriptorFactory, TrueTypeFontParser trueTypeFontParser)
+        public CidFontFactory(FontDescriptorFactory descriptorFactory, TrueTypeFontParser trueTypeFontParser, 
+            IPdfObjectParser pdfObjectParser,
+            IFilterProvider filterProvider)
         {
             this.descriptorFactory = descriptorFactory;
             this.trueTypeFontParser = trueTypeFontParser;
+            this.pdfObjectParser = pdfObjectParser;
+            this.filterProvider = filterProvider;
         }
 
-        public ICidFont Generate(PdfDictionary dictionary, ParsingArguments arguments, bool isLenientParsing)
+        public ICidFont Generate(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
         {
             var type = dictionary.GetName(CosName.TYPE);
             if (!CosName.FONT.Equals(type))
@@ -37,12 +41,12 @@
             var verticalWritingMetrics = ReadVerticalDisplacements(dictionary);
 
             FontDescriptor descriptor = null;
-            if (TryGetFontDescriptor(dictionary, arguments, out var descriptorDictionary))
+            if (TryGetFontDescriptor(dictionary, reader, out var descriptorDictionary))
             {
-                descriptor = descriptorFactory.Generate(descriptorDictionary, arguments.IsLenientParsing);
+                descriptor = descriptorFactory.Generate(descriptorDictionary, isLenientParsing);
             }
 
-            ReadDescriptorFile(descriptor, arguments);
+            ReadDescriptorFile(descriptor, reader, isLenientParsing);
 
             var subType = dictionary.GetName(CosName.SUBTYPE);
             if (CosName.CID_FONT_TYPE0.Equals(subType))
@@ -58,8 +62,7 @@
             return null;
         }
 
-        private static bool TryGetFontDescriptor(PdfDictionary dictionary, ParsingArguments arguments,
-            out PdfDictionary descriptorDictionary)
+        private bool TryGetFontDescriptor(PdfDictionary dictionary, IRandomAccessRead reader, out PdfDictionary descriptorDictionary)
         {
             descriptorDictionary = null;
 
@@ -68,7 +71,7 @@
                 return false;
             }
 
-            var descriptorObj = arguments.Get<DynamicParser>().Parse(arguments, obj, false);
+            var descriptorObj = pdfObjectParser.Parse(obj.ToIndirectReference(), reader, false);
 
             if (!(descriptorObj is PdfDictionary descriptor))
             {
@@ -80,21 +83,21 @@
             return true;
         }
 
-        private void ReadDescriptorFile(FontDescriptor descriptor, ParsingArguments arguments)
+        private void ReadDescriptorFile(FontDescriptor descriptor, IRandomAccessRead reader, bool isLenientParsing)
         {
             if (descriptor?.FontFile == null)
             {
                 return;
             }
 
-            var fontFileStream = arguments.Get<DynamicParser>().Parse(arguments, descriptor.FontFile.ObjectKey, false) as RawCosStream;
+            var fontFileStream = pdfObjectParser.Parse(descriptor.FontFile.ObjectKey, reader, isLenientParsing) as RawCosStream;
 
             if (fontFileStream == null)
             {
                 return;
             }
 
-            var fontFile = fontFileStream.Decode(arguments.Get<IFilterProvider>());
+            var fontFile = fontFileStream.Decode(filterProvider);
             
             switch (descriptor.FontFile.FileType)
             {

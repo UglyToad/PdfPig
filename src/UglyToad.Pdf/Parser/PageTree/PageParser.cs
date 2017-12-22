@@ -1,57 +1,12 @@
 ﻿namespace UglyToad.Pdf.Parser.PageTree
 {
     using System;
-    using Content;
     using ContentStream;
     using ContentStream.TypedAccessors;
     using Cos;
     using Filters;
     using Fonts;
-
-    internal class PageParser
-    {
-        public Page Parse(int number, PdfDictionary dictionary, ParsingArguments arguments)
-        {
-            if (dictionary == null)
-            {
-                throw new ArgumentNullException(nameof(dictionary));
-            }
-
-            if (arguments == null)
-            {
-                throw new ArgumentNullException(nameof(arguments));
-            }
-
-            if (!dictionary.IsType(CosName.PAGE))
-            {
-                throw new InvalidOperationException("Expected a Dictionary of Type Page, instead got this: " + dictionary);
-            }
-
-            return new Page(number, dictionary, new PageTreeMembers(), arguments);
-        }
-    }
-
-    internal class FontParser
-    {
-        public Font Parse(PdfDictionary dictionary, ParsingArguments arguments)
-        {
-            var type = dictionary.GetName(CosName.SUBTYPE);
-
-            if (CosName.Equals(type, CosName.TYPE0))
-            {
-                var compositeFont = arguments.Container.Get<CompositeFontParser>()
-                    .Parse(dictionary, arguments);
-            }
-            else
-            {
-                var simpleFont = arguments.Container.Get<SimpleFontParser>()
-                    .Parse(dictionary, arguments);
-            }
-
-            return new Font();
-        }
-    }
-
+    
     internal class CompositeFontParser
     {
         public CompositeFont Parse(PdfDictionary dictionary, ParsingArguments arguments)

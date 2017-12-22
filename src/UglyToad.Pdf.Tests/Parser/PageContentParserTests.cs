@@ -13,15 +13,14 @@
 
     public class PageContentParserTests
     {
-        private readonly PageContentParser parser = new PageContentParser();
-        private readonly IGraphicsStateOperationFactory operationFactory = new ReflectionGraphicsStateOperationFactory();
+        private readonly PageContentParser parser = new PageContentParser(new ReflectionGraphicsStateOperationFactory());
 
         [Fact]
         public void CorrectlyExtractsOperations()
         {
             var input = StringBytesTestConverter.Convert(SimpleGoogleDocPageContent, false);
 
-            var result = parser.Parse(new ReflectionGraphicsStateOperationFactory(), input.Bytes);
+            var result = parser.Parse(input.Bytes);
         }
 
         [Fact]
@@ -36,7 +35,7 @@
 ET";
             var input = StringBytesTestConverter.Convert(s, false);
 
-            var result = parser.Parse(operationFactory, input.Bytes);
+            var result = parser.Parse(input.Bytes);
 
             Assert.Equal(7, result.Count);
 
@@ -72,7 +71,7 @@ ET";
 
             var input = StringBytesTestConverter.Convert(s, false);
 
-            var result = parser.Parse(operationFactory, input.Bytes);
+            var result = parser.Parse(input.Bytes);
 
             Assert.Equal(4, result.Count);
 

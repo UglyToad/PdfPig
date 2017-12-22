@@ -10,16 +10,12 @@
     internal interface IFont
     {
         CosName Name { get; }
-
-        CosName SubType { get; }
-
-        string BaseFontType { get; }
-
+        
         bool IsVertical { get; }
 
         int ReadCharacterCode(IInputBytes bytes, out int codeLength);
 
-        string GetUnicode(int characterCode);
+        bool TryGetUnicode(int characterCode, out string value);
 
         PdfVector GetDisplacement(int characterCode);
     }
@@ -49,6 +45,11 @@
             codeLength = bytes.CurrentOffset - current;
 
             return code;
+        }
+
+        public bool TryGetUnicode(int characterCode, out string value)
+        {
+            throw new NotImplementedException();
         }
 
         public string GetUnicode(int characterCode)

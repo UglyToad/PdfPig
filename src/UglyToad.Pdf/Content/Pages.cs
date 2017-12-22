@@ -6,26 +6,26 @@
     using ContentStream;
     using ContentStream.TypedAccessors;
     using Cos;
+    using IO;
     using Logging;
     using Parser;
-    using Parser.PageTree;
 
     public class Pages
     {
+        private readonly ILog log;
         private readonly Catalog catalog;
-        private readonly ParsingArguments arguments;
+        private readonly IPdfObjectParser pdfObjectParser;
+        private readonly IPageFactory pageFactory;
+        private readonly IRandomAccessRead reader;
+        private readonly bool isLenientParsing;
         private readonly PdfDictionary rootPageDictionary;
         private readonly Dictionary<int, PdfDictionary> locatedPages = new Dictionary<int, PdfDictionary>();
 
         public int Count { get; }
 
-        internal Pages(Catalog catalog, ParsingArguments arguments)
+        internal Pages(ILog log, Catalog catalog, IPdfObjectParser pdfObjectParser, IPageFactory pageFactory, 
+            IRandomAccessRead reader, bool isLenientParsing)
         {
-            if (arguments == null)
-            {
-                throw new ArgumentNullException(nameof(arguments));
-            }
-
             if (catalog == null)
             {
                 throw new ArgumentNullException(nameof(catalog));
@@ -38,9 +38,9 @@
                 throw new InvalidOperationException("No pages were present in the catalog for this PDF document");
             }
 
-            var pageObject = arguments.Container.Get<DynamicParser>().Parse(arguments, pages, false);
+            var pagesObject = pdfObjectParser.Parse(pages.ToIndirectReference(), reader, isLenientParsing);
 
-            if (!(pageObject is PdfDictionary catalogPageDictionary))
+            if (!(pagesObject is PdfDictionary catalogPageDictionary))
             {
                 throw new InvalidOperationException("Could not find the root pages object: " + pages);
             }
@@ -51,8 +51,12 @@
 
             Count = count;
 
+            this.log = log;
             this.catalog = catalog;
-            this.arguments = arguments;
+            this.pdfObjectParser = pdfObjectParser;
+            this.pageFactory = pageFactory;
+            this.reader = reader;
+            this.isLenientParsing = isLenientParsing;
         }
 
 
@@ -60,7 +64,8 @@
         {
             if (locatedPages.TryGetValue(pageNumber, out PdfDictionary targetPageDictionary))
             {
-                return new Page(pageNumber, targetPageDictionary, new PageTreeMembers(), arguments);
+                return pageFactory.Create(pageNumber, targetPageDictionary, new PageTreeMembers(), reader,
+                    isLenientParsing);
             }
 
             var observed = new List<int>();
@@ -73,8 +78,7 @@
                 throw new InvalidOperationException("Could not find the page with number: " + pageNumber);
             }
 
-            var page = arguments.Container.Get<PageParser>()
-                .Parse(pageNumber, targetPageDictionary, arguments);
+            var page = pageFactory.Create(pageNumber, targetPageDictionary, new PageTreeMembers(), reader, isLenientParsing);
 
             locatedPages[pageNumber] = targetPageDictionary;
 
@@ -108,8 +112,7 @@
 
             if (!type.Equals(CosName.PAGES))
             {
-                arguments.Container.Get<ILog>()
-                    .Warn("Did not find the expected type (Page or Pages) in dictionary: " + currentPageDictionary);
+                log.Warn("Did not find the expected type (Page or Pages) in dictionary: " + currentPageDictionary);
 
                 return false;
             }
@@ -120,7 +123,7 @@
             foreach (var kid in kids.OfType<CosObject>())
             {
                 // todo: exit early
-                var child = arguments.Container.Get<DynamicParser>().Parse(arguments, kid, false) as PdfDictionary;
+                var child = pdfObjectParser.Parse(kid.ToIndirectReference(), reader, isLenientParsing) as PdfDictionary;
 
                 var thisPageMatches = FindPage(child, soughtPageNumber, pageNumbersObserved);
 

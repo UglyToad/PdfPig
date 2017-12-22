@@ -9,7 +9,14 @@
 
     internal class PageContentParser : IPageContentParser
     {
-        public IReadOnlyList<IGraphicsStateOperation> Parse(IGraphicsStateOperationFactory operationFactory, IInputBytes inputBytes)
+        private readonly IGraphicsStateOperationFactory operationFactory;
+
+        public PageContentParser(IGraphicsStateOperationFactory operationFactory)
+        {
+            this.operationFactory = operationFactory;
+        }
+
+        public IReadOnlyList<IGraphicsStateOperation> Parse(IInputBytes inputBytes)
         {
             var scanner = new CoreTokenScanner(inputBytes);
 
