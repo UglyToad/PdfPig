@@ -52,6 +52,8 @@
                                 WriteData(asciiBuffer, index, writer);
                             }
 
+                            index = 0;
+
                             // The end
                             break;
                         }
@@ -86,6 +88,11 @@
                         WriteData(asciiBuffer, index, writer);
                         index = 0;
                     }
+                }
+
+                if (index > 0)
+                {
+                    WriteData(asciiBuffer, index, writer);
                 }
 
                 writer.Flush();
