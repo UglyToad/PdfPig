@@ -41,6 +41,10 @@
                 {
                     ParseDescendant(descendantFontDictionary, reader, isLenientParsing);
                 }
+                else
+                {
+                    throw new InvalidFontFormatException("Expected to find a Descendant Font dictionary, instead it was: " + parsed);
+                }
             }
             else
             {
@@ -68,7 +72,7 @@
 
             return font;
         }
-        
+
         private static bool TryGetFirstDescendant(PdfDictionary dictionary, out CosObject descendant)
         {
             descendant = null;
