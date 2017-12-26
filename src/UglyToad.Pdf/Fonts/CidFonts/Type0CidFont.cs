@@ -14,5 +14,6 @@
         public CosName BaseFont { get; }
         public CharacterIdentifierSystemInfo SystemInfo { get; }
         public CidFontType CidFontType => CidFontType.Type0;
+        public FontDescriptor Descriptor { get; }
     }
 }

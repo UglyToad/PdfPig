@@ -34,5 +34,7 @@
         CharacterIdentifierSystemInfo SystemInfo { get; }
 
         CidFontType CidFontType { get; }
+
+        FontDescriptor Descriptor { get; }
     }
 }
