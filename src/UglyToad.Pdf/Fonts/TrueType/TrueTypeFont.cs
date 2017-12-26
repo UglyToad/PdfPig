@@ -1,9 +1,10 @@
-﻿namespace UglyToad.Pdf.Fonts.TrueType.Parser
+﻿namespace UglyToad.Pdf.Fonts.TrueType
 {
     using System.Collections.Generic;
+    using CidFonts;
     using Tables;
 
-    internal class TrueTypeFont
+    internal class TrueTypeFont : ICidFontProgram
     {
         public decimal Version { get; }
 

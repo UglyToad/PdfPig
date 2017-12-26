@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.Pdf.Fonts.CidFonts
 {
+    using System.Collections.Generic;
     using Cos;
-    using TrueType.Parser;
 
     /// <inheritdoc />
     /// <summary>
@@ -10,7 +10,10 @@
     /// </summary>
     internal class Type2CidFont : ICidFont
     {
-        private readonly TrueTypeFont fontProgram;
+        private readonly ICidFontProgram fontProgram;
+        private readonly VerticalWritingMetrics verticalWritingMetrics;
+        private readonly IReadOnlyDictionary<int, decimal> widths;
+
         public CosName Type { get; }
         public CosName SubType { get; }
         public CosName BaseFont { get; }
@@ -18,7 +21,10 @@
         public CidFontType CidFontType => CidFontType.Type2;
         public FontDescriptor Descriptor { get; }
 
-        public Type2CidFont(CosName type, CosName subType, CosName baseFont, CharacterIdentifierSystemInfo systemInfo, FontDescriptor descriptor, TrueTypeFont fontProgram)
+        public Type2CidFont(CosName type, CosName subType, CosName baseFont, CharacterIdentifierSystemInfo systemInfo, 
+            FontDescriptor descriptor, ICidFontProgram fontProgram,
+            VerticalWritingMetrics verticalWritingMetrics,
+            IReadOnlyDictionary<int, decimal> widths)
         {
             Type = type;
             SubType = subType;
@@ -26,6 +32,8 @@
             SystemInfo = systemInfo;
             Descriptor = descriptor;
             this.fontProgram = fontProgram;
+            this.verticalWritingMetrics = verticalWritingMetrics;
+            this.widths = widths;
         }
     }
 }

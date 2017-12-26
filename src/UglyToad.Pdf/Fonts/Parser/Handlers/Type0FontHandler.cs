@@ -33,13 +33,15 @@
 
             var cMap = ReadEncoding(dictionary, out var isCMapPredefined);
 
+            ICidFont cidFont;
+
             if (TryGetFirstDescendant(dictionary, out var descendantObject))
             {
                 var parsed = pdfObjectParser.Parse(descendantObject.ToIndirectReference(), reader, isLenientParsing);
 
                 if (parsed is PdfDictionary descendantFontDictionary)
                 {
-                    ParseDescendant(descendantFontDictionary, reader, isLenientParsing);
+                    cidFont = ParseDescendant(descendantFontDictionary, reader, isLenientParsing);
                 }
                 else
                 {
@@ -68,7 +70,7 @@
                 }
             }
 
-            var font = new Type0Font(baseFont, new Type0CidFont(), cMap, toUnicodeCMap);
+            var font = new Type0Font(baseFont, cidFont, cMap, toUnicodeCMap);
 
             return font;
         }
@@ -97,15 +99,17 @@
             return false;
         }
 
-        private void ParseDescendant(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        private ICidFont ParseDescendant(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
         {
             var type = dictionary.GetName(CosName.TYPE);
             if (!CosName.FONT.Equals(type))
             {
-                throw new InvalidOperationException($"Expected \'Font\' dictionary but found \'{type.Name}\'");
+                throw new InvalidFontFormatException($"Expected \'Font\' dictionary but found \'{type.Name}\'");
             }
 
-            cidFontFactory.Generate(dictionary, reader, isLenientParsing);
+            var result = cidFontFactory.Generate(dictionary, reader, isLenientParsing);
+
+            return result;
         }
 
         private CMap ReadEncoding(PdfDictionary dictionary, out bool isCMapPredefined)

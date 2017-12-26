@@ -4,7 +4,9 @@
     using System.Collections.Generic;
     using CidFonts;
     using ContentStream;
+    using ContentStream.TypedAccessors;
     using Cos;
+    using Exceptions;
     using Filters;
     using Geometry;
     using IO;
@@ -34,7 +36,7 @@
             var type = dictionary.GetName(CosName.TYPE);
             if (!CosName.FONT.Equals(type))
             {
-                throw new InvalidOperationException($"Expected \'Font\' dictionary but found \'{type.Name}\'");
+                throw new InvalidFontFormatException($"Expected \'Font\' dictionary but found \'{type.Name}\'");
             }
 
             var widths = ReadWidths(dictionary);
@@ -46,7 +48,11 @@
                 descriptor = descriptorFactory.Generate(descriptorDictionary, isLenientParsing);
             }
 
-            ReadDescriptorFile(descriptor, reader, isLenientParsing);
+            var fontProgram = ReadDescriptorFile(descriptor, reader, isLenientParsing);
+
+            var baseFont = dictionary.GetName(CosName.BASE_FONT);
+
+            var systemInfo = GetSystemInfo(dictionary);
 
             var subType = dictionary.GetName(CosName.SUBTYPE);
             if (CosName.CID_FONT_TYPE0.Equals(subType))
@@ -56,7 +62,7 @@
 
             if (CosName.CID_FONT_TYPE2.Equals(subType))
             {
-                //return new PDCIDFontType2(dictionary, parent);
+                return new Type2CidFont(type, subType, baseFont, systemInfo, descriptor, fontProgram, verticalWritingMetrics, widths);
             }
 
             return null;
@@ -83,18 +89,18 @@
             return true;
         }
 
-        private void ReadDescriptorFile(FontDescriptor descriptor, IRandomAccessRead reader, bool isLenientParsing)
+        private ICidFontProgram ReadDescriptorFile(FontDescriptor descriptor, IRandomAccessRead reader, bool isLenientParsing)
         {
             if (descriptor?.FontFile == null)
             {
-                return;
+                return null;
             }
 
             var fontFileStream = pdfObjectParser.Parse(descriptor.FontFile.ObjectKey, reader, isLenientParsing) as PdfRawStream;
 
             if (fontFileStream == null)
             {
-                return;
+                return null;
             }
 
             var fontFile = fontFileStream.Decode(filterProvider);
@@ -103,8 +109,7 @@
             {
                 case DescriptorFontFile.FontFileType.TrueType:
                     var input = new TrueTypeDataBytes(new ByteArrayInputBytes(fontFile));
-                    trueTypeFontParser.Parse(input);
-                    break;
+                    return trueTypeFontParser.Parse(input);
                 default:
                     throw new NotSupportedException("Currently only TrueType fonts are supported.");
             }
@@ -210,6 +215,20 @@
             }
 
             return new VerticalWritingMetrics(dw2, verticalDisplacements, positionVectors);
+        }
+
+        private static CharacterIdentifierSystemInfo GetSystemInfo(PdfDictionary dictionary)
+        {
+            if(!dictionary.TryGetItemOfType(CosName.CIDSYSTEMINFO, out PdfDictionary cidDictionary))
+            {
+                throw new InvalidFontFormatException($"No CID System Info was found in the CID Font dictionary: " + dictionary);
+            }
+
+            var registry = (CosString) cidDictionary.GetItemOrDefault(CosName.REGISTRY);
+            var ordering = (CosString)cidDictionary.GetItemOrDefault(CosName.ORDERING);
+            var supplement = cidDictionary.GetIntOrDefault(CosName.SUPPLEMENT, 0);
+
+            return new CharacterIdentifierSystemInfo(registry.GetAscii(), ordering.GetAscii(), supplement);
         }
     }
 }

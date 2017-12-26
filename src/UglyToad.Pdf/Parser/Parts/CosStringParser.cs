@@ -168,6 +168,7 @@
                 {
                     seqSource.Unread(c);
                 }
+                writer.Flush();
                 return new CosString(memoryStream.ToArray());
             }
         }
