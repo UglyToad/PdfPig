@@ -58,7 +58,7 @@
             {
                 var toUnicodeValue = dictionary[CosName.TO_UNICODE];
 
-                var toUnicode = pdfObjectParser.Parse(((CosObject)toUnicodeValue).ToIndirectReference(), reader, isLenientParsing) as RawCosStream;
+                var toUnicode = pdfObjectParser.Parse(((CosObject)toUnicodeValue).ToIndirectReference(), reader, isLenientParsing) as PdfRawStream;
 
                 var decodedUnicodeCMap = toUnicode?.Decode(filterProvider);
 
@@ -123,7 +123,7 @@
 
                     isCMapPredefined = true;
                 }
-                else if (value is RawCosStream stream)
+                else if (value is PdfRawStream stream)
                 {
                     var decoded = stream.Decode(filterProvider);
 

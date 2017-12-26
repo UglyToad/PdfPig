@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using ContentStream;
     using ContentStream.TypedAccessors;
     using Cos;
     using Filters;
@@ -22,7 +23,7 @@
             this.baseParser = baseParser;
         }
 
-        public IReadOnlyList<CosObject> Parse(RawCosStream stream, CosObjectPool pool)
+        public IReadOnlyList<CosObject> Parse(PdfRawStream stream, CosObjectPool pool)
         {
             if (stream == null)
             {

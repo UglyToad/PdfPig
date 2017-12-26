@@ -90,7 +90,7 @@
                 return;
             }
 
-            var fontFileStream = pdfObjectParser.Parse(descriptor.FontFile.ObjectKey, reader, isLenientParsing) as RawCosStream;
+            var fontFileStream = pdfObjectParser.Parse(descriptor.FontFile.ObjectKey, reader, isLenientParsing) as PdfRawStream;
 
             if (fontFileStream == null)
             {

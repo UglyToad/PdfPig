@@ -2,6 +2,7 @@
 {
     using System.Collections.Generic;
     using System.IO;
+    using ContentStream;
     using ContentStream.TypedAccessors;
     using Cos;
     using Filters;
@@ -18,15 +19,15 @@
         /// <summary>
         /// Parses through the unfiltered stream and populates the xrefTable HashMap.
         /// </summary>
-        public CrossReferenceTablePart Parse(long streamOffset, RawCosStream cosStream)
+        public CrossReferenceTablePart Parse(long streamOffset, PdfRawStream stream)
         {
-            var w = cosStream.Dictionary.GetDictionaryObject(CosName.W);
+            var w = stream.Dictionary.GetDictionaryObject(CosName.W);
             if (!(w is COSArray format))
             {
                 throw new IOException("/W array is missing in Xref stream");
             }
             
-            var objNums = GetObjectNumbers(cosStream);
+            var objNums = GetObjectNumbers(stream);
 
             /*
              * Calculating the size of the line in bytes
@@ -36,7 +37,7 @@
             int w2 = format.getInt(2);
             int lineSize = w0 + w1 + w2;
 
-            var decoded = cosStream.Decode(filterProvider);
+            var decoded = stream.Decode(filterProvider);
 
             var lineCount = decoded.Length / lineSize;
             var lineNumber = 0;
@@ -44,8 +45,8 @@
             var builder = new CrossReferenceTablePartBuilder
             {
                 Offset = streamOffset,
-                Previous = cosStream.Dictionary.GetLongOrDefault(CosName.PREV),
-                Dictionary = cosStream.Dictionary,
+                Previous = stream.Dictionary.GetLongOrDefault(CosName.PREV),
+                Dictionary = stream.Dictionary,
                 XRefType = CrossReferenceType.Stream
             };
 
@@ -141,16 +142,16 @@
             return builder.AsCrossReferenceTablePart();
         }
 
-        private static List<long> GetObjectNumbers(RawCosStream cosStream)
+        private static List<long> GetObjectNumbers(PdfRawStream stream)
         {
-            var indexArray = (COSArray) cosStream.Dictionary.GetDictionaryObject(CosName.INDEX);
+            var indexArray = (COSArray) stream.Dictionary.GetDictionaryObject(CosName.INDEX);
             
             // If Index doesn't exist, we will use the default values.
             if (indexArray == null)
             {
                 indexArray = new COSArray();
                 indexArray.add(CosInt.Zero);
-                indexArray.add(cosStream.Dictionary.GetDictionaryObject(CosName.SIZE));
+                indexArray.add(stream.Dictionary.GetDictionaryObject(CosName.SIZE));
             }
 
             List<long> objNums = new List<long>();

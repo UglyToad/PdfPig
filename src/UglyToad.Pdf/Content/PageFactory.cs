@@ -77,7 +77,7 @@
             var contentObject = dictionary.GetItemOrDefault(CosName.CONTENTS) as CosObject;
             if (contentObject != null)
             {
-                var contentStream = pdfObjectParser.Parse(contentObject.ToIndirectReference(), reader, false) as RawCosStream;
+                var contentStream = pdfObjectParser.Parse(contentObject.ToIndirectReference(), reader, false) as PdfRawStream;
 
                 if (contentStream == null)
                 {

@@ -142,7 +142,7 @@
         {
             if (currentBase is PdfDictionary dictionary)
             {
-                RawCosStream stream = streamParser.Parse(reader, dictionary, isLenientParsing);
+                PdfRawStream stream = streamParser.Parse(reader, dictionary, isLenientParsing);
 
                 currentBase = stream;
             }
@@ -176,7 +176,7 @@
         {
             var baseStream = Parse(new IndirectReference(streamObjectNumber, 0), reader, isLenientParsing, true);
 
-            if (!(baseStream is RawCosStream stream))
+            if (!(baseStream is PdfRawStream stream))
             {
                 log.Warn($"Could not find a stream for the object number, defaults to returning CosNull: {streamObjectNumber}");
 

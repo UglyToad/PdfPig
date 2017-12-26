@@ -1,14 +1,14 @@
-﻿namespace UglyToad.Pdf.Cos
+﻿namespace UglyToad.Pdf.ContentStream
 {
     using System;
-    using ContentStream;
+    using Cos;
     using Filters;
 
-    internal class RawCosStream : CosBase
+    internal class PdfRawStream : CosBase
     {
         private static readonly object Lock = new object();
 
-        public readonly byte[] streamBytes;
+        private readonly byte[] streamBytes;
 
         private byte[] decodedBytes;
 
@@ -17,7 +17,7 @@
         /// <summary>
         /// Combines the dictionary for the stream with the raw, encoded/filtered bytes.
         /// </summary>
-        public RawCosStream(byte[] streamBytes, PdfDictionary streamDictionary)
+        public PdfRawStream(byte[] streamBytes, PdfDictionary streamDictionary)
         {
             this.streamBytes = streamBytes;
 

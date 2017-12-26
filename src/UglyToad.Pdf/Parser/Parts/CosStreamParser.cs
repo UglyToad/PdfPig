@@ -32,9 +32,9 @@
             this.log = log;
         }
 
-        public RawCosStream Parse(IRandomAccessRead reader, PdfDictionary streamDictionary, bool isLenientParsing)
+        public PdfRawStream Parse(IRandomAccessRead reader, PdfDictionary streamDictionary, bool isLenientParsing)
         {
-            RawCosStream result;
+            PdfRawStream result;
 
             // read 'stream'; this was already tested in parseObjectsDynamically()
             ReadHelper.ReadExpectedString(reader, "stream");
@@ -59,7 +59,7 @@
                     ReadUntilEndStream(reader, writer);
                 }
 
-                result = new RawCosStream(stream.ToArray(), streamDictionary);
+                result = new PdfRawStream(stream.ToArray(), streamDictionary);
             }
 
             String endStream = ReadHelper.ReadString(reader);
