@@ -78,16 +78,7 @@
          * @throws IOException If there is an error while visiting this object.
          */
         object VisitFromNull(CosNull obj);
-
-        /**
-         * Notification of visit to stream object.
-         *
-         * @param obj The Object that is being visited.
-         * @return any Object depending on the visitor implementation, or null
-         * @throws IOException If there is an error while visiting this object.
-         */
-        object VisitFromStream(COSStream obj);
-
+        
         /**
          * Notification of visit to string object.
          *

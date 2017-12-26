@@ -45,12 +45,7 @@
          * Maps object and generation id to object byte offsets.
          */
         private readonly Dictionary<CosObjectKey, long> xrefTable = new Dictionary<CosObjectKey, long>();
-
-        /**
-         * List containing all streams which are created when creating a new pdf. 
-         */
-        private readonly List<COSStream> streams = new List<COSStream>();
-
+        
         /**
          * Document trailer dictionary.
          */
@@ -64,38 +59,6 @@
 
         private bool closed = false;
         
-        /**
-         * Creates a new COSStream using the current configuration for scratch files.
-         * 
-         * @return the new COSStream
-         */
-        public COSStream createCOSStream()
-        {
-            COSStream stream = new COSStream();
-            // collect all COSStreams so that they can be closed when closing the COSDocument.
-            // This is limited to newly created pdfs as all COSStreams of an existing pdf are
-            // collected within the map objectPool
-            streams.Add(stream);
-            return stream;
-        }
-
-        /**
-         * Creates a new COSStream using the current configuration for scratch files.
-         * Not for public use. Only COSParser should call this method.
-         *
-         * @param dictionary the corresponding dictionary
-         * @return the new COSStream
-         */
-        public COSStream createCOSStream(CosDictionary dictionary)
-        {
-            var stream = new COSStream();
-            foreach (var entry in dictionary.entrySet())
-            {
-                stream.setItem(entry.Key, entry.Value);
-            }
-            return stream;
-        }
-
         /**
          * This will get the first dictionary object by type.
          *
@@ -353,14 +316,6 @@
                 foreach (CosObject obj in getObjects())
                 {
                     CosBase cosObject = obj.GetObject();
-                    if (cosObject is COSStream stream)
-                    {
-                        stream.Dispose();
-                    }
-                }
-                foreach (COSStream stream in streams)
-                {
-                    stream.Dispose();
                 }
                 closed = true;
             }
@@ -402,32 +357,6 @@
         public void setWarnMissingClose(bool warn)
         {
             this.warnMissingClose = warn;
-        }
-
-        /**
-         * This method will search the list of objects for types of ObjStm.  If it finds
-         * them then it will parse out all of the objects from the stream that is contains.
-         *
-         * @throws IOException If there is an error parsing the stream.
-         */
-        internal void dereferenceObjectStreams(CosBaseParser baseParser, CosObjectPool pool)
-        {
-            foreach (CosObject objStream in getObjectsByType(CosName.OBJ_STM))
-            {
-                COSStream stream = (COSStream)objStream.GetObject();
-                PDFObjectStreamParser parser = new PDFObjectStreamParser(stream, this);
-                parser.parse(baseParser, pool);
-                foreach (CosObject next in parser.getObjects())
-                {
-                    CosObjectKey key = new CosObjectKey(next);
-                    if (!objectPool.TryGetValue(key, out CosObject target) || target?.GetObject() == null
-                        || (xrefTable.ContainsKey(key) && xrefTable[key] == -objStream.GetObjectNumber()))
-                    {
-                        CosObject obj = getObjectFromPool(key);
-                        obj.SetObject(next.GetObject());
-                    }
-                }
-            }
         }
 
         /**
