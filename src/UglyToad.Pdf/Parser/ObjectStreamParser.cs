@@ -37,9 +37,7 @@
             var streamObjects = new List<CosObject>(numberOfObjects);
 
             var bytes = stream.Decode(filterProvider);
-
-            var text = UglyToad.Pdf.Util.OtherEncodings.BytesAsLatin1String(bytes);
-
+            
             var reader = new RandomAccessBuffer(bytes);
 
             for (int i = 0; i < numberOfObjects; i++)
