@@ -35,5 +35,20 @@
             this.verticalWritingMetrics = verticalWritingMetrics;
             this.widths = widths;
         }
+
+        public decimal GetWidthFromFont(int characterCode)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public decimal GetWidthFromDictionary(int cid)
+        {
+            if (widths.TryGetValue(cid, out var width))
+            {
+                return width;
+            }
+
+            return Descriptor.MissingWidth;
+        }
     }
 }

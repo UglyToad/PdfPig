@@ -15,5 +15,7 @@
         bool TryGetUnicode(int characterCode, out string value);
 
         PdfVector GetDisplacement(int characterCode);
+
+        decimal GetWidth(int characterCode);
     }
 }

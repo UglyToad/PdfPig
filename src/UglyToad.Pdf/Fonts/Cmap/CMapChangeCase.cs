@@ -6,21 +6,36 @@
     using IO;
     using Util.JetBrains.Annotations;
 
+    /// <summary>
+    /// The CMap (character code map) maps character codes to character identifiers (CIDs).
+    /// The set of characters which a CMap refers to is the "character set" (charset).
+    /// </summary>
     internal class CMap
     {
         public CharacterIdentifierSystemInfo Info { get; }
 
+        /// <summary>
+        /// Defines the type of the internal organization of the CMap file.
+        /// </summary>
         public int Type { get; }
 
-        public int WMode { get; }
-
+        /// <summary>
+        /// Defines the name of the CMap file.
+        /// </summary>
         public string Name { get; }
 
+        /// <summary>
+        /// The version number of the CIDFont file.
+        /// </summary>
+        [CanBeNull]
         public string Version { get; }
 
         [NotNull]
         public IReadOnlyDictionary<int, string> BaseFontCharacterMap { get; }
 
+        /// <summary>
+        /// Describes the set of valid input character codes.
+        /// </summary>
         [NotNull]
         public IReadOnlyList<CodespaceRange> CodespaceRanges { get; }
 
@@ -30,6 +45,9 @@
         [NotNull]
         public IReadOnlyList<CidCharacterMapping> CidCharacterMappings { get; }
 
+        /// <summary>
+        /// Controls whether the font associated with the CMap writes horizontally or vertically.
+        /// </summary>
         public WritingMode WritingMode { get; }
 
         public bool HasCidMappings => CidCharacterMappings.Count > 0 || CidRanges.Count > 0;
@@ -53,15 +71,6 @@
             maxCodeLength = CodespaceRanges.Max(x => x.CodeLength);
             minCodeLength = CodespaceRanges.Min(x => x.CodeLength);
         }
-        
-        private string cmapName = null;
-        private string cmapVersion = null;
-        private int cmapType = -1;
-
-        private string registry = null;
-        private string ordering = null;
-        private int supplement = 0;
-
         
         // CID mappings
         private readonly Dictionary<int, int> codeToCid = new Dictionary<int, int>();
@@ -111,7 +120,7 @@
         
         public override string ToString()
         {
-            return cmapName;
+            return Name;
         }
 
         public int ReadCode(IInputBytes bytes)
@@ -130,7 +139,7 @@
                 int byteCount = i + 1;
                 foreach (CodespaceRange range in CodespaceRanges)
                 {
-                    if (range.isFullMatch(result, byteCount))
+                    if (range.IsFullMatch(result, byteCount))
                     {
                         return ByteArrayToInt(result, byteCount);
                     }

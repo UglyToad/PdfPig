@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.Pdf.Fonts.CidFonts
 {
-    using Cmap;
     using Cos;
 
     /// <summary>
@@ -36,5 +35,9 @@
         CidFontType CidFontType { get; }
 
         FontDescriptor Descriptor { get; }
+
+        decimal GetWidthFromFont(int characterCode);
+
+        decimal GetWidthFromDictionary(int cid);
     }
 }

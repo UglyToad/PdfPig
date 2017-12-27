@@ -41,7 +41,7 @@
         {
             var current = bytes.CurrentOffset;
 
-            var code = ToUnicode.ReadCode(bytes);
+            var code = CMap.ReadCode(bytes);
 
             codeLength = bytes.CurrentOffset - current;
 
@@ -70,7 +70,19 @@
 
         public PdfVector GetDisplacement(int characterCode)
         {
-            return new PdfVector(0.333m, 0);
+            // This width is in units scaled up by 1000
+            var width = GetWidth(characterCode);
+
+            return new PdfVector(width / 1000, 0);
+        }
+
+        public decimal GetWidth(int characterCode)
+        {
+            var cid = CMap.ConvertToCid(characterCode);
+
+            var fromFont = CidFont.GetWidthFromDictionary(cid);
+            
+            return fromFont;
         }
     }
 }

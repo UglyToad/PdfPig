@@ -15,5 +15,15 @@
         public CharacterIdentifierSystemInfo SystemInfo { get; }
         public CidFontType CidFontType => CidFontType.Type0;
         public FontDescriptor Descriptor { get; }
+
+        public decimal GetWidthFromFont(int characterCode)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public decimal GetWidthFromDictionary(int cid)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

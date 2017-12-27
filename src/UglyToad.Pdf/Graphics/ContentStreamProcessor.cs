@@ -87,6 +87,8 @@
 
                 font.TryGetUnicode(code, out var unicode);
 
+                var width = font.GetWidth(code);
+
                 var wordSpacing = 0m;
                 if (code == ' ' && codeLength == 1)
                 {
@@ -97,7 +99,7 @@
 
                 if (font.IsVertical)
                 {
-                    throw new NotImplementedException("Vertical fonts are currently unsupported, please submit a pull request.");
+                    throw new NotImplementedException("Vertical fonts are currently unsupported, please submit a pull request or issue with an example file.");
                 }
 
                 var displacement = font.GetDisplacement(code);

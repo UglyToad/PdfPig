@@ -3,7 +3,7 @@
     using CidFonts;
 
     /// <summary>
-    /// Specifies the character collection associated with the <see cref="CharacterIdentifierFont"/> (CIDFont).
+    /// Specifies the character collection associated with the <see cref="ICidFont"/> (CIDFont).
     /// </summary>
     public struct CharacterIdentifierSystemInfo
     {
