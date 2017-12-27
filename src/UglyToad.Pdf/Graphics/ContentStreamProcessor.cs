@@ -20,7 +20,7 @@
 
         public int StackSize => graphicsStack.Count;
         
-        public List<string> Texts = new List<string>();
+        public List<Letter> Letters = new List<Letter>();
 
         public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore)
         {
@@ -37,7 +37,7 @@
             return new PageContent
             {
                 GraphicsStateOperations = operations,
-                Text = Texts
+                Letters = Letters
             };
         }
 
@@ -87,8 +87,6 @@
 
                 font.TryGetUnicode(code, out var unicode);
 
-                var width = font.GetWidth(code);
-
                 var wordSpacing = 0m;
                 if (code == ' ' && codeLength == 1)
                 {
@@ -104,7 +102,7 @@
 
                 var displacement = font.GetDisplacement(code);
 
-                ShowGlyph(renderingMatrix, font, code, unicode, displacement);
+                ShowGlyph(renderingMatrix, font, code, unicode, displacement, fontSize);
 
                 decimal tx, ty;
                 if (font.IsVertical)
@@ -124,15 +122,13 @@
             }
         }
 
-        private void ShowGlyph(TransformationMatrix renderingMatrix, IFont font, 
-            int characterCode, string unicode, PdfVector displacement)
+        private void ShowGlyph(TransformationMatrix renderingMatrix, IFont font, int characterCode, string unicode, PdfVector displacement, decimal fontSize)
         {
-            if (unicode.Length == 1 && (unicode[0] == '\0' || unicode[0] == '\u200B'))
-            {
-                return;
-            }
             var location = new PdfPoint(renderingMatrix.E, renderingMatrix.F);
-            Texts.Add(unicode);
+
+            var letter = new Letter(unicode, location, displacement.X, fontSize, font.Name.Name);
+
+            Letters.Add(letter);
         }
     }
 }

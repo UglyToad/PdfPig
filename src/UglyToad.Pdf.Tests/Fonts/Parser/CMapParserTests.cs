@@ -102,6 +102,27 @@ end";
             Assert.NotNull(cmap);
         }
 
+        [Fact]
+        public void CanParseIdentityHorizontalCMap()
+        {
+            var input = new ByteArrayInputBytes(ReadResourceBytes("UglyToad.Pdf.Resources.CMap.Identity-H"));
+
+            var cmap = cMapParser.Parse(input, false);
+
+            Assert.Equal(1, cmap.CodespaceRanges.Count);
+
+            var range = cmap.CodespaceRanges[0];
+
+            Assert.Equal(0, range.StartInt);
+            Assert.Equal(65535, range.EndInt);
+
+            Assert.Equal(2, range.CodeLength);
+
+            Assert.Equal(256, cmap.CidRanges.Count);
+            
+            Assert.Equal("10.003", cmap.Version);
+        }
+
         private static byte[] ReadResourceBytes(string name)
         {
             using (var resource = typeof(CMapParser).Assembly.GetManifestResourceStream(name))
@@ -119,7 +140,7 @@ end";
 
             foreach (var resource in resources)
             {
-                if (resource.Contains(".CMap."))
+                if (resource.Contains(".CMap.") && !resource.EndsWith("Identity-H"))
                 {
                     yield return new object[] {resource};
                 }

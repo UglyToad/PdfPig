@@ -14,7 +14,7 @@
 
         internal PageContent Content { get; }
 
-        public IReadOnlyList<string> Text => Content?.Text ?? new string[0];
+        public IReadOnlyList<Letter> Text => Content?.Letters ?? new Letter[0];
 
         internal Page(int number, MediaBox mediaBox, PageContent content)
         {

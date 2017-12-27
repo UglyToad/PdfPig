@@ -56,7 +56,7 @@
                 var page = document.Pages.GetPage(1);
                 Assert.Equal(1, page.Number);
 
-                var text = string.Join(string.Empty, page.Content.Text);
+                var text = string.Join(string.Empty, page.Content.Letters.Select(x => x.Value)).Replace("\u200B", string.Empty);
 
                 Assert.Equal("This is the document title There is some lede text here And then another line of text.".Replace(" ", string.Empty), text.Replace(" ", string.Empty));
             }

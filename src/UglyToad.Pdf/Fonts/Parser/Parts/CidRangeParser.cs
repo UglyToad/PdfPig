@@ -1,8 +1,7 @@
 ﻿namespace UglyToad.Pdf.Fonts.Parser.Parts
 {
-    using System;
-    using System.Collections.Generic;
     using Cmap;
+    using Exceptions;
     using Tokenization.Scanner;
     using Tokenization.Tokens;
 
@@ -10,37 +9,30 @@
     {
         public void Parse(NumericToken numeric, ITokenScanner scanner, CharacterMapBuilder builder, bool isLenientParsing)
         {
-            var ranges = new List<CidRange>();
-
             for (var i = 0; i < numeric.Int; i++)
             {
                 if (!scanner.TryReadToken(out HexToken startHexToken))
                 {
-                    // TODO: message
-                    throw new InvalidOperationException();
+                    throw new InvalidFontFormatException("Could not find the starting hex token for the CIDRange in this font.");
                 }
 
                 if (!scanner.TryReadToken(out HexToken endHexToken))
                 {
-                    // TODO: message
-                    throw new InvalidOperationException();
+                    throw new InvalidFontFormatException("Could not find the end hex token for the CIDRange in this font.");
                 }
 
                 if (!scanner.TryReadToken(out NumericToken mappedCode))
                 {
-                    // TODO: message
-                    throw new InvalidOperationException();
+                    throw new InvalidFontFormatException("Could not find the starting CID numeric token for the CIDRange in this font.");
                 }
 
                 var start = HexToken.ConvertHexBytesToInt(startHexToken);
                 var end = HexToken.ConvertHexBytesToInt(endHexToken);
 
-                var range = new CidRange((char)start, (char)end, mappedCode.Int);
+                var range = new CidRange(start, end, mappedCode.Int);
 
-                ranges.Add(range);
+                builder.AddCidRange(range);
             }
-
-            builder.CidRanges = ranges;
         }
     }
 }

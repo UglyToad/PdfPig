@@ -1,48 +1,77 @@
 ﻿namespace UglyToad.Pdf.Fonts.Cmap
 {
-    public class CidRange
+    using System;
+
+    /// <summary>
+    /// Associates the beginning and end of a range of character codes with the starting CID for the range.
+    /// </summary>
+    public struct CidRange
     {
-        private readonly char from;
+        /// <summary>
+        /// The beginning of the range of character codes.
+        /// </summary>
+        private readonly int firstCharacterCode;
 
-        private readonly char to;
+        /// <summary>
+        /// The end of the range of character codes.
+        /// </summary>
+        private readonly int lastCharacterCode;
 
+        /// <summary>
+        /// The CID associated with the beginning character code.
+        /// </summary>
         private readonly int cid;
 
-        public CidRange(char from, char to, int cid)
+        /// <summary>
+        /// Creates a new <see cref="CidRange"/> to associate a range of character codes to a range of CIDs.
+        /// </summary>
+        /// <param name="firstCharacterCode">The first character code in the range.</param>
+        /// <param name="lastCharacterCode">The last character code in the range.</param>
+        /// <param name="cid">The first CID for the range.</param>
+        public CidRange(int firstCharacterCode, int lastCharacterCode, int cid)
         {
-            this.from = from;
-            this.to = to;
+            if (lastCharacterCode < firstCharacterCode)
+            {
+                throw new ArgumentOutOfRangeException(nameof(lastCharacterCode), "The last character code cannot be lower than the first character code: " +
+                                                                                 $"First: {firstCharacterCode}, Last: {lastCharacterCode}, CID: {cid}");
+            }
+
+            this.firstCharacterCode = firstCharacterCode;
+            this.lastCharacterCode = lastCharacterCode;
             this.cid = cid;
         }
 
         /// <summary>
-        /// Maps the given Unicode character to the corresponding CID in this range.
+        /// Determines if this <see cref="CidRange"/> contains a mapping for the character code.
         /// </summary>
-        /// <param name="ch">Unicode character</param>
-        /// <returns>corresponding CID, or -1 if the character is out of range</returns>
-        public int Map(char ch)
+        public bool Contains(int characterCode)
         {
-            if (from <= ch && ch <= to)
-            {
-                return cid + (ch - from);
-            }
-            return -1;
+            return firstCharacterCode <= characterCode && characterCode <= lastCharacterCode;
         }
 
         /// <summary>
-        /// Maps the given CID to the corresponding Unicode character in this range.
+        /// Attempts to map the given character code to the corresponding CID in this range.
         /// </summary>
-        /// <param name="code">CID</param>
-        /// <returns>corresponding Unicode character, or -1 if the CID is out of range</returns>
-        public int Unmap(int code)
+        /// <param name="characterCode">Character code</param>
+        /// <param name="cidValue">The CID if found.</param>
+        /// <returns><see langword="true"/> if the character code maps to a CID in this range or <see langword="false"/> if the character is out of range.</returns>
+        public bool TryMap(int characterCode, out int cidValue)
         {
-            if (cid <= code && code <= cid + (to - from))
+            cidValue = 0;
+
+            if (Contains(characterCode))
             {
-                return from + (code - cid);
+                cidValue = cid + (characterCode - firstCharacterCode);
+
+                return true;
             }
-            return -1;
+
+            return false;
         }
 
+        public override string ToString()
+        {
+            return $"CID {cid}: Code {firstCharacterCode} -> {lastCharacterCode}";
+        }
     }
-
 }

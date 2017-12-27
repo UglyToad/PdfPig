@@ -39,11 +39,17 @@
         [NotNull]
         public IReadOnlyList<CodespaceRange> CodespaceRanges { get; }
 
+        /// <summary>
+        /// Associates ranges of character codes with their corresponding CID values.
+        /// </summary>
         [NotNull]
         public IReadOnlyList<CidRange> CidRanges { get; }
 
+        /// <summary>
+        /// Overrides CID mappings for single character codes.
+        /// </summary>
         [NotNull]
-        public IReadOnlyList<CidCharacterMapping> CidCharacterMappings { get; }
+        public IReadOnlyDictionary<int, CidCharacterMapping> CidCharacterMappings { get; }
 
         /// <summary>
         /// Controls whether the font associated with the CMap writes horizontally or vertically.
@@ -54,11 +60,16 @@
 
         public bool HasUnicodeMappings => BaseFontCharacterMap.Count > 0;
 
-        private readonly int minCodeLength = 4;
+        private readonly int minCodeLength;
         private readonly int maxCodeLength;
 
         public CMap(CharacterIdentifierSystemInfo info, int type, int wMode, string name, string version, IReadOnlyDictionary<int, string> baseFontCharacterMap, IReadOnlyList<CodespaceRange> codespaceRanges, IReadOnlyList<CidRange> cidRanges, IReadOnlyList<CidCharacterMapping> cidCharacterMappings)
         {
+            if (cidCharacterMappings == null)
+            {
+                throw new ArgumentNullException(nameof(cidCharacterMappings));
+            }
+
             Info = info;
             Type = type;
             WritingMode = (WritingMode)wMode;
@@ -67,17 +78,18 @@
             BaseFontCharacterMap = baseFontCharacterMap ?? throw new ArgumentNullException(nameof(baseFontCharacterMap));
             CodespaceRanges = codespaceRanges ?? throw new ArgumentNullException(nameof(codespaceRanges));
             CidRanges = cidRanges ?? throw new ArgumentNullException(nameof(cidRanges));
-            CidCharacterMappings = cidCharacterMappings ?? throw new ArgumentNullException(nameof(cidCharacterMappings));
             maxCodeLength = CodespaceRanges.Max(x => x.CodeLength);
             minCodeLength = CodespaceRanges.Min(x => x.CodeLength);
-        }
-        
-        // CID mappings
-        private readonly Dictionary<int, int> codeToCid = new Dictionary<int, int>();
-        private readonly List<CidRange> codeToCidRanges = new List<CidRange>();
 
-        private static readonly string SPACE = " ";
-        private int spaceMapping = -1;
+            var characterMappings = new Dictionary<int, CidCharacterMapping>();
+
+            foreach (var characterMapping in cidCharacterMappings)
+            {
+                characterMappings[characterMapping.SourceCharacterCode] = characterMapping;
+            }
+
+            CidCharacterMappings = characterMappings;
+        }
 
         /// <summary>
         /// Returns the sequence of Unicode characters for the given character code.
@@ -92,32 +104,30 @@
             return found;
         }
 
-        /**
-         * Returns the CID for the given character code.
-         *
-         * @param code character code
-         * @return CID
-         */
+        /// <summary>
+        /// Converts a character code to a CID.
+        /// </summary>
+        /// <param name="code">The character code.</param>
+        /// <returns>The corresponding CID for the character code.</returns>
         public int ConvertToCid(int code)
         {
-            if (codeToCid.TryGetValue(code, out var cid))
+            if (CidCharacterMappings.TryGetValue(code, out var mapping))
             {
-                return cid;
+                return mapping.DestinationCid;
             }
-
-            foreach (CidRange range in codeToCidRanges)
+            
+            foreach (CidRange range in CidRanges)
             {
-                int ch = range.Map((char)code);
-                if (ch != -1)
+                if (range.TryMap(code, out var cid))
                 {
-                    return ch;
+                    return cid;
                 }
             }
 
             return 0;
         }
-        
-        
+
+
         public override string ToString()
         {
             return Name;

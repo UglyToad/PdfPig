@@ -1,14 +1,32 @@
 ﻿namespace UglyToad.Pdf.Fonts.Cmap
 {
-    public class CidCharacterMapping
+    /// <summary>
+    /// Maps from a single character code to its CID.
+    /// </summary>
+    public struct CidCharacterMapping
     {
-        public int Source { get; }
-        public int Destination { get; }
+        /// <summary>
+        /// The character code.
+        /// </summary>
+        public int SourceCharacterCode { get; }
 
-        public CidCharacterMapping(int source, int destination)
+        /// <summary>
+        /// The CID to map to.
+        /// </summary>
+        public int DestinationCid { get; }
+
+        /// <summary>
+        /// Creates a new single mapping from a character code to a CID.
+        /// </summary>
+        public CidCharacterMapping(int sourceCharacterCode, int destinationCid)
         {
-            Source = source;
-            Destination = destination;
+            SourceCharacterCode = sourceCharacterCode;
+            DestinationCid = destinationCid;
+        }
+
+        public override string ToString()
+        {
+            return $"Code {SourceCharacterCode} -> CID {DestinationCid}";
         }
     }
 }

@@ -93,7 +93,9 @@
                 content = context.Process(operations);
             }
 
-            return new Page(number, mediaBox, content);
+            var page = new Page(number, mediaBox, content);
+
+            return page;
         }
     }
 }

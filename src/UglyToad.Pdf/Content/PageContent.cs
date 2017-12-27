@@ -14,6 +14,6 @@
     {
         internal IReadOnlyList<IGraphicsStateOperation> GraphicsStateOperations { get; set; }
 
-        public IReadOnlyList<string> Text { get; set; }
+        public IReadOnlyList<Letter> Letters { get; set; }
     }
 }

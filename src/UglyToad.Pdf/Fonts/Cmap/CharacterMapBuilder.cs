@@ -57,7 +57,8 @@
 
         public IReadOnlyList<CidCharacterMapping> CidCharacterMappings { get; set; }
 
-        public IReadOnlyList<CidRange> CidRanges { get; set; }
+        private List<CidRange> cidRanges = new List<CidRange>();
+        public IReadOnlyList<CidRange> CidRanges => cidRanges;
 
         public Dictionary<int, string> BaseFontCharacterMap { get; } = new Dictionary<int, string>();
 
@@ -100,8 +101,8 @@
         public void UseCMap(CMap other)
         {
             CodespaceRanges = Combine(CodespaceRanges, other.CodespaceRanges);
-            CidCharacterMappings = Combine(CidCharacterMappings, other.CidCharacterMappings);
-            CidRanges = Combine(CidRanges, other.CidRanges);
+            CidCharacterMappings = Combine(CidCharacterMappings, other.CidCharacterMappings.Values.ToList());
+            cidRanges.AddRange(other.CidRanges);
 
             if (other.BaseFontCharacterMap != null)
             {
@@ -152,6 +153,11 @@
             return bytes.Length == 1
                 ? OtherEncodings.BytesAsLatin1String(bytes)
                 : Encoding.BigEndianUnicode.GetString(bytes);
+        }
+
+        public void AddCidRange(CidRange range)
+        {
+            cidRanges.Add(range);
         }
     }
 }

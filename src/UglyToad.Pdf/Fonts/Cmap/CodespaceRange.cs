@@ -18,8 +18,14 @@
         /// </summary>
         public IReadOnlyList<byte> End { get; }
 
+        /// <summary>
+        /// The lower-bound of this range as an integer.
+        /// </summary>
         public int StartInt { get; }
 
+        /// <summary>
+        /// The upper-bound of this range as an integer.
+        /// </summary>
         public int EndInt { get; }
 
         /// <summary>
@@ -55,25 +61,31 @@
         /// <summary>
         /// Returns true if the given code bytes match this codespace range.
         /// </summary>
-        public bool IsFullMatch(byte[] code, int codeLen)
+        public bool IsFullMatch(byte[] code, int codeLength)
         {
             if (code == null)
             {
                 throw new ArgumentNullException(nameof(code));
             }
 
-            // code must be the same length as the bounding codes
-            if (codeLen == CodeLength)
+            // the code must be the same length as the bounding codes
+            if (codeLength != CodeLength)
             {
-                int value = code.ToInt(codeLen);
-                if (value >= StartInt && value <= EndInt)
-                {
-                    return true;
-                }
+                return false;
             }
+
+            var value = code.ToInt(codeLength);
+            if (value >= StartInt && value <= EndInt)
+            {
+                return true;
+            }
+
             return false;
         }
 
+        public override string ToString()
+        {
+            return $"Length {CodeLength}: {StartInt} -> {EndInt}";
+        }
     }
-
 }
