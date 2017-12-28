@@ -44,25 +44,6 @@
     public class PdfParserTests
     {
         [Fact]
-        public void CanParseSimpleGoogleDocsDocument()
-        {
-            // To see the text as shown in Visual Studio or Notepad++, use the OtherEncodings.BytesAsLatin1String()
-            var file = GetNthFilename();
-            
-            using (var document = PdfDocument.Open(File.ReadAllBytes(file)))
-            {
-                Assert.Equal(1, document.Pages.Count);
-
-                var page = document.Pages.GetPage(1);
-                Assert.Equal(1, page.Number);
-
-                var text = string.Join(string.Empty, page.Content.Letters.Select(x => x.Value)).Replace("\u200B", string.Empty);
-
-                Assert.Equal("This is the document title There is some lede text here And then another line of text.".Replace(" ", string.Empty), text.Replace(" ", string.Empty));
-            }
-        }
-
-        [Fact]
         public void CanDecompressNormalObjectStream()
         {
             var bytes = File.ReadAllBytes(GetNthFilename());

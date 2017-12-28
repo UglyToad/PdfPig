@@ -25,10 +25,15 @@
         private readonly ParsingCachingProviders cachingProviders;
 
         [NotNull]
-        public Catalog Catalog { get; }
+        internal Catalog Catalog { get; }
 
         [NotNull]
-        public Pages Pages { get; }
+        internal Pages Pages { get; }
+
+        /// <summary>
+        /// Get the number of pages in this document.
+        /// </summary>
+        public int NumberOfPages => Pages.Count;
 
         internal PdfDocument(ILog log, IRandomAccessRead reader, HeaderVersion version, CrossReferenceTable crossReferenceTable,
             bool isLenientParsing, 
@@ -49,6 +54,16 @@
 
         public static PdfDocument Open(byte[] fileBytes, ParsingOptions options = null) => PdfDocumentFactory.Open(fileBytes, options);
         public static PdfDocument Open(string filename, ParsingOptions options = null) => PdfDocumentFactory.Open(filename, options);
+
+        /// <summary>
+        /// Get the page with the specified page number.
+        /// </summary>
+        /// <param name="pageNumber">The number of the page to return, this starts from 1.</param>
+        /// <returns>The page.</returns>
+        public Page GetPage(int pageNumber)
+        {
+            return Pages.GetPage(pageNumber);
+        }
 
         public void Dispose()
         {

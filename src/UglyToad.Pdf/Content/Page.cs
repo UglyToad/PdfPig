@@ -10,11 +10,21 @@
         /// </summary>
         public int Number { get; }
 
-        public MediaBox MediaBox { get; }
+        internal MediaBox MediaBox { get; }
 
         internal PageContent Content { get; }
 
-        public IReadOnlyList<Letter> Text => Content?.Letters ?? new Letter[0];
+        public IReadOnlyList<Letter> Letters => Content?.Letters ?? new Letter[0];
+
+        /// <summary>
+        /// Gets the width of the page in points.
+        /// </summary>
+        public decimal Width { get; }
+
+        /// <summary>
+        /// Gets the height of the page in points.
+        /// </summary>
+        public decimal Height { get; }
 
         internal Page(int number, MediaBox mediaBox, PageContent content)
         {
@@ -26,6 +36,9 @@
             Number = number;
             MediaBox = mediaBox;
             Content = content;
+
+            Width = mediaBox.Bounds.Width;
+            Height = mediaBox.Bounds.Height;
         }
     }
 }

@@ -75,7 +75,7 @@
 
             if (!isFound || !locatedPages.TryGetValue(pageNumber, out targetPageDictionary))
             {
-                throw new InvalidOperationException("Could not find the page with number: " + pageNumber);
+                throw new ArgumentOutOfRangeException("Could not find the page with number: " + pageNumber);
             }
 
             var page = pageFactory.Create(pageNumber, targetPageDictionary, new PageTreeMembers(), reader, isLenientParsing);
