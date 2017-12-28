@@ -12,5 +12,10 @@
             // TODO: tree inheritance
             throw new NotImplementedException("Track inherited members");
         }
+
+        public CropBox GetCropBox()
+        {
+            return null;
+        }
     }
 }

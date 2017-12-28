@@ -92,6 +92,95 @@ namespace UglyToad.Pdf.Tests.Integration
             }
         }
 
+        [Fact]
+        public void LettersHavePdfBoxPositions()
+        {
+            var file = GetFilename();
+
+            var pdfBoxData = GetPdfBoxPositionData();
+            var index = 0;
+
+            using (var document = PdfDocument.Open(File.ReadAllBytes(file)))
+            {
+                var page = document.GetPage(1);
+
+                foreach (var letter in page.Letters)
+                {
+                    // Something a bit weird with how we or PdfBox handle hidden characters and spaces.
+                    if (IgnoredHiddenCharacters.Contains(letter.Value) || string.IsNullOrWhiteSpace(letter.Value))
+                    {
+                        continue;
+                    }
+
+                    var datum = pdfBoxData[index];
+
+                    while (IgnoredHiddenCharacters.Contains(datum.Text))
+                    {
+                        index++;
+                        datum = pdfBoxData[index];
+                    }
+
+                    Assert.Equal(datum.Text, letter.Value);
+                    Assert.Equal(datum.X, letter.Location.X, 2);
+
+                    var transformed = page.Height - letter.Location.Y;
+                    Assert.Equal(datum.Y, transformed, 2);
+
+                    Assert.Equal(datum.Width, letter.Width, 2);
+
+                    Assert.Equal(datum.FontName, letter.FontName);
+
+                    // I think we have font size wrong for now, or right, but differently correct...
+
+                    index++;
+                }
+            }
+        }
+
+        [Fact]
+        public void LettersHaveOtherProviderPositions()
+        {
+            var file = GetFilename();
+
+            var pdfBoxData = GetOtherPositionData1();
+            var index = 0;
+
+            using (var document = PdfDocument.Open(File.ReadAllBytes(file)))
+            {
+                var page = document.GetPage(1);
+
+                foreach (var letter in page.Letters)
+                {
+                    // Something a bit weird with how we or this provider handle hidden characters and spaces.
+                    if (IgnoredHiddenCharacters.Contains(letter.Value) || string.IsNullOrWhiteSpace(letter.Value))
+                    {
+                        continue;
+                    }
+
+                    var datum = pdfBoxData[index];
+
+                    while (IgnoredHiddenCharacters.Contains(datum.Text) || datum.Text == " ")
+                    {
+                        index++;
+                        datum = pdfBoxData[index];
+                    }
+
+                    Assert.Equal(datum.Text, letter.Value);
+                    Assert.Equal(datum.X, letter.Location.X, 2);
+
+                    var transformed = page.Height - letter.Location.Y;
+                    Assert.Equal(datum.Y, transformed, 2);
+
+                    // Until we get width from glyphs we're a bit out.
+                    Assert.True(Math.Abs(datum.Width - letter.Width) < 0.03m);
+
+                    index++;
+                }
+            }
+        }
+
+
+
         private static IReadOnlyList<AssertablePositionData> GetPdfBoxPositionData()
         {
             // X    Y   Width   Letter  FontSize    Font

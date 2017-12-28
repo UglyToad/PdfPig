@@ -18,9 +18,15 @@
 
         private readonly decimal[] value;
 
+        /// <summary>
+        /// The scale for the X dimension.
+        /// </summary>
         public decimal A => value[0];
         public decimal B => value[1];
         public decimal C => value[3];
+        /// <summary>
+        /// The scale for the Y dimension.
+        /// </summary>
         public decimal D => value[4];
         public decimal E => value[6];
         public decimal F => value[7];

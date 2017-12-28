@@ -162,11 +162,7 @@
         {
             var documentFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Integration", "Documents"));
 
-            var files = Directory.GetFiles(documentFolder);
-
-            var file = files[n];
-
-            return file;
+            return Path.Combine(documentFolder, "Single Page Simple - from google drive.pdf");
         }
     }
 }

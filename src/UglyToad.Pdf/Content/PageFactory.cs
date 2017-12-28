@@ -40,6 +40,75 @@
                 throw new InvalidOperationException($"Page {number} had its type was specified as {type} rather than 'Page'.");
             }
 
+            MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers, isLenientParsing);
+            CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox);
+
+            if (dictionary.GetItemOrDefault(CosName.RESOURCES) is PdfDictionary resource)
+            {
+                resourceStore.LoadResourceDictionary(resource, reader, isLenientParsing);
+            }
+
+            UserSpaceUnit userSpaceUnit = GetUserSpaceUnits(dictionary);
+
+            PageContent content = default(PageContent);
+
+            var contentObject = dictionary.GetItemOrDefault(CosName.CONTENTS) as CosObject;
+            if (contentObject != null)
+            {
+                var contentStream = pdfObjectParser.Parse(contentObject.ToIndirectReference(), reader, false) as PdfRawStream;
+
+                if (contentStream == null)
+                {
+                    throw new InvalidOperationException("Failed to parse the content for the page: " + number);
+                }
+
+                var contents = contentStream.Decode(filterProvider);
+
+                var operations = pageContentParser.Parse(new ByteArrayInputBytes(contents));
+
+                var context = new ContentStreamProcessor(mediaBox.Bounds, resourceStore, userSpaceUnit);
+
+                content = context.Process(operations);
+            }
+
+            var page = new Page(number, mediaBox, cropBox, content);
+
+            return page;
+        }
+
+        private static UserSpaceUnit GetUserSpaceUnits(PdfDictionary dictionary)
+        {
+            var spaceUnits = UserSpaceUnit.Default;
+            if (dictionary.TryGetValue(CosName.USER_UNIT, out var userUnitCosBase) && userUnitCosBase is ICosNumber userUnitNumber)
+            {
+                spaceUnits = new UserSpaceUnit(userUnitNumber.AsInt());
+            }
+
+            return spaceUnits;
+        }
+
+        private static CropBox GetCropBox(PdfDictionary dictionary, PageTreeMembers pageTreeMembers, MediaBox mediaBox)
+        {
+            CropBox cropBox;
+            if (dictionary.TryGetItemOfType(CosName.CROP_BOX, out COSArray cropBoxArray))
+            {
+                var x1 = cropBoxArray.getInt(0);
+                var y1 = cropBoxArray.getInt(1);
+                var x2 = cropBoxArray.getInt(2);
+                var y2 = cropBoxArray.getInt(3);
+
+                cropBox = new CropBox(new PdfRectangle(x1, y1, x2, y2));
+            }
+            else
+            {
+                cropBox = pageTreeMembers.GetCropBox() ?? new CropBox(mediaBox.Bounds);
+            }
+
+            return cropBox;
+        }
+
+        private static MediaBox GetMediaBox(int number, PdfDictionary dictionary, PageTreeMembers pageTreeMembers, bool isLenientParsing)
+        {
             MediaBox mediaBox;
             if (dictionary.TryGetItemOfType(CosName.MEDIA_BOX, out COSArray mediaboxArray))
             {
@@ -67,35 +136,7 @@
                 }
             }
 
-            if (dictionary.GetItemOrDefault(CosName.RESOURCES) is PdfDictionary resource)
-            {
-                resourceStore.LoadResourceDictionary(resource, reader, isLenientParsing);
-            }
-
-            PageContent content = default(PageContent);
-
-            var contentObject = dictionary.GetItemOrDefault(CosName.CONTENTS) as CosObject;
-            if (contentObject != null)
-            {
-                var contentStream = pdfObjectParser.Parse(contentObject.ToIndirectReference(), reader, false) as PdfRawStream;
-
-                if (contentStream == null)
-                {
-                    throw new InvalidOperationException("Failed to parse the content for the page: " + number);
-                }
-
-                var contents = contentStream.Decode(filterProvider);
-
-                var operations = pageContentParser.Parse(new ByteArrayInputBytes(contents));
-
-                var context = new ContentStreamProcessor(mediaBox.Bounds, resourceStore);
-
-                content = context.Process(operations);
-            }
-
-            var page = new Page(number, mediaBox, content);
-
-            return page;
+            return mediaBox;
         }
     }
 }

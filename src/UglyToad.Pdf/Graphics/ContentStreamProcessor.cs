@@ -13,6 +13,7 @@
     internal class ContentStreamProcessor : IOperationContext
     {
         private readonly IResourceStore resourceStore;
+        private readonly UserSpaceUnit userSpaceUnit;
 
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
 
@@ -22,9 +23,10 @@
         
         public List<Letter> Letters = new List<Letter>();
 
-        public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore)
+        public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit)
         {
             this.resourceStore = resourceStore;
+            this.userSpaceUnit = userSpaceUnit;
             graphicsStack.Push(new CurrentGraphicsState());
         }
 
@@ -77,10 +79,18 @@
         {
             var font = resourceStore.GetFont(GetCurrentState().FontState.FontName);
 
-            var fontSize = GetCurrentState().FontState.FontSize;
-            var horizontalScaling = GetCurrentState().FontState.HorizontalScaling;
-            var characterSpacing = GetCurrentState().FontState.CharacterSpacing;
+            var currentState = GetCurrentState();
 
+            var fontSize = currentState.FontState.FontSize;
+            var horizontalScaling = currentState.FontState.HorizontalScaling;
+            var characterSpacing = currentState.FontState.CharacterSpacing;
+
+            var transformationMatrix = currentState.CurrentTransformationMatrix;
+
+            // TODO: this does not seem correct, produces the correct result for now but we need to revisit.
+            // see: https://stackoverflow.com/questions/48010235/pdf-specification-get-font-size-in-points
+            var pointSize = decimal.Round(fontSize * transformationMatrix.A, 2);
+            
             while (bytes.MoveNext())
             {
                 var code = font.ReadCharacterCode(bytes, out int codeLength);
@@ -102,7 +112,9 @@
 
                 var displacement = font.GetDisplacement(code);
 
-                ShowGlyph(renderingMatrix, font, code, unicode, displacement, fontSize);
+                var width = (displacement.X * fontSize) * transformationMatrix.A;
+
+                ShowGlyph(renderingMatrix, font, code, unicode, width, fontSize, pointSize);
 
                 decimal tx, ty;
                 if (font.IsVertical)
@@ -122,11 +134,12 @@
             }
         }
 
-        private void ShowGlyph(TransformationMatrix renderingMatrix, IFont font, int characterCode, string unicode, PdfVector displacement, decimal fontSize)
+        private void ShowGlyph(TransformationMatrix renderingMatrix, IFont font, int characterCode, string unicode, decimal width, decimal fontSize,
+            decimal pointSize)
         {
             var location = new PdfPoint(renderingMatrix.E, renderingMatrix.F);
-
-            var letter = new Letter(unicode, location, displacement.X, fontSize, font.Name.Name);
+            
+            var letter = new Letter(unicode, location, width, fontSize, font.Name.Name, pointSize);
 
             Letters.Add(letter);
         }

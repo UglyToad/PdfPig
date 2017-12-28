@@ -12,6 +12,8 @@
 
         internal MediaBox MediaBox { get; }
 
+        internal CropBox CropBox { get; }
+
         internal PageContent Content { get; }
 
         public IReadOnlyList<Letter> Letters => Content?.Letters ?? new Letter[0];
@@ -26,7 +28,7 @@
         /// </summary>
         public decimal Height { get; }
 
-        internal Page(int number, MediaBox mediaBox, PageContent content)
+        internal Page(int number, MediaBox mediaBox, CropBox cropBox, PageContent content)
         {
             if (number <= 0)
             {
@@ -35,6 +37,7 @@
 
             Number = number;
             MediaBox = mediaBox;
+            CropBox = cropBox;
             Content = content;
 
             Width = mediaBox.Bounds.Width;

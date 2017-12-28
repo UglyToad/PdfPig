@@ -518,6 +518,7 @@ namespace UglyToad.Pdf.Cos
         public static readonly CosName UNIX = new CosName("Unix");
         public static readonly CosName URI = new CosName("URI");
         public static readonly CosName URL = new CosName("URL");
+        public static readonly CosName USER_UNIT = new CosName("UserUnit");
         // V
         public static readonly CosName V = new CosName("V");
         public static readonly CosName VERISIGN_PPKVS = new CosName("VeriSign.PPKVS");
