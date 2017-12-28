@@ -22,13 +22,16 @@
         {
             IFilter FlateFunc() => new FlateFilter(decodeParameterResolver, pngPredictor, log);
             IFilter Ascii85Func() => new Ascii85Filter();
+            IFilter AsciiHexFunc() => new AsciiHexDecodeFilter();
 
             filterFactories = new Dictionary<CosName, Func<IFilter>>
             {
                 {CosName.FLATE_DECODE, FlateFunc},
                 {CosName.FLATE_DECODE_ABBREVIATION, FlateFunc},
                 {CosName.ASCII85_DECODE, Ascii85Func},
-                {CosName.ASCII85_DECODE_ABBREVIATION, Ascii85Func}
+                {CosName.ASCII85_DECODE_ABBREVIATION, Ascii85Func},
+                {CosName.ASCII_HEX_DECODE, AsciiHexFunc},
+                {CosName.ASCII_HEX_DECODE_ABBREVIATION, AsciiHexFunc}
             };
         }
 
