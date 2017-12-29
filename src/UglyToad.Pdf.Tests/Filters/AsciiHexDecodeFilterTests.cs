@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.Pdf.Tests.Filters
 {
     using System;
+    using System.Net.NetworkInformation;
     using System.Text;
     using ContentStream;
     using Pdf.Filters;
@@ -68,14 +69,28 @@
             Assert.Equal(text, decodedText);
         }
 
-        [Fact]
-        public void DecodeWithInvalidCharactersThrows()
+        [Theory]
+        [InlineData("ZA")]
+        [InlineData("AM")]
+        public void DecodeWithInvalidCharactersThrows(string inputString)
         {
-            var input = Encoding.ASCII.GetBytes("6f6eHappyHungryHippos6d6520696e20612067616c61787920466172204661722041776179");
+            var input = Encoding.ASCII.GetBytes(inputString);
 
             Action action = () => new AsciiHexDecodeFilter().Decode(input, new PdfDictionary(), 1);
 
             Assert.Throws<InvalidOperationException>(action);
+        }
+
+        [Fact]
+        public void SubstitutesZeroForLastByte()
+        {
+            var input = Encoding.ASCII.GetBytes("AE5>");
+
+            var decoded = new AsciiHexDecodeFilter().Decode(input, new PdfDictionary(), 1);
+
+            var decodedText = Encoding.UTF7.GetString(decoded);
+
+            Assert.Equal("®P", decodedText);
         }
 
         [Fact]
