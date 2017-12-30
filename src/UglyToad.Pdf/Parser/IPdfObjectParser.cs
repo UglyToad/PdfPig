@@ -71,7 +71,12 @@
 
             if (offsetOrStreamNumber == null)
             {
-                return CosNull.Null;
+                if (isLenientParsing)
+                {
+                    return CosNull.Null;
+                }
+
+                throw new InvalidOperationException($"Could not locate the object {key.Number} which was not found in the cross reference table.");
             }
 
             var isCompressedStreamObject = offsetOrStreamNumber <= 0;

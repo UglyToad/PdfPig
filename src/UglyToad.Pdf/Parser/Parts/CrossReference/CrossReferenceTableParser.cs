@@ -10,6 +10,9 @@
 
     internal class CrossReferenceTableParser
     {
+        private const string InUseEntry = "n";
+        private const string FreeEntry = "f";
+
         private readonly ILog log;
         private readonly CosDictionaryParser dictionaryParser;
         private readonly CosBaseParser baseParser;
@@ -25,7 +28,8 @@
         {
             builder = null;
 
-            long xrefTableStartOffset = source.GetPosition();
+            var tableStartOffset = source.GetPosition();
+
             if (source.Peek() != 'x')
             {
                 return false;
@@ -40,6 +44,7 @@
             // check for trailer after xref
             var str = ReadHelper.ReadString(source);
             byte[] b = OtherEncodings.StringAsLatin1Bytes(str);
+
             source.Rewind(b.Length);
             
             if (str.StartsWith("trailer"))
@@ -54,23 +59,25 @@
                 XRefType = CrossReferenceType.Table
             };
 
-            // Xref tables can have multiple sections. Each starts with a starting object id and a count.
+            // Tables can have multiple sections. Each starts with a starting object id and a count.
             while (true)
             {
-                var currentLine = ReadHelper.ReadLine(source);
-                String[] splitString = currentLine.Split(new[] { "\\s" }, StringSplitOptions.RemoveEmptyEntries);
-                if (splitString.Length != 2)
+                if (!TableSubsectionDefinition.TryRead(log, source, out var subsectionDefinition))
                 {
-                    log.Warn("Unexpected XRefTable Entry: " + currentLine);
-                    break;
+                    if (isLenientParsing)
+                    {
+                        log.Warn($"Unexpected subsection definition in the cross-reference table at offset {offset}");
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Unexpected subsection definition in the cross-reference table at offset {offset}");
+                    }
                 }
-                // first obj id
-                long currObjID = long.Parse(splitString[0]);
-                // the number of objects in the xref table
-                int count = int.Parse(splitString[1]);
+
+                var currentObjectId = subsectionDefinition.FirstNumber;
 
                 ReadHelper.SkipSpaces(source);
-                for (int i = 0; i < count; i++)
+                for (var i = 0; i < subsectionDefinition.Count; i++)
                 {
                     if (source.IsEof() || ReadHelper.IsEndOfName((char)source.Peek()))
                     {
@@ -81,42 +88,47 @@
                         break;
                     }
                     //Ignore table contents
-                    currentLine = ReadHelper.ReadLine(source);
-                    splitString = currentLine.Split(new[] { "\\s" }, StringSplitOptions.RemoveEmptyEntries);
+                    var currentLine = ReadHelper.ReadLine(source);
+                    var splitString = currentLine.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
                     if (splitString.Length < 3)
                     {
                         log.Warn("invalid xref line: " + currentLine);
                         break;
                     }
 
-                    /* This supports the corrupt table as reported in
-                     * PDFBOX-474 (XXXX XXX XX n) */
-                    if (splitString[splitString.Length - 1].Equals("n"))
+                    // This supports the corrupt table as reported in PDFBOX-474 (XXXX XXX XX n)
+                    if (splitString[splitString.Length - 1].Equals(InUseEntry))
                     {
                         try
                         {
-                            long currOffset = long.Parse(splitString[0]);
-                            if (currOffset >= xrefTableStartOffset && currOffset <= source.GetPosition())
+                            var objectOffset = long.Parse(splitString[0]);
+
+                            if (objectOffset >= tableStartOffset && objectOffset <= source.GetPosition())
                             {
                                 // PDFBOX-3923: offset points inside this table - that can't be good
-                                throw new InvalidOperationException("XRefTable offset " + currOffset +
-                                        " is within xref table for " + currObjID);
+                                throw new InvalidOperationException(
+                                    $"Object offset {objectOffset} is within its own cross-reference table for object {currentObjectId}");
                             }
-                            int currGenID = int.Parse(splitString[1]);
-                            builder.Add(currObjID, currGenID, currOffset);
+
+                            var generation = int.Parse(splitString[1]);
+                            builder.Add(currentObjectId, generation, objectOffset);
                         }
                         catch (FormatException e)
                         {
                             throw new InvalidOperationException("Bad", e);
                         }
                     }
-                    else if (!splitString[2].Equals("f"))
+                    else if (!splitString[2].Equals(FreeEntry))
                     {
-                        throw new InvalidOperationException("Corrupt XRefTable Entry - ObjID:" + currObjID);
+                        throw new InvalidOperationException(
+                            $"Corrupt cross-reference table entry for object {currentObjectId}. The indicator was not 'n' or 'f' but {splitString[2]}.");
                     }
-                    currObjID++;
+
+                    currentObjectId++;
+
                     ReadHelper.SkipSpaces(source);
                 }
+
                 ReadHelper.SkipSpaces(source);
                 if (!ReadHelper.IsDigit(source))
                 {

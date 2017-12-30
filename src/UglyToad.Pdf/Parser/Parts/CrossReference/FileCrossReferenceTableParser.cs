@@ -45,15 +45,14 @@
 
             var table = new CrossReferenceTableBuilder();
 
-            long prev = xrefLocation;
+            long previousCrossReferenceLocation = xrefLocation;
             // ---- parse whole chain of xref tables/object streams using PREV reference
             HashSet<long> prevSet = new HashSet<long>();
-            while (prev > 0)
+            while (previousCrossReferenceLocation > 0)
             {
                 // seek to xref table
-                reader.Seek(prev);
-
-                // skip white spaces
+                reader.Seek(previousCrossReferenceLocation);
+                
                 ReadHelper.SkipSpaces(reader);
 
                 var isTable = reader.Peek() == X;
@@ -63,7 +62,7 @@
                 {
                     // xref table and trailer
                     // use existing parser to parse xref table
-                    if (!crossReferenceTableParser.TryParse(reader, prev, isLenientParsing, pool, out var tableBuilder))
+                    if (!crossReferenceTableParser.TryParse(reader, previousCrossReferenceLocation, isLenientParsing, pool, out var tableBuilder))
                     {
                         throw new InvalidOperationException($"Expected trailer object at position: {reader.GetPosition()}");
                     }
@@ -89,7 +88,7 @@
                             ReadHelper.SkipSpaces(reader);
                             try
                             {
-                                streamPart = ParseCrossReferenceStream(reader, prev, pool, isLenientParsing);
+                                streamPart = ParseCrossReferenceStream(reader, previousCrossReferenceLocation, pool, isLenientParsing);
                             }
                             catch (InvalidOperationException ex)
                             {
@@ -115,46 +114,50 @@
                             }
                         }
                     }
-                    prev = trailer.GetLongOrDefault(CosName.PREV);
-                    if (prev > 0)
+                    previousCrossReferenceLocation = trailer.GetLongOrDefault(CosName.PREV);
+                    if (previousCrossReferenceLocation > 0)
                     {
                         // check the xref table reference
-                        fixedOffset = xrefOffsetValidator.CheckXRefOffset(prev, isLenientParsing);
-                        if (fixedOffset > -1 && fixedOffset != prev)
+                        fixedOffset = xrefOffsetValidator.CheckXRefOffset(previousCrossReferenceLocation, isLenientParsing);
+                        if (fixedOffset > -1 && fixedOffset != previousCrossReferenceLocation)
                         {
-                            prev = fixedOffset;
-                            trailer.SetLong(CosName.PREV, prev);
+                            previousCrossReferenceLocation = fixedOffset;
+                            trailer.SetLong(CosName.PREV, previousCrossReferenceLocation);
                         }
                     }
 
                     tableBuilder.Previous = tableBuilder.Dictionary.GetLongOrDefault(CosName.PREV);
 
                     table.Add(tableBuilder.AsCrossReferenceTablePart());
-                    table.Add(streamPart);
+
+                    if (streamPart != null)
+                    {
+                        table.Add(streamPart);
+                    }
                 }
                 else
                 {
                     // parse xref stream
-                    var tablePart = ParseCrossReferenceStream(reader, prev, pool, isLenientParsing);
+                    var tablePart = ParseCrossReferenceStream(reader, previousCrossReferenceLocation, pool, isLenientParsing);
                     table.Add(tablePart);
 
-                    prev = tablePart.Previous;
-                    if (prev > 0)
+                    previousCrossReferenceLocation = tablePart.Previous;
+                    if (previousCrossReferenceLocation > 0)
                     {
                         // check the xref table reference
-                        fixedOffset = xrefOffsetValidator.CheckXRefOffset(prev, isLenientParsing);
-                        if (fixedOffset > -1 && fixedOffset != prev)
+                        fixedOffset = xrefOffsetValidator.CheckXRefOffset(previousCrossReferenceLocation, isLenientParsing);
+                        if (fixedOffset > -1 && fixedOffset != previousCrossReferenceLocation)
                         {
-                            prev = fixedOffset;
-                            tablePart.FixOffset(prev);
+                            previousCrossReferenceLocation = fixedOffset;
+                            tablePart.FixOffset(previousCrossReferenceLocation);
                         }
                     }
                 }
-                if (prevSet.Contains(prev))
+                if (prevSet.Contains(previousCrossReferenceLocation))
                 {
-                    throw new InvalidOperationException("/Prev loop at offset " + prev);
+                    throw new InvalidOperationException("/Prev loop at offset " + previousCrossReferenceLocation);
                 }
-                prevSet.Add(prev);
+                prevSet.Add(previousCrossReferenceLocation);
             }
 
             var resolved = table.Build(xrefLocation, log);
