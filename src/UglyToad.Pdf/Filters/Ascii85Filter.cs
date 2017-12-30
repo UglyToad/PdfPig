@@ -65,12 +65,12 @@
                     {
                         if (index > 0)
                         {
-                            // Should I throw here?
+                            throw new InvalidOperationException("Encountered z within a 5 character block");
                         }
 
                         for (int j = 0; j < 4; j++)
                         {
-                            writer.Write(0);
+                            writer.Write((byte)0);
                         }
 
                         index = 0;

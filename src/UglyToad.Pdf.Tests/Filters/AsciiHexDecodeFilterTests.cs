@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.Pdf.Tests.Filters
 {
     using System;
-    using System.Net.NetworkInformation;
     using System.Text;
     using ContentStream;
     using Pdf.Filters;

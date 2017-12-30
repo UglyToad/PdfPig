@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.Pdf.Tests.Filters
 {
+    using System;
     using System.Text;
     using ContentStream;
     using Pdf.Filters;
@@ -27,6 +28,28 @@ O<DJ+*.@<*K0@<6L(Df-\0Ec5e;DffZ(EZee.Bl.9pF""AGXBPCsi + DGm >@3BB / F * &OCAfu2 
                          "that by a perseverance of delight in the continued and indefatigable generation of knowledge, " +
                          "exceeds the short vehemence of any carnal pleasure.",
                 text);
+        }
+
+        [Fact]
+        public void ReplacesZWithEmptyBytes()
+        {
+            var bytes = Encoding.ASCII.GetBytes("9jqo^zBlbD-");
+
+            var result = filter.Decode(bytes, new PdfDictionary(), 1);
+
+            var text = Encoding.ASCII.GetString(result);
+
+            Assert.Equal("Man \0\0\0\0is d", text);
+        }
+
+        [Fact]
+        public void ZInMiddleOf5CharacterSequenceThrows()
+        {
+            var bytes = Encoding.ASCII.GetBytes("qjzqo^");
+
+            Action action = () => filter.Decode(bytes, new PdfDictionary(), 0);
+
+            Assert.Throws<InvalidOperationException>(action);
         }
 
         private const string PdfContent = @"1 0 obj
@@ -95,5 +118,7 @@ Li?EZek1DKKT1F`2DD/TboKAKY](@:s.m/h%oBC'mC/$>""*cF*)G6@;Q?_DIdZpC&";
 
             Assert.Equal(PdfContent.Replace("\r\n", "\n"), text);
         }
+
+
     }
 }
