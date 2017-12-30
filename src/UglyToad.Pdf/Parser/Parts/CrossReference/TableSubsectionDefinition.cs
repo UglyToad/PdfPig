@@ -34,6 +34,11 @@
         /// </summary>
         public TableSubsectionDefinition(long firstNumber, int count)
         {
+            if (count < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), $"Count must be 0 or positive, instead it was {count}.");
+            }
+
             FirstNumber = firstNumber;
             Count = count;
         }

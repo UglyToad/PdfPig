@@ -6,7 +6,12 @@
     using IO;
     using Util;
 
-    internal class CosBaseParser
+    internal interface IBaseParser
+    {
+        CosBase Parse(IRandomAccessRead reader, CosObjectPool pool);
+    }
+
+    internal class CosBaseParser : IBaseParser
     {
         private readonly CosNameParser nameParser;
         private readonly CosStringParser stringParser;

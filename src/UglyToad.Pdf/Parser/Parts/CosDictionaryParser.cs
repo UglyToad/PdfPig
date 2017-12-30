@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.Pdf.Parser.Parts
 {
     using System;
-    using System.Collections.Generic;
     using ContentStream;
     using Cos;
     using IO;
@@ -9,7 +8,12 @@
     using Util;
     using Util.JetBrains.Annotations;
 
-    internal class CosDictionaryParser
+    internal interface IDictionaryParser
+    {
+        PdfDictionary Parse(IRandomAccessRead reader, IBaseParser baseParser, CosObjectPool pool);
+    }
+
+    internal class CosDictionaryParser : IDictionaryParser
     {
         private readonly ILog log;
         private readonly CosNameParser nameParser;
@@ -34,7 +38,7 @@
             this.nameParser = nameParser ?? throw new ArgumentNullException();
         }
 
-        public PdfDictionary Parse(IRandomAccessRead reader, CosBaseParser baseParser, CosObjectPool pool)
+        public PdfDictionary Parse(IRandomAccessRead reader, IBaseParser baseParser, CosObjectPool pool)
         {
             if (reader == null)
             {
@@ -93,7 +97,7 @@
         }
 
         [ItemCanBeNull]
-        private (CosName key, CosBase value) ParseCosDictionaryNameValuePair(IRandomAccessRead reader, CosBaseParser baseParser, CosObjectPool pool)
+        private (CosName key, CosBase value) ParseCosDictionaryNameValuePair(IRandomAccessRead reader, IBaseParser baseParser, CosObjectPool pool)
         {
             var key = nameParser.Parse(reader);
             var value = ParseValue(reader, baseParser, pool);
@@ -126,7 +130,7 @@
             return (key, value);
         }
         
-        private static CosBase ParseValue(IRandomAccessRead reader, CosBaseParser baseParser, CosObjectPool pool)
+        private static CosBase ParseValue(IRandomAccessRead reader, IBaseParser baseParser, CosObjectPool pool)
         {
             var numOffset = reader.GetPosition();
             var value = baseParser.Parse(reader, pool);

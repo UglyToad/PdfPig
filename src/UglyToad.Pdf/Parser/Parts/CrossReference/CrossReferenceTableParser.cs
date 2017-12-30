@@ -14,10 +14,10 @@
         private const string FreeEntry = "f";
 
         private readonly ILog log;
-        private readonly CosDictionaryParser dictionaryParser;
-        private readonly CosBaseParser baseParser;
+        private readonly IDictionaryParser dictionaryParser;
+        private readonly IBaseParser baseParser;
 
-        public CrossReferenceTableParser(ILog log, CosDictionaryParser dictionaryParser, CosBaseParser baseParser)
+        public CrossReferenceTableParser(ILog log, IDictionaryParser dictionaryParser, IBaseParser baseParser)
         {
             this.log = log;
             this.dictionaryParser = dictionaryParser;
@@ -64,14 +64,15 @@
             {
                 if (!TableSubsectionDefinition.TryRead(log, source, out var subsectionDefinition))
                 {
+                    log.Warn($"Unexpected subsection definition in the cross-reference table at offset {offset}");
+
                     if (isLenientParsing)
                     {
-                        log.Warn($"Unexpected subsection definition in the cross-reference table at offset {offset}");
+                        
+                        break;
                     }
-                    else
-                    {
-                        throw new InvalidOperationException($"Unexpected subsection definition in the cross-reference table at offset {offset}");
-                    }
+
+                    return false;
                 }
 
                 var currentObjectId = subsectionDefinition.FirstNumber;
@@ -83,10 +84,12 @@
                     {
                         break;
                     }
+
                     if (source.Peek() == 't')
                     {
                         break;
                     }
+
                     //Ignore table contents
                     var currentLine = ReadHelper.ReadLine(source);
                     var splitString = currentLine.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
