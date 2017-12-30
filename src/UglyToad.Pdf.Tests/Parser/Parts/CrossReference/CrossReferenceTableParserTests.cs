@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.Pdf.Tests.Parser.Parts.CrossReference
 {
+    using System;
     using System.Linq;
     using IO;
     using Pdf.Cos;
@@ -226,6 +227,51 @@ trailer
             Assert.Equal(250, results[4].Value);
             Assert.Equal(16, results[4].Number);
             Assert.Equal(32, results[4].Generation);
+        }
+
+        [Fact]
+        public void EntryPointingAtOffsetInTableThrows()
+        {
+            var input = GetReader(@"xref
+0 2
+0000000000 65535 f
+0000000010 00000 n
+trailer
+<<>>");
+
+            Action action = () => parser.TryParse(input, 0, false, objectPool, out var _);
+
+            Assert.Throws<InvalidOperationException>(action);
+        }
+
+        [Fact]
+        public void EntryWithInvalidFormatThrows()
+        {
+            var input = GetReader(@"xref
+0 22
+0000000000 65535 f
+0000aa0010 00000 n
+trailer
+<<>>");
+
+            Action action = () => parser.TryParse(input, 0, false, objectPool, out var _);
+
+            Assert.Throws<InvalidOperationException>(action);
+        }
+
+        [Fact]
+        public void ShortLineInTableReturnsFalse()
+        {
+            var input = GetReader(@"xref
+15 2
+000000019000000 n
+0000000250 00032 n
+trailer
+<<>>");
+
+            var result = parser.TryParse(input, 0, false, objectPool, out var table);
+
+            Assert.False(result);
         }
 
         private static IRandomAccessRead GetReader(string input)

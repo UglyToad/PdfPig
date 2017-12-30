@@ -3,6 +3,7 @@
     using System;
     using System.IO;
     using System.Linq;
+    using Content;
     using Xunit;
 
     public class FontSizeTestFromGoogleChromeTests
@@ -47,6 +48,17 @@
                 var text = string.Join(string.Empty, page.Letters.Select(x => x.Value));
 
                 Assert.Equal("Hello, this is 16ptHello, this is 16px", text);
+            }
+        }
+
+        [Fact]
+        public void GetsCorrectPageSize()
+        {
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                var page = document.GetPage(1);
+
+                Assert.Equal(PageSize.A4, page.Size);
             }
         }
     }

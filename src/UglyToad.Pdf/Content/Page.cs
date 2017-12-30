@@ -6,7 +6,7 @@
     public class Page
     {
         /// <summary>
-        /// The 1 indexed page number.
+        /// The page number (starting at 1).
         /// </summary>
         public int Number { get; }
 
@@ -28,6 +28,11 @@
         /// </summary>
         public decimal Height { get; }
 
+        /// <summary>
+        /// The size of the page according to the standard page sizes or Custom if no matching standard size found.
+        /// </summary>
+        public PageSize Size { get; }
+
         internal Page(int number, MediaBox mediaBox, CropBox cropBox, PageContent content)
         {
             if (number <= 0)
@@ -42,6 +47,8 @@
 
             Width = mediaBox.Bounds.Width;
             Height = mediaBox.Bounds.Height;
+
+            Size = mediaBox.Bounds.GetPageSize();
         }
     }
 }

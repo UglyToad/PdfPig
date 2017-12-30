@@ -5,6 +5,7 @@ namespace UglyToad.Pdf.Tests.Integration
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using Content;
     using Xunit;
 
     public class SinglePageSimpleTests
@@ -89,6 +90,17 @@ namespace UglyToad.Pdf.Tests.Integration
                     "This is the document title  There is some lede text here  And then another line of text. ";
 
                 Assert.Equal(expected, text);
+            }
+        }
+
+        [Fact]
+        public void GetsCorrectPageSize()
+        {
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                var page = document.GetPage(1);
+
+                Assert.Equal(PageSize.Letter, page.Size);
             }
         }
 
