@@ -9,6 +9,9 @@
         /// </summary>
         public string Value { get; }
 
+        /// <summary>
+        /// The lower-left position of the letter. Letters with descenders will extend below this point.
+        /// </summary>
         public PdfPoint Location { get; }
 
         /// <summary>
@@ -17,9 +20,9 @@
         public decimal Width { get; }
 
         /// <summary>
-        /// Size defined by the Tj operator prior to our possibly incorrect transformation.
+        /// Size as defined in the PDF file. This is not equivalent to font size in points but is relative to other font sizes on the page.
         /// </summary>
-        internal decimal FontSize { get; }
+        public decimal FontSize { get; }
 
         /// <summary>
         /// The name of the font.
@@ -27,10 +30,13 @@
         public string FontName { get; }
 
         /// <summary>
-        /// The size of the font in points.
+        /// The size of the font in points. This is not ready for public consumption as the calculation is incorrect.
         /// </summary>
-        public decimal PointSize { get; }
+        internal decimal PointSize { get; }
 
+        /// <summary>
+        /// Create a new letter to represent some text drawn by the Tj operator.
+        /// </summary>
         internal Letter(string value, PdfPoint location, decimal width, decimal fontSize, string fontName, decimal pointSize)
         {
             Value = value;

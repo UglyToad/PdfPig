@@ -41,7 +41,7 @@ O<DJ+*.@<*K0@<6L(Df-\0Ec5e;DffZ(EZee.Bl.9pF""AGXBPCsi + DGm >@3BB / F * &OCAfu2 
 
             Assert.Equal("Man \0\0\0\0is d", text);
         }
-
+        
         [Fact]
         public void ZInMiddleOf5CharacterSequenceThrows()
         {
@@ -50,6 +50,16 @@ O<DJ+*.@<*K0@<6L(Df-\0Ec5e;DffZ(EZee.Bl.9pF""AGXBPCsi + DGm >@3BB / F * &OCAfu2 
             Action action = () => filter.Decode(bytes, new PdfDictionary(), 0);
 
             Assert.Throws<InvalidOperationException>(action);
+        }
+
+        [Fact]
+        public void SingleCharacterLastThrows()
+        {
+            var bytes = Encoding.ASCII.GetBytes("9jqo^B");
+
+            Action action = () => filter.Decode(bytes, new PdfDictionary(), 1);
+
+            Assert.Throws<ArgumentOutOfRangeException>(action);
         }
 
         private const string PdfContent = @"1 0 obj

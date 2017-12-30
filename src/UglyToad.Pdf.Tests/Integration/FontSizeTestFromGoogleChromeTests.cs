@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using System.Linq;
     using Xunit;
 
     public class FontSizeTestFromGoogleChromeTests
@@ -33,6 +34,19 @@
 
                 Assert.Equal(595, page.Width);
                 Assert.Equal(842, page.Height);
+            }
+        }
+
+        [Fact]
+        public void GetsCorrectPageTextIgnoringHiddenCharacters()
+        {
+            using (var document  = PdfDocument.Open(GetFilename()))
+            {
+                var page = document.GetPage(1);
+
+                var text = string.Join(string.Empty, page.Letters.Select(x => x.Value));
+
+                Assert.Equal("Hello, this is 16ptHello, this is 16px", text);
             }
         }
     }
