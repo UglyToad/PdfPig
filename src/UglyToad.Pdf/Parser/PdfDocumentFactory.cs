@@ -52,7 +52,7 @@
             var crossReferenceOffset = container.Get<FileTrailerParser>().GetXrefOffset(reader, isLenientParsing);
 
             var pool = new CosObjectPool();
-
+            
             var crossReferenceTable = container.Get<FileCrossReferenceTableParser>()
                 .Parse(reader, isLenientParsing, crossReferenceOffset, pool);
 

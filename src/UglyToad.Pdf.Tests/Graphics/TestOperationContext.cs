@@ -7,6 +7,7 @@
     using Pdf.Cos;
     using Pdf.Fonts;
     using Pdf.Graphics;
+    using Pdf.Tokenization.Tokens;
 
     internal class TestOperationContext : IOperationContext
     {
@@ -39,6 +40,10 @@
         }
 
         public void ShowText(IInputBytes bytes)
+        {
+        }
+
+        public void ShowPositionedText(IReadOnlyList<IToken> tokens)
         {
         }
     }

@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.Pdf.Graphics
 {
+    using System.Collections.Generic;
     using IO;
+    using Tokenization.Tokens;
 
     internal interface IOperationContext
     {
@@ -15,5 +17,7 @@
         void PushState();
 
         void ShowText(IInputBytes bytes);
+
+        void ShowPositionedText(IReadOnlyList<IToken> tokens);
     }
 }

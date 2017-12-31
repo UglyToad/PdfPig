@@ -147,7 +147,7 @@
         {
             if (currentBase is PdfDictionary dictionary)
             {
-                PdfRawStream stream = streamParser.Parse(reader, dictionary, isLenientParsing);
+                PdfRawStream stream = streamParser.Parse(reader, dictionary, isLenientParsing, this);
 
                 currentBase = stream;
             }

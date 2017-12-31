@@ -269,9 +269,27 @@ trailer
 trailer
 <<>>");
 
-            var result = parser.TryParse(input, 0, false, objectPool, out var table);
+            var result = parser.TryParse(input, 0, false, objectPool, out var _);
 
             Assert.False(result);
+        }
+
+        [Fact]
+        public void SkipsBlankLinesPrecedingTrailer()
+        {
+            var input = GetReader(@"xref
+15 2
+0000000190 00000 n
+0000000250 00032 n
+
+trailer
+<<>>");
+
+            var result = parser.TryParse(input, 0, false, objectPool, out var table);
+
+            Assert.True(result);
+
+            Assert.Equal(2, table.AsCrossReferenceTablePart().ObjectOffsets.Count);
         }
 
         private static IRandomAccessRead GetReader(string input)

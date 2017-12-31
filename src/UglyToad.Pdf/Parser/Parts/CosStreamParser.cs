@@ -32,7 +32,7 @@
             this.log = log;
         }
 
-        public PdfRawStream Parse(IRandomAccessRead reader, PdfDictionary streamDictionary, bool isLenientParsing)
+        public PdfRawStream Parse(IRandomAccessRead reader, PdfDictionary streamDictionary, bool isLenientParsing, IPdfObjectParser parser)
         {
             PdfRawStream result;
 
@@ -42,7 +42,7 @@
             skipWhiteSpaces(reader);
             
              // This needs to be streamDictionary.getItem because when we are parsing, the underlying object might still be null.
-            ICosNumber streamLength = getLength(reader, streamDictionary.GetItemOrDefault(CosName.LENGTH), streamDictionary.GetName(CosName.TYPE));
+            ICosNumber streamLength = GetLength(reader, streamDictionary.GetItemOrDefault(CosName.LENGTH), streamDictionary.GetName(CosName.TYPE), isLenientParsing, parser);
 
             ValidateStreamLength(reader, isLenientParsing, streamLength);
 
@@ -87,63 +87,72 @@
 
         private void ValidateStreamLength(IRandomAccessRead reader, bool isLenientParsing, ICosNumber streamLength)
         {
-            if (streamLength == null)
+            if (streamLength != null)
             {
-                if (isLenientParsing)
-                {
-                    log.Warn("The stream doesn't provide any stream length, using fallback readUntilEnd, at offset " +
-                             reader.GetPosition());
-                }
-                else
-                {
-                    throw new InvalidOperationException("Missing length for stream.");
-                }
+                return;
+            }
+
+            if (isLenientParsing)
+            {
+                log.Warn("The stream doesn't provide any stream length, using fallback readUntilEnd, at offset " +
+                         reader.GetPosition());
+            }
+            else
+            {
+                throw new InvalidOperationException("Missing length for stream.");
             }
         }
 
-        private ICosNumber getLength(IRandomAccessRead source, CosBase lengthBaseObj, CosName streamType)
+        private ICosNumber GetLength(IRandomAccessRead source, CosBase lengthBaseObj, CosName streamType, bool isLenientParsing, IPdfObjectParser parser)
         {
             if (lengthBaseObj == null)
             {
                 return null;
             }
-            ICosNumber retVal = null;
-            // maybe length was given directly
-            if (lengthBaseObj is ICosNumber)
+            
+            // Length is given directly in the stream dictionary
+            if (lengthBaseObj is ICosNumber number)
             {
-                retVal = (ICosNumber)lengthBaseObj;
+                return number;
             }
+
             // length in referenced object
-            else if (lengthBaseObj is CosObject)
+            if (lengthBaseObj is CosObject lengthObj)
             {
-                CosObject lengthObj = (CosObject)lengthBaseObj;
-                if (lengthObj.GetObject() == null)
+                var currentObject = lengthObj.GetObject();
+
+                if (currentObject == null)
                 {
-                    // not read so far, keep current stream position
-                    long curFileOffset = source.GetPosition();
-                    bool isObjectStream = CosName.OBJ_STM.Equals(streamType);
-                    throw new NotImplementedException();
-                    //parseObjectDynamically(lengthObj, isObjectStream);
-                    // reset current stream position
-                    source.Seek(curFileOffset);
-                    if (lengthObj.GetObject() == null)
+                    if (parser == null)
                     {
-                        throw new InvalidOperationException("Length object content was not read.");
+                        throw new InvalidOperationException("This method required access to the PDF object parser but it was not created yet. Figure out how to fix this.");
                     }
+
+                    var currentOffset = source.GetPosition();
+
+                    var obj = parser.Parse(lengthObj.ToIndirectReference(), source, isLenientParsing);
+
+                    source.Seek(currentOffset);
+
+                    if (obj is ICosNumber referenceNumber)
+                    {
+                        return referenceNumber;
+                    }
+
+                    throw new InvalidOperationException("Length object content was not read.");
                 }
-                if (!(lengthObj.GetObject() is ICosNumber))
+
+                if (currentObject is ICosNumber objectNumber)
                 {
-                    throw new InvalidOperationException("Wrong type of referenced length object " + lengthObj
-                                                        + ": " + lengthObj.GetObject().GetType().Name);
+                    return objectNumber;
                 }
-                retVal = (ICosNumber)lengthObj.GetObject();
+
+
+                throw new InvalidOperationException("Wrong type of referenced length object " + lengthObj
+                                                    + ": " + lengthObj.GetObject().GetType().Name);
             }
-            else
-            {
-                throw new InvalidOperationException("Wrong type of length object: "
-                                                    + lengthBaseObj.GetType().Name);
-            }
-            return retVal;
+
+            throw new InvalidOperationException($"Wrong type of length object: {lengthBaseObj.GetType().Name}");
         }
 
         private void ReadValidStream(IRandomAccessRead reader, BinaryWriter output, ICosNumber streamLengthObj)

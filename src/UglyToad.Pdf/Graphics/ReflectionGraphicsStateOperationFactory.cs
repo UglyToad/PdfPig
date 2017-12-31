@@ -61,6 +61,20 @@ namespace UglyToad.Pdf.Graphics
                     {
                         throw new InvalidOperationException($"Tried to create a show text operation with operand type: {operands[0]?.GetType().Name ?? "null"}");
                     }
+                case ShowTextsWithPositioning.Symbol:
+                    if (operands.Count == 0)
+                    {
+                        throw new InvalidOperationException("Cannot have 0 parameters for a TJ operator.");
+                    }
+
+                    if (operands.Count == 1 && operands[0] is ArrayToken arrayToken)
+                    {
+                        return new ShowTextsWithPositioning(arrayToken.Data);
+                    }
+
+                    var array = operands.ToArray();
+
+                    return new ShowTextsWithPositioning(array);
             }
 
             if (!operations.TryGetValue(op.Data, out Type operationType))

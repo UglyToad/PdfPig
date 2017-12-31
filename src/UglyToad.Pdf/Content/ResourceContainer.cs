@@ -23,8 +23,31 @@
 
         public void LoadResourceDictionary(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
         {
-            if (dictionary.TryGetValue(CosName.FONT, out var fontBase) && fontBase is PdfDictionary fontDictionary)
+            if (dictionary.TryGetValue(CosName.FONT, out var fontBase))
             {
+                PdfDictionary fontDictionary;
+                if (fontBase is CosObject obj)
+                {
+                    var parsedObj = pdfObjectParser.Parse(obj.ToIndirectReference(), reader, isLenientParsing);
+
+                    if (parsedObj is PdfDictionary indirectFontDictionary)
+                    {
+                        fontDictionary = indirectFontDictionary;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"No font dictionary could be found for the dictionary {dictionary}.");
+                    }
+                }
+                else if (fontBase is PdfDictionary directDictionary)
+                {
+                    fontDictionary = directDictionary;
+                }
+                else
+                {
+                    throw new InvalidOperationException($"No font dictionary could be found for the dictionary {dictionary}");
+                }
+
                 LoadFontDictionary(fontDictionary, reader, isLenientParsing);
             }
         }

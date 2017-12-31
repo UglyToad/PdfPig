@@ -9,6 +9,8 @@
     using IO;
     using Operations;
     using Pdf.Core;
+    using Tokenization.Tokens;
+    using Util;
 
     internal class ContentStreamProcessor : IOperationContext
     {
@@ -132,6 +134,64 @@
 
                 TextMatrices.TextMatrix = translate.Multiply(TextMatrices.TextMatrix);
             }
+        }
+
+        public void ShowPositionedText(IReadOnlyList<IToken> tokens)
+        {
+            var currentState = GetCurrentState();
+
+            var textState = currentState.FontState;
+
+            var fontSize = textState.FontSize;
+            var horizontalScaling = textState.HorizontalScaling;
+            var font = resourceStore.GetFont(textState.FontName);
+
+            var isVertical = font.IsVertical;
+
+            foreach (var token in tokens)
+            {
+                if (token is NumericToken number)
+                {
+                    var positionAdjustment = number.Data;
+
+                    decimal tx, ty;
+                    if (isVertical)
+                    {
+                        tx = 0;
+                        ty = -positionAdjustment / 1000 * fontSize;
+                    }
+                    else
+                    {
+                        tx = -positionAdjustment / 1000 * fontSize * horizontalScaling;
+                        ty = 0;
+                    }
+
+                    AdjustTextMatrix(tx, ty);
+                }
+                else
+                {
+                    IReadOnlyList<byte> bytes;
+                    if (token is HexToken hex)
+                    {
+                        bytes = hex.Bytes;
+                    }
+                    else
+                    {
+                        bytes = OtherEncodings.StringAsLatin1Bytes(((StringToken) token).Data);
+                    }
+
+                    ShowText(new ByteArrayInputBytes(bytes));
+                }
+            }
+        }
+
+        private void AdjustTextMatrix(decimal tx, decimal ty)
+        {
+            var matrix = TransformationMatrix.GetTranslationMatrix(tx, ty);
+
+            var newMatrix = matrix.Multiply(TextMatrices.TextMatrix);
+
+            TextMatrices.TextMatrix = newMatrix;
         }
 
         private void ShowGlyph(TransformationMatrix renderingMatrix, IFont font, int characterCode, string unicode, decimal width, decimal fontSize,

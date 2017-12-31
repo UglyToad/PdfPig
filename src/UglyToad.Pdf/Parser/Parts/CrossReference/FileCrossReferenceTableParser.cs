@@ -179,7 +179,7 @@
 
             PdfDictionary dict = dictionaryParser.Parse(reader, baseParser, pool);
 
-            PdfRawStream xrefStream = streamParser.Parse(reader, dict, isLenientParsing);
+            PdfRawStream xrefStream = streamParser.Parse(reader, dict, isLenientParsing, null);
             CrossReferenceTablePart xrefTablePart = crossReferenceStreamParser.Parse(objByteOffset, xrefStream);
 
             return xrefTablePart;

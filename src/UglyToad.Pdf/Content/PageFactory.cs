@@ -42,13 +42,10 @@
 
             MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers, isLenientParsing);
             CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox);
-
-            if (dictionary.GetItemOrDefault(CosName.RESOURCES) is PdfDictionary resource)
-            {
-                resourceStore.LoadResourceDictionary(resource, reader, isLenientParsing);
-            }
-
+            
             UserSpaceUnit userSpaceUnit = GetUserSpaceUnits(dictionary);
+
+            LoadResources(number, dictionary, reader, isLenientParsing);
 
             PageContent content = default(PageContent);
 
@@ -66,7 +63,7 @@
 
                 var operations = pageContentParser.Parse(new ByteArrayInputBytes(contents));
 
-                var context = new ContentStreamProcessor(mediaBox.Bounds, resourceStore, userSpaceUnit);
+                var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit);
 
                 content = context.Process(operations);
             }
@@ -137,6 +134,34 @@
             }
 
             return mediaBox;
+        }
+
+        private void LoadResources(int pageNumber, PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        {
+            var resources = dictionary.GetItemOrDefault(CosName.RESOURCES);
+
+            if (resources is PdfDictionary resource)
+            {
+                resourceStore.LoadResourceDictionary(resource, reader, isLenientParsing);
+
+                return;
+            }
+
+            if (resources is CosObject resourceObject)
+            {
+                var resourceDictionary =
+                    pdfObjectParser.Parse(resourceObject.ToIndirectReference(), reader, isLenientParsing);
+
+                if (resourceDictionary is PdfDictionary resolvedDictionary)
+                {
+                    resourceStore.LoadResourceDictionary(resolvedDictionary, reader, isLenientParsing);
+
+                    return;
+                }
+            }
+
+            throw new InvalidOperationException(
+                $"No resource dictionary was found for this page ({pageNumber}), the page dictionary was {dictionary}.");
         }
     }
 }
