@@ -604,7 +604,7 @@ namespace UglyToad.Pdf.Cos
             return $"/{Name}";
         }
 
-        public void WriteToPdfStream(StreamWriter output)
+        public void WriteToPdfStream(BinaryWriter output)
         {
             output.Write('/');
             byte[] bytes = Encoding.ASCII.GetBytes(Name);

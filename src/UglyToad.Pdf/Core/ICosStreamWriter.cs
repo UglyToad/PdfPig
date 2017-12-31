@@ -4,6 +4,6 @@
 
     public interface ICosStreamWriter
     {
-        void WriteToPdfStream(StreamWriter output);
+        void WriteToPdfStream(BinaryWriter output);
     }
 }

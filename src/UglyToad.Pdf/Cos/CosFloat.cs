@@ -139,7 +139,7 @@ namespace UglyToad.Pdf.Cos
             return "COSFloat{" + valueAsString + "}";
         }
 
-        public void WriteToPdfStream(StreamWriter output)
+        public void WriteToPdfStream(BinaryWriter output)
         {
             var encoding = Encoding.GetEncoding("ISO-8859-1");
             output.Write(encoding.GetBytes(valueAsString));

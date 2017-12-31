@@ -1,9 +1,8 @@
 ﻿namespace UglyToad.Pdf.Tests.Filters
 {
     using System;
-    using ContentStream;
     using Parser.Parts;
-    using Pdf.Cos;
+    using Pdf.ContentStream;
     using Pdf.Filters;
     using Xunit;
 

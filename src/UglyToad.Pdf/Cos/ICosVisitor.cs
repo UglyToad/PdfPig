@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Cos
 {
+    using ContentStream;
+
     /**
      * An interface for visiting a PDF document at the type (COS) level.
      *
@@ -23,7 +25,7 @@
          * @return any Object depending on the visitor implementation, or null
          * @throws IOException If there is an error while visiting this object.
          */
-        object VisitFromBoolean(CosBoolean obj);
+        object VisitFromBoolean(PdfBoolean obj);
 
         /**
          * Notification of visit to dictionary object.

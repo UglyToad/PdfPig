@@ -103,7 +103,7 @@ namespace UglyToad.Pdf.Cos
             return "COSInt{" + value + "}";
         }
 
-        public void WriteToPdfStream(StreamWriter output)
+        public void WriteToPdfStream(BinaryWriter output)
         {
             var encoding = Encoding.GetEncoding("ISO-8859-1");
 

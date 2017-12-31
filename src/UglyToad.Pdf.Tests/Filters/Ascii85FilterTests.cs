@@ -2,7 +2,7 @@
 {
     using System;
     using System.Text;
-    using ContentStream;
+    using Pdf.ContentStream;
     using Pdf.Filters;
     using Xunit;
 

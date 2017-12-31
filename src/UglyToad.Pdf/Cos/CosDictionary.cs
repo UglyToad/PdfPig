@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Text;
     using System.Linq;
+    using ContentStream;
     using Util;
 
     internal class CosDictionary : CosBase, ICosUpdateInfo
@@ -238,7 +239,7 @@
          */
         public void setbool(String key, bool value)
         {
-            setItem(CosName.Create(key), (CosBoolean)value);
+            setItem(CosName.Create(key), (PdfBoolean)value);
         }
 
         /**
@@ -249,7 +250,7 @@
          */
         public void setbool(CosName key, bool value)
         {
-            setItem(key, (CosBoolean)value);
+            setItem(key, (PdfBoolean)value);
         }
 
         /**
@@ -919,9 +920,9 @@
         {
             bool retval = defaultValue;
             CosBase boolValue = getDictionaryObject(firstKey, secondKey);
-            if (boolValue is CosBoolean)
+            if (boolValue is PdfBoolean)
             {
-                retval = ((CosBoolean)boolValue).Value;
+                retval = ((PdfBoolean)boolValue).Value;
             }
 
             return retval;

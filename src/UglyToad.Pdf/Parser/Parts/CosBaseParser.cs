@@ -2,6 +2,7 @@
 {
     using System.IO;
     using System.Text;
+    using ContentStream;
     using Cos;
     using IO;
     using Util;
@@ -85,7 +86,7 @@
                         string truestring = OtherEncodings.BytesAsLatin1String(reader.ReadFully(4));
                         if (truestring.Equals("true"))
                         {
-                            retval = CosBoolean.True;
+                            retval = PdfBoolean.True;
                         }
                         else
                         {
@@ -99,7 +100,7 @@
                         string falsestring = OtherEncodings.BytesAsLatin1String(reader.ReadFully(5));
                         if (falsestring.Equals("false"))
                         {
-                            retval = CosBoolean.False;
+                            retval = PdfBoolean.False;
                         }
                         else
                         {

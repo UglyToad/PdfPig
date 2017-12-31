@@ -6,7 +6,7 @@
     using System.IO.Compression;
     using System.Linq;
     using System.Text;
-    using ContentStream;
+    using Pdf.ContentStream;
     using Pdf.Cos;
     using Pdf.Filters;
     using Xunit;

@@ -4,6 +4,7 @@
     using Content;
     using ContentStream;
     using IO;
+    using Pdf.ContentStream;
     using Pdf.Cos;
     using Pdf.Fonts;
     using Pdf.Graphics;

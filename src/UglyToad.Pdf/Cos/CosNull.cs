@@ -29,14 +29,14 @@ namespace UglyToad.Pdf.Cos
             return visitor.VisitFromNull(this);
         }
 
-        public void WriteToPdfStream(StreamWriter output)
+        public void WriteToPdfStream(BinaryWriter output)
         {
             output.Write(NullBytes);
         }
 
         public override string ToString()
         {
-            return "COSNull{}";
+            return "COSNull";
         }
     }
 }

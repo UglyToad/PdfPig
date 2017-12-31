@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.Pdf.Tests
 {
-    using ContentStream;
     using IO;
+    using Pdf.ContentStream;
     using Pdf.Cos;
     using Pdf.Parser.Parts;
 
