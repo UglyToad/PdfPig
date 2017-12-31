@@ -30,9 +30,9 @@
         {
             using (var document = PdfDocument.Open(GetFilename()))
             {
-                //var page = document.GetPage(1);
+                var page = document.GetPage(1);
 
-                //Assert.Equal(PageSize.A4, page.Size);
+                Assert.Equal(PageSize.A4, page.Size);
             }
         }
     }

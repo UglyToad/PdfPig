@@ -227,9 +227,5 @@
     <EmbeddedResource Include="Resources\CMap\UniKS-UTF16-V" />
     <EmbeddedResource Include="Resources\CMap\V" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Fonts\Simple\" />
-  </ItemGroup>
   
 </Project>

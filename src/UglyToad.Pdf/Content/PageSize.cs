@@ -36,7 +36,9 @@
             // Seems there is some disagreement 1190/1191
             {new WidthHeight(842, 1190), PageSize.A3},
             {new WidthHeight(842, 1191), PageSize.A3},
+            // Possibly some kind of rounding mix-up here
             {new WidthHeight(595, 842), PageSize.A4},
+            {new WidthHeight(595, 841), PageSize.A4},
             {new WidthHeight(420, 595), PageSize.A5},
             {new WidthHeight(298, 420), PageSize.A6},
             {new WidthHeight(210, 298), PageSize.A7},

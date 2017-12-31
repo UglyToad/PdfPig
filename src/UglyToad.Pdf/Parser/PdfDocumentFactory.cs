@@ -68,10 +68,11 @@
 
             var cMapCache = new CMapCache(new CMapParser());
 
-            var fontFactory = new FontFactory(container.Get<ILog>(), new Type0FontHandler(cidFontFactory,
+            var fontFactory = new FontFactory(log, new Type0FontHandler(cidFontFactory,
                 cMapCache, 
                 filterProvider,
-                pdfObjectParser));
+                pdfObjectParser),
+                new TrueTypeFontHandler(pdfObjectParser, filterProvider, cMapCache, fontDescriptorFactory, trueTypeFontParser));
 
             var dynamicParser = container.Get<DynamicParser>();
             var resourceContainer = new ResourceContainer(pdfObjectParser, fontFactory);
