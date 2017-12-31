@@ -2,7 +2,7 @@
 
 namespace UglyToad.Pdf.Cos
 {
-    public class CosObjectKey : IComparable<CosObjectKey>
+    internal class CosObjectKey : IComparable<CosObjectKey>
     {
         public long Number { get; }
         public long Generation { get; }

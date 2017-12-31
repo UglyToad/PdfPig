@@ -7,7 +7,7 @@
     using Cos;
     using Util.JetBrains.Annotations;
 
-    public class PdfDictionary : CosBase, IReadOnlyDictionary<CosName, CosBase>
+    internal class PdfDictionary : CosBase, IReadOnlyDictionary<CosName, CosBase>
     {
         private readonly Dictionary<CosName, CosBase> inner = new Dictionary<CosName, CosBase>();
 

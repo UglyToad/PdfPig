@@ -1,13 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace UglyToad.Pdf.Cos
+﻿namespace UglyToad.Pdf.Cos
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Text;
     using System.Linq;
     using Util;
 
-    public class CosDictionary : CosBase, ICosUpdateInfo
+    internal class CosDictionary : CosBase, ICosUpdateInfo
     {
         private static readonly string PATH_SEPARATOR = "/";
         private bool needToBeUpdated;
@@ -63,7 +62,7 @@ namespace UglyToad.Pdf.Cos
             var contains = items.Values.Any(x => ReferenceEquals(x, value));
             if (!contains && value is CosObject)
             {
-                contains = items.ContainsValue(((CosObject) value).GetObject());
+                contains = items.ContainsValue(((CosObject)value).GetObject());
             }
             return contains;
         }
@@ -80,7 +79,7 @@ namespace UglyToad.Pdf.Cos
             {
                 Object nextValue = item.Value;
                 if (nextValue.Equals(value)
-                    || nextValue is CosObject && ((CosObject) nextValue).GetObject()
+                    || nextValue is CosObject && ((CosObject)nextValue).GetObject()
                     .Equals(value))
                 {
                     return item.Key;
@@ -176,7 +175,7 @@ namespace UglyToad.Pdf.Cos
 
             if (result is CosObject)
             {
-                result = ((CosObject) result).GetObject();
+                result = ((CosObject)result).GetObject();
             }
             if (result is CosNull)
             {
@@ -239,7 +238,7 @@ namespace UglyToad.Pdf.Cos
          */
         public void setbool(String key, bool value)
         {
-            setItem(CosName.Create(key), (CosBoolean) value);
+            setItem(CosName.Create(key), (CosBoolean)value);
         }
 
         /**
@@ -250,7 +249,7 @@ namespace UglyToad.Pdf.Cos
          */
         public void setbool(CosName key, bool value)
         {
-            setItem(key, (CosBoolean) value);
+            setItem(key, (CosBoolean)value);
         }
 
         /**
@@ -336,7 +335,7 @@ namespace UglyToad.Pdf.Cos
          */
         public void setEmbeddedDate(String embedded, CosName key, DateTime date)
         {
-            CosDictionary dic = (CosDictionary) getDictionaryObject(embedded);
+            CosDictionary dic = (CosDictionary)getDictionaryObject(embedded);
             if (dic == null)
             {
                 dic = new CosDictionary();
@@ -397,7 +396,7 @@ namespace UglyToad.Pdf.Cos
          */
         public void setEmbeddedString(String embedded, CosName key, String value)
         {
-            CosDictionary dic = (CosDictionary) getDictionaryObject(embedded);
+            CosDictionary dic = (CosDictionary)getDictionaryObject(embedded);
             if (dic == null && value != null)
             {
                 dic = new CosDictionary();
@@ -475,7 +474,7 @@ namespace UglyToad.Pdf.Cos
          */
         public void setEmbeddedInt(String embeddedDictionary, CosName key, int value)
         {
-            CosDictionary embedded = (CosDictionary) getDictionaryObject(embeddedDictionary);
+            CosDictionary embedded = (CosDictionary)getDictionaryObject(embeddedDictionary);
             if (embedded == null)
             {
                 embedded = new CosDictionary();
@@ -540,7 +539,7 @@ namespace UglyToad.Pdf.Cos
             CosBase name = getDictionaryObject(key);
             if (name is CosName)
             {
-                return (CosName) name;
+                return (CosName)name;
             }
             return null;
         }
@@ -558,7 +557,7 @@ namespace UglyToad.Pdf.Cos
             CosBase name = getDictionaryObject(key);
             if (name is CosName)
             {
-                return (CosName) name;
+                return (CosName)name;
             }
             return defaultValue;
         }
@@ -588,11 +587,11 @@ namespace UglyToad.Pdf.Cos
             CosBase name = getDictionaryObject(key);
             if (name is CosName)
             {
-                retval = ((CosName) name).Name;
+                retval = ((CosName)name).Name;
             }
             else if (name is CosString)
             {
-                retval = ((CosString) name).GetString();
+                retval = ((CosString)name).GetString();
             }
             return retval;
         }
@@ -653,7 +652,7 @@ namespace UglyToad.Pdf.Cos
             CosBase value = getDictionaryObject(key);
             if (value is CosString)
             {
-                retval = ((CosString) value).GetString();
+                retval = ((CosString)value).GetString();
             }
             return retval;
         }
@@ -741,7 +740,7 @@ namespace UglyToad.Pdf.Cos
         public String getEmbeddedString(String embedded, CosName key, String defaultValue)
         {
             String retval = defaultValue;
-            CosDictionary dic = (CosDictionary) getDictionaryObject(embedded);
+            CosDictionary dic = (CosDictionary)getDictionaryObject(embedded);
             if (dic != null)
             {
                 retval = dic.getString(key, defaultValue);
@@ -773,7 +772,7 @@ namespace UglyToad.Pdf.Cos
             CosBase baseObj = getDictionaryObject(key);
             if (baseObj is CosString)
             {
-                return DateConverter.toCalendar((CosString) baseObj);
+                return DateConverter.toCalendar((CosString)baseObj);
             }
 
             return null;
@@ -870,7 +869,7 @@ namespace UglyToad.Pdf.Cos
 
         {
             var retval = defaultValue;
-            CosDictionary eDic = (CosDictionary) getDictionaryObject(embedded);
+            CosDictionary eDic = (CosDictionary)getDictionaryObject(embedded);
             if (eDic != null)
             {
                 retval = eDic.getDate(key, defaultValue);
@@ -922,7 +921,7 @@ namespace UglyToad.Pdf.Cos
             CosBase boolValue = getDictionaryObject(firstKey, secondKey);
             if (boolValue is CosBoolean)
             {
-                retval = ((CosBoolean) boolValue).Value;
+                retval = ((CosBoolean)boolValue).Value;
             }
 
             return retval;
@@ -980,7 +979,7 @@ namespace UglyToad.Pdf.Cos
         public int getEmbeddedInt(String embeddedDictionary, CosName key, int defaultValue)
         {
             int retval = defaultValue;
-            CosDictionary embedded = (CosDictionary) getDictionaryObject(embeddedDictionary);
+            CosDictionary embedded = (CosDictionary)getDictionaryObject(embeddedDictionary);
             if (embedded != null)
             {
                 retval = embedded.getInt(key, defaultValue);
@@ -1026,7 +1025,7 @@ namespace UglyToad.Pdf.Cos
             CosBase obj = getDictionaryObject(keyList);
             if (obj is ICosNumber)
             {
-                retval = ((ICosNumber) obj).AsInt();
+                retval = ((ICosNumber)obj).AsInt();
             }
             return retval;
         }
@@ -1161,7 +1160,7 @@ namespace UglyToad.Pdf.Cos
             CosBase obj = getDictionaryObject(key);
             if (obj is ICosNumber)
             {
-                retval = ((ICosNumber) obj).AsLong();
+                retval = ((ICosNumber)obj).AsLong();
             }
             return retval;
         }
@@ -1217,7 +1216,7 @@ namespace UglyToad.Pdf.Cos
             CosBase obj = getDictionaryObject(key);
             if (obj is ICosNumber)
             {
-                retval = ((ICosNumber) obj).AsFloat();
+                retval = ((ICosNumber)obj).AsFloat();
             }
             return retval;
         }
@@ -1382,18 +1381,18 @@ namespace UglyToad.Pdf.Cos
          */
         public CosBase getObjectFromPath(String objPath)
         {
-            String[] path = objPath.Split(new string[] {PATH_SEPARATOR}, StringSplitOptions.RemoveEmptyEntries);
+            String[] path = objPath.Split(new string[] { PATH_SEPARATOR }, StringSplitOptions.RemoveEmptyEntries);
             CosBase retval = this;
             foreach (var pathString in path)
             {
                 if (retval is COSArray)
                 {
                     int idx = int.Parse(pathString.Replace("\\[", "").Replace("\\]", ""));
-                  retval = ((COSArray) retval).getObject(idx);
+                    retval = ((COSArray)retval).getObject(idx);
                 }
                 else if (retval is CosDictionary)
                 {
-                    retval = ((CosDictionary) retval).getDictionaryObject(pathString);
+                    retval = ((CosDictionary)retval).getDictionaryObject(pathString);
                 }
             }
 
@@ -1408,7 +1407,7 @@ namespace UglyToad.Pdf.Cos
         public CosDictionary asUnmodifiableDictionary()
         {
             throw new NotImplementedException();
-          //  return new UnmodifiableCosDictionary(this);
+            //  return new UnmodifiableCosDictionary(this);
         }
 
         /**
@@ -1418,7 +1417,7 @@ namespace UglyToad.Pdf.Cos
         {
             try
             {
-                return getDictionaryString(this,  new List<CosBase>());
+                return getDictionaryString(this, new List<CosBase>());
             }
             catch (Exception e)
             {

@@ -10,7 +10,7 @@
     using Logging;
     using Parser;
 
-    public class Pages
+    internal class Pages
     {
         private readonly ILog log;
         private readonly Catalog catalog;

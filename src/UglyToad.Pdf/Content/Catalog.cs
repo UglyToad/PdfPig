@@ -4,7 +4,7 @@
     using ContentStream;
     using Cos;
 
-    public class Catalog
+    internal class Catalog
     {
         private readonly PdfDictionary catalogDictionary;
 

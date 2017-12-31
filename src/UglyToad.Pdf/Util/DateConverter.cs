@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace UglyToad.Pdf.Util
+﻿namespace UglyToad.Pdf.Util
 {
+    using System;
     using System.Globalization;
     using Cos;
 
-    public class DateConverter
+    internal class DateConverter
     {
         private DateConverter()
         {
@@ -231,12 +228,12 @@ namespace UglyToad.Pdf.Util
          * package-private for testing
          */
         private static string formatTZoffset(long millis, string sep)
-        { 
-        //{
-        //    SimpleDateFormat sdf = new SimpleDateFormat("Z"); // #hhmm
-        //    sdf.setTimeZone(new SimpleTimeZone(restrainTZoffset(millis), "unknown"));
-        //    String tz = sdf.format(new Date());
-        //    return tz.substring(0, 3) + sep + tz.substring(3);
+        {
+            //{
+            //    SimpleDateFormat sdf = new SimpleDateFormat("Z"); // #hhmm
+            //    sdf.setTimeZone(new SimpleTimeZone(restrainTZoffset(millis), "unknown"));
+            //    String tz = sdf.format(new Date());
+            //    return tz.substring(0, 3) + sep + tz.substring(3);
             throw new NotImplementedException();
         }
 
@@ -627,7 +624,7 @@ namespace UglyToad.Pdf.Util
                 if (whereLen == text.Length)
                 {
                     initialWhere.Index = whereLen;
-                   // return retCal;
+                    // return retCal;
                 }
                 if (whereLen > longestLen)
                 {

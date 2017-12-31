@@ -21,7 +21,7 @@
     /// giving the number of bytes from the beginning of the file to the beginning of the
     /// object. 
     /// </remarks>
-    public class CrossReferenceTablePart
+    internal class CrossReferenceTablePart
     {
         public IReadOnlyDictionary<CosObjectKey, long> ObjectOffsets { get; }
 

@@ -2,10 +2,9 @@
 {
     using System.Collections.Generic;
     using Cos;
-    using Util;
     using Util.JetBrains.Annotations;
 
-    public static class DictionaryValueAccessorExtensions
+    internal static class DictionaryValueAccessorExtensions
     {
         public static long GetLongOrDefault(this PdfDictionary dictionary, CosName key)
         {

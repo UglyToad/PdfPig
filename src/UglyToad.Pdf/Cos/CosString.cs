@@ -1,13 +1,12 @@
-﻿using System;
-using System.Text;
-using System.IO;
-
-namespace UglyToad.Pdf.Cos
+﻿namespace UglyToad.Pdf.Cos
 {
+    using System;
+    using System.Text;
+    using System.IO;
     using System.Collections.Generic;
     using Util;
 
-    public class CosString : CosBase
+    internal class CosString : CosBase
     {
         public byte[] Bytes { get; }
 
@@ -70,7 +69,7 @@ namespace UglyToad.Pdf.Cos
                 }
             }
         }
-        
+
         private static byte[] CloneBytes(IReadOnlyList<byte> bytes)
         {
             var result = new byte[bytes.Count];
@@ -181,7 +180,7 @@ namespace UglyToad.Pdf.Cos
                 return ((Bytes != null ? Bytes.GetHashCode() : 0) * 397);
             }
         }
-        
+
         public override object Accept(ICosVisitor visitor)
         {
             return visitor.VisitFromString(this);

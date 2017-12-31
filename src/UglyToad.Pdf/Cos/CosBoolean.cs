@@ -3,7 +3,7 @@
     using System.IO;
     using Core;
 
-    public class CosBoolean : CosBase, ICosStreamWriter
+    internal class CosBoolean : CosBase, ICosStreamWriter
     {
         /**
      * The true boolean token.

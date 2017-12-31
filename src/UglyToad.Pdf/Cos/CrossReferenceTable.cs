@@ -5,7 +5,7 @@
     using ContentStream;
     using Util.JetBrains.Annotations;
 
-    public class CrossReferenceTable
+    internal class CrossReferenceTable
     {
         public CrossReferenceType Type { get; }
 

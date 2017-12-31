@@ -4,7 +4,7 @@ using UglyToad.Pdf.Core;
 
 namespace UglyToad.Pdf.Cos
 {
-    public class CosInt : CosBase, ICosNumber, ICosStreamWriter
+    internal class CosInt : CosBase, ICosNumber, ICosStreamWriter
     {
         /**
          * The lowest integer to be kept in the {@link #STATIC} array.

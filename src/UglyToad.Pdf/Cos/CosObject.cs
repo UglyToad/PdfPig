@@ -2,7 +2,7 @@
 {
     using ContentStream;
 
-    public class CosObject : CosBase, ICosUpdateInfo
+    internal class CosObject : CosBase, ICosUpdateInfo
     {
         private CosBase baseObject;
         private long objectNumber;

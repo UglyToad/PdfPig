@@ -6,7 +6,7 @@
     using Cos;
     using Util.JetBrains.Annotations;
 
-    public class DictionaryToken : IDataToken<IReadOnlyDictionary<IToken, IToken>>
+    internal class DictionaryToken : IDataToken<IReadOnlyDictionary<IToken, IToken>>
     {
         [NotNull]
         public IReadOnlyDictionary<IToken, IToken> Data { get; }

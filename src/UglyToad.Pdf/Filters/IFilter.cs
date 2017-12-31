@@ -2,7 +2,7 @@
 {
     using ContentStream;
 
-    public interface IFilter
+    internal interface IFilter
     {
         byte[] Decode(byte[] input, PdfDictionary streamDictionary, int filterIndex);
     }

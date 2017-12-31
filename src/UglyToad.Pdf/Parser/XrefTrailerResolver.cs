@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace UglyToad.Pdf.Parser
+﻿namespace UglyToad.Pdf.Parser
 {
-    using System.Collections.ObjectModel;
+    using System.Collections.Generic;
     using System.Linq;
     using Cos;
 
-    public class XrefTrailerResolver
+    internal class XrefTrailerResolver
     {
 
         /**

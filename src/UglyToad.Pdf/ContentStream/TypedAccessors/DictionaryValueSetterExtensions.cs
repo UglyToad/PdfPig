@@ -2,7 +2,7 @@
 {
     using Cos;
 
-    public static class DictionaryValueSetterExtensions
+    internal static class DictionaryValueSetterExtensions
     {
         public static void SetLong(this PdfDictionary dictionary, CosName key, long value)
         {

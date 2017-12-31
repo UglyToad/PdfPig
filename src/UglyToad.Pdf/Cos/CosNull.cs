@@ -5,7 +5,7 @@ namespace UglyToad.Pdf.Cos
     using System.IO;
     using Core;
 
-    public class CosNull : CosBase, ICosStreamWriter
+    internal class CosNull : CosBase, ICosStreamWriter
     {
         /// <summary>
         /// The Null Token

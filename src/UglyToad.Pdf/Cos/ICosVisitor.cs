@@ -5,7 +5,7 @@
      *
      * @author Michael Traut
      */
-    public interface ICosVisitor
+    internal interface ICosVisitor
     {
         /**
          * Notification of visit to Array object.
@@ -33,16 +33,7 @@
          * @throws IOException If there is an error while visiting this object.
          */
         object VisitFromDictionary(CosDictionary obj);
-
-        /**
-         * Notification of visit to document object.
-         *
-         * @param obj The Object that is being visited.
-         * @return any Object depending on the visitor implementation, or null
-         * @throws IOException If there is an error while visiting this object.
-         */
-         object VisitFromDocument(COSDocument obj);
-
+        
         /**
          * Notification of visit to float object.
          *

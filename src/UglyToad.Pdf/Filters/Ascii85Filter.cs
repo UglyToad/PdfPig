@@ -7,7 +7,7 @@
     /// <summary>
     /// ASCII 85 (Base85) is a binary to text encoding using 5 ASCII characters per 4 bytes of data.
     /// </summary>
-    public class Ascii85Filter : IFilter
+    internal class Ascii85Filter : IFilter
     {
         private const byte EmptyBlock = (byte)'z';
         private const byte Offset = (byte)'!';

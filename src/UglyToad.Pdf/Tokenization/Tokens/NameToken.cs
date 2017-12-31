@@ -2,7 +2,7 @@
 {
     using Cos;
 
-    public class NameToken : IDataToken<CosName>
+    internal class NameToken : IDataToken<CosName>
     {
         public CosName Data { get; }
 

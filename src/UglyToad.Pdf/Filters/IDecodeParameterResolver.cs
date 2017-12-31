@@ -2,7 +2,7 @@
 {
     using ContentStream;
 
-    public interface IDecodeParameterResolver
+    internal interface IDecodeParameterResolver
     {
         PdfDictionary GetFilterParameters(PdfDictionary streamDictionary, int index);
     }

@@ -25,7 +25,8 @@ namespace UglyToad.Pdf.Cos
     using System;
     using System.Collections;
     using System.Collections.Generic;
-    public class COSArray : CosBase, IEnumerable<CosBase>, ICosUpdateInfo
+
+    internal class COSArray : CosBase, IEnumerable<CosBase>, ICosUpdateInfo
     {
         private readonly List<CosBase> objects = new List<CosBase>();
         public bool NeedsToBeUpdated { get; set; }

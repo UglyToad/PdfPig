@@ -16,7 +16,7 @@
     /// See section 3.3.3 of the spec (version 1.7) for details on the FlateDecode filter.
     /// The flate decode filter may have a predictor function to further compress the stream.
     /// </remarks>
-    public class FlateFilter : IFilter
+    internal class FlateFilter : IFilter
     {
         // Defaults are from table 3.7 in the spec (version 1.7)
         private const int DefaultColors = 1;

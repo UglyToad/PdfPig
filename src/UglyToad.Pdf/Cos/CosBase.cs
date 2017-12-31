@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace UglyToad.Pdf.Cos
+﻿namespace UglyToad.Pdf.Cos
 {
-    public abstract class CosBase : ICosObject
+    internal abstract class CosBase : ICosObject
     {
         public bool Direct { get; set; }
 
@@ -16,7 +12,7 @@ namespace UglyToad.Pdf.Cos
         public abstract object Accept(ICosVisitor visitor);
     }
 
-    public interface ICosObject
+    internal interface ICosObject
     {
         CosBase GetCosObject();
     }

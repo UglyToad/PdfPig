@@ -10,7 +10,7 @@
     /// <summary>
     /// Store the results of a brute force search for all Cos Objects in the document so we only do it once.
     /// </summary>
-    public class BruteForceSearcher
+    internal class BruteForceSearcher
     {
         private const int MinimumSearchOffset = 6;
 

@@ -7,7 +7,7 @@ using UglyToad.Pdf.Core;
 
 namespace UglyToad.Pdf.Cos
 {
-    public class CosFloat : CosBase, ICosNumber, ICosStreamWriter
+    internal class CosFloat : CosBase, ICosNumber, ICosStreamWriter
     {
         private readonly decimal value;
         private readonly string valueAsString;

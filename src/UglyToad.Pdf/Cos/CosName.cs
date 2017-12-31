@@ -16,7 +16,7 @@ namespace UglyToad.Pdf.Cos
      *
      * @author Ben Litchfield
      */
-    public class CosName : CosBase, IComparable<CosName>, ICosStreamWriter
+    internal class CosName : CosBase, IComparable<CosName>, ICosStreamWriter
     {
         // using ConcurrentHashMap because this can be accessed by multiple threads
         private static readonly ConcurrentDictionary<string, CosName> NameMap = new ConcurrentDictionary<string, CosName>();
