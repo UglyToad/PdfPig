@@ -45,7 +45,7 @@
             
             UserSpaceUnit userSpaceUnit = GetUserSpaceUnits(dictionary);
 
-            LoadResources(number, dictionary, reader, isLenientParsing);
+            LoadResources(dictionary, reader, isLenientParsing);
 
             PageContent content = default(PageContent);
 
@@ -136,7 +136,7 @@
             return mediaBox;
         }
 
-        private void LoadResources(int pageNumber, PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        public void LoadResources(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
         {
             var resources = dictionary.GetItemOrDefault(CosName.RESOURCES);
 
@@ -155,13 +155,8 @@
                 if (resourceDictionary is PdfDictionary resolvedDictionary)
                 {
                     resourceStore.LoadResourceDictionary(resolvedDictionary, reader, isLenientParsing);
-
-                    return;
                 }
             }
-
-            throw new InvalidOperationException(
-                $"No resource dictionary was found for this page ({pageNumber}), the page dictionary was {dictionary}.");
         }
     }
 }

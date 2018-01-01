@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using System.Linq;
     using Content;
     using Xunit;
 
@@ -33,6 +34,19 @@
                 var page = document.GetPage(1);
 
                 Assert.Equal(PageSize.A4, page.Size);
+            }
+        }
+
+        [Fact]
+        public void GetsCorrectPageTextIgnoringHiddenCharacters()
+        {
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                var page = document.GetPage(1);
+
+                var text = string.Join(string.Empty, page.Letters.Select(x => x.Value));
+
+                Assert.Equal("36pt font14 pt font6pt font", text);
             }
         }
     }

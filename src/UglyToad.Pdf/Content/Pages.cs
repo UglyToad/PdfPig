@@ -64,6 +64,7 @@
         {
             if (locatedPages.TryGetValue(pageNumber, out PdfDictionary targetPageDictionary))
             {
+                // TODO: cache the page
                 return pageFactory.Create(pageNumber, targetPageDictionary, new PageTreeMembers(), reader,
                     isLenientParsing);
             }
@@ -118,6 +119,8 @@
             }
 
             var kids = currentPageDictionary.GetDictionaryObject(CosName.KIDS) as COSArray;
+
+            pageFactory.LoadResources(currentPageDictionary, reader, isLenientParsing);
 
             bool childFound = false;
             foreach (var kid in kids.OfType<CosObject>())

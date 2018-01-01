@@ -79,10 +79,15 @@
 
         public void ShowText(IInputBytes bytes)
         {
-            var font = resourceStore.GetFont(GetCurrentState().FontState.FontName);
-
             var currentState = GetCurrentState();
 
+            var font = resourceStore.GetFont(currentState.FontState.FontName);
+
+            if (font == null)
+            {
+                throw new InvalidOperationException($"Could not find the font with name {currentState.FontState.FontName} in the resource store. It has not been loaded yet.");
+            }
+            
             var fontSize = currentState.FontState.FontSize;
             var horizontalScaling = currentState.FontState.HorizontalScaling;
             var characterSpacing = currentState.FontState.CharacterSpacing;
