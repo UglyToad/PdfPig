@@ -6,13 +6,13 @@
     using Content;
     using Xunit;
 
-    public class SinglePageSimpleOpenOfficeTests
+    public class SinglePageNonLatinAcrobatDistillerTests
     {
         private static string GetFilename()
         {
             var documentFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Integration", "Documents"));
 
-            return Path.Combine(documentFolder, "Single Page Simple - from open office.pdf");
+            return Path.Combine(documentFolder, "Single Page Non Latin - from acrobat distiller.pdf");
         }
 
         [Fact]
@@ -46,7 +46,9 @@
 
                 var text = string.Join(string.Empty, page.Letters.Select(x => x.Value));
 
-                Assert.Equal("I am a simple pdf.", text);
+                // For some reason the C# string reverses these characters but they are extracted correctly.
+                // TODO: Need someone who can read these to check them
+                Assert.Equal("Hello ﺪﻤﺤﻣ World. ", text);
             }
         }
     }

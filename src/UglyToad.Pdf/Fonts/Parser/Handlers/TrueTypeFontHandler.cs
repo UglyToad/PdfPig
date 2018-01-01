@@ -1,9 +1,11 @@
 ﻿namespace UglyToad.Pdf.Fonts.Parser.Handlers
 {
+    using System;
     using System.Linq;
     using Cmap;
     using ContentStream;
     using Cos;
+    using Encodings;
     using Exceptions;
     using Filters;
     using IO;
@@ -57,6 +59,33 @@
                 if (decodedUnicodeCMap != null)
                 {
                     toUnicodeCMap = cMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap), isLenientParsing);
+                }
+            }
+
+            Encoding encoding = null;
+            if (dictionary.TryGetValue(CosName.ENCODING, out var encodingBase))
+            {
+                // Symbolic fonts default to standard encoding.
+                if (descriptor.Flags.HasFlag(FontFlags.Symbolic))
+                {
+                    encoding = StandardEncoding.Instance;
+                }
+
+                if (encodingBase is CosName encodingName)
+                {
+                    if (!Encoding.TryGetNamedEncoding(encodingName, out encoding))
+                    {
+                        // TODO: PDFBox would not throw here.
+                        throw new InvalidFontFormatException($"Unrecognised encoding name: {encodingName}");
+                    }
+                }
+                else if (encodingBase is CosDictionary encodingDictionary)
+                {
+                    throw new NotImplementedException("No support for reading encoding from dictionary yet.");
+                }
+                else
+                {
+                    throw new NotImplementedException("No support for reading encoding from font yet.");
                 }
             }
 

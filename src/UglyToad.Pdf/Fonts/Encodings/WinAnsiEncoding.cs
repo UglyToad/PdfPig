@@ -1,7 +1,13 @@
 ﻿namespace UglyToad.Pdf.Fonts.Encodings
 {
+    using Util;
+
     internal class WinAnsiEncoding : Encoding
     {
+        /// <summary>
+        /// The encoding table is taken from the Appendix of the specification.
+        /// These codes are in octal.
+        /// </summary>
         private static readonly (int, string)[] EncodingTable =
         {
             (0101, "A"),
@@ -233,7 +239,10 @@
         {
             foreach (var valueTuple in EncodingTable)
             {
-                Add(valueTuple.Item1, valueTuple.Item2);
+                // Convert out of octal before creating
+                var code = OctalHelpers.FromOctalInt(valueTuple.Item1);
+
+                Add(code, valueTuple.Item2);
             }
 
             // In WinAnsiEncoding, all unused codes greater than 40 map to the bullet character.

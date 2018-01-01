@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Fonts.Encodings
 {
+    using Util;
+
     internal class MacExpertEncoding : Encoding
     {
         /// <summary>
@@ -182,7 +184,7 @@
         {
             foreach (var valueTuple in EncodingTable)
             {
-                Add(valueTuple.Item1, valueTuple.Item2);
+                Add(OctalHelpers.FromOctalInt(valueTuple.Item1), valueTuple.Item2);
             }
         }
     }

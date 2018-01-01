@@ -4,6 +4,7 @@
     using IO;
     using Parser.Parts;
     using Tokens;
+    using Util;
 
     public class StringTokenizer : ITokenizer
     {
@@ -51,7 +52,7 @@
 
                     if (octalsRead == 3 || !nextCharacterOctal)
                     {
-                        var characterCode = FromOctal(octal);
+                        var characterCode = OctalHelpers.FromOctalDigits(octal);
 
                         // For now :(
                         // TODO: I have a sneaking suspicion this is wrong, not sure what behaviour is for large octal numbers
@@ -159,7 +160,7 @@
                 octals[i] = octals[i - 1];
             }
 
-            var value = OctalCharacterToShort(nextOctalChar);
+            var value = nextOctalChar.CharacterToShort();
 
             octals[0] = value;
         }
@@ -220,7 +221,7 @@
                 case '5':
                 case '6':
                 case '7':
-                    octal[0] = OctalCharacterToShort(c);
+                    octal[0] = c.CharacterToShort();
                     isOctalActive = true;
                     octalsRead = 1;
                     break;
@@ -241,61 +242,6 @@
                     }
                     break;
             }
-        }
-
-        private static short OctalCharacterToShort(char c)
-        {
-            switch (c)
-            {
-                case '0':
-                    return 0;
-                case '1':
-                    return 1;
-                case '2':
-                    return 2;
-                case '3':
-                    return 3;
-                case '4':
-                    return 4;
-                case '5':
-                    return 5;
-                case '6':
-                    return 6;
-                case '7':
-                    return 7;
-                case '8':
-                    return 8;
-                case '9':
-                    return 9;
-                default:
-                    return 0;
-            }
-        }
-
-        private static int FromOctal(short[] octal)
-        {
-            int Power(int x, int pow)
-            {
-                int ret = 1;
-                while (pow != 0)
-                {
-                    if ((pow & 1) == 1)
-                        ret *= x;
-                    x *= x;
-                    pow >>= 1;
-                }
-
-                return ret;
-            }
-
-            int sum = 0;
-            for (int i = octal.Length - 1; i >= 0; i--)
-            {
-                var power = i;
-                sum += octal[i] * Power(8, power);
-            }
-
-            return sum;
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.Pdf.Fonts.Simple
 {
+    using System;
     using Cmap;
     using Composite;
     using Cos;
@@ -47,7 +48,18 @@
 
             if (!ToUnicode.CanMapToUnicode)
             {
-                return false;
+                // For now just cast to character
+
+                try
+                {
+                    value = ((char) characterCode).ToString();
+
+                    return true;
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
             }
 
             return ToUnicode.TryGet(characterCode, out value);

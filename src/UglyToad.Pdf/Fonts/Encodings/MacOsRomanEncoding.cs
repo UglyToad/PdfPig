@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.Pdf.Fonts.Encodings
 {
+    using Util;
+
     /// <summary>
     /// Similar to the <see cref="MacRomanEncoding"/> with 15 additional entries.
     /// </summary>
@@ -31,7 +33,7 @@
         {
             foreach (var valueTuple in EncodingTable)
             {
-                Add(valueTuple.Item1, valueTuple.Item2);
+                Add(OctalHelpers.FromOctalInt(valueTuple.Item1), valueTuple.Item2);
             }
         }
     }
