@@ -65,7 +65,9 @@
             var encodedCharacterName = encoding.GetName(characterCode);
 
             // Look up the character name in the Adobe Glyph List.
+            value = GlyphList.AdobeGlyphList.NameToUnicode(encodedCharacterName);
 
+            return true;
 
             if (!ToUnicode.CanMapToUnicode)
             {

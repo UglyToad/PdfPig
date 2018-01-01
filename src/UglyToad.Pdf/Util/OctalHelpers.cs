@@ -52,9 +52,9 @@
             var str = input.ToString();
 
             int sum = 0;
-            for (var i = str.Length - 1; i >= 0; i--)
+            for (var i = 0; i < str.Length; i++)
             {
-                var part = str[i].CharacterToShort();
+                var part = str[str.Length - 1 - i].CharacterToShort();
 
                 sum += part * QuickPower(8, i);
             }
