@@ -89,7 +89,7 @@
                 }
             }
 
-            return new TrueTypeSimpleFont(name, firstCharacter, lastCharacter, widths, descriptor, toUnicodeCMap);
+            return new TrueTypeSimpleFont(name, firstCharacter, lastCharacter, widths, descriptor, toUnicodeCMap, encoding);
         }
 
         private static int GetFirstCharacter(PdfDictionary dictionary)

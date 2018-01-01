@@ -4,6 +4,7 @@
     using Cmap;
     using Composite;
     using Cos;
+    using Encodings;
     using Geometry;
     using IO;
     using Util.JetBrains.Annotations;
@@ -14,6 +15,8 @@
         private readonly int lastCharacterCode;
         private readonly decimal[] widths;
         private readonly FontDescriptor descriptor;
+        [CanBeNull]
+        private readonly Encoding encoding;
 
         public CosName Name { get; }
 
@@ -24,12 +27,14 @@
 
         public TrueTypeSimpleFont(CosName name, int firstCharacterCode, int lastCharacterCode, decimal[] widths, 
             FontDescriptor descriptor,
-            [CanBeNull]CMap toUnicodeCMap)
+            [CanBeNull]CMap toUnicodeCMap,
+            [CanBeNull]Encoding encoding)
         {
             this.firstCharacterCode = firstCharacterCode;
             this.lastCharacterCode = lastCharacterCode;
             this.widths = widths;
             this.descriptor = descriptor;
+            this.encoding = encoding;
 
             Name = name;
             IsVertical = false;
@@ -46,12 +51,30 @@
         {
             value = null;
 
+            // Behaviour specified by the Extraction of Text Content section of the specification.
+
+            // If the font contains a ToUnicode CMap use that.
+            if (ToUnicode.CanMapToUnicode)
+            {
+                return ToUnicode.TryGet(characterCode, out value);
+            }
+
+            // If the font is a simple font that uses one of the predefined encodings MacRomanEncoding, MacExpertEncoding, or WinAnsiEncoding...
+
+            //  Map the character code to a character name.
+            var encodedCharacterName = encoding.GetName(characterCode);
+
+            // Look up the character name in the Adobe Glyph List.
+
+
             if (!ToUnicode.CanMapToUnicode)
             {
-                // For now just cast to character
-
                 try
                 {
+                    if (encoding != null)
+                    {
+                        }
+
                     value = ((char) characterCode).ToString();
 
                     return true;

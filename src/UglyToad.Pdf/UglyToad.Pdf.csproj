@@ -112,6 +112,9 @@
     <None Remove="Resources\CMap\UniKS-UTF16-H" />
     <None Remove="Resources\CMap\UniKS-UTF16-V" />
     <None Remove="Resources\CMap\V" />
+    <None Remove="Resources\GlyphList\additional" />
+    <None Remove="Resources\GlyphList\glyphlist" />
+    <None Remove="Resources\GlyphList\zapfdingbats" />
   </ItemGroup>
 
   <ItemGroup>
@@ -226,6 +229,9 @@
     <EmbeddedResource Include="Resources\CMap\UniKS-UTF16-H" />
     <EmbeddedResource Include="Resources\CMap\UniKS-UTF16-V" />
     <EmbeddedResource Include="Resources\CMap\V" />
+    <EmbeddedResource Include="Resources\GlyphList\additional" />
+    <EmbeddedResource Include="Resources\GlyphList\glyphlist" />
+    <EmbeddedResource Include="Resources\GlyphList\zapfdingbats" />
   </ItemGroup>
   
 </Project>
