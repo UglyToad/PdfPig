@@ -8,7 +8,7 @@ namespace UglyToad.Pdf.Tests.Integration
     using Content;
     using Xunit;
 
-    public class SinglePageSimpleTests
+    public class SinglePageSimpleGoogleChromeTests
     {
         private static readonly HashSet<string> IgnoredHiddenCharacters = new HashSet<string>
         {

@@ -1,14 +1,13 @@
-﻿namespace UglyToad.Pdf.Content
+﻿namespace UglyToad.Pdf.Parser
 {
     using System;
+    using Content;
     using ContentStream;
     using Cos;
     using Filters;
     using Geometry;
     using Graphics;
     using IO;
-    using Parser;
-    using Util;
 
     internal class PageFactory : IPageFactory
     {

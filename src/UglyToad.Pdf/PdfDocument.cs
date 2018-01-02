@@ -7,7 +7,6 @@
     using Logging;
     using Parser;
     using Parser.Parts;
-    using Util;
     using Util.JetBrains.Annotations;
 
     public class PdfDocument : IDisposable
@@ -30,6 +29,9 @@
         [NotNull]
         internal Pages Pages { get; }
 
+        [NotNull]
+        public DocumentInformation Information { get; }
+
         /// <summary>
         /// Get the number of pages in this document.
         /// </summary>
@@ -40,7 +42,8 @@
             ParsingCachingProviders cachingProviders,
             IPageFactory pageFactory,
             IPdfObjectParser pdfObjectParser,
-            Catalog catalog)
+            Catalog catalog,
+            DocumentInformation information)
         {
             this.log = log;
             this.reader = reader ?? throw new ArgumentNullException(nameof(reader));
@@ -48,6 +51,7 @@
             this.crossReferenceTable = crossReferenceTable ?? throw new ArgumentNullException(nameof(crossReferenceTable));
             this.isLenientParsing = isLenientParsing;
             this.cachingProviders = cachingProviders ?? throw new ArgumentNullException(nameof(cachingProviders));
+            Information = information ?? throw new ArgumentNullException(nameof(information));
             Catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             Pages = new Pages(log, Catalog, pdfObjectParser, pageFactory, reader, isLenientParsing);
         }

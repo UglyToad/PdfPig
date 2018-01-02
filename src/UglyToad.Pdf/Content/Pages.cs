@@ -31,25 +31,9 @@
                 throw new ArgumentNullException(nameof(catalog));
             }
 
-            var pages = catalog.Get(CosName.PAGES) as CosObject;
+            rootPageDictionary = catalog.PagesDictionary;
 
-            if (pages == null)
-            {
-                throw new InvalidOperationException("No pages were present in the catalog for this PDF document");
-            }
-
-            var pagesObject = pdfObjectParser.Parse(pages.ToIndirectReference(), reader, isLenientParsing);
-
-            if (!(pagesObject is PdfDictionary catalogPageDictionary))
-            {
-                throw new InvalidOperationException("Could not find the root pages object: " + pages);
-            }
-
-            var count = catalogPageDictionary.GetIntOrDefault(CosName.COUNT);
-
-            rootPageDictionary = catalogPageDictionary;
-
-            Count = count;
+            Count = rootPageDictionary.GetIntOrDefault(CosName.COUNT);
 
             this.log = log;
             this.catalog = catalog;

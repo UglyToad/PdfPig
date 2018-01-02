@@ -78,6 +78,8 @@
             var resourceContainer = new ResourceContainer(pdfObjectParser, fontFactory);
 
             var pageFactory = new PageFactory(resourceContainer, pdfObjectParser, filterProvider, new PageContentParser(new ReflectionGraphicsStateOperationFactory()));
+            var informationFactory = new DocumentInformationFactory();
+            var catalogFactory = new CatalogFactory(pdfObjectParser);
 
             var root = ParseTrailer(reader, crossReferenceTable, dynamicParser, bruteForceSearcher, pool,
                 isLenientParsing);
@@ -93,9 +95,13 @@
                 rootDictionary.Set(CosName.TYPE, CosName.CATALOG);
             }
 
+            var information = informationFactory.Create(pdfObjectParser, crossReferenceTable.Dictionary, reader, isLenientParsing);
+
+            var catalog = catalogFactory.Create(rootDictionary, reader, isLenientParsing);
+
             var caching = new ParsingCachingProviders(pool, bruteForceSearcher, resourceContainer);
 
-            return new PdfDocument(log, reader, version, crossReferenceTable, isLenientParsing, caching, pageFactory, pdfObjectParser, new Catalog(rootDictionary));
+            return new PdfDocument(log, reader, version, crossReferenceTable, isLenientParsing, caching, pageFactory, pdfObjectParser, catalog, information);
         }
 
         private static CosBase ParseTrailer(IRandomAccessRead reader, CrossReferenceTable crossReferenceTable,
