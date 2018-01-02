@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.Pdf.Fonts.CidFonts
 {
+    using Core;
     using Cos;
 
     /// <summary>
@@ -31,6 +32,8 @@
         /// The definition of the character collection for the font.
         /// </summary>
         CharacterIdentifierSystemInfo SystemInfo { get; }
+
+        TransformationMatrix FontMatrix { get; }
 
         CidFontType CidFontType { get; }
 

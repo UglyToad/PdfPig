@@ -89,10 +89,12 @@
             }
             
             var fontSize = currentState.FontState.FontSize;
-            var horizontalScaling = currentState.FontState.HorizontalScaling;
+            var horizontalScaling = currentState.FontState.HorizontalScaling / 100m;
             var characterSpacing = currentState.FontState.CharacterSpacing;
 
             var transformationMatrix = currentState.CurrentTransformationMatrix;
+
+            var fontMatrix = font.GetFontMatrix();
 
             // TODO: this does not seem correct, produces the correct result for now but we need to revisit.
             // see: https://stackoverflow.com/questions/48010235/pdf-specification-get-font-size-in-points
@@ -114,12 +116,12 @@
 
                 if (font.IsVertical)
                 {
-                    throw new NotImplementedException("Vertical fonts are currently unsupported, please submit a pull request or issue with an example file.");
+                    throw new NotImplementedException("Vertical fonts are# currently unsupported, please submit a pull request or issue with an example file.");
                 }
 
                 var displacement = font.GetDisplacement(code);
-
-                var width = (displacement.X * fontSize) * transformationMatrix.A;
+                
+                var width = displacement.X * fontSize * TextMatrices.TextMatrix.GetScalingFactorX() * transformationMatrix.A;
 
                 ShowGlyph(renderingMatrix, font, code, unicode, width, fontSize, pointSize);
 
@@ -148,7 +150,7 @@
             var textState = currentState.FontState;
 
             var fontSize = textState.FontSize;
-            var horizontalScaling = textState.HorizontalScaling;
+            var horizontalScaling = textState.HorizontalScaling/100m;
             var font = resourceStore.GetFont(textState.FontName);
 
             var isVertical = font.IsVertical;

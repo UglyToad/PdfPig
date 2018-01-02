@@ -134,6 +134,35 @@
             return new TransformationMatrix(result);
         }
 
+        public decimal GetScalingFactorX()
+        {
+            var xScale = A;
+
+            /**
+             * BM: if the trm is rotated, the calculation is a little more complicated
+             *
+             * The rotation matrix multiplied with the scaling matrix is:
+             * (   x   0   0)    ( cos  sin  0)    ( x*cos x*sin   0)
+             * (   0   y   0) *  (-sin  cos  0)  = (-y*sin y*cos   0)
+             * (   0   0   1)    (   0    0  1)    (     0     0   1)
+             *
+             * So, if you want to deduce x from the matrix you take
+             * M(0,0) = x*cos and M(0,1) = x*sin and use the theorem of Pythagoras
+             *
+             * sqrt(M(0,0)^2+M(0,1)^2) =
+             * sqrt(x2*cos2+x2*sin2) =
+             * sqrt(x2*(cos2+sin2)) = <- here is the trick cos2+sin2 is one
+             * sqrt(x2) =
+             * abs(x)
+             */
+            if (!(B == 0m && C == 0m))
+            {
+                xScale = (decimal)Math.Sqrt((double)(A*A + B*B));
+            }
+
+            return xScale;
+        }
+
         public override bool Equals(object obj)
         {
             if (!(obj is TransformationMatrix m))

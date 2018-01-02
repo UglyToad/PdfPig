@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.Pdf.Fonts
 {
+    using Core;
     using Cos;
     using Geometry;
     using IO;
@@ -17,5 +18,7 @@
         PdfVector GetDisplacement(int characterCode);
 
         decimal GetWidth(int characterCode);
+
+        TransformationMatrix GetFontMatrix();
     }
 }

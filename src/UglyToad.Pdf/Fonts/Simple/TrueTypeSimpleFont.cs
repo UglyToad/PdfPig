@@ -3,6 +3,7 @@
     using System;
     using Cmap;
     using Composite;
+    using Core;
     using Cos;
     using Encodings;
     using Geometry;
@@ -11,6 +12,8 @@
 
     internal class TrueTypeSimpleFont : IFont
     {
+        private static readonly TransformationMatrix FontMatrix =
+            TransformationMatrix.FromValues(1/1000m, 0, 0, 1/1000m, 0, 0);
         private readonly int firstCharacterCode;
         private readonly int lastCharacterCode;
         private readonly decimal[] widths;
@@ -107,6 +110,12 @@
             }
 
             return widths[index];
+        }
+
+        public TransformationMatrix GetFontMatrix()
+        {
+            // TODO: should this also use units per em?
+            return FontMatrix;
         }
     }
 }

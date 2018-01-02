@@ -3,6 +3,7 @@
     using System;
     using CidFonts;
     using Cmap;
+    using Core;
     using Cos;
     using Geometry;
     using IO;
@@ -83,6 +84,11 @@
             var fromFont = CidFont.GetWidthFromDictionary(cid);
             
             return fromFont;
+        }
+
+        public TransformationMatrix GetFontMatrix()
+        {
+            return CidFont.FontMatrix;
         }
     }
 }

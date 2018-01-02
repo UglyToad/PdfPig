@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.Pdf.Fonts.CidFonts
 {
     using System.Collections.Generic;
+    using Core;
     using Cos;
 
     /// <inheritdoc />
@@ -18,6 +19,7 @@
         public CosName SubType { get; }
         public CosName BaseFont { get; }
         public CharacterIdentifierSystemInfo SystemInfo { get; }
+        public TransformationMatrix FontMatrix { get; }
         public CidFontType CidFontType => CidFontType.Type2;
         public FontDescriptor Descriptor { get; }
 
@@ -34,10 +36,15 @@
             this.fontProgram = fontProgram;
             this.verticalWritingMetrics = verticalWritingMetrics;
             this.widths = widths;
+
+            // TODO: This should maybe take units per em into account?
+            var scale = 1 / 1000m;
+            FontMatrix = TransformationMatrix.FromValues(scale, 0, 0, scale, 0, 0);
         }
 
         public decimal GetWidthFromFont(int characterCode)
         {
+            // TODO: Read the font width from the font program.
             throw new System.NotImplementedException();
         }
 
