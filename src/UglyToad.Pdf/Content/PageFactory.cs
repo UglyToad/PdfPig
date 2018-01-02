@@ -61,9 +61,7 @@
                 }
 
                 var contents = contentStream.Decode(filterProvider);
-
-                var texty = OtherEncodings.BytesAsLatin1String(contents);
-
+                
                 var operations = pageContentParser.Parse(new ByteArrayInputBytes(contents));
 
                 var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit);
