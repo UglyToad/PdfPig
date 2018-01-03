@@ -91,6 +91,7 @@
                 bool found = pageNumber == soughtPageNumber;
 
                 locatedPages[pageNumber] = currentPageDictionary;
+                pageNumbersObserved.Add(pageNumber);
 
                 return found;
             }
@@ -117,6 +118,7 @@
                 if (thisPageMatches)
                 {
                     childFound = true;
+                    break;
                 }
             }
 

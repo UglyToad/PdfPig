@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
 
     public class Page
     {
@@ -17,6 +18,8 @@
         internal PageContent Content { get; }
 
         public IReadOnlyList<Letter> Letters => Content?.Letters ?? new Letter[0];
+
+        public string Text { get; }
 
         /// <summary>
         /// Gets the width of the page in points.
@@ -44,11 +47,22 @@
             MediaBox = mediaBox;
             CropBox = cropBox;
             Content = content;
+            Text = GetText(content);
 
             Width = mediaBox.Bounds.Width;
             Height = mediaBox.Bounds.Height;
 
             Size = mediaBox.Bounds.GetPageSize();
+        }
+
+        private static string GetText(PageContent content)
+        {
+            if (content?.Letters == null)
+            {
+                return string.Empty;
+            }
+
+            return string.Join(string.Empty, content.Letters.Select(x => x.Value));
         }
     }
 }

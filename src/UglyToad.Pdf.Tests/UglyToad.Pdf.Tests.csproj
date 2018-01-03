@@ -16,6 +16,7 @@
     <None Remove="Integration\Documents\Single Page Non Latin - from acrobat distiller.pdf" />
     <None Remove="Integration\Documents\Single Page Simple - from google drive.pdf" />
     <None Remove="Integration\Documents\Single Page Simple - from open office.pdf" />
+    <None Remove="Integration\Documents\Two Page Text Only - from libre office.pdf" />
   </ItemGroup>
 
   <ItemGroup>
@@ -41,6 +42,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Integration\Documents\Single Page Simple - from open office.pdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Integration\Documents\Two Page Text Only - from libre office.pdf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
