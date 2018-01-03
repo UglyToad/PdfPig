@@ -32,7 +32,7 @@
 
         public static BasicMaximumProfileTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table)
         {
-            data.Seek(table.Offset - 1);
+            data.Seek(table.Offset);
 
             var version = data.Read32Fixed();
             var numberOfGlyphs = data.ReadUnsignedShort();

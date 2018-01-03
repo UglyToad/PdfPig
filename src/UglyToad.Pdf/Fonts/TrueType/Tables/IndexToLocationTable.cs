@@ -29,7 +29,7 @@
             const short shortFormat = 0;
             const short longFormat = 1;
 
-            data.Seek(table.Offset - 1);
+            data.Seek(table.Offset);
 
             var format = headerTable.IndexToLocFormat;
 

@@ -81,7 +81,7 @@
 
         public static PostScriptTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, BasicMaximumProfileTable maximumProfileTable)
         {
-            data.Seek(table.Offset - 1);
+            data.Seek(table.Offset);
             var formatType = data.Read32Fixed();
             var italicAngle = data.Read32Fixed();
             var underlinePosition = data.ReadSignedShort();

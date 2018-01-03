@@ -87,7 +87,7 @@
 
         public static HeaderTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table)
         {
-            data.Seek(table.Offset - 1);
+            data.Seek(table.Offset);
             var version = data.Read32Fixed();
             var fontRevision = data.Read32Fixed();
             var checkSumAdjustment = data.ReadUnsignedInt();

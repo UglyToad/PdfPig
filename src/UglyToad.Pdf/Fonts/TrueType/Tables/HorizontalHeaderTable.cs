@@ -99,7 +99,7 @@
 
         public static HorizontalHeaderTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table)
         {
-            data.Seek(table.Offset - 1);
+            data.Seek(table.Offset);
             var majorVersion = data.ReadUnsignedShort();
             var minorVersion = data.ReadUnsignedShort();
 

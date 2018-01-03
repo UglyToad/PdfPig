@@ -25,7 +25,7 @@
         public static GlyphDataTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, HeaderTable headerTable,
             IndexToLocationTable indexToLocationTable)
         {
-            data.Seek(table.Offset - 1);
+            data.Seek(table.Offset);
 
             var offsets = indexToLocationTable.GlyphOffsets;
 
@@ -43,7 +43,7 @@
                     continue;
                 }
 
-                data.Seek(offsets[i] - 1 + table.Offset);
+                data.Seek(offsets[i] + table.Offset);
 
                 var contourCount = data.ReadSignedShort();
 
