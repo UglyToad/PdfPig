@@ -119,6 +119,21 @@ startxref
         }
 
         [Fact]
+        public void MissingNumericAfterStartXrefThrows()
+        {
+            var input = StringBytesTestConverter.Convert(@"11 0 obj
+        << /Type/Font >>
+endobj
+
+startxref 
+   ", false);
+
+            Action action = () => parser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes), false);
+
+            Assert.Throws<PdfDocumentFormatException>(action);
+        }
+
+        [Fact]
         public void TakesLastStartXrefPrecedingEndOfFile()
         {
             var input = StringBytesTestConverter.Convert(@"11 0 obj
