@@ -7,11 +7,11 @@ The aim of this project is to convert the [PdfBox](https://github.com/apache/pdf
 
 ## Status ##
 
-There is a lot left to do for this project, the initial minimum viable project when released to Alpha will provide:
+There is a lot left to do for this project, the initial minimum viable product when released to Alpha will provide:
 
 + Page counts and sizes (in points) for a document.
 + Access to the text contents of each page. Note that since PDF has no concept of a "word" it will be up to the consumer of the text to work out where the words are within the text.
-+ (Possible) The locations and bounds of each letter on the page.
++ (Possible) The locations of each letter on the page.
 
 For the initial alpha release all files will be opened rather than streamed so this will not support large files.
 
@@ -32,6 +32,14 @@ The initial public API will be as limited as possible to allow extensive refacto
 
         string text = page.Text;
     }
+    
+```PdfDocument``` should only be used in a ```using``` statement since it is disposable (unless the consumer disposes of it elsewhere).
+    
+The ```Page``` contains the page width and height in points as well as mapping to the ```PageSize``` enum:
+
+    PageSize size = Page.Size;
+    
+    bool sA4 = size == PageSize.A4;
 
 The ```PdfDocument``` will also support opening from byte arrays (as well as streams eventually):
 
@@ -40,3 +48,12 @@ The ```PdfDocument``` will also support opening from byte arrays (as well as str
     {
         int numberOfPages = document.NumberOfPages;
     }
+
+The ```PdfDocument``` provides access to the document metadata defined in the PDF file, most of these entries will be null:
+
+    PdfDocument document = PdfDocument.Open(fileName);
+    // The name of the program used to convert this document to PDF.
+    string producer = document.DocumentInformation.Producer;
+    // The title given to the document
+    string title = document.DocumentInformation.Title;
+    // etc...
