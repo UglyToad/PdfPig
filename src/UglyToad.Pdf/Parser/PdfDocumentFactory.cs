@@ -29,9 +29,11 @@
 
             var reader = new RandomAccessBuffer(fileBytes);
 
-            var tokenScanner = new CoreTokenScanner(new ByteArrayInputBytes(fileBytes));
+            var inputBytes = new ByteArrayInputBytes(fileBytes);
 
-            var document = OpenDocument(reader,tokenScanner, container,  isLenientParsing);
+            var tokenScanner = new CoreTokenScanner(inputBytes);
+
+            var document = OpenDocument(reader, inputBytes, tokenScanner, container,  isLenientParsing);
 
             return document;
         }
@@ -46,13 +48,13 @@
             return Open(File.ReadAllBytes(filename), options);
         }
 
-        private static PdfDocument OpenDocument(IRandomAccessRead reader, ISeekableTokenScanner scanner, IContainer container, bool isLenientParsing)
+        private static PdfDocument OpenDocument(IRandomAccessRead reader, IInputBytes inputBytes, ISeekableTokenScanner scanner, IContainer container, bool isLenientParsing)
         {
             var log = container.Get<ILog>();
 
             var version = container.Get<FileHeaderParser>().Parse(scanner, isLenientParsing);
-
-            var crossReferenceOffset = container.Get<FileTrailerParser>().GetXrefOffset(reader, isLenientParsing);
+            
+            var crossReferenceOffset = container.Get<FileTrailerParser>().GetFirstCrossReferenceOffset(inputBytes, scanner, isLenientParsing);
 
             var pool = new CosObjectPool();
             

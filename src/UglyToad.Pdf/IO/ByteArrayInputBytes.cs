@@ -29,6 +29,8 @@
 
         public byte CurrentByte { get; private set; }
 
+        public long Length => bytes.Count;
+
         public byte? Peek()
         {
             if (currentOffset == bytes.Count - 1)

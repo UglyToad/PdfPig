@@ -1,8 +1,11 @@
 ﻿namespace UglyToad.Pdf.Parser.Parts
 {
     using System;
-    using System.Linq;
+    using System.Collections.Generic;
+    using Exceptions;
     using IO;
+    using Tokenization.Scanner;
+    using Tokenization.Tokens;
 
     /*
      * The trailer of a PDF file allows us to quickly find the cross-reference table and other special objects. 
@@ -19,156 +22,136 @@
 
     internal class FileTrailerParser
     {
-        private const int DefaultTrailerByteLength = 2048;
+        /// <summary>
+        /// Acrobat viewers require the EOF to be in the last 1024 bytes instead of at the end.
+        /// </summary>
+        private const int EndOfFileSearchRange = 1024;
 
-        private readonly byte[] endOfFileBytes;
-        private readonly byte[] startXRefBytes;
-
-        public FileTrailerParser()
+        private static readonly byte[] EndOfFileBytes = 
         {
-            endOfFileBytes = "%%EOF".Select(x => (byte)x).ToArray();
-            startXRefBytes = "startxref".Select(x => (byte)x).ToArray();
-        }
+            (byte)'%',
+            (byte)'%',
+            (byte)'E',
+            (byte)'O',
+            (byte)'F'
+        };
 
-        public long GetXrefOffset(IRandomAccessRead reader, bool isLenientParsing)
+        private static readonly byte[] StartXRefBytes =
         {
-            var startXrefOffset = GetByteOffsetForStartXref(reader, (int)reader.Length(), isLenientParsing);
-
-            reader.Seek(startXrefOffset);
-
-            long actualXrefOffset = Math.Max(0, ParseXrefStartPosition(reader));
-
-            return actualXrefOffset;
-        }
-
-        private long ParseXrefStartPosition(IRandomAccessRead reader)
+            (byte) 's',
+            (byte) 't',
+            (byte) 'a',
+            (byte) 'r',
+            (byte) 't',
+            (byte) 'x',
+            (byte) 'r',
+            (byte) 'e',
+            (byte) 'f'
+        };
+        
+        public long GetFirstCrossReferenceOffset(IInputBytes bytes, ISeekableTokenScanner scanner, bool isLenientParsing)
         {
-            long startXref = -1;
-
-            if (ReadHelper.IsString(reader, startXRefBytes))
+            if (bytes == null)
             {
-                ReadHelper.ReadString(reader);
-
-                ReadHelper.SkipSpaces(reader);
-
-                // This integer is the byte offset of the first object referenced by the xref or xref stream
-                startXref = ReadHelper.ReadLong(reader);
+                throw new ArgumentNullException(nameof(bytes));
             }
-            return startXref;
-        }
 
-        private long GetByteOffsetForStartXref(IRandomAccessRead reader, int fileLength, bool isLenientParsing)
-        {
-            byte[] buf;
-            long skipBytes;
-            // read trailing bytes into buffer
-            try
+            if (scanner == null)
             {
-                var trailByteCount = fileLength < DefaultTrailerByteLength ? fileLength : DefaultTrailerByteLength;
-                buf = new byte[trailByteCount];
+                throw new ArgumentNullException(nameof(scanner));
+            }
 
-                skipBytes = fileLength - trailByteCount;
+            var fileLength = bytes.Length;
 
-                reader.Seek(skipBytes);
-                int off = 0;
-                while (off < trailByteCount)
+            var offsetFromEnd = fileLength < EndOfFileSearchRange ? (int)fileLength : EndOfFileSearchRange;
+
+            var startPosition = fileLength - offsetFromEnd;
+
+            bytes.Seek(startPosition);
+
+            var startXrefPosition = GetStartXrefPosition(bytes, offsetFromEnd);
+
+            scanner.Seek(startXrefPosition);
+
+            if (!scanner.TryReadToken(out OperatorToken startXrefToken) || startXrefToken.Data != "startxref")
+            {
+                throw new InvalidOperationException($"The start xref position we found was not correct. Found {startXrefPosition} but it was occupied by token {scanner.CurrentToken}.");
+            }
+
+            NumericToken numeric = null;
+            while (scanner.MoveNext())
+            {
+                if (scanner.CurrentToken is NumericToken token)
                 {
-                    var readBytes = reader.Read(buf, off, trailByteCount - off);
+                    numeric = token;
+                    break;
+                }
 
-                    // in order to not get stuck in a loop we check readBytes (this should never happen)
-                    if (readBytes < 1)
-                    {
-                        throw new InvalidOperationException(
-                                "No more bytes to read for trailing buffer, but expected: "
-                                        + (trailByteCount - off));
-                    }
-
-                    off += readBytes;
+                if (!(scanner.CurrentToken is CommentToken))
+                {
+                    throw new PdfDocumentFormatException($"Found an unexpected token following 'startxref': {scanner.CurrentToken}.");
                 }
             }
-            finally
+
+            if (numeric == null)
             {
-                reader.ReturnToBeginning();
+                throw new PdfDocumentFormatException($"Could not find the numeric value following 'startxref'. Searching from position {startXrefPosition}.");
             }
 
-            // find last '%%EOF'
-            int bufOff = LastIndexOf(endOfFileBytes, buf, buf.Length);
-            if (bufOff < 0)
+            return numeric.Long;
+        }
+
+        private static long GetStartXrefPosition(IInputBytes bytes, int offsetFromEnd)
+        {
+            var startXrefs = new List<int>();
+
+            var index = 0;
+            var eofIndex = 0;
+            var offset = 0;
+            
+            // Starting scanning the last 1024 bytes.
+            while (bytes.MoveNext())
             {
-                if (isLenientParsing)
+                offset++;
+                if (bytes.CurrentByte == StartXRefBytes[index])
                 {
-                    // in lenient mode the '%%EOF' isn't needed
-                    bufOff = buf.Length;
-                    //LOG.debug("Missing end of file marker '" + new String(EOF_MARKER) + "'");
+                    // We might be reading "startxref".
+                    eofIndex = 0;
+                    index++;
+                }
+                else if (bytes.CurrentByte == EndOfFileBytes[eofIndex])
+                {
+                    // We might be reading "%%EOF".
+                    eofIndex++;
+                    index = 0;
                 }
                 else
                 {
-                    throw new InvalidOperationException("Missing end of file marker '%%EOF'");
+                    eofIndex = 0;
+                    index = 0;
                 }
-            }
-            // find last startxref preceding EOF marker
-            bufOff = LastIndexOf(startXRefBytes, buf, bufOff);
-            long startXRefOffset = skipBytes + bufOff;
 
-            if (bufOff < 0)
-            {
-                throw new NotImplementedException();
-                //if (isLenientParsing)
-                //{
-                //    //LOG.debug("Performing brute force search for last startxref entry");
-                //    long bfOffset = bfSearchForLastStartxrefEntry();
-                //    bool offsetIsValid = false;
-                //    if (bfOffset > -1)
-                //    {
-                //        reader.Seek(bfOffset);
-                //        long bfXref = ParseXrefStartPosition();
-                //        if (bfXref > -1)
-                //        {
-                //            offsetIsValid = checkXRefOffset(bfXref) == bfXref;
-                //        }
-                //    }
-
-                //    reader.ReturnToBeginning();
-
-                //    // use the new offset only if it is a valid pointer to a xref table
-                //    return offsetIsValid ? bfOffset : -1;
-                //}
-
-                throw new InvalidOperationException("Missing 'startxref' marker.");
-            }
-
-            return startXRefOffset;
-        }
-
-        private int LastIndexOf(byte[] pattern, byte[] bytes, int endOff)
-        {
-            int lastPatternByte = pattern.Length - 1;
-
-            int bufferOffset = endOff;
-            int patternByte = lastPatternByte;
-            byte targetByte = pattern[patternByte];
-
-            while (--bufferOffset >= 0)
-            {
-                if (bytes[bufferOffset] == targetByte)
+                if (index == StartXRefBytes.Length)
                 {
-                    if (--patternByte < 0)
-                    {
-                        // whole pattern matched
-                        return bufferOffset;
-                    }
-                    // matched current byte, advance to preceding one
-                    targetByte = pattern[patternByte];
+                    // Add this "startxref" (position from the end of the document to the first 's').
+                    startXrefs.Add(offsetFromEnd - (offset - StartXRefBytes.Length));
+
+                    // Continue scanning in case there are further "startxref"s. Not sure if this ever happens.
+                    index = 0;
                 }
-                else if (patternByte < lastPatternByte)
+                else if (eofIndex == EndOfFileBytes.Length)
                 {
-                    // no byte match but already matched some chars; reset
-                    patternByte = lastPatternByte;
-                    targetByte = pattern[patternByte];
+                    // Stop at the EOF if present.
+                    break;
                 }
             }
 
-            return -1;
+            if (startXrefs.Count == 0)
+            {
+                throw new PdfDocumentFormatException("Could not find the startxref within the last 1024 characters.");
+            }
+
+            return bytes.Length - startXrefs[startXrefs.Count - 1];
         }
     }
 }

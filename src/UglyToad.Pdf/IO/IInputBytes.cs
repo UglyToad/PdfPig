@@ -8,6 +8,8 @@
 
         byte CurrentByte { get; }
 
+        long Length { get; }
+
         byte? Peek();
         
         bool IsAtEnd();
