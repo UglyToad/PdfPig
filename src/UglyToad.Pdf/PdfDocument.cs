@@ -33,6 +33,11 @@
         public DocumentInformation Information { get; }
 
         /// <summary>
+        /// The version number of the PDF specification which this file conforms to, for example 1.4.
+        /// </summary>
+        public decimal Version => version.Version;
+
+        /// <summary>
         /// Get the number of pages in this document.
         /// </summary>
         public int NumberOfPages => Pages.Count;

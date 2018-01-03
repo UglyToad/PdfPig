@@ -9,20 +9,21 @@
         public ByteArrayInputBytes(IReadOnlyList<byte> bytes)
         {
             this.bytes = bytes;
-            CurrentOffset = -1;
+            currentOffset = -1;
         }
-
-        public int CurrentOffset { get; private set; }
+        
+        private int currentOffset;
+        public int CurrentOffset => currentOffset + 1;
 
         public bool MoveNext()
         {
-            if (CurrentOffset == bytes.Count - 1)
+            if (currentOffset == bytes.Count - 1)
             {
                 return false;
             }
 
-            CurrentOffset++;
-            CurrentByte = bytes[CurrentOffset];
+            currentOffset++;
+            CurrentByte = bytes[currentOffset];
             return true;
         }
 
@@ -30,23 +31,23 @@
 
         public byte? Peek()
         {
-            if (CurrentOffset == bytes.Count - 1)
+            if (currentOffset == bytes.Count - 1)
             {
                 return null;
             }
 
-            return bytes[CurrentOffset + 1];
+            return bytes[currentOffset + 1];
         }
 
         public bool IsAtEnd()
         {
-            return CurrentOffset == bytes.Count - 1;
+            return currentOffset == bytes.Count - 1;
         }
 
         public void Seek(long position)
         {
-            CurrentOffset = (int)position - 1;
-            CurrentByte = CurrentOffset < 0 ? (byte)0 : bytes[CurrentOffset];
+            currentOffset = (int)position - 1;
+            CurrentByte = currentOffset < 0 ? (byte)0 : bytes[currentOffset];
         }
     }
 }

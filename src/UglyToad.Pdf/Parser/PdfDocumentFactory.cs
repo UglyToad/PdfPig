@@ -16,6 +16,7 @@
     using Logging;
     using Parts;
     using Parts.CrossReference;
+    using Tokenization.Scanner;
     using Util;
 
     internal static class PdfDocumentFactory
@@ -28,7 +29,9 @@
 
             var reader = new RandomAccessBuffer(fileBytes);
 
-            var document = OpenDocument(reader, container, isLenientParsing);
+            var tokenScanner = new CoreTokenScanner(new ByteArrayInputBytes(fileBytes));
+
+            var document = OpenDocument(reader,tokenScanner, container,  isLenientParsing);
 
             return document;
         }
@@ -43,11 +46,11 @@
             return Open(File.ReadAllBytes(filename), options);
         }
 
-        private static PdfDocument OpenDocument(IRandomAccessRead reader, IContainer container, bool isLenientParsing)
+        private static PdfDocument OpenDocument(IRandomAccessRead reader, ISeekableTokenScanner scanner, IContainer container, bool isLenientParsing)
         {
             var log = container.Get<ILog>();
 
-            var version = container.Get<FileHeaderParser>().ReadHeader(reader, isLenientParsing);
+            var version = container.Get<FileHeaderParser>().Parse(scanner, isLenientParsing);
 
             var crossReferenceOffset = container.Get<FileTrailerParser>().GetXrefOffset(reader, isLenientParsing);
 

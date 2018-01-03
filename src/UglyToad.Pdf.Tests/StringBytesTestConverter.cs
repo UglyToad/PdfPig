@@ -2,6 +2,8 @@
 {
     using System.Text;
     using IO;
+    using Pdf.Tokenization.Scanner;
+    using Pdf.Util;
 
     public static class StringBytesTestConverter
     {
@@ -28,6 +30,13 @@
             public byte First { get; set; }
 
             public IInputBytes Bytes { get; set; }
+        }
+
+        internal static CoreTokenScanner Scanner(string s)
+        {
+            var result = new CoreTokenScanner(new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(s)));
+
+            return result;
         }
     }
 }

@@ -5,7 +5,7 @@
     using Parser.Parts;
     using Tokens;
 
-    public class CommentTokenizer : ITokenizer
+    internal class CommentTokenizer : ITokenizer
     {
         public bool ReadsNextByte { get; } = true;
 

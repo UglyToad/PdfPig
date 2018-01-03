@@ -5,7 +5,7 @@
     using Scanner;
     using Tokens;
 
-    public class ArrayTokenizer : ITokenizer
+    internal class ArrayTokenizer : ITokenizer
     {
         public bool ReadsNextByte { get; } = false;
 

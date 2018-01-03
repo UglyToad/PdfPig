@@ -7,14 +7,7 @@
     using Tokenization;
     using Tokens;
 
-    internal enum ScannerScope
-    {
-        None,
-        Array,
-        Dictionary
-    }
-
-    public class CoreTokenScanner : ITokenScanner
+    internal class CoreTokenScanner : ISeekableTokenScanner
     {
         private static readonly HexTokenizer HexTokenizer = new HexTokenizer();
         private static readonly StringTokenizer StringTokenizer = new StringTokenizer();
@@ -47,6 +40,13 @@
 
             return false;
         }
+
+        public void Seek(long position)
+        {
+            inputBytes.Seek(position);
+        }
+
+        public long CurrentPosition => inputBytes.CurrentOffset;
 
         private bool hasBytePreRead;
 

@@ -7,7 +7,7 @@
     using Parser.Parts;
     using Tokens;
 
-    public class NameTokenizer : ITokenizer
+    internal class NameTokenizer : ITokenizer
     {
         public bool ReadsNextByte { get; } = true;
 

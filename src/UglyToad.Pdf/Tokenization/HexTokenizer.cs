@@ -5,7 +5,7 @@
     using Parser.Parts;
     using Tokens;
 
-    public class HexTokenizer : ITokenizer
+    internal class HexTokenizer : ITokenizer
     {
         public bool ReadsNextByte { get; } = false;
 

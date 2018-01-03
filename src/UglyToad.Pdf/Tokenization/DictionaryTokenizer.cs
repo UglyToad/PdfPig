@@ -8,7 +8,7 @@
     using Tokens;
     using Util.JetBrains.Annotations;
 
-    public class DictionaryTokenizer : ITokenizer
+    internal class DictionaryTokenizer : ITokenizer
     {
         public bool ReadsNextByte { get; } = false;
 

@@ -5,7 +5,7 @@
     using Parser.Parts;
     using Tokens;
 
-    public class PlainTokenizer : ITokenizer
+    internal class PlainTokenizer : ITokenizer
     {
         public bool ReadsNextByte { get; } = true;
 

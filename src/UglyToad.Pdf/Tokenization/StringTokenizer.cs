@@ -6,7 +6,7 @@
     using Tokens;
     using Util;
 
-    public class StringTokenizer : ITokenizer
+    internal class StringTokenizer : ITokenizer
     {
         public bool ReadsNextByte { get; } = false;
 

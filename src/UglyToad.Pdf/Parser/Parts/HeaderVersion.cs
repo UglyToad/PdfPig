@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.Pdf.Parser.Parts
 {
-    public class HeaderVersion
+    internal class HeaderVersion
     {
         public decimal Version { get; }
 
@@ -10,6 +10,11 @@
         {
             Version = version;
             VersionString = versionString;
+        }
+
+        public override string ToString()
+        {
+            return $"Version: {VersionString}";
         }
     }
 }

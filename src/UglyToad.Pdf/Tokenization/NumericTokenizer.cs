@@ -6,7 +6,7 @@
     using IO;
     using Tokens;
 
-    public class NumericTokenizer : ITokenizer
+    internal class NumericTokenizer : ITokenizer
     {
         public bool ReadsNextByte { get; } = true;
 
