@@ -39,7 +39,7 @@ The ```Page``` contains the page width and height in points as well as mapping t
 
     PageSize size = Page.Size;
     
-    bool sA4 = size == PageSize.A4;
+    bool isA4 = size == PageSize.A4;
 
 The ```PdfDocument``` will also support opening from byte arrays (as well as streams eventually):
 

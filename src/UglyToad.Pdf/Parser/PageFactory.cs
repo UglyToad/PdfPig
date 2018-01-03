@@ -8,6 +8,7 @@
     using Geometry;
     using Graphics;
     using IO;
+    using Util;
 
     internal class PageFactory : IPageFactory
     {
@@ -60,7 +61,9 @@
                 }
 
                 var contents = contentStream.Decode(filterProvider);
-                
+
+                var txt = OtherEncodings.BytesAsLatin1String(contents);
+
                 var operations = pageContentParser.Parse(new ByteArrayInputBytes(contents));
 
                 var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit);
