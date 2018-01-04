@@ -11,6 +11,7 @@
     using IO;
     using Parts;
     using Pdf.Parser;
+    using Pdf.Parser.Parts;
 
     internal class Type0FontHandler : IFontHandler
     {
@@ -37,7 +38,7 @@
 
             if (TryGetFirstDescendant(dictionary, out var descendantObject))
             {
-                var parsed = pdfObjectParser.Parse(descendantObject.ToIndirectReference(), reader, isLenientParsing);
+                var parsed = DirectObjectFinder.Find<PdfDictionary>(descendantObject, pdfObjectParser, reader, isLenientParsing);
 
                 if (parsed is PdfDictionary descendantFontDictionary)
                 {
