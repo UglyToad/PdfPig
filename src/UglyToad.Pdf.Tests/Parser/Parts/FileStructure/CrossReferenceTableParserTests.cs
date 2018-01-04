@@ -1,77 +1,94 @@
-﻿namespace UglyToad.Pdf.Tests.Parser.Parts.CrossReference
+﻿namespace UglyToad.Pdf.Tests.Parser.Parts.FileStructure
 {
     using System;
     using System.Linq;
-    using IO;
+    using Exceptions;
     using Pdf.Cos;
-    using Pdf.Parser.Parts.CrossReference;
-    using Pdf.Util;
+    using Pdf.Parser.FileStructure;
+    using Pdf.Tokenization.Scanner;
     using Xunit;
 
     public class CrossReferenceTableParserTests
     {
-        private readonly CosObjectPool objectPool = new CosObjectPool();
-
-        private readonly CrossReferenceTableParser parser = new CrossReferenceTableParser(new TestingLog(),
-            new TestDictionaryParser(),
-            new TestBaseParser());
+        private readonly CrossReferenceTableParser parser = new CrossReferenceTableParser();
 
         [Fact]
-        public void OffsetNotXrefFalse()
+        public void ParseNewDefaultTable()
         {
-            var input = GetReader("12 0 obj <<>> endobj xref");
+            var input = StringBytesTestConverter.Scanner(@"one xref
+0 6
+0000000003 65535 f
+0000000090 00000 n
+0000000081 00000 n
+0000000000 00007 f
+0000000331 00000 n
+0000000409 00000 n
 
-            var result = parser.TryParse(input, 4, false, objectPool, out var _);
+trailer
+<< >>");
 
-            Assert.False(result);
+            var result = parser.Parse(input, 4, false);
+
+            Assert.Equal(4, result.ObjectOffsets.Count);
         }
 
         [Fact]
-        public void OffsetXButNotXrefFalse()
+        public void OffsetNotXrefThrows()
+        {
+            var input = GetReader("12 0 obj <<>> endobj xref");
+
+            Action action = () => parser.Parse(input, 4, false);
+
+            Assert.Throws<PdfDocumentFormatException>(action);
+        }
+
+        [Fact]
+        public void OffsetXButNotXrefThrows()
         {
             var input = GetReader(@"xtable
 trailer");
 
-            var result = parser.TryParse(input, 0, false, objectPool, out var _);
+            Action action = () => parser.Parse(input, 0, false);
 
-            Assert.False(result);
+            Assert.Throws<PdfDocumentFormatException>(action);
         }
 
         [Fact]
-        public void EmptyTableFalse()
+        public void EmptyTableReturnsEmpty()
         {
             var input = GetReader(@"xref
-trailer");
+trailer
+<<>>");
 
-            var result = parser.TryParse(input, 0, false, objectPool, out var _);
+            var result = parser.Parse(input, 0, false);
 
-            Assert.False(result);
+            Assert.Empty(result.ObjectOffsets);
         }
 
         [Fact]
-        public void InvalidSubsectionDefinitionLenientTrue()
+        public void InvalidSubsectionDefinitionLenientSkips()
         {
             var input = GetReader(@"xref
 ab 12
 trailer
 <<>>");
 
-            var result = parser.TryParse(input, 0, true, objectPool, out var _);
+            var result = parser.Parse(input, 0, true);
 
-            Assert.True(result);
+            Assert.Empty(result.ObjectOffsets);
         }
 
         [Fact]
-        public void InvalidSubsectionDefinitionNotLenientFalse()
+        public void InvalidSubsectionDefinitionNotLenientThrows()
         {
             var input = GetReader(@"xref
 ab 12
 trailer
 <<>>");
 
-            var result = parser.TryParse(input, 0, false, objectPool, out var _);
+            Action action = () => parser.Parse(input, 0, false);
 
-            Assert.False(result);
+            Assert.Throws<PdfDocumentFormatException>(action);
         }
 
         [Fact]
@@ -83,15 +100,11 @@ trailer
 trailer
 <<>>");
 
-            var result = parser.TryParse(input, 0, false, objectPool, out var table);
-
-            Assert.True(result);
-
-            var built = table.AsCrossReferenceTablePart();
-
-            Assert.Empty(built.ObjectOffsets);
-            Assert.Equal(0, built.Offset);
-            Assert.Equal(CrossReferenceType.Table, built.Type);
+            var result = parser.Parse(input, 0, false);
+            
+            Assert.Empty(result.ObjectOffsets);
+            Assert.Equal(0, result.Offset);
+            Assert.Equal(CrossReferenceType.Table, result.Type);
         }
 
         [Fact]
@@ -105,15 +118,11 @@ trailer
 trailer
 <<>>");
 
-            var result = parser.TryParse(input, 0, false, objectPool, out var table);
+            var result = parser.Parse(input, 0, false);
+            
+            Assert.Equal(2, result.ObjectOffsets.Count);
 
-            Assert.True(result);
-
-            var built = table.AsCrossReferenceTablePart();
-
-            Assert.Equal(2, built.ObjectOffsets.Count);
-
-            var results = built.ObjectOffsets.Select(x => new {x.Key.Number, x.Key.Generation, x.Value}).ToList();
+            var results = result.ObjectOffsets.Select(x => new {x.Key.Number, x.Key.Generation, x.Value}).ToList();
 
             Assert.Equal(100, results[0].Value);
             Assert.Equal(1, results[0].Number);
@@ -134,15 +143,11 @@ trailer
 trailer
 <<>>");
 
-            var result = parser.TryParse(input, 0, false, objectPool, out var table);
+            var result = parser.Parse(input, 0, false);
+            
+            Assert.Equal(2, result.ObjectOffsets.Count);
 
-            Assert.True(result);
-
-            var built = table.AsCrossReferenceTablePart();
-
-            Assert.Equal(2, built.ObjectOffsets.Count);
-
-            var results = built.ObjectOffsets.Select(x => new { x.Key.Number, x.Key.Generation, x.Value }).ToList();
+            var results = result.ObjectOffsets.Select(x => new { x.Key.Number, x.Key.Generation, x.Value }).ToList();
 
             Assert.Equal(190, results[0].Value);
             Assert.Equal(15, results[0].Number);
@@ -164,15 +169,11 @@ trailer
 trailer
 <<>>");
 
-            var result = parser.TryParse(input, 0, false, objectPool, out var table);
+            var result = parser.Parse(input, 0, false);
+            
+            Assert.Equal(2, result.ObjectOffsets.Count);
 
-            Assert.True(result);
-
-            var built = table.AsCrossReferenceTablePart();
-
-            Assert.Equal(2, built.ObjectOffsets.Count);
-
-            var results = built.ObjectOffsets.Select(x => new { x.Key.Number, x.Key.Generation, x.Value }).ToList();
+            var results = result.ObjectOffsets.Select(x => new { x.Key.Number, x.Key.Generation, x.Value }).ToList();
 
             Assert.Equal(190, results[0].Value);
             Assert.Equal(15, results[0].Number);
@@ -198,15 +199,11 @@ trailer
 trailer
 <<>>");
 
-            var result = parser.TryParse(input, 0, false, objectPool, out var table);
+            var result = parser.Parse(input, 0, false);
+            
+            Assert.Equal(5, result.ObjectOffsets.Count);
 
-            Assert.True(result);
-
-            var built = table.AsCrossReferenceTablePart();
-
-            Assert.Equal(5, built.ObjectOffsets.Count);
-
-            var results = built.ObjectOffsets.Select(x => new { x.Key.Number, x.Key.Generation, x.Value }).ToList();
+            var results = result.ObjectOffsets.Select(x => new { x.Key.Number, x.Key.Generation, x.Value }).ToList();
 
             Assert.Equal(100, results[0].Value);
             Assert.Equal(1, results[0].Number);
@@ -239,9 +236,9 @@ trailer
 trailer
 <<>>");
 
-            Action action = () => parser.TryParse(input, 0, false, objectPool, out var _);
+            Action action = () => parser.Parse(input, 0, false);
 
-            Assert.Throws<InvalidOperationException>(action);
+            Assert.Throws<PdfDocumentFormatException>(action);
         }
 
         [Fact]
@@ -254,24 +251,24 @@ trailer
 trailer
 <<>>");
 
-            Action action = () => parser.TryParse(input, 0, false, objectPool, out var _);
+            Action action = () => parser.Parse(input, 0, false);
 
-            Assert.Throws<InvalidOperationException>(action);
+            Assert.Throws<PdfDocumentFormatException>(action);
         }
 
         [Fact]
-        public void ShortLineInTableReturnsFalse()
+        public void ShortLineInTableReturnsThrows()
         {
             var input = GetReader(@"xref
 15 2
-000000019000000 n
+019 n
 0000000250 00032 n
 trailer
 <<>>");
 
-            var result = parser.TryParse(input, 0, false, objectPool, out var _);
+            Action action = () => parser.Parse(input, 0, false);
 
-            Assert.False(result);
+            Assert.Throws<PdfDocumentFormatException>(action);
         }
 
         [Fact]
@@ -285,16 +282,14 @@ trailer
 trailer
 <<>>");
 
-            var result = parser.TryParse(input, 0, false, objectPool, out var table);
-
-            Assert.True(result);
-
-            Assert.Equal(2, table.AsCrossReferenceTablePart().ObjectOffsets.Count);
+            var result = parser.Parse(input, 0, false);
+            
+            Assert.Equal(2, result.ObjectOffsets.Count);
         }
 
-        private static IRandomAccessRead GetReader(string input)
+        private static CoreTokenScanner GetReader(string input)
         {
-            return new RandomAccessBuffer(OtherEncodings.StringAsLatin1Bytes(input));
+            return StringBytesTestConverter.Scanner(input);
         }
     }
 }

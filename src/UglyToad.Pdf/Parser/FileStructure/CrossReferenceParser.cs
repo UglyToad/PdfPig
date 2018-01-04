@@ -1,14 +1,20 @@
-﻿namespace UglyToad.Pdf.Parser.Parts.CrossReference
+﻿namespace UglyToad.Pdf.Parser.FileStructure
 {
     using System;
     using System.Collections.Generic;
     using ContentStream;
     using ContentStream.TypedAccessors;
     using Cos;
+    using Exceptions;
     using IO;
     using Logging;
+    using Parts;
+    using Parts.CrossReference;
+    using Tokenization.Scanner;
+    using Tokenization.Tokens;
+    using UglyToad.Pdf.Parser.Parts.CrossReference;
 
-    internal class FileCrossReferenceTableParser
+    internal class CrossReferenceParser
     {
         private const int X = 'x';
 
@@ -18,11 +24,13 @@
         private readonly CosStreamParser streamParser;
         private readonly CrossReferenceStreamParser crossReferenceStreamParser;
         private readonly CrossReferenceTableParser crossReferenceTableParser;
+        private readonly OldCrossReferenceTableParser oldCrossReferenceTableParser;
 
-        public FileCrossReferenceTableParser(ILog log, CosDictionaryParser dictionaryParser, CosBaseParser baseParser, 
+        public CrossReferenceParser(ILog log, CosDictionaryParser dictionaryParser, CosBaseParser baseParser, 
             CosStreamParser streamParser,
             CrossReferenceStreamParser crossReferenceStreamParser,
-            CrossReferenceTableParser crossReferenceTableParser)
+            CrossReferenceTableParser crossReferenceTableParser,
+            OldCrossReferenceTableParser oldCrossReferenceTableParser)
         {
             this.log = log;
             this.dictionaryParser = dictionaryParser;
@@ -30,6 +38,41 @@
             this.streamParser = streamParser;
             this.crossReferenceStreamParser = crossReferenceStreamParser;
             this.crossReferenceTableParser = crossReferenceTableParser;
+            this.oldCrossReferenceTableParser = oldCrossReferenceTableParser;
+        }
+
+        public CrossReferenceTable ParseNew(long crossReferenceLocation, ISeekableTokenScanner scanner,
+            bool isLenientParsing)
+        {
+            var previousLocation = crossReferenceLocation;
+
+            var visitedCrossReferences = new HashSet<long>();
+
+            while (previousLocation >= 0)
+            {
+                scanner.Seek(crossReferenceLocation);
+
+                scanner.MoveNext();
+
+                if (scanner.CurrentToken is OperatorToken tableToken && tableToken.Data == "xref")
+                {
+                    var table = crossReferenceTableParser.Parse(scanner, crossReferenceLocation, isLenientParsing);
+
+                    previousLocation = table.Dictionary.GetLongOrDefault(CosName.PREV, -1);
+
+
+                }
+                else if (scanner.CurrentToken is NumericToken streamObjectNumberToken)
+                {
+                    break;
+                }
+                else
+                {
+                    throw new PdfDocumentFormatException($"The xref object was not a stream or a table, was instead: {scanner.CurrentToken}.");
+                }
+            }
+
+            return null;
         }
 
         public CrossReferenceTable Parse(IRandomAccessRead reader, bool isLenientParsing, long xrefLocation,
@@ -62,11 +105,11 @@
                 {
                     // xref table and trailer
                     // use existing parser to parse xref table
-                    if (!crossReferenceTableParser.TryParse(reader, previousCrossReferenceLocation, isLenientParsing, pool, out var tableBuilder))
+                    if (!oldCrossReferenceTableParser.TryParse(reader, previousCrossReferenceLocation, isLenientParsing, pool, out var tableBuilder))
                     {
                         throw new InvalidOperationException($"Expected trailer object at position: {reader.GetPosition()}");
                     }
-
+                    
                     PdfDictionary trailer = tableBuilder.Dictionary;
                     CrossReferenceTablePart streamPart = null;
                     // check for a XRef stream, it may contain some object ids of compressed objects 
@@ -128,7 +171,7 @@
 
                     tableBuilder.Previous = tableBuilder.Dictionary.GetLongOrDefault(CosName.PREV);
 
-                    table.Add(tableBuilder.AsCrossReferenceTablePart());
+                    table.Add(tableBuilder.Build());
 
                     if (streamPart != null)
                     {

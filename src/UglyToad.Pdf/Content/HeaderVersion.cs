@@ -1,4 +1,4 @@
-﻿namespace UglyToad.Pdf.Parser.Parts
+﻿namespace UglyToad.Pdf.Content
 {
     internal class HeaderVersion
     {

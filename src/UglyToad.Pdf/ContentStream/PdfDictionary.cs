@@ -5,6 +5,7 @@
     using System.Collections;
     using System.Text;
     using Cos;
+    using Tokenization.Tokens;
     using Util.JetBrains.Annotations;
 
     internal class PdfDictionary : CosBase, IReadOnlyDictionary<CosName, CosBase>
@@ -105,5 +106,15 @@
             throw new NotImplementedException();
         }
         #endregion
+
+        internal static PdfDictionary FromDictionaryToken(DictionaryToken token)
+        {
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
+
+            return new PdfDictionary();
+        }
     }
 }

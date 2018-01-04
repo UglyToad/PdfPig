@@ -1,7 +1,8 @@
-﻿namespace UglyToad.Pdf.Parser.Parts
+﻿namespace UglyToad.Pdf.Parser.FileStructure
 {
     using System;
     using System.Text.RegularExpressions;
+    using Content;
     using Exceptions;
     using Logging;
     using Tokenization.Scanner;

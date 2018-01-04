@@ -21,6 +21,7 @@
         private readonly ScannerScope scope;
         private readonly IInputBytes inputBytes;
         private readonly List<byte> currentBuffer = new List<byte>();
+        private readonly List<(byte firstByte, ITokenizer tokenizer)> customTokenizers = new List<(byte, ITokenizer)>();
         
         public IToken CurrentToken { get; private set; }
         public bool TryReadToken<T>(out T token) where T : class, IToken
@@ -47,7 +48,7 @@
         }
 
         public long CurrentPosition => inputBytes.CurrentOffset;
-
+        
         private bool hasBytePreRead;
 
         internal CoreTokenScanner(IInputBytes inputBytes, ScannerScope scope = ScannerScope.None)
@@ -68,73 +69,86 @@
                 hasBytePreRead = false;
                 var currentByte = inputBytes.CurrentByte;
                 var c = (char) currentByte;
-                
-                if (IsEmpty(currentByte) || ReadHelper.IsWhitespace(currentByte))
-                {
-                    isSkippingSymbol = false;
-                    continue;
-                }
-
-                // If we failed to read the symbol for whatever reason we pass over it.
-                if (isSkippingSymbol && c != '>')
-                {
-                    continue;
-                }
 
                 ITokenizer tokenizer = null;
-                switch (c)
+                foreach (var customTokenizer in customTokenizers)
                 {
-                    case '(':
-                        tokenizer = StringTokenizer;
+                    if (currentByte == customTokenizer.firstByte)
+                    {
+                        tokenizer = customTokenizer.tokenizer;
                         break;
-                    case '<':
-                        var following = inputBytes.Peek();
-                        if (following == '<')
-                        {
-                            isSkippingSymbol = true;
-                            tokenizer = DictionaryTokenizer;
-                        }
-                        else
-                        {
-                            tokenizer = HexTokenizer;
-                        }
-                        break;
-                    case '>' when scope == ScannerScope.Dictionary:
-                        endAngleBracesRead++;
-                        if (endAngleBracesRead == 2)
-                        {
+                    }
+                }
+
+                if (tokenizer == null)
+                {
+                    if (IsEmpty(currentByte) || ReadHelper.IsWhitespace(currentByte))
+                    {
+                        isSkippingSymbol = false;
+                        continue;
+                    }
+
+
+                    // If we failed to read the symbol for whatever reason we pass over it.
+                    if (isSkippingSymbol && c != '>')
+                    {
+                        continue;
+                    }
+
+                    switch (c)
+                    {
+                        case '(':
+                            tokenizer = StringTokenizer;
+                            break;
+                        case '<':
+                            var following = inputBytes.Peek();
+                            if (following == '<')
+                            {
+                                isSkippingSymbol = true;
+                                tokenizer = DictionaryTokenizer;
+                            }
+                            else
+                            {
+                                tokenizer = HexTokenizer;
+                            }
+                            break;
+                        case '>' when scope == ScannerScope.Dictionary:
+                            endAngleBracesRead++;
+                            if (endAngleBracesRead == 2)
+                            {
+                                return false;
+                            }
+                            break;
+                        case '[':
+                            tokenizer = ArrayTokenizer;
+                            break;
+                        case ']' when scope == ScannerScope.Array:
                             return false;
-                        }
-                        break;
-                    case '[':
-                        tokenizer = ArrayTokenizer;
-                        break;
-                    case ']' when scope == ScannerScope.Array:
-                        return false;
-                    case '/':
-                        tokenizer = NameTokenizer;
-                        break;
-                    case '%':
-                        tokenizer = CommentTokenizer;
-                        break;
-                    case '0':
-                    case '1':
-                    case '2':
-                    case '3':
-                    case '4':
-                    case '5':
-                    case '6':
-                    case '7':
-                    case '8':
-                    case '9':
-                    case '-':
-                    case '+':
-                    case '.':
-                        tokenizer = NumericTokenizer;
-                        break;
-                    default:
-                        tokenizer = PlainTokenizer;
-                        break;
+                        case '/':
+                            tokenizer = NameTokenizer;
+                            break;
+                        case '%':
+                            tokenizer = CommentTokenizer;
+                            break;
+                        case '0':
+                        case '1':
+                        case '2':
+                        case '3':
+                        case '4':
+                        case '5':
+                        case '6':
+                        case '7':
+                        case '8':
+                        case '9':
+                        case '-':
+                        case '+':
+                        case '.':
+                            tokenizer = NumericTokenizer;
+                            break;
+                        default:
+                            tokenizer = PlainTokenizer;
+                            break;
+                    }
                 }
 
                 if (tokenizer == null || !tokenizer.TryTokenize(currentByte, inputBytes, out var token))
@@ -156,6 +170,21 @@
             }
 
             return false;
+        }
+
+        public void RegisterCustomTokenizer(byte firstByte, ITokenizer tokenizer)
+        {
+            if (tokenizer == null)
+            {
+                throw new ArgumentNullException(nameof(tokenizer));
+            }
+
+            customTokenizers.Add((firstByte, tokenizer));
+        }
+
+        public void DeregisterCustomTokenizer(ITokenizer tokenizer)
+        {
+            customTokenizers.RemoveAll(x => ReferenceEquals(x.tokenizer, tokenizer));
         }
 
         private static bool IsEmpty(byte b)

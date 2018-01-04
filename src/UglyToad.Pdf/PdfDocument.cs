@@ -6,6 +6,7 @@
     using IO;
     using Logging;
     using Parser;
+    using Parser.FileStructure;
     using Parser.Parts;
     using Util.JetBrains.Annotations;
 

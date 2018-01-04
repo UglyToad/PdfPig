@@ -1,10 +1,11 @@
-﻿namespace UglyToad.Pdf.Parser.Parts.CrossReference
+﻿namespace UglyToad.Pdf.Parser.FileStructure
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using Cos;
     using IO;
+    using Parts;
     using Util;
 
     internal class XrefCosOffsetChecker

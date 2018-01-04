@@ -2,6 +2,7 @@
 {
     using System;
     using Exceptions;
+    using Pdf.Parser.FileStructure;
     using Pdf.Parser.Parts;
     using Xunit;
 

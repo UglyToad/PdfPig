@@ -4,6 +4,8 @@
     using Fonts.Parser;
     using Logging;
     using Parser;
+    using Parser.FileStructure;
+    using Parser.FileStructure.UglyToad.Pdf.Parser.Parts.CrossReference;
     using Parser.Parts;
     using Parser.Parts.CrossReference;
 
@@ -39,8 +41,8 @@
             var objectStreamParser = new ObjectStreamParser(logger, filterProvider, baseParser);
             var dynamicParser = new DynamicParser(logger, baseParser, streamParser, objectStreamParser);
 
-            var crossReferenceTableParser = new FileCrossReferenceTableParser(logger, dictionaryParser, baseParser, streamParser, crossReferenceParser,
-                new CrossReferenceTableParser(logger, dictionaryParser, baseParser));
+            var crossReferenceTableParser = new CrossReferenceParser(logger, dictionaryParser, baseParser, streamParser, crossReferenceParser, new CrossReferenceTableParser(),
+                new OldCrossReferenceTableParser(logger, dictionaryParser, baseParser));
             
             var cmapParser = new CMapParser();
             var afmParser = new AdobeFontMetricsParser();

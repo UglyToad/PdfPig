@@ -1,4 +1,4 @@
-﻿namespace UglyToad.Pdf.Parser.Parts.CrossReference
+﻿namespace UglyToad.Pdf.Parser.FileStructure
 {
     using System;
     using System.Collections.Generic;
@@ -6,6 +6,7 @@
     using Cos;
     using IO;
     using Logging;
+    using Parts;
 
     internal class XrefOffsetValidator
     {

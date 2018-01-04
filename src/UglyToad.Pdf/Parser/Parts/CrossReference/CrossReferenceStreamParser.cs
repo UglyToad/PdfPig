@@ -139,7 +139,7 @@
                 }
             }
 
-            return builder.AsCrossReferenceTablePart();
+            return builder.Build();
         }
 
         private static List<long> GetObjectNumbers(PdfRawStream stream)

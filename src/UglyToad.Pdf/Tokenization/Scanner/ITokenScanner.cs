@@ -16,5 +16,9 @@
         void Seek(long position);
 
         long CurrentPosition { get; }
+
+        void RegisterCustomTokenizer(byte firstByte, ITokenizer tokenizer);
+
+        void DeregisterCustomTokenizer(ITokenizer tokenizer);
     }
 }

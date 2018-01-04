@@ -1,4 +1,4 @@
-﻿namespace UglyToad.Pdf.Parser.Parts
+﻿namespace UglyToad.Pdf.Parser.FileStructure
 {
     using System;
     using System.Collections.Generic;

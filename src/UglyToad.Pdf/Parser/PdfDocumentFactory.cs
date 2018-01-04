@@ -5,6 +5,7 @@
     using Content;
     using ContentStream;
     using Cos;
+    using FileStructure;
     using Filters;
     using Fonts;
     using Fonts.Parser;
@@ -57,10 +58,18 @@
             var crossReferenceOffset = container.Get<FileTrailerParser>().GetFirstCrossReferenceOffset(inputBytes, scanner, isLenientParsing);
 
             var pool = new CosObjectPool();
+
+            // TODO: make this use the scanner.
+            var validator = new CrossReferenceOffsetValidator(new XrefOffsetValidator(log, reader, container.Get<CosDictionaryParser>(),
+                container.Get<CosBaseParser>(), pool));
+
+            crossReferenceOffset = validator.Validate(crossReferenceOffset, isLenientParsing);
             
-            var crossReferenceTable = container.Get<FileCrossReferenceTableParser>()
+            var crossReferenceTable = container.Get<CrossReferenceParser>()
                 .Parse(reader, isLenientParsing, crossReferenceOffset, pool);
 
+            container.Get<CrossReferenceParser>().ParseNew(crossReferenceOffset, scanner, isLenientParsing);
+            
             var filterProvider = container.Get<IFilterProvider>();
             var bruteForceSearcher = new BruteForceSearcher(reader);
             var pdfObjectParser = new PdfObjectParser(container.Get<ILog>(), container.Get<CosBaseParser>(),
