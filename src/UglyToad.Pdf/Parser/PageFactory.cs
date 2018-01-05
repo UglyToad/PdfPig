@@ -8,6 +8,7 @@
     using Geometry;
     using Graphics;
     using IO;
+    using Parts;
     using Util;
 
     internal class PageFactory : IPageFactory
@@ -53,7 +54,7 @@
             var contentObject = dictionary.GetItemOrDefault(CosName.CONTENTS) as CosObject;
             if (contentObject != null)
             {
-                var contentStream = pdfObjectParser.Parse(contentObject.ToIndirectReference(), reader, false) as PdfRawStream;
+                var contentStream = DirectObjectFinder.Find<PdfRawStream>(contentObject, pdfObjectParser,  reader, false);
 
                 if (contentStream == null)
                 {

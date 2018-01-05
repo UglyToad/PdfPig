@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.Pdf.Tokenization
 {
     using System.Collections.Generic;
+    using System.Diagnostics;
     using IO;
     using Scanner;
     using Tokens;
@@ -26,6 +27,7 @@
             while (!CurrentByteEndsCurrentArray(inputBytes, previousToken) && scanner.MoveNext())
             {
                 previousToken = scanner.CurrentToken;
+                
                 contents.Add(scanner.CurrentToken);
             }
 

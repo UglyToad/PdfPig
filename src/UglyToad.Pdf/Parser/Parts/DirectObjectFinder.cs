@@ -6,7 +6,7 @@
 
     internal static class DirectObjectFinder
     {
-        public static CosBase Find<T>(CosObject baseObject, IPdfObjectParser parser, IRandomAccessRead reader,
+        public static T Find<T>(CosObject baseObject, IPdfObjectParser parser, IRandomAccessRead reader,
             bool isLenientParsing) where T : CosBase
         {
             var result = parser.Parse(baseObject.ToIndirectReference(), reader, isLenientParsing);

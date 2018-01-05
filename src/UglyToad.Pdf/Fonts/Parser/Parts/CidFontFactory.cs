@@ -11,6 +11,7 @@
     using Geometry;
     using IO;
     using Pdf.Parser;
+    using Pdf.Parser.Parts;
     using TrueType;
     using TrueType.Parser;
 
@@ -52,7 +53,7 @@
 
             var baseFont = dictionary.GetName(CosName.BASE_FONT);
 
-            var systemInfo = GetSystemInfo(dictionary);
+            var systemInfo = GetSystemInfo(dictionary, reader, isLenientParsing);
 
             var subType = dictionary.GetName(CosName.SUBTYPE);
             if (CosName.CID_FONT_TYPE0.Equals(subType))
@@ -217,11 +218,25 @@
             return new VerticalWritingMetrics(dw2, verticalDisplacements, positionVectors);
         }
 
-        private static CharacterIdentifierSystemInfo GetSystemInfo(PdfDictionary dictionary)
+        private CharacterIdentifierSystemInfo GetSystemInfo(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
         {
-            if(!dictionary.TryGetItemOfType(CosName.CIDSYSTEMINFO, out PdfDictionary cidDictionary))
+            if(!dictionary.TryGetValue(CosName.CIDSYSTEMINFO, out var cidEntry))
             {
-                throw new InvalidFontFormatException($"No CID System Info was found in the CID Font dictionary: " + dictionary);
+                throw new InvalidFontFormatException($"No CID System Info was found in the CID Font dictionary: {dictionary}");
+            }
+
+            if (cidEntry is PdfDictionary cidDictionary)
+            {
+                
+            }
+            else if (cidEntry is CosObject cidObject)
+            {
+                cidDictionary =
+                    DirectObjectFinder.Find<PdfDictionary>(cidObject, pdfObjectParser, reader, isLenientParsing);
+            }
+            else
+            {
+                throw new InvalidFontFormatException($"No CID System Info was found in the CID Font dictionary: {dictionary}");
             }
 
             var registry = (CosString) cidDictionary.GetItemOrDefault(CosName.REGISTRY);

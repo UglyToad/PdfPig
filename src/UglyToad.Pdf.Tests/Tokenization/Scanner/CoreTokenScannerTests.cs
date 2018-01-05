@@ -114,6 +114,39 @@ endobj";
             AssertCorrectToken<StringToken, string>(tokens[5], "Bob");
             Assert.IsType<ArrayToken>(tokens[6]);
         }
+
+        [Fact]
+        public void CorrectlyScansArrayWithEscapedStrings()
+        {
+            const string s = @"<0078>Tj
+/TT0 1 Tf
+0.463 0 Td
+( )Tj
+-0.002 Tc 0.007 Tw 11.04 -0 0 11.04 180 695.52 Tm
+[(R)2.6(eg)-11.3(i)2.7(s)-2(t)4.2(r)-5.9(at)-6.6(i)2.6(on S)2(e)10.5(r)-6(v)8.9(i)2.6(c)-2(e S)1.9(o)10.6(f)-17.5(t)4.3(w)13.4(ar)-6(e \()-6(R)2.6(S)2(S)1.9(\))]TJ
+0 Tc 0 Tw 16.12 0 Td";
+
+            var tokens = new List<IToken>();
+
+            var scanner = scannerFactory(StringBytesTestConverter.Convert(s, false).Bytes);
+
+            while (scanner.MoveNext())
+            {
+                tokens.Add(scanner.CurrentToken);
+            }
+
+            Assert.Equal(30, tokens.Count);
+
+            AssertCorrectToken<OperatorToken, string>(tokens[29], "Td");
+            AssertCorrectToken<NumericToken, decimal>(tokens[28], 0);
+            AssertCorrectToken<NumericToken, decimal>(tokens[27], 16.12m);
+            AssertCorrectToken<OperatorToken, string>(tokens[26], "Tw");
+
+            var array = Assert.IsType<ArrayToken>(tokens[21]);
+
+            AssertCorrectToken<StringToken, string>(array.Data[array.Data.Count - 1], ")");
+            AssertCorrectToken<NumericToken, decimal>(array.Data[array.Data.Count - 2], 1.9m);
+        }
         
         private static void AssertCorrectToken<T, TData>(IToken token, TData expected) where T : IDataToken<TData>
         {

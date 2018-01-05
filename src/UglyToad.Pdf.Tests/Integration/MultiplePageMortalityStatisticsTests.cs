@@ -4,7 +4,7 @@
     using System.IO;
     using Xunit;
 
-    public class MultiplePageMortalityStatistics
+    public class MultiplePageMortalityStatisticsTests
     {
         private static string GetFilename()
         {
@@ -30,6 +30,19 @@
             using (var document = PdfDocument.Open(GetFilename()))
             {
                 Assert.Equal(1.7m, document.Version);
+            }
+        }
+
+        [Fact]
+        public void GetsFirstPageContent()
+        {
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                var page = document.GetPage(1);
+
+                Assert.Contains("Mortality Statistics: Metadata", page.Text);
+                Assert.Contains("Notification to the registrar by the coroner that he does not consider it necessary to hold an inquest – no post-mortem held (Form 100A – salmon pink)", page.Text);
+                Assert.Contains("Presumption of death certificate", page.Text);
             }
         }
     }

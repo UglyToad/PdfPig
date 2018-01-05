@@ -80,29 +80,26 @@
                             numberOfBrackets--;
                         }
 
+                        isEscapeActive = false;
                         if (numberOfBrackets > 0)
                         {
                             builder.Append(c);
-
-                            break;
                         }
 
                         // TODO: Check for other ends of string where the string is improperly formatted. See commented method
                         // numberOfBrackets = CheckForEndOfString(inputBytes, numberOfBrackets);
 
-                        isEscapeActive = false;
 
                         break;
                     case '(':
                         isLineBreaking = false;
-
-
-
+                        
                         if (!isEscapeActive)
                         {
                             numberOfBrackets++;
                         }
 
+                        isEscapeActive = false;
                         builder.Append(c);
                         break;
                     // Escape
