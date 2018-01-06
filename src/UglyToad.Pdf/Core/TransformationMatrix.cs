@@ -3,6 +3,7 @@
     using System;
     using Geometry;
     using System.Collections.Generic;
+    using System.Diagnostics.Contracts;
 
     /// <summary>
     /// Specifies the conversion from the transformed coordinate space to the original untransformed coordinate space.
@@ -90,6 +91,15 @@
             var y = B * original.X + D * original.Y + F;
 
             return new PdfPoint(x, y);
+        }
+
+        [Pure]
+        public PdfVector Transform(PdfVector original)
+        {
+            var x = A * original.X + C * original.Y + E;
+            var y = B * original.X + D * original.Y + F;
+
+            return new PdfVector(x, y);
         }
 
         public static TransformationMatrix FromValues(decimal a, decimal b, decimal c, decimal d, decimal e, decimal f)

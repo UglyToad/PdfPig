@@ -29,6 +29,20 @@
 
         public IFont Generate(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
         {
+            var usingStandard14Only = !dictionary.ContainsKey(CosName.FIRST_CHAR);
+
+            if (usingStandard14Only)
+            {
+                if (!dictionary.TryGetName(CosName.BASE_FONT, out var standard14Name))
+                {
+                    throw new InvalidFontFormatException($"The Type 1 font did not contain a first character entry but also did not reference a standard 14 font: {dictionary}");
+                }
+
+                var metrics = Standard14.GetAdobeFontMetrics(standard14Name.Name);
+
+                return new Type1Standard14Font(metrics);
+            }
+
             var firstCharacter = FontDictionaryAccessHelper.GetFirstCharacter(dictionary);
 
             var lastCharacter = FontDictionaryAccessHelper.GetLastCharacter(dictionary);
@@ -69,7 +83,7 @@
                         throw new InvalidFontFormatException($"Unrecognised encoding name: {encodingName}");
                     }
                 }
-                else if (encodingBase is CosDictionary encodingDictionary)
+                else if (encodingBase is CosDictionary)
                 {
                     throw new NotImplementedException("No support for reading encoding from dictionary yet.");
                 }

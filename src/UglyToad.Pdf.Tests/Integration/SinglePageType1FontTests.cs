@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using Content;
     using Xunit;
 
     public class SinglePageType1FontTests
@@ -16,9 +17,7 @@
         [Fact]
         public void HasCorrectNumberOfPages()
         {
-            var file = GetFilename();
-
-            using (var document = PdfDocument.Open(File.ReadAllBytes(file)))
+            using (var document = PdfDocument.Open(GetFilename()))
             {
                 Assert.Equal(1, document.NumberOfPages);
             }
@@ -29,9 +28,20 @@
         {
             using (var document = PdfDocument.Open(GetFilename()))
             {
-                //var page = document.GetPage(1);
+                var page = document.GetPage(1);
 
-                //Assert.Equal(PageSize.Letter, page.Size);
+                Assert.Equal(PageSize.Letter, page.Size);
+            }
+        }
+
+        [Fact]
+        public void HasCorrectPageText()
+        {
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                var page = document.GetPage(1);
+
+                Assert.Equal("PDF test that contains the word yadda", page.Text.Trim());
             }
         }
     }

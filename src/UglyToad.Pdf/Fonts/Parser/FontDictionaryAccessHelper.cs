@@ -15,8 +15,7 @@
         {
             if (!dictionary.TryGetItemOfType(CosName.FIRST_CHAR, out CosInt firstChar))
             {
-                throw new InvalidFontFormatException(
-                    $"No first character entry was found in the font dictionary for this TrueType font: {dictionary}.");
+                throw new InvalidFontFormatException($"No first character entry was found in the font dictionary for this TrueType font: {dictionary}.");
             }
 
             return firstChar.AsInt();
@@ -26,8 +25,7 @@
         {
             if (!dictionary.TryGetItemOfType(CosName.LAST_CHAR, out CosInt lastChar))
             {
-                throw new InvalidFontFormatException(
-                    $"No last character entry was found in the font dictionary for this TrueType font: {dictionary}.");
+                throw new InvalidFontFormatException($"No last character entry was found in the font dictionary for this TrueType font: {dictionary}.");
             }
 
             return lastChar.AsInt();
