@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.Pdf.Fonts.Parser.Handlers
 {
     using System;
-    using System.Linq;
     using Cmap;
     using ContentStream;
     using Cos;
@@ -12,27 +11,20 @@
     using Parts;
     using Pdf.Parser;
     using Simple;
-    using TrueType;
-    using TrueType.Parser;
 
-    internal class TrueTypeFontHandler : IFontHandler
+    internal class Type1FontHandler : IFontHandler
     {
         private readonly IPdfObjectParser pdfObjectParser;
-        private readonly IFilterProvider filterProvider;
         private readonly CMapCache cMapCache;
+        private readonly IFilterProvider filterProvider;
         private readonly FontDescriptorFactory fontDescriptorFactory;
-        private readonly TrueTypeFontParser trueTypeFontParser;
 
-        public TrueTypeFontHandler(IPdfObjectParser pdfObjectParser, IFilterProvider filterProvider, 
-            CMapCache cMapCache,
-            FontDescriptorFactory fontDescriptorFactory,
-            TrueTypeFontParser trueTypeFontParser)
+        public Type1FontHandler(IPdfObjectParser pdfObjectParser, CMapCache cMapCache, IFilterProvider filterProvider, FontDescriptorFactory fontDescriptorFactory)
         {
             this.pdfObjectParser = pdfObjectParser;
-            this.filterProvider = filterProvider;
             this.cMapCache = cMapCache;
+            this.filterProvider = filterProvider;
             this.fontDescriptorFactory = fontDescriptorFactory;
-            this.trueTypeFontParser = trueTypeFontParser;
         }
 
         public IFont Generate(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
@@ -44,9 +36,7 @@
             var widths = FontDictionaryAccessHelper.GetWidths(dictionary);
 
             var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfObjectParser, fontDescriptorFactory, dictionary, reader, isLenientParsing);
-
-            var font = ParseTrueTypeFont(descriptor, reader, isLenientParsing);
-
+            
             var name = FontDictionaryAccessHelper.GetName(dictionary, descriptor);
 
             CMap toUnicodeCMap = null;
@@ -90,34 +80,6 @@
             }
 
             return new TrueTypeSimpleFont(name, firstCharacter, lastCharacter, widths, descriptor, toUnicodeCMap, encoding);
-        }
-
-        private TrueTypeFont ParseTrueTypeFont(FontDescriptor descriptor, IRandomAccessRead reader,
-            bool isLenientParsing)
-        {
-            if (descriptor?.FontFile == null)
-            {
-                return null;
-            }
-
-            if (descriptor.FontFile.FileType != DescriptorFontFile.FontFileType.TrueType)
-            {
-                throw new InvalidFontFormatException(
-                    $"Expected a TrueType font in the TrueType font descriptor, instead it was {descriptor.FontFile.FileType}.");
-            }
-
-            var fontFileStream = pdfObjectParser.Parse(descriptor.FontFile.ObjectKey, reader, isLenientParsing) as PdfRawStream;
-
-            if (fontFileStream == null)
-            {
-                return null;
-            }
-
-            var fontFile = fontFileStream.Decode(filterProvider);
-
-            var font = trueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFile)));
-
-            return font;
         }
     }
 }

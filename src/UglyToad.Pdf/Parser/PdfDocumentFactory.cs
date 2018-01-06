@@ -86,7 +86,8 @@
                 cMapCache, 
                 filterProvider,
                 pdfObjectParser),
-                new TrueTypeFontHandler(pdfObjectParser, filterProvider, cMapCache, fontDescriptorFactory, trueTypeFontParser));
+                new TrueTypeFontHandler(pdfObjectParser, filterProvider, cMapCache, fontDescriptorFactory, trueTypeFontParser),
+                new Type1FontHandler(pdfObjectParser, cMapCache, filterProvider, fontDescriptorFactory));
 
             var dynamicParser = container.Get<DynamicParser>();
             var resourceContainer = new ResourceContainer(pdfObjectParser, fontFactory);

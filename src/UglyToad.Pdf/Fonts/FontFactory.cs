@@ -14,13 +14,14 @@
         private readonly ILog log;
         private readonly IReadOnlyDictionary<CosName, IFontHandler> handlers;
 
-        public FontFactory(ILog log, Type0FontHandler type0FontHandler, TrueTypeFontHandler trueTypeFontHandler)
+        public FontFactory(ILog log, Type0FontHandler type0FontHandler, TrueTypeFontHandler trueTypeFontHandler, Type1FontHandler type1FontHandler)
         {
             this.log = log;
             handlers = new Dictionary<CosName, IFontHandler>
             {
                 {CosName.TYPE0, type0FontHandler},
-                {CosName.TRUE_TYPE,  trueTypeFontHandler}
+                {CosName.TRUE_TYPE,  trueTypeFontHandler},
+                {CosName.TYPE1, type1FontHandler}
             };
         }
 

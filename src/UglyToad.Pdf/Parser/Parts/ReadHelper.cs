@@ -141,6 +141,11 @@ namespace UglyToad.Pdf.Parser.Parts
             return IsLineFeed(c) || IsCarriageReturn(c);
         }
 
+        public static bool IsEndOfLine(byte b)
+        {
+            return IsLineFeed(b) || IsCarriageReturn(b);
+        }
+
         public static bool IsLineFeed(int c)
         {
             return AsciiLineFeed == c;

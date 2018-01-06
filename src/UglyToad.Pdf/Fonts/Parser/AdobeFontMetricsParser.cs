@@ -1,9 +1,10 @@
 ﻿namespace UglyToad.Pdf.Fonts.Parser
 {
     using System;
+    using System.Text;
+    using Exceptions;
     using IO;
-    using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Pdf.Parser.Parts;
 
     internal class AdobeFontMetricsParser : IAdobeFontMetricsParser
     {
@@ -316,23 +317,102 @@
 
         public FontMetrics Parse(IInputBytes bytes, bool useReducedDataSet)
         {
-            var tokenizer = new CoreTokenScanner(bytes);
+            var token = ReadString(bytes);
 
-            tokenizer.MoveNext();
-
-            var current = tokenizer.CurrentToken;
-
-            if (!(current is OperatorToken operatorToken) || operatorToken.Data != StartFontMetrics)
+            if (!string.Equals(StartFontMetrics, token, StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidOperationException($"The font metrics file started with {current} rather than {StartFontMetrics}.");
+                throw new InvalidFontFormatException($"The AFM file was not valid, it did not start with {StartFontMetrics}.");
             }
 
-            while (tokenizer.MoveNext())
-            {
+            var version = ReadDecimal(bytes);
 
+            var builder = new FontMetricsBuilder(version);
+
+            while ((token = ReadString(bytes)) != EndFontMetrics)
+            {
+                switch (token)
+                {
+                    case Comment:
+                        builder.Comments.Add(ReadLine(bytes));
+                        break;
+                    case FontName:
+                        builder.FontName = ReadLine(bytes);
+                        break;
+                    case FullName:
+                        builder.FullName = ReadLine(bytes);
+                        break;
+                    case FamilyName:
+                        builder.FamilyName = ReadLine(bytes);
+                        break;
+                }
             }
 
             return new FontMetrics();
+        }
+
+        private static decimal ReadDecimal(IInputBytes input)
+        {
+            var str = ReadString(input);
+
+            return decimal.Parse(str);
+        }
+
+        private static bool ReadBool(IInputBytes input)
+        {
+            var boolean = ReadString(input);
+
+            switch (boolean)
+            {
+                case "true":
+                    return true;
+                case "false":
+                    return false;
+                default:
+                    throw new InvalidFontFormatException($"The AFM should have contained a boolean but instead contained: {boolean}.");
+            }
+        }
+
+        private static readonly StringBuilder Builder = new StringBuilder();
+
+        private static string ReadString(IInputBytes input)
+        {
+            Builder.Clear();
+
+            if (input.IsAtEnd())
+            {
+                return EndFontMetrics;
+            }
+
+            while (ReadHelper.IsWhitespace(input.CurrentByte) && input.MoveNext())
+            {
+            }
+
+            Builder.Append((char)input.CurrentByte);
+
+            while (input.MoveNext() && !ReadHelper.IsWhitespace(input.CurrentByte))
+            {
+                Builder.Append((char)input.CurrentByte);
+            }
+
+            return Builder.ToString();
+        }
+
+        private static string ReadLine(IInputBytes input)
+        {
+            Builder.Clear();
+
+            while (ReadHelper.IsWhitespace(input.CurrentByte) && input.MoveNext())
+            {
+            }
+
+            Builder.Append((char)input.CurrentByte);
+
+            while (input.MoveNext() && !ReadHelper.IsEndOfLine(input.CurrentByte))
+            {
+                Builder.Append((char)input.CurrentByte);
+            }
+
+            return Builder.ToString();
         }
     }
 

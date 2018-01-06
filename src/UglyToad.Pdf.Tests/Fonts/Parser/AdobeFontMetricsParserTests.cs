@@ -1,5 +1,8 @@
 ﻿namespace UglyToad.Pdf.Tests.Fonts.Parser
 {
+    using System;
+    using System.IO;
+    using IO;
     using Pdf.Fonts.Parser;
     using Xunit;
 
@@ -78,6 +81,34 @@ C 37 ; WX 600 ; N percent ; B 81 -15 518 622 ;";
             var metrics = parser.Parse(input.Bytes, false);
 
             Assert.NotNull(metrics);
+        }
+
+        [Fact]
+        public void CanParseHelveticaAfmFile()
+        {
+            var helvetica = GetResourceBytes("UglyToad.Pdf.Resources.AdobeFontMetrics.Helvetica.afm");
+
+            var input = new ByteArrayInputBytes(helvetica);
+
+            var metrics = parser.Parse(input, false);
+
+            Assert.NotNull(metrics);
+        }
+
+        private static byte[] GetResourceBytes(string name)
+        {
+            using (var memoryStream = new MemoryStream())
+            using (var resource = typeof(AdobeFontMetricsParser).Assembly.GetManifestResourceStream(name))
+            {
+                if (resource == null)
+                {
+                    throw new InvalidOperationException($"No assembly resource with name: {name}.");
+                }
+
+                resource.CopyTo(memoryStream);
+
+                return memoryStream.ToArray();
+            }
         }
     }
 }
