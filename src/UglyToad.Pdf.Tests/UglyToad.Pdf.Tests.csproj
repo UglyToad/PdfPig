@@ -72,4 +72,10 @@
     <ProjectReference Include="..\UglyToad.Pdf\UglyToad.Pdf.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Integration\Documents\2006_Swedish_Touring_Car_Championship.pdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
