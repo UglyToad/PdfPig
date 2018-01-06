@@ -188,6 +188,65 @@ are the same.)";
             Assert.Equal("This string has two +Öctals", AssertStringToken(token).Data);
         }
 
+        [Fact]
+        public void HandlesEscapedBackslash()
+        {
+            const string s = @"(listen\\learn)";
+
+            var input = StringBytesTestConverter.Convert(s);
+
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            Assert.True(result);
+
+            Assert.Equal(@"listen\learn", AssertStringToken(token).Data);
+        }
+
+        [Theory]
+        [InlineData(@"(new line \n)", "new line \n")]
+        [InlineData(@"(carriage return \r)", "carriage return \r")]
+        [InlineData(@"(tab \t)", "tab \t")]
+        [InlineData(@"(bell \b)", "bell \b")]
+        [InlineData(@"(uhmmm \f)", "uhmmm \f")]
+        public void WritesEscapedCharactersToOutput(string input, string expected)
+        {
+            var bytes = StringBytesTestConverter.Convert(input);
+
+            var result = tokenizer.TryTokenize(bytes.First, bytes.Bytes, out var token);
+
+            Assert.True(result);
+
+            Assert.Equal(expected, AssertStringToken(token).Data);
+        }
+
+        [Fact]
+        public void EscapedNonEscapeCharacterWritesPlainCharacter()
+        {
+            const string s = @"(this does not need escaping \e)";
+
+            var input = StringBytesTestConverter.Convert(s);
+
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            Assert.True(result);
+
+            Assert.Equal(@"this does not need escaping e", AssertStringToken(token).Data);
+        }
+
+        [Fact]
+        public void ReachesEndOfInputAssumesEndOfString()
+        {
+            const string s = @"(this does not end with bracket";
+
+            var input = StringBytesTestConverter.Convert(s);
+
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            Assert.True(result);
+
+            Assert.Equal(@"this does not end with bracket", AssertStringToken(token).Data);
+        }
+
         private static StringToken AssertStringToken(IToken token)
         {
             Assert.NotNull(token);

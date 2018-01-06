@@ -3,7 +3,7 @@
     using IO;
     using Tokens;
 
-    internal class CrossReferenceEndOfLineTokenizer : ITokenizer
+    internal class EndOfLineTokenizer : ITokenizer
     {
         public bool ReadsNextByte { get; } = false;
 
@@ -18,15 +18,6 @@
             token = EndOfLineToken.Token;
 
             return true;
-        }
-    }
-
-    internal class EndOfLineToken : IToken
-    {
-        public static EndOfLineToken Token { get; } = new EndOfLineToken();
-
-        private EndOfLineToken()
-        {
         }
     }
 }

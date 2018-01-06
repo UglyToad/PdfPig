@@ -51,7 +51,7 @@
 
                 var definition = new TableSubsectionDefinition(firstObjectNumber.Long, objectCount.Int);
 
-                var tokenizer = new CrossReferenceEndOfLineTokenizer();
+                var tokenizer = new EndOfLineTokenizer();
 
                 scanner.RegisterCustomTokenizer((byte)'\r', tokenizer);
                 scanner.RegisterCustomTokenizer((byte)'\n', tokenizer);

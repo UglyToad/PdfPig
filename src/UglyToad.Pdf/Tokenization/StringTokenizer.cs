@@ -222,11 +222,6 @@
                     isOctalActive = true;
                     octalsRead = 1;
                     break;
-                case ')':
-                    // TODO: Handle the weird malformed use case "/Something (C:\)"
-                    // numberOfBrackets = CheckForEndOfString(inputBytes, numberOfBrackets);
-                    builder.Append(c);
-                    break;
                 default:
                     if (c == ReadHelper.AsciiCarriageReturn || c == ReadHelper.AsciiLineFeed)
                     {
