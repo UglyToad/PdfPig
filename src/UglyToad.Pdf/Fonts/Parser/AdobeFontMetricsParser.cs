@@ -1,8 +1,10 @@
 ﻿namespace UglyToad.Pdf.Fonts.Parser
 {
     using System;
+    using System.Globalization;
     using System.Text;
     using Exceptions;
+    using Geometry;
     using IO;
     using Pdf.Parser.Parts;
 
@@ -373,10 +375,16 @@
                         builder.EncodingScheme = ReadLine(bytes);
                         break;
                     case MappingScheme:
-                        builder.MappingScheme = (int) ReadDecimal(bytes);
+                        builder.MappingScheme = (int)ReadDecimal(bytes);
                         break;
                     case CharacterSet:
                         builder.CharacterSet = ReadLine(bytes);
+                        break;
+                    case EscChar:
+                        builder.EscapeCharacter = (int) ReadDecimal(bytes);
+                        break;
+                    case Characters:
+                        builder.Characters = (int) ReadDecimal(bytes);
                         break;
                     case IsBaseFont:
                         builder.IsBaseFont = ReadBool(bytes);
@@ -402,6 +410,12 @@
                     case CharWidth:
                         builder.SetCharacterWidth(ReadDecimal(bytes), ReadDecimal(bytes));
                         break;
+                    case VVector:
+                        builder.SetVVector(ReadDecimal(bytes), ReadDecimal(bytes));
+                        break;
+                    case IsFixedV:
+                        builder.IsFixedV = ReadBool(bytes);
+                        break;
                     case StartCharMetrics:
                         var count = (int)ReadDecimal(bytes);
                         for (int i = 0; i < count; i++)
@@ -409,13 +423,20 @@
                             var metric = ReadCharacterMetric(bytes);
                             builder.CharacterMetrics.Add(metric);
                         }
-                        var end = ReadString(bytes);
 
+                        var end = ReadString(bytes);
+                        if (end != EndCharMetrics)
+                        {
+                            throw new InvalidFontFormatException($"The character metrics section did not end with {EndCharMetrics} instead it was {end}.");
+                        }
+
+                        break;
+                    case StartKernData:
                         break;
                 }
             }
 
-            return new FontMetrics();
+            return builder.Build();
         }
 
         private static decimal ReadDecimal(IInputBytes input)
@@ -487,7 +508,123 @@
         {
             var line = ReadLine(bytes);
 
-            return new IndividualCharacterMetric();
+            var split = line.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+
+            var metric = new IndividualCharacterMetric();
+
+            foreach (var s in split)
+            {
+                var parts = s.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+                switch (parts[0])
+                {
+                    case CharmetricsC:
+                        {
+                            var code = int.Parse(parts[1]);
+                            metric.CharacterCode = code;
+                            break;
+                        }
+                    case CharmetricsCh:
+                        {
+                            var code = int.Parse(parts[1], NumberStyles.HexNumber);
+                            metric.CharacterCode = code;
+                            break;
+                        }
+                    case CharmetricsWx:
+                        {
+                            metric.WidthX = decimal.Parse(parts[1]);
+                            break;
+                        }
+                    case CharmetricsW0X:
+                        {
+                            metric.WidthXDirection0 = decimal.Parse(parts[1]);
+                            break;
+                        }
+                    case CharmetricsW1X:
+                        {
+                            metric.WidthXDirection1 = decimal.Parse(parts[1]);
+                            break;
+                        }
+                    case CharmetricsWy:
+                        {
+                            metric.WidthY = decimal.Parse(parts[1]);
+                            break;
+                        }
+                    case CharmetricsW0Y:
+                        {
+                            metric.WidthYDirection0 = decimal.Parse(parts[1]);
+                            break;
+                        }
+                    case CharmetricsW1Y:
+                        {
+                            metric.WidthYDirection1 = decimal.Parse(parts[1]);
+                            break;
+                        }
+                    case CharmetricsW:
+                        {
+                            metric.WidthX = decimal.Parse(parts[1]);
+                            metric.WidthY = decimal.Parse(parts[2]);
+                            break;
+                        }
+                    case CharmetricsW0:
+                        {
+                            metric.WidthXDirection0 = decimal.Parse(parts[1]);
+                            metric.WidthYDirection0 = decimal.Parse(parts[2]);
+                            break;
+                        }
+                    case CharmetricsW1:
+                        {
+                            metric.WidthXDirection1 = decimal.Parse(parts[1]);
+                            metric.WidthYDirection1 = decimal.Parse(parts[2]);
+                            break;
+                        }
+                    case CharmetricsVv:
+                        {
+                            metric.VVector = new PdfVector(decimal.Parse(parts[1]), decimal.Parse(parts[2]));
+                            break;
+                        }
+                    case CharmetricsN:
+                        {
+                            metric.Name = parts[1];
+                            break;
+                        }
+                    case CharmetricsB:
+                        {
+                            metric.BoundingBox = new PdfRectangle(decimal.Parse(parts[1]),
+                                decimal.Parse(parts[2]),
+                                decimal.Parse(parts[3]),
+                                decimal.Parse(parts[4]));
+                            break;
+                        }
+                    case CharmetricsL:
+                        {
+                            metric.Ligature = new Ligature(parts[1], parts[2]);
+                            break;
+                        }
+                    default:
+                        throw new InvalidFontFormatException($"Unknown CharMetrics command '{parts[0]}'.");
+                }
+            }
+
+            return metric;
+        }
+    }
+
+    internal class Ligature
+    {
+        public string Successor { get; }
+
+        public string Value { get; }
+
+        public Ligature(string successor, string value)
+        {
+            Successor = successor;
+            Value = value;
+        }
+
+        public override string ToString()
+        {
+            return $"Ligature: {Value} -> Successor: {Successor}";
         }
     }
 

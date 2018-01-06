@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.IO;
     using IO;
+    using Parser;
     using Util.JetBrains.Annotations;
 
     /// <summary>
@@ -31,6 +32,7 @@
     /// </remarks>
     internal static class Standard14
     {
+        private static readonly AdobeFontMetricsParser Parser = new AdobeFontMetricsParser();
         private static readonly HashSet<string> Standard14Names = new HashSet<string>();
         private static readonly Dictionary<string, string> Standard14Mapping = new Dictionary<string, string>(34);
         private static readonly Dictionary<string, FontMetrics> Standard14AfmMap = new Dictionary<string, FontMetrics>(34);
@@ -106,7 +108,7 @@
                     bytes = new ByteArrayInputBytes(memory.ToArray());
                 }
 
-                Standard14AfmMap[fontName] = new FontMetrics();
+                Standard14AfmMap[fontName] = Parser.Parse(bytes, true);
             }
             catch (Exception ex)
             {

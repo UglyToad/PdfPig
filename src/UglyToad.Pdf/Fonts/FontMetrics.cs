@@ -3,170 +3,97 @@
     using System.Collections.Generic;
     using Geometry;
 
-    class FontMetrics
-    {
-    }
-
-    internal class FontMetricsBuilder
+    internal class FontMetrics
     {
         public decimal AfmVersion { get; }
 
-        public List<string> Comments { get; }
+        public IReadOnlyList<string> Comments { get; }
 
-        public List<IndividualCharacterMetric> CharacterMetrics { get; } = new List<IndividualCharacterMetric>();
+        public int MetricSets { get; }
 
-        /// <summary>
-        /// Name of the font as seen by PostScript.
-        /// </summary>
-        public string FontName { get; set; }
+        public string FontName { get; }
 
-        /// <summary>
-        /// The full text name of the font.
-        /// </summary>
-        public string FullName { get; set; }
+        public string FullName { get; }
 
-        /// <summary>
-        /// The name of the typeface family for the font.
-        /// </summary>
-        public string FamilyName { get; set; }
+        public string FamilyName { get; }
 
-        /// <summary>
-        /// The weight of the font.
-        /// </summary>
-        public string Weight { get; set; }
+        public string Weight { get; }
 
-        /// <summary>
-        /// Angle in degrees counter-clockwise from vertical of vertical strokes of the font.
-        /// </summary>
-        public decimal ItalicAngle { get; set; }
+        public PdfRectangle BoundingBox { get; }
 
-        /// <summary>
-        /// Whether the font is monospaced or not.
-        /// </summary>
-        public bool IsFixedPitch { get; set; }
+        public string Version { get; }
 
-        /// <summary>
-        /// The dimensions of the font bounding box.
-        /// </summary>
-        public PdfRectangle PdfBoundingBox { get; private set; }
+        public string Notice { get; }
 
-        /// <summary>
-        /// Distance from the baseline for underlining.
-        /// </summary>
-        public decimal UnderlinePosition { get; set; }
+        public string EncodingScheme { get; }
 
-        /// <summary>
-        /// The stroke width for underlining.
-        /// </summary>
-        public decimal UnderlineThickness { get; set; }
+        public int MappingScheme { get; }
 
-        /// <summary>
-        /// Version identifier for the font program.
-        /// </summary>
-        public string Version { get; set; }
+        public int EscapeCharacter { get; }
 
-        /// <summary>
-        /// Font name trademark or copyright notice.
-        /// </summary>
-        public string Notice { get; set; }
+        public string CharacterSet { get; }
 
-        public string EncodingScheme { get; set; }
+        public int Characters { get; }
 
-        /// <summary>
-        /// Code describing mapping scheme for a non base font.
-        /// </summary>
-        public int MappingScheme { get; set; }
+        public bool IsBaseFont { get; }
 
-        /// <summary>
-        /// The character set of this font.
-        /// </summary>
-        public string CharacterSet { get; set; }
+        public PdfVector VVector { get; }
 
-        public bool IsBaseFont { get; set; } = true;
+        public bool IsFixedV { get; }
 
-        /// <summary>
-        /// The y-value of the top of a capital H.
-        /// </summary>
-        public decimal CapHeight { get; set; }
+        public decimal CapHeight { get; }
 
-        /// <summary>
-        /// The y-value of the top of lowercase x.
-        /// </summary>
-        public decimal XHeight { get; set; }
+        public decimal XHeight { get; }
 
-        /// <summary>
-        /// Generally the y-value of the top of lowercase d.
-        /// </summary>
-        public decimal Ascender { get; set; }
+        public decimal Ascender { get; }
 
-        /// <summary>
-        /// The y-value of the bottom of lowercase p.
-        /// </summary>
-        public decimal Descender { get; set; }
+        public decimal Descender { get; }
 
-        /// <summary>
-        /// Width of horizontal stems.
-        /// </summary>
-        public decimal StdHw { get; set; }
+        public decimal UnderlinePosition { get; }
 
-        /// <summary>
-        /// Width of vertical stems.
-        /// </summary>
-        public decimal StdVw { get; set; }
+        public decimal UnderlineThickness { get; }
 
-        public CharacterWidth CharacterWidth { get; private set; }
+        public decimal ItalicAngle { get; }
 
-        public FontMetricsBuilder(decimal afmVersion)
+        public CharacterWidth CharacterWidth { get; }
+
+        public decimal HorizontalStemWidth { get; }
+
+        public decimal VerticalStemWidth { get; }
+
+        public IReadOnlyDictionary<string, IndividualCharacterMetric> CharacterMetrics { get; }
+
+        public FontMetrics(decimal afmVersion, IReadOnlyList<string> comments, int metricSets, string fontName, string fullName, string familyName, string weight, PdfRectangle boundingBox, string version, string notice, string encodingScheme, int mappingScheme, int escapeCharacter, string characterSet, int characters, bool isBaseFont, PdfVector vVector, bool isFixedV, decimal capHeight, decimal xHeight, decimal ascender, decimal descender, decimal underlinePosition, decimal underlineThickness, decimal italicAngle, CharacterWidth characterWidth, decimal horizontalStemWidth, decimal verticalStemWidth, IReadOnlyDictionary<string, IndividualCharacterMetric> characterMetrics)
         {
             AfmVersion = afmVersion;
-            Comments = new List<string>();
+            Comments = comments;
+            MetricSets = metricSets;
+            FontName = fontName;
+            FullName = fullName;
+            FamilyName = familyName;
+            Weight = weight;
+            BoundingBox = boundingBox;
+            Version = version;
+            Notice = notice;
+            EncodingScheme = encodingScheme;
+            MappingScheme = mappingScheme;
+            EscapeCharacter = escapeCharacter;
+            CharacterSet = characterSet;
+            Characters = characters;
+            IsBaseFont = isBaseFont;
+            VVector = vVector;
+            IsFixedV = isFixedV;
+            CapHeight = capHeight;
+            XHeight = xHeight;
+            Ascender = ascender;
+            Descender = descender;
+            UnderlinePosition = underlinePosition;
+            UnderlineThickness = underlineThickness;
+            ItalicAngle = italicAngle;
+            CharacterWidth = characterWidth;
+            HorizontalStemWidth = horizontalStemWidth;
+            VerticalStemWidth = verticalStemWidth;
+            CharacterMetrics = characterMetrics;
         }
-
-        public void SetBoundingBox(decimal x1, decimal y1, decimal x2, decimal y2)
-        {
-            PdfBoundingBox = new PdfRectangle(x1, y1, x2, y2);
-        }
-
-        public void SetCharacterWidth(decimal x, decimal y)
-        {
-            CharacterWidth = new CharacterWidth(x, y);
-        }
-    }
-
-    /// <summary>
-    /// The x and y components of the width vector of the font's characters.
-    /// Presence implies that IsFixedPitch is true.
-    /// </summary>
-    internal class CharacterWidth
-    {
-        public decimal X { get; }
-
-        public decimal Y { get; }
-
-        public CharacterWidth(decimal x, decimal y)
-        {
-            X = x;
-            Y = y;
-        }
-    }
-
-    internal class IndividualCharacterMetric
-    {
-        public int CharacterCode { get; set; }
-
-        public decimal WidthX { get; set; }
-        public decimal WidthY { get; set; }
-
-        public decimal WidthXDirection0 { get; set; }
-        public decimal WidthYDirection0 { get; set; }
-
-        public decimal WidthXDirection1 { get; set; }
-        public decimal WidthYDirection1 { get; set; }
-
-        public string Name { get; set; }
-
-        public PdfVector VVector { get; set; }
-
-        public PdfRectangle BoundingBox { get; set; }
     }
 }

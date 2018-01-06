@@ -57,7 +57,7 @@ StdHW 51
 
 StdVW 51
 
-StartCharMetrics 315
+StartCharMetrics 6
 
 C 32 ; WX 600 ; N space ; B 0 0 0 0 ;
 
@@ -69,7 +69,9 @@ C 35 ; WX 600 ; N numbersign ; B 93 -32 507 639 ;
 
 C 36 ; WX 600 ; N dollar ; B 105 -126 496 662 ;
 
-C 37 ; WX 600 ; N percent ; B 81 -15 518 622 ;";
+C 37 ; WX 600 ; N percent ; B 81 -15 518 622 ;
+
+EndCharMetrics";
 
         private readonly AdobeFontMetricsParser parser = new AdobeFontMetricsParser();
 
