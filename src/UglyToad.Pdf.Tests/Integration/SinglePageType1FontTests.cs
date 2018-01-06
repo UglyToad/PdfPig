@@ -2,8 +2,6 @@
 {
     using System;
     using System.IO;
-    using System.Linq;
-    using Content;
     using Xunit;
 
     public class SinglePageType1FontTests

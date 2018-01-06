@@ -6,6 +6,7 @@
     using Cos;
     using Exceptions;
     using IO;
+    using Parts;
 
     internal class CatalogFactory
     {
@@ -33,7 +34,7 @@
                 throw new PdfDocumentFormatException($"No pages entry was found in the catalog dictionary: {dictionary}.");
             }
 
-            var pages = pdfObjectParser.Parse(value.ToIndirectReference(), reader, isLenientParsing);
+            var pages = DirectObjectFinder.Find<PdfDictionary>(value, pdfObjectParser, reader, isLenientParsing);
 
             if (!(pages is PdfDictionary pagesDictionary))
             {

@@ -7,6 +7,7 @@
     using IO;
     using Parts;
     using Pdf.Parser;
+    using Pdf.Parser.Parts;
 
     internal static class FontDictionaryAccessHelper
     {
@@ -32,11 +33,16 @@
             return lastChar.AsInt();
         }
 
-        public static decimal[] GetWidths(PdfDictionary dictionary)
+        public static decimal[] GetWidths(IPdfObjectParser pdfObjectParser, PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
         {
             if (!dictionary.TryGetItemOfType(CosName.WIDTHS, out COSArray widthArray))
             {
-                throw new InvalidFontFormatException($"No widths array was found in the font dictionary for this TrueType font: {dictionary}.");
+                if (!dictionary.TryGetItemOfType(CosName.WIDTHS, out CosObject arr))
+                {
+                    throw new InvalidFontFormatException($"No widths array was found in the font dictionary for this TrueType font: {dictionary}.");
+                }
+
+                widthArray = DirectObjectFinder.Find<COSArray>(arr, pdfObjectParser, reader, isLenientParsing);
             }
 
             return widthArray.Select(x => ((ICosNumber)x).AsDecimal()).ToArray();

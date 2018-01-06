@@ -344,6 +344,74 @@
                     case FamilyName:
                         builder.FamilyName = ReadLine(bytes);
                         break;
+                    case Weight:
+                        builder.Weight = ReadLine(bytes);
+                        break;
+                    case ItalicAngle:
+                        builder.ItalicAngle = ReadDecimal(bytes);
+                        break;
+                    case IsFixedPitch:
+                        builder.IsFixedPitch = ReadBool(bytes);
+                        break;
+                    case FontBbox:
+                        builder.SetBoundingBox(ReadDecimal(bytes), ReadDecimal(bytes),
+                            ReadDecimal(bytes), ReadDecimal(bytes));
+                        break;
+                    case UnderlinePosition:
+                        builder.UnderlinePosition = ReadDecimal(bytes);
+                        break;
+                    case UnderlineThickness:
+                        builder.UnderlineThickness = ReadDecimal(bytes);
+                        break;
+                    case Version:
+                        builder.Version = ReadLine(bytes);
+                        break;
+                    case Notice:
+                        builder.Notice = ReadLine(bytes);
+                        break;
+                    case EncodingScheme:
+                        builder.EncodingScheme = ReadLine(bytes);
+                        break;
+                    case MappingScheme:
+                        builder.MappingScheme = (int) ReadDecimal(bytes);
+                        break;
+                    case CharacterSet:
+                        builder.CharacterSet = ReadLine(bytes);
+                        break;
+                    case IsBaseFont:
+                        builder.IsBaseFont = ReadBool(bytes);
+                        break;
+                    case CapHeight:
+                        builder.CapHeight = ReadDecimal(bytes);
+                        break;
+                    case XHeight:
+                        builder.XHeight = ReadDecimal(bytes);
+                        break;
+                    case Ascender:
+                        builder.Ascender = ReadDecimal(bytes);
+                        break;
+                    case Descender:
+                        builder.Descender = ReadDecimal(bytes);
+                        break;
+                    case StdHw:
+                        builder.StdHw = ReadDecimal(bytes);
+                        break;
+                    case StdVw:
+                        builder.StdVw = ReadDecimal(bytes);
+                        break;
+                    case CharWidth:
+                        builder.SetCharacterWidth(ReadDecimal(bytes), ReadDecimal(bytes));
+                        break;
+                    case StartCharMetrics:
+                        var count = (int)ReadDecimal(bytes);
+                        for (int i = 0; i < count; i++)
+                        {
+                            var metric = ReadCharacterMetric(bytes);
+                            builder.CharacterMetrics.Add(metric);
+                        }
+                        var end = ReadString(bytes);
+
+                        break;
                 }
             }
 
@@ -413,6 +481,13 @@
             }
 
             return Builder.ToString();
+        }
+
+        private static IndividualCharacterMetric ReadCharacterMetric(IInputBytes bytes)
+        {
+            var line = ReadLine(bytes);
+
+            return new IndividualCharacterMetric();
         }
     }
 

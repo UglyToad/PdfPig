@@ -1,9 +1,13 @@
 ﻿namespace UglyToad.Pdf.Parser
 {
     using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Linq;
     using Content;
     using ContentStream;
     using Cos;
+    using Exceptions;
     using Filters;
     using Geometry;
     using Graphics;
@@ -51,8 +55,8 @@
 
             PageContent content = default(PageContent);
 
-            var contentObject = dictionary.GetItemOrDefault(CosName.CONTENTS) as CosObject;
-            if (contentObject != null)
+            var contents = dictionary.GetItemOrDefault(CosName.CONTENTS);
+            if (contents is CosObject contentObject)
             {
                 var contentStream = DirectObjectFinder.Find<PdfRawStream>(contentObject, pdfObjectParser,  reader, false);
 
@@ -61,20 +65,52 @@
                     throw new InvalidOperationException("Failed to parse the content for the page: " + number);
                 }
 
-                var contents = contentStream.Decode(filterProvider);
+                var bytes = contentStream.Decode(filterProvider);
 
-                var txt = OtherEncodings.BytesAsLatin1String(contents);
+                content = GetContent(bytes, cropBox, userSpaceUnit);
+            }
+            else if (contents is COSArray arr)
+            {
+                var bytes = new List<byte>();
+                
+                foreach (var item in arr)
+                {
+                    var obj = item as CosObject;
+                    if (obj == null)
+                    {
+                        throw new PdfDocumentFormatException($"The contents contained something which was not an indirect reference: {item}.");
+                    }
 
-                var operations = pageContentParser.Parse(new ByteArrayInputBytes(contents));
+                    var contentStream = DirectObjectFinder.Find<PdfRawStream>(obj, pdfObjectParser, reader, isLenientParsing);
+                    
+                    if (contentStream == null)
+                    {
+                        throw new InvalidOperationException($"Could not find the contents for object {obj}.");
+                    }
 
-                var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit);
+                    bytes.AddRange(contentStream.Decode(filterProvider));
+                }
 
-                content = context.Process(operations);
+                content = GetContent(bytes, cropBox, userSpaceUnit);
             }
 
             var page = new Page(number, mediaBox, cropBox, content);
 
             return page;
+        }
+
+        private PageContent GetContent(IReadOnlyList<byte> contentBytes, CropBox cropBox, UserSpaceUnit userSpaceUnit)
+        {
+            if (Debugger.IsAttached)
+            {
+                var txt = OtherEncodings.BytesAsLatin1String(contentBytes.ToArray());
+            }
+
+            var operations = pageContentParser.Parse(new ByteArrayInputBytes(contentBytes));
+
+            var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit);
+
+            return context.Process(operations);
         }
 
         private static UserSpaceUnit GetUserSpaceUnits(PdfDictionary dictionary)

@@ -7,6 +7,7 @@
     using Fonts;
     using IO;
     using Parser;
+    using Parser.Parts;
 
     internal class ResourceContainer : IResourceStore
     {
@@ -71,7 +72,7 @@
                     throw new InvalidOperationException($"The font with name {pair.Key} did not link to an object key. Value was: {pair.Value}.");
                 }
                 
-                var fontObject = pdfObjectParser.Parse(objectKey.ToIndirectReference(), reader, false) as PdfDictionary;
+                var fontObject = DirectObjectFinder.Find<PdfDictionary>(objectKey, pdfObjectParser, reader, false);
 
                 if (fontObject == null)
                 {

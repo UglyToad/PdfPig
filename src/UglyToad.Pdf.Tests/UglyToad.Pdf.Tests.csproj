@@ -12,6 +12,7 @@
     <None Remove="Fonts\TrueType\Roboto-Regular.ttf" />
     <None Remove="Integration\Documents\Font Size Test - from google chrome print pdf.pdf" />
     <None Remove="Integration\Documents\Font Size Test - from libre office.pdf" />
+    <None Remove="Integration\Documents\Judgement Document.pdf" />
     <None Remove="Integration\Documents\Multiple Page - from Mortality Statistics.pdf" />
     <None Remove="Integration\Documents\Single Page Form Content - from itext 1_1.pdf" />
     <None Remove="Integration\Documents\Single Page Non Latin - from acrobat distiller.pdf" />
@@ -32,6 +33,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Integration\Documents\Font Size Test - from google chrome print pdf.pdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Integration\Documents\Judgement Document.pdf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Integration\Documents\Multiple Page - from Mortality Statistics.pdf">

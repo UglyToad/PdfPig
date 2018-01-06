@@ -33,7 +33,7 @@
 
             var lastCharacter = FontDictionaryAccessHelper.GetLastCharacter(dictionary);
 
-            var widths = FontDictionaryAccessHelper.GetWidths(dictionary);
+            var widths = FontDictionaryAccessHelper.GetWidths(pdfObjectParser, dictionary, reader, isLenientParsing);
 
             var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfObjectParser, fontDescriptorFactory, dictionary, reader, isLenientParsing);
             
