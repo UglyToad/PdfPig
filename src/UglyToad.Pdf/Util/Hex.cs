@@ -48,20 +48,6 @@
             output.Write(HexBytes[GetLowNibble(b)]);
         }
 
-        /** 
-         * Writes the given byte array as hex value to the given output stream.
-         * @param bytes the byte array to be written
-         * @param output the output stream to be written to
-         * @throws IOException exception if anything went wrong
-         */
-        public static void WriteHexBytes(byte[] bytes, BinaryWriter output)
-        {
-            foreach (var b in bytes)
-            {
-                WriteHexByte(b, output);
-            }
-        }
-
         /**
          * GetLongOrDefault the high nibble of the given byte.
          * 
