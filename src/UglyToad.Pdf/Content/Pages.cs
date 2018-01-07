@@ -9,6 +9,7 @@
     using IO;
     using Logging;
     using Parser;
+    using Parser.Parts;
 
     internal class Pages
     {
@@ -111,8 +112,8 @@
             foreach (var kid in kids.OfType<CosObject>())
             {
                 // todo: exit early
-                var child = pdfObjectParser.Parse(kid.ToIndirectReference(), reader, isLenientParsing) as PdfDictionary;
-
+                var child = DirectObjectFinder.Find<PdfDictionary>(kid, pdfObjectParser, reader, isLenientParsing);
+                
                 var thisPageMatches = FindPage(child, soughtPageNumber, pageNumbersObserved);
 
                 if (thisPageMatches)

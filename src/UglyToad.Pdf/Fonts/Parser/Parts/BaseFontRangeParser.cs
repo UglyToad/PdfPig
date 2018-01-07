@@ -4,35 +4,39 @@
     using System.Collections.Generic;
     using System.Linq;
     using Cmap;
+    using Exceptions;
     using Tokenization.Scanner;
     using Tokenization.Tokens;
 
+    /// <summary>
+    /// The beginbfrange and endbfrange operators map i ranges of input codes to the corresponding output code range.
+    /// </summary>
     internal class BaseFontRangeParser : ICidFontPartParser<NumericToken>
     {
-        public void Parse(NumericToken numeric, ITokenScanner scanner, CharacterMapBuilder builder, bool isLenientParsing)
+        public void Parse(NumericToken numberOfOperations, ITokenScanner scanner, CharacterMapBuilder builder, bool isLenientParsing)
         {
-            for (var i = 0; i < numeric.Int; i++)
+            for (var i = 0; i < numberOfOperations.Int; i++)
             {
+                // The start of the input code range.
                 if (!scanner.TryReadToken(out HexToken lowSourceCode))
                 {
-                    // TODO: message
-                    throw new InvalidOperationException();
+                    throw new InvalidFontFormatException($"bfrange was missing the low source code: {scanner.CurrentToken}");
                 }
 
+                // The inclusive end of the input code range.
                 if (!scanner.TryReadToken(out HexToken highSourceCode))
                 {
-                    // TODO: message
-                    throw new InvalidOperationException();
+                    throw new InvalidFontFormatException($"bfrange was missing the high source code: {scanner.CurrentToken}");
                 }
 
                 if (!scanner.MoveNext())
                 {
-                    // TODO: message
-                    throw new InvalidOperationException();
+                    throw new InvalidFontFormatException("bfrange ended unexpectedly after the high source code.");
                 }
 
                 List<byte> destinationBytes = null;
                 ArrayToken destinationArray = null;
+
                 switch (scanner.CurrentToken)
                 {
                     case ArrayToken arrayToken:
@@ -51,7 +55,35 @@
                 var startCode = new List<byte>(lowSourceCode.Bytes);
                 var endCode = highSourceCode.Bytes;
 
-                int arrayIndex = 0;
+                if (destinationArray != null)
+                {
+                    int arrayIndex = 0;
+                    while (!done)
+                    {
+                        if (Compare(startCode, endCode) >= 0)
+                        {
+                            done = true;
+                        }
+
+                        var destination = destinationArray.Data[arrayIndex];
+
+                        if (destination is NameToken name)
+                        {
+                            builder.AddBaseFontCharacter(startCode, name.Data.Name);
+                        }
+                        else if (destination is HexToken hex)
+                        {
+                            builder.AddBaseFontCharacter(startCode, hex.Bytes);
+                        }
+                        
+                        Increment(startCode, startCode.Count - 1);
+
+                        arrayIndex++;
+                    }
+
+                    continue;
+                }
+
                 while (!done)
                 {
                     if (Compare(startCode, endCode) >= 0)
@@ -63,18 +95,7 @@
 
                     Increment(startCode, startCode.Count - 1);
 
-                    if (destinationArray == null)
-                    {
-                        Increment(destinationBytes, destinationBytes.Count - 1);
-                    }
-                    else
-                    {
-                        arrayIndex++;
-                        if (arrayIndex < destinationArray.Data.Count)
-                        {
-                            destinationBytes = ((HexToken)destinationArray.Data[arrayIndex]).Bytes.ToList();
-                        }
-                    }
+                    Increment(destinationBytes, destinationBytes.Count - 1);
                 }
             }
         }

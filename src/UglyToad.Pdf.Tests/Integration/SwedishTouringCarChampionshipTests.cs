@@ -61,5 +61,14 @@
                 Assert.Contains("Söderberg", page.Text);
             }
         }
+
+        //[Fact]
+        //public void localFileTest()
+        //{
+        //    using (var document = PdfDocument.Open(@"C:\Users\eliot\Downloads\CV.pdf"))
+        //    {
+        //        var page = document.GetPage(1);
+        //    }
+        //}
     }
 }
