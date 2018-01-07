@@ -22,17 +22,20 @@
         private readonly CMapCache cMapCache;
         private readonly FontDescriptorFactory fontDescriptorFactory;
         private readonly TrueTypeFontParser trueTypeFontParser;
+        private readonly IEncodingReader encodingReader;
 
         public TrueTypeFontHandler(IPdfObjectParser pdfObjectParser, IFilterProvider filterProvider, 
             CMapCache cMapCache,
             FontDescriptorFactory fontDescriptorFactory,
-            TrueTypeFontParser trueTypeFontParser)
+            TrueTypeFontParser trueTypeFontParser,
+            IEncodingReader encodingReader)
         {
             this.pdfObjectParser = pdfObjectParser;
             this.filterProvider = filterProvider;
             this.cMapCache = cMapCache;
             this.fontDescriptorFactory = fontDescriptorFactory;
             this.trueTypeFontParser = trueTypeFontParser;
+            this.encodingReader = encodingReader;
         }
 
         public IFont Generate(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
@@ -62,32 +65,7 @@
                 }
             }
 
-            Encoding encoding = null;
-            if (dictionary.TryGetValue(CosName.ENCODING, out var encodingBase))
-            {
-                // Symbolic fonts default to standard encoding.
-                if (descriptor.Flags.HasFlag(FontFlags.Symbolic))
-                {
-                    encoding = StandardEncoding.Instance;
-                }
-
-                if (encodingBase is CosName encodingName)
-                {
-                    if (!Encoding.TryGetNamedEncoding(encodingName, out encoding))
-                    {
-                        // TODO: PDFBox would not throw here.
-                        throw new InvalidFontFormatException($"Unrecognised encoding name: {encodingName}");
-                    }
-                }
-                else if (encodingBase is CosDictionary encodingDictionary)
-                {
-                    throw new NotImplementedException("No support for reading encoding from dictionary yet.");
-                }
-                else
-                {
-                    throw new NotImplementedException("No support for reading encoding from font yet.");
-                }
-            }
+            Encoding encoding = encodingReader.Read(dictionary, reader, isLenientParsing, descriptor);
 
             return new TrueTypeSimpleFont(name, firstCharacter, lastCharacter, widths, descriptor, toUnicodeCMap, encoding);
         }

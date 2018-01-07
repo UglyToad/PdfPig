@@ -16,7 +16,6 @@
     using IO;
     using Logging;
     using Parts;
-    using Parts.CrossReference;
     using Tokenization.Scanner;
     using Util;
 
@@ -79,6 +78,7 @@
             var fontDescriptorFactory = new FontDescriptorFactory();
 
             var cidFontFactory = new CidFontFactory(fontDescriptorFactory, trueTypeFontParser, pdfObjectParser, filterProvider);
+            var encodingReader = new EncodingReader(pdfObjectParser);
 
             var cMapCache = new CMapCache(new CMapParser());
 
@@ -86,8 +86,9 @@
                 cMapCache, 
                 filterProvider,
                 pdfObjectParser),
-                new TrueTypeFontHandler(pdfObjectParser, filterProvider, cMapCache, fontDescriptorFactory, trueTypeFontParser),
-                new Type1FontHandler(pdfObjectParser, cMapCache, filterProvider, fontDescriptorFactory));
+                new TrueTypeFontHandler(pdfObjectParser, filterProvider, cMapCache, fontDescriptorFactory, trueTypeFontParser, encodingReader),
+                new Type1FontHandler(pdfObjectParser, cMapCache, filterProvider, fontDescriptorFactory, encodingReader),
+                new Type3FontHandler(pdfObjectParser, cMapCache, filterProvider, encodingReader));
 
             var dynamicParser = container.Get<DynamicParser>();
             var resourceContainer = new ResourceContainer(pdfObjectParser, fontFactory);
