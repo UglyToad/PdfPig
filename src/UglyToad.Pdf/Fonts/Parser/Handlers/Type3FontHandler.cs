@@ -54,7 +54,7 @@
                 }
             }
             
-            return new Type3Font(CosName.UNCHANGED, boundingBox, fontMatrix, encoding, firstCharacter,
+            return new Type3Font(CosName.TYPE3, boundingBox, fontMatrix, encoding, firstCharacter,
                 lastCharacter, widths, toUnicodeCMap);
         }
 

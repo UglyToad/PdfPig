@@ -6,7 +6,8 @@
     /// Move to the start of the next line.
     /// </summary>
     /// <remarks>
-    /// This performs this operation: 0 Tl Td
+    /// This performs this operation: 0 -Tl Td
+    /// The offset is negative leading text (Tl) value, this is incorrect in the specification.
     /// </remarks>
     internal class MoveToNextLine : IGraphicsStateOperation
     {
@@ -21,7 +22,7 @@
 
         public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
-            var tdOperation = new MoveToNextLineWithOffset(0, operationContext.GetCurrentState().FontState.Leading);
+            var tdOperation = new MoveToNextLineWithOffset(0, -1 * operationContext.GetCurrentState().FontState.Leading);
 
             tdOperation.Run(operationContext, resourceStore);
         }

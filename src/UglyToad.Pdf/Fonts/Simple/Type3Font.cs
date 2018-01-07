@@ -19,6 +19,9 @@
         private readonly decimal[] widths;
         private readonly ToUnicodeCMap toUnicodeCMap;
 
+        /// <summary>
+        /// Type 3 fonts are usually unnamed.
+        /// </summary>
         public CosName Name { get; }
 
         public bool IsVertical { get; } = false;

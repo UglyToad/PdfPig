@@ -65,9 +65,9 @@
         //[Fact]
         //public void localFileTest()
         //{
-        //    //using (var document = PdfDocument.Open(@"C:\Users\eliot\Downloads\Document (1).pdf"))
+        //    using (var document = PdfDocument.Open(@"C:\Users\eliot\Downloads\Document (1).pdf"))
         //    {
-        //        //var page = document.GetPage(1);
+        //        var page = document.GetPage(1);
         //    }
         //}
     }
