@@ -7,7 +7,7 @@
     /// <summary>
     /// Defines the visible region, contents expanding beyond the crop box should be clipped.
     /// </summary>
-    public class CropBox
+    internal class CropBox
     {
         [NotNull]
         public PdfRectangle Bounds { get; }

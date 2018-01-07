@@ -2,7 +2,7 @@
 
 namespace UglyToad.Pdf.Util
 {
-    public static class OtherEncodings
+    internal static class OtherEncodings
     {
         /// <summary>
         /// Latin 1 Encoding: ISO 8859-1 is a single-byte encoding that can represent the first 256 Unicode characters.

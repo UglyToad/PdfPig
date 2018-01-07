@@ -9,7 +9,7 @@
     /// <remarks>
     /// See table 3.27 from the PDF specification version 1.7.
     /// </remarks>
-    public class MediaBox
+    internal class MediaBox
     {
         ///<summary>
         /// User space units per inch.

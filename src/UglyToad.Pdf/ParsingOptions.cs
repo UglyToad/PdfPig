@@ -2,10 +2,25 @@
 {
     using Logging;
 
+    /// <summary>
+    /// Configures options used by the parser when reading PDF documents.
+    /// </summary>
     public class ParsingOptions
     {
+
+        /// <summary>
+        /// Should the parser ignore issues where the document does not conform to the PDF specification?
+        /// </summary>
         public bool UseLenientParsing { get; set; } = true;
 
-        public ILog Logger { get; set; } = new NoOpLog();
+        private ILog logger = new NoOpLog();
+        /// <summary>
+        /// The <see cref="ILog"/> used to record messages raised by the parsing process.
+        /// </summary>
+        public ILog Logger
+        {
+            get => logger ?? new NoOpLog();
+            set => logger = value;
+        }
     }
 }

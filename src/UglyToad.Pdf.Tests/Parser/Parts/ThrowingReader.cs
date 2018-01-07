@@ -3,7 +3,7 @@
     using System;
     using IO;
 
-    public class ThrowingReader : IRandomAccessRead
+    internal class ThrowingReader : IRandomAccessRead
     {
         private readonly IRandomAccessRead reader;
 

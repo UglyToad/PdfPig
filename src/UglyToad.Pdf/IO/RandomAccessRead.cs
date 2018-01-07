@@ -2,7 +2,7 @@
 {
     using System;
 
-    public interface IRandomAccessRead : IDisposable
+    internal interface IRandomAccessRead : IDisposable
     {
         /**
          * Read a single byte of data.

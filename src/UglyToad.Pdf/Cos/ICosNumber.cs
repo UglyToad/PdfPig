@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.Pdf.Cos
 {
-    public interface ICosNumber
+    internal interface ICosNumber
     {
         float AsFloat();
 

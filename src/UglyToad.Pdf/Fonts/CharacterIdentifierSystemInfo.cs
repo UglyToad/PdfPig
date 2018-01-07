@@ -5,7 +5,7 @@
     /// <summary>
     /// Specifies the character collection associated with the <see cref="ICidFont"/> (CIDFont).
     /// </summary>
-    public struct CharacterIdentifierSystemInfo
+    internal struct CharacterIdentifierSystemInfo
     {
         /// <summary>
         /// Identifies the issuer of the character collection.

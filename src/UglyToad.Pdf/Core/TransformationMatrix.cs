@@ -148,7 +148,7 @@
         {
             var xScale = A;
 
-            /**
+            /*
              * BM: if the trm is rotated, the calculation is a little more complicated
              *
              * The rotation matrix multiplied with the scaling matrix is:
@@ -161,7 +161,7 @@
              *
              * sqrt(M(0,0)^2+M(0,1)^2) =
              * sqrt(x2*cos2+x2*sin2) =
-             * sqrt(x2*(cos2+sin2)) = <- here is the trick cos2+sin2 is one
+             * sqrt(x2*(cos2+sin2)) = (here is the trick cos2+sin2 = 1)
              * sqrt(x2) =
              * abs(x)
              */

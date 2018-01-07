@@ -5,7 +5,7 @@
     /// <summary>
     /// Contains the values inherited from the Page Tree for this page.
     /// </summary>
-    public class PageTreeMembers
+    internal class PageTreeMembers
     {
         public MediaBox GetMediaBox()
         {

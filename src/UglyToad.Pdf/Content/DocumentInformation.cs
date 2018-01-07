@@ -70,6 +70,9 @@
             representation = builder.ToString() ?? string.Empty;
         }
 
+        /// <summary>
+        /// Gets a string representing this document information. <see langword="null"/> entries are not shown.
+        /// </summary>
         public override string ToString()
         {
             return representation;
@@ -82,7 +85,7 @@
                 return;
             }
 
-            builder.Append(name).Append(": ").Append(value).Append(";");
+            builder.Append(name).Append(": ").Append(value).Append("; ");
         }
     }
 }

@@ -7,8 +7,6 @@
         public static string ReplaceLimited(this string value, string old, string newValue, int count)
         {
             throw new NotImplementedException();
-
-            return value;
         }
 
         public static bool StartsWithOffset(this string value, string start, int offset)

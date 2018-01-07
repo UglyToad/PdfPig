@@ -3,7 +3,7 @@
     using System.Collections.Generic;
     using System.Text;
 
-    public class ArrayToken : IDataToken<IReadOnlyList<IToken>>
+    internal class ArrayToken : IDataToken<IReadOnlyList<IToken>>
     {
         public IReadOnlyList<IToken> Data { get; }
 

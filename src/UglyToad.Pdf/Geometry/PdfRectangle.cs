@@ -2,7 +2,7 @@
 {
     using System;
 
-    public class PdfRectangle
+    internal class PdfRectangle
     {
         public PdfPoint TopLeft { get; }
 

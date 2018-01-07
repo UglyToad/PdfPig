@@ -6,7 +6,7 @@
     /// By default user space units correspond to 1/72nd of an inch (a typographic point).
     /// The UserUnit entry in a page dictionary can define the space units as a different multiple of 1/72 (1 point).
     /// </summary>
-    public struct UserSpaceUnit
+    internal struct UserSpaceUnit
     {
         public static readonly UserSpaceUnit Default = new UserSpaceUnit(1);
 

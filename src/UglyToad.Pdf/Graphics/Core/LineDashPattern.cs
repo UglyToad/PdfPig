@@ -2,7 +2,7 @@
 {
     using System;
 
-    public struct LineDashPattern
+    internal struct LineDashPattern
     {
         public int Phase { get; }
 

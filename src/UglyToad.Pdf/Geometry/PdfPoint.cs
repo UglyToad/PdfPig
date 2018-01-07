@@ -25,24 +25,36 @@
         /// </summary>
         public decimal Y { get; }
 
+        /// <summary>
+        /// Create a new <see cref="PdfPoint"/> at this position.
+        /// </summary>
         public PdfPoint(decimal x, decimal y)
         {
             X = x;
             Y = y;
         }
 
+        /// <summary>
+        /// Create a new <see cref="PdfPoint"/> at this position.
+        /// </summary>
         public PdfPoint(int x, int y)
         {
             X = x;
             Y = y;
         }
 
+        /// <summary>
+        /// Create a new <see cref="PdfPoint"/> at this position.
+        /// </summary>
         public PdfPoint(double x, double y)
         {
             X = (decimal)x;
             Y = (decimal)y;
         }
 
+        /// <summary>
+        /// Get a string representation of this point.
+        /// </summary>
         public override string ToString()
         {
             return $"(x:{X}, y:{Y})";

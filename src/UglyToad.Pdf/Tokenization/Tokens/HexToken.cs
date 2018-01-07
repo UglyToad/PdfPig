@@ -3,7 +3,7 @@ namespace UglyToad.Pdf.Tokenization.Tokens
     using System.Collections.Generic;
     using System.Text;
 
-    public class HexToken : IDataToken<string>
+    internal class HexToken : IDataToken<string>
     {
         private static readonly Dictionary<char, byte> HexMap = new Dictionary<char, byte>
         {

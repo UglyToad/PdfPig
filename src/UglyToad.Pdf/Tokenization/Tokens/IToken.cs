@@ -1,6 +1,9 @@
 ﻿namespace UglyToad.Pdf.Tokenization.Tokens
 {
-    public interface IToken
+    /// <summary>
+    /// A marker interface for tokens from the content.
+    /// </summary>
+    internal interface IToken
     {
     }
 }

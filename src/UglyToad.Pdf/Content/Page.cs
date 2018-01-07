@@ -4,6 +4,9 @@
     using System.Collections.Generic;
     using System.Linq;
 
+    /// <summary>
+    /// Contains the content and provides access to methods of a single page in the <see cref="PdfDocument"/>.
+    /// </summary>
     public class Page
     {
         /// <summary>

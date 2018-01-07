@@ -71,26 +71,6 @@
             value = GlyphList.AdobeGlyphList.NameToUnicode(encodedCharacterName);
 
             return true;
-
-            if (!ToUnicode.CanMapToUnicode)
-            {
-                try
-                {
-                    if (encoding != null)
-                    {
-                        }
-
-                    value = ((char) characterCode).ToString();
-
-                    return true;
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
-            }
-
-            return ToUnicode.TryGet(characterCode, out value);
         }
 
         public PdfVector GetDisplacement(int characterCode)

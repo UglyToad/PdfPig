@@ -26,7 +26,7 @@
                 long objectOffset = objectEntry.Value;
                 // a negative offset number represents a object number itself
                 // see type 2 entry in xref stream
-                if (objectOffset != null && objectOffset >= 0
+                if (objectOffset >= 0
                         && !checkObjectKeys(reader, objectKey, objectOffset))
                 {
                     //LOG.debug("Stop checking xref offsets as at least one (" + objectKey
@@ -58,7 +58,7 @@
                     return true;
                 }
             }
-            catch (InvalidOperationException exception)
+            catch (InvalidOperationException)
             {
                 // Swallow the exception, obviously there isn't any valid object number
             }
@@ -180,7 +180,7 @@
                 foreach (var entry in xrefOffset)
                 {
                     long offset = entry.Value;
-                    if (offset != null && offset < 0)
+                    if (offset < 0)
                     {
                         CosObjectKey objStream = new CosObjectKey(-offset, 0);
                         if (!objStreams.Contains(objStream))
@@ -253,7 +253,7 @@
                             ObjectHelper.ReadObjectNumber(source);
                             ObjectHelper.ReadGenerationNumber(source);
                         }
-                        catch (InvalidOperationException exception)
+                        catch (InvalidOperationException)
                         {
                             // save the EOF marker as the following data is most likely some garbage
                             lastEOFMarker = tempMarker;

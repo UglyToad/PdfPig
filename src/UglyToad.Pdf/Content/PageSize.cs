@@ -3,24 +3,78 @@
     using System.Collections.Generic;
     using Geometry;
 
+    /// <summary>
+    /// The corresponding named size of the <see cref="Page"/>.
+    /// </summary>
     public enum PageSize
     {
+        /// <summary>
+        /// Unknown page size, did not match a defined page size.
+        /// </summary>
         Custom = 0,
+        /// <summary>
+        /// The ISO 216 A0 page size.
+        /// </summary>
         A0 = 3,
+        /// <summary>
+        /// The ISO 216 A1 page size.
+        /// </summary>
         A1 = 4,
+        /// <summary>
+        /// The ISO 216 A2 page size.
+        /// </summary>
         A2 = 5,
+        /// <summary>
+        /// The ISO 216 A3 page size.
+        /// </summary>
         A3 = 6,
+        /// <summary>
+        /// The ISO 216 A4 page size.
+        /// </summary>
         A4 = 7,
+        /// <summary>
+        /// The ISO 216 A5 page size.
+        /// </summary>
         A5 = 8,
+        /// <summary>
+        /// The ISO 216 A6 page size.
+        /// </summary>
         A6 = 9,
+        /// <summary>
+        /// The ISO 216 A7 page size.
+        /// </summary>
         A7 = 10,
+        /// <summary>
+        /// The ISO 216 A8 page size.
+        /// </summary>
         A8 = 11,
+        /// <summary>
+        /// The ISO 216 A9 page size.
+        /// </summary>
         A9 = 12,
+        /// <summary>
+        /// The ISO 216 A10 page size.
+        /// </summary>
         A10 = 13,
+        /// <summary>
+        /// The North American Letter page size.
+        /// </summary>
         Letter = 14,
+        /// <summary>
+        /// The North American Legal page size.
+        /// </summary>
         Legal = 15,
+        /// <summary>
+        /// The North American Ledger page size.
+        /// </summary>
         Ledger = 16,
+        /// <summary>
+        /// The North American Tabloid page size.
+        /// </summary>
         Tabloid = 17,
+        /// <summary>
+        /// The North American Executive page size.
+        /// </summary>
         Executive = 18
     }
 

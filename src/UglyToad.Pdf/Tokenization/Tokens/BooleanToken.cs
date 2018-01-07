@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.Pdf.Tokenization.Tokens
 {
-    public class BooleanToken : IDataToken<bool>
+    internal class BooleanToken : IDataToken<bool>
     {
         public static BooleanToken True { get; } = new BooleanToken(true);
 

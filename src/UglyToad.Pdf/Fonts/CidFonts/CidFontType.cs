@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.Pdf.Fonts.CidFonts
 {
-    public enum CidFontType
+    internal enum CidFontType
     {
         /// <summary>
         /// Glyph descriptions based on Adobe Type 1 format.

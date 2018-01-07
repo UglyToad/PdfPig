@@ -2,7 +2,7 @@
 {
     using System.IO;
 
-    public interface ICosStreamWriter
+    internal interface ICosStreamWriter
     {
         void WriteToPdfStream(BinaryWriter output);
     }

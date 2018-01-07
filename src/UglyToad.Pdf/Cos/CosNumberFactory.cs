@@ -2,7 +2,7 @@
 {
     using System;
 
-    public static class CosNumberFactory
+    internal static class CosNumberFactory
     {
         /**
      * This factory method will get the appropriate number object.
@@ -15,7 +15,7 @@
      */
         public static ICosNumber get(string value)
         {
-            if (value.Length == 1) 
+            if (value.Length == 1)
             {
                 char digit = value[0];
                 if ('0' <= digit && digit <= '9')
@@ -31,25 +31,26 @@
                 {
                     throw new ArgumentException($"Not a number: {value}");
                 }
-            } 
-            else if (value.IndexOf('.') == -1 && (value.ToLower().IndexOf('e') == -1)) 
+            }
+            else
             {
-                try
+                if (value.IndexOf('.') == -1 && (value.ToLower().IndexOf('e') == -1))
                 {
-                    if (value[0] == '+')
+                    try
                     {
-                        return CosInt.Get(long.Parse(value.Substring(1)));
+                        if (value[0] == '+')
+                        {
+                            return CosInt.Get(long.Parse(value.Substring(1)));
+                        }
+                        return CosInt.Get(long.Parse(value));
                     }
-                    return CosInt.Get(long.Parse(value));
+                    catch (FormatException)
+                    {
+                        // might be a huge number, see PDFBOX-3116
+                        return new CosFloat(value);
+                    }
                 }
-                catch (FormatException e)
-                {
-// might be a huge number, see PDFBOX-3116
-                    return new CosFloat(value);
-                }
-            } 
-            else 
-            {
+
                 return new CosFloat(value);
             }
         }

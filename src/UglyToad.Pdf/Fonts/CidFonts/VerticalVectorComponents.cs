@@ -3,7 +3,7 @@
     /// <summary>
     /// Equivalent to the DW2 array in the font dictionary for vertical fonts.
     /// </summary>
-    public struct VerticalVectorComponents
+    internal struct VerticalVectorComponents
     {
         public decimal Position { get; }
 

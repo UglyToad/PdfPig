@@ -5,7 +5,7 @@ namespace UglyToad.Pdf.IO
 {
     using System.IO;
 
-    public class RandomAccessBuffer : RandomAccess
+    internal class RandomAccessBuffer : RandomAccess
     {
         // default chunk size is 1kb
         private static readonly int DefaultChunkSize = 1024;

@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.Pdf.Cos
 {
-    public enum CrossReferenceType
+    internal enum CrossReferenceType
     {
         Table,
         Stream

@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.Pdf.IO
 {
-    public interface IInputBytes
+    internal interface IInputBytes
     {
         int CurrentOffset { get; }
 

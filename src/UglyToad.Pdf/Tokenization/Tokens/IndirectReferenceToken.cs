@@ -2,7 +2,7 @@
 {
     using ContentStream;
 
-    public class IndirectReferenceToken : IDataToken<IndirectReference>
+    internal class IndirectReferenceToken : IDataToken<IndirectReference>
     {
         public IndirectReference Data { get; }
 

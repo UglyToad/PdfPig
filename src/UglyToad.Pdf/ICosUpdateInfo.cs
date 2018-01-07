@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.Pdf
 {
-    public interface ICosUpdateInfo
+    internal interface ICosUpdateInfo
     {
         bool NeedsToBeUpdated { get; set; }
     }

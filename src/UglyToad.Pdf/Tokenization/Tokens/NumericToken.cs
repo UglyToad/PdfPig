@@ -3,7 +3,7 @@
     using System;
     using System.Globalization;
 
-    public class NumericToken : IDataToken<decimal>
+    internal class NumericToken : IDataToken<decimal>
     {
         public decimal Data { get; }
 

@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.Pdf.Tokenization.Tokens
 {
-    public class CommentToken : IDataToken<string>
+    internal class CommentToken : IDataToken<string>
     {
         public string Data { get; }
 

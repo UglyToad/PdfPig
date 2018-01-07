@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.Pdf.Util
 {
-    public class ParsePosition
+    internal class ParsePosition
     {
         public int Index { get; set; }
 

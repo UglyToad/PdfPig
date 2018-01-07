@@ -5,7 +5,7 @@
     using Pdf.Tokenization.Scanner;
     using Pdf.Util;
 
-    public static class StringBytesTestConverter
+    internal static class StringBytesTestConverter
     {
         public static Result Convert(string s, bool readFirst = true)
         {

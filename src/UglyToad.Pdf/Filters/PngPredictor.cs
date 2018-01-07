@@ -5,7 +5,7 @@
     using System.IO;
     using IO;
 
-    public class PngPredictor : IPngPredictor
+    internal class PngPredictor : IPngPredictor
     {
         public byte[] Decode(byte[] inputBytes, int predictor, int colors, int bitsPerComponent, int columns)
         {

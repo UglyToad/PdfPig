@@ -15,11 +15,12 @@
  * limitations under the License.
  */
 
-/**
+/*
  * An array of PDFBase objects as part of the PDF document.
  *
  * @author Ben Litchfield
  */
+
 namespace UglyToad.Pdf.Cos
 {
     using System;

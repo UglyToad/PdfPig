@@ -2,7 +2,7 @@
 {
     using System.Collections.Generic;
 
-    public class OperatorToken : IDataToken<string>
+    internal class OperatorToken : IDataToken<string>
     {
         private static readonly Dictionary<string, string> PooledNames = new Dictionary<string, string>();
 

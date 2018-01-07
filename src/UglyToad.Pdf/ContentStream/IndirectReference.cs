@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.Pdf.ContentStream
 {
-    public struct IndirectReference
+    internal struct IndirectReference
     {
         public long ObjectNumber { get; }
 

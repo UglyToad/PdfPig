@@ -6,7 +6,7 @@
     /// <summary>
     ///  A codespace range is specified by a pair of codes of some particular length giving the lower and upper bounds of that range.
     /// </summary>
-    public class CodespaceRange
+    internal class CodespaceRange
     {
         /// <summary>
         /// The lower-bound of this range.

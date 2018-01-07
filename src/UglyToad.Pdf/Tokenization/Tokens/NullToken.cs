@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.Pdf.Tokenization.Tokens
 {
-    public class NullToken : IDataToken<object>
+    internal class NullToken : IDataToken<object>
     {
         public static NullToken Instance { get; } = new NullToken();
 

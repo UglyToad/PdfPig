@@ -2,7 +2,7 @@
 {
     using System;
 
-    public interface RandomAccessWrite : IDisposable
+    internal interface RandomAccessWrite : IDisposable
     {
         /**
          * Write a byte to the stream.

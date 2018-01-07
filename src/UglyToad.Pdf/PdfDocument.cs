@@ -6,10 +6,12 @@
     using IO;
     using Logging;
     using Parser;
-    using Parser.FileStructure;
-    using Parser.Parts;
     using Util.JetBrains.Annotations;
 
+    /// <inheritdoc />
+    /// <summary>
+    /// Provides access to document level information for this PDF document as well as access to the <see cref="T:UglyToad.Pdf.Content.Page" />s contained in the document.
+    /// </summary>
     public class PdfDocument : IDisposable
     {
         [NotNull]

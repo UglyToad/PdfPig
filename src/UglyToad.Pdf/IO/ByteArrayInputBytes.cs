@@ -2,7 +2,7 @@
 {
     using System.Collections.Generic;
 
-    public class ByteArrayInputBytes : IInputBytes
+    internal class ByteArrayInputBytes : IInputBytes
     {
         private readonly IReadOnlyList<byte> bytes;
 
