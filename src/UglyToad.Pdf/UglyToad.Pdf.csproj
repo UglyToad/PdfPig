@@ -2,7 +2,20 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <DebugType>full</DebugType> 
+    <PackageId>ToadPDF</PackageId>
+    <PackageVersion>0.0.1-alpha-001</PackageVersion>
+    <DebugType>full</DebugType>
+    <Authors>UglyToad</Authors>
+    <Title>ToadPDF</Title>
+    <Description>Reads text content from PDF documents.</Description>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/UglyToad/Pdf/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/UglyToad/Pdf</PackageProjectUrl>
+    <PackageTags>PDF;Reader;Document;Adobe;PDFBox</PackageTags>
+    <RepositoryUrl>https://github.com/UglyToad/Pdf</RepositoryUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Version>0.0.1-alpha-001</Version>
+    <AssemblyVersion>0.0.1.1</AssemblyVersion>
+    <FileVersion>0.0.1.1</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
