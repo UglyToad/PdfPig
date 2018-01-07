@@ -14,7 +14,8 @@
         private readonly IPdfObjectParser pdfObjectParser;
         private readonly IFontFactory fontFactory;
 
-        private readonly Dictionary<CosName, IFont> loadedFonts = new Dictionary<CosName, IFont>();
+        private readonly Dictionary<IndirectReference, IFont> loadedFonts = new Dictionary<IndirectReference, IFont>();
+        private readonly Dictionary<CosName, IndirectReference> currentResourceState = new Dictionary<CosName, IndirectReference>();
 
         public ResourceContainer(IPdfObjectParser pdfObjectParser, IFontFactory fontFactory)
         {
@@ -57,11 +58,6 @@
         {
             foreach (var pair in fontDictionary)
             {
-                if (loadedFonts.ContainsKey(pair.Key))
-                {
-                    continue;
-                }
-
                 if (!(pair.Value is CosObject objectKey))
                 {
                     if (isLenientParsing)
@@ -71,6 +67,15 @@
 
                     throw new InvalidOperationException($"The font with name {pair.Key} did not link to an object key. Value was: {pair.Value}.");
                 }
+
+                var reference = objectKey.ToIndirectReference();
+
+                currentResourceState[pair.Key] = reference;
+
+                if (loadedFonts.ContainsKey(reference))
+                {
+                    continue;
+                }
                 
                 var fontObject = DirectObjectFinder.Find<PdfDictionary>(objectKey, pdfObjectParser, reader, false);
 
@@ -79,13 +84,15 @@
                     throw new InvalidOperationException($"Could not retrieve the font with name: {pair.Key} which should have been object {objectKey.GetObjectNumber()}");
                 }
 
-                loadedFonts[pair.Key] = fontFactory.Get(fontObject, reader, isLenientParsing);
+                loadedFonts[reference] = fontFactory.Get(fontObject, reader, isLenientParsing);
             }
         }
         
         public IFont GetFont(CosName name)
         {
-            loadedFonts.TryGetValue(name, out var font);
+            var reference = currentResourceState[name];
+
+            loadedFonts.TryGetValue(reference, out var font);
 
             return font;
         }
