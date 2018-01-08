@@ -20,8 +20,14 @@
 
         internal PageContent Content { get; }
 
+        /// <summary>
+        /// The set of <see cref="Letter"/>s drawn by the PDF content.
+        /// </summary>
         public IReadOnlyList<Letter> Letters => Content?.Letters ?? new Letter[0];
 
+        /// <summary>
+        /// The full text of all characters on the page in the order they are presented in the PDF content.
+        /// </summary>
         public string Text { get; }
 
         /// <summary>

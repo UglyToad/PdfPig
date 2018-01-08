@@ -2,6 +2,9 @@
 {
     using Geometry;
 
+    /// <summary>
+    /// A glyph or combination of glyphs (characters) drawn by a PDF content stream.
+    /// </summary>
     public class Letter
     {
         /// <summary>
