@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.Pdf.Fonts.Parser.Handlers
 {
-    using System;
     using Cmap;
     using ContentStream;
     using Cos;
@@ -71,7 +70,7 @@
 
             Encoding encoding = encodingReader.Read(dictionary, reader, isLenientParsing, descriptor);
 
-            return new TrueTypeSimpleFont(name, firstCharacter, lastCharacter, widths, descriptor, toUnicodeCMap, encoding);
+            return new Type1Font(name, firstCharacter, lastCharacter, widths, descriptor, encoding, toUnicodeCMap);
         }
     }
 }

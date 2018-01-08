@@ -78,7 +78,7 @@
                 return descriptor.FontName;
             }
 
-            throw new InvalidFontFormatException($"Could not find a name for this TrueType font {dictionary}.");
+            throw new InvalidFontFormatException($"Could not find a name for this font {dictionary}.");
         }
     }
 }

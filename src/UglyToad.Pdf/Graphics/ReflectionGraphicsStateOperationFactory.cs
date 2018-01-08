@@ -133,6 +133,13 @@ namespace UglyToad.Pdf.Graphics
                 }
                 else if (parameter.ParameterType == typeof(decimal[]))
                 {
+                    if (operands[offset] is ArrayToken arr)
+                    {
+                        arguments.Add(arr.Data.OfType<NumericToken>().Select(x => x.Data).ToArray());
+                        offset++;
+                        continue;
+                    }
+
                     var array = new List<decimal>();
                     while (offset < operands.Count && operands[offset] is NumericToken numeric)
                     {

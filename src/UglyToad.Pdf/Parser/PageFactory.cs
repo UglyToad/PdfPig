@@ -189,8 +189,7 @@
 
             if (resources is CosObject resourceObject)
             {
-                var resourceDictionary =
-                    pdfObjectParser.Parse(resourceObject.ToIndirectReference(), reader, isLenientParsing);
+                var resourceDictionary = DirectObjectFinder.Find<PdfDictionary>(resourceObject, pdfObjectParser, reader, isLenientParsing);
 
                 if (resourceDictionary is PdfDictionary resolvedDictionary)
                 {
