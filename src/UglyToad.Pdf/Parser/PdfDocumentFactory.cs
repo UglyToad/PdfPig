@@ -123,6 +123,11 @@
         private static CosBase ParseTrailer(IRandomAccessRead reader, CrossReferenceTable crossReferenceTable,
             DynamicParser dynamicParser, BruteForceSearcher bruteForceSearcher, CosObjectPool pool, bool isLenientParsing)
         {
+            if (crossReferenceTable.Dictionary.ContainsKey(CosName.ENCRYPT))
+            {
+                throw new NotSupportedException("Cannot currently parse a document using encryption: " + crossReferenceTable.Dictionary);
+            }
+
             foreach (var value in crossReferenceTable.Dictionary.Values)
             {
                 if (value is CosObject temporaryObject)
