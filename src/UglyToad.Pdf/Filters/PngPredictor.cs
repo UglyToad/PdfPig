@@ -231,9 +231,4 @@
             return (by & mask) | (truncatedVal << startBit);
         }
     }
-
-    public interface IPngPredictor
-    {
-        byte[] Decode(byte[] input, int predictor, int colors, int bitsPerComponent, int columns);
-    }
 }

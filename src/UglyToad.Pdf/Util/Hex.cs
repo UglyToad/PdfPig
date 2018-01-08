@@ -7,7 +7,7 @@
      *
      * @author John Hewson
      */
-    public class Hex
+    internal class Hex
     {
         /**
          * for hex conversion.
