@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.Pdf.Fonts.Simple
 {
+    using System;
     using Cmap;
     using Composite;
     using Core;
@@ -58,7 +59,14 @@
 
             var name = encoding.GetName(characterCode);
 
-            value = GlyphList.AdobeGlyphList.NameToUnicode(name);
+            try
+            {
+                value = GlyphList.AdobeGlyphList.NameToUnicode(name);
+            }
+            catch
+            {
+                return false;
+            }
 
             return true;
         }

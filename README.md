@@ -41,10 +41,10 @@ The ```PdfDocument``` provides access to the document metadata as ```DocumentInf
     PdfDocument document = PdfDocument.Open(fileName);
 
     // The name of the program used to convert this document to PDF.
-    string producer = document.DocumentInformation.Producer;
+    string producer = document.Information.Producer;
 
     // The title given to the document
-    string title = document.DocumentInformation.Title;
+    string title = document.Information.Title;
     // etc...
 
 ### Page ###
@@ -61,7 +61,7 @@ The ```Page``` contains the page width and height in points as well as mapping t
 
 ### Letter ###
 
-Due to the way a PDF is structured internally the page text may not be a readable representation of the page text. Since PDF is a presentation format, text can be drawn in any order, not necessarily reading order. This means spaces may be missing or words may be in unexpected positions in the text.
+Due to the way a PDF is structured internally the page text may not be a readable representation of the text as it appears in the document. Since PDF is a presentation format, text can be drawn in any order, not necessarily reading order. This means spaces may be missing or words may be in unexpected positions in the text.
 
 To help users resolve actual text order on the page, the ```Page``` file provides access to a list of the letters:
 

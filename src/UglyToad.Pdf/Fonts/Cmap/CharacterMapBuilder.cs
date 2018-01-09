@@ -95,6 +95,8 @@
                 return new CharacterIdentifierSystemInfo(SystemInfoBuilder.Registry, SystemInfoBuilder.Ordering, SystemInfoBuilder.Supplement);
             }
 
+            return CharacterIdentifierSystemInfo;
+
             throw new InvalidOperationException("The Character Identifier System Information was never set.");
         }
 
