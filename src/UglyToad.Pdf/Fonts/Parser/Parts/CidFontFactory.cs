@@ -75,6 +75,12 @@
 
             if (!dictionary.TryGetValue(CosName.FONT_DESC, out var baseValue) || !(baseValue is CosObject obj))
             {
+                if (baseValue is PdfDictionary baseDictionary)
+                {
+                    descriptorDictionary = baseDictionary;
+                    return true;
+                }
+
                 return false;
             }
 
@@ -239,11 +245,33 @@
                 throw new InvalidFontFormatException($"No CID System Info was found in the CID Font dictionary: {dictionary}");
             }
 
-            var registry = (CosString) cidDictionary.GetItemOrDefault(CosName.REGISTRY);
-            var ordering = (CosString)cidDictionary.GetItemOrDefault(CosName.ORDERING);
+            var registry = SafeKeyAccess(cidDictionary, CosName.REGISTRY, reader, isLenientParsing);
+            var ordering = SafeKeyAccess(cidDictionary, CosName.ORDERING, reader, isLenientParsing);
             var supplement = cidDictionary.GetIntOrDefault(CosName.SUPPLEMENT, 0);
 
             return new CharacterIdentifierSystemInfo(registry.GetAscii(), ordering.GetAscii(), supplement);
+        }
+
+        private CosString SafeKeyAccess(PdfDictionary dictionary, CosName keyName, IRandomAccessRead reader, bool isLenientParsing)
+        {
+            var item = dictionary.GetItemOrDefault(keyName);
+
+            if (item == null)
+            {
+                return new CosString(string.Empty);
+            }
+
+            if (item is CosString str)
+            {
+                return str;
+            }
+
+            if (item is CosObject obj)
+            {
+                return DirectObjectFinder.Find<CosString>(obj, pdfObjectParser, reader, isLenientParsing);
+            }
+
+            return new CosString(string.Empty);
         }
     }
 }

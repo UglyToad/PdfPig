@@ -38,16 +38,20 @@
 
             if (TryGetFirstDescendant(dictionary, out var descendantObject))
             {
-                var parsed = DirectObjectFinder.Find<PdfDictionary>(descendantObject, pdfObjectParser, reader, isLenientParsing);
+                PdfDictionary descendantFontDictionary;
 
-                if (parsed is PdfDictionary descendantFontDictionary)
+                if (descendantObject is CosObject obj)
                 {
-                    cidFont = ParseDescendant(descendantFontDictionary, reader, isLenientParsing);
+                    var parsed = DirectObjectFinder.Find<PdfDictionary>(obj, pdfObjectParser, reader, isLenientParsing);
+
+                    descendantFontDictionary = parsed;
                 }
                 else
                 {
-                    throw new InvalidFontFormatException("Expected to find a Descendant Font dictionary, instead it was: " + parsed);
+                    descendantFontDictionary = (PdfDictionary) descendantObject;
                 }
+
+                cidFont = ParseDescendant(descendantFontDictionary, reader, isLenientParsing);
             }
             else
             {
@@ -76,7 +80,7 @@
             return font;
         }
 
-        private static bool TryGetFirstDescendant(PdfDictionary dictionary, out CosObject descendant)
+        private static bool TryGetFirstDescendant(PdfDictionary dictionary, out CosBase descendant)
         {
             descendant = null;
 
@@ -91,9 +95,21 @@
                 return true;
             }
 
-            if (value is COSArray array && array.Count > 0 && array.get(0) is CosObject objArr)
+            if (value is COSArray array && array.Count > 0)
             {
+                if (array.get(0) is CosObject objArr)
+                {
                 descendant = objArr;
+                }
+                else if (array.get(0) is PdfDictionary dict)
+                {
+                    descendant = dict;
+                }
+                else
+                {
+                    return false;
+                }
+
                 return true;
             }
 
