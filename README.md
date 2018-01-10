@@ -1,4 +1,4 @@
-# UglyToad.Pdf #
+# PdfPig #
 
 [![Build status](https://ci.appveyor.com/api/projects/status/ni7et2j2ml60pdi3?svg=true)](https://ci.appveyor.com/project/EliotJones/pdf)
 [![codecov](https://codecov.io/gh/UglyToad/Pdf/branch/master/graph/badge.svg)](https://codecov.io/gh/UglyToad/Pdf)
@@ -11,8 +11,8 @@ This project aims to port [PDFBox](https://github.com/apache/pdfbox) to C#.
 
 The ```PdfDocument``` class provides access to the contents of a document loaded either from file or passed in as bytes. To open from a file use the ```PdfDocument.Open``` static method:
 
-    using UglyToad.Pdf;
-    using UglyToad.Pdf.Content;
+    using UglyToad.PdfPig;
+    using UglyToad.PdfPig.Content;
 
     using (PdfDocument document = PdfDocument.Open(@"C:\my-file.pdf"))
     {

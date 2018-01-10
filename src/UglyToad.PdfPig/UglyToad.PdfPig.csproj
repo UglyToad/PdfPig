@@ -1,0 +1,250 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>PdfPig</PackageId>
+    <PackageVersion>0.0.1-alpha-001</PackageVersion>
+    <DebugType>full</DebugType>
+    <Authors>UglyToad</Authors>
+    <Title>ToadPDF</Title>
+    <Description>Reads text content from PDF documents.</Description>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/UglyToad/Pdf/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/UglyToad/Pdf</PackageProjectUrl>
+    <PackageTags>PDF;Reader;Document;Adobe;PDFBox;PdfPig</PackageTags>
+    <RepositoryUrl>https://github.com/UglyToad/Pdf</RepositoryUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Version>0.0.1-alpha-001</Version>
+    <AssemblyVersion>0.0.1.1</AssemblyVersion>
+    <FileVersion>0.0.1.1</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\AdobeFontMetrics\Courier-Bold.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Courier-BoldOblique.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Courier-Oblique.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Courier.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Helvetica-Bold.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Helvetica-BoldOblique.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Helvetica-Oblique.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Helvetica.afm" />
+    <None Remove="Resources\AdobeFontMetrics\MustRead.html" />
+    <None Remove="Resources\AdobeFontMetrics\Symbol.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Times-Bold.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Times-BoldItalic.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Times-Italic.afm" />
+    <None Remove="Resources\AdobeFontMetrics\Times-Roman.afm" />
+    <None Remove="Resources\AdobeFontMetrics\ZapfDingbats.afm" />
+    <None Remove="Resources\CMap\83pv-RKSJ-H" />
+    <None Remove="Resources\CMap\90ms-RKSJ-H" />
+    <None Remove="Resources\CMap\90ms-RKSJ-V" />
+    <None Remove="Resources\CMap\90msp-RKSJ-H" />
+    <None Remove="Resources\CMap\90msp-RKSJ-V" />
+    <None Remove="Resources\CMap\90pv-RKSJ-H" />
+    <None Remove="Resources\CMap\90pv-RKSJ-V" />
+    <None Remove="Resources\CMap\Add-RKSJ-H" />
+    <None Remove="Resources\CMap\Add-RKSJ-V" />
+    <None Remove="Resources\CMap\Adobe-CNS1-0" />
+    <None Remove="Resources\CMap\Adobe-CNS1-1" />
+    <None Remove="Resources\CMap\Adobe-CNS1-2" />
+    <None Remove="Resources\CMap\Adobe-CNS1-3" />
+    <None Remove="Resources\CMap\Adobe-CNS1-4" />
+    <None Remove="Resources\CMap\Adobe-CNS1-5" />
+    <None Remove="Resources\CMap\Adobe-CNS1-6" />
+    <None Remove="Resources\CMap\Adobe-CNS1-UCS2" />
+    <None Remove="Resources\CMap\Adobe-GB1-0" />
+    <None Remove="Resources\CMap\Adobe-GB1-1" />
+    <None Remove="Resources\CMap\Adobe-GB1-2" />
+    <None Remove="Resources\CMap\Adobe-GB1-3" />
+    <None Remove="Resources\CMap\Adobe-GB1-4" />
+    <None Remove="Resources\CMap\Adobe-GB1-5" />
+    <None Remove="Resources\CMap\Adobe-GB1-UCS2" />
+    <None Remove="Resources\CMap\Adobe-Japan1-0" />
+    <None Remove="Resources\CMap\Adobe-Japan1-1" />
+    <None Remove="Resources\CMap\Adobe-Japan1-2" />
+    <None Remove="Resources\CMap\Adobe-Japan1-3" />
+    <None Remove="Resources\CMap\Adobe-Japan1-4" />
+    <None Remove="Resources\CMap\Adobe-Japan1-5" />
+    <None Remove="Resources\CMap\Adobe-Japan1-6" />
+    <None Remove="Resources\CMap\Adobe-Japan1-UCS2" />
+    <None Remove="Resources\CMap\Adobe-Japan2-0" />
+    <None Remove="Resources\CMap\Adobe-Korea1-0" />
+    <None Remove="Resources\CMap\Adobe-Korea1-1" />
+    <None Remove="Resources\CMap\Adobe-Korea1-2" />
+    <None Remove="Resources\CMap\Adobe-Korea1-UCS2" />
+    <None Remove="Resources\CMap\B5pc-H" />
+    <None Remove="Resources\CMap\B5pc-V" />
+    <None Remove="Resources\CMap\CNS-EUC-H" />
+    <None Remove="Resources\CMap\CNS-EUC-V" />
+    <None Remove="Resources\CMap\ETen-B5-H" />
+    <None Remove="Resources\CMap\ETen-B5-V" />
+    <None Remove="Resources\CMap\ETenms-B5-H" />
+    <None Remove="Resources\CMap\ETenms-B5-V" />
+    <None Remove="Resources\CMap\EUC-H" />
+    <None Remove="Resources\CMap\EUC-V" />
+    <None Remove="Resources\CMap\Ext-RKSJ-H" />
+    <None Remove="Resources\CMap\Ext-RKSJ-V" />
+    <None Remove="Resources\CMap\GB-EUC-H" />
+    <None Remove="Resources\CMap\GB-EUC-V" />
+    <None Remove="Resources\CMap\GBK-EUC-H" />
+    <None Remove="Resources\CMap\GBK-EUC-V" />
+    <None Remove="Resources\CMap\GBK2K-H" />
+    <None Remove="Resources\CMap\GBK2K-V" />
+    <None Remove="Resources\CMap\GBKp-EUC-H" />
+    <None Remove="Resources\CMap\GBKp-EUC-V" />
+    <None Remove="Resources\CMap\GBpc-EUC-H" />
+    <None Remove="Resources\CMap\GBpc-EUC-V" />
+    <None Remove="Resources\CMap\H" />
+    <None Remove="Resources\CMap\HKscs-B5-H" />
+    <None Remove="Resources\CMap\HKscs-B5-V" />
+    <None Remove="Resources\CMap\Identity-H" />
+    <None Remove="Resources\CMap\Identity-V" />
+    <None Remove="Resources\CMap\KSC-EUC-H" />
+    <None Remove="Resources\CMap\KSC-EUC-V" />
+    <None Remove="Resources\CMap\KSCms-UHC-H" />
+    <None Remove="Resources\CMap\KSCms-UHC-HW-H" />
+    <None Remove="Resources\CMap\KSCms-UHC-HW-V" />
+    <None Remove="Resources\CMap\KSCms-UHC-V" />
+    <None Remove="Resources\CMap\KSCpc-EUC-H" />
+    <None Remove="Resources\CMap\KSCpc-EUC-V" />
+    <None Remove="Resources\CMap\UniCNS-UCS2-H" />
+    <None Remove="Resources\CMap\UniCNS-UCS2-V" />
+    <None Remove="Resources\CMap\UniCNS-UTF16-H" />
+    <None Remove="Resources\CMap\UniCNS-UTF16-V" />
+    <None Remove="Resources\CMap\UniGB-UCS2-H" />
+    <None Remove="Resources\CMap\UniGB-UCS2-V" />
+    <None Remove="Resources\CMap\UniGB-UTF16-H" />
+    <None Remove="Resources\CMap\UniGB-UTF16-V" />
+    <None Remove="Resources\CMap\UniJIS-UCS2-H" />
+    <None Remove="Resources\CMap\UniJIS-UCS2-HW-H" />
+    <None Remove="Resources\CMap\UniJIS-UCS2-HW-V" />
+    <None Remove="Resources\CMap\UniJIS-UCS2-V" />
+    <None Remove="Resources\CMap\UniJIS-UTF16-H" />
+    <None Remove="Resources\CMap\UniJIS-UTF16-V" />
+    <None Remove="Resources\CMap\UniKS-UCS2-H" />
+    <None Remove="Resources\CMap\UniKS-UCS2-V" />
+    <None Remove="Resources\CMap\UniKS-UTF16-H" />
+    <None Remove="Resources\CMap\UniKS-UTF16-V" />
+    <None Remove="Resources\CMap\V" />
+    <None Remove="Resources\GlyphList\additional" />
+    <None Remove="Resources\GlyphList\glyphlist" />
+    <None Remove="Resources\GlyphList\zapfdingbats" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Resources\AdobeFontMetrics\MustRead.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Courier-Bold.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Courier-BoldOblique.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Courier-Oblique.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Courier.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Helvetica-Bold.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Helvetica-BoldOblique.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Helvetica-Oblique.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Helvetica.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Symbol.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Times-Bold.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Times-BoldItalic.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Times-Italic.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\Times-Roman.afm" />
+    <EmbeddedResource Include="Resources\AdobeFontMetrics\ZapfDingbats.afm" />
+    <EmbeddedResource Include="Resources\CMap\83pv-RKSJ-H" />
+    <EmbeddedResource Include="Resources\CMap\90ms-RKSJ-H" />
+    <EmbeddedResource Include="Resources\CMap\90ms-RKSJ-V" />
+    <EmbeddedResource Include="Resources\CMap\90msp-RKSJ-H" />
+    <EmbeddedResource Include="Resources\CMap\90msp-RKSJ-V" />
+    <EmbeddedResource Include="Resources\CMap\90pv-RKSJ-H" />
+    <EmbeddedResource Include="Resources\CMap\90pv-RKSJ-V" />
+    <EmbeddedResource Include="Resources\CMap\Add-RKSJ-H" />
+    <EmbeddedResource Include="Resources\CMap\Add-RKSJ-V" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-CNS1-0" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-CNS1-1" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-CNS1-2" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-CNS1-3" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-CNS1-4" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-CNS1-5" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-CNS1-6" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-CNS1-UCS2" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-GB1-0" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-GB1-1" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-GB1-2" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-GB1-3" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-GB1-4" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-GB1-5" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-GB1-UCS2" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-Japan1-0" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-Japan1-1" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-Japan1-2" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-Japan1-3" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-Japan1-4" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-Japan1-5" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-Japan1-6" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-Japan1-UCS2" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-Japan2-0" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-Korea1-0" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-Korea1-1" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-Korea1-2" />
+    <EmbeddedResource Include="Resources\CMap\Adobe-Korea1-UCS2" />
+    <EmbeddedResource Include="Resources\CMap\B5pc-H" />
+    <EmbeddedResource Include="Resources\CMap\B5pc-V" />
+    <EmbeddedResource Include="Resources\CMap\CNS-EUC-H" />
+    <EmbeddedResource Include="Resources\CMap\CNS-EUC-V" />
+    <EmbeddedResource Include="Resources\CMap\ETen-B5-H" />
+    <EmbeddedResource Include="Resources\CMap\ETen-B5-V" />
+    <EmbeddedResource Include="Resources\CMap\ETenms-B5-H" />
+    <EmbeddedResource Include="Resources\CMap\ETenms-B5-V" />
+    <EmbeddedResource Include="Resources\CMap\EUC-H" />
+    <EmbeddedResource Include="Resources\CMap\EUC-V" />
+    <EmbeddedResource Include="Resources\CMap\Ext-RKSJ-H" />
+    <EmbeddedResource Include="Resources\CMap\Ext-RKSJ-V" />
+    <EmbeddedResource Include="Resources\CMap\GB-EUC-H" />
+    <EmbeddedResource Include="Resources\CMap\GB-EUC-V" />
+    <EmbeddedResource Include="Resources\CMap\GBK-EUC-H" />
+    <EmbeddedResource Include="Resources\CMap\GBK-EUC-V" />
+    <EmbeddedResource Include="Resources\CMap\GBK2K-H" />
+    <EmbeddedResource Include="Resources\CMap\GBK2K-V" />
+    <EmbeddedResource Include="Resources\CMap\GBKp-EUC-H" />
+    <EmbeddedResource Include="Resources\CMap\GBKp-EUC-V" />
+    <EmbeddedResource Include="Resources\CMap\GBpc-EUC-H" />
+    <EmbeddedResource Include="Resources\CMap\GBpc-EUC-V" />
+    <EmbeddedResource Include="Resources\CMap\H" />
+    <EmbeddedResource Include="Resources\CMap\HKscs-B5-H" />
+    <EmbeddedResource Include="Resources\CMap\HKscs-B5-V" />
+    <EmbeddedResource Include="Resources\CMap\Identity-H" />
+    <EmbeddedResource Include="Resources\CMap\Identity-V" />
+    <EmbeddedResource Include="Resources\CMap\KSC-EUC-H" />
+    <EmbeddedResource Include="Resources\CMap\KSC-EUC-V" />
+    <EmbeddedResource Include="Resources\CMap\KSCms-UHC-H" />
+    <EmbeddedResource Include="Resources\CMap\KSCms-UHC-HW-H" />
+    <EmbeddedResource Include="Resources\CMap\KSCms-UHC-HW-V" />
+    <EmbeddedResource Include="Resources\CMap\KSCms-UHC-V" />
+    <EmbeddedResource Include="Resources\CMap\KSCpc-EUC-H" />
+    <EmbeddedResource Include="Resources\CMap\KSCpc-EUC-V" />
+    <EmbeddedResource Include="Resources\CMap\UniCNS-UCS2-H" />
+    <EmbeddedResource Include="Resources\CMap\UniCNS-UCS2-V" />
+    <EmbeddedResource Include="Resources\CMap\UniCNS-UTF16-H" />
+    <EmbeddedResource Include="Resources\CMap\UniCNS-UTF16-V" />
+    <EmbeddedResource Include="Resources\CMap\UniGB-UCS2-H" />
+    <EmbeddedResource Include="Resources\CMap\UniGB-UCS2-V" />
+    <EmbeddedResource Include="Resources\CMap\UniGB-UTF16-H" />
+    <EmbeddedResource Include="Resources\CMap\UniGB-UTF16-V" />
+    <EmbeddedResource Include="Resources\CMap\UniJIS-UCS2-H" />
+    <EmbeddedResource Include="Resources\CMap\UniJIS-UCS2-HW-H" />
+    <EmbeddedResource Include="Resources\CMap\UniJIS-UCS2-HW-V" />
+    <EmbeddedResource Include="Resources\CMap\UniJIS-UCS2-V" />
+    <EmbeddedResource Include="Resources\CMap\UniJIS-UTF16-H" />
+    <EmbeddedResource Include="Resources\CMap\UniJIS-UTF16-V" />
+    <EmbeddedResource Include="Resources\CMap\UniKS-UCS2-H" />
+    <EmbeddedResource Include="Resources\CMap\UniKS-UCS2-V" />
+    <EmbeddedResource Include="Resources\CMap\UniKS-UTF16-H" />
+    <EmbeddedResource Include="Resources\CMap\UniKS-UTF16-V" />
+    <EmbeddedResource Include="Resources\CMap\V" />
+    <EmbeddedResource Include="Resources\GlyphList\additional" />
+    <EmbeddedResource Include="Resources\GlyphList\glyphlist" />
+    <EmbeddedResource Include="Resources\GlyphList\zapfdingbats" />
+  </ItemGroup>
+  
+</Project>
