@@ -29,7 +29,8 @@
 
                 if (inputBytes.CurrentByte == '<' || inputBytes.CurrentByte == '['
                     || inputBytes.CurrentByte == '/' || inputBytes.CurrentByte == ']'
-                    || inputBytes.CurrentByte == '>')
+                    || inputBytes.CurrentByte == '>' || inputBytes.CurrentByte == '('
+                    || inputBytes.CurrentByte == ')')
                 {
                     break;
                 }

@@ -1,0 +1,1 @@
+msbuild /t:pack "../src/UglyToad.PdfPig/UglyToad.PdfPig.csproj" /p:Configuration=Release /p:PackageOutputPath="../../releases"

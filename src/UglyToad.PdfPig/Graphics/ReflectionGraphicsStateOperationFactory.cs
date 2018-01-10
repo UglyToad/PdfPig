@@ -5,8 +5,10 @@ namespace UglyToad.PdfPig.Graphics
     using System.Linq;
     using System.Reflection;
     using Cos;
+    using Exceptions;
     using Operations;
     using Operations.TextShowing;
+    using Operations.TextState;
     using Tokenization.Tokens;
 
     internal class ReflectionGraphicsStateOperationFactory : IGraphicsStateOperationFactory
@@ -75,6 +77,14 @@ namespace UglyToad.PdfPig.Graphics
                     var array = operands.ToArray();
 
                     return new ShowTextsWithPositioning(array);
+                case SetFontAndSize.Symbol:
+                    if (operands.Count == 2 && operands[0] is NameToken name && operands[1] is NumericToken size)
+                    {
+                        return new SetFontAndSize(name.Data, size.Data);
+                    }
+
+                    var information = string.Join(", ", operands.Select(x => x.ToString()));
+                    throw new PdfDocumentFormatException($"Attempted to set font with wrong number of parameters: [{information}]");
             }
 
             if (!operations.TryGetValue(op.Data, out Type operationType))
@@ -109,7 +119,7 @@ namespace UglyToad.PdfPig.Graphics
                 {
                     if (operands[offset] is NumericToken numeric)
                     {
-                        arguments.Add(numeric.Data);   
+                        arguments.Add(numeric.Data);
                     }
                     else
                     {

@@ -147,6 +147,29 @@ endobj";
             AssertCorrectToken<StringToken, string>(array.Data[array.Data.Count - 1], ")");
             AssertCorrectToken<NumericToken, decimal>(array.Data[array.Data.Count - 2], 1.9m);
         }
+
+        [Fact]
+        public void ScansStringWithoutWhitespacePreceding()
+        {
+            const string s = @"T*() Tj
+-91";
+
+            var tokens = new List<IToken>();
+
+            var scanner = scannerFactory(StringBytesTestConverter.Convert(s, false).Bytes);
+
+            while (scanner.MoveNext())
+            {
+                tokens.Add(scanner.CurrentToken);
+            }
+
+            Assert.Equal(4, tokens.Count);
+
+            AssertCorrectToken<OperatorToken, string>(tokens[0], "T*");
+            AssertCorrectToken<StringToken, string>(tokens[1], "");
+            AssertCorrectToken<OperatorToken, string>(tokens[2], "Tj");
+            AssertCorrectToken<NumericToken, decimal>(tokens[3], -91);
+        }
         
         private static void AssertCorrectToken<T, TData>(IToken token, TData expected) where T : IDataToken<TData>
         {

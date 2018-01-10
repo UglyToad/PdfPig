@@ -10,7 +10,7 @@
 
     /// <inheritdoc />
     /// <summary>
-    /// Provides access to document level information for this PDF document as well as access to the <see cref="T:UglyToad.PdfPig.Content.Page" />s contained in the document.
+    /// Provides access to document level information for this PDF document as well as access to the <see cref="T:UglyToad.PdfPig.Content.Page"/>s contained in the document.
     /// </summary>
     public class PdfDocument : IDisposable
     {

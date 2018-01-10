@@ -31,10 +31,11 @@
 
         public IFont Generate(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
         {
-            var usingStandard14Only = !dictionary.ContainsKey(CosName.FIRST_CHAR);
+            var usingStandard14Only = !dictionary.ContainsKey(CosName.FIRST_CHAR) || !dictionary.ContainsKey(CosName.WIDTHS);
 
             if (usingStandard14Only)
             {
+                // TODO: some fonts combine standard 14 font with other metrics.
                 if (!dictionary.TryGetName(CosName.BASE_FONT, out var standard14Name))
                 {
                     throw new InvalidFontFormatException($"The Type 1 font did not contain a first character entry but also did not reference a standard 14 font: {dictionary}");
