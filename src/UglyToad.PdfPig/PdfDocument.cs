@@ -32,6 +32,9 @@
         [NotNull]
         internal Pages Pages { get; }
 
+        /// <summary>
+        /// The metadata associated with this document.
+        /// </summary>
         [NotNull]
         public DocumentInformation Information { get; }
 
@@ -89,6 +92,10 @@
             return Pages.GetPage(pageNumber);
         }
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Dispose the <see cref="T:UglyToad.PdfPig.PdfDocument" /> and close any unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             try

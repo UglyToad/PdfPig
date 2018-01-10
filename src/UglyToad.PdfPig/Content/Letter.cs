@@ -50,6 +50,9 @@
             PointSize = pointSize;
         }
 
+        /// <summary>
+        /// Produces a string representation of the letter and its position.
+        /// </summary>
         public override string ToString()
         {
             return $"{Location} {Width} {Value} {FontName} {PointSize}";
