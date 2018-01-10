@@ -1,9 +1,10 @@
-# PdfPig #
-
 <image src="https://raw.githubusercontent.com/UglyToad/Pdf/master/documentation/pdfpig.png" width="128px" height="128px"/>
 
+# PdfPig #
+
+
 [![Build status](https://ci.appveyor.com/api/projects/status/ni7et2j2ml60pdi3?svg=true)](https://ci.appveyor.com/project/EliotJones/pdf)
-[![codecov](https://codecov.io/gh/UglyToad/Pdf/branch/master/graph/badge.svg)](https://codecov.io/gh/UglyToad/Pdf)
+[![codecov](https://codecov.io/gh/UglyToad/PdfPig/branch/master/graph/badge.svg)](https://codecov.io/gh/UglyToad/Pdf)
 
 This project allows users to read text content from PDF files.
 
