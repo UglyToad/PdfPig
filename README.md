@@ -83,6 +83,12 @@ Letter position is measured in PDF coordinates where the origin is the lower lef
 
 At this stage letter position is experimental and **will change in future versions**! Do not rely on letter positions remaining constant between different versions of this package.
 
+## Installation ##
+
+The **pre-release** package is available via the releases tab or from Nuget:
+
+https://www.nuget.org/packages/PdfPig/
+
 ## Issues ##
 
 At this stage the software is in Alpha. In order to proceed to Beta and production we need to see a wide variety of document types.
