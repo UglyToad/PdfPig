@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts.Encodings
 {
+    using System.Collections.Generic;
     using PdfPig.Fonts.Encodings;
     using Xunit;
 
@@ -31,6 +32,39 @@
             var result = GlyphList.AdobeGlyphList.UnicodeCodePointToName(79);
 
             Assert.Equal("O", result);
+        }
+
+        [Fact]
+        public void UnicodeToNameNotDefined()
+        {
+            var list = new GlyphList(new Dictionary<string, string>());
+
+            var result = list.UnicodeCodePointToName(120);
+
+            Assert.Equal(".notdef", result);
+        }
+
+        [Fact]
+        public void NameToUnicodeNull()
+        {
+            var list = new GlyphList(new Dictionary<string, string>());
+
+            var result = list.NameToUnicode(null);
+
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void NameToUnicodeRemovesSuffix()
+        {
+            var list = new GlyphList(new Dictionary<string, string>
+            {
+                {"Boris", "B"}
+            });
+
+            var result = list.NameToUnicode("Boris.Special");
+
+            Assert.Equal("B", result);
         }
     }
 }
