@@ -66,5 +66,31 @@
 
             Assert.Equal("B", result);
         }
+
+        [Fact]
+        public void NameToUnicodeConvertsHexAndUsesHexValue()
+        {
+            var list = new GlyphList(new Dictionary<string, string>
+            {
+                {"B", "X"}
+            });
+
+            var result = list.NameToUnicode("uni0042");
+
+            Assert.Equal("B", result);
+        }
+
+        [Fact]
+        public void NameToUnicodeConvertsShortHexAndUsesHexValue()
+        {
+            var list = new GlyphList(new Dictionary<string, string>
+            {
+                {"E", "Æ"}
+            });
+
+            var result = list.NameToUnicode("u0045");
+
+            Assert.Equal("E", result);
+        }
     }
 }

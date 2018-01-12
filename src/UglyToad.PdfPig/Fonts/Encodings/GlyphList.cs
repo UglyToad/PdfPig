@@ -89,7 +89,7 @@
 
                 for (int chPos = 3; chPos + 4 <= nameLength; chPos += 4)
                 {
-                    int codePoint = int.Parse(name.Substring(chPos, chPos + 4), NumberStyles.HexNumber);
+                    int codePoint = int.Parse(name.Substring(chPos, 4), NumberStyles.HexNumber);
 
                     if (codePoint > 0xD7FF && codePoint < 0xE000)
                     {
