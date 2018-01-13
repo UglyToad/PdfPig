@@ -1,5 +1,3 @@
-# PdfPig #
-
 <image src="https://raw.githubusercontent.com/UglyToad/Pdf/master/documentation/pdfpig.png" width="128px" height="128px"/>
 
 PdfPig is a fully open-source .NET standard compatible library that enables users to extract text content from PDFs in C#.
