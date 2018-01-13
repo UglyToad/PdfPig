@@ -53,6 +53,16 @@
 
             if (encoding == null)
             {
+                try
+                {
+                    value = char.ConvertFromUtf32(characterCode);
+                    return true;
+                }
+                catch
+                {
+                    // our quick hack has failed, we should decode the type 1 font!
+                }
+
                 return false;
             }
 

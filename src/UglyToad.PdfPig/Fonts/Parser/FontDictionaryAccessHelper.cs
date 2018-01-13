@@ -66,7 +66,7 @@
             return descriptor;
         }
         
-        public static CosName GetName(PdfDictionary dictionary, FontDescriptor descriptor)
+        public static CosName GetName(IPdfObjectParser pdfObjectParser, PdfDictionary dictionary, FontDescriptor descriptor, IRandomAccessRead reader, bool isLenientParsing)
         {
             if (dictionary.TryGetName(CosName.BASE_FONT, out CosName name))
             {
@@ -76,6 +76,14 @@
             if (descriptor.FontName != null)
             {
                 return descriptor.FontName;
+            }
+
+            if (dictionary.TryGetValue(CosName.BASE_FONT, out var baseFont))
+            {
+                if (baseFont is CosObject baseFontObj)
+                {
+                    return DirectObjectFinder.Find<CosName>(baseFontObj, pdfObjectParser, reader, isLenientParsing);
+                }
             }
 
             throw new InvalidFontFormatException($"Could not find a name for this font {dictionary}.");
