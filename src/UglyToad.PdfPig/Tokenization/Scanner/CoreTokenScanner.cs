@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using Exceptions;
     using IO;
     using Parser.Parts;
     using Tokens;
@@ -22,6 +23,7 @@
         private readonly List<byte> currentBuffer = new List<byte>();
         private readonly List<(byte firstByte, ITokenizer tokenizer)> customTokenizers = new List<(byte, ITokenizer)>();
         
+        internal long CurrentTokenStart { get; private set; }
         public IToken CurrentToken { get; private set; }
         public bool TryReadToken<T>(out T token) where T : class, IToken
         {
@@ -149,6 +151,8 @@
                             break;
                     }
                 }
+
+                CurrentTokenStart = inputBytes.CurrentOffset - 1;
 
                 if (tokenizer == null || !tokenizer.TryTokenize(currentByte, inputBytes, out var token))
                 {

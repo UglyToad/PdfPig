@@ -55,7 +55,7 @@
             var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfObjectParser, fontDescriptorFactory, dictionary, reader, isLenientParsing);
             
             var name = FontDictionaryAccessHelper.GetName(pdfObjectParser, dictionary, descriptor, reader, isLenientParsing);
-
+            
             CMap toUnicodeCMap = null;
             if (dictionary.TryGetItemOfType(CosName.TO_UNICODE, out CosObject toUnicodeObj))
             {
