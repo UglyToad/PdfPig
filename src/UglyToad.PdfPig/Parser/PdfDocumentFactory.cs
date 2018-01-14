@@ -18,6 +18,7 @@
     using Logging;
     using Parts;
     using Tokenization.Scanner;
+    using Tokenization.Tokens;
     using Util;
 
     internal static class PdfDocumentFactory
@@ -83,12 +84,13 @@
 
             var cMapCache = new CMapCache(new CMapParser());
 
+            var pdfScanner = new PdfTokenScanner(inputBytes, new ObjectLocationProvider(crossReferenceTable, pool, bruteForceSearcher));
             var fontFactory = new FontFactory(log, new Type0FontHandler(cidFontFactory,
                 cMapCache, 
                 filterProvider,
                 pdfObjectParser),
                 new TrueTypeFontHandler(pdfObjectParser, filterProvider, cMapCache, fontDescriptorFactory, trueTypeFontParser, encodingReader),
-                new Type1FontHandler(pdfObjectParser, cMapCache, filterProvider, fontDescriptorFactory, encodingReader),
+                new Type1FontHandler(pdfObjectParser, cMapCache, filterProvider, fontDescriptorFactory, encodingReader, pdfScanner),
                 new Type3FontHandler(pdfObjectParser, cMapCache, filterProvider, encodingReader));
 
             var dynamicParser = container.Get<DynamicParser>();
@@ -118,9 +120,9 @@
 
             var caching = new ParsingCachingProviders(pool, bruteForceSearcher, resourceContainer);
 
-            var pdfScanner = new PdfTokenScanner(inputBytes, null);
-
-            return new PdfDocument(log, reader, version, crossReferenceTable, isLenientParsing, caching, pageFactory, pdfObjectParser, catalog, information);
+            
+            return new PdfDocument(log, reader, version, crossReferenceTable, isLenientParsing, caching, pageFactory, pdfObjectParser, catalog, information,
+                pdfScanner);
         }
 
         private static CosBase ParseTrailer(IRandomAccessRead reader, CrossReferenceTable crossReferenceTable,

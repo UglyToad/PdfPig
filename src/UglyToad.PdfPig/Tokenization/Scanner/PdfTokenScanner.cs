@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tokenization.Scanner
 {
+    using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
@@ -9,7 +10,12 @@
     using Parser.Parts;
     using Tokens;
 
-    internal class PdfTokenScanner : ISeekableTokenScanner
+    internal interface IPdfObjectScanner : ISeekableTokenScanner
+    {
+        ObjectToken Get(IndirectReference reference);
+    }
+
+    internal class PdfTokenScanner : IPdfObjectScanner
     {
         private readonly IInputBytes inputBytes;
         private readonly IObjectLocationProvider objectLocationProvider;
@@ -448,6 +454,23 @@
         public void DeregisterCustomTokenizer(ITokenizer tokenizer)
         {
             coreTokenScanner.DeregisterCustomTokenizer(tokenizer);
+        }
+
+        public ObjectToken Get(IndirectReference reference)
+        {
+            if (!objectLocationProvider.TryGetOffset(reference, out var offset))
+            {
+                throw new InvalidOperationException($"Could not find the object with reference: {reference}.");
+            }
+
+            Seek(offset);
+
+            if (!MoveNext())
+            {
+                throw new InvalidOperationException($"Could not parse the object with reference: {reference}.");
+            }
+
+            return (ObjectToken)CurrentToken;
         }
     }
 }

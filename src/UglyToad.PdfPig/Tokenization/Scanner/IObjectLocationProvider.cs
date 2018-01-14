@@ -23,18 +23,24 @@
         public ObjectLocationProvider(CrossReferenceTable crossReferenceTable, CosObjectPool pool, BruteForceSearcher searcher)
         {
             this.crossReferenceTable = crossReferenceTable;
+
+            foreach (var offset in crossReferenceTable.ObjectOffsets)
+            {
+                offsets[offset.Key] = offset.Value;
+            }
+
             this.pool = pool;
             this.searcher = searcher;
         }
 
         public bool TryGetOffset(IndirectReference reference, out long offset)
         {
-            throw new System.NotImplementedException();
+            return offsets.TryGetValue(reference, out offset);
         }
 
         public void UpdateOffset(IndirectReference reference, long offset)
         {
-            throw new System.NotImplementedException();
+            offsets[reference] = offset;
         }
     }
 }

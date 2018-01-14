@@ -5,7 +5,9 @@
     using System.Linq;
     using ContentStream;
     using Cos;
+    using Exceptions;
     using Logging;
+    using Tokenization.Tokens;
 
     internal class MemoryFilterProvider : IFilterProvider
     {
@@ -29,6 +31,30 @@
                 {CosName.RUN_LENGTH_DECODE, RunLengthFunc},
                 {CosName.RUN_LENGTH_DECODE_ABBREVIATION, RunLengthFunc}
             };
+        }
+
+        public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary)
+        {
+            if (dictionary == null)
+            {
+                throw new ArgumentNullException(nameof(dictionary));
+            }
+
+            if (!dictionary.TryGetByName(CosName.FILTER, out var token))
+            {
+                return new IFilter[0];
+            }
+
+            switch (token)
+            {
+                case ArrayToken filters:
+                    // TODO: presumably this may be invalid...
+                    return filters.Data.Select(x => GetFilterStrict(((NameToken)x).Data)).ToList();
+                case NameToken name:
+                    return new[] { GetFilterStrict(name.Data) };
+                default:
+                    throw new PdfDocumentFormatException($"The filter for the stream was not a valid object. Expected name or array, instead got: {token}.");
+            }
         }
 
         public IReadOnlyList<IFilter> GetFilters(PdfDictionary streamDictionary)

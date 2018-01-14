@@ -10,6 +10,7 @@
     using Logging;
     using Parser;
     using Parser.Parts;
+    using Tokenization.Scanner;
 
     internal class Pages
     {
@@ -19,13 +20,14 @@
         private readonly IPageFactory pageFactory;
         private readonly IRandomAccessRead reader;
         private readonly bool isLenientParsing;
+        private readonly IPdfObjectScanner pdfScanner;
         private readonly PdfDictionary rootPageDictionary;
         private readonly Dictionary<int, PdfDictionary> locatedPages = new Dictionary<int, PdfDictionary>();
 
         public int Count { get; }
 
-        internal Pages(ILog log, Catalog catalog, IPdfObjectParser pdfObjectParser, IPageFactory pageFactory, 
-            IRandomAccessRead reader, bool isLenientParsing)
+        internal Pages(ILog log, Catalog catalog, IPdfObjectParser pdfObjectParser, IPageFactory pageFactory,
+            IRandomAccessRead reader, bool isLenientParsing, IPdfObjectScanner pdfScanner)
         {
             if (catalog == null)
             {
@@ -42,8 +44,8 @@
             this.pageFactory = pageFactory;
             this.reader = reader;
             this.isLenientParsing = isLenientParsing;
+            this.pdfScanner = pdfScanner;
         }
-
 
         public Page GetPage(int pageNumber)
         {

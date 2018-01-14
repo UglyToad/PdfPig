@@ -6,6 +6,7 @@
     using IO;
     using Logging;
     using Parser;
+    using Tokenization.Scanner;
     using Util.JetBrains.Annotations;
 
     /// <inheritdoc />
@@ -25,6 +26,8 @@
         private readonly bool isLenientParsing;
         [NotNull]
         private readonly ParsingCachingProviders cachingProviders;
+
+        private readonly IPdfObjectScanner pdfScanner;
 
         [NotNull]
         internal Catalog Catalog { get; }
@@ -49,12 +52,12 @@
         public int NumberOfPages => Pages.Count;
 
         internal PdfDocument(ILog log, IRandomAccessRead reader, HeaderVersion version, CrossReferenceTable crossReferenceTable,
-            bool isLenientParsing, 
+            bool isLenientParsing,
             ParsingCachingProviders cachingProviders,
             IPageFactory pageFactory,
             IPdfObjectParser pdfObjectParser,
             Catalog catalog,
-            DocumentInformation information)
+            DocumentInformation information, IPdfObjectScanner pdfScanner)
         {
             this.log = log;
             this.reader = reader ?? throw new ArgumentNullException(nameof(reader));
@@ -62,9 +65,10 @@
             this.crossReferenceTable = crossReferenceTable ?? throw new ArgumentNullException(nameof(crossReferenceTable));
             this.isLenientParsing = isLenientParsing;
             this.cachingProviders = cachingProviders ?? throw new ArgumentNullException(nameof(cachingProviders));
+            this.pdfScanner = pdfScanner;
             Information = information ?? throw new ArgumentNullException(nameof(information));
             Catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
-            Pages = new Pages(log, Catalog, pdfObjectParser, pageFactory, reader, isLenientParsing);
+            Pages = new Pages(log, Catalog, pdfObjectParser, pageFactory, reader, isLenientParsing, pdfScanner);
         }
 
         /// <summary>

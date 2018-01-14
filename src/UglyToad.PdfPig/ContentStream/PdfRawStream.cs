@@ -3,12 +3,14 @@
     using System;
     using Cos;
     using Filters;
+    using Tokenization.Tokens;
 
     internal class PdfRawStream : CosBase
     {
         private static readonly object Lock = new object();
 
         private readonly byte[] streamBytes;
+        private readonly StreamToken stream;
 
         private byte[] decodedBytes;
 
@@ -24,12 +26,31 @@
             Dictionary = streamDictionary ?? throw new ArgumentNullException(nameof(streamDictionary));
         }
 
+        public PdfRawStream(StreamToken stream)
+        {
+            this.stream = stream;
+        }
+
         public byte[] Decode(IFilterProvider filterProvider)
         {
             lock (Lock)
             {
                 if (decodedBytes != null)
                 {
+                    return decodedBytes;
+                }
+
+                if (stream != null)
+                {
+                    var tokenFilters = filterProvider.GetFilters(stream.StreamDictionary);
+
+                    if (tokenFilters.Count > 0)
+                    {
+                        throw new NotImplementedException("Need to change everything to use this method.");
+                    }
+
+                    decodedBytes = stream.Data;
+
                     return decodedBytes;
                 }
 
