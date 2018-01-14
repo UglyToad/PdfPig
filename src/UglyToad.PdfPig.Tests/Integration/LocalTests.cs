@@ -10,10 +10,7 @@
         [Fact]
         public void Tests()
         {
-            using (var document = PdfDocument.Open(@"C:\Users\eliot\Downloads\ICML03-081.pdf"))
-            {
-                var page = document.GetPage(1);
-            }
+            
         }
     }
 }

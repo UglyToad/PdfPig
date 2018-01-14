@@ -13,6 +13,7 @@
     using Fonts.Parser.Handlers;
     using Fonts.Parser.Parts;
     using Fonts.TrueType.Parser;
+    using Fonts.Type1.Parser;
     using Graphics;
     using IO;
     using Logging;
@@ -90,7 +91,7 @@
                 filterProvider,
                 pdfObjectParser),
                 new TrueTypeFontHandler(pdfObjectParser, filterProvider, cMapCache, fontDescriptorFactory, trueTypeFontParser, encodingReader),
-                new Type1FontHandler(pdfObjectParser, cMapCache, filterProvider, fontDescriptorFactory, encodingReader, pdfScanner),
+                new Type1FontHandler(pdfObjectParser, cMapCache, filterProvider, fontDescriptorFactory, encodingReader, pdfScanner, new Type1FontParser()),
                 new Type3FontHandler(pdfObjectParser, cMapCache, filterProvider, encodingReader));
 
             var dynamicParser = container.Get<DynamicParser>();

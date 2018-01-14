@@ -11,6 +11,13 @@
         public static readonly OperatorToken EndObject = new OperatorToken("endobj");
         public static readonly OperatorToken StartStream = new OperatorToken("stream");
         public static readonly OperatorToken EndStream = new OperatorToken("endstream");
+        public static readonly OperatorToken Eexec = new OperatorToken("eexec");
+        public static readonly OperatorToken Def = new OperatorToken("def");
+        public static readonly OperatorToken Dict = new OperatorToken("dict");
+        public static readonly OperatorToken Readonly = new OperatorToken("readonly");
+        public static readonly OperatorToken Dup = new OperatorToken("dup");
+        public static readonly OperatorToken For = new OperatorToken("for");
+        public static readonly OperatorToken Put = new OperatorToken("put");
 
         public string Data { get; }
 
@@ -39,6 +46,20 @@
                     return StartStream;
                 case "endstream":
                     return EndStream;
+                case "eexec":
+                    return Eexec;
+                case "def":
+                    return Def;
+                case "dict":
+                    return Dict;
+                case "readonly":
+                    return Readonly;
+                case "dup":
+                    return Dup;
+                case "for":
+                    return For;
+                case "put":
+                    return Put;
                 default:
                     return new OperatorToken(data);
             }

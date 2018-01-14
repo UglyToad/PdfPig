@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Parser.Handlers
 {
-    using System;
     using Cmap;
     using ContentStream;
     using Cos;
@@ -13,6 +12,8 @@
     using Simple;
     using Tokenization.Scanner;
     using Tokenization.Tokens;
+    using Type1;
+    using Type1.Parser;
 
     internal class Type1FontHandler : IFontHandler
     {
@@ -22,10 +23,12 @@
         private readonly FontDescriptorFactory fontDescriptorFactory;
         private readonly IEncodingReader encodingReader;
         private readonly IPdfObjectScanner scanner;
+        private readonly Type1FontParser type1FontParser;
 
         public Type1FontHandler(IPdfObjectParser pdfObjectParser, CMapCache cMapCache, IFilterProvider filterProvider, 
             FontDescriptorFactory fontDescriptorFactory, IEncodingReader encodingReader,
-            IPdfObjectScanner scanner)
+            IPdfObjectScanner scanner,
+            Type1FontParser type1FontParser)
         {
             this.pdfObjectParser = pdfObjectParser;
             this.cMapCache = cMapCache;
@@ -33,6 +36,7 @@
             this.fontDescriptorFactory = fontDescriptorFactory;
             this.encodingReader = encodingReader;
             this.scanner = scanner;
+            this.type1FontParser = type1FontParser;
         }
 
         public IFont Generate(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
@@ -60,7 +64,7 @@
 
             var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfObjectParser, fontDescriptorFactory, dictionary, reader, isLenientParsing);
 
-            ParseType1Font(descriptor, isLenientParsing);
+            var font = ParseType1Font(descriptor, isLenientParsing);
 
             var name = FontDictionaryAccessHelper.GetName(pdfObjectParser, dictionary, descriptor, reader, isLenientParsing);
             
@@ -79,19 +83,24 @@
 
             Encoding encoding = encodingReader.Read(dictionary, reader, isLenientParsing, descriptor);
 
-            return new Type1Font(name, firstCharacter, lastCharacter, widths, descriptor, encoding, toUnicodeCMap);
+            if (encoding == null && font?.Encoding.Count > 0)
+            {
+                encoding = new BuiltInEncoding(font.Encoding);
+            }
+
+            return new Type1FontSimple(name, firstCharacter, lastCharacter, widths, descriptor, encoding, toUnicodeCMap);
         }
 
-        private void ParseType1Font(FontDescriptor descriptor, bool isLenientParsing)
+        private Type1Font ParseType1Font(FontDescriptor descriptor, bool isLenientParsing)
         {
             if (descriptor?.FontFile == null)
             {
-                return;
+                return null;
             }
 
             if (descriptor.FontFile.ObjectKey.ObjectNumber == 0)
             {
-                return;
+                return null;
             }
             
             try
@@ -100,14 +109,16 @@
 
                 if (stream == null)
                 {
-                    return;
+                    return null;
                 }
 
                 var raw = new PdfRawStream(stream);
 
                 var bytes = raw.Decode(filterProvider);
 
-                // TODO: parse
+                var font = type1FontParser.Parse(new ByteArrayInputBytes(bytes));
+
+                return font;
             }
             catch
             {
@@ -116,6 +127,8 @@
                     throw;
                 }
             }
+
+            return null;
         }
     }
 }

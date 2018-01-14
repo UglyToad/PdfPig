@@ -11,7 +11,7 @@
     /// <summary>
     /// TODO: implement this properly if you find a Type 1 font in the wild.
     /// </summary>
-    internal class Type1Font : IFont
+    internal class Type1FontSimple : IFont
     {
         private readonly int firstChar;
         private readonly int lastChar;
@@ -25,7 +25,7 @@
 
         public bool IsVertical { get; } = false;
 
-        public Type1Font(CosName name, int firstChar, int lastChar, decimal[] widths, FontDescriptor fontDescriptor, Encoding encoding, CMap toUnicodeCMap)
+        public Type1FontSimple(CosName name, int firstChar, int lastChar, decimal[] widths, FontDescriptor fontDescriptor, Encoding encoding, CMap toUnicodeCMap)
         {
             this.firstChar = firstChar;
             this.lastChar = lastChar;
