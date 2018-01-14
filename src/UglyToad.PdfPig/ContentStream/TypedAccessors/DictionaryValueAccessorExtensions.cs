@@ -140,18 +140,7 @@
 
             return result;
         }
-
-        [CanBeNull]
-        public static CosObjectKey GetObjectKey(this PdfDictionary dictionary, CosName key)
-        {
-            if (!dictionary.TryGetValue(key, out var value) || !(value is CosObject obj))
-            {
-                return null;
-            }
-
-            return new CosObjectKey(obj);
-        }
-
+        
         [CanBeNull]
         public static PdfDictionary GetDictionaryOrDefault(this PdfDictionary dictionary,
             CosName key)

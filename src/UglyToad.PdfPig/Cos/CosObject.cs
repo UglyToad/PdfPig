@@ -19,11 +19,6 @@
             SetObject(obj);
         }
 
-        public CosObjectKey GetObjectKey()
-        {
-            return new CosObjectKey(objectNumber, generationNumber);
-        }
-
         /**
          * This will get the dictionary object in this object that has the name key and
          * if it is a pdfobjref then it will dereference that and return it.

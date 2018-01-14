@@ -32,14 +32,7 @@
                 arguments.IsLenientParsing,
                 requiresExistingObject);
         }
-
-        public CosBase Parse(ParsingArguments arguments, CosObjectKey key, bool requiresExistingObject)
-        {
-            return Parse(arguments.Reader, key.Number, (int)key.Generation, arguments.CachingProviders.ObjectPool,
-                arguments.CrossReferenceTable, arguments.CachingProviders.BruteForceSearcher,
-                arguments.IsLenientParsing, requiresExistingObject);
-        }
-
+        
         public CosBase Parse(IRandomAccessRead reader, CosObject obj, CosObjectPool pool,
             CrossReferenceTable crossReferenceTable, BruteForceSearcher bruteForceSearcher, bool isLenient, bool requireExistingObject)
         {
