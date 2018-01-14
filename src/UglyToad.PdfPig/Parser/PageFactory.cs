@@ -67,7 +67,7 @@
 
                 var bytes = contentStream.Decode(filterProvider);
 
-                content = GetContent(bytes, cropBox, userSpaceUnit);
+                content = GetContent(bytes, cropBox, userSpaceUnit, isLenientParsing);
             }
             else if (contents is COSArray arr)
             {
@@ -91,7 +91,7 @@
                     bytes.AddRange(contentStream.Decode(filterProvider));
                 }
 
-                content = GetContent(bytes, cropBox, userSpaceUnit);
+                content = GetContent(bytes, cropBox, userSpaceUnit, isLenientParsing);
             }
 
             var page = new Page(number, mediaBox, cropBox, content);
@@ -99,7 +99,7 @@
             return page;
         }
 
-        private PageContent GetContent(IReadOnlyList<byte> contentBytes, CropBox cropBox, UserSpaceUnit userSpaceUnit)
+        private PageContent GetContent(IReadOnlyList<byte> contentBytes, CropBox cropBox, UserSpaceUnit userSpaceUnit, bool isLenientParsing)
         {
             if (Debugger.IsAttached)
             {
@@ -108,7 +108,7 @@
 
             var operations = pageContentParser.Parse(new ByteArrayInputBytes(contentBytes));
 
-            var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit);
+            var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit, isLenientParsing);
 
             return context.Process(operations);
         }

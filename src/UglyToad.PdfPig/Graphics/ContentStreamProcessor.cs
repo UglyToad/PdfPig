@@ -16,6 +16,7 @@
     {
         private readonly IResourceStore resourceStore;
         private readonly UserSpaceUnit userSpaceUnit;
+        private readonly bool isLenientParsing;
 
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
 
@@ -25,10 +26,11 @@
         
         public List<Letter> Letters = new List<Letter>();
 
-        public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit)
+        public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit, bool isLenientParsing)
         {
             this.resourceStore = resourceStore;
             this.userSpaceUnit = userSpaceUnit;
+            this.isLenientParsing = isLenientParsing;
             graphicsStack.Push(new CurrentGraphicsState());
         }
 
@@ -104,7 +106,12 @@
             {
                 var code = font.ReadCharacterCode(bytes, out int codeLength);
 
-                font.TryGetUnicode(code, out var unicode);
+                var foundUnicode = font.TryGetUnicode(code, out var unicode);
+
+                if (!foundUnicode && !isLenientParsing)
+                {
+                    throw new InvalidOperationException($"We could not find the corresponding character with code {code} in font {font.Name}.");
+                }
 
                 var wordSpacing = 0m;
                 if (code == ' ' && codeLength == 1)
