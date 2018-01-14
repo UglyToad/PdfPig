@@ -2,17 +2,14 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Text;
     using PdfPig.ContentStream;
-    using PdfPig.Cos;
     using PdfPig.Tokenization.Scanner;
     using PdfPig.Tokenization.Tokens;
     using Xunit;
 
     public class PdfTokenScannerTests
     {
-        private readonly CrossReferenceTable table = new CrossReferenceTable(CrossReferenceType.Table, new Dictionary<CosObjectKey, long>(), 
-            new PdfDictionary());
-
         [Fact]
         public void ReadsSimpleObject()
         {
@@ -32,6 +29,23 @@
             Assert.Equal("WDKAAR+CMBX12", name.Data.Name);
 
             Assert.StartsWith("294 0 obj", s.Substring((int)objectToken.Position));
+        }
+
+        [Fact]
+        public void ReadsIndirectReferenceInObject()
+        {
+            const string s = @"
+15 0 obj
+12 7 R
+endobj";
+
+            var scanner = GetScanner(s);
+
+            var token = ReadToEnd(scanner)[0];
+
+            var reference = Assert.IsType<IndirectReferenceToken>(token.Data);
+
+            Assert.Equal(new IndirectReference(12, 7), reference.Data);
         }
 
         [Fact]
@@ -141,11 +155,131 @@ endobj
             Assert.StartsWith("58949797283757 0 obj", s.Substring((int)token.Position));
         }
 
-        private PdfTokenScanner GetScanner(string s)
+        [Fact]
+        public void ReadsStreamObject()
+        {
+            const string s = @"
+352 0 obj<< /S 1273 /Filter /FlateDecode /Length 353 0 R >> stream
+H‰œUkLSgþÚh¹IÝÅlK(%[ÈÅ©+ƒåê©ŠèæÇtnZ)Z¹¨Oå~9ŠÊµo”[éiK)÷B¹´
+É² ©¸˜ n±º×dKöcÏ÷ãœç{ßï}¾÷ÍÉs   Ô;€
+À»—ÀF`ÇF@ƒ4˜ï	@¥T¨³fY: žwÌµ;’’Îq®]cƒÿdp¨ÛI3F#G©#œ)TÇqW£NÚÑ¬gOKbü‡µ#á¡£Þaîtƒƒ›ß–¾“S>}µuÕõ5M±¢ª†»øÞû•q÷îÜ~¬PòžÞ~•¬ëÉƒGÅ-Ñ­ím·°gêêb,/,£P§õ^v¾ãÁô¿¿ŠTE]²±{šuwÔ`LG³DªìTÈA¡¬àð‰É©ˆ°‘¼›‚%¥×s³®í»š}%§X{{tøNåÝž¶ö¢ÖÞ¾–~´¼¬°À“Éððr¥8»P£ØêÁi½®Û(éhŽ‘ú;x#dÃÄ$m
++))†…±n
+9ùyŽA·n\ï»t!=3£½¡:®­µåâ¹Ô³ø¼ËiûSÎsë;•Dt—ö$WÉ4U‘¢ºÚšñá1íÐèÔó‚svõ(/(+D²#mZÏ6êüÝ7x‡—†”‡E„²‚|ê«êªDµ5q°šR¦RÈ£n¾[è~“}ýƒÝ½Sêž¦'æQŽzÝ‚mæ
+óF+Õ%ù‡ƒß9SË†ŒÓãšH¶~L-#T]êîÁ©ÎkbjÒp½¸$¤´(4<,""øfvÎ•< VÐ«#4'2l'Ð1ñðn?sìûãI'OŸøñçŸN5(äÊ'âÎÑ¾ÞþíðƒQmu}]Õ£‡c›©.Œòµ9zz0Ñ²‚B¢«#š-3ªà<cš¥’¡È¨qµ¦{pìÛ„Ã‡ŽŠ/íO»|áIclSCuo_Oœ\\ï!ª©«­ªƒTþ5Ó‹™Ü”óî_9|ýÍ7ø!Ñý|2Goÿ€Î¶Öö…<ðáƒGéGá½G´Ã.®TŠóî=_|þ™‡ƒééFwßà 0æîc_Óë¦³|ý|¶®æ„…†G8Òüï€l…\¦RFº:‰	VPð•S“Û¶ï V—ø/¿¾Xæ+«««ÖŽ4>ŸŸ¦Pà8®Ó…¼æ¢BaÅÐkëÊŠukÈÊÖL£­ivvv…k2=µZMØ|Úl(ŠZ­V›ÍbI>Ÿl¹œ(â±Äb­ø”Uªñeü©U*‹’“Oð,„E+¶Êà>ŽU”ÎÌõçlºFÃ_ÃÙl?¶=>>!>þC¿-×à©©©x¾€¢ŠÊåòtÃ0‹Æôz“‰ NÊ,¬‚kÀ°F‚XÛ4&“ÉfÃñÅæûæy=ÆãIðE_¾Èårår/XÞ„/·qò›m¶ìÖ|†óx8Wð¹hºÜÂÕalÎü’˜Ã0^Òòòü¼yÞ¶´´DX
+                )¨ÇM8lüM…Oúý| 1Ïãk»:t<…ÂÚl¶e¾†” éKÜl6c¹¸É„› ”)‰'3¤œ\–™ËN–™ÿe^Ð² y÷ð¹f`3ëž´	¸“$d:e†)!%2ºdvË@½N¼ªŠ Ùná¹ ¼¿@€Ã.èšs ì÷ûM€2(E4_ | FÑ.@v@÷¤ÃÅ0È Pž~,€:»H¤k¾hT	Œ	€ êÇV:Ô…©@@oH¯(3T‰{""C½SñŠœþtz3€•ƒ ñf.¬SÐøzWþ*$9gj=~Ì·QD E6o¥Ûi/Â`1ígGMq,;}Ž¼sÔ×®kDü˜J{e5‚²ìÉ~Y)}fA>:˜ù–""Yò	ç¹=ù²yÛ¡¿i	aœ‘ØÏºþÇoäO ôkÆ)
+                endstream
+                    endobj
+                353 0 obj
+                1479
+                endobj";
+
+            var locationProvider = new TestObjectLocationProvider();
+            // Mark location of "353 0 obj"
+            locationProvider.Offsets[new IndirectReference(353, 0)] = 1643;
+
+            var scanner = GetScanner(s, locationProvider);
+
+            var tokens = ReadToEnd(scanner);
+
+            Assert.Equal(2, tokens.Count);
+
+            var stream = Assert.IsType<StreamToken>(tokens[0].Data);
+
+            var str = Encoding.UTF8.GetString(stream.Data);
+
+            Assert.StartsWith("H‰œUkLSgþÚh¹IÝÅl", str);
+
+            Assert.Equal(2, locationProvider.Offsets[new IndirectReference(352, 0)]);
+        }
+
+        [Fact]
+        public void ReadsSimpleStreamObject()
+        {
+            // Length of the bytes as found by Encoding.UTF8.GetBytes is 45
+            const string s = @"
+574387 0    obj
+<< /Length 45 >>
+stream
+À“Éððr¥8»P£ØêÁi½®Û(éhŽ‘ú
+endstream
+endobj";
+            
+            var scanner = GetScanner(s);
+
+            var token = ReadToEnd(scanner)[0];
+
+            var stream = Assert.IsType<StreamToken>(token.Data);
+
+            Assert.Equal(45, stream.Data.Length);
+
+            var outputString = Encoding.UTF8.GetString(stream.Data);
+
+            Assert.Equal("À“Éððr¥8»P£ØêÁi½®Û(éhŽ‘ú", outputString);
+        }
+
+        [Fact]
+        public void ReadsStreamWithIndirectLength()
+        {
+            const string s = @"5 0 obj 52 endobj
+
+
+
+12 0 obj
+
+<< /Length 5 0 R /S 1245 >>
+
+stream
+%¥×³®í»š}%§X{{tøNåÝž¶ö¢ÖÞ¾–~´¼
+endstream
+endobj";
+            var locationProvider = new TestObjectLocationProvider();
+
+            locationProvider.Offsets[new IndirectReference(5, 0)] = 0;
+
+            var scanner = GetScanner(s, locationProvider);
+
+            var token = ReadToEnd(scanner)[1];
+
+            var stream = Assert.IsType<StreamToken>(token.Data);
+
+            Assert.Equal(52, stream.Data.Length);
+
+            var outputString = Encoding.UTF8.GetString(stream.Data);
+
+            Assert.Equal("%¥×³®í»š}%§X{{tøNåÝž¶ö¢ÖÞ¾–~´¼", outputString);
+        }
+
+        [Fact]
+        public void ReadsStreamWithMissingLength()
+        {
+            const string s = @"
+12655 0 obj
+
+<< /S 1245 >>
+
+stream
+%¥×³®í»š}%§X{{tøNåÝž¶ö¢ÖÞgrehtyyy$&%&£$££(*¾–~´¼
+endstream
+endobj";
+
+            var scanner = GetScanner(s);
+
+            var token = ReadToEnd(scanner)[0];
+
+            Assert.Equal(12655, token.Number.ObjectNumber);
+
+            var stream = Assert.IsType<StreamToken>(token.Data);
+
+            Assert.Equal("1245", stream.StreamDictionary.Data["S"].ToString());
+
+            Assert.Equal("%¥×³®í»š}%§X{{tøNåÝž¶ö¢ÖÞgrehtyyy$&%&£$££(*¾–~´¼", Encoding.UTF8.GetString(stream.Data));
+        }
+
+        private PdfTokenScanner GetScanner(string s, TestObjectLocationProvider locationProvider = null)
         {
             var input = StringBytesTestConverter.Convert(s, false);
 
-            return new PdfTokenScanner(input.Bytes, table);
+            return new PdfTokenScanner(input.Bytes, locationProvider ?? new TestObjectLocationProvider());
         }
 
         private static IReadOnlyList<ObjectToken> ReadToEnd(PdfTokenScanner scanner)

@@ -1,37 +1,44 @@
 ﻿namespace UglyToad.PdfPig.Tokenization.Scanner
 {
-    using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.IO;
     using ContentStream;
-    using Cos;
     using Exceptions;
     using IO;
+    using Parser.Parts;
     using Tokens;
 
     internal class PdfTokenScanner : ISeekableTokenScanner
     {
         private readonly IInputBytes inputBytes;
-        private readonly CrossReferenceTable crossReferenceTable;
+        private readonly IObjectLocationProvider objectLocationProvider;
         private readonly CoreTokenScanner coreTokenScanner;
 
+        /// <summary>
+        /// Stores tokens encountered between obj - endobj markers for each <see cref="MoveNext"/> call.
+        /// Cleared after each operation.
+        /// </summary>
+        private readonly List<IToken> readTokens = new List<IToken>();
+
+        // Store the previous 2 tokens and their positions so we can backtrack to find object numbers and stream dictionaries.
         private readonly long[] previousTokenPositions = new long[2];
         private readonly IToken[] previousTokens = new IToken[2];
-
-        private readonly Dictionary<IndirectReference, long> objectOffsets = new Dictionary<IndirectReference, long>();
 
         public IToken CurrentToken { get; private set; }
 
         public long CurrentPosition => coreTokenScanner.CurrentPosition;
 
-        public PdfTokenScanner(IInputBytes inputBytes, CrossReferenceTable crossReferenceTable)
+        public PdfTokenScanner(IInputBytes inputBytes, IObjectLocationProvider objectLocationProvider)
         {
             this.inputBytes = inputBytes;
-            this.crossReferenceTable = crossReferenceTable;
+            this.objectLocationProvider = objectLocationProvider;
             coreTokenScanner = new CoreTokenScanner(inputBytes);
         }
 
         public bool MoveNext()
         {
+            // Read until we find object-number generation obj, e.g. "69 420 obj".
             int tokensRead = 0;
             while (coreTokenScanner.MoveNext() && coreTokenScanner.CurrentToken != OperatorToken.StartObject)
             {
@@ -49,6 +56,7 @@
                 previousTokenPositions[1] = coreTokenScanner.CurrentTokenStart;
             }
 
+            // We only read partial tokens.
             if (tokensRead < 2)
             {
                 return false;
@@ -64,8 +72,7 @@
                                                      $"Instead got: {previousTokens[0]} {previousTokens[1]} obj");
             }
 
-            var data = new List<IToken>();
-
+            // Read all tokens between obj and endobj.
             while (coreTokenScanner.MoveNext() && coreTokenScanner.CurrentToken != OperatorToken.EndObject)
             {
                 if (coreTokenScanner.CurrentToken is CommentToken)
@@ -73,12 +80,26 @@
                     continue;
                 }
 
-                if (coreTokenScanner.CurrentToken == OperatorToken.StartStream)
+                if (coreTokenScanner.CurrentToken == OperatorToken.StartObject)
                 {
-                    // Read stream.
+                    // This should never happen.
+                    Debug.Assert(false, "Encountered a start object 'obj' operator before the end of the previous object.");
+                    return false;
                 }
 
-                data.Add(coreTokenScanner.CurrentToken);
+                if (coreTokenScanner.CurrentToken == OperatorToken.StartStream)
+                {
+                    // Read stream: special case.
+                    if (TryReadStream(coreTokenScanner.CurrentTokenStart, out var stream))
+                    {
+                        readTokens.Clear();
+                        readTokens.Add(stream);
+                    }
+                }
+                else
+                {
+                    readTokens.Add(coreTokenScanner.CurrentToken);
+                }
 
                 previousTokens[0] = previousTokens[1];
                 previousTokenPositions[0] = previousTokenPositions[1];
@@ -89,10 +110,322 @@
 
             if (coreTokenScanner.CurrentToken != OperatorToken.EndObject)
             {
+                readTokens.Clear();
                 return false;
             }
 
-            CurrentToken = new ObjectToken(startPosition, new IndirectReference(objectNumber.Long, generation.Int), data[data.Count - 1]);
+            var reference = new IndirectReference(objectNumber.Long, generation.Int);
+
+            IToken token;
+            if (readTokens.Count == 3 && readTokens[0] is NumericToken objNum
+                                      && readTokens[1] is NumericToken genNum
+                                      && readTokens[2] == OperatorToken.R)
+            {
+                // I have no idea if this can ever happen.
+                token = new IndirectReferenceToken(new IndirectReference(objNum.Long, genNum.Int));
+            }
+            else
+            {
+                // Just take the last, should only ever be 1
+                Debug.Assert(readTokens.Count == 1, "Found more than 1 token in an object.");
+
+                token = readTokens[readTokens.Count - 1];
+            }
+
+            CurrentToken = new ObjectToken(startPosition, reference, token);
+
+            objectLocationProvider.UpdateOffset(reference, startPosition);
+
+            readTokens.Clear();
+            return true;
+        }
+
+        private bool TryReadStream(long startStreamTokenOffset, out StreamToken stream)
+        {
+            stream = null;
+
+            DictionaryToken streamDictionaryToken = GetStreamDictionary();
+
+            // Get the expected length from the stream dictionary if present.
+            long? length = GetStreamLength(streamDictionaryToken);
+
+            // Verify again that we start with "stream"
+            var hasStartStreamToken = ReadStreamTokenStart(inputBytes, startStreamTokenOffset);
+
+            if (!hasStartStreamToken)
+            {
+                return false;
+            }
+
+            // From the specification: The stream operator should be followed by \r\n or \n, not just \r.
+            if (!inputBytes.MoveNext())
+            {
+                return false;
+            }
+
+            if (inputBytes.CurrentByte == '\r')
+            {
+                inputBytes.MoveNext();
+            }
+
+            if (inputBytes.CurrentByte != '\n')
+            {
+                return false;
+            }
+
+            // Store where we started reading the first byte of data.
+            long startDataOffset = inputBytes.CurrentOffset;
+
+            // Store how many bytes we have read for checking against Length.
+            long read = 0;
+
+            // We want to check if we ever read 'endobj' or 'endstream'.
+            int endObjPosition = 0;
+            int endStreamPosition = 0;
+            int commonPartPosition = 0;
+
+            const string commonPart = "end";
+            const string streamPart = "stream";
+            const string objPart = "obj";
+
+            // Track any 'endobj' or 'endstream' operators we see.
+            var observedEndLocations = new List<PossibleStreamEndLocation>();
+
+            // Keep track of the previous byte.
+            byte previousByte = 0;
+
+            // Begin reading the stream.
+            using (var memoryStream = new MemoryStream())
+            using (var binaryWrite = new BinaryWriter(memoryStream))
+            {
+                while (inputBytes.MoveNext())
+                {
+                    if (length.HasValue && read == length)
+                    {
+                        // TODO: read ahead and check we're at the end...
+                        // break;
+                    }
+
+                    // We are reading 'end' (possibly).
+                    if (commonPartPosition < commonPart.Length && inputBytes.CurrentByte == commonPart[commonPartPosition])
+                    {
+                        if (commonPartPosition == 0 && !ReadHelper.IsWhitespace(previousByte))
+                        {
+                            // We've just encountered a normal 'e' in the stream.
+                        }
+                        else
+                        {
+                            commonPartPosition++;
+                        }
+                    }
+                    else if (commonPartPosition == commonPart.Length)
+                    {
+                        // We are reading 'stream' after 'end'
+                        if (inputBytes.CurrentByte == streamPart[endStreamPosition])
+                        {
+                            endObjPosition = 0;
+                            endStreamPosition++;
+
+                            // We've finished reading 'endstream', add it to the end tokens we've seen.
+                            if (endStreamPosition == streamPart.Length && (!inputBytes.MoveNext() || ReadHelper.IsWhitespace(inputBytes.CurrentByte)))
+                            {
+                                var token = new PossibleStreamEndLocation(inputBytes.CurrentOffset - OperatorToken.EndStream.Data.Length, OperatorToken.EndStream);
+
+                                observedEndLocations.Add(token);
+
+                                if (length.HasValue && read > length)
+                                {
+                                    break;
+                                }
+
+                                endStreamPosition = 0;
+                            }
+                        }
+                        else if (inputBytes.CurrentByte == objPart[endObjPosition])
+                        {
+                            // We are reading 'obj' after 'end'
+
+                            endStreamPosition = 0;
+                            endObjPosition++;
+
+                            // We have finished reading 'endobj'.
+                            if (endObjPosition == objPart.Length)
+                            {
+                                // If we saw an 'endstream' or 'endobj' previously we've definitely hit the end now.
+                                if (observedEndLocations.Count > 0)
+                                {
+                                    var lastEndToken = observedEndLocations[observedEndLocations.Count - 1];
+
+                                    inputBytes.Seek(lastEndToken.Offset + lastEndToken.Type.Data.Length + 1);
+
+                                    break;
+                                }
+
+                                var token = new PossibleStreamEndLocation(inputBytes.CurrentOffset - OperatorToken.EndObject.Data.Length, OperatorToken.EndObject);
+                                observedEndLocations.Add(token);
+
+                                if (read > length)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // We were reading 'end' but then we had a character mismatch.
+                            // Reset all the counters.
+
+                            endStreamPosition = 0;
+                            endObjPosition = 0;
+                            commonPartPosition = 0;
+                        }
+                    }
+                    else
+                    {
+                        // For safety reset every counter in case we had a partial read.
+
+                        endStreamPosition = 0;
+                        endObjPosition = 0;
+                        commonPartPosition = 0;
+                    }
+
+                    previousByte = inputBytes.CurrentByte;
+                    binaryWrite.Write(inputBytes.CurrentByte);
+
+                    read++;
+                }
+
+                binaryWrite.Flush();
+
+                if (observedEndLocations.Count == 0)
+                {
+                    return false;
+                }
+
+                memoryStream.Seek(0, SeekOrigin.Begin);
+                if (length.HasValue && memoryStream.Length >= length)
+                {
+                    // Use the declared length to copy just the data we want.
+                    byte[] data = new byte[length.Value];
+
+                    memoryStream.Read(data, 0, (int)length.Value);
+
+                    stream = new StreamToken(streamDictionaryToken, data);
+                }
+                else
+                {
+                    // Work out where '\r\nendobj' or '\r\nendstream' occurs and read everything up to that.
+                    var lastEnd = observedEndLocations[observedEndLocations.Count - 1];
+
+                    var dataLength = lastEnd.Offset - startDataOffset;
+
+                    var current = inputBytes.CurrentOffset;
+
+                    // 3 characters, 'e', '\n' and possibly '\r'
+                    inputBytes.Seek(lastEnd.Offset - 3);
+                    inputBytes.MoveNext();
+
+                    if (inputBytes.CurrentByte == '\r')
+                    {
+                        dataLength -= 3;
+                    }
+                    else
+                    {
+                        dataLength -= 2;
+                    }
+
+                    inputBytes.Seek(current);
+
+                    byte[] data = new byte[dataLength];
+
+                    memoryStream.Read(data, 0, (int)dataLength);
+
+                    stream = new StreamToken(streamDictionaryToken, data);
+                }
+            }
+
+            return true;
+        }
+
+        private DictionaryToken GetStreamDictionary()
+        {
+            DictionaryToken streamDictionaryToken;
+            if (previousTokens[1] is DictionaryToken firstDictionary)
+            {
+                streamDictionaryToken = firstDictionary;
+            }
+            else if (previousTokens[0] is DictionaryToken secondDictionary)
+            {
+                streamDictionaryToken = secondDictionary;
+            }
+            else
+            {
+                throw new PdfDocumentFormatException("No dictionary token was found prior to the 'stream' operator. Previous tokens were:" +
+                                                     $" {previousTokens[1]} and {previousTokens[0]}.");
+            }
+
+            return streamDictionaryToken;
+        }
+
+        private long? GetStreamLength(DictionaryToken dictionary)
+        {
+            if (!dictionary.Data.TryGetValue("Length", out var lengthValue))
+            {
+                return null;
+            }
+
+            long? length = default(long?);
+
+            // Can either be number in the stream dictionary.
+            if (lengthValue is NumericToken numeric)
+            {
+                return numeric.Long;
+            }
+
+            long currentOffset = inputBytes.CurrentOffset;
+
+            // Or a reference to another numeric object.
+            if (lengthValue is IndirectReferenceToken lengthReference)
+            {
+                // We can only find it if we know where it is.
+                if (objectLocationProvider.TryGetOffset(lengthReference.Data, out var offset))
+                {
+                    // Move to the length object and read it.
+                    Seek(offset);
+
+                    // Keep a copy of the read tokens here since this list must be empty prior to move next.
+                    var oldData = new List<IToken>(readTokens);
+                    readTokens.Clear();
+                    if (MoveNext() && ((ObjectToken)CurrentToken).Data is NumericToken lengthToken)
+                    {
+                        length = lengthToken.Long;
+                    }
+                    readTokens.AddRange(oldData);
+
+                    // Move back to where we started.
+                    Seek(currentOffset);
+                }
+                else
+                {
+                    // warn, we had a reference to a length object but didn't find it...
+                }
+            }
+
+            return length;
+        }
+
+        private static bool ReadStreamTokenStart(IInputBytes input, long tokenStart)
+        {
+            input.Seek(tokenStart);
+
+            for (var i = 0; i < OperatorToken.StartStream.Data.Length; i++)
+            {
+                if (!input.MoveNext() || input.CurrentByte != OperatorToken.StartStream.Data[i])
+                {
+                    input.Seek(tokenStart);
+                    return false;
+                }
+            }
 
             return true;
         }
