@@ -1,6 +1,6 @@
 <image src="https://raw.githubusercontent.com/UglyToad/Pdf/master/documentation/pdfpig.png" width="128px" height="128px"/>
 
-PdfPig is a fully open-source .NET standard compatible library that enables users to extract text content from PDFs in C#.
+[PdfPig](https://github.com/UglyToad/PdfPig) is a fully open-source .NET standard compatible library that enables users to extract text content from PDFs in C#.
 
 Using PdfPig users can read text from a PDF in C# without the need for commercial libraries.
 
@@ -85,4 +85,4 @@ At this stage letter position is experimental and **will change in future versio
 
 The **pre-release** package is available via the releases tab or from Nuget:
 
-https://www.nuget.org/packages/PdfPig/
+[https://www.nuget.org/packages/PdfPig/](https://www.nuget.org/packages/PdfPig/)
