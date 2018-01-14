@@ -23,7 +23,7 @@
     /// </remarks>
     internal class CrossReferenceTablePart
     {
-        public IReadOnlyDictionary<CosObjectKey, long> ObjectOffsets { get; }
+        public IReadOnlyDictionary<IndirectReference, long> ObjectOffsets { get; }
 
         public long Offset { get; private set; }
 
@@ -33,7 +33,7 @@
 
         public CrossReferenceType Type { get; }
 
-        public CrossReferenceTablePart(IReadOnlyDictionary<CosObjectKey, long> objectOffsets, long offset, long previous, PdfDictionary dictionary, CrossReferenceType type)
+        public CrossReferenceTablePart(IReadOnlyDictionary<IndirectReference, long> objectOffsets, long offset, long previous, PdfDictionary dictionary, CrossReferenceType type)
         {
             ObjectOffsets = objectOffsets;
             Offset = offset;

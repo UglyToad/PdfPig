@@ -156,7 +156,7 @@
                 throw new InvalidOperationException("expected number, actual=" + value + " at offset " + genOffset);
             }
 
-            var key = new CosObjectKey(((CosInt)value).AsLong(), ((CosInt)generationNumber).AsInt());
+            var key = new IndirectReference(((CosInt)value).AsLong(), ((CosInt)generationNumber).AsInt());
 
             // dereference the object
             return pool.Get(key);

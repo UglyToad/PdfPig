@@ -63,7 +63,7 @@
                 throw new ArgumentNullException(nameof(pool));
             }
 
-            var key = new CosObjectKey(objectNumber, objectGeneration);
+            var key = new IndirectReference(objectNumber, objectGeneration);
 
             var pdfObject = pool.GetOrCreateDefault(key);
 
@@ -112,7 +112,7 @@
         }
         
         private CosBase ParseObjectFromFile(long offset, IRandomAccessRead reader,
-            CosObjectKey key,
+            IndirectReference key,
             CosObjectPool pool,
             bool isLenientParsing)
         {
@@ -123,7 +123,7 @@
 
             ReadHelper.ReadExpectedString(reader, "obj", true);
 
-            if (objectNumber != key.Number || objectGeneration != key.Generation)
+            if (objectNumber != key.ObjectNumber || objectGeneration != key.Generation)
             {
                 throw new InvalidOperationException($"Xref for {key} points to object {objectNumber} {objectGeneration} at {offset}");
             }
@@ -213,7 +213,7 @@
             // register all objects which are referenced to be contained in object stream
             foreach (var next in objects)
             {
-                var streamKey = new CosObjectKey(next);
+                var streamKey = new IndirectReference(next.GetObjectNumber(), next.GetGenerationNumber());
                 var offset = TryGet(streamKey, crossReferenceTable.ObjectOffsets);
 
                 if (offset != null && offset == -streamObjectNumber)

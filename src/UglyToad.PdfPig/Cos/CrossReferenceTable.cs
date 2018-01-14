@@ -9,15 +9,15 @@
     {
         public CrossReferenceType Type { get; }
 
-        private readonly Dictionary<CosObjectKey, long> objectOffsets;
+        private readonly Dictionary<IndirectReference, long> objectOffsets;
 
         [NotNull]
-        public IReadOnlyDictionary<CosObjectKey, long> ObjectOffsets => objectOffsets;
+        public IReadOnlyDictionary<IndirectReference, long> ObjectOffsets => objectOffsets;
 
         [NotNull]
         public PdfDictionary Dictionary { get; }
 
-        public CrossReferenceTable(CrossReferenceType type, IReadOnlyDictionary<CosObjectKey, long> objectOffsets, PdfDictionary dictionary)
+        public CrossReferenceTable(CrossReferenceType type, IReadOnlyDictionary<IndirectReference, long> objectOffsets, PdfDictionary dictionary)
         {
             if (objectOffsets == null)
             {
@@ -27,7 +27,7 @@
             Type = type;
             Dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
 
-            var result = new Dictionary<CosObjectKey, long>();
+            var result = new Dictionary<IndirectReference, long>();
             foreach (var objectOffset in objectOffsets)
             {
                 result[objectOffset.Key] = objectOffset.Value;
@@ -36,7 +36,7 @@
             this.objectOffsets = result;
         }
 
-        public void UpdateOffset(CosObjectKey key, long offset)
+        public void UpdateOffset(IndirectReference key, long offset)
         {
             objectOffsets[key] = offset;
         }

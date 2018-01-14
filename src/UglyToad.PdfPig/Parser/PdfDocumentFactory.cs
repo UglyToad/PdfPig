@@ -5,6 +5,7 @@
     using Content;
     using ContentStream;
     using Cos;
+    using Exceptions;
     using FileStructure;
     using Filters;
     using Fonts;
@@ -102,7 +103,7 @@
 
             if (!(root is PdfDictionary rootDictionary))
             {
-                throw new InvalidOperationException("Expected root dictionary, but got this: " + root);
+                throw new PdfDocumentFormatException("Expected root dictionary, but got this: " + root);
             }
 
             // in some pdfs the type value "Catalog" is missing in the root object
@@ -116,6 +117,8 @@
             var catalog = catalogFactory.Create(rootDictionary, reader, isLenientParsing);
 
             var caching = new ParsingCachingProviders(pool, bruteForceSearcher, resourceContainer);
+
+            var pdfScanner = new PdfTokenScanner(inputBytes, null);
 
             return new PdfDocument(log, reader, version, crossReferenceTable, isLenientParsing, caching, pageFactory, pdfObjectParser, catalog, information);
         }

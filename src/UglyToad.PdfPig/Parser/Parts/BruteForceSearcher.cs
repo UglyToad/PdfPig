@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using Cos;
+    using ContentStream;
     using IO;
     using Util;
     using Util.JetBrains.Annotations;
@@ -16,7 +16,7 @@
 
         private readonly IRandomAccessRead reader;
 
-        private Dictionary<CosObjectKey, long> objectLocations;
+        private Dictionary<IndirectReference, long> objectLocations;
 
         public BruteForceSearcher([NotNull] IRandomAccessRead reader)
         {
@@ -24,7 +24,7 @@
         }
 
         [NotNull]
-        public IReadOnlyDictionary<CosObjectKey, long> GetObjectLocations()
+        public IReadOnlyDictionary<IndirectReference, long> GetObjectLocations()
         {
             if (objectLocations != null)
             {
@@ -33,7 +33,7 @@
 
             var lastEndOfFile = GetLastEndOfFileMarker();
 
-            var results = new Dictionary<CosObjectKey, long>();
+            var results = new Dictionary<IndirectReference, long>();
 
             var originPosition = reader.GetPosition();
 
@@ -81,7 +81,7 @@
                                 if (lastObjOffset > 0)
                                 {
                                     // add the former object ID only if there was a subsequent object ID
-                                    results[new CosObjectKey(lastObjectId, lastGenerationId)] = lastObjOffset;
+                                    results[new IndirectReference(lastObjectId, lastGenerationId)] = lastObjOffset;
                                 }
                                 lastObjectId = objectId;
                                 lastGenerationId = generationId;
@@ -103,7 +103,7 @@
             {
                 // if the pdf wasn't cut off in the middle or if the last object ends with a "endobj" marker
                 // the last object id has to be added here so that it can't get lost as there isn't any subsequent object id
-                results[new CosObjectKey(lastObjectId, lastGenerationId)] = lastObjOffset;
+                results[new IndirectReference(lastObjectId, lastGenerationId)] = lastObjOffset;
             }
 
             // reestablish origin position

@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Parser.Parts
 {
+    using ContentStream;
     using Cos;
     using IO;
     using Util;
@@ -25,7 +26,7 @@
                         if (po.get(po.size() - 1) is CosInt)
                         {
                             var number = (CosInt)po.remove(po.size() - 1);
-                            CosObjectKey key = new CosObjectKey(number.AsLong(), genNumber.AsInt());
+                            IndirectReference key = new IndirectReference(number.AsLong(), genNumber.AsInt());
                             pbo = pool.Get(key);
                         }
                         else

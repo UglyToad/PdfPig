@@ -122,14 +122,14 @@ trailer
             
             Assert.Equal(2, result.ObjectOffsets.Count);
 
-            var results = result.ObjectOffsets.Select(x => new {x.Key.Number, x.Key.Generation, x.Value}).ToList();
+            var results = result.ObjectOffsets.Select(x => new {x.Key.ObjectNumber, x.Key.Generation, x.Value}).ToList();
 
             Assert.Equal(100, results[0].Value);
-            Assert.Equal(1, results[0].Number);
+            Assert.Equal(1, results[0].ObjectNumber);
             Assert.Equal(0, results[0].Generation);
 
             Assert.Equal(200, results[1].Value);
-            Assert.Equal(2, results[1].Number);
+            Assert.Equal(2, results[1].ObjectNumber);
             Assert.Equal(5, results[1].Generation);
         }
 
@@ -147,14 +147,14 @@ trailer
             
             Assert.Equal(2, result.ObjectOffsets.Count);
 
-            var results = result.ObjectOffsets.Select(x => new { x.Key.Number, x.Key.Generation, x.Value }).ToList();
+            var results = result.ObjectOffsets.Select(x => new { x.Key.ObjectNumber, x.Key.Generation, x.Value }).ToList();
 
             Assert.Equal(190, results[0].Value);
-            Assert.Equal(15, results[0].Number);
+            Assert.Equal(15, results[0].ObjectNumber);
             Assert.Equal(0, results[0].Generation);
 
             Assert.Equal(250, results[1].Value);
-            Assert.Equal(16, results[1].Number);
+            Assert.Equal(16, results[1].ObjectNumber);
             Assert.Equal(32, results[1].Generation);
         }
 
@@ -173,14 +173,14 @@ trailer
             
             Assert.Equal(2, result.ObjectOffsets.Count);
 
-            var results = result.ObjectOffsets.Select(x => new { x.Key.Number, x.Key.Generation, x.Value }).ToList();
+            var results = result.ObjectOffsets.Select(x => new { x.Key.ObjectNumber, x.Key.Generation, x.Value }).ToList();
 
             Assert.Equal(190, results[0].Value);
-            Assert.Equal(15, results[0].Number);
+            Assert.Equal(15, results[0].ObjectNumber);
             Assert.Equal(0, results[0].Generation);
 
             Assert.Equal(250, results[1].Value);
-            Assert.Equal(16, results[1].Number);
+            Assert.Equal(16, results[1].ObjectNumber);
             Assert.Equal(32, results[1].Generation);
         }
 
@@ -203,26 +203,26 @@ trailer
             
             Assert.Equal(5, result.ObjectOffsets.Count);
 
-            var results = result.ObjectOffsets.Select(x => new { x.Key.Number, x.Key.Generation, x.Value }).ToList();
+            var results = result.ObjectOffsets.Select(x => new { x.Key.ObjectNumber, x.Key.Generation, x.Value }).ToList();
 
             Assert.Equal(100, results[0].Value);
-            Assert.Equal(1, results[0].Number);
+            Assert.Equal(1, results[0].ObjectNumber);
             Assert.Equal(0, results[0].Generation);
 
             Assert.Equal(200, results[1].Value);
-            Assert.Equal(2, results[1].Number);
+            Assert.Equal(2, results[1].ObjectNumber);
             Assert.Equal(5, results[1].Generation);
 
             Assert.Equal(230, results[2].Value);
-            Assert.Equal(3, results[2].Number);
+            Assert.Equal(3, results[2].ObjectNumber);
             Assert.Equal(5, results[2].Generation);
 
             Assert.Equal(190, results[3].Value);
-            Assert.Equal(15, results[3].Number);
+            Assert.Equal(15, results[3].ObjectNumber);
             Assert.Equal(7, results[3].Generation);
 
             Assert.Equal(250, results[4].Value);
-            Assert.Equal(16, results[4].Number);
+            Assert.Equal(16, results[4].ObjectNumber);
             Assert.Equal(32, results[4].Generation);
         }
 

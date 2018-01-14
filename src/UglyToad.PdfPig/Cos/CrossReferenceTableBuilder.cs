@@ -32,7 +32,7 @@
         {
             CrossReferenceType type = CrossReferenceType.Table;
             PdfDictionary trailerDictionary = new PdfDictionary();
-            Dictionary<CosObjectKey, long> objectOffsets = new Dictionary<CosObjectKey, long>();
+            Dictionary<IndirectReference, long> objectOffsets = new Dictionary<IndirectReference, long>();
 
             List<long> xrefSeqBytePos = new List<long>();
 

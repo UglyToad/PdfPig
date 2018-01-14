@@ -1,34 +1,29 @@
 ﻿namespace UglyToad.PdfPig.Cos
 {
     using System.Collections.Generic;
+    using ContentStream;
 
     internal class CosObjectPool
     {
-        private readonly Dictionary<CosObjectKey, CosObject> objects = new Dictionary<CosObjectKey, CosObject>();
+        private readonly Dictionary<IndirectReference, CosObject> objects = new Dictionary<IndirectReference, CosObject>();
 
-        public CosObject Get(CosObjectKey key)
+        public CosObject Get(IndirectReference key)
         {
-            if (key != null)
+            if (objects.TryGetValue(key, out var value))
             {
-                if (objects.TryGetValue(key, out var value))
-                {
-                    return value;
-                }
+                return value;
             }
 
             // this was a forward reference, make "proxy" object
             var obj = new CosObject(null);
-            if (key != null)
-            {
-                obj.SetObjectNumber(key.Number);
-                obj.SetGenerationNumber((int)key.Generation);
-                objects[key] = obj;
-            }
+            obj.SetObjectNumber(key.ObjectNumber);
+            obj.SetGenerationNumber(key.Generation);
+            objects[key] = obj;
 
             return obj;
         }
 
-        public CosObject GetOrCreateDefault(CosObjectKey key)
+        public CosObject GetOrCreateDefault(IndirectReference key)
         {
             if (!objects.TryGetValue(key, out CosObject obj))
             {

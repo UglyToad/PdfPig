@@ -5,7 +5,7 @@
 
     internal class CrossReferenceTablePartBuilder
     {
-        private readonly Dictionary<CosObjectKey, long> objects = new Dictionary<CosObjectKey, long>();
+        private readonly Dictionary<IndirectReference, long> objects = new Dictionary<IndirectReference, long>();
 
         public long Offset { get; set; }
 
@@ -17,7 +17,7 @@
         
         public void Add(long objectId, int generationNumber, long offset)
         {
-            CosObjectKey objKey = new CosObjectKey(objectId, generationNumber);
+            IndirectReference objKey = new IndirectReference(objectId, generationNumber);
 
             if (!objects.ContainsKey(objKey))
             {

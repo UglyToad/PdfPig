@@ -87,7 +87,7 @@ startxref
 
             foreach (var keyValuePair in locations)
             {
-                Assert.Contains(newLocations.Keys, x => ReferenceEquals(x, keyValuePair.Key));
+                Assert.Contains(newLocations.Keys, x => x.Equals(keyValuePair.Key));
             }
         }
     }

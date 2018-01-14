@@ -41,7 +41,7 @@
 
         public CosBase Parse(IndirectReference indirectReference, IRandomAccessRead reader, bool isLenientParsing = true, bool requireExistingObject = false)
         {
-            var key = new CosObjectKey(indirectReference.ObjectNumber, indirectReference.Generation);
+            var key = new IndirectReference(indirectReference.ObjectNumber, indirectReference.Generation);
 
             var pdfObject = objectPool.GetOrCreateDefault(key);
 
@@ -76,7 +76,7 @@
                     return CosNull.Null;
                 }
 
-                throw new InvalidOperationException($"Could not locate the object {key.Number} which was not found in the cross reference table.");
+                throw new InvalidOperationException($"Could not locate the object {key.ObjectNumber} which was not found in the cross reference table.");
             }
 
             var isCompressedStreamObject = offsetOrStreamNumber <= 0;
@@ -90,7 +90,7 @@
         }
 
         private CosBase ParseObjectFromFile(long offset, IRandomAccessRead reader,
-            CosObjectKey key,
+            IndirectReference key,
             CosObjectPool pool,
             bool isLenientParsing)
         {
@@ -101,7 +101,7 @@
 
             ReadHelper.ReadExpectedString(reader, "obj", true);
 
-            if (objectNumber != key.Number || objectGeneration != key.Generation)
+            if (objectNumber != key.ObjectNumber || objectGeneration != key.Generation)
             {
                 throw new InvalidOperationException($"Xref for {key} points to object {objectNumber} {objectGeneration} at {offset}");
             }
@@ -193,7 +193,7 @@
             // register all objects which are referenced to be contained in object stream
             foreach (var next in objects)
             {
-                var streamKey = new CosObjectKey(next);
+                var streamKey = new IndirectReference(next.GetObjectNumber(), next.GetGenerationNumber());
                 var offset = TryGet(streamKey, crossReferenceTable.ObjectOffsets);
 
                 if (offset != null && offset == -streamObjectNumber)

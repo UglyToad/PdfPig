@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using ContentStream;
     using Cos;
     using IO;
     using Parts;
@@ -12,9 +13,9 @@
     {
         private static readonly long MINIMUM_SEARCH_OFFSET = 6;
 
-        private Dictionary<CosObjectKey, long> bfSearchCOSObjectKeyOffsets;
+        private Dictionary<IndirectReference, long> bfSearchCOSObjectKeyOffsets;
         
-        private bool validateXrefOffsets(IRandomAccessRead reader, Dictionary<CosObjectKey, long> xrefOffset)
+        private bool validateXrefOffsets(IRandomAccessRead reader, Dictionary<IndirectReference, long> xrefOffset)
         {
             if (xrefOffset == null)
             {
@@ -22,7 +23,7 @@
             }
             foreach (var objectEntry in xrefOffset)
             {
-                CosObjectKey objectKey = objectEntry.Key;
+                IndirectReference objectKey = objectEntry.Key;
                 long objectOffset = objectEntry.Value;
                 // a negative offset number represents a object number itself
                 // see type 2 entry in xref stream
@@ -37,14 +38,14 @@
             return true;
         }
 
-        private bool checkObjectKeys(IRandomAccessRead source, CosObjectKey objectKey, long offset)
+        private bool checkObjectKeys(IRandomAccessRead source, IndirectReference objectKey, long offset)
         {
             // there can't be any object at the very beginning of a pdf
             if (offset < MINIMUM_SEARCH_OFFSET)
             {
                 return false;
             }
-            long objectNr = objectKey.Number;
+            long objectNr = objectKey.ObjectNumber;
             long objectGen = objectKey.Generation;
             long originOffset = source.GetPosition();
             string objectString = ObjectHelper.createObjectString(objectNr, objectGen);
@@ -71,7 +72,7 @@
         }
 
 
-        private Dictionary<CosObjectKey, long> getBFCosObjectOffsets(IRandomAccessRead reader)
+        private Dictionary<IndirectReference, long> getBFCosObjectOffsets(IRandomAccessRead reader)
         {
             if (bfSearchCOSObjectKeyOffsets == null)
             {
@@ -83,7 +84,7 @@
         private void bfSearchForObjects(IRandomAccessRead source)
         {
             bfSearchForLastEOFMarker(source);
-            bfSearchCOSObjectKeyOffsets = new Dictionary<CosObjectKey, long>();
+            bfSearchCOSObjectKeyOffsets = new Dictionary<IndirectReference, long>();
             long originOffset = source.GetPosition();
             long currentOffset = MINIMUM_SEARCH_OFFSET;
             long lastObjectId = long.MinValue;
@@ -125,7 +126,7 @@
                                 if (lastObjOffset > 0)
                                 {
                                     // add the former object ID only if there was a subsequent object ID
-                                    bfSearchCOSObjectKeyOffsets[new CosObjectKey(lastObjectId, lastGenID)] = lastObjOffset;
+                                    bfSearchCOSObjectKeyOffsets[new IndirectReference(lastObjectId, lastGenID)] = lastObjOffset;
                                 }
                                 lastObjectId = objectId;
                                 lastGenID = genID;
@@ -147,7 +148,7 @@
             {
                 // if the pdf wasn't cut off in the middle or if the last object ends with a "endobj" marker
                 // the last object id has to be added here so that it can't get lost as there isn't any subsequent object id
-                bfSearchCOSObjectKeyOffsets[new CosObjectKey(lastObjectId, lastGenID)] = lastObjOffset;
+                bfSearchCOSObjectKeyOffsets[new IndirectReference(lastObjectId, lastGenID)] = lastObjOffset;
             }
             // reestablish origin position
 
@@ -166,33 +167,33 @@
             {
                 return;
             }
-            Dictionary<CosObjectKey, long> xrefOffset = xrefTrailerResolver.ObjectOffsets.ToDictionary(x => x.Key, x => x.Value);
+            Dictionary<IndirectReference, long> xrefOffset = xrefTrailerResolver.ObjectOffsets.ToDictionary(x => x.Key, x => x.Value);
             if (validateXrefOffsets(reader, xrefOffset))
             {
                 return;
             }
 
-            Dictionary<CosObjectKey, long> bfCOSObjectKeyOffsets = getBFCosObjectOffsets(reader);
+            Dictionary<IndirectReference, long> bfCOSObjectKeyOffsets = getBFCosObjectOffsets(reader);
             if (bfCOSObjectKeyOffsets.Count > 0)
             {
-                List<CosObjectKey> objStreams = new List<CosObjectKey>();
+                List<IndirectReference> objStreams = new List<IndirectReference>();
                 // find all object streams
                 foreach (var entry in xrefOffset)
                 {
                     long offset = entry.Value;
                     if (offset < 0)
                     {
-                        CosObjectKey objStream = new CosObjectKey(-offset, 0);
+                        IndirectReference objStream = new IndirectReference(-offset, 0);
                         if (!objStreams.Contains(objStream))
                         {
-                            objStreams.Add(new CosObjectKey(-offset, 0));
+                            objStreams.Add(new IndirectReference(-offset, 0));
                         }
                     }
                 }
                 // remove all found object streams
                 if (objStreams.Count > 0)
                 {
-                    foreach (CosObjectKey key in objStreams)
+                    foreach (IndirectReference key in objStreams)
                     {
                         if (bfCOSObjectKeyOffsets.ContainsKey(key))
                         {
