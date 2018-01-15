@@ -112,6 +112,42 @@
             Assert.Equal(expected, AssertNameToken(token).Data.Name);
         }
 
+        [Fact]
+        public void IgnoredInvalidHex()
+        {
+            var input = StringBytesTestConverter.Convert("/Invalid#AZBadHex");
+
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            Assert.True(result);
+
+            Assert.Equal("Invalid#AZBadHex", AssertNameToken(token).Data.Name);
+        }
+
+        [Fact]
+        public void IgnoreInvalidSingleHex()
+        {
+            var input = StringBytesTestConverter.Convert("/Invalid#Z");
+
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            Assert.True(result);
+
+            Assert.Equal("Invalid#Z", AssertNameToken(token).Data.Name);
+        }
+
+        [Fact]
+        public void EndsNameFollowingInvalidHex()
+        {
+            var input = StringBytesTestConverter.Convert("/Hex#/Name");
+
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            Assert.True(result);
+
+            Assert.Equal("Hex#", AssertNameToken(token).Data.Name);
+        }
+
         private static NameToken AssertNameToken(IToken token)
         {
             Assert.NotNull(token);

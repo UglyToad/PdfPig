@@ -25,7 +25,7 @@
             bool escapeActive = false;
             int postEscapeRead = 0;
             var escapedChars = new char[2];
-            
+
             while (inputBytes.MoveNext())
             {
                 var b = inputBytes.CurrentByte;
@@ -43,16 +43,10 @@
 
                         if (postEscapeRead == 2)
                         {
-                            string hex = new string(escapedChars);
-                            try
-                            {
-                                var characterToWrite = (byte)Convert.ToInt32(hex, 16);
-                                bytes.Add(characterToWrite);
-                            }
-                            catch (FormatException e)
-                            {
-                                throw new InvalidOperationException("Error: expected hex digit, actual='" + hex + "'", e);
-                            }
+                            var hex = new string(escapedChars);
+
+                            var characterToWrite = (byte)Convert.ToInt32(hex, 16);
+                            bytes.Add(characterToWrite);
 
                             escapeActive = false;
                             postEscapeRead = 0;
