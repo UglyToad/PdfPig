@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tokenization.Tokens
 {
+    using System;
     using System.Collections.Generic;
     using System.Text;
 
@@ -9,16 +10,25 @@
 
         public ArrayToken(IReadOnlyList<IToken> data)
         {
-            Data = data;
+            Data = data ?? throw new ArgumentNullException(nameof(data));
         }
 
         public override string ToString()
         {
             var builder = new StringBuilder("[ ");
 
-            foreach (var token in Data)
+            for (var i = 0; i < Data.Count; i++)
             {
-                builder.Append(token).Append(' ');
+                var token = Data[i];
+
+                builder.Append(token);
+
+                if (i < Data.Count - 1)
+                {
+                    builder.Append(',');
+                }
+
+                builder.Append(' ');
             }
 
             builder.Append(']');

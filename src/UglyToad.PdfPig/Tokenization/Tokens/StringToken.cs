@@ -11,7 +11,7 @@ namespace UglyToad.PdfPig.Tokenization.Tokens
 
         public override string ToString()
         {
-            return $"\"{Data}\"";
+            return $"({Data})";
         }
     }
 }
