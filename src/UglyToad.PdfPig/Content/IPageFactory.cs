@@ -1,13 +1,13 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using ContentStream;
     using IO;
+    using Tokenization.Tokens;
 
     internal interface IPageFactory
     {
-        Page Create(int number, PdfDictionary dictionary, PageTreeMembers pageTreeMembers, IRandomAccessRead reader,
+        Page Create(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers, IRandomAccessRead reader,
             bool isLenientParsing);
 
-        void LoadResources(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing);
+        void LoadResources(DictionaryToken dictionary, bool isLenientParsing);
     }
 }

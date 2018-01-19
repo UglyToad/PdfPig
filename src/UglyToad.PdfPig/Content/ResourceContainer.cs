@@ -3,62 +3,40 @@
     using System;
     using System.Collections.Generic;
     using ContentStream;
-    using Cos;
     using Fonts;
-    using IO;
-    using Parser;
     using Parser.Parts;
+    using Tokenization.Scanner;
+    using Tokenization.Tokens;
 
     internal class ResourceContainer : IResourceStore
     {
-        private readonly IPdfObjectParser pdfObjectParser;
+        private readonly IPdfObjectScanner scanner;
         private readonly IFontFactory fontFactory;
 
         private readonly Dictionary<IndirectReference, IFont> loadedFonts = new Dictionary<IndirectReference, IFont>();
-        private readonly Dictionary<CosName, IndirectReference> currentResourceState = new Dictionary<CosName, IndirectReference>();
+        private readonly Dictionary<NameToken, IndirectReference> currentResourceState = new Dictionary<NameToken, IndirectReference>();
 
-        public ResourceContainer(IPdfObjectParser pdfObjectParser, IFontFactory fontFactory)
+        public ResourceContainer(IPdfObjectScanner scanner, IFontFactory fontFactory)
         {
-            this.pdfObjectParser = pdfObjectParser;
+            this.scanner = scanner;
             this.fontFactory = fontFactory;
         }
 
-        public void LoadResourceDictionary(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        public void LoadResourceDictionary(DictionaryToken resourceDictionary, bool isLenientParsing)
         {
-            if (dictionary.TryGetValue(CosName.FONT, out var fontBase))
+            if (resourceDictionary.TryGet(NameToken.Font, out var fontBase))
             {
-                PdfDictionary fontDictionary;
-                if (fontBase is CosObject obj)
-                {
-                    var parsedObj = pdfObjectParser.Parse(obj.ToIndirectReference(), reader, isLenientParsing);
-
-                    if (parsedObj is PdfDictionary indirectFontDictionary)
-                    {
-                        fontDictionary = indirectFontDictionary;
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException($"No font dictionary could be found for the dictionary {dictionary}.");
-                    }
-                }
-                else if (fontBase is PdfDictionary directDictionary)
-                {
-                    fontDictionary = directDictionary;
-                }
-                else
-                {
-                    throw new InvalidOperationException($"No font dictionary could be found for the dictionary {dictionary}");
-                }
-
-                LoadFontDictionary(fontDictionary, reader, isLenientParsing);
+                var fontDictionary = DirectObjectFinder.Get<DictionaryToken>(fontBase, scanner);
+                
+                LoadFontDictionary(fontDictionary, isLenientParsing);
             }
         }
 
-        private void LoadFontDictionary(PdfDictionary fontDictionary, IRandomAccessRead reader, bool isLenientParsing)
+        private void LoadFontDictionary(DictionaryToken fontDictionary, bool isLenientParsing)
         {
-            foreach (var pair in fontDictionary)
+            foreach (var pair in fontDictionary.Data)
             {
-                if (!(pair.Value is CosObject objectKey))
+                if (!(pair.Value is IndirectReferenceToken objectKey))
                 {
                     if (isLenientParsing)
                     {
@@ -68,27 +46,27 @@
                     throw new InvalidOperationException($"The font with name {pair.Key} did not link to an object key. Value was: {pair.Value}.");
                 }
 
-                var reference = objectKey.ToIndirectReference();
+                var reference = objectKey.Data;
 
-                currentResourceState[pair.Key] = reference;
+                currentResourceState[NameToken.Create(pair.Key)] = reference;
 
                 if (loadedFonts.ContainsKey(reference))
                 {
                     continue;
                 }
                 
-                var fontObject = DirectObjectFinder.Find<PdfDictionary>(objectKey, pdfObjectParser, reader, false);
+                var fontObject = DirectObjectFinder.Get<DictionaryToken>(objectKey, scanner);
 
                 if (fontObject == null)
                 {
-                    throw new InvalidOperationException($"Could not retrieve the font with name: {pair.Key} which should have been object {objectKey.GetObjectNumber()}");
+                    throw new InvalidOperationException($"Could not retrieve the font with name: {pair.Key} which should have been object {objectKey}");
                 }
 
-                loadedFonts[reference] = fontFactory.Get(fontObject, reader, isLenientParsing);
+                loadedFonts[reference] = fontFactory.Get(fontObject, isLenientParsing);
             }
         }
         
-        public IFont GetFont(CosName name)
+        public IFont GetFont(NameToken name)
         {
             var reference = currentResourceState[name];
 

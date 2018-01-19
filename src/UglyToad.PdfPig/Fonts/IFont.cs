@@ -1,13 +1,13 @@
 ﻿namespace UglyToad.PdfPig.Fonts
 {
     using Core;
-    using Cos;
     using Geometry;
     using IO;
+    using Tokenization.Tokens;
 
     internal interface IFont
     {
-        CosName Name { get; }
+        NameToken Name { get; }
         
         bool IsVertical { get; }
 

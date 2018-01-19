@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CidFonts
 {
     using Core;
-    using Cos;
+    using Tokenization.Tokens;
 
     /// <inheritdoc/>
     /// <summary>
@@ -10,9 +10,9 @@
     /// </summary>
     internal class Type0CidFont : ICidFont
     {
-        public CosName Type { get; }
-        public CosName SubType { get; }
-        public CosName BaseFont { get; }
+        public NameToken Type { get; }
+        public NameToken SubType { get; }
+        public NameToken BaseFont { get; }
         public CharacterIdentifierSystemInfo SystemInfo { get; }
         public TransformationMatrix FontMatrix { get; }
         public CidFontType CidFontType => CidFontType.Type0;

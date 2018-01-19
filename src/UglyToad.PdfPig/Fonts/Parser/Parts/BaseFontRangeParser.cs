@@ -69,7 +69,7 @@
 
                         if (destination is NameToken name)
                         {
-                            builder.AddBaseFontCharacter(startCode, name.Data.Name);
+                            builder.AddBaseFontCharacter(startCode, name.Data);
                         }
                         else if (destination is HexToken hex)
                         {

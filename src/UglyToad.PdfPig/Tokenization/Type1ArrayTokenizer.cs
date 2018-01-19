@@ -54,7 +54,7 @@
 
                 if (part[0] == '/')
                 {
-                    tokens.Add(new NameToken(part.Substring(1)));
+                    tokens.Add(NameToken.Create(part.Substring(1)));
                     continue;
                 }
 

@@ -1,10 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Fonts
 {
-    using ContentStream;
-    using IO;
+    using Tokenization.Tokens;
 
     internal interface IFontFactory
     {
-        IFont Get(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing);
+        IFont Get(DictionaryToken dictionary, bool isLenientParsing);
     }
 }

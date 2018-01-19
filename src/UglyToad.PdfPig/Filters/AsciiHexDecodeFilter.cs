@@ -2,7 +2,7 @@
 {
     using System;
     using System.IO;
-    using ContentStream;
+    using Tokenization.Tokens;
 
     internal class AsciiHexDecodeFilter : IFilter
     {
@@ -21,7 +21,7 @@
             /* 100 */  13, 14, 15
         };
 
-        public byte[] Decode(byte[] input, PdfDictionary streamDictionary, int filterIndex)
+        public byte[] Decode(byte[] input, DictionaryToken streamDictionary, int filterIndex)
         {
             var pair = new byte[2];
             var index = 0;

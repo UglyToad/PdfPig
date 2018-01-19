@@ -4,9 +4,9 @@
     using CidFonts;
     using Cmap;
     using Core;
-    using Cos;
     using Geometry;
     using IO;
+    using Tokenization.Tokens;
     using Util.JetBrains.Annotations;
 
     /// <summary>
@@ -14,10 +14,10 @@
     /// </summary>
     internal class Type0Font : IFont
     {
-        public CosName Name => BaseFont;
+        public NameToken Name => BaseFont;
 
         [NotNull]
-        public CosName BaseFont { get; }
+        public NameToken BaseFont { get; }
 
         [NotNull]
         public ICidFont CidFont { get; }
@@ -30,7 +30,7 @@
 
         public bool IsVertical => CMap.WritingMode == WritingMode.Vertical;
 
-        public Type0Font(CosName baseFont, ICidFont cidFont, CMap cmap, CMap toUnicodeCMap)
+        public Type0Font(NameToken baseFont, ICidFont cidFont, CMap cmap, CMap toUnicodeCMap)
         {
             BaseFont = baseFont ?? throw new ArgumentNullException(nameof(baseFont));
             CidFont = cidFont ?? throw new ArgumentNullException(nameof(cidFont));

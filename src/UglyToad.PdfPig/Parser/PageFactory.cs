@@ -5,33 +5,33 @@
     using System.Diagnostics;
     using System.Linq;
     using Content;
-    using ContentStream;
-    using Cos;
     using Exceptions;
     using Filters;
     using Geometry;
     using Graphics;
     using IO;
     using Parts;
+    using Tokenization.Scanner;
+    using Tokenization.Tokens;
     using Util;
 
     internal class PageFactory : IPageFactory
     {
         private readonly IResourceStore resourceStore;
-        private readonly IPdfObjectParser pdfObjectParser;
         private readonly IFilterProvider filterProvider;
         private readonly IPageContentParser pageContentParser;
+        private readonly IPdfObjectScanner pdfScanner;
 
-        public PageFactory(IResourceStore resourceStore, IPdfObjectParser pdfObjectParser, IFilterProvider filterProvider,
-            IPageContentParser pageContentParser)
+        public PageFactory(IResourceStore resourceStore, IFilterProvider filterProvider,
+            IPageContentParser pageContentParser, IPdfObjectScanner pdfScanner)
         {
             this.resourceStore = resourceStore;
-            this.pdfObjectParser = pdfObjectParser;
             this.filterProvider = filterProvider;
             this.pageContentParser = pageContentParser;
+            this.pdfScanner = pdfScanner;
         }
 
-        public Page Create(int number, PdfDictionary dictionary, PageTreeMembers pageTreeMembers, IRandomAccessRead reader,
+        public Page Create(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers, IRandomAccessRead reader,
             bool isLenientParsing)
         {
             if (dictionary == null)
@@ -39,9 +39,9 @@
                 throw new ArgumentNullException(nameof(dictionary));
             }
 
-            var type = dictionary.GetName(CosName.TYPE);
+            var type = dictionary.GetNameOrDefault(NameToken.Type);
 
-            if (type != null && !type.Equals(CosName.PAGE) && !isLenientParsing)
+            if (type != null && !type.Equals(NameToken.Page) && !isLenientParsing)
             {
                 throw new InvalidOperationException($"Page {number} had its type was specified as {type} rather than 'Page'.");
             }
@@ -51,37 +51,27 @@
             
             UserSpaceUnit userSpaceUnit = GetUserSpaceUnits(dictionary);
 
-            LoadResources(dictionary, reader, isLenientParsing);
+            LoadResources(dictionary, isLenientParsing);
 
             PageContent content = default(PageContent);
 
-            var contents = dictionary.GetItemOrDefault(CosName.CONTENTS);
-            if (contents is CosObject contentObject)
+            if (!dictionary.TryGet(NameToken.Contents, out var contents))
             {
-                var contentStream = DirectObjectFinder.Find<PdfRawStream>(contentObject, pdfObjectParser,  reader, false);
-
-                if (contentStream == null)
-                {
-                    throw new InvalidOperationException("Failed to parse the content for the page: " + number);
-                }
-
-                var bytes = contentStream.Decode(filterProvider);
-
-                content = GetContent(bytes, cropBox, userSpaceUnit, isLenientParsing);
+                 // ignored for now, is it possible? check the spec...
             }
-            else if (contents is COSArray arr)
+            else if (contents is ArrayToken array)
             {
                 var bytes = new List<byte>();
                 
-                foreach (var item in arr)
+                foreach (var item in array.Data)
                 {
-                    var obj = item as CosObject;
+                    var obj = item as IndirectReferenceToken;
                     if (obj == null)
                     {
                         throw new PdfDocumentFormatException($"The contents contained something which was not an indirect reference: {item}.");
                     }
 
-                    var contentStream = DirectObjectFinder.Find<PdfRawStream>(obj, pdfObjectParser, reader, isLenientParsing);
+                    var contentStream = DirectObjectFinder.Get<StreamToken>(obj, pdfScanner);
                     
                     if (contentStream == null)
                     {
@@ -90,6 +80,19 @@
 
                     bytes.AddRange(contentStream.Decode(filterProvider));
                 }
+
+                content = GetContent(bytes, cropBox, userSpaceUnit, isLenientParsing);
+            }
+            else
+            { 
+                var contentStream = DirectObjectFinder.Get<StreamToken>(contents, pdfScanner);
+
+                if (contentStream == null)
+                {
+                    throw new InvalidOperationException("Failed to parse the content for the page: " + number);
+                }
+
+                var bytes = contentStream.Decode(filterProvider);
 
                 content = GetContent(bytes, cropBox, userSpaceUnit, isLenientParsing);
             }
@@ -113,26 +116,26 @@
             return context.Process(operations);
         }
 
-        private static UserSpaceUnit GetUserSpaceUnits(PdfDictionary dictionary)
+        private static UserSpaceUnit GetUserSpaceUnits(DictionaryToken dictionary)
         {
             var spaceUnits = UserSpaceUnit.Default;
-            if (dictionary.TryGetValue(CosName.USER_UNIT, out var userUnitCosBase) && userUnitCosBase is ICosNumber userUnitNumber)
+            if (dictionary.TryGet(NameToken.UserUnit, out var userUnitBase) && userUnitBase is NumericToken userUnitNumber)
             {
-                spaceUnits = new UserSpaceUnit(userUnitNumber.AsInt());
+                spaceUnits = new UserSpaceUnit(userUnitNumber.Int);
             }
 
             return spaceUnits;
         }
 
-        private static CropBox GetCropBox(PdfDictionary dictionary, PageTreeMembers pageTreeMembers, MediaBox mediaBox)
+        private static CropBox GetCropBox(DictionaryToken dictionary, PageTreeMembers pageTreeMembers, MediaBox mediaBox)
         {
             CropBox cropBox;
-            if (dictionary.TryGetItemOfType(CosName.CROP_BOX, out COSArray cropBoxArray))
+            if (dictionary.TryGet(NameToken.CropBox, out var cropBoxObject) && cropBoxObject is ArrayToken cropBoxArray)
             {
-                var x1 = cropBoxArray.getInt(0);
-                var y1 = cropBoxArray.getInt(1);
-                var x2 = cropBoxArray.getInt(2);
-                var y2 = cropBoxArray.getInt(3);
+                var x1 = cropBoxArray.GetNumeric(0).Data;
+                var y1 = cropBoxArray.GetNumeric(1).Data;
+                var x2 = cropBoxArray.GetNumeric(2).Data;
+                var y2 = cropBoxArray.GetNumeric(3).Data;
 
                 cropBox = new CropBox(new PdfRectangle(x1, y1, x2, y2));
             }
@@ -144,15 +147,15 @@
             return cropBox;
         }
 
-        private static MediaBox GetMediaBox(int number, PdfDictionary dictionary, PageTreeMembers pageTreeMembers, bool isLenientParsing)
+        private static MediaBox GetMediaBox(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers, bool isLenientParsing)
         {
             MediaBox mediaBox;
-            if (dictionary.TryGetItemOfType(CosName.MEDIA_BOX, out COSArray mediaboxArray))
+            if (dictionary.TryGet(NameToken.MediaBox, out var mediaboxObject) && mediaboxObject is ArrayToken mediaboxArray)
             {
-                var x1 = mediaboxArray.getInt(0);
-                var y1 = mediaboxArray.getInt(1);
-                var x2 = mediaboxArray.getInt(2);
-                var y2 = mediaboxArray.getInt(3);
+                var x1 = mediaboxArray.GetNumeric(0).Data;
+                var y1 = mediaboxArray.GetNumeric(1).Data;
+                var x2 = mediaboxArray.GetNumeric(2).Data;
+                var y2 = mediaboxArray.GetNumeric(3).Data;
 
                 mediaBox = new MediaBox(new PdfRectangle(x1, y1, x2, y2));
             }
@@ -176,26 +179,16 @@
             return mediaBox;
         }
 
-        public void LoadResources(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        public void LoadResources(DictionaryToken dictionary, bool isLenientParsing)
         {
-            var resources = dictionary.GetItemOrDefault(CosName.RESOURCES);
-
-            if (resources is PdfDictionary resource)
+            if (!dictionary.TryGet(NameToken.Resources, out var token))
             {
-                resourceStore.LoadResourceDictionary(resource, reader, isLenientParsing);
-
                 return;
             }
 
-            if (resources is CosObject resourceObject)
-            {
-                var resourceDictionary = DirectObjectFinder.Find<PdfDictionary>(resourceObject, pdfObjectParser, reader, isLenientParsing);
+            var resources = DirectObjectFinder.Get<DictionaryToken>(token, pdfScanner);
 
-                if (resourceDictionary is PdfDictionary resolvedDictionary)
-                {
-                    resourceStore.LoadResourceDictionary(resolvedDictionary, reader, isLenientParsing);
-                }
-            }
+            resourceStore.LoadResourceDictionary(resources, isLenientParsing);
         }
     }
 }

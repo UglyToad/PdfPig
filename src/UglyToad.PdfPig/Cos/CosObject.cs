@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Cos
 {
+    using System.Diagnostics;
     using ContentStream;
 
     internal class CosObject : CosBase, ICosUpdateInfo
@@ -122,6 +123,7 @@
 
         public bool NeedsToBeUpdated { get; set; }
 
+        [DebuggerStepThrough]
         public IndirectReference ToIndirectReference()
         {
             return new IndirectReference(objectNumber, generationNumber);

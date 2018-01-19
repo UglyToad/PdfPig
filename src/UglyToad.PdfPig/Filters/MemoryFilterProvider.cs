@@ -11,7 +11,7 @@
 
     internal class MemoryFilterProvider : IFilterProvider
     {
-        private readonly IReadOnlyDictionary<CosName, Func<IFilter>> filterFactories; 
+        private readonly IReadOnlyDictionary<string, Func<IFilter>> filterFactories; 
 
         public MemoryFilterProvider(IDecodeParameterResolver decodeParameterResolver, IPngPredictor pngPredictor, ILog log)
         {
@@ -20,16 +20,16 @@
             IFilter FlateFunc() => new FlateFilter(decodeParameterResolver, pngPredictor, log);
             IFilter RunLengthFunc() => new RunLengthFilter();
 
-            filterFactories = new Dictionary<CosName, Func<IFilter>>
+            filterFactories = new Dictionary<string, Func<IFilter>>
             {
-                {CosName.ASCII85_DECODE, Ascii85Func},
-                {CosName.ASCII85_DECODE_ABBREVIATION, Ascii85Func},
-                {CosName.ASCII_HEX_DECODE, AsciiHexFunc},
-                {CosName.ASCII_HEX_DECODE_ABBREVIATION, AsciiHexFunc},
-                {CosName.FLATE_DECODE, FlateFunc},
-                {CosName.FLATE_DECODE_ABBREVIATION, FlateFunc},
-                {CosName.RUN_LENGTH_DECODE, RunLengthFunc},
-                {CosName.RUN_LENGTH_DECODE_ABBREVIATION, RunLengthFunc}
+                {NameToken.Ascii85Decode.Data, Ascii85Func},
+                {NameToken.Ascii85DecodeAbbreviation.Data, Ascii85Func},
+                {NameToken.AsciiHexDecode.Data, AsciiHexFunc},
+                {NameToken.AsciiHexDecodeAbbreviation.Data, AsciiHexFunc},
+                {NameToken.FlateDecode.Data, FlateFunc},
+                {NameToken.FlateDecodeAbbreviation.Data, FlateFunc},
+                {NameToken.RunLengthDecode.Data, RunLengthFunc},
+                {NameToken.RunLengthDecodeAbbreviation.Data, RunLengthFunc}
             };
         }
 
@@ -40,7 +40,7 @@
                 throw new ArgumentNullException(nameof(dictionary));
             }
 
-            if (!dictionary.TryGetByName(CosName.FILTER, out var token))
+            if (!dictionary.TryGet(NameToken.Filter, out var token))
             {
                 return new IFilter[0];
             }
@@ -57,6 +57,7 @@
             }
         }
 
+        [Obsolete]
         public IReadOnlyList<IFilter> GetFilters(PdfDictionary streamDictionary)
         {
             if (streamDictionary == null)
@@ -75,16 +76,16 @@
             {
                 case COSArray filters:
                     // TODO: presumably this may be invalid...
-                    return filters.Select(x => GetFilterStrict((CosName) x)).ToList();
+                    return filters.Select(x => GetFilterStrict(((CosName) x).Name)).ToList();
                 case CosName name:
-                    return new[] {GetFilterStrict(name)};
+                    return new[] {GetFilterStrict(name.Name)};
                 default:
                     throw new InvalidOperationException("The filter for a stream may be either a string or an array, instead this Pdf has: " 
                                                         + filterObject.GetType());
             }
         }
 
-        private IFilter GetFilterStrict(CosName name)
+        private IFilter GetFilterStrict(string name)
         {
             if (!filterFactories.TryGetValue(name, out var factory))
             {

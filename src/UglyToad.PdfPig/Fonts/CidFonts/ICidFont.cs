@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CidFonts
 {
     using Core;
-    using Cos;
+    using Tokenization.Tokens;
 
     /// <summary>
     /// A CID font contains glyph descriptions accessed by 
@@ -14,19 +14,19 @@
     internal interface ICidFont
     {
         /// <summary>
-        /// <see cref="CosName.FONT"/>
+        /// <see cref="NameToken.Font"/>
         /// </summary>
-        CosName Type { get; }
+        NameToken Type { get; }
 
         /// <summary>
         /// Either Type0 (Adobe Type 1 font) or Type2 (TrueType font).
         /// </summary>
-        CosName SubType { get; }
+        NameToken SubType { get; }
 
         /// <summary>
         /// The PostScript name of the CIDFont.
         /// </summary>
-        CosName BaseFont { get; }
+        NameToken BaseFont { get; }
 
         /// <summary>
         /// The definition of the character collection for the font.

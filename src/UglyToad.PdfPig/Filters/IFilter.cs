@@ -1,9 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
-    using ContentStream;
+    using Tokenization.Tokens;
 
     internal interface IFilter
     {
-        byte[] Decode(byte[] input, PdfDictionary streamDictionary, int filterIndex);
+        byte[] Decode(byte[] input, DictionaryToken streamDictionary, int filterIndex);
     }
 }

@@ -1,10 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
     using System;
-    using ContentStream;
-    using ContentStream.TypedAccessors;
-    using Cos;
+    using System.Collections.Generic;
     using Logging;
+    using Tokenization.Tokens;
 
     internal class DecodeParameterResolver : IDecodeParameterResolver
     {
@@ -15,7 +14,7 @@
             this.log = log;
         }
 
-        public PdfDictionary GetFilterParameters(PdfDictionary streamDictionary, int index)
+        public DictionaryToken GetFilterParameters(DictionaryToken streamDictionary, int index)
         {
             if (streamDictionary == null)
             {
@@ -27,22 +26,22 @@
                 throw new ArgumentOutOfRangeException(nameof(index), "Index must be 0 or greater");
             }
 
-            var filter = streamDictionary.GetDictionaryObject(CosName.FILTER, CosName.F);
+            var filter = GetDictionaryObject(streamDictionary, NameToken.Filter, NameToken.F);
 
-            var parameters = streamDictionary.GetDictionaryObject(CosName.DECODE_PARMS, CosName.DP);
+            var parameters = GetDictionaryObject(streamDictionary, NameToken.DecodeParms, NameToken.Dp);
 
             switch (filter)
             {
-                case CosName _:
-                    if (parameters is PdfDictionary dict)
+                case NameToken _:
+                    if (parameters is DictionaryToken dict)
                     {
                         return dict;
                     }
                     break;
-                case COSArray array:
-                    if (parameters is COSArray arr)
+                case ArrayToken array:
+                    if (parameters is ArrayToken arr)
                     {
-                        if (index < arr.size() && array.getObject(index) is PdfDictionary dictionary)
+                        if (index < arr.Data.Count && array.Data[index] is DictionaryToken dictionary)
                         {
                             return dictionary;
                         }
@@ -56,7 +55,22 @@
                     break;
             }
 
-            return new PdfDictionary();
+            return new DictionaryToken(new Dictionary<IToken, IToken>());
+        }
+
+        private static IToken GetDictionaryObject(DictionaryToken dictionary, NameToken first, NameToken second)
+        {
+            if (dictionary.TryGet(first, out var token))
+            {
+                return token;
+            }
+
+            if (dictionary.TryGet(second, out token))
+            {
+                return token;
+            }
+
+            return null;
         }
     }
 }

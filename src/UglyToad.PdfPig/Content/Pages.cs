@@ -2,31 +2,27 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
-    using ContentStream;
-    using ContentStream.TypedAccessors;
-    using Cos;
     using IO;
     using Logging;
-    using Parser;
     using Parser.Parts;
     using Tokenization.Scanner;
+    using Tokenization.Tokens;
+    using Util;
 
     internal class Pages
     {
         private readonly ILog log;
         private readonly Catalog catalog;
-        private readonly IPdfObjectParser pdfObjectParser;
         private readonly IPageFactory pageFactory;
         private readonly IRandomAccessRead reader;
         private readonly bool isLenientParsing;
         private readonly IPdfObjectScanner pdfScanner;
-        private readonly PdfDictionary rootPageDictionary;
-        private readonly Dictionary<int, PdfDictionary> locatedPages = new Dictionary<int, PdfDictionary>();
+        private readonly DictionaryToken rootPageDictionary;
+        private readonly Dictionary<int, DictionaryToken> locatedPages = new Dictionary<int, DictionaryToken>();
 
         public int Count { get; }
 
-        internal Pages(ILog log, Catalog catalog, IPdfObjectParser pdfObjectParser, IPageFactory pageFactory,
+        internal Pages(ILog log, Catalog catalog, IPageFactory pageFactory,
             IRandomAccessRead reader, bool isLenientParsing, IPdfObjectScanner pdfScanner)
         {
             if (catalog == null)
@@ -36,20 +32,19 @@
 
             rootPageDictionary = catalog.PagesDictionary;
 
-            Count = rootPageDictionary.GetIntOrDefault(CosName.COUNT);
+            Count = rootPageDictionary.GetIntOrDefault(NameToken.Count);
 
             this.log = log;
             this.catalog = catalog;
-            this.pdfObjectParser = pdfObjectParser;
             this.pageFactory = pageFactory;
             this.reader = reader;
             this.isLenientParsing = isLenientParsing;
             this.pdfScanner = pdfScanner;
         }
-
+        
         public Page GetPage(int pageNumber)
         {
-            if (locatedPages.TryGetValue(pageNumber, out PdfDictionary targetPageDictionary))
+            if (locatedPages.TryGetValue(pageNumber, out DictionaryToken targetPageDictionary))
             {
                 // TODO: cache the page
                 return pageFactory.Create(pageNumber, targetPageDictionary, new PageTreeMembers(), reader,
@@ -83,11 +78,11 @@
             return pages[pages.Count - 1] + 1;
         }
 
-        public bool FindPage(PdfDictionary currentPageDictionary, int soughtPageNumber, List<int> pageNumbersObserved)
+        public bool FindPage(DictionaryToken currentPageDictionary, int soughtPageNumber, List<int> pageNumbersObserved)
         {
-            var type = currentPageDictionary.GetName(CosName.TYPE);
+            var type = currentPageDictionary.GetNameOrDefault(NameToken.Type);
 
-            if (type.Equals(CosName.PAGE))
+            if (type?.Equals(NameToken.Page) == true)
             {
                 var pageNumber = GetNextPageNumber(pageNumbersObserved);
 
@@ -99,22 +94,26 @@
                 return found;
             }
 
-            if (!type.Equals(CosName.PAGES))
+            if (type?.Equals(NameToken.Pages) != true)
             {
                 log.Warn("Did not find the expected type (Page or Pages) in dictionary: " + currentPageDictionary);
 
                 return false;
             }
 
-            var kids = currentPageDictionary.GetDictionaryObject(CosName.KIDS) as COSArray;
-
-            pageFactory.LoadResources(currentPageDictionary, reader, isLenientParsing);
+            if (!currentPageDictionary.TryGet(NameToken.Kids, out var kids)
+            || !(kids is ArrayToken kidsArray))
+            {
+                return false;
+            }
+            
+            pageFactory.LoadResources(currentPageDictionary, isLenientParsing);
 
             bool childFound = false;
-            foreach (var kid in kids.OfType<CosObject>())
+            foreach (var kid in kidsArray.Data)
             {
                 // todo: exit early
-                var child = DirectObjectFinder.Find<PdfDictionary>(kid, pdfObjectParser, reader, isLenientParsing);
+                var child = DirectObjectFinder.Get<DictionaryToken>(kid, pdfScanner);
                 
                 var thisPageMatches = FindPage(child, soughtPageNumber, pageNumbersObserved);
 
@@ -131,11 +130,6 @@
         public IReadOnlyList<Page> GetAllPages()
         {
             return new Page[0];
-        }
-
-        public void LoadAll()
-        {
-
         }
     }
 }

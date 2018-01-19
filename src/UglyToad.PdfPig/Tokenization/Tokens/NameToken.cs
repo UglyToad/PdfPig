@@ -1,19 +1,53 @@
 ﻿namespace UglyToad.PdfPig.Tokenization.Tokens
 {
-    using Cos;
+    using System.Collections.Concurrent;
 
-    internal class NameToken : IDataToken<CosName>
+    internal partial class NameToken : IDataToken<string>
     {
-        public CosName Data { get; }
+        private static readonly ConcurrentDictionary<string, NameToken> NameMap = new ConcurrentDictionary<string, NameToken>();
 
-        public NameToken(string text)
+        public string Data { get; }
+
+        private NameToken(string text)
         {
-            Data = CosName.Create(text);
+            NameMap[text] = this;
+
+            Data = text;
+        }
+
+        public static NameToken Create(string name)
+        {
+            if (!NameMap.TryGetValue(name, out var value))
+            {
+                return new NameToken(name);
+            }
+
+            return value;
+        }
+        
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as NameToken);
+        }
+
+        public bool Equals(NameToken other)
+        {
+            return string.Equals(Data, other?.Data);
+        }
+
+        public override int GetHashCode()
+        {
+            return Data.GetHashCode();
+        }
+
+        public static implicit operator string(NameToken name)
+        {
+            return name?.Data;
         }
 
         public override string ToString()
         {
-            return Data.ToString();
+            return Data;
         }
     }
 }

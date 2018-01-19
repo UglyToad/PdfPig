@@ -2,7 +2,7 @@
 {
     using System;
     using Content;
-    using Cos;
+    using Tokenization.Tokens;
     using Util.JetBrains.Annotations;
 
     internal class SetFontAndSize : IGraphicsStateOperation
@@ -15,7 +15,7 @@
         /// The name of the font as defined in the resource dictionary.
         /// </summary>
         [NotNull]
-        public CosName Font { get; }
+        public NameToken Font { get; }
 
         /// <summary>
         /// The font program defines glyphs for a standard size. This standard size is set so that each line of text will occupy 1 unit in user space.
@@ -23,7 +23,7 @@
         /// </summary>
         public decimal Size { get; }
 
-        public SetFontAndSize(CosName font, decimal size)
+        public SetFontAndSize(NameToken font, decimal size)
         {
             Font = font ?? throw new ArgumentNullException(nameof(font));
             Size = size;

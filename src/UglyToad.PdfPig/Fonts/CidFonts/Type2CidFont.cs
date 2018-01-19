@@ -2,7 +2,7 @@
 {
     using System.Collections.Generic;
     using Core;
-    using Cos;
+    using Tokenization.Tokens;
 
     /// <inheritdoc />
     /// <summary>
@@ -15,15 +15,15 @@
         private readonly VerticalWritingMetrics verticalWritingMetrics;
         private readonly IReadOnlyDictionary<int, decimal> widths;
 
-        public CosName Type { get; }
-        public CosName SubType { get; }
-        public CosName BaseFont { get; }
+        public NameToken Type { get; }
+        public NameToken SubType { get; }
+        public NameToken BaseFont { get; }
         public CharacterIdentifierSystemInfo SystemInfo { get; }
         public TransformationMatrix FontMatrix { get; }
         public CidFontType CidFontType => CidFontType.Type2;
         public FontDescriptor Descriptor { get; }
 
-        public Type2CidFont(CosName type, CosName subType, CosName baseFont, CharacterIdentifierSystemInfo systemInfo, 
+        public Type2CidFont(NameToken type, NameToken subType, NameToken baseFont, CharacterIdentifierSystemInfo systemInfo, 
             FontDescriptor descriptor, ICidFontProgram fontProgram,
             VerticalWritingMetrics verticalWritingMetrics,
             IReadOnlyDictionary<int, decimal> widths)

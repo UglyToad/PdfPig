@@ -3,7 +3,6 @@
     using System;
     using System.IO;
     using Content;
-    using ContentStream;
     using Cos;
     using Exceptions;
     using FileStructure;
@@ -99,22 +98,11 @@
 
             var pageFactory = new PageFactory(resourceContainer, pdfObjectParser, filterProvider, new PageContentParser(new ReflectionGraphicsStateOperationFactory()));
             var informationFactory = new DocumentInformationFactory();
-            var catalogFactory = new CatalogFactory(pdfObjectParser);
+            var catalogFactory = new CatalogFactory(pdfScanner);
 
-            var root = ParseTrailer(reader, crossReferenceTable, dynamicParser, bruteForceSearcher, pool,
-                isLenientParsing);
-
-            if (!(root is PdfDictionary rootDictionary))
-            {
-                throw new PdfDocumentFormatException("Expected root dictionary, but got this: " + root);
-            }
-
-            // in some pdfs the type value "Catalog" is missing in the root object
-            if (isLenientParsing && !rootDictionary.ContainsKey(CosName.TYPE))
-            {
-                rootDictionary.Set(CosName.TYPE, CosName.CATALOG);
-            }
-
+            var rootDictionary = ParseTrailer(reader, crossReferenceTable, dynamicParser, bruteForceSearcher, pool,
+                isLenientParsing, pdfScanner);
+            
             var information = informationFactory.Create(pdfObjectParser, crossReferenceTable.Dictionary, reader, isLenientParsing);
 
             var catalog = catalogFactory.Create(rootDictionary, reader, isLenientParsing);
@@ -126,34 +114,43 @@
                 pdfScanner);
         }
 
-        private static CosBase ParseTrailer(IRandomAccessRead reader, CrossReferenceTable crossReferenceTable,
-            DynamicParser dynamicParser, BruteForceSearcher bruteForceSearcher, CosObjectPool pool, bool isLenientParsing)
+        private static DictionaryToken ParseTrailer(IRandomAccessRead reader, CrossReferenceTable crossReferenceTable,
+            DynamicParser dynamicParser, BruteForceSearcher bruteForceSearcher, CosObjectPool pool, bool isLenientParsing, IPdfObjectScanner pdfObjectScanner)
         {
             if (crossReferenceTable.Dictionary.ContainsKey(CosName.ENCRYPT))
             {
                 throw new NotSupportedException("Cannot currently parse a document using encryption: " + crossReferenceTable.Dictionary);
             }
 
-            foreach (var value in crossReferenceTable.Dictionary.Values)
+            foreach (var keyValuePair in crossReferenceTable.Dictionary)
             {
-                if (value is CosObject temporaryObject)
+                if (keyValuePair.Value is CosObject temporaryObject && !keyValuePair.Key.Equals(CosName.ROOT))
                 {
                     // Loads these objects into the object pool for access later.
                     dynamicParser.Parse(reader, temporaryObject, pool, crossReferenceTable, bruteForceSearcher,
                         isLenientParsing, false);
                 }
             }
-
+            
             CosObject root = (CosObject)crossReferenceTable.Dictionary.GetItemOrDefault(CosName.ROOT);
             if (root == null)
             {
                 throw new InvalidOperationException("Missing root object specification in trailer.");
             }
 
-            var rootObject = dynamicParser.Parse(reader, root, pool, crossReferenceTable, bruteForceSearcher,
-                isLenientParsing, false);
+            var obj = pdfObjectScanner.Get(root.ToIndirectReference());
 
-            return rootObject;
+            if (!(obj.Data is DictionaryToken rootDictionary))
+            {
+                throw new PdfDocumentFormatException($"Could not find the root dictionary, instead found: {obj.Data}");
+            }
+
+            if (!rootDictionary.ContainsKey(NameToken.Type) && isLenientParsing)
+            {
+                rootDictionary = rootDictionary.With(NameToken.Type, NameToken.Catalog);
+            }
+
+            return rootDictionary;
         }
     }
 }

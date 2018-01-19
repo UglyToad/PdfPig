@@ -2,36 +2,35 @@
 {
     using System;
     using System.Collections.Generic;
-    using ContentStream;
-    using Cos;
     using Exceptions;
-    using IO;
     using Logging;
     using Parser.Handlers;
+    using Tokenization.Tokens;
+    using Util;
 
     internal class FontFactory : IFontFactory
     {
         private readonly ILog log;
-        private readonly IReadOnlyDictionary<CosName, IFontHandler> handlers;
+        private readonly IReadOnlyDictionary<NameToken, IFontHandler> handlers;
 
         public FontFactory(ILog log, Type0FontHandler type0FontHandler, TrueTypeFontHandler trueTypeFontHandler, 
             Type1FontHandler type1FontHandler, Type3FontHandler type3FontHandler)
         {
             this.log = log;
-            handlers = new Dictionary<CosName, IFontHandler>
+            handlers = new Dictionary<NameToken, IFontHandler>
             {
-                {CosName.TYPE0, type0FontHandler},
-                {CosName.TRUE_TYPE,  trueTypeFontHandler},
-                {CosName.TYPE1, type1FontHandler},
-                {CosName.TYPE3, type3FontHandler}
+                {NameToken.Type0, type0FontHandler},
+                {NameToken.TrueType,  trueTypeFontHandler},
+                {NameToken.Type1, type1FontHandler},
+                {NameToken.Type3, type3FontHandler}
             };
         }
 
-        public IFont Get(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        public IFont Get(DictionaryToken dictionary, bool isLenientParsing)
         {
-            var type = dictionary.GetName(CosName.TYPE);
+            var type = dictionary.GetNameOrDefault(NameToken.Type);
 
-            if (!type.Equals(CosName.FONT))
+            if (!type.Equals(NameToken.Font))
             {
                 var message = "The font dictionary did not have type 'Font'. " + dictionary;
 
@@ -45,11 +44,11 @@
                 }
             }
 
-            var subtype = dictionary.GetName(CosName.SUBTYPE);
+            var subtype = dictionary.GetNameOrDefault(NameToken.Subtype);
 
             if (handlers.TryGetValue(subtype, out var handler))
             {
-                return handler.Generate(dictionary, reader, isLenientParsing);
+                return handler.Generate(dictionary, isLenientParsing);
             }
 
             throw new NotImplementedException($"Parsing not implemented for fonts of type: {subtype}, please submit a pull request or an issue.");

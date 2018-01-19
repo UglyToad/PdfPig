@@ -12,6 +12,9 @@
     using Parts;
     using PdfPig.Parser;
     using PdfPig.Parser.Parts;
+    using Tokenization.Scanner;
+    using Tokenization.Tokens;
+    using Util;
 
     internal class Type0FontHandler : IFontHandler
     {
@@ -19,18 +22,21 @@
         private readonly CMapCache cMapCache;
         private readonly IFilterProvider filterProvider;
         private readonly IPdfObjectParser pdfObjectParser;
+        private readonly IPdfObjectScanner scanner;
 
-        public Type0FontHandler(CidFontFactory cidFontFactory, CMapCache cMapCache, IFilterProvider filterProvider, IPdfObjectParser pdfObjectParser)
+        public Type0FontHandler(CidFontFactory cidFontFactory, CMapCache cMapCache, IFilterProvider filterProvider, IPdfObjectParser pdfObjectParser,
+            IPdfObjectScanner scanner)
         {
             this.cidFontFactory = cidFontFactory;
             this.cMapCache = cMapCache;
             this.filterProvider = filterProvider;
             this.pdfObjectParser = pdfObjectParser;
+            this.scanner = scanner;
         }
 
-        public IFont Generate(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        public IFont Generate(DictionaryToken dictionary, IRandomAccessRead reader, bool isLenientParsing)
         {
-            var baseFont = dictionary.GetName(CosName.BASE_FONT);
+            var baseFont = dictionary.GetNameOrDefault(NameToken.BaseFont);
 
             var cMap = ReadEncoding(dictionary, out var isCMapPredefined);
 
@@ -38,17 +44,17 @@
 
             if (TryGetFirstDescendant(dictionary, out var descendantObject))
             {
-                PdfDictionary descendantFontDictionary;
+                DictionaryToken descendantFontDictionary;
 
-                if (descendantObject is CosObject obj)
+                if (descendantObject is IndirectReferenceToken obj)
                 {
-                    var parsed = DirectObjectFinder.Find<PdfDictionary>(obj, pdfObjectParser, reader, isLenientParsing);
+                    var parsed = DirectObjectFinder.Get<DictionaryToken>(obj, scanner);
 
                     descendantFontDictionary = parsed;
                 }
                 else
                 {
-                    descendantFontDictionary = (PdfDictionary) descendantObject;
+                    descendantFontDictionary = (DictionaryToken) descendantObject;
                 }
 
                 cidFont = ParseDescendant(descendantFontDictionary, reader, isLenientParsing);
@@ -61,11 +67,11 @@
             var ucs2CMap = GetUcs2CMap(dictionary, isCMapPredefined, false);
 
             CMap toUnicodeCMap = null;
-            if (dictionary.ContainsKey(CosName.TO_UNICODE))
+            if (dictionary.ContainsKey(NameToken.ToUnicode))
             {
-                var toUnicodeValue = dictionary[CosName.TO_UNICODE];
+                var toUnicodeValue = dictionary.Data[NameToken.ToUnicode];
 
-                var toUnicode = pdfObjectParser.Parse(((CosObject)toUnicodeValue).ToIndirectReference(), reader, isLenientParsing) as PdfRawStream;
+                var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeValue, scanner);
 
                 var decodedUnicodeCMap = toUnicode?.Decode(filterProvider);
 
@@ -80,28 +86,28 @@
             return font;
         }
 
-        private static bool TryGetFirstDescendant(PdfDictionary dictionary, out CosBase descendant)
+        private static bool TryGetFirstDescendant(DictionaryToken dictionary, out IToken descendant)
         {
             descendant = null;
 
-            if (!dictionary.TryGetValue(CosName.DESCENDANT_FONTS, out var value))
+            if (!dictionary.TryGet(NameToken.DescendantFonts, out var value))
             {
                 return false;
             }
 
-            if (value is CosObject obj)
+            if (value is IndirectReferenceToken obj)
             {
                 descendant = obj;
                 return true;
             }
 
-            if (value is COSArray array && array.Count > 0)
+            if (value is ArrayToken array && array.Data.Count > 0)
             {
-                if (array.get(0) is CosObject objArr)
+                if (array.Data[0] is IndirectReferenceToken objArr)
                 {
                 descendant = objArr;
                 }
-                else if (array.get(0) is PdfDictionary dict)
+                else if (array.Data[0] is DictionaryToken dict)
                 {
                     descendant = dict;
                 }
@@ -116,12 +122,12 @@
             return false;
         }
 
-        private ICidFont ParseDescendant(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        private ICidFont ParseDescendant(DictionaryToken dictionary, IRandomAccessRead reader, bool isLenientParsing)
         {
-            var type = dictionary.GetName(CosName.TYPE);
-            if (!CosName.FONT.Equals(type))
+            var type = dictionary.GetNameOrDefault(NameToken.Type);
+            if (type?.Equals(NameToken.Font) != true)
             {
-                throw new InvalidFontFormatException($"Expected \'Font\' dictionary but found \'{type.Name}\'");
+                throw new InvalidFontFormatException($"Expected \'Font\' dictionary but found \'{type}\'");
             }
 
             var result = cidFontFactory.Generate(dictionary, reader, isLenientParsing);
@@ -129,22 +135,22 @@
             return result;
         }
 
-        private CMap ReadEncoding(PdfDictionary dictionary, out bool isCMapPredefined)
+        private CMap ReadEncoding(DictionaryToken dictionary, out bool isCMapPredefined)
         {
             isCMapPredefined = false;
             CMap result = default(CMap);
 
-            if (dictionary.TryGetValue(CosName.ENCODING, out var value))
+            if (dictionary.TryGet(NameToken.Encoding, out var value))
             {
-                if (value is CosName encodingName)
+                if (value is NameToken encodingName)
                 {
-                    var cmap = cMapCache.Get(encodingName.Name);
+                    var cmap = cMapCache.Get(encodingName.Data);
 
-                    result = cmap ?? throw new InvalidOperationException("Missing CMap for " + encodingName.Name);
+                    result = cmap ?? throw new InvalidOperationException("Missing CMap for " + encodingName.Data);
 
                     isCMapPredefined = true;
                 }
-                else if (value is PdfRawStream stream)
+                else if (value is StreamToken stream)
                 {
                     var decoded = stream.Decode(filterProvider);
 
@@ -161,7 +167,7 @@
             return result;
         }
 
-        private static CMap GetUcs2CMap(PdfDictionary dictionary, bool isCMapPredefined, bool usesDescendantAdobeFont)
+        private static CMap GetUcs2CMap(DictionaryToken dictionary, bool isCMapPredefined, bool usesDescendantAdobeFont)
         {
             if (!isCMapPredefined)
             {
@@ -173,14 +179,14 @@
              * CIDFont uses the Adobe-GB1, Adobe-CNS1, Adobe-Japan1, or Adobe-Korea1 character collection use a UCS2 CMap.
              */
 
-            var encodingName = dictionary.GetName(CosName.ENCODING);
+            var encodingName = dictionary.GetNameOrDefault(NameToken.Encoding);
 
             if (encodingName == null)
             {
                 return null;
             }
 
-            var isPredefinedIdentityMap = encodingName.Equals(CosName.IDENTITY_H) || encodingName.Equals(CosName.IDENTITY_V);
+            var isPredefinedIdentityMap = encodingName.Equals(NameToken.IdentityH) || encodingName.Equals(NameToken.IdentityV);
 
             if (isPredefinedIdentityMap && !usesDescendantAdobeFont)
             {

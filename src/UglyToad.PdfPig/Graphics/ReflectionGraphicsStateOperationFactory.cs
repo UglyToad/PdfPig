@@ -80,7 +80,7 @@ namespace UglyToad.PdfPig.Graphics
                 case SetFontAndSize.Symbol:
                     if (operands.Count == 2 && operands[0] is NameToken name && operands[1] is NumericToken size)
                     {
-                        return new SetFontAndSize(name.Data, size.Data);
+                        return new SetFontAndSize(name, size.Data);
                     }
 
                     var information = string.Join(", ", operands.Select(x => x.ToString()));

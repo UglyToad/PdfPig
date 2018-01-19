@@ -2,7 +2,7 @@
 {
     using System;
     using System.IO;
-    using ContentStream;
+    using Tokenization.Tokens;
 
     /// <summary>
     /// ASCII 85 (Base85) is a binary to text encoding using 5 ASCII characters per 4 bytes of data.
@@ -23,7 +23,7 @@
             85 * 85 * 85 *85
         };
 
-        public byte[] Decode(byte[] input, PdfDictionary streamDictionary, int filterIndex)
+        public byte[] Decode(byte[] input, DictionaryToken streamDictionary, int filterIndex)
         {
             var asciiBuffer = new byte[5];
 

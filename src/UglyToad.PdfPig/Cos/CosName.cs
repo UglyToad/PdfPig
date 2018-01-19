@@ -7,6 +7,7 @@
     using System.IO;
     using System.Text;
     using Core;
+    using Tokenization.Tokens;
     using Util;
     using Util.JetBrains.Annotations;
 
@@ -15,6 +16,7 @@
      *
      * @author Ben Litchfield
      */
+    [Obsolete]
     internal class CosName : CosBase, IComparable<CosName>, ICosStreamWriter
     {
         // using ConcurrentHashMap because this can be accessed by multiple threads
@@ -677,5 +679,4 @@
             return Name?.CompareTo(other?.Name) ?? 0;
         }
     }
-
 }

@@ -3,10 +3,10 @@
     using Cmap;
     using Composite;
     using Core;
-    using Cos;
     using Encodings;
     using Geometry;
     using IO;
+    using Tokenization.Tokens;
     using Util.JetBrains.Annotations;
 
     internal class TrueTypeSimpleFont : IFont
@@ -20,14 +20,14 @@
         [CanBeNull]
         private readonly Encoding encoding;
 
-        public CosName Name { get; }
+        public NameToken Name { get; }
 
         public bool IsVertical { get; }
 
         [NotNull]
         public ToUnicodeCMap ToUnicode { get; set; }
 
-        public TrueTypeSimpleFont(CosName name, int firstCharacterCode, int lastCharacterCode, decimal[] widths, 
+        public TrueTypeSimpleFont(NameToken name, int firstCharacterCode, int lastCharacterCode, decimal[] widths, 
             FontDescriptor descriptor,
             [CanBeNull]CMap toUnicodeCMap,
             [CanBeNull]Encoding encoding)

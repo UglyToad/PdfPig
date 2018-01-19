@@ -1,14 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using ContentStream;
-    using Cos;
     using Fonts;
-    using IO;
+    using Tokenization.Tokens;
 
     internal interface IResourceStore
     {
-        void LoadResourceDictionary(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing);
+        void LoadResourceDictionary(DictionaryToken resourceDictionary, bool isLenientParsing);
 
-        IFont GetFont(CosName name);
+        IFont GetFont(NameToken name);
     }
 }

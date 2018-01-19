@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Cos;
     using Util.JetBrains.Annotations;
 
     internal class DictionaryToken : IDataToken<IReadOnlyDictionary<string, IToken>>
@@ -24,7 +23,7 @@
             {
                 if (keyValuePair.Key is NameToken name)
                 {
-                    result[name.Data.Name] = keyValuePair.Value;
+                    result[name.Data] = keyValuePair.Value;
                 }
                 else
                 {
@@ -35,17 +34,42 @@
 
             Data = result;
         }
+
+        private DictionaryToken(IReadOnlyDictionary<string, IToken> data)
+        {
+            Data = data;
+        }
         
-        public bool TryGetByName(CosName name, out IToken token)
+        public bool TryGet(NameToken name, out IToken token)
         {
             if (name == null)
             {
                 throw new ArgumentNullException(nameof(name));
             }
 
-            return Data.TryGetValue(name.Name, out token);
+            return Data.TryGetValue(name.Data, out token);
         }
 
+        public bool ContainsKey(NameToken name)
+        {
+            return Data.ContainsKey(name.Data);
+        }
+
+        public DictionaryToken With(NameToken key, IToken value) => With(key.Data, value);
+        public DictionaryToken With(string key, IToken value)
+        {
+            var result = new Dictionary<string, IToken>(Data.Count + 1);
+
+            foreach (var keyValuePair in Data)
+            {
+                result[keyValuePair.Key] = keyValuePair.Value;
+            }
+
+            result[key] = value;
+
+            return new DictionaryToken(result);
+        }
+        
         public override string ToString()
         {
             return string.Join(", ", Data.Select(x => $"<{x.Key}, {x.Value}>"));

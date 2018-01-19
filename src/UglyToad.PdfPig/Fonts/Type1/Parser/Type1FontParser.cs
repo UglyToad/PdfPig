@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using Cos;
     using Exceptions;
     using Geometry;
     using IO;
@@ -127,7 +126,7 @@
                     return new DictionaryToken(dictionary);
                 }
 
-                if (key.Data.Equals(CosName.ENCODING))
+                if (key.Data.Equals(NameToken.Encoding))
                 {
                     dictionary[key] = ReadEncoding(scanner);
                     continue;
@@ -231,14 +230,14 @@
 
             foreach (var dictionary in dictionaries)
             {
-                if (dictionary.TryGetByName(CosName.ENCODING, out var token) && token is ArrayToken encodingArray)
+                if (dictionary.TryGet(NameToken.Encoding, out var token) && token is ArrayToken encodingArray)
                 {
                     for (var i = 0; i < encodingArray.Data.Count; i += 2)
                     {
                         var code = (NumericToken) encodingArray.Data[i];
                         var name = (NameToken) encodingArray.Data[i + 1];
 
-                        result[code.Int] = name.Data.Name;
+                        result[code.Int] = name.Data;
                     }
 
                     return result;
@@ -252,7 +251,7 @@
         {
             foreach (var dictionaryToken in dictionaries)
             {
-                if (dictionaryToken.TryGetByName(CosName.FONT_MATRIX, out var token) && token is ArrayToken array)
+                if (dictionaryToken.TryGet(NameToken.FontMatrix, out var token) && token is ArrayToken array)
                 {
                     return array;
                 }
@@ -265,7 +264,7 @@
         {
             foreach (var dictionary in dictionaries)
             {
-                if (dictionary.TryGetByName(CosName.FONT_BBOX, out var token) && token is ArrayToken array && array.Data.Count == 4)
+                if (dictionary.TryGet(NameToken.FontBbox, out var token) && token is ArrayToken array && array.Data.Count == 4)
                 {
                     var x1 = (NumericToken) array.Data[0];
                     var y1 = (NumericToken) array.Data[1];

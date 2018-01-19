@@ -1,9 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
-    using ContentStream;
+    using Tokenization.Tokens;
 
     internal interface IDecodeParameterResolver
     {
-        PdfDictionary GetFilterParameters(PdfDictionary streamDictionary, int index);
+        DictionaryToken GetFilterParameters(DictionaryToken streamDictionary, int index);
     }
 }

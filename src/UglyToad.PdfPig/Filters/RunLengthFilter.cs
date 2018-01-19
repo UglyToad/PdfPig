@@ -1,13 +1,13 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
     using System.IO;
-    using ContentStream;
+    using Tokenization.Tokens;
 
     internal class RunLengthFilter : IFilter
     {
         private const byte EndOfDataLength = 128;
 
-        public byte[] Decode(byte[] input, PdfDictionary streamDictionary, int filterIndex)
+        public byte[] Decode(byte[] input, DictionaryToken streamDictionary, int filterIndex)
         {
             using (var memoryStream = new MemoryStream())
             using (var writer = new BinaryWriter(memoryStream))

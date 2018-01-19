@@ -3,7 +3,6 @@
     using System;
     using System.Globalization;
     using Cmap;
-    using Cos;
     using Tokenization.Scanner;
     using Tokenization.Tokens;
 
@@ -12,7 +11,7 @@
         public void Parse(NameToken nameToken, ITokenScanner scanner, CharacterMapBuilder builder,
             bool isLenientParsing)
         {
-            switch (nameToken.Data.Name)
+            switch (nameToken.Data)
             {
                 case "WMode":
                     {
@@ -26,7 +25,7 @@
                     {
                         if (scanner.TryReadToken(out NameToken name))
                         {
-                            builder.Name = name.Data.Name;
+                            builder.Name = name.Data;
                         }
                         break;
                     }
@@ -98,7 +97,7 @@
                 return $"No {missingKey} found in the CIDSystemInfo dictionary: " + dictionary;
             }
 
-            if (!dictionary.TryGetByName(CosName.REGISTRY, out var registry) || !(registry is StringToken registryString))
+            if (!dictionary.TryGet(NameToken.Registry, out var registry) || !(registry is StringToken registryString))
             {
                 if (isLenientParsing)
                 {
@@ -110,7 +109,7 @@
                 }
             }
 
-            if (!dictionary.TryGetByName(CosName.ORDERING, out var ordering) || !(ordering is StringToken orderingString))
+            if (!dictionary.TryGet(NameToken.Ordering, out var ordering) || !(ordering is StringToken orderingString))
             {
                 if (isLenientParsing)
                 {
@@ -122,7 +121,7 @@
                 }
             }
 
-            if (!dictionary.TryGetByName(CosName.SUPPLEMENT, out var supplement) || !(supplement is NumericToken supplementNumeric))
+            if (!dictionary.TryGet(NameToken.Supplement, out var supplement) || !(supplement is NumericToken supplementNumeric))
             {
                 if (isLenientParsing)
                 {

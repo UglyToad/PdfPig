@@ -3,11 +3,11 @@
     using Cmap;
     using Composite;
     using Core;
-    using Cos;
     using Encodings;
     using Exceptions;
     using Geometry;
     using IO;
+    using Tokenization.Tokens;
 
     internal class Type3Font : IFont
     {
@@ -22,11 +22,11 @@
         /// <summary>
         /// Type 3 fonts are usually unnamed.
         /// </summary>
-        public CosName Name { get; }
+        public NameToken Name { get; }
 
         public bool IsVertical { get; } = false;
 
-        public Type3Font(CosName name, PdfRectangle boundingBox, TransformationMatrix fontMatrix,
+        public Type3Font(NameToken name, PdfRectangle boundingBox, TransformationMatrix fontMatrix,
             Encoding encoding, int firstChar, int lastChar, decimal[] widths,
             CMap toUnicodeCMap)
         {

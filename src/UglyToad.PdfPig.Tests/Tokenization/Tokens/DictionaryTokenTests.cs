@@ -3,7 +3,6 @@ namespace UglyToad.PdfPig.Tests.Tokenization.Tokens
 {
     using System;
     using System.Collections.Generic;
-    using PdfPig.Cos;
     using PdfPig.Tokenization.Tokens;
     using Xunit;
 
@@ -30,7 +29,7 @@ namespace UglyToad.PdfPig.Tests.Tokenization.Tokens
         {
             var dictionary = new DictionaryToken(new Dictionary<IToken, IToken>());
 
-            var result = dictionary.TryGetByName(CosName.ACTUAL_TEXT, out var token);
+            var result = dictionary.TryGet(NameToken.ActualText, out var token);
 
             Assert.False(result);
             Assert.Null(token);
@@ -41,7 +40,7 @@ namespace UglyToad.PdfPig.Tests.Tokenization.Tokens
         {
             var dictionary = new DictionaryToken(new Dictionary<IToken, IToken>());
 
-            Action action = () => dictionary.TryGetByName(null, out var _);
+            Action action = () => dictionary.TryGet(null, out var _);
 
             Assert.Throws<ArgumentNullException>(action);
         }
@@ -51,10 +50,10 @@ namespace UglyToad.PdfPig.Tests.Tokenization.Tokens
         {
             var dictionary = new DictionaryToken(new Dictionary<IToken, IToken>
             {
-                { new NameToken("Registry"), new StringToken("None") }
+                { NameToken.Create("Registry"), new StringToken("None") }
             });
 
-            var result = dictionary.TryGetByName(CosName.ACTUAL_TEXT, out var token);
+            var result = dictionary.TryGet(NameToken.ActualText, out var token);
 
             Assert.False(result);
             Assert.Null(token);
@@ -65,11 +64,11 @@ namespace UglyToad.PdfPig.Tests.Tokenization.Tokens
         {
             var dictionary = new DictionaryToken(new Dictionary<IToken, IToken>
             {
-                { new NameToken("Fish"), new NumericToken(420) },
-                { new NameToken("Registry"), new StringToken("None") }
+                { NameToken.Create("Fish"), new NumericToken(420) },
+                { NameToken.Create("Registry"), new StringToken("None") }
             });
 
-            var result = dictionary.TryGetByName(CosName.REGISTRY, out var token);
+            var result = dictionary.TryGet(NameToken.Registry, out var token);
 
             Assert.True(result);
             Assert.Equal("None", Assert.IsType<StringToken>(token).Data);

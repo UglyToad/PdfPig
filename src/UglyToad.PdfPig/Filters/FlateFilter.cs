@@ -4,10 +4,9 @@
     using System.Collections.Generic;
     using System.IO;
     using System.IO.Compression;
-    using ContentStream;
-    using ContentStream.TypedAccessors;
-    using Cos;
     using Logging;
+    using Tokenization.Tokens;
+    using Util;
 
     /// <summary>
     /// 
@@ -34,7 +33,7 @@
             this.log = log;
         }
 
-        public byte[] Decode(byte[] input, PdfDictionary streamDictionary, int filterIndex)
+        public byte[] Decode(byte[] input, DictionaryToken streamDictionary, int filterIndex)
         {
             if (input == null)
             {
@@ -43,7 +42,7 @@
 
             var parameters = decodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
-            var predictor = parameters.GetIntOrDefault(CosName.PREDICTOR);
+            var predictor = parameters.GetIntOrDefault(NameToken.Predictor, -1);
 
             try
             {
@@ -54,9 +53,9 @@
                     return decompressed;
                 }
 
-                var colors = Math.Min(parameters.GetIntOrDefault(CosName.COLORS, DefaultColors), 32);
-                var bitsPerComponent = parameters.GetIntOrDefault(CosName.BITS_PER_COMPONENT, DefaultBitsPerComponent);
-                var columns = parameters.GetIntOrDefault(CosName.COLUMNS, DefaultColumns);
+                var colors = Math.Min(parameters.GetIntOrDefault(NameToken.Colors, DefaultColors), 32);
+                var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
+                var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
 
                 var result = pngPredictor.Decode(decompressed, predictor, colors, bitsPerComponent, columns);
 

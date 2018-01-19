@@ -2,8 +2,8 @@
 namespace UglyToad.PdfPig.Graphics
 {
     using Core;
-    using Cos;
     using PdfPig.Core;
+    using Tokenization.Tokens;
 
     /// <summary>
     /// The current state of text related parameters for a content stream.
@@ -39,7 +39,7 @@ namespace UglyToad.PdfPig.Graphics
         /// </summary>
         public decimal Leading { get; set; }
 
-        public CosName FontName { get; set; }
+        public NameToken FontName { get; set; }
 
         public decimal FontSize { get; set; }
 

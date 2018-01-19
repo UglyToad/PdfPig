@@ -4,16 +4,17 @@
     using System.Collections.Generic;
     using CidFonts;
     using ContentStream;
-    using ContentStream.TypedAccessors;
-    using Cos;
     using Exceptions;
     using Filters;
     using Geometry;
     using IO;
     using PdfPig.Parser;
     using PdfPig.Parser.Parts;
+    using Tokenization.Scanner;
+    using Tokenization.Tokens;
     using TrueType;
     using TrueType.Parser;
+    using Util;
 
     internal class CidFontFactory
     {
@@ -21,47 +22,50 @@
         private readonly TrueTypeFontParser trueTypeFontParser;
         private readonly IPdfObjectParser pdfObjectParser;
         private readonly IFilterProvider filterProvider;
+        private readonly IPdfObjectScanner pdfScanner;
 
         public CidFontFactory(FontDescriptorFactory descriptorFactory, TrueTypeFontParser trueTypeFontParser, 
             IPdfObjectParser pdfObjectParser,
-            IFilterProvider filterProvider)
+            IFilterProvider filterProvider,
+            IPdfObjectScanner pdfScanner)
         {
             this.descriptorFactory = descriptorFactory;
             this.trueTypeFontParser = trueTypeFontParser;
             this.pdfObjectParser = pdfObjectParser;
             this.filterProvider = filterProvider;
+            this.pdfScanner = pdfScanner;
         }
 
-        public ICidFont Generate(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        public ICidFont Generate(DictionaryToken dictionary, IRandomAccessRead reader, bool isLenientParsing)
         {
-            var type = dictionary.GetName(CosName.TYPE);
-            if (!CosName.FONT.Equals(type))
+            var type = dictionary.GetNameOrDefault(NameToken.Type);
+            if (!NameToken.Font.Equals(type))
             {
-                throw new InvalidFontFormatException($"Expected \'Font\' dictionary but found \'{type.Name}\'");
+                throw new InvalidFontFormatException($"Expected \'Font\' dictionary but found \'{type}\'");
             }
 
             var widths = ReadWidths(dictionary);
             var verticalWritingMetrics = ReadVerticalDisplacements(dictionary);
 
             FontDescriptor descriptor = null;
-            if (TryGetFontDescriptor(dictionary, reader, out var descriptorDictionary))
+            if (TryGetFontDescriptor(dictionary, out var descriptorDictionary))
             {
                 descriptor = descriptorFactory.Generate(descriptorDictionary, isLenientParsing);
             }
 
             var fontProgram = ReadDescriptorFile(descriptor, reader, isLenientParsing);
 
-            var baseFont = dictionary.GetName(CosName.BASE_FONT);
+            var baseFont = dictionary.GetNameOrDefault(NameToken.BaseFont);
 
             var systemInfo = GetSystemInfo(dictionary, reader, isLenientParsing);
 
-            var subType = dictionary.GetName(CosName.SUBTYPE);
-            if (CosName.CID_FONT_TYPE0.Equals(subType))
+            var subType = dictionary.GetNameOrDefault(NameToken.Subtype);
+            if (NameToken.CidFontType0.Equals(subType))
             {
                 //return new PDCIDFontType0(dictionary, parent);
             }
 
-            if (CosName.CID_FONT_TYPE2.Equals(subType))
+            if (NameToken.CidFontType2.Equals(subType))
             {
                 return new Type2CidFont(type, subType, baseFont, systemInfo, descriptor, fontProgram, verticalWritingMetrics, widths);
             }
@@ -69,28 +73,17 @@
             return null;
         }
 
-        private bool TryGetFontDescriptor(PdfDictionary dictionary, IRandomAccessRead reader, out PdfDictionary descriptorDictionary)
+        private bool TryGetFontDescriptor(DictionaryToken dictionary, out DictionaryToken descriptorDictionary)
         {
             descriptorDictionary = null;
 
-            if (!dictionary.TryGetValue(CosName.FONT_DESC, out var baseValue) || !(baseValue is CosObject obj))
-            {
-                if (baseValue is PdfDictionary baseDictionary)
-                {
-                    descriptorDictionary = baseDictionary;
-                    return true;
-                }
-
-                return false;
-            }
-
-            var descriptorObj = pdfObjectParser.Parse(obj.ToIndirectReference(), reader, false);
-
-            if (!(descriptorObj is PdfDictionary descriptor))
+            if (!dictionary.TryGet(NameToken.FontDesc, out var baseValue))
             {
                 return false;
             }
 
+            var descriptor = DirectObjectFinder.Get<DictionaryToken>(baseValue, pdfScanner);
+            
             descriptorDictionary = descriptor;
 
             return true;
@@ -122,38 +115,39 @@
             }
         }
 
-        private static IReadOnlyDictionary<int, decimal> ReadWidths(PdfDictionary dict)
+        private static IReadOnlyDictionary<int, decimal> ReadWidths(DictionaryToken dict)
         {
             var widths = new Dictionary<int, decimal>();
 
-            if (!dict.TryGetItemOfType(CosName.W, out COSArray widthArray))
+            if (!dict.TryGet(NameToken.W, out var widthsItem) || !(widthsItem is ArrayToken widthArray))
             {
                 return widths;
             }
 
-            int size = widthArray.size();
+            int size = widthArray.Data.Count;
             int counter = 0;
             while (counter < size)
             {
-                var firstCode = (ICosNumber)widthArray.getObject(counter++);
-                var next = widthArray.getObject(counter++);
-                if (next is COSArray array)
+                var firstCode = (NumericToken)widthArray.Data[counter++];
+                var next = widthArray.Data[counter++];
+                if (next is ArrayToken array)
                 {
-                    int startRange = firstCode.AsInt();
-                    int arraySize = array.size();
+                    int startRange = firstCode.Int;
+                    int arraySize = array.Data.Count;
+
                     for (int i = 0; i < arraySize; i++)
                     {
-                        var width = (ICosNumber)array.getObject(i);
-                        widths[startRange + i] = width.AsDecimal();
+                        var width = (NumericToken)array.Data[i];
+                        widths[startRange + i] = width.Data;
                     }
                 }
                 else
                 {
-                    var secondCode = (ICosNumber)next;
-                    var rangeWidth = (ICosNumber)widthArray.getObject(counter++);
-                    int startRange = firstCode.AsInt();
-                    int endRange = secondCode.AsInt();
-                    var width = rangeWidth.AsDecimal();
+                    var secondCode = (NumericToken)next;
+                    var rangeWidth = (NumericToken)widthArray.Data[counter++];
+                    int startRange = firstCode.Int;
+                    int endRange = secondCode.Int;
+                    var width = rangeWidth.Data;
                     for (var i = startRange; i <= endRange; i++)
                     {
                         widths[i] = width;
@@ -164,58 +158,59 @@
             return widths;
         }
 
-        private VerticalWritingMetrics ReadVerticalDisplacements(PdfDictionary dict)
+        private VerticalWritingMetrics ReadVerticalDisplacements(DictionaryToken dict)
         {
             var verticalDisplacements = new Dictionary<int, decimal>();
             var positionVectors = new Dictionary<int, PdfVector>();
 
             VerticalVectorComponents dw2;
-            if (!dict.TryGetItemOfType(CosName.DW2, out COSArray arrayVerticalComponents))
+            if (!dict.TryGet(NameToken.Dw2, out var dw2Token) || !(dw2Token is ArrayToken arrayVerticalComponents))
             {
                 dw2 = new VerticalVectorComponents(880, -1000);
             }
             else
             {
-                var position = ((ICosNumber)arrayVerticalComponents.get(0)).AsDecimal();
-                var displacement = ((ICosNumber)arrayVerticalComponents.get(1)).AsDecimal();
+                var position = ((NumericToken)arrayVerticalComponents.Data[0]).Data;
+                var displacement = ((NumericToken)arrayVerticalComponents.Data[1]).Data;
 
                 dw2 = new VerticalVectorComponents(position, displacement);
             }
 
             // vertical metrics for individual CIDs.
-            if (dict.TryGetItemOfType(CosName.W2, out COSArray w2))
+            if (dict.TryGet(NameToken.W2, out var w2Token) && w2Token is ArrayToken w2)
             {
-                for (var i = 0; i < w2.size(); i++)
+                for (var i = 0; i < w2.Data.Count; i++)
                 {
-                    var c = (ICosNumber)w2.get(i);
-                    var next = w2.get(++i);
-                    if (next is COSArray array)
+                    var c = (NumericToken)w2.Data[i];
+                    var next = w2.Data[++i];
+
+                    if (next is ArrayToken array)
                     {
-                        for (int j = 0; j < array.size(); j++)
+                        for (int j = 0; j < array.Data.Count; j++)
                         {
-                            int cid = c.AsInt() + j;
-                            var w1y = (ICosNumber)array.get(j);
-                            var v1x = (ICosNumber)array.get(++j);
-                            var v1y = (ICosNumber)array.get(++j);
+                            int cid = c.Int + j;
+                            var w1y = (NumericToken)array.Data[j];
+                            var v1x = (NumericToken)array.Data[++j];
+                            var v1y = (NumericToken)array.Data[++j];
 
-                            verticalDisplacements[cid] = w1y.AsDecimal();
+                            verticalDisplacements[cid] = w1y.Data;
 
-                            positionVectors[cid] = new PdfVector(v1x.AsDecimal(), v1y.AsDecimal());
+                            positionVectors[cid] = new PdfVector(v1x.Data, v1y.Data);
                         }
                     }
                     else
                     {
-                        int first = c.AsInt();
-                        int last = ((ICosNumber)next).AsInt();
-                        var w1y = (ICosNumber)w2.get(++i);
-                        var v1x = (ICosNumber)w2.get(++i);
-                        var v1y = (ICosNumber)w2.get(++i);
+                        int first = c.Int;
+                        int last = ((NumericToken)next).Int;
+                        var w1y = (NumericToken)w2.Data[++i];
+                        var v1x = (NumericToken)w2.Data[++i];
+                        var v1y = (NumericToken)w2.Data[++i];
 
                         for (var cid = first; cid <= last; cid++)
                         {
-                            verticalDisplacements[cid] = w1y.AsDecimal();
+                            verticalDisplacements[cid] = w1y.Data;
 
-                            positionVectors[cid] = new PdfVector(v1x.AsDecimal(), v1y.AsDecimal());
+                            positionVectors[cid] = new PdfVector(v1x.Data, v1y.Data);
                         }
                     }
                 }
@@ -224,54 +219,53 @@
             return new VerticalWritingMetrics(dw2, verticalDisplacements, positionVectors);
         }
 
-        private CharacterIdentifierSystemInfo GetSystemInfo(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        private CharacterIdentifierSystemInfo GetSystemInfo(DictionaryToken dictionary, IRandomAccessRead reader, bool isLenientParsing)
         {
-            if(!dictionary.TryGetValue(CosName.CIDSYSTEMINFO, out var cidEntry))
+            if(!dictionary.TryGet(NameToken.CidSystemInfo, out var cidEntry))
             {
                 throw new InvalidFontFormatException($"No CID System Info was found in the CID Font dictionary: {dictionary}");
             }
 
-            if (cidEntry is PdfDictionary cidDictionary)
+            if (cidEntry is DictionaryToken cidDictionary)
             {
                 
             }
-            else if (cidEntry is CosObject cidObject)
-            {
-                cidDictionary =
-                    DirectObjectFinder.Find<PdfDictionary>(cidObject, pdfObjectParser, reader, isLenientParsing);
-            }
             else
             {
-                throw new InvalidFontFormatException($"No CID System Info was found in the CID Font dictionary: {dictionary}");
+                cidDictionary =
+                    DirectObjectFinder.Get<DictionaryToken>(cidEntry, pdfScanner);
             }
 
-            var registry = SafeKeyAccess(cidDictionary, CosName.REGISTRY, reader, isLenientParsing);
-            var ordering = SafeKeyAccess(cidDictionary, CosName.ORDERING, reader, isLenientParsing);
-            var supplement = cidDictionary.GetIntOrDefault(CosName.SUPPLEMENT, 0);
+            var registry = SafeKeyAccess(cidDictionary, NameToken.Registry, reader, isLenientParsing);
+            var ordering = SafeKeyAccess(cidDictionary, NameToken.Ordering, reader, isLenientParsing);
+            var supplement = cidDictionary.GetIntOrDefault(NameToken.Supplement);
 
-            return new CharacterIdentifierSystemInfo(registry.GetAscii(), ordering.GetAscii(), supplement);
+            return new CharacterIdentifierSystemInfo(registry, ordering, supplement);
         }
 
-        private CosString SafeKeyAccess(PdfDictionary dictionary, CosName keyName, IRandomAccessRead reader, bool isLenientParsing)
+        private string SafeKeyAccess(DictionaryToken dictionary, NameToken keyName, IRandomAccessRead reader, bool isLenientParsing)
         {
-            var item = dictionary.GetItemOrDefault(keyName);
-
-            if (item == null)
+            if (!dictionary.TryGet(keyName, out var token))
             {
-                return new CosString(string.Empty);
+                return string.Empty;
             }
 
-            if (item is CosString str)
+            if (token is StringToken str)
             {
-                return str;
+                return str.Data;
             }
 
-            if (item is CosObject obj)
+            if (token is HexToken hex)
             {
-                return DirectObjectFinder.Find<CosString>(obj, pdfObjectParser, reader, isLenientParsing);
+                return hex.Data;
             }
 
-            return new CosString(string.Empty);
+            if (token is IndirectReferenceToken obj)
+            {
+                return DirectObjectFinder.Get<StringToken>(obj, pdfScanner).Data;
+            }
+
+            return string.Empty;
         }
     }
 }

@@ -3,13 +3,13 @@
     using Cmap;
     using Composite;
     using Core;
-    using Cos;
     using Encodings;
     using Geometry;
     using IO;
+    using Tokenization.Tokens;
 
     /// <summary>
-    /// TODO: implement this properly if you find a Type 1 font in the wild.
+    /// A font based on the Adobe Type 1 font format.
     /// </summary>
     internal class Type1FontSimple : IFont
     {
@@ -21,11 +21,11 @@
         private readonly ToUnicodeCMap toUnicodeCMap;
         private readonly TransformationMatrix fontMatrix = TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);
 
-        public CosName Name { get; }
+        public NameToken Name { get; }
 
         public bool IsVertical { get; } = false;
 
-        public Type1FontSimple(CosName name, int firstChar, int lastChar, decimal[] widths, FontDescriptor fontDescriptor, Encoding encoding, CMap toUnicodeCMap)
+        public Type1FontSimple(NameToken name, int firstChar, int lastChar, decimal[] widths, FontDescriptor fontDescriptor, Encoding encoding, CMap toUnicodeCMap)
         {
             this.firstChar = firstChar;
             this.lastChar = lastChar;

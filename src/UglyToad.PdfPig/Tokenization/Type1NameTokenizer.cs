@@ -34,7 +34,7 @@
                 builder.Append((char)inputBytes.CurrentByte);
             }
 
-            token = new NameToken(builder.ToString());
+            token = NameToken.Create(builder.ToString());
 
             return true;
         }

@@ -2,10 +2,10 @@
 {
     using System;
     using Core;
-    using Cos;
     using Encodings;
     using Geometry;
     using IO;
+    using Tokenization.Tokens;
 
     internal class Type1Standard14Font: IFont
     {
@@ -14,7 +14,7 @@
         private readonly FontMetrics standardFontMetrics;
         private readonly Encoding encoding;
 
-        public CosName Name { get; }
+        public NameToken Name { get; }
         public bool IsVertical { get; }
 
         public Type1Standard14Font(FontMetrics standardFontMetrics)
@@ -22,7 +22,7 @@
             this.standardFontMetrics = standardFontMetrics ?? throw new ArgumentNullException(nameof(standardFontMetrics));
             encoding = new AdobeFontMetricsEncoding(standardFontMetrics);
 
-            Name = CosName.Create(standardFontMetrics.FontName);
+            Name = NameToken.Create(standardFontMetrics.FontName);
             
             IsVertical = false;
         }

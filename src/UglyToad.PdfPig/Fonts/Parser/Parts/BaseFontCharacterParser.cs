@@ -23,7 +23,7 @@
 
                 if (tokenScanner.CurrentToken is NameToken characterName)
                 {
-                    builder.AddBaseFontCharacter(inputCode.Bytes, characterName.Data.Name);
+                    builder.AddBaseFontCharacter(inputCode.Bytes, characterName.Data);
                 }
                 else if (tokenScanner.CurrentToken is HexToken characterCode)
                 {

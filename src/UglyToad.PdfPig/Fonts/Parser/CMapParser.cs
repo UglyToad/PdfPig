@@ -37,7 +37,7 @@
                             {
                                 if (previousToken is NameToken name)
                                 {
-                                    var external = ParseExternal(name.Data.Name);
+                                    var external = ParseExternal(name.Data);
 
                                     builder.UseCMap(external);
                                 }

@@ -97,7 +97,7 @@
                 ? Encoding.UTF8.GetString(byteArray)
                 : Encoding.GetEncoding("windows-1252").GetString(byteArray);
 
-            token = new NameToken(str);
+            token = NameToken.Create(str);
 
             return true;
         }
