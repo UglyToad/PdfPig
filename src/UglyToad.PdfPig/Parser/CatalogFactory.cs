@@ -2,7 +2,6 @@
 {
     using System;
     using Content;
-    using ContentStream;
     using Exceptions;
     using IO;
     using Parts;

@@ -99,7 +99,7 @@
                         {
                             try
                             {
-                                streamPart = ParseCrossReferenceStream(previousCrossReferenceLocation, pdfScanner);
+                                streamPart = ParseCrossReferenceStream(streamOffset, pdfScanner);
                             }
                             catch (InvalidOperationException ex)
                             {

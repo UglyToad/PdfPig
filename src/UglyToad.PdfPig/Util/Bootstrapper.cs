@@ -3,7 +3,6 @@
     using Filters;
     using Fonts.Parser;
     using Logging;
-    using Parser;
     using Parser.FileStructure;
     using Parser.Parts;
     using Parser.Parts.CrossReference;
@@ -34,10 +33,8 @@
             var nameParser = new CosNameParser();
             var dictionaryParser = new CosDictionaryParser(nameParser, logger);
             var baseParser = new CosBaseParser(nameParser, new CosStringParser(), dictionaryParser, new CosArrayParser());
-            var streamParser = new CosStreamParser(logger);
             var filterProvider = new MemoryFilterProvider(new DecodeParameterResolver(logger), new PngPredictor(), logger);
             var crossReferenceParser = new CrossReferenceStreamParser(filterProvider);
-            var objectStreamParser = new ObjectStreamParser(logger, filterProvider, baseParser);
 
             var crossReferenceTableParser = new CrossReferenceParser(logger, dictionaryParser, baseParser, crossReferenceParser, new CrossReferenceTableParser());
             
@@ -50,10 +47,8 @@
             container.Register(nameParser);
             container.Register(dictionaryParser);
             container.Register(baseParser);
-            container.Register(streamParser);
             container.Register(crossReferenceParser);
             container.Register(crossReferenceTableParser);
-            container.Register(objectStreamParser);
             container.Register(filterProvider);
             container.Register(cmapParser);
             container.Register(afmParser);
