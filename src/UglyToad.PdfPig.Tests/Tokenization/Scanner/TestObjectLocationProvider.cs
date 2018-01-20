@@ -3,6 +3,7 @@
     using System.Collections.Generic;
     using PdfPig.ContentStream;
     using PdfPig.Tokenization.Scanner;
+    using PdfPig.Tokenization.Tokens;
 
     internal class TestObjectLocationProvider : IObjectLocationProvider
     {
@@ -16,6 +17,16 @@
         public void UpdateOffset(IndirectReference reference, long offset)
         {
             Offsets[reference] = offset;
+        }
+
+        public bool TryGetCached(IndirectReference reference, out ObjectToken objectToken)
+        {
+            objectToken = null;
+            return false;
+        }
+
+        public void Cache(ObjectToken objectToken)
+        {
         }
     }
 }

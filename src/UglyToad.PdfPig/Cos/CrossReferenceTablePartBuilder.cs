@@ -2,6 +2,7 @@
 {
     using System.Collections.Generic;
     using ContentStream;
+    using Tokenization.Tokens;
 
     internal class CrossReferenceTablePartBuilder
     {
@@ -11,7 +12,7 @@
 
         public long Previous { get; set; }
 
-        public PdfDictionary Dictionary { get; set; }
+        public DictionaryToken Dictionary { get; set; }
 
         public CrossReferenceType XRefType { get; set; }
         

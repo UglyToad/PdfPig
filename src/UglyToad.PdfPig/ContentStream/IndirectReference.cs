@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.ContentStream
 {
+    using System.Diagnostics;
+
     /// <summary>
     /// Used to uniquely identify and refer to objects in the PDF file.
     /// </summary>
@@ -20,6 +22,7 @@
         /// </summary>
         /// <param name="objectNumber">The object number.</param>
         /// <param name="generation">The generation number.</param>
+        [DebuggerStepThrough]
         public IndirectReference(long objectNumber, int generation)
         {
             ObjectNumber = objectNumber;

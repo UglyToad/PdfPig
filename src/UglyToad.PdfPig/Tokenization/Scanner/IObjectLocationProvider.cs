@@ -1,40 +1,65 @@
 ﻿namespace UglyToad.PdfPig.Tokenization.Scanner
 {
+    using System;
     using System.Collections.Generic;
     using ContentStream;
     using Cos;
     using Parser.Parts;
+    using Tokens;
 
     internal interface IObjectLocationProvider
     {
         bool TryGetOffset(IndirectReference reference, out long offset);
 
         void UpdateOffset(IndirectReference reference, long offset);
+
+        bool TryGetCached(IndirectReference reference, out ObjectToken objectToken);
+
+        void Cache(ObjectToken objectToken);
     }
 
     internal class ObjectLocationProvider : IObjectLocationProvider
     {
-        private readonly CrossReferenceTable crossReferenceTable;
+        private readonly Dictionary<IndirectReference, ObjectToken> cache = new Dictionary<IndirectReference, ObjectToken>();
+
+        /// <summary>
+        /// Since we want to scan objects while reading the cross reference table we lazily load it when it's ready.
+        /// </summary>
+        private readonly Func<CrossReferenceTable> crossReferenceTable;
         private readonly CosObjectPool pool;
         private readonly BruteForceSearcher searcher;
 
+        /// <summary>
+        /// Indicates whether we now have a cross reference table.
+        /// </summary>
+        private bool loadedFromTable;
+
         private readonly Dictionary<IndirectReference, long> offsets = new Dictionary<IndirectReference, long>();
 
-        public ObjectLocationProvider(CrossReferenceTable crossReferenceTable, CosObjectPool pool, BruteForceSearcher searcher)
+        public ObjectLocationProvider(Func<CrossReferenceTable> crossReferenceTable, CosObjectPool pool, BruteForceSearcher searcher)
         {
             this.crossReferenceTable = crossReferenceTable;
-
-            foreach (var offset in crossReferenceTable.ObjectOffsets)
-            {
-                offsets[offset.Key] = offset.Value;
-            }
-
             this.pool = pool;
             this.searcher = searcher;
         }
 
         public bool TryGetOffset(IndirectReference reference, out long offset)
         {
+            if (!loadedFromTable)
+            {
+                var table = crossReferenceTable.Invoke();
+
+                if (table != null)
+                {
+                    foreach (var objectOffset in table.ObjectOffsets)
+                    {
+                        offsets[objectOffset.Key] = objectOffset.Value;
+                    }
+
+                    loadedFromTable = true;
+                }
+            }
+
             if (offsets.TryGetValue(reference, out offset))
             {
                 return true;
@@ -53,6 +78,21 @@
         public void UpdateOffset(IndirectReference reference, long offset)
         {
             offsets[reference] = offset;
+        }
+
+        public bool TryGetCached(IndirectReference reference, out ObjectToken objectToken)
+        {
+            return cache.TryGetValue(reference, out objectToken);
+        }
+
+        public void Cache(ObjectToken objectToken)
+        {
+            if (objectToken == null)
+            {
+                throw new ArgumentNullException();
+            }
+
+            cache[objectToken.Number] = objectToken;
         }
     }
 }

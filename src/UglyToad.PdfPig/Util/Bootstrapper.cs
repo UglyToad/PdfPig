@@ -38,10 +38,8 @@
             var filterProvider = new MemoryFilterProvider(new DecodeParameterResolver(logger), new PngPredictor(), logger);
             var crossReferenceParser = new CrossReferenceStreamParser(filterProvider);
             var objectStreamParser = new ObjectStreamParser(logger, filterProvider, baseParser);
-            var dynamicParser = new DynamicParser(logger, baseParser, streamParser, objectStreamParser);
 
-            var crossReferenceTableParser = new CrossReferenceParser(logger, dictionaryParser, baseParser, streamParser, crossReferenceParser, new CrossReferenceTableParser(),
-                new OldCrossReferenceTableParser(logger, dictionaryParser, baseParser));
+            var crossReferenceTableParser = new CrossReferenceParser(logger, dictionaryParser, baseParser, crossReferenceParser, new CrossReferenceTableParser());
             
             var cmapParser = new CMapParser();
             var afmParser = new AdobeFontMetricsParser();
@@ -55,7 +53,6 @@
             container.Register(streamParser);
             container.Register(crossReferenceParser);
             container.Register(crossReferenceTableParser);
-            container.Register(dynamicParser);
             container.Register(objectStreamParser);
             container.Register(filterProvider);
             container.Register(cmapParser);

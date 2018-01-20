@@ -1,44 +1,48 @@
 ﻿namespace UglyToad.PdfPig.Parser
 {
     using Content;
-    using ContentStream;
-    using Cos;
     using IO;
+    using Parts;
+    using Tokenization.Scanner;
+    using Tokenization.Tokens;
 
     internal class DocumentInformationFactory
     {
-        public DocumentInformation Create(IPdfObjectParser pdfObjectParser,
-            PdfDictionary rootDictionary, IRandomAccessRead reader, 
-            bool isLenientParsing)
+        public DocumentInformation Create(IPdfTokenScanner pdfTokenScanner, DictionaryToken rootDictionary)
         {
-            if (!rootDictionary.TryGetItemOfType(CosName.INFO, out CosObject infoBase))
+            if (!rootDictionary.TryGet(NameToken.Info, out var infoBase))
             {
                 return DocumentInformation.Default;
             }
 
-            var infoParsed = pdfObjectParser.Parse(infoBase.ToIndirectReference(), reader, isLenientParsing);
+            var infoParsed = DirectObjectFinder.Get<DictionaryToken>(infoBase, pdfTokenScanner);
 
-            if (!(infoParsed is PdfDictionary infoDictionary))
-            {
-                return DocumentInformation.Default;
-            }
-
-            var title = GetEntryOrDefault(infoDictionary, CosName.TITLE);
-            var author = GetEntryOrDefault(infoDictionary, CosName.AUTHOR);
-            var subject = GetEntryOrDefault(infoDictionary, CosName.SUBJECT);
-            var keywords = GetEntryOrDefault(infoDictionary, CosName.KEYWORDS);
-            var creator = GetEntryOrDefault(infoDictionary, CosName.CREATOR);
-            var producer = GetEntryOrDefault(infoDictionary, CosName.PRODUCER);
+            var title = GetEntryOrDefault(infoParsed, NameToken.Title);
+            var author = GetEntryOrDefault(infoParsed, NameToken.Author);
+            var subject = GetEntryOrDefault(infoParsed, NameToken.Subject);
+            var keywords = GetEntryOrDefault(infoParsed, NameToken.Keywords);
+            var creator = GetEntryOrDefault(infoParsed, NameToken.Creator);
+            var producer = GetEntryOrDefault(infoParsed, NameToken.Producer);
 
             return new DocumentInformation(title, author, subject,
                 keywords, creator, producer);
         }
 
-        private static string GetEntryOrDefault(PdfDictionary infoDictionary, CosName key)
+        private static string GetEntryOrDefault(DictionaryToken infoDictionary, NameToken key)
         {
-            if (infoDictionary.TryGetItemOfType(key, out CosString str))
+            if (!infoDictionary.TryGet(key, out var value))
             {
-                return str.GetAscii();
+                return null;
+            }
+
+            if (value is StringToken str)
+            {
+                return str.Data;
+            }
+
+            if (value is HexToken hex)
+            {
+                return hex.Data;
             }
 
             return null;

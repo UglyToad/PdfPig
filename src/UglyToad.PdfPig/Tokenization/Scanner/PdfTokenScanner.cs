@@ -6,19 +6,22 @@
     using System.IO;
     using ContentStream;
     using Exceptions;
+    using Filters;
     using IO;
     using Parser.Parts;
     using Tokens;
+    using Util;
 
-    internal interface IPdfObjectScanner : ISeekableTokenScanner
+    internal interface IPdfTokenScanner : ISeekableTokenScanner
     {
         ObjectToken Get(IndirectReference reference);
     }
 
-    internal class PdfTokenScanner : IPdfObjectScanner
+    internal class PdfTokenScanner : IPdfTokenScanner
     {
         private readonly IInputBytes inputBytes;
         private readonly IObjectLocationProvider objectLocationProvider;
+        private readonly IFilterProvider filterProvider;
         private readonly CoreTokenScanner coreTokenScanner;
 
         /// <summary>
@@ -35,10 +38,11 @@
 
         public long CurrentPosition => coreTokenScanner.CurrentPosition;
 
-        public PdfTokenScanner(IInputBytes inputBytes, IObjectLocationProvider objectLocationProvider)
+        public PdfTokenScanner(IInputBytes inputBytes, IObjectLocationProvider objectLocationProvider, IFilterProvider filterProvider)
         {
             this.inputBytes = inputBytes;
             this.objectLocationProvider = objectLocationProvider;
+            this.filterProvider = filterProvider;
             coreTokenScanner = new CoreTokenScanner(inputBytes);
         }
 
@@ -46,7 +50,7 @@
         {
             // Read until we find object-number generation obj, e.g. "69 420 obj".
             int tokensRead = 0;
-            while (coreTokenScanner.MoveNext() && coreTokenScanner.CurrentToken != OperatorToken.StartObject)
+            while (coreTokenScanner.MoveNext() && !Equals(coreTokenScanner.CurrentToken, OperatorToken.StartObject))
             {
                 if (coreTokenScanner.CurrentToken is CommentToken)
                 {
@@ -79,21 +83,21 @@
             }
 
             // Read all tokens between obj and endobj.
-            while (coreTokenScanner.MoveNext() && coreTokenScanner.CurrentToken != OperatorToken.EndObject)
+            while (coreTokenScanner.MoveNext() && !Equals(coreTokenScanner.CurrentToken, OperatorToken.EndObject))
             {
                 if (coreTokenScanner.CurrentToken is CommentToken)
                 {
                     continue;
                 }
 
-                if (coreTokenScanner.CurrentToken == OperatorToken.StartObject)
+                if (ReferenceEquals(coreTokenScanner.CurrentToken, OperatorToken.StartObject))
                 {
                     // This should never happen.
                     Debug.Assert(false, "Encountered a start object 'obj' operator before the end of the previous object.");
                     return false;
                 }
 
-                if (coreTokenScanner.CurrentToken == OperatorToken.StartStream)
+                if (ReferenceEquals(coreTokenScanner.CurrentToken, OperatorToken.StartStream))
                 {
                     // Read stream: special case.
                     if (TryReadStream(coreTokenScanner.CurrentTokenStart, out var stream))
@@ -114,7 +118,7 @@
                 previousTokenPositions[1] = coreTokenScanner.CurrentPosition;
             }
 
-            if (coreTokenScanner.CurrentToken != OperatorToken.EndObject)
+            if (!ReferenceEquals(coreTokenScanner.CurrentToken, OperatorToken.EndObject))
             {
                 readTokens.Clear();
                 return false;
@@ -125,7 +129,7 @@
             IToken token;
             if (readTokens.Count == 3 && readTokens[0] is NumericToken objNum
                                       && readTokens[1] is NumericToken genNum
-                                      && readTokens[2] == OperatorToken.R)
+                                      && ReferenceEquals(readTokens[2], OperatorToken.R))
             {
                 // I have no idea if this can ever happen.
                 token = new IndirectReferenceToken(new IndirectReference(objNum.Long, genNum.Int));
@@ -196,10 +200,7 @@
 
             // Track any 'endobj' or 'endstream' operators we see.
             var observedEndLocations = new List<PossibleStreamEndLocation>();
-
-            // Keep track of the previous byte.
-            byte previousByte = 0;
-
+            
             // Begin reading the stream.
             using (var memoryStream = new MemoryStream())
             using (var binaryWrite = new BinaryWriter(memoryStream))
@@ -287,8 +288,7 @@
                         endObjPosition = 0;
                         commonPartPosition = 0;
                     }
-
-                    previousByte = inputBytes.CurrentByte;
+                    
                     binaryWrite.Write(inputBytes.CurrentByte);
 
                     read++;
@@ -451,9 +451,22 @@
 
         public ObjectToken Get(IndirectReference reference)
         {
+            if (objectLocationProvider.TryGetCached(reference, out var objectToken))
+            {
+                return objectToken;
+            }
+
             if (!objectLocationProvider.TryGetOffset(reference, out var offset))
             {
                 throw new InvalidOperationException($"Could not find the object with reference: {reference}.");
+            }
+
+            // Negative offsets refer to a stream with that number.
+            if (offset < 0)
+            {
+                var result = GetObjectFromStream(reference, offset);
+
+                return result;
             }
 
             Seek(offset);
@@ -464,6 +477,80 @@
             }
 
             return (ObjectToken)CurrentToken;
+        }
+
+        private ObjectToken GetObjectFromStream(IndirectReference reference, long offset)
+        {
+            var streamObjectNumber = offset * -1;
+
+            var streamObject = Get(new IndirectReference(streamObjectNumber, 0));
+
+            if (!(streamObject.Data is StreamToken stream))
+            {
+                throw new PdfDocumentFormatException("Requested a stream object by reference but the requested stream object " +
+                                                     $"was not a stream: {reference}, {streamObject.Data}.");
+            }
+
+            var objects = ParseObjectStream(stream, offset);
+
+            foreach (var o in objects)
+            {
+                objectLocationProvider.Cache(o);
+            }
+
+            if (!objectLocationProvider.TryGetCached(reference, out var result))
+            {
+                throw new PdfDocumentFormatException($"Could not find the object {reference} in the stream {streamObjectNumber}.");
+            }
+
+            return result;
+        }
+
+        private IReadOnlyList<ObjectToken> ParseObjectStream(StreamToken stream, long offset)
+        {
+            if (!stream.StreamDictionary.TryGet(NameToken.N, out var numberToken)
+            || !(numberToken is NumericToken numberOfObjects))
+            {
+                throw new PdfDocumentFormatException($"Object stream dictionary did not provide number of objects {stream.StreamDictionary}.");
+            }
+
+            if (!stream.StreamDictionary.TryGet(NameToken.First, out var firstToken)
+            || !(firstToken is NumericToken))
+            {
+                throw new PdfDocumentFormatException($"Object stream dictionary did not provide first object offset {stream.StreamDictionary}.");
+            }
+
+            // Read the N integers
+            var bytes = new ByteArrayInputBytes(stream.Decode(filterProvider));
+
+            var scanner = new CoreTokenScanner(bytes);
+
+            var objects = new List<Tuple<long, long>>();
+
+            for (var i = 0; i < numberOfObjects.Int; i++)
+            {
+                scanner.MoveNext();
+                var objectNumber = (NumericToken) scanner.CurrentToken;
+                scanner.MoveNext();
+                var byteOffset = (NumericToken) scanner.CurrentToken;
+
+                objects.Add(Tuple.Create(objectNumber.Long, byteOffset.Long));
+            }
+
+            var results = new List<ObjectToken>();
+
+            for (var i = 0; i < objects.Count; i++)
+            {
+                var obj = objects[i];
+
+                scanner.MoveNext();
+
+                var token = scanner.CurrentToken;
+
+                results.Add(new ObjectToken(offset, new IndirectReference(obj.Item1, 0), token));
+            }
+
+            return results;
         }
     }
 }

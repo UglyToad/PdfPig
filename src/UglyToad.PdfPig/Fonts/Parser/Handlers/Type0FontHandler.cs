@@ -18,10 +18,10 @@
         private readonly CidFontFactory cidFontFactory;
         private readonly CMapCache cMapCache;
         private readonly IFilterProvider filterProvider;
-        private readonly IPdfObjectScanner scanner;
+        private readonly IPdfTokenScanner scanner;
 
         public Type0FontHandler(CidFontFactory cidFontFactory, CMapCache cMapCache, IFilterProvider filterProvider,
-            IPdfObjectScanner scanner)
+            IPdfTokenScanner scanner)
         {
             this.cidFontFactory = cidFontFactory;
             this.cMapCache = cMapCache;

@@ -2,7 +2,7 @@
 {
     using System.Collections.Generic;
     using ContentStream;
-    using ContentStream.TypedAccessors;
+    using Tokenization.Tokens;
 
     /// <summary>
     /// 
@@ -29,11 +29,11 @@
 
         public long Previous { get; }
 
-        public PdfDictionary Dictionary { get; }
+        public DictionaryToken Dictionary { get; private set; }
 
         public CrossReferenceType Type { get; }
 
-        public CrossReferenceTablePart(IReadOnlyDictionary<IndirectReference, long> objectOffsets, long offset, long previous, PdfDictionary dictionary, CrossReferenceType type)
+        public CrossReferenceTablePart(IReadOnlyDictionary<IndirectReference, long> objectOffsets, long offset, long previous, DictionaryToken dictionary, CrossReferenceType type)
         {
             ObjectOffsets = objectOffsets;
             Offset = offset;
@@ -45,7 +45,17 @@
         public void FixOffset(long offset)
         {
             Offset = offset;
-            Dictionary.SetLong(CosName.PREV, offset);
+            Dictionary = Dictionary.With(NameToken.Prev, new NumericToken(offset));
+        }
+
+        public long GetPreviousOffset()
+        {
+            if (Dictionary.TryGet(NameToken.Prev, out var token) && token is NumericToken numeric)
+            {
+                return numeric.Long;
+            }
+
+            return -1;
         }
     }
 }

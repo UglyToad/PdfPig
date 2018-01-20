@@ -10,9 +10,9 @@
 
     internal class EncodingReader : IEncodingReader
     {
-        private readonly IPdfObjectScanner pdfScanner;
+        private readonly IPdfTokenScanner pdfScanner;
 
-        public EncodingReader(IPdfObjectScanner pdfScanner)
+        public EncodingReader(IPdfTokenScanner pdfScanner)
         {
             this.pdfScanner = pdfScanner;
         }

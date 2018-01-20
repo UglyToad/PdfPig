@@ -16,14 +16,14 @@
         private readonly IPageFactory pageFactory;
         private readonly IRandomAccessRead reader;
         private readonly bool isLenientParsing;
-        private readonly IPdfObjectScanner pdfScanner;
+        private readonly IPdfTokenScanner pdfScanner;
         private readonly DictionaryToken rootPageDictionary;
         private readonly Dictionary<int, DictionaryToken> locatedPages = new Dictionary<int, DictionaryToken>();
 
         public int Count { get; }
 
         internal Pages(ILog log, Catalog catalog, IPageFactory pageFactory,
-            IRandomAccessRead reader, bool isLenientParsing, IPdfObjectScanner pdfScanner)
+            IRandomAccessRead reader, bool isLenientParsing, IPdfTokenScanner pdfScanner)
         {
             if (catalog == null)
             {

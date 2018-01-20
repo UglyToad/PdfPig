@@ -146,7 +146,7 @@
                 throw new InvalidOperationException($"Something went wrong trying to read the XREF table at {offset}.");
             }
 
-            builder.Dictionary = trailer;
+            //builder.Dictionary = trailer;
             builder.Previous = trailer.GetLongOrDefault(CosName.PREV);
 
             return true;

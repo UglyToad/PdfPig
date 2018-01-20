@@ -2,8 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using ContentStream;
-    using ContentStream.TypedAccessors;
     using Cos;
     using Exceptions;
     using IO;
@@ -15,122 +13,93 @@
 
     internal class CrossReferenceParser
     {
-        private const int X = 'x';
-
         private readonly ILog log;
         private readonly CosDictionaryParser dictionaryParser;
         private readonly CosBaseParser baseParser;
-        private readonly CosStreamParser streamParser;
         private readonly CrossReferenceStreamParser crossReferenceStreamParser;
         private readonly CrossReferenceTableParser crossReferenceTableParser;
-        private readonly OldCrossReferenceTableParser oldCrossReferenceTableParser;
+        private readonly XrefCosOffsetChecker xrefCosChecker;
 
-        public CrossReferenceParser(ILog log, CosDictionaryParser dictionaryParser, CosBaseParser baseParser, 
-            CosStreamParser streamParser,
+        public CrossReferenceParser(ILog log, CosDictionaryParser dictionaryParser, CosBaseParser baseParser,
             CrossReferenceStreamParser crossReferenceStreamParser,
-            CrossReferenceTableParser crossReferenceTableParser,
-            OldCrossReferenceTableParser oldCrossReferenceTableParser)
+            CrossReferenceTableParser crossReferenceTableParser)
         {
             this.log = log;
             this.dictionaryParser = dictionaryParser;
             this.baseParser = baseParser;
-            this.streamParser = streamParser;
             this.crossReferenceStreamParser = crossReferenceStreamParser;
             this.crossReferenceTableParser = crossReferenceTableParser;
-            this.oldCrossReferenceTableParser = oldCrossReferenceTableParser;
+
+            xrefCosChecker = new XrefCosOffsetChecker();
         }
-
-        public CrossReferenceTable ParseNew(long crossReferenceLocation, ISeekableTokenScanner scanner,
-            bool isLenientParsing)
-        {
-            var previousLocation = crossReferenceLocation;
-
-            var visitedCrossReferences = new HashSet<long>();
-
-            while (previousLocation >= 0)
-            {
-                scanner.Seek(crossReferenceLocation);
-
-                scanner.MoveNext();
-
-                if (scanner.CurrentToken is OperatorToken tableToken && tableToken.Data == "xref")
-                {
-                    var table = crossReferenceTableParser.Parse(scanner, crossReferenceLocation, isLenientParsing);
-
-                    previousLocation = table.Dictionary.GetLongOrDefault(CosName.PREV, -1);
-
-
-                }
-                else if (scanner.CurrentToken is NumericToken streamObjectNumberToken)
-                {
-                    break;
-                }
-                else
-                {
-                    throw new PdfDocumentFormatException($"The xref object was not a stream or a table, was instead: {scanner.CurrentToken}.");
-                }
-            }
-
-            return null;
-        }
-
+        
         public CrossReferenceTable Parse(IRandomAccessRead reader, bool isLenientParsing, long xrefLocation,
-            CosObjectPool pool)
+            CosObjectPool pool, IPdfTokenScanner pdfScanner, ISeekableTokenScanner tokenScanner)
         {
             var xrefOffsetValidator = new XrefOffsetValidator(log, reader, dictionaryParser, baseParser, pool);
-            var xrefCosChecker = new XrefCosOffsetChecker();
             long fixedOffset = xrefOffsetValidator.CheckXRefOffset(xrefLocation, isLenientParsing);
             if (fixedOffset > -1)
             {
                 xrefLocation = fixedOffset;
+
+                log.Debug($"Found the first cross reference table or stream at {fixedOffset}.");
             }
 
             var table = new CrossReferenceTableBuilder();
 
+            var prevSet = new HashSet<long>();
             long previousCrossReferenceLocation = xrefLocation;
-            // ---- parse whole chain of xref tables/object streams using PREV reference
-            HashSet<long> prevSet = new HashSet<long>();
+
+            // Parse all cross reference tables and streams.
             while (previousCrossReferenceLocation > 0)
             {
+                log.Debug($"Reading cross reference table or stream at {previousCrossReferenceLocation}.");
+
                 // seek to xref table
-                reader.Seek(previousCrossReferenceLocation);
-                
-                ReadHelper.SkipSpaces(reader);
+                tokenScanner.Seek(previousCrossReferenceLocation);
 
-                var isTable = reader.Peek() == X;
+                tokenScanner.MoveNext();
 
-                // -- parse xref
-                if (isTable)
+                if (tokenScanner.CurrentToken is OperatorToken tableToken && tableToken.Data == "xref")
                 {
-                    // xref table and trailer
-                    // use existing parser to parse xref table
-                    if (!oldCrossReferenceTableParser.TryParse(reader, previousCrossReferenceLocation, isLenientParsing, pool, out var tableBuilder))
-                    {
-                        throw new InvalidOperationException($"Expected trailer object at position: {reader.GetPosition()}");
-                    }
-                    
-                    PdfDictionary trailer = tableBuilder.Dictionary;
+                    log.Debug("Element was cross reference table.");
+
+                    CrossReferenceTablePart tablePart = crossReferenceTableParser.Parse(tokenScanner,
+                        previousCrossReferenceLocation, isLenientParsing);
+
+                    previousCrossReferenceLocation = tablePart.GetPreviousOffset();
+
+                    DictionaryToken tableDictionary = tablePart.Dictionary;
+
                     CrossReferenceTablePart streamPart = null;
+
                     // check for a XRef stream, it may contain some object ids of compressed objects 
-                    if (trailer.ContainsKey(CosName.XREF_STM))
+                    if (tableDictionary.ContainsKey(NameToken.XrefStm))
                     {
-                        int streamOffset = trailer.GetIntOrDefault(CosName.XREF_STM);
+                        log.Debug("Cross reference table contained referenced to stream. Reading the stream.");
+
+                        int streamOffset = ((NumericToken)tableDictionary.Data[NameToken.XrefStm]).Int;
+
                         // check the xref stream reference
                         fixedOffset = xrefOffsetValidator.CheckXRefOffset(streamOffset, isLenientParsing);
                         if (fixedOffset > -1 && fixedOffset != streamOffset)
                         {
-                            log.Warn("/XRefStm offset " + streamOffset + " is incorrect, corrected to " + fixedOffset);
+                            log.Warn($"/XRefStm offset {streamOffset} is incorrect, corrected to {fixedOffset}");
+
                             streamOffset = (int)fixedOffset;
-                            trailer.SetInt(CosName.XREF_STM, streamOffset);
-                            tableBuilder.Offset = streamOffset;
+
+                            // Update the cross reference table to be a stream instead.
+                            tableDictionary = tableDictionary.With(NameToken.XrefStm, new NumericToken(streamOffset));
+                            tablePart = new CrossReferenceTablePart(tablePart.ObjectOffsets, streamOffset,
+                                tablePart.Previous, tableDictionary, tablePart.Type);
                         }
+
+                        // Read the stream from the table.
                         if (streamOffset > 0)
                         {
-                            reader.Seek(streamOffset);
-                            ReadHelper.SkipSpaces(reader);
                             try
                             {
-                                streamPart = ParseCrossReferenceStream(reader, previousCrossReferenceLocation, pool, isLenientParsing);
+                                streamPart = ParseCrossReferenceStream(previousCrossReferenceLocation, pdfScanner);
                             }
                             catch (InvalidOperationException ex)
                             {
@@ -140,7 +109,7 @@
                                 }
                                 else
                                 {
-                                    throw ex;
+                                    throw;
                                 }
                             }
                         }
@@ -148,39 +117,31 @@
                         {
                             if (isLenientParsing)
                             {
-                                log.Error("Skipped XRef stream due to a corrupt offset:"+streamOffset);
+                                log.Error("Skipped XRef stream due to a corrupt offset:" + streamOffset);
                             }
                             else
                             {
-                                throw new InvalidOperationException("Skipped XRef stream due to a corrupt offset:" + streamOffset);
+                                throw new PdfDocumentFormatException("Skipped XRef stream due to a corrupt offset:" + streamOffset);
                             }
                         }
                     }
-                    previousCrossReferenceLocation = trailer.GetLongOrDefault(CosName.PREV);
-                    if (previousCrossReferenceLocation > 0)
-                    {
-                        // check the xref table reference
-                        fixedOffset = xrefOffsetValidator.CheckXRefOffset(previousCrossReferenceLocation, isLenientParsing);
-                        if (fixedOffset > -1 && fixedOffset != previousCrossReferenceLocation)
-                        {
-                            previousCrossReferenceLocation = fixedOffset;
-                            trailer.SetLong(CosName.PREV, previousCrossReferenceLocation);
-                        }
-                    }
-
-                    tableBuilder.Previous = tableBuilder.Dictionary.GetLongOrDefault(CosName.PREV);
-
-                    table.Add(tableBuilder.Build());
+                    
+                    table.Add(tablePart);
 
                     if (streamPart != null)
                     {
                         table.Add(streamPart);
                     }
                 }
-                else
+                else if (tokenScanner.CurrentToken is NumericToken)
                 {
+                    log.Debug("Element was cross reference stream.");
+
+                    // Unread the numeric token.
+                    tokenScanner.Seek(previousCrossReferenceLocation);
+
                     // parse xref stream
-                    var tablePart = ParseCrossReferenceStream(reader, previousCrossReferenceLocation, pool, isLenientParsing);
+                    var tablePart = ParseCrossReferenceStream(previousCrossReferenceLocation, pdfScanner);
                     table.Add(tablePart);
 
                     previousCrossReferenceLocation = tablePart.Previous;
@@ -195,10 +156,19 @@
                         }
                     }
                 }
+                else
+                {
+                    log.Debug("Element was invalid.");
+
+                    throw new PdfDocumentFormatException("The cross reference found at this location was not a " +
+                                                         $"table or a stream: Location - {previousCrossReferenceLocation}, {tokenScanner.CurrentPosition}.");
+                }
+
                 if (prevSet.Contains(previousCrossReferenceLocation))
                 {
-                    throw new InvalidOperationException("/Prev loop at offset " + previousCrossReferenceLocation);
+                    throw new PdfDocumentFormatException("The cross references formed an infinite loop.");
                 }
+
                 prevSet.Add(previousCrossReferenceLocation);
             }
 
@@ -209,20 +179,21 @@
             
             return resolved;
         }
-        
-        private CrossReferenceTablePart ParseCrossReferenceStream(IRandomAccessRead reader, long objByteOffset, CosObjectPool pool, 
-            bool isLenientParsing)
+
+        private CrossReferenceTablePart ParseCrossReferenceStream(long objByteOffset, IPdfTokenScanner pdfScanner)
         {
-            // ---- parse indirect object head
-            ObjectHelper.ReadObjectNumber(reader);
-            ObjectHelper.ReadGenerationNumber(reader);
+            pdfScanner.Seek(objByteOffset);
 
-            ReadHelper.ReadExpectedString(reader, "obj", true);
+            pdfScanner.MoveNext();
 
-            PdfDictionary dict = dictionaryParser.Parse(reader, baseParser, pool);
+            var streamObjectToken = (ObjectToken)pdfScanner.CurrentToken;
 
-            PdfRawStream xrefStream = streamParser.Parse(reader, dict, isLenientParsing, null);
-            CrossReferenceTablePart xrefTablePart = crossReferenceStreamParser.Parse(objByteOffset, xrefStream);
+            if (streamObjectToken == null || !(streamObjectToken.Data is StreamToken objectStream))
+            {
+                throw new PdfDocumentFormatException($"When reading a cross reference stream object found a non-stream object: {streamObjectToken?.Data}");
+            }
+            
+            CrossReferenceTablePart xrefTablePart = crossReferenceStreamParser.Parse(objByteOffset, objectStream);
 
             return xrefTablePart;
         }

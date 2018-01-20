@@ -5,6 +5,7 @@
     using System.Text;
     using IO;
     using PdfPig.ContentStream;
+    using PdfPig.Filters;
     using PdfPig.Tokenization.Scanner;
     using PdfPig.Tokenization.Tokens;
     using PdfPig.Util;
@@ -298,7 +299,7 @@ endobj
 endobj";
             var inputBytes = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(s));
 
-            var scanner = new PdfTokenScanner(inputBytes, new TestObjectLocationProvider());
+            var scanner = new PdfTokenScanner(inputBytes, new TestObjectLocationProvider(), new TestFilterProvider());
 
             var token = ReadToEnd(scanner)[1];
 
@@ -310,7 +311,8 @@ endobj";
         {
             var input = StringBytesTestConverter.Convert(s, false);
 
-            return new PdfTokenScanner(input.Bytes, locationProvider ?? new TestObjectLocationProvider());
+            return new PdfTokenScanner(input.Bytes, locationProvider ?? new TestObjectLocationProvider(),
+                new TestFilterProvider());
         }
 
         private static IReadOnlyList<ObjectToken> ReadToEnd(PdfTokenScanner scanner)
@@ -330,6 +332,24 @@ endobj";
             }
 
             return result;
+        }
+    }
+
+    internal class TestFilterProvider : IFilterProvider
+    {
+        public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary)
+        {
+            return new List<IFilter>();
+        }
+
+        public IReadOnlyList<IFilter> GetFilters(PdfDictionary streamDictionary)
+        {
+            return new List<IFilter>();
+        }
+
+        public IReadOnlyList<IFilter> GetAllFilters()
+        {
+            return new List<IFilter>();
         }
     }
 }

@@ -18,9 +18,9 @@
         private readonly CMapCache cMapCache;
         private readonly IFilterProvider filterProvider;
         private readonly IEncodingReader encodingReader;
-        private readonly IPdfObjectScanner scanner;
+        private readonly IPdfTokenScanner scanner;
 
-        public Type3FontHandler(IPdfObjectScanner scanner, CMapCache cMapCache, IFilterProvider filterProvider,
+        public Type3FontHandler(IPdfTokenScanner scanner, CMapCache cMapCache, IFilterProvider filterProvider,
             IEncodingReader encodingReader)
         {
             this.cMapCache = cMapCache;

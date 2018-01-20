@@ -16,14 +16,14 @@
 
     internal class Type1FontHandler : IFontHandler
     {
-        private readonly IPdfObjectScanner pdfScanner;
+        private readonly IPdfTokenScanner pdfScanner;
         private readonly CMapCache cMapCache;
         private readonly IFilterProvider filterProvider;
         private readonly FontDescriptorFactory fontDescriptorFactory;
         private readonly IEncodingReader encodingReader;
         private readonly Type1FontParser type1FontParser;
 
-        public Type1FontHandler(IPdfObjectScanner pdfScanner, CMapCache cMapCache, IFilterProvider filterProvider, 
+        public Type1FontHandler(IPdfTokenScanner pdfScanner, CMapCache cMapCache, IFilterProvider filterProvider, 
             FontDescriptorFactory fontDescriptorFactory, 
             IEncodingReader encodingReader,
             Type1FontParser type1FontParser)

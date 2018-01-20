@@ -11,9 +11,9 @@
 
     internal class CatalogFactory
     {
-        private readonly IPdfObjectScanner scanner;
+        private readonly IPdfTokenScanner scanner;
 
-        public CatalogFactory(IPdfObjectScanner scanner)
+        public CatalogFactory(IPdfTokenScanner scanner)
         {
             this.scanner = scanner;
         }

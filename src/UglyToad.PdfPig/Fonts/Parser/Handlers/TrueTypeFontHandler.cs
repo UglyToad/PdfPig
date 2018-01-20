@@ -20,9 +20,9 @@
         private readonly FontDescriptorFactory fontDescriptorFactory;
         private readonly TrueTypeFontParser trueTypeFontParser;
         private readonly IEncodingReader encodingReader;
-        private readonly IPdfObjectScanner pdfScanner;
+        private readonly IPdfTokenScanner pdfScanner;
 
-        public TrueTypeFontHandler(IPdfObjectScanner pdfScanner, IFilterProvider filterProvider, 
+        public TrueTypeFontHandler(IPdfTokenScanner pdfScanner, IFilterProvider filterProvider, 
             CMapCache cMapCache,
             FontDescriptorFactory fontDescriptorFactory,
             TrueTypeFontParser trueTypeFontParser,

@@ -32,7 +32,7 @@
             throw new InvalidOperationException($"Could not find the object {baseObject.ToIndirectReference()} with type {typeof(T).Name}.");
         }
 
-        public static T Get<T>(IToken token, IPdfObjectScanner scanner) where T : IToken
+        public static T Get<T>(IToken token, IPdfTokenScanner scanner) where T : IToken
         {
             if (token is T result)
             {

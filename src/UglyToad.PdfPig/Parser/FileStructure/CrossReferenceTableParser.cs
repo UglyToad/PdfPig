@@ -2,7 +2,6 @@
 {
     using System.Collections.Generic;
     using System.Linq;
-    using ContentStream;
     using Cos;
     using Exceptions;
     using Parts.CrossReference;
@@ -183,7 +182,7 @@
             return objectCount;
         }
 
-        private static PdfDictionary ParseTrailer(ISeekableTokenScanner scanner, bool isLenientParsing)
+        private static DictionaryToken ParseTrailer(ISeekableTokenScanner scanner, bool isLenientParsing)
         {
             if (scanner.CurrentToken is OperatorToken trailerToken && trailerToken.Data == "trailer")
             {
@@ -192,7 +191,7 @@
                     throw new PdfDocumentFormatException($"Expected to find a dictionary in the trailer but instead found: {scanner.CurrentToken}.");
                 }
 
-                return PdfDictionary.FromDictionaryToken(trailerDictionary);
+                return trailerDictionary;
             }
 
             if (isLenientParsing)
@@ -210,7 +209,7 @@
 
                 if (foundTrailer && scanner.TryReadToken(out DictionaryToken trailerDictionary))
                 {
-                    return PdfDictionary.FromDictionaryToken(trailerDictionary);
+                    return trailerDictionary;
                 }
             }
 

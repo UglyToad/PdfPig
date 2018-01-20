@@ -20,9 +20,9 @@
         private readonly IResourceStore resourceStore;
         private readonly IFilterProvider filterProvider;
         private readonly IPageContentParser pageContentParser;
-        private readonly IPdfObjectScanner pdfScanner;
+        private readonly IPdfTokenScanner pdfScanner;
 
-        public PageFactory(IPdfObjectScanner pdfScanner, IResourceStore resourceStore, IFilterProvider filterProvider,
+        public PageFactory(IPdfTokenScanner pdfScanner, IResourceStore resourceStore, IFilterProvider filterProvider,
             IPageContentParser pageContentParser)
         {
             this.resourceStore = resourceStore;

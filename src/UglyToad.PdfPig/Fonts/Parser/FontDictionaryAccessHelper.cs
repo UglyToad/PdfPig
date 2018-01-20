@@ -28,7 +28,7 @@
             return number.Int;
         }
 
-        public static decimal[] GetWidths(IPdfObjectScanner pdfScanner, DictionaryToken dictionary, bool isLenientParsing)
+        public static decimal[] GetWidths(IPdfTokenScanner pdfScanner, DictionaryToken dictionary, bool isLenientParsing)
         {
             if (!dictionary.TryGet(NameToken.Widths, out var token))
             {
@@ -53,7 +53,7 @@
             return result;
         }
 
-        public static FontDescriptor GetFontDescriptor(IPdfObjectScanner pdfScanner, FontDescriptorFactory fontDescriptorFactory, DictionaryToken dictionary, 
+        public static FontDescriptor GetFontDescriptor(IPdfTokenScanner pdfScanner, FontDescriptorFactory fontDescriptorFactory, DictionaryToken dictionary, 
             bool isLenientParsing)
         {
             if (!dictionary.TryGet(NameToken.FontDesc, out var obj))
@@ -68,7 +68,7 @@
             return descriptor;
         }
         
-        public static NameToken GetName(IPdfObjectScanner pdfScanner, DictionaryToken dictionary, FontDescriptor descriptor, bool isLenientParsing)
+        public static NameToken GetName(IPdfTokenScanner pdfScanner, DictionaryToken dictionary, FontDescriptor descriptor, bool isLenientParsing)
         {
             if (dictionary.TryGet(NameToken.BaseFont, out var nameBase))
             {

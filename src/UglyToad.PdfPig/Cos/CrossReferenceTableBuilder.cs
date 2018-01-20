@@ -4,8 +4,8 @@
     using System.Collections.Generic;
     using System.Linq;
     using ContentStream;
-    using ContentStream.TypedAccessors;
     using Logging;
+    using Tokenization.Tokens;
 
     /// <summary>
     /// 
@@ -31,7 +31,7 @@
         public CrossReferenceTable Build(long startXrefOffset, ILog log)
         {
             CrossReferenceType type = CrossReferenceType.Table;
-            PdfDictionary trailerDictionary = new PdfDictionary();
+            DictionaryToken trailerDictionary = new DictionaryToken(new Dictionary<IToken, IToken>());
             Dictionary<IndirectReference, long> objectOffsets = new Dictionary<IndirectReference, long>();
 
             List<long> xrefSeqBytePos = new List<long>();
@@ -59,7 +59,7 @@
 
                 while (currentPart.Dictionary != null)
                 {
-                    long prevBytePos = currentPart.Dictionary.GetLongOrDefault(CosName.PREV, -1L);
+                    long prevBytePos = currentPart.GetPreviousOffset();
                     if (prevBytePos == -1)
                     {
                         break;
@@ -91,16 +91,16 @@
                 var currentObject = parts.First(x => x.Offset == bPos);
                 if (currentObject.Dictionary != null)
                 {
-                    foreach (var entry in currentObject.Dictionary)
+                    foreach (var entry in currentObject.Dictionary.Data)
                     {
                         /*
                          * If we're at a second trailer, we have a linearized pdf file, meaning that the first Size entry represents
                          * all of the objects so we don't need to grab the second.
                          */
-                        if (!entry.Key.Name.Equals("Size")
-                            || !trailerDictionary.ContainsKey(CosName.Create("Size")))
+                        if (!entry.Key.Equals("Size", StringComparison.OrdinalIgnoreCase)
+                            || !trailerDictionary.ContainsKey(NameToken.Size))
                         {
-                            trailerDictionary.Set(entry.Key, entry.Value);
+                            trailerDictionary = trailerDictionary.With(entry.Key, entry.Value);
                         }
                     }
                 }

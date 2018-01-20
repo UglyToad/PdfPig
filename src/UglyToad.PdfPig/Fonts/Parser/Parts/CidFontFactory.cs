@@ -19,9 +19,9 @@
         private readonly FontDescriptorFactory descriptorFactory;
         private readonly TrueTypeFontParser trueTypeFontParser;
         private readonly IFilterProvider filterProvider;
-        private readonly IPdfObjectScanner pdfScanner;
+        private readonly IPdfTokenScanner pdfScanner;
 
-        public CidFontFactory(IPdfObjectScanner pdfScanner, FontDescriptorFactory descriptorFactory, TrueTypeFontParser trueTypeFontParser, 
+        public CidFontFactory(IPdfTokenScanner pdfScanner, FontDescriptorFactory descriptorFactory, TrueTypeFontParser trueTypeFontParser, 
             IFilterProvider filterProvider)
         {
             this.descriptorFactory = descriptorFactory;

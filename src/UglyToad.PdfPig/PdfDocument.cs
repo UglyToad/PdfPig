@@ -27,7 +27,7 @@
         [NotNull]
         private readonly ParsingCachingProviders cachingProviders;
 
-        private readonly IPdfObjectScanner pdfScanner;
+        private readonly IPdfTokenScanner pdfScanner;
 
         [NotNull]
         internal Catalog Catalog { get; }
@@ -56,7 +56,7 @@
             ParsingCachingProviders cachingProviders,
             IPageFactory pageFactory,
             Catalog catalog,
-            DocumentInformation information, IPdfObjectScanner pdfScanner)
+            DocumentInformation information, IPdfTokenScanner pdfScanner)
         {
             this.log = log;
             this.reader = reader ?? throw new ArgumentNullException(nameof(reader));

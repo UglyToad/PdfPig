@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using ContentStream;
+    using Tokenization.Tokens;
     using Util.JetBrains.Annotations;
 
     internal class CrossReferenceTable
@@ -15,9 +16,9 @@
         public IReadOnlyDictionary<IndirectReference, long> ObjectOffsets => objectOffsets;
 
         [NotNull]
-        public PdfDictionary Dictionary { get; }
+        public DictionaryToken Dictionary { get; }
 
-        public CrossReferenceTable(CrossReferenceType type, IReadOnlyDictionary<IndirectReference, long> objectOffsets, PdfDictionary dictionary)
+        public CrossReferenceTable(CrossReferenceType type, IReadOnlyDictionary<IndirectReference, long> objectOffsets, DictionaryToken dictionary)
         {
             if (objectOffsets == null)
             {

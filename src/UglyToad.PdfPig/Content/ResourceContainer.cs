@@ -10,13 +10,13 @@
 
     internal class ResourceContainer : IResourceStore
     {
-        private readonly IPdfObjectScanner scanner;
+        private readonly IPdfTokenScanner scanner;
         private readonly IFontFactory fontFactory;
 
         private readonly Dictionary<IndirectReference, IFont> loadedFonts = new Dictionary<IndirectReference, IFont>();
         private readonly Dictionary<NameToken, IndirectReference> currentResourceState = new Dictionary<NameToken, IndirectReference>();
 
-        public ResourceContainer(IPdfObjectScanner scanner, IFontFactory fontFactory)
+        public ResourceContainer(IPdfTokenScanner scanner, IFontFactory fontFactory)
         {
             this.scanner = scanner;
             this.fontFactory = fontFactory;

@@ -53,33 +53,33 @@
         private static PdfDocument OpenDocument(IRandomAccessRead reader, IInputBytes inputBytes, ISeekableTokenScanner scanner, IContainer container, bool isLenientParsing)
         {
             var log = container.Get<ILog>();
+            var filterProvider = container.Get<IFilterProvider>();
+            var bruteForceSearcher = new BruteForceSearcher(reader);
+            var pool = new CosObjectPool();
+
+            CrossReferenceTable crossReferenceTable = null;
+
+            // We're ok with this since our intent is to lazily load the cross reference table.
+            // ReSharper disable once AccessToModifiedClosure
+            var locationProvider = new ObjectLocationProvider(() => crossReferenceTable, pool, bruteForceSearcher);
+            var pdfScanner = new PdfTokenScanner(inputBytes, locationProvider, filterProvider);
 
             var version = container.Get<FileHeaderParser>().Parse(scanner, isLenientParsing);
             
             var crossReferenceOffset = container.Get<FileTrailerParser>().GetFirstCrossReferenceOffset(inputBytes, scanner, isLenientParsing);
-
-            var pool = new CosObjectPool();
-
+            
             // TODO: make this use the scanner.
             var validator = new CrossReferenceOffsetValidator(new XrefOffsetValidator(log, reader, container.Get<CosDictionaryParser>(),
                 container.Get<CosBaseParser>(), pool));
 
             crossReferenceOffset = validator.Validate(crossReferenceOffset, isLenientParsing);
             
-            var crossReferenceTable = container.Get<CrossReferenceParser>()
-                .Parse(reader, isLenientParsing, crossReferenceOffset, pool);
-
-            // container.Get<CrossReferenceParser>().ParseNew(crossReferenceOffset, scanner, isLenientParsing);
+            crossReferenceTable = container.Get<CrossReferenceParser>()
+                .Parse(reader, isLenientParsing, crossReferenceOffset, pool, pdfScanner, scanner);
             
-            var filterProvider = container.Get<IFilterProvider>();
-            var bruteForceSearcher = new BruteForceSearcher(reader);
-            var pdfObjectParser = new PdfObjectParser(container.Get<ILog>(), container.Get<CosBaseParser>(),
-                container.Get<CosStreamParser>(), crossReferenceTable, bruteForceSearcher, pool, container.Get<ObjectStreamParser>());
-
             var trueTypeFontParser = new TrueTypeFontParser();
             var fontDescriptorFactory = new FontDescriptorFactory();
 
-            var pdfScanner = new PdfTokenScanner(inputBytes, new ObjectLocationProvider(crossReferenceTable, pool, bruteForceSearcher));
             var cidFontFactory = new CidFontFactory(pdfScanner, fontDescriptorFactory, trueTypeFontParser, filterProvider);
             var encodingReader = new EncodingReader(pdfScanner);
 
@@ -91,59 +91,39 @@
                 new TrueTypeFontHandler(pdfScanner, filterProvider, cMapCache, fontDescriptorFactory, trueTypeFontParser, encodingReader),
                 new Type1FontHandler(pdfScanner, cMapCache, filterProvider, fontDescriptorFactory, encodingReader, new Type1FontParser()),
                 new Type3FontHandler(pdfScanner, cMapCache, filterProvider, encodingReader));
-
-            var dynamicParser = container.Get<DynamicParser>();
+            
             var resourceContainer = new ResourceContainer(pdfScanner, fontFactory);
 
             var pageFactory = new PageFactory(pdfScanner, resourceContainer, filterProvider, new PageContentParser(new ReflectionGraphicsStateOperationFactory()));
             var informationFactory = new DocumentInformationFactory();
             var catalogFactory = new CatalogFactory(pdfScanner);
 
-            var rootDictionary = ParseTrailer(reader, crossReferenceTable, dynamicParser, bruteForceSearcher, pool,
-                isLenientParsing, pdfScanner);
+            var rootDictionary = ParseTrailer(crossReferenceTable, isLenientParsing, pdfScanner);
             
-            var information = informationFactory.Create(pdfObjectParser, crossReferenceTable.Dictionary, reader, isLenientParsing);
+            var information = informationFactory.Create(pdfScanner, crossReferenceTable.Dictionary);
 
             var catalog = catalogFactory.Create(rootDictionary, reader, isLenientParsing);
 
             var caching = new ParsingCachingProviders(pool, bruteForceSearcher, resourceContainer);
-
             
             return new PdfDocument(log, reader, version, crossReferenceTable, isLenientParsing, caching, pageFactory, catalog, information,
                 pdfScanner);
         }
 
-        private static DictionaryToken ParseTrailer(IRandomAccessRead reader, CrossReferenceTable crossReferenceTable,
-            DynamicParser dynamicParser, BruteForceSearcher bruteForceSearcher, CosObjectPool pool, bool isLenientParsing, IPdfObjectScanner pdfObjectScanner)
+        private static DictionaryToken ParseTrailer(CrossReferenceTable crossReferenceTable, bool isLenientParsing, IPdfTokenScanner pdfTokenScanner)
         {
-            if (crossReferenceTable.Dictionary.ContainsKey(CosName.ENCRYPT))
+            if (crossReferenceTable.Dictionary.ContainsKey(NameToken.Encrypt))
             {
                 throw new NotSupportedException("Cannot currently parse a document using encryption: " + crossReferenceTable.Dictionary);
             }
 
-            foreach (var keyValuePair in crossReferenceTable.Dictionary)
+            if (!crossReferenceTable.Dictionary.TryGet(NameToken.Root, out var rootToken))
             {
-                if (keyValuePair.Value is CosObject temporaryObject && !keyValuePair.Key.Equals(CosName.ROOT))
-                {
-                    // Loads these objects into the object pool for access later.
-                    dynamicParser.Parse(reader, temporaryObject, pool, crossReferenceTable, bruteForceSearcher,
-                        isLenientParsing, false);
-                }
+                throw new PdfDocumentFormatException($"Missing root object specification in trailer: {crossReferenceTable.Dictionary}.");
             }
+
+            var rootDictionary = DirectObjectFinder.Get<DictionaryToken>(rootToken, pdfTokenScanner);
             
-            CosObject root = (CosObject)crossReferenceTable.Dictionary.GetItemOrDefault(CosName.ROOT);
-            if (root == null)
-            {
-                throw new InvalidOperationException("Missing root object specification in trailer.");
-            }
-
-            var obj = pdfObjectScanner.Get(root.ToIndirectReference());
-
-            if (!(obj.Data is DictionaryToken rootDictionary))
-            {
-                throw new PdfDocumentFormatException($"Could not find the root dictionary, instead found: {obj.Data}");
-            }
-
             if (!rootDictionary.ContainsKey(NameToken.Type) && isLenientParsing)
             {
                 rootDictionary = rootDictionary.With(NameToken.Type, NameToken.Catalog);
