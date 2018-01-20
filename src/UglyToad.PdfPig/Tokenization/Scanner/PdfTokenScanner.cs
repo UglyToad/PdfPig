@@ -215,14 +215,7 @@
                     // We are reading 'end' (possibly).
                     if (commonPartPosition < commonPart.Length && inputBytes.CurrentByte == commonPart[commonPartPosition])
                     {
-                        if (commonPartPosition == 0 && !ReadHelper.IsWhitespace(previousByte))
-                        {
-                            // We've just encountered a normal 'e' in the stream.
-                        }
-                        else
-                        {
-                            commonPartPosition++;
-                        }
+                        commonPartPosition++;
                     }
                     else if (commonPartPosition == commonPart.Length)
                     {

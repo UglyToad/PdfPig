@@ -3,9 +3,11 @@
     using System;
     using System.Collections.Generic;
     using System.Text;
+    using IO;
     using PdfPig.ContentStream;
     using PdfPig.Tokenization.Scanner;
     using PdfPig.Tokenization.Tokens;
+    using PdfPig.Util;
     using Xunit;
 
     public class PdfTokenScannerTests
@@ -294,8 +296,9 @@ endobj
 9 0 obj
 16
 endobj";
+            var inputBytes = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(s));
 
-            var scanner = GetScanner(s);
+            var scanner = new PdfTokenScanner(inputBytes, new TestObjectLocationProvider());
 
             var token = ReadToEnd(scanner)[1];
 
