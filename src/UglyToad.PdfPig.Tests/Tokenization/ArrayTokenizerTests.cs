@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Tokenization
 {
     using System.Collections.Generic;
-    using PdfPig.Cos;
     using PdfPig.Tokenization;
     using PdfPig.Tokenization.Tokens;
     using Xunit;
@@ -85,12 +84,12 @@
 
             Assert.Equal(12m, AssertDataToken<NumericToken, decimal>(0, array).Data);
             Assert.Equal(10.453m, AssertDataToken<NumericToken, decimal>(1, array).Data);
-            Assert.Equal(CosName.Create("Fonts"), AssertDataToken<NameToken, CosName>(2, array).Data);
+            Assert.Equal(NameToken.Create("Fonts"), AssertDataToken<NameToken, string>(2, array).Data);
 
             var inner = AssertArrayToken(array.Data[3]);
 
-            Assert.Equal(CosName.Create("F1"), AssertDataToken<NameToken, CosName>(0, inner).Data);
-            Assert.Equal(CosName.Create("F3"), AssertDataToken<NameToken, CosName>(1, inner).Data);
+            Assert.Equal(NameToken.Create("F1"), AssertDataToken<NameToken, string>(0, inner).Data);
+            Assert.Equal(NameToken.Create("F3"), AssertDataToken<NameToken, string>(1, inner).Data);
 
             Assert.Equal("Moreover", AssertDataToken<StringToken, string>(4, array).Data);
         }
@@ -108,7 +107,7 @@
 
             var array = AssertArrayToken(token);
 
-            Assert.Equal(CosName.Create("Bounds"), AssertDataToken<NameToken, CosName>(0, array).Data);
+            Assert.Equal(NameToken.Create("Bounds"), AssertDataToken<NameToken, string>(0, array).Data);
 
             var firstInner = AssertArrayToken(array.Data[1]);
 
@@ -150,7 +149,7 @@
             Assert.Equal(3.14m, AssertDataToken<NumericToken, decimal>(1, array).Data);
             Assert.False(AssertDataToken<BooleanToken, bool>(2, array).Data);
             Assert.Equal("Ralph", AssertDataToken<StringToken, string>(3, array).Data);
-            Assert.Equal(CosName.Create("SomeName"), AssertDataToken<NameToken, CosName>(4, array).Data);
+            Assert.Equal(NameToken.Create("SomeName"), AssertDataToken<NameToken, string>(4, array).Data);
         }
         
         private static ArrayToken AssertArrayToken(IToken token)

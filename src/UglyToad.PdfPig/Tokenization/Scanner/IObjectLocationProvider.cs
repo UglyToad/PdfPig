@@ -35,7 +35,19 @@
 
         public bool TryGetOffset(IndirectReference reference, out long offset)
         {
-            return offsets.TryGetValue(reference, out offset);
+            if (offsets.TryGetValue(reference, out offset))
+            {
+                return true;
+            }
+
+            var locations = searcher.GetObjectLocations();
+
+            if (locations.TryGetValue(reference, out offset))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public void UpdateOffset(IndirectReference reference, long offset)

@@ -4,13 +4,10 @@
     using CidFonts;
     using Cmap;
     using Composite;
-    using ContentStream;
-    using Cos;
     using Exceptions;
     using Filters;
     using IO;
     using Parts;
-    using PdfPig.Parser;
     using PdfPig.Parser.Parts;
     using Tokenization.Scanner;
     using Tokenization.Tokens;
@@ -21,20 +18,18 @@
         private readonly CidFontFactory cidFontFactory;
         private readonly CMapCache cMapCache;
         private readonly IFilterProvider filterProvider;
-        private readonly IPdfObjectParser pdfObjectParser;
         private readonly IPdfObjectScanner scanner;
 
-        public Type0FontHandler(CidFontFactory cidFontFactory, CMapCache cMapCache, IFilterProvider filterProvider, IPdfObjectParser pdfObjectParser,
+        public Type0FontHandler(CidFontFactory cidFontFactory, CMapCache cMapCache, IFilterProvider filterProvider,
             IPdfObjectScanner scanner)
         {
             this.cidFontFactory = cidFontFactory;
             this.cMapCache = cMapCache;
             this.filterProvider = filterProvider;
-            this.pdfObjectParser = pdfObjectParser;
             this.scanner = scanner;
         }
 
-        public IFont Generate(DictionaryToken dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        public IFont Generate(DictionaryToken dictionary, bool isLenientParsing)
         {
             var baseFont = dictionary.GetNameOrDefault(NameToken.BaseFont);
 
@@ -57,7 +52,7 @@
                     descendantFontDictionary = (DictionaryToken) descendantObject;
                 }
 
-                cidFont = ParseDescendant(descendantFontDictionary, reader, isLenientParsing);
+                cidFont = ParseDescendant(descendantFontDictionary, isLenientParsing);
             }
             else
             {
@@ -122,7 +117,7 @@
             return false;
         }
 
-        private ICidFont ParseDescendant(DictionaryToken dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        private ICidFont ParseDescendant(DictionaryToken dictionary, bool isLenientParsing)
         {
             var type = dictionary.GetNameOrDefault(NameToken.Type);
             if (type?.Equals(NameToken.Font) != true)
@@ -130,7 +125,7 @@
                 throw new InvalidFontFormatException($"Expected \'Font\' dictionary but found \'{type}\'");
             }
 
-            var result = cidFontFactory.Generate(dictionary, reader, isLenientParsing);
+            var result = cidFontFactory.Generate(dictionary, isLenientParsing);
 
             return result;
         }

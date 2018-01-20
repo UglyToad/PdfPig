@@ -6,9 +6,8 @@
     using System.IO.Compression;
     using System.Linq;
     using System.Text;
-    using PdfPig.ContentStream;
-    using PdfPig.Cos;
     using PdfPig.Filters;
+    using PdfPig.Tokenization.Tokens;
     using Xunit;
 
     /*
@@ -88,16 +87,21 @@
             var endStreamPosition = GetOffset(bytes, "endstream", streamPosition.end);
 
             var streamBytes = BytesBetween(streamPosition.end + 1, endStreamPosition.start - 1, bytes);
-            
-            var paramsDict = new PdfDictionary();
-            paramsDict.Set(CosName.PREDICTOR, new CosFloat("12"));
-            paramsDict.Set(CosName.COLUMNS, new CosFloat("4"));
 
-            var dict = new PdfDictionary();
-            dict.Set(CosName.FILTER, CosName.FLATE_DECODE);
-            dict.Set(CosName.DECODE_PARMS, paramsDict);
+            var paramsDict = new DictionaryToken(new Dictionary<IToken, IToken>
+            {
+                { NameToken.Predictor, new NumericToken(12) },
+                { NameToken.Columns, new NumericToken(4) }
+            });
+
+            var dictionary = new DictionaryToken(new Dictionary<IToken, IToken>
+            {
+                {NameToken.Filter, NameToken.FlateDecode},
+                {NameToken.DecodeParms, paramsDict}
+            });
+
             var filter = new FlateFilter(new DecodeParameterResolver(null), new PngPredictor(), null);
-            var filtered = filter.Decode(streamBytes, dict, 0);
+            var filtered = filter.Decode(streamBytes, dictionary, 0);
             
             var expected =
                 "1 0 15 0 1 0 216 0 1 2 160 0 1 2 210 0 1 3 84 0 1 4 46 0 1 7 165 0 1 70 229 0 1 72 84 0 1 96 235 0 1 98 18 0 2 0 12 0 2 0 12 1 2 0 12 2 2 0 12 3 2 0 12 4 2 0 12 5 2 0 12 6 2 0 12 7 2 0 12 8"

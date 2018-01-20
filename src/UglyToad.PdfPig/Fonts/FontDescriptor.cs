@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts
 {
-    using Cos;
     using Geometry;
+    using Tokenization.Tokens;
     using Util.JetBrains.Annotations;
 
     /// <summary>
@@ -26,7 +26,7 @@
         /// The PostScript name for the font.
         /// </summary>
         /// <remarks>Required</remarks>
-        public CosName FontName { get; }
+        public NameToken FontName { get; }
 
         /// <summary>
         /// The preferred font family.
@@ -155,7 +155,7 @@
         [CanBeNull]
         public string CharSet { get; set; }
 
-        public FontDescriptor(CosName name, FontFlags flags)
+        public FontDescriptor(NameToken name, FontFlags flags)
         {
             FontName = name;
             Flags = flags;

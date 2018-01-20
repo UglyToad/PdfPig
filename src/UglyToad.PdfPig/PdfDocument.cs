@@ -55,7 +55,6 @@
             bool isLenientParsing,
             ParsingCachingProviders cachingProviders,
             IPageFactory pageFactory,
-            IPdfObjectParser pdfObjectParser,
             Catalog catalog,
             DocumentInformation information, IPdfObjectScanner pdfScanner)
         {
@@ -68,7 +67,7 @@
             this.pdfScanner = pdfScanner;
             Information = information ?? throw new ArgumentNullException(nameof(information));
             Catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
-            Pages = new Pages(log, Catalog, pdfObjectParser, pageFactory, reader, isLenientParsing, pdfScanner);
+            Pages = new Pages(log, Catalog, pageFactory, reader, isLenientParsing, pdfScanner);
         }
 
         /// <summary>

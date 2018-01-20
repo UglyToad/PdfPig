@@ -1,7 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.Filters
 {
-    using PdfPig.ContentStream;
+    using System.Collections.Generic;
     using PdfPig.Filters;
+    using PdfPig.Tokenization.Tokens;
     using Xunit;
 
     public class RunLengthFilterTests
@@ -25,7 +26,7 @@
                 1, 10, 19
             };
 
-            var decoded = filter.Decode(data, new PdfDictionary(), 1);
+            var decoded = filter.Decode(data, new DictionaryToken(new Dictionary<IToken, IToken>()), 1);
             
             var expectedResult = new byte[]
             {
@@ -54,7 +55,7 @@
                 90, 6, 7
             };
 
-            var decoded = filter.Decode(data, new PdfDictionary(), 0);
+            var decoded = filter.Decode(data, new DictionaryToken(new Dictionary<IToken, IToken>()), 0);
 
             var expectedResult = new byte[]
             {

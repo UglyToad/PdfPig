@@ -19,7 +19,7 @@
 
             Assert.True(result);
             
-            Assert.Equal("Type", AssertNameToken(token).Data.Name);
+            Assert.Equal("Type", AssertNameToken(token).Data);
         }
 
         [Fact]
@@ -33,7 +33,7 @@
 
             Assert.True(result);
 
-            Assert.Equal("Type", AssertNameToken(token).Data.Name);
+            Assert.Equal("Type", AssertNameToken(token).Data);
         }
 
         [Fact]
@@ -59,7 +59,7 @@
 
             Assert.True(result);
 
-            Assert.Equal("XRef", AssertNameToken(token).Data.Name);
+            Assert.Equal("XRef", AssertNameToken(token).Data);
         }
 
         [Fact]
@@ -73,7 +73,7 @@
 
             Assert.True(result);
 
-            Assert.Equal("Priorto1.2#INvalidHexHash", AssertNameToken(token).Data.Name);
+            Assert.Equal("Priorto1.2#INvalidHexHash", AssertNameToken(token).Data);
         }
 
         [Theory]
@@ -92,7 +92,7 @@
 
             Assert.True(result);
 
-            Assert.Equal(expected, AssertNameToken(token).Data.Name);
+            Assert.Equal(expected, AssertNameToken(token).Data);
         }
 
         [Theory]
@@ -109,7 +109,7 @@
 
             Assert.True(result);
 
-            Assert.Equal(expected, AssertNameToken(token).Data.Name);
+            Assert.Equal(expected, AssertNameToken(token).Data);
         }
 
         [Fact]
@@ -121,7 +121,7 @@
 
             Assert.True(result);
 
-            Assert.Equal("Invalid#AZBadHex", AssertNameToken(token).Data.Name);
+            Assert.Equal("Invalid#AZBadHex", AssertNameToken(token).Data);
         }
 
         [Fact]
@@ -133,7 +133,7 @@
 
             Assert.True(result);
 
-            Assert.Equal("Invalid#Z", AssertNameToken(token).Data.Name);
+            Assert.Equal("Invalid#Z", AssertNameToken(token).Data);
         }
 
         [Fact]
@@ -145,7 +145,7 @@
 
             Assert.True(result);
 
-            Assert.Equal("Hex#", AssertNameToken(token).Data.Name);
+            Assert.Equal("Hex#", AssertNameToken(token).Data);
         }
 
         private static NameToken AssertNameToken(IToken token)

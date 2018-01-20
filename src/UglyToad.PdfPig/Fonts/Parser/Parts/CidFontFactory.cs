@@ -3,12 +3,10 @@
     using System;
     using System.Collections.Generic;
     using CidFonts;
-    using ContentStream;
     using Exceptions;
     using Filters;
     using Geometry;
     using IO;
-    using PdfPig.Parser;
     using PdfPig.Parser.Parts;
     using Tokenization.Scanner;
     using Tokenization.Tokens;
@@ -20,23 +18,19 @@
     {
         private readonly FontDescriptorFactory descriptorFactory;
         private readonly TrueTypeFontParser trueTypeFontParser;
-        private readonly IPdfObjectParser pdfObjectParser;
         private readonly IFilterProvider filterProvider;
         private readonly IPdfObjectScanner pdfScanner;
 
-        public CidFontFactory(FontDescriptorFactory descriptorFactory, TrueTypeFontParser trueTypeFontParser, 
-            IPdfObjectParser pdfObjectParser,
-            IFilterProvider filterProvider,
-            IPdfObjectScanner pdfScanner)
+        public CidFontFactory(IPdfObjectScanner pdfScanner, FontDescriptorFactory descriptorFactory, TrueTypeFontParser trueTypeFontParser, 
+            IFilterProvider filterProvider)
         {
             this.descriptorFactory = descriptorFactory;
             this.trueTypeFontParser = trueTypeFontParser;
-            this.pdfObjectParser = pdfObjectParser;
             this.filterProvider = filterProvider;
             this.pdfScanner = pdfScanner;
         }
 
-        public ICidFont Generate(DictionaryToken dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        public ICidFont Generate(DictionaryToken dictionary, bool isLenientParsing)
         {
             var type = dictionary.GetNameOrDefault(NameToken.Type);
             if (!NameToken.Font.Equals(type))
@@ -53,11 +47,11 @@
                 descriptor = descriptorFactory.Generate(descriptorDictionary, isLenientParsing);
             }
 
-            var fontProgram = ReadDescriptorFile(descriptor, reader, isLenientParsing);
+            var fontProgram = ReadDescriptorFile(descriptor);
 
             var baseFont = dictionary.GetNameOrDefault(NameToken.BaseFont);
 
-            var systemInfo = GetSystemInfo(dictionary, reader, isLenientParsing);
+            var systemInfo = GetSystemInfo(dictionary);
 
             var subType = dictionary.GetNameOrDefault(NameToken.Subtype);
             if (NameToken.CidFontType0.Equals(subType))
@@ -89,14 +83,14 @@
             return true;
         }
 
-        private ICidFontProgram ReadDescriptorFile(FontDescriptor descriptor, IRandomAccessRead reader, bool isLenientParsing)
+        private ICidFontProgram ReadDescriptorFile(FontDescriptor descriptor)
         {
             if (descriptor?.FontFile == null)
             {
                 return null;
             }
 
-            var fontFileStream = pdfObjectParser.Parse(descriptor.FontFile.ObjectKey, reader, isLenientParsing) as PdfRawStream;
+            var fontFileStream = DirectObjectFinder.Get<StreamToken>(descriptor.FontFile.ObjectKey, pdfScanner);
 
             if (fontFileStream == null)
             {
@@ -219,7 +213,7 @@
             return new VerticalWritingMetrics(dw2, verticalDisplacements, positionVectors);
         }
 
-        private CharacterIdentifierSystemInfo GetSystemInfo(DictionaryToken dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        private CharacterIdentifierSystemInfo GetSystemInfo(DictionaryToken dictionary)
         {
             if(!dictionary.TryGet(NameToken.CidSystemInfo, out var cidEntry))
             {
@@ -236,14 +230,14 @@
                     DirectObjectFinder.Get<DictionaryToken>(cidEntry, pdfScanner);
             }
 
-            var registry = SafeKeyAccess(cidDictionary, NameToken.Registry, reader, isLenientParsing);
-            var ordering = SafeKeyAccess(cidDictionary, NameToken.Ordering, reader, isLenientParsing);
+            var registry = SafeKeyAccess(cidDictionary, NameToken.Registry);
+            var ordering = SafeKeyAccess(cidDictionary, NameToken.Ordering);
             var supplement = cidDictionary.GetIntOrDefault(NameToken.Supplement);
 
             return new CharacterIdentifierSystemInfo(registry, ordering, supplement);
         }
 
-        private string SafeKeyAccess(DictionaryToken dictionary, NameToken keyName, IRandomAccessRead reader, bool isLenientParsing)
+        private string SafeKeyAccess(DictionaryToken dictionary, NameToken keyName)
         {
             if (!dictionary.TryGet(keyName, out var token))
             {

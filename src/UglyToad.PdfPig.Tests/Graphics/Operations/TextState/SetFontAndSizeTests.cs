@@ -1,13 +1,13 @@
 ﻿namespace UglyToad.PdfPig.Tests.Graphics.Operations.TextState
 {
     using System;
-    using PdfPig.Cos;
     using PdfPig.Graphics.Operations.TextState;
+    using PdfPig.Tokenization.Tokens;
     using Xunit;
 
     public class SetFontAndSizeTests
     {
-        private static readonly CosName Font1Name = CosName.Create("Font1");
+        private static readonly NameToken Font1Name = NameToken.Create("Font1");
 
         [Fact]
         public void HasCorrectSymbol()
@@ -22,7 +22,7 @@
         {
             var setFontAndSize = new SetFontAndSize(Font1Name, 12.75m);
 
-            Assert.Equal("Font1", setFontAndSize.Font.Name);
+            Assert.Equal("Font1", setFontAndSize.Font.Data);
             Assert.Equal(12.75m, setFontAndSize.Size);
         }
 

@@ -1,12 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Fonts
 {
-    using Cos;
+    using Tokenization.Tokens;
 
     internal static class FontStretchExtensions
     {
-        public static FontStretch ConvertToFontStretch(this CosName name)
+        public static FontStretch ConvertToFontStretch(this NameToken name)
         {
-            switch (name.Name)
+            switch (name.Data)
             {
                 case "UltraCondensed":
                     return FontStretch.UltraCondensed;

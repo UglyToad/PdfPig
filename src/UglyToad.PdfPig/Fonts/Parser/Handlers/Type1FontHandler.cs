@@ -2,13 +2,12 @@
 {
     using Cmap;
     using ContentStream;
-    using Cos;
     using Encodings;
     using Exceptions;
     using Filters;
     using IO;
     using Parts;
-    using PdfPig.Parser;
+    using PdfPig.Parser.Parts;
     using Simple;
     using Tokenization.Scanner;
     using Tokenization.Tokens;
@@ -17,41 +16,40 @@
 
     internal class Type1FontHandler : IFontHandler
     {
-        private readonly IPdfObjectParser pdfObjectParser;
+        private readonly IPdfObjectScanner pdfScanner;
         private readonly CMapCache cMapCache;
         private readonly IFilterProvider filterProvider;
         private readonly FontDescriptorFactory fontDescriptorFactory;
         private readonly IEncodingReader encodingReader;
-        private readonly IPdfObjectScanner scanner;
         private readonly Type1FontParser type1FontParser;
 
-        public Type1FontHandler(IPdfObjectParser pdfObjectParser, CMapCache cMapCache, IFilterProvider filterProvider, 
-            FontDescriptorFactory fontDescriptorFactory, IEncodingReader encodingReader,
-            IPdfObjectScanner scanner,
+        public Type1FontHandler(IPdfObjectScanner pdfScanner, CMapCache cMapCache, IFilterProvider filterProvider, 
+            FontDescriptorFactory fontDescriptorFactory, 
+            IEncodingReader encodingReader,
             Type1FontParser type1FontParser)
         {
-            this.pdfObjectParser = pdfObjectParser;
+            this.pdfScanner = pdfScanner;
             this.cMapCache = cMapCache;
             this.filterProvider = filterProvider;
             this.fontDescriptorFactory = fontDescriptorFactory;
             this.encodingReader = encodingReader;
-            this.scanner = scanner;
             this.type1FontParser = type1FontParser;
         }
 
-        public IFont Generate(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        public IFont Generate(DictionaryToken dictionary, bool isLenientParsing)
         {
-            var usingStandard14Only = !dictionary.ContainsKey(CosName.FIRST_CHAR) || !dictionary.ContainsKey(CosName.WIDTHS);
+            var usingStandard14Only = !dictionary.ContainsKey(NameToken.FirstChar) || !dictionary.ContainsKey(NameToken.Widths);
 
             if (usingStandard14Only)
             {
                 // TODO: some fonts combine standard 14 font with other metrics.
-                if (!dictionary.TryGetName(CosName.BASE_FONT, out var standard14Name))
+                if (!dictionary.TryGet(NameToken.BaseFont, out var baseFontToken) 
+                    || !(baseFontToken is NameToken standard14Name))
                 {
                     throw new InvalidFontFormatException($"The Type 1 font did not contain a first character entry but also did not reference a standard 14 font: {dictionary}");
                 }
 
-                var metrics = Standard14.GetAdobeFontMetrics(standard14Name.Name);
+                var metrics = Standard14.GetAdobeFontMetrics(standard14Name.Data);
 
                 return new Type1Standard14Font(metrics);
             }
@@ -60,18 +58,18 @@
 
             var lastCharacter = FontDictionaryAccessHelper.GetLastCharacter(dictionary);
 
-            var widths = FontDictionaryAccessHelper.GetWidths(pdfObjectParser, dictionary, reader, isLenientParsing);
+            var widths = FontDictionaryAccessHelper.GetWidths(pdfScanner, dictionary, isLenientParsing);
 
-            var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfObjectParser, fontDescriptorFactory, dictionary, reader, isLenientParsing);
+            var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfScanner, fontDescriptorFactory, dictionary, isLenientParsing);
 
             var font = ParseType1Font(descriptor, isLenientParsing);
 
-            var name = FontDictionaryAccessHelper.GetName(pdfObjectParser, dictionary, descriptor, reader, isLenientParsing);
+            var name = FontDictionaryAccessHelper.GetName(pdfScanner, dictionary, descriptor, isLenientParsing);
             
             CMap toUnicodeCMap = null;
-            if (dictionary.TryGetItemOfType(CosName.TO_UNICODE, out CosObject toUnicodeObj))
+            if (dictionary.TryGet(NameToken.ToUnicode, out var toUnicodeObj))
             {
-                var toUnicode = pdfObjectParser.Parse(toUnicodeObj.ToIndirectReference(), reader, isLenientParsing) as PdfRawStream;
+                var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, pdfScanner);
 
                 var decodedUnicodeCMap = toUnicode?.Decode(filterProvider);
 
@@ -81,7 +79,7 @@
                 }
             }
 
-            Encoding encoding = encodingReader.Read(dictionary, reader, isLenientParsing, descriptor);
+            Encoding encoding = encodingReader.Read(dictionary, isLenientParsing, descriptor);
 
             if (encoding == null && font?.Encoding.Count > 0)
             {
@@ -98,14 +96,14 @@
                 return null;
             }
 
-            if (descriptor.FontFile.ObjectKey.ObjectNumber == 0)
+            if (descriptor.FontFile.ObjectKey.Data.ObjectNumber == 0)
             {
                 return null;
             }
             
             try
             {
-                var stream = scanner.Get(descriptor.FontFile.ObjectKey).Data as StreamToken;
+                var stream = pdfScanner.Get(descriptor.FontFile.ObjectKey.Data).Data as StreamToken;
 
                 if (stream == null)
                 {

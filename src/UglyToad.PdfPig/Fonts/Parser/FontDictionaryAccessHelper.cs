@@ -1,75 +1,79 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Parser
 {
-    using System.Linq;
-    using ContentStream;
-    using Cos;
     using Exceptions;
-    using IO;
     using Parts;
-    using PdfPig.Parser;
     using PdfPig.Parser.Parts;
+    using Tokenization.Scanner;
+    using Tokenization.Tokens;
 
     internal static class FontDictionaryAccessHelper
     {
-        public static int GetFirstCharacter(PdfDictionary dictionary)
+        public static int GetFirstCharacter(DictionaryToken dictionary)
         {
-            if (!dictionary.TryGetItemOfType(CosName.FIRST_CHAR, out CosInt firstChar))
+            if (!dictionary.TryGet(NameToken.FirstChar, out var firstChar) || !(firstChar is NumericToken number))
             {
                 throw new InvalidFontFormatException($"No first character entry was found in the font dictionary for this TrueType font: {dictionary}.");
             }
 
-            return firstChar.AsInt();
+            return number.Int;
         }
 
-        public static int GetLastCharacter(PdfDictionary dictionary)
+        public static int GetLastCharacter(DictionaryToken dictionary)
         {
-            if (!dictionary.TryGetItemOfType(CosName.LAST_CHAR, out CosInt lastChar))
+            if (!dictionary.TryGet(NameToken.LastChar, out var firstChar) || !(firstChar is NumericToken number))
             {
-                throw new InvalidFontFormatException($"No last character entry was found in the font dictionary for this TrueType font: {dictionary}.");
+                throw new InvalidFontFormatException($"No first character entry was found in the font dictionary for this TrueType font: {dictionary}.");
             }
 
-            return lastChar.AsInt();
+            return number.Int;
         }
 
-        public static decimal[] GetWidths(IPdfObjectParser pdfObjectParser, PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        public static decimal[] GetWidths(IPdfObjectScanner pdfScanner, DictionaryToken dictionary, bool isLenientParsing)
         {
-            if (!dictionary.TryGetItemOfType(CosName.WIDTHS, out COSArray widthArray))
+            if (!dictionary.TryGet(NameToken.Widths, out var token))
             {
-                if (!dictionary.TryGetItemOfType(CosName.WIDTHS, out CosObject arr))
+                throw new InvalidFontFormatException($"No widths array found for the font: {dictionary}.");
+            }
+
+            var widthArray = DirectObjectFinder.Get<ArrayToken>(token, pdfScanner);
+
+            var result = new decimal[widthArray.Data.Count];
+            for (int i = 0; i < widthArray.Data.Count; i++)
+            {
+                var arrayToken = widthArray.Data[i];
+
+                if (!(arrayToken is NumericToken number))
                 {
-                    throw new InvalidFontFormatException($"No widths array was found in the font dictionary for this TrueType font: {dictionary}.");
+                    throw new InvalidFontFormatException($"Token which was not a number found in the widths array: {arrayToken}.");
                 }
 
-                widthArray = DirectObjectFinder.Find<COSArray>(arr, pdfObjectParser, reader, isLenientParsing);
+                result[i] = number.Data;
             }
 
-            return widthArray.Select(x => ((ICosNumber)x).AsDecimal()).ToArray();
+            return result;
         }
 
-        public static FontDescriptor GetFontDescriptor(IPdfObjectParser pdfObjectParser, FontDescriptorFactory fontDescriptorFactory, PdfDictionary dictionary, 
-            IRandomAccessRead reader, bool isLenientParsing)
+        public static FontDescriptor GetFontDescriptor(IPdfObjectScanner pdfScanner, FontDescriptorFactory fontDescriptorFactory, DictionaryToken dictionary, 
+            bool isLenientParsing)
         {
-            if (!dictionary.TryGetItemOfType(CosName.FONT_DESC, out CosObject obj))
+            if (!dictionary.TryGet(NameToken.FontDesc, out var obj))
             {
                 throw new InvalidFontFormatException($"No font descriptor indirect reference found in the TrueType font: {dictionary}.");
             }
 
-            var parsed = pdfObjectParser.Parse(obj.ToIndirectReference(), reader, isLenientParsing);
-
-            if (!(parsed is PdfDictionary descriptorDictionary))
-            {
-                throw new InvalidFontFormatException($"Expected a font descriptor dictionary but instead found {parsed}.");
-            }
-
-            var descriptor = fontDescriptorFactory.Generate(descriptorDictionary, isLenientParsing);
+            var parsed = DirectObjectFinder.Get<DictionaryToken>(obj, pdfScanner);
+            
+            var descriptor = fontDescriptorFactory.Generate(parsed, isLenientParsing);
 
             return descriptor;
         }
         
-        public static CosName GetName(IPdfObjectParser pdfObjectParser, PdfDictionary dictionary, FontDescriptor descriptor, IRandomAccessRead reader, bool isLenientParsing)
+        public static NameToken GetName(IPdfObjectScanner pdfScanner, DictionaryToken dictionary, FontDescriptor descriptor, bool isLenientParsing)
         {
-            if (dictionary.TryGetName(CosName.BASE_FONT, out CosName name))
+            if (dictionary.TryGet(NameToken.BaseFont, out var nameBase))
             {
+                var name = DirectObjectFinder.Get<NameToken>(nameBase, pdfScanner);
+
                 return name;
             }
 
@@ -77,15 +81,7 @@
             {
                 return descriptor.FontName;
             }
-
-            if (dictionary.TryGetValue(CosName.BASE_FONT, out var baseFont))
-            {
-                if (baseFont is CosObject baseFontObj)
-                {
-                    return DirectObjectFinder.Find<CosName>(baseFontObj, pdfObjectParser, reader, isLenientParsing);
-                }
-            }
-
+            
             throw new InvalidFontFormatException($"Could not find a name for this font {dictionary}.");
         }
     }

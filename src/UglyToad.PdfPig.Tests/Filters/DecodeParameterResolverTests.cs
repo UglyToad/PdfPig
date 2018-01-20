@@ -1,9 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Tests.Filters
 {
     using System;
+    using System.Collections.Generic;
     using Parser.Parts;
-    using PdfPig.ContentStream;
     using PdfPig.Filters;
+    using PdfPig.Tokenization.Tokens;
     using Xunit;
 
     public class DecodeParameterResolverTests
@@ -21,7 +22,7 @@
         [Fact]
         public void NegativeIndex_Throws()
         {
-            Action action = () => resolver.GetFilterParameters(new PdfDictionary(), -1);
+            Action action = () => resolver.GetFilterParameters(new DictionaryToken(new Dictionary<IToken, IToken>()), -1);
 
             Assert.Throws<ArgumentOutOfRangeException>(action);
         }
@@ -29,9 +30,9 @@
         [Fact]
         public void EmptyDictionary_ReturnsEmptyDictionary()
         {
-            var result = resolver.GetFilterParameters(new PdfDictionary(), 0);
+            var result = resolver.GetFilterParameters(new DictionaryToken(new Dictionary<IToken, IToken>()), 0);
 
-            Assert.Empty(result);
+            Assert.Empty(result.Data);
         }
     }
 }

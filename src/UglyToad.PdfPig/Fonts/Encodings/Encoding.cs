@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using Cos;
+    using Tokenization.Tokens;
 
     /// <summary>
     /// Maps character codes to glyph names from a PostScript encoding.
@@ -57,7 +57,7 @@
             }
         }
         
-        public static bool TryGetNamedEncoding(CosName name, out Encoding encoding)
+        public static bool TryGetNamedEncoding(NameToken name, out Encoding encoding)
         {
             encoding = null;
 
@@ -66,25 +66,25 @@
                 return false;
             }
 
-            if (name.Equals(CosName.STANDARD_ENCODING))
+            if (name.Equals(NameToken.StandardEncoding))
             {
                 encoding = StandardEncoding.Instance;
                 return true;
             }
 
-            if (name.Equals(CosName.WIN_ANSI_ENCODING))
+            if (name.Equals(NameToken.WinAnsiEncoding))
             {
                 encoding = WinAnsiEncoding.Instance;
                 return true;
             }
 
-            if (name.Equals(CosName.MAC_EXPERT_ENCODING))
+            if (name.Equals(NameToken.MacExpertEncoding))
             {
                 encoding = MacExpertEncoding.Instance;
                 return true;
             }
 
-            if (name.Equals(CosName.MAC_ROMAN_ENCODING))
+            if (name.Equals(NameToken.MacRomanEncoding))
             {
                 encoding = MacRomanEncoding.Instance;
                 return true;

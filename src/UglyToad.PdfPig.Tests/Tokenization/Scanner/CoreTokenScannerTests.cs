@@ -4,7 +4,6 @@ namespace UglyToad.PdfPig.Tests.Tokenization.Scanner
     using System;
     using System.Collections.Generic;
     using IO;
-    using PdfPig.Cos;
     using PdfPig.Tokenization.Scanner;
     using PdfPig.Tokenization.Tokens;
     using Xunit;
@@ -36,7 +35,7 @@ namespace UglyToad.PdfPig.Tests.Tokenization.Scanner
             AssertCorrectToken<NumericToken, decimal>(tokens[1], 3.14m);
             AssertCorrectToken<BooleanToken, bool>(tokens[2], false);
             AssertCorrectToken<StringToken, string>(tokens[3], "Ralph");
-            AssertCorrectToken<NameToken, CosName>(tokens[4], CosName.Create("SomeName"));
+            AssertCorrectToken<NameToken, string>(tokens[4], "SomeName");
         }
 
         [Fact]
@@ -57,15 +56,15 @@ namespace UglyToad.PdfPig.Tests.Tokenization.Scanner
                 tokens.Add(scanner.CurrentToken);
             }
 
-            AssertCorrectToken<NameToken, CosName>(tokens[0], CosName.TYPE);
-            AssertCorrectToken<NameToken, CosName>(tokens[1], CosName.Create("Example"));
-            AssertCorrectToken<NameToken, CosName>(tokens[2], CosName.SUBTYPE);
-            AssertCorrectToken<NameToken, CosName>(tokens[3], CosName.Create("DictionaryExample"));
-            AssertCorrectToken<NameToken, CosName>(tokens[4], CosName.VERSION);
+            AssertCorrectToken<NameToken, string>(tokens[0], NameToken.Type.Data);
+            AssertCorrectToken<NameToken, string>(tokens[1], "Example");
+            AssertCorrectToken<NameToken, string>(tokens[2], NameToken.Subtype.Data);
+            AssertCorrectToken<NameToken, string>(tokens[3], "DictionaryExample");
+            AssertCorrectToken<NameToken, string>(tokens[4], NameToken.Version.Data);
             AssertCorrectToken<NumericToken, decimal>(tokens[5], 0.01m);
-            AssertCorrectToken<NameToken, CosName>(tokens[6], CosName.Create("IntegerItem"));
+            AssertCorrectToken<NameToken, string>(tokens[6], "IntegerItem");
             AssertCorrectToken<NumericToken, decimal>(tokens[7], 12m);
-            AssertCorrectToken<NameToken, CosName>(tokens[8], CosName.Create("StringItem"));
+            AssertCorrectToken<NameToken, string>(tokens[8], "StringItem");
             AssertCorrectToken<StringToken, string>(tokens[9], "a string");
         }
         
@@ -106,11 +105,11 @@ endobj";
                 tokens.Add(scanner.CurrentToken);
             }
 
-            AssertCorrectToken<NameToken, CosName>(tokens[0], CosName.Create("Bounds"));
+            AssertCorrectToken<NameToken, string>(tokens[0], "Bounds");
             Assert.IsType<ArrayToken>(tokens[1]);
-            AssertCorrectToken<NameToken, CosName>(tokens[2], CosName.Create("Font"));
-            AssertCorrectToken<NameToken, CosName>(tokens[3], CosName.Create("F1"));
-            AssertCorrectToken<NameToken, CosName>(tokens[4], CosName.Create("Name"));
+            AssertCorrectToken<NameToken, string>(tokens[2], "Font");
+            AssertCorrectToken<NameToken, string>(tokens[3], "F1");
+            AssertCorrectToken<NameToken, string>(tokens[4], "Name");
             AssertCorrectToken<StringToken, string>(tokens[5], "Bob");
             Assert.IsType<ArrayToken>(tokens[6]);
         }

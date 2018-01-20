@@ -4,7 +4,6 @@ namespace UglyToad.PdfPig.Tests.Tokenization
     using System;
     using System.Collections.Generic;
     using PdfPig.ContentStream;
-    using PdfPig.Cos;
     using PdfPig.Tokenization;
     using PdfPig.Tokenization.Tokens;
     using Xunit;
@@ -39,7 +38,7 @@ namespace UglyToad.PdfPig.Tests.Tokenization
 
             var dictionary = AssertDictionaryToken(token);
 
-            AssertDictionaryEntry<StringToken, string>(dictionary, CosName.NAME, "Barry Scott");
+            AssertDictionaryEntry<StringToken, string>(dictionary, NameToken.Name, "Barry Scott");
         }
 
         [Fact]
@@ -53,8 +52,7 @@ namespace UglyToad.PdfPig.Tests.Tokenization
 
             var dictionary = AssertDictionaryToken(token);
 
-            AssertDictionaryEntry<NameToken, CosName>(dictionary, CosName.TYPE,
-                CosName.Create("Example"));
+            AssertDictionaryEntry<NameToken, string>(dictionary, NameToken.Type, "Example");
         }
 
         [Fact]
@@ -68,9 +66,9 @@ namespace UglyToad.PdfPig.Tests.Tokenization
 
             var dictionary = AssertDictionaryToken(token);
 
-            AssertDictionaryEntry<NameToken, CosName>(dictionary, CosName.FILTER, CosName.FLATE_DECODE);
-            AssertDictionaryEntry<NumericToken, decimal>(dictionary, CosName.S, 36);
-            AssertDictionaryEntry<NumericToken, decimal>(dictionary, CosName.LENGTH, 53);
+            AssertDictionaryEntry<NameToken, string>(dictionary, NameToken.Filter, NameToken.FlateDecode.Data);
+            AssertDictionaryEntry<NumericToken, decimal>(dictionary, NameToken.S, 36);
+            AssertDictionaryEntry<NumericToken, decimal>(dictionary, NameToken.Length, 53);
         }
 
         [Fact]
@@ -86,8 +84,8 @@ namespace UglyToad.PdfPig.Tests.Tokenization
 
             var reference = new IndirectReference(14, 0);
 
-            AssertDictionaryEntry<IndirectReferenceToken, IndirectReference>(dictionary, CosName.PAGES, reference);
-            AssertDictionaryEntry<NameToken, CosName>(dictionary, CosName.TYPE, CosName.CATALOG);
+            AssertDictionaryEntry<IndirectReferenceToken, IndirectReference>(dictionary, NameToken.Pages, reference);
+            AssertDictionaryEntry<NameToken, string>(dictionary, NameToken.Type, NameToken.Catalog);
         }
 
         [Fact]
@@ -114,11 +112,11 @@ namespace UglyToad.PdfPig.Tests.Tokenization
 
             var dictionary = AssertDictionaryToken(token);
             
-            AssertDictionaryEntry<NameToken, CosName>(dictionary, CosName.TYPE, CosName.Create("Example"));
-            AssertDictionaryEntry<NameToken, CosName>(dictionary, CosName.SUBTYPE, CosName.Create("DictionaryExample"));
-            AssertDictionaryEntry<NumericToken, decimal>(dictionary, CosName.VERSION, 0.01m);
-            AssertDictionaryEntry<NumericToken, decimal>(dictionary, CosName.Create("IntegerItem"), 12m);
-            AssertDictionaryEntry<StringToken, string>(dictionary, CosName.Create("StringItem"), "a string");
+            AssertDictionaryEntry<NameToken, string>(dictionary, NameToken.Type, "Example");
+            AssertDictionaryEntry<NameToken, string>(dictionary, NameToken.Subtype, "DictionaryExample");
+            AssertDictionaryEntry<NumericToken, decimal>(dictionary, NameToken.Version, 0.01m);
+            AssertDictionaryEntry<NumericToken, decimal>(dictionary, NameToken.Create("IntegerItem"), 12m);
+            AssertDictionaryEntry<StringToken, string>(dictionary, NameToken.Create("StringItem"), "a string");
 
             var subDictionary = GetIndex(5, dictionary);
 
@@ -126,10 +124,10 @@ namespace UglyToad.PdfPig.Tests.Tokenization
 
             var subDictionaryValue = Assert.IsType<DictionaryToken>(subDictionary.Value);
             
-            AssertDictionaryEntry<NumericToken, decimal>(subDictionaryValue, CosName.Create("Item1"), 0.4m);
-            AssertDictionaryEntry<BooleanToken, bool>(subDictionaryValue, CosName.Create("Item2"), true);
-            AssertDictionaryEntry<StringToken, string>(subDictionaryValue, CosName.Create("LastItem"), "not!");
-            AssertDictionaryEntry<StringToken, string>(subDictionaryValue, CosName.Create("VeryLastItem"), "OK");
+            AssertDictionaryEntry<NumericToken, decimal>(subDictionaryValue, NameToken.Create("Item1"), 0.4m);
+            AssertDictionaryEntry<BooleanToken, bool>(subDictionaryValue, NameToken.Create("Item2"), true);
+            AssertDictionaryEntry<StringToken, string>(subDictionaryValue, NameToken.Create("LastItem"), "not!");
+            AssertDictionaryEntry<StringToken, string>(subDictionaryValue, NameToken.Create("VeryLastItem"), "OK");
         }
         
         [Fact]
@@ -147,8 +145,8 @@ endobj
 
             var reference = new IndirectReference(69, 0);
 
-            AssertDictionaryEntry<IndirectReferenceToken, IndirectReference>(dictionary, CosName.PAGES, reference);
-            AssertDictionaryEntry<NameToken, CosName>(dictionary, CosName.TYPE, CosName.CATALOG);
+            AssertDictionaryEntry<IndirectReferenceToken, IndirectReference>(dictionary, NameToken.Pages, reference);
+            AssertDictionaryEntry<NameToken, string>(dictionary, NameToken.Type, NameToken.Catalog.Data);
 
             Assert.Equal(2, dictionary.Data.Count);
         }
@@ -164,7 +162,7 @@ endobj
 
             var dictionary = AssertDictionaryToken(token);
 
-            AssertDictionaryEntry<NumericToken, decimal>(dictionary, CosName.COUNT, 12);
+            AssertDictionaryEntry<NumericToken, decimal>(dictionary, NameToken.Count, 12);
 
             var subDictionaryToken = GetIndex(1, dictionary);
 
@@ -172,17 +170,17 @@ endobj
 
             var subDictionary = Assert.IsType<DictionaryToken>(subDictionaryToken.Value);
 
-            AssertDictionaryEntry<StringToken, string>(subDictionary, CosName.NAME, "Glorp");
+            AssertDictionaryEntry<StringToken, string>(subDictionary, NameToken.Name, "Glorp");
 
-            AssertDictionaryEntry<NameToken, CosName>(dictionary, CosName.TYPE, CosName.CATALOG);
+            AssertDictionaryEntry<NameToken, string>(dictionary, NameToken.Type, NameToken.Catalog.Data);
 
             Assert.Equal(3, dictionary.Data.Count);
         }
 
-        private static void AssertDictionaryEntry<TValue, TValueData>(DictionaryToken dictionary, CosName key,
+        private static void AssertDictionaryEntry<TValue, TValueData>(DictionaryToken dictionary, NameToken key,
             TValueData value) where TValue : IDataToken<TValueData>
         {
-            var result = dictionary.Data[key.Name];
+            var result = dictionary.Data[key.Data];
 
             var valueToken = Assert.IsType<TValue>(result);
 

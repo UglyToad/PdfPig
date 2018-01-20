@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Parser
 {
-    using PdfPig.Cos;
     using PdfPig.Graphics;
     using PdfPig.Graphics.Core;
     using PdfPig.Graphics.Operations.General;
@@ -9,6 +8,7 @@
     using PdfPig.Graphics.Operations.TextShowing;
     using PdfPig.Graphics.Operations.TextState;
     using PdfPig.Parser;
+    using PdfPig.Tokenization.Tokens;
     using Xunit;
 
     public class PageContentParserTests
@@ -42,7 +42,7 @@ ET";
             Assert.Equal(BeginText.Value, result[0]);
 
             var font = Assert.IsType<SetFontAndSize>(result[1]);
-            Assert.Equal(CosName.Create("F13"), font.Font);
+            Assert.Equal(NameToken.Create("F13"), font.Font);
             Assert.Equal(48, font.Size);
 
             var nextLine = Assert.IsType<MoveToNextLineWithOffset>(result[2]);

@@ -22,8 +22,8 @@
         private readonly IPageContentParser pageContentParser;
         private readonly IPdfObjectScanner pdfScanner;
 
-        public PageFactory(IResourceStore resourceStore, IFilterProvider filterProvider,
-            IPageContentParser pageContentParser, IPdfObjectScanner pdfScanner)
+        public PageFactory(IPdfObjectScanner pdfScanner, IResourceStore resourceStore, IFilterProvider filterProvider,
+            IPageContentParser pageContentParser)
         {
             this.resourceStore = resourceStore;
             this.filterProvider = filterProvider;
@@ -132,10 +132,10 @@
             CropBox cropBox;
             if (dictionary.TryGet(NameToken.CropBox, out var cropBoxObject) && cropBoxObject is ArrayToken cropBoxArray)
             {
-                var x1 = cropBoxArray.GetNumeric(0).Data;
-                var y1 = cropBoxArray.GetNumeric(1).Data;
-                var x2 = cropBoxArray.GetNumeric(2).Data;
-                var y2 = cropBoxArray.GetNumeric(3).Data;
+                var x1 = cropBoxArray.GetNumeric(0).Int;
+                var y1 = cropBoxArray.GetNumeric(1).Int;
+                var x2 = cropBoxArray.GetNumeric(2).Int;
+                var y2 = cropBoxArray.GetNumeric(3).Int;
 
                 cropBox = new CropBox(new PdfRectangle(x1, y1, x2, y2));
             }
@@ -152,10 +152,10 @@
             MediaBox mediaBox;
             if (dictionary.TryGet(NameToken.MediaBox, out var mediaboxObject) && mediaboxObject is ArrayToken mediaboxArray)
             {
-                var x1 = mediaboxArray.GetNumeric(0).Data;
-                var y1 = mediaboxArray.GetNumeric(1).Data;
-                var x2 = mediaboxArray.GetNumeric(2).Data;
-                var y2 = mediaboxArray.GetNumeric(3).Data;
+                var x1 = mediaboxArray.GetNumeric(0).Int;
+                var y1 = mediaboxArray.GetNumeric(1).Int;
+                var x2 = mediaboxArray.GetNumeric(2).Int;
+                var y2 = mediaboxArray.GetNumeric(3).Int;
 
                 mediaBox = new MediaBox(new PdfRectangle(x1, y1, x2, y2));
             }

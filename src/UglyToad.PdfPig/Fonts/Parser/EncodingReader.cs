@@ -1,58 +1,45 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Parser
 {
     using System.Collections.Generic;
-    using ContentStream;
-    using Cos;
     using Encodings;
     using Exceptions;
-    using IO;
-    using PdfPig.Parser;
     using PdfPig.Parser.Parts;
+    using Tokenization.Scanner;
+    using Tokenization.Tokens;
+    using Util;
 
     internal class EncodingReader : IEncodingReader
     {
-        private readonly IPdfObjectParser pdfObjectParser;
+        private readonly IPdfObjectScanner pdfScanner;
 
-        public EncodingReader(IPdfObjectParser pdfObjectParser)
+        public EncodingReader(IPdfObjectScanner pdfScanner)
         {
-            this.pdfObjectParser = pdfObjectParser;
+            this.pdfScanner = pdfScanner;
         }
 
-        public Encoding Read(PdfDictionary fontDictionary, IRandomAccessRead reader, bool isLenientParsing, FontDescriptor descriptor = null)
+        public Encoding Read(DictionaryToken fontDictionary, bool isLenientParsing, FontDescriptor descriptor = null)
         {
-            if (!fontDictionary.TryGetValue(CosName.ENCODING, out var baseEncodingObject))
+            if (!fontDictionary.TryGet(NameToken.Encoding, out var baseEncodingObject))
             {
                 return null;
             }
 
-            if (baseEncodingObject is CosName name)
+            if (baseEncodingObject is NameToken name)
             {
                 return GetNamedEncoding(descriptor, name);
             }
 
-            PdfDictionary encodingDictionary;
-            if (baseEncodingObject is CosObject reference)
-            {
-                encodingDictionary = DirectObjectFinder.Find<PdfDictionary>(reference, pdfObjectParser, reader, isLenientParsing);
-            }
-            else if (baseEncodingObject is PdfDictionary dictionary)
-            {
-                encodingDictionary = dictionary;
-            }
-            else
-            {
-                throw new InvalidFontFormatException($"The font encoding was not a named entry or dictionary, instead it was: {baseEncodingObject}.");
-            }
-
-            var encoding = ReadEncodingDictionary(encodingDictionary, reader, isLenientParsing);
+            DictionaryToken encodingDictionary = DirectObjectFinder.Get<DictionaryToken>(baseEncodingObject, pdfScanner);
+           
+            var encoding = ReadEncodingDictionary(encodingDictionary);
 
             return encoding;
         }
 
-        private Encoding ReadEncodingDictionary(PdfDictionary encodingDictionary, IRandomAccessRead reader, bool isLenientParsing)
+        private Encoding ReadEncodingDictionary(DictionaryToken encodingDictionary)
         {
             Encoding baseEncoding;
-            if (encodingDictionary.TryGetName(CosName.BASE_ENCODING, out var baseEncodingName))
+            if (encodingDictionary.TryGet(NameToken.BaseEncoding, out var baseEncodingToken) && baseEncodingToken is NameToken baseEncodingName)
             {
                 if (!Encoding.TryGetNamedEncoding(baseEncodingName, out baseEncoding))
                 {
@@ -65,23 +52,12 @@
                 baseEncoding = StandardEncoding.Instance;
             }
 
-            if (!encodingDictionary.TryGetValue(CosName.DIFFERENCES, out var differencesBase))
+            if (!encodingDictionary.TryGet(NameToken.Differences, out var differencesBase))
             {
                 return baseEncoding;
             }
 
-            var differenceArray = differencesBase as COSArray;
-            if (differenceArray == null)
-            {
-                if (differencesBase is CosObject differencesObj)
-                {
-                    differenceArray = DirectObjectFinder.Find<COSArray>(differencesObj, pdfObjectParser, reader, isLenientParsing);
-                }
-                else
-                {
-                    throw new InvalidFontFormatException($"Differences was not an array: {differencesBase}.");
-                }
-            }
+            var differenceArray = DirectObjectFinder.Get<ArrayToken>(differencesBase, pdfScanner);
 
             var differences = ProcessDifferences(differenceArray);
 
@@ -90,22 +66,22 @@
             return newEncoding;
         }
 
-        private static IReadOnlyList<(int, string)> ProcessDifferences(COSArray differenceArray)
+        private static IReadOnlyList<(int, string)> ProcessDifferences(ArrayToken differenceArray)
         {
-            var activeCode = differenceArray.getInt(0);
+            var activeCode = differenceArray.GetNumeric(0).Int;
             var differences = new List<(int, string)>();
 
-            for (int i = 1; i < differenceArray.Count; i++)
+            for (int i = 1; i < differenceArray.Data.Count; i++)
             {
-                var entry = differenceArray.get(i);
+                var entry = differenceArray.Data[i];
 
-                if (entry is ICosNumber numeric)
+                if (entry is NumericToken numeric)
                 {
-                    activeCode = numeric.AsInt();
+                    activeCode = numeric.Int;
                 }
-                else if (entry is CosName name)
+                else if (entry is NameToken name)
                 {
-                    differences.Add((activeCode, name.Name));
+                    differences.Add((activeCode, name.Data));
                     activeCode++;
                 }
                 else
@@ -117,7 +93,7 @@
             return differences;
         }
 
-        private static Encoding GetNamedEncoding(FontDescriptor descriptor, CosName encodingName)
+        private static Encoding GetNamedEncoding(FontDescriptor descriptor, NameToken encodingName)
         {
             Encoding encoding;
             // Symbolic fonts default to standard encoding.

@@ -79,24 +79,23 @@
             var trueTypeFontParser = new TrueTypeFontParser();
             var fontDescriptorFactory = new FontDescriptorFactory();
 
-            var cidFontFactory = new CidFontFactory(fontDescriptorFactory, trueTypeFontParser, pdfObjectParser, filterProvider);
-            var encodingReader = new EncodingReader(pdfObjectParser);
+            var pdfScanner = new PdfTokenScanner(inputBytes, new ObjectLocationProvider(crossReferenceTable, pool, bruteForceSearcher));
+            var cidFontFactory = new CidFontFactory(pdfScanner, fontDescriptorFactory, trueTypeFontParser, filterProvider);
+            var encodingReader = new EncodingReader(pdfScanner);
 
             var cMapCache = new CMapCache(new CMapParser());
 
-            var pdfScanner = new PdfTokenScanner(inputBytes, new ObjectLocationProvider(crossReferenceTable, pool, bruteForceSearcher));
             var fontFactory = new FontFactory(log, new Type0FontHandler(cidFontFactory,
                 cMapCache, 
-                filterProvider,
-                pdfObjectParser),
-                new TrueTypeFontHandler(pdfObjectParser, filterProvider, cMapCache, fontDescriptorFactory, trueTypeFontParser, encodingReader),
-                new Type1FontHandler(pdfObjectParser, cMapCache, filterProvider, fontDescriptorFactory, encodingReader, pdfScanner, new Type1FontParser()),
-                new Type3FontHandler(pdfObjectParser, cMapCache, filterProvider, encodingReader));
+                filterProvider, pdfScanner),
+                new TrueTypeFontHandler(pdfScanner, filterProvider, cMapCache, fontDescriptorFactory, trueTypeFontParser, encodingReader),
+                new Type1FontHandler(pdfScanner, cMapCache, filterProvider, fontDescriptorFactory, encodingReader, new Type1FontParser()),
+                new Type3FontHandler(pdfScanner, cMapCache, filterProvider, encodingReader));
 
             var dynamicParser = container.Get<DynamicParser>();
-            var resourceContainer = new ResourceContainer(pdfObjectParser, fontFactory);
+            var resourceContainer = new ResourceContainer(pdfScanner, fontFactory);
 
-            var pageFactory = new PageFactory(resourceContainer, pdfObjectParser, filterProvider, new PageContentParser(new ReflectionGraphicsStateOperationFactory()));
+            var pageFactory = new PageFactory(pdfScanner, resourceContainer, filterProvider, new PageContentParser(new ReflectionGraphicsStateOperationFactory()));
             var informationFactory = new DocumentInformationFactory();
             var catalogFactory = new CatalogFactory(pdfScanner);
 
@@ -110,7 +109,7 @@
             var caching = new ParsingCachingProviders(pool, bruteForceSearcher, resourceContainer);
 
             
-            return new PdfDocument(log, reader, version, crossReferenceTable, isLenientParsing, caching, pageFactory, pdfObjectParser, catalog, information,
+            return new PdfDocument(log, reader, version, crossReferenceTable, isLenientParsing, caching, pageFactory, catalog, information,
                 pdfScanner);
         }
 

@@ -26,7 +26,7 @@
             Assert.Equal(294, objectToken.Number.ObjectNumber);
             Assert.Equal(0, objectToken.Number.Generation);
 
-            Assert.Equal("WDKAAR+CMBX12", name.Data.Name);
+            Assert.Equal("WDKAAR+CMBX12", name.Data);
 
             Assert.StartsWith("294 0 obj", s.Substring((int)objectToken.Position));
         }
@@ -126,7 +126,7 @@ endobj
 
             var nameObject = Assert.IsType<NameToken>(tokens[1].Data);
 
-            Assert.Equal("WPXNWT+CMR9", nameObject.Data.Name);
+            Assert.Equal("WPXNWT+CMR9", nameObject.Data);
             Assert.Equal(310, tokens[1].Number.ObjectNumber);
             Assert.StartsWith("310 0 obj", s.Substring((int)tokens[1].Position));
 
@@ -273,6 +273,34 @@ endobj";
             Assert.Equal("1245", stream.StreamDictionary.Data["S"].ToString());
 
             Assert.Equal("%¥×³®í»š}%§X{{tøNåÝž¶ö¢ÖÞgrehtyyy$&%&£$££(*¾–~´¼", Encoding.UTF8.GetString(stream.Data));
+        }
+
+        [Fact]
+        public void ReadsStreamWithoutBreakBeforeEndstream()
+        {
+            const string s = @"
+1 0 obj
+12
+endobj
+
+7 0 obj
+<< /Length 288
+   /Filter /FlateDecode >>
+stream
+xœ]‘ËjÃ0E÷ÿÃ,ÓEð#NÒ€1¤N^ôA~€-]A-YYøï+Ï4¡t#qfîFWQY*­Dïv5:è”–§ñjB‹½Òa¤ •p7¤K	ƒÈûëyr8Tº!ÏÃ  úð‚ÉÙVG9¶ø@Å7+Ñ*ÝÃê³¬¹T_ùÆµƒ8Š$vËÌ—Æ¼6BDöu%½B¹yí$—Ù ¤\Hx71JœL#Ð6ºÇ0Èã¸€ü|.Â µüßõÏ""WÛ‰¯Æ.êÄ«ã8;¤iL°!Ø %Ã‰`K°ßì¸ÃöÜáÜ)	[‚#CFðÄ°#(yƒg^ÿ¶æò
+ÿž“¸Zë#¢?¢h–P”Æû?šÑï÷ø¯‰Šendstream
+endobj
+
+9 0 obj
+16
+endobj";
+
+            var scanner = GetScanner(s);
+
+            var token = ReadToEnd(scanner)[1];
+
+            Assert.Equal(7, token.Number.ObjectNumber);
+
         }
 
         private PdfTokenScanner GetScanner(string s, TestObjectLocationProvider locationProvider = null)

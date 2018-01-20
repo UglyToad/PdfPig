@@ -1,10 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Parser.Handlers
 {
-    using ContentStream;
-    using IO;
+    using Tokenization.Tokens;
 
     internal interface IFontHandler
     {
-        IFont Generate(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing);
+        IFont Generate(DictionaryToken dictionary, bool isLenientParsing);
     }
 }

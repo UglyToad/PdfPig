@@ -3,8 +3,6 @@
     using System.Collections.Generic;
     using Content;
     using IO;
-    using PdfPig.ContentStream;
-    using PdfPig.Cos;
     using PdfPig.Fonts;
     using PdfPig.Graphics;
     using PdfPig.Tokenization.Tokens;
@@ -50,11 +48,11 @@
 
     internal class TestResourceStore : IResourceStore
     {
-        public void LoadResourceDictionary(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        public void LoadResourceDictionary(DictionaryToken dictionary, bool isLenientParsing)
         {
         }
 
-        public IFont GetFont(CosName name)
+        public IFont GetFont(NameToken name)
         {
             return null;
         }

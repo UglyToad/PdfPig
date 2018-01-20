@@ -1,7 +1,11 @@
 ﻿namespace UglyToad.PdfPig.Tokenization.Tokens
 {
+    using System.Collections.Concurrent;
+
     internal partial class NameToken
     {
+        private static readonly ConcurrentDictionary<string, NameToken> NameMap = new ConcurrentDictionary<string, NameToken>();
+
         #region A
         public static readonly NameToken A = new NameToken("A");
         public static readonly NameToken Aa = new NameToken("AA");

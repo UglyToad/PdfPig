@@ -1,50 +1,50 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Parser.Handlers
 {
-    using System;
     using Cmap;
-    using ContentStream;
     using Core;
-    using Cos;
     using Encodings;
     using Exceptions;
     using Filters;
     using Geometry;
     using IO;
-    using PdfPig.Parser;
     using PdfPig.Parser.Parts;
     using Simple;
+    using Tokenization.Scanner;
+    using Tokenization.Tokens;
+    using Util;
 
     internal class Type3FontHandler : IFontHandler
     {
-        private readonly IPdfObjectParser pdfObjectParser;
         private readonly CMapCache cMapCache;
         private readonly IFilterProvider filterProvider;
         private readonly IEncodingReader encodingReader;
+        private readonly IPdfObjectScanner scanner;
 
-        public Type3FontHandler(IPdfObjectParser pdfObjectParser, CMapCache cMapCache, IFilterProvider filterProvider, IEncodingReader encodingReader)
+        public Type3FontHandler(IPdfObjectScanner scanner, CMapCache cMapCache, IFilterProvider filterProvider,
+            IEncodingReader encodingReader)
         {
-            this.pdfObjectParser = pdfObjectParser;
             this.cMapCache = cMapCache;
             this.filterProvider = filterProvider;
             this.encodingReader = encodingReader;
+            this.scanner = scanner;
         }
 
-        public IFont Generate(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        public IFont Generate(DictionaryToken dictionary, bool isLenientParsing)
         {
             var boundingBox = GetBoundingBox(dictionary);
 
-            var fontMatrix = GetFontMatrix(dictionary, reader, isLenientParsing);
+            var fontMatrix = GetFontMatrix(dictionary);
 
             var firstCharacter = FontDictionaryAccessHelper.GetFirstCharacter(dictionary);
             var lastCharacter = FontDictionaryAccessHelper.GetLastCharacter(dictionary);
-            var widths = FontDictionaryAccessHelper.GetWidths(pdfObjectParser, dictionary, reader, isLenientParsing);
+            var widths = FontDictionaryAccessHelper.GetWidths(scanner, dictionary, isLenientParsing);
             
-            Encoding encoding = encodingReader.Read(dictionary, reader, isLenientParsing);
+            Encoding encoding = encodingReader.Read(dictionary, isLenientParsing);
 
             CMap toUnicodeCMap = null;
-            if (dictionary.TryGetItemOfType(CosName.TO_UNICODE, out CosObject toUnicodeObj))
+            if (dictionary.TryGet(NameToken.ToUnicode, out var toUnicodeObj))
             {
-                var toUnicode = pdfObjectParser.Parse(toUnicodeObj.ToIndirectReference(), reader, isLenientParsing) as PdfRawStream;
+                var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, scanner);
 
                 var decodedUnicodeCMap = toUnicode?.Decode(filterProvider);
 
@@ -54,86 +54,35 @@
                 }
             }
             
-            return new Type3Font(CosName.TYPE3, boundingBox, fontMatrix, encoding, firstCharacter,
+            return new Type3Font(NameToken.Type3, boundingBox, fontMatrix, encoding, firstCharacter,
                 lastCharacter, widths, toUnicodeCMap);
         }
 
-        private TransformationMatrix GetFontMatrix(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        private TransformationMatrix GetFontMatrix(DictionaryToken dictionary)
         {
-            if (!dictionary.TryGetValue(CosName.FONT_MATRIX, out var matrixObject))
+            if (!dictionary.TryGet(NameToken.FontMatrix, out var matrixObject))
             {
                 throw new InvalidFontFormatException($"No font matrix found: {dictionary}.");
             }
 
-            COSArray matrixArray;
-            if (matrixObject is COSArray arr)
-            {
-                matrixArray = arr;
-            }
-            else if (matrixObject is CosObject obj)
-            {
-                matrixArray = DirectObjectFinder.Find<COSArray>(obj, pdfObjectParser, reader, isLenientParsing);
-            }
-            else
-            {
-                throw new InvalidFontFormatException($"The font matrix object was not an array or reference to an array: {matrixObject}.");
-            }
-
-            return TransformationMatrix.FromValues(GetDecimal(matrixArray, 0), GetDecimal(matrixArray, 1),
-                GetDecimal(matrixArray, 2), GetDecimal(matrixArray, 3), GetDecimal(matrixArray, 4), GetDecimal(matrixArray, 5));
+            var matrixArray = DirectObjectFinder.Get<ArrayToken>(matrixObject, scanner);
+            
+            return TransformationMatrix.FromValues(matrixArray.GetNumeric(0).Data, matrixArray.GetNumeric(1).Data,
+                matrixArray.GetNumeric(2).Data, matrixArray.GetNumeric(3).Data, matrixArray.GetNumeric(4).Data,
+                matrixArray.GetNumeric(5).Data);
         }
-
-        private Encoding GetEncoding(CosBase baseObject, IRandomAccessRead reader, bool isLenientParsing)
+        
+        private static PdfRectangle GetBoundingBox(DictionaryToken dictionary)
         {
-            if (baseObject is CosObject obj)
-            {
-                baseObject = pdfObjectParser.Parse(obj.ToIndirectReference(), reader, isLenientParsing);
-            }
-
-            if (baseObject is CosName encodingName)
-            {
-                
-            }
-            else if (baseObject is PdfDictionary dictionary)
-            {
-                
-            }
-            else
-            {
-                throw new InvalidFontFormatException("");
-            }
-
-            throw new NotImplementedException();
-        }
-
-        private static decimal GetDecimal(COSArray array, int index)
-        {
-            if (index >= array.Count)
-            {
-                throw new InvalidFontFormatException($"The array did not contain enough entries to be the font matrix: {array}.");
-            }
-
-            var item = array.get(index) as ICosNumber;
-
-            if (item == null)
-            {
-                throw new InvalidFontFormatException($"The array did not contain a decimal at position {index}: {array}.");
-            }
-
-            return item.AsDecimal();
-        }
-
-        private static PdfRectangle GetBoundingBox(PdfDictionary dictionary)
-        {
-            if (!dictionary.TryGetValue(CosName.FONT_BBOX, out var bboxObject))
+            if (!dictionary.TryGet(NameToken.FontBbox, out var bboxObject))
             {
                 throw new InvalidFontFormatException($"Type 3 font was invalid. No Font Bounding Box: {dictionary}.");
             }
 
-            if (bboxObject is COSArray bboxArray)
+            if (bboxObject is ArrayToken bboxArray)
             {
-                return new PdfRectangle(GetDecimal(bboxArray, 0), GetDecimal(bboxArray, 1),
-                    GetDecimal(bboxArray, 2), GetDecimal(bboxArray, 3));
+                return new PdfRectangle(bboxArray.GetNumeric(0).Data, bboxArray.GetNumeric(1).Data,
+                    bboxArray.GetNumeric(2).Data, bboxArray.GetNumeric(3).Data);
             }
 
             return new PdfRectangle(0, 0, 0, 0);

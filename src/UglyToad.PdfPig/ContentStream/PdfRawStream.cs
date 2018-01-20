@@ -59,7 +59,7 @@
                 var transform = streamBytes;
                 for (var i = 0; i < filters.Count; i++)
                 {
-                    transform = filters[i].Decode(transform, Dictionary, i);
+                    //transform = filters[i].Decode(transform, Dictionary, i);
                 }
 
                 decodedBytes = transform;

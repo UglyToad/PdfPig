@@ -130,7 +130,7 @@
                 
                 var width = displacement.X * fontSize * TextMatrices.TextMatrix.GetScalingFactorX() * transformationMatrix.A;
 
-                ShowGlyph(renderingMatrix, font, code, unicode, width, fontSize, pointSize);
+                ShowGlyph(renderingMatrix, font, unicode, width, fontSize, pointSize);
 
                 decimal tx, ty;
                 if (font.IsVertical)
@@ -208,12 +208,12 @@
             TextMatrices.TextMatrix = newMatrix;
         }
 
-        private void ShowGlyph(TransformationMatrix renderingMatrix, IFont font, int characterCode, string unicode, decimal width, decimal fontSize,
+        private void ShowGlyph(TransformationMatrix renderingMatrix, IFont font, string unicode, decimal width, decimal fontSize,
             decimal pointSize)
         {
             var location = new PdfPoint(renderingMatrix.E, renderingMatrix.F);
             
-            var letter = new Letter(unicode, location, width, fontSize, font.Name.Name, pointSize);
+            var letter = new Letter(unicode, location, width, fontSize, font.Name.Data, pointSize);
 
             Letters.Add(letter);
         }

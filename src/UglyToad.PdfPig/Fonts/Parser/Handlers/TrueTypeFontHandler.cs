@@ -1,62 +1,62 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Parser.Handlers
 {
     using Cmap;
-    using ContentStream;
-    using Cos;
     using Encodings;
     using Exceptions;
     using Filters;
     using IO;
     using Parts;
-    using PdfPig.Parser;
+    using PdfPig.Parser.Parts;
     using Simple;
+    using Tokenization.Scanner;
+    using Tokenization.Tokens;
     using TrueType;
     using TrueType.Parser;
 
     internal class TrueTypeFontHandler : IFontHandler
     {
-        private readonly IPdfObjectParser pdfObjectParser;
         private readonly IFilterProvider filterProvider;
         private readonly CMapCache cMapCache;
         private readonly FontDescriptorFactory fontDescriptorFactory;
         private readonly TrueTypeFontParser trueTypeFontParser;
         private readonly IEncodingReader encodingReader;
+        private readonly IPdfObjectScanner pdfScanner;
 
-        public TrueTypeFontHandler(IPdfObjectParser pdfObjectParser, IFilterProvider filterProvider, 
+        public TrueTypeFontHandler(IPdfObjectScanner pdfScanner, IFilterProvider filterProvider, 
             CMapCache cMapCache,
             FontDescriptorFactory fontDescriptorFactory,
             TrueTypeFontParser trueTypeFontParser,
             IEncodingReader encodingReader)
         {
-            this.pdfObjectParser = pdfObjectParser;
             this.filterProvider = filterProvider;
             this.cMapCache = cMapCache;
             this.fontDescriptorFactory = fontDescriptorFactory;
             this.trueTypeFontParser = trueTypeFontParser;
             this.encodingReader = encodingReader;
+            this.pdfScanner = pdfScanner;
         }
 
-        public IFont Generate(PdfDictionary dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        public IFont Generate(DictionaryToken dictionary, bool isLenientParsing)
         {
             var firstCharacter = FontDictionaryAccessHelper.GetFirstCharacter(dictionary);
 
             var lastCharacter = FontDictionaryAccessHelper.GetLastCharacter(dictionary);
 
-            var widths = FontDictionaryAccessHelper.GetWidths(pdfObjectParser, dictionary, reader, isLenientParsing);
+            var widths = FontDictionaryAccessHelper.GetWidths(pdfScanner, dictionary, isLenientParsing);
 
-            var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfObjectParser, fontDescriptorFactory, dictionary, reader, isLenientParsing);
+            var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfScanner, fontDescriptorFactory, dictionary, isLenientParsing);
 
             // TODO: use the parsed font fully.
             //var font = ParseTrueTypeFont(descriptor, reader, isLenientParsing);
 
-            var name = FontDictionaryAccessHelper.GetName(pdfObjectParser, dictionary, descriptor, reader, isLenientParsing);
+            var name = FontDictionaryAccessHelper.GetName(pdfScanner, dictionary, descriptor, isLenientParsing);
 
             CMap toUnicodeCMap = null;
-            if (dictionary.TryGetItemOfType(CosName.TO_UNICODE, out CosObject toUnicodeObj))
+            if (dictionary.TryGet(NameToken.ToUnicode, out var toUnicodeObj))
             {
-                var toUnicode = pdfObjectParser.Parse(toUnicodeObj.ToIndirectReference(), reader, isLenientParsing) as PdfRawStream;
+                var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, pdfScanner);
 
-                var decodedUnicodeCMap = toUnicode?.Decode(filterProvider);
+                var decodedUnicodeCMap = toUnicode.Decode(filterProvider);
 
                 if (decodedUnicodeCMap != null)
                 {
@@ -64,7 +64,7 @@
                 }
             }
 
-            Encoding encoding = encodingReader.Read(dictionary, reader, isLenientParsing, descriptor);
+            Encoding encoding = encodingReader.Read(dictionary, isLenientParsing, descriptor);
 
             return new TrueTypeSimpleFont(name, firstCharacter, lastCharacter, widths, descriptor, toUnicodeCMap, encoding);
         }
@@ -83,18 +83,18 @@
                     $"Expected a TrueType font in the TrueType font descriptor, instead it was {descriptor.FontFile.FileType}.");
             }
 
-            var fontFileStream = pdfObjectParser.Parse(descriptor.FontFile.ObjectKey, reader, isLenientParsing) as PdfRawStream;
+            //var fontFileStream = pdfObjectParser.Parse(descriptor.FontFile.ObjectKey, reader, isLenientParsing) as PdfRawStream;
 
-            if (fontFileStream == null)
+            //if (fontFileStream == null)
             {
                 return null;
             }
 
-            var fontFile = fontFileStream.Decode(filterProvider);
+            //var fontFile = fontFileStream.Decode(filterProvider);
 
-            var font = trueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFile)));
+            //var font = trueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFile)));
 
-            return font;
+            //return font;
         }
     }
 }

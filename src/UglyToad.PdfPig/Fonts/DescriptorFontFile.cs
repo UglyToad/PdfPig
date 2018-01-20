@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts
 {
-    using ContentStream;
+    using Tokenization.Tokens;
 
     /// <summary>
     /// The bytes of the stream containing the font program.
@@ -13,13 +13,13 @@
     /// </remarks>
     internal class DescriptorFontFile
     {
-        public IndirectReference ObjectKey { get; }
+        public IndirectReferenceToken ObjectKey { get; }
 
         public byte[] FileBytes { get; }
 
         public FontFileType FileType { get; }
 
-        public DescriptorFontFile(IndirectReference key, FontFileType fileType)
+        public DescriptorFontFile(IndirectReferenceToken key, FontFileType fileType)
         {
             ObjectKey = key;
             FileBytes = new byte[0];

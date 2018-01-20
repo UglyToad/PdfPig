@@ -1,13 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Tokenization.Tokens
 {
-    using System.Collections.Concurrent;
-
     internal partial class NameToken : IDataToken<string>
     {
-        private static readonly ConcurrentDictionary<string, NameToken> NameMap = new ConcurrentDictionary<string, NameToken>();
-
         public string Data { get; }
-
+        
         private NameToken(string text)
         {
             NameMap[text] = this;
@@ -47,7 +43,7 @@
 
         public override string ToString()
         {
-            return Data;
+            return $"/{Data}";
         }
     }
 }

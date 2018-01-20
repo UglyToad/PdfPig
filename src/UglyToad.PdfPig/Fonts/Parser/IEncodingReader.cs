@@ -1,11 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Parser
 {
-    using ContentStream;
     using Encodings;
-    using IO;
+    using Tokenization.Tokens;
 
     internal interface IEncodingReader
     {
-        Encoding Read(PdfDictionary fontDictionary, IRandomAccessRead reader, bool isLenientParsing, FontDescriptor descriptor = null);
+        Encoding Read(DictionaryToken fontDictionary, bool isLenientParsing, FontDescriptor descriptor = null);
     }
 }
