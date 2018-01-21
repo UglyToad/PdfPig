@@ -2,7 +2,7 @@
 namespace UglyToad.PdfPig.Tests.Parser.Parts
 {
     using System;
-    using IO;
+    using PdfPig.IO;
     using PdfPig.Parser.Parts;
     using PdfPig.Util;
     using Xunit;

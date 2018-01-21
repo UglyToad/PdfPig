@@ -2,9 +2,9 @@
 {
     using System.Collections.Generic;
     using Content;
-    using IO;
     using PdfPig.Fonts;
     using PdfPig.Graphics;
+    using PdfPig.IO;
     using PdfPig.Tokenization.Tokens;
 
     internal class TestOperationContext : IOperationContext

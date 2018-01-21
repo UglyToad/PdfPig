@@ -2,8 +2,8 @@
 {
     using System;
     using System.IO;
-    using IO;
     using PdfPig.Fonts.Parser;
+    using PdfPig.IO;
     using Xunit;
 
     public class AdobeFontMetricsParserTests

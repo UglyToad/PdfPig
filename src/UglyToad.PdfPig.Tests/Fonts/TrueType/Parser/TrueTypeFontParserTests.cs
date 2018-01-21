@@ -3,10 +3,10 @@
     using System;
     using System.IO;
     using System.Linq;
-    using IO;
     using PdfPig.Fonts.TrueType;
     using PdfPig.Fonts.TrueType.Parser;
     using PdfPig.Fonts.TrueType.Tables;
+    using PdfPig.IO;
     using Xunit;
 
     public class TrueTypeFontParserTests

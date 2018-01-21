@@ -26,17 +26,9 @@
     {
         public static PdfDocument Open(byte[] fileBytes, ParsingOptions options = null)
         {
-            var container = Bootstrapper.GenerateContainer(options?.Logger);
-
-            var isLenientParsing = options?.UseLenientParsing ?? true;
-            
             var inputBytes = new ByteArrayInputBytes(fileBytes);
 
-            var tokenScanner = new CoreTokenScanner(inputBytes);
-
-            var document = OpenDocument(inputBytes, tokenScanner, container,  isLenientParsing);
-
-            return document;
+            return Open(inputBytes, options);
         }
 
         public static PdfDocument Open(string filename, ParsingOptions options = null)
@@ -47,6 +39,26 @@
             }
 
             return Open(File.ReadAllBytes(filename), options);
+        }
+
+        internal static PdfDocument Open(Stream stream, ParsingOptions options)
+        {
+            var streamInput = new StreamInputBytes(stream, false);
+
+            return Open(streamInput, options);
+        }
+
+        private static PdfDocument Open(IInputBytes inputBytes, ParsingOptions options = null)
+        {
+            var container = Bootstrapper.GenerateContainer(options?.Logger);
+
+            var isLenientParsing = options?.UseLenientParsing ?? true;
+            
+            var tokenScanner = new CoreTokenScanner(inputBytes);
+
+            var document = OpenDocument(inputBytes, tokenScanner, container, isLenientParsing);
+
+            return document;
         }
 
         private static PdfDocument OpenDocument(IInputBytes inputBytes, ISeekableTokenScanner scanner, IContainer container, bool isLenientParsing)
@@ -109,7 +121,7 @@
 
             var caching = new ParsingCachingProviders(bruteForceSearcher, resourceContainer);
             
-            return new PdfDocument(log, version, crossReferenceTable, isLenientParsing, caching, pageFactory, catalog, information,
+            return new PdfDocument(log, inputBytes, version, crossReferenceTable, isLenientParsing, caching, pageFactory, catalog, information,
                 pdfScanner);
         }
 

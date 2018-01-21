@@ -51,5 +51,9 @@
             currentOffset = (int)position - 1;
             CurrentByte = currentOffset < 0 ? (byte)0 : bytes[(int)currentOffset];
         }
+
+        public void Dispose()
+        {
+        }
     }
 }

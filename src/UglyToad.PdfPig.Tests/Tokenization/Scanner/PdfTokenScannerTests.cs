@@ -3,8 +3,8 @@
     using System;
     using System.Collections.Generic;
     using System.Text;
-    using IO;
     using PdfPig.ContentStream;
+    using PdfPig.IO;
     using PdfPig.Tokenization.Scanner;
     using PdfPig.Tokenization.Tokens;
     using PdfPig.Util;

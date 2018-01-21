@@ -80,7 +80,8 @@ namespace UglyToad.PdfPig.Tests.Integration
         {
             var file = GetFilename();
 
-            using (var document = PdfDocument.Open(File.ReadAllBytes(file)))
+            using (var stream = File.OpenRead(file))
+            using (var document = PdfDocument.Open(stream))
             {
                 var page = document.GetPage(1);
 

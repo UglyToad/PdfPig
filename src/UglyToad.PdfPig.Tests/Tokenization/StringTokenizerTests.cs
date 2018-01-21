@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Tokenization
 {
-    using IO;
+    using PdfPig.IO;
     using PdfPig.Tokenization;
     using PdfPig.Tokenization.Tokens;
     using Xunit;

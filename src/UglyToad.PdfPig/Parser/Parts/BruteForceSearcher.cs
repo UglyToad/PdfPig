@@ -5,7 +5,6 @@
     using System.Text;
     using ContentStream;
     using IO;
-    using Util;
     using Util.JetBrains.Annotations;
 
     /// <summary>
@@ -47,23 +46,47 @@
             bool endobjFound = false;
             do
             {
-                bytes.Seek(currentOffset);
-
                 if (inObject)
                 {
-                    if (ReadHelper.IsString(bytes, "endobj"))
+                    if (bytes.CurrentByte == 'e')
                     {
-                        inObject = false;
-                        endobjFound = true;
-                        currentOffset += "endobj".Length;
+                        var next = bytes.Peek();
+
+                        if (next.HasValue && next == 'n')
+                        {
+                            if (ReadHelper.IsString(bytes, "endobj"))
+                            {
+                                inObject = false;
+                                endobjFound = true;
+
+                                for (int i = 0; i < "endobj".Length; i++)
+                                {
+                                    bytes.MoveNext();
+                                    currentOffset++;
+                                }
+                            }
+                            else
+                            {
+                                bytes.MoveNext();
+                                currentOffset++;
+                            }
+                        }
+                        else
+                        {
+                            bytes.MoveNext();
+                            currentOffset++;
+                        }
                     }
                     else
                     {
+                        bytes.MoveNext();
                         currentOffset++;
                     }
 
                     continue;
                 }
+
+                bytes.Seek(currentOffset);
 
                 if (!ReadHelper.IsString(bytes, " obj"))
                 {
@@ -114,6 +137,8 @@
                 endobjFound = false;
 
                 currentOffset++;
+
+                bytes.Seek(currentOffset);
             } while (currentOffset < lastEndOfFile && !bytes.IsAtEnd());
 
             if ((lastEndOfFile < long.MaxValue || endobjFound) && lastObjOffset > 0)

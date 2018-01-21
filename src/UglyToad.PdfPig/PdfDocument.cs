@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig
 {
     using System;
+    using System.IO;
     using Content;
     using Cos;
     using IO;
@@ -15,12 +16,15 @@
     /// </summary>
     public class PdfDocument : IDisposable
     {
+        private bool isDisposed = false;
+
         [NotNull]
         private readonly HeaderVersion version;
         [NotNull]
         private readonly CrossReferenceTable crossReferenceTable;
 
         private readonly ILog log;
+        private readonly IInputBytes inputBytes;
         private readonly bool isLenientParsing;
         [NotNull]
         private readonly ParsingCachingProviders cachingProviders;
@@ -49,7 +53,10 @@
         /// </summary>
         public int NumberOfPages => Pages.Count;
 
-        internal PdfDocument(ILog log, HeaderVersion version, CrossReferenceTable crossReferenceTable,
+        internal PdfDocument(ILog log, 
+            IInputBytes inputBytes,
+            HeaderVersion version, 
+            CrossReferenceTable crossReferenceTable,
             bool isLenientParsing,
             ParsingCachingProviders cachingProviders,
             IPageFactory pageFactory,
@@ -57,6 +64,7 @@
             DocumentInformation information, IPdfTokenScanner pdfScanner)
         {
             this.log = log;
+            this.inputBytes = inputBytes;
             this.version = version ?? throw new ArgumentNullException(nameof(version));
             this.crossReferenceTable = crossReferenceTable ?? throw new ArgumentNullException(nameof(crossReferenceTable));
             this.isLenientParsing = isLenientParsing;
@@ -81,6 +89,17 @@
         /// <param name="options">Optional parameters controlling parsing.</param>
         /// <returns>A <see cref="PdfDocument"/> providing access to the file contents.</returns>
         public static PdfDocument Open(string filePath, ParsingOptions options = null) => PdfDocumentFactory.Open(filePath, options);
+        /// <summary>
+        /// Creates a <see cref="PdfDocument"/> for reading from the provided stream.
+        /// The caller must manage disposing the stream. The created PdfDocument will not dispose the stream.
+        /// </summary>
+        /// <param name="stream">
+        /// A stream of the file contents, this must support reading and seeking.
+        /// The PdfDocument will not dispose of the provided stream.
+        /// </param>
+        /// <param name="options">Optional parameters controlling parsing.</param>
+        /// <returns>A <see cref="PdfDocument"/> providing access to the file contents.</returns>
+        public static PdfDocument Open(Stream stream, ParsingOptions options = null) => PdfDocumentFactory.Open(stream, options);
 
         /// <summary>
         /// Get the page with the specified page number.
@@ -89,6 +108,13 @@
         /// <returns>The page.</returns>
         public Page GetPage(int pageNumber)
         {
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException("Cannot access page after the document is disposed.");
+            }
+
+            log.Debug($"Accessing page {pageNumber}.");
+
             return Pages.GetPage(pageNumber);
         }
 
@@ -100,10 +126,15 @@
         {
             try
             {
+                inputBytes.Dispose();
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: something
+                log.Error("Failed disposing the PdfDocument due to an error.", ex);
+            }
+            finally
+            {
+                isDisposed = true;
             }
         }
     }

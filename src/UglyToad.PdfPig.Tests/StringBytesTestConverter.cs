@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests
 {
     using System.Text;
-    using IO;
+    using PdfPig.IO;
     using PdfPig.Tokenization.Scanner;
     using PdfPig.Util;
 

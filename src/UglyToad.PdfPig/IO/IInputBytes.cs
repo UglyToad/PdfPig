@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.PdfPig.IO
 {
-    internal interface IInputBytes
+    using System;
+
+    internal interface IInputBytes : IDisposable
     {
         long CurrentOffset { get; }
 
