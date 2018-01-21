@@ -13,9 +13,9 @@
     <PackageTags>PDF;Reader;Document;Adobe;PDFBox;PdfPig</PackageTags>
     <RepositoryUrl>https://github.com/UglyToad/PdfPig</RepositoryUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>0.0.1-alpha-001</Version>
-    <AssemblyVersion>0.0.1.1</AssemblyVersion>
-    <FileVersion>0.0.1.1</FileVersion>
+    <Version>0.0.1-alpha-002</Version>
+    <AssemblyVersion>0.0.1.2</AssemblyVersion>
+    <FileVersion>0.0.1.2</FileVersion>
     <PackageIconUrl>https://raw.githubusercontent.com/UglyToad/PdfPig/master/documentation/pdfpig.png</PackageIconUrl>
     <Product>PdfPig</Product>
   </PropertyGroup>
