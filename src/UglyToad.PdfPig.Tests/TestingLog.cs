@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Tests.Parser.Parts
+﻿namespace UglyToad.PdfPig.Tests
 {
     using System;
     using Logging;

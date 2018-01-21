@@ -30,8 +30,7 @@
             xrefCosChecker = new XrefCosOffsetChecker();
         }
         
-        public CrossReferenceTable Parse(IRandomAccessRead reader, bool isLenientParsing, long xrefLocation,
-            CosObjectPool pool, IPdfTokenScanner pdfScanner, ISeekableTokenScanner tokenScanner)
+        public CrossReferenceTable Parse(IRandomAccessRead reader, bool isLenientParsing, long xrefLocation, IPdfTokenScanner pdfScanner, ISeekableTokenScanner tokenScanner)
         {
             long fixedOffset = offsetValidator.CheckXRefOffset(xrefLocation, tokenScanner, reader, isLenientParsing);
             if (fixedOffset > -1)

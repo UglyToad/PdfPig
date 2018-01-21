@@ -1,0 +1,19 @@
+﻿namespace UglyToad.PdfPig.Tests
+{
+    using System.Collections.Generic;
+    using PdfPig.Filters;
+    using PdfPig.Tokenization.Tokens;
+
+    internal class TestFilterProvider : IFilterProvider
+    {
+        public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary)
+        {
+            return new List<IFilter>();
+        }
+
+        public IReadOnlyList<IFilter> GetAllFilters()
+        {
+            return new List<IFilter>();
+        }
+    }
+}

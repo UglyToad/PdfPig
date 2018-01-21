@@ -3,10 +3,8 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using Core;
-    using Cos;
 
-    internal class PdfBoolean : CosBase, ICosStreamWriter, IEquatable<PdfBoolean>
+    internal class PdfBoolean : IEquatable<PdfBoolean>
     {
         /// <summary>
         /// The bytes representing a true value in the PDF content.
@@ -38,11 +36,6 @@
         private PdfBoolean(bool value)
         {
             Value = value;
-        }
-        
-        public override object Accept(ICosVisitor visitor)
-        {
-            return visitor.VisitFromBoolean(this);
         }
 
         /// <summary>

@@ -26,7 +26,6 @@
         /// Since we want to scan objects while reading the cross reference table we lazily load it when it's ready.
         /// </summary>
         private readonly Func<CrossReferenceTable> crossReferenceTable;
-        private readonly CosObjectPool pool;
         private readonly BruteForceSearcher searcher;
 
         /// <summary>
@@ -36,10 +35,9 @@
 
         private readonly Dictionary<IndirectReference, long> offsets = new Dictionary<IndirectReference, long>();
 
-        public ObjectLocationProvider(Func<CrossReferenceTable> crossReferenceTable, CosObjectPool pool, BruteForceSearcher searcher)
+        public ObjectLocationProvider(Func<CrossReferenceTable> crossReferenceTable, BruteForceSearcher searcher)
         {
             this.crossReferenceTable = crossReferenceTable;
-            this.pool = pool;
             this.searcher = searcher;
         }
 

@@ -5,7 +5,6 @@
     using System.Text;
     using IO;
     using PdfPig.ContentStream;
-    using PdfPig.Filters;
     using PdfPig.Tokenization.Scanner;
     using PdfPig.Tokenization.Tokens;
     using PdfPig.Util;
@@ -332,24 +331,6 @@ endobj";
             }
 
             return result;
-        }
-    }
-
-    internal class TestFilterProvider : IFilterProvider
-    {
-        public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary)
-        {
-            return new List<IFilter>();
-        }
-
-        public IReadOnlyList<IFilter> GetFilters(PdfDictionary streamDictionary)
-        {
-            return new List<IFilter>();
-        }
-
-        public IReadOnlyList<IFilter> GetAllFilters()
-        {
-            return new List<IFilter>();
         }
     }
 }

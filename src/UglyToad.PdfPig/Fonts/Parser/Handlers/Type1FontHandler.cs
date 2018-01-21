@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Parser.Handlers
 {
     using Cmap;
-    using ContentStream;
     using Encodings;
     using Exceptions;
     using Filters;
@@ -109,10 +108,8 @@
                 {
                     return null;
                 }
-
-                var raw = new PdfRawStream(stream);
-
-                var bytes = raw.Decode(filterProvider);
+                
+                var bytes = stream.Decode(filterProvider);
 
                 var font = type1FontParser.Parse(new ByteArrayInputBytes(bytes));
 

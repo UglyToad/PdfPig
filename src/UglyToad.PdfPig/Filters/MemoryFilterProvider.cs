@@ -3,8 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using ContentStream;
-    using Cos;
     using Exceptions;
     using Logging;
     using Tokenization.Tokens;
@@ -56,35 +54,7 @@
                     throw new PdfDocumentFormatException($"The filter for the stream was not a valid object. Expected name or array, instead got: {token}.");
             }
         }
-
-        [Obsolete]
-        public IReadOnlyList<IFilter> GetFilters(PdfDictionary streamDictionary)
-        {
-            if (streamDictionary == null)
-            {
-                throw new ArgumentNullException(nameof(streamDictionary));
-            }
-
-            var filterObject = streamDictionary.GetItemOrDefault(CosName.FILTER);
-
-            if (filterObject == null)
-            {
-                return new IFilter[0];
-            }
-
-            switch (filterObject)
-            {
-                case COSArray filters:
-                    // TODO: presumably this may be invalid...
-                    return filters.Select(x => GetFilterStrict(((CosName) x).Name)).ToList();
-                case CosName name:
-                    return new[] {GetFilterStrict(name.Name)};
-                default:
-                    throw new InvalidOperationException("The filter for a stream may be either a string or an array, instead this Pdf has: " 
-                                                        + filterObject.GetType());
-            }
-        }
-
+        
         private IFilter GetFilterStrict(string name)
         {
             if (!filterFactories.TryGetValue(name, out var factory))

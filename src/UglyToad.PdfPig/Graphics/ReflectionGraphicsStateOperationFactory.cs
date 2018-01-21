@@ -159,7 +159,7 @@ namespace UglyToad.PdfPig.Graphics
 
                     arguments.Add(array.ToArray());
                 }
-                else if (parameter.ParameterType == typeof(CosName))
+                else if (parameter.ParameterType == typeof(NameToken))
                 {
                     if (operands[offset] is NameToken name)
                     {

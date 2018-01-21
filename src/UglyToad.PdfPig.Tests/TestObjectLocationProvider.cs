@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Tests.Tokenization.Scanner
+﻿namespace UglyToad.PdfPig.Tests
 {
     using System.Collections.Generic;
     using PdfPig.ContentStream;

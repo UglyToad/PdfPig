@@ -56,13 +56,12 @@
             var log = container.Get<ILog>();
             var filterProvider = container.Get<IFilterProvider>();
             var bruteForceSearcher = new BruteForceSearcher(reader);
-            var pool = new CosObjectPool();
 
             CrossReferenceTable crossReferenceTable = null;
 
             // We're ok with this since our intent is to lazily load the cross reference table.
             // ReSharper disable once AccessToModifiedClosure
-            var locationProvider = new ObjectLocationProvider(() => crossReferenceTable, pool, bruteForceSearcher);
+            var locationProvider = new ObjectLocationProvider(() => crossReferenceTable, bruteForceSearcher);
             var pdfScanner = new PdfTokenScanner(inputBytes, locationProvider, filterProvider);
 
             var xrefValidator = new XrefOffsetValidator(log);
@@ -79,7 +78,7 @@
 
             crossReferenceOffset = validator.Validate(crossReferenceOffset, scanner, reader, isLenientParsing);
             
-            crossReferenceTable = crossReferenceParser.Parse(reader, isLenientParsing, crossReferenceOffset, pool, pdfScanner, scanner);
+            crossReferenceTable = crossReferenceParser.Parse(reader, isLenientParsing, crossReferenceOffset, pdfScanner, scanner);
             
             var trueTypeFontParser = new TrueTypeFontParser();
             var fontDescriptorFactory = new FontDescriptorFactory();
@@ -108,7 +107,7 @@
 
             var catalog = catalogFactory.Create(rootDictionary, reader, isLenientParsing);
 
-            var caching = new ParsingCachingProviders(pool, bruteForceSearcher, resourceContainer);
+            var caching = new ParsingCachingProviders(bruteForceSearcher, resourceContainer);
             
             return new PdfDocument(log, reader, version, crossReferenceTable, isLenientParsing, caching, pageFactory, catalog, information,
                 pdfScanner);
