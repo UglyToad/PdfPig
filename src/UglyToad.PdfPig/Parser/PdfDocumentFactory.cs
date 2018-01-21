@@ -17,6 +17,7 @@
     using IO;
     using Logging;
     using Parts;
+    using Parts.CrossReference;
     using Tokenization.Scanner;
     using Tokenization.Tokens;
     using Util;
@@ -64,18 +65,21 @@
             var locationProvider = new ObjectLocationProvider(() => crossReferenceTable, pool, bruteForceSearcher);
             var pdfScanner = new PdfTokenScanner(inputBytes, locationProvider, filterProvider);
 
+            var xrefValidator = new XrefOffsetValidator(log);
+
+            var crossReferenceStreamParser = new CrossReferenceStreamParser(filterProvider);
+            var crossReferenceParser = new CrossReferenceParser(log, xrefValidator, crossReferenceStreamParser, new CrossReferenceTableParser());
+            
             var version = container.Get<FileHeaderParser>().Parse(scanner, isLenientParsing);
             
             var crossReferenceOffset = container.Get<FileTrailerParser>().GetFirstCrossReferenceOffset(inputBytes, scanner, isLenientParsing);
             
             // TODO: make this use the scanner.
-            var validator = new CrossReferenceOffsetValidator(new XrefOffsetValidator(log, reader, container.Get<CosDictionaryParser>(),
-                container.Get<CosBaseParser>(), pool));
+            var validator = new CrossReferenceOffsetValidator(xrefValidator);
 
-            crossReferenceOffset = validator.Validate(crossReferenceOffset, isLenientParsing);
+            crossReferenceOffset = validator.Validate(crossReferenceOffset, scanner, reader, isLenientParsing);
             
-            crossReferenceTable = container.Get<CrossReferenceParser>()
-                .Parse(reader, isLenientParsing, crossReferenceOffset, pool, pdfScanner, scanner);
+            crossReferenceTable = crossReferenceParser.Parse(reader, isLenientParsing, crossReferenceOffset, pool, pdfScanner, scanner);
             
             var trueTypeFontParser = new TrueTypeFontParser();
             var fontDescriptorFactory = new FontDescriptorFactory();

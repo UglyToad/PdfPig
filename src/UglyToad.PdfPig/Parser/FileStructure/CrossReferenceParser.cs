@@ -6,7 +6,6 @@
     using Exceptions;
     using IO;
     using Logging;
-    using Parts;
     using Parts.CrossReference;
     using Tokenization.Scanner;
     using Tokenization.Tokens;
@@ -14,19 +13,17 @@
     internal class CrossReferenceParser
     {
         private readonly ILog log;
-        private readonly CosDictionaryParser dictionaryParser;
-        private readonly CosBaseParser baseParser;
+        private readonly XrefOffsetValidator offsetValidator;
         private readonly CrossReferenceStreamParser crossReferenceStreamParser;
         private readonly CrossReferenceTableParser crossReferenceTableParser;
         private readonly XrefCosOffsetChecker xrefCosChecker;
 
-        public CrossReferenceParser(ILog log, CosDictionaryParser dictionaryParser, CosBaseParser baseParser,
+        public CrossReferenceParser(ILog log, XrefOffsetValidator offsetValidator,
             CrossReferenceStreamParser crossReferenceStreamParser,
             CrossReferenceTableParser crossReferenceTableParser)
         {
             this.log = log;
-            this.dictionaryParser = dictionaryParser;
-            this.baseParser = baseParser;
+            this.offsetValidator = offsetValidator;
             this.crossReferenceStreamParser = crossReferenceStreamParser;
             this.crossReferenceTableParser = crossReferenceTableParser;
 
@@ -36,8 +33,7 @@
         public CrossReferenceTable Parse(IRandomAccessRead reader, bool isLenientParsing, long xrefLocation,
             CosObjectPool pool, IPdfTokenScanner pdfScanner, ISeekableTokenScanner tokenScanner)
         {
-            var xrefOffsetValidator = new XrefOffsetValidator(log, reader, dictionaryParser, baseParser, pool);
-            long fixedOffset = xrefOffsetValidator.CheckXRefOffset(xrefLocation, isLenientParsing);
+            long fixedOffset = offsetValidator.CheckXRefOffset(xrefLocation, tokenScanner, reader, isLenientParsing);
             if (fixedOffset > -1)
             {
                 xrefLocation = fixedOffset;
@@ -81,7 +77,7 @@
                         int streamOffset = ((NumericToken)tableDictionary.Data[NameToken.XrefStm]).Int;
 
                         // check the xref stream reference
-                        fixedOffset = xrefOffsetValidator.CheckXRefOffset(streamOffset, isLenientParsing);
+                        fixedOffset = offsetValidator.CheckXRefOffset(streamOffset, tokenScanner, reader, isLenientParsing);
                         if (fixedOffset > -1 && fixedOffset != streamOffset)
                         {
                             log.Warn($"/XRefStm offset {streamOffset} is incorrect, corrected to {fixedOffset}");
@@ -148,7 +144,7 @@
                     if (previousCrossReferenceLocation > 0)
                     {
                         // check the xref table reference
-                        fixedOffset = xrefOffsetValidator.CheckXRefOffset(previousCrossReferenceLocation, isLenientParsing);
+                        fixedOffset = offsetValidator.CheckXRefOffset(previousCrossReferenceLocation, tokenScanner, reader, isLenientParsing);
                         if (fixedOffset > -1 && fixedOffset != previousCrossReferenceLocation)
                         {
                             previousCrossReferenceLocation = fixedOffset;
