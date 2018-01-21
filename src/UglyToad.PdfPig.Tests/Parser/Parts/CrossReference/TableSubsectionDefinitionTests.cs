@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Parser.Parts.CrossReference
 {
     using System;
-    using IO;
     using PdfPig.Parser.Parts.CrossReference;
-    using PdfPig.Util;
     using Xunit;
 
     public class TableSubsectionDefinitionTests
@@ -39,11 +37,9 @@
         [Fact]
         public void TryReadIncorrectFormatSinglePartFalse()
         {
-            var bytes = OtherEncodings.StringAsLatin1Bytes(@"76362");
+            var input = StringBytesTestConverter.Convert("76362", false);
 
-            var input = new RandomAccessBuffer(bytes);
-
-            var result = TableSubsectionDefinition.TryRead(log, input, out var _);
+            var result = TableSubsectionDefinition.TryRead(log, input.Bytes, out var _);
 
             Assert.False(result);
         }
@@ -51,11 +47,9 @@
         [Fact]
         public void TryReadIncorrectFormatMultiplePartsFalse()
         {
-            var bytes = OtherEncodings.StringAsLatin1Bytes(@"76362 100 1000");
+            var input = StringBytesTestConverter.Convert("76362 100 1000", false);
 
-            var input = new RandomAccessBuffer(bytes);
-
-            var result = TableSubsectionDefinition.TryRead(log, input, out var _);
+            var result = TableSubsectionDefinition.TryRead(log, input.Bytes, out var _);
 
             Assert.False(result);
         }
@@ -63,11 +57,9 @@
         [Fact]
         public void FirstPartInvalidFormatFalse()
         {
-            var bytes = OtherEncodings.StringAsLatin1Bytes("00adb85 97");
+            var input = StringBytesTestConverter.Convert("00adb85 97", false);
 
-            var input = new RandomAccessBuffer(bytes);
-
-            var result = TableSubsectionDefinition.TryRead(log, input, out var _);
+            var result = TableSubsectionDefinition.TryRead(log, input.Bytes, out var _);
 
             Assert.False(result);
         }
@@ -75,11 +67,9 @@
         [Fact]
         public void SecondPartInvalidFormatFalse()
         {
-            var bytes = OtherEncodings.StringAsLatin1Bytes("85 9t");
-
-            var input = new RandomAccessBuffer(bytes);
-
-            var result = TableSubsectionDefinition.TryRead(log, input, out var _);
+            var input = StringBytesTestConverter.Convert("85 9t", false);
+            
+            var result = TableSubsectionDefinition.TryRead(log, input.Bytes, out var _);
 
             Assert.False(result);
         }
@@ -87,11 +77,9 @@
         [Fact]
         public void ValidTrue()
         {
-            var bytes = OtherEncodings.StringAsLatin1Bytes("12 32");
+            var input = StringBytesTestConverter.Convert("12 32", false);
 
-            var input = new RandomAccessBuffer(bytes);
-
-            var result = TableSubsectionDefinition.TryRead(log, input, out var definition);
+            var result = TableSubsectionDefinition.TryRead(log, input.Bytes, out var definition);
 
             Assert.True(result);
 
@@ -102,11 +90,9 @@
         [Fact]
         public void ValidWithLongTrue()
         {
-            var bytes = OtherEncodings.StringAsLatin1Bytes("214748364700 6");
+            var input = StringBytesTestConverter.Convert("214748364700 6", false);
 
-            var input = new RandomAccessBuffer(bytes);
-
-            var result = TableSubsectionDefinition.TryRead(log, input, out var definition);
+            var result = TableSubsectionDefinition.TryRead(log, input.Bytes, out var definition);
 
             Assert.True(result);
 

@@ -22,7 +22,7 @@
             this.log = log;
         }
 
-        public long CheckXRefOffset(long startXRefOffset, ISeekableTokenScanner scanner, IRandomAccessRead reader, bool isLenientParsing)
+        public long CheckXRefOffset(long startXRefOffset, ISeekableTokenScanner scanner, IInputBytes inputBytes, bool isLenientParsing)
         {
             // repair mode isn't available in non-lenient mode
             if (!isLenientParsing)
@@ -30,14 +30,15 @@
                 return startXRefOffset;
             }
 
-            reader.Seek(startXRefOffset);
+            scanner.Seek(startXRefOffset);
 
-            ReadHelper.SkipSpaces(reader);
+            scanner.MoveNext();
 
-            if (reader.Peek() == 'x' && ReadHelper.IsString(reader, "xref"))
+            if (ReferenceEquals(scanner.CurrentToken, OperatorToken.Xref))
             {
                 return startXRefOffset;
             }
+            
             if (startXRefOffset > 0)
             {
                 if (CheckXRefStreamOffset(startXRefOffset, scanner, true))
@@ -45,14 +46,14 @@
                     return startXRefOffset;
                 }
 
-                return CalculateXRefFixedOffset(startXRefOffset, scanner, reader);
+                return CalculateXRefFixedOffset(startXRefOffset, scanner, inputBytes);
             }
 
             // can't find a valid offset
             return -1;
         }
 
-        private long CalculateXRefFixedOffset(long objectOffset, ISeekableTokenScanner scanner, IRandomAccessRead reader)
+        private long CalculateXRefFixedOffset(long objectOffset, ISeekableTokenScanner scanner, IInputBytes inputBytes)
         {
             if (objectOffset < 0)
             {
@@ -61,10 +62,12 @@
             }
 
             // start a brute force search for all xref tables and try to find the offset we are looking for
-            long newOffset = BfSearchForXRef(objectOffset, scanner, reader);
+            var newOffset = BruteForceSearchForXref(objectOffset, scanner, inputBytes);
+
             if (newOffset > -1)
             {
                 log.Debug($"Fixed reference for xref table/stream {objectOffset} -> {newOffset}");
+
                 return newOffset;
             }
 
@@ -73,90 +76,18 @@
             return 0;
         }
 
-        private void BfSearchForXRefStreams(IRandomAccessRead reader)
-        {
-            if (bfSearchXRefStreamsOffsets != null)
-            {
-                return;
-            }
+       
 
-            // a pdf may contain more than one /XRef entry
-            bfSearchXRefStreamsOffsets = new List<long>();
-            long originOffset = reader.GetPosition();
-            reader.Seek(MinimumSearchOffset);
-            // search for XRef streams
-            var objString = " obj";
-            while (!reader.IsEof())
-            {
-                if (ReadHelper.IsString(reader, "xref"))
-                {
-                    // search backwards for the beginning of the stream
-                    long newOffset = -1;
-                    long xrefOffset = reader.GetPosition();
-                    bool objFound = false;
-                    for (int i = 1; i < 40 && !objFound; i++)
-                    {
-                        long currentOffset = xrefOffset - (i * 10);
-                        if (currentOffset > 0)
-                        {
-                            reader.Seek(currentOffset);
-                            for (int j = 0; j < 10; j++)
-                            {
-                                if (ReadHelper.IsString(reader, objString))
-                                {
-                                    long tempOffset = currentOffset - 1;
-                                    reader.Seek(tempOffset);
-                                    int genId = reader.Peek();
-                                    // is the next char a digit?
-                                    if (ReadHelper.IsDigit(genId))
-                                    {
-                                        tempOffset--;
-                                        reader.Seek(tempOffset);
-                                        if (ReadHelper.IsSpace(reader))
-                                        {
-                                            int length = 0;
-                                            reader.Seek(--tempOffset);
-                                            while (tempOffset > MinimumSearchOffset && ReadHelper.IsDigit(reader))
-                                            {
-                                                reader.Seek(--tempOffset);
-                                                length++;
-                                            }
-                                            if (length > 0)
-                                            {
-                                                reader.Read();
-                                                newOffset = reader.GetPosition();
-                                            }
-                                        }
-                                    }
-                                    objFound = true;
-                                    break;
-                                }
-                                else
-                                {
-                                    currentOffset++;
-                                    reader.Read();
-                                }
-                            }
-                        }
-                    }
-                    if (newOffset > -1)
-                    {
-                        bfSearchXRefStreamsOffsets.Add(newOffset);
-                    }
-                    reader.Seek(xrefOffset + 5);
-                }
-                reader.Read();
-            }
-            reader.Seek(originOffset);
-        }
-
-        private long BfSearchForXRef(long xrefOffset, ISeekableTokenScanner scanner, IRandomAccessRead reader)
+        private long BruteForceSearchForXref(long xrefOffset, ISeekableTokenScanner scanner, IInputBytes reader)
         {
             long newOffset = -1;
             long newOffsetTable = -1;
             long newOffsetStream = -1;
-            BfSearchForXRefTables(reader);
+
+            BruteForceSearchForTables(reader);
+
             BfSearchForXRefStreams(reader);
+
             if (bfSearchXRefTablesOffsets != null)
             {
                 // TODO to be optimized, this won't work in every case
@@ -196,35 +127,143 @@
             return newOffset;
         }
 
-        private void BfSearchForXRefTables(IRandomAccessRead reader)
+        private void BruteForceSearchForTables(IInputBytes bytes)
         {
-            if (bfSearchXRefTablesOffsets == null)
+            if (bfSearchXRefTablesOffsets != null)
             {
-                // a pdf may contain more than one xref entry
-                bfSearchXRefTablesOffsets = new List<long>();
-                long originOffset = reader.GetPosition();
-                reader.Seek(MinimumSearchOffset);
-                // search for xref tables
-                while (!reader.IsEof())
-                {
-                    if (ReadHelper.IsString(reader, "xref"))
-                    {
-                        long newOffset = reader.GetPosition();
-                        reader.Seek(newOffset - 1);
-                        // ensure that we don't read "startxref" instead of "xref"
-                        if (ReadHelper.IsWhitespace(reader))
-                        {
-                            bfSearchXRefTablesOffsets.Add(newOffset);
-                        }
-                        reader.Seek(newOffset + 4);
-                    }
-                    reader.Read();
-                }
-                reader.Seek(originOffset);
+                return;
             }
+
+            // a pdf may contain more than one xref entry
+            bfSearchXRefTablesOffsets = new List<long>();
+
+            var startOffset = bytes.CurrentOffset;
+
+            bytes.Seek(MinimumSearchOffset);
+
+            // search for xref tables
+            while (bytes.MoveNext() && !bytes.IsAtEnd())
+            {
+                if (ReadHelper.IsString(bytes, "xref"))
+                {
+                    var newOffset = bytes.CurrentOffset;
+
+                    bytes.Seek(newOffset - 1);
+
+                    // ensure that we don't read "startxref" instead of "xref"
+                    if (ReadHelper.IsWhitespace(bytes.CurrentByte))
+                    {
+                        bfSearchXRefTablesOffsets.Add(newOffset);
+                    }
+
+                    bytes.Seek(newOffset + 4);
+                }
+            }
+
+            bytes.Seek(startOffset);
         }
 
-        private long SearchNearestValue(List<long> values, long offset)
+        private void BfSearchForXRefStreams(IInputBytes bytes)
+        {
+            if (bfSearchXRefStreamsOffsets != null)
+            {
+                return;
+            }
+
+            // a pdf may contain more than one /XRef entry
+            bfSearchXRefStreamsOffsets = new List<long>();
+
+            var startOffset = bytes.CurrentOffset;
+
+            bytes.Seek(MinimumSearchOffset);
+
+            // search for XRef streams
+            var objString = " obj";
+
+            while (bytes.MoveNext() && !bytes.IsAtEnd())
+            {
+                if (!ReadHelper.IsString(bytes, "xref"))
+                {
+                    continue;
+                }
+
+                // search backwards for the beginning of the stream
+                long newOffset = -1;
+                long xrefOffset = bytes.CurrentOffset;
+
+                bool objFound = false;
+                for (var i = 1; i < 40; i++)
+                {
+                    if (objFound)
+                    {
+                        break;
+                    }
+
+                    long currentOffset = xrefOffset - (i * 10);
+
+                    if (currentOffset > 0)
+                    {
+                        bytes.Seek(currentOffset);
+
+                        for (int j = 0; j < 10; j++)
+                        {
+                            if (ReadHelper.IsString(bytes, objString))
+                            {
+                                long tempOffset = currentOffset - 1;
+
+                                bytes.Seek(tempOffset);
+
+                                var generationNumber = bytes.Peek();
+
+                                // is the next char a digit?
+                                if (generationNumber.HasValue && ReadHelper.IsDigit(generationNumber.Value))
+                                {
+                                    tempOffset--;
+                                    bytes.Seek(tempOffset);
+
+                                    // is the digit preceded by a space?
+                                    if (ReadHelper.IsSpace(bytes.CurrentByte))
+                                    {
+                                        int length = 0;
+                                        bytes.Seek(--tempOffset);
+
+                                        while (tempOffset > MinimumSearchOffset && ReadHelper.IsDigit(bytes.CurrentByte))
+                                        {
+                                            bytes.Seek(--tempOffset);
+                                            length++;
+                                        }
+
+                                        if (length > 0)
+                                        {
+                                            bytes.MoveNext();
+                                            newOffset = bytes.CurrentOffset;
+                                        }
+                                    }
+                                }
+
+                                objFound = true;
+
+                                break;
+                            }
+
+                            currentOffset++;
+                            bytes.MoveNext();
+                        }
+                    }
+                }
+
+                if (newOffset > -1)
+                {
+                    bfSearchXRefStreamsOffsets.Add(newOffset);
+                }
+
+                bytes.Seek(xrefOffset + 5);
+            }
+
+            bytes.Seek(startOffset);
+        }
+
+        private static long SearchNearestValue(List<long> values, long offset)
         {
             long newValue = -1;
             long? currentDifference = null;
@@ -255,8 +294,9 @@
             {
                 return true;
             }
-            // seek to offset-1 
-            scanner.Seek(startXRefOffset - 1);
+
+            scanner.Seek(startXRefOffset);
+
             if (scanner.TryReadToken(out NumericToken objectNumber))
             {
                 try
@@ -280,7 +320,6 @@
                     if (!scanner.TryReadToken(out DictionaryToken dictionary))
                     {
                         scanner.Seek(startXRefOffset);
-
                     }
 
                     if (dictionary.TryGet(NameToken.Type, out var type) && NameToken.Xref.Equals(type))
@@ -293,6 +332,11 @@
                     log.Error("Couldn't read the xref stream object.", ex);
                 }
             }
+            else
+            {
+                log.Error($"When looking for the cross reference stream object we sought a number but found: {scanner.CurrentToken}.");
+            }
+
             return false;
         }
     }

@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.IO;
 
-    internal class RandomAccessBuffer : RandomAccess
+    internal class RandomAccessBuffer : IDisposable
     {
         // default chunk size is 1kb
         private static readonly int DefaultChunkSize = 1024;

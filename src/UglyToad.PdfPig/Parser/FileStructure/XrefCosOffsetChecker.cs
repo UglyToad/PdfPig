@@ -6,174 +6,122 @@
     using ContentStream;
     using Cos;
     using IO;
+    using Logging;
     using Parts;
-    using Util;
 
     internal class XrefCosOffsetChecker
     {
         private static readonly long MINIMUM_SEARCH_OFFSET = 6;
 
-        private Dictionary<IndirectReference, long> bfSearchCOSObjectKeyOffsets;
-        
-        private bool validateXrefOffsets(IRandomAccessRead reader, Dictionary<IndirectReference, long> xrefOffset)
+        private readonly ILog log;
+        private readonly BruteForceSearcher bruteForceSearcher;
+
+        private IReadOnlyDictionary<IndirectReference, long> objectKeyOffsets;
+
+        public XrefCosOffsetChecker(ILog log, BruteForceSearcher bruteForceSearcher)
+        {
+            this.log = log;
+            this.bruteForceSearcher = bruteForceSearcher;
+        }
+
+        private bool ValidateXrefOffsets(IInputBytes bytes, Dictionary<IndirectReference, long> xrefOffset)
         {
             if (xrefOffset == null)
             {
                 return true;
             }
+
             foreach (var objectEntry in xrefOffset)
             {
                 IndirectReference objectKey = objectEntry.Key;
                 long objectOffset = objectEntry.Value;
+
                 // a negative offset number represents a object number itself
                 // see type 2 entry in xref stream
-                if (objectOffset >= 0
-                        && !checkObjectKeys(reader, objectKey, objectOffset))
+                if (objectOffset >= 0 && !CheckObjectKeys(bytes, objectKey, objectOffset))
                 {
-                    //LOG.debug("Stop checking xref offsets as at least one (" + objectKey
-                    //        + ") couldn't be dereferenced");
+                    log.Debug($"Stop checking xref offsets as at least one ({objectKey}) couldn't be dereferenced");
+
                     return false;
                 }
             }
             return true;
         }
 
-        private bool checkObjectKeys(IRandomAccessRead source, IndirectReference objectKey, long offset)
+        private bool CheckObjectKeys(IInputBytes bytes, IndirectReference objectKey, long offset)
         {
             // there can't be any object at the very beginning of a pdf
             if (offset < MINIMUM_SEARCH_OFFSET)
             {
                 return false;
             }
+
             long objectNr = objectKey.ObjectNumber;
             long objectGen = objectKey.Generation;
-            long originOffset = source.GetPosition();
-            string objectString = ObjectHelper.createObjectString(objectNr, objectGen);
+            long originOffset = bytes.CurrentOffset;
+
+            string objectString = ObjectHelper.CreateObjectString(objectNr, objectGen);
+
             try
             {
-                source.Seek(offset);
-                if (ReadHelper.IsString(source, OtherEncodings.StringAsLatin1Bytes(objectString)))
+                bytes.Seek(offset);
+
+                if (ReadHelper.IsWhitespace(bytes.CurrentByte))
+                {
+                    bytes.MoveNext();
+                }
+                
+                if (ReadHelper.IsString(bytes, objectString))
                 {
                     // everything is ok, return origin object key
-                    source.Seek(originOffset);
+                    bytes.Seek(originOffset);
                     return true;
                 }
             }
-            catch (InvalidOperationException)
+            catch (Exception)
             {
                 // Swallow the exception, obviously there isn't any valid object number
             }
             finally
             {
-                source.Seek(originOffset);
+                bytes.Seek(originOffset);
             }
+
             // no valid object number found
             return false;
         }
 
 
-        private Dictionary<IndirectReference, long> getBFCosObjectOffsets(IRandomAccessRead reader)
+        private IReadOnlyDictionary<IndirectReference, long> getBFCosObjectOffsets()
         {
-            if (bfSearchCOSObjectKeyOffsets == null)
+            if (objectKeyOffsets == null)
             {
-                bfSearchForObjects(reader);
+                var offsets = bruteForceSearcher.GetObjectLocations();
+
+                objectKeyOffsets = offsets;
             }
-            return bfSearchCOSObjectKeyOffsets;
+
+            return objectKeyOffsets;
         }
-
-        private void bfSearchForObjects(IRandomAccessRead source)
-        {
-            bfSearchForLastEOFMarker(source);
-            bfSearchCOSObjectKeyOffsets = new Dictionary<IndirectReference, long>();
-            long originOffset = source.GetPosition();
-            long currentOffset = MINIMUM_SEARCH_OFFSET;
-            long lastObjectId = long.MinValue;
-            int lastGenID = int.MinValue;
-            long lastObjOffset = long.MinValue;
-            char[] objString = " obj".ToCharArray();
-            char[] endobjString = "endobj".ToCharArray();
-            bool endobjFound = false;
-            do
-            {
-                source.Seek(currentOffset);
-                if (ReadHelper.IsString(source, "obj"))
-                {
-                    long tempOffset = currentOffset - 1;
-                    source.Seek(tempOffset);
-                    int genID = source.Peek();
-                    // is the next char a digit?
-                    if (ReadHelper.IsDigit(genID))
-                    {
-                        genID -= 48;
-                        tempOffset--;
-                        source.Seek(tempOffset);
-                        if (ReadHelper.IsSpace(source))
-                        {
-                            while (tempOffset > MINIMUM_SEARCH_OFFSET && ReadHelper.IsSpace(source))
-                            {
-                                source.Seek(--tempOffset);
-                            }
-                            bool objectIDFound = false;
-                            while (tempOffset > MINIMUM_SEARCH_OFFSET && ReadHelper.IsDigit(source))
-                            {
-                                source.Seek(--tempOffset);
-                                objectIDFound = true;
-                            }
-                            if (objectIDFound)
-                            {
-                                source.Read();
-                                long objectId = ObjectHelper.ReadObjectNumber(source);
-                                if (lastObjOffset > 0)
-                                {
-                                    // add the former object ID only if there was a subsequent object ID
-                                    bfSearchCOSObjectKeyOffsets[new IndirectReference(lastObjectId, lastGenID)] = lastObjOffset;
-                                }
-                                lastObjectId = objectId;
-                                lastGenID = genID;
-                                lastObjOffset = tempOffset + 1;
-                                currentOffset += objString.Length - 1;
-                                endobjFound = false;
-                            }
-                        }
-                    }
-                }
-                else if (ReadHelper.IsString(source, "endobj"))
-                {
-                    endobjFound = true;
-                    currentOffset += endobjString.Length - 1;
-                }
-                currentOffset++;
-            } while (currentOffset < lastEOFMarker && !source.IsEof());
-            if ((lastEOFMarker < long.MaxValue || endobjFound) && lastObjOffset > 0)
-            {
-                // if the pdf wasn't cut off in the middle or if the last object ends with a "endobj" marker
-                // the last object id has to be added here so that it can't get lost as there isn't any subsequent object id
-                bfSearchCOSObjectKeyOffsets[new IndirectReference(lastObjectId, lastGenID)] = lastObjOffset;
-            }
-            // reestablish origin position
-
-            source.Seek(originOffset);
-        }
-
-        /**
-         * Check the XRef table by dereferencing all objects and fixing the offset if necessary.
-         * 
-         * @throws InvalidOperationException if something went wrong.
-         */
-        public void checkXrefOffsets(IRandomAccessRead reader, CrossReferenceTable xrefTrailerResolver, bool isLenientParsing)
+        
+        /// <summary>
+        /// Check that the offsets in the cross reference are correct.
+        /// </summary>
+        public void CheckCrossReferenceOffsets(IInputBytes bytes, CrossReferenceTable xrefTrailerResolver, bool isLenientParsing)
         {
             // repair mode isn't available in non-lenient mode
             if (!isLenientParsing)
             {
                 return;
             }
+
             Dictionary<IndirectReference, long> xrefOffset = xrefTrailerResolver.ObjectOffsets.ToDictionary(x => x.Key, x => x.Value);
-            if (validateXrefOffsets(reader, xrefOffset))
+            if (ValidateXrefOffsets(bytes, xrefOffset))
             {
                 return;
             }
 
-            Dictionary<IndirectReference, long> bfCOSObjectKeyOffsets = getBFCosObjectOffsets(reader);
+            IReadOnlyDictionary<IndirectReference, long> bfCOSObjectKeyOffsets = getBFCosObjectOffsets();
             if (bfCOSObjectKeyOffsets.Count > 0)
             {
                 List<IndirectReference> objStreams = new List<IndirectReference>();
@@ -225,49 +173,64 @@
 
                 foreach (var item in bfCOSObjectKeyOffsets)
                 {
-                    xrefOffset.Add(item.Key, item.Value);
+                    xrefOffset[item.Key] = item.Value;
                 }
 
             }
         }
 
-        private long? lastEOFMarker = null;
-        private void bfSearchForLastEOFMarker(IRandomAccessRead source)
+        private long? lastEndOfFileMarker;
+
+        private void BruteForceSearchForEndOfFileMarker(IInputBytes source)
         {
-            if (lastEOFMarker == null)
+            if (lastEndOfFileMarker != null)
             {
-                long originOffset = source.GetPosition();
-                source.Seek(MINIMUM_SEARCH_OFFSET);
-                while (!source.IsEof())
+                return;
+            }
+
+            long startOffset = source.CurrentOffset;
+
+            source.Seek(MINIMUM_SEARCH_OFFSET);
+
+            while (!source.IsAtEnd())
+            {
+                // search for EOF marker
+                if (ReadHelper.IsString(source, "%%EOF"))
                 {
-                    // search for EOF marker
-                    if (ReadHelper.IsString(source, "%%EOF"))
+                    long tempMarker = source.CurrentOffset;
+
+                    if (tempMarker >= source.Length)
                     {
-                        long tempMarker = source.GetPosition();
-                        source.Seek(tempMarker + 5);
-                        try
-                        {
-                            // check if the following data is some valid pdf content
-                            // which most likely indicates that the pdf is linearized,
-                            // updated or just cut off somewhere in the middle
-                            ReadHelper.SkipSpaces(source);
-                            ObjectHelper.ReadObjectNumber(source);
-                            ObjectHelper.ReadGenerationNumber(source);
-                        }
-                        catch (InvalidOperationException)
-                        {
-                            // save the EOF marker as the following data is most likely some garbage
-                            lastEOFMarker = tempMarker;
-                        }
+                        lastEndOfFileMarker = tempMarker;
+                        break;
                     }
-                    source.Read();
+
+                    try
+                    {
+                        source.Seek(tempMarker + 5);
+                        // check if the following data is some valid pdf content
+                        // which most likely indicates that the pdf is linearized,
+                        // updated or just cut off somewhere in the middle
+                        ReadHelper.SkipSpaces(source);
+                        ObjectHelper.ReadObjectNumber(source);
+                        ObjectHelper.ReadGenerationNumber(source);
+                    }
+                    catch (Exception)
+                    {
+                        // save the EOF marker as the following data is most likely some garbage
+                        lastEndOfFileMarker = tempMarker;
+                    }
                 }
-                source.Seek(originOffset);
-                // no EOF marker found
-                if (lastEOFMarker == null)
-                {
-                    lastEOFMarker = long.MaxValue;
-                }
+
+                source.MoveNext();
+            }
+
+            source.Seek(startOffset);
+
+            // no EOF marker found
+            if (lastEndOfFileMarker == null)
+            {
+                lastEndOfFileMarker = long.MaxValue;
             }
         }
     }

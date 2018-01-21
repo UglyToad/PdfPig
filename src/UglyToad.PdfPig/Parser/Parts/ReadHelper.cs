@@ -2,9 +2,8 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
     using System.Text;
+    using Exceptions;
     using IO;
     using Util;
 
@@ -13,23 +12,25 @@
         public const byte AsciiLineFeed = 10;
         public const byte AsciiCarriageReturn = 13;
 
-        public static string ReadLine(IRandomAccessRead reader)
+        public static string ReadLine(IInputBytes bytes)
         {
-            if (reader == null)
+            if (bytes == null)
             {
-                throw new ArgumentNullException(nameof(reader));
+                throw new ArgumentNullException(nameof(bytes));
             }
 
-            if (reader.IsEof())
+            if (bytes.IsAtEnd())
             {
                 throw new InvalidOperationException("Error: End-of-File, expected line");
             }
 
             var buffer = new StringBuilder(11);
 
-            int c;
-            while ((c = reader.Read()) != -1)
+            byte c = 0;
+            while (bytes.MoveNext())
             {
+                c = bytes.CurrentByte;
+
                 // CR and LF are valid EOLs
                 if (IsEndOfLine(c))
                 {
@@ -40,56 +41,43 @@
             }
 
             // CR+LF is also a valid EOL 
-            if (IsCarriageReturn(c) && IsLineFeed(reader.Peek()))
+            if (IsCarriageReturn(c) && IsLineFeed(bytes.Peek()))
             {
-                reader.Read();
+                bytes.MoveNext();
             }
 
             return buffer.ToString();
         }
-
-        public static string ReadString(IRandomAccessRead reader)
-        {
-            SkipSpaces(reader);
-            StringBuilder buffer = new StringBuilder();
-            int c = reader.Read();
-            while (!IsEndOfName((char)c) && c != -1)
-            {
-                buffer.Append((char)c);
-                c = reader.Read();
-            }
-            if (c != -1)
-            {
-                reader.Unread(c);
-            }
-
-            return buffer.ToString();
-        }
-
-        public static void SkipSpaces(IRandomAccessRead reader)
+        
+        public static void SkipSpaces(IInputBytes bytes)
         {
             const int commentCharacter = 37;
-            int c = reader.Read();
+            bytes.MoveNext();
+            byte c = bytes.CurrentByte;
 
             while (IsWhitespace(c) || c == 37)
             {
                 if (c == commentCharacter)
                 {
                     // skip past the comment section
-                    c = reader.Read();
-                    while (!IsEndOfLine(c) && c != -1)
+                    bytes.MoveNext();
+                    c = bytes.CurrentByte;
+                    while (!IsEndOfLine(c))
                     {
-                        c = reader.Read();
+                        bytes.MoveNext();
+                        c = bytes.CurrentByte;
                     }
                 }
                 else
                 {
-                    c = reader.Read();
+                    bytes.MoveNext();
+                    c = bytes.CurrentByte;
                 }
             }
-            if (c != -1)
+
+            if (!bytes.IsAtEnd())
             {
-                reader.Unread(c);
+                bytes.Seek(bytes.CurrentOffset - 1);
             }
         }
 
@@ -114,15 +102,7 @@
         {
             return EndOfNameCharacters.Contains(ch);
         }
-
-        /// <summary>
-        /// Determines if the current character in the reader is a whitespace.
-        /// </summary>
-        public static bool IsWhitespace(IRandomAccessRead reader)
-        {
-            return IsWhitespace(reader.Peek());
-        }
-
+        
         /// <summary>
         /// Determines if a character is whitespace or not.
         /// </summary>
@@ -135,50 +115,50 @@
                    || c == AsciiCarriageReturn || c == ' ';
         }
 
-        public static bool IsEndOfLine(int c)
-        {
-            return IsLineFeed(c) || IsCarriageReturn(c);
-        }
-
+        public static bool IsEndOfLine(char c) => IsEndOfLine((byte) c);
         public static bool IsEndOfLine(byte b)
         {
             return IsLineFeed(b) || IsCarriageReturn(b);
         }
 
-        public static bool IsLineFeed(int c)
+        public static bool IsLineFeed(byte? c)
         {
             return AsciiLineFeed == c;
         }
 
-        public static bool IsCarriageReturn(int c)
+        public static bool IsCarriageReturn(byte c)
         {
             return AsciiCarriageReturn == c;
         }
 
-        public static bool IsString(IRandomAccessRead reader, string str) => IsString(reader, str.Select(x => (byte)x));
-        public static bool IsString(IRandomAccessRead reader, IEnumerable<byte> str)
+        public static bool IsString(IInputBytes bytes, string s)
         {
-            bool bytesMatching = true;
-            long originOffset = reader.GetPosition();
-            foreach (var c in str)
+            bool found = true;
+
+            var startOffset = bytes.CurrentOffset;
+
+            foreach (var c in s)
             {
-                if (reader.Read() != c)
+                if (bytes.CurrentByte != c)
                 {
-                    bytesMatching = false;
+                    found = false;
                     break;
                 }
+
+                bytes.MoveNext();
             }
-            reader.Seek(originOffset);
 
-            return bytesMatching;
+            bytes.Seek(startOffset);
+
+            return found;
         }
-
-        public static long ReadLong(IRandomAccessRead reader)
+        
+        public static long ReadLong(IInputBytes bytes)
         {
-            SkipSpaces(reader);
+            SkipSpaces(bytes);
             long retval;
 
-            StringBuilder longBuffer = ReadStringNumber(reader);
+            StringBuilder longBuffer = ReadStringNumber(bytes);
 
             try
             {
@@ -187,46 +167,45 @@
             catch (FormatException e)
             {
                 var bytesToReverse = OtherEncodings.StringAsLatin1Bytes(longBuffer.ToString());
-                reader.Unread(bytesToReverse);
+                bytes.Seek(bytes.CurrentOffset - bytesToReverse.Length);
 
-                throw new InvalidOperationException($"Error: Expected a long type at offset {reader.GetPosition()}, instead got \'{longBuffer}\'", e);
+                throw new InvalidOperationException($"Error: Expected a long type at offset {bytes.CurrentOffset}, instead got \'{longBuffer}\'", e);
             }
 
             return retval;
         }
 
-        private static StringBuilder ReadStringNumber(IRandomAccessRead reader)
+        private static readonly int MaximumNumberStringLength = long.MaxValue.ToString("D").Length;
+
+        private static StringBuilder ReadStringNumber(IInputBytes reader)
         {
-            int lastByte = 0;
+            byte lastByte;
             StringBuilder buffer = new StringBuilder();
-            while ((lastByte = reader.Read()) != ' ' &&
+
+            while (reader.MoveNext() && (lastByte = reader.CurrentByte) != ' ' &&
                    lastByte != AsciiLineFeed &&
                    lastByte != AsciiCarriageReturn &&
                    lastByte != 60 && //see sourceforge bug 1714707
                    lastByte != '[' && // PDFBOX-1845
                    lastByte != '(' && // PDFBOX-2579
-                   lastByte != 0 && //See sourceforge bug 853328
-                   lastByte != -1)
+                   lastByte != 0)
             {
                 buffer.Append((char)lastByte);
-                if (buffer.Length > long.MaxValue.ToString("D").Length)
+
+                if (buffer.Length > MaximumNumberStringLength)
                 {
-                    throw new IOException("Number '" + buffer + "' is getting too long, stop reading at offset " + reader.GetPosition());
+                    throw new InvalidOperationException($"Number \'{buffer}\' is getting too long, stop reading at offset {reader.CurrentOffset}");
                 }
             }
-            if (lastByte != -1)
+
+            if (!reader.IsAtEnd())
             {
-                reader.Unread(lastByte);
+                reader.Seek(reader.CurrentOffset - 1);
             }
 
             return buffer;
         }
-
-        public static bool IsDigit(IRandomAccessRead reader)
-        {
-            return IsDigit(reader.Peek());
-        }
-
+        
         /// <summary>
         /// This will tell if the given value is a digit or not.
         /// </summary>
@@ -235,17 +214,17 @@
             return c >= '0' && c <= '9';
         }
 
-        public static int ReadInt(IRandomAccessRead reader)
+        public static int ReadInt(IInputBytes bytes)
         {
-            if (reader == null)
+            if (bytes == null)
             {
-                throw new ArgumentNullException(nameof(reader));
+                throw new ArgumentNullException(nameof(bytes));
             }
 
-            SkipSpaces(reader);
+            SkipSpaces(bytes);
             int result;
 
-            var intBuffer = ReadStringNumber(reader);
+            var intBuffer = ReadStringNumber(bytes);
 
             try
             {
@@ -253,45 +232,14 @@
             }
             catch (Exception e)
             {
-                reader.Unread(OtherEncodings.StringAsLatin1Bytes(intBuffer.ToString()));
-                throw new IOException("Error: Expected an integer type at offset " + reader.GetPosition(), e);
+                bytes.Seek(bytes.CurrentOffset - OtherEncodings.StringAsLatin1Bytes(intBuffer.ToString()).Length);
+
+                throw new PdfDocumentFormatException($"Error: Expected an integer type at offset {bytes.CurrentOffset}", e);
             }
 
             return result;
         }
-
-        public static void ReadExpectedString(IRandomAccessRead reader, string expectedstring)
-        {
-            ReadExpectedString(reader, expectedstring, false);
-        }
-
-        /**
-         * Reads given pattern from {@link #seqSource}. Skipping whitespace at start and end if wanted.
-         * 
-         * @param expectedstring pattern to be skipped
-         * @param skipSpaces if set to true spaces before and after the string will be skipped
-         * @throws IOException if pattern could not be read
-         */
-        public static void ReadExpectedString(IRandomAccessRead reader, string expectedstring, bool skipSpaces)
-        {
-            SkipSpaces(reader);
-
-            foreach (var c in expectedstring)
-            {
-                if (reader.Read() != c)
-                {
-                    throw new IOException($"Expected string \'{expectedstring}\' but missed character \'{c}\' at offset {reader.GetPosition()}");
-                }
-            }
-
-            SkipSpaces(reader);
-        }
-
-        public static bool IsSpace(IRandomAccessRead reader)
-        {
-            return IsSpace(reader.Peek());
-        }
-
+        
         /**
          * This will tell if the given value is a space or not.
          * 
@@ -302,17 +250,7 @@
         {
             return ' ' == c;
         }
-
-        public static void ReadExpectedChar(IRandomAccessRead reader, char ec)
-        {
-            char c = (char)reader.Read();
-
-            if (c != ec)
-            {
-                throw new InvalidOperationException($"expected=\'{ec}\' actual=\'{c}\' at offset {reader.GetPosition()}");
-            }
-        }
-
+        
         public static bool IsHexDigit(char ch)
         {
             return char.IsDigit(ch) || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');

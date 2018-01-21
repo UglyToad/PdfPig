@@ -8,30 +8,31 @@
         private const long ObjectNumberThreshold = 10000000000L;
         private const long GenerationNumberThreshold = 65535;
 
-        public static long ReadObjectNumber(IRandomAccessRead reader)
+        public static long ReadObjectNumber(IInputBytes bytes)
         {
-            long retval = ReadHelper.ReadLong(reader);
-            if (retval < 0 || retval >= ObjectNumberThreshold)
+            long result = ReadHelper.ReadLong(bytes);
+            if (result < 0 || result >= ObjectNumberThreshold)
             {
-                throw new FormatException($"Object Number \'{retval}\' has more than 10 digits or is negative");
+                throw new FormatException($"Object Number \'{result}\' has more than 10 digits or is negative");
             }
 
-            return retval;
+            return result;
         }
 
-        public static int ReadGenerationNumber(IRandomAccessRead reader)
+        public static int ReadGenerationNumber(IInputBytes bytes)
         {
-            int retval = ReadHelper.ReadInt(reader);
-            if (retval < 0 || retval > GenerationNumberThreshold)
+            int result = ReadHelper.ReadInt(bytes);
+            if (result < 0 || result > GenerationNumberThreshold)
             {
-                throw new FormatException("Generation Number '" + retval + "' has more than 5 digits");
+                throw new FormatException("Generation Number '" + result + "' has more than 5 digits");
             }
-            return retval;
+
+            return result;
         }
 
-        public static string createObjectString(long objectID, long genID)
+        public static string CreateObjectString(long objectId, long genId)
         {
-            return $"{objectID} {genID} obj";
+            return $"{objectId} {genId} obj";
         }
     }
 }

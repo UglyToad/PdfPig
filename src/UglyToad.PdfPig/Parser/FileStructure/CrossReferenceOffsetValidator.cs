@@ -12,9 +12,9 @@
             this.offsetValidator = offsetValidator;
         }
 
-        public long Validate(long crossReferenceOffset, ISeekableTokenScanner scanner, IRandomAccessRead reader, bool isLenientParsing)
+        public long Validate(long crossReferenceOffset, ISeekableTokenScanner scanner, IInputBytes bytes, bool isLenientParsing)
         {
-            long fixedOffset = offsetValidator.CheckXRefOffset(crossReferenceOffset, scanner, reader, isLenientParsing);
+            long fixedOffset = offsetValidator.CheckXRefOffset(crossReferenceOffset, scanner, bytes, isLenientParsing);
             if (fixedOffset > -1)
             {
                 crossReferenceOffset = fixedOffset;

@@ -3,21 +3,13 @@
     using System;
     using Content;
     using Exceptions;
-    using IO;
     using Parts;
     using Tokenization.Scanner;
     using Tokenization.Tokens;
 
     internal class CatalogFactory
     {
-        private readonly IPdfTokenScanner scanner;
-
-        public CatalogFactory(IPdfTokenScanner scanner)
-        {
-            this.scanner = scanner;
-        }
-
-        public Catalog Create(DictionaryToken dictionary, IRandomAccessRead reader, bool isLenientParsing)
+        public Catalog Create(IPdfTokenScanner scanner, DictionaryToken dictionary)
         {
             if (dictionary == null)
             {

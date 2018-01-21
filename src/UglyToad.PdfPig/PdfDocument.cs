@@ -16,8 +16,6 @@
     public class PdfDocument : IDisposable
     {
         [NotNull]
-        private readonly IRandomAccessRead reader;
-        [NotNull]
         private readonly HeaderVersion version;
         [NotNull]
         private readonly CrossReferenceTable crossReferenceTable;
@@ -51,7 +49,7 @@
         /// </summary>
         public int NumberOfPages => Pages.Count;
 
-        internal PdfDocument(ILog log, IRandomAccessRead reader, HeaderVersion version, CrossReferenceTable crossReferenceTable,
+        internal PdfDocument(ILog log, HeaderVersion version, CrossReferenceTable crossReferenceTable,
             bool isLenientParsing,
             ParsingCachingProviders cachingProviders,
             IPageFactory pageFactory,
@@ -59,7 +57,6 @@
             DocumentInformation information, IPdfTokenScanner pdfScanner)
         {
             this.log = log;
-            this.reader = reader ?? throw new ArgumentNullException(nameof(reader));
             this.version = version ?? throw new ArgumentNullException(nameof(version));
             this.crossReferenceTable = crossReferenceTable ?? throw new ArgumentNullException(nameof(crossReferenceTable));
             this.isLenientParsing = isLenientParsing;
@@ -67,7 +64,7 @@
             this.pdfScanner = pdfScanner;
             Information = information ?? throw new ArgumentNullException(nameof(information));
             Catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
-            Pages = new Pages(log, Catalog, pageFactory, reader, isLenientParsing, pdfScanner);
+            Pages = new Pages(log, Catalog, pageFactory, isLenientParsing, pdfScanner);
         }
 
         /// <summary>
@@ -103,7 +100,6 @@
         {
             try
             {
-                reader.Dispose();
             }
             catch
             {

@@ -1,10 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Parser.Handlers
 {
+    using System;
     using Cmap;
     using Encodings;
     using Exceptions;
     using Filters;
     using IO;
+    using Logging;
     using Parts;
     using PdfPig.Parser.Parts;
     using Simple;
@@ -15,6 +17,7 @@
 
     internal class TrueTypeFontHandler : IFontHandler
     {
+        private readonly ILog log;
         private readonly IFilterProvider filterProvider;
         private readonly CMapCache cMapCache;
         private readonly FontDescriptorFactory fontDescriptorFactory;
@@ -22,12 +25,13 @@
         private readonly IEncodingReader encodingReader;
         private readonly IPdfTokenScanner pdfScanner;
 
-        public TrueTypeFontHandler(IPdfTokenScanner pdfScanner, IFilterProvider filterProvider, 
+        public TrueTypeFontHandler(ILog log, IPdfTokenScanner pdfScanner, IFilterProvider filterProvider, 
             CMapCache cMapCache,
             FontDescriptorFactory fontDescriptorFactory,
             TrueTypeFontParser trueTypeFontParser,
             IEncodingReader encodingReader)
         {
+            this.log = log;
             this.filterProvider = filterProvider;
             this.cMapCache = cMapCache;
             this.fontDescriptorFactory = fontDescriptorFactory;
@@ -47,7 +51,7 @@
             var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfScanner, fontDescriptorFactory, dictionary, isLenientParsing);
 
             // TODO: use the parsed font fully.
-            //var font = ParseTrueTypeFont(descriptor, reader, isLenientParsing);
+            var font = ParseTrueTypeFont(descriptor);
 
             var name = FontDictionaryAccessHelper.GetName(pdfScanner, dictionary, descriptor, isLenientParsing);
 
@@ -69,8 +73,7 @@
             return new TrueTypeSimpleFont(name, firstCharacter, lastCharacter, widths, descriptor, toUnicodeCMap, encoding);
         }
 
-        private TrueTypeFont ParseTrueTypeFont(FontDescriptor descriptor, IRandomAccessRead reader,
-            bool isLenientParsing)
+        private TrueTypeFont ParseTrueTypeFont(FontDescriptor descriptor)
         {
             if (descriptor?.FontFile == null)
             {
@@ -83,18 +86,23 @@
                     $"Expected a TrueType font in the TrueType font descriptor, instead it was {descriptor.FontFile.FileType}.");
             }
 
-            //var fontFileStream = pdfObjectParser.Parse(descriptor.FontFile.ObjectKey, reader, isLenientParsing) as PdfRawStream;
-
-            //if (fontFileStream == null)
+            try
             {
+
+                var fontFileStream = DirectObjectFinder.Get<StreamToken>(descriptor.FontFile.ObjectKey, pdfScanner);
+            
+                var fontFile = fontFileStream.Decode(filterProvider);
+
+                var font = trueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFile)));
+
+                return font;
+            }
+            catch (Exception ex)
+            {
+                log.Error("Could not parse the TrueType font.", ex);
+
                 return null;
             }
-
-            //var fontFile = fontFileStream.Decode(filterProvider);
-
-            //var font = trueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFile)));
-
-            //return font;
         }
     }
 }

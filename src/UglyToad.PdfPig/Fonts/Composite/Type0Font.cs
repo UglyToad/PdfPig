@@ -44,7 +44,7 @@
 
             var code = CMap.ReadCode(bytes);
 
-            codeLength = bytes.CurrentOffset - current;
+            codeLength = (int)(bytes.CurrentOffset - current);
 
             return code;
         }

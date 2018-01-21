@@ -2,7 +2,7 @@
 {
     internal interface IInputBytes
     {
-        int CurrentOffset { get; }
+        long CurrentOffset { get; }
 
         bool MoveNext();
 

@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using IO;
     using Logging;
     using Parser.Parts;
     using Tokenization.Scanner;
@@ -14,7 +13,6 @@
         private readonly ILog log;
         private readonly Catalog catalog;
         private readonly IPageFactory pageFactory;
-        private readonly IRandomAccessRead reader;
         private readonly bool isLenientParsing;
         private readonly IPdfTokenScanner pdfScanner;
         private readonly DictionaryToken rootPageDictionary;
@@ -22,8 +20,7 @@
 
         public int Count { get; }
 
-        internal Pages(ILog log, Catalog catalog, IPageFactory pageFactory,
-            IRandomAccessRead reader, bool isLenientParsing, IPdfTokenScanner pdfScanner)
+        internal Pages(ILog log, Catalog catalog, IPageFactory pageFactory, bool isLenientParsing, IPdfTokenScanner pdfScanner)
         {
             if (catalog == null)
             {
@@ -37,7 +34,6 @@
             this.log = log;
             this.catalog = catalog;
             this.pageFactory = pageFactory;
-            this.reader = reader;
             this.isLenientParsing = isLenientParsing;
             this.pdfScanner = pdfScanner;
         }
@@ -47,7 +43,7 @@
             if (locatedPages.TryGetValue(pageNumber, out DictionaryToken targetPageDictionary))
             {
                 // TODO: cache the page
-                return pageFactory.Create(pageNumber, targetPageDictionary, new PageTreeMembers(), reader,
+                return pageFactory.Create(pageNumber, targetPageDictionary, new PageTreeMembers(),
                     isLenientParsing);
             }
 
@@ -61,7 +57,7 @@
                 throw new ArgumentOutOfRangeException("Could not find the page with number: " + pageNumber);
             }
 
-            var page = pageFactory.Create(pageNumber, targetPageDictionary, new PageTreeMembers(), reader, isLenientParsing);
+            var page = pageFactory.Create(pageNumber, targetPageDictionary, new PageTreeMembers(), isLenientParsing);
 
             locatedPages[pageNumber] = targetPageDictionary;
 

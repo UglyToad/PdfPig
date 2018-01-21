@@ -9,18 +9,9 @@ namespace UglyToad.PdfPig.Tests.Parser.Parts
 
     public class BruteForceSearcherTests
     {
-        [Fact]
-        public void ReaderNull_Throws()
-        {
-            // ReSharper disable once ConvertToLocalFunction
-            Action action = () => new BruteForceSearcher(null);
-
-            Assert.Throws<ArgumentNullException>(action);
-        }
-
         private const string TestData = @"%PDF-1.5
 %¿÷¢þ
-2 0 obj
+2 17 obj
 << /Linearized 1 /L 26082 /H [ 722 130 ] /O 6 /E 25807 /N 1 /T 25806 >>
 endobj
                                                                                                                  
@@ -45,13 +36,20 @@ startxref
 %%EOF";
 
         [Fact]
+        public void ReaderNull_Throws()
+        {
+            Action action = () => new BruteForceSearcher(null);
+
+            Assert.Throws<ArgumentNullException>(action);
+        }
+
+
+        [Fact]
         public void SearcherFindsCorrectObjects()
         {
-            var bytes = OtherEncodings.StringAsLatin1Bytes(TestData);
+            var input = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(TestData));
 
-            var reader = new RandomAccessBuffer(bytes);
-
-            var searcher = new BruteForceSearcher(reader);
+            var searcher = new BruteForceSearcher(input);
 
             var locations = searcher.GetObjectLocations();
 
@@ -59,28 +57,24 @@ startxref
 
             Assert.Equal(locations.Values, new long[]
             {
-                TestData.IndexOf("2 0 obj", StringComparison.OrdinalIgnoreCase),
-                TestData.IndexOf("3 0 obj", StringComparison.OrdinalIgnoreCase),
-                TestData.IndexOf("4 0 obj", StringComparison.OrdinalIgnoreCase),
-                TestData.IndexOf("5 0 obj", StringComparison.OrdinalIgnoreCase)
+                TestData.IndexOf("2 17 obj", StringComparison.OrdinalIgnoreCase) + 1,
+                TestData.IndexOf("3 0 obj", StringComparison.OrdinalIgnoreCase) + 1,
+                TestData.IndexOf("4 0 obj", StringComparison.OrdinalIgnoreCase) + 1,
+                TestData.IndexOf("5 0 obj", StringComparison.OrdinalIgnoreCase) + 1
             });
         }
 
         [Fact]
         public void ReaderOnlyCallsOnce()
         {
-            var bytes = OtherEncodings.StringAsLatin1Bytes(TestData);
+            var reader = StringBytesTestConverter.Convert(TestData, false);
 
-            var reader = new ThrowingReader(new RandomAccessBuffer(bytes));
-
-            var searcher = new BruteForceSearcher(reader);
+            var searcher = new BruteForceSearcher(reader.Bytes);
 
             var locations = searcher.GetObjectLocations();
 
             Assert.Equal(4, locations.Count);
-
-            reader.Throw = true;
-
+            
             var newLocations = searcher.GetObjectLocations();
 
             Assert.Equal(4, locations.Count);

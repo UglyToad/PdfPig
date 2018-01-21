@@ -2,25 +2,26 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Text;
     using ContentStream;
     using IO;
     using Util;
     using Util.JetBrains.Annotations;
 
     /// <summary>
-    /// Store the results of a brute force search for all Cos Objects in the document so we only do it once.
+    /// Store the results of a brute force search for all objects in the document so we only do it once.
     /// </summary>
     internal class BruteForceSearcher
     {
         private const int MinimumSearchOffset = 6;
 
-        private readonly IRandomAccessRead reader;
+        private readonly IInputBytes bytes;
 
         private Dictionary<IndirectReference, long> objectLocations;
 
-        public BruteForceSearcher([NotNull] IRandomAccessRead reader)
+        public BruteForceSearcher([NotNull] IInputBytes bytes)
         {
-            this.reader = reader ?? throw new ArgumentNullException(nameof(reader));
+            this.bytes = bytes ?? throw new ArgumentNullException(nameof(bytes));
         }
 
         [NotNull]
@@ -35,70 +36,86 @@
 
             var results = new Dictionary<IndirectReference, long>();
 
-            var originPosition = reader.GetPosition();
+            var originPosition = bytes.CurrentOffset;
 
             long currentOffset = MinimumSearchOffset;
             long lastObjectId = long.MinValue;
             int lastGenerationId = int.MinValue;
             long lastObjOffset = long.MinValue;
-            byte[] objString = OtherEncodings.StringAsLatin1Bytes(" obj");
-            byte[] endobjString = OtherEncodings.StringAsLatin1Bytes("endobj");
 
+            bool inObject = false;
             bool endobjFound = false;
             do
             {
-                reader.Seek(currentOffset);
-                if (ReadHelper.IsString(reader, objString))
-                {
-                    long tempOffset = currentOffset - 1;
-                    reader.Seek(tempOffset);
-                    int generationId = reader.Peek();
+                bytes.Seek(currentOffset);
 
-                    // is the next char a digit?
-                    if (ReadHelper.IsDigit(generationId))
+                if (inObject)
+                {
+                    if (ReadHelper.IsString(bytes, "endobj"))
                     {
-                        generationId -= 48;
-                        tempOffset--;
-                        reader.Seek(tempOffset);
-                        if (ReadHelper.IsSpace(reader))
-                        {
-                            while (tempOffset > MinimumSearchOffset && ReadHelper.IsSpace(reader))
-                            {
-                                reader.Seek(--tempOffset);
-                            }
-
-                            bool objectIdFound = false;
-                            while (tempOffset > MinimumSearchOffset && ReadHelper.IsDigit(reader))
-                            {
-                                reader.Seek(--tempOffset);
-                                objectIdFound = true;
-                            }
-
-                            if (objectIdFound)
-                            {
-                                reader.Read();
-                                long objectId = ObjectHelper.ReadObjectNumber(reader);
-                                if (lastObjOffset > 0)
-                                {
-                                    // add the former object ID only if there was a subsequent object ID
-                                    results[new IndirectReference(lastObjectId, lastGenerationId)] = lastObjOffset;
-                                }
-                                lastObjectId = objectId;
-                                lastGenerationId = generationId;
-                                lastObjOffset = tempOffset + 1;
-                                currentOffset += objString.Length - 1;
-                                endobjFound = false;
-                            }
-                        }
+                        inObject = false;
+                        endobjFound = true;
+                        currentOffset += "endobj".Length;
                     }
+                    else
+                    {
+                        currentOffset++;
+                    }
+
+                    continue;
                 }
-                else if (ReadHelper.IsString(reader, "endobj"))
+
+                if (!ReadHelper.IsString(bytes, " obj"))
                 {
-                    endobjFound = true;
-                    currentOffset += endobjString.Length - 1;
+                    currentOffset++;
+                    continue;
                 }
+
+                // Current byte is ' '[obj]
+                var offset = currentOffset - 1;
+
+                bytes.Seek(offset);
+
+                var generationBytes = new StringBuilder();
+                while (ReadHelper.IsDigit(bytes.CurrentByte) && offset >= MinimumSearchOffset)
+                {
+                    generationBytes.Insert(0, (char)bytes.CurrentByte);
+                    offset--;
+                    bytes.Seek(offset);
+                }
+
+                // We should now be at the space between object and generation number.
+                if (!ReadHelper.IsSpace(bytes.CurrentByte))
+                {
+                    continue;
+                }
+
+                bytes.Seek(--offset);
+
+                var objectNumberBytes = new StringBuilder();
+                while (ReadHelper.IsDigit(bytes.CurrentByte) && offset >= MinimumSearchOffset)
+                {
+                    objectNumberBytes.Insert(0, (char)bytes.CurrentByte);
+                    offset--;
+                    bytes.Seek(offset);
+                }
+
+                if (!ReadHelper.IsWhitespace(bytes.CurrentByte))
+                {
+                    continue;
+                }
+
+                var obj = long.Parse(objectNumberBytes.ToString());
+                var generation = int.Parse(generationBytes.ToString());
+
+                results[new IndirectReference(obj, generation)] = bytes.CurrentOffset + 1;
+
+                inObject = true;
+                endobjFound = false;
+
                 currentOffset++;
-            } while (currentOffset < lastEndOfFile && !reader.IsEof());
+            } while (currentOffset < lastEndOfFile && !bytes.IsAtEnd());
+
             if ((lastEndOfFile < long.MaxValue || endobjFound) && lastObjOffset > 0)
             {
                 // if the pdf wasn't cut off in the middle or if the last object ends with a "endobj" marker
@@ -107,7 +124,7 @@
             }
 
             // reestablish origin position
-            reader.Seek(originPosition);
+            bytes.Seek(originPosition);
 
             objectLocations = results;
 
@@ -116,27 +133,29 @@
 
         private long GetLastEndOfFileMarker()
         {
-            var originalOffset = reader.GetPosition();
+            var originalOffset = bytes.CurrentOffset;
 
-            var searchTerm = OtherEncodings.StringAsLatin1Bytes("%%EOF");
+            const string searchTerm = "%%EOF";
 
-            var minimumEndOffset = reader.Length() - searchTerm.Length;
+            var minimumEndOffset = bytes.Length - searchTerm.Length;
 
-            reader.Seek(minimumEndOffset);
+            bytes.Seek(minimumEndOffset);
 
-            while (reader.GetPosition() > 0)
+            while (bytes.CurrentOffset > 0)
             {
-                if (ReadHelper.IsString(reader, searchTerm))
+                if (ReadHelper.IsString(bytes, searchTerm))
                 {
-                    var position = reader.GetPosition();
-                    reader.Seek(originalOffset);
+                    var position = bytes.CurrentOffset;
+
+                    bytes.Seek(originalOffset);
+
                     return position;
                 }
 
-                reader.Seek(minimumEndOffset--);
+                bytes.Seek(minimumEndOffset--);
             }
 
-            reader.Seek(originalOffset);
+            bytes.Seek(originalOffset);
             return long.MaxValue;
         }
     }

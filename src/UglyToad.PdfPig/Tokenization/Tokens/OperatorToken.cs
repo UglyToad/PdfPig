@@ -18,6 +18,7 @@
         public static readonly OperatorToken Dup = new OperatorToken("dup");
         public static readonly OperatorToken For = new OperatorToken("for");
         public static readonly OperatorToken Put = new OperatorToken("put");
+        public static readonly OperatorToken Xref = new OperatorToken("xref");
 
         public string Data { get; }
 
@@ -60,6 +61,8 @@
                     return For;
                 case "put":
                     return Put;
+                case "xref":
+                    return Xref;
                 default:
                     return new OperatorToken(data);
             }

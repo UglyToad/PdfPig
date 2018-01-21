@@ -12,8 +12,8 @@
             currentOffset = -1;
         }
         
-        private int currentOffset;
-        public int CurrentOffset => currentOffset + 1;
+        private long currentOffset;
+        public long CurrentOffset => currentOffset + 1;
 
         public bool MoveNext()
         {
@@ -23,7 +23,7 @@
             }
 
             currentOffset++;
-            CurrentByte = bytes[currentOffset];
+            CurrentByte = bytes[(int)currentOffset];
             return true;
         }
 
@@ -38,7 +38,7 @@
                 return null;
             }
 
-            return bytes[currentOffset + 1];
+            return bytes[(int)currentOffset + 1];
         }
 
         public bool IsAtEnd()
@@ -49,7 +49,7 @@
         public void Seek(long position)
         {
             currentOffset = (int)position - 1;
-            CurrentByte = currentOffset < 0 ? (byte)0 : bytes[currentOffset];
+            CurrentByte = currentOffset < 0 ? (byte)0 : bytes[(int)currentOffset];
         }
     }
 }

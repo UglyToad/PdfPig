@@ -46,11 +46,11 @@
         /// <summary>
         /// Attempts to read the <see cref="TableSubsectionDefinition"/> from the current line of the source.
         /// </summary>
-        public static bool TryRead(ILog log, IRandomAccessRead source, out TableSubsectionDefinition definition)
+        public static bool TryRead(ILog log, IInputBytes bytes, out TableSubsectionDefinition definition)
         {
             definition = default(TableSubsectionDefinition);
 
-            var line = ReadHelper.ReadLine(source);
+            var line = ReadHelper.ReadLine(bytes);
 
             var parts = line.Split(Splitters, StringSplitOptions.RemoveEmptyEntries);
 
