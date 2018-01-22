@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>PdfPig</PackageId>
-    <PackageVersion>0.0.1-alpha-001</PackageVersion>
     <DebugType>full</DebugType>
     <Authors>UglyToad</Authors>
     <Title>PdfPig</Title>
