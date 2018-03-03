@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using Parser;
     using Util.JetBrains.Annotations;
 
     /// <summary>
@@ -22,10 +23,12 @@
             Glyphs = glyphs ?? throw new ArgumentNullException(nameof(glyphs));
         }
 
-        public static GlyphDataTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, HeaderTable headerTable,
-            IndexToLocationTable indexToLocationTable)
+        public static GlyphDataTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, TableRegister tableRegister)
         {
             data.Seek(table.Offset);
+
+            var headerTable = tableRegister.HeaderTable;
+            var indexToLocationTable = tableRegister.IndexToLocationTable;
 
             var offsets = indexToLocationTable.GlyphOffsets;
 

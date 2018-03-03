@@ -53,31 +53,37 @@
         {
             var isPostScript = tables.ContainsKey(TrueTypeHeaderTable.Cff);
 
+            var tableRegister = new TableRegister();
+
             if (!tables.TryGetValue(TrueTypeHeaderTable.Head, out var table))
             {
                 throw new InvalidOperationException($"The {TrueTypeHeaderTable.Head} table is required.");
             }
 
-            var header = HeaderTable.Load(data, table);
+            // head
+            tableRegister.HeaderTable = HeaderTable.Load(data, table);
 
             if (!tables.TryGetValue(TrueTypeHeaderTable.Hhea, out var hHead))
             {
                 throw new InvalidOperationException("The horizontal header table is required.");
             }
 
-            var horizontalHeader = HorizontalHeaderTable.Load(data, hHead);
+            // hhea
+            tableRegister.HorizontalHeaderTable = HorizontalHeaderTable.Load(data, hHead);
 
             if (!tables.TryGetValue(TrueTypeHeaderTable.Maxp, out var maxHeaderTable))
             {
                 throw new InvalidOperationException("The maximum profile table is required.");
             }
 
-            var maximumProfile = BasicMaximumProfileTable.Load(data, maxHeaderTable);
+            // maxp
+            tableRegister.MaximumProfileTable = BasicMaximumProfileTable.Load(data, maxHeaderTable);
 
+            // post
             var postScriptTable = default(PostScriptTable);
             if (tables.TryGetValue(TrueTypeHeaderTable.Post, out var postscriptHeaderTable))
             {
-                postScriptTable = PostScriptTable.Load(data, table, maximumProfile);
+                tableRegister.PostScriptTable = PostScriptTable.Load(data, table, tableRegister.MaximumProfileTable);
             }
 
             if (!isPostScript)
@@ -87,18 +93,43 @@
                     throw new InvalidOperationException("The location to index table is required for non-PostScript fonts.");
                 }
 
-                var indexToLocationTable =
-                    IndexToLocationTable.Load(data, indexToLocationHeaderTable, header, maximumProfile);
+                // loca
+                tableRegister.IndexToLocationTable =
+                    IndexToLocationTable.Load(data, indexToLocationHeaderTable, tableRegister);
 
                 if (!tables.TryGetValue(TrueTypeHeaderTable.Glyf, out var glyphHeaderTable))
                 {
                     throw new InvalidOperationException("The glpyh table is required for non-PostScript fonts.");
                 }
 
-                var glyphTable = GlyphDataTable.Load(data, glyphHeaderTable, header, indexToLocationTable);
+                // glyf
+                tableRegister.GlyphDataTable = GlyphDataTable.Load(data, glyphHeaderTable, tableRegister);
+
+                OptionallyParseTables(tables, data, tableRegister);
             }
 
-            return new TrueTypeFont(version, tables, header);
+            return new TrueTypeFont(version, tables, tableRegister.HeaderTable);
+        }
+
+        private static void OptionallyParseTables(IReadOnlyDictionary<string, TrueTypeHeaderTable> tables, TrueTypeDataBytes data, TableRegister tableRegister)
+        {
+            // cmap
+
+            // hmtx
+            if (tables.TryGetValue(TrueTypeHeaderTable.Hmtx, out var hmtxHeaderTable))
+            {
+                tableRegister.HorizontalMetricsTable = HorizontalMetricsTable.Load(data, hmtxHeaderTable, tableRegister);
+            }
+
+            // name
+            if (tables.TryGetValue(TrueTypeHeaderTable.Name, out var nameHeaderTable))
+            {
+                // TODO: Not important
+            }
+
+            // os2
+
+            // kern
         }
     }
 }

@@ -15,6 +15,8 @@
             this.inputBytes = inputBytes;
         }
 
+        public long Position => inputBytes.CurrentOffset;
+
         public float Read32Fixed()
         {
             float retval = ReadSignedShort();

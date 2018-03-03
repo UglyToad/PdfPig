@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Tables
 {
     using System;
+    using Parser;
 
     /// <summary>
     /// Stores the offset to the glyph locations relative to the start of the glyph data table.
@@ -24,12 +25,15 @@
             GlyphOffsets = glyphOffsets;
         }
 
-        public static IndexToLocationTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, HeaderTable headerTable, BasicMaximumProfileTable maximumProfileTable)
+        public static IndexToLocationTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, TableRegister tableRegister)
         {
             const short shortFormat = 0;
             const short longFormat = 1;
 
             data.Seek(table.Offset);
+
+            var headerTable = tableRegister.HeaderTable;
+            var maximumProfileTable = tableRegister.MaximumProfileTable;
 
             var format = headerTable.IndexToLocFormat;
 
