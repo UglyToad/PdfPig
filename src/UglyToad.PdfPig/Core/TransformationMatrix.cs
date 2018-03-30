@@ -102,6 +102,17 @@
             return new PdfVector(x, y);
         }
 
+        [Pure]
+        public PdfRectangle Transform(PdfRectangle original)
+        {
+            return new PdfRectangle(
+                Transform(original.BottomLeft.ToVector()),
+                Transform(original.BottomLeft.ToVector()),
+                Transform(original.BottomLeft.ToVector()),
+                Transform(original.BottomLeft.ToVector())
+            );
+        }
+
         public static TransformationMatrix FromValues(decimal a, decimal b, decimal c, decimal d, decimal e, decimal f)
             => FromArray(new[] {a, b, c, d, e, f});
         public static TransformationMatrix FromArray(decimal[] values)
@@ -137,6 +148,26 @@
                     for (int x = 0; x < Rows; x++)
                     {
                         result[index] += this[i, x] * matrix[x, j];
+                    }
+                }
+            }
+
+            return new TransformationMatrix(result);
+        }
+
+        public TransformationMatrix Multiply(decimal scalar)
+        {
+            var result = new decimal[9];
+
+            for (int i = 0; i < Rows; i++)
+            {
+                for (int j = 0; j < Columns; j++)
+                {
+                    var index = (i * Rows) + j;
+
+                    for (int x = 0; x < Rows; x++)
+                    {
+                        result[index] += this[i, x] * scalar;
                     }
                 }
             }

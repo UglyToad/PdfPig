@@ -63,19 +63,19 @@
             return true;
         }
 
-        public PdfVector GetDisplacement(int characterCode)
+        public PdfRectangle GetDisplacement(int characterCode)
         {
-            return fontMatrix.Transform(new PdfVector(GetWidth(characterCode), 0));
+            return fontMatrix.Transform(GetRectangle(characterCode));
         }
 
-        public decimal GetWidth(int characterCode)
+        public PdfRectangle GetRectangle(int characterCode)
         {
             if (characterCode < firstChar || characterCode > lastChar)
             {
                 throw new InvalidFontFormatException($"The character code was not contained in the widths array: {characterCode}.");
             }
 
-            return widths[characterCode - firstChar];
+            return new PdfRectangle(0, 0, widths[characterCode - firstChar], 0); ;
         }
 
         public TransformationMatrix GetFontMatrix()

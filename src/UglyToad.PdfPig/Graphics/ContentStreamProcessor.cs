@@ -96,8 +96,6 @@
 
             var transformationMatrix = currentState.CurrentTransformationMatrix;
 
-            var fontMatrix = font.GetFontMatrix();
-
             // TODO: this does not seem correct, produces the correct result for now but we need to revisit.
             // see: https://stackoverflow.com/questions/48010235/pdf-specification-get-font-size-in-points
             var pointSize = decimal.Round(fontSize * transformationMatrix.A, 2);
@@ -119,28 +117,31 @@
                     wordSpacing += GetCurrentState().FontState.WordSpacing;
                 }
                 
-                var renderingMatrix = TextMatrices.GetRenderingMatrix(GetCurrentState());
-
                 if (font.IsVertical)
                 {
                     throw new NotImplementedException("Vertical fonts are# currently unsupported, please submit a pull request or issue with an example file.");
                 }
 
                 var displacement = font.GetDisplacement(code);
-                
-                var width = displacement.X * fontSize * TextMatrices.TextMatrix.GetScalingFactorX() * transformationMatrix.A;
 
-                ShowGlyph(renderingMatrix, font, unicode, width, fontSize, pointSize);
+                var fontScaling = TransformationMatrix.Identity.Multiply(fontSize);
+
+                var transformedDisplacement = transformationMatrix
+                    .Transform(TextMatrices.TextMatrix
+                    .Transform(fontScaling
+                    .Transform(displacement)));
+
+                ShowGlyph(font, transformedDisplacement, unicode, fontSize, pointSize);
 
                 decimal tx, ty;
                 if (font.IsVertical)
                 {
                     tx = 0;
-                    ty = displacement.Y * fontSize + characterSpacing + wordSpacing;
+                    ty = displacement.Height * fontSize + characterSpacing + wordSpacing;
                 }
                 else
                 {
-                    tx = (displacement.X * fontSize + characterSpacing + wordSpacing) * horizontalScaling;
+                    tx = (displacement.Width * fontSize + characterSpacing + wordSpacing) * horizontalScaling;
                     ty = 0;
                 }
 
@@ -208,12 +209,9 @@
             TextMatrices.TextMatrix = newMatrix;
         }
 
-        private void ShowGlyph(TransformationMatrix renderingMatrix, IFont font, string unicode, decimal width, decimal fontSize,
-            decimal pointSize)
+        private void ShowGlyph(IFont font, PdfRectangle rectangle, string unicode, decimal fontSize, decimal pointSize)
         {
-            var location = new PdfPoint(renderingMatrix.E, renderingMatrix.F);
-            
-            var letter = new Letter(unicode, location, width, fontSize, font.Name.Data, pointSize);
+            var letter = new Letter(unicode, rectangle, fontSize, font.Name.Data, pointSize);
 
             Letters.Add(letter);
         }

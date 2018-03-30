@@ -9,13 +9,13 @@
 
     internal class Type1Standard14Font: IFont
     {
-        private static readonly TransformationMatrix FontMatrix = TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);
-
         private readonly FontMetrics standardFontMetrics;
         private readonly Encoding encoding;
 
         public NameToken Name { get; }
         public bool IsVertical { get; }
+
+        private readonly TransformationMatrix fontMatrix = TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);
 
         public Type1Standard14Font(FontMetrics standardFontMetrics)
         {
@@ -44,26 +44,26 @@
             return true;
         }
 
-        public PdfVector GetDisplacement(int characterCode)
+        public PdfRectangle GetDisplacement(int characterCode)
         {
-            return FontMatrix.Transform(new PdfVector(GetWidth(characterCode), 0));
+            return fontMatrix.Transform(GetRectangle(characterCode));
         }
 
-        public decimal GetWidth(int characterCode)
+        public PdfRectangle GetRectangle(int characterCode)
         {
             var name = encoding.GetName(characterCode);
 
             if (!standardFontMetrics.CharacterMetrics.TryGetValue(name, out var metrics))
             {
-                return 250;
+                return new PdfRectangle(0, 0, 250, 0);
             }
 
-            return metrics.WidthX;
+            return new PdfRectangle(0, 0, metrics.WidthX, 0);
         }
 
         public TransformationMatrix GetFontMatrix()
         {
-            return FontMatrix;
+            return fontMatrix;
         }
     }
 }

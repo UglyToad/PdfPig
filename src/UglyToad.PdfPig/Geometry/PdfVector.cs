@@ -1,4 +1,6 @@
-﻿namespace UglyToad.PdfPig.Geometry
+﻿using System;
+
+namespace UglyToad.PdfPig.Geometry
 {
     internal struct PdfVector
     {
@@ -15,6 +17,24 @@
         public PdfVector Scale(decimal scale)
         {
             return new PdfVector(X * scale, Y * scale);
+        }
+
+        public decimal GetMagnitude()
+        {
+            var doubleX = (double)X;
+            var doubleY = (double)Y;
+
+            return (decimal)Math.Sqrt(doubleX * doubleX + doubleY * doubleY);
+        }
+
+        public PdfVector Subtract(PdfVector vector)
+        {
+            return new PdfVector(X - vector.X, Y - vector.Y);
+        }
+
+        public PdfPoint ToPoint()
+        {
+            return new PdfPoint(X, Y);
         }
 
         public override string ToString()

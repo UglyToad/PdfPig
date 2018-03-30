@@ -11,12 +11,14 @@
 
     internal class TrueTypeSimpleFont : IFont
     {
-        private static readonly TransformationMatrix FontMatrix =
-            TransformationMatrix.FromValues(1/1000m, 0, 0, 1/1000m, 0, 0);
         private readonly int firstCharacterCode;
+
         private readonly int lastCharacterCode;
+
         private readonly decimal[] widths;
+
         private readonly FontDescriptor descriptor;
+
         [CanBeNull]
         private readonly Encoding encoding;
 
@@ -26,6 +28,8 @@
 
         [NotNull]
         public ToUnicodeCMap ToUnicode { get; set; }
+
+        private readonly TransformationMatrix fontMatrix = TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);
 
         public TrueTypeSimpleFont(NameToken name, int firstCharacterCode, int lastCharacterCode, decimal[] widths, 
             FontDescriptor descriptor,
@@ -79,29 +83,27 @@
             return true;
         }
 
-        public PdfVector GetDisplacement(int characterCode)
+        public PdfRectangle GetDisplacement(int characterCode)
         {
-            var tx = GetWidth(characterCode);
-
-            return new PdfVector(tx / 1000m, 0);
+            return fontMatrix.Transform(GetRectangle(characterCode));
         }
 
-        public decimal GetWidth(int characterCode)
+        public PdfRectangle GetRectangle(int characterCode)
         {
             var index = characterCode - firstCharacterCode;
-            
+
             if (index < 0 || index >= widths.Length)
             {
-                return descriptor.MissingWidth;
+                return new PdfRectangle(0, 0, descriptor.MissingWidth, 0);
             }
 
-            return widths[index];
+            return new PdfRectangle(0, 0, widths[index], 0);
         }
 
         public TransformationMatrix GetFontMatrix()
         {
             // TODO: should this also use units per em?
-            return FontMatrix;
+            return fontMatrix;
         }
     }
 }

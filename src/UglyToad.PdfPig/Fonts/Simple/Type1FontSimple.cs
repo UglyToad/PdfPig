@@ -19,6 +19,7 @@
         private readonly FontDescriptor fontDescriptor;
         private readonly Encoding encoding;
         private readonly ToUnicodeCMap toUnicodeCMap;
+
         private readonly TransformationMatrix fontMatrix = TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);
 
         public NameToken Name { get; }
@@ -80,19 +81,19 @@
             return true;
         }
 
-        public PdfVector GetDisplacement(int characterCode)
+        public PdfRectangle GetDisplacement(int characterCode)
         {
-            return fontMatrix.Transform(new PdfVector(GetWidth(characterCode), 0));
+            return fontMatrix.Transform(GetRectangle(characterCode));
         }
 
-        public decimal GetWidth(int characterCode)
+        public PdfRectangle GetRectangle(int characterCode)
         {
             if (characterCode < firstChar || characterCode > lastChar)
             {
-                return 250;
+                return new PdfRectangle(0, 0, 250, 0);
             }
 
-            return widths[characterCode - firstChar];
+            return new PdfRectangle(0, 0, widths[characterCode - firstChar], 0);
         }
 
         public TransformationMatrix GetFontMatrix()

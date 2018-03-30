@@ -70,7 +70,7 @@
                         break;
                     }
 
-                    var myX = pageLetter.Location.X;
+                    var myX = pageLetter.Rectangle.BottomLeft.X;
                     var theirX = pdfBoxData[index].X;
 
                     var myLetter = pageLetter.Value;
