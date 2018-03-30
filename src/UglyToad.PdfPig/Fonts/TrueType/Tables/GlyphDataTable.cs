@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using Geometry;
     using Parser;
     using Util.JetBrains.Annotations;
 
@@ -55,7 +56,7 @@
                 var maxX = data.ReadSignedShort();
                 var maxY = data.ReadSignedShort();
 
-                var bounds = new TrueTypeGlyphBounds(minX, minY, maxX, maxY);
+                var bounds = new PdfRectangle(minX, minY, maxX, maxY);
 
                 // If the number of contours is greater than or equal zero it's a simple glyph.
                 if (contourCount >= 0)
@@ -71,7 +72,7 @@
             return new GlyphDataTable(table, glyphs);
         }
 
-        private static SimpleGlyphDescription ReadSimpleGlyph(TrueTypeDataBytes data, short contourCount, TrueTypeGlyphBounds bounds)
+        private static SimpleGlyphDescription ReadSimpleGlyph(TrueTypeDataBytes data, short contourCount, PdfRectangle bounds)
         {
             var endPointsOfContours = data.ReadUnsignedShortArray(contourCount);
 
@@ -93,7 +94,7 @@
             var yCoordinates = ReadCoordinates(data, pointCount, flags, SimpleGlyphFlags.YShortVector,
                 SimpleGlyphFlags.YSignOrSame);
 
-            return new SimpleGlyphDescription(instructionLength, endPointsOfContours, flags, xCoordinates, yCoordinates);
+            return new SimpleGlyphDescription(instructionLength, endPointsOfContours, flags, xCoordinates, yCoordinates, bounds);
         }
 
         private static SimpleGlyphFlags[] ReadFlags(TrueTypeDataBytes data, int pointCount)
@@ -134,66 +135,11 @@
 
                 x += dx;
 
-                // TODO: overflow?
                 xs[i] = (short)x;
             }
 
             return xs;
         }
-    }
-
-    internal interface IGlyphDescription
-    {
-        bool IsSimple { get; }
-
-        SimpleGlyphDescription SimpleGlyph { get; }
-
-        object CompositeGlyph { get; }
-    }
-
-    internal class SimpleGlyphDescription : IGlyphDescription
-    {
-        /// <summary>
-        /// The total number of bytes for instructions.
-        /// </summary>
-        public int InstructionLength { get; }
-        
-        /// <summary>
-        /// An array of the last points of each contour.
-        /// </summary>
-        public int[] EndPointsOfContours { get; }
-
-        /// <summary>
-        /// Array of flags for each coordinate in the outline.
-        /// </summary>
-        public SimpleGlyphFlags[] Flags { get; }
-
-        /// <summary>
-        /// The x-coordinates of the points in this glyph. The first coordinates are relative to the origin (0, 0)
-        /// the rest are relative to the previous point.
-        /// </summary>
-        public short[] XCoordinates { get; }
-        
-        /// <summary>
-        /// The y-coordinates of the points in this glyph. The first coordinates are relative to the origin (0, 0)
-        /// the rest are relative to the previous point.
-        /// </summary>
-        public short[] YCoordinates { get; }
-
-        public SimpleGlyphDescription(int instructionLength, int[] endPointsOfContours, SimpleGlyphFlags[] flags, short[] xCoordinates, short[] yCoordinates)
-        {
-            InstructionLength = instructionLength;
-            EndPointsOfContours = endPointsOfContours;
-            Flags = flags;
-            XCoordinates = xCoordinates;
-            YCoordinates = yCoordinates;
-        }
-
-        public bool IsSimple { get; } = true;
-
-        public SimpleGlyphDescription SimpleGlyph => this;
-
-        public object CompositeGlyph { get; } = null;
     }
 
     [Flags]
@@ -225,24 +171,5 @@
         /// If <see cref="YShortVector"/> is not set then the current y-coordinate is the same as the previous.
         /// </summary>
         YSignOrSame = 1 << 5
-    }
-
-    internal struct TrueTypeGlyphBounds
-    {
-        public short X1 { get; }
-
-        public short Y1 { get; }
-
-        public short X2 { get; }
-
-        public short Y2 { get; }
-
-        public TrueTypeGlyphBounds(short x1, short y1, short x2, short y2)
-        {
-            X1 = x1;
-            Y1 = y1;
-            X2 = x2;
-            Y2 = y2;
-        }
     }
 }

@@ -19,6 +19,7 @@
         public decimal Area { get; }
 
         public PdfRectangle(PdfPoint point1, PdfPoint point2) : this(point1.X, point1.Y, point2.X, point2.Y) { }
+        public PdfRectangle(short x1, short y1, short x2, short y2) : this((decimal) x1, y1, x2, y2) { }
         public PdfRectangle(decimal x1, decimal y1, decimal x2, decimal y2)
         {
             var bottom = Math.Min(y1, y2);
