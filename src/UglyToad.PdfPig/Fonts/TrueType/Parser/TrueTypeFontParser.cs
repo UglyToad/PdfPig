@@ -114,6 +114,10 @@
         private static void OptionallyParseTables(IReadOnlyDictionary<string, TrueTypeHeaderTable> tables, TrueTypeDataBytes data, TableRegister tableRegister)
         {
             // cmap
+            if (tables.TryGetValue(TrueTypeHeaderTable.Cmap, out var cmap))
+            {
+                tableRegister.CMapTable = CMapTable.Load(data, cmap, tableRegister);
+            }
 
             // hmtx
             if (tables.TryGetValue(TrueTypeHeaderTable.Hmtx, out var hmtxHeaderTable))
@@ -133,3 +137,4 @@
         }
     }
 }
+

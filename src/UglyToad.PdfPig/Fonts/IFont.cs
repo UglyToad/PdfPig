@@ -19,6 +19,8 @@
 
         decimal GetWidth(int characterCode);
 
+        PdfRectangle GetBoundingBox(int characterCode);
+
         TransformationMatrix GetFontMatrix();
     }
 }

@@ -98,6 +98,11 @@
             return widths[index];
         }
 
+        public PdfRectangle GetBoundingBox(int characterCode)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public TransformationMatrix GetFontMatrix()
         {
             // TODO: should this also use units per em?

@@ -3,9 +3,29 @@
     using System;
     using System.Collections.Generic;
 
+    /// <inheritdoc />
+    /// <summary>
+    /// A format 2 sub-table for Chinese, Japanese and Korean characters.
+    /// Contains mixed 8/16 bit encodings.
+    /// </summary>
     internal class HighByteMappingCMapTable : ICMapSubTable
     {
-        public static HighByteMappingCMapTable Load(TrueTypeDataBytes data, int numberOfGlyphs)
+        public int PlatformId { get; }
+
+        public int EncodingId { get; }
+
+        public HighByteMappingCMapTable(int platformId, int encodingId)
+        {
+            PlatformId = platformId;
+            EncodingId = encodingId;
+        }
+
+        public int CharacterCodeToGlyphIndex(int characterCode)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static HighByteMappingCMapTable Load(TrueTypeDataBytes data, int numberOfGlyphs, int platformId, int encodingId)
         {
             var length = data.ReadUnsignedShort();
             var version = data.ReadUnsignedShort();
@@ -63,7 +83,7 @@
                 }
             }
 
-            return new HighByteMappingCMapTable();
+            return new HighByteMappingCMapTable(platformId, encodingId);
         }
 
         public struct SubHeader
