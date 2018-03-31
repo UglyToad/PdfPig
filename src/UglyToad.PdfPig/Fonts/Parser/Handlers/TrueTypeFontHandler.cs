@@ -70,7 +70,7 @@
 
             Encoding encoding = encodingReader.Read(dictionary, isLenientParsing, descriptor);
 
-            return new TrueTypeSimpleFont(name, firstCharacter, lastCharacter, widths, descriptor, toUnicodeCMap, encoding);
+            return new TrueTypeSimpleFont(name, firstCharacter, lastCharacter, widths, descriptor, toUnicodeCMap, encoding, font);
         }
 
         private TrueTypeFont ParseTrueTypeFont(FontDescriptor descriptor)

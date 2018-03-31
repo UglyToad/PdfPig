@@ -88,12 +88,12 @@
                             // Microsoft's standard mapping table.
                             var item = Format4CMapTable.Load(data, header.PlatformId, header.EncodingId);
                             tables.Add(item);
-
                             break;
                         }
                     case 6:
                         {
-                            // TODO: support format 6 for modern fonts.
+                            var item = TrimmedTableMappingCMapTable.Load(data, header.PlatformId, header.EncodingId);
+                            tables.Add(item);
                             break;
                         }
                 }

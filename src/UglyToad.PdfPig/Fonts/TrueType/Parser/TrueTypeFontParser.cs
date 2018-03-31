@@ -11,9 +11,13 @@
         {
             var version = (decimal)data.Read32Fixed();
             int numberOfTables = data.ReadUnsignedShort();
+
+            // Read these data points to move to the correct data location.
+            // ReSharper disable UnusedVariable
             int searchRange = data.ReadUnsignedShort();
             int entrySelector = data.ReadUnsignedShort();
             int rangeShift = data.ReadUnsignedShort();
+            // ReSharper restore UnusedVariable
 
             var tables = new Dictionary<string, TrueTypeHeaderTable>();
 
@@ -80,7 +84,6 @@
             tableRegister.MaximumProfileTable = BasicMaximumProfileTable.Load(data, maxHeaderTable);
 
             // post
-            var postScriptTable = default(PostScriptTable);
             if (tables.TryGetValue(TrueTypeHeaderTable.Post, out var postscriptHeaderTable))
             {
                 tableRegister.PostScriptTable = PostScriptTable.Load(data, table, tableRegister.MaximumProfileTable);
@@ -108,7 +111,7 @@
                 OptionallyParseTables(tables, data, tableRegister);
             }
 
-            return new TrueTypeFont(version, tables, tableRegister.HeaderTable);
+            return new TrueTypeFont(version, tables, tableRegister);
         }
 
         private static void OptionallyParseTables(IReadOnlyDictionary<string, TrueTypeHeaderTable> tables, TrueTypeDataBytes data, TableRegister tableRegister)

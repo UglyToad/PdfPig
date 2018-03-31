@@ -122,7 +122,7 @@
                     name = "cvt ";
                 }
 
-                var match = font.Tables[name];
+                var match = font.TableHeaders[name];
 
                 var offset = long.Parse(parts[1]);
                 var length = long.Parse(parts[2]);

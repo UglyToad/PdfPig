@@ -23,6 +23,11 @@
         /// </summary>
         int EncodingId { get; }
 
+        /// <summary>
+        /// Maps from a character code to the array index of the glyph in the font data.
+        /// </summary>
+        /// <param name="characterCode">The character code.</param>
+        /// <returns>The index of the glyph information for this character.</returns>
         int CharacterCodeToGlyphIndex(int characterCode);
     }
 }

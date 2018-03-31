@@ -7,6 +7,7 @@
     using Geometry;
     using IO;
     using Tokenization.Tokens;
+    using TrueType;
     using Util.JetBrains.Annotations;
 
     internal class TrueTypeSimpleFont : IFont
@@ -19,6 +20,8 @@
         private readonly FontDescriptor descriptor;
         [CanBeNull]
         private readonly Encoding encoding;
+        [CanBeNull]
+        private readonly TrueTypeFont font;
 
         public NameToken Name { get; }
 
@@ -27,16 +30,18 @@
         [NotNull]
         public ToUnicodeCMap ToUnicode { get; set; }
 
-        public TrueTypeSimpleFont(NameToken name, int firstCharacterCode, int lastCharacterCode, decimal[] widths, 
+        public TrueTypeSimpleFont(NameToken name, int firstCharacterCode, int lastCharacterCode, decimal[] widths,
             FontDescriptor descriptor,
-            [CanBeNull]CMap toUnicodeCMap,
-            [CanBeNull]Encoding encoding)
+            [CanBeNull] CMap toUnicodeCMap,
+            [CanBeNull] Encoding encoding, 
+            [CanBeNull]TrueTypeFont font)
         {
             this.firstCharacterCode = firstCharacterCode;
             this.lastCharacterCode = lastCharacterCode;
             this.widths = widths;
             this.descriptor = descriptor;
             this.encoding = encoding;
+            this.font = font;
 
             Name = name;
             IsVertical = false;

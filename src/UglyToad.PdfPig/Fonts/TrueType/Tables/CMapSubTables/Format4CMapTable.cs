@@ -69,10 +69,11 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
 
             var idRangeOffsets = data.ReadUnsignedShortArray(segmentCount);
 
-            const int singleIntsRead = 16;
+            const int singleIntsRead = 8;
             const int intArraysRead = 8;
 
-            var remainingBytes = length - (singleIntsRead + intArraysRead * segmentCount);
+            // ReSharper disable once ArrangeRedundantParentheses
+            var remainingBytes = length - ((singleIntsRead * 2) + intArraysRead * segmentCount);
 
             var remainingInts = remainingBytes / 2;
 
