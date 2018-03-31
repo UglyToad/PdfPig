@@ -34,7 +34,26 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
 
         public int CharacterCodeToGlyphIndex(int characterCode)
         {
-            throw new NotImplementedException();
+            for (var i = 0; i < Segments.Count; i++)
+            {
+                var segment = Segments[i];
+
+                if (segment.EndCode < characterCode || segment.StartCode > characterCode)
+                {
+                    continue;
+                }
+
+                if (segment.IdRangeOffset == 0)
+                {
+                    return (characterCode + segment.IdDelta) % ushort.MaxValue;
+                }
+
+                var offset = segment.IdRangeOffset / 2 + (characterCode - segment.StartCode);
+
+                return GlyphIds[offset - Segments.Count + i];
+            }
+
+            return 0;
         }
 
         public static Format4CMapTable Load(TrueTypeDataBytes data, int platformId, int encodingId)
