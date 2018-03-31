@@ -34,7 +34,7 @@
 
         public int CharacterCodeToGlyphIndex(int characterCode)
         {
-            if (characterCode < GlyphMappingLength || characterCode >= GlyphMappingLength)
+            if (characterCode < 0 || characterCode >= GlyphMappingLength)
             {
                 return 0;
             }

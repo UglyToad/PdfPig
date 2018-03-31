@@ -13,7 +13,7 @@
     internal class TrueTypeSimpleFont : IFont
     {
         private static readonly TransformationMatrix FontMatrix =
-            TransformationMatrix.FromValues(1/1000m, 0, 0, 1/1000m, 0, 0);
+            TransformationMatrix.FromValues(1 / 1000m, 0, 0, 1 / 1000m, 0, 0);
         private readonly int firstCharacterCode;
         private readonly int lastCharacterCode;
         private readonly decimal[] widths;
@@ -33,7 +33,7 @@
         public TrueTypeSimpleFont(NameToken name, int firstCharacterCode, int lastCharacterCode, decimal[] widths,
             FontDescriptor descriptor,
             [CanBeNull] CMap toUnicodeCMap,
-            [CanBeNull] Encoding encoding, 
+            [CanBeNull] Encoding encoding,
             [CanBeNull]TrueTypeFont font)
         {
             this.firstCharacterCode = firstCharacterCode;
@@ -88,13 +88,15 @@
         {
             var tx = GetWidth(characterCode);
 
+            var box = GetBoundingBox(characterCode);
+
             return new PdfVector(tx / 1000m, 0);
         }
 
         public decimal GetWidth(int characterCode)
         {
             var index = characterCode - firstCharacterCode;
-            
+
             if (index < 0 || index >= widths.Length)
             {
                 return descriptor.MissingWidth;
@@ -105,7 +107,19 @@
 
         public PdfRectangle GetBoundingBox(int characterCode)
         {
-            throw new System.NotImplementedException();
+            if (font?.CMapTable == null)
+            {
+                return descriptor.BoundingBox;
+            }
+
+            if (!font.CMapTable.TryGetGlyphIndex(characterCode, out var index))
+            {
+                return descriptor.BoundingBox;
+            }
+
+            var glyph = font.GlyphTable.Glyphs[index];
+
+            return glyph?.GlyphBounds ?? descriptor.BoundingBox;
         }
 
         public TransformationMatrix GetFontMatrix()

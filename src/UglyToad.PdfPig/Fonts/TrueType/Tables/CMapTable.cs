@@ -21,6 +21,28 @@
             DirectoryTable = directoryTable;
         }
 
+        public bool TryGetGlyphIndex(int characterCode, out int glyphIndex)
+        {
+            glyphIndex = 0;
+
+            if (subTables.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var subTable in subTables)
+            {
+                glyphIndex = subTable.CharacterCodeToGlyphIndex(characterCode);
+
+                if (glyphIndex != 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public static CMapTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, TableRegister tableRegister)
         {
             data.Seek(table.Offset);
