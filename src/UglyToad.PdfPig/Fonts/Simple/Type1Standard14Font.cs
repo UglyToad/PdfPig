@@ -44,12 +44,12 @@
             return true;
         }
 
-        public PdfRectangle GetDisplacement(int characterCode)
+        public PdfRectangle GetBoundingBox(int characterCode)
         {
-            return fontMatrix.Transform(GetRectangle(characterCode));
+            return fontMatrix.Transform(GetBoundingBoxInGlyphSpace(characterCode));
         }
 
-        public PdfRectangle GetRectangle(int characterCode)
+        private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
         {
             var name = encoding.GetName(characterCode);
 
@@ -59,11 +59,6 @@
             }
 
             return new PdfRectangle(0, 0, metrics.WidthX, 0);
-        }
-
-        public PdfRectangle GetBoundingBox(int characterCode)
-        {
-            throw new NotImplementedException();
         }
 
         public TransformationMatrix GetFontMatrix()

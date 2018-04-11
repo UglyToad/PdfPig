@@ -106,10 +106,10 @@
         public PdfRectangle Transform(PdfRectangle original)
         {
             return new PdfRectangle(
+                Transform(original.TopLeft.ToVector()),
+                Transform(original.TopRight.ToVector()),
                 Transform(original.BottomLeft.ToVector()),
-                Transform(original.BottomLeft.ToVector()),
-                Transform(original.BottomLeft.ToVector()),
-                Transform(original.BottomLeft.ToVector())
+                Transform(original.BottomRight.ToVector())
             );
         }
 

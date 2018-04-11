@@ -71,23 +71,18 @@
             return ToUnicode.TryGet(characterCode, out value);
         }
 
-        public PdfRectangle GetDisplacement(int characterCode)
+        public PdfRectangle GetBoundingBox(int characterCode)
         {
-            return fontMatrix.Transform(GetRectangle(characterCode));
+            return fontMatrix.Transform(GetBoundingBoxInGlyphSpace(characterCode));
         }
 
-        public PdfRectangle GetRectangle(int characterCode)
+        private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
         {
             var cid = CMap.ConvertToCid(characterCode);
 
             var fromFont = CidFont.GetWidthFromDictionary(cid);
             
             return new PdfRectangle(0, 0, fromFont, 0);
-        }
-
-        public PdfRectangle GetBoundingBox(int characterCode)
-        {
-            throw new NotImplementedException();
         }
 
         public TransformationMatrix GetFontMatrix()

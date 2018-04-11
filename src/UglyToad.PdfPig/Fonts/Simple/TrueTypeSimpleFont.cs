@@ -12,16 +12,11 @@
 
     internal class TrueTypeSimpleFont : IFont
     {
-        private readonly int firstCharacterCode;
-
-        private readonly int lastCharacterCode;
-
-        private readonly decimal[] widths;
-
         private readonly FontDescriptor descriptor;
 
         [CanBeNull]
         private readonly Encoding encoding;
+
         [CanBeNull]
         private readonly TrueTypeFont font;
 
@@ -34,15 +29,12 @@
 
         private readonly TransformationMatrix fontMatrix = TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);
 
-        public TrueTypeSimpleFont(NameToken name, int firstCharacterCode, int lastCharacterCode, decimal[] widths,
+        public TrueTypeSimpleFont(NameToken name,
             FontDescriptor descriptor,
             [CanBeNull] CMap toUnicodeCMap,
             [CanBeNull] Encoding encoding,
-            [CanBeNull]TrueTypeFont font)
+            [CanBeNull] TrueTypeFont font)
         {
-            this.firstCharacterCode = firstCharacterCode;
-            this.lastCharacterCode = lastCharacterCode;
-            this.widths = widths;
             this.descriptor = descriptor;
             this.encoding = encoding;
             this.font = font;
@@ -88,24 +80,12 @@
             return true;
         }
 
-        public PdfRectangle GetDisplacement(int characterCode)
-        {
-            return fontMatrix.Transform(GetRectangle(characterCode));
-        }
-
-        public PdfRectangle GetRectangle(int characterCode)
-        {
-            var index = characterCode - firstCharacterCode;
-
-            if (index < 0 || index >= widths.Length)
-            {
-                return new PdfRectangle(0, 0, descriptor.MissingWidth, 0);
-            }
-
-            return new PdfRectangle(0, 0, widths[index], 0);
-        }
-
         public PdfRectangle GetBoundingBox(int characterCode)
+        {
+            return fontMatrix.Transform(GetBoundingBoxInGlyphSpace(characterCode));
+        }
+
+        private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
         {
             if (font?.CMapTable == null)
             {

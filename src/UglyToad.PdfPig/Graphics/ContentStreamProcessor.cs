@@ -93,8 +93,12 @@
             var fontSize = currentState.FontState.FontSize;
             var horizontalScaling = currentState.FontState.HorizontalScaling / 100m;
             var characterSpacing = currentState.FontState.CharacterSpacing;
+            var rise = currentState.FontState.Rise;
 
             var transformationMatrix = currentState.CurrentTransformationMatrix;
+
+            var renderingMatrix =
+                TransformationMatrix.FromValues(fontSize * horizontalScaling, 0, 0, fontSize, 0, rise);
 
             // TODO: this does not seem correct, produces the correct result for now but we need to revisit.
             // see: https://stackoverflow.com/questions/48010235/pdf-specification-get-font-size-in-points
@@ -119,17 +123,15 @@
                 
                 if (font.IsVertical)
                 {
-                    throw new NotImplementedException("Vertical fonts are# currently unsupported, please submit a pull request or issue with an example file.");
+                    throw new NotImplementedException("Vertical fonts are currently unsupported, please submit a pull request or issue with an example file.");
                 }
 
-                var displacement = font.GetDisplacement(code);
-
-                var fontScaling = TransformationMatrix.Identity.Multiply(fontSize);
+                var boundingBox = font.GetBoundingBox(code);
 
                 var transformedDisplacement = transformationMatrix
                     .Transform(TextMatrices.TextMatrix
-                    .Transform(fontScaling
-                    .Transform(displacement)));
+                    .Transform(renderingMatrix
+                    .Transform(boundingBox)));
 
                 ShowGlyph(font, transformedDisplacement, unicode, fontSize, pointSize);
 
@@ -137,11 +139,11 @@
                 if (font.IsVertical)
                 {
                     tx = 0;
-                    ty = displacement.Height * fontSize + characterSpacing + wordSpacing;
+                    ty = boundingBox.Height * fontSize + characterSpacing + wordSpacing;
                 }
                 else
                 {
-                    tx = (displacement.Width * fontSize + characterSpacing + wordSpacing) * horizontalScaling;
+                    tx = (boundingBox.Width * fontSize + characterSpacing + wordSpacing) * horizontalScaling;
                     ty = 0;
                 }
 
