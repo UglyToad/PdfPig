@@ -7,6 +7,7 @@
     using Geometry;
     using IO;
     using Tokenization.Tokens;
+    using TrueType;
     using Util.JetBrains.Annotations;
 
     internal class TrueTypeSimpleFont : IFont
@@ -21,6 +22,8 @@
 
         [CanBeNull]
         private readonly Encoding encoding;
+        [CanBeNull]
+        private readonly TrueTypeFont font;
 
         public NameToken Name { get; }
 
@@ -31,16 +34,18 @@
 
         private readonly TransformationMatrix fontMatrix = TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);
 
-        public TrueTypeSimpleFont(NameToken name, int firstCharacterCode, int lastCharacterCode, decimal[] widths, 
+        public TrueTypeSimpleFont(NameToken name, int firstCharacterCode, int lastCharacterCode, decimal[] widths,
             FontDescriptor descriptor,
-            [CanBeNull]CMap toUnicodeCMap,
-            [CanBeNull]Encoding encoding)
+            [CanBeNull] CMap toUnicodeCMap,
+            [CanBeNull] Encoding encoding,
+            [CanBeNull]TrueTypeFont font)
         {
             this.firstCharacterCode = firstCharacterCode;
             this.lastCharacterCode = lastCharacterCode;
             this.widths = widths;
             this.descriptor = descriptor;
             this.encoding = encoding;
+            this.font = font;
 
             Name = name;
             IsVertical = false;
@@ -98,6 +103,23 @@
             }
 
             return new PdfRectangle(0, 0, widths[index], 0);
+        }
+
+        public PdfRectangle GetBoundingBox(int characterCode)
+        {
+            if (font?.CMapTable == null)
+            {
+                return descriptor.BoundingBox;
+            }
+
+            if (!font.CMapTable.TryGetGlyphIndex(characterCode, out var index))
+            {
+                return descriptor.BoundingBox;
+            }
+
+            var glyph = font.GlyphTable.Glyphs[index];
+
+            return glyph?.GlyphBounds ?? descriptor.BoundingBox;
         }
 
         public TransformationMatrix GetFontMatrix()

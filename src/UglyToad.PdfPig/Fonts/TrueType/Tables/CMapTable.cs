@@ -21,6 +21,28 @@
             DirectoryTable = directoryTable;
         }
 
+        public bool TryGetGlyphIndex(int characterCode, out int glyphIndex)
+        {
+            glyphIndex = 0;
+
+            if (subTables.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var subTable in subTables)
+            {
+                glyphIndex = subTable.CharacterCodeToGlyphIndex(characterCode);
+
+                if (glyphIndex != 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public static CMapTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, TableRegister tableRegister)
         {
             data.Seek(table.Offset);
@@ -52,19 +74,47 @@
 
                 var format = data.ReadUnsignedShort();
 
+                /*
+                 * There are 9 currently available formats:
+                 * 0: Character code and glyph indices are restricted to a single byte. Rare.
+                 * 2: Suitable for CJK characters. Contain mixed 8/16 byte encoding.
+                 * 4: 2 byte encoding format. Used when character codes fall into (gappy) contiguous ranges.
+                 * 6: 'Trimmed table mapping', used when character codes fall into a single contiguous range. This is dense mapping.
+                 * 8: 16/32 bit coverage. Uses mixed length character codes.
+                 * 10: Similar to format 6, trimmed table/array for 32 bits.
+                 * 12: Segmented coverage, similar to format 4 but for 32 bit/4 byte.
+                 * 13: Many to one mappings. Used by Apple for the LastResort font.
+                 * 14: Unicode variation sequences.
+                 *
+                 * Many of the formats are obsolete or not really used. Modern fonts will tend to use formats 4, 6 and 12.
+                 * For PDF we will support 0, 2 and 4 since these are in the original TrueType spec.
+                 */
                 switch (format)
                 {
                     case 0:
                         {
                             // Simple 1 to 1 mapping of character codes to glyph codes.
-                            var item = ByteEncodingCMapTable.Load(data);
+                            var item = ByteEncodingCMapTable.Load(data, header.PlatformId, header.EncodingId);
                             tables.Add(item);
                             break;
                         }
-                    case 1:
+                    case 2:
                         {
                             // Useful for CJK characters. Use mixed 8/16 bit encoding.
-                            var item = HighByteMappingCMapTable.Load(data, numberofGlyphs);
+                            var item = HighByteMappingCMapTable.Load(data, numberofGlyphs, header.PlatformId, header.EncodingId);
+                            tables.Add(item);
+                            break;
+                        }
+                    case 4:
+                        {
+                            // Microsoft's standard mapping table.
+                            var item = Format4CMapTable.Load(data, header.PlatformId, header.EncodingId);
+                            tables.Add(item);
+                            break;
+                        }
+                    case 6:
+                        {
+                            var item = TrimmedTableMappingCMapTable.Load(data, header.PlatformId, header.EncodingId);
                             tables.Add(item);
                             break;
                         }

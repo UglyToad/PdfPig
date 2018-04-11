@@ -96,6 +96,11 @@
             return new PdfRectangle(0, 0, widths[characterCode - firstChar], 0);
         }
 
+        public PdfRectangle GetBoundingBox(int characterCode)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public TransformationMatrix GetFontMatrix()
         {
             return fontMatrix;

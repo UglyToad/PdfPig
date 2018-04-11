@@ -3,12 +3,42 @@
     using System;
     using System.Collections.Generic;
 
+    /// <inheritdoc />
+    /// <summary>
+    /// A format 2 sub-table for Chinese, Japanese and Korean characters.
+    /// Contains mixed 8/16 bit encodings.
+    /// </summary>
     internal class HighByteMappingCMapTable : ICMapSubTable
     {
-        public static HighByteMappingCMapTable Load(TrueTypeDataBytes data, int numberOfGlyphs)
+        private readonly IReadOnlyDictionary<int, int> characterCodesToGlyphIndices;
+
+        public int PlatformId { get; }
+
+        public int EncodingId { get; }
+
+        private HighByteMappingCMapTable(int platformId, int encodingId, IReadOnlyDictionary<int, int> characterCodesToGlyphIndices)
         {
+            this.characterCodesToGlyphIndices = characterCodesToGlyphIndices ?? throw new ArgumentNullException(nameof(characterCodesToGlyphIndices));
+            PlatformId = platformId;
+            EncodingId = encodingId;
+        }
+
+        public int CharacterCodeToGlyphIndex(int characterCode)
+        {
+            if (!characterCodesToGlyphIndices.TryGetValue(characterCode, out var index))
+            {
+                return 0;
+            }
+
+            return index;
+        }
+
+        public static HighByteMappingCMapTable Load(TrueTypeDataBytes data, int numberOfGlyphs, int platformId, int encodingId)
+        {
+            // ReSharper disable UnusedVariable
             var length = data.ReadUnsignedShort();
             var version = data.ReadUnsignedShort();
+            // ReSharper restore UnusedVariable
 
             var subHeaderKeys = new int[256];
             var maximumSubHeaderIndex = 0;
@@ -63,7 +93,7 @@
                 }
             }
 
-            return new HighByteMappingCMapTable();
+            return new HighByteMappingCMapTable(platformId, encodingId, characterCodeToGlyphId);
         }
 
         public struct SubHeader

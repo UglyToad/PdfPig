@@ -173,5 +173,17 @@
                 offsets[i] = ReadUnsignedInt();
             }
         }
+
+        public short[] ReadShortArray(int length)
+        {
+            var result = new short[length];
+
+            for (int i = 0; i < length; i++)
+            {
+                result[i] = ReadSignedShort();
+            }
+
+            return result;
+        }
     }
 }

@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Parser
 {
-    using System;
-    using System.Collections.Generic;
     using Tables;
 
     /// <summary>
@@ -22,5 +20,12 @@
         public BasicMaximumProfileTable MaximumProfileTable { get; set; }
 
         public PostScriptTable PostScriptTable { get; set; }
+
+        /// <summary>
+        /// Defines mapping of character codes to glyph index values in the font.
+        /// Can contain mutliple sub-tables to support multiple encoding schemes.
+        /// Where a character code isn't found it should map to index 0.
+        /// </summary>
+        public CMapTable CMapTable { get; set; }
     }
 }

@@ -17,6 +17,8 @@
 
         PdfRectangle GetDisplacement(int characterCode);
 
+        PdfRectangle GetBoundingBox(int characterCode);
+
         TransformationMatrix GetFontMatrix();
     }
 }
