@@ -12,6 +12,7 @@
     using Tokenization.Tokens;
     using Type1;
     using Type1.Parser;
+    using Util;
 
     internal class Type1FontHandler : IFontHandler
     {
@@ -110,6 +111,8 @@
                 }
                 
                 var bytes = stream.Decode(filterProvider);
+
+                var text = OtherEncodings.BytesAsLatin1String(bytes);
 
                 var font = type1FontParser.Parse(new ByteArrayInputBytes(bytes));
 

@@ -32,14 +32,6 @@ namespace UglyToad.PdfPig.Tokenization.Tokens
             {'f', 0x0F }
         };
 
-        private static byte Convert(char high, char low)
-        {
-            var highByte = HexMap[high];
-            var lowByte = HexMap[low];
-
-            return (byte)(highByte << 4 | lowByte);
-        }
-
         public string Data { get; }
 
         public IReadOnlyList<byte> Bytes { get; }
@@ -73,6 +65,14 @@ namespace UglyToad.PdfPig.Tokenization.Tokens
 
             Bytes = bytes;
             Data = builder.ToString();
+        }
+
+        public static byte Convert(char high, char low)
+        {
+            var highByte = HexMap[high];
+            var lowByte = HexMap[low];
+
+            return (byte)(highByte << 4 | lowByte);
         }
 
         public static int ConvertHexBytesToInt(HexToken token)

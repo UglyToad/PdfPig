@@ -1,14 +1,37 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts.Type1
 {
+    using System;
+    using System.IO;
+    using System.Linq;
+    using System.Text;
     using PdfPig.Fonts.Type1.Parser;
+    using PdfPig.IO;
+    using PdfPig.Util;
     using Xunit;
 
     public class Type1FontParserTests
     {
-        private readonly Type1FontParser parser = new Type1FontParser();
+        private readonly Type1FontParser parser = new Type1FontParser(new Type1EncryptedPortionParser());
 
         [Fact]
-        public void CanRead()
+        public void CanReadHexEncryptedPortion()
+        {
+            var bytes = GetFileBytes("AdobeUtopia.pfa");
+            
+            parser.Parse(new ByteArrayInputBytes(bytes));
+        }
+
+        [Fact]
+        public void CanReadBinaryEncryptedPortion()
+        {
+            // TODO: support reading in these pfb files
+            //var bytes = GetFileBytes("cmbx8.pfb");
+            
+            //parser.Parse(new ByteArrayInputBytes(bytes));
+        }
+
+        [Fact]
+        public void CanReadAsciiPart()
         {
             var bytes = StringBytesTestConverter.Convert(Cmbx12, false);
 
@@ -91,5 +114,20 @@ currentfile eexec
 0000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000
 cleartomark";
+
+        private static byte[] GetFileBytes(string name)
+        {
+            var manifestFiles = typeof(Type1FontParserTests).Assembly.GetManifestResourceNames();
+
+            var match = manifestFiles.Single(x => x.IndexOf(name, StringComparison.InvariantCultureIgnoreCase) >= 0);
+
+            using (var memoryStream = new MemoryStream())
+            using (var stream = typeof(Type1FontParserTests).Assembly.GetManifestResourceStream(match))
+            {
+                stream.CopyTo(memoryStream);
+
+                return memoryStream.ToArray();
+            }
+        }
     }
 }

@@ -10,6 +10,7 @@
   <ItemGroup>
     <None Remove="Fonts\TrueType\google-simple-doc.ttf" />
     <None Remove="Fonts\TrueType\Roboto-Regular.ttf" />
+    <None Remove="Fonts\Type1\AdobeUtopia.pfa" />
     <None Remove="Integration\Documents\FarmerMac.pdf" />
     <None Remove="Integration\Documents\Font Size Test - from google chrome print pdf.pdf" />
     <None Remove="Integration\Documents\Font Size Test - from libre office.pdf" />
@@ -29,6 +30,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="Fonts\TrueType\Roboto-Regular.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Fonts\Type1\AdobeUtopia.pfa">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
     <Content Include="Integration\Documents\FarmerMac.pdf">

@@ -104,7 +104,7 @@
                 cMapCache, 
                 filterProvider, pdfScanner),
                 new TrueTypeFontHandler(log, pdfScanner, filterProvider, cMapCache, fontDescriptorFactory, trueTypeFontParser, encodingReader),
-                new Type1FontHandler(pdfScanner, cMapCache, filterProvider, fontDescriptorFactory, encodingReader, new Type1FontParser()),
+                new Type1FontHandler(pdfScanner, cMapCache, filterProvider, fontDescriptorFactory, encodingReader, new Type1FontParser(new Type1EncryptedPortionParser())),
                 new Type3FontHandler(pdfScanner, cMapCache, filterProvider, encodingReader));
             
             var resourceContainer = new ResourceContainer(pdfScanner, fontFactory);

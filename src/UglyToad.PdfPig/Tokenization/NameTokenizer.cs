@@ -36,7 +36,7 @@
                 }
                 else if (escapeActive)
                 {
-                    if (ReadHelper.IsHexDigit((char)b))
+                    if (ReadHelper.IsHex((char)b))
                     {
                         escapedChars[postEscapeRead] = (char)b;
                         postEscapeRead++;

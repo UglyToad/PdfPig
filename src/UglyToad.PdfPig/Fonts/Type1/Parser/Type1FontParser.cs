@@ -11,6 +11,14 @@
 
     internal class Type1FontParser
     {
+        private const string ClearToMark = "cleartomark";
+        private readonly Type1EncryptedPortionParser encryptedPortionParser;
+
+        public Type1FontParser(Type1EncryptedPortionParser encryptedPortionParser)
+        {
+            this.encryptedPortionParser = encryptedPortionParser;
+        }
+
         public Type1Font Parse(IInputBytes inputBytes)
         {
             var scanner = new CoreTokenScanner(inputBytes);
@@ -46,6 +54,8 @@
             scanner.RegisterCustomTokenizer((byte)'{', arrayTokenizer);
             scanner.RegisterCustomTokenizer((byte)'/', nameTokenizer);
 
+            var eexecPortion = new List<byte>();
+
             try
             {
                 var tokenSet = new PreviousTokenSet();
@@ -54,7 +64,46 @@
                 {
                     if (scanner.CurrentToken is OperatorToken operatorToken)
                     {
-                        HandleOperator(operatorToken, inputBytes, scanner, tokenSet, dictionaries);
+                        if (Equals(scanner.CurrentToken, OperatorToken.Eexec))
+                        {
+                            int offset = 0;
+
+                            while (inputBytes.MoveNext())
+                            {
+                                if (inputBytes.CurrentByte == (byte)ClearToMark[offset])
+                                {
+                                    offset++;
+                                }
+                                else
+                                {
+                                    if (offset > 0)
+                                    {
+                                        for (int i = 0; i < offset; i++)
+                                        {
+                                            eexecPortion.Add((byte)ClearToMark[i]);
+                                        }
+                                    }
+
+                                    offset = 0;
+                                }
+
+                                if (offset == ClearToMark.Length)
+                                {
+                                    break;
+                                }
+
+                                if (offset > 0)
+                                {
+                                    continue;
+                                }
+
+                                eexecPortion.Add(inputBytes.CurrentByte);
+                            }
+                        }
+                        else
+                        {
+                            HandleOperator(operatorToken, scanner, tokenSet, dictionaries);
+                        }
                     }
 
                     tokenSet.Add(scanner.CurrentToken);
@@ -70,10 +119,12 @@
             var matrix = GetFontMatrix(dictionaries);
             var boundingBox = GetBoundingBox(dictionaries);
 
+            encryptedPortionParser.Parse(eexecPortion);
+
             return new Type1Font(name, encoding, matrix, boundingBox);
         }
 
-        private void HandleOperator(OperatorToken token, IInputBytes bytes, ISeekableTokenScanner scanner, PreviousTokenSet set, List<DictionaryToken> dictionaries)
+        private static void HandleOperator(OperatorToken token, ISeekableTokenScanner scanner, PreviousTokenSet set, List<DictionaryToken> dictionaries)
         {
             switch (token.Data)
             {
@@ -83,27 +134,8 @@
 
                     dictionaries.Add(dictionary);
                     break;
-                case "currentfile":
-                    if (!scanner.MoveNext() || scanner.CurrentToken != OperatorToken.Eexec)
-                    {
-                        return;
-                    }
-
-                    // For now we will not read this stuff.
-                    SkipEncryptedContent(bytes);
-                    break;
                 default:
                     return;
-            }
-        }
-
-        private void SkipEncryptedContent(IInputBytes bytes)
-        {
-            bytes.Seek(bytes.Length - 1);
-
-            while (bytes.MoveNext())
-            {
-                // skip to end.
             }
         }
 
@@ -277,7 +309,7 @@
 
             return null;
         }
-
+        
         private class PreviousTokenSet
         {
             private readonly IToken[] tokens = new IToken[3];
