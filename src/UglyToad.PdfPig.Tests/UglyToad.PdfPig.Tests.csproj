@@ -18,6 +18,7 @@
     <None Remove="Integration\Documents\ICML03-081.pdf" />
     <None Remove="Integration\Documents\Judgement Document.pdf" />
     <None Remove="Integration\Documents\Multiple Page - from Mortality Statistics.pdf" />
+    <None Remove="Integration\Documents\Pig Production Handbook.pdf" />
     <None Remove="Integration\Documents\Pig Reproduction Powerpoint.pdf" />
     <None Remove="Integration\Documents\Single Page Form Content - from itext 1_1.pdf" />
     <None Remove="Integration\Documents\Single Page Non Latin - from acrobat distiller.pdf" />
@@ -56,6 +57,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Integration\Documents\Multiple Page - from Mortality Statistics.pdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Integration\Documents\Pig Production Handbook.pdf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Integration\Documents\Pig Reproduction Powerpoint.pdf">
