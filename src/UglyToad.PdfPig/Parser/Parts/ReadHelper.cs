@@ -250,8 +250,9 @@
         {
             return ' ' == c;
         }
-        
-        public static bool IsHexDigit(char ch)
+
+        public static bool IsHex(byte b) => IsHex((char) b);
+        public static bool IsHex(char ch)
         {
             return char.IsDigit(ch) || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
         }

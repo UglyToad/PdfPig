@@ -76,13 +76,18 @@
             return fontMatrix.Transform(GetBoundingBoxInGlyphSpace(characterCode));
         }
 
-        private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
+        public decimal GetWidth(int characterCode)
         {
             var cid = CMap.ConvertToCid(characterCode);
 
             var fromFont = CidFont.GetWidthFromDictionary(cid);
             
-            return new PdfRectangle(0, 0, fromFont, 0);
+            return fromFont;
+        }
+
+        public PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
+        {
+            return CidFont.GetBoundingBox(characterCode);
         }
 
         public TransformationMatrix GetFontMatrix()

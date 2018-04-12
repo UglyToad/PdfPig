@@ -1,11 +1,13 @@
 ﻿namespace UglyToad.PdfPig.IO
 {
     using System.Collections.Generic;
+    using System.Diagnostics;
 
     internal class ByteArrayInputBytes : IInputBytes
     {
         private readonly IReadOnlyList<byte> bytes;
 
+        [DebuggerStepThrough]
         public ByteArrayInputBytes(IReadOnlyList<byte> bytes)
         {
             this.bytes = bytes;

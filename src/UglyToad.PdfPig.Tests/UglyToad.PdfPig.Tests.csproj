@@ -8,16 +8,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Fonts\TrueType\*" />
+    <None Remove="Fonts\TrueType\*.ttf" />
+    <None Remove="Fonts\Type1\*.pfa" />
+     <None Remove="Fonts\Type1\*.pfb" />
     <None Remove="Integration\Documents\*" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Fonts\TrueType\google-simple-doc.ttf">
+    <EmbeddedResource Include="Fonts\TrueType\*.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="Fonts\TrueType\Roboto-Regular.ttf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <EmbeddedResource Include="Fonts\Type1\*.pfa">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Fonts\Type1\*.pfb">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
     <Content Include="Integration\Documents\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -85,19 +85,17 @@
 
         private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
         {
-            if (font?.CMapTable == null)
+            if (font == null)
             {
                 return descriptor.BoundingBox;
             }
 
-            if (!font.CMapTable.TryGetGlyphIndex(characterCode, out var index))
+            if (font.TryGetBoundingBox(characterCode, out var bounds))
             {
-                return descriptor.BoundingBox;
+                return bounds;
             }
 
-            var glyph = font.GlyphTable.Glyphs[index];
-
-            return glyph?.GlyphBounds ?? descriptor.BoundingBox;
+            return descriptor.BoundingBox;
         }
 
         public TransformationMatrix GetFontMatrix()

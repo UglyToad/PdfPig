@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using CidFonts;
+    using Geometry;
     using Parser;
     using Tables;
 
@@ -30,6 +31,32 @@
             HeaderTable = tableRegister.HeaderTable;
             CMapTable = tableRegister.CMapTable;
             GlyphTable = tableRegister.GlyphDataTable;
+        }
+
+        public bool TryGetBoundingBox(int characterCode, out PdfRectangle boundingBox)
+        {
+            boundingBox = default(PdfRectangle);
+
+            if (CMapTable == null)
+            {
+                return false;
+            }
+
+            if (!CMapTable.TryGetGlyphIndex(characterCode, out var index))
+            {
+                return false;
+            }
+
+            var glyph = GlyphTable.Glyphs[index];
+
+            if (glyph?.GlyphBounds == null)
+            {
+                return false;
+            }
+
+            boundingBox = glyph.GlyphBounds;
+
+            return true;
         }
     }
 }
