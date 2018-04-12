@@ -8,20 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Fonts\TrueType\google-simple-doc.ttf" />
-    <None Remove="Fonts\TrueType\Roboto-Regular.ttf" />
-    <None Remove="Integration\Documents\FarmerMac.pdf" />
-    <None Remove="Integration\Documents\Font Size Test - from google chrome print pdf.pdf" />
-    <None Remove="Integration\Documents\Font Size Test - from libre office.pdf" />
-    <None Remove="Integration\Documents\ICML03-081.pdf" />
-    <None Remove="Integration\Documents\Judgement Document.pdf" />
-    <None Remove="Integration\Documents\Multiple Page - from Mortality Statistics.pdf" />
-    <None Remove="Integration\Documents\Single Page Form Content - from itext 1_1.pdf" />
-    <None Remove="Integration\Documents\Single Page Non Latin - from acrobat distiller.pdf" />
-    <None Remove="Integration\Documents\Single Page Simple - from google drive.pdf" />
-    <None Remove="Integration\Documents\Single Page Simple - from open office.pdf" />
-    <None Remove="Integration\Documents\Single Page Type 1 Font.pdf" />
-    <None Remove="Integration\Documents\Two Page Text Only - from libre office.pdf" />
+    <None Remove="Fonts\TrueType\*" />
+    <None Remove="Integration\Documents\*" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,40 +19,7 @@
     <EmbeddedResource Include="Fonts\TrueType\Roboto-Regular.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
-    <Content Include="Integration\Documents\FarmerMac.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Integration\Documents\Font Size Test - from libre office.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Integration\Documents\Font Size Test - from google chrome print pdf.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Integration\Documents\ICML03-081.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Integration\Documents\Judgement Document.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Integration\Documents\Multiple Page - from Mortality Statistics.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Integration\Documents\Single Page Non Latin - from acrobat distiller.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Integration\Documents\Single Page Simple - from google drive.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Integration\Documents\Single Page Form Content - from itext 1_1.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Integration\Documents\Single Page Simple - from open office.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Integration\Documents\Single Page Type 1 Font.pdf">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Integration\Documents\Two Page Text Only - from libre office.pdf">
+    <Content Include="Integration\Documents\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -78,12 +33,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\UglyToad.PdfPig\UglyToad.PdfPig.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Integration\Documents\2006_Swedish_Touring_Car_Championship.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

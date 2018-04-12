@@ -27,8 +27,6 @@
         [NotNull]
         public ToUnicodeCMap ToUnicode { get; set; }
 
-        private readonly TransformationMatrix fontMatrix = TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);
-
         public TrueTypeSimpleFont(NameToken name,
             FontDescriptor descriptor,
             [CanBeNull] CMap toUnicodeCMap,
@@ -82,7 +80,7 @@
 
         public PdfRectangle GetBoundingBox(int characterCode)
         {
-            return fontMatrix.Transform(GetBoundingBoxInGlyphSpace(characterCode));
+            return GetFontMatrix().Transform(GetBoundingBoxInGlyphSpace(characterCode));
         }
 
         private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
@@ -104,8 +102,14 @@
 
         public TransformationMatrix GetFontMatrix()
         {
-            // TODO: should this also use units per em?
-            return fontMatrix;
+            var scale = 1000m;
+
+            if (font?.HeaderTable != null)
+            {
+                scale = font.HeaderTable.UnitsPerEm;
+            }
+
+            return TransformationMatrix.FromValues(1m / scale, 0, 0, 1m / scale, 0, 0);
         }
     }
 }

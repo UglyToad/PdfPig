@@ -38,6 +38,41 @@
         }
 
         [Fact]
+        public void HasCorrectLetterBoundingBoxes()
+        {
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                var page = document.GetPage(1);
+
+                var comparer = new DecimalComparer(3m);
+
+                Assert.Equal("I", page.Letters[0].Value);
+
+                Assert.Equal(90.1m, page.Letters[0].Rectangle.BottomLeft.X, comparer);
+                Assert.Equal(709.2m, page.Letters[0].Rectangle.BottomLeft.Y, comparer);
+
+                Assert.Equal(94.0m, page.Letters[0].Rectangle.TopRight.X, comparer);
+                Assert.Equal(719.89m, page.Letters[0].Rectangle.TopRight.Y, comparer);
+
+                Assert.Equal("a", page.Letters[5].Value);
+
+                Assert.Equal(114.5m, page.Letters[5].Rectangle.BottomLeft.X, comparer);
+                Assert.Equal(709.2m, page.Letters[5].Rectangle.BottomLeft.Y, comparer);
+
+                Assert.Equal(119.82m, page.Letters[5].Rectangle.TopRight.X, comparer);
+                Assert.Equal(719.89m, page.Letters[5].Rectangle.TopRight.Y, comparer);
+
+                Assert.Equal("f", page.Letters[16].Value);
+
+                Assert.Equal(169.9m, page.Letters[16].Rectangle.BottomLeft.X, comparer);
+                Assert.Equal(709.2m, page.Letters[16].Rectangle.BottomLeft.Y, comparer);
+
+                Assert.Equal(176.89m, page.Letters[16].Rectangle.TopRight.X, comparer);
+                Assert.Equal(719.89m, page.Letters[16].Rectangle.TopRight.Y, comparer);
+            }
+        }
+
+        [Fact]
         public void GetsCorrectPageTextIgnoringHiddenCharacters()
         {
             using (var document = PdfDocument.Open(GetFilename()))

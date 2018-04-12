@@ -82,7 +82,8 @@
                     }
 
                     Assert.Equal(theirLetter, myLetter);
-                    Assert.Equal(theirX, myX, 2);
+
+                    Assert.True(Math.Abs(theirX - myX) < 2);
 
                     index++;
                 }

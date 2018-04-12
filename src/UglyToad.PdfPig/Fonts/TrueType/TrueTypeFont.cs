@@ -15,6 +15,7 @@
         public HeaderTable HeaderTable { get; }
         public CMapTable CMapTable { get; }
         public GlyphDataTable GlyphTable { get; }
+        public TableRegister TableRegister { get; }
 
         public TrueTypeFont(decimal version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tableHeaders, TableRegister tableRegister)
         {
@@ -25,6 +26,7 @@
 
             Version = version;
             TableHeaders = tableHeaders;
+            TableRegister = tableRegister;
             HeaderTable = tableRegister.HeaderTable;
             CMapTable = tableRegister.CMapTable;
             GlyphTable = tableRegister.GlyphDataTable;
