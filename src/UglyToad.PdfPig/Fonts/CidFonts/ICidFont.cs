@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CidFonts
 {
     using Core;
+    using Geometry;
     using Tokenization.Tokens;
 
     /// <summary>
@@ -39,8 +40,8 @@
 
         FontDescriptor Descriptor { get; }
 
-        decimal GetWidthFromFont(int characterCode);
-
         decimal GetWidthFromDictionary(int cid);
+
+        PdfRectangle GetBoundingBox(int characterCode);
     }
 }

@@ -88,7 +88,7 @@
 
         public PdfRectangle GetBoundingBox(int characterCode)
         {
-            throw new NotImplementedException();
+            return CidFont.GetBoundingBox(characterCode);
         }
 
         public TransformationMatrix GetFontMatrix()

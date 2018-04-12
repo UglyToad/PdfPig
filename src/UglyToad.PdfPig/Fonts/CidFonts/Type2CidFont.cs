@@ -2,6 +2,7 @@
 {
     using System.Collections.Generic;
     using Core;
+    using Geometry;
     using Tokenization.Tokens;
 
     /// <inheritdoc />
@@ -56,6 +57,21 @@
             }
 
             return Descriptor.MissingWidth;
+        }
+
+        public PdfRectangle GetBoundingBox(int characterCode)
+        {
+            if (fontProgram == null)
+            {
+                return Descriptor.BoundingBox;
+            }
+
+            if (fontProgram.TryGetBoundingBox(characterCode, out var result))
+            {
+                return result;
+            }
+
+            return Descriptor.BoundingBox;
         }
     }
 }

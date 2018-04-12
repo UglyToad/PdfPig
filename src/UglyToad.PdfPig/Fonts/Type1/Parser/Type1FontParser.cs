@@ -31,6 +31,7 @@
         /// <returns>The parsed type 1 font.</returns>
         public Type1Font Parse(IInputBytes inputBytes, int length1, int length2)
         {
+            // Sometimes the entire PFB file including the header bytes can be included which prevents parsing in the normal way.
             var isEntirePfbFile = inputBytes.Peek() == PfbFileIndicator;
 
             IReadOnlyList<byte> eexecPortion = new byte[0];
@@ -155,6 +156,14 @@
         /// </summary>
         private static (byte[] ascii, byte[] binary) ReadPfbHeader(IInputBytes bytes)
         {
+            /*
+             * The header is a 6 byte sequence. The first byte is 0x80 followed by 0x01 for the ASCII record indicator.
+             * The following 4 bytes determine the size/length of the ASCII part of the PFB file.
+             * After the ASCII part another 6 byte sequence is present, this time 0x80 0x02 for the Binary part length.
+             * A 3rd sequence is present at the end re-stating the ASCII length but this is surplus to requirements.
+             */
+
+            // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
             int ReadSize(byte recordType)
             {
                 bytes.MoveNext();
