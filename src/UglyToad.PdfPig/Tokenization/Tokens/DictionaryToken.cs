@@ -3,6 +3,8 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using Parser.Parts;
+    using Scanner;
     using Util.JetBrains.Annotations;
 
     internal class DictionaryToken : IDataToken<IReadOnlyDictionary<string, IToken>>
@@ -38,6 +40,21 @@
         private DictionaryToken(IReadOnlyDictionary<string, IToken> data)
         {
             Data = data;
+        }
+
+        public T Get<T>(NameToken name, IPdfTokenScanner scanner) where T : IToken
+        {
+            if (!TryGet(name, out var token) || !(token is T typedToken))
+            {
+                if (!(token is IndirectReferenceToken indirectReference))
+                {
+                    throw new InvalidOperationException($"Dictionary does not contain token with name {name} of type {typeof(T).Name}.");
+                }
+
+                typedToken = DirectObjectFinder.Get<T>(indirectReference, scanner);
+            }
+
+            return typedToken;
         }
         
         public bool TryGet(NameToken name, out IToken token)

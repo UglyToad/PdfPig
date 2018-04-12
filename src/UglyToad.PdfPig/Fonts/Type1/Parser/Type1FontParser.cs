@@ -12,6 +12,9 @@
     internal class Type1FontParser
     {
         private const string ClearToMark = "cleartomark";
+
+        private const int PfbFileIndicator = 0x80;
+        
         private readonly Type1EncryptedPortionParser encryptedPortionParser;
 
         public Type1FontParser(Type1EncryptedPortionParser encryptedPortionParser)
@@ -19,8 +22,27 @@
             this.encryptedPortionParser = encryptedPortionParser;
         }
 
-        public Type1Font Parse(IInputBytes inputBytes)
+        /// <summary>
+        /// Parses an embedded Adobe Type 1 font file.
+        /// </summary>
+        /// <param name="inputBytes">The bytes of the font program.</param>
+        /// <param name="length1">The length in bytes of the clear text portion of the font program.</param>
+        /// <param name="length2">The length in bytes of the encrypted portion of the font program.</param>
+        /// <returns>The parsed type 1 font.</returns>
+        public Type1Font Parse(IInputBytes inputBytes, int length1, int length2)
         {
+            var isEntirePfbFile = inputBytes.Peek() == PfbFileIndicator;
+
+            IReadOnlyList<byte> eexecPortion = new byte[0];
+
+            if (isEntirePfbFile)
+            {
+                var (ascii, binary) = ReadPfbHeader(inputBytes);
+
+                eexecPortion = binary;
+                inputBytes = new ByteArrayInputBytes(ascii);
+            }
+
             var scanner = new CoreTokenScanner(inputBytes);
 
             if (!scanner.TryReadToken(out CommentToken comment) || !comment.Data.StartsWith("!"))
@@ -53,11 +75,10 @@
             var nameTokenizer = new Type1NameTokenizer();
             scanner.RegisterCustomTokenizer((byte)'{', arrayTokenizer);
             scanner.RegisterCustomTokenizer((byte)'/', nameTokenizer);
-
-            var eexecPortion = new List<byte>();
-
+            
             try
             {
+                var tempEexecPortion = new List<byte>();
                 var tokenSet = new PreviousTokenSet();
                 tokenSet.Add(scanner.CurrentToken);
                 while (scanner.MoveNext())
@@ -80,7 +101,7 @@
                                     {
                                         for (int i = 0; i < offset; i++)
                                         {
-                                            eexecPortion.Add((byte)ClearToMark[i]);
+                                            tempEexecPortion.Add((byte)ClearToMark[i]);
                                         }
                                     }
 
@@ -97,7 +118,7 @@
                                     continue;
                                 }
 
-                                eexecPortion.Add(inputBytes.CurrentByte);
+                                tempEexecPortion.Add(inputBytes.CurrentByte);
                             }
                         }
                         else
@@ -107,6 +128,11 @@
                     }
 
                     tokenSet.Add(scanner.CurrentToken);
+                }
+
+                if (!isEntirePfbFile)
+                {
+                    eexecPortion = tempEexecPortion;
                 }
             }
             finally
@@ -122,6 +148,65 @@
             encryptedPortionParser.Parse(eexecPortion);
 
             return new Type1Font(name, encoding, matrix, boundingBox);
+        }
+
+        /// <summary>
+        /// Where an entire PFB file has been embedded in the PDF we read the header first.
+        /// </summary>
+        private static (byte[] ascii, byte[] binary) ReadPfbHeader(IInputBytes bytes)
+        {
+            int ReadSize(byte recordType)
+            {
+                bytes.MoveNext();
+
+                if (bytes.CurrentByte != PfbFileIndicator)
+                {
+                    throw new InvalidOperationException($"File does not start with 0x80, which indicates a full PFB file. Instead got: {bytes.CurrentByte}");
+                }
+
+                bytes.MoveNext();
+
+                if (bytes.CurrentByte != recordType)
+                {
+                    throw new InvalidOperationException($"Encountered unexpected header type in the PFB file: {bytes.CurrentByte}");
+                }
+
+                bytes.MoveNext();
+                int size = bytes.CurrentByte;
+                bytes.MoveNext();
+                size += bytes.CurrentByte << 8;
+                bytes.MoveNext();
+                size += bytes.CurrentByte << 16;
+                bytes.MoveNext();
+                size += bytes.CurrentByte << 24;
+
+                return size;
+            }
+
+            var asciiSize = ReadSize(0x01);
+            var asciiPart = new byte[asciiSize];
+
+            int i = 0;
+            while (i < asciiSize)
+            {
+                bytes.MoveNext();
+                asciiPart[i] = bytes.CurrentByte;
+                i++;
+            }
+
+            var binarySize = ReadSize(0x02);
+
+            var binaryPart = new byte[binarySize];
+            i = 0;
+
+            while (i < binarySize)
+            {
+                bytes.MoveNext();
+                binaryPart[i] = bytes.CurrentByte;
+                i++;
+            }
+
+            return (asciiPart, binaryPart);
         }
 
         private static void HandleOperator(OperatorToken token, ISeekableTokenScanner scanner, PreviousTokenSet set, List<DictionaryToken> dictionaries)
@@ -266,8 +351,8 @@
                 {
                     for (var i = 0; i < encodingArray.Data.Count; i += 2)
                     {
-                        var code = (NumericToken) encodingArray.Data[i];
-                        var name = (NameToken) encodingArray.Data[i + 1];
+                        var code = (NumericToken)encodingArray.Data[i];
+                        var name = (NameToken)encodingArray.Data[i + 1];
 
                         result[code.Int] = name.Data;
                     }
@@ -298,10 +383,10 @@
             {
                 if (dictionary.TryGet(NameToken.FontBbox, out var token) && token is ArrayToken array && array.Data.Count == 4)
                 {
-                    var x1 = (NumericToken) array.Data[0];
-                    var y1 = (NumericToken) array.Data[1];
-                    var x2 = (NumericToken) array.Data[2];
-                    var y2 = (NumericToken) array.Data[3];
+                    var x1 = (NumericToken)array.Data[0];
+                    var y1 = (NumericToken)array.Data[1];
+                    var x2 = (NumericToken)array.Data[2];
+                    var y2 = (NumericToken)array.Data[3];
 
                     return new PdfRectangle(x1.Data, y1.Data, x2.Data, y2.Data);
                 }
@@ -309,7 +394,7 @@
 
             return null;
         }
-        
+
         private class PreviousTokenSet
         {
             private readonly IToken[] tokens = new IToken[3];

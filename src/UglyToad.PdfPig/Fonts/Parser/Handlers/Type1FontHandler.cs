@@ -103,18 +103,17 @@
             
             try
             {
-                var stream = pdfScanner.Get(descriptor.FontFile.ObjectKey.Data).Data as StreamToken;
-
-                if (stream == null)
+                if (!(pdfScanner.Get(descriptor.FontFile.ObjectKey.Data).Data is StreamToken stream))
                 {
                     return null;
                 }
+
+                var length1 = stream.StreamDictionary.Get<NumericToken>(NameToken.Length1, pdfScanner);
+                var length2 = stream.StreamDictionary.Get<NumericToken>(NameToken.Length2, pdfScanner);
                 
                 var bytes = stream.Decode(filterProvider);
-
-                var text = OtherEncodings.BytesAsLatin1String(bytes);
-
-                var font = type1FontParser.Parse(new ByteArrayInputBytes(bytes));
+                
+                var font = type1FontParser.Parse(new ByteArrayInputBytes(bytes), length1.Int, length2.Int);
 
                 return font;
             }

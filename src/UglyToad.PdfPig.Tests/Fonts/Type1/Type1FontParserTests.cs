@@ -18,16 +18,16 @@
         {
             var bytes = GetFileBytes("AdobeUtopia.pfa");
             
-            parser.Parse(new ByteArrayInputBytes(bytes));
+            parser.Parse(new ByteArrayInputBytes(bytes),0, 0);
         }
 
         [Fact]
-        public void CanReadBinaryEncryptedPortion()
+        public void CanReadBinaryEncryptedPortionOfFullPfb()
         {
             // TODO: support reading in these pfb files
-            //var bytes = GetFileBytes("cmbx8.pfb");
+            var bytes = GetFileBytes("Raleway-Black.pfb");
             
-            //parser.Parse(new ByteArrayInputBytes(bytes));
+            parser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
         }
 
         [Fact]
@@ -35,7 +35,7 @@
         {
             var bytes = StringBytesTestConverter.Convert(Cmbx12, false);
 
-            parser.Parse(bytes.Bytes);
+            parser.Parse(bytes.Bytes, 0, 0);
         }
 
         private const string Cmbx12 = @"%!PS-AdobeFont-1.1: CMBX12 1.0
