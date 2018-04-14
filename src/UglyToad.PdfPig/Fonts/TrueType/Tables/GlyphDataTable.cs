@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using Geometry;
+    using Glyphs;
     using Parser;
     using Util.JetBrains.Annotations;
 
@@ -88,7 +89,7 @@
 
             var instructionLength = data.ReadUnsignedShort();
 
-            data.ReadByteArray(instructionLength);
+            var instructions = data.ReadByteArray(instructionLength);
 
             var pointCount = 0;
             if (contourCount > 0)
@@ -104,7 +105,14 @@
             var yCoordinates = ReadCoordinates(data, pointCount, flags, SimpleGlyphFlags.YShortVector,
                 SimpleGlyphFlags.YSignOrSame);
 
-            return new SimpleGlyphDescription(instructionLength, endPointsOfContours, flags, xCoordinates, yCoordinates, bounds);
+            var points = new GlyphPoint[xCoordinates.Length];
+            for (var i = xCoordinates.Length - 1; i >= 0; i--)
+            {
+                var isOnCurve = (flags[i] & SimpleGlyphFlags.OnCurve) == SimpleGlyphFlags.OnCurve;
+                points[i] = new GlyphPoint(xCoordinates[i], yCoordinates[i], isOnCurve);
+            }
+
+            return new SimpleGlyphDescription(instructions, endPointsOfContours, points, bounds);
         }
 
         private static CompositeGlyphDescription ReadCompositeGlyph(TrueTypeDataBytes data, TemporaryCompositeLocation compositeLocation, Dictionary<int, TemporaryCompositeLocation> compositeLocations, IGlyphDescription[] glyphs)
@@ -115,6 +123,8 @@
             }
 
             data.Seek(compositeLocation.Position);
+
+            var components = new List<CompositeComponent>();
 
             CompositeGlyphFlags flags;
             do
@@ -150,42 +160,32 @@
                     arg2 = data.ReadByte();
                 }
 
-                float xscale = 1;
-                float scale01 = 0;
-                float scale10 = 0;
-                float yscale = 1;
+                decimal xscale = 1;
+                decimal scale01 = 0;
+                decimal scale10 = 0;
+                decimal yscale = 1;
 
-                bool hasScale, hasMatrix = false;
                 if (HasFlag(flags, CompositeGlyphFlags.WeHaveAScale))
                 {
                     xscale = ReadTwoFourteenFormat(data);
                     yscale = xscale;
-                    hasScale = true;
                 }
                 else if (HasFlag(flags, CompositeGlyphFlags.WeHaveAnXAndYScale))
                 {
                     xscale = ReadTwoFourteenFormat(data);
                     yscale = ReadTwoFourteenFormat(data);
-                    hasScale = true;
                 }
                 else if (HasFlag(flags, CompositeGlyphFlags.WeHaveATwoByTwo))
                 {
-                    /*
-                     * We build the 2 by 2 matrix:
-                     * x 0
-                     * 0 y
-                     */
                     xscale = ReadTwoFourteenFormat(data);
                     scale01 = ReadTwoFourteenFormat(data);
                     scale10 = ReadTwoFourteenFormat(data);
                     yscale = ReadTwoFourteenFormat(data);
-                    hasScale = true;
-                    hasMatrix = true;
                 }
 
                 if (HasFlag(flags, CompositeGlyphFlags.ArgsAreXAndYValues))
                 {
-                    
+                    components.Add(new CompositeComponent(glyphIndex, new PdfMatrix3By2(xscale, scale01, scale10, yscale, arg1, arg2)));
                 }
                 else
                 {
@@ -197,9 +197,9 @@
             return new CompositeGlyphDescription();
         }
 
-        private static float ReadTwoFourteenFormat(TrueTypeDataBytes data)
+        private static decimal ReadTwoFourteenFormat(TrueTypeDataBytes data)
         {
-            const float divisor = 1 << 14;
+            const decimal divisor = 1 << 14;
 
             return data.ReadSignedShort() / divisor;
         }
@@ -279,6 +279,19 @@
                 {
                     throw new ArgumentException($"A composite glyph should not have a positive contour count. Got: {contourCount}.", nameof(contourCount));
                 }
+            }
+        }
+
+        private class CompositeComponent
+        {
+            public int Index { get; }
+
+            public PdfMatrix3By2 Transformation { get; }
+
+            public CompositeComponent(int index, PdfMatrix3By2 transformation)
+            {
+                Index = index;
+                Transformation = transformation;
             }
         }
     }

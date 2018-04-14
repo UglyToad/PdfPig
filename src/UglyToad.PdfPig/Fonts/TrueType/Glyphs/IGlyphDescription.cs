@@ -1,6 +1,5 @@
-﻿namespace UglyToad.PdfPig.Fonts.TrueType.Tables
+﻿namespace UglyToad.PdfPig.Fonts.TrueType.Glyphs
 {
-    using System;
     using Geometry;
 
     internal interface IGlyphDescription
