@@ -15,6 +15,7 @@
         private readonly ICidFontProgram fontProgram;
         private readonly VerticalWritingMetrics verticalWritingMetrics;
         private readonly IReadOnlyDictionary<int, decimal> widths;
+        private readonly CharacterIdentifierToGlyphIndexMap cidToGid;
 
         public NameToken Type { get; }
         public NameToken SubType { get; }
@@ -24,10 +25,11 @@
         public CidFontType CidFontType => CidFontType.Type2;
         public FontDescriptor Descriptor { get; }
 
-        public Type2CidFont(NameToken type, NameToken subType, NameToken baseFont, CharacterIdentifierSystemInfo systemInfo, 
+        public Type2CidFont(NameToken type, NameToken subType, NameToken baseFont, CharacterIdentifierSystemInfo systemInfo,
             FontDescriptor descriptor, ICidFontProgram fontProgram,
             VerticalWritingMetrics verticalWritingMetrics,
-            IReadOnlyDictionary<int, decimal> widths)
+            IReadOnlyDictionary<int, decimal> widths, 
+            CharacterIdentifierToGlyphIndexMap cidToGid)
         {
             Type = type;
             SubType = subType;
@@ -37,6 +39,7 @@
             this.fontProgram = fontProgram;
             this.verticalWritingMetrics = verticalWritingMetrics;
             this.widths = widths;
+            this.cidToGid = cidToGid;
 
             // TODO: This should maybe take units per em into account?
             var scale = 1 / 1000m;
@@ -49,9 +52,9 @@
             throw new System.NotImplementedException();
         }
 
-        public decimal GetWidthFromDictionary(int cid)
+        public decimal GetWidthFromDictionary(int characterIdentifier)
         {
-            if (widths.TryGetValue(cid, out var width))
+            if (widths.TryGetValue(characterIdentifier, out var width))
             {
                 return width;
             }
@@ -59,14 +62,14 @@
             return Descriptor.MissingWidth;
         }
 
-        public PdfRectangle GetBoundingBox(int characterCode)
+        public PdfRectangle GetBoundingBox(int characterIdentifier)
         {
             if (fontProgram == null)
             {
                 return Descriptor.BoundingBox;
             }
 
-            if (fontProgram.TryGetBoundingBox(characterCode, out var result))
+            if (fontProgram.TryGetBoundingBox(characterIdentifier, cidToGid.GetGlyphIndex, out var result))
             {
                 return result;
             }

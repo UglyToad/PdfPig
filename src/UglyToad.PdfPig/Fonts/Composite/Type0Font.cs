@@ -81,13 +81,17 @@
             var cid = CMap.ConvertToCid(characterCode);
 
             var fromFont = CidFont.GetWidthFromDictionary(cid);
-            
+
+            var box = GetBoundingBox(characterCode);
+
             return fromFont;
         }
 
         public PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
         {
-            return CidFont.GetBoundingBox(characterCode);
+            var cid = CMap.ConvertToCid(characterCode);
+
+            return CidFont.GetBoundingBox(cid);
         }
 
         public TransformationMatrix GetFontMatrix()

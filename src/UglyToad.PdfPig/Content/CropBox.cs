@@ -12,7 +12,7 @@
         [NotNull]
         public PdfRectangle Bounds { get; }
 
-        public CropBox(PdfRectangle bounds)
+        public CropBox(PdfRectangle? bounds)
         {
             Bounds = bounds ?? throw new ArgumentNullException(nameof(bounds));
         }

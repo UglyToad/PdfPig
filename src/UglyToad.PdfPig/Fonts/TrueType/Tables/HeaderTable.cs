@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Tables
 {
     using System;
+    using Geometry;
 
     /// <summary>
     /// Gives global information about the font.
@@ -27,13 +28,7 @@
 
         public DateTime Modified { get; }
 
-        public short XMin { get; }
-
-        public short YMin { get; }
-
-        public short XMax { get; }
-
-        public short YMax { get; }
+        public PdfRectangle Bounds { get; }
 
         public HeaderMacStyle MacStyle { get; }
 
@@ -74,10 +69,7 @@
             UnitsPerEm = unitsPerEm;
             Created = created;
             Modified = modified;
-            XMin = xMin;
-            YMin = yMin;
-            XMax = xMax;
-            YMax = yMax;
+            Bounds = new PdfRectangle(xMin, yMin, xMax, yMax);
             MacStyle = (HeaderMacStyle)macStyle;
             LowestRecommendedPpem = lowestRecommendedPpem;
             FontDirectionHint = (FontDirection)fontDirectionHint;

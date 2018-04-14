@@ -10,7 +10,7 @@
     /// The Y-axis extends vertically upwards and the X-axis horizontally to the right.
     /// Unless otherwise specified on a per-page basis, units in PDF space are equivalent to a typographic point (1/72 inch).
     /// </remarks>
-    public class PdfRectangle
+    public struct PdfRectangle
     {
         /// <summary>
         /// Top left point of the rectangle.
@@ -47,22 +47,28 @@
         /// </summary>
         public decimal Area { get; }
 
-        internal PdfRectangle(PdfVector topLeft, PdfVector topRight, PdfVector bottomLeft, PdfVector bottomRight)
-        {
-            TopLeft = topLeft.ToPoint();
-            TopRight = topRight.ToPoint();
+        /// <summary>
+        /// Left.
+        /// </summary>
+        public decimal Left => TopLeft.X;
 
-            BottomLeft = bottomLeft.ToPoint();
-            BottomRight = bottomRight.ToPoint();
+        /// <summary>
+        /// Top.
+        /// </summary>
+        public decimal Top => TopLeft.Y;
 
-            Width = bottomRight.Subtract(bottomLeft).GetMagnitude();
-            Height = topLeft.Subtract(bottomLeft).GetMagnitude();
+        /// <summary>
+        /// Right.
+        /// </summary>
+        public decimal Right => BottomRight.X;
 
-            Area = Width * Height;
-        }
+        /// <summary>
+        /// Bottom.
+        /// </summary>
+        public decimal Bottom => BottomRight.Y;
 
+        internal PdfRectangle(PdfPoint point1, PdfPoint point2) : this(point1.X, point1.Y, point2.X, point2.Y) { }
         internal PdfRectangle(short x1, short y1, short x2, short y2) : this((decimal) x1, y1, x2, y2) { }
-
         internal PdfRectangle(decimal x1, decimal y1, decimal x2, decimal y2)
         {
             var bottom = Math.Min(y1, y2);
@@ -79,6 +85,20 @@
 
             Width = right - left;
             Height = top - bottom;
+
+            Area = Width * Height;
+        }
+
+        internal PdfRectangle(PdfVector topLeft, PdfVector topRight, PdfVector bottomLeft, PdfVector bottomRight)
+        {
+            TopLeft = topLeft.ToPoint();
+            TopRight = topRight.ToPoint();
+
+            BottomLeft = bottomLeft.ToPoint();
+            BottomRight = bottomRight.ToPoint();
+
+            Width = bottomRight.Subtract(bottomLeft).GetMagnitude();
+            Height = topLeft.Subtract(bottomLeft).GetMagnitude();
 
             Area = Width * Height;
         }

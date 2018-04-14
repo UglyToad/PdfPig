@@ -52,7 +52,7 @@
             var baseFont = dictionary.GetNameOrDefault(NameToken.BaseFont);
 
             var systemInfo = GetSystemInfo(dictionary);
-
+            
             var subType = dictionary.GetNameOrDefault(NameToken.Subtype);
             if (NameToken.CidFontType0.Equals(subType))
             {
@@ -61,12 +61,14 @@
 
             if (NameToken.CidFontType2.Equals(subType))
             {
-                return new Type2CidFont(type, subType, baseFont, systemInfo, descriptor, fontProgram, verticalWritingMetrics, widths);
+                var cidToGid = GetCharacterIdentifierToGlyphIndexMap(dictionary, isLenientParsing);
+
+                return new Type2CidFont(type, subType, baseFont, systemInfo, descriptor, fontProgram, verticalWritingMetrics, widths, cidToGid);
             }
 
             return null;
         }
-
+        
         private bool TryGetFontDescriptor(DictionaryToken dictionary, out DictionaryToken descriptorDictionary)
         {
             descriptorDictionary = null;
@@ -152,7 +154,7 @@
             return widths;
         }
 
-        private VerticalWritingMetrics ReadVerticalDisplacements(DictionaryToken dict)
+        private static VerticalWritingMetrics ReadVerticalDisplacements(DictionaryToken dict)
         {
             var verticalDisplacements = new Dictionary<int, decimal>();
             var positionVectors = new Dictionary<int, PdfVector>();
@@ -235,6 +237,30 @@
             var supplement = cidDictionary.GetIntOrDefault(NameToken.Supplement);
 
             return new CharacterIdentifierSystemInfo(registry, ordering, supplement);
+        }
+
+        private CharacterIdentifierToGlyphIndexMap GetCharacterIdentifierToGlyphIndexMap(DictionaryToken dictionary, bool isLenientParsing)
+        {
+            if (!dictionary.TryGet(NameToken.CidToGidMap, out var entry))
+            {
+                return new CharacterIdentifierToGlyphIndexMap();
+            }
+
+            if (entry is NameToken name)
+            {
+                if (!name.Equals(NameToken.CidToGidMap) && !isLenientParsing)
+                {
+                    throw new InvalidOperationException($"The CIDToGIDMap in a Type 0 font should have the value /Identity, instead got: {name}.");
+                }
+
+                return new CharacterIdentifierToGlyphIndexMap();
+            }
+
+            var stream = DirectObjectFinder.Get<StreamToken>(entry, pdfScanner);
+
+            var bytes = stream.Decode(filterProvider);
+
+            return new CharacterIdentifierToGlyphIndexMap(bytes);
         }
 
         private string SafeKeyAccess(DictionaryToken dictionary, NameToken keyName)

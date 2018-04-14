@@ -34,7 +34,7 @@
             throw new System.NotImplementedException();
         }
 
-        public PdfRectangle GetBoundingBox(int characterCode)
+        public PdfRectangle GetBoundingBox(int characterIdentifier)
         {
             throw new System.NotImplementedException();
         }

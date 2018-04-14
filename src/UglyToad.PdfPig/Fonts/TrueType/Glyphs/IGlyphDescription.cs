@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Fonts.TrueType.Tables
+﻿namespace UglyToad.PdfPig.Fonts.TrueType.Glyphs
 {
     using Geometry;
 
@@ -8,8 +8,10 @@
 
         SimpleGlyphDescription SimpleGlyph { get; }
 
-        object CompositeGlyph { get; }
+        CompositeGlyphDescription CompositeGlyph { get; }
 
         PdfRectangle GlyphBounds { get; }
+
+        IGlyphDescription DeepClone();
     }
 }

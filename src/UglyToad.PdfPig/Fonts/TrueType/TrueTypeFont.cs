@@ -33,16 +33,23 @@
             GlyphTable = tableRegister.GlyphDataTable;
         }
 
-        public bool TryGetBoundingBox(int characterCode, out PdfRectangle boundingBox)
+        public bool TryGetBoundingBox(int characterCode, out PdfRectangle boundingBox) => TryGetBoundingBox(characterCode, null, out boundingBox);
+        public bool TryGetBoundingBox(int characterCode, Func<int, int> characterIdentifierToGlyphIndex, out PdfRectangle boundingBox)
         {
             boundingBox = default(PdfRectangle);
 
+            int index;
+
             if (CMapTable == null)
             {
-                return false;
-            }
+                if (characterIdentifierToGlyphIndex == null)
+                {
+                    return false;
+                }
 
-            if (!CMapTable.TryGetGlyphIndex(characterCode, out var index))
+                index = characterIdentifierToGlyphIndex(characterCode);
+            }
+            else if (!CMapTable.TryGetGlyphIndex(characterCode, out index))
             {
                 return false;
             }

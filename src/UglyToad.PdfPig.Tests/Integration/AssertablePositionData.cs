@@ -16,14 +16,18 @@
 
         public string FontName { get; set; }
 
+        public decimal Height { get; set; }
+
         public static AssertablePositionData Parse(string line)
         {
             var parts = line.Split('\t', StringSplitOptions.None);
 
-            if (parts.Length != 6)
+            if (parts.Length < 6)
             {
                 throw new ArgumentException($"Expected 6 parts to the line, instead got {parts.Length}");
             }
+
+            var height = parts.Length < 7 ? 0 : decimal.Parse(parts[6]);
 
             return new AssertablePositionData
             {
