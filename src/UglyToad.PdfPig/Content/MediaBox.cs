@@ -68,7 +68,7 @@
 
         public PdfRectangle Bounds { get; }
 
-        public MediaBox(PdfRectangle bounds)
+        public MediaBox(PdfRectangle? bounds)
         {
             Bounds = bounds ?? throw new ArgumentNullException(nameof(bounds));
         }

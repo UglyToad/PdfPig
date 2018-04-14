@@ -2,7 +2,7 @@
 {
     using System;
 
-    internal class PdfRectangle
+    internal struct PdfRectangle
     {
         public PdfPoint TopLeft { get; }
 
@@ -17,6 +17,11 @@
         public decimal Height { get; }
 
         public decimal Area { get; }
+
+        public decimal Left => TopLeft.X;
+        public decimal Top => TopLeft.Y;
+        public decimal Right => BottomRight.X;
+        public decimal Bottom => BottomRight.Y;
 
         public PdfRectangle(PdfPoint point1, PdfPoint point2) : this(point1.X, point1.Y, point2.X, point2.Y) { }
         public PdfRectangle(short x1, short y1, short x2, short y2) : this((decimal) x1, y1, x2, y2) { }

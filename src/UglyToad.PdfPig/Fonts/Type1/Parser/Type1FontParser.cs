@@ -148,7 +148,7 @@
 
             encryptedPortionParser.Parse(eexecPortion);
 
-            return new Type1Font(name, encoding, matrix, boundingBox);
+            return new Type1Font(name, encoding, matrix, boundingBox ?? new PdfRectangle());
         }
 
         /// <summary>
@@ -386,7 +386,7 @@
             return null;
         }
 
-        private static PdfRectangle GetBoundingBox(IReadOnlyList<DictionaryToken> dictionaries)
+        private static PdfRectangle? GetBoundingBox(IReadOnlyList<DictionaryToken> dictionaries)
         {
             foreach (var dictionary in dictionaries)
             {

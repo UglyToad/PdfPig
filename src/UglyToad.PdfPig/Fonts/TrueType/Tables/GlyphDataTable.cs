@@ -28,7 +28,6 @@
         {
             data.Seek(table.Offset);
 
-            var headerTable = tableRegister.HeaderTable;
             var indexToLocationTable = tableRegister.IndexToLocationTable;
 
             var offsets = indexToLocationTable.GlyphOffsets;
@@ -39,11 +38,16 @@
 
             var glyphs = new IGlyphDescription[glyphCount];
 
+            var emptyGlyph = new EmptyGlyph(tableRegister.HeaderTable.Bounds);
+
+            var compositeLocations = new Dictionary<int, TemporaryCompositeLocation>();
+
             for (var i = 0; i < glyphCount; i++)
             {
                 if (offsets[i] == offsets[i + 1])
                 {
                     // empty glyph
+                    glyphs[i] = emptyGlyph;
                     continue;
                 }
 
@@ -55,9 +59,9 @@
                 var minY = data.ReadSignedShort();
                 var maxX = data.ReadSignedShort();
                 var maxY = data.ReadSignedShort();
-
+                
                 var bounds = new PdfRectangle(minX, minY, maxX, maxY);
-
+                
                 // If the number of contours is greater than or equal zero it's a simple glyph.
                 if (contourCount >= 0)
                 {
@@ -65,8 +69,14 @@
                 }
                 else
                 {
-
+                    compositeLocations.Add(i , new TemporaryCompositeLocation(data.Position, bounds, contourCount));
                 }
+            }
+
+            // Build composite glyphs by combining simple and other composite glyphs.
+            foreach (var compositeLocation in compositeLocations)
+            {
+                glyphs[compositeLocation.Key] = ReadCompositeGlyph(data, compositeLocation.Value, compositeLocations, glyphs);
             }
 
             return new GlyphDataTable(table, glyphs);
@@ -95,6 +105,103 @@
                 SimpleGlyphFlags.YSignOrSame);
 
             return new SimpleGlyphDescription(instructionLength, endPointsOfContours, flags, xCoordinates, yCoordinates, bounds);
+        }
+
+        private static CompositeGlyphDescription ReadCompositeGlyph(TrueTypeDataBytes data, TemporaryCompositeLocation compositeLocation, Dictionary<int, TemporaryCompositeLocation> compositeLocations, IGlyphDescription[] glyphs)
+        {
+            bool HasFlag(CompositeGlyphFlags value, CompositeGlyphFlags target)
+            {
+                return (value & target) == target;
+            }
+
+            data.Seek(compositeLocation.Position);
+
+            CompositeGlyphFlags flags;
+            do
+            {
+                flags = (CompositeGlyphFlags) data.ReadUnsignedShort();
+                var glyphIndex = data.ReadUnsignedShort();
+
+                var childGlyph = glyphs[glyphIndex];
+
+                if (childGlyph == null)
+                {
+                    if (!compositeLocations.TryGetValue(glyphIndex, out var missingComposite))
+                    {
+                        throw new InvalidOperationException($"The composite glyph required a contour at index {glyphIndex} but there was no simple or composite glyph at this location.");
+                    }
+
+                    childGlyph = ReadCompositeGlyph(data, missingComposite, compositeLocations, glyphs);
+
+                    glyphs[glyphIndex] = childGlyph;
+                }
+
+                var cloned = childGlyph.DeepClone();
+
+                short arg1, arg2;
+                if (HasFlag(flags, CompositeGlyphFlags.Args1And2AreWords))
+                {
+                    arg1 = data.ReadSignedShort();
+                    arg2 = data.ReadSignedShort();
+                }
+                else
+                {
+                    arg1 = data.ReadByte();
+                    arg2 = data.ReadByte();
+                }
+
+                float xscale = 1;
+                float scale01 = 0;
+                float scale10 = 0;
+                float yscale = 1;
+
+                bool hasScale, hasMatrix = false;
+                if (HasFlag(flags, CompositeGlyphFlags.WeHaveAScale))
+                {
+                    xscale = ReadTwoFourteenFormat(data);
+                    yscale = xscale;
+                    hasScale = true;
+                }
+                else if (HasFlag(flags, CompositeGlyphFlags.WeHaveAnXAndYScale))
+                {
+                    xscale = ReadTwoFourteenFormat(data);
+                    yscale = ReadTwoFourteenFormat(data);
+                    hasScale = true;
+                }
+                else if (HasFlag(flags, CompositeGlyphFlags.WeHaveATwoByTwo))
+                {
+                    /*
+                     * We build the 2 by 2 matrix:
+                     * x 0
+                     * 0 y
+                     */
+                    xscale = ReadTwoFourteenFormat(data);
+                    scale01 = ReadTwoFourteenFormat(data);
+                    scale10 = ReadTwoFourteenFormat(data);
+                    yscale = ReadTwoFourteenFormat(data);
+                    hasScale = true;
+                    hasMatrix = true;
+                }
+
+                if (HasFlag(flags, CompositeGlyphFlags.ArgsAreXAndYValues))
+                {
+                    
+                }
+                else
+                {
+                    // TODO: Not implemented, it is unclear how to do this.
+                }
+
+            } while (HasFlag(flags, CompositeGlyphFlags.MoreComponents));
+
+            return new CompositeGlyphDescription();
+        }
+
+        private static float ReadTwoFourteenFormat(TrueTypeDataBytes data)
+        {
+            const float divisor = 1 << 14;
+
+            return data.ReadSignedShort() / divisor;
         }
 
         private static SimpleGlyphFlags[] ReadFlags(TrueTypeDataBytes data, int pointCount)
@@ -140,36 +247,39 @@
 
             return xs;
         }
-    }
 
-    [Flags]
-    internal enum SimpleGlyphFlags : byte
-    {
         /// <summary>
-        /// The point is on the curve.
+        /// Stores the composite glyph information we read when initially scanning the glyph table.
+        /// Once we have all composite glyphs we can start building them from simple glyphs.
         /// </summary>
-        OnCurve = 1,
-        /// <summary>
-        /// The x-coordinate is 1 byte long instead of 2.
-        /// </summary>
-        XShortVector = 1 << 1,
-        /// <summary>
-        /// The y-coordinate is 1 byte long instead of 2.
-        /// </summary>
-        YShortVector = 1 << 2,
-        /// <summary>
-        /// The next byte specifies the number of times to repeat this set of flags.
-        /// </summary>
-        Repeat = 1 << 3,
-        /// <summary>
-        /// If <see cref="XShortVector"/> is set this means the sign of the x-coordinate is positive.
-        /// If <see cref="XShortVector"/> is not set then the current x-coordinate is the same as the previous.
-        /// </summary>
-        XSignOrSame = 1 << 4,
-        /// <summary>
-        /// If <see cref="YShortVector"/> is set this means the sign of the y-coordinate is positive.
-        /// If <see cref="YShortVector"/> is not set then the current y-coordinate is the same as the previous.
-        /// </summary>
-        YSignOrSame = 1 << 5
+        private struct TemporaryCompositeLocation
+        {
+            /// <summary>
+            /// Stores the position after reading the contour count and bounds.
+            /// </summary>
+            public long Position { get; }
+
+            /// <summary>
+            /// The bounds we read.
+            /// </summary>
+            public PdfRectangle Bounds { get; }
+
+            /// <summary>
+            /// The number of contours in this composite glyph. Should be less than zero.
+            /// </summary>
+            public short ContourCount { get; }
+            
+            public TemporaryCompositeLocation(long position, PdfRectangle bounds, short contourCount)
+            {
+                Position = position;
+                Bounds = bounds;
+                ContourCount = contourCount;
+
+                if (ContourCount >= 0 )
+                {
+                    throw new ArgumentException($"A composite glyph should not have a positive contour count. Got: {contourCount}.", nameof(contourCount));
+                }
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Tables
 {
+    using System;
     using Geometry;
 
     internal interface IGlyphDescription
@@ -8,8 +9,10 @@
 
         SimpleGlyphDescription SimpleGlyph { get; }
 
-        object CompositeGlyph { get; }
+        CompositeGlyphDescription CompositeGlyph { get; }
 
         PdfRectangle GlyphBounds { get; }
+
+        IGlyphDescription DeepClone();
     }
 }

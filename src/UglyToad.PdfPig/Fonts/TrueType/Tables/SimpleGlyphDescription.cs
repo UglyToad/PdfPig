@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Tables
 {
+    using System;
     using Geometry;
 
     internal class SimpleGlyphDescription : IGlyphDescription
@@ -13,7 +14,7 @@
         /// The total number of bytes for instructions.
         /// </summary>
         public int InstructionLength { get; }
-        
+
         /// <summary>
         /// An array of the last points of each contour.
         /// </summary>
@@ -29,7 +30,7 @@
         /// the rest are relative to the previous point.
         /// </summary>
         public short[] XCoordinates { get; }
-        
+
         /// <summary>
         /// The y-coordinates of the points in this glyph. The first coordinates are relative to the origin (0, 0)
         /// the rest are relative to the previous point.
@@ -51,6 +52,59 @@
 
         public SimpleGlyphDescription SimpleGlyph => this;
 
-        public object CompositeGlyph { get; } = null;
+        public CompositeGlyphDescription CompositeGlyph { get; } = null;
+
+        public IGlyphDescription DeepClone()
+        {
+            var clonedEndPoints = new int[EndPointsOfContours.Length];
+            Array.Copy(EndPointsOfContours, clonedEndPoints, EndPointsOfContours.Length);
+
+            var clonedFlags = new SimpleGlyphFlags[Flags.Length];
+            Array.Copy(Flags, clonedFlags, Flags.Length);
+
+            var clonedXCoordinates = new short[XCoordinates.Length];
+            Array.Copy(XCoordinates, clonedXCoordinates, XCoordinates.Length);
+
+            var clonedYCoordinates = new short[YCoordinates.Length];
+            Array.Copy(YCoordinates, clonedYCoordinates, YCoordinates.Length);
+
+            return new SimpleGlyphDescription(InstructionLength, clonedEndPoints, clonedFlags, clonedXCoordinates, clonedYCoordinates, GlyphBounds);
+        }
+    }
+
+    internal class CompositeGlyphDescription : IGlyphDescription
+    {
+        public bool IsSimple { get; } = false;
+
+        public SimpleGlyphDescription SimpleGlyph { get; } = null;
+
+        public CompositeGlyphDescription CompositeGlyph => this;
+
+        public PdfRectangle GlyphBounds { get; }
+        public IGlyphDescription DeepClone()
+        {
+            return new CompositeGlyphDescription();
+        }
+    }
+
+    internal class EmptyGlyph : IGlyphDescription
+    {
+        public bool IsSimple { get; } = true;
+
+        public SimpleGlyphDescription SimpleGlyph => new SimpleGlyphDescription(0, new int[0], new SimpleGlyphFlags[0], new short[0], new short[0], GlyphBounds);
+
+        public CompositeGlyphDescription CompositeGlyph { get; } = null;
+
+        public PdfRectangle GlyphBounds { get; }
+
+        public EmptyGlyph(PdfRectangle glyphBounds)
+        {
+            GlyphBounds = glyphBounds;
+        }
+
+        public IGlyphDescription DeepClone()
+        {
+            return new EmptyGlyph(GlyphBounds);
+        }
     }
 }

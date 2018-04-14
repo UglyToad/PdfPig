@@ -63,11 +63,11 @@
             Assert.Equal(13, font.HeaderTable.Modified.Minute);
             Assert.Equal(10, font.HeaderTable.Modified.Second);
 
-            Assert.Equal(-980, font.HeaderTable.XMin);
-            Assert.Equal(-555, font.HeaderTable.YMin);
+            Assert.Equal(-980, font.HeaderTable.Bounds.Left);
+            Assert.Equal(-555, font.HeaderTable.Bounds.Bottom);
 
-            Assert.Equal(2396, font.HeaderTable.XMax);
-            Assert.Equal(2163, font.HeaderTable.YMax);
+            Assert.Equal(2396, font.HeaderTable.Bounds.Right);
+            Assert.Equal(2163, font.HeaderTable.Bounds.Top);
 
             Assert.Equal(HeaderTable.HeaderMacStyle.None, font.HeaderTable.MacStyle);
             Assert.Equal(9, font.HeaderTable.LowestRecommendedPpem);

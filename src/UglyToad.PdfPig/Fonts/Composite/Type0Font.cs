@@ -82,7 +82,9 @@
             var cid = CMap.ConvertToCid(characterCode);
 
             var fromFont = CidFont.GetWidthFromDictionary(cid);
-            
+
+            var box = GetBoundingBox(characterCode);
+
             return fromFont;
         }
 
