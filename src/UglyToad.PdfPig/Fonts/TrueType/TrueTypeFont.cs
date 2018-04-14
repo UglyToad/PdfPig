@@ -54,12 +54,12 @@
 
             var glyph = GlyphTable.Glyphs[index];
 
-            if (glyph?.GlyphBounds == null)
+            if (glyph?.Bounds == null)
             {
                 return false;
             }
 
-            boundingBox = glyph.GlyphBounds;
+            boundingBox = glyph.Bounds;
 
             return true;
         }

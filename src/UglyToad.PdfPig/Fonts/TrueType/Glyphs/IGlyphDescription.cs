@@ -2,16 +2,28 @@
 {
     using Geometry;
 
-    internal interface IGlyphDescription
+    internal interface IGlyphDescription : IMergeableGlyph, ITransformableGlyph
     {
         bool IsSimple { get; }
 
-        SimpleGlyphDescription SimpleGlyph { get; }
+        PdfRectangle Bounds { get; }
 
-        CompositeGlyphDescription CompositeGlyph { get; }
+        byte[] Instructions { get; }
 
-        PdfRectangle GlyphBounds { get; }
+        int[] EndPointsOfContours { get; }
+
+        GlyphPoint[] Points { get; }
 
         IGlyphDescription DeepClone();
+    }
+
+    internal interface IMergeableGlyph
+    {
+        IGlyphDescription Merge(IGlyphDescription glyph);
+    }
+
+    internal interface ITransformableGlyph
+    {
+        IGlyphDescription Transform(PdfMatrix3By2 matrix);
     }
 }

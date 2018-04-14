@@ -27,5 +27,18 @@
         {
             return new PdfMatrix3By2(r0c0, r0c1, r1c0, r1c1, x, y);
         }
+
+        public PdfPoint ScaleAndRotate(PdfPoint source)
+        {
+            var newX = source.X * r0c0 + source.Y * r1c0;
+            var newY = source.X * r0c1 + source.Y * r1c1;
+
+            return new PdfPoint(newX, newY);
+        }
+
+        public PdfPoint Translate(PdfPoint source)
+        {
+            return new PdfPoint(source.X + r2c0, source.Y + r2c1);
+        }
     }
 }

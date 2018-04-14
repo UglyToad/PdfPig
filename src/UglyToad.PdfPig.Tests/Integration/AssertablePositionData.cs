@@ -20,7 +20,7 @@
 
         public static AssertablePositionData Parse(string line)
         {
-            var parts = line.Split('\t', StringSplitOptions.None);
+            var parts = line.Split('\t');
 
             if (parts.Length < 6)
             {
@@ -36,7 +36,8 @@
                 Width = decimal.Parse(parts[2]),
                 Text = parts[3],
                 FontSize = decimal.Parse(parts[4]),
-                FontName = parts[5]
+                FontName = parts[5],
+                Height = height
             };
         }
     }

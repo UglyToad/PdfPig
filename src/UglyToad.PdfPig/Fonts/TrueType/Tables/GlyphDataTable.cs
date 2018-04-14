@@ -39,7 +39,7 @@
 
             var glyphs = new IGlyphDescription[glyphCount];
 
-            var emptyGlyph = new EmptyGlyph(tableRegister.HeaderTable.Bounds);
+            var emptyGlyph = Glyph.Empty(tableRegister.HeaderTable.Bounds);
 
             var compositeLocations = new Dictionary<int, TemporaryCompositeLocation>();
 
@@ -77,13 +77,13 @@
             // Build composite glyphs by combining simple and other composite glyphs.
             foreach (var compositeLocation in compositeLocations)
             {
-                glyphs[compositeLocation.Key] = ReadCompositeGlyph(data, compositeLocation.Value, compositeLocations, glyphs);
+                glyphs[compositeLocation.Key] = ReadCompositeGlyph(data, compositeLocation.Value, compositeLocations, glyphs, emptyGlyph);
             }
-
+            
             return new GlyphDataTable(table, glyphs);
         }
 
-        private static SimpleGlyphDescription ReadSimpleGlyph(TrueTypeDataBytes data, short contourCount, PdfRectangle bounds)
+        private static Glyph ReadSimpleGlyph(TrueTypeDataBytes data, short contourCount, PdfRectangle bounds)
         {
             var endPointsOfContours = data.ReadUnsignedShortArray(contourCount);
 
@@ -112,10 +112,11 @@
                 points[i] = new GlyphPoint(xCoordinates[i], yCoordinates[i], isOnCurve);
             }
 
-            return new SimpleGlyphDescription(instructions, endPointsOfContours, points, bounds);
+            return new Glyph(true, instructions, endPointsOfContours, points, bounds);
         }
 
-        private static CompositeGlyphDescription ReadCompositeGlyph(TrueTypeDataBytes data, TemporaryCompositeLocation compositeLocation, Dictionary<int, TemporaryCompositeLocation> compositeLocations, IGlyphDescription[] glyphs)
+        private static IGlyphDescription ReadCompositeGlyph(TrueTypeDataBytes data, TemporaryCompositeLocation compositeLocation, Dictionary<int, TemporaryCompositeLocation> compositeLocations, IGlyphDescription[] glyphs,
+            IGlyphDescription emptyGlyph)
         {
             bool HasFlag(CompositeGlyphFlags value, CompositeGlyphFlags target)
             {
@@ -125,7 +126,8 @@
             data.Seek(compositeLocation.Position);
 
             var components = new List<CompositeComponent>();
-
+            
+            // First recursively find all components and ensure they are available.
             CompositeGlyphFlags flags;
             do
             {
@@ -141,13 +143,11 @@
                         throw new InvalidOperationException($"The composite glyph required a contour at index {glyphIndex} but there was no simple or composite glyph at this location.");
                     }
 
-                    childGlyph = ReadCompositeGlyph(data, missingComposite, compositeLocations, glyphs);
+                    childGlyph = ReadCompositeGlyph(data, missingComposite, compositeLocations, glyphs, emptyGlyph);
 
                     glyphs[glyphIndex] = childGlyph;
                 }
-
-                var cloned = childGlyph.DeepClone();
-
+                
                 short arg1, arg2;
                 if (HasFlag(flags, CompositeGlyphFlags.Args1And2AreWords))
                 {
@@ -194,14 +194,27 @@
 
             } while (HasFlag(flags, CompositeGlyphFlags.MoreComponents));
 
-            return new CompositeGlyphDescription();
-        }
+            // Now build the final glyph from the components.
+            IGlyphDescription builderGlyph = null;
+            foreach (var component in components)
+            {
+                var glyph = glyphs[component.Index];
 
-        private static decimal ReadTwoFourteenFormat(TrueTypeDataBytes data)
-        {
-            const decimal divisor = 1 << 14;
+                var transformed = glyph.Transform(component.Transformation);
 
-            return data.ReadSignedShort() / divisor;
+                if (builderGlyph == null)
+                {
+                    builderGlyph = transformed;
+                }
+                else
+                {
+                    builderGlyph = builderGlyph.Merge(transformed);
+                }
+            }
+
+            builderGlyph = builderGlyph ?? emptyGlyph;
+
+            return new Glyph(false, builderGlyph.Instructions, builderGlyph.EndPointsOfContours, builderGlyph.Points, compositeLocation.Bounds);
         }
 
         private static SimpleGlyphFlags[] ReadFlags(TrueTypeDataBytes data, int pointCount)
@@ -248,6 +261,13 @@
             return xs;
         }
 
+        private static decimal ReadTwoFourteenFormat(TrueTypeDataBytes data)
+        {
+            const decimal divisor = 1 << 14;
+
+            return data.ReadSignedShort() / divisor;
+        }
+
         /// <summary>
         /// Stores the composite glyph information we read when initially scanning the glyph table.
         /// Once we have all composite glyphs we can start building them from simple glyphs.
@@ -258,27 +278,18 @@
             /// Stores the position after reading the contour count and bounds.
             /// </summary>
             public long Position { get; }
-
-            /// <summary>
-            /// The bounds we read.
-            /// </summary>
-            public PdfRectangle Bounds { get; }
-
-            /// <summary>
-            /// The number of contours in this composite glyph. Should be less than zero.
-            /// </summary>
-            public short ContourCount { get; }
+            
+            public PdfRectangle Bounds { get; set; }
             
             public TemporaryCompositeLocation(long position, PdfRectangle bounds, short contourCount)
             {
-                Position = position;
-                Bounds = bounds;
-                ContourCount = contourCount;
-
-                if (ContourCount >= 0 )
+                if (contourCount >= 0 )
                 {
                     throw new ArgumentException($"A composite glyph should not have a positive contour count. Got: {contourCount}.", nameof(contourCount));
                 }
+
+                Position = position;
+                Bounds = bounds;
             }
         }
 
