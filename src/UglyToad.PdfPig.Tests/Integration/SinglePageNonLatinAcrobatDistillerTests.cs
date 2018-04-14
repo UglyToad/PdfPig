@@ -84,6 +84,46 @@
                     Assert.Equal(theirLetter, myLetter);
                     Assert.Equal(theirX, myX, 2);
 
+                    Assert.Equal(pdfBoxData[index].Width, pageLetter.Width, 1);
+
+                    index++;
+                }
+            }
+        }
+
+        [Fact]
+        public void LetterPositionsAreCorrectXfinium()
+        {
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                var page = document.GetPage(1);
+
+                var positions = GetXfiniumPositionData();
+
+                var index = 0;
+                foreach (var pageLetter in page.Letters)
+                {
+                    if (index >= positions.Count)
+                    {
+                        break;
+                    }
+
+                    var myX = pageLetter.Location.X;
+                    var theirX = positions[index].X;
+
+                    var myLetter = pageLetter.Value;
+                    var theirLetter = positions[index].Text;
+
+                    if (myLetter == " " && theirLetter != " ")
+                    {
+                        continue;
+                    }
+
+                    Assert.Equal(theirLetter, myLetter);
+                    Assert.Equal(theirX, myX, 2);
+
+                    Assert.Equal(positions[index].Width, pageLetter.Width, 1);
+
                     index++;
                 }
             }
@@ -108,6 +148,26 @@
 228.6252	90.65997	4.994995	.	19	FFJICI+TimesNewRomanPSMT";
 
             var result = data.Split(new[] {"\r", "\n", "\r\n"}, StringSplitOptions.RemoveEmptyEntries)
+                .Select(AssertablePositionData.Parse)
+                .ToList();
+
+            return result;
+        }
+
+        private static IReadOnlyList<AssertablePositionData> GetXfiniumPositionData()
+        {
+            const string data = @"90	90.66	14.439546	H	19	FFJICI+TimesNewRomanPSMT	17.802
+104.4395	90.66	8.885106	e	19	FFJICI+TimesNewRomanPSMT	17.80218
+113.3247	90.66	5.568426	l	19	FFJICI+TimesNewRomanPSMT	17.80218
+118.8931	90.66	5.568426	l	19	FFJICI+TimesNewRomanPSMT	17.80218
+124.4615	90.66	10.003986	o	19	FFJICI+TimesNewRomanPSMT	17.80218
+139.4505	90.66	6.727266	ﺪ	19	FFJIAH+TimesNewRomanPSMT	17.80218
+146.1778	90.66	7.866126	ﻤ	19	FFJIAH+TimesNewRomanPSMT	17.80218
+154.0439	90.66	10.583406	ﺤ	19	FFJIAH+TimesNewRomanPSMT	17.80218
+164.6273	90.66	7.866126	ﻣ	19	FFJIAH+TimesNewRomanPSMT	17.80218
+177.4964	90.66	18.86112	W	19	FFJICI+TimesNewRomanPSMT	17.80218";
+
+            var result = data.Split(new[] { "\r", "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(AssertablePositionData.Parse)
                 .ToList();
 
