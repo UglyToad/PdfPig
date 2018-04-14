@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CidFonts
 {
+    using System;
     using Geometry;
 
     /// <summary>
@@ -8,5 +9,6 @@
     internal interface ICidFontProgram
     {
         bool TryGetBoundingBox(int characterCode, out PdfRectangle boundingBox);
+        bool TryGetBoundingBox(int characterCode, Func<int, int> characterIdentifierToGlyphIndex, out PdfRectangle boundingBox);
     }
 }

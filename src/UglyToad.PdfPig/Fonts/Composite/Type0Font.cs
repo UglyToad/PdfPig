@@ -90,7 +90,9 @@
 
         public PdfRectangle GetBoundingBox(int characterCode)
         {
-            return CidFont.GetBoundingBox(characterCode);
+            var cid = CMap.ConvertToCid(characterCode);
+
+            return CidFont.GetBoundingBox(cid);
         }
 
         public TransformationMatrix GetFontMatrix()
