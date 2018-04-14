@@ -8,5 +8,7 @@
     internal interface ICidFontProgram
     {
         bool TryGetBoundingBox(int characterCode, out PdfRectangle boundingBox);
+
+        bool TryGetBoundingAdvancedWidth(int characterCode, out decimal width);
     }
 }

@@ -58,5 +58,24 @@
 
             return true;
         }
+
+        public bool TryGetBoundingAdvancedWidth(int characterCode, out decimal width)
+        {
+            width = 0m;
+
+            if (CMapTable == null)
+            {
+                return false;
+            }
+
+            if (!CMapTable.TryGetGlyphIndex(characterCode, out var index))
+            {
+                return false;
+            }
+
+            width = TableRegister.HorizontalMetricsTable.GetAdvanceWidth(index);
+
+            return true;
+        }
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace UglyToad.PdfPig.Fonts.Simple
+﻿using System;
+
+namespace UglyToad.PdfPig.Fonts.Simple
 {
     using Cmap;
     using Composite;
@@ -20,6 +22,10 @@
         [CanBeNull]
         private readonly TrueTypeFont font;
 
+        private readonly int firstCharacter;
+
+        private readonly decimal[] widths;
+
         public NameToken Name { get; }
 
         public bool IsVertical { get; }
@@ -31,11 +37,15 @@
             FontDescriptor descriptor,
             [CanBeNull] CMap toUnicodeCMap,
             [CanBeNull] Encoding encoding,
-            [CanBeNull] TrueTypeFont font)
+            [CanBeNull] TrueTypeFont font,
+            int firstCharacter,
+            decimal[] widths)
         {
             this.descriptor = descriptor;
             this.encoding = encoding;
             this.font = font;
+            this.firstCharacter = firstCharacter;
+            this.widths = widths;
 
             Name = name;
             IsVertical = false;
@@ -95,7 +105,24 @@
                 return bounds;
             }
 
-            return descriptor.BoundingBox;
+            if (font.TryGetBoundingAdvancedWidth(characterCode, out var width))
+            {
+                return new PdfRectangle(0, 0, width, 0);
+            }
+
+            return new PdfRectangle(0, 0, GetWidth(characterCode), 0);
+        }
+
+        private decimal GetWidth(int characterCode)
+        {
+            var index = characterCode - firstCharacter;
+
+            if (index < 0 || index >= widths.Length)
+            {
+                return descriptor.MissingWidth;
+            }
+
+            return widths[index];
         }
 
         public TransformationMatrix GetFontMatrix()

@@ -60,7 +60,7 @@
                 Assert.Equal(709.2m, page.Letters[5].Rectangle.BottomLeft.Y, comparer);
 
                 Assert.Equal(119.82m, page.Letters[5].Rectangle.TopRight.X, comparer);
-                Assert.Equal(719.89m, page.Letters[5].Rectangle.TopRight.Y, comparer);
+                Assert.Equal(714.89m, page.Letters[5].Rectangle.TopRight.Y, comparer);
 
                 Assert.Equal("f", page.Letters[16].Value);
 

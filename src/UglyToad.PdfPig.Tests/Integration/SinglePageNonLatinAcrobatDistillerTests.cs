@@ -83,7 +83,7 @@
 
                     Assert.Equal(theirLetter, myLetter);
 
-                    Assert.True(Math.Abs(theirX - myX) < 2);
+                    Assert.Equal(theirX, myX, new DecimalComparer(3m));
 
                     index++;
                 }

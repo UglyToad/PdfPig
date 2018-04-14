@@ -42,6 +42,10 @@
 
         public IFont Generate(DictionaryToken dictionary, bool isLenientParsing)
         {
+            var firstCharacter = FontDictionaryAccessHelper.GetFirstCharacter(dictionary);
+
+            var widths = FontDictionaryAccessHelper.GetWidths(pdfScanner, dictionary, isLenientParsing);
+
             var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfScanner, fontDescriptorFactory, dictionary, isLenientParsing);
 
             // TODO: use the parsed font fully.
@@ -64,7 +68,7 @@
 
             Encoding encoding = encodingReader.Read(dictionary, isLenientParsing, descriptor);
 
-            return new TrueTypeSimpleFont(name, descriptor, toUnicodeCMap, encoding, font);
+            return new TrueTypeSimpleFont(name, descriptor, toUnicodeCMap, encoding, font, firstCharacter, widths);
         }
 
         private TrueTypeFont ParseTrueTypeFont(FontDescriptor descriptor)
