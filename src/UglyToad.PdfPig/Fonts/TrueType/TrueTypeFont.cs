@@ -16,6 +16,7 @@
         public HeaderTable HeaderTable { get; }
         public CMapTable CMapTable { get; }
         public GlyphDataTable GlyphTable { get; }
+        public TableRegister TableRegister { get; }
 
         public TrueTypeFont(decimal version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tableHeaders, TableRegister tableRegister)
         {
@@ -26,6 +27,7 @@
 
             Version = version;
             TableHeaders = tableHeaders;
+            TableRegister = tableRegister;
             HeaderTable = tableRegister.HeaderTable;
             CMapTable = tableRegister.CMapTable;
             GlyphTable = tableRegister.GlyphDataTable;
@@ -60,6 +62,25 @@
             }
 
             boundingBox = glyph.Bounds;
+
+            return true;
+        }
+
+        public bool TryGetBoundingAdvancedWidth(int characterCode, out decimal width)
+        {
+            width = 0m;
+
+            if (CMapTable == null)
+            {
+                return false;
+            }
+
+            if (!CMapTable.TryGetGlyphIndex(characterCode, out var index))
+            {
+                return false;
+            }
+
+            width = TableRegister.HorizontalMetricsTable.GetAdvanceWidth(index);
 
             return true;
         }

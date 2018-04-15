@@ -30,6 +30,8 @@
 
         public bool IsVertical => CMap.WritingMode == WritingMode.Vertical;
 
+        private readonly TransformationMatrix fontMatrix = TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);
+
         public Type0Font(NameToken baseFont, ICidFont cidFont, CMap cmap, CMap toUnicodeCMap)
         {
             BaseFont = baseFont ?? throw new ArgumentNullException(nameof(baseFont));
@@ -69,12 +71,9 @@
             return ToUnicode.TryGet(characterCode, out value);
         }
 
-        public PdfVector GetDisplacement(int characterCode)
+        public PdfRectangle GetBoundingBox(int characterCode)
         {
-            // This width is in units scaled up by 1000
-            var width = GetWidth(characterCode);
-
-            return new PdfVector(width / 1000, 0);
+            return fontMatrix.Transform(GetBoundingBoxInGlyphSpace(characterCode));
         }
 
         public decimal GetWidth(int characterCode)
@@ -88,7 +87,7 @@
             return fromFont;
         }
 
-        public PdfRectangle GetBoundingBox(int characterCode)
+        public PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
         {
             var cid = CMap.ConvertToCid(characterCode);
 

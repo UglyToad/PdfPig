@@ -13,14 +13,9 @@
         public string Value { get; }
 
         /// <summary>
-        /// The lower-left position of the letter. Letters with descenders will extend below this point.
+        /// Position of the bounding box.
         /// </summary>
-        public PdfPoint Location { get; }
-
-        /// <summary>
-        /// The width of the letter.
-        /// </summary>
-        public decimal Width { get; }
+        public PdfRectangle Rectangle { get; }
 
         /// <summary>
         /// Size as defined in the PDF file. This is not equivalent to font size in points but is relative to other font sizes on the page.
@@ -40,11 +35,10 @@
         /// <summary>
         /// Create a new letter to represent some text drawn by the Tj operator.
         /// </summary>
-        internal Letter(string value, PdfPoint location, decimal width, decimal fontSize, string fontName, decimal pointSize)
+        internal Letter(string value, PdfRectangle rectangle, decimal fontSize, string fontName, decimal pointSize)
         {
             Value = value;
-            Location = location;
-            Width = width;
+            Rectangle = rectangle;
             FontSize = fontSize;
             FontName = fontName;
             PointSize = pointSize;
@@ -55,7 +49,7 @@
         /// </summary>
         public override string ToString()
         {
-            return $"{Location} {Width} {Value} {FontName} {PointSize}";
+            return $"{Rectangle} {Value} {FontName} {PointSize}";
         }
     }
 }

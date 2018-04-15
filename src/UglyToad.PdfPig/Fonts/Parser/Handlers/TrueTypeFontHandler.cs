@@ -44,8 +44,6 @@
         {
             var firstCharacter = FontDictionaryAccessHelper.GetFirstCharacter(dictionary);
 
-            var lastCharacter = FontDictionaryAccessHelper.GetLastCharacter(dictionary);
-
             var widths = FontDictionaryAccessHelper.GetWidths(pdfScanner, dictionary, isLenientParsing);
 
             var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfScanner, fontDescriptorFactory, dictionary, isLenientParsing);
@@ -70,7 +68,7 @@
 
             Encoding encoding = encodingReader.Read(dictionary, isLenientParsing, descriptor);
 
-            return new TrueTypeSimpleFont(name, firstCharacter, lastCharacter, widths, descriptor, toUnicodeCMap, encoding, font);
+            return new TrueTypeSimpleFont(name, descriptor, toUnicodeCMap, encoding, font, firstCharacter, widths);
         }
 
         private TrueTypeFont ParseTrueTypeFont(FontDescriptor descriptor)

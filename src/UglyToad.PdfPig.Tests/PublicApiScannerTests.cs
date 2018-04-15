@@ -29,6 +29,7 @@
                 "UglyToad.PdfPig.ParsingOptions",
                 "UglyToad.PdfPig.Logging.ILog",
                 "UglyToad.PdfPig.Geometry.PdfPoint",
+                "UglyToad.PdfPig.Geometry.PdfRectangle",
                 "UglyToad.PdfPig.Fonts.Exceptions.InvalidFontFormatException",
                 "UglyToad.PdfPig.Exceptions.PdfDocumentFormatException",
                 "UglyToad.PdfPig.Content.Letter",

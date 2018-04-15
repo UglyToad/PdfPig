@@ -52,6 +52,11 @@
             Y = (decimal)y;
         }
 
+        internal PdfVector ToVector()
+        {
+            return new PdfVector(X, Y);
+        }
+
         /// <summary>
         /// Get a string representation of this point.
         /// </summary>

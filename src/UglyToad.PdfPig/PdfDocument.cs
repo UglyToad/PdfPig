@@ -16,26 +16,30 @@
     /// </summary>
     public class PdfDocument : IDisposable
     {
-        private bool isDisposed = false;
+        private bool isDisposed;
+
+        private readonly bool isLenientParsing;
 
         [NotNull]
         private readonly HeaderVersion version;
+
         [NotNull]
         private readonly CrossReferenceTable crossReferenceTable;
 
         private readonly ILog log;
+
         private readonly IInputBytes inputBytes;
-        private readonly bool isLenientParsing;
+
         [NotNull]
         private readonly ParsingCachingProviders cachingProviders;
 
         private readonly IPdfTokenScanner pdfScanner;
 
-        [NotNull]
-        internal Catalog Catalog { get; }
+        [NotNull] 
+        private readonly Catalog catalog;
 
         [NotNull]
-        internal Pages Pages { get; }
+        private readonly Pages pages;
 
         /// <summary>
         /// The metadata associated with this document.
@@ -51,7 +55,7 @@
         /// <summary>
         /// Get the number of pages in this document.
         /// </summary>
-        public int NumberOfPages => Pages.Count;
+        public int NumberOfPages => pages.Count;
 
         internal PdfDocument(ILog log, 
             IInputBytes inputBytes,
@@ -71,8 +75,8 @@
             this.cachingProviders = cachingProviders ?? throw new ArgumentNullException(nameof(cachingProviders));
             this.pdfScanner = pdfScanner;
             Information = information ?? throw new ArgumentNullException(nameof(information));
-            Catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
-            Pages = new Pages(log, Catalog, pageFactory, isLenientParsing, pdfScanner);
+            catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
+            pages = new Pages(log, catalog, pageFactory, isLenientParsing, pdfScanner);
         }
 
         /// <summary>
@@ -82,6 +86,7 @@
         /// <param name="options">Optional parameters controlling parsing.</param>
         /// <returns>A <see cref="PdfDocument"/> providing access to the file contents.</returns>
         public static PdfDocument Open(byte[] fileBytes, ParsingOptions options = null) => PdfDocumentFactory.Open(fileBytes, options);
+ 
         /// <summary>
         /// Opens a file and creates a <see cref="PdfDocument"/> for reading from the provided file path.
         /// </summary>
@@ -89,6 +94,7 @@
         /// <param name="options">Optional parameters controlling parsing.</param>
         /// <returns>A <see cref="PdfDocument"/> providing access to the file contents.</returns>
         public static PdfDocument Open(string filePath, ParsingOptions options = null) => PdfDocumentFactory.Open(filePath, options);
+
         /// <summary>
         /// Creates a <see cref="PdfDocument"/> for reading from the provided stream.
         /// The caller must manage disposing the stream. The created PdfDocument will not dispose the stream.
@@ -115,7 +121,7 @@
 
             log.Debug($"Accessing page {pageNumber}.");
 
-            return Pages.GetPage(pageNumber);
+            return pages.GetPage(pageNumber);
         }
 
         /// <inheritdoc />

@@ -15,10 +15,6 @@
 
         bool TryGetUnicode(int characterCode, out string value);
 
-        PdfVector GetDisplacement(int characterCode);
-
-        decimal GetWidth(int characterCode);
-
         PdfRectangle GetBoundingBox(int characterCode);
 
         TransformationMatrix GetFontMatrix();

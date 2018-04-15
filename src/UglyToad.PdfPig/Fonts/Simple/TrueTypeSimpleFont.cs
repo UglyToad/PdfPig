@@ -1,4 +1,6 @@
-﻿namespace UglyToad.PdfPig.Fonts.Simple
+﻿using System;
+
+namespace UglyToad.PdfPig.Fonts.Simple
 {
     using Cmap;
     using Composite;
@@ -12,16 +14,17 @@
 
     internal class TrueTypeSimpleFont : IFont
     {
-        private static readonly TransformationMatrix FontMatrix =
-            TransformationMatrix.FromValues(1 / 1000m, 0, 0, 1 / 1000m, 0, 0);
-        private readonly int firstCharacterCode;
-        private readonly int lastCharacterCode;
-        private readonly decimal[] widths;
         private readonly FontDescriptor descriptor;
+
         [CanBeNull]
         private readonly Encoding encoding;
+
         [CanBeNull]
         private readonly TrueTypeFont font;
+
+        private readonly int firstCharacter;
+
+        private readonly decimal[] widths;
 
         public NameToken Name { get; }
 
@@ -30,18 +33,19 @@
         [NotNull]
         public ToUnicodeCMap ToUnicode { get; set; }
 
-        public TrueTypeSimpleFont(NameToken name, int firstCharacterCode, int lastCharacterCode, decimal[] widths,
+        public TrueTypeSimpleFont(NameToken name,
             FontDescriptor descriptor,
             [CanBeNull] CMap toUnicodeCMap,
             [CanBeNull] Encoding encoding,
-            [CanBeNull]TrueTypeFont font)
+            [CanBeNull] TrueTypeFont font,
+            int firstCharacter,
+            decimal[] widths)
         {
-            this.firstCharacterCode = firstCharacterCode;
-            this.lastCharacterCode = lastCharacterCode;
-            this.widths = widths;
             this.descriptor = descriptor;
             this.encoding = encoding;
             this.font = font;
+            this.firstCharacter = firstCharacter;
+            this.widths = widths;
 
             Name = name;
             IsVertical = false;
@@ -84,28 +88,12 @@
             return true;
         }
 
-        public PdfVector GetDisplacement(int characterCode)
-        {
-            var tx = GetWidth(characterCode);
-
-            var box = GetBoundingBox(characterCode);
-
-            return new PdfVector(tx / 1000m, 0);
-        }
-
-        public decimal GetWidth(int characterCode)
-        {
-            var index = characterCode - firstCharacterCode;
-
-            if (index < 0 || index >= widths.Length)
-            {
-                return descriptor.MissingWidth;
-            }
-
-            return widths[index];
-        }
-
         public PdfRectangle GetBoundingBox(int characterCode)
+        {
+            return GetFontMatrix().Transform(GetBoundingBoxInGlyphSpace(characterCode));
+        }
+
+        private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
         {
             if (font == null)
             {
@@ -117,13 +105,36 @@
                 return bounds;
             }
 
-            return descriptor.BoundingBox;
+            if (font.TryGetBoundingAdvancedWidth(characterCode, out var width))
+            {
+                return new PdfRectangle(0, 0, width, 0);
+            }
+
+            return new PdfRectangle(0, 0, GetWidth(characterCode), 0);
+        }
+
+        private decimal GetWidth(int characterCode)
+        {
+            var index = characterCode - firstCharacter;
+
+            if (index < 0 || index >= widths.Length)
+            {
+                return descriptor.MissingWidth;
+            }
+
+            return widths[index];
         }
 
         public TransformationMatrix GetFontMatrix()
         {
-            // TODO: should this also use units per em?
-            return FontMatrix;
+            var scale = 1000m;
+
+            if (font?.HeaderTable != null)
+            {
+                scale = font.HeaderTable.UnitsPerEm;
+            }
+
+            return TransformationMatrix.FromValues(1m / scale, 0, 0, 1m / scale, 0, 0);
         }
     }
 }
