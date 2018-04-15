@@ -49,7 +49,7 @@
         /// </summary>
         public override string ToString()
         {
-            return $"{Rectangle} {Value} {FontName} {PointSize}";
+            return $"{Value} {Rectangle} {FontName} {PointSize}";
         }
     }
 }

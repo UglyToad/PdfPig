@@ -14,6 +14,8 @@
 
         GlyphPoint[] Points { get; }
 
+        bool IsEmpty { get; }
+
         IGlyphDescription DeepClone();
     }
 

@@ -24,6 +24,8 @@
 
         public bool IsSimple { get; }
 
+        public bool IsEmpty => Points.Length == 0;
+
         public Glyph(bool isSimple, byte[] instructions, int[] endPointsOfContours, GlyphPoint[] points,
             PdfRectangle bounds)
         {

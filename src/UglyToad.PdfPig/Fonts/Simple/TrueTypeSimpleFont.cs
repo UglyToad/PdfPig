@@ -90,7 +90,13 @@ namespace UglyToad.PdfPig.Fonts.Simple
 
         public PdfRectangle GetBoundingBox(int characterCode)
         {
-            return GetFontMatrix().Transform(GetBoundingBoxInGlyphSpace(characterCode));
+            var fontMatrix = GetFontMatrix();
+
+            var boundingBox = GetBoundingBoxInGlyphSpace(characterCode);
+
+            var result = fontMatrix.Transform(boundingBox);
+
+            return result;
         }
 
         private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
@@ -138,3 +144,4 @@ namespace UglyToad.PdfPig.Fonts.Simple
         }
     }
 }
+

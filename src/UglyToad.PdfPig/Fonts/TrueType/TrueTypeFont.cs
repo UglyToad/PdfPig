@@ -20,14 +20,9 @@
 
         public TrueTypeFont(decimal version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tableHeaders, TableRegister tableRegister)
         {
-            if (tableRegister == null)
-            {
-                throw new ArgumentNullException(nameof(tableRegister));
-            }
-
             Version = version;
             TableHeaders = tableHeaders;
-            TableRegister = tableRegister;
+            TableRegister = tableRegister ?? throw new ArgumentNullException(nameof(tableRegister));
             HeaderTable = tableRegister.HeaderTable;
             CMapTable = tableRegister.CMapTable;
             GlyphTable = tableRegister.GlyphDataTable;
@@ -38,18 +33,7 @@
         {
             boundingBox = default(PdfRectangle);
 
-            int index;
-
-            if (CMapTable == null)
-            {
-                if (characterIdentifierToGlyphIndex == null)
-                {
-                    return false;
-                }
-
-                index = characterIdentifierToGlyphIndex(characterCode);
-            }
-            else if (!CMapTable.TryGetGlyphIndex(characterCode, out index))
+            if (!TryGetGlyphIndex(characterCode, characterIdentifierToGlyphIndex, out var index))
             {
                 return false;
             }
@@ -61,8 +45,15 @@
                 return false;
             }
 
-            boundingBox = glyph.Bounds;
-
+            if (glyph.IsEmpty && TryGetBoundingAdvancedWidthByIndex(index, out var advanceWidth))
+            {
+                boundingBox = new PdfRectangle(0, 0, advanceWidth, 0);
+            }
+            else
+            {
+                boundingBox = glyph.Bounds;
+            }
+            
             return true;
         }
 
@@ -70,17 +61,38 @@
         {
             width = 0m;
 
+            if (!TryGetGlyphIndex(characterCode, null, out var index))
+            {
+                return false;
+            }
+
+            return TryGetBoundingAdvancedWidthByIndex(index, out width);
+        }
+
+        private bool TryGetBoundingAdvancedWidthByIndex(int index, out decimal width)
+        {
+            width = TableRegister.HorizontalMetricsTable.GetAdvanceWidth(index);
+
+            return true;
+        }
+
+        private bool TryGetGlyphIndex(int characterIdentifier, Func<int, int> characterIdentifierToGlyphIndex, out int glyphIndex)
+        {
+            glyphIndex = 0;
+
             if (CMapTable == null)
             {
-                return false;
-            }
+                if (characterIdentifierToGlyphIndex == null)
+                {
+                    return false;
+                }
 
-            if (!CMapTable.TryGetGlyphIndex(characterCode, out var index))
+                glyphIndex = characterIdentifierToGlyphIndex(characterIdentifier);
+            }
+            else if (!CMapTable.TryGetGlyphIndex(characterIdentifier, out glyphIndex))
             {
                 return false;
             }
-
-            width = TableRegister.HorizontalMetricsTable.GetAdvanceWidth(index);
 
             return true;
         }
