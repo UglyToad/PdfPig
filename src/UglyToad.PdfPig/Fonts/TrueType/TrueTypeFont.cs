@@ -28,12 +28,12 @@
             GlyphTable = tableRegister.GlyphDataTable;
         }
 
-        public bool TryGetBoundingBox(int characterCode, out PdfRectangle boundingBox) => TryGetBoundingBox(characterCode, null, out boundingBox);
-        public bool TryGetBoundingBox(int characterCode, Func<int, int> characterIdentifierToGlyphIndex, out PdfRectangle boundingBox)
+        public bool TryGetBoundingBox(int characterIdentifier, out PdfRectangle boundingBox) => TryGetBoundingBox(characterIdentifier, null, out boundingBox);
+        public bool TryGetBoundingBox(int characterIdentifier, Func<int, int> characterIdentifierToGlyphIndex, out PdfRectangle boundingBox)
         {
             boundingBox = default(PdfRectangle);
 
-            if (!TryGetGlyphIndex(characterCode, characterIdentifierToGlyphIndex, out var index))
+            if (!TryGetGlyphIndex(characterIdentifier, characterIdentifierToGlyphIndex, out var index))
             {
                 return false;
             }
@@ -85,16 +85,19 @@
         {
             glyphIndex = 0;
 
-            if (CMapTable == null)
-            {
-                if (characterIdentifierToGlyphIndex == null)
+            if (characterIdentifierToGlyphIndex != null)
                 {
-                    return false;
+                    glyphIndex = characterIdentifierToGlyphIndex(characterIdentifier);
+
+                    return true;
                 }
 
-                glyphIndex = characterIdentifierToGlyphIndex(characterIdentifier);
+            if (CMapTable == null)
+            {
+                return false;
             }
-            else if (!CMapTable.TryGetGlyphIndex(characterIdentifier, out glyphIndex))
+
+            if (!CMapTable.TryGetGlyphIndex(characterIdentifier, out glyphIndex))
             {
                 return false;
             }
