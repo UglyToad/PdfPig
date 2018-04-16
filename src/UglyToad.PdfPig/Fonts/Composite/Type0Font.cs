@@ -30,8 +30,6 @@
 
         public bool IsVertical => CMap.WritingMode == WritingMode.Vertical;
 
-        private readonly TransformationMatrix fontMatrix = TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);
-
         public Type0Font(NameToken baseFont, ICidFont cidFont, CMap cmap, CMap toUnicodeCMap)
         {
             BaseFont = baseFont ?? throw new ArgumentNullException(nameof(baseFont));
@@ -73,7 +71,11 @@
 
         public PdfRectangle GetBoundingBox(int characterCode)
         {
-            return fontMatrix.Transform(GetBoundingBoxInGlyphSpace(characterCode));
+            var matrix = GetFontMatrix();
+
+            var boundingBox = GetBoundingBoxInGlyphSpace(characterCode);
+
+            return matrix.Transform(boundingBox);
         }
 
         public decimal GetWidth(int characterCode)

@@ -42,7 +42,7 @@
             this.cidToGid = cidToGid;
 
             // TODO: This should maybe take units per em into account?
-            var scale = 1 / 1000m;
+            var scale = 1 / (decimal)(fontProgram?.GetFontMatrixMultiplier() ?? 1000);
             FontMatrix = TransformationMatrix.FromValues(scale, 0, 0, scale, 0, 0);
         }
 

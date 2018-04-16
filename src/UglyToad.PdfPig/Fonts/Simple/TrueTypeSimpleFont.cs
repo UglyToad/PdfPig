@@ -137,7 +137,7 @@ namespace UglyToad.PdfPig.Fonts.Simple
 
             if (font?.HeaderTable != null)
             {
-                scale = font.HeaderTable.UnitsPerEm;
+                scale = font.GetFontMatrixMultiplier();
             }
 
             return TransformationMatrix.FromValues(1m / scale, 0, 0, 1m / scale, 0, 0);

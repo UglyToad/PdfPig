@@ -69,6 +69,11 @@
             return TryGetBoundingAdvancedWidthByIndex(index, out width);
         }
 
+        public int GetFontMatrixMultiplier()
+        {
+            return HeaderTable?.UnitsPerEm ?? 1000;
+        }
+
         private bool TryGetBoundingAdvancedWidthByIndex(int index, out decimal width)
         {
             width = TableRegister.HorizontalMetricsTable.GetAdvanceWidth(index);
