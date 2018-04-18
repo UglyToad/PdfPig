@@ -41,7 +41,13 @@
             Run(SinglePageFormattedType0Content);
         }
 
-        private static void Run(string file)
+        [Fact]
+        public void RotatedTextLibreOffice()
+        {
+            Run(@"Rotated Text Libre Office", 841);
+        }
+
+        private static void Run(string file, int imageHeight = 792)
         {
             var pdfFileName = GetFilename(file);
 
@@ -58,7 +64,7 @@
                     foreach (var word in page.Letters)
                     {
                         graphics.DrawRectangle(redPen, new Rectangle((int)word.GlyphRectangle.Left,
-                            792 - (int)(word.GlyphRectangle.Bottom + word.GlyphRectangle.Height), (int)Math.Max(1, word.GlyphRectangle.Width), (int)word.GlyphRectangle.Height));
+                            imageHeight - (int)(word.GlyphRectangle.Bottom + word.GlyphRectangle.Height), (int)Math.Max(1, word.GlyphRectangle.Width), (int)word.GlyphRectangle.Height));
                     }
 
                     var imageName = $"{file}.jpg";
