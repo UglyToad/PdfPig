@@ -58,7 +58,7 @@
                     foreach (var word in page.Letters)
                     {
                         graphics.DrawRectangle(redPen, new Rectangle((int)word.GlyphRectangle.Left,
-                            792 - (int)word.GlyphRectangle.Top, (int)Math.Max(1, word.GlyphRectangle.Width), (int)word.GlyphRectangle.Height));
+                            792 - (int)(word.GlyphRectangle.Bottom + word.GlyphRectangle.Height), (int)Math.Max(1, word.GlyphRectangle.Width), (int)word.GlyphRectangle.Height));
                     }
 
                     var imageName = $"{file}.jpg";
