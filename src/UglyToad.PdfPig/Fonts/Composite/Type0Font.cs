@@ -69,22 +69,22 @@
             return ToUnicode.TryGet(characterCode, out value);
         }
 
-        public PdfRectangle GetBoundingBox(int characterCode)
+        public CharacterBoundingBox GetBoundingBox(int characterCode)
         {
             var matrix = GetFontMatrix();
 
             var boundingBox = GetBoundingBoxInGlyphSpace(characterCode);
 
-            return matrix.Transform(boundingBox);
-        }
+            boundingBox = matrix.Transform(boundingBox);
 
-        public decimal GetWidth(int characterCode)
-        {
-            var cid = CMap.ConvertToCid(characterCode);
+            var characterIdentifier = CMap.ConvertToCid(characterCode);
 
-            var fromFont = CidFont.GetWidthFromDictionary(cid);
+            var width = CidFont.GetWidthFromFont(characterIdentifier);
 
-            return fromFont;
+            var advanceWidth = new PdfRectangle(0, 0, width, 0);
+            advanceWidth = matrix.Transform(advanceWidth);
+
+            return new CharacterBoundingBox(boundingBox, advanceWidth);
         }
 
         public PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)

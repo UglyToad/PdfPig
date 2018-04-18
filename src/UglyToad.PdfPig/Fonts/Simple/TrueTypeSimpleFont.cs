@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace UglyToad.PdfPig.Fonts.Simple
+﻿namespace UglyToad.PdfPig.Fonts.Simple
 {
     using Cmap;
     using Composite;
@@ -88,15 +86,32 @@ namespace UglyToad.PdfPig.Fonts.Simple
             return true;
         }
 
-        public PdfRectangle GetBoundingBox(int characterCode)
+        public CharacterBoundingBox GetBoundingBox(int characterCode)
         {
             var fontMatrix = GetFontMatrix();
 
             var boundingBox = GetBoundingBoxInGlyphSpace(characterCode);
 
-            var result = fontMatrix.Transform(boundingBox);
+            boundingBox = fontMatrix.Transform(boundingBox);
 
-            return result;
+            decimal width;
+            if (font == null)
+            {
+                 width = widths[characterCode];
+            }
+            else
+            {
+                if (!font.TryGetBoundingAdvancedWidth(characterCode, out width))
+                {
+                    width = boundingBox.Width;
+                }
+            }
+            
+            var advancedRectangle = new PdfRectangle(0, 0, width, 0);
+
+            advancedRectangle = fontMatrix.Transform(advancedRectangle);
+
+            return new CharacterBoundingBox(boundingBox, advancedRectangle);
         }
 
         private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)

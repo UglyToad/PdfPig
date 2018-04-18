@@ -44,9 +44,13 @@
             return true;
         }
 
-        public PdfRectangle GetBoundingBox(int characterCode)
+        public CharacterBoundingBox GetBoundingBox(int characterCode)
         {
-            return fontMatrix.Transform(GetBoundingBoxInGlyphSpace(characterCode));
+            var boundingBox = GetBoundingBoxInGlyphSpace(characterCode);
+
+            boundingBox = fontMatrix.Transform(boundingBox);
+
+            return new CharacterBoundingBox(boundingBox, boundingBox);
         }
 
         private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)

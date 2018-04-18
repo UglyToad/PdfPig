@@ -15,8 +15,21 @@
 
         bool TryGetUnicode(int characterCode, out string value);
 
-        PdfRectangle GetBoundingBox(int characterCode);
+        CharacterBoundingBox GetBoundingBox(int characterCode);
 
         TransformationMatrix GetFontMatrix();
+    }
+
+    internal class CharacterBoundingBox
+    {
+        public PdfRectangle GlyphBounds { get; }
+
+        public PdfRectangle CharacterBounds { get; }
+
+        public CharacterBoundingBox(PdfRectangle glyphBounds, PdfRectangle characterBounds)
+        {
+            GlyphBounds = glyphBounds;
+            CharacterBounds = characterBounds;
+        }
     }
 }

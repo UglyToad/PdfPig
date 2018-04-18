@@ -57,8 +57,8 @@ namespace UglyToad.PdfPig.Tests.Integration
             {
                 var page = document.GetPage(1);
 
-                Assert.True((bool) page.Letters.Any(x => x.Rectangle.Width != 0));
-                Assert.True((bool) page.Letters.Any(x => x.Rectangle.Height != 0));
+                Assert.True((bool) page.Letters.Any(x => x.GlyphRectangle.Width != 0));
+                Assert.True((bool) page.Letters.Any(x => x.GlyphRectangle.Height != 0));
             }
         }
     }

@@ -42,6 +42,8 @@
 
         decimal GetWidthFromDictionary(int cid);
 
+        decimal GetWidthFromFont(int characterIdentifier);
+
         PdfRectangle GetBoundingBox(int characterIdentifier);
     }
 }

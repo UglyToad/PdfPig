@@ -46,10 +46,14 @@
             FontMatrix = TransformationMatrix.FromValues(scale, 0, 0, scale, 0, 0);
         }
 
-        public decimal GetWidthFromFont(int characterCode)
+        public decimal GetWidthFromFont(int characterIdentifier)
         {
+            if (fontProgram.TryGetBoundingAdvancedWidth(characterIdentifier, cidToGid.GetGlyphIndex, out var width))
+            {
+                return width;
+            }
             // TODO: Read the font width from the font program.
-            throw new System.NotImplementedException();
+            return GetWidthFromDictionary(characterIdentifier);
         }
 
         public decimal GetWidthFromDictionary(int characterIdentifier)

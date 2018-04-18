@@ -57,11 +57,12 @@
             return true;
         }
 
-        public bool TryGetBoundingAdvancedWidth(int characterCode, out decimal width)
+        public bool TryGetBoundingAdvancedWidth(int characterIdentifier, out decimal width) => TryGetBoundingAdvancedWidth(characterIdentifier, null, out width);
+        public bool TryGetBoundingAdvancedWidth(int characterIdentifier, Func<int, int> characterIdentifierToGlyphIndex, out decimal width)
         {
             width = 0m;
 
-            if (!TryGetGlyphIndex(characterCode, null, out var index))
+            if (!TryGetGlyphIndex(characterIdentifier, characterIdentifierToGlyphIndex, out var index))
             {
                 return false;
             }

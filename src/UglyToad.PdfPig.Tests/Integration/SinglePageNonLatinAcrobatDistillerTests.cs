@@ -70,7 +70,7 @@
                         break;
                     }
 
-                    var myX = pageLetter.Rectangle.BottomLeft.X;
+                    var myX = pageLetter.CharacterRectangle.Left;
                     var theirX = pdfBoxData[index].X;
 
                     var myLetter = pageLetter.Value;
@@ -87,7 +87,7 @@
 
                     Assert.Equal(theirX, myX, comparer);
 
-                    Assert.Equal(pdfBoxData[index].Width, pageLetter.Rectangle.Width, comparer);
+                    Assert.Equal(pdfBoxData[index].Width, pageLetter.CharacterRectangle.Width, comparer);
 
                     index++;
                 }
@@ -97,6 +97,8 @@
         [Fact]
         public void LetterPositionsAreCorrectXfinium()
         {
+            var comparer = new DecimalComparer(1);
+
             using (var document = PdfDocument.Open(GetFilename()))
             {
                 var page = document.GetPage(1);
@@ -111,7 +113,7 @@
                         break;
                     }
 
-                    var myX = pageLetter.Rectangle.Left;
+                    var myX = pageLetter.CharacterRectangle.Left;
                     var theirX = positions[index].X;
 
                     var myLetter = pageLetter.Value;
@@ -123,9 +125,9 @@
                     }
 
                     Assert.Equal(theirLetter, myLetter);
-                    Assert.Equal(theirX, myX, 2);
+                    Assert.Equal(theirX, myX, comparer);
 
-                    Assert.Equal(positions[index].Width, pageLetter.Rectangle.Width, 1);
+                    Assert.Equal(positions[index].Width, pageLetter.CharacterRectangle.Width, 1);
 
                     index++;
                 }

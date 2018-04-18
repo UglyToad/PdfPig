@@ -128,22 +128,25 @@
 
                 var boundingBox = font.GetBoundingBox(code);
 
-                var transformedDisplacement = transformationMatrix
+                var transformedGlyphBounds = transformationMatrix
                     .Transform(TextMatrices.TextMatrix
                     .Transform(renderingMatrix
-                    .Transform(boundingBox)));
+                    .Transform(boundingBox.GlyphBounds)));
+                var transformedGlyphOrigin = transformationMatrix
+                    .Transform(TextMatrices.TextMatrix
+                        .Transform(renderingMatrix.Transform(boundingBox.CharacterBounds)));
 
-                ShowGlyph(font, transformedDisplacement, unicode, fontSize, pointSize);
+                ShowGlyph(font, transformedGlyphBounds, transformedGlyphOrigin, unicode, fontSize, pointSize);
 
                 decimal tx, ty;
                 if (font.IsVertical)
                 {
                     tx = 0;
-                    ty = boundingBox.Height * fontSize + characterSpacing + wordSpacing;
+                    ty = boundingBox.CharacterBounds.Height * fontSize + characterSpacing + wordSpacing;
                 }
                 else
                 {
-                    tx = (boundingBox.Width * fontSize + characterSpacing + wordSpacing) * horizontalScaling;
+                    tx = (boundingBox.CharacterBounds.Width * fontSize + characterSpacing + wordSpacing) * horizontalScaling;
                     ty = 0;
                 }
 
@@ -211,9 +214,9 @@
             TextMatrices.TextMatrix = newMatrix;
         }
 
-        private void ShowGlyph(IFont font, PdfRectangle rectangle, string unicode, decimal fontSize, decimal pointSize)
+        private void ShowGlyph(IFont font, PdfRectangle glyphRectangle, PdfRectangle characterRectangle,  string unicode, decimal fontSize, decimal pointSize)
         {
-            var letter = new Letter(unicode, rectangle, fontSize, font.Name.Data, pointSize);
+            var letter = new Letter(unicode, glyphRectangle, characterRectangle, fontSize, font.Name.Data, pointSize);
 
             Letters.Add(letter);
         }

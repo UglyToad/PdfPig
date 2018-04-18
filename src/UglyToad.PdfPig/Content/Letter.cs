@@ -13,9 +13,14 @@
         public string Value { get; }
 
         /// <summary>
-        /// Position of the bounding box.
+        /// Position of the bounding box for the glyph.
         /// </summary>
-        public PdfRectangle Rectangle { get; }
+        public PdfRectangle GlyphRectangle { get; }
+
+        /// <summary>
+        /// The bounding box for the entire character.
+        /// </summary>
+        public PdfRectangle CharacterRectangle { get; }
 
         /// <summary>
         /// Size as defined in the PDF file. This is not equivalent to font size in points but is relative to other font sizes on the page.
@@ -35,13 +40,14 @@
         /// <summary>
         /// Create a new letter to represent some text drawn by the Tj operator.
         /// </summary>
-        internal Letter(string value, PdfRectangle rectangle, decimal fontSize, string fontName, decimal pointSize)
+        internal Letter(string value, PdfRectangle glyphRectangle, PdfRectangle characterRectangle, decimal fontSize, string fontName, decimal pointSize)
         {
             Value = value;
-            Rectangle = rectangle;
+            GlyphRectangle = glyphRectangle;
             FontSize = fontSize;
             FontName = fontName;
             PointSize = pointSize;
+            CharacterRectangle = characterRectangle;
         }
 
         /// <summary>
@@ -49,7 +55,7 @@
         /// </summary>
         public override string ToString()
         {
-            return $"{Value} {Rectangle} {FontName} {PointSize}";
+            return $"{Value} {GlyphRectangle} {FontName} {PointSize}";
         }
     }
 }
