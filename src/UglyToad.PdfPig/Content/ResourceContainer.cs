@@ -30,6 +30,21 @@
                 
                 LoadFontDictionary(fontDictionary, isLenientParsing);
             }
+
+            if (resourceDictionary.TryGet(NameToken.Xobject, out var xobjectBase))
+            {
+                var xobjectDictionary = DirectObjectFinder.Get<DictionaryToken>(xobjectBase, scanner);
+
+                foreach (var pair in xobjectDictionary.Data)
+                {
+                    if (!(pair.Value is IndirectReferenceToken reference))
+                    {
+                        throw new InvalidOperationException($"Expected the XObject dictionary value for key /{pair.Key} to be an indirect reference, instead got: {pair.Value}.");
+                    }
+
+                    currentResourceState[NameToken.Create(pair.Key)] = reference.Data;
+                }
+            }
         }
 
         private void LoadFontDictionary(DictionaryToken fontDictionary, bool isLenientParsing)

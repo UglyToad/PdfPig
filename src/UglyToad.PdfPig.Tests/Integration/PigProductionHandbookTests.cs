@@ -25,6 +25,18 @@
         }
 
         [Fact]
+        public void CanReadPage9()
+        {
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                var page = document.GetPage(9);
+
+                // TODO: This page requires a CFF font parser for Type 1 fonts, see 5.5.1
+                Assert.Contains("BreedsNative breeds of pig can be found throughout the country. They are a small body size compared to other exotic and crosses pig types. There name varies from region to region, for example", page.Text);
+            }
+        }
+
+        [Fact]
         public void HasCorrectNumberOfPages()
         {
             using (var document = PdfDocument.Open(GetFilename()))

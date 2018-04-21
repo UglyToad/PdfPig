@@ -163,7 +163,11 @@ namespace UglyToad.PdfPig.Graphics
                 {
                     if (operands[offset] is NameToken name)
                     {
-                        arguments.Add(name.Data);
+                        arguments.Add(name);
+                    }
+                    else if (operands[offset] is StringToken s)
+                    {
+                        arguments.Add(NameToken.Create(s.Data));
                     }
                     else
                     {
