@@ -9,28 +9,43 @@
     using IO;
     using Operations;
     using PdfPig.Core;
+    using Tokenization.Scanner;
     using Tokenization.Tokens;
     using Util;
+    using XObject;
 
     internal class ContentStreamProcessor : IOperationContext
     {
         private readonly IResourceStore resourceStore;
         private readonly UserSpaceUnit userSpaceUnit;
         private readonly bool isLenientParsing;
+        private readonly IPdfTokenScanner pdfScanner;
+        private readonly XObjectFactory xObjectFactory;
 
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
 
         public TextMatrices TextMatrices { get; } = new TextMatrices();
 
         public int StackSize => graphicsStack.Count;
-        
+
+        private readonly Dictionary<XObjectType, List<XObjectContentRecord>> xObjects = new Dictionary<XObjectType, List<XObjectContentRecord>>
+        {
+            {XObjectType.Form, new List<XObjectContentRecord>()},
+            {XObjectType.Image, new List<XObjectContentRecord>()},
+            {XObjectType.PostScript, new List<XObjectContentRecord>()}
+        };
+
         public List<Letter> Letters = new List<Letter>();
 
-        public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit, bool isLenientParsing)
+        public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit, bool isLenientParsing, 
+            IPdfTokenScanner pdfScanner,
+            XObjectFactory xObjectFactory)
         {
             this.resourceStore = resourceStore;
             this.userSpaceUnit = userSpaceUnit;
             this.isLenientParsing = isLenientParsing;
+            this.pdfScanner = pdfScanner;
+            this.xObjectFactory = xObjectFactory;
             graphicsStack.Push(new CurrentGraphicsState());
         }
 
@@ -40,11 +55,7 @@
 
             ProcessOperations(operations);
             
-            return new PageContent
-            {
-                GraphicsStateOperations = operations,
-                Letters = Letters
-            };
+            return new PageContent(operations, Letters, xObjects, pdfScanner, xObjectFactory, isLenientParsing);
         }
 
         private void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
@@ -202,6 +213,34 @@
 
                     ShowText(new ByteArrayInputBytes(bytes));
                 }
+            }
+        }
+
+        public void ApplyXObject(StreamToken xObjectStream)
+        {
+            // For now we will determine the type and store the object with the graphics state information preceding it.
+            // Then consumers of the page can request the object/s to be retrieved by type.
+            var subType = (NameToken)xObjectStream.StreamDictionary.Data[NameToken.Subtype.Data];
+
+            var state = GetCurrentState();
+
+            var matrix = state.CurrentTransformationMatrix;
+
+            if (subType.Equals(NameToken.Ps))
+            {
+               xObjects[XObjectType.PostScript].Add(new XObjectContentRecord(XObjectType.PostScript, xObjectStream, matrix));
+            }
+            else if (subType.Equals(NameToken.Image))
+            {
+                xObjects[XObjectType.Image].Add(new XObjectContentRecord(XObjectType.Image, xObjectStream, matrix));
+            }
+            else if (subType.Equals(NameToken.Form))
+            {
+                xObjects[XObjectType.Form].Add(new XObjectContentRecord(XObjectType.Form, xObjectStream, matrix));
+            }
+            else
+            {
+                throw new InvalidOperationException($"XObject encountered with unexpected SubType {subType}. {xObjectStream.StreamDictionary}.");
             }
         }
 

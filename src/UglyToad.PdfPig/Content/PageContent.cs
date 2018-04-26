@@ -1,7 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
     using System.Collections.Generic;
+    using Graphics;
     using Graphics.Operations;
+    using Tokenization.Scanner;
+    using XObject;
 
     /// <summary>
     /// 
@@ -12,8 +15,35 @@
     /// </remarks>
     internal class PageContent
     {
-        internal IReadOnlyList<IGraphicsStateOperation> GraphicsStateOperations { get; set; }
+        private readonly IReadOnlyDictionary<XObjectType, List<XObjectContentRecord>> xObjects;
+        private readonly IPdfTokenScanner pdfScanner;
+        private readonly XObjectFactory xObjectFactory;
+        private readonly bool isLenientParsing;
 
-        public IReadOnlyList<Letter> Letters { get; set; }
+        internal IReadOnlyList<IGraphicsStateOperation> GraphicsStateOperations { get; }
+
+        public IReadOnlyList<Letter> Letters { get; }
+
+        internal PageContent(IReadOnlyList<IGraphicsStateOperation> graphicsStateOperations, IReadOnlyList<Letter> letters,
+            IReadOnlyDictionary<XObjectType, List<XObjectContentRecord>> xObjects,
+            IPdfTokenScanner pdfScanner,
+            XObjectFactory xObjectFactory,
+            bool isLenientParsing)
+        {
+            GraphicsStateOperations = graphicsStateOperations;
+            Letters = letters;
+            this.xObjects = xObjects;
+            this.pdfScanner = pdfScanner;
+            this.xObjectFactory = xObjectFactory;
+            this.isLenientParsing = isLenientParsing;
+        }
+
+        public void GetImages()
+        {
+            foreach (var contentRecord in xObjects[XObjectType.Image])
+            {
+                xObjectFactory.CreateImage(contentRecord, pdfScanner, isLenientParsing);
+            }
+        }
     }
 }

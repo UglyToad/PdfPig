@@ -21,6 +21,7 @@
     using Tokenization.Scanner;
     using Tokenization.Tokens;
     using Util;
+    using XObject;
 
     internal static class PdfDocumentFactory
     {
@@ -109,7 +110,7 @@
             
             var resourceContainer = new ResourceContainer(pdfScanner, fontFactory);
 
-            var pageFactory = new PageFactory(pdfScanner, resourceContainer, filterProvider, new PageContentParser(new ReflectionGraphicsStateOperationFactory()));
+            var pageFactory = new PageFactory(pdfScanner, resourceContainer, filterProvider, new PageContentParser(new ReflectionGraphicsStateOperationFactory()), new XObjectFactory());
             var informationFactory = new DocumentInformationFactory();
             
 

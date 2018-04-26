@@ -44,6 +44,10 @@
         public void ShowPositionedText(IReadOnlyList<IToken> tokens)
         {
         }
+
+        public void ApplyXObject(StreamToken xObjectStream)
+        {
+        }
     }
 
     internal class TestResourceStore : IResourceStore
@@ -53,6 +57,11 @@
         }
 
         public IFont GetFont(NameToken name)
+        {
+            return null;
+        }
+
+        public StreamToken GetXObject(NameToken name)
         {
             return null;
         }

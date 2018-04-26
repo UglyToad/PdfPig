@@ -8,5 +8,7 @@
         void LoadResourceDictionary(DictionaryToken resourceDictionary, bool isLenientParsing);
 
         IFont GetFont(NameToken name);
+
+        StreamToken GetXObject(NameToken name);
     }
 }

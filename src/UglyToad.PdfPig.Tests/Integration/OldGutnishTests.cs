@@ -37,5 +37,16 @@
             }
         }
 
+        [Fact]
+        public void GetsImageOnPageOne()
+        {
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                var page = document.GetPage(1);
+
+                page.Content.GetImages();
+            }
+        }
+
     }
 }

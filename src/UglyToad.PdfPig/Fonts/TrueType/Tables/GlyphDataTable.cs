@@ -224,6 +224,18 @@
             for (var i = 0; i < pointCount; i++)
             {
                 result[i] = (SimpleGlyphFlags)data.ReadByte();
+
+                if (result[i].HasFlag(SimpleGlyphFlags.Repeat))
+                {
+                    var numberOfRepeats = data.ReadByte();
+
+                    for (int j = 0; j < numberOfRepeats; j++)
+                    {
+                        result[i + j + 1] = result[i];
+                    }
+
+                    i += numberOfRepeats;
+                }
             }
 
             return result;

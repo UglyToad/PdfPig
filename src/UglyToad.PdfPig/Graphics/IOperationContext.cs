@@ -19,5 +19,7 @@
         void ShowText(IInputBytes bytes);
 
         void ShowPositionedText(IReadOnlyList<IToken> tokens);
+
+        void ApplyXObject(StreamToken xObjectStream);
     }
 }

@@ -18,6 +18,9 @@
 
         public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
+            var xobject = resourceStore.GetXObject(Name);
+
+            operationContext.ApplyXObject(xobject);
         }
 
         public override string ToString()

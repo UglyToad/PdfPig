@@ -89,6 +89,15 @@
 
             return font;
         }
+
+        public StreamToken GetXObject(NameToken name)
+        {
+            var reference = currentResourceState[name];
+
+            var stream = DirectObjectFinder.Get<StreamToken>(new IndirectReferenceToken(reference), scanner);
+
+            return stream;
+        }
     }
 }
 
