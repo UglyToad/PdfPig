@@ -10,6 +10,13 @@
         private const string TagTtcf = "ttcf";
         private const string TagTtfonly = "\u0000\u0001\u0000\u0000";
 
+        private readonly CompactFontFormatIndividualFontParser individualFontParser;
+
+        public CompactFontFormatParser(CompactFontFormatIndividualFontParser individualFontParser)
+        {
+            this.individualFontParser = individualFontParser;
+        }
+
         public void Parse(CompactFontFormatData data)
         {
             var tag = ReadTag(data);
@@ -29,11 +36,20 @@
 
             var header = ReadHeader(data);
 
-            var names = ReadStringIndex(data);
+            var fontNames = ReadStringIndex(data);
 
             var topLevelDict = ReadDictionaryData(data);
 
             var stringIndex = ReadStringIndex(data);
+
+            var globalSubroutineIndex = ReadDictionaryData(data);
+
+            for (var i = 0; i < fontNames.Length; i++)
+            {
+                var fontName = fontNames[i];
+
+                individualFontParser.Parse(data, fontName, topLevelDict[i], stringIndex);
+            }
         }
 
         private static string ReadTag(CompactFontFormatData data)
