@@ -8,6 +8,7 @@
     using FileStructure;
     using Filters;
     using Fonts;
+    using Fonts.CompactFontFormat;
     using Fonts.Parser;
     using Fonts.Parser.Handlers;
     using Fonts.Parser.Parts;
@@ -105,7 +106,9 @@
                 cMapCache, 
                 filterProvider, pdfScanner),
                 new TrueTypeFontHandler(log, pdfScanner, filterProvider, cMapCache, fontDescriptorFactory, trueTypeFontParser, encodingReader),
-                new Type1FontHandler(pdfScanner, cMapCache, filterProvider, fontDescriptorFactory, encodingReader, new Type1FontParser(new Type1EncryptedPortionParser())),
+                new Type1FontHandler(pdfScanner, cMapCache, filterProvider, fontDescriptorFactory, encodingReader, 
+                    new Type1FontParser(new Type1EncryptedPortionParser()),
+                    new CompactFontFormatParser()),
                 new Type3FontHandler(pdfScanner, cMapCache, filterProvider, encodingReader));
             
             var resourceContainer = new ResourceContainer(pdfScanner, fontFactory);

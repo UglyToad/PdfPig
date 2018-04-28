@@ -67,6 +67,18 @@
             return Data.TryGetValue(name.Data, out token);
         }
 
+        public bool TryGet<T>(NameToken name, out T token) where T : IToken
+        {
+            token = default(T);
+            if (!TryGet(name, out var t) || !(t is T typedToken))
+            {
+                return false;
+            }
+
+            token = typedToken;
+            return true;
+        }
+
         public bool ContainsKey(NameToken name)
         {
             return Data.ContainsKey(name.Data);

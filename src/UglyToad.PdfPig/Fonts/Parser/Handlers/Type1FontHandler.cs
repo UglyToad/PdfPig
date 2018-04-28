@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Parser.Handlers
 {
     using Cmap;
+    using CompactFontFormat;
     using Encodings;
     using Exceptions;
     using Filters;
@@ -22,11 +23,13 @@
         private readonly FontDescriptorFactory fontDescriptorFactory;
         private readonly IEncodingReader encodingReader;
         private readonly Type1FontParser type1FontParser;
+        private readonly CompactFontFormatParser compactFontFormatParser;
 
         public Type1FontHandler(IPdfTokenScanner pdfScanner, CMapCache cMapCache, IFilterProvider filterProvider, 
             FontDescriptorFactory fontDescriptorFactory, 
             IEncodingReader encodingReader,
-            Type1FontParser type1FontParser)
+            Type1FontParser type1FontParser,
+            CompactFontFormatParser compactFontFormatParser)
         {
             this.pdfScanner = pdfScanner;
             this.cMapCache = cMapCache;
@@ -34,6 +37,7 @@
             this.fontDescriptorFactory = fontDescriptorFactory;
             this.encodingReader = encodingReader;
             this.type1FontParser = type1FontParser;
+            this.compactFontFormatParser = compactFontFormatParser;
         }
 
         public IFont Generate(DictionaryToken dictionary, bool isLenientParsing)
@@ -108,10 +112,18 @@
                     return null;
                 }
 
+                var bytes = stream.Decode(filterProvider);
+
+                // We have a Compact Font Format font rather than an Adobe Type 1 Font.
+                if (stream.StreamDictionary.TryGet(NameToken.Subtype, out NameToken subTypeName)
+                && NameToken.Type1C.Equals(subTypeName))
+                {
+                    compactFontFormatParser.Parse(new CompactFontFormatData(bytes));
+                    return null;
+                }
+
                 var length1 = stream.StreamDictionary.Get<NumericToken>(NameToken.Length1, pdfScanner);
                 var length2 = stream.StreamDictionary.Get<NumericToken>(NameToken.Length2, pdfScanner);
-                
-                var bytes = stream.Decode(filterProvider);
                 
                 var font = type1FontParser.Parse(new ByteArrayInputBytes(bytes), length1.Int, length2.Int);
 

@@ -491,6 +491,7 @@
         public static readonly NameToken Type = new NameToken("Type");
         public static readonly NameToken Type0 = new NameToken("Type0");
         public static readonly NameToken Type1 = new NameToken("Type1");
+        public static readonly NameToken Type1C = new NameToken("Type1C");
         public static readonly NameToken Type3 = new NameToken("Type3");
         // U
         public static readonly NameToken U = new NameToken("U");
@@ -529,6 +530,5 @@
         // Y
         public static readonly NameToken YStep = new NameToken("YStep");
         public static readonly NameToken Yes = new NameToken("Yes");
-
     }
 }

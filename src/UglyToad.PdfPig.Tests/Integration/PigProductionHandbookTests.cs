@@ -27,7 +27,10 @@
         [Fact]
         public void CanReadPage9()
         {
-            using (var document = PdfDocument.Open(GetFilename()))
+            using (var document = PdfDocument.Open(GetFilename(), new ParsingOptions
+            {
+                UseLenientParsing = false
+            }))
             {
                 var page = document.GetPage(9);
 
