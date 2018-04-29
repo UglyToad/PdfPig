@@ -12,6 +12,9 @@
 
     internal class TrueTypeSimpleFont : IFont
     {
+        private static readonly TransformationMatrix DefaultTransformation =
+            TransformationMatrix.FromValues(1m / 1000m, 0, 0, 1m / 1000m, 0, 0);
+
         private readonly FontDescriptor descriptor;
 
         [CanBeNull]
@@ -90,32 +93,51 @@
         {
             var fontMatrix = GetFontMatrix();
 
-            var boundingBox = GetBoundingBoxInGlyphSpace(characterCode);
+            var boundingBox = GetBoundingBoxInGlyphSpace(characterCode, out var fromFont);
 
-            boundingBox = fontMatrix.Transform(boundingBox);
+            var boundingBoxPreTransform = boundingBox.Width;
 
+            if (fromFont)
+            {
+                boundingBox = fontMatrix.Transform(boundingBox);
+            }
+            else
+            {
+                boundingBox = DefaultTransformation.Transform(boundingBox);
+            }
+            
             decimal width;
             if (font == null)
             {
+                fromFont = false;
                  width = widths[characterCode];
             }
             else
             {
                 if (!font.TryGetBoundingAdvancedWidth(characterCode, out width))
                 {
-                    width = boundingBox.Width;
+                    width = boundingBoxPreTransform;
                 }
             }
             
             var advancedRectangle = new PdfRectangle(0, 0, width, 0);
 
-            advancedRectangle = fontMatrix.Transform(advancedRectangle);
+            if (fromFont)
+            {
+                advancedRectangle = fontMatrix.Transform(advancedRectangle);
+            }
+            else
+            {
+                advancedRectangle = DefaultTransformation.Transform(advancedRectangle);
+            }
 
             return new CharacterBoundingBox(boundingBox, advancedRectangle);
         }
 
-        private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
+        private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode, out bool fromFont)
         {
+            fromFont = true;
+            
             if (font == null)
             {
                 return descriptor.BoundingBox;
@@ -130,6 +152,8 @@
             {
                 return new PdfRectangle(0, 0, width, 0);
             }
+
+            fromFont = false;
 
             return new PdfRectangle(0, 0, GetWidth(characterCode), 0);
         }

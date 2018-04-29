@@ -30,9 +30,42 @@
                 return false;
             }
 
+            var windowsMapping = default(ICMapSubTable);
+
             foreach (var subTable in subTables)
             {
                 glyphIndex = subTable.CharacterCodeToGlyphIndex(characterCode);
+
+                if (glyphIndex != 0)
+                {
+                    return true;
+                }
+
+                if (subTable.EncodingId == 0 && subTable.PlatformId == 3)
+                {
+                    windowsMapping = subTable;
+                }
+            }
+
+            if (windowsMapping != null && characterCode >= 0 && characterCode <= 255)
+            {
+                // the CMap may use one of the following code ranges, so that we have to add the high byte to get the
+                // mapped value
+                glyphIndex = windowsMapping.CharacterCodeToGlyphIndex(characterCode + 0xF000);
+
+                if (glyphIndex != 0)
+                {
+                    return true;
+                }
+
+                glyphIndex = windowsMapping.CharacterCodeToGlyphIndex(characterCode + 0xF100);
+
+                if (glyphIndex != 0)
+                {
+                    return true;
+                }
+
+                glyphIndex = windowsMapping.CharacterCodeToGlyphIndex(characterCode + 0xF200);
 
                 if (glyphIndex != 0)
                 {

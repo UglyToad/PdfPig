@@ -45,7 +45,7 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
 
                 if (segment.IdRangeOffset == 0)
                 {
-                    return (characterCode + segment.IdDelta) % ushort.MaxValue;
+                    return (characterCode + segment.IdDelta) & 0xFFFF;
                 }
 
                 var offset = segment.IdRangeOffset / 2 + (characterCode - segment.StartCode);
