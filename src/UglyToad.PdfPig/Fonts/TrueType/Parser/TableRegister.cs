@@ -27,5 +27,7 @@
         /// Where a character code isn't found it should map to index 0.
         /// </summary>
         public CMapTable CMapTable { get; set; }
+
+        public KerningTable KerningTable { get; set; }
     }
 }

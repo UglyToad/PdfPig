@@ -88,7 +88,7 @@
             {
                 tableRegister.PostScriptTable = PostScriptTable.Load(data, table, tableRegister.MaximumProfileTable);
             }
-
+            
             if (!isPostScript)
             {
                 if (!tables.TryGetValue(TrueTypeHeaderTable.Loca, out var indexToLocationHeaderTable))
@@ -102,7 +102,7 @@
 
                 if (!tables.TryGetValue(TrueTypeHeaderTable.Glyf, out var glyphHeaderTable))
                 {
-                    throw new InvalidOperationException("The glpyh table is required for non-PostScript fonts.");
+                    throw new InvalidOperationException("The glyph table is required for non-PostScript fonts.");
                 }
 
                 // glyf
@@ -137,6 +137,10 @@
             // os2
 
             // kern
+            if (tables.TryGetValue(TrueTypeHeaderTable.Kern, out var kernHeaderTable))
+            {
+                tableRegister.KerningTable = KerningTable.Load(data, kernHeaderTable);
+            }
         }
     }
 }
