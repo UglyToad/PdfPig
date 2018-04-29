@@ -86,7 +86,7 @@
             // post
             if (tables.TryGetValue(TrueTypeHeaderTable.Post, out var postscriptHeaderTable))
             {
-                tableRegister.PostScriptTable = PostScriptTable.Load(data, table, tableRegister.MaximumProfileTable);
+                tableRegister.PostScriptTable = PostScriptTable.Load(data, postscriptHeaderTable, tableRegister.MaximumProfileTable);
             }
             
             if (!isPostScript)
