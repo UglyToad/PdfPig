@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using Geometry;
     using Logging;
     using Parser.Parts;
     using Tokenization.Scanner;
@@ -49,15 +50,17 @@
 
             var observed = new List<int>();
 
+            var pageTreeMembers = new PageTreeMembers();
+
             // todo: running a search for a different, unloaded, page number, results in a bug.
-            var isFound = FindPage(rootPageDictionary, pageNumber, observed);
+            var isFound = FindPage(rootPageDictionary, pageNumber, observed, pageTreeMembers);
 
             if (!isFound || !locatedPages.TryGetValue(pageNumber, out targetPageDictionary))
             {
                 throw new ArgumentOutOfRangeException("Could not find the page with number: " + pageNumber);
             }
 
-            var page = pageFactory.Create(pageNumber, targetPageDictionary, new PageTreeMembers(), isLenientParsing);
+            var page = pageFactory.Create(pageNumber, targetPageDictionary, pageTreeMembers, isLenientParsing);
 
             locatedPages[pageNumber] = targetPageDictionary;
 
@@ -74,7 +77,7 @@
             return pages[pages.Count - 1] + 1;
         }
 
-        public bool FindPage(DictionaryToken currentPageDictionary, int soughtPageNumber, List<int> pageNumbersObserved)
+        public bool FindPage(DictionaryToken currentPageDictionary, int soughtPageNumber, List<int> pageNumbersObserved, PageTreeMembers pageTreeMembers)
         {
             var type = currentPageDictionary.GetNameOrDefault(NameToken.Type);
 
@@ -97,6 +100,16 @@
                 return false;
             }
 
+            if (currentPageDictionary.TryGet(NameToken.MediaBox, out var token))
+            {
+                var mediaBox = DirectObjectFinder.Get<ArrayToken>(token, pdfScanner);
+
+                pageTreeMembers.MediaBox = new MediaBox(new PdfRectangle(mediaBox.GetNumeric(0).Data,
+                    mediaBox.GetNumeric(1).Data,
+                    mediaBox.GetNumeric(2).Data,
+                    mediaBox.GetNumeric(3).Data));
+            }
+
             if (!currentPageDictionary.TryGet(NameToken.Kids, out var kids)
             || !(kids is ArrayToken kidsArray))
             {
@@ -111,7 +124,7 @@
                 // todo: exit early
                 var child = DirectObjectFinder.Get<DictionaryToken>(kid, pdfScanner);
                 
-                var thisPageMatches = FindPage(child, soughtPageNumber, pageNumbersObserved);
+                var thisPageMatches = FindPage(child, soughtPageNumber, pageNumbersObserved, pageTreeMembers);
 
                 if (thisPageMatches)
                 {

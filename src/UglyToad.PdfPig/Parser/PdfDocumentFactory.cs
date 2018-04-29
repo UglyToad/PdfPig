@@ -9,6 +9,7 @@
     using Filters;
     using Fonts;
     using Fonts.CompactFontFormat;
+    using Fonts.CompactFontFormat.Dictionaries;
     using Fonts.Parser;
     using Fonts.Parser.Handlers;
     using Fonts.Parser.Parts;
@@ -102,13 +103,16 @@
             var cidFontFactory = new CidFontFactory(pdfScanner, fontDescriptorFactory, trueTypeFontParser, filterProvider);
             var encodingReader = new EncodingReader(pdfScanner);
             
+            var compactFontFormatIndexReader = new CompactFontFormatIndexReader();
+
             var fontFactory = new FontFactory(log, new Type0FontHandler(cidFontFactory,
                 cMapCache, 
                 filterProvider, pdfScanner),
                 new TrueTypeFontHandler(log, pdfScanner, filterProvider, cMapCache, fontDescriptorFactory, trueTypeFontParser, encodingReader),
                 new Type1FontHandler(pdfScanner, cMapCache, filterProvider, fontDescriptorFactory, encodingReader, 
                     new Type1FontParser(new Type1EncryptedPortionParser()),
-                    new CompactFontFormatParser(new CompactFontFormatIndividualFontParser())),
+                    new CompactFontFormatParser(new CompactFontFormatIndividualFontParser(compactFontFormatIndexReader, new CompactFontFormatTopLevelDictionaryReader(), 
+                        new CompactFontFormatPrivateDictionaryReader()), compactFontFormatIndexReader)),
                 new Type3FontHandler(pdfScanner, cMapCache, filterProvider, encodingReader));
             
             var resourceContainer = new ResourceContainer(pdfScanner, fontFactory);

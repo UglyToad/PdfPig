@@ -11,10 +11,12 @@
         private const string TagTtfonly = "\u0000\u0001\u0000\u0000";
 
         private readonly CompactFontFormatIndividualFontParser individualFontParser;
+        private readonly CompactFontFormatIndexReader indexReader;
 
-        public CompactFontFormatParser(CompactFontFormatIndividualFontParser individualFontParser)
+        public CompactFontFormatParser(CompactFontFormatIndividualFontParser individualFontParser, CompactFontFormatIndexReader indexReader)
         {
             this.individualFontParser = individualFontParser;
+            this.indexReader = indexReader;
         }
 
         public void Parse(CompactFontFormatData data)
@@ -38,11 +40,11 @@
 
             var fontNames = ReadStringIndex(data);
 
-            var topLevelDict = ReadDictionaryData(data);
+            var topLevelDict = indexReader.ReadDictionaryData(data);
 
             var stringIndex = ReadStringIndex(data);
 
-            var globalSubroutineIndex = ReadDictionaryData(data);
+            var globalSubroutineIndex = indexReader.ReadDictionaryData(data);
 
             for (var i = 0; i < fontNames.Length; i++)
             {
@@ -72,9 +74,9 @@
         /// <summary>
         /// Reads indexed string data.
         /// </summary>
-        private static string[] ReadStringIndex(CompactFontFormatData data)
+        private string[] ReadStringIndex(CompactFontFormatData data)
         {
-            var index = ReadIndex(data);
+            var index = indexReader.ReadIndex(data);
 
             var count = index.Length - 1;
 
@@ -93,45 +95,6 @@
             }
 
             return result;
-        }
-
-        private static byte[][] ReadDictionaryData(CompactFontFormatData data)
-        {
-            var index = ReadIndex(data);
-
-            var count = index.Length - 1;
-
-            var results = new byte[count][];
-
-            for (var i = 0; i < count; i++)
-            {
-                var length = index[i + 1] - index[i];
-
-                if (length < 0)
-                {
-                    throw new InvalidOperationException($"Negative object length {length} at {i}. Current position: {data.Position}.");
-                }
-
-                results[i] = data.ReadBytes(length);
-            }
-
-            return results;
-        }
-
-        private static int[] ReadIndex(CompactFontFormatData data)
-        {
-            var count = data.ReadCard16();
-
-            var offsetSize = data.ReadOffsize();
-
-            var offsets = new int[count + 1];
-
-            for (var i = 0; i < offsets.Length; i++)
-            {
-                offsets[i] = data.ReadOffset(offsetSize);
-            }
-
-            return offsets;
         }
     }
 

@@ -132,6 +132,16 @@
                 });
             }
 
+            if (values.Length == 4)
+            {
+                return new TransformationMatrix(new []
+                {
+                    values[0], values[1], 0,
+                    values[2], values[3], 0,
+                    0, 0, 1
+                });
+            }
+
             throw new ArgumentException("The array must either define all 9 elements of the matrix or all 6 key elements. Instead array was: " + values);
         }
 

@@ -165,7 +165,7 @@
             }
             else
             {
-                mediaBox = pageTreeMembers.GetMediaBox();
+                mediaBox = pageTreeMembers.MediaBox;
 
                 if (mediaBox == null)
                 {
