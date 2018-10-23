@@ -3,10 +3,8 @@
     using System;
     using System.IO;
     using System.Linq;
-    using System.Text;
     using PdfPig.Fonts.Type1.Parser;
     using PdfPig.IO;
-    using PdfPig.Util;
     using Xunit;
 
     public class Type1FontParserTests
@@ -27,6 +25,14 @@
             // TODO: support reading in these pfb files
             var bytes = GetFileBytes("Raleway-Black.pfb");
             
+            parser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
+        }
+
+        [Fact]
+        public void CanReadCharStrings()
+        {
+            var bytes = GetFileBytes("CMBX10.pfa");
+
             parser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
         }
 

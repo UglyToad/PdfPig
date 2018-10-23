@@ -5,6 +5,7 @@
     using Exceptions;
     using Geometry;
     using IO;
+    using PdfPig.Parser.Parts;
     using Tokenization;
     using Tokenization.Scanner;
     using Tokenization.Tokens;
@@ -14,7 +15,8 @@
         private const string ClearToMark = "cleartomark";
 
         private const int PfbFileIndicator = 0x80;
-        
+        private const int EexecKey = 55665;
+
         private readonly Type1EncryptedPortionParser encryptedPortionParser;
 
         public Type1FontParser(Type1EncryptedPortionParser encryptedPortionParser)
@@ -146,7 +148,7 @@
             var matrix = GetFontMatrix(dictionaries);
             var boundingBox = GetBoundingBox(dictionaries);
 
-            encryptedPortionParser.Parse(eexecPortion);
+            var binaryPortion = encryptedPortionParser.Parse(eexecPortion);
 
             return new Type1Font(name, encoding, matrix, boundingBox ?? new PdfRectangle());
         }
@@ -349,7 +351,6 @@
 
             return new ArrayToken(result);
         }
-
         private static Dictionary<int, string> GetEncoding(IReadOnlyList<DictionaryToken> dictionaries)
         {
             var result = new Dictionary<int, string>();

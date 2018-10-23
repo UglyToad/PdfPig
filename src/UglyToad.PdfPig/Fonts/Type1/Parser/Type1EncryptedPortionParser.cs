@@ -2,6 +2,7 @@
 {
     using System.Collections.Generic;
     using System.Linq;
+    using IO;
     using PdfPig.Parser.Parts;
     using Tokenization.Tokens;
     using Util;
@@ -11,7 +12,7 @@
         private const ushort EexecEncryptionKey = 55665;
         private const int EexecRandomBytes = 4;
 
-        public void Parse(IReadOnlyList<byte> bytes)
+        public IReadOnlyList<byte> Parse(IReadOnlyList<byte> bytes)
         {
             if (!IsBinary(bytes))
             {
@@ -20,7 +21,23 @@
 
             var decrypted = Decrypt(bytes, EexecEncryptionKey, EexecRandomBytes);
 
+            // line 461 of type1parser.java
             var str = OtherEncodings.BytesAsLatin1String(decrypted.ToArray());
+
+            var tokenizer = new Type1Tokenizer(new ByteArrayInputBytes(decrypted));
+            while (tokenizer.CurrentToken != null)
+            {
+                tokenizer.GetNext();
+            }
+
+            /*
+             * After 4 random characters follows the /Private dictionary and the /CharString dictionary.
+             * The first defines a number of technical terms involving character construction, and contains also an array of subroutines used in character paths.
+             * The second contains the character descriptions themselves.
+             * Both the subroutines and the character descriptions are yet again encrypted in a fashion similar to the entire binary segment, but now with an initial value of R = 4330 instead of 55665.
+             */
+
+            return decrypted;
         }
 
         /// <summary>
@@ -89,6 +106,16 @@
 
         private static IReadOnlyList<byte> Decrypt(IReadOnlyList<byte> bytes, int key, int randomBytes)
         {
+            /*
+             * We start with three constants R = 55665, c1 = 52845 and c2 = 22719.
+             * Then we apply to the entire binary array c[i] of length n the decryption procedure:
+             * for in [0, n):
+             *    p[i] = c[i]^(R >> 8)
+             *    R = ((c[i] + R)*c1 + c2) & ((1 << 16) - 1)
+             *
+             * Here ^ means xor addition, in which one interprets the bits modulo 2.
+             * The encryption key R changes as the procedure is carried out.
+             */
             if (randomBytes == -1)
             {
                 return bytes;

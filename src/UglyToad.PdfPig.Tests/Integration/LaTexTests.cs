@@ -29,6 +29,17 @@
         }
 
         [Fact]
+        public void LettersHaveHeight()
+        {
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                var page = document.GetPage(1);
+
+                Assert.NotEqual(0, page.Letters[0].GlyphRectangle.Height);
+            }
+        }
+
+        [Fact]
         public void HasCorrectNumberOfPages()
         {
             using (var document = PdfDocument.Open(GetFilename()))
