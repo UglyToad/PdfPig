@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.Parser
 {
     using System;
+    using System.Collections.Generic;
     using System.Text;
     using IO;
     using PdfPig.Parser.Parts;
@@ -12,15 +13,18 @@
         private readonly StringBuilder stringBuffer = new StringBuilder();
 
         private readonly IInputBytes bytes;
+        private readonly List<string> comments;
 
         private int openParens;
         private Type1Token previousToken;
 
         public Type1Token CurrentToken { get; private set; }
+        public IReadOnlyList<string> Comments => comments;
 
         public Type1Tokenizer(IInputBytes bytes)
         {
             this.bytes = bytes;
+            comments = new List<string>();
             CurrentToken = ReadNextToken();
         }
 
@@ -45,7 +49,7 @@
                     switch (c)
                     {
                         case '%':
-                            var comment = ReadComment();
+                            comments.Add(ReadComment());
                             break;
                         case '(':
                             return ReadString();
@@ -100,7 +104,7 @@
                                     break;
                                 }
 
-                                if (TryReadNumber(out var number))
+                                if (TryReadNumber(c, out var number))
                                 {
                                     return number;
                                 }
@@ -193,7 +197,7 @@
             return null;
         }
 
-        private bool TryReadNumber(out Type1TextToken numberToken)
+        private bool TryReadNumber(char c, out Type1TextToken numberToken)
         {
             char GetNext()
             {
@@ -208,7 +212,6 @@
             var sb = new StringBuilder();
             StringBuilder radix = null;
 
-            char c = GetNext();
             var hasDigit = false;
 
             // optional + or -

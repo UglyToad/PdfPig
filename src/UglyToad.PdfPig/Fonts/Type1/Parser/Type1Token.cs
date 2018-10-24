@@ -7,6 +7,8 @@
     {
         public IReadOnlyList<byte> Data { get; }
 
+        public override bool IsPrivateDictionary { get; } = false;
+
         public Type1DataToken(TokenType type, IReadOnlyList<byte> data) : base(type)
         {
             if (type != TokenType.Charstring)
@@ -20,13 +22,14 @@
         public override string ToString()
         {
             return $"Token[type = {Type}, data = {Data.Count} bytes]";
-
         }
     }
 
     internal class Type1TextToken : Type1Token
     {
         public string Text { get; }
+
+        public override bool IsPrivateDictionary => Type == TokenType.Literal && string.Equals(Text, "Private", StringComparison.OrdinalIgnoreCase);
 
         public Type1TextToken(char c, TokenType type) : this(c.ToString(), type) { }
         public Type1TextToken(string text, TokenType type) : base(type)
@@ -55,11 +58,13 @@
         }
     }
 
-    internal class Type1Token
+    internal abstract class Type1Token
     {
         public TokenType Type { get; }
 
-        public Type1Token(TokenType type)
+        public abstract bool IsPrivateDictionary { get; }
+
+        protected Type1Token(TokenType type)
         {
             Type = type;
         }

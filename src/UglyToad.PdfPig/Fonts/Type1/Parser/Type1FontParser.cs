@@ -5,7 +5,6 @@
     using Exceptions;
     using Geometry;
     using IO;
-    using PdfPig.Parser.Parts;
     using Tokenization;
     using Tokenization.Scanner;
     using Tokenization.Tokens;
@@ -15,7 +14,6 @@
         private const string ClearToMark = "cleartomark";
 
         private const int PfbFileIndicator = 0x80;
-        private const int EexecKey = 55665;
 
         private readonly Type1EncryptedPortionParser encryptedPortionParser;
 

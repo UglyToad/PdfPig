@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.Parser
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using IO;
@@ -25,17 +26,39 @@
             var str = OtherEncodings.BytesAsLatin1String(decrypted.ToArray());
 
             var tokenizer = new Type1Tokenizer(new ByteArrayInputBytes(decrypted));
-            while (tokenizer.CurrentToken != null)
-            {
-                tokenizer.GetNext();
-            }
-
             /*
              * After 4 random characters follows the /Private dictionary and the /CharString dictionary.
              * The first defines a number of technical terms involving character construction, and contains also an array of subroutines used in character paths.
              * The second contains the character descriptions themselves.
              * Both the subroutines and the character descriptions are yet again encrypted in a fashion similar to the entire binary segment, but now with an initial value of R = 4330 instead of 55665.
              */
+
+            while (!tokenizer.CurrentToken.IsPrivateDictionary)
+            {
+                tokenizer.GetNext();
+                if (tokenizer.CurrentToken == null)
+                {
+                    throw new InvalidOperationException("Did not find the private dictionary start token.");
+                }
+            }
+
+            var next = tokenizer.GetNext();
+            if (next?.Type != Type1Token.TokenType.Integer || !(next is Type1TextToken textToken))
+            {
+                throw new InvalidOperationException($"No length token was present in the stream following the private dictionary start, instead got {next}.");
+            }
+
+            var length = textToken.AsInt();
+            ReadExpected(tokenizer, Type1Token.TokenType.Name, "dict");
+            // actually could also be "/Private 10 dict def Private begin"
+            // instead of the "dup"
+            ReadExpected(tokenizer, Type1Token.TokenType.Name, "dup");
+            ReadExpected(tokenizer, Type1Token.TokenType.Name, "begin");
+
+            while (tokenizer.CurrentToken != null)
+            {
+                tokenizer.GetNext();
+            }
 
             return decrypted;
         }
@@ -145,6 +168,20 @@
             }
 
             return plainBytes;
+        }
+
+        private static void ReadExpected(Type1Tokenizer tokenizer, Type1Token.TokenType type, string text)
+        {
+            var token = tokenizer.GetNext();
+            if (token == null)
+            {
+                throw new InvalidOperationException($"Type 1 Encrypted portion ended when a token with text '{text}' was expected instead.");
+            }
+
+            if (token.Type != type || !(token is Type1TextToken textToken) || !string.Equals(textToken.Text, text, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException($"Found invalid token {token} when type {type} with text {text} was expected.");
+            }
         }
     }
 }
