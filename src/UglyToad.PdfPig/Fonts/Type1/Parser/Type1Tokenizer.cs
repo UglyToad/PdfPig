@@ -56,17 +56,17 @@
                         case ')':
                             throw new InvalidOperationException("Encountered an end of string ')' outside of string.");
                         case '[':
-                            return new Type1TextToken(c, Type1Token.TokenType.StartArray);
+                            return new Type1Token(c, Type1Token.TokenType.StartArray);
                         case ']':
-                            return new Type1TextToken(c, Type1Token.TokenType.EndArray);
+                            return new Type1Token(c, Type1Token.TokenType.EndArray);
                         case '{':
-                            return new Type1TextToken(c, Type1Token.TokenType.StartProc);
+                            return new Type1Token(c, Type1Token.TokenType.StartProc);
                         case '}':
-                            return new Type1TextToken(c, Type1Token.TokenType.EndProc);
+                            return new Type1Token(c, Type1Token.TokenType.EndProc);
                         case '/':
                             {
                                 var name = ReadLiteral();
-                                return new Type1TextToken(name, Type1Token.TokenType.Literal);
+                                return new Type1Token(name, Type1Token.TokenType.Literal);
                             }
                         case '<':
                             {
@@ -74,10 +74,10 @@
                                 if (following == '<')
                                 {
                                     bytes.MoveNext();
-                                    return new Type1TextToken("<<", Type1Token.TokenType.StartDict);
+                                    return new Type1Token("<<", Type1Token.TokenType.StartDict);
                                 }
 
-                                return new Type1TextToken(c, Type1Token.TokenType.Name);
+                                return new Type1Token(c, Type1Token.TokenType.Name);
                             }
                         case '>':
                             {
@@ -85,10 +85,10 @@
                                 if (following == '>')
                                 {
                                     bytes.MoveNext();
-                                    return new Type1TextToken(">>", Type1Token.TokenType.EndDict);
+                                    return new Type1Token(">>", Type1Token.TokenType.EndDict);
                                 }
 
-                                return new Type1TextToken(c, Type1Token.TokenType.Name);
+                                return new Type1Token(c, Type1Token.TokenType.Name);
                             }
                         default:
                             {
@@ -119,13 +119,13 @@
                                 {
                                     if (previousToken.Type == Type1Token.TokenType.Integer)
                                     {
-                                        return ReadCharString(((Type1TextToken)previousToken).AsInt());
+                                        return ReadCharString(previousToken.AsInt());
                                     }
 
                                     throw new InvalidOperationException($"Expected integer token before {name} at offset {bytes.CurrentOffset}.");
                                 }
 
-                                return new Type1TextToken(name, Type1Token.TokenType.Name);
+                                return new Type1Token(name, Type1Token.TokenType.Name);
                             }
                     }
                 }
@@ -134,7 +134,7 @@
             return null;
         }
 
-        private Type1TextToken ReadString()
+        private Type1Token ReadString()
         {
             char GetNext()
             {
@@ -158,7 +158,7 @@
                         if (openParens == 0)
                         {
                             // end of string
-                            return new Type1TextToken(stringBuffer.ToString(), Type1Token.TokenType.String);
+                            return new Type1Token(stringBuffer.ToString(), Type1Token.TokenType.String);
                         }
                         stringBuffer.Append(')');
                         openParens--;
@@ -197,7 +197,7 @@
             return null;
         }
 
-        private bool TryReadNumber(char c, out Type1TextToken numberToken)
+        private bool TryReadNumber(char c, out Type1Token numberToken)
         {
             char GetNext()
             {
@@ -253,7 +253,7 @@
                 // integer
                 bytes.Seek(bytes.CurrentOffset - 1);
 
-                numberToken = new Type1TextToken(sb.ToString(), Type1Token.TokenType.Integer);
+                numberToken = new Type1Token(sb.ToString(), Type1Token.TokenType.Integer);
                 return true;
             }
 
@@ -313,11 +313,11 @@
             if (radix != null)
             {
                 var number = Convert.ToInt32(sb.ToString(), int.Parse(radix.ToString()));
-                numberToken = new Type1TextToken(number.ToString(), Type1Token.TokenType.Integer);
+                numberToken = new Type1Token(number.ToString(), Type1Token.TokenType.Integer);
             }
             else
             {
-                numberToken = new Type1TextToken(sb.ToString(), Type1Token.TokenType.Real);
+                numberToken = new Type1Token(sb.ToString(), Type1Token.TokenType.Real);
             }
 
             return true;

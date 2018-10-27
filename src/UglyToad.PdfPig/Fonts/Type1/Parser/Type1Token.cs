@@ -9,7 +9,7 @@
 
         public override bool IsPrivateDictionary { get; } = false;
 
-        public Type1DataToken(TokenType type, IReadOnlyList<byte> data) : base(type)
+        public Type1DataToken(TokenType type, IReadOnlyList<byte> data) : base(string.Empty, type)
         {
             if (type != TokenType.Charstring)
             {
@@ -25,26 +25,28 @@
         }
     }
 
-    internal class Type1TextToken : Type1Token
+    internal class Type1Token
     {
+        public TokenType Type { get; }
         public string Text { get; }
 
-        public override bool IsPrivateDictionary => Type == TokenType.Literal && string.Equals(Text, "Private", StringComparison.OrdinalIgnoreCase);
+        public virtual bool IsPrivateDictionary => Type == TokenType.Literal && string.Equals(Text, "Private", StringComparison.OrdinalIgnoreCase);
 
-        public Type1TextToken(char c, TokenType type) : this(c.ToString(), type) { }
-        public Type1TextToken(string text, TokenType type) : base(type)
+        public Type1Token(char c, TokenType type) : this(c.ToString(), type) { }
+        public Type1Token(string text, TokenType type)
         {
             Text = text;
+            Type = type;
         }
 
         public int AsInt()
         {
-            return (int)AsFloat();
+            return (int)AsDecimal();
         }
 
-        public float AsFloat()
+        public decimal AsDecimal()
         {
-            return float.Parse(Text);
+            return decimal.Parse(Text);
         }
 
         public bool AsBool()
@@ -55,18 +57,6 @@
         public override string ToString()
         {
             return $"Token[type={Type}, text={Text}]";
-        }
-    }
-
-    internal abstract class Type1Token
-    {
-        public TokenType Type { get; }
-
-        public abstract bool IsPrivateDictionary { get; }
-
-        protected Type1Token(TokenType type)
-        {
-            Type = type;
         }
 
         public enum TokenType
