@@ -14,6 +14,7 @@
         private const int EexecRandomBytes = 4;
         private const int Len4Bytes = 4;
         private const int Password = 5839;
+        private const int CharstringEncryptionKey = 4330;
 
         public IReadOnlyList<byte> Parse(IReadOnlyList<byte> bytes, bool isLenientParsing)
         {
@@ -137,11 +138,13 @@
                     case Type1Symbols.BlueScale:
                         {
                             builder.BlueScale = ReadNumeric(tokenizer);
+                            ReadTillDef(tokenizer);
                             break;
                         }
                     case Type1Symbols.ForceBold:
                         {
                             builder.ForceBold = ReadBoolean(tokenizer);
+                            ReadTillDef(tokenizer);
                             break;
                         }
                     case Type1Symbols.MinFeature:
@@ -160,6 +163,10 @@
                                 }
                             }
 
+                            builder.MinFeature = new Type1PrivateDictionary.MinFeature(procedureTokens[0].AsInt(), procedureTokens[1].AsInt());
+
+                            ReadTillDef(tokenizer);
+
                             break;
                         }
                     case Type1Symbols.Password:
@@ -171,12 +178,16 @@
                             }
 
                             builder.Password = password;
+
+                            ReadTillDef(tokenizer);
+
                             break;
                         }
                     case Type1Symbols.UniqueId:
                         {
                             var id = (int)ReadNumeric(tokenizer);
                             builder.UniqueId = id;
+                            ReadTillDef(tokenizer);
                             break;
                         }
                     case Type1Symbols.Len4:
@@ -187,11 +198,13 @@
                     case Type1Symbols.BlueShift:
                         {
                             builder.BlueShift = (int)ReadNumeric(tokenizer);
+                            ReadTillDef(tokenizer);
                             break;
                         }
                     case Type1Symbols.BlueFuzz:
                         {
                             builder.BlueFuzz = (int)ReadNumeric(tokenizer);
+                            ReadTillDef(tokenizer);
                             break;
                         }
                     case Type1Symbols.FamilyBlues:
@@ -207,31 +220,37 @@
                     case Type1Symbols.LanguageGroup:
                         {
                             builder.LanguageGroup = (int)ReadNumeric(tokenizer);
+                            ReadTillDef(tokenizer);
                             break;
                         }
                     case Type1Symbols.RndStemUp:
                         {
                             builder.RoundStemUp = ReadBoolean(tokenizer);
+                            ReadTillDef(tokenizer);
                             break;
                         }
                     case Type1Symbols.Subroutines:
                         {
-                            //readSubrs(lenIV);
+                            builder.Subroutines = ReadSubroutines(tokenizer, lenIv, isLenientParsing);
                             break;
-
                         }
                     case Type1Symbols.OtherSubroutines:
                         {
                             ReadOtherSubroutines(tokenizer, isLenientParsing);
+                            ReadTillDef(tokenizer);
                             break;
                         }
                 }
             }
 
-            while (tokenizer.CurrentToken != null)
+            var currentToken = tokenizer.CurrentToken;
+            while (currentToken.Type != Type1Token.TokenType.Literal
+                   && !string.Equals(currentToken.Text, "CharStrings", StringComparison.OrdinalIgnoreCase))
             {
-                tokenizer.GetNext();
+                currentToken = tokenizer.GetNext();
             }
+
+            var charStrings = ReadCharStrings(tokenizer, lenIv, isLenientParsing);
 
             return decrypted;
         }
@@ -242,8 +261,6 @@
         /// The first byte must not be whitespace.
         /// One of the first four ciphertext bytes must not be an ASCII hex character.
         /// </summary>
-        /// <param name="bytes"></param>
-        /// <returns></returns>
         private static bool IsBinary(IReadOnlyList<byte> bytes)
         {
             if (bytes.Count < 4)
@@ -428,6 +445,11 @@
             {
                 if (token.Type == Type1Token.TokenType.Name)
                 {
+                    if (string.Equals(token.Text, "ND", StringComparison.OrdinalIgnoreCase) || string.Equals(token.Text, "|-", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return;
+                    }
+
                     if (string.Equals(token.Text, "def", StringComparison.OrdinalIgnoreCase))
                     {
                         break;
@@ -459,7 +481,8 @@
             }
         }
 
-        private static IReadOnlyList<T> ReadArrayValues<T>(Type1Tokenizer tokenizer, Func<Type1Token, T> converter, bool hasReadStart = false)
+        private static IReadOnlyList<T> ReadArrayValues<T>(Type1Tokenizer tokenizer, Func<Type1Token, T> converter, bool hasReadStart = false,
+            bool includeDef = true)
         {
             if (!hasReadStart)
             {
@@ -486,6 +509,11 @@
                 {
                     throw new InvalidOperationException($"Conversion of token '{token}' to value of type {typeof(T).Name} failed.", ex);
                 }
+            }
+
+            if (includeDef)
+            {
+                ReadTillDef(tokenizer);
             }
 
             return results;
@@ -522,7 +550,7 @@
 
             if (start.Type == Type1Token.TokenType.StartArray)
             {
-                ReadArrayValues(tokenizer, x => x, true);
+                ReadArrayValues(tokenizer, x => x, true, false);
             }
             else if (start.Type == Type1Token.TokenType.Integer || start.Type == Type1Token.TokenType.Real)
             {
@@ -541,6 +569,100 @@
             {
                 throw new InvalidOperationException($"Failed to read start of /OtherSubrs array. Got start token: {start}.");
             }
+        }
+
+        private static IReadOnlyList<Type1CharstringDecryptedBytes> ReadSubroutines(Type1Tokenizer tokenizer, int lenIv, bool isLenientParsing)
+        {
+            var length = (int)ReadNumeric(tokenizer);
+            var subroutines = new List<Type1CharstringDecryptedBytes>(length);
+
+            ReadExpected(tokenizer, Type1Token.TokenType.Name, "array");
+
+            for (var i = 0; i < length; i++)
+            {
+                var current = tokenizer.GetNext();
+                if (current.Type != Type1Token.TokenType.Name || !string.Equals(current.Text, "dup"))
+                {
+                    break;
+                }
+
+                var index = (int)ReadNumeric(tokenizer);
+
+                var byteLength = (int)ReadNumeric(tokenizer);
+
+                var charstring = tokenizer.GetNext();
+
+                if (!(charstring is Type1DataToken charstringToken))
+                {
+                    throw new InvalidOperationException($"Found an unexpected token instead of subroutine charstring: {charstring}.");
+                }
+
+                if (!isLenientParsing && charstringToken.Data.Count != byteLength)
+                {
+                    throw new InvalidOperationException($"The subroutine charstring {charstringToken} did not have the expected length of {byteLength}.");
+                }
+
+                var subroutine = Decrypt(charstringToken.Data, CharstringEncryptionKey, lenIv);
+                subroutines.Add(new Type1CharstringDecryptedBytes(subroutine, index));
+                ReadTillPut(tokenizer);
+            }
+
+            ReadTillDef(tokenizer);
+
+            return subroutines;
+        }
+
+        private static IReadOnlyList<Type1CharstringDecryptedBytes> ReadCharStrings(Type1Tokenizer tokenizer, int lenIv, bool isLenientParsing)
+        {
+            var length = (int) ReadNumeric(tokenizer);
+
+            ReadExpected(tokenizer, Type1Token.TokenType.Name, "dict");
+
+            // dup begin or CharStrings begin.
+            ReadExpected(tokenizer, Type1Token.TokenType.Name);
+            ReadExpected(tokenizer, Type1Token.TokenType.Name, "begin");
+
+            var results = new List<Type1CharstringDecryptedBytes>();
+
+            for (var i = 0; i < length; i++)
+            {
+                var token = tokenizer.GetNext();
+
+                if (token.Type == Type1Token.TokenType.Name &&
+                    string.Equals(token.Text, "end", StringComparison.OrdinalIgnoreCase))
+                {
+                    break;
+                }
+
+                if (token.Type != Type1Token.TokenType.Literal)
+                {
+                    throw new InvalidOperationException($"Type 1 font error. Expected literal for charstring name, instead got: {token}.");
+                }
+
+                var name = token.Text;
+
+                var charstringLength = ReadNumeric(tokenizer);
+                var charstring = tokenizer.GetNext();
+                if (!(charstring is Type1DataToken charstringToken))
+                {
+                    throw new InvalidOperationException($"Got wrong type of token, expected charstring, instead got: {charstring}.");
+                }
+
+                if (!isLenientParsing && charstringToken.Data.Count != charstringLength)
+                {
+                    throw new InvalidOperationException($"The charstring {charstringToken} did not have the expected length of {charstringLength}.");
+                }
+
+                var data = Decrypt(charstringToken.Data, CharstringEncryptionKey, lenIv);
+
+                results.Add(new Type1CharstringDecryptedBytes(name, data, i));
+
+                ReadTillDef(tokenizer);
+            }
+
+            ReadExpected(tokenizer, Type1Token.TokenType.Name, "end");
+
+            return results;
         }
     }
 }

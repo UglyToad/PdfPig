@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1
 {
     using System.Collections.Generic;
+    using Parser;
 
     internal class Type1PrivateDictionary
     {
@@ -12,7 +13,7 @@
 
             public object NoAccessDef { get; set; }
 
-            public object[] Subroutines { get; set; }
+            public IReadOnlyList<Type1CharstringDecryptedBytes> Subroutines { get; set; }
 
             public object[] OtherSubroutines { get; set; }
 
@@ -48,9 +49,22 @@
 
             public int LenIv { get; set; }
 
-            public object[] MinFeature { get; set; }
+            public MinFeature MinFeature { get; set; }
 
             public bool RoundStemUp { get; set; }
+        }
+
+        public class MinFeature
+        {
+            public int First { get; }
+
+            public int Second { get; }
+
+            public MinFeature(int first, int second)
+            {
+                First = first;
+                Second = second;
+            }
         }
     }
 }

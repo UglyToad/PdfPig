@@ -376,6 +376,8 @@
         {
             // Skip preceding space.
             bytes.MoveNext();
+            // TODO: may be wrong
+            bytes.MoveNext();
 
             byte[] data = new byte[length];
             for (int i = 0; i < length; i++)
