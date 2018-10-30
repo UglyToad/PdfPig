@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using CharStrings;
     using IO;
     using PdfPig.Parser.Parts;
     using Tokenization.Tokens;
@@ -69,8 +70,9 @@
             for (var i = 0; i < length; i++)
             {
                 var token = tokenizer.GetNext();
+                
                 // premature end
-                if (token.Type != Type1Token.TokenType.Literal)
+                if (token == null || token.Type != Type1Token.TokenType.Literal)
                 {
                     break;
                 }
@@ -80,18 +82,21 @@
                 switch (key)
                 {
                     case Type1Symbols.RdProcedure:
+                    case Type1Symbols.RdProcedureAlt:
                         {
                             var procedureTokens = ReadProcedure(tokenizer);
                             ReadTillDef(tokenizer);
                             break;
                         }
                     case Type1Symbols.NoAccessDef:
+                    case Type1Symbols.NoAccessDefAlt:
                         {
                             var procedureTokens = ReadProcedure(tokenizer);
                             ReadTillDef(tokenizer);
                             break;
                         }
                     case Type1Symbols.NoAccessPut:
+                    case Type1Symbols.NoAccessPutAlt:
                         {
                             var procedureTokens = ReadProcedure(tokenizer);
                             ReadTillDef(tokenizer);
@@ -193,6 +198,7 @@
                     case Type1Symbols.Len4:
                         {
                             lenIv = (int)ReadNumeric(tokenizer);
+                            ReadTillDef(tokenizer);
                             break;
                         }
                     case Type1Symbols.BlueShift:
@@ -240,17 +246,51 @@
                             ReadTillDef(tokenizer);
                             break;
                         }
+                    case Type1Symbols.ExpansionFactor:
+                        {
+                            builder.ExpansionFactor = ReadNumeric(tokenizer);
+                            ReadTillDef(tokenizer);
+                            break;
+                        }
+                    case Type1Symbols.Erode:
+                        {
+                            ReadTillDef(tokenizer, true);
+                            break;
+                        }
+                    default:
+                        {
+                            ReadTillDef(tokenizer, true);
+                            break;
+                        }
                 }
             }
 
             var currentToken = tokenizer.CurrentToken;
-            while (currentToken.Type != Type1Token.TokenType.Literal
-                   && !string.Equals(currentToken.Text, "CharStrings", StringComparison.OrdinalIgnoreCase))
+
+            IReadOnlyList<Type1CharstringDecryptedBytes> charStrings;
+            if (currentToken != null)
             {
-                currentToken = tokenizer.GetNext();
+                while (currentToken != null && currentToken.Type != Type1Token.TokenType.Literal
+                       && !string.Equals(currentToken.Text, "CharStrings", StringComparison.OrdinalIgnoreCase))
+                {
+                    currentToken = tokenizer.GetNext();
+                }
+
+                if (currentToken != null)
+                {
+                    charStrings = ReadCharStrings(tokenizer, lenIv, isLenientParsing);
+                }
+                else
+                {
+                    charStrings = new Type1CharstringDecryptedBytes[0];
+                }
+            }
+            else
+            {
+                charStrings = new Type1CharstringDecryptedBytes[0];
             }
 
-            var charStrings = ReadCharStrings(tokenizer, lenIv, isLenientParsing);
+            Type1CharStringParser.Parse(charStrings, builder.Subroutines ?? new Type1CharstringDecryptedBytes[0]);
 
             return decrypted;
         }
@@ -438,7 +478,7 @@
             }
         }
 
-        private static void ReadTillDef(Type1Tokenizer tokenizer)
+        private static void ReadTillDef(Type1Tokenizer tokenizer, bool skip = false)
         {
             Type1Token token;
             while ((token = tokenizer.GetNext()) != null)
@@ -455,7 +495,7 @@
                         break;
                     }
                 }
-                else
+                else if (!skip)
                 {
                     throw new InvalidOperationException($"Encountered unexpected non-name token while reading till 'def' token: {token}");
                 }
@@ -614,7 +654,7 @@
 
         private static IReadOnlyList<Type1CharstringDecryptedBytes> ReadCharStrings(Type1Tokenizer tokenizer, int lenIv, bool isLenientParsing)
         {
-            var length = (int) ReadNumeric(tokenizer);
+            var length = (int)ReadNumeric(tokenizer);
 
             ReadExpected(tokenizer, Type1Token.TokenType.Name, "dict");
 

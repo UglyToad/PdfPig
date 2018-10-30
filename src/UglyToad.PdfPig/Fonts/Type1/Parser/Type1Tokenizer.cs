@@ -115,7 +115,7 @@
                                     throw new InvalidOperationException($"The binary portion of the type 1 font was invalid at position {bytes.CurrentOffset}.");
                                 }
 
-                                if (name.Equals("RD") || name.Equals("-|"))
+                                if (name.Equals(Type1Symbols.RdProcedure, StringComparison.OrdinalIgnoreCase) || name.Equals(Type1Symbols.RdProcedureAlt))
                                 {
                                     if (previousToken.Type == Type1Token.TokenType.Integer)
                                     {
@@ -377,7 +377,7 @@
             // Skip preceding space.
             bytes.MoveNext();
             // TODO: may be wrong
-            bytes.MoveNext();
+           // bytes.MoveNext();
 
             byte[] data = new byte[length];
             for (int i = 0; i < length; i++)

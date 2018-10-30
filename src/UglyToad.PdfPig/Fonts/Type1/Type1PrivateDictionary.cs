@@ -52,6 +52,8 @@
             public MinFeature MinFeature { get; set; }
 
             public bool RoundStemUp { get; set; }
+
+            public decimal? ExpansionFactor { get; set; }
         }
 
         public class MinFeature
