@@ -146,9 +146,9 @@
             var matrix = GetFontMatrix(dictionaries);
             var boundingBox = GetBoundingBox(dictionaries);
 
-            var binaryPortion = encryptedPortionParser.Parse(eexecPortion, false);
+            var (privateDictionary, charStrings) = encryptedPortionParser.Parse(eexecPortion, false);
 
-            return new Type1Font(name, encoding, matrix, boundingBox ?? new PdfRectangle());
+            return new Type1Font(name, encoding, matrix, boundingBox ?? new PdfRectangle(), privateDictionary);
         }
 
         /// <summary>

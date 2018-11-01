@@ -13,7 +13,6 @@
     using Tokenization.Tokens;
     using Type1;
     using Type1.Parser;
-    using Util;
 
     internal class Type1FontHandler : IFontHandler
     {

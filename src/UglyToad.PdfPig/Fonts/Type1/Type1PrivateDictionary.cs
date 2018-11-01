@@ -321,6 +321,15 @@
             /// <see cref="Type1PrivateDictionary.ExpansionFactor"/>.
             /// </summary>
             public decimal? ExpansionFactor { get; set; }
+
+            /// <summary>
+            /// Generate a <see cref="Type1PrivateDictionary"/> from the values in this builder.
+            /// </summary>
+            /// <returns>The generated <see cref="Type1PrivateDictionary"/>.</returns>
+            public Type1PrivateDictionary Build()
+            {
+                return new Type1PrivateDictionary(this);
+            }
         }
     }
 }

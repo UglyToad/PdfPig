@@ -7,7 +7,6 @@
     using IO;
     using PdfPig.Parser.Parts;
     using Tokenization.Tokens;
-    using Util;
 
     internal class Type1EncryptedPortionParser
     {
@@ -17,7 +16,7 @@
         private const int Password = 5839;
         private const int CharstringEncryptionKey = 4330;
 
-        public IReadOnlyList<byte> Parse(IReadOnlyList<byte> bytes, bool isLenientParsing)
+        public (Type1PrivateDictionary, Type1CharStrings) Parse(IReadOnlyList<byte> bytes, bool isLenientParsing)
         {
             if (!IsBinary(bytes))
             {
@@ -25,11 +24,9 @@
             }
 
             var decrypted = Decrypt(bytes, EexecEncryptionKey, EexecRandomBytes);
-
-            // line 461 of type1parser.java
-            var str = OtherEncodings.BytesAsLatin1String(decrypted.ToArray());
-
+            
             var tokenizer = new Type1Tokenizer(new ByteArrayInputBytes(decrypted));
+
             /*
              * After 4 random characters follows the /Private dictionary and the /CharString dictionary.
              * The first defines a number of technical terms involving character construction, and contains also an array of subroutines used in character paths.
@@ -54,8 +51,8 @@
 
             var length = next.AsInt();
             ReadExpected(tokenizer, Type1Token.TokenType.Name, "dict");
-            // actually could also be "/Private 10 dict def Private begin"
-            // instead of the "dup"
+            
+            // Could also be "/Private 10 dict def Private begin" instead of the "dup"
             ReadExpectedAfterOptional(tokenizer, Type1Token.TokenType.Name, "def", Type1Token.TokenType.Name, "dup");
             ReadExpected(tokenizer, Type1Token.TokenType.Name, "begin");
 
@@ -85,6 +82,7 @@
                     case Type1Symbols.RdProcedureAlt:
                         {
                             var procedureTokens = ReadProcedure(tokenizer);
+                            builder.Rd = procedureTokens;
                             ReadTillDef(tokenizer);
                             break;
                         }
@@ -92,6 +90,7 @@
                     case Type1Symbols.NoAccessDefAlt:
                         {
                             var procedureTokens = ReadProcedure(tokenizer);
+                            builder.NoAccessDef = procedureTokens;
                             ReadTillDef(tokenizer);
                             break;
                         }
@@ -99,6 +98,7 @@
                     case Type1Symbols.NoAccessPutAlt:
                         {
                             var procedureTokens = ReadProcedure(tokenizer);
+                            builder.NoAccessPut = procedureTokens;
                             ReadTillDef(tokenizer);
                             break;
                         }
@@ -290,14 +290,15 @@
                 charStrings = new Type1CharstringDecryptedBytes[0];
             }
 
+            var privateDictionary = builder.Build();
+
             var instructions = Type1CharStringParser.Parse(charStrings, builder.Subroutines ?? new Type1CharstringDecryptedBytes[0]);
 
-            return decrypted;
+            return (privateDictionary, instructions);
         }
 
         /// <summary>
-        /// To distinguish between binary and hex the first 4 bytes (of the ciphertext) for hex must
-        /// obey these restrictions:
+        /// To distinguish between binary and hex the first 4 bytes (of the ciphertext) for hex must obey these restrictions:
         /// The first byte must not be whitespace.
         /// One of the first four ciphertext bytes must not be an ASCII hex character.
         /// </summary>

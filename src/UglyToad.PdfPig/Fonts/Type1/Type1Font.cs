@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1
 {
+    using System;
     using System.Collections.Generic;
-    using Cos;
     using Geometry;
     using Tokenization.Tokens;
     using Util.JetBrains.Annotations;
@@ -21,12 +21,16 @@
         [CanBeNull]
         public PdfRectangle BoundingBox { get; }
 
-        public Type1Font(string name, IReadOnlyDictionary<int, string> encoding, ArrayToken fontMatrix, PdfRectangle boundingBox)
+        public Type1PrivateDictionary PrivateDictionary { get; }
+
+        public Type1Font(string name, IReadOnlyDictionary<int, string> encoding, ArrayToken fontMatrix, PdfRectangle boundingBox,
+            Type1PrivateDictionary privateDictionary)
         {
             Name = name;
             Encoding = encoding;
             FontMatrix = fontMatrix;
             BoundingBox = boundingBox;
+            PrivateDictionary = privateDictionary ?? throw new ArgumentNullException(nameof(privateDictionary));
         }
     }
 }
