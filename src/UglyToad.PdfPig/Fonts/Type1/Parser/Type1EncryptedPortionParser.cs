@@ -131,7 +131,7 @@
                     case Type1Symbols.StemSnapHorizontalWidths:
                         {
                             var widths = ReadArrayValues(tokenizer, x => x.AsDecimal());
-                            builder.StempSnapHorizontalWidths = widths;
+                            builder.StemSnapHorizontalWidths = widths;
                             break;
                         }
                     case Type1Symbols.StemSnapVerticalWidths:
@@ -168,7 +168,7 @@
                                 }
                             }
 
-                            builder.MinFeature = new Type1PrivateDictionary.MinFeature(procedureTokens[0].AsInt(), procedureTokens[1].AsInt());
+                            builder.MinFeature = new MinFeature(procedureTokens[0].AsInt(), procedureTokens[1].AsInt());
 
                             ReadTillDef(tokenizer);
 
