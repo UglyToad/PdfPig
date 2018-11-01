@@ -3,33 +3,23 @@
     /// <summary>
     /// Horizontal line-to command.
     /// </summary>
-    internal class HLineToCommand
+    internal static class HLineToCommand
     {
         public const string Name = "hlineto";
 
         public static readonly byte First = 6;
         public static readonly byte? Second = null;
 
-        public bool TakeFromStackBottom { get; } = true;
-        public bool ClearsOperandStack { get; } = true;
+        public static bool TakeFromStackBottom { get; } = true;
+        public static bool ClearsOperandStack { get; } = true;
 
-        /// <summary>
-        /// The length of the horizontal line.
-        /// </summary>
-        public int DeltaX { get; }
+        public static LazyType1Command Lazy { get; } = new LazyType1Command(Name, Run);
 
-        /// <summary>
-        /// Create a new <see cref="HLineToCommand"/>.
-        /// </summary>
-        /// <param name="deltaX">The length of the horizontal line.</param>
-        public HLineToCommand(int deltaX)
+        public static void Run(Type1BuildCharContext context)
         {
-            DeltaX = deltaX;
-        }
+            var deltaX = context.Stack.PopBottom();
 
-        public override string ToString()
-        {
-            return $"{DeltaX} {Name}";
+            context.Stack.Clear();
         }
     }
 }

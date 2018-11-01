@@ -3,33 +3,23 @@
     /// <summary>
     /// Vertical-line to command.
     /// </summary>
-    internal class VLineToCommand
+    internal static class VLineToCommand
     {
         public const string Name = "vlineto";
 
         public static readonly byte First = 7;
         public static readonly byte? Second = null;
 
-        public bool TakeFromStackBottom { get; } = true;
-        public bool ClearsOperandStack { get; } = true;
+        public static bool TakeFromStackBottom { get; } = true;
+        public static bool ClearsOperandStack { get; } = true;
 
-        /// <summary>
-        /// The length of the vertical line.
-        /// </summary>
-        public int DeltaY { get; }
+        public static LazyType1Command Lazy { get; } = new LazyType1Command(Name, Run);
 
-        /// <summary>
-        /// Create a new <see cref="VLineToCommand"/>.
-        /// </summary>
-        /// <param name="deltaY">The length of the vertical line.</param>
-        public VLineToCommand(int deltaY)
+        public static void Run(Type1BuildCharContext context)
         {
-            DeltaY = deltaY;
-        }
+            var deltaY = context.Stack.PopBottom();
 
-        public override string ToString()
-        {
-            return $"{DeltaY} {Name}";
+            context.Stack.Clear();
         }
     }
 }

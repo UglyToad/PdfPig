@@ -290,7 +290,7 @@
                 charStrings = new Type1CharstringDecryptedBytes[0];
             }
 
-            Type1CharStringParser.Parse(charStrings, builder.Subroutines ?? new Type1CharstringDecryptedBytes[0]);
+            var instructions = Type1CharStringParser.Parse(charStrings, builder.Subroutines ?? new Type1CharstringDecryptedBytes[0]);
 
             return decrypted;
         }

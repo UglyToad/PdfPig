@@ -3,33 +3,21 @@
     /// <summary>
     /// Calls a subroutine with index from the subroutines array in the Private dictionary.
     /// </summary>
-    internal class CallSubrCommand
+    internal static class CallSubrCommand
     {
         public const string Name = "callsubr";
 
         public static readonly byte First = 10;
         public static readonly byte? Second = null;
+        
+        public static bool TakeFromStackBottom { get; } = false;
+        public static bool ClearsOperandStack { get; } = false;
+        
+        public static LazyType1Command Lazy { get; } = new LazyType1Command(Name, Run);
 
-        public bool TakeFromStackBottom { get; } = false;
-        public bool ClearsOperandStack { get; } = false;
-
-        /// <summary>
-        /// The index of the subroutine in the Private dictionary.
-        /// </summary>
-        public int SubroutineIndex { get; }
-
-        /// <summary>
-        /// Creates a new <see cref="CallSubrCommand"/>.
-        /// </summary>
-        /// <param name="subroutineIndex">The index of the subroutine in the Private dictionary.</param>
-        public CallSubrCommand(int subroutineIndex)
+        public static void Run(Type1BuildCharContext context)
         {
-            SubroutineIndex = subroutineIndex;
-        }
-
-        public override string ToString()
-        {
-            return $"{SubroutineIndex} {Name}";
+            var index = (int)context.Stack.PopTop();
         }
     }
 }

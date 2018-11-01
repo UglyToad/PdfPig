@@ -3,25 +3,21 @@
     /// <summary>
     /// Closes a sub-path. This command does not reposition the current point.
     /// </summary>
-    internal class ClosePathCommand
+    internal static class ClosePathCommand
     {
         public const string Name = "closepath";
 
         public static readonly byte First = 9;
         public static readonly byte? Second = null;
 
-        public bool TakeFromStackBottom { get; } = false;
-        public bool ClearsOperandStack { get; } = true;
+        public static bool TakeFromStackBottom { get; } = false;
+        public static bool ClearsOperandStack { get; } = true;
 
-        public static ClosePathCommand Instance { get; } = new ClosePathCommand();
-
-        private ClosePathCommand()
+        public static LazyType1Command Lazy { get; } = new LazyType1Command(Name, Run);
+        
+        public static void Run(Type1BuildCharContext context)
         {
-        }
-
-        public override string ToString()
-        {
-            return Name;
+            context.Stack.Clear();
         }
     }
 }

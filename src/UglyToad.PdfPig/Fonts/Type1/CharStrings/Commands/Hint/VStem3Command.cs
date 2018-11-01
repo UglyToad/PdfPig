@@ -17,34 +17,21 @@
         public static readonly byte First = 12;
         public static readonly byte? Second = 1;
 
-        public bool TakeFromStackBottom { get; } = true;
-        public bool ClearsOperandStack { get; } = true;
+        public static bool TakeFromStackBottom { get; } = true;
+        public static bool ClearsOperandStack { get; } = true;
 
-        public int X0 { get; }
+        public static LazyType1Command Lazy { get; } = new LazyType1Command(Name, Run);
 
-        public int DeltaX0 { get; }
-
-        public int X1 { get; }
-
-        public int DeltaX1 { get; }
-
-        public int X2 { get; }
-
-        public int DeltaX2 { get; }
-
-        public VStem3Command(int x0, int deltaX0, int x1, int deltaX1, int x2, int deltaX2)
+        public static void Run(Type1BuildCharContext context)
         {
-            X0 = x0;
-            DeltaX0 = deltaX0;
-            X1 = x1;
-            DeltaX1 = deltaX1;
-            X2 = x2;
-            DeltaX2 = deltaX2;
-        }
+            var x0 = context.Stack.PopBottom();
+            var dx0 = context.Stack.PopBottom();
+            var x1 = context.Stack.PopBottom();
+            var dx1 = context.Stack.PopBottom();
+            var x2 = context.Stack.PopBottom();
+            var dx2 = context.Stack.PopBottom();
 
-        public override string ToString()
-        {
-            return $"{X0} {DeltaX0} {X1} {DeltaX1} {X2} {DeltaX2} {Name}";
+            context.Stack.Clear();
         }
     }
 }

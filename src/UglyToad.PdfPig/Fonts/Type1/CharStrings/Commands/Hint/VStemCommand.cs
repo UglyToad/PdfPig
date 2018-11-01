@@ -4,35 +4,24 @@
     /// Declares the horizontal range of a vertical stem zone between the x coordinates x and x+dx,
     /// where x is relative to the x coordinate of the left sidebearing point.
     /// </summary>
-    internal class VStemCommand
+    internal static class VStemCommand
     {
         public const string Name = "vstem";
 
         public static readonly byte First = 3;
         public static readonly byte? Second = null;
 
-        public bool TakeFromStackBottom { get; } = true;
-        public bool ClearsOperandStack { get; } = true;
+        public static bool TakeFromStackBottom { get; } = true;
+        public static bool ClearsOperandStack { get; } = true;
+        
+        public static LazyType1Command Lazy { get; } = new LazyType1Command(Name, Run);
 
-        /// <summary>
-        /// The first X coordinate for the stem zone, relative to the current left sidebearing X point.
-        /// </summary>
-        public int X { get; }
-
-        /// <summary>
-        /// The distance to move from X horizontally for the vertical stem zone.
-        /// </summary>
-        public int DeltaX { get; }
-
-        public VStemCommand(int x, int deltaX)
+        public static void Run(Type1BuildCharContext context)
         {
-            X = x;
-            DeltaX = deltaX;
-        }
+            var x = context.Stack.PopBottom();
+            var dx = context.Stack.PopBottom();
 
-        public override string ToString()
-        {
-            return $"{X} {DeltaX} {Name}";
+            context.Stack.Clear();
         }
     }
 }

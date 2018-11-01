@@ -5,36 +5,28 @@
     /// point, the arguments to rrcurveto are relative to each other. 
     /// Equivalent to: dx1 dy1 (dx1+dx2) (dy1+dy2) (dx1+dx2+dx3) (dy1+dy2+dy3) rcurveto.
     /// </summary>
-    internal class RelativeRCurveToCommand
+    internal static class RelativeRCurveToCommand
     {
         public const string Name = "rrcurveto";
 
         public static readonly byte First = 8;
         public static readonly byte? Second = null;
 
-        public bool TakeFromStackBottom { get; } = true;
-        public bool ClearsOperandStack { get; } = true;
+        public static bool TakeFromStackBottom { get; } = true;
+        public static bool ClearsOperandStack { get; } = true;
 
-        public int DeltaX1 { get; }
+        public static LazyType1Command Lazy { get; } = new LazyType1Command(Name, Run);
 
-        public int DeltaY1 { get; }
-
-        public int DeltaX2 { get; }
-
-        public int DeltaY2 { get; }
-
-        public int DeltaX3 { get; }
-
-        public int DeltaY3 { get; }
-
-        public RelativeRCurveToCommand(int deltaX1, int deltaY1, int deltaX2, int deltaY2, int deltaX3, int deltaY3)
+        public static void Run(Type1BuildCharContext context)
         {
-            DeltaX1 = deltaX1;
-            DeltaY1 = deltaY1;
-            DeltaX2 = deltaX2;
-            DeltaY2 = deltaY2;
-            DeltaX3 = deltaX3;
-            DeltaY3 = deltaY3;
+            var dx1 = context.Stack.PopBottom();
+            var dy1 = context.Stack.PopBottom();
+            var dx2 = context.Stack.PopBottom();
+            var dy2 = context.Stack.PopBottom();
+            var dx3 = context.Stack.PopBottom();
+            var dy3 = context.Stack.PopBottom();
+
+            context.Stack.Clear();
         }
     }
 }

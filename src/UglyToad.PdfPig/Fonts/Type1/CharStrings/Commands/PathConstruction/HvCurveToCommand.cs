@@ -4,38 +4,26 @@
     /// Horizontal vertical curve to command. Draws a Bézier curve when the first Bézier tangent is horizontal and the second Bézier tangent is vertical.
     /// Equivalent to dx1 0 dx2 dy2 0 dy3 rrcurveto.
     /// </summary>
-    internal class HvCurveToCommand
+    internal static class HvCurveToCommand
     {
         public const string Name = "hvcurveto";
 
         public static readonly byte First = 31;
         public static readonly byte? Second = null;
 
-        public bool TakeFromStackBottom { get; } = true;
-        public bool ClearsOperandStack { get; } = true;
+        public static bool TakeFromStackBottom { get; } = true;
+        public static bool ClearsOperandStack { get; } = true;
 
-        public int PostControlPointDeltaX { get; }
+        public static LazyType1Command Lazy { get; } = new LazyType1Command(Name, Run);
 
-        public int PreControlPointDeltaX { get; }
-
-        public int PreControlPointDeltaY { get; }
-
-        public int EndPointDeltaY { get; }
-
-        /// <summary>
-        /// Create a new <see cref="HvCurveToCommand"/>.
-        /// </summary>
-        public HvCurveToCommand(int postControlPointDeltaX, int preControlPointDeltaX, int preControlPointDeltaY, int endPointDeltaY)
+        public static void Run(Type1BuildCharContext context)
         {
-            PostControlPointDeltaX = postControlPointDeltaX;
-            PreControlPointDeltaX = preControlPointDeltaX;
-            PreControlPointDeltaY = preControlPointDeltaY;
-            EndPointDeltaY = endPointDeltaY;
-        }
+            var postControlPointDeltaX = context.Stack.PopBottom();
+            var preControlPointDeltaX = context.Stack.PopBottom();
+            var preControlPointDeltaY = context.Stack.PopBottom();
+            var endPointDeltaY = context.Stack.PopBottom();
 
-        public override string ToString()
-        {
-            return $"{PostControlPointDeltaX} {PreControlPointDeltaX} {PreControlPointDeltaY} {EndPointDeltaY} {Name}";
+            context.Stack.Clear();
         }
     }
 }

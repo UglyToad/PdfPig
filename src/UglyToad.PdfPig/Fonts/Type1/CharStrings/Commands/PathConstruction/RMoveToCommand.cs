@@ -9,40 +9,24 @@
     /// If the previous path operation in the current path was also a moveto or rmoveto, 
     /// that point is deleted from the current path and the new moveto point replaces it.
     /// </remarks>
-    internal class RMoveToCommand
+    internal static class RMoveToCommand
     {
         public const string Name = "rmoveto";
 
         public static readonly byte First = 21;
         public static readonly byte? Second = null;
 
-        public bool TakeFromStackBottom { get; } = true;
-        public bool ClearsOperandStack { get; } = true;
+        public static bool TakeFromStackBottom { get; } = true;
+        public static bool ClearsOperandStack { get; } = true;
 
-        /// <summary>
-        /// The distance to move horizontally.
-        /// </summary>
-        public int DeltaX { get; }
+        public static LazyType1Command Lazy { get; } = new LazyType1Command(Name, Run);
 
-        /// <summary>
-        /// The distance to move vertically.
-        /// </summary>
-        public int DeltaY { get; }
-
-        /// <summary>
-        /// Create a new <see cref="RMoveToCommand"/>.
-        /// </summary>
-        /// <param name="deltaX">The distance to move horizontally.</param>
-        /// <param name="deltaY">The distance to move vertically.</param>
-        public RMoveToCommand(int deltaX, int deltaY)
+        public static void Run(Type1BuildCharContext context)
         {
-            DeltaX = deltaX;
-            DeltaY = deltaY;
-        }
+            var deltaX = context.Stack.PopBottom();
+            var deltaY = context.Stack.PopBottom();
 
-        public override string ToString()
-        {
-            return $"{DeltaX} {DeltaY} {Name}";
+            context.Stack.Clear();
         }
     }
 }

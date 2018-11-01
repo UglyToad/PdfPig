@@ -10,41 +10,28 @@
     /// <remarks>
     /// Suited to letters with 3 horizontal stems like 'E'.
     /// </remarks>
-    internal class HStem3Command
+    internal static class HStem3Command
     {
         public const string Name = "hstem3";
 
         public static readonly byte First = 12;
         public static readonly byte? Second = 2;
 
-        public bool TakeFromStackBottom { get; } = true;
-        public bool ClearsOperandStack { get; } = true;
+        public static bool TakeFromStackBottom { get; } = true;
+        public static bool ClearsOperandStack { get; } = true;
 
-        public int Y0 { get; }
+        public static LazyType1Command Lazy { get; } = new LazyType1Command(Name, Run);
 
-        public int DeltaY0 { get; }
-
-        public int Y1 { get; }
-
-        public int DeltaY1 { get; }
-
-        public int Y2 { get; }
-
-        public int DeltaY2 { get; }
-
-        public HStem3Command(int y0, int deltaY0, int y1, int deltaY1, int y2, int deltaY2)
+        public static void Run(Type1BuildCharContext context)
         {
-            Y0 = y0;
-            DeltaY0 = deltaY0;
-            Y1 = y1;
-            DeltaY1 = deltaY1;
-            Y2 = y2;
-            DeltaY2 = deltaY2;
-        }
+            var y0 = context.Stack.PopBottom();
+            var dy0 = context.Stack.PopBottom();
+            var y1 = context.Stack.PopBottom();
+            var dy1 = context.Stack.PopBottom();
+            var y2 = context.Stack.PopBottom();
+            var dy2 = context.Stack.PopBottom();
 
-        public override string ToString()
-        {
-            return $"{Y0} {DeltaY0} {Y1} {DeltaY1} {Y2} {DeltaY2} {Name}";
+            context.Stack.Clear();
         }
     }
 }

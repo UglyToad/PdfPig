@@ -3,25 +3,21 @@
     /// <summary>
     /// Brackets an outline section for the dots in letters such as "i", "j" and "!".
     /// </summary>
-    internal class DotSectionCommand
+    internal static class DotSectionCommand
     {
         public const string Name = "dotsection";
 
         public static readonly byte First = 12;
         public static readonly byte? Second = 0;
 
-        public bool TakeFromStackBottom { get; } = false;
-        public bool ClearsOperandStack { get; } = true;
+        public static bool TakeFromStackBottom { get; } = false;
+        public static bool ClearsOperandStack { get; } = true;
+        
+        public static LazyType1Command Lazy { get; } = new LazyType1Command(Name, Run);
 
-        public static DotSectionCommand Instance { get; } = new DotSectionCommand();
-
-        private DotSectionCommand()
+        public static void Run(Type1BuildCharContext context)
         {
-        }
-
-        public override string ToString()
-        {
-            return Name;
+            context.Stack.Clear();
         }
     }
 }

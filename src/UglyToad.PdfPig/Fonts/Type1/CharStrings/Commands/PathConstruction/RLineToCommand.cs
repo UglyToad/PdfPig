@@ -3,40 +3,24 @@
     /// <summary>
     /// Relative line-to command. Creates a line moving a distance relative to the current point.
     /// </summary>
-    internal class RLineToCommand
+    internal static class RLineToCommand
     {
         public const string Name = "rlineto";
 
         public static readonly byte First = 5;
         public static readonly byte? Second = null;
 
-        public bool TakeFromStackBottom { get; } = true;
-        public bool ClearsOperandStack { get; } = true;
+        public static bool TakeFromStackBottom { get; } = true;
+        public static bool ClearsOperandStack { get; } = true;
 
-        /// <summary>
-        /// The distance to move horizontally.
-        /// </summary>
-        public int DeltaX { get; }
+        public static LazyType1Command Lazy { get; } = new LazyType1Command(Name, Run);
 
-        /// <summary>
-        /// The distance to move vertically.
-        /// </summary>
-        public int DeltaY { get; }
-
-        /// <summary>
-        /// Create a new <see cref="RLineToCommand"/>.
-        /// </summary>
-        /// <param name="deltaX">The distance to move horizontally.</param>
-        /// <param name="deltaY">The distance to move vertically.</param>
-        public RLineToCommand(int deltaX, int deltaY)
+        public static void Run(Type1BuildCharContext context)
         {
-            DeltaX = deltaX;
-            DeltaY = deltaY;
-        }
+            var deltaX = context.Stack.PopBottom();
+            var deltaY = context.Stack.PopBottom();
 
-        public override string ToString()
-        {
-            return $"{DeltaX} {DeltaY} {Name}";
+            context.Stack.Clear();
         }
     }
 }

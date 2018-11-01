@@ -6,24 +6,24 @@
     /// This command sets the left sidebearing point at (sbx, 0) and sets the character width vector to(wx, 0) in character space.
     /// This command also sets the current point to (sbx, 0), but does not place the point in the character path.
     /// </summary>
-    internal class HsbwCommand
+    internal static class HsbwCommand
     {
         public const string Name = "hsbw";
 
         public static readonly byte First = 13;
         public static readonly byte? Second = null;
 
-        public bool TakeFromStackBottom { get; } = true;
-        public bool ClearsOperandStack { get; } = true;
+        public static bool TakeFromStackBottom { get; } = true;
+        public static bool ClearsOperandStack { get; } = true;
 
-        public int LeftSidebearingPointX { get; }
+        public static LazyType1Command Lazy { get; } = new LazyType1Command(Name, Run);
 
-        public int CharacterWidthVectorX { get; }
-
-        public HsbwCommand(int leftSidebearingPointX, int characterWidthVectorX)
+        public static void Run(Type1BuildCharContext context)
         {
-            LeftSidebearingPointX = leftSidebearingPointX;
-            CharacterWidthVectorX = characterWidthVectorX;
+            var leftSidebearingPointX = context.Stack.PopBottom();
+            var characterWidthVectorX = context.Stack.PopBottom();
+
+            context.Stack.Clear();
         }
     }
 }
