@@ -89,6 +89,7 @@
             }
             else
             { 
+                // TODO: this can be an array of stream objects... investigate
                 var contentStream = DirectObjectFinder.Get<StreamToken>(contents, pdfScanner);
 
                 if (contentStream == null)

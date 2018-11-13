@@ -29,7 +29,7 @@
         /// <param name="length1">The length in bytes of the clear text portion of the font program.</param>
         /// <param name="length2">The length in bytes of the encrypted portion of the font program.</param>
         /// <returns>The parsed type 1 font.</returns>
-        public Type1Font Parse(IInputBytes inputBytes, int length1, int length2)
+        public Type1FontProgram Parse(IInputBytes inputBytes, int length1, int length2)
         {
             // Sometimes the entire PFB file including the header bytes can be included which prevents parsing in the normal way.
             var isEntirePfbFile = inputBytes.Peek() == PfbFileIndicator;
@@ -148,7 +148,7 @@
 
             var (privateDictionary, charStrings) = encryptedPortionParser.Parse(eexecPortion, false);
 
-            return new Type1Font(name, encoding, matrix, boundingBox ?? new PdfRectangle(), privateDictionary);
+            return new Type1FontProgram(name, encoding, matrix, boundingBox ?? new PdfRectangle(), privateDictionary, charStrings);
         }
 
         /// <summary>
@@ -349,6 +349,7 @@
 
             return new ArrayToken(result);
         }
+
         private static Dictionary<int, string> GetEncoding(IReadOnlyList<DictionaryToken> dictionaries)
         {
             var result = new Dictionary<int, string>();

@@ -89,10 +89,10 @@
                 encoding = new BuiltInEncoding(font.Encoding);
             }
 
-            return new Type1FontSimple(name, firstCharacter, lastCharacter, widths, descriptor, encoding, toUnicodeCMap);
+            return new Type1FontSimple(name, firstCharacter, lastCharacter, widths, descriptor, encoding, toUnicodeCMap, font);
         }
 
-        private Type1Font ParseType1Font(FontDescriptor descriptor, bool isLenientParsing)
+        private Type1FontProgram ParseType1Font(FontDescriptor descriptor, bool isLenientParsing)
         {
             if (descriptor?.FontFile == null)
             {

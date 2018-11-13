@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands.PathConstruction
 {
+    using Geometry;
+
     /// <summary>
     /// Relative move to command. starts a new subpath of the current path in the same manner as moveto.
     /// However, the number pair is interpreted as a displacement relative to the current point (x, y) rather than as an absolute coordinate.
@@ -25,6 +27,18 @@
         {
             var deltaX = context.Stack.PopBottom();
             var deltaY = context.Stack.PopBottom();
+
+            if (context.IsFlexing)
+            {
+                
+            }
+            else
+            {
+                var x = context.CurrentPosition.X + deltaX;
+                var y = context.CurrentPosition.Y + deltaY;
+                context.CurrentPosition = new PdfPoint(x, y);
+                context.Path.MoveTo(x, y);
+            }
 
             context.Stack.Clear();
         }

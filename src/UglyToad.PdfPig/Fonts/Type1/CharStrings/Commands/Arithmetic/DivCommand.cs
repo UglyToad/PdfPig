@@ -20,7 +20,7 @@
             var first = context.Stack.PopTop();
             var second = context.Stack.PopTop();
 
-            var result = first / second;
+            var result = second / first;
 
             context.Stack.Push(result);
         }

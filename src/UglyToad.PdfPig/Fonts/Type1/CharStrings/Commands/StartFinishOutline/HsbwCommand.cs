@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands.StartFinishOutline
 {
+    using Geometry;
+
     /// <summary>
     /// The name hsbw stands for horizontal sidebearing and width; 
     /// horizontal indicates that the y component of both the sidebearing and width is 0. 
@@ -22,6 +24,11 @@
         {
             var leftSidebearingPointX = context.Stack.PopBottom();
             var characterWidthVectorX = context.Stack.PopBottom();
+
+            context.LeftSideBearing = leftSidebearingPointX;
+            context.Width = characterWidthVectorX;
+
+            context.CurrentPosition = new PdfPoint(leftSidebearingPointX, 0);
 
             context.Stack.Clear();
         }

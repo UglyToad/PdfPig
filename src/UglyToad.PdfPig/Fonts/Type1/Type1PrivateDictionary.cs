@@ -10,7 +10,7 @@
     /// These hints help ensure that the shape is as close as possible to the original design even where the character
     /// must be represented in few pixels.
     /// Note that subroutines are also defined in the private dictionary however for the purposes of this API they are
-    /// stored on the parent <see cref="Type1Font"/>.
+    /// stored on the parent <see cref="Type1FontProgram"/>.
     /// </summary>
     internal class Type1PrivateDictionary
     {

@@ -17,6 +17,7 @@
         
         public static void Run(Type1BuildCharContext context)
         {
+            context.Path.ClosePath();
             context.Stack.Clear();
         }
     }

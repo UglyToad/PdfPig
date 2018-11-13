@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands.PathConstruction
 {
+    using Geometry;
+
     /// <summary>
     /// Relative line-to command. Creates a line moving a distance relative to the current point.
     /// </summary>
@@ -19,6 +21,12 @@
         {
             var deltaX = context.Stack.PopBottom();
             var deltaY = context.Stack.PopBottom();
+
+            var x = context.CurrentPosition.X + deltaX;
+            var y = context.CurrentPosition.Y + deltaY;
+
+            context.Path.LineTo(x, y);
+            context.CurrentPosition = new PdfPoint(x, y);
 
             context.Stack.Clear();
         }

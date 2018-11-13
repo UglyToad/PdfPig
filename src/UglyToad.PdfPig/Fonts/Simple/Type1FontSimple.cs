@@ -7,6 +7,7 @@
     using Geometry;
     using IO;
     using Tokenization.Tokens;
+    using Type1;
 
     /// <summary>
     /// A font based on the Adobe Type 1 font format.
@@ -22,6 +23,7 @@
         private readonly FontDescriptor fontDescriptor;
 
         private readonly Encoding encoding;
+        private readonly Type1FontProgram fontProgram;
 
         private readonly ToUnicodeCMap toUnicodeCMap;
 
@@ -31,13 +33,16 @@
 
         public bool IsVertical { get; } = false;
 
-        public Type1FontSimple(NameToken name, int firstChar, int lastChar, decimal[] widths, FontDescriptor fontDescriptor, Encoding encoding, CMap toUnicodeCMap)
+        public Type1FontSimple(NameToken name, int firstChar, int lastChar, decimal[] widths, FontDescriptor fontDescriptor, Encoding encoding, 
+            CMap toUnicodeCMap,
+            Type1FontProgram fontProgram)
         {
             this.firstChar = firstChar;
             this.lastChar = lastChar;
             this.widths = widths;
             this.fontDescriptor = fontDescriptor;
             this.encoding = encoding;
+            this.fontProgram = fontProgram;
             this.toUnicodeCMap = new ToUnicodeCMap(toUnicodeCMap);
             Name = name;
         }
@@ -101,6 +106,8 @@
             {
                 return new PdfRectangle(0, 0, 250, 0);
             }
+
+            this.fontProgram.GetCharacterBoundingBox(characterCode);
 
             return new PdfRectangle(0, 0, widths[characterCode - firstChar], 0);
         }

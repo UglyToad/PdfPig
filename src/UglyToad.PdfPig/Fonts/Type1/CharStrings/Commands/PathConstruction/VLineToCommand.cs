@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands.PathConstruction
 {
+    using Geometry;
+
     /// <summary>
     /// Vertical-line to command.
     /// </summary>
@@ -18,6 +20,10 @@
         public static void Run(Type1BuildCharContext context)
         {
             var deltaY = context.Stack.PopBottom();
+            var y = context.CurrentPosition.Y + deltaY;
+
+            context.Path.LineTo(context.CurrentPosition.X, y);
+            context.CurrentPosition = new PdfPoint(context.CurrentPosition.X, y);
 
             context.Stack.Clear();
         }

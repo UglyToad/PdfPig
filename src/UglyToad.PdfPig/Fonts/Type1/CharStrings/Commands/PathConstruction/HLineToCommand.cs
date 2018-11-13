@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands.PathConstruction
 {
+    using Geometry;
+
     /// <summary>
     /// Horizontal line-to command.
     /// </summary>
@@ -18,6 +20,10 @@
         public static void Run(Type1BuildCharContext context)
         {
             var deltaX = context.Stack.PopBottom();
+            var x = context.CurrentPosition.X + deltaX;
+
+            context.Path.LineTo(x, context.CurrentPosition.Y);
+            context.CurrentPosition = new PdfPoint(x, context.CurrentPosition.Y);
 
             context.Stack.Clear();
         }

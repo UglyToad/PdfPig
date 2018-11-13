@@ -1,15 +1,25 @@
 ﻿using System;
+// ReSharper disable InconsistentNaming
 
 namespace UglyToad.PdfPig.Util
 {
-    // ReSharper disable once InconsistentNaming
-    internal abstract class DiscriminatedUnion<A, B>
+    internal abstract class Union<A, B>
     {
-        public abstract T Match<T>(Func<A, T> first, Func<B, T> second);
+        public abstract void Match(Action<A> first, Action<B> second);
 
-        private DiscriminatedUnion() { }
+        private Union() { }
 
-        public sealed class Case1 : DiscriminatedUnion<A, B>
+        public static Case1 One(A item)
+        {
+            return new Case1(item);
+        }
+
+        public static Case2 Two(B item)
+        {
+            return new Case2(item);
+        }
+
+        public sealed class Case1 : Union<A, B>
         {
             public readonly A Item;
 
@@ -18,9 +28,9 @@ namespace UglyToad.PdfPig.Util
                 Item = item;
             }
 
-            public override T Match<T>(Func<A, T> first, Func<B, T> second)
+            public override void Match(Action<A> first, Action<B> second)
             {
-                return first(Item);
+                first(Item);
             }
 
             public override string ToString()
@@ -29,7 +39,7 @@ namespace UglyToad.PdfPig.Util
             }
         }
 
-        public sealed class Case2 : DiscriminatedUnion<A, B>
+        public sealed class Case2 : Union<A, B>
         {
             public readonly B Item;
 
@@ -38,9 +48,9 @@ namespace UglyToad.PdfPig.Util
                 Item = item;
             }
 
-            public override T Match<T>(Func<A, T> first, Func<B, T> second)
+            public override void Match(Action<A> first, Action<B> second)
             {
-                return second(Item);
+                second(Item);
             }
 
             public override string ToString()

@@ -66,9 +66,9 @@
             return new Type1CharStrings(charStringResults, subroutineResults);
         }
 
-        private static IReadOnlyList<DiscriminatedUnion<decimal, LazyType1Command>> ParseSingle(IReadOnlyList<byte> charStringBytes)
+        private static IReadOnlyList<Union<decimal, LazyType1Command>> ParseSingle(IReadOnlyList<byte> charStringBytes)
         {
-            var interpreted = new List<DiscriminatedUnion<decimal, LazyType1Command>>();
+            var interpreted = new List<Union<decimal, LazyType1Command>>();
 
             for (var i = 0; i < charStringBytes.Count; i++)
             {
@@ -83,13 +83,13 @@
                         throw new InvalidOperationException($"Could not find command with code {b}.");
                     }
 
-                    interpreted.Add(new DiscriminatedUnion<decimal, LazyType1Command>.Case2(command));
+                    interpreted.Add(new Union<decimal, LazyType1Command>.Case2(command));
                 }
                 else
                 {
                     var val = InterpretNumber(b, charStringBytes, ref i);
 
-                    interpreted.Add(new DiscriminatedUnion<decimal, LazyType1Command>.Case1(val));
+                    interpreted.Add(new Union<decimal, LazyType1Command>.Case1(val));
                 }
             }
 

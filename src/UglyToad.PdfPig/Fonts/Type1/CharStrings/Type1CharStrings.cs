@@ -46,7 +46,14 @@
 
         private void Run(CommandSequence sequence)
         {
+            var context = new Type1BuildCharContext();
+            foreach (var command in sequence.Commands)
+            {
+                command.Match(x => context.Stack.Push(x), 
+                    x => x.Run(context));
+            }
 
+            var str = context.Path.ToSvg();
         }
 
         public class CommandSequence
@@ -54,9 +61,9 @@
             /// <summary>
             /// The ordered list of numbers and commands for a Type 1 charstring or subroutine.
             /// </summary>
-            public IReadOnlyList<DiscriminatedUnion<decimal, LazyType1Command>> Commands { get; }
+            public IReadOnlyList<Union<decimal, LazyType1Command>> Commands { get; }
 
-            public CommandSequence(IReadOnlyList<DiscriminatedUnion<decimal, LazyType1Command>> commands)
+            public CommandSequence(IReadOnlyList<Union<decimal, LazyType1Command>> commands)
             {
                 Commands = commands ?? throw new ArgumentNullException(nameof(commands));
             }
