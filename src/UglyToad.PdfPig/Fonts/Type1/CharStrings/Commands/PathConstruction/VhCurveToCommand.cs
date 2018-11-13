@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands.PathConstruction
 {
+    using Geometry;
+
     /// <summary>
     /// Vertical-horizontal curveto. 
     /// Equivalent to 0 dy1 dx2 dy2 dx3 0 rrcurveto.
@@ -19,10 +21,22 @@
 
         public static void Run(Type1BuildCharContext context)
         {
-            var postControlPointDeltaY = context.Stack.PopBottom();
-            var preControlPointDeltaX = context.Stack.PopBottom();
-            var preControlPointDeltaY = context.Stack.PopBottom();
-            var endPointDeltaX = context.Stack.PopBottom();
+            var dy1 = context.Stack.PopBottom();
+            var dx2 = context.Stack.PopBottom();
+            var dy2 = context.Stack.PopBottom();
+            var dx3 = context.Stack.PopBottom();
+
+            var x1 = context.CurrentPosition.X;
+            var y1 = context.CurrentPosition.Y + dy1;
+
+            var x2 = x1 + dx2;
+            var y2 = y1 + dy2;
+
+            var x3 = x2 + dx3;
+            var y3 = y2;
+
+            context.Path.BezierCurveTo(x1, y1, x2, y2, x3, y3);
+            context.CurrentPosition = new PdfPoint(x3, y3);
 
             context.Stack.Clear();
         }

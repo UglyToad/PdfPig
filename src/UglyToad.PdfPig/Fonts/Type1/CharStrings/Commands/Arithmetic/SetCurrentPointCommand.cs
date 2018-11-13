@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands.Arithmetic
 {
+    using Geometry;
+
     /// <summary>
     /// Sets the current point to (x, y) in absolute character space coordinates without performing a charstring moveto command.
     /// </summary>
@@ -19,6 +21,8 @@
         {
             var x = context.Stack.PopBottom();
             var y = context.Stack.PopBottom();
+
+            context.CurrentPosition = new PdfPoint(x, y);
 
             context.Stack.Clear();
         }

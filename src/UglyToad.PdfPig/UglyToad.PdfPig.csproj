@@ -36,9 +36,5 @@
     <EmbeddedResource Include="Resources\CMap\*" />
     <EmbeddedResource Include="Resources\GlyphList\*" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Fonts\Type1\CharStrings\Commands\Subroutine\" />
-  </ItemGroup>
   
 </Project>

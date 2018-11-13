@@ -1,4 +1,5 @@
-﻿namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands.Hint
+﻿// ReSharper disable UnusedVariable
+namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands.Hint
 {
     /// <summary>
     /// Declares the vertical range of a horizontal stem zone between the y coordinates y and y+dy,
@@ -20,6 +21,8 @@
         {
             var y = context.Stack.PopBottom();
             var dy = context.Stack.PopBottom();
+
+            // Ignored
 
             context.Stack.Clear();
         }

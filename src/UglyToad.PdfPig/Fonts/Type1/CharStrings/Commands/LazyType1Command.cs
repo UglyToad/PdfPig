@@ -36,6 +36,11 @@ namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands
 
         public decimal PopTop()
         {
+            if (stack.Count == 0)
+            {
+                throw new InvalidOperationException("Cannot pop from the top of an empty stack, invalid charstring parsed.");
+            }
+
             var result = stack[stack.Count - 1];
             stack.RemoveAt(stack.Count - 1);
             return result;
@@ -43,6 +48,11 @@ namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands
 
         public decimal PopBottom()
         {
+            if (stack.Count == 0)
+            {
+                throw new InvalidOperationException("Cannot pop from the bottom of an empty stack, invalid charstring parsed.");
+            }
+
             var result = stack[0];
             stack.RemoveAt(0);
             return result;

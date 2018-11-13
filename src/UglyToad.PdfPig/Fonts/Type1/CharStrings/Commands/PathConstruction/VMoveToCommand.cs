@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands.PathConstruction
 {
+    using Geometry;
+
     /// <summary>
     /// Vertical move to. Moves relative to the current point.
     /// </summary>
@@ -18,6 +20,19 @@
         public static void Run(Type1BuildCharContext context)
         {
             var deltaY = context.Stack.PopBottom();
+
+            if (context.IsFlexing)
+            {
+                // TODO: flex commands
+            }
+            else
+            {
+                var y = context.CurrentPosition.Y + deltaY;
+                var x = context.CurrentPosition.X;
+
+                context.CurrentPosition = new PdfPoint(x, y);
+                context.Path.MoveTo(x, y);
+            }
 
             context.Stack.Clear();
         }

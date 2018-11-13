@@ -1,4 +1,5 @@
-﻿namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands.Hint
+﻿// ReSharper disable UnusedVariable
+namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands.Hint
 {
     /// <summary>
     /// Declares the horizontal ranges of three vertical stem zones.
@@ -30,6 +31,8 @@
             var dx1 = context.Stack.PopBottom();
             var x2 = context.Stack.PopBottom();
             var dx2 = context.Stack.PopBottom();
+
+            // Ignored
 
             context.Stack.Clear();
         }

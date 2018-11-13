@@ -53,12 +53,22 @@
             commands.Add(new Close());
         }
 
+        public PdfRectangle GetBoundingRectangle()
+        {
+            return new PdfRectangle();
+        }
+
         public string ToSvg()
         {
             var builder = new StringBuilder();
             foreach (var pathCommand in commands)
             {
                 pathCommand.WriteSvg(builder);
+            }
+
+            if (builder.Length == 0)
+            {
+                return string.Empty;
             }
 
             if (builder[builder.Length - 1] == ' ')

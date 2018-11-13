@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands.StartFinishOutline
 {
+    using Geometry;
+
     /// <summary>
     /// Sets left sidebearing and the character width vector.
     /// This command also sets the current point to(sbx, sby), but does not place the point in the character path.
@@ -22,6 +24,14 @@
             var leftSidebearingY = context.Stack.PopBottom();
             var characterWidthX = context.Stack.PopBottom();
             var characterWidthY = context.Stack.PopBottom();
+
+            context.LeftSideBearingX = leftSidebearingX;
+            context.LeftSideBearingY = leftSidebearingY;
+
+            context.WidthX = characterWidthX;
+            context.WidthY = characterWidthY;
+
+            context.CurrentPosition = new PdfPoint(leftSidebearingX, leftSidebearingY);
 
             context.Stack.Clear();
         }

@@ -25,8 +25,8 @@
             var leftSidebearingPointX = context.Stack.PopBottom();
             var characterWidthVectorX = context.Stack.PopBottom();
 
-            context.LeftSideBearing = leftSidebearingPointX;
-            context.Width = characterWidthVectorX;
+            context.LeftSideBearingX = leftSidebearingPointX;
+            context.WidthX = characterWidthVectorX;
 
             context.CurrentPosition = new PdfPoint(leftSidebearingPointX, 0);
 

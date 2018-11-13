@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands.PathConstruction
 {
+    using Geometry;
+
     /// <summary>
     /// Relative move to for horizontal dimension only.
     /// </summary>
@@ -18,6 +20,19 @@
         public static void Run(Type1BuildCharContext context)
         {
             var x = context.Stack.PopBottom();
+
+            var actualX = context.CurrentPosition.X + x;
+            var y = context.CurrentPosition.Y;
+
+            if (context.IsFlexing)
+            {
+                // TODO: flex support
+            }
+            else
+            {
+                context.CurrentPosition = new PdfPoint(actualX, y);
+                context.Path.MoveTo(actualX, y);
+            }
 
             context.Stack.Clear();
         }

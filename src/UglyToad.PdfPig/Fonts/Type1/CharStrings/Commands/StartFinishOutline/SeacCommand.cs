@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands.StartFinishOutline
 {
+    using System;
+
     /// <summary>
     /// Standard encoding accented character.
     /// Makes an accented character from two other characters in the font program.
@@ -23,6 +25,12 @@
             var accentOriginY = context.Stack.PopBottom();
             var baseCharacterCode = context.Stack.PopBottom();
             var accentCharacterCode = context.Stack.PopBottom();
+
+            var baseCharacter = context.GetCharacter((int)baseCharacterCode);
+            var accentCharacter = context.GetCharacter((int) accentCharacterCode);
+
+            // TODO
+            throw new NotImplementedException("Not done yet...");
 
             context.Stack.Clear();
         }
