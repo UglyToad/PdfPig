@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using CharStrings;
     using Geometry;
     using Tokenization.Tokens;
@@ -61,8 +62,24 @@
         public PdfRectangle GetCharacterBoundingBox(int characterCode)
         {
             var b = Encoding[characterCode];
-            CharStrings.Generate(b);
-            return new PdfRectangle();
+            var glyph = CharStrings.Generate(b);
+            var bbox = glyph.GetBoundingRectangle();
+
+            if (Debugger.IsAttached)
+            {
+                if (bbox.Bottom < BoundingBox.Bottom
+                    || bbox.Top > BoundingBox.Top
+                    || bbox.Left < BoundingBox.Left
+                    || bbox.Right > BoundingBox.Right)
+                {
+                    // Debugger.Break();
+                }
+
+                var full = glyph.ToFullSvg();
+                Console.WriteLine(full);
+            }
+
+            return bbox;
         }
     }
 }

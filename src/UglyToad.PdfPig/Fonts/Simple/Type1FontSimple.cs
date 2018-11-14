@@ -107,9 +107,9 @@
                 return new PdfRectangle(0, 0, 250, 0);
             }
 
-            this.fontProgram.GetCharacterBoundingBox(characterCode);
+            var rect = fontProgram.GetCharacterBoundingBox(characterCode);
 
-            return new PdfRectangle(0, 0, widths[characterCode - firstChar], 0);
+            return rect;
         }
 
         public TransformationMatrix GetFontMatrix()

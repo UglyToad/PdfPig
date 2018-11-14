@@ -9,51 +9,51 @@
     internal class Type1CharStrings
     {
         private readonly object locker = new object();
-        private readonly Dictionary<string, CommandSequence> charStrings = new Dictionary<string, CommandSequence>();
+        private readonly Dictionary<string, CharacterPath> glyphs = new Dictionary<string, CharacterPath>();
 
         public IReadOnlyDictionary<string, CommandSequence> CharStrings { get; }
 
         public IReadOnlyDictionary<int, CommandSequence> Subroutines { get; }
-        
+
         public Type1CharStrings(IReadOnlyDictionary<string, CommandSequence> charStrings, IReadOnlyDictionary<int, CommandSequence> subroutines)
         {
             CharStrings = charStrings ?? throw new ArgumentNullException(nameof(charStrings));
             Subroutines = subroutines ?? throw new ArgumentNullException(nameof(subroutines));
         }
 
-        public void Generate(string name)
+        public CharacterPath Generate(string name)
         {
+            CharacterPath glyph;
             lock (locker)
             {
-                if (charStrings.TryGetValue(name, out var result))
+                if (glyphs.TryGetValue(name, out var result))
                 {
-                    return;
+                    return result;
                 }
+
+                if (!CharStrings.TryGetValue(name, out var sequence))
+                {
+                    throw new InvalidOperationException($"No charstring sequence with the name /{name} in this font.");
+                }
+
+                glyph = Run(sequence);
+
+                glyphs[name] = glyph;
             }
 
-            if (!CharStrings.TryGetValue(name, out var sequence))
-            {
-                throw new InvalidOperationException($"No charstring sequence with the name /{name} in this font.");
-            }
-
-            Run(sequence);
-
-            lock (locker)
-            {
-                charStrings[name] = sequence;
-            }
+            return glyph;
         }
 
-        private void Run(CommandSequence sequence)
+        private static CharacterPath Run(CommandSequence sequence)
         {
             var context = new Type1BuildCharContext();
             foreach (var command in sequence.Commands)
             {
-                command.Match(x => context.Stack.Push(x), 
+                command.Match(x => context.Stack.Push(x),
                     x => x.Run(context));
             }
 
-            var str = context.Path.ToSvg();
+            return context.Path;
         }
 
         public class CommandSequence
