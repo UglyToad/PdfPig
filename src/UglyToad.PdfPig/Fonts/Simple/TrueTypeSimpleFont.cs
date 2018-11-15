@@ -110,7 +110,7 @@
             if (font == null)
             {
                 fromFont = false;
-                 width = widths[characterCode];
+                 width = widths[characterCode - firstCharacter];
             }
             else
             {

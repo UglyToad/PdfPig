@@ -11,6 +11,7 @@
         private const string SingleGoogleDrivePage = "Single Page Simple - from google drive";
         private const string SinglePageFormattedType0Content = "Type0 Font";
         private const string SinglePageType1Content = "ICML03-081";
+        private const string SingleInkscapePage = "Single Page Simple - from inkscape";
 
         private static string GetFilename(string name)
         {
@@ -28,6 +29,12 @@
         public void SinglePageWithType1Content()
         {
             Run(SinglePageType1Content);
+        }
+
+        [Fact]
+        public void SinglePageSimpleFromInkscape()
+        {
+            Run(SingleInkscapePage);
         }
 
         [Fact]
