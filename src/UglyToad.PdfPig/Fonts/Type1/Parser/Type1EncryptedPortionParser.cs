@@ -540,6 +540,13 @@
                     break;
                 }
 
+                if (token.Type == Type1Token.TokenType.StartArray)
+                {
+                    var array = ReadArrayValues<T>(tokenizer, converter, true, false);
+
+                    results.AddRange(array);
+                }
+
                 try
                 {
                     var result = converter(token);

@@ -15,8 +15,8 @@
         public void CanReadHexEncryptedPortion()
         {
             var bytes = GetFileBytes("AdobeUtopia.pfa");
-            
-            parser.Parse(new ByteArrayInputBytes(bytes),0, 0);
+
+            parser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
         }
 
         [Fact]
@@ -24,7 +24,7 @@
         {
             // TODO: support reading in these pfb files
             var bytes = GetFileBytes("Raleway-Black.pfb");
-            
+
             parser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
         }
 
@@ -48,6 +48,14 @@
         public void CanReadAsciiPart()
         {
             var bytes = GetFileBytes("CMBX12");
+
+            parser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
+        }
+
+        [Fact]
+        public void CanReadFontWithCommentsInOtherSubrs()
+        {
+            var bytes = GetFileBytes("CMR10");
 
             parser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
         }

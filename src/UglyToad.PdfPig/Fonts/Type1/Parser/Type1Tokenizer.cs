@@ -363,7 +363,7 @@
                 var c = (char)bytes.CurrentByte;
                 if (ReadHelper.IsEndOfLine(c))
                 {
-                    continue;
+                    break;
                 }
 
                 commentBuffer.Append(c);
