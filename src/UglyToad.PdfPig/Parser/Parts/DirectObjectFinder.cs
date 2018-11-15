@@ -6,6 +6,36 @@
 
     internal static class DirectObjectFinder
     {
+        public static bool TryGet<T>(IToken token, IPdfTokenScanner scanner, out T tokenResult) where T : IToken
+        {
+            tokenResult = default(T);
+            if (token is T t)
+            {
+                tokenResult = t;
+                return true;
+            }
+
+            if (!(token is IndirectReferenceToken reference))
+            {
+                return false;
+            }
+
+            var temp = scanner.Get(reference.Data);
+
+            if (temp.Data is T tTemp)
+            {
+                tokenResult = tTemp;
+                return true;
+            }
+
+            if (temp.Data is IndirectReferenceToken nestedReferenceToken)
+            {
+                return TryGet(nestedReferenceToken, scanner, out tokenResult);
+            }
+
+            return false;
+        }
+
         public static T Get<T>(IToken token, IPdfTokenScanner scanner) where T : IToken
         {
             if (token is T result)

@@ -2,8 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.Linq;
     using Content;
     using Exceptions;
     using Filters;
@@ -63,14 +61,13 @@
             {
                  // ignored for now, is it possible? check the spec...
             }
-            else if (contents is ArrayToken array)
+            else if (DirectObjectFinder.TryGet<ArrayToken>(contents, pdfScanner, out var array))
             {
                 var bytes = new List<byte>();
                 
                 foreach (var item in array.Data)
                 {
-                    var obj = item as IndirectReferenceToken;
-                    if (obj == null)
+                    if (!(item is IndirectReferenceToken obj))
                     {
                         throw new PdfDocumentFormatException($"The contents contained something which was not an indirect reference: {item}.");
                     }
@@ -88,8 +85,7 @@
                 content = GetContent(bytes, cropBox, userSpaceUnit, isLenientParsing);
             }
             else
-            { 
-                // TODO: this can be an array of stream objects... investigate
+            {
                 var contentStream = DirectObjectFinder.Get<StreamToken>(contents, pdfScanner);
 
                 if (contentStream == null)
@@ -109,11 +105,6 @@
 
         private PageContent GetContent(IReadOnlyList<byte> contentBytes, CropBox cropBox, UserSpaceUnit userSpaceUnit, bool isLenientParsing)
         {
-            if (Debugger.IsAttached)
-            {
-                var txt = OtherEncodings.BytesAsLatin1String(contentBytes.ToArray());
-            }
-
             var operations = pageContentParser.Parse(new ByteArrayInputBytes(contentBytes));
 
             var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit, isLenientParsing, pdfScanner, xObjectFactory);
