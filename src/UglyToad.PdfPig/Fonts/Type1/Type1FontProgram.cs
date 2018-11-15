@@ -59,27 +59,29 @@
             CharStrings = charStrings ?? throw new ArgumentNullException(nameof(charStrings));
         }
 
-        public PdfRectangle GetCharacterBoundingBox(int characterCode)
+        public PdfRectangle? GetCharacterBoundingBox(int characterCode)
         {
             var b = Encoding[characterCode];
             var glyph = CharStrings.Generate(b);
             var bbox = glyph.GetBoundingRectangle();
 
+            if (!bbox.HasValue)
+            {
+                return null;
+            }
+
             if (Debugger.IsAttached)
             {
-                if (bbox.Bottom < BoundingBox.Bottom
-                    || bbox.Top > BoundingBox.Top
-                    || bbox.Left < BoundingBox.Left
-                    || bbox.Right > BoundingBox.Right)
-                {
-                    // Debugger.Break();
-                }
-
                 var full = glyph.ToFullSvg();
                 Console.WriteLine(full);
             }
 
             return bbox;
+        }
+
+        public bool ContainsNamedCharacter(string name)
+        {
+            return CharStrings.CharStrings.ContainsKey(name);
         }
     }
 }

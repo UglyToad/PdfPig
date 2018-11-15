@@ -123,7 +123,8 @@
 
                 if (!foundUnicode && !isLenientParsing)
                 {
-                    throw new InvalidOperationException($"We could not find the corresponding character with code {code} in font {font.Name}.");
+                    // TODO: record warning
+                    // throw new InvalidOperationException($"We could not find the corresponding character with code {code} in font {font.Name}.");
                 }
 
                 var wordSpacing = 0m;

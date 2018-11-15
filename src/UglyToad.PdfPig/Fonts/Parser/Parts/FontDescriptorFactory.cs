@@ -2,20 +2,22 @@
 {
     using System;
     using Geometry;
+    using PdfPig.Parser.Parts;
+    using Tokenization.Scanner;
     using Tokenization.Tokens;
     using Util;
     using Util.JetBrains.Annotations;
 
     internal class FontDescriptorFactory
     {
-        public FontDescriptor Generate(DictionaryToken dictionary, bool isLenientParsing)
+        public FontDescriptor Generate(DictionaryToken dictionary, IPdfTokenScanner pdfScanner, bool isLenientParsing)
         {
             if (dictionary == null)
             {
                 throw new ArgumentNullException(nameof(dictionary));
             }
 
-            var name = GetFontName(dictionary, isLenientParsing);
+            var name = GetFontName(dictionary, pdfScanner, isLenientParsing);
             var family = GetFontFamily(dictionary);
             var stretch = GetFontStretch(dictionary);
             var flags = GetFlags(dictionary, isLenientParsing);
@@ -55,10 +57,16 @@
             return number.Data;
         }
 
-        private static NameToken GetFontName(DictionaryToken dictionary, bool isLenientParsing)
+        private static NameToken GetFontName(DictionaryToken dictionary, IPdfTokenScanner scanner, bool isLenientParsing)
         {
             if (!dictionary.TryGet(NameToken.FontName, out var name) || !(name is NameToken nameToken))
             {
+                if (name is IndirectReferenceToken nameReference)
+                {
+                    var indirectName = DirectObjectFinder.Get<NameToken>(nameReference, scanner);
+                    return indirectName;
+                }
+
                 if (isLenientParsing)
                 {
                     nameToken = NameToken.Create(string.Empty);

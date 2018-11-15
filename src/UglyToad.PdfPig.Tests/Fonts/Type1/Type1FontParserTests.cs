@@ -54,17 +54,17 @@
 
         private static byte[] GetFileBytes(string name)
         {
-            var manifestFiles = typeof(Type1FontParserTests).Assembly.GetManifestResourceNames();
+            var documentFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Fonts", "Type1"));
+            var files = Directory.GetFiles(documentFolder);
 
-            var match = manifestFiles.Single(x => x.IndexOf(name, StringComparison.InvariantCultureIgnoreCase) >= 0);
+            var file = files.FirstOrDefault(x => x.IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0);
 
-            using (var memoryStream = new MemoryStream())
-            using (var stream = typeof(Type1FontParserTests).Assembly.GetManifestResourceStream(match))
+            if (file == null)
             {
-                stream.CopyTo(memoryStream);
-
-                return memoryStream.ToArray();
+                throw new InvalidOperationException($"Could not find test file {name} in folder {documentFolder}.");
             }
+
+            return File.ReadAllBytes(file);
         }
     }
 }

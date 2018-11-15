@@ -56,8 +56,13 @@ namespace UglyToad.PdfPig.Fonts.Type1.CharStrings
             commands.Add(new Close());
         }
 
-        public PdfRectangle GetBoundingRectangle()
+        public PdfRectangle? GetBoundingRectangle()
         {
+            if (commands.Count == 0)
+            {
+                return null;
+            }
+
             var minX = decimal.MaxValue;
             var maxX = decimal.MinValue;
 
@@ -139,7 +144,7 @@ namespace UglyToad.PdfPig.Fonts.Type1.CharStrings
             }
 
             var path = $"<path d='{glyph}' stroke='cyan' stroke-width='3'></path>";
-            var bboxRect = BboxToRect(bbox, "yellow");
+            var bboxRect = bbox.HasValue ? BboxToRect(bbox.Value, "yellow") : string.Empty;
             var others = string.Join(" ", bboxes.Select(x => BboxToRect(x, "gray")));
             var result = $"<svg transform='scale(1, -1)' width='2000' height='2000'>{path} {bboxRect} {others}</svg>";
 

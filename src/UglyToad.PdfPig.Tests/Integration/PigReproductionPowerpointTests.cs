@@ -32,5 +32,17 @@
                 Assert.Equal(35, document.NumberOfPages);
             }
         }
+
+        [Fact]
+        public void CanReadAllPages()
+        {
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                for (var i = 0; i < document.NumberOfPages; i++)
+                {
+                    document.GetPage(i + 1);
+                }
+            }
+        }
     }
 }

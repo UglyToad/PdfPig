@@ -63,7 +63,7 @@
 
             var parsed = DirectObjectFinder.Get<DictionaryToken>(obj, pdfScanner);
             
-            var descriptor = fontDescriptorFactory.Generate(parsed, isLenientParsing);
+            var descriptor = fontDescriptorFactory.Generate(parsed, pdfScanner, isLenientParsing);
 
             return descriptor;
         }

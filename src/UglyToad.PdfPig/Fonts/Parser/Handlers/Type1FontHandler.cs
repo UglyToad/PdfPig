@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Parser.Handlers
 {
+    using System;
     using Cmap;
     using CompactFontFormat;
     using Encodings;
@@ -118,6 +119,7 @@
                 && NameToken.Type1C.Equals(subTypeName))
                 {
                     compactFontFormatParser.Parse(new CompactFontFormatData(bytes));
+                    throw new NotSupportedException("TODO: support Compact Font Format...");
                     return null;
                 }
 

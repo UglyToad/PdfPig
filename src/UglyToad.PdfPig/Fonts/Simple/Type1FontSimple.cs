@@ -71,6 +71,11 @@
                 }
                 catch
                 {
+                    if (fontProgram != null)
+                    {
+                        var result = fontProgram.Encoding.TryGetValue(characterCode, out value);
+                        return result;
+                    }
                     // our quick hack has failed, we should decode the type 1 font!
                 }
 
@@ -78,7 +83,7 @@
             }
 
             var name = encoding.GetName(characterCode);
-
+            
             try
             {
                 value = GlyphList.AdobeGlyphList.NameToUnicode(name);
@@ -107,9 +112,19 @@
                 return new PdfRectangle(0, 0, 250, 0);
             }
 
+            if (fontProgram == null)
+            {
+                return new PdfRectangle(0, 0, widths[characterCode - firstChar], 0);
+            }
+
             var rect = fontProgram.GetCharacterBoundingBox(characterCode);
 
-            return rect;
+            if (!rect.HasValue)
+            {
+                return new PdfRectangle(0, 0, widths[characterCode - firstChar], 0);
+            }
+
+            return rect.Value;
         }
 
         public TransformationMatrix GetFontMatrix()
