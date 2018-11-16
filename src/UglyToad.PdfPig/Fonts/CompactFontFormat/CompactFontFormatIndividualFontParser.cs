@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CompactFontFormat
 {
+    using System;
+    using CharStrings;
     using Dictionaries;
 
     internal class CompactFontFormatIndividualFontParser
@@ -42,6 +44,17 @@
                 data.Seek(dictionary.CharStringsOffset);
 
                 var index = indexReader.ReadDictionaryData(data);
+
+                switch (dictionary.CharStringType)
+                {
+                    case CompactFontFormatCharStringType.Type1:
+                        throw new NotImplementedException();
+                    case CompactFontFormatCharStringType.Type2:
+                        Type2CharStringParser.Parse(index);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException($"Unexpected CharString type in CFF font: {dictionary.CharStringType}.");
+                }
             }
         }
     }

@@ -30,7 +30,7 @@
 
         public decimal PaintType { get; set; }
 
-        public int CharstringType { get; set; } = 2;
+        public CompactFontFormatCharStringType CharStringType { get; set; } = CompactFontFormatCharStringType.Type2;
 
         public TransformationMatrix FontMatrix { get; set; } = TransformationMatrix.FromValues(0.001m, 0m, 0.001m, 0, 0, 0);
 
@@ -62,5 +62,22 @@
         public string BaseFontName { get; set; }
 
         public decimal[] BaseFontBlend { get; set; }
+
+
+    }
+
+    /// <summary>
+    /// Defines the format of the CharString data contained within a Compact Font Format font.
+    /// </summary>
+    internal enum CompactFontFormatCharStringType
+    {
+        /// <summary>
+        /// The Type 1 CharString format as defined by the Adobe Type 1 Font Format.
+        /// </summary>
+        Type1 = 1,
+        /// <summary>
+        /// The Type 2 CharString format as defined by Adobe Technical Note #5177. This is the default type.
+        /// </summary>
+        Type2 = 2
     }
 }

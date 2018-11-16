@@ -65,7 +65,7 @@
                                 dictionary.PaintType = operands[0].Decimal;
                                 break;
                             case 6:
-                                dictionary.CharstringType = GetIntOrDefault(operands);
+                                dictionary.CharStringType = (CompactFontFormatCharStringType)GetIntOrDefault(operands, 2);
                                 break;
                             case 7:
                                 {

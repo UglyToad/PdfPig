@@ -19,9 +19,9 @@
 
         public PdfPoint CurrentPosition { get; set; }
 
-        public Type1Stack Stack { get; } = new Type1Stack();
+        public CharStringStack Stack { get; } = new CharStringStack();
 
-        public Type1Stack PostscriptStack { get; } = new Type1Stack();
+        public CharStringStack PostscriptStack { get; } = new CharStringStack();
 
         public IReadOnlyList<PdfPoint> FlexPoints { get; }
 

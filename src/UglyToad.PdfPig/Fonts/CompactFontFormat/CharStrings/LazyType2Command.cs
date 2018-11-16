@@ -1,25 +1,25 @@
-﻿namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands
+﻿namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
 {
     using System;
     using System.Diagnostics;
 
     /// <summary>
-    /// Represents the deferred execution of a Type 1 Build Char command.
+    /// Represents the deferred execution of a Type 2 CharString command.
     /// </summary>
-    internal class LazyType1Command
+    internal class LazyType2Command
     {
-        private readonly Action<Type1BuildCharContext> runCommand;
+        private readonly Action<Type2BuildCharContext> runCommand;
 
         public string Name { get; }
 
-        public LazyType1Command(string name, Action<Type1BuildCharContext> runCommand)
+        public LazyType2Command(string name, Action<Type2BuildCharContext> runCommand)
         {
             Name = name;
             this.runCommand = runCommand ?? throw new ArgumentNullException(nameof(runCommand));
         }
 
         [DebuggerStepThrough]
-        public void Run(Type1BuildCharContext context)
+        public void Run(Type2BuildCharContext context)
         {
             runCommand(context);
         }
@@ -28,5 +28,10 @@
         {
             return Name;
         }
+    }
+
+    internal class Type2BuildCharContext
+    {
+
     }
 }
