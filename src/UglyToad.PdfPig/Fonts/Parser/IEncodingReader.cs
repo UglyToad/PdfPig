@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Parser
 {
     using Encodings;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal interface IEncodingReader
     {

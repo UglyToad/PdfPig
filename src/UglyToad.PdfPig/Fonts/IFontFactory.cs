@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts
 {
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal interface IFontFactory
     {

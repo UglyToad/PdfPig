@@ -2,7 +2,7 @@
 {
     using Core;
     using Geometry;
-    using Tokenization.Tokens;
+    using Tokens;
 
     /// <summary>
     /// A CID font contains glyph descriptions accessed by 

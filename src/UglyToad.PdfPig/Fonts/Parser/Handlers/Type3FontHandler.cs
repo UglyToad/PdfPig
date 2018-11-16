@@ -10,7 +10,7 @@
     using PdfPig.Parser.Parts;
     using Simple;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
     using Util;
 
     internal class Type3FontHandler : IFontHandler

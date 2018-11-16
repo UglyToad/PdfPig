@@ -3,7 +3,7 @@
     using System;
     using Exceptions;
     using JetBrains.Annotations;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal static class DictionaryTokenExtensions
     {

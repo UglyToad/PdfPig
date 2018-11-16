@@ -5,7 +5,7 @@
     using Exceptions;
     using PdfPig.Parser.Parts;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
     using Util;
 
     internal class EncodingReader : IEncodingReader

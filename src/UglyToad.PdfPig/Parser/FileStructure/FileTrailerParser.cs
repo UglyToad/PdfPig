@@ -5,7 +5,7 @@
     using Exceptions;
     using IO;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
 
     /*
      * The trailer of a PDF file allows us to quickly find the cross-reference table and other special objects. 

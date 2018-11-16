@@ -5,7 +5,7 @@
     using System.Linq;
     using Exceptions;
     using Logging;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class MemoryFilterProvider : IFilterProvider
     {

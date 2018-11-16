@@ -3,7 +3,7 @@
     using Cmap;
     using Exceptions;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class CidRangeParser : ICidFontPartParser<NumericToken>
     {

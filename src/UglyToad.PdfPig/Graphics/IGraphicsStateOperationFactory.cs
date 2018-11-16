@@ -2,7 +2,7 @@
 {
     using System.Collections.Generic;
     using Operations;
-    using Tokenization.Tokens;
+    using Tokens;
     using Util.JetBrains.Annotations;
 
     internal interface IGraphicsStateOperationFactory

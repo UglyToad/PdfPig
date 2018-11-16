@@ -2,7 +2,7 @@
 {
     using System.Collections.Generic;
     using IO;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal interface IOperationContext
     {

@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal interface IPageFactory
     {

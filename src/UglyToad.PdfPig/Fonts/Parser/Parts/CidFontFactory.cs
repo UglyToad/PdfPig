@@ -9,7 +9,7 @@
     using IO;
     using PdfPig.Parser.Parts;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
     using TrueType;
     using TrueType.Parser;
     using Util;

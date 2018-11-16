@@ -5,7 +5,7 @@
     using PdfPig.Fonts;
     using PdfPig.Graphics;
     using PdfPig.IO;
-    using PdfPig.Tokenization.Tokens;
+    using PdfPig.Tokens;
 
     internal class TestOperationContext : IOperationContext
     {

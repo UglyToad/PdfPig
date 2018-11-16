@@ -3,7 +3,7 @@
     using System;
     using System.Collections.Generic;
     using ContentStream;
-    using Tokenization.Tokens;
+    using Tokens;
     using Util.JetBrains.Annotations;
 
     internal class CrossReferenceTable

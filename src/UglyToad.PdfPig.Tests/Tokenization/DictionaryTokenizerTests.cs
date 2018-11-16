@@ -5,7 +5,7 @@ namespace UglyToad.PdfPig.Tests.Tokenization
     using System.Collections.Generic;
     using PdfPig.ContentStream;
     using PdfPig.Tokenization;
-    using PdfPig.Tokenization.Tokens;
+    using PdfPig.Tokens;
     using Xunit;
 
     public class DictionaryTokenizerTests

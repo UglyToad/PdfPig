@@ -2,9 +2,8 @@
 {
     using System;
     using System.Collections.Generic;
-    using Parser.Parts;
     using PdfPig.Filters;
-    using PdfPig.Tokenization.Tokens;
+    using PdfPig.Tokens;
     using Xunit;
 
     public class DecodeParameterResolverTests

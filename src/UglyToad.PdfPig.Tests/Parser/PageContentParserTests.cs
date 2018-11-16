@@ -8,7 +8,7 @@
     using PdfPig.Graphics.Operations.TextShowing;
     using PdfPig.Graphics.Operations.TextState;
     using PdfPig.Parser;
-    using PdfPig.Tokenization.Tokens;
+    using PdfPig.Tokens;
     using Xunit;
 
     public class PageContentParserTests

@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations
 {
     using Content;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class InvokeNamedXObject : IGraphicsStateOperation
     {

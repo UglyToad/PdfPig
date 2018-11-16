@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Tokenization
 {
     using PdfPig.Tokenization;
-    using PdfPig.Tokenization.Tokens;
+    using PdfPig.Tokens;
     using Xunit;
 
     public class EndOfLineTokenizerTests

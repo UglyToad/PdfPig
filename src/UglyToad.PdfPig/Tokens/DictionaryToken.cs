@@ -1,10 +1,10 @@
-﻿namespace UglyToad.PdfPig.Tokenization.Tokens
+﻿namespace UglyToad.PdfPig.Tokens
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using Parser.Parts;
-    using Scanner;
+    using Tokenization.Scanner;
     using Util.JetBrains.Annotations;
 
     internal class DictionaryToken : IDataToken<IReadOnlyDictionary<string, IToken>>

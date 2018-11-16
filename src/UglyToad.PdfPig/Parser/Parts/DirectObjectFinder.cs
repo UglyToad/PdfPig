@@ -2,7 +2,7 @@
 {
     using Exceptions;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal static class DirectObjectFinder
     {

@@ -9,7 +9,7 @@ namespace UglyToad.PdfPig.Graphics
     using Operations;
     using Operations.TextShowing;
     using Operations.TextState;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class ReflectionGraphicsStateOperationFactory : IGraphicsStateOperationFactory
     {

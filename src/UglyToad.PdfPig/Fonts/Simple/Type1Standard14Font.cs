@@ -5,7 +5,7 @@
     using Encodings;
     using Geometry;
     using IO;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class Type1Standard14Font: IFont
     {

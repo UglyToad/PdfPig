@@ -3,7 +3,7 @@
     using System;
     using Cmap;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class BaseFontCharacterParser : ICidFontPartParser<NumericToken>
     {

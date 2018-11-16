@@ -3,7 +3,7 @@
     using System;
     using System.Collections.Generic;
     using Content;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class ShowTextsWithPositioning : IGraphicsStateOperation
     {

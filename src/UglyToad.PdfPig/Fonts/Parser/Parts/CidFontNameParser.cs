@@ -4,7 +4,7 @@
     using System.Globalization;
     using Cmap;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class CidFontNameParser : ICidFontPartParser<NameToken>
     {

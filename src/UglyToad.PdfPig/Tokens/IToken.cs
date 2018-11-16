@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Tokenization.Tokens
+﻿namespace UglyToad.PdfPig.Tokens
 {
     /// <summary>
     /// A marker interface for tokens from the content.

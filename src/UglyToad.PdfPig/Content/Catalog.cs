@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
     using System;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class Catalog
     {

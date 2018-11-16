@@ -3,7 +3,7 @@
     using System;
     using System.Collections.Generic;
     using Logging;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class DecodeParameterResolver : IDecodeParameterResolver
     {

@@ -2,7 +2,7 @@
 {
     using System;
     using Content;
-    using Tokenization.Tokens;
+    using Tokens;
     using Util.JetBrains.Annotations;
 
     internal class SetFontAndSize : IGraphicsStateOperation

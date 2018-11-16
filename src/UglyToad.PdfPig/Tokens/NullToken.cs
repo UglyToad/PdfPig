@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Tokenization.Tokens
+﻿namespace UglyToad.PdfPig.Tokens
 {
     internal class NullToken : IDataToken<object>
     {

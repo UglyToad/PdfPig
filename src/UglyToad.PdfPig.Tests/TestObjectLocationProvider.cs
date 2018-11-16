@@ -3,7 +3,7 @@
     using System.Collections.Generic;
     using PdfPig.ContentStream;
     using PdfPig.Tokenization.Scanner;
-    using PdfPig.Tokenization.Tokens;
+    using PdfPig.Tokens;
 
     internal class TestObjectLocationProvider : IObjectLocationProvider
     {

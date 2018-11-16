@@ -5,7 +5,7 @@
     using Graphics.Operations;
     using IO;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class PageContentParser : IPageContentParser
     {

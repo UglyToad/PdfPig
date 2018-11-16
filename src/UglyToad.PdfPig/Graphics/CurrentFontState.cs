@@ -3,7 +3,7 @@ namespace UglyToad.PdfPig.Graphics
 {
     using Core;
     using PdfPig.Core;
-    using Tokenization.Tokens;
+    using Tokens;
 
     /// <summary>
     /// The current state of text related parameters for a content stream.

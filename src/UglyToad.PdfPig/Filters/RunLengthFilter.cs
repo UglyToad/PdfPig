@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
     using System.IO;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class RunLengthFilter : IFilter
     {

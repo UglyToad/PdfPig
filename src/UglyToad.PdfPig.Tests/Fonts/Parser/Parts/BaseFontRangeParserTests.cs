@@ -2,7 +2,7 @@
 {
     using PdfPig.Fonts.Cmap;
     using PdfPig.Fonts.Parser.Parts;
-    using PdfPig.Tokenization.Tokens;
+    using PdfPig.Tokens;
     using Xunit;
 
     public class BaseFontRangeParserTests

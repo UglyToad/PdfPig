@@ -3,7 +3,7 @@
     using System;
     using Graphics;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class XObjectFactory
     {

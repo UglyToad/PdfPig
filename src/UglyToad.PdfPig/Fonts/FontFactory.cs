@@ -5,7 +5,7 @@
     using Exceptions;
     using Logging;
     using Parser.Handlers;
-    using Tokenization.Tokens;
+    using Tokens;
     using Util;
 
     internal class FontFactory : IFontFactory

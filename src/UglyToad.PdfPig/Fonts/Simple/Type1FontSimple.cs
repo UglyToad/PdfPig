@@ -6,7 +6,7 @@
     using Encodings;
     using Geometry;
     using IO;
-    using Tokenization.Tokens;
+    using Tokens;
     using Type1;
 
     /// <summary>

@@ -6,7 +6,7 @@
     using CharStrings;
     using IO;
     using PdfPig.Parser.Parts;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class Type1EncryptedPortionParser
     {

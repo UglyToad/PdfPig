@@ -6,7 +6,7 @@
     using PdfPig.ContentStream;
     using PdfPig.IO;
     using PdfPig.Tokenization.Scanner;
-    using PdfPig.Tokenization.Tokens;
+    using PdfPig.Tokens;
     using PdfPig.Util;
     using Xunit;
 

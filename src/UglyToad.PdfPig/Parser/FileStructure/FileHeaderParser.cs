@@ -6,7 +6,7 @@
     using Exceptions;
     using Logging;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
     using Util.JetBrains.Annotations;
 
     /// <summary>

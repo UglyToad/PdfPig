@@ -2,7 +2,7 @@
 {
     using System;
     using System.IO;
-    using Tokenization.Tokens;
+    using Tokens;
 
     /// <summary>
     /// ASCII 85 (Base85) is a binary to text encoding using 5 ASCII characters per 4 bytes of data.

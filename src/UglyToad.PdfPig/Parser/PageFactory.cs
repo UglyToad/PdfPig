@@ -10,7 +10,7 @@
     using IO;
     using Parts;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
     using Util;
     using XObject;
 

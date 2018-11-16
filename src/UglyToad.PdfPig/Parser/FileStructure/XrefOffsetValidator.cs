@@ -6,7 +6,7 @@
     using Logging;
     using Parts;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class XrefOffsetValidator
     {

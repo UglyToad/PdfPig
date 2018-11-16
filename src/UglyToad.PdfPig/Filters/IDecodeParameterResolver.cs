@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal interface IDecodeParameterResolver
     {

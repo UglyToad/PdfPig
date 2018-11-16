@@ -6,7 +6,7 @@
     using Core;
     using Geometry;
     using IO;
-    using Tokenization.Tokens;
+    using Tokens;
     using Util.JetBrains.Annotations;
 
     /// <summary>

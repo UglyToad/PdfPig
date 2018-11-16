@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Parser.Handlers
 {
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal interface IFontHandler
     {

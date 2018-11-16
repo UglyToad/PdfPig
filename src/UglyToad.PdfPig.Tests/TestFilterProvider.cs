@@ -2,7 +2,7 @@
 {
     using System.Collections.Generic;
     using PdfPig.Filters;
-    using PdfPig.Tokenization.Tokens;
+    using PdfPig.Tokens;
 
     internal class TestFilterProvider : IFilterProvider
     {

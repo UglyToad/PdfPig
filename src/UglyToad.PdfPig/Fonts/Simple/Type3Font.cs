@@ -7,7 +7,7 @@
     using Exceptions;
     using Geometry;
     using IO;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class Type3Font : IFont
     {

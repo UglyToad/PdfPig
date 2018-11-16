@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.Text;
     using PdfPig.Filters;
-    using PdfPig.Tokenization.Tokens;
+    using PdfPig.Tokens;
     using Xunit;
 
     public class AsciiHexDecodeFilterTests

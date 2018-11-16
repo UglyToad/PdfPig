@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
     using Fonts;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal interface IResourceStore
     {

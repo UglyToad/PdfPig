@@ -2,7 +2,7 @@
 {
     using System;
     using PdfPig.Graphics.Operations.TextState;
-    using PdfPig.Tokenization.Tokens;
+    using PdfPig.Tokens;
     using Xunit;
 
     public class SetFontAndSizeTests

@@ -11,7 +11,7 @@
     using PdfPig.Parser.Parts;
     using Simple;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
     using Type1;
     using Type1.Parser;
 

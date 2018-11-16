@@ -4,7 +4,7 @@
     using Cos;
     using Exceptions;
     using Filters;
-    using Tokenization.Tokens;
+    using Tokens;
     using Util;
 
     internal class CrossReferenceStreamParser

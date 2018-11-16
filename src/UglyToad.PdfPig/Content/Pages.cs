@@ -6,7 +6,7 @@
     using Logging;
     using Parser.Parts;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
     using Util;
 
     internal class Pages

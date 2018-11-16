@@ -2,7 +2,7 @@
 {
     using System;
     using Exceptions;
-    using Tokenization.Tokens;
+    using Tokens;
     using Util;
 
     /// <summary>

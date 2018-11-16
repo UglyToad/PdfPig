@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
     using System;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class DctDecodeFilter : IFilter
     {

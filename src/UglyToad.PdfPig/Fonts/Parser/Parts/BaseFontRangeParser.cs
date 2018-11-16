@@ -6,7 +6,7 @@
     using Cmap;
     using Exceptions;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
 
     /// <summary>
     /// The beginbfrange and endbfrange operators map i ranges of input codes to the corresponding output code range.

@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using Tokenization.Tokens;
+    using Tokens;
 
     /// <summary>
     /// Maps character codes to glyph names from a PostScript encoding.

@@ -1,6 +1,5 @@
-﻿namespace UglyToad.PdfPig.Tokenization.Tokens
+﻿namespace UglyToad.PdfPig.Tokens
 {
-    using System;
     using Filters;
 
     internal class StreamToken : IDataToken<byte[]>

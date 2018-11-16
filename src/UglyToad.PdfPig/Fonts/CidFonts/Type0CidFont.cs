@@ -2,7 +2,7 @@
 {
     using Core;
     using Geometry;
-    using Tokenization.Tokens;
+    using Tokens;
 
     /// <inheritdoc/>
     /// <summary>

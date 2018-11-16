@@ -21,7 +21,7 @@
     using Parts;
     using Parts.CrossReference;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
     using Util;
     using XObject;
 

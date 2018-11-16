@@ -5,7 +5,7 @@
     using System.IO;
     using System.IO.Compression;
     using Logging;
-    using Tokenization.Tokens;
+    using Tokens;
     using Util;
 
     /// <summary>

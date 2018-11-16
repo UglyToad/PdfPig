@@ -7,7 +7,7 @@
     using Parts.CrossReference;
     using Tokenization;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class CrossReferenceTableParser
     {

@@ -2,7 +2,7 @@
 {
     using System.Collections.Generic;
     using ContentStream;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class CrossReferenceTablePartBuilder
     {

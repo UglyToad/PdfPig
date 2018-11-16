@@ -1,9 +1,9 @@
 ﻿// ReSharper disable ObjectCreationAsStatement
-namespace UglyToad.PdfPig.Tests.Tokenization.Tokens
+namespace UglyToad.PdfPig.Tests.Tokens
 {
     using System;
     using System.Collections.Generic;
-    using PdfPig.Tokenization.Tokens;
+    using PdfPig.Tokens;
     using Xunit;
 
     public class DictionaryTokenTests

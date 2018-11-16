@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts
 {
-    using Tokenization.Tokens;
+    using Tokens;
 
     /// <summary>
     /// The bytes of the stream containing the font program.

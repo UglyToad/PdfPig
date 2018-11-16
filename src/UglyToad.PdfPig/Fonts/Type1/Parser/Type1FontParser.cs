@@ -7,7 +7,7 @@
     using IO;
     using Tokenization;
     using Tokenization.Scanner;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal class Type1FontParser
     {

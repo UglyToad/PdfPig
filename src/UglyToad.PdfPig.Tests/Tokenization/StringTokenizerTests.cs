@@ -2,7 +2,7 @@
 {
     using PdfPig.IO;
     using PdfPig.Tokenization;
-    using PdfPig.Tokenization.Tokens;
+    using PdfPig.Tokens;
     using Xunit;
 
     public class StringTokenizerTests
@@ -29,11 +29,11 @@
         [InlineData(' ')]
         [InlineData('y')]
         [InlineData('^')]
-        public void DoesNotStartWithOpenBracket_ReturnsFalse(byte firstByte)
+        public void DoesNotStartWithOpenBracket_ReturnsFalse(char firstByte)
         {
-            var input = new ByteArrayInputBytes(new[] {firstByte});
+            var input = new ByteArrayInputBytes(new[] {(byte)firstByte});
 
-            var result = tokenizer.TryTokenize(firstByte, input, out var token);
+            var result = tokenizer.TryTokenize((byte)firstByte, input, out var token);
 
             Assert.False(result);
             Assert.Null(token);

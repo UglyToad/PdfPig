@@ -3,7 +3,7 @@
     using System;
     using System.Linq;
     using PdfPig.Fonts.Cmap;
-    using PdfPig.Tokenization.Tokens;
+    using PdfPig.Tokens;
     using Xunit;
 
     public class CodespaceRangeTests

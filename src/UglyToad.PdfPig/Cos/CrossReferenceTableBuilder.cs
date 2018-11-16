@@ -5,7 +5,7 @@
     using System.Linq;
     using ContentStream;
     using Logging;
-    using Tokenization.Tokens;
+    using Tokens;
 
     /// <summary>
     /// 

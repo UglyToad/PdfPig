@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
     using System.Collections.Generic;
-    using Tokenization.Tokens;
+    using Tokens;
 
     internal interface IFilterProvider
     {
