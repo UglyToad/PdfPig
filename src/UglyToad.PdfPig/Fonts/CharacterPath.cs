@@ -1,5 +1,5 @@
 ﻿// ReSharper disable ArrangeRedundantParentheses
-namespace UglyToad.PdfPig.Fonts.Type1.CharStrings
+namespace UglyToad.PdfPig.Fonts
 {
     using System;
     using System.Collections.Generic;

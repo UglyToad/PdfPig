@@ -88,6 +88,11 @@
             return (ReadCard16() << 16) | ReadCard16();
         }
 
+        public int ReadSid()
+        {
+            return ReadByte() << 8 | ReadByte();
+        }
+
         public byte[] ReadBytes(int length)
         {
             var result = new byte[length];

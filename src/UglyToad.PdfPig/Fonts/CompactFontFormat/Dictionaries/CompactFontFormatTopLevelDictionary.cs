@@ -63,7 +63,7 @@
 
         public decimal[] BaseFontBlend { get; set; }
 
-
+        public bool IsCidFont { get; set; }
     }
 
     /// <summary>

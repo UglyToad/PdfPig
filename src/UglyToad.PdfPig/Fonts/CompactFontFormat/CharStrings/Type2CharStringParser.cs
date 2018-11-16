@@ -11,13 +11,17 @@
     /// </remarks>
     internal class Type2CharStringParser
     {
-        public static void Parse(IReadOnlyList<IReadOnlyList<byte>> charStringBytes)
+        public static Type2CharStrings Parse(IReadOnlyList<IReadOnlyList<byte>> charStringBytes)
         {
+            var charStrings = new Dictionary<int, Type2CharStrings.CommandSequence>();
             for (var i = 0; i < charStringBytes.Count; i++)
             {
                 var charString = charStringBytes[i];
-                ParseSingle(charString);
+                var sequence = ParseSingle(charString);
+                charStrings[i] = new Type2CharStrings.CommandSequence(sequence);
             }
+
+            return new Type2CharStrings(charStrings, new Dictionary<int, Type2CharStrings.CommandSequence>());
         }
 
         private static IReadOnlyList<Union<decimal, LazyType2Command>> ParseSingle(IReadOnlyList<byte> bytes)
