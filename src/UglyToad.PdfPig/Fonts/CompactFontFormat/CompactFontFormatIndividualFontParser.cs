@@ -34,7 +34,7 @@
 
             var topDictionary = topLevelDictionaryReader.Read(individualData, stringIndex);
 
-            var privateDictionary = new CompactFontFormatPrivateDictionary();
+            var privateDictionary = CompactFontFormatPrivateDictionary.GetDefault();
 
             if (topDictionary.PrivateDictionarySizeAndOffset.Item2 >= 0)
             {
@@ -49,9 +49,9 @@
             }
 
             var localSubroutines = CompactFontFormatIndex.None;
-            if (privateDictionary.LocalSubroutineLocalOffset.HasValue)
+            if (privateDictionary.LocalSubroutineOffset.HasValue)
             {
-                data.Seek(privateDictionary.LocalSubroutineLocalOffset.Value);
+                data.Seek(privateDictionary.LocalSubroutineOffset.Value);
 
                 localSubroutines = indexReader.ReadDictionaryData(data);
             }

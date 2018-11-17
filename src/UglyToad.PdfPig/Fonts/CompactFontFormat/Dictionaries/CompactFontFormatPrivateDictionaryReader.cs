@@ -3,32 +3,32 @@
     using System;
     using System.Collections.Generic;
 
-    internal class CompactFontFormatPrivateDictionaryReader : CompactFontFormatDictionaryReader<CompactFontFormatPrivateDictionary>
+    internal class CompactFontFormatPrivateDictionaryReader : CompactFontFormatDictionaryReader<CompactFontFormatPrivateDictionary, CompactFontFormatPrivateDictionary.Builder>
     {
         public override CompactFontFormatPrivateDictionary Read(CompactFontFormatData data, IReadOnlyList<string> stringIndex)
         {
-            var dictionary = new CompactFontFormatPrivateDictionary();
+            var builder = new CompactFontFormatPrivateDictionary.Builder();
 
-            ReadDictionary(dictionary, data, stringIndex);
+            ReadDictionary(builder, data, stringIndex);
 
-            return dictionary;
+            return builder.Build();
         }
 
-        protected override void ApplyOperation(CompactFontFormatPrivateDictionary dictionary, List<Operand> operands, OperandKey operandKey, IReadOnlyList<string> stringIndex)
+        protected override void ApplyOperation(CompactFontFormatPrivateDictionary.Builder dictionary, List<Operand> operands, OperandKey operandKey, IReadOnlyList<string> stringIndex)
         {
             switch (operandKey.Byte0)
             {
                 case 6:
-                    dictionary.BlueValues = ReadDeltaToArray(operands);
+                    dictionary.BlueValues = ReadDeltaToIntArray(operands);
                     break;
                 case 7:
-                    dictionary.OtherBlues = ReadDeltaToArray(operands);
+                    dictionary.OtherBlues = ReadDeltaToIntArray(operands);
                     break;
                 case 8:
-                    dictionary.FamilyBlues = ReadDeltaToArray(operands);
+                    dictionary.FamilyBlues = ReadDeltaToIntArray(operands);
                     break;
                 case 9:
-                    dictionary.FamilyOtherBlues = ReadDeltaToArray(operands);
+                    dictionary.FamilyOtherBlues = ReadDeltaToIntArray(operands);
                     break;
                 case 10:
                     dictionary.StandardHorizontalWidth = operands[0].Decimal;
@@ -49,22 +49,22 @@
                             dictionary.BlueScale = operands[0].Decimal;
                             break;
                         case 10:
-                            dictionary.BlueShift = operands[0].Decimal;
+                            dictionary.BlueShift = operands[0].Int;
                             break;
                         case 11:
-                            dictionary.BlueFuzz = operands[0].Decimal;
+                            dictionary.BlueFuzz = operands[0].Int;
                             break;
                         case 12:
-                            dictionary.StemSnapHorizontal = ReadDeltaToArray(operands);
+                            dictionary.StemSnapHorizontalWidths = ReadDeltaToArray(operands);
                             break;
                         case 13:
-                            dictionary.StemStapVertical = ReadDeltaToArray(operands);
+                            dictionary.StemSnapVerticalWidths = ReadDeltaToArray(operands);
                             break;
                         case 14:
                             dictionary.ForceBold = operands[0].Decimal == 1;
                             break;
                         case 17:
-                            dictionary.LanguageGroup = operands[0].Decimal;
+                            dictionary.LanguageGroup = operands[0].Int;
                             break;
                         case 18:
                             dictionary.ExpansionFactor = operands[0].Decimal;
@@ -76,7 +76,7 @@
                 }
                     break;
                 case 19:
-                    dictionary.LocalSubroutineLocalOffset = GetIntOrDefault(operands, -1);
+                    dictionary.LocalSubroutineOffset = GetIntOrDefault(operands, -1);
                     break;
                 case 20:
                     dictionary.DefaultWidthX = operands[0].Decimal;
