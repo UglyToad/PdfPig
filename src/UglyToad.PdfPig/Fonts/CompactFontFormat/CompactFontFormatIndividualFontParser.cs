@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
     using Charsets;
     using CharStrings;
@@ -145,6 +146,15 @@
                     break;
                 default:
                     throw new ArgumentOutOfRangeException($"Unexpected CharString type in CFF font: {topDictionary.CharStringType}.");
+            }
+
+            if (Debugger.IsAttached)
+            {
+                foreach (var pair in charStrings.CharStrings)
+                {
+                    var path = Type2CharStrings.Run(pair.Value);
+                    var svg = path.ToFullSvg();
+                }
             }
 
             return new CompactFontFormatFont(topDictionary, privateDictionary, charset, Union<Type1CharStrings, Type2CharStrings>.Two(charStrings));

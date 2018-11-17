@@ -43,16 +43,69 @@
             return glyph;
         }
 
-        private static CharacterPath Run(CommandSequence sequence)
+        public static CharacterPath Run(CommandSequence sequence)
         {
             var context = new Type2BuildCharContext();
+
+            var hasRunStackClearingCommand = false;
             foreach (var command in sequence.Commands)
             {
-                //command.Match(x => context.Stack.Push(x),
-                //    x => x.Run(context));
+                command.Match(x => context.Stack.Push(x),
+                   x =>
+                   {
+                       if (!hasRunStackClearingCommand)
+                       {
+                           /*
+                            * The first stack-clearing operator, which must be one of hstem, hstemhm, vstem, vstemhm, cntrmask, hintmask, hmoveto, vmoveto,
+                            * rmoveto, or endchar, takes an additional argument — the width (as described earlier), which may be expressed as zero or one numeric argument.
+                            */
+                           hasRunStackClearingCommand = true;
+                           switch (x.Name)
+                           {
+                               case "hstem":
+                               case "hstemhm":
+                               case "vstemhm":
+                               case "vstem":
+                               {
+                                   var oddArgCount = context.Stack.Length % 2 != 0;
+                                   if (oddArgCount)
+                                   {
+                                       context.Width = context.Stack.PopBottom();
+                                   }
+                                   break;
+                               }
+                               case "hmoveto":
+                               case "vmoveto":
+                                   SetWidthFromArgumentsIfPresent(context, 1);
+                                   break;
+                               case "rmoveto":
+                                   SetWidthFromArgumentsIfPresent(context, 2);
+                                   break;
+                               case "cntrmask":
+                               case "hintmask":
+                               case "endchar:":
+                                   SetWidthFromArgumentsIfPresent(context, 0);
+                                    break;
+                                default:
+                                    hasRunStackClearingCommand = false;
+                                    break;
+                                
+                           }
+
+                       }
+                       x.Run(context);
+                   });
             }
 
-            throw new NotImplementedException();
+            return context.Path;
+        }
+
+        private static void SetWidthFromArgumentsIfPresent(Type2BuildCharContext context, int expectedArgumentLength)
+        {
+            if (context.Stack.Length > expectedArgumentLength)
+            {
+                context.Width = context.Stack.PopBottom();
+            }
         }
 
         public class CommandSequence

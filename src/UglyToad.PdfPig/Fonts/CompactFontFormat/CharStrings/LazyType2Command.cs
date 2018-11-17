@@ -42,6 +42,8 @@
 
         public PdfPoint CurrentLocation { get; set; } = new PdfPoint(0, 0);
 
+        public decimal? Width { get; set; }
+
         public void AddRelativeHorizontalLine(decimal dx)
         {
             AddRelativeLine(dx, 0);

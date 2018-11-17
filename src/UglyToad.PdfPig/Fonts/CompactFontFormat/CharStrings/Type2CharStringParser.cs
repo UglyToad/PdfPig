@@ -332,6 +332,8 @@
 
                         ctx.AddRelativeBezierCurve(dx1, dy1, dx2, dy2, 0, dy3);
                     }
+
+                    ctx.Stack.Clear();
                 })
             },
             { 27,  new LazyType2Command("hhcurveto", ctx =>
