@@ -17,6 +17,14 @@
     /// </remarks>
     internal class Type2CharStringParser
     {
+        private static readonly HashSet<string> HintingCommandNames = new HashSet<string>
+        {
+            "hstem",
+            "vstem",
+            "hstemhm",
+            "vstemhm"
+        };
+
         private static readonly IReadOnlyDictionary<int, LazyType2Command> SingleByteCommandStore = new Dictionary<int, LazyType2Command>
         {
             { 1,  new LazyType2Command("hstem", ctx =>
@@ -701,7 +709,7 @@
                 var b = bytes[i];
                 if (b <= 31 && b != 28)
                 {
-                    var command = GetCommand(b, bytes, ref i);
+                    var command = GetCommand(b, bytes, instructions, ref i);
                     instructions.Add(Union<decimal, LazyType2Command>.Two(command));
                 }
                 else
@@ -754,7 +762,8 @@
             return lead + (fractionalPart / 65535m);
         }
 
-        private static LazyType2Command GetCommand(byte b, IReadOnlyList<byte> bytes, ref int i)
+        private static LazyType2Command GetCommand(byte b, IReadOnlyList<byte> bytes,
+            IReadOnlyList<Union<decimal, LazyType2Command>> precedingCommands, ref int i)
         {
             if (b == 12)
             {
@@ -765,6 +774,46 @@
                 }
 
                 return new LazyType2Command($"unknown: {b} {b2}", x => { });
+            }
+
+            // hintmask and cntrmask
+            if (b == 19 || b == 20)
+            {
+                /*
+                 * The hintmask operator is followed by one or more data bytes that specify the stem hints which are to be active for the
+                 * subsequent path construction. The number of data bytes must be exactly the number needed to represent the number of
+                 * stems in the original stem list (those stems specified by the hstem, vstem, hstemhm, or vstemhm commands), using one bit
+                 * in the data bytes for each stem in the original stem list.
+                 */
+                var stemCount = 0;
+                var precedingNumbers = 0;
+                for (var j = 0; j < precedingCommands.Count; j++)
+                {
+                    var item = precedingCommands[j];
+                    item.Match(x => precedingNumbers++,
+                        x =>
+                        {
+                            if (!HintingCommandNames.Contains(x.Name))
+                            {
+                                precedingNumbers = 0;
+                                return;
+                            }
+
+                            // ReSharper disable once AccessToModifiedClosure
+                            stemCount += precedingNumbers / 2;
+                            precedingNumbers = 0;
+                        });
+                }
+
+                // The vstem command can be left out, e.g. for 12 20 hstemhm 4 6 hintmask, 4 and 6 act as the vertical hints
+                if (precedingNumbers > 0)
+                {
+                    stemCount += precedingNumbers / 2;
+                }
+
+                var minimumFullBytes = Math.Ceiling(stemCount / 8d);
+                // Skip the following hintmask or cntrmask data bytes
+                i += (int)minimumFullBytes;
             }
 
             if (SingleByteCommandStore.TryGetValue(b, out var command))
