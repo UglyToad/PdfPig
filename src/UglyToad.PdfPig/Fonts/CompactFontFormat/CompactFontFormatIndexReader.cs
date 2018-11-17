@@ -4,7 +4,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat
 {
     internal class CompactFontFormatIndexReader
     {
-        public byte[][] ReadDictionaryData(CompactFontFormatData data)
+        public CompactFontFormatIndex ReadDictionaryData(CompactFontFormatData data)
         {
             var index = ReadIndex(data);
 
@@ -24,7 +24,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat
                 results[i] = data.ReadBytes(length);
             }
 
-            return results;
+            return new CompactFontFormatIndex(results);
         }
 
         public int[] ReadIndex(CompactFontFormatData data)

@@ -25,7 +25,7 @@
             switch (tag)
             {
                 case TagOtto:
-                    throw new NotImplementedException("Currently tagged CFF data is not supported.");
+                    throw new NotSupportedException("Currently tagged CFF data is not supported.");
                 case TagTtcf:
                     throw new NotSupportedException("True Type Collection fonts are not supported.");
                 case TagTtfonly:
@@ -49,7 +49,7 @@
             {
                 var fontName = fontNames[i];
 
-                individualFontParser.Parse(data, fontName, topLevelDict[i], stringIndex);
+                individualFontParser.Parse(data, fontName, topLevelDict[i], stringIndex, globalSubroutineIndex);
             }
         }
 

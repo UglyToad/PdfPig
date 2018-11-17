@@ -2,9 +2,12 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using Charsets;
     using CharStrings;
     using Dictionaries;
+    using Type1.CharStrings;
+    using Util;
 
     internal class CompactFontFormatIndividualFontParser
     {
@@ -21,9 +24,10 @@
             this.privateDictionaryReader = privateDictionaryReader;
         }
 
-        public void Parse(CompactFontFormatData data, string name, byte[] topDictionaryIndex, string[] stringIndex)
+        public CompactFontFormatFont Parse(CompactFontFormatData data, string name, IReadOnlyList<byte> topDictionaryIndex, IReadOnlyList<string> stringIndex,
+            CompactFontFormatIndex globalSubroutineIndex)
         {
-            var individualData = new CompactFontFormatData(topDictionaryIndex);
+            var individualData = new CompactFontFormatData(topDictionaryIndex.ToArray());
 
             var topDictionary = topLevelDictionaryReader.Read(individualData, stringIndex);
 
@@ -41,11 +45,19 @@
                 throw new InvalidOperationException("Expected CFF to contain a CharString offset.");
             }
 
+            var localSubroutines = CompactFontFormatIndex.None;
+            if (privateDictionary.LocalSubroutineLocalOffset.HasValue)
+            {
+                data.Seek(privateDictionary.LocalSubroutineLocalOffset.Value);
+
+                localSubroutines = indexReader.ReadDictionaryData(data);
+            }
+
             data.Seek(topDictionary.CharStringsOffset);
 
             var charStringIndex = indexReader.ReadDictionaryData(data);
 
-            object charset = null;
+            ICompactFontFormatCharset charset = null;
 
             if (topDictionary.IsCidFont && topDictionary.CharSetOffset >= 0 && topDictionary.CharSetOffset <= 2)
             {
@@ -74,7 +86,7 @@
                         {
                             var glyphToNamesAndStringId = new List<(int glyphId, int stringId, string name)>();
 
-                            for (var glyphId = 1; glyphId < charStringIndex.Length; glyphId++)
+                            for (var glyphId = 1; glyphId < charStringIndex.Count; glyphId++)
                             {
                                 var stringId = data.ReadSid();
                                 glyphToNamesAndStringId.Add((glyphId, stringId, ReadString(stringId, stringIndex)));
@@ -89,7 +101,7 @@
                         {
                             var glyphToNamesAndStringId = new List<(int glyphId, int stringId, string name)>();
 
-                            for (var glyphId = 1; glyphId < charStringIndex.Length; glyphId++)
+                            for (var glyphId = 1; glyphId < charStringIndex.Count; glyphId++)
                             {
                                 var firstSid = data.ReadSid();
                                 var numberInRange = format == 1 ? data.ReadCard8() : data.ReadCard16();
@@ -98,7 +110,8 @@
                                 glyphId++;
                                 for (var i = 0; i < numberInRange; i++)
                                 {
-                                    glyphToNamesAndStringId.Add((glyphId, firstSid + i + 1, ReadString(firstSid, stringIndex)));
+                                    var sid = firstSid + i + 1;
+                                    glyphToNamesAndStringId.Add((glyphId, sid, ReadString(sid, stringIndex)));
                                     glyphId++;
                                 }
                             }
@@ -128,25 +141,27 @@
                 case CompactFontFormatCharStringType.Type1:
                     throw new NotImplementedException();
                 case CompactFontFormatCharStringType.Type2:
-                    charStrings = Type2CharStringParser.Parse(charStringIndex);
+                    charStrings = Type2CharStringParser.Parse(charStringIndex, localSubroutines, globalSubroutineIndex);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException($"Unexpected CharString type in CFF font: {topDictionary.CharStringType}.");
             }
+
+            return new CompactFontFormatFont(topDictionary, privateDictionary, charset, Union<Type1CharStrings, Type2CharStrings>.Two(charStrings));
         }
 
-        private static string ReadString(int index, string[] stringIndex)
+        private static string ReadString(int index, IReadOnlyList<string> stringIndex)
         {
             if (index >= 0 && index <= 390)
             {
                 return CompactFontFormatStandardStrings.GetName(index);
             }
-            if (index - 391 < stringIndex.Length)
+            if (index - 391 < stringIndex.Count)
             {
                 return stringIndex[index - 391];
             }
 
-            // technically this maps to .notdef, but we need a unique sid name
+            // technically this maps to .notdef, but we PDFBox uses this
             return "SID" + index;
         }
     }

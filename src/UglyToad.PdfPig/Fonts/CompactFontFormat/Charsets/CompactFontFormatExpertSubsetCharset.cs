@@ -5,7 +5,7 @@
     /// <summary>
     /// A predefined Charset for a Compact Font Format font with Charset Id of 2.
     /// </summary>
-    internal class CompactFontFormatExpertSubsetCharset
+    internal class CompactFontFormatExpertSubsetCharset : ICompactFontFormatCharset
     {
         private static readonly IReadOnlyDictionary<int, string> StringIdToName = new Dictionary<int, string>
         {
@@ -112,6 +112,21 @@
             }
 
             characterIdToStringIdAndName = furtherMap;
+        }
+
+        public string GetNameByGlyphId(int glyphId)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public string GetNameByStringId(int stringId)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public string GetStringIdByGlyphId(int glyphId)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

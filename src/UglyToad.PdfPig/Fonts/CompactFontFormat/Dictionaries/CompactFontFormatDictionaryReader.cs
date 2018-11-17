@@ -9,9 +9,9 @@
     {
         private readonly List<Operand> operands = new List<Operand>();
 
-        public abstract T Read(CompactFontFormatData data, string[] stringIndex);
+        public abstract T Read(CompactFontFormatData data, IReadOnlyList<string> stringIndex);
 
-        protected T ReadDictionary(T dictionary, CompactFontFormatData data, string[] stringIndex)
+        protected T ReadDictionary(T dictionary, CompactFontFormatData data, IReadOnlyList<string> stringIndex)
         {
             while (data.CanRead())
             {
@@ -162,9 +162,9 @@
             return decimal.Parse(sb.ToString());
         }
 
-        protected abstract void ApplyOperation(T dictionary, List<Operand> operands, OperandKey operandKey, string[] stringIndex);
+        protected abstract void ApplyOperation(T dictionary, List<Operand> operands, OperandKey operandKey, IReadOnlyList<string> stringIndex);
 
-        protected static string GetString(List<Operand> operands, string[] stringIndex)
+        protected static string GetString(List<Operand> operands, IReadOnlyList<string> stringIndex)
         {
             if (operands.Count == 0)
             {
@@ -184,7 +184,7 @@
             }
 
             var stringIndexIndex = index - 391;
-            if (stringIndexIndex >= 0 && stringIndexIndex < stringIndex.Length)
+            if (stringIndexIndex >= 0 && stringIndexIndex < stringIndex.Count)
             {
                 return stringIndex[stringIndexIndex];
             }

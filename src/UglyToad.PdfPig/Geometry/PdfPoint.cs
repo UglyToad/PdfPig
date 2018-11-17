@@ -52,6 +52,16 @@
             Y = (decimal)y;
         }
 
+        public PdfPoint MoveX(decimal dx)
+        {
+            return new PdfPoint(X + dx, Y);
+        }
+
+        public PdfPoint MoveY(decimal dy)
+        {
+            return new PdfPoint(X, Y + dy);
+        }
+
         internal PdfVector ToVector()
         {
             return new PdfVector(X, Y);

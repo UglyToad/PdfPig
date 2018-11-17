@@ -6,7 +6,7 @@
 
     internal class CompactFontFormatTopLevelDictionaryReader : CompactFontFormatDictionaryReader<CompactFontFormatTopLevelDictionary>
     {
-        public override CompactFontFormatTopLevelDictionary Read(CompactFontFormatData data, string[] stringIndex)
+        public override CompactFontFormatTopLevelDictionary Read(CompactFontFormatData data, IReadOnlyList<string> stringIndex)
         {
             var dictionary = new CompactFontFormatTopLevelDictionary();
 
@@ -15,7 +15,7 @@
             return dictionary;
         }
 
-        protected override void ApplyOperation(CompactFontFormatTopLevelDictionary dictionary, List<Operand> operands, OperandKey key, string[] stringIndex)
+        protected override void ApplyOperation(CompactFontFormatTopLevelDictionary dictionary, List<Operand> operands, OperandKey key, IReadOnlyList<string> stringIndex)
         {
             switch (key.Byte0)
             {

@@ -32,7 +32,7 @@
 
         public decimal InitialRandomSeed { get; set; }
 
-        public int LocalSubroutineLocalOffset { get; set; }
+        public int? LocalSubroutineLocalOffset { get; set; }
 
         /// <summary>
         /// If a glyph's width equals the default width X it can be omitted from the charstring.

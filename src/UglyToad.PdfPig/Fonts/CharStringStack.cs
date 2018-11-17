@@ -62,6 +62,16 @@
             stack.Add(value);
         }
 
+        public decimal CopyElementAt(int index)
+        {
+            if (index < 0)
+            {
+                return stack[stack.Count - 1];
+            }
+
+            return stack[index];
+        }
+
         /// <summary>
         /// Removes all values from the stack.
         /// </summary>
