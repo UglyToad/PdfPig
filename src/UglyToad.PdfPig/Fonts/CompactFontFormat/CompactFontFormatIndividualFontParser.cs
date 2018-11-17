@@ -3,7 +3,9 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.IO;
     using System.Linq;
+    using System.Text;
     using Charsets;
     using CharStrings;
     using Dictionaries;
@@ -108,12 +110,11 @@
                                 var numberInRange = format == 1 ? data.ReadCard8() : data.ReadCard16();
 
                                 glyphToNamesAndStringId.Add((glyphId, firstSid, ReadString(firstSid, stringIndex)));
-                                glyphId++;
                                 for (var i = 0; i < numberInRange; i++)
                                 {
+                                    glyphId++;
                                     var sid = firstSid + i + 1;
                                     glyphToNamesAndStringId.Add((glyphId, sid, ReadString(sid, stringIndex)));
-                                    glyphId++;
                                 }
                             }
 
@@ -142,7 +143,7 @@
                 case CompactFontFormatCharStringType.Type1:
                     throw new NotImplementedException();
                 case CompactFontFormatCharStringType.Type2:
-                    charStrings = Type2CharStringParser.Parse(charStringIndex, localSubroutines, globalSubroutineIndex);
+                    charStrings = Type2CharStringParser.Parse(charStringIndex, localSubroutines, globalSubroutineIndex, charset);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException($"Unexpected CharString type in CFF font: {topDictionary.CharStringType}.");
@@ -150,11 +151,17 @@
 
             if (Debugger.IsAttached)
             {
+                var builder = new StringBuilder("<!DOCTYPE html><html><head></head><body>");
                 foreach (var pair in charStrings.CharStrings)
                 {
                     var path = Type2CharStrings.Run(pair.Value);
                     var svg = path.ToFullSvg();
+                    builder.AppendLine(svg);
                 }
+
+                builder.Append("</body></html>");
+
+                File.WriteAllText(@"C:\git\index.html", builder.ToString());
             }
 
             return new CompactFontFormatFont(topDictionary, privateDictionary, charset, Union<Type1CharStrings, Type2CharStrings>.Two(charStrings));

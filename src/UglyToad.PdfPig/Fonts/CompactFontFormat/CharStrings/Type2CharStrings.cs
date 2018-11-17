@@ -10,11 +10,11 @@
         private readonly object locker = new object();
         private readonly Dictionary<string, CharacterPath> glyphs = new Dictionary<string, CharacterPath>();
 
-        public IReadOnlyDictionary<int, CommandSequence> CharStrings { get; }
+        public IReadOnlyDictionary<string, CommandSequence> CharStrings { get; }
 
         public IReadOnlyDictionary<int, CommandSequence> Subroutines { get; }
 
-        public Type2CharStrings(IReadOnlyDictionary<int, CommandSequence> charStrings, IReadOnlyDictionary<int, CommandSequence> subroutines)
+        public Type2CharStrings(IReadOnlyDictionary<string, CommandSequence> charStrings, IReadOnlyDictionary<int, CommandSequence> subroutines)
         {
             CharStrings = charStrings ?? throw new ArgumentNullException(nameof(charStrings));
             Subroutines = subroutines ?? throw new ArgumentNullException(nameof(subroutines));
@@ -30,7 +30,7 @@
                     return result;
                 }
 
-                if (!CharStrings.TryGetValue(0, out var sequence))
+                if (!CharStrings.TryGetValue(name, out var sequence))
                 {
                     throw new InvalidOperationException($"No charstring sequence with the name /{name} in this font.");
                 }

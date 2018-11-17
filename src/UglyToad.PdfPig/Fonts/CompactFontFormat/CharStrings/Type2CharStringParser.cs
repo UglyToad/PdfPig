@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using Charsets;
     using Geometry;
     using Util;
     using Util.JetBrains.Annotations;
@@ -118,22 +119,25 @@
                      */
                     var isOdd = ctx.Stack.Length % 2 != 0;
 
-                    var dx1 = ctx.Stack.PopBottom();
-                    ctx.AddRelativeHorizontalLine(dx1);
+                    var numberOfAdditionalLines = ctx.Stack.Length - (isOdd ? 1 : 0);
 
-                    var numberOfAdditionalLines = ctx.Stack.Length;
-                    for (var i = 0; i < numberOfAdditionalLines; i++)
+                    if (isOdd)
                     {
-                        var isDeltaY = (isOdd && i % 2 == 0) || (!isOdd && i % 2 != 0);
-                        if (isDeltaY)
+                        var dx1 = ctx.Stack.PopBottom();
+                        ctx.AddRelativeHorizontalLine(dx1);
+
+                        for (var i = 0; i < numberOfAdditionalLines; i+= 2)
                         {
-                            var dya = ctx.Stack.PopBottom();
-                            ctx.AddRelativeVerticalLine(dya);
+                            ctx.AddRelativeVerticalLine(ctx.Stack.PopBottom());
+                            ctx.AddRelativeHorizontalLine(ctx.Stack.PopBottom());
                         }
-                        else
+                    }
+                    else
+                    {
+                        for (var i = 0; i < numberOfAdditionalLines; i+= 2)
                         {
-                            var dxa = ctx.Stack.PopBottom();
-                            ctx.AddRelativeHorizontalLine(dxa);
+                            ctx.AddRelativeHorizontalLine(ctx.Stack.PopBottom());
+                            ctx.AddRelativeVerticalLine(ctx.Stack.PopBottom());
                         }
                     }
 
@@ -145,23 +149,25 @@
                 {
                     var isOdd = ctx.Stack.Length % 2 != 0;
 
+                    var numberOfAdditionalLines = ctx.Stack.Length - (isOdd ? 1 : 0);
+
+                    if (isOdd)
+                    {
                     var dy1 = ctx.Stack.PopBottom();
                     ctx.AddRelativeVerticalLine(dy1);
 
-                    var numberOfAdditionalLines = ctx.Stack.Length;
-                    for (var i = 0; i < numberOfAdditionalLines; i++)
-                    {
-                        var isDeltaY = (isOdd && i % 2 != 0) || (!isOdd && i % 2 == 0);
-
-                        if (isDeltaY)
+                        for (var i = 0; i < numberOfAdditionalLines; i+=2)
                         {
-                            var dya = ctx.Stack.PopBottom();
-                            ctx.AddRelativeVerticalLine(dya);
+                            ctx.AddRelativeHorizontalLine(ctx.Stack.PopBottom());
+                            ctx.AddRelativeVerticalLine(ctx.Stack.PopBottom());
                         }
-                        else
+                    }
+                    else
+                    {
+                        for (var i = 0; i < numberOfAdditionalLines; i+=2)
                         {
-                            var dxa = ctx.Stack.PopBottom();
-                            ctx.AddRelativeHorizontalLine(dxa);
+                            ctx.AddRelativeVerticalLine(ctx.Stack.PopBottom());
+                            ctx.AddRelativeHorizontalLine(ctx.Stack.PopBottom());
                         }
                     }
 
@@ -673,7 +679,7 @@
 
         public static Type2CharStrings Parse([NotNull] IReadOnlyList<IReadOnlyList<byte>> charStringBytes,
             [NotNull] CompactFontFormatIndex localSubroutines,
-            [NotNull] CompactFontFormatIndex globalSubroutines)
+            [NotNull] CompactFontFormatIndex globalSubroutines, ICompactFontFormatCharset charset)
         {
             if (charStringBytes == null)
             {
@@ -690,12 +696,12 @@
                 throw new ArgumentNullException(nameof(globalSubroutines));
             }
 
-            var charStrings = new Dictionary<int, Type2CharStrings.CommandSequence>();
+            var charStrings = new Dictionary<string, Type2CharStrings.CommandSequence>();
             for (var i = 0; i < charStringBytes.Count; i++)
             {
                 var charString = charStringBytes[i];
                 var sequence = ParseSingle(charString);
-                charStrings[i] = new Type2CharStrings.CommandSequence(sequence);
+                charStrings[charset.GetNameByGlyphId(i)] = new Type2CharStrings.CommandSequence(sequence);
             }
 
             return new Type2CharStrings(charStrings, new Dictionary<int, Type2CharStrings.CommandSequence>());

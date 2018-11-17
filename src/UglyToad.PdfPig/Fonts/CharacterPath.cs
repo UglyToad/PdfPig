@@ -146,7 +146,7 @@ namespace UglyToad.PdfPig.Fonts
             var path = $"<path d='{glyph}' stroke='cyan' stroke-width='3'></path>";
             var bboxRect = bbox.HasValue ? BboxToRect(bbox.Value, "yellow") : string.Empty;
             var others = string.Join(" ", bboxes.Select(x => BboxToRect(x, "gray")));
-            var result = $"<svg transform='scale(1, -1)' width='2000' height='2000'>{path} {bboxRect} {others}</svg>";
+            var result = $"<svg transform='scale(0.2, -0.2)' width='500' height='500'>{path} {bboxRect} {others}</svg>";
 
             return result;
         }

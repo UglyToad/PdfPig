@@ -258,7 +258,7 @@
 
         public string GetNameByGlyphId(int glyphId)
         {
-            throw new System.NotImplementedException();
+            return characterIdToStringIdAndName[glyphId].Value;
         }
 
         public string GetNameByStringId(int stringId)

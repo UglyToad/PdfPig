@@ -29,7 +29,7 @@
 
         public virtual string GetNameByGlyphId(int glyphId)
         {
-            throw new NotImplementedException();
+            return GlyphIdToStringIdAndName[glyphId].name;
         }
 
         public virtual string GetNameByStringId(int stringId)
