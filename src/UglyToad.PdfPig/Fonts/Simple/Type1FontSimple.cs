@@ -29,7 +29,7 @@
         private readonly Encoding encoding;
 
         [CanBeNull]
-        private readonly Union<Type1FontProgram, CompactFontFormatFontSet> fontProgram;
+        private readonly Union<Type1FontProgram, CompactFontFormatFontProgram> fontProgram;
 
         private readonly ToUnicodeCMap toUnicodeCMap;
 
@@ -41,7 +41,7 @@
 
         public Type1FontSimple(NameToken name, int firstChar, int lastChar, decimal[] widths, FontDescriptor fontDescriptor, Encoding encoding, 
             CMap toUnicodeCMap,
-            Union<Type1FontProgram, CompactFontFormatFontSet> fontProgram)
+            Union<Type1FontProgram, CompactFontFormatFontProgram> fontProgram)
         {
             this.firstChar = firstChar;
             this.lastChar = lastChar;

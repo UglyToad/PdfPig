@@ -19,7 +19,7 @@
             this.indexReader = indexReader;
         }
 
-        public CompactFontFormatFontSet Parse(CompactFontFormatData data)
+        public CompactFontFormatFontProgram Parse(CompactFontFormatData data)
         {
             var tag = ReadTag(data);
 
@@ -56,7 +56,7 @@
                 fonts[fontName] = individualFontParser.Parse(data, fontName, topLevelDictionaryIndex[i], stringIndex, globalSubroutineIndex);
             }
 
-            return new CompactFontFormatFontSet(header, fontNames, fonts);
+            return new CompactFontFormatFontProgram(header, fonts);
         }
 
         private static string ReadTag(CompactFontFormatData data)

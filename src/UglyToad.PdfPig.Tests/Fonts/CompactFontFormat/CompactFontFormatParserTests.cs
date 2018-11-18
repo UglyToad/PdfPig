@@ -4,6 +4,7 @@
     using System.IO;
     using System.Linq;
     using PdfPig.Fonts.CompactFontFormat;
+    using PdfPig.Fonts.CompactFontFormat.CharStrings;
     using PdfPig.Fonts.CompactFontFormat.Dictionaries;
     using Xunit;
 
@@ -20,7 +21,69 @@
 
             var font = parser.Parse(new CompactFontFormatData(fileBytes));
 
-            Assert.Equal("MinionPro", font.ToString());
+            Assert.Equal(1, font.Header.MajorVersion);
+            Assert.Equal(1, font.Fonts.Count);
+            Assert.True(font.Fonts.ContainsKey("MinionPro-It"));
+        }
+
+        [Fact]
+        public void CanInterpretPercentSymbol()
+        {
+            var fileBytes = GetFileBytes("MinionPro.bin");
+
+            var font = parser.Parse(new CompactFontFormatData(fileBytes));
+
+            // Calls a global subroutine
+            var box = font.GetCharacterBoundingBox("percent");
+
+            Assert.NotNull(box);
+        }
+
+        [Fact]
+        public void CanInterpretNumberSignSymbol()
+        {
+            var fileBytes = GetFileBytes("MinionPro.bin");
+
+            var font = parser.Parse(new CompactFontFormatData(fileBytes));
+
+            // Calls a local subroutine
+            var box = font.GetCharacterBoundingBox("numbersign");
+
+            Assert.NotNull(box);
+        }
+
+        [Fact]
+        public void CanInterpretPerThousandSymbol()
+        {
+            var fileBytes = GetFileBytes("MinionPro.bin");
+
+            var font = parser.Parse(new CompactFontFormatData(fileBytes));
+
+            // Calls a local subroutine which adds to the hints
+            var box = font.GetCharacterBoundingBox("perthousand");
+
+            Assert.NotNull(box);
+        }
+
+        [Fact]
+        public void CanInterpretAllGlyphs()
+        {
+            var fileBytes = GetFileBytes("MinionPro.bin");
+
+            var fontSet = parser.Parse(new CompactFontFormatData(fileBytes));
+
+            var font = fontSet.Fonts["MinionPro-It"];
+
+            var charStrings = default(Type2CharStrings);
+            font.CharStrings.Match(x => throw new InvalidOperationException("The charstrings in MinionPro are Type 2."),
+                x => charStrings = x);
+
+            foreach (var charString in charStrings.CharStrings)
+            {
+                var path = charStrings.Generate(charString.Key);
+
+                Assert.NotNull(path);
+            }
         }
 
         private static byte[] GetFileBytes(string name)

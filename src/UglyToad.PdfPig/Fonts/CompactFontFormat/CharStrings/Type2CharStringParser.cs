@@ -386,12 +386,12 @@
                     ctx.Stack.Clear();
                 })
             },
-            { 29,  new LazyType2Command("callgsubr", ctx => 
+            { 29,  new LazyType2Command("callgsubr", ctx =>
                 {
                     var index = (int)ctx.Stack.PopTop();
-                    var bias = ctx.GetLocalSubroutineBias();
+                    var bias = ctx.GetGlobalSubroutineBias();
                     var actualIndex = index + bias;
-                    var subr = ctx.LocalSubroutines[actualIndex];
+                    var subr = ctx.GlobalSubroutines[actualIndex];
                     ctx.EvaluateSubroutine(subr);
                 })
             },
@@ -711,34 +711,36 @@
                 throw new ArgumentNullException(nameof(globalSubroutines));
             }
 
-            var localSubroutineSequences = new Dictionary<int, Type2CharStrings.CommandSequence>();
-            for (var i = 0; i < localSubroutines.Count; i++)
-            {
-                var bytes = localSubroutines[i];
-                var sequence = ParseSingle(bytes);
-                localSubroutineSequences[i] = new Type2CharStrings.CommandSequence(sequence);
-            }
-
             var globalSubroutineSequences = new Dictionary<int, Type2CharStrings.CommandSequence>();
             for (var i = 0; i < globalSubroutines.Count; i++)
             {
                 var bytes = globalSubroutines[i];
-                var sequence = ParseSingle(bytes);
+                var sequence = ParseSingle(bytes, null, null);
                 globalSubroutineSequences[i] = new Type2CharStrings.CommandSequence(sequence);
+            }
+
+            var localSubroutineSequences = new Dictionary<int, Type2CharStrings.CommandSequence>();
+            for (var i = 0; i < localSubroutines.Count; i++)
+            {
+                var bytes = localSubroutines[i];
+                var sequence = ParseSingle(bytes, null, globalSubroutineSequences);
+                localSubroutineSequences[i] = new Type2CharStrings.CommandSequence(sequence);
             }
 
             var charStrings = new Dictionary<string, Type2CharStrings.CommandSequence>();
             for (var i = 0; i < charStringBytes.Count; i++)
             {
                 var charString = charStringBytes[i];
-                var sequence = ParseSingle(charString);
+                var sequence = ParseSingle(charString, localSubroutineSequences, globalSubroutineSequences);
                 charStrings[charset.GetNameByGlyphId(i)] = new Type2CharStrings.CommandSequence(sequence);
             }
 
             return new Type2CharStrings(charStrings, localSubroutineSequences, globalSubroutineSequences);
         }
 
-        private static IReadOnlyList<Union<decimal, LazyType2Command>> ParseSingle(IReadOnlyList<byte> bytes)
+        private static IReadOnlyList<Union<decimal, LazyType2Command>> ParseSingle(IReadOnlyList<byte> bytes,
+            Dictionary<int, Type2CharStrings.CommandSequence> localSubroutines,
+            Dictionary<int, Type2CharStrings.CommandSequence> globalSubroutines)
         {
             var instructions = new List<Union<decimal, LazyType2Command>>();
             for (var i = 0; i < bytes.Count; i++)
@@ -746,7 +748,7 @@
                 var b = bytes[i];
                 if (b <= 31 && b != 28)
                 {
-                    var command = GetCommand(b, bytes, instructions, ref i);
+                    var command = GetCommand(b, bytes, instructions, localSubroutines, globalSubroutines, ref i);
                     instructions.Add(Union<decimal, LazyType2Command>.Two(command));
                 }
                 else
@@ -800,7 +802,9 @@
         }
 
         private static LazyType2Command GetCommand(byte b, IReadOnlyList<byte> bytes,
-            IReadOnlyList<Union<decimal, LazyType2Command>> precedingCommands, ref int i)
+            IReadOnlyList<Union<decimal, LazyType2Command>> precedingCommands,
+            Dictionary<int, Type2CharStrings.CommandSequence> localSubroutines,
+            Dictionary<int, Type2CharStrings.CommandSequence> globalSubroutines, ref int i)
         {
             if (b == 12)
             {
@@ -816,50 +820,9 @@
             // hintmask and cntrmask
             if (b == 19 || b == 20)
             {
-                /*
-                 * The hintmask operator is followed by one or more data bytes that specify the stem hints which are to be active for the
-                 * subsequent path construction. The number of data bytes must be exactly the number needed to represent the number of
-                 * stems in the original stem list (those stems specified by the hstem, vstem, hstemhm, or vstemhm commands), using one bit
-                 * in the data bytes for each stem in the original stem list.
-                 */
-                var stemCount = 0;
-                var precedingNumbers = 0;
-                var hasEncounteredInitialHintMask = false;
-                for (var j = 0; j < precedingCommands.Count; j++)
-                {
-                    var item = precedingCommands[j];
-                    item.Match(x => precedingNumbers++,
-                        x =>
-                        {
-                            // The numbers preceding the first hintmask following hinting can act as vertical hints.
-                            if (x.Name == "hintmask" && !hasEncounteredInitialHintMask)
-                            {
-                                hasEncounteredInitialHintMask = true;
-                                stemCount += precedingNumbers / 2;
-                                return;
-                            }
-
-                            if (!HintingCommandNames.Contains(x.Name))
-                            {
-                                precedingNumbers = 0;
-                                return;
-                            }
-
-                            stemCount += precedingNumbers / 2;
-                            precedingNumbers = 0;
-                        });
-                }
-
-                var fullStemCount = stemCount;
-                // The vstem command can be left out, e.g. for 12 20 hstemhm 4 6 hintmask, 4 and 6 act as the vertical hints
-                if (precedingNumbers > 0 && !hasEncounteredInitialHintMask)
-                {
-                    fullStemCount += precedingNumbers / 2;
-                }
-
-                var minimumFullBytes = Math.Ceiling(fullStemCount / 8d);
+                var minimumFullBytes = CalculatePrecedingHintBytes(precedingCommands, localSubroutines, globalSubroutines);
                 // Skip the following hintmask or cntrmask data bytes
-                i += (int)minimumFullBytes;
+                i += minimumFullBytes;
             }
 
             if (SingleByteCommandStore.TryGetValue(b, out var command))
@@ -868,6 +831,131 @@
             }
 
             return new LazyType2Command($"unknown: {b}", x => { });
+        }
+
+        private static int CalculatePrecedingHintBytes(IReadOnlyList<Union<decimal, LazyType2Command>> precedingCommands,
+            Dictionary<int, Type2CharStrings.CommandSequence> localSubroutines,
+            Dictionary<int, Type2CharStrings.CommandSequence> globalSubroutines)
+        {
+            // Do a first pass to substitute in all local and global subroutines prior to the first hintmask.
+            var commandsToCountHints = BuildFullCommandSequence(precedingCommands, localSubroutines, globalSubroutines);
+
+            /*
+             * The hintmask operator is followed by one or more data bytes that specify the stem hints which are to be active for the
+             * subsequent path construction. The number of data bytes must be exactly the number needed to represent the number of
+             * stems in the original stem list (those stems specified by the hstem, vstem, hstemhm, or vstemhm commands), using one bit
+             * in the data bytes for each stem in the original stem list.
+             */
+            var stemCount = 0;
+            var precedingNumbers = 0;
+            var hasEncounteredInitialHintMask = false;
+            for (var j = 0; j < commandsToCountHints.Count; j++)
+            {
+                var item = commandsToCountHints[j];
+                item.Match(x =>
+                    {
+                        precedingNumbers++;
+                    },
+                    x =>
+                    {
+                        // The numbers preceding the first hintmask following hinting can act as vertical hints.
+                        if (x.Name == "hintmask" && !hasEncounteredInitialHintMask)
+                        {
+                            hasEncounteredInitialHintMask = true;
+                            stemCount += precedingNumbers / 2;
+                            return;
+                        }
+                        
+                        if (!HintingCommandNames.Contains(x.Name))
+                        {
+                            precedingNumbers = 0;
+                            return;
+                        }
+
+                        stemCount += precedingNumbers / 2;
+                        precedingNumbers = 0;
+                    });
+            }
+
+            var fullStemCount = stemCount;
+            // The vstem command can be left out, e.g. for 12 20 hstemhm 4 6 hintmask, 4 and 6 act as the vertical hints
+            if (precedingNumbers > 0 && !hasEncounteredInitialHintMask)
+            {
+                fullStemCount += precedingNumbers / 2;
+            }
+
+            var minimumFullBytes = (int)Math.Ceiling(fullStemCount / 8d);
+
+            return minimumFullBytes;
+        }
+
+        private static IReadOnlyList<Union<decimal, LazyType2Command>> BuildFullCommandSequence(IReadOnlyList<Union<decimal, LazyType2Command>> allNonSubroutineCommands,
+            Dictionary<int, Type2CharStrings.CommandSequence> localSubroutines,
+            Dictionary<int, Type2CharStrings.CommandSequence> globalSubroutines)
+        {
+            /*
+             * Since the initial hintmask or stem information may be in a subroutine we must include subroutines
+             * when calculating the overall number of hints. This is a nuisance because we have to evaluate the
+             * charstring but should be rare enough to avoid a performance hit.
+             */
+            bool IsSubroutine(LazyType2Command cmd)
+            {
+                return cmd.Name == "callsubr" || cmd.Name == "callgsubr";
+            }
+
+            if (localSubroutines == null || globalSubroutines == null)
+            {
+                return allNonSubroutineCommands;
+            }
+
+            // Build a mutable list of the commands to substitute subroutine into.
+            var results = new List<Union<decimal, LazyType2Command>>(allNonSubroutineCommands);
+
+            var firstHintmask = false;
+
+            var previousNumber = -1m;
+            for (var i = 0; i < results.Count; i++)
+            {
+                var command = results[i];
+
+                var foundSubroutine = false;
+                var wasLocalSubroutine = false;
+                var subroutineIndex = 0;
+
+                command.Match(x => previousNumber = x, x =>
+                {
+                    // When we have a subroutine which appears before a hintmask we substitute the actual commands in to check for hints.
+                    if (IsSubroutine(x) && !firstHintmask)
+                    {
+                        foundSubroutine = true;
+                        wasLocalSubroutine = x.Name == "callsubr";
+
+                        var bias = Type2BuildCharContext.CountToBias(wasLocalSubroutine ? localSubroutines.Count : globalSubroutines.Count);
+                        subroutineIndex = (int) previousNumber + bias;
+                    }
+                    else if (x.Name == "hintmask")
+                    {
+                        firstHintmask = true;
+                    }
+                });
+
+                if (foundSubroutine)
+                {
+                    // Replace the call to the local or global subroutine with the actual routine.
+                    var routine = wasLocalSubroutine ? localSubroutines[subroutineIndex] : globalSubroutines[subroutineIndex];
+                    results.RemoveAt(i);
+                    results.InsertRange(i , routine.Commands);
+                    i -= 1;
+                }
+
+                // Exit once we hit the first hintmask since all hints have now been declared.
+                if (firstHintmask)
+                {
+                    break;
+                }
+            }
+
+            return results;
         }
     }
 }

@@ -48,9 +48,16 @@
                     throw new InvalidOperationException($"No charstring sequence with the name /{name} in this font.");
                 }
 
-                glyph = Run(sequence);
+                try
+                {
+                    glyph = Run(sequence);
 
-                glyphs[name] = glyph;
+                    glyphs[name] = glyph;
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException($"Failed to interpret charstring for symbol with name: {name}. Commands: {sequence}.", ex);
+                }
             }
 
             return glyph;
@@ -79,14 +86,14 @@
                                case "hstemhm":
                                case "vstemhm":
                                case "vstem":
-                               {
-                                   var oddArgCount = context.Stack.Length % 2 != 0;
-                                   if (oddArgCount)
                                    {
-                                       context.Width = context.Stack.PopBottom();
+                                       var oddArgCount = context.Stack.Length % 2 != 0;
+                                       if (oddArgCount)
+                                       {
+                                           context.Width = context.Stack.PopBottom();
+                                       }
+                                       break;
                                    }
-                                   break;
-                               }
                                case "hmoveto":
                                case "vmoveto":
                                    SetWidthFromArgumentsIfPresent(context, 1);
@@ -98,11 +105,11 @@
                                case "hintmask":
                                case "endchar:":
                                    SetWidthFromArgumentsIfPresent(context, 0);
-                                    break;
-                                default:
-                                    hasRunStackClearingCommand = false;
-                                    break;
-                                
+                                   break;
+                               default:
+                                   hasRunStackClearingCommand = false;
+                                   break;
+
                            }
 
                        }

@@ -1,8 +1,9 @@
-﻿using System;
-// ReSharper disable InconsistentNaming
-
+﻿// ReSharper disable InconsistentNaming
 namespace UglyToad.PdfPig.Util
 {
+    using System;
+    using System.Diagnostics;
+
     internal abstract class Union<A, B>
     {
         public abstract void Match(Action<A> first, Action<B> second);
@@ -28,6 +29,7 @@ namespace UglyToad.PdfPig.Util
                 Item = item;
             }
 
+            [DebuggerStepThrough]
             public override void Match(Action<A> first, Action<B> second)
             {
                 first(Item);
@@ -48,6 +50,7 @@ namespace UglyToad.PdfPig.Util
                 Item = item;
             }
 
+            [DebuggerStepThrough]
             public override void Match(Action<A> first, Action<B> second)
             {
                 second(Item);

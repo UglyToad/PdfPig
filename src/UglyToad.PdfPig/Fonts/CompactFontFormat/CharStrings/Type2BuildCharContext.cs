@@ -116,7 +116,7 @@
             return CountToBias(count);
         }
 
-        private static int CountToBias(int count)
+        public static int CountToBias(int count)
         {
             if (count < 1240)
             {

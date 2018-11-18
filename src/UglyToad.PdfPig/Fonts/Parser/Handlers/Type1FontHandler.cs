@@ -93,7 +93,7 @@
             return new Type1FontSimple(name, firstCharacter, lastCharacter, widths, descriptor, encoding, toUnicodeCMap, font);
         }
 
-        private Union<Type1FontProgram, CompactFontFormatFontSet> ParseFontProgram(FontDescriptor descriptor, bool isLenientParsing)
+        private Union<Type1FontProgram, CompactFontFormatFontProgram> ParseFontProgram(FontDescriptor descriptor, bool isLenientParsing)
         {
             if (descriptor?.FontFile == null)
             {
@@ -119,7 +119,7 @@
                 && NameToken.Type1C.Equals(subTypeName))
                 {
                     var cffFont = compactFontFormatParser.Parse(new CompactFontFormatData(bytes));
-                    return Union<Type1FontProgram, CompactFontFormatFontSet>.Two(cffFont);
+                    return Union<Type1FontProgram, CompactFontFormatFontProgram>.Two(cffFont);
                 }
 
                 var length1 = stream.StreamDictionary.Get<NumericToken>(NameToken.Length1, pdfScanner);
@@ -127,7 +127,7 @@
                 
                 var font = type1FontParser.Parse(new ByteArrayInputBytes(bytes), length1.Int, length2.Int);
 
-                return Union<Type1FontProgram, CompactFontFormatFontSet>.One(font);
+                return Union<Type1FontProgram, CompactFontFormatFontProgram>.One(font);
             }
             catch
             {

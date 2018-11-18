@@ -150,28 +150,6 @@
                     throw new ArgumentOutOfRangeException($"Unexpected CharString type in CFF font: {topDictionary.CharStringType}.");
             }
 
-            if (Debugger.IsAttached)
-            {
-                var builder = new StringBuilder("<!DOCTYPE html><html><head></head><body>");
-                foreach (var pair in charStrings.CharStrings)
-                {
-                    try
-                    {
-                        var path = charStrings.Generate(pair.Key);
-                        var svg = path.ToFullSvg();
-                        builder.AppendLine(svg);
-                    }
-                    catch (Exception ex)
-                    {
-
-                    }
-                }
-
-                builder.Append("</body></html>");
-
-                File.WriteAllText(@"C:\git\index.html", builder.ToString());
-            }
-
             return new CompactFontFormatFont(topDictionary, privateDictionary, charset, Union<Type1CharStrings, Type2CharStrings>.Two(charStrings));
         }
 
