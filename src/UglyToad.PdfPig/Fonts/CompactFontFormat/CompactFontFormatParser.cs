@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CompactFontFormat
 {
     using System;
+    using System.Collections.Generic;
     using Util;
 
     internal class CompactFontFormatParser
@@ -18,18 +19,19 @@
             this.indexReader = indexReader;
         }
 
-        public void Parse(CompactFontFormatData data)
+        public CompactFontFormatFontSet Parse(CompactFontFormatData data)
         {
             var tag = ReadTag(data);
 
             switch (tag)
             {
+                // An OpenType font containing CFF data.
                 case TagOtto:
                     throw new NotSupportedException("Currently tagged CFF data is not supported.");
                 case TagTtcf:
-                    throw new NotSupportedException("True Type Collection fonts are not supported.");
+                    throw new NotSupportedException("True Type Collection fonts are not currently supported.");
                 case TagTtfonly:
-                    throw new NotSupportedException("OpenType fonts containing a true type font are not supported.");
+                    throw new NotSupportedException("OpenType fonts containing a true type font are not currently supported.");
                 default:
                     data.Seek(0);
                     break;
@@ -39,18 +41,22 @@
 
             var fontNames = ReadStringIndex(data);
 
-            var topLevelDict = indexReader.ReadDictionaryData(data);
+            var topLevelDictionaryIndex = indexReader.ReadDictionaryData(data);
 
             var stringIndex = ReadStringIndex(data);
 
             var globalSubroutineIndex = indexReader.ReadDictionaryData(data);
 
+            var fonts = new Dictionary<string, CompactFontFormatFont>();
+
             for (var i = 0; i < fontNames.Length; i++)
             {
                 var fontName = fontNames[i];
 
-                individualFontParser.Parse(data, fontName, topLevelDict[i], stringIndex, globalSubroutineIndex);
+                fonts[fontName] = individualFontParser.Parse(data, fontName, topLevelDictionaryIndex[i], stringIndex, globalSubroutineIndex);
             }
+
+            return new CompactFontFormatFontSet(header, fontNames, fonts);
         }
 
         private static string ReadTag(CompactFontFormatData data)

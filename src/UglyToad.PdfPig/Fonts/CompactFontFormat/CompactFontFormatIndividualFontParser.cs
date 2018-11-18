@@ -36,11 +36,12 @@
 
             var privateDictionary = CompactFontFormatPrivateDictionary.GetDefault();
 
-            if (topDictionary.PrivateDictionarySizeAndOffset.Item2 >= 0)
+            if (topDictionary.PrivateDictionaryLocation.HasValue)
             {
-                data.Seek(topDictionary.PrivateDictionarySizeAndOffset.Item2);
+                var privateDictionaryBytes = data.SnapshotPortion(topDictionary.PrivateDictionaryLocation.Value.Offset,
+                    topDictionary.PrivateDictionaryLocation.Value.Size);
 
-                privateDictionary = privateDictionaryReader.Read(data, stringIndex);
+                privateDictionary = privateDictionaryReader.Read(privateDictionaryBytes, stringIndex);
             }
 
             if (topDictionary.CharStringsOffset < 0)
@@ -49,9 +50,9 @@
             }
 
             var localSubroutines = CompactFontFormatIndex.None;
-            if (privateDictionary.LocalSubroutineOffset.HasValue)
+            if (privateDictionary.LocalSubroutineOffset.HasValue && topDictionary.PrivateDictionaryLocation.HasValue)
             {
-                data.Seek(privateDictionary.LocalSubroutineOffset.Value);
+                data.Seek(privateDictionary.LocalSubroutineOffset.Value + topDictionary.PrivateDictionaryLocation.Value.Offset);
 
                 localSubroutines = indexReader.ReadDictionaryData(data);
             }
@@ -154,9 +155,16 @@
                 var builder = new StringBuilder("<!DOCTYPE html><html><head></head><body>");
                 foreach (var pair in charStrings.CharStrings)
                 {
-                    var path = Type2CharStrings.Run(pair.Value);
-                    var svg = path.ToFullSvg();
-                    builder.AppendLine(svg);
+                    try
+                    {
+                        var path = charStrings.Generate(pair.Key);
+                        var svg = path.ToFullSvg();
+                        builder.AppendLine(svg);
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
                 }
 
                 builder.Append("</body></html>");

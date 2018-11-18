@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CompactFontFormat.Dictionaries
 {
-    using System;
     using Core;
     using Geometry;
 
@@ -46,12 +45,7 @@
 
         public int EncodingOffset { get; set; } = UnsetOffset;
 
-        private Tuple<int, int> privateDictionarySizeAndOffset = Tuple.Create(0, UnsetOffset);
-        public Tuple<int, int> PrivateDictionarySizeAndOffset
-        {
-            get => privateDictionarySizeAndOffset ?? Tuple.Create(0, UnsetOffset);
-            set => privateDictionarySizeAndOffset = value;
-        }
+        public SizeAndOffset? PrivateDictionaryLocation { get; set; }
 
         public int CharStringsOffset { get; set; } = -1;
 
@@ -64,6 +58,24 @@
         public decimal[] BaseFontBlend { get; set; }
 
         public bool IsCidFont { get; set; }
+
+        public struct SizeAndOffset
+        {
+            public int Size { get; }
+
+            public int Offset { get; }
+
+            public SizeAndOffset(int size, int offset)
+            {
+                Size = size;
+                Offset = offset;
+            }
+
+            public override string ToString()
+            {
+                return $"Size: {Size}, Offset: {Offset}";
+            }
+        }
     }
 
     /// <summary>

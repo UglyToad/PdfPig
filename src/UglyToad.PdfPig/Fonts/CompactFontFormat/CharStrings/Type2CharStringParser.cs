@@ -189,7 +189,14 @@
                     ctx.Stack.Clear();
                 })
             },
-            { 10,  new LazyType2Command("callsubr", x => { })},
+            { 10,  new LazyType2Command("callsubr", ctx =>
+            {
+                var index = (int)ctx.Stack.PopTop();
+                var bias = ctx.GetLocalSubroutineBias();
+                var actualIndex = index + bias;
+                var subr = ctx.LocalSubroutines[actualIndex];
+                ctx.EvaluateSubroutine(subr);
+            })},
             { 11,  new LazyType2Command("return", x => { })},
             { 14,  new LazyType2Command("endchar", ctx =>
                 {
@@ -379,7 +386,15 @@
                     ctx.Stack.Clear();
                 })
             },
-            { 29,  new LazyType2Command("callgsubr", x => { })},
+            { 29,  new LazyType2Command("callgsubr", ctx => 
+                {
+                    var index = (int)ctx.Stack.PopTop();
+                    var bias = ctx.GetLocalSubroutineBias();
+                    var actualIndex = index + bias;
+                    var subr = ctx.LocalSubroutines[actualIndex];
+                    ctx.EvaluateSubroutine(subr);
+                })
+            },
             { 30,
                 new LazyType2Command("vhcurveto", ctx =>
                 {
@@ -696,6 +711,22 @@
                 throw new ArgumentNullException(nameof(globalSubroutines));
             }
 
+            var localSubroutineSequences = new Dictionary<int, Type2CharStrings.CommandSequence>();
+            for (var i = 0; i < localSubroutines.Count; i++)
+            {
+                var bytes = localSubroutines[i];
+                var sequence = ParseSingle(bytes);
+                localSubroutineSequences[i] = new Type2CharStrings.CommandSequence(sequence);
+            }
+
+            var globalSubroutineSequences = new Dictionary<int, Type2CharStrings.CommandSequence>();
+            for (var i = 0; i < globalSubroutines.Count; i++)
+            {
+                var bytes = globalSubroutines[i];
+                var sequence = ParseSingle(bytes);
+                globalSubroutineSequences[i] = new Type2CharStrings.CommandSequence(sequence);
+            }
+
             var charStrings = new Dictionary<string, Type2CharStrings.CommandSequence>();
             for (var i = 0; i < charStringBytes.Count; i++)
             {
@@ -704,7 +735,7 @@
                 charStrings[charset.GetNameByGlyphId(i)] = new Type2CharStrings.CommandSequence(sequence);
             }
 
-            return new Type2CharStrings(charStrings, new Dictionary<int, Type2CharStrings.CommandSequence>());
+            return new Type2CharStrings(charStrings, localSubroutineSequences, globalSubroutineSequences);
         }
 
         private static IReadOnlyList<Union<decimal, LazyType2Command>> ParseSingle(IReadOnlyList<byte> bytes)
@@ -793,31 +824,40 @@
                  */
                 var stemCount = 0;
                 var precedingNumbers = 0;
+                var hasEncounteredInitialHintMask = false;
                 for (var j = 0; j < precedingCommands.Count; j++)
                 {
                     var item = precedingCommands[j];
                     item.Match(x => precedingNumbers++,
                         x =>
                         {
+                            // The numbers preceding the first hintmask following hinting can act as vertical hints.
+                            if (x.Name == "hintmask" && !hasEncounteredInitialHintMask)
+                            {
+                                hasEncounteredInitialHintMask = true;
+                                stemCount += precedingNumbers / 2;
+                                return;
+                            }
+
                             if (!HintingCommandNames.Contains(x.Name))
                             {
                                 precedingNumbers = 0;
                                 return;
                             }
 
-                            // ReSharper disable once AccessToModifiedClosure
                             stemCount += precedingNumbers / 2;
                             precedingNumbers = 0;
                         });
                 }
 
+                var fullStemCount = stemCount;
                 // The vstem command can be left out, e.g. for 12 20 hstemhm 4 6 hintmask, 4 and 6 act as the vertical hints
-                if (precedingNumbers > 0)
+                if (precedingNumbers > 0 && !hasEncounteredInitialHintMask)
                 {
-                    stemCount += precedingNumbers / 2;
+                    fullStemCount += precedingNumbers / 2;
                 }
 
-                var minimumFullBytes = Math.Ceiling(stemCount / 8d);
+                var minimumFullBytes = Math.Ceiling(fullStemCount / 8d);
                 // Skip the following hintmask or cntrmask data bytes
                 i += (int)minimumFullBytes;
             }

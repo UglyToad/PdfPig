@@ -136,7 +136,7 @@
                         var size = GetIntOrDefault(operands);
                         operands.RemoveAt(0);
                         var offset = GetIntOrDefault(operands);
-                        dictionary.PrivateDictionarySizeAndOffset = Tuple.Create(size, offset);
+                        dictionary.PrivateDictionaryLocation = new CompactFontFormatTopLevelDictionary.SizeAndOffset(size, offset);
                     }
                     break;
             }

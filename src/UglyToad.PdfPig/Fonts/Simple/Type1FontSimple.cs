@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Simple
 {
+    using System;
     using Cmap;
+    using CompactFontFormat;
     using Composite;
     using Core;
     using Encodings;
@@ -8,6 +10,8 @@
     using IO;
     using Tokens;
     using Type1;
+    using Util;
+    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// A font based on the Adobe Type 1 font format.
@@ -23,7 +27,9 @@
         private readonly FontDescriptor fontDescriptor;
 
         private readonly Encoding encoding;
-        private readonly Type1FontProgram fontProgram;
+
+        [CanBeNull]
+        private readonly Union<Type1FontProgram, CompactFontFormatFontSet> fontProgram;
 
         private readonly ToUnicodeCMap toUnicodeCMap;
 
@@ -35,7 +41,7 @@
 
         public Type1FontSimple(NameToken name, int firstChar, int lastChar, decimal[] widths, FontDescriptor fontDescriptor, Encoding encoding, 
             CMap toUnicodeCMap,
-            Type1FontProgram fontProgram)
+            Union<Type1FontProgram, CompactFontFormatFontSet> fontProgram)
         {
             this.firstChar = firstChar;
             this.lastChar = lastChar;
@@ -71,15 +77,18 @@
                 }
                 catch
                 {
-                    if (fontProgram != null)
+                    if (fontProgram == null)
                     {
-                        var result = fontProgram.Encoding.TryGetValue(characterCode, out value);
-                        return result;
+                        return false;
                     }
-                    // our quick hack has failed, we should decode the type 1 font!
-                }
 
-                return false;
+                    var containsEncoding = false;
+                    var capturedValue = default(string);
+                    fontProgram.Match(x => { containsEncoding = x.Encoding.TryGetValue(characterCode, out capturedValue); },
+                        _ => {});
+                    value = capturedValue;
+                    return containsEncoding;
+                }
             }
 
             var name = encoding.GetName(characterCode);
@@ -100,9 +109,25 @@
         {
             var boundingBox = GetBoundingBoxInGlyphSpace(characterCode);
 
-            boundingBox = fontMatrix.Transform(boundingBox);
+            var matrix = GetFontMatrixInternal();
+
+            boundingBox = matrix.Transform(boundingBox);
 
             return new CharacterBoundingBox(boundingBox, boundingBox);
+        }
+
+        private TransformationMatrix GetFontMatrixInternal()
+        {
+            if (fontProgram == null)
+            {
+                return fontMatrix;
+            }
+
+            var matrix = default(TransformationMatrix);
+
+            fontProgram.Match(x => { matrix = fontMatrix; }, x => { matrix = x.GetFontTransformationMatrix(); });
+
+            return matrix;
         }
 
         private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
@@ -117,13 +142,31 @@
                 return new PdfRectangle(0, 0, widths[characterCode - firstChar], 0);
             }
 
-            var rect = fontProgram.GetCharacterBoundingBox(characterCode);
+            var rect = default(PdfRectangle?);
+            fontProgram.Match(x =>
+                {
+                    rect = x.GetCharacterBoundingBox(characterCode);
+                },
+                x =>
+                {
+                    string characterName;
+                    if (encoding != null)
+                    {
+                        characterName = encoding.GetName(characterCode);
+                    }
+                    else
+                    {
+                        throw new NotImplementedException("Unclear how to access the character name for CFF fonts when no encoding is present.");
+                    }
+                    rect = x.GetCharacterBoundingBox(characterName);
+                });
 
             if (!rect.HasValue)
             {
                 return new PdfRectangle(0, 0, widths[characterCode - firstChar], 0);
             }
 
+            // ReSharper disable once PossibleInvalidOperationException
             return rect.Value;
         }
 

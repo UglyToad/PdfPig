@@ -5,6 +5,11 @@
     using System.Linq;
     using Util;
 
+    /// <summary>
+    /// Stores the decoded command sequences for Type 2 CharStrings from a Compact Font Format font as well
+    /// as the local (per font) and global (per font set) subroutines.
+    /// The CharStrings are lazily evaluated.
+    /// </summary>
     internal class Type2CharStrings
     {
         private readonly object locker = new object();
@@ -12,14 +17,22 @@
 
         public IReadOnlyDictionary<string, CommandSequence> CharStrings { get; }
 
-        public IReadOnlyDictionary<int, CommandSequence> Subroutines { get; }
+        public IReadOnlyDictionary<int, CommandSequence> LocalSubroutines { get; }
+        public IReadOnlyDictionary<int, CommandSequence> GlobalSubroutines { get; }
 
-        public Type2CharStrings(IReadOnlyDictionary<string, CommandSequence> charStrings, IReadOnlyDictionary<int, CommandSequence> subroutines)
+        public Type2CharStrings(IReadOnlyDictionary<string, CommandSequence> charStrings, IReadOnlyDictionary<int, CommandSequence> localSubroutines,
+            IReadOnlyDictionary<int, CommandSequence> globalSubroutines)
         {
             CharStrings = charStrings ?? throw new ArgumentNullException(nameof(charStrings));
-            Subroutines = subroutines ?? throw new ArgumentNullException(nameof(subroutines));
+            LocalSubroutines = localSubroutines ?? throw new ArgumentNullException(nameof(localSubroutines));
+            GlobalSubroutines = globalSubroutines ?? throw new ArgumentNullException(nameof(globalSubroutines));
         }
 
+        /// <summary>
+        /// Evaluate the CharString for the character with a given name returning the path constructed for the glyph.
+        /// </summary>
+        /// <param name="name">The name of the character to retrieve the CharString for.</param>
+        /// <returns>A <see cref="CharacterPath"/> for the glyph.</returns>
         public CharacterPath Generate(string name)
         {
             CharacterPath glyph;
@@ -43,9 +56,9 @@
             return glyph;
         }
 
-        public static CharacterPath Run(CommandSequence sequence)
+        private CharacterPath Run(CommandSequence sequence)
         {
-            var context = new Type2BuildCharContext();
+            var context = new Type2BuildCharContext(LocalSubroutines, GlobalSubroutines);
 
             var hasRunStackClearingCommand = false;
             foreach (var command in sequence.Commands)

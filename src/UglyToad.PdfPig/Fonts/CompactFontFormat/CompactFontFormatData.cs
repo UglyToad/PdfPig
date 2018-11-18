@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CompactFontFormat
 {
     using System;
+    using System.Diagnostics;
     using System.Text;
 
     /// <summary>
@@ -12,6 +13,9 @@
 
         public int Position { get; private set; } = -1;
 
+        public int Length => dataBytes.Length;
+
+        [DebuggerStepThrough]
         public CompactFontFormatData(byte[] dataBytes)
         {
             this.dataBytes = dataBytes;
@@ -103,6 +107,18 @@
             }
 
             return result;
+        }
+
+        public CompactFontFormatData SnapshotPortion(int startLocation, int length)
+        {
+            if (startLocation > dataBytes.Length - 1 || startLocation + length > dataBytes.Length)
+            {
+                throw new ArgumentException($"Attempted to create a snapshot of an invalid portion of the data. Length was {dataBytes.Length}, requested start: {startLocation} and requested length: {length}.");
+            }
+
+            var newData = new byte[length];
+            Array.Copy(dataBytes, startLocation, newData, 0, length);
+            return new CompactFontFormatData(newData);
         }
     }
 }

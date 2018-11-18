@@ -21,6 +21,11 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat
                     throw new InvalidOperationException($"Negative object length {length} at {i}. Current position: {data.Position}.");
                 }
 
+                if (length > data.Length)
+                {
+                    throw new InvalidOperationException($"Attempted to read data of length {length} in data array of length {data.Length}.");
+                }
+
                 results[i] = data.ReadBytes(length);
             }
 

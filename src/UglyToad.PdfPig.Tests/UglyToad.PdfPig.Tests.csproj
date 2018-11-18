@@ -38,6 +38,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Fonts\CompactFontFormat\MinionPro.bin" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Fonts\CompactFontFormat\MinionPro.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Fonts\Type1\AdobeUtopia.pfa" />
     <Content Include="Fonts\Type1\CMBX10.pfa" />
     <Content Include="Fonts\Type1\CMBX12.pfa" />
