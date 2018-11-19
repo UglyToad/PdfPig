@@ -2,7 +2,6 @@
 {
     using System.Collections.Generic;
     using Geometry;
-    using Util;
 
     /// <summary>
     /// The context used and updated when interpreting the commands for a charstring.
@@ -10,17 +9,7 @@
     internal class Type2BuildCharContext
     {
         private readonly Dictionary<int, decimal> transientArray = new Dictionary<int, decimal>();
-
-        /// <summary>
-        /// The local subroutines available in this font.
-        /// </summary>
-        public IReadOnlyDictionary<int, Type2CharStrings.CommandSequence> LocalSubroutines { get; }
-
-        /// <summary>
-        /// The global subroutines available in this font set.
-        /// </summary>
-        public IReadOnlyDictionary<int, Type2CharStrings.CommandSequence> GlobalSubroutines { get; }
-
+        
         /// <summary>
         /// The numbers currently on the Type 2 Build Char stack.
         /// </summary>
@@ -42,18 +31,6 @@
         /// </summary>
         public decimal? Width { get; set; }
 
-        public List<Union<decimal, LazyType2Command>> All { get; } = new List<Union<decimal, LazyType2Command>>();
-
-        /// <summary>
-        /// Create a new <see cref="Type2BuildCharContext"/>.
-        /// </summary>
-        public Type2BuildCharContext(IReadOnlyDictionary<int, Type2CharStrings.CommandSequence> localSubroutines, 
-            IReadOnlyDictionary<int, Type2CharStrings.CommandSequence> globalSubroutines)
-        {
-            LocalSubroutines = localSubroutines;
-            GlobalSubroutines = globalSubroutines;
-        }
-        
         public void AddRelativeHorizontalLine(decimal dx)
         {
             AddRelativeLine(dx, 0);
@@ -107,18 +84,6 @@
             return result;
         }
 
-        public int GetLocalSubroutineBias()
-        {
-            var count = LocalSubroutines.Count;
-            return CountToBias(count);
-        }
-
-        public int GetGlobalSubroutineBias()
-        {
-            var count = GlobalSubroutines.Count;
-            return CountToBias(count);
-        }
-
         public static int CountToBias(int count)
         {
             if (count < 1240)
@@ -132,16 +97,6 @@
             }
 
             return 32768;
-        }
-
-        public void EvaluateSubroutine(Type2CharStrings.CommandSequence subroutine)
-        {
-            foreach (var command in subroutine.Commands)
-            {
-                All.Add(command);
-                command.Match(x => Stack.Push(x),
-                    act => act.Run(this));
-            }
         }
     }
 }

@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using Util;
+    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// Stores the decoded command sequences for Type 2 CharStrings from a Compact Font Format font as well
@@ -15,13 +16,25 @@
         private readonly object locker = new object();
         private readonly Dictionary<string, CharacterPath> glyphs = new Dictionary<string, CharacterPath>();
 
+        /// <summary>
+        /// The decoded charstrings in this font.
+        /// </summary>
         public IReadOnlyDictionary<string, CommandSequence> CharStrings { get; }
 
-        public IReadOnlyDictionary<int, CommandSequence> LocalSubroutines { get; }
-        public IReadOnlyDictionary<int, CommandSequence> GlobalSubroutines { get; }
+        /// <summary>
+        /// The indexed bytes for the local subroutines in this font.
+        /// </summary>
+        [NotNull]
+        public CompactFontFormatIndex LocalSubroutines { get; }
 
-        public Type2CharStrings(IReadOnlyDictionary<string, CommandSequence> charStrings, IReadOnlyDictionary<int, CommandSequence> localSubroutines,
-            IReadOnlyDictionary<int, CommandSequence> globalSubroutines)
+        /// <summary>
+        /// The indexed bytes for the global subroutines in this font set.
+        /// </summary>
+        [NotNull]
+        public CompactFontFormatIndex GlobalSubroutines { get; }
+
+        public Type2CharStrings(IReadOnlyDictionary<string, CommandSequence> charStrings, CompactFontFormatIndex localSubroutines,
+            CompactFontFormatIndex globalSubroutines)
         {
             CharStrings = charStrings ?? throw new ArgumentNullException(nameof(charStrings));
             LocalSubroutines = localSubroutines ?? throw new ArgumentNullException(nameof(localSubroutines));
@@ -52,8 +65,6 @@
                 {
                     glyph = Run(sequence);
 
-                    var svg = glyph.ToFullSvg();
-
                     glyphs[name] = glyph;
                 }
                 catch (Exception ex)
@@ -65,14 +76,13 @@
             return glyph;
         }
 
-        private CharacterPath Run(CommandSequence sequence)
+        private static CharacterPath Run(CommandSequence sequence)
         {
-            var context = new Type2BuildCharContext(LocalSubroutines, GlobalSubroutines);
+            var context = new Type2BuildCharContext();
 
             var hasRunStackClearingCommand = false;
             foreach (var command in sequence.Commands)
             {
-                context.All.Add(command);
                 command.Match(x => context.Stack.Push(x),
                    x =>
                    {
