@@ -12,6 +12,7 @@
         private const string SinglePageFormattedType0Content = "Type0 Font";
         private const string SinglePageType1Content = "ICML03-081";
         private const string SingleInkscapePage = "Single Page Simple - from inkscape";
+        private const string PigProduction = "Pig Production Handbook";
 
         private static string GetFilename(string name)
         {
@@ -59,6 +60,12 @@
         public void RotatedTextLibreOffice()
         {
             Run(@"Rotated Text Libre Office", 841);
+        }
+
+        [Fact]
+        public void PigProductionCompactFontFormat()
+        {
+            Run(PigProduction);
         }
 
         private static void Run(string file, int imageHeight = 792)
