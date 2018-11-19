@@ -52,6 +52,8 @@
                 {
                     glyph = Run(sequence);
 
+                    var svg = glyph.ToFullSvg();
+
                     glyphs[name] = glyph;
                 }
                 catch (Exception ex)
@@ -70,6 +72,7 @@
             var hasRunStackClearingCommand = false;
             foreach (var command in sequence.Commands)
             {
+                context.All.Add(command);
                 command.Match(x => context.Stack.Push(x),
                    x =>
                    {

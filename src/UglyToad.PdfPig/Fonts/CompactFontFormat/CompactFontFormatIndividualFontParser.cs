@@ -2,10 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.IO;
     using System.Linq;
-    using System.Text;
     using Charsets;
     using CharStrings;
     using Dictionaries;
@@ -164,7 +161,7 @@
                 return stringIndex[index - 391];
             }
 
-            // technically this maps to .notdef, but we PDFBox uses this
+            // technically this maps to .notdef, but PDFBox uses this
             return "SID" + index;
         }
     }

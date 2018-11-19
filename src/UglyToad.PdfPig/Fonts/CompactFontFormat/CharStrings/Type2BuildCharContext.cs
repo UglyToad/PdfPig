@@ -2,6 +2,7 @@
 {
     using System.Collections.Generic;
     using Geometry;
+    using Util;
 
     /// <summary>
     /// The context used and updated when interpreting the commands for a charstring.
@@ -40,6 +41,8 @@
         ///  number in the charstring, and encoded as the difference from nominalWidthX.
         /// </summary>
         public decimal? Width { get; set; }
+
+        public List<Union<decimal, LazyType2Command>> All { get; } = new List<Union<decimal, LazyType2Command>>();
 
         /// <summary>
         /// Create a new <see cref="Type2BuildCharContext"/>.
@@ -135,6 +138,7 @@
         {
             foreach (var command in subroutine.Commands)
             {
+                All.Add(command);
                 command.Match(x => Stack.Push(x),
                     act => act.Run(this));
             }

@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using Charsets;
     using Geometry;
     using Util;
@@ -731,8 +732,9 @@
             for (var i = 0; i < charStringBytes.Count; i++)
             {
                 var charString = charStringBytes[i];
+                var name = charset.GetNameByGlyphId(i);
                 var sequence = ParseSingle(charString, localSubroutineSequences, globalSubroutineSequences);
-                charStrings[charset.GetNameByGlyphId(i)] = new Type2CharStrings.CommandSequence(sequence);
+                charStrings[name] = new Type2CharStrings.CommandSequence(sequence);
             }
 
             return new Type2CharStrings(charStrings, localSubroutineSequences, globalSubroutineSequences);
@@ -837,6 +839,15 @@
             Dictionary<int, Type2CharStrings.CommandSequence> localSubroutines,
             Dictionary<int, Type2CharStrings.CommandSequence> globalSubroutines)
         {
+            int SafeStemCount(int counts)
+            {
+                if (counts % 2 == 0)
+                {
+                    return counts / 2;
+                }
+
+                return (counts - 1) / 2;
+            }
             // Do a first pass to substitute in all local and global subroutines prior to the first hintmask.
             var commandsToCountHints = BuildFullCommandSequence(precedingCommands, localSubroutines, globalSubroutines);
 
@@ -862,7 +873,7 @@
                         if (x.Name == "hintmask" && !hasEncounteredInitialHintMask)
                         {
                             hasEncounteredInitialHintMask = true;
-                            stemCount += precedingNumbers / 2;
+                            stemCount += SafeStemCount(precedingNumbers);
                             return;
                         }
                         
@@ -871,17 +882,22 @@
                             precedingNumbers = 0;
                             return;
                         }
-
-                        stemCount += precedingNumbers / 2;
+                        
+                        stemCount += SafeStemCount(precedingNumbers);
                         precedingNumbers = 0;
                     });
+
+                if (hasEncounteredInitialHintMask)
+                {
+                    break;
+                }
             }
 
             var fullStemCount = stemCount;
             // The vstem command can be left out, e.g. for 12 20 hstemhm 4 6 hintmask, 4 and 6 act as the vertical hints
             if (precedingNumbers > 0 && !hasEncounteredInitialHintMask)
             {
-                fullStemCount += precedingNumbers / 2;
+                fullStemCount += SafeStemCount(precedingNumbers);
             }
 
             var minimumFullBytes = (int)Math.Ceiling(fullStemCount / 8d);
@@ -943,9 +959,17 @@
                 {
                     // Replace the call to the local or global subroutine with the actual routine.
                     var routine = wasLocalSubroutine ? localSubroutines[subroutineIndex] : globalSubroutines[subroutineIndex];
-                    results.RemoveAt(i);
-                    results.InsertRange(i , routine.Commands);
-                    i -= 1;
+                    results.RemoveRange(i-1, 2);
+
+                    // Skip any return commands since they interfere with counting.
+                    results.InsertRange(i-1 , routine.Commands.Where(x =>
+                    {
+                        var isReturn = false;
+                        x.Match(_ => {}, y => isReturn = y.Name == "return");
+                        return !isReturn;
+                    }));
+
+                    i -= 2;
                 }
 
                 // Exit once we hit the first hintmask since all hints have now been declared.

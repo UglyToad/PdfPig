@@ -66,6 +66,32 @@
         }
 
         [Fact]
+        public void CanInterpretATildeSmallSymbol()
+        {
+            var fileBytes = GetFileBytes("MinionPro.bin");
+
+            var font = parser.Parse(new CompactFontFormatData(fileBytes));
+
+            // Calls a global subroutine which adds to the hints
+            var box = font.GetCharacterBoundingBox("Atildesmall");
+
+            Assert.NotNull(box);
+        }
+
+        [Fact]
+        public void CanInterpretUniF687Symbol()
+        {
+            var fileBytes = GetFileBytes("MinionPro.bin");
+
+            var font = parser.Parse(new CompactFontFormatData(fileBytes));
+
+            // Calls hugely nested subroutines
+            var box = font.GetCharacterBoundingBox("uniF687");
+
+            Assert.NotNull(box);
+        }
+
+        [Fact]
         public void CanInterpretAllGlyphs()
         {
             var fileBytes = GetFileBytes("MinionPro.bin");
