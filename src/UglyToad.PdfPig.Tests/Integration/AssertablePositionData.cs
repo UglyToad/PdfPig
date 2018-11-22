@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
     using System;
+    using Content;
+    using Xunit;
 
     public class AssertablePositionData
     {
@@ -39,6 +41,18 @@
                 FontName = parts[5],
                 Height = height
             };
+        }
+
+        public void AssertWithinTolerance(Letter letter, Page page, bool includeHeight = true)
+        {
+            Assert.Equal(Text, letter.Value);
+            Assert.Equal(FontName, letter.FontName);
+            Assert.Equal(X, letter.Position.X, 1);
+            Assert.Equal(Width, letter.Width, 1);
+            if (includeHeight)
+            {
+                Assert.Equal(Height, letter.GlyphRectangle.Height, 1);
+            }
         }
     }
 }

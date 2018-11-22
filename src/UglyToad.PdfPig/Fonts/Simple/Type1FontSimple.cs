@@ -113,7 +113,9 @@
 
             boundingBox = matrix.Transform(boundingBox);
 
-            return new CharacterBoundingBox(boundingBox, boundingBox);
+            var width = matrix.Transform(new PdfVector(widths[characterCode - firstChar], 0)).X;
+
+            return new CharacterBoundingBox(boundingBox, width);
         }
 
         private TransformationMatrix GetFontMatrixInternal()

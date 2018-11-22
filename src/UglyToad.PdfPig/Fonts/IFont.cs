@@ -24,12 +24,12 @@
     {
         public PdfRectangle GlyphBounds { get; }
 
-        public PdfRectangle CharacterBounds { get; }
+        public decimal Width { get; }
 
-        public CharacterBoundingBox(PdfRectangle glyphBounds, PdfRectangle characterBounds)
+        public CharacterBoundingBox(PdfRectangle glyphBounds, decimal width)
         {
             GlyphBounds = glyphBounds;
-            CharacterBounds = characterBounds;
+            Width = width;
         }
     }
 }

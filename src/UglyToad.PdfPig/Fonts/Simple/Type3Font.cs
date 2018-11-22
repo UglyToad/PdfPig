@@ -65,11 +65,13 @@
 
         public CharacterBoundingBox GetBoundingBox(int characterCode)
         {
-            var boundingBox = GetBoundingBoxInGlyphSpace(characterCode);
+            var characterBoundingBox = GetBoundingBoxInGlyphSpace(characterCode);
 
-            boundingBox = fontMatrix.Transform(boundingBox);
+            characterBoundingBox = fontMatrix.Transform(characterBoundingBox);
 
-            return new CharacterBoundingBox(boundingBox, boundingBox);
+            var width = fontMatrix.Transform(new PdfVector(widths[characterCode - firstChar], 0)).X;
+
+            return new CharacterBoundingBox(characterBoundingBox, width);
         }
 
         private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)

@@ -120,18 +120,16 @@
                 }
             }
             
-            var advancedRectangle = new PdfRectangle(0, 0, width, 0);
-
             if (fromFont)
             {
-                advancedRectangle = fontMatrix.Transform(advancedRectangle);
+                width = fontMatrix.Transform(new PdfVector(width, 0)).X;
             }
             else
             {
-                advancedRectangle = DefaultTransformation.Transform(advancedRectangle);
+                width = DefaultTransformation.Transform(new PdfVector(width, 0)).X;
             }
 
-            return new CharacterBoundingBox(boundingBox, advancedRectangle);
+            return new CharacterBoundingBox(boundingBox, width);
         }
 
         private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode, out bool fromFont)

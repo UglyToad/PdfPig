@@ -70,7 +70,7 @@
                         break;
                     }
 
-                    var myX = pageLetter.CharacterRectangle.Left;
+                    var myX = pageLetter.Position.X;
                     var theirX = pdfBoxData[index].X;
 
                     var myLetter = pageLetter.Value;
@@ -87,7 +87,7 @@
 
                     Assert.Equal(theirX, myX, comparer);
 
-                    Assert.Equal(pdfBoxData[index].Width, pageLetter.CharacterRectangle.Width, comparer);
+                    Assert.Equal(pdfBoxData[index].Width, pageLetter.Width, comparer);
 
                     index++;
                 }
@@ -113,7 +113,7 @@
                         break;
                     }
 
-                    var myX = pageLetter.CharacterRectangle.Left;
+                    var myX = pageLetter.Position.X;
                     var theirX = positions[index].X;
 
                     var myLetter = pageLetter.Value;
@@ -127,7 +127,7 @@
                     Assert.Equal(theirLetter, myLetter);
                     Assert.Equal(theirX, myX, comparer);
 
-                    Assert.Equal(positions[index].Width, pageLetter.CharacterRectangle.Width, 1);
+                    Assert.Equal(positions[index].Width, pageLetter.Width, 1);
 
                     index++;
                 }
