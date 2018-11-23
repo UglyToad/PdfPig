@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Simple
 {
+    using System;
     using Cmap;
     using Composite;
     using Core;
@@ -107,17 +108,23 @@
             }
             
             decimal width;
-            if (font == null)
+
+            var index = characterCode - firstCharacter;
+            if (widths != null && index >= 0 && index < widths.Length)
             {
                 fromFont = false;
-                 width = widths[characterCode - firstCharacter];
+                 width = widths[index];
             }
-            else
+            else if (font != null)
             {
                 if (!font.TryGetBoundingAdvancedWidth(characterCode, out width))
                 {
                     width = boundingBoxPreTransform;
                 }
+            }
+            else
+            {
+                throw new InvalidOperationException($"Could not retrieve width for character code: {characterCode} in font {Name}.");
             }
             
             if (fromFont)

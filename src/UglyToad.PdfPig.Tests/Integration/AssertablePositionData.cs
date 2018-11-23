@@ -54,5 +54,10 @@
                 Assert.Equal(Height, letter.GlyphRectangle.Height, 1);
             }
         }
+
+        public override string ToString()
+        {
+            return $"{X} {Y} {Width} {Text} {FontSize} {FontName} {Height}";
+        }
     }
 }

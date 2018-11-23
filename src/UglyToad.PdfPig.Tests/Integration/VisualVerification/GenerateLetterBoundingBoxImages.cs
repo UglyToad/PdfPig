@@ -35,7 +35,7 @@
         [Fact]
         public void SinglePageSimpleFromInkscape()
         {
-            Run(SingleInkscapePage);
+            Run(SingleInkscapePage, 841);
         }
 
         [Fact]
@@ -65,7 +65,7 @@
         [Fact]
         public void PigProductionCompactFontFormat()
         {
-            Run(PigProduction);
+            Run(PigProduction, 680);
         }
 
         private static void Run(string file, int imageHeight = 792)
