@@ -5,6 +5,8 @@
 
     internal class Type1BuildCharContext
     {
+        public IReadOnlyDictionary<int, Type1CharStrings.CommandSequence> Subroutines { get; }
+
         public decimal WidthX { get; set; }
 
         public decimal WidthY { get; set; }
@@ -24,6 +26,11 @@
         public CharStringStack PostscriptStack { get; } = new CharStringStack();
 
         public IReadOnlyList<PdfPoint> FlexPoints { get; }
+
+        public Type1BuildCharContext(IReadOnlyDictionary<int, Type1CharStrings.CommandSequence> subroutines)
+        {
+            Subroutines = subroutines;
+        }
 
         public void AddFlexPoint(PdfPoint point)
         {

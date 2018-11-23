@@ -44,9 +44,9 @@
             return glyph;
         }
 
-        private static CharacterPath Run(CommandSequence sequence)
+        private CharacterPath Run(CommandSequence sequence)
         {
-            var context = new Type1BuildCharContext();
+            var context = new Type1BuildCharContext(Subroutines);
             foreach (var command in sequence.Commands)
             {
                 command.Match(x => context.Stack.Push(x),

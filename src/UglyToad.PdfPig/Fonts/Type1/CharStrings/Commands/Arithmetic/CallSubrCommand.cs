@@ -18,6 +18,14 @@
         public static void Run(Type1BuildCharContext context)
         {
             var index = (int)context.Stack.PopTop();
+
+            var subroutine = context.Subroutines[index];
+
+            foreach (var command in subroutine.Commands)
+            {
+                command.Match(x => context.Stack.Push(x),
+                    x => x.Run(context));
+            }
         }
     }
 }
