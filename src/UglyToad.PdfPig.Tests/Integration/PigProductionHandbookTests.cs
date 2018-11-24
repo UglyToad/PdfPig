@@ -30,6 +30,61 @@
         }
 
         [Fact]
+        public void Page1HasCorrectWords()
+        {
+            var expected = new List<string>
+            {
+                "European",
+                "Comission",
+                "Farmer's",
+                "Hand",
+                "Book",
+                "on",
+                "Pig",
+                "Production",
+                "(For",
+                "the",
+                "small",
+                "holders",
+                "at",
+                "village",
+                "level)",
+                "GCP/NEP/065/EC",
+                "Food",
+                "and",
+                "Agriculture",
+                "Organization",
+                "of",
+                "the",
+                "United",
+                "Nations"
+            };
+
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                var page = document.GetPage(1);
+
+                var words = page.GetWords().ToList();
+
+                Assert.Equal(expected, words.Select(x => x.Text));
+            }
+        }
+
+        [Fact]
+        public void Page4HasCorrectWords()
+        {
+            var expected = WordsPage4.Split(new[] {"\r", "\r\n", "\n", " "}, StringSplitOptions.RemoveEmptyEntries);
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                var page = document.GetPage(4);
+
+                var words = page.GetWords().ToList();
+
+                Assert.Equal(expected, words.Select(x => x.Text));
+            }
+        }
+
+        [Fact]
         public void CanReadPage9()
         {
             using (var document = PdfDocument.Open(GetFilename(), new ParsingOptions
@@ -243,5 +298,27 @@
 
             return result;
         }
+
+        private const string WordsPage4 = @"Disclaimer
+The designations employed end the presentation of the material in this information
+product do not imply the expression of any opinion whatsoever on the part of the
+Food and Agriculture Organization of the United Nations (FAO) concerning the
+legal or development status of any country, territory, city or area of its authorities,
+or concerning the delimitation of its frontiers or boundaries. The mention of
+specific companies or products of manufacturers, whether or not these have been
+patented, does not imply that these have been endorsed or recommended by FAO
+in preference to others of similar nature that are not mentioned.
+The views expressed in this publication are those of the author(s) and do not
+necessarily reflects the views of FAO.
+All rights reserved. Reproduction and dissemination of materials in this information
+product for educational or other non-commercial purposes are authorized without
+any prior written permission from the copyright holders provided the source is
+fully acknowledged. Reproduction in this information product for resale or other
+commercial purposes is prohibited without written permission of the copyright
+holders. Applications for such permission should be addressed to: Chief, Electronic
+Publishing Policy and Support Branch Communication Division, FAO, Viale delle
+Terme di Caracalla, 00153 Rome, Italy or by e-mail to: copyright@fao.org
+FAO 2009
+design&print: wps, eMail: printnepal@gmail.com";
     }
 }

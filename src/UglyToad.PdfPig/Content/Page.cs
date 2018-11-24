@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using Util;
 
     /// <summary>
     /// Contains the content and provides access to methods of a single page in the <see cref="PdfDocument"/>.
@@ -72,6 +73,21 @@
             }
 
             return string.Join(string.Empty, content.Letters.Select(x => x.Value));
+        }
+
+        /// <summary>
+        /// Use the default <see cref="IWordExtractor"/> to get the words for this page.
+        /// </summary>
+        /// <returns>The words on this page.</returns>
+        public IEnumerable<Word> GetWords() => GetWords(DefaultWordExtractor.Instance);
+        /// <summary>
+        /// Use a custom <see cref="IWordExtractor"/> to get the words for this page.
+        /// </summary>
+        /// <param name="wordExtractor">The word extractor to use to generate words.</param>
+        /// <returns>The words on this page.</returns>
+        public IEnumerable<Word> GetWords(IWordExtractor wordExtractor)
+        {
+            return (wordExtractor ?? DefaultWordExtractor.Instance).GetWords(Letters);
         }
     }
 }

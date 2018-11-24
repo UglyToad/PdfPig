@@ -38,6 +38,7 @@
                 "UglyToad.PdfPig.Content.Letter",
                 "UglyToad.PdfPig.Content.Page",
                 "UglyToad.PdfPig.Content.PageSize",
+                "UglyToad.PdfPig.Content.Word",
                 "UglyToad.PdfPig.CrossReference.CrossReferenceTable",
                 "UglyToad.PdfPig.CrossReference.CrossReferenceType",
                 "UglyToad.PdfPig.CrossReference.TrailerDictionary",
@@ -54,7 +55,8 @@
                 "UglyToad.PdfPig.Tokens.NumericToken",
                 "UglyToad.PdfPig.Tokens.ObjectToken",
                 "UglyToad.PdfPig.Tokens.StreamToken",
-                "UglyToad.PdfPig.Tokens.StringToken"
+                "UglyToad.PdfPig.Tokens.StringToken",
+                "UglyToad.PdfPig.Util.IWordExtractor"
             };
 
             foreach (var publicTypeName in publicTypeNames)
