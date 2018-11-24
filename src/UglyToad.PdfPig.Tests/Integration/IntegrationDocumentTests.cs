@@ -26,6 +26,26 @@
             }
         }
 
+        [Theory]
+        [MemberData(nameof(GetAllDocuments))]
+        public void CanTokenizeAllAccessibleObjects(string documentName)
+        {
+            documentName = Path.Combine(DocumentFolder.Value, documentName);
+
+            using (var document = PdfDocument.Open(documentName, new ParsingOptions{ UseLenientParsing = false }))
+            {
+                Assert.NotNull(document.Structure.Catalog);
+
+                Assert.True(document.Structure.CrossReferenceTable.ObjectOffsets.Count > 0 , "Cross reference table was empty.");
+                foreach (var objectOffset in document.Structure.CrossReferenceTable.ObjectOffsets)
+                {
+                    var token = document.Structure.GetObject(objectOffset.Key);
+
+                    Assert.NotNull(token);
+                }
+            }
+        }
+
         public static IEnumerable<object[]> GetAllDocuments
         {
             get
