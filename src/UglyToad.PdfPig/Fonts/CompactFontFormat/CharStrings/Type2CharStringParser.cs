@@ -353,6 +353,7 @@
             },
             { 27,  new LazyType2Command("hhcurveto", ctx =>
                 {
+                    //  dy1? {dxa dxb dyb dxc}+
                     var hasDeltaYFirstCurve = ctx.Stack.Length % 4 != 0;
 
                     if (hasDeltaYFirstCurve)
@@ -430,7 +431,8 @@
                             var dx2 = ctx.Stack.PopBottom();
                             var dy2 = ctx.Stack.PopBottom();
                             var dx3 = ctx.Stack.PopBottom();
-                            ctx.AddRelativeBezierCurve(0, dy1, dx2, dy2, dx3, 0);
+                            var dy3 = ctx.Stack.Length == 1 ? ctx.Stack.PopBottom() : 0;
+                            ctx.AddRelativeBezierCurve(0, dy1, dx2, dy2, dx3, dy3);
                         }
 
                         for (var i = 0; i < numberOfCurves; i++)
@@ -516,7 +518,8 @@
                             var dx2 = ctx.Stack.PopBottom();
                             var dy2 = ctx.Stack.PopBottom();
                             var dy3 = ctx.Stack.PopBottom();
-                            ctx.AddRelativeBezierCurve(dx1, 0, dx2, dy2, 0, dy3);
+                            var dx3 = ctx.Stack.Length == 1 ? ctx.Stack.PopBottom() : 0;
+                            ctx.AddRelativeBezierCurve(dx1, 0, dx2, dy2, dx3, dy3);
                         }
 
                         for (var i = 0; i < numberOfCurves; i++)
