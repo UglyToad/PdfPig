@@ -134,9 +134,9 @@ namespace UglyToad.PdfPig.Tests.Integration
                     }
 
                     Assert.Equal(datum.Text, letter.Value);
-                    Assert.Equal(datum.X, letter.Position.X, 2);
+                    Assert.Equal(datum.X, letter.Origin.X, 2);
 
-                    var transformed = page.Height - letter.Position.Y;
+                    var transformed = page.Height - letter.Origin.Y;
                     Assert.Equal(datum.Y, transformed, 2);
 
                     Assert.Equal(datum.Width, letter.Width, 2);
@@ -179,9 +179,9 @@ namespace UglyToad.PdfPig.Tests.Integration
                     }
 
                     Assert.Equal(datum.Text, letter.Value);
-                    Assert.Equal(datum.X, letter.Position.X, 2);
+                    Assert.Equal(datum.X, letter.Origin.X, 2);
 
-                    var transformed = page.Height - letter.Position.Y;
+                    var transformed = page.Height - letter.Origin.Y;
                     Assert.Equal(datum.Y, transformed, 2);
 
                     // Until we get width from glyphs we're a bit out.

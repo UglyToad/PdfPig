@@ -70,7 +70,7 @@
                         break;
                     }
 
-                    var myX = pageLetter.Position.X;
+                    var myX = pageLetter.Origin.X;
                     var theirX = pdfBoxData[index].X;
 
                     var myLetter = pageLetter.Value;
@@ -113,7 +113,7 @@
                         break;
                     }
 
-                    var myX = pageLetter.Position.X;
+                    var myX = pageLetter.Origin.X;
                     var theirX = positions[index].X;
 
                     var myLetter = pageLetter.Value;

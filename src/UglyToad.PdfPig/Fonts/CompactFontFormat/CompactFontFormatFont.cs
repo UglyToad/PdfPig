@@ -29,7 +29,7 @@
         {
             var result = default(PdfRectangle?);
             CharStrings.Match(x => throw new NotImplementedException("Type 1 CharStrings in a CFF font are currently unsupported."),
-                x => { result = x.Generate(characterName).GetBoundingRectangle(); });
+                x => { result = x.Generate(characterName).Path.GetBoundingRectangle(); });
 
             return result;
         }

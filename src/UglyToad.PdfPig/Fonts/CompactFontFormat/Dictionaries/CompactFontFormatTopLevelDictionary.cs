@@ -31,7 +31,7 @@
 
         public CompactFontFormatCharStringType CharStringType { get; set; } = CompactFontFormatCharStringType.Type2;
 
-        public TransformationMatrix FontMatrix { get; set; } = TransformationMatrix.FromValues(0.001m, 0m, 0.001m, 0, 0, 0);
+        public TransformationMatrix FontMatrix { get; set; } = TransformationMatrix.FromValues(0.001m, 0m, 0, 0.001m, 0, 0);
 
         public decimal StrokeWidth { get; set; }
 

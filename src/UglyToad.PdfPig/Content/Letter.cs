@@ -15,15 +15,17 @@
         /// <summary>
         /// The placement position of the character in PDF space.
         /// </summary>
-        public PdfPoint Position { get; }
+        public PdfPoint Origin { get; }
 
         /// <summary>
-        /// The width to advance the renderer once this character is drawn.
+        /// The width occupied by the character within the PDF content.
         /// </summary>
         public decimal Width { get; }
 
         /// <summary>
-        /// Position of the bounding box for the glyph.
+        /// Position of the bounding box for the glyph, this is the box surrounding the visible glyph as it appears on the page.
+        /// For example letters with descenders, p, j, etc., will have a box extending below the <see cref="Origin"/> they are placed at.
+        /// The width of the glyph may also be more or less than the <see cref="Width"/> allocated for the character in the PDF content.
         /// </summary>
         public PdfRectangle GlyphRectangle { get; }
 
@@ -45,14 +47,14 @@
         /// <summary>
         /// Create a new letter to represent some text drawn by the Tj operator.
         /// </summary>
-        internal Letter(string value, PdfRectangle glyphRectangle, PdfPoint position, decimal width, decimal fontSize, string fontName, decimal pointSize)
+        internal Letter(string value, PdfRectangle glyphRectangle, PdfPoint origin, decimal width, decimal fontSize, string fontName, decimal pointSize)
         {
             Value = value;
             GlyphRectangle = glyphRectangle;
             FontSize = fontSize;
             FontName = fontName;
             PointSize = pointSize;
-            Position = position;
+            Origin = origin;
             Width = width;
         }
 
@@ -61,7 +63,7 @@
         /// </summary>
         public override string ToString()
         {
-            return $"{Value} {GlyphRectangle} {FontName} {PointSize}";
+            return $"{Value} {Origin} {FontName} {PointSize}";
         }
     }
 }

@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using Dictionaries;
     using Util;
     using Util.JetBrains.Annotations;
 
@@ -14,7 +15,7 @@
     internal class Type2CharStrings
     {
         private readonly object locker = new object();
-        private readonly Dictionary<string, CharacterPath> glyphs = new Dictionary<string, CharacterPath>();
+        private readonly Dictionary<string, Type2Glyph> glyphs = new Dictionary<string, Type2Glyph>();
 
         /// <summary>
         /// The decoded charstrings in this font.
@@ -46,9 +47,9 @@
         /// </summary>
         /// <param name="name">The name of the character to retrieve the CharString for.</param>
         /// <returns>A <see cref="CharacterPath"/> for the glyph.</returns>
-        public CharacterPath Generate(string name)
+        public Type2Glyph Generate(string name)
         {
-            CharacterPath glyph;
+            Type2Glyph glyph;
             lock (locker)
             {
                 if (glyphs.TryGetValue(name, out var result))
@@ -76,7 +77,7 @@
             return glyph;
         }
 
-        private static CharacterPath Run(CommandSequence sequence)
+        private static Type2Glyph Run(CommandSequence sequence)
         {
             var context = new Type2BuildCharContext();
 
@@ -130,7 +131,7 @@
                    });
             }
 
-            return context.Path;
+            return new Type2Glyph(context.Path, context.Width);
         }
 
         private static void SetWidthFromArgumentsIfPresent(Type2BuildCharContext context, int expectedArgumentLength)
@@ -157,6 +158,48 @@
             {
                 return string.Join(", ", Commands.Select(x => x.ToString()));
             }
+        }
+    }
+
+    /// <summary>
+    /// Since Type 2 CharStrings may define their width as the first argument (as a delta from the font's nominal width X)
+    /// we can retrieve both details for the Type 2 glyph.
+    /// </summary>
+    internal class Type2Glyph
+    {
+        /// <summary>
+        /// The path of the glyph.
+        /// </summary>
+        [NotNull]
+        public CharacterPath Path { get; }
+
+        /// <summary>
+        /// The width of the glyph as a difference from the nominal width X for the font. Optional.
+        /// </summary>
+        public decimal? WidthDifferenceFromNominal { get; }
+
+        /// <summary>
+        /// Create a new <see cref="Type2Glyph"/>.
+        /// </summary>
+        public Type2Glyph(CharacterPath path, decimal? widthDifferenceFromNominal)
+        {
+            Path = path ?? throw new ArgumentNullException(nameof(path));
+            WidthDifferenceFromNominal = widthDifferenceFromNominal;
+        }
+
+        public decimal GetWidth(CompactFontFormatPrivateDictionary privateDictionary)
+        {
+            if (privateDictionary == null)
+            {
+                throw new ArgumentNullException(nameof(privateDictionary));
+            }
+
+            if (!WidthDifferenceFromNominal.HasValue)
+            {
+                return Path.GetBoundingRectangle().GetValueOrDefault().Width;
+            }
+
+            return privateDictionary.NominalWidthX + WidthDifferenceFromNominal.Value;
         }
     }
 }

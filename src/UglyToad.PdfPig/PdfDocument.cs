@@ -108,7 +108,7 @@
         public static PdfDocument Open(Stream stream, ParsingOptions options = null) => PdfDocumentFactory.Open(stream, options);
 
         /// <summary>
-        /// Get the page with the specified page number.
+        /// Get the page with the specified page number (1 indexed).
         /// </summary>
         /// <param name="pageNumber">The number of the page to return, this starts from 1.</param>
         /// <returns>The page.</returns>

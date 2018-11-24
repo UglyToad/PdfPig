@@ -11,18 +11,22 @@
     [Serializable]
     public class InvalidFontFormatException : Exception
     {
+        /// <inheritdoc />
         public InvalidFontFormatException()
         {
         }
 
+        /// <inheritdoc />
         public InvalidFontFormatException(string message) : base(message)
         {
         }
 
+        /// <inheritdoc />
         public InvalidFontFormatException(string message, Exception inner) : base(message, inner)
         {
         }
 
+        /// <inheritdoc />
         protected InvalidFontFormatException(
             SerializationInfo info,
             StreamingContext context) : base(info, context)
