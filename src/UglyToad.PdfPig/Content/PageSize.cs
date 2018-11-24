@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
     using System.Collections.Generic;
+    using System.Linq;
     using Geometry;
 
     /// <summary>
@@ -116,6 +117,20 @@
             }
 
             return size;
+        }
+
+        public static bool TryGetPdfRectangle(this PageSize size, out PdfRectangle rectangle)
+        {
+            rectangle = default(PdfRectangle);
+
+            var match = Lookup.FirstOrDefault(x => x.Value == size);
+
+            if (match.Key.Width > 0)
+            {
+                rectangle = new PdfRectangle(0, 0, match.Key.Width, match.Key.Height);
+            }
+
+            return match.Key.Width > 0;
         }
 
         private struct WidthHeight
