@@ -6,12 +6,12 @@
     /// A comment from a PDF document. Any occurrence of the percent sign character (%) outside a string or stream
     /// introduces a comment. The comment consists of all characters between the percent sign and the end of the line.
     /// </summary>
-    internal class CommentToken : IDataToken<string>
+    public class CommentToken : IDataToken<string>
     {
         /// <summary>
         /// The text of the comment (excluding the initial percent '%' sign).
         /// </summary>
-        [CanBeNull]
+        [NotNull]
         public string Data { get; }
 
         /// <summary>
@@ -20,12 +20,13 @@
         /// <param name="data">The text of the comment.</param>
         public CommentToken([CanBeNull]string data)
         {
-            Data = data;
+            Data = data ?? string.Empty;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
-            return Data ?? "NULL";
+            return Data;
         }
     }
 }

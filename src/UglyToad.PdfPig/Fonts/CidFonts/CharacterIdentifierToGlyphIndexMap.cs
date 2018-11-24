@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CidFonts
 {
+    using System.Collections.Generic;
+
     /// <summary>
     /// Specifies mapping from character identifiers to glyph indices.
     /// Can either be defined as a name in which case it must be Identity or a stream which defines the mapping.
@@ -15,9 +17,9 @@
             map = null;
         }
 
-        public CharacterIdentifierToGlyphIndexMap(byte[] streamBytes)
+        public CharacterIdentifierToGlyphIndexMap(IReadOnlyList<byte> streamBytes)
         {
-            var numberOfEntries = streamBytes.Length / 2;
+            var numberOfEntries = streamBytes.Count / 2;
 
             map = new int[numberOfEntries];
             var offset = 0;

@@ -1,9 +1,14 @@
 namespace UglyToad.PdfPig.Tokens
 {
+    using System;
     using System.Collections.Generic;
     using System.Text;
+    using Util.JetBrains.Annotations;
 
-    internal class HexToken : IDataToken<string>
+    /// <summary>
+    /// A token containing string data where the string is encoded as hexadecimal.
+    /// </summary>
+    public class HexToken : IDataToken<string>
     {
         private static readonly Dictionary<char, byte> HexMap = new Dictionary<char, byte>
         {
@@ -32,16 +37,33 @@ namespace UglyToad.PdfPig.Tokens
             {'f', 0x0F }
         };
 
+        /// <summary>
+        /// The string contained in the hex data.
+        /// </summary>
+        [NotNull]
         public string Data { get; }
 
+        /// <summary>
+        /// The bytes of the hex data.
+        /// </summary>
+        [NotNull]
         public IReadOnlyList<byte> Bytes { get; }
 
-        public HexToken(IReadOnlyList<char> characters)
+        /// <summary>
+        /// Create a new <see cref="HexToken"/> from the provided hex characters.
+        /// </summary>
+        /// <param name="characters">A set of hex characters 0-9, A - F, a - f representing a string.</param>
+        public HexToken([NotNull] IReadOnlyList<char> characters)
         {
+            if (characters == null)
+            {
+                throw new ArgumentNullException(nameof(characters));
+            }
+
             var bytes = new List<byte>();
             var builder = new StringBuilder();
 
-            for (int i = 0; i < characters.Count; i += 2)
+            for (var i = 0; i < characters.Count; i += 2)
             {
                 char high = characters[i];
                 char low;
@@ -67,6 +89,12 @@ namespace UglyToad.PdfPig.Tokens
             Data = builder.ToString();
         }
 
+        /// <summary>
+        /// Convert two hex characters to a byte.
+        /// </summary>
+        /// <param name="high">The high nibble.</param>
+        /// <param name="low">The low nibble.</param>
+        /// <returns>The byte.</returns>
         public static byte Convert(char high, char low)
         {
             var highByte = HexMap[high];
@@ -75,8 +103,18 @@ namespace UglyToad.PdfPig.Tokens
             return (byte)(highByte << 4 | lowByte);
         }
 
-        public static int ConvertHexBytesToInt(HexToken token)
+        /// <summary>
+        /// Convert the bytes in this hex token to an integer.
+        /// </summary>
+        /// <param name="token">The token containing the data to convert.</param>
+        /// <returns>The integer corresponding to the bytes.</returns>
+        public static int ConvertHexBytesToInt([NotNull] HexToken token)
         {
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
+
             var bytes = token.Bytes;
 
             var value = bytes[0] & 0xFF;

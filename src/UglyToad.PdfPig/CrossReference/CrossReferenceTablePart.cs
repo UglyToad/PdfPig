@@ -1,7 +1,6 @@
-﻿namespace UglyToad.PdfPig.Cos
+﻿namespace UglyToad.PdfPig.CrossReference
 {
     using System.Collections.Generic;
-    using ContentStream;
     using Tokens;
 
     /// <summary>

@@ -3,13 +3,26 @@
     using System;
     using System.Collections.Generic;
     using System.Text;
-    using ContentStream;
+    using Util.JetBrains.Annotations;
 
-    internal class ArrayToken : IDataToken<IReadOnlyList<IToken>>
+    /// <summary>
+    /// An array object is a one-dimensional collection of objects arranged sequentially.
+    /// PDF arrays may be heterogeneous; that is, an array's elements may be any combination of numbers, strings,
+    /// dictionaries, or any other objects, including other arrays.
+    /// </summary>
+    public class ArrayToken : IDataToken<IReadOnlyList<IToken>>
     {
+        /// <summary>
+        /// The tokens contained in this array.
+        /// </summary>
+        [NotNull]
         public IReadOnlyList<IToken> Data { get; }
 
-        public ArrayToken(IReadOnlyList<IToken> data)
+        /// <summary>
+        /// Create a new <see cref="ArrayToken"/>.
+        /// </summary>
+        /// <param name="data">The tokens contained by this array.</param>
+        public ArrayToken([NotNull] IReadOnlyList<IToken> data)
         {
             if (data == null)
             {
@@ -42,6 +55,7 @@
             Data = result;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             var builder = new StringBuilder("[ ");

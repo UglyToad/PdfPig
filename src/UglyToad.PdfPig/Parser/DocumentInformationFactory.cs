@@ -1,21 +1,21 @@
 ﻿namespace UglyToad.PdfPig.Parser
 {
     using Content;
-    using IO;
+    using CrossReference;
     using Parts;
     using Tokenization.Scanner;
     using Tokens;
 
     internal class DocumentInformationFactory
     {
-        public DocumentInformation Create(IPdfTokenScanner pdfTokenScanner, DictionaryToken rootDictionary)
+        public DocumentInformation Create(IPdfTokenScanner pdfTokenScanner, TrailerDictionary trailer)
         {
-            if (!rootDictionary.TryGet(NameToken.Info, out var infoBase))
+            if (!trailer.Info.HasValue)
             {
                 return DocumentInformation.Default;
             }
 
-            var infoParsed = DirectObjectFinder.Get<DictionaryToken>(infoBase, pdfTokenScanner);
+            var infoParsed = DirectObjectFinder.Get<DictionaryToken>(trailer.Info.Value, pdfTokenScanner);
 
             var title = GetEntryOrDefault(infoParsed, NameToken.Title);
             var author = GetEntryOrDefault(infoParsed, NameToken.Author);

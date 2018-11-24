@@ -4,16 +4,22 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
-    using ContentStream;
     using Exceptions;
     using Filters;
     using IO;
     using Parser.Parts;
     using Tokens;
-    using Util;
 
+    /// <summary>
+    /// Tokenizes objects from bytes in a PDF file.
+    /// </summary>
     internal interface IPdfTokenScanner : ISeekableTokenScanner
     {
+        /// <summary>
+        /// Tokenize the object with a given object number.
+        /// </summary>
+        /// <param name="reference">The object number for the object to tokenize.</param>
+        /// <returns>The tokenized object.</returns>
         ObjectToken Get(IndirectReference reference);
     }
 

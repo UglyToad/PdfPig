@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using Cos;
+    using CrossReference;
     using Exceptions;
     using IO;
     using Logging;
@@ -30,12 +31,12 @@
             this.xrefCosChecker = xrefCosChecker;
         }
         
-        public CrossReferenceTable Parse(IInputBytes bytes, bool isLenientParsing, long xrefLocation, IPdfTokenScanner pdfScanner, ISeekableTokenScanner tokenScanner)
+        public CrossReferenceTable Parse(IInputBytes bytes, bool isLenientParsing, long crossReferenceLocation, IPdfTokenScanner pdfScanner, ISeekableTokenScanner tokenScanner)
         {
-            long fixedOffset = offsetValidator.CheckXRefOffset(xrefLocation, tokenScanner, bytes, isLenientParsing);
+            long fixedOffset = offsetValidator.CheckXRefOffset(crossReferenceLocation, tokenScanner, bytes, isLenientParsing);
             if (fixedOffset > -1)
             {
-                xrefLocation = fixedOffset;
+                crossReferenceLocation = fixedOffset;
 
                 log.Debug($"Found the first cross reference table or stream at {fixedOffset}.");
             }
@@ -43,7 +44,7 @@
             var table = new CrossReferenceTableBuilder();
 
             var prevSet = new HashSet<long>();
-            long previousCrossReferenceLocation = xrefLocation;
+            long previousCrossReferenceLocation = crossReferenceLocation;
 
             // Parse all cross reference tables and streams.
             while (previousCrossReferenceLocation > 0)
@@ -167,7 +168,7 @@
                 prevSet.Add(previousCrossReferenceLocation);
             }
 
-            var resolved = table.Build(xrefLocation, log);
+            var resolved = table.Build(crossReferenceLocation, log);
             
             // check the offsets of all referenced objects
             xrefCosChecker.CheckCrossReferenceOffsets(bytes, resolved, isLenientParsing);

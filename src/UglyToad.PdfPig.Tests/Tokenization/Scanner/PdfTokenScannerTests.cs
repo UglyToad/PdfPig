@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Text;
     using PdfPig.ContentStream;
     using PdfPig.IO;
@@ -187,7 +188,7 @@ H‰œUkLSgþÚh¹IÝÅlK(%[ÈÅ©+ƒåê©ŠèæÇtnZ)Z¹¨Oå~9Š�
 
             var stream = Assert.IsType<StreamToken>(tokens[0].Data);
 
-            var str = Encoding.UTF8.GetString(stream.Data);
+            var str = Encoding.UTF8.GetString(stream.Data.ToArray());
 
             Assert.StartsWith("H‰œUkLSgþÚh¹IÝÅl", str);
 
@@ -212,9 +213,10 @@ endobj";
 
             var stream = Assert.IsType<StreamToken>(token.Data);
 
-            Assert.Equal(45, stream.Data.Length);
+            var bytes = stream.Data.ToArray();
+            Assert.Equal(45, bytes.Length);
 
-            var outputString = Encoding.UTF8.GetString(stream.Data);
+            var outputString = Encoding.UTF8.GetString(bytes);
 
             Assert.Equal("À“Éððr¥8»P£ØêÁi½®Û(éhŽ‘ú", outputString);
         }
@@ -244,9 +246,10 @@ endobj";
 
             var stream = Assert.IsType<StreamToken>(token.Data);
 
-            Assert.Equal(52, stream.Data.Length);
+            var bytes = stream.Data.ToArray();
+            Assert.Equal(52, bytes.Length);
 
-            var outputString = Encoding.UTF8.GetString(stream.Data);
+            var outputString = Encoding.UTF8.GetString(bytes);
 
             Assert.Equal("%¥×³®í»š}%§X{{tøNåÝž¶ö¢ÖÞ¾–~´¼", outputString);
         }
@@ -274,7 +277,7 @@ endobj";
 
             Assert.Equal("1245", stream.StreamDictionary.Data["S"].ToString());
 
-            Assert.Equal("%¥×³®í»š}%§X{{tøNåÝž¶ö¢ÖÞgrehtyyy$&%&£$££(*¾–~´¼", Encoding.UTF8.GetString(stream.Data));
+            Assert.Equal("%¥×³®í»š}%§X{{tøNåÝž¶ö¢ÖÞgrehtyyy$&%&£$££(*¾–~´¼", Encoding.UTF8.GetString(stream.Data.ToArray()));
         }
 
         [Fact]

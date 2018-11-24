@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CompactFontFormat
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Text;
 
@@ -9,14 +10,14 @@
     /// </summary>
     internal class CompactFontFormatData
     {
-        private readonly byte[] dataBytes;
+        private readonly IReadOnlyList<byte> dataBytes;
 
         public int Position { get; private set; } = -1;
 
-        public int Length => dataBytes.Length;
+        public int Length => dataBytes.Count;
 
         [DebuggerStepThrough]
-        public CompactFontFormatData(byte[] dataBytes)
+        public CompactFontFormatData(IReadOnlyList<byte> dataBytes)
         {
             this.dataBytes = dataBytes;
         }
@@ -64,9 +65,9 @@
         {
             Position++;
 
-            if (Position >= dataBytes.Length)
+            if (Position >= dataBytes.Count)
             {
-                throw new IndexOutOfRangeException($"Cannot read byte at position {Position} of an array which is {dataBytes.Length} bytes long.");
+                throw new IndexOutOfRangeException($"Cannot read byte at position {Position} of an array which is {dataBytes.Count} bytes long.");
             }
 
             return dataBytes[Position];
@@ -79,7 +80,7 @@
 
         public bool CanRead()
         {
-            return Position < dataBytes.Length - 1;
+            return Position < dataBytes.Count - 1;
         }
 
         public void Seek(int offset)
@@ -111,13 +112,19 @@
 
         public CompactFontFormatData SnapshotPortion(int startLocation, int length)
         {
-            if (startLocation > dataBytes.Length - 1 || startLocation + length > dataBytes.Length)
+            if (startLocation > dataBytes.Count - 1 || startLocation + length > dataBytes.Count)
             {
-                throw new ArgumentException($"Attempted to create a snapshot of an invalid portion of the data. Length was {dataBytes.Length}, requested start: {startLocation} and requested length: {length}.");
+                throw new ArgumentException($"Attempted to create a snapshot of an invalid portion of the data. Length was {dataBytes.Count}, requested start: {startLocation} and requested length: {length}.");
             }
 
             var newData = new byte[length];
-            Array.Copy(dataBytes, startLocation, newData, 0, length);
+            var newI = 0;
+            for (var i = startLocation; i < startLocation + length; i++)
+            {
+                newData[newI] = dataBytes[i];
+                newI++;
+            }
+
             return new CompactFontFormatData(newData);
         }
     }

@@ -2,10 +2,11 @@
 {
     using System.Collections.Concurrent;
 
-    internal partial class NameToken
+    public partial class NameToken
     {
         private static readonly ConcurrentDictionary<string, NameToken> NameMap = new ConcurrentDictionary<string, NameToken>();
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         #region A
         public static readonly NameToken A = new NameToken("A");
         public static readonly NameToken Aa = new NameToken("AA");
@@ -530,5 +531,6 @@
         // Y
         public static readonly NameToken YStep = new NameToken("YStep");
         public static readonly NameToken Yes = new NameToken("Yes");
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
     }
 }

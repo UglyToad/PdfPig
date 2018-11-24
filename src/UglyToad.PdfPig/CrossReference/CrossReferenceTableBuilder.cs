@@ -1,9 +1,10 @@
-﻿namespace UglyToad.PdfPig.Cos
+﻿namespace UglyToad.PdfPig.CrossReference
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using ContentStream;
+    using Cos;
     using Logging;
     using Tokens;
 
@@ -17,7 +18,7 @@
     {
         private readonly List<CrossReferenceTablePart> parts = new List<CrossReferenceTablePart>();
         public IReadOnlyList<CrossReferenceTablePart> Parts => parts;
-
+        
         public void Add(CrossReferenceTablePart part)
         {
             if (part == null)
@@ -28,7 +29,7 @@
             parts.Add(part);
         }
 
-        public CrossReferenceTable Build(long startXrefOffset, ILog log)
+        public CrossReferenceTable Build(long firstCrossReferenceOffset, ILog log)
         {
             CrossReferenceType type = CrossReferenceType.Table;
             DictionaryToken trailerDictionary = new DictionaryToken(new Dictionary<IToken, IToken>());
@@ -36,12 +37,12 @@
 
             List<long> xrefSeqBytePos = new List<long>();
 
-            var currentPart = parts.FirstOrDefault(x => x.Offset == startXrefOffset);
+            var currentPart = parts.FirstOrDefault(x => x.Offset == firstCrossReferenceOffset);
             
             if (currentPart == null)
             {
                 // no XRef at given position
-                log.Warn("Did not found XRef object at specified startxref position " + startXrefOffset);
+                log.Warn("Did not found XRef object at specified startxref position " + firstCrossReferenceOffset);
 
                 // use all objects in byte position order (last entries overwrite previous ones)
                 xrefSeqBytePos.AddRange(parts.Select(x => x.Offset));
@@ -55,7 +56,7 @@
 
                 // found starting Xref object
                 // add this and follow chain defined by 'Prev' keys
-                xrefSeqBytePos.Add(startXrefOffset);
+                xrefSeqBytePos.Add(firstCrossReferenceOffset);
 
                 while (currentPart.Dictionary != null)
                 {
@@ -111,7 +112,13 @@
                 }
             }
 
-            return new CrossReferenceTable(type, objectOffsets, trailerDictionary);
+            return new CrossReferenceTable(type, objectOffsets, new TrailerDictionary(trailerDictionary), 
+                parts.Select(x =>
+                {
+                    var prev = x.GetPreviousOffset();
+
+                    return new CrossReferenceTable.CrossReferenceOffset(x.Offset, prev >= 0 ? prev : default(long?));
+                }).ToList());
         }
     }
 }

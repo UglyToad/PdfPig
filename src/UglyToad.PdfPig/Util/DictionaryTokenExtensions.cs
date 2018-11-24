@@ -7,6 +7,21 @@
 
     internal static class DictionaryTokenExtensions
     {
+        public static int GetInt(this DictionaryToken token, NameToken name)
+        {
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
+
+            if (!token.TryGet(name, out var keyedToken) || !(keyedToken is NumericToken numeric))
+            {
+                throw new PdfDocumentFormatException($"The dictionary did not contain a number with the key {name}. Dictionary way: {token}.");
+            }
+
+            return numeric.Int;
+        }
+
         public static int GetIntOrDefault(this DictionaryToken token, NameToken name, int defaultValue = 0)
         {
             if (token == null)
@@ -20,6 +35,21 @@
             }
 
             return numeric.Int;
+        }
+
+        public static long? GetLongOrDefault(this DictionaryToken token, NameToken name)
+        {
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
+
+            if (!token.TryGet(name, out var keyedToken) || !(keyedToken is NumericToken numeric))
+            {
+                return null;
+            }
+
+            return numeric.Long;
         }
 
         [CanBeNull]

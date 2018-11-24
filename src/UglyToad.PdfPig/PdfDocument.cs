@@ -3,7 +3,7 @@
     using System;
     using System.IO;
     using Content;
-    using Cos;
+    using CrossReference;
     using IO;
     using Logging;
     using Parser;
@@ -22,10 +22,7 @@
 
         [NotNull]
         private readonly HeaderVersion version;
-
-        [NotNull]
-        private readonly CrossReferenceTable crossReferenceTable;
-
+        
         private readonly ILog log;
 
         private readonly IInputBytes inputBytes;
@@ -34,10 +31,7 @@
         private readonly ParsingCachingProviders cachingProviders;
 
         private readonly IPdfTokenScanner pdfScanner;
-
-        [NotNull] 
-        private readonly Catalog catalog;
-
+        
         [NotNull]
         private readonly Pages pages;
 
@@ -46,6 +40,12 @@
         /// </summary>
         [NotNull]
         public DocumentInformation Information { get; }
+
+        /// <summary>
+        /// Access to the underlying raw structure of the document. 
+        /// </summary>
+        [NotNull]
+        internal Structure Structure { get; }
 
         /// <summary>
         /// The version number of the PDF specification which this file conforms to, for example 1.4.
@@ -70,13 +70,12 @@
             this.log = log;
             this.inputBytes = inputBytes;
             this.version = version ?? throw new ArgumentNullException(nameof(version));
-            this.crossReferenceTable = crossReferenceTable ?? throw new ArgumentNullException(nameof(crossReferenceTable));
             this.isLenientParsing = isLenientParsing;
             this.cachingProviders = cachingProviders ?? throw new ArgumentNullException(nameof(cachingProviders));
-            this.pdfScanner = pdfScanner;
+            this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
             Information = information ?? throw new ArgumentNullException(nameof(information));
-            catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             pages = new Pages(log, catalog, pageFactory, isLenientParsing, pdfScanner);
+            Structure = new Structure(catalog, crossReferenceTable, pdfScanner);
         }
 
         /// <summary>
@@ -123,7 +122,7 @@
 
             return pages.GetPage(pageNumber);
         }
-
+        
         /// <inheritdoc />
         /// <summary>
         /// Dispose the <see cref="T:UglyToad.PdfPig.PdfDocument" /> and close any unmanaged resources.

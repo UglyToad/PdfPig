@@ -3,8 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using ContentStream;
-    using Cos;
+    using CrossReference;
     using IO;
     using Logging;
     using Parts;

@@ -3,8 +3,7 @@
     using System;
     using System.IO;
     using Content;
-    using Cos;
-    using Exceptions;
+    using CrossReference;
     using FileStructure;
     using Filters;
     using Fonts;
@@ -123,7 +122,7 @@
 
             var rootDictionary = ParseTrailer(crossReferenceTable, isLenientParsing, pdfScanner);
             
-            var information = informationFactory.Create(pdfScanner, crossReferenceTable.Dictionary);
+            var information = informationFactory.Create(pdfScanner, crossReferenceTable.Trailer);
 
             var catalog = catalogFactory.Create(pdfScanner, rootDictionary);
 
@@ -135,17 +134,12 @@
 
         private static DictionaryToken ParseTrailer(CrossReferenceTable crossReferenceTable, bool isLenientParsing, IPdfTokenScanner pdfTokenScanner)
         {
-            if (crossReferenceTable.Dictionary.ContainsKey(NameToken.Encrypt))
+            if (crossReferenceTable.Trailer.EncryptionToken != null)
             {
-                throw new NotSupportedException("Cannot currently parse a document using encryption: " + crossReferenceTable.Dictionary);
+                throw new NotSupportedException("Cannot currently parse a document using encryption: " + crossReferenceTable.Trailer.EncryptionToken);
             }
-
-            if (!crossReferenceTable.Dictionary.TryGet(NameToken.Root, out var rootToken))
-            {
-                throw new PdfDocumentFormatException($"Missing root object specification in trailer: {crossReferenceTable.Dictionary}.");
-            }
-
-            var rootDictionary = DirectObjectFinder.Get<DictionaryToken>(rootToken, pdfTokenScanner);
+            
+            var rootDictionary = DirectObjectFinder.Get<DictionaryToken>(crossReferenceTable.Trailer.Root, pdfTokenScanner);
             
             if (!rootDictionary.ContainsKey(NameToken.Type) && isLenientParsing)
             {

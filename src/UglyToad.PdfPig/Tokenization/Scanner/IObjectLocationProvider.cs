@@ -2,8 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using ContentStream;
-    using Cos;
+    using CrossReference;
     using Parser.Parts;
     using Tokens;
 

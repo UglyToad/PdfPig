@@ -4,6 +4,7 @@
     using Cos;
     using Exceptions;
     using Filters;
+    using PdfPig.CrossReference;
     using Tokens;
     using Util;
 
@@ -21,11 +22,11 @@
         /// </summary>
         public CrossReferenceTablePart Parse(long streamOffset, StreamToken stream)
         {
-            byte[] decoded = stream.Decode(filterProvider);
+            var decoded = stream.Decode(filterProvider);
 
             var fieldSizes = new CrossReferenceStreamFieldSize(stream.StreamDictionary);
 
-            var lineCount = decoded.Length / fieldSizes.LineLength;
+            var lineCount = decoded.Count / fieldSizes.LineLength;
             
             long previousOffset = -1;
             if (stream.StreamDictionary.TryGet(NameToken.Prev, out var prevToken) && prevToken is NumericToken prevNumeric)

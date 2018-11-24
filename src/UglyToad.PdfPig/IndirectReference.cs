@@ -1,11 +1,11 @@
-﻿namespace UglyToad.PdfPig.ContentStream
+﻿namespace UglyToad.PdfPig
 {
     using System.Diagnostics;
 
     /// <summary>
     /// Used to uniquely identify and refer to objects in the PDF file.
     /// </summary>
-    internal struct IndirectReference
+    public struct IndirectReference
     {
         /// <summary>
         /// A positive integer object number.
@@ -29,6 +29,7 @@
             Generation = generation;
         }
 
+        /// <inheritdoc />
         public override bool Equals(object obj)
         {
             if (obj is IndirectReference reference)
@@ -40,6 +41,7 @@
             return false;
         }
 
+        /// <inheritdoc />
         public override int GetHashCode()
         {
             unchecked
@@ -52,6 +54,7 @@
             }
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"{ObjectNumber} {Generation}";
