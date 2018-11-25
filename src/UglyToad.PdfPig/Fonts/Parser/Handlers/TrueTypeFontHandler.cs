@@ -75,6 +75,7 @@
         {
             if (descriptor?.FontFile == null)
             {
+                // TODO: check if this font is present on the host OS. See: FileSystemFontProvider.java
                 return null;
             }
 
