@@ -234,31 +234,54 @@ namespace UglyToad.PdfPig.Fonts
 
             public PdfRectangle? GetBoundingRectangle()
             {
-                var minX = Math.Min(StartPoint.X, EndPoint.X);
-                var maxX = Math.Max(StartPoint.X, EndPoint.X);
+                // Optimised
+                double minX;
+                double maxX;
+                if (StartPoint.X <= EndPoint.X)
+                {
+                    minX = (double) StartPoint.X;
+                    maxX = (double) EndPoint.X;
+                }
+                else
+                {
+                    minX = (double)EndPoint.X;
+                    maxX = (double)StartPoint.X;
+                }
 
-                var minY = Math.Min(StartPoint.Y, EndPoint.Y);
-                var maxY = Math.Max(StartPoint.Y, EndPoint.Y);
+                double minY;
+                double maxY;
+                if (StartPoint.Y <= EndPoint.Y)
+                {
+                    minY = (double)StartPoint.Y;
+                    maxY = (double)EndPoint.Y;
+                }      
+                else   
+                {      
+                    minY = (double)EndPoint.Y;
+                    maxY = (double)StartPoint.Y;
+                }
 
-                if (TrySolveQuadratic(x => (double)x.X, minX, maxX, out var xSolutions))
+                if (TrySolveQuadratic(true, minX, maxX, out var xSolutions))
                 {
                     minX = xSolutions.min;
                     maxX = xSolutions.max;
                 }
 
-                if (TrySolveQuadratic(x => (double)x.Y, minY, maxY, out var ySolutions))
+                if (TrySolveQuadratic(false, minY, maxY, out var ySolutions))
                 {
                     minY = ySolutions.min;
                     maxY = ySolutions.max;
                 }
 
-                return new PdfRectangle(minX, minY, maxX, maxY);
+                return new PdfRectangle((decimal)minX, (decimal)minY, (decimal)maxX, (decimal)maxY);
             }
 
 
-            private bool TrySolveQuadratic(Func<PdfPoint, double> valueAccessor, decimal currentMin, decimal currentMax, out (decimal min, decimal max) solutions)
+            private bool TrySolveQuadratic(bool isX, double currentMin, double currentMax, out (double min, double max) solutions)
             {
-                solutions = default((decimal, decimal));
+                solutions = default((double, double));
+
+                // This method has been optimised for performance by eliminating calls to Math.
 
                 // Given k points the general form is:
                 // P = (1-t)^(k - i - 1)*t^(i)*P_i
@@ -271,10 +294,10 @@ namespace UglyToad.PdfPig.Fonts
                 // P' = 3da(1-t)^2 + 6db(1-t)t + 3dct^2
                 // P' = 3da - 3dat - 3dat + 3dat^2 + 6dbt - 6dbt^2 + 3dct^2
                 // P' = (3da - 6db + 3dc)t^2 + (6db - 3da - 3da)t + 3da
-                var p1 = valueAccessor(StartPoint);
-                var p2 = valueAccessor(FirstControlPoint);
-                var p3 = valueAccessor(SecondControlPoint);
-                var p4 = valueAccessor(EndPoint);
+                var p1 = (double)( isX ? StartPoint.X : StartPoint.Y);
+                var p2 = (double)(isX ? FirstControlPoint.X : FirstControlPoint.Y);
+                var p3 = (double)(isX ? SecondControlPoint.X : SecondControlPoint.Y);
+                var p4 = (double)(isX ? EndPoint.X : EndPoint.Y);
 
                 var threeda = 3 * (p2 - p1);
                 var sixdb = 6 * (p3 - p2);
@@ -294,12 +317,15 @@ namespace UglyToad.PdfPig.Fonts
                     return false;
                 }
 
-                var t1 = (-b + Math.Sqrt(sqrtable)) / (2 * a);
-                var t2 = (-b - Math.Sqrt(sqrtable)) / (2 * a);
+                var sqrt = Math.Sqrt(sqrtable);
+                var divisor = 2 * a;
+
+                var t1 = (-b + sqrt) / divisor;
+                var t2 = (-b - sqrt) / divisor;
 
                 if (t1 >= 0 && t1 <= 1)
                 {
-                    var sol1 = (decimal)ValueWithT(p1, p2, p3, p4, t1);
+                    var sol1 = ValueWithT(p1, p2, p3, p4, t1);
                     if (sol1 < currentMin)
                     {
                         currentMin = sol1;
@@ -313,7 +339,7 @@ namespace UglyToad.PdfPig.Fonts
 
                 if (t2 >= 0 && t2 <= 1)
                 {
-                    var sol2 = (decimal)ValueWithT(p1, p2, p3, p4, t2);
+                    var sol2 = ValueWithT(p1, p2, p3, p4, t2);
                     if (sol2 < currentMin)
                     {
                         currentMin = sol2;
@@ -333,7 +359,11 @@ namespace UglyToad.PdfPig.Fonts
             private static double ValueWithT(double p1, double p2, double p3, double p4, double t)
             {
                 // P = (1−t)^3*P_1 + 3(1−t)^2*t*P_2 + 3(1−t)*t^2*P_3 + t^3*P_4
-                var p = (Math.Pow(1 - t, 3) * p1) + (3 * Math.Pow(1 - t, 2) * t * p2) + (3 * (1 - t) * Math.Pow(t, 2) * p3) + (Math.Pow(t, 3) * p4);
+                var oneMinusT = 1 - t;
+                var p = ((oneMinusT * oneMinusT * oneMinusT) * p1)
+                        + (3 * (oneMinusT * oneMinusT) * t * p2) 
+                        + (3 * oneMinusT * (t * t) * p3) 
+                        + ((t * t * t) * p4);
 
                 return p;
             }

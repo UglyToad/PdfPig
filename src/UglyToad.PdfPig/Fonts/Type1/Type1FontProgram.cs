@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using CharStrings;
+    using Core;
     using Geometry;
     using Tokens;
     using Util.JetBrains.Annotations;
@@ -65,23 +66,29 @@
             var glyph = CharStrings.Generate(b);
             var bbox = glyph.GetBoundingRectangle();
 
-            if (!bbox.HasValue)
-            {
-                return null;
-            }
-
-            if (Debugger.IsAttached)
-            {
-                var full = glyph.ToFullSvg();
-                Console.WriteLine(full);
-            }
-
             return bbox;
         }
 
         public bool ContainsNamedCharacter(string name)
         {
             return CharStrings.CharStrings.ContainsKey(name);
+        }
+
+        public TransformationMatrix GetFontTransformationMatrix()
+        {
+            if (FontMatrix == null || FontMatrix.Data.Count != 6)
+            {
+                return TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);;
+            }
+
+            var a = ((NumericToken) FontMatrix.Data[0]).Data;
+            var b = ((NumericToken) FontMatrix.Data[1]).Data;
+            var c = ((NumericToken) FontMatrix.Data[2]).Data;
+            var d = ((NumericToken) FontMatrix.Data[3]).Data;
+            var e = ((NumericToken) FontMatrix.Data[4]).Data;
+            var f = ((NumericToken) FontMatrix.Data[5]).Data;
+
+            return TransformationMatrix.FromValues(a, b, c, d, e, f);
         }
     }
 }

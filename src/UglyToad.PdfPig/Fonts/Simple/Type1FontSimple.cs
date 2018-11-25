@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Simple
 {
     using System;
+    using System.Collections.Generic;
     using Cmap;
     using CompactFontFormat;
     using Composite;
@@ -18,6 +19,8 @@
     /// </summary>
     internal class Type1FontSimple : IFont
     {
+        private readonly Dictionary<int, CharacterBoundingBox> cachedBoundingBoxes = new Dictionary<int, CharacterBoundingBox>();
+
         private readonly int firstChar;
 
         private readonly int lastChar;
@@ -33,7 +36,7 @@
 
         private readonly ToUnicodeCMap toUnicodeCMap;
 
-        private readonly TransformationMatrix fontMatrix = TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);
+        private readonly TransformationMatrix fontMatrix;
 
         public NameToken Name { get; }
 
@@ -50,6 +53,12 @@
             this.encoding = encoding;
             this.fontProgram = fontProgram;
             this.toUnicodeCMap = new ToUnicodeCMap(toUnicodeCMap);
+
+            var matrix = TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);
+            fontProgram?.Match(x => matrix = x.GetFontTransformationMatrix(), x => { matrix = x.GetFontTransformationMatrix(); });
+
+            fontMatrix = matrix;
+
             Name = name;
         }
 
@@ -107,31 +116,26 @@
 
         public CharacterBoundingBox GetBoundingBox(int characterCode)
         {
+            if (cachedBoundingBoxes.TryGetValue(characterCode, out var box))
+            {
+                return box;
+            }
+
             var boundingBox = GetBoundingBoxInGlyphSpace(characterCode);
 
-            var matrix = GetFontMatrixInternal();
+            var matrix = fontMatrix;
 
             boundingBox = matrix.Transform(boundingBox);
 
-            var width = matrix.Transform(new PdfVector(widths[characterCode - firstChar], 0)).X;
+            var width = matrix.TransformX(widths[characterCode - firstChar]);
 
-            return new CharacterBoundingBox(boundingBox, width);
+            var result = new CharacterBoundingBox(boundingBox, width);
+
+            cachedBoundingBoxes[characterCode] = result;
+
+            return result;
         }
-
-        private TransformationMatrix GetFontMatrixInternal()
-        {
-            if (fontProgram == null)
-            {
-                return fontMatrix;
-            }
-
-            var matrix = default(TransformationMatrix);
-
-            fontProgram.Match(x => { matrix = fontMatrix; }, x => { matrix = x.GetFontTransformationMatrix(); });
-
-            return matrix;
-        }
-
+        
         private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
         {
             if (characterCode < firstChar || characterCode > lastChar)

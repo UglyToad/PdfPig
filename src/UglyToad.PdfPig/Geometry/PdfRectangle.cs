@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Geometry
 {
-    using System;
-
     /// <summary>
     /// A rectangle in a PDF file. 
     /// </summary>
@@ -71,11 +69,32 @@
         internal PdfRectangle(short x1, short y1, short x2, short y2) : this((decimal) x1, y1, x2, y2) { }
         internal PdfRectangle(decimal x1, decimal y1, decimal x2, decimal y2)
         {
-            var bottom = Math.Min(y1, y2);
-            var top = Math.Max(y1, y2);
+            decimal bottom;
+            decimal top;
 
-            var left = Math.Min(x1, x2);
-            var right = Math.Max(x1, x2);
+            if (y1 <= y2)
+            {
+                bottom = y1;
+                top = y2;
+            }
+            else
+            {
+                bottom = y2;
+                top = y1;
+            }
+
+            decimal left;
+            decimal right;
+            if (x1 <= x2)
+            {
+                left = x1;
+                right = x2;
+            }
+            else
+            {
+                left = x2;
+                right = x1;
+            }
 
             TopLeft = new PdfPoint(left, top);
             TopRight = new PdfPoint(right, top);
@@ -99,6 +118,20 @@
 
             Width = bottomRight.Subtract(bottomLeft).GetMagnitude();
             Height = topLeft.Subtract(bottomLeft).GetMagnitude();
+
+            Area = Width * Height;
+        }
+
+        internal PdfRectangle(PdfPoint topLeft, PdfPoint topRight, PdfPoint bottomLeft, PdfPoint bottomRight)
+        {
+            TopLeft = topLeft;
+            TopRight = topRight;
+
+            BottomLeft = bottomLeft;
+            BottomRight = bottomRight;
+
+            Width = bottomRight.X - bottomLeft.X;
+            Height = topLeft.Y - bottomLeft.Y;
 
             Area = Width * Height;
         }

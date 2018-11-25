@@ -94,6 +94,14 @@
         }
 
         [Pure]
+        public decimal TransformX(decimal x)
+        {
+            var xt = A * x + C * 0 + E;
+
+            return xt;
+        }
+
+        [Pure]
         public PdfVector Transform(PdfVector original)
         {
             var x = A * original.X + C * original.Y + E;
@@ -106,10 +114,10 @@
         public PdfRectangle Transform(PdfRectangle original)
         {
             return new PdfRectangle(
-                Transform(original.TopLeft.ToVector()),
-                Transform(original.TopRight.ToVector()),
-                Transform(original.BottomLeft.ToVector()),
-                Transform(original.BottomRight.ToVector())
+                Transform(original.TopLeft),
+                Transform(original.TopRight),
+                Transform(original.BottomLeft),
+                Transform(original.BottomRight)
             );
         }
 
@@ -151,9 +159,11 @@
 
             for (int i = 0; i < Rows; i++)
             {
+                var rowIndexPart = i * Rows;
+
                 for (int j = 0; j < Columns; j++)
                 {
-                    var index = (i * Rows) + j;
+                    var index = rowIndexPart + j;
 
                     for (int x = 0; x < Rows; x++)
                     {
