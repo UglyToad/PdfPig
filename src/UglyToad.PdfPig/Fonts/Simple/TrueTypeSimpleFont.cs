@@ -179,7 +179,7 @@
         {
             var scale = 1000m;
 
-            if (fontProgram?.HeaderTable != null)
+            if (fontProgram?.TableRegister.HeaderTable != null)
             {
                 scale = fontProgram.GetFontMatrixMultiplier();
             }

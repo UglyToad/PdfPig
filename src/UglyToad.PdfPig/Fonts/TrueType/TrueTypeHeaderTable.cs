@@ -1,5 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType
 {
+    using System;
+    using Util.JetBrains.Annotations;
+
     /// <summary>
     /// A table directory entry from the TrueType font file.
     /// </summary>
@@ -161,6 +164,7 @@
         /// <summary>
         /// The 4 byte tag identifying the table.
         /// </summary>
+        [NotNull]
         public string Tag { get; }
 
         /// <summary>
@@ -180,7 +184,7 @@
 
         public TrueTypeHeaderTable(string tag, long checkSum, long offset, long length)
         {
-            Tag = tag;
+            Tag = tag ?? throw new ArgumentNullException(nameof(tag));
             CheckSum = checkSum;
             Offset = offset;
             Length = length;

@@ -25,7 +25,7 @@
             GlyphOffsets = glyphOffsets;
         }
 
-        public static IndexToLocationTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, TableRegister tableRegister)
+        public static IndexToLocationTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, TableRegister.Builder tableRegister)
         {
             const short shortFormat = 0;
             const short longFormat = 1;

@@ -76,7 +76,7 @@
             return false;
         }
 
-        public static CMapTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, TableRegister tableRegister)
+        public static CMapTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, TableRegister.Builder tableRegister)
         {
             data.Seek(table.Offset);
 

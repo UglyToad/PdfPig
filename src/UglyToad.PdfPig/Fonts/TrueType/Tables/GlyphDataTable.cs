@@ -8,7 +8,8 @@
     using Util.JetBrains.Annotations;
 
     /// <summary>
-    /// Describes the glyphs in the font.
+    /// The 'glyf' table contains the data that defines the appearance of the glyphs in the font. 
+    /// This includes specification of the points that describe the contours that make up a glyph outline and the instructions that grid-fit that glyph.
     /// </summary>
     internal class GlyphDataTable : ITable
     {
@@ -25,7 +26,7 @@
             Glyphs = glyphs ?? throw new ArgumentNullException(nameof(glyphs));
         }
 
-        public static GlyphDataTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, TableRegister tableRegister)
+        public static GlyphDataTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, TableRegister.Builder tableRegister)
         {
             data.Seek(table.Offset);
 

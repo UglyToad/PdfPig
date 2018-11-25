@@ -64,6 +64,7 @@
         }
     }
 
+    /// <inheritdoc />
     internal class MaximumProfileTable : BasicMaximumProfileTable
     {
         /// <summary>
@@ -131,6 +132,9 @@
         /// </summary>
         public int MaximumComponentDepth { get; }
 
+        /// <summary>
+        /// Create a new <see cref="MaximumProfileTable"/>.
+        /// </summary>
         public MaximumProfileTable(TrueTypeHeaderTable directoryTable, float version, int numberOfGlyphs, int maximumPoints, int maximumContours, int maximumCompositePoints, int maximumCompositeContours, int maximumZones, int maximumTwilightPoints, int maximumStorage, int maximumFunctionDefinitions, int maximumInstructionDefinitions, int maximumStackElements, int maximumSizeOfInstructions, int maximumComponentElements, int maximumComponentDepth) : base(directoryTable, version, numberOfGlyphs)
         {
             MaximumPoints = maximumPoints;

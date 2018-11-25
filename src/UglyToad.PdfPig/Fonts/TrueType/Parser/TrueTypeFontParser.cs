@@ -57,7 +57,7 @@
         {
             var isPostScript = tables.ContainsKey(TrueTypeHeaderTable.Cff);
 
-            var tableRegister = new TableRegister();
+            var builder = new TableRegister.Builder();
 
             if (!tables.TryGetValue(TrueTypeHeaderTable.Head, out var table))
             {
@@ -65,7 +65,7 @@
             }
 
             // head
-            tableRegister.HeaderTable = HeaderTable.Load(data, table);
+            builder.HeaderTable = HeaderTable.Load(data, table);
 
             if (!tables.TryGetValue(TrueTypeHeaderTable.Hhea, out var hHead))
             {
@@ -73,7 +73,7 @@
             }
 
             // hhea
-            tableRegister.HorizontalHeaderTable = HorizontalHeaderTable.Load(data, hHead);
+            builder.HorizontalHeaderTable = HorizontalHeaderTable.Load(data, hHead);
 
             if (!tables.TryGetValue(TrueTypeHeaderTable.Maxp, out var maxHeaderTable))
             {
@@ -81,12 +81,12 @@
             }
 
             // maxp
-            tableRegister.MaximumProfileTable = BasicMaximumProfileTable.Load(data, maxHeaderTable);
+            builder.MaximumProfileTable = BasicMaximumProfileTable.Load(data, maxHeaderTable);
 
             // post
             if (tables.TryGetValue(TrueTypeHeaderTable.Post, out var postscriptHeaderTable))
             {
-                tableRegister.PostScriptTable = PostScriptTable.Load(data, postscriptHeaderTable, tableRegister.MaximumProfileTable);
+                builder.PostScriptTable = PostScriptTable.Load(data, postscriptHeaderTable, builder.MaximumProfileTable);
             }
             
             if (!isPostScript)
@@ -97,8 +97,8 @@
                 }
 
                 // loca
-                tableRegister.IndexToLocationTable =
-                    IndexToLocationTable.Load(data, indexToLocationHeaderTable, tableRegister);
+                builder.IndexToLocationTable =
+                    IndexToLocationTable.Load(data, indexToLocationHeaderTable, builder);
 
                 if (!tables.TryGetValue(TrueTypeHeaderTable.Glyf, out var glyphHeaderTable))
                 {
@@ -106,15 +106,15 @@
                 }
 
                 // glyf
-                tableRegister.GlyphDataTable = GlyphDataTable.Load(data, glyphHeaderTable, tableRegister);
+                builder.GlyphDataTable = GlyphDataTable.Load(data, glyphHeaderTable, builder);
 
-                OptionallyParseTables(tables, data, tableRegister);
+                OptionallyParseTables(tables, data, builder);
             }
 
-            return new TrueTypeFontProgram(version, tables, tableRegister);
+            return new TrueTypeFontProgram(version, tables, builder.Build());
         }
 
-        private static void OptionallyParseTables(IReadOnlyDictionary<string, TrueTypeHeaderTable> tables, TrueTypeDataBytes data, TableRegister tableRegister)
+        private static void OptionallyParseTables(IReadOnlyDictionary<string, TrueTypeHeaderTable> tables, TrueTypeDataBytes data, TableRegister.Builder tableRegister)
         {
             // cmap
             if (tables.TryGetValue(TrueTypeHeaderTable.Cmap, out var cmap))

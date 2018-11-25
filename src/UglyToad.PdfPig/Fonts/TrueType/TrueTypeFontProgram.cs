@@ -5,7 +5,6 @@
     using CidFonts;
     using Geometry;
     using Parser;
-    using Tables;
 
     internal class TrueTypeFontProgram : ICidFontProgram
     {
@@ -13,9 +12,6 @@
 
         public IReadOnlyDictionary<string, TrueTypeHeaderTable> TableHeaders { get; }
 
-        public HeaderTable HeaderTable { get; }
-        public CMapTable CMapTable { get; }
-        public GlyphDataTable GlyphTable { get; }
         public TableRegister TableRegister { get; }
 
         public TrueTypeFontProgram(decimal version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tableHeaders, TableRegister tableRegister)
@@ -23,9 +19,6 @@
             Version = version;
             TableHeaders = tableHeaders;
             TableRegister = tableRegister ?? throw new ArgumentNullException(nameof(tableRegister));
-            HeaderTable = tableRegister.HeaderTable;
-            CMapTable = tableRegister.CMapTable;
-            GlyphTable = tableRegister.GlyphDataTable;
         }
 
         public bool TryGetBoundingBox(int characterIdentifier, out PdfRectangle boundingBox) => TryGetBoundingBox(characterIdentifier, null, out boundingBox);
@@ -38,7 +31,7 @@
                 return false;
             }
 
-            var glyph = GlyphTable.Glyphs[index];
+            var glyph = TableRegister.GlyphTable.Glyphs[index];
 
             if (glyph?.Bounds == null)
             {
@@ -72,7 +65,7 @@
 
         public int GetFontMatrixMultiplier()
         {
-            return HeaderTable?.UnitsPerEm ?? 1000;
+            return TableRegister.HeaderTable.UnitsPerEm;
         }
 
         private bool TryGetBoundingAdvancedWidthByIndex(int index, out decimal width)
@@ -93,17 +86,12 @@
                     return true;
                 }
 
-            if (CMapTable == null)
+            if (TableRegister.CMapTable == null)
             {
                 return false;
             }
 
-            if (!CMapTable.TryGetGlyphIndex(characterIdentifier, out glyphIndex))
-            {
-                return false;
-            }
-
-            return true;
+            return TableRegister.CMapTable.TryGetGlyphIndex(characterIdentifier, out glyphIndex);
         }
     }
 }

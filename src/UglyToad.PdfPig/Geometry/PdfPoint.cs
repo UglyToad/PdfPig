@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Geometry
 {
+    using System.Diagnostics;
+
     /// <summary>
     /// A point in a PDF file. 
     /// </summary>
@@ -28,6 +30,7 @@
         /// <summary>
         /// Create a new <see cref="PdfPoint"/> at this position.
         /// </summary>
+        [DebuggerStepThrough]
         public PdfPoint(decimal x, decimal y)
         {
             X = x;
@@ -37,6 +40,7 @@
         /// <summary>
         /// Create a new <see cref="PdfPoint"/> at this position.
         /// </summary>
+        [DebuggerStepThrough]
         public PdfPoint(int x, int y)
         {
             X = x;
@@ -46,6 +50,7 @@
         /// <summary>
         /// Create a new <see cref="PdfPoint"/> at this position.
         /// </summary>
+        [DebuggerStepThrough]
         public PdfPoint(double x, double y)
         {
             X = (decimal)x;

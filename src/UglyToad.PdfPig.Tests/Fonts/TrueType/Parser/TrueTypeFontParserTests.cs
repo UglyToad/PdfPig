@@ -35,43 +35,43 @@
 
             Assert.Equal(1, font.Version);
 
-            Assert.Equal(1, font.HeaderTable.Version);
-            Assert.Equal(1, font.HeaderTable.Revision);
+            Assert.Equal(1, font.TableRegister.HeaderTable.Version);
+            Assert.Equal(1, font.TableRegister.HeaderTable.Revision);
 
-            Assert.Equal(1142661421, font.HeaderTable.CheckSumAdjustment);
-            Assert.Equal(1594834165, font.HeaderTable.MagicNumber);
+            Assert.Equal(1142661421, font.TableRegister.HeaderTable.CheckSumAdjustment);
+            Assert.Equal(1594834165, font.TableRegister.HeaderTable.MagicNumber);
 
-            Assert.Equal(9, font.HeaderTable.Flags);
+            Assert.Equal(9, font.TableRegister.HeaderTable.Flags);
 
-            Assert.Equal(2048, font.HeaderTable.UnitsPerEm);
+            Assert.Equal(2048, font.TableRegister.HeaderTable.UnitsPerEm);
 
-            Assert.Equal(2008, font.HeaderTable.Created.Year);
-            Assert.Equal(10, font.HeaderTable.Created.Month);
-            Assert.Equal(13, font.HeaderTable.Created.Day);
-            Assert.Equal(12, font.HeaderTable.Created.Hour);
-            Assert.Equal(29, font.HeaderTable.Created.Minute);
-            Assert.Equal(34, font.HeaderTable.Created.Second);
+            Assert.Equal(2008, font.TableRegister.HeaderTable.Created.Year);
+            Assert.Equal(10, font.TableRegister.HeaderTable.Created.Month);
+            Assert.Equal(13, font.TableRegister.HeaderTable.Created.Day);
+            Assert.Equal(12, font.TableRegister.HeaderTable.Created.Hour);
+            Assert.Equal(29, font.TableRegister.HeaderTable.Created.Minute);
+            Assert.Equal(34, font.TableRegister.HeaderTable.Created.Second);
 
-            Assert.Equal(2011, font.HeaderTable.Modified.Year);
-            Assert.Equal(12, font.HeaderTable.Modified.Month);
-            Assert.Equal(31, font.HeaderTable.Modified.Day);
-            Assert.Equal(5, font.HeaderTable.Modified.Hour);
-            Assert.Equal(13, font.HeaderTable.Modified.Minute);
-            Assert.Equal(10, font.HeaderTable.Modified.Second);
+            Assert.Equal(2011, font.TableRegister.HeaderTable.Modified.Year);
+            Assert.Equal(12, font.TableRegister.HeaderTable.Modified.Month);
+            Assert.Equal(31, font.TableRegister.HeaderTable.Modified.Day);
+            Assert.Equal(5, font.TableRegister.HeaderTable.Modified.Hour);
+            Assert.Equal(13, font.TableRegister.HeaderTable.Modified.Minute);
+            Assert.Equal(10, font.TableRegister.HeaderTable.Modified.Second);
 
-            Assert.Equal(-980, font.HeaderTable.Bounds.Left);
-            Assert.Equal(-555, font.HeaderTable.Bounds.Bottom);
+            Assert.Equal(-980, font.TableRegister.HeaderTable.Bounds.Left);
+            Assert.Equal(-555, font.TableRegister.HeaderTable.Bounds.Bottom);
 
-            Assert.Equal(2396, font.HeaderTable.Bounds.Right);
-            Assert.Equal(2163, font.HeaderTable.Bounds.Top);
+            Assert.Equal(2396, font.TableRegister.HeaderTable.Bounds.Right);
+            Assert.Equal(2163, font.TableRegister.HeaderTable.Bounds.Top);
 
-            Assert.Equal(HeaderTable.HeaderMacStyle.None, font.HeaderTable.MacStyle);
-            Assert.Equal(9, font.HeaderTable.LowestRecommendedPpem);
+            Assert.Equal(HeaderTable.HeaderMacStyle.None, font.TableRegister.HeaderTable.MacStyle);
+            Assert.Equal(9, font.TableRegister.HeaderTable.LowestRecommendedPpem);
 
-            Assert.Equal(HeaderTable.FontDirection.StronglyLeftToRightWithNeutrals, font.HeaderTable.FontDirectionHint);
+            Assert.Equal(HeaderTable.FontDirection.StronglyLeftToRightWithNeutrals, font.TableRegister.HeaderTable.FontDirectionHint);
 
-            Assert.Equal(0, font.HeaderTable.IndexToLocFormat);
-            Assert.Equal(0, font.HeaderTable.GlyphDataFormat);
+            Assert.Equal(0, font.TableRegister.HeaderTable.IndexToLocFormat);
+            Assert.Equal(0, font.TableRegister.HeaderTable.GlyphDataFormat);
         }
 
         [Fact]
@@ -139,7 +139,7 @@
 
             var font = parser.Parse(input);
 
-            Assert.NotNull(font.GlyphTable);
+            Assert.NotNull(font.TableRegister.GlyphTable);
         }
 
         [Fact]
@@ -151,7 +151,7 @@
 
             var font = parser.Parse(input);
 
-            Assert.NotNull(font.GlyphTable);
+            Assert.NotNull(font.TableRegister.GlyphTable);
         }
 
         [Fact]
@@ -175,7 +175,7 @@
                 var height = decimal.Parse(match.Groups["height"].Value);
                 var points = int.Parse(match.Groups["points"].Value);
 
-                var glyph = font.GlyphTable.Glyphs[i];
+                var glyph = font.TableRegister.GlyphTable.Glyphs[i];
 
                 // Vendor data ignores the empty glyph bounds.
                 if (width == 0 && height == 0)

@@ -2,6 +2,9 @@
 {
     using Parser;
 
+    /// <summary>
+    /// The 'hmtx' table contains metric information for the horizontal layout each of the glyphs in the font.
+    /// </summary>
     internal class HorizontalMetricsTable : ITable
     {
         private readonly int[] advancedWidths;
@@ -22,7 +25,7 @@
             DirectoryTable = directoryTable;
         }
 
-        public static HorizontalMetricsTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, TableRegister tableRegister)
+        public static HorizontalMetricsTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, TableRegister.Builder tableRegister)
         {
             var glyphCount = tableRegister.MaximumProfileTable.NumberOfGlyphs;
             var metricCount = tableRegister.HorizontalHeaderTable.NumberOfHeaderMetrics;
