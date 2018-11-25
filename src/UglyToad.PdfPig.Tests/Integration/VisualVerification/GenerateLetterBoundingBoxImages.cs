@@ -77,15 +77,22 @@
             {
                 var page = document.GetPage(1);
 
-                var redPen = new Pen(Color.BlueViolet, 1);
+                var violetPen = new Pen(Color.BlueViolet, 1);
+                var greenPen = new Pen(Color.GreenYellow, 1);
 
                 using (var bitmap = new Bitmap(image))
                 using (var graphics = Graphics.FromImage(bitmap))
                 {
-                    foreach (var word in page.Letters)
+                    foreach (var word in page.GetWords())
                     {
-                        graphics.DrawRectangle(redPen, new Rectangle((int)word.GlyphRectangle.Left,
-                            imageHeight - (int)(word.GlyphRectangle.Bottom + word.GlyphRectangle.Height), (int)Math.Max(1, word.GlyphRectangle.Width), (int)word.GlyphRectangle.Height));
+                        graphics.DrawRectangle(greenPen, new Rectangle((int)word.BoundingBox.Left,
+                            imageHeight - (int)word.BoundingBox.Top, (int)word.BoundingBox.Width, (int)word.BoundingBox.Height));
+                    }
+
+                    foreach (var letter in page.Letters)
+                    {
+                        graphics.DrawRectangle(violetPen, new Rectangle((int)letter.GlyphRectangle.Left,
+                            imageHeight - (int)(letter.GlyphRectangle.Bottom + letter.GlyphRectangle.Height), (int)Math.Max(1, letter.GlyphRectangle.Width), (int)letter.GlyphRectangle.Height));
                     }
 
                     var imageName = $"{file}.jpg";
