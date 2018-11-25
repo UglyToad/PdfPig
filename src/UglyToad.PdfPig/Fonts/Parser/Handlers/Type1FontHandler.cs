@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Parser.Handlers
 {
+    using System.Linq;
     using Cmap;
     using CompactFontFormat;
     using Encodings;
@@ -118,6 +119,7 @@
                 if (stream.StreamDictionary.TryGet(NameToken.Subtype, out NameToken subTypeName)
                 && NameToken.Type1C.Equals(subTypeName))
                 {
+                    var str = OtherEncodings.BytesAsLatin1String(bytes.ToArray());
                     var cffFont = compactFontFormatParser.Parse(new CompactFontFormatData(bytes));
                     return Union<Type1FontProgram, CompactFontFormatFontProgram>.Two(cffFont);
                 }

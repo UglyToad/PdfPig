@@ -8,6 +8,11 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat
         {
             var index = ReadIndex(data);
 
+            if (index.Length == 0)
+            {
+                return new CompactFontFormatIndex(null);
+            }
+
             var count = index.Length - 1;
 
             var results = new byte[count][];
@@ -35,6 +40,11 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat
         public int[] ReadIndex(CompactFontFormatData data)
         {
             var count = data.ReadCard16();
+
+            if (count == 0)
+            {
+                return Array.Empty<int>();
+            }
 
             var offsetSize = data.ReadOffsize();
 

@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using System.Linq;
     using Xunit;
 
@@ -10,9 +9,7 @@
     {
         private static string GetFilename()
         {
-            var documentFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Integration", "Documents"));
-
-            return Path.Combine(documentFolder, "Single Page Simple - from inkscape.pdf");
+            return IntegrationHelpers.GetDocumentPath("Single Page Simple - from inkscape.pdf");
         }
 
         [Fact]

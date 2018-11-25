@@ -59,13 +59,25 @@
         [Fact]
         public void RotatedTextLibreOffice()
         {
-            Run(@"Rotated Text Libre Office", 841);
+            Run("Rotated Text Libre Office", 841);
         }
 
         [Fact]
         public void PigProductionCompactFontFormat()
         {
             Run(PigProduction, 680);
+        }
+
+        [Fact]
+        public void PopBugzilla37292()
+        {
+            Run("pop-bugzilla37292");
+        }
+
+        [Fact]
+        public void MultiPageMortalityStatistics()
+        {
+            Run("Multiple Page - from Mortality Statistics");
         }
 
         private static void Run(string file, int imageHeight = 792)

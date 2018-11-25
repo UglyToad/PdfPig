@@ -1,6 +1,5 @@
 namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
     using System.IO;
     using System.Linq;
     using Content;
@@ -10,9 +9,7 @@ namespace UglyToad.PdfPig.Tests.Integration
     {
         private static string GetFilename()
         {
-            var documentFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Integration", "Documents"));
-
-            return Path.Combine(documentFolder, "Type0 Font.pdf");
+            return IntegrationHelpers.GetDocumentPath("Type0 Font.pdf");
         }
 
         [Fact]
@@ -57,8 +54,8 @@ namespace UglyToad.PdfPig.Tests.Integration
             {
                 var page = document.GetPage(1);
 
-                Assert.True((bool) page.Letters.Any(x => x.GlyphRectangle.Width != 0));
-                Assert.True((bool) page.Letters.Any(x => x.GlyphRectangle.Height != 0));
+                Assert.Contains(page.Letters, x => x.GlyphRectangle.Width != 0);
+                Assert.Contains(page.Letters, x => x.GlyphRectangle.Height != 0);
             }
         }
     }

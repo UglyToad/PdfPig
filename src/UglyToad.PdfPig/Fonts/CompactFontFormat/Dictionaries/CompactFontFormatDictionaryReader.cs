@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Text;
     using Geometry;
 
@@ -95,6 +96,7 @@
             var sb = new StringBuilder();
             var done = false;
             var exponentMissing = false;
+            var hasExponent = false;
 
             while (!done)
             {
@@ -125,12 +127,24 @@
                             sb.Append(".");
                             break;
                         case 0xb:
+                            if (hasExponent)
+                            {
+                                // avoid duplicates
+                                break;
+                            }
                             sb.Append("E");
                             exponentMissing = true;
+                            hasExponent = true;
                             break;
                         case 0xc:
+                            if (hasExponent)
+                            {
+                                // avoid duplicates
+                                break;
+                            }
                             sb.Append("E-");
                             exponentMissing = true;
+                            hasExponent = true;
                             break;
                         case 0xd:
                             break;
@@ -159,7 +173,7 @@
                 return 0m;
             }
 
-            return decimal.Parse(sb.ToString());
+            return hasExponent ? decimal.Parse(sb.ToString(), NumberStyles.Float) : decimal.Parse(sb.ToString());
         }
 
         protected abstract void ApplyOperation(TBuilder builder, List<Operand> operands, OperandKey operandKey, IReadOnlyList<string> stringIndex);

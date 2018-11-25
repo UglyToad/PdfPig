@@ -11,9 +11,7 @@
     {
         private static string GetFilename()
         {
-            var documentFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Integration", "Documents"));
-
-            return Path.Combine(documentFolder, "Single Page Non Latin - from acrobat distiller.pdf");
+            return IntegrationHelpers.GetDocumentPath("Single Page Non Latin - from acrobat distiller.pdf");
         }
 
         [Fact]
@@ -152,7 +150,7 @@
 218.6352	90.65997	9.990005	d	19	FFJICI+TimesNewRomanPSMT
 228.6252	90.65997	4.994995	.	19	FFJICI+TimesNewRomanPSMT";
 
-            var result = data.Split(new[] {"\r", "\n", "\r\n"}, StringSplitOptions.RemoveEmptyEntries)
+            var result = data.Split(new[] { "\r", "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(AssertablePositionData.Parse)
                 .ToList();
 

@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
     using System.IO;
     using System.Linq;
     using Content;
@@ -10,9 +9,7 @@
     {
         private static string GetFilename()
         {
-            var documentFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Integration", "Documents"));
-
-            return Path.Combine(documentFolder, "Single Page Simple - from open office.pdf");
+            return IntegrationHelpers.GetDocumentPath("Single Page Simple - from open office.pdf");
         }
 
         [Fact]

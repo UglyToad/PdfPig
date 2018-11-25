@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
-    using System.IO;
     using Content;
     using Xunit;
 
@@ -9,9 +7,7 @@
     {
         private static string GetFilename()
         {
-            var documentFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Integration", "Documents"));
-
-            return Path.Combine(documentFolder, "Single Page Type 1 Font.pdf");
+            return IntegrationHelpers.GetDocumentPath("Single Page Type 1 Font.pdf");
         }
 
         [Fact]

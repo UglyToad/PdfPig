@@ -17,9 +17,7 @@ namespace UglyToad.PdfPig.Tests.Integration
 
         private static string GetFilename()
         {
-            var documentFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Integration", "Documents"));
-
-            return Path.Combine(documentFolder, "Single Page Simple - from google drive.pdf");
+            return IntegrationHelpers.GetDocumentPath("Single Page Simple - from google drive.pdf");
         }
 
         [Fact]
