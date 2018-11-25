@@ -63,7 +63,7 @@
 
                 var gap = letter.Origin.X - (lastLetter.Origin.X + lastLetter.Width);
                 var nextToLeft = letter.Origin.X < lastX.Value - 1;
-                var nextBigSpace = gap > Math.Max(lastLetter.Width, letter.Width) * 0.9m;
+                var nextBigSpace = gap > Math.Max(lastLetter.GlyphRectangle.Height, letter.GlyphRectangle.Height) * 0.39m;
                 var nextIsWhiteSpace = string.IsNullOrWhiteSpace(letter.Value);
                 var nextFontDiffers = !string.Equals(letter.FontName, lastLetter.FontName, StringComparison.OrdinalIgnoreCase) && gap > letter.Width * 0.1m;
                 var nextFontSizeDiffers = Math.Abs(letter.FontSize - lastLetter.FontSize) > 0.1m;

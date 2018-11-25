@@ -94,6 +94,39 @@
             }
         }
 
+        [Fact]
+        public void Page1Words()
+        {
+            const string expectedString = @"Tackling the Poor Assumptions of Naive Bayes Text Classiﬁers
+Jason D. M. Rennie jrennie@mit.edu
+Lawrence Shih kai@mit.edu
+Jaime Teevan teevan@mit.edu
+David R. Karger karger@mit.edu
+Artiﬁcial Intelligence Laboratory; Massachusetts Institute of Technology; Cambridge, MA 02139
+Abstract amples. To balance the amount of training examples
+used per estimate, we introduce a “complement class”Naive Bayes is often used as a baseline in";
+
+            var expected = expectedString.Split(new[] {"\r", "\r\n", "\n", " "}, StringSplitOptions.RemoveEmptyEntries);
+
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                var page = document.GetPage(1);
+
+                var words = page.GetWords().ToList();
+
+                for (var i = 0; i < words.Count; i++)
+                {
+                    if (i == expected.Length)
+                    {
+                        break;
+                    }
+
+                    Assert.True(string.Equals(expected[i], words[i].Text, StringComparison.Ordinal),
+                        $"Expected word {expected[i]} got word {words[i].Text} at index {i}.");
+                }
+            }
+        }
+
         private static IReadOnlyList<AssertablePositionData> GetPdfBoxPositionData()
         {
             const string data = @"75.731	698.917	11.218573	T	14.346	WDKAAR+CMBX12	9.712242

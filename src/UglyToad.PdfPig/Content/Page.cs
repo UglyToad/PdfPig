@@ -80,6 +80,7 @@
         /// </summary>
         /// <returns>The words on this page.</returns>
         public IEnumerable<Word> GetWords() => GetWords(DefaultWordExtractor.Instance);
+
         /// <summary>
         /// Use a custom <see cref="IWordExtractor"/> to get the words for this page.
         /// </summary>
