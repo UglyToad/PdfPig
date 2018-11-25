@@ -42,7 +42,7 @@
                 else
                 {
                     // For now:
-                    throw new PdfDocumentFormatException("Key for dictionary token was not a string! " + keyValuePair.Key);
+                    throw new PdfDocumentFormatException($"Key for dictionary token was not a name! {keyValuePair.Key}");
                 }
             }
 
@@ -60,7 +60,7 @@
             {
                 if (!(token is IndirectReferenceToken indirectReference))
                 {
-                    throw new InvalidOperationException($"Dictionary does not contain token with name {name} of type {typeof(T).Name}.");
+                    throw new PdfDocumentFormatException($"Dictionary does not contain token with name {name} of type {typeof(T).Name}.");
                 }
 
                 typedToken = DirectObjectFinder.Get<T>(indirectReference, scanner);

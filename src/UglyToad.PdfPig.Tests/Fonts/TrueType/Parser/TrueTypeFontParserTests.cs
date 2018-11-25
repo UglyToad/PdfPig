@@ -2,7 +2,6 @@
 {
     using System;
     using System.IO;
-    using System.Linq;
     using System.Text.RegularExpressions;
     using PdfPig.Fonts.TrueType;
     using PdfPig.Fonts.TrueType.Parser;
@@ -14,17 +13,13 @@
     {
         private static byte[] GetFileBytes(string name)
         {
-            var manifestFiles = typeof(TrueTypeFontParserTests).Assembly.GetManifestResourceNames();
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts", "TrueType");
 
-            var match = manifestFiles.Single(x => x.IndexOf(name, StringComparison.InvariantCultureIgnoreCase) >= 0);
+            name = name.EndsWith(".ttf") ? name : name + ".ttf";
 
-            using (var memoryStream = new MemoryStream())
-            using (var stream = typeof(TrueTypeFontParserTests).Assembly.GetManifestResourceStream(match))
-            {
-                stream.CopyTo(memoryStream);
+            var file = Path.Combine(path, name);
 
-                return memoryStream.ToArray();
-            }
+            return File.ReadAllBytes(file);
         }
 
         private readonly TrueTypeFontParser parser = new TrueTypeFontParser();
@@ -136,13 +131,27 @@
         }
 
         [Fact]
-        public void ParseEmbeddedSimpleGoogleDocssGautmi()
+        public void ParseSimpleGoogleDocssGautmi()
         {
             var bytes = GetFileBytes("google-simple-doc");
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
-            parser.Parse(input);
+            var font = parser.Parse(input);
+
+            Assert.NotNull(font.GlyphTable);
+        }
+
+        [Fact]
+        public void ParseAndadaRegular()
+        {
+            var bytes = GetFileBytes("Andada-Regular");
+
+            var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
+
+            var font = parser.Parse(input);
+
+            Assert.NotNull(font.GlyphTable);
         }
 
         [Fact]

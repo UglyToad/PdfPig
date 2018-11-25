@@ -3,6 +3,7 @@ namespace UglyToad.PdfPig.Tests.Tokens
 {
     using System;
     using System.Collections.Generic;
+    using Exceptions;
     using PdfPig.Tokens;
     using Xunit;
 
@@ -72,6 +73,44 @@ namespace UglyToad.PdfPig.Tests.Tokens
 
             Assert.True(result);
             Assert.Equal("None", Assert.IsType<StringToken>(token).Data);
+        }
+
+        [Fact]
+        public void CreateWithNonNameTokensThrows()
+        {
+            Action action = () => new DictionaryToken(new Dictionary<IToken, IToken>
+            {
+                { new NumericToken(7), NameToken.N }
+            });
+
+            Assert.Throws<PdfDocumentFormatException>(action);
+        }
+
+        [Fact]
+        public void GetWithObjectNotOfTypeOrReferenceThrows()
+        {
+            var dictionary = new DictionaryToken(new Dictionary<IToken, IToken>
+            {
+                { NameToken.Count, new StringToken("twelve") }
+            });
+
+            Action action = () => dictionary.Get<NumericToken>(NameToken.Count, new TestPdfTokenScanner());
+
+            Assert.Throws<PdfDocumentFormatException>(action);
+        }
+
+        [Fact]
+        public void WithCorrectlyAddsKey()
+        {
+            var dictionary = new DictionaryToken(new Dictionary<IToken, IToken>
+            {
+                { NameToken.Count, new StringToken("12") }
+            });
+
+            var newDictionary = dictionary.With(NameToken.ActualText, new StringToken("The text"));
+
+            Assert.True(newDictionary.ContainsKey(NameToken.ActualText));
+            Assert.Equal("The text", newDictionary.Get<StringToken>(NameToken.ActualText, new TestPdfTokenScanner()).Data);
         }
     }
 }

@@ -22,7 +22,7 @@
         private readonly Encoding encoding;
 
         [CanBeNull]
-        private readonly TrueTypeFont font;
+        private readonly TrueTypeFontProgram fontProgram;
 
         private readonly int firstCharacter;
 
@@ -39,13 +39,13 @@
             FontDescriptor descriptor,
             [CanBeNull] CMap toUnicodeCMap,
             [CanBeNull] Encoding encoding,
-            [CanBeNull] TrueTypeFont font,
+            [CanBeNull] TrueTypeFontProgram fontProgram,
             int firstCharacter,
             decimal[] widths)
         {
             this.descriptor = descriptor;
             this.encoding = encoding;
-            this.font = font;
+            this.fontProgram = fontProgram;
             this.firstCharacter = firstCharacter;
             this.widths = widths;
 
@@ -115,9 +115,9 @@
                 fromFont = false;
                  width = widths[index];
             }
-            else if (font != null)
+            else if (fontProgram != null)
             {
-                if (!font.TryGetBoundingAdvancedWidth(characterCode, out width))
+                if (!fontProgram.TryGetBoundingAdvancedWidth(characterCode, out width))
                 {
                     width = boundingBoxPreTransform;
                 }
@@ -143,17 +143,17 @@
         {
             fromFont = true;
             
-            if (font == null)
+            if (fontProgram == null)
             {
                 return descriptor.BoundingBox;
             }
 
-            if (font.TryGetBoundingBox(characterCode, out var bounds))
+            if (fontProgram.TryGetBoundingBox(characterCode, out var bounds))
             {
                 return bounds;
             }
 
-            if (font.TryGetBoundingAdvancedWidth(characterCode, out var width))
+            if (fontProgram.TryGetBoundingAdvancedWidth(characterCode, out var width))
             {
                 return new PdfRectangle(0, 0, width, 0);
             }
@@ -179,9 +179,9 @@
         {
             var scale = 1000m;
 
-            if (font?.HeaderTable != null)
+            if (fontProgram?.HeaderTable != null)
             {
-                scale = font.GetFontMatrixMultiplier();
+                scale = fontProgram.GetFontMatrixMultiplier();
             }
 
             return TransformationMatrix.FromValues(1m / scale, 0, 0, 1m / scale, 0, 0);

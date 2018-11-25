@@ -7,7 +7,7 @@
     using Parser;
     using Tables;
 
-    internal class TrueTypeFont : ICidFontProgram
+    internal class TrueTypeFontProgram : ICidFontProgram
     {
         public decimal Version { get; }
 
@@ -18,7 +18,7 @@
         public GlyphDataTable GlyphTable { get; }
         public TableRegister TableRegister { get; }
 
-        public TrueTypeFont(decimal version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tableHeaders, TableRegister tableRegister)
+        public TrueTypeFontProgram(decimal version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tableHeaders, TableRegister tableRegister)
         {
             Version = version;
             TableHeaders = tableHeaders;

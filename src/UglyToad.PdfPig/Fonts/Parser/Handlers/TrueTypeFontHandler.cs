@@ -71,7 +71,7 @@
             return new TrueTypeSimpleFont(name, descriptor, toUnicodeCMap, encoding, font, firstCharacter, widths);
         }
 
-        private TrueTypeFont ParseTrueTypeFont(FontDescriptor descriptor)
+        private TrueTypeFontProgram ParseTrueTypeFont(FontDescriptor descriptor)
         {
             if (descriptor?.FontFile == null)
             {

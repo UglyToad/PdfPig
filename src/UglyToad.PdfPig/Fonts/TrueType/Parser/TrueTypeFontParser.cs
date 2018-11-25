@@ -7,7 +7,7 @@
 
     internal class TrueTypeFontParser
     {
-        public TrueTypeFont Parse(TrueTypeDataBytes data)
+        public TrueTypeFontProgram Parse(TrueTypeDataBytes data)
         {
             var version = (decimal)data.Read32Fixed();
             int numberOfTables = data.ReadUnsignedShort();
@@ -53,7 +53,7 @@
             return new TrueTypeHeaderTable(tag, checksum, offset, length);
         }
 
-        private static TrueTypeFont ParseTables(decimal version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tables, TrueTypeDataBytes data)
+        private static TrueTypeFontProgram ParseTables(decimal version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tables, TrueTypeDataBytes data)
         {
             var isPostScript = tables.ContainsKey(TrueTypeHeaderTable.Cff);
 
@@ -111,7 +111,7 @@
                 OptionallyParseTables(tables, data, tableRegister);
             }
 
-            return new TrueTypeFont(version, tables, tableRegister);
+            return new TrueTypeFontProgram(version, tables, tableRegister);
         }
 
         private static void OptionallyParseTables(IReadOnlyDictionary<string, TrueTypeHeaderTable> tables, TrueTypeDataBytes data, TableRegister tableRegister)

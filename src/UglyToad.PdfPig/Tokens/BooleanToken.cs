@@ -5,7 +5,7 @@
     /// <summary>
     /// The boolean object either <see cref="True"/> (<see langword="true"/>) or <see cref="False"/> (<see langword="true"/>).
     /// </summary>
-    public class BooleanToken : IDataToken<bool>
+    public sealed class BooleanToken : IDataToken<bool>
     {
         /// <summary>
         /// The boolean token corresponding to <see langword="true"/>.
@@ -43,15 +43,7 @@
 
             return other.Data == Data;
         }
-
-        /// <summary>
-        /// Check if two boolean tokens are equal in value.
-        /// </summary>
-        protected bool Equals(BooleanToken other)
-        {
-            return Data == other.Data;
-        }
-
+        
         /// <inheritdoc />
         public override int GetHashCode()
         {
