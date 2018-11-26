@@ -47,7 +47,7 @@
         {
             Assert.Equal(Text, letter.Value);
             Assert.Equal(FontName, letter.FontName);
-            Assert.Equal(X, letter.Origin.X, 1);
+            Assert.Equal(X, letter.Location.X, 1);
             Assert.Equal(Width, letter.Width, 1);
             if (includeHeight)
             {

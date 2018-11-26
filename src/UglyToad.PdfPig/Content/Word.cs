@@ -43,9 +43,9 @@
 
             Text = string.Join(string.Empty, letters.Select(x => x.Value));
 
-            var minX = letters.Min(x => x.Origin.X);
-            var minY = letters.Min(x => x.Origin.Y);
-            var maxX = letters.Max(x => x.Origin.X + x.Width);
+            var minX = letters.Min(x => x.Location.X);
+            var minY = letters.Min(x => x.Location.Y);
+            var maxX = letters.Max(x => x.Location.X + x.Width);
             var maxY = letters.Max(x => x.GlyphRectangle.Top);
 
             BoundingBox = new PdfRectangle(minX, minY, maxX, maxY);

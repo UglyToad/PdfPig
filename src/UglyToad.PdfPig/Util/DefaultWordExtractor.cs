@@ -9,8 +9,8 @@
     {
         public IEnumerable<Word> GetWords(IReadOnlyList<Letter> letters)
         {
-            var lettersOrder = letters.OrderByDescending(x => x.Origin.Y)
-                .ThenBy(x => x.Origin.X);
+            var lettersOrder = letters.OrderByDescending(x => x.Location.Y)
+                .ThenBy(x => x.Location.X);
 
             var lettersSoFar = new List<Letter>(10);
 
@@ -21,12 +21,12 @@
             {
                 if (!y.HasValue)
                 {
-                    y = letter.Origin.Y;
+                    y = letter.Location.Y;
                 }
 
                 if (!lastX.HasValue)
                 {
-                    lastX = letter.Origin.X;
+                    lastX = letter.Location.X;
                 }
 
                 if (lastLetter == null)
@@ -41,7 +41,7 @@
                     continue;
                 }
 
-                if (letter.Origin.Y > y.Value + 0.5m)
+                if (letter.Location.Y > y.Value + 0.5m)
                 {
                     if (lettersSoFar.Count > 0)
                     {
@@ -54,15 +54,15 @@
                         lettersSoFar.Add(letter);
                     }
 
-                    y = letter.Origin.Y;
-                    lastX = letter.Origin.X;
+                    y = letter.Location.Y;
+                    lastX = letter.Location.X;
                     lastLetter = letter;
 
                     continue;
                 }
 
-                var gap = letter.Origin.X - (lastLetter.Origin.X + lastLetter.Width);
-                var nextToLeft = letter.Origin.X < lastX.Value - 1;
+                var gap = letter.Location.X - (lastLetter.Location.X + lastLetter.Width);
+                var nextToLeft = letter.Location.X < lastX.Value - 1;
                 var nextBigSpace = gap > Math.Max(lastLetter.GlyphRectangle.Height, letter.GlyphRectangle.Height) * 0.39m;
                 var nextIsWhiteSpace = string.IsNullOrWhiteSpace(letter.Value);
                 var nextFontDiffers = !string.Equals(letter.FontName, lastLetter.FontName, StringComparison.OrdinalIgnoreCase) && gap > letter.Width * 0.1m;
@@ -84,7 +84,7 @@
 
                 lastLetter = letter;
 
-                lastX = letter.Origin.X;
+                lastX = letter.Location.X;
             }
 
             if (lettersSoFar.Count > 0)
