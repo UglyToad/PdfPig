@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.XObject
+﻿namespace UglyToad.PdfPig.XObjects
 {
     using System;
     using Graphics;
@@ -7,7 +7,7 @@
 
     internal class XObjectFactory
     {
-        public void CreateImage(XObjectContentRecord xObject, IPdfTokenScanner pdfScanner, bool isLenientParsing)
+        public XObjectImage CreateImage(XObjectContentRecord xObject, IPdfTokenScanner pdfScanner, bool isLenientParsing)
         {
             if (xObject == null)
             {
@@ -25,23 +25,13 @@
             var isJpxDecode = xObject.Stream.StreamDictionary.TryGet(NameToken.Filter, out var token) 
                 && token is NameToken filterName
                 && filterName.Equals(NameToken.JpxDecode);
-
-            if (isJpxDecode)
-            {
-                return;
-            }
-
+            
             var isImageMask = xObject.Stream.StreamDictionary.TryGet(NameToken.ImageMask, out var maskToken)
                               && maskToken is BooleanToken maskBoolean
                               && maskBoolean.Data;
 
-            if (isImageMask)
-            {
-                return;
-            }
-
-            var bitsPerComponents = xObject.Stream.StreamDictionary.Get<NumericToken>(NameToken.BitsPerComponent, pdfScanner).Int;
-
+            return new XObjectImage(width, height, isJpxDecode, isImageMask, xObject.Stream.StreamDictionary,
+                xObject.Stream.Data);
         }
     }
 }

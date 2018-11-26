@@ -12,7 +12,7 @@
     using Tokenization.Scanner;
     using Tokens;
     using Util;
-    using XObject;
+    using XObjects;
 
     internal class PageFactory : IPageFactory
     {

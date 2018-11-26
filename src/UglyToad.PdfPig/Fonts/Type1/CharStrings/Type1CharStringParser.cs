@@ -46,12 +46,15 @@
             }
 
             var charStringResults = new Dictionary<string, Type1CharStrings.CommandSequence>(charStrings.Count);
+            var charStringIndexToName = new Dictionary<int, string>();
 
-            foreach (var charString in charStrings)
+            for (var i = 0; i < charStrings.Count; i++)
             {
+                var charString = charStrings[i];
                 var commandSequence = ParseSingle(charString.Bytes);
 
                 charStringResults[charString.Name] = new Type1CharStrings.CommandSequence(commandSequence);
+                charStringIndexToName[i] = charString.Name;
             }
 
             var subroutineResults = new Dictionary<int, Type1CharStrings.CommandSequence>(subroutines.Count);
@@ -63,7 +66,7 @@
                 subroutineResults[subroutine.Index] = new Type1CharStrings.CommandSequence(commandSequence);
             }
 
-            return new Type1CharStrings(charStringResults, subroutineResults);
+            return new Type1CharStrings(charStringResults, charStringIndexToName, subroutineResults);
         }
 
         private static IReadOnlyList<Union<decimal, LazyType1Command>> ParseSingle(IReadOnlyList<byte> charStringBytes)

@@ -4,7 +4,7 @@
     using Graphics;
     using Graphics.Operations;
     using Tokenization.Scanner;
-    using XObject;
+    using XObjects;
 
     /// <summary>
     /// 
@@ -38,11 +38,11 @@
             this.isLenientParsing = isLenientParsing;
         }
 
-        public void GetImages()
+        public IEnumerable<XObjectImage> GetImages()
         {
             foreach (var contentRecord in xObjects[XObjectType.Image])
             {
-                xObjectFactory.CreateImage(contentRecord, pdfScanner, isLenientParsing);
+                yield return xObjectFactory.CreateImage(contentRecord, pdfScanner, isLenientParsing);
             }
         }
     }

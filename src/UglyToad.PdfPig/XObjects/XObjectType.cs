@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.XObject
+﻿namespace UglyToad.PdfPig.XObjects
 {
     internal enum XObjectType
     {

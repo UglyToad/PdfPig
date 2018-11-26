@@ -8,6 +8,7 @@
 
     internal class Type1CharStrings
     {
+        private readonly IReadOnlyDictionary<int, string> charStringIndexToName;
         private readonly object locker = new object();
         private readonly Dictionary<string, CharacterPath> glyphs = new Dictionary<string, CharacterPath>();
 
@@ -15,8 +16,10 @@
 
         public IReadOnlyDictionary<int, CommandSequence> Subroutines { get; }
 
-        public Type1CharStrings(IReadOnlyDictionary<string, CommandSequence> charStrings, IReadOnlyDictionary<int, CommandSequence> subroutines)
+        public Type1CharStrings(IReadOnlyDictionary<string, CommandSequence> charStrings, IReadOnlyDictionary<int, string> charStringIndexToName, 
+            IReadOnlyDictionary<int, CommandSequence> subroutines)
         {
+            this.charStringIndexToName = charStringIndexToName ?? throw new ArgumentNullException(nameof(charStringIndexToName));
             CharStrings = charStrings ?? throw new ArgumentNullException(nameof(charStrings));
             Subroutines = subroutines ?? throw new ArgumentNullException(nameof(subroutines));
         }
@@ -46,7 +49,29 @@
 
         private CharacterPath Run(CommandSequence sequence)
         {
-            var context = new Type1BuildCharContext(Subroutines);
+            var context = new Type1BuildCharContext(Subroutines, i =>
+            {
+                if (!charStringIndexToName.TryGetValue(i, out var name))
+                {
+                    throw new InvalidOperationException($"Tried to retrieve Type 1 charstring by index {i} which did not exist.");
+                }
+
+                if (glyphs.TryGetValue(name, out var result))
+                {
+                    return result;
+                }
+
+                if (!CharStrings.TryGetValue(name, out var charstring))
+                {
+                    throw new InvalidOperationException($"Tried to retrieve Type 1 charstring by index {i} which mapped to name {name} but was not found in the charstrings.");
+                }
+
+                var path = Run(charstring);
+
+                glyphs[name] = path;
+
+                return path;
+            });
             foreach (var command in sequence.Commands)
             {
                 command.Match(x => context.Stack.Push(x),

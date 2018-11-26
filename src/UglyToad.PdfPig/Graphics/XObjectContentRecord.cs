@@ -4,7 +4,7 @@
     using PdfPig.Core;
     using Tokens;
     using Util.JetBrains.Annotations;
-    using XObject;
+    using XObjects;
 
     internal class XObjectContentRecord
     {

@@ -22,7 +22,7 @@
     using Tokenization.Scanner;
     using Tokens;
     using Util;
-    using XObject;
+    using XObjects;
 
     internal static class PdfDocumentFactory
     {

@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
+    using System.Linq;
     using Xunit;
 
     public class OldGutnishTests
@@ -40,9 +41,9 @@
             {
                 var page = document.GetPage(1);
 
-                page.Content.GetImages();
+                var images = page.ExperimentalAccess.GetRawImages().ToList();
+                Assert.Single(images);
             }
         }
-
     }
 }
