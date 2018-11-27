@@ -10,7 +10,7 @@
     public class PdfDocumentBuilderTests
     {
         [Fact]
-        public void CanLoadFontAndWriteText()
+        public void CanWriteSinglePageHelloWorld()
         {
             var builder = new PdfDocumentBuilder();
 
@@ -21,7 +21,13 @@
 
             var font = builder.AddTrueTypeFont(File.ReadAllBytes(file));
 
-            page.AddText("One", 12, new PdfPoint(30, 50), font);
+            page.AddText("Hello World!", 12, new PdfPoint(30, 50), font);
+
+            Assert.NotEmpty(page.Operations);
+
+            var b = builder.Build();
+
+            Assert.NotEmpty(b);
         }
     }
 }
