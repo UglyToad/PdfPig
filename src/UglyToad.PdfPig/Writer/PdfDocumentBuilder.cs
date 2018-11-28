@@ -14,7 +14,7 @@
 
     internal class PdfDocumentBuilder
     {
-        private static readonly byte Break = (byte) '\n';
+        private static readonly byte Break = (byte)'\n';
         private static readonly TrueTypeFontParser Parser = new TrueTypeFontParser();
 
         private readonly Dictionary<int, PdfPageBuilder> pages = new Dictionary<int, PdfPageBuilder>();
@@ -97,11 +97,12 @@
                 // Body
                 foreach (var font in fonts)
                 {
-                    var widths = new ArrayToken(new [] { new NumericToken(0), new NumericToken(255) });
+                    var widths = new ArrayToken(new[] { new NumericToken(0), new NumericToken(255) });
                     var widthsObj = WriteObject(widths, memory, objectLocations, ref number);
 
-                    var descriptorRef = new IndirectReference(number++, 0);
-                    
+                    // TODO
+                    // var descriptorRef = new IndirectReference(number++, 0);
+
                     var dictionary = new DictionaryToken(new Dictionary<IToken, IToken>
                     {
                         { NameToken.Type, NameToken.Font },
@@ -110,29 +111,36 @@
                         { NameToken.LastChar, new NumericToken(255) },
                         { NameToken.Encoding, NameToken.WinAnsiEncoding },
                         { NameToken.Widths, widthsObj },
-                        { NameToken.FontDesc, new IndirectReferenceToken(descriptorRef) }
+                        //{ NameToken.FontDesc, new IndirectReferenceToken(descriptorRef) }
                     });
 
                     var fontObj = WriteObject(dictionary, memory, objectLocations, ref number);
                     fontsWritten.Add(font.Key, fontObj);
                 }
+                
+                var resources = new Dictionary<IToken, IToken>
+                {
+                    { NameToken.ProcSet, new ArrayToken(new []{ NameToken.Create("PDF"), NameToken.Create("Text") }) }
+                };
 
-                var fontsDictionary = new DictionaryToken(fontsWritten.Select(x => ((IToken)fonts[x.Key].FontKey.Name, (IToken)new IndirectReferenceToken(x.Value.Number)))
-                    .ToDictionary(x => x.Item1, x => x.Item2));
+                if (fontsWritten.Count > 0)
+                {
+                    var fontsDictionary = new DictionaryToken(fontsWritten.Select(x => ((IToken)fonts[x.Key].FontKey.Name, (IToken)new IndirectReferenceToken(x.Value.Number)))
+                        .ToDictionary(x => x.Item1, x => x.Item2));
 
-                var fontsDictionaryRef = WriteObject(fontsDictionary, memory, objectLocations, ref number);
+                    var fontsDictionaryRef = WriteObject(fontsDictionary, memory, objectLocations, ref number);
+
+                    resources.Add(NameToken.Font, new IndirectReferenceToken(fontsDictionaryRef.Number));
+                }
 
                 var page = new DictionaryToken(new Dictionary<IToken, IToken>
                 {
                     { NameToken.Type, NameToken.Page },
                     {
                         NameToken.Resources,
-                        new DictionaryToken(new Dictionary<IToken, IToken>
-                        {
-                            { NameToken.ProcSet, new ArrayToken(new []{ NameToken.Create("PDF"), NameToken.Create("Text") }) },
-                            { NameToken.Font, new IndirectReferenceToken(fontsDictionaryRef.Number) }
-                        })
-                    }
+                        new DictionaryToken(resources)
+                    },
+                    { NameToken.MediaBox, RectangleToArray(pages[1].PageSize) }
                 });
 
                 var pageRef = WriteObject(page, memory, objectLocations, ref number);
@@ -152,20 +160,32 @@
                     { NameToken.Pages, new IndirectReferenceToken(pagesRef.Number) }
                 });
 
-                WriteObject(catalog, memory, objectLocations, ref number);
+                var catalogRef = WriteObject(catalog, memory, objectLocations, ref number);
+
+                TokenWriter.WriteCrossReferenceTable(objectLocations, catalogRef, memory);
 
                 return memory.ToArray();
             }
         }
 
-        private static ObjectToken WriteObject(IToken content, MemoryStream stream, Dictionary<IndirectReference, long> objectOffsets, ref int number)
+        private static ArrayToken RectangleToArray(PdfRectangle rectangle)
+        {
+            return new ArrayToken(new[]
+            {
+                new NumericToken(rectangle.BottomLeft.X), 
+                new NumericToken(rectangle.BottomLeft.Y), 
+                new NumericToken(rectangle.TopRight.X), 
+                new NumericToken(rectangle.TopRight.Y) 
+            });
+        }
+
+        private static ObjectToken WriteObject(IToken content, Stream stream, Dictionary<IndirectReference, long> objectOffsets, ref int number)
         {
             var reference = new IndirectReference(number++, 0);
             var obj = new ObjectToken(stream.Position, reference, content);
             objectOffsets.Add(reference, obj.Position);
             // TODO: write
-            stream.Write(new byte[50], 0, 50);
-            stream.WriteByte(Break);
+            TokenWriter.WriteToken(obj, stream);
             return obj;
         }
 
@@ -178,7 +198,7 @@
                 stream.WriteByte(Break);
             }
         }
-
+        
         internal class FontStored
         {
             public AddedFont FontKey { get; }

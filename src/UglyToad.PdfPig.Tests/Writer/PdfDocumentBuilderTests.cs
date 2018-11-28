@@ -4,11 +4,61 @@
     using System.IO;
     using Content;
     using PdfPig.Geometry;
+    using PdfPig.Util;
     using PdfPig.Writer;
     using Xunit;
 
     public class PdfDocumentBuilderTests
     {
+        [Fact]
+        public void CanWriteSingleBlankPage()
+        {
+            var result = CreateSingleBlankPage();
+
+            Assert.NotEmpty(result);
+
+            var str = OtherEncodings.BytesAsLatin1String(result);
+            Assert.StartsWith("%PDF", str);
+            Assert.EndsWith("%%EOF", str);
+        }
+
+        [Fact]
+        public void CanReadSingleBlankPage()
+        {
+            var result = CreateSingleBlankPage();
+
+            using (var document = PdfDocument.Open(result, new ParsingOptions { UseLenientParsing = false }))
+            {
+                Assert.Equal(1, document.NumberOfPages);
+
+                var page = document.GetPage(1);
+
+                Assert.Equal(PageSize.A4, page.Size);
+
+                Assert.Empty(page.Letters);
+
+                Assert.NotNull(document.Structure.Catalog);
+
+                foreach (var offset in document.Structure.CrossReferenceTable.ObjectOffsets)
+                {
+                    var obj = document.Structure.GetObject(offset.Key);
+
+                    Assert.NotNull(obj);
+                }
+            }
+        }
+
+        private static byte[] CreateSingleBlankPage()
+        {
+            var builder = new PdfDocumentBuilder();
+
+            builder.AddPage(PageSize.A4);
+
+            var result = builder.Build();
+
+            return result;
+        }
+
         [Fact]
         public void CanWriteSinglePageHelloWorld()
         {
