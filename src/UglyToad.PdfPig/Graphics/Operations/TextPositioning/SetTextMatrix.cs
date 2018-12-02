@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextPositioning
 {
     using System;
+    using System.IO;
     using Content;
     using PdfPig.Core;
 
@@ -28,6 +29,11 @@
 
             operationContext.TextMatrices.TextMatrix = newMatrix;
             operationContext.TextMatrices.TextLineMatrix = newMatrix;
+        }
+
+        public void Write(Stream stream)
+        {
+            throw new NotImplementedException();
         }
 
         public override string ToString()

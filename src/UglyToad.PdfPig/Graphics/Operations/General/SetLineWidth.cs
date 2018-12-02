@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.General
 {
+    using System.IO;
     using Content;
 
     internal class SetLineWidth : IGraphicsStateOperation
@@ -20,6 +21,11 @@
             var currentState = operationContext.GetCurrentState();
 
             currentState.LineWidth = Width;
+        }
+
+        public void Write(Stream stream)
+        {
+            throw new System.NotImplementedException();
         }
 
         public override string ToString()

@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextShowing
 {
+    using System;
+    using System.IO;
     using Content;
     using IO;
     using Util;
@@ -48,6 +50,19 @@
             var input = new ByteArrayInputBytes(Text != null ? OtherEncodings.StringAsLatin1Bytes(Text) : Bytes);
 
             operationContext.ShowText(input);
+        }
+
+        public void Write(Stream stream)
+        {
+            if (Text == null && Bytes != null)
+            {
+                throw new NotImplementedException("Support for writing hex not done yet.");
+            }
+
+            stream.WriteText($"({Text})");
+            stream.WriteWhiteSpace();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
         public override string ToString()

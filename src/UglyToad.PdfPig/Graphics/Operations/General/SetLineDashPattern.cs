@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.General
 {
+    using System.IO;
     using Content;
     using Core;
 
@@ -19,6 +20,11 @@
         public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
             operationContext.GetCurrentState().LineDashPattern = Pattern;
+        }
+
+        public void Write(Stream stream)
+        {
+            throw new System.NotImplementedException();
         }
 
         public override string ToString()

@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using Content;
     using Tokens;
 
@@ -35,6 +36,11 @@
         public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
             operationContext.ShowPositionedText(Array);
+        }
+
+        public void Write(Stream stream)
+        {
+            throw new NotImplementedException();
         }
     }
 }

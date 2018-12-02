@@ -36,23 +36,24 @@
         private static readonly HashSet<string> Standard14Names = new HashSet<string>();
         private static readonly Dictionary<string, string> Standard14Mapping = new Dictionary<string, string>(34);
         private static readonly Dictionary<string, FontMetrics> Standard14AfmMap = new Dictionary<string, FontMetrics>(34);
+        private static readonly Dictionary<Standard14Font, FontMetrics> Standard14AfmTypeMap = new Dictionary<Standard14Font, FontMetrics>(14);
 
         static Standard14()
         {
-            AddAdobeFontMetrics("Courier-Bold");
-            AddAdobeFontMetrics("Courier-BoldOblique");
-            AddAdobeFontMetrics("Courier");
-            AddAdobeFontMetrics("Courier-Oblique");
-            AddAdobeFontMetrics("Helvetica");
-            AddAdobeFontMetrics("Helvetica-Bold");
-            AddAdobeFontMetrics("Helvetica-BoldOblique");
-            AddAdobeFontMetrics("Helvetica-Oblique");
-            AddAdobeFontMetrics("Symbol");
-            AddAdobeFontMetrics("Times-Bold");
-            AddAdobeFontMetrics("Times-BoldItalic");
-            AddAdobeFontMetrics("Times-Italic");
-            AddAdobeFontMetrics("Times-Roman");
-            AddAdobeFontMetrics("ZapfDingbats");
+            AddAdobeFontMetrics("Courier-Bold", Standard14Font.CourierBold);
+            AddAdobeFontMetrics("Courier-BoldOblique", Standard14Font.CourierBoldOblique);
+            AddAdobeFontMetrics("Courier", Standard14Font.Courier);
+            AddAdobeFontMetrics("Courier-Oblique", Standard14Font.CourierOblique);
+            AddAdobeFontMetrics("Helvetica", Standard14Font.Helvetica);
+            AddAdobeFontMetrics("Helvetica-Bold", Standard14Font.HelveticaBold);
+            AddAdobeFontMetrics("Helvetica-BoldOblique", Standard14Font.HelveticaBoldOblique);
+            AddAdobeFontMetrics("Helvetica-Oblique", Standard14Font.HelveticaOblique);
+            AddAdobeFontMetrics("Symbol", Standard14Font.Symbol);
+            AddAdobeFontMetrics("Times-Bold", Standard14Font.TimesBold);
+            AddAdobeFontMetrics("Times-BoldItalic", Standard14Font.TimesBoldItalic);
+            AddAdobeFontMetrics("Times-Italic", Standard14Font.TimesItalic);
+            AddAdobeFontMetrics("Times-Roman", Standard14Font.TimesRoman);
+            AddAdobeFontMetrics("ZapfDingbats", Standard14Font.ZapfDingbats);
 
             // alternative names from Adobe Supplement to the ISO 32000
             AddAdobeFontMetrics("CourierCourierNew", "Courier");
@@ -79,12 +80,12 @@
             AddAdobeFontMetrics("Times,BoldItalic", "Times-BoldItalic");
         }
 
-        private static void AddAdobeFontMetrics(string fontName)
+        private static void AddAdobeFontMetrics(string fontName, Standard14Font? type = null)
         {
-            AddAdobeFontMetrics(fontName, fontName);
+            AddAdobeFontMetrics(fontName, fontName, type);
         }
 
-        private static void AddAdobeFontMetrics(string fontName, string afmName)
+        private static void AddAdobeFontMetrics(string fontName, string afmName, Standard14Font? type = null)
         {
             Standard14Names.Add(fontName);
             Standard14Mapping.Add(fontName, afmName);
@@ -109,6 +110,10 @@
                 }
 
                 Standard14AfmMap[fontName] = Parser.Parse(bytes, true);
+                if (type.HasValue)
+                {
+                    Standard14AfmTypeMap[type.Value] = Standard14AfmMap[fontName];
+                }
             }
             catch (Exception ex)
             {
@@ -126,6 +131,11 @@
             Standard14AfmMap.TryGetValue(baseName, out var metrics);
 
             return metrics;
+        }
+
+        public static FontMetrics GetAdobeFontMetrics(Standard14Font fontType)
+        {
+            return Standard14AfmTypeMap[fontType];
         }
         
         /// <summary>
@@ -156,5 +166,23 @@
 
             return mappedName;
         }
+    }
+
+    internal enum Standard14Font
+    {
+        TimesRoman = 0, 
+        TimesBold = 1, 
+        TimesItalic=2, 
+        TimesBoldItalic = 3,
+        Helvetica = 4,
+        HelveticaBold = 5,
+        HelveticaOblique = 6,
+        HelveticaBoldOblique = 7,
+        Courier = 8,
+        CourierBold = 9,
+        CourierOblique = 10,
+        CourierBoldOblique = 11,
+        Symbol = 12,
+        ZapfDingbats = 13
     }
 }

@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextState
 {
+    using System.IO;
     using Content;
 
     internal class SetWordSpacing : IGraphicsStateOperation
@@ -20,6 +21,11 @@
             var currentState = operationContext.GetCurrentState();
 
             currentState.FontState.WordSpacing = Spacing;
+        }
+
+        public void Write(Stream stream)
+        {
+            throw new System.NotImplementedException();
         }
 
         public override string ToString()

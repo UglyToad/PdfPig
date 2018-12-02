@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextState
 {
+    using System.IO;
     using Content;
 
     internal class SetTextRise : IGraphicsStateOperation
@@ -20,6 +21,11 @@
             var currentState = operationContext.GetCurrentState();
 
             currentState.FontState.Rise = Rise;
+        }
+
+        public void Write(Stream stream)
+        {
+            throw new System.NotImplementedException();
         }
 
         public override string ToString()

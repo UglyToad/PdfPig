@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState
 {
     using System;
+    using System.IO;
     using Content;
 
     internal class Pop : IGraphicsStateOperation
@@ -25,6 +26,11 @@
             {
                 throw new InvalidOperationException("Cannot execute a pop of the graphics state stack, it would leave the stack empty.");
             }
+        }
+
+        public void Write(Stream stream)
+        {
+            throw new NotImplementedException();
         }
 
         public override string ToString()

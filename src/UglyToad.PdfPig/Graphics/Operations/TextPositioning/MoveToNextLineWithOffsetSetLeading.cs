@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextPositioning
 {
+    using System.IO;
     using Content;
     using TextState;
 
@@ -28,6 +29,11 @@
             var tdOperation = new MoveToNextLineWithOffset(Tx, Ty);
 
             tdOperation.Run(operationContext, resourceStore);
+        }
+
+        public void Write(Stream stream)
+        {
+            throw new System.NotImplementedException();
         }
 
         public override string ToString()

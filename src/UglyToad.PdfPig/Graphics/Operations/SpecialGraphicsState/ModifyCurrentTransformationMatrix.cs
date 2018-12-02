@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState
 {
     using System;
+    using System.IO;
     using Content;
     using PdfPig.Core;
 
@@ -35,6 +36,24 @@
             var newCtm = newMatrix.Multiply(ctm);
 
             operationContext.GetCurrentState().CurrentTransformationMatrix = newCtm;
+        }
+
+        public void Write(Stream stream)
+        {
+            stream.WriteDecimal(Value[0]);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(Value[1]);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(Value[2]);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(Value[3]);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(Value[4]);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(Value[5]);
+            stream.WriteWhiteSpace();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
         public override string ToString()

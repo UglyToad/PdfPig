@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.General
 {
+    using System.IO;
     using Content;
 
     internal class SetMiterLimit : IGraphicsStateOperation
@@ -20,6 +21,11 @@
             var currentState = operationContext.GetCurrentState();
 
             currentState.MiterLimit = Limit;
+        }
+
+        public void Write(Stream stream)
+        {
+            throw new System.NotImplementedException();
         }
 
         public override string ToString()

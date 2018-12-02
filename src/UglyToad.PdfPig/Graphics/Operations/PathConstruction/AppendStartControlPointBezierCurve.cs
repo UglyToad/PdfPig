@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.PathConstruction
 {
+    using System.IO;
     using Content;
     using Geometry;
 
@@ -21,6 +22,11 @@
 
         public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
+        }
+
+        public void Write(Stream stream)
+        {
+            throw new System.NotImplementedException();
         }
 
         public override string ToString()

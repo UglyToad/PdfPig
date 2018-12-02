@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations
 {
+    using System.IO;
     using Content;
     using Tokens;
 
@@ -21,6 +22,11 @@
             var xobject = resourceStore.GetXObject(Name);
 
             operationContext.ApplyXObject(xobject);
+        }
+
+        public void Write(Stream stream)
+        {
+            throw new System.NotImplementedException();
         }
 
         public override string ToString()

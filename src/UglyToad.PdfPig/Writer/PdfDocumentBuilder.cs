@@ -5,12 +5,15 @@
     using System.IO;
     using System.Linq;
     using Content;
+    using Fonts;
     using Fonts.TrueType;
     using Fonts.TrueType.Parser;
     using Geometry;
+    using Graphics.Operations;
     using IO;
     using Tokens;
     using Util;
+    using Util.JetBrains.Annotations;
 
     internal class PdfDocumentBuilder
     {
@@ -21,7 +24,7 @@
         private readonly Dictionary<Guid, FontStored> fonts = new Dictionary<Guid, FontStored>();
 
         public IReadOnlyDictionary<int, PdfPageBuilder> Pages => pages;
-        public IReadOnlyDictionary<Guid, TrueTypeFontProgram> Fonts => fonts.ToDictionary(x => x.Key, x => x.Value.FontProgram);
+        public IReadOnlyDictionary<Guid, IWritingFont> Fonts => fonts.ToDictionary(x => x.Key, x => x.Value.FontProgram);
 
         public AddedFont AddTrueTypeFont(IReadOnlyList<byte> fontFileBytes)
         {
@@ -31,7 +34,7 @@
                 var id = Guid.NewGuid();
                 var i = fonts.Count;
                 var added = new AddedFont(id, NameToken.Create($"F{i}"));
-                fonts[id] = new FontStored(added, font);
+                fonts[id] = new FontStored(added, new TrueTypeWritingFont(font));
 
                 return added;
             }
@@ -39,6 +42,16 @@
             {
                 throw new InvalidOperationException("Writing only supports TrueType fonts, please provide a valid TrueType font.", ex);
             }
+        }
+
+        public AddedFont AddStandard14Font(Standard14Font type)
+        {
+            var id = Guid.NewGuid();
+            var name = NameToken.Create($"F{fonts.Count}");
+            var added = new AddedFont(id, name);
+            fonts[id] = new FontStored(added, new Standard14WritingFont(Standard14.GetAdobeFontMetrics(type)));
+
+            return added;
         }
 
         public PdfPageBuilder AddPage(PageSize size, bool isPortrait = true)
@@ -97,27 +110,17 @@
                 // Body
                 foreach (var font in fonts)
                 {
-                    var widths = new ArrayToken(new[] { new NumericToken(0), new NumericToken(255) });
-                    var widthsObj = WriteObject(widths, memory, objectLocations, ref number);
+                    var fontDictionary = font.Value.FontProgram.GetDictionary(font.Value.FontKey.Name);
 
                     // TODO
                     // var descriptorRef = new IndirectReference(number++, 0);
 
-                    var dictionary = new DictionaryToken(new Dictionary<IToken, IToken>
-                    {
-                        { NameToken.Type, NameToken.Font },
-                        { NameToken.Subtype, NameToken.TrueType },
-                        { NameToken.FirstChar, new NumericToken(0) },
-                        { NameToken.LastChar, new NumericToken(255) },
-                        { NameToken.Encoding, NameToken.WinAnsiEncoding },
-                        { NameToken.Widths, widthsObj },
-                        //{ NameToken.FontDesc, new IndirectReferenceToken(descriptorRef) }
-                    });
+                    var dictionary = new DictionaryToken(fontDictionary);
 
                     var fontObj = WriteObject(dictionary, memory, objectLocations, ref number);
                     fontsWritten.Add(font.Key, fontObj);
                 }
-                
+
                 var resources = new Dictionary<IToken, IToken>
                 {
                     { NameToken.ProcSet, new ArrayToken(new []{ NameToken.Create("PDF"), NameToken.Create("Text") }) }
@@ -133,22 +136,37 @@
                     resources.Add(NameToken.Font, new IndirectReferenceToken(fontsDictionaryRef.Number));
                 }
 
-                var page = new DictionaryToken(new Dictionary<IToken, IToken>
+                var pageReferences = new List<IndirectReferenceToken>();
+                foreach (var page in pages)
                 {
-                    { NameToken.Type, NameToken.Page },
+                    var pageDictionary = new Dictionary<IToken, IToken>
                     {
-                        NameToken.Resources,
-                        new DictionaryToken(resources)
-                    },
-                    { NameToken.MediaBox, RectangleToArray(pages[1].PageSize) }
-                });
+                        {NameToken.Type, NameToken.Page},
+                        {
+                            NameToken.Resources,
+                            new DictionaryToken(resources)
+                        },
+                        {NameToken.MediaBox, RectangleToArray(page.Value.PageSize)}
+                    };
 
-                var pageRef = WriteObject(page, memory, objectLocations, ref number);
+                    if (page.Value.Operations.Count > 0)
+                    {
+                        var contentStream = WriteContentStream(page.Value.Operations);
+
+                        var contentStreamObj = WriteObject(contentStream, memory, objectLocations, ref number);
+
+                        pageDictionary[NameToken.Contents] = new IndirectReferenceToken(contentStreamObj.Number);
+                    }
+
+                    var pageRef = WriteObject(new DictionaryToken(pageDictionary), memory, objectLocations, ref number);
+
+                    pageReferences.Add(new IndirectReferenceToken(pageRef.Number));
+                }
 
                 var pagesDictionary = new DictionaryToken(new Dictionary<IToken, IToken>
                 {
                     { NameToken.Type, NameToken.Pages },
-                    { NameToken.Kids, new ArrayToken(new [] { new IndirectReferenceToken(pageRef.Number) }) },
+                    { NameToken.Kids, new ArrayToken(pageReferences) },
                     { NameToken.Count, new NumericToken(1) }
                 });
 
@@ -168,14 +186,36 @@
             }
         }
 
+        private static StreamToken WriteContentStream(IReadOnlyList<IGraphicsStateOperation> content)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                foreach (var operation in content)
+                {
+                    operation.Write(memoryStream);
+                }
+
+                var bytes = memoryStream.ToArray();
+
+                var streamDictionary = new Dictionary<IToken, IToken>
+                {
+                    { NameToken.Length, new NumericToken(bytes.Length) }
+                };
+
+                var stream = new StreamToken(new DictionaryToken(streamDictionary), bytes);
+
+                return stream;
+            }
+        }
+
         private static ArrayToken RectangleToArray(PdfRectangle rectangle)
         {
             return new ArrayToken(new[]
             {
-                new NumericToken(rectangle.BottomLeft.X), 
-                new NumericToken(rectangle.BottomLeft.Y), 
-                new NumericToken(rectangle.TopRight.X), 
-                new NumericToken(rectangle.TopRight.Y) 
+                new NumericToken(rectangle.BottomLeft.X),
+                new NumericToken(rectangle.BottomLeft.Y),
+                new NumericToken(rectangle.TopRight.X),
+                new NumericToken(rectangle.TopRight.Y)
             });
         }
 
@@ -198,17 +238,19 @@
                 stream.WriteByte(Break);
             }
         }
-        
+
         internal class FontStored
         {
+            [NotNull]
             public AddedFont FontKey { get; }
 
-            public TrueTypeFontProgram FontProgram { get; }
+            [NotNull]
+            public IWritingFont FontProgram { get; }
 
-            public FontStored(AddedFont fontKey, TrueTypeFontProgram fontProgram)
+            public FontStored(AddedFont fontKey, IWritingFont fontProgram)
             {
-                FontKey = fontKey;
-                FontProgram = fontProgram;
+                FontKey = fontKey ?? throw new ArgumentNullException(nameof(fontKey));
+                FontProgram = fontProgram ?? throw new ArgumentNullException(nameof(fontProgram));
             }
         }
 
@@ -225,5 +267,4 @@
             }
         }
     }
-
 }

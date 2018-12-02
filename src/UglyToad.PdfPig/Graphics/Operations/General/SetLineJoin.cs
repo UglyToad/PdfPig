@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.General
 {
     using System;
+    using System.IO;
     using Content;
     using Core;
 
@@ -26,6 +27,11 @@
         public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
             operationContext.GetCurrentState().JoinStyle = Join;
+        }
+
+        public void Write(Stream stream)
+        {
+            throw new NotImplementedException();
         }
 
         public override string ToString()

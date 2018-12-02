@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.General
 {
+    using System.IO;
     using Content;
 
     internal class SetFlatnessTolerance : IGraphicsStateOperation
@@ -18,6 +19,11 @@
         public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
             operationContext.GetCurrentState().Flatness = Tolerance;
+        }
+
+        public void Write(Stream stream)
+        {
+            throw new System.NotImplementedException();
         }
 
         public override string ToString()

@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextState
 {
     using System;
+    using System.IO;
     using Content;
     using Tokens;
     using Util.JetBrains.Annotations;
@@ -35,6 +36,16 @@
 
             currentState.FontState.FontSize = Size;
             currentState.FontState.FontName = Font;
+        }
+
+        public void Write(Stream stream)
+        {
+            stream.WriteText(Font.ToString());
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(Size);
+            stream.WriteWhiteSpace();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
         public override string ToString()

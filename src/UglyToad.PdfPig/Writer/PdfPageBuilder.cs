@@ -8,6 +8,7 @@
     using Graphics.Operations;
     using Graphics.Operations.SpecialGraphicsState;
     using Graphics.Operations.TextObjects;
+    using Graphics.Operations.TextPositioning;
     using Graphics.Operations.TextShowing;
     using Graphics.Operations.TextState;
 
@@ -59,24 +60,18 @@
 
             try
             {
-                var ctm = TransformationMatrix.FromValues(position.X, 0, position.Y, 0, 0, 0);
-
-                var realWidth = ctm.Transform(widthRect).Width;
+                var realWidth = widthRect.Width;
 
                 if (realWidth + position.X > PageSize.Width)
                 {
                     throw new InvalidOperationException("Text would exceed the bounds.");
                 }
 
-                operations.Add(new ModifyCurrentTransformationMatrix(new[]
-                {
-                    position.X, 0, position.Y, 0, 0, 0
-                }));
-
                 var beginText = BeginText.Value;
 
                 operations.Add(beginText);
                 operations.Add(new SetFontAndSize(font.Name, fontSize));
+                operations.Add(new MoveToNextLineWithOffset(position.X, position.Y));
                 operations.Add(new ShowText(text));
                 operations.Add(EndText.Value);
 
@@ -90,7 +85,7 @@
             return this;
         }
 
-        private static decimal CalculateGlyphSpaceTextWidth(string text, TrueTypeFontProgram font)
+        private static decimal CalculateGlyphSpaceTextWidth(string text, IWritingFont font)
         {
             var width = 0m;
             for (var i = 0; i < text.Length; i++)

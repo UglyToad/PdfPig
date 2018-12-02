@@ -36,6 +36,9 @@
 
         private static readonly byte[] StartXref = OtherEncodings.StringAsLatin1Bytes("startxref");
 
+        private static readonly byte[] StreamStart = OtherEncodings.StringAsLatin1Bytes("stream");
+        private static readonly byte[] StreamEnd = OtherEncodings.StringAsLatin1Bytes("endstream");
+
         private static readonly byte StringStart = GetByte("(");
         private static readonly byte StringEnd = GetByte(")");
 
@@ -81,8 +84,9 @@
                 case ObjectToken objectToken:
                     WriteObject(objectToken, outputStream);
                     break;
-                case StreamToken _:
-                    throw new NotImplementedException();
+                case StreamToken streamToken:
+                    WriteStream(streamToken, outputStream);
+                    break;
                 case StringToken stringToken:
                     WriteString(stringToken, outputStream);
                     break;
@@ -266,6 +270,17 @@
             outputStream.Write(ObjEnd, 0, ObjEnd.Length);
 
             WriteLineBreak(outputStream);
+        }
+
+        private static void WriteStream(StreamToken streamToken, Stream outputStream)
+        {
+            WriteDictionary(streamToken.StreamDictionary, outputStream);
+            WriteLineBreak(outputStream);
+            outputStream.Write(StreamStart, 0, StreamStart.Length);
+            WriteLineBreak(outputStream);
+            outputStream.Write(streamToken.Data.ToArray(), 0, streamToken.Data.Count);
+            WriteLineBreak(outputStream);
+            outputStream.Write(StreamEnd, 0, StreamEnd.Length);
         }
 
         private static void WriteString(StringToken stringToken, Stream outputStream)

@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextShowing
 {
+    using System.IO;
     using Content;
     using TextPositioning;
     using TextState;
@@ -46,6 +47,11 @@
             setCharacterSpacing.Run(operationContext, resourceStore);
             moveToNextLine.Run(operationContext, resourceStore);
             showText.Run(operationContext, resourceStore);
+        }
+
+        public void Write(Stream stream)
+        {
+            throw new System.NotImplementedException();
         }
 
         public override string ToString()

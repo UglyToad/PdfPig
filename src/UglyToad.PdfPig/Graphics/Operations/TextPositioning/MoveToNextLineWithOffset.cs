@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextPositioning
 {
+    using System.IO;
     using Content;
     using PdfPig.Core;
 
@@ -38,6 +39,16 @@
 
             operationContext.TextMatrices.TextLineMatrix = transformed;
             operationContext.TextMatrices.TextMatrix = transformed;
+        }
+
+        public void Write(Stream stream)
+        {
+            stream.WriteDecimal(Tx);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(Ty);
+            stream.WriteWhiteSpace();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
         public override string ToString()

@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextShowing
 {
+    using System.IO;
     using Content;
     using TextPositioning;
     using Util.JetBrains.Annotations;
@@ -34,6 +35,11 @@
 
             move.Run(operationContext, resourceStore);
             showText.Run(operationContext, resourceStore);
+        }
+
+        public void Write(Stream stream)
+        {
+            throw new System.NotImplementedException();
         }
 
         public override string ToString()

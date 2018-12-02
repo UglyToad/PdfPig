@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextState
 {
+    using System.IO;
     using Content;
     using Core;
 
@@ -21,6 +22,11 @@
             var currentState = operationContext.GetCurrentState();
 
             currentState.FontState.RenderingMode = Mode;
+        }
+
+        public void Write(Stream stream)
+        {
+            throw new System.NotImplementedException();
         }
 
         public override string ToString()
