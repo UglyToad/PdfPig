@@ -152,6 +152,10 @@
             var font = parser.Parse(input);
 
             Assert.NotNull(font.TableRegister.GlyphTable);
+
+            var name = font.Name;
+
+            Assert.Equal("Andada Regular", name);
         }
 
         [Fact]

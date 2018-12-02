@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using Exceptions;
     using Tables;
     using Util.JetBrains.Annotations;
 
@@ -61,7 +62,7 @@
 
             if (!tables.TryGetValue(TrueTypeHeaderTable.Head, out var table))
             {
-                throw new InvalidOperationException($"The {TrueTypeHeaderTable.Head} table is required.");
+                throw new InvalidFontFormatException($"The {TrueTypeHeaderTable.Head} table is required.");
             }
 
             // head
@@ -69,7 +70,7 @@
 
             if (!tables.TryGetValue(TrueTypeHeaderTable.Hhea, out var hHead))
             {
-                throw new InvalidOperationException("The horizontal header table is required.");
+                throw new InvalidFontFormatException("The horizontal header table is required.");
             }
 
             // hhea
@@ -77,7 +78,7 @@
 
             if (!tables.TryGetValue(TrueTypeHeaderTable.Maxp, out var maxHeaderTable))
             {
-                throw new InvalidOperationException("The maximum profile table is required.");
+                throw new InvalidFontFormatException("The maximum profile table is required.");
             }
 
             // maxp
@@ -88,12 +89,17 @@
             {
                 builder.PostScriptTable = PostScriptTable.Load(data, postscriptHeaderTable, builder.MaximumProfileTable);
             }
+
+            if (tables.TryGetValue(TrueTypeHeaderTable.Name, out var nameTable))
+            {
+                builder.NameTable = NameTable.Load(data, nameTable);
+            }
             
             if (!isPostScript)
             {
                 if (!tables.TryGetValue(TrueTypeHeaderTable.Loca, out var indexToLocationHeaderTable))
                 {
-                    throw new InvalidOperationException("The location to index table is required for non-PostScript fonts.");
+                    throw new InvalidFontFormatException("The location to index table is required for non-PostScript fonts.");
                 }
 
                 // loca
@@ -102,7 +108,7 @@
 
                 if (!tables.TryGetValue(TrueTypeHeaderTable.Glyf, out var glyphHeaderTable))
                 {
-                    throw new InvalidOperationException("The glyph table is required for non-PostScript fonts.");
+                    throw new InvalidFontFormatException("The glyph table is required for non-PostScript fonts.");
                 }
 
                 // glyf

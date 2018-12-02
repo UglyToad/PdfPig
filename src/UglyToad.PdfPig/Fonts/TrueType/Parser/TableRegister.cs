@@ -45,6 +45,9 @@
         [NotNull]
         public BasicMaximumProfileTable MaximumProfileTable { get; }
 
+        [CanBeNull]
+        public NameTable NameTable { get; }
+
         public PostScriptTable PostScriptTable { get; }
 
         /// <summary>
@@ -73,6 +76,7 @@
             HorizontalMetricsTable = builder.HorizontalMetricsTable;
             IndexToLocationTable = builder.IndexToLocationTable ?? throw new ArgumentException("The builder did not contain the index to location table.");
             MaximumProfileTable = builder.MaximumProfileTable ?? throw new ArgumentException("The builder did not contain the maximum profile table.");
+            NameTable = builder.NameTable;
             PostScriptTable = builder.PostScriptTable;
             CMapTable = builder.CMapTable;
             KerningTable = builder.KerningTable;
@@ -105,6 +109,8 @@
             public CMapTable CMapTable { get; set; }
 
             public KerningTable KerningTable { get; set; }
+
+            public NameTable NameTable { get; set; }
 
             public TableRegister Build()
             {

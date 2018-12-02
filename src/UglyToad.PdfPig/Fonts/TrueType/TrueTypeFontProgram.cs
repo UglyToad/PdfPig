@@ -5,6 +5,7 @@
     using CidFonts;
     using Geometry;
     using Parser;
+    using Util.JetBrains.Annotations;
 
     internal class TrueTypeFontProgram : ICidFontProgram
     {
@@ -12,7 +13,11 @@
 
         public IReadOnlyDictionary<string, TrueTypeHeaderTable> TableHeaders { get; }
 
+        [NotNull]
         public TableRegister TableRegister { get; }
+
+        [CanBeNull]
+        public string Name => TableRegister.NameTable?.FontName;
 
         public TrueTypeFontProgram(decimal version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tableHeaders, TableRegister tableRegister)
         {
