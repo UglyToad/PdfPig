@@ -94,6 +94,11 @@
             {
                 builder.NameTable = NameTable.Load(data, nameTable);
             }
+
+            if (tables.TryGetValue(TrueTypeHeaderTable.Os2, out var os2Table))
+            {
+                builder.Os2Table = TableParser.Parse<Os2Table>(os2Table, data, builder);
+            }
             
             if (!isPostScript)
             {

@@ -59,6 +59,8 @@
 
         public KerningTable KerningTable { get; }
 
+        public Os2Table Os2Table { get; }
+
         /// <summary>
         /// Create a new <see cref="TableRegister"/>.
         /// </summary>
@@ -80,6 +82,7 @@
             PostScriptTable = builder.PostScriptTable;
             CMapTable = builder.CMapTable;
             KerningTable = builder.KerningTable;
+            Os2Table = builder.Os2Table;
         }
 
         /// <summary>
@@ -111,6 +114,8 @@
             public KerningTable KerningTable { get; set; }
 
             public NameTable NameTable { get; set; }
+
+            public Os2Table Os2Table { get; set; }
 
             public TableRegister Build()
             {

@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Writer
 {
     using System.Collections.Generic;
+    using System.IO;
     using Fonts;
     using Fonts.Encodings;
     using Geometry;
@@ -32,9 +33,9 @@
             return true;
         }
 
-        public IReadOnlyDictionary<IToken, IToken> GetDictionary(NameToken fontKeyName)
+        public ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context)
         {
-            return new Dictionary<IToken, IToken>
+            var dictionary = new Dictionary<IToken, IToken>
             {
                 { NameToken.Type, NameToken.Font },
                 { NameToken.Subtype, NameToken.Type1  },
@@ -42,6 +43,29 @@
                 { NameToken.Encoding, NameToken.MacRomanEncoding },
                 { NameToken.Name, fontKeyName }
             };
+
+            var token = new DictionaryToken(dictionary);
+
+            var result = context.WriteObject(outputStream, token);
+
+            return result;
+        }
+    }
+
+    internal class BuilderContext
+    {
+        public int CurrentNumber { get; private set; } = 1;
+
+        private Dictionary<IndirectReference, long> objectOffsets = new Dictionary<IndirectReference, long>();
+        public IReadOnlyDictionary<IndirectReference, long> ObjectOffsets => objectOffsets;
+
+        public ObjectToken WriteObject(Stream stream, IToken token)
+        {
+            var reference = new IndirectReference(CurrentNumber++, 0);
+            var obj = new ObjectToken(stream.Position, reference, token);
+            objectOffsets.Add(reference, obj.Position);
+            TokenWriter.WriteToken(obj, stream);
+            return obj;
         }
     }
 }

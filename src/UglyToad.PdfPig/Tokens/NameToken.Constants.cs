@@ -214,7 +214,7 @@
         public static readonly NameToken FlateDecodeAbbreviation = new NameToken("Fl");
         public static readonly NameToken Font = new NameToken("Font");
         public static readonly NameToken FontBbox = new NameToken("FontBBox");
-        public static readonly NameToken FontDesc = new NameToken("FontDescriptor");
+        public static readonly NameToken FontDescriptor = new NameToken("FontDescriptor");
         public static readonly NameToken FontFamily = new NameToken("FontFamily");
         public static readonly NameToken FontFile = new NameToken("FontFile");
         public static readonly NameToken FontFile2 = new NameToken("FontFile2");

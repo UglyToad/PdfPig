@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Writer
 {
     using System.Collections.Generic;
+    using System.IO;
     using Geometry;
     using Tokens;
 
@@ -10,6 +11,6 @@
 
         bool TryGetBoundingBox(char character, out PdfRectangle boundingBox);
 
-        IReadOnlyDictionary<IToken, IToken> GetDictionary(NameToken fontKeyName);
+        ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context);
     }
 }

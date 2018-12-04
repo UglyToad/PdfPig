@@ -73,7 +73,7 @@
         {
             descriptorDictionary = null;
 
-            if (!dictionary.TryGet(NameToken.FontDesc, out var baseValue))
+            if (!dictionary.TryGet(NameToken.FontDescriptor, out var baseValue))
             {
                 return false;
             }
