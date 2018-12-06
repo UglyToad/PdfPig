@@ -77,7 +77,7 @@
                 {
                     int characterCode = (i << 8) + (subHeader.FirstCode + j);
 
-                    var p = data.ReadUnsignedShort();
+                    var p = (int)data.ReadUnsignedShort();
 
                     if (p > 0)
                     {

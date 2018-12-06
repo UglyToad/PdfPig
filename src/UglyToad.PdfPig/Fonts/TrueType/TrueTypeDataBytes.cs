@@ -31,11 +31,11 @@
             return unchecked((short)((internalBuffer[0] << 8) + (internalBuffer[1] << 0)));
         }
 
-        public int ReadUnsignedShort()
+        public ushort ReadUnsignedShort()
         {
             ReadBuffered(internalBuffer, 2);
 
-            return (internalBuffer[0] << 8) + (internalBuffer[1] << 0);
+            return (ushort)((internalBuffer[0] << 8) + (internalBuffer[1] << 0));
         }
 
         public int ReadUnsignedByte()
