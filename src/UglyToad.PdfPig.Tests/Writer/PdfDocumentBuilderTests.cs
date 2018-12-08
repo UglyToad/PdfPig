@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Writer
 {
     using System;
+    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using Content;
@@ -16,6 +17,8 @@
         public void CanWriteSingleBlankPage()
         {
             var result = CreateSingleBlankPage();
+
+            WriteFile(nameof(CanWriteSinglePageHelloWorld), result);
 
             Assert.NotEmpty(result);
 
@@ -74,6 +77,8 @@
 
             var b = builder.Build();
 
+            WriteFile(nameof(CanWriteSinglePageStandard14FontHelloWorld), b);
+
             using (var document = PdfDocument.Open(b))
             {
                 var page1 = document.GetPage(1);
@@ -94,11 +99,13 @@
 
             var font = builder.AddTrueTypeFont(File.ReadAllBytes(file));
 
-            page.AddText("Hello World!", 12, new PdfPoint(30, 50), font);
+            var letters = page.AddText("Hello World!", 12, new PdfPoint(30, 50), font);
 
             Assert.NotEmpty(page.Operations);
 
             var b = builder.Build();
+
+            WriteFile(nameof(CanWriteSinglePageHelloWorld), b);
 
             Assert.NotEmpty(b);
 
@@ -112,6 +119,38 @@
 
                 Assert.Equal("H", h.Value);
                 Assert.Equal("Andada-Regular", h.FontName);
+
+                for (int i = 0; i < page1.Letters.Count; i++)
+                {
+                    var readerLetter = page1.Letters[i];
+                    var writerLetter = letters[i];
+
+                    Assert.Equal(readerLetter.Value, writerLetter.Value);
+                    //Assert.Equal(readerLetter.Location, writerLetter.Location);
+                    //Assert.Equal(readerLetter.FontSize, writerLetter.FontSize);
+                    //Assert.Equal(readerLetter.GlyphRectangle.Width, writerLetter.GlyphRectangle.Width);
+                    //Assert.Equal(readerLetter.GlyphRectangle.Height, writerLetter.GlyphRectangle.Height);
+                    //Assert.Equal(readerLetter.GlyphRectangle.BottomLeft, writerLetter.GlyphRectangle.BottomLeft);
+                }
+            }
+        }
+
+        private static void WriteFile(string name, byte[] bytes)
+        {
+            try
+            {
+                if (!Directory.Exists("Builder"))
+                {
+                    Directory.CreateDirectory("Builder");
+                }
+
+                var output = Path.Combine("Builder", $"{name}.pdf");
+
+                File.WriteAllBytes(output, bytes);
+            }
+            catch
+            {
+                // ignored.
             }
         }
     }

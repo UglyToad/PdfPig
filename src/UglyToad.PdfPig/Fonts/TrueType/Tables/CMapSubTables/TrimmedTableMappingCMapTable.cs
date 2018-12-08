@@ -9,21 +9,26 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
     /// </summary>
     internal class TrimmedTableMappingCMapTable : ICMapSubTable
     {
-        private readonly int firstCharacterCode;
         private readonly int entryCount;
         private readonly int[] glyphIndices;
 
-        public int PlatformId { get; }
+        public TrueTypeCMapPlatform PlatformId { get; }
         public int EncodingId { get; }
+
+        public int FirstCharacterCode { get; }
+
+        public int LastCharacterCode { get; }
 
         /// <summary>
         /// Create a new <see cref="TrimmedTableMappingCMapTable"/>.
         /// </summary>
-        public TrimmedTableMappingCMapTable(int platformId, int encodingId, int firstCharacterCode, int entryCount, int[] glyphIndices)
+        public TrimmedTableMappingCMapTable(TrueTypeCMapPlatform platformId, int encodingId, int firstCharacterCode, int entryCount, int[] glyphIndices)
         {
-            this.firstCharacterCode = firstCharacterCode;
+            FirstCharacterCode = firstCharacterCode;
             this.entryCount = entryCount;
             this.glyphIndices = glyphIndices ?? throw new ArgumentNullException(nameof(glyphIndices));
+
+            LastCharacterCode = firstCharacterCode + entryCount - 1;
 
             PlatformId = platformId;
             EncodingId = encodingId;
@@ -31,17 +36,17 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
 
         public int CharacterCodeToGlyphIndex(int characterCode)
         {
-            if (characterCode < firstCharacterCode || characterCode > firstCharacterCode + entryCount)
+            if (characterCode < FirstCharacterCode || characterCode > FirstCharacterCode + entryCount)
             {
                 return 0;
             }
 
-            var offset = characterCode - firstCharacterCode;
+            var offset = characterCode - FirstCharacterCode;
 
             return glyphIndices[offset];
         }
 
-        public static TrimmedTableMappingCMapTable Load(TrueTypeDataBytes data, int platformId, int encodingId)
+        public static TrimmedTableMappingCMapTable Load(TrueTypeDataBytes data, TrueTypeCMapPlatform platformId, int encodingId)
         {
             var length = data.ReadUnsignedShort();
             var language = data.ReadUnsignedShort();

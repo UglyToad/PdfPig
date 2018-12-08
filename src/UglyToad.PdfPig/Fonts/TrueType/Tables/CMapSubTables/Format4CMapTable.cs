@@ -10,9 +10,13 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
     /// </summary>
     internal class Format4CMapTable : ICMapSubTable
     {
-        public int PlatformId { get; }
+        public TrueTypeCMapPlatform PlatformId { get; }
 
         public int EncodingId { get; }
+
+        public int FirstCharacterCode { get; }
+
+        public int LastCharacterCode { get; }
 
         public int Language { get; }
 
@@ -23,13 +27,16 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
         /// <summary>
         /// Create a new <see cref="Format4CMapTable"/>.
         /// </summary>
-        public Format4CMapTable(int platformId, int encodingId, int language, IReadOnlyList<Segment> segments, IReadOnlyList<int> glyphIds)
+        public Format4CMapTable(TrueTypeCMapPlatform platformId, int encodingId, int language, IReadOnlyList<Segment> segments, IReadOnlyList<int> glyphIds)
         {
             PlatformId = platformId;
             EncodingId = encodingId;
             Language = language;
             Segments = segments ?? throw new ArgumentNullException(nameof(segments));
             GlyphIds = glyphIds ?? throw new ArgumentNullException(nameof(glyphIds));
+
+            FirstCharacterCode = Segments[0].StartCode;
+            LastCharacterCode = Segments[Segments.Count - 2].EndCode;
         }
 
         public int CharacterCodeToGlyphIndex(int characterCode)
@@ -56,7 +63,7 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
             return 0;
         }
 
-        public static Format4CMapTable Load(TrueTypeDataBytes data, int platformId, int encodingId)
+        public static Format4CMapTable Load(TrueTypeDataBytes data, TrueTypeCMapPlatform platformId, int encodingId)
         {
             // Length in bytes.
             var length = data.ReadUnsignedShort();

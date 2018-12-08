@@ -13,6 +13,8 @@
 
         public bool HasWidths { get; } = false;
 
+        public string Name => metrics.FontName;
+
         public Standard14WritingFont(FontMetrics metrics)
         {
             this.metrics = metrics;
@@ -29,6 +31,19 @@
 
             boundingBox = new PdfRectangle(characterMetric.BoundingBox.Left, characterMetric.BoundingBox.Bottom,
                 characterMetric.BoundingBox.Left + characterMetric.WidthX, characterMetric.BoundingBox.Top);
+
+            return true;
+        }
+
+        public bool TryGetAdvanceWidth(char character, out decimal width)
+        {
+            width = 0;
+            if (!TryGetBoundingBox(character, out var bbox))
+            {
+                return false;
+            }
+
+            width = bbox.Width;
 
             return true;
         }

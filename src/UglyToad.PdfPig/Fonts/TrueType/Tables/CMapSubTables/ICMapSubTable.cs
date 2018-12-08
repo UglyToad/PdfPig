@@ -10,18 +10,16 @@
         /// <summary>
         /// The platform identifier.
         /// </summary>
-        /// <remarks>
-        /// 0: Unicode
-        /// 1: Macintosh
-        /// 2: Reserved
-        /// 3: Microsoft
-        /// </remarks>
-        int PlatformId { get; }
+        TrueTypeCMapPlatform PlatformId { get; }
 
         /// <summary>
         /// Platform specific encoding indentifier.
         /// </summary>
         int EncodingId { get; }
+
+        int FirstCharacterCode { get; }
+
+        int LastCharacterCode { get; }
 
         /// <summary>
         /// Maps from a character code to the array index of the glyph in the font data.
@@ -29,5 +27,28 @@
         /// <param name="characterCode">The character code.</param>
         /// <returns>The index of the glyph information for this character.</returns>
         int CharacterCodeToGlyphIndex(int characterCode);
+    }
+
+    /// <summary>
+    /// The platform identifier for a CMap table.
+    /// </summary>
+    internal enum TrueTypeCMapPlatform
+    {
+        /// <summary>
+        /// Unicode.
+        /// </summary>
+        Unicode = 0,
+        /// <summary>
+        /// Apple Macintosh.
+        /// </summary>
+        Macintosh = 1,
+        /// <summary>
+        /// Unused.
+        /// </summary>
+        Reserved2 = 2,
+        /// <summary>
+        /// Microsoft Windows.
+        /// </summary>
+        Windows = 3
     }
 }

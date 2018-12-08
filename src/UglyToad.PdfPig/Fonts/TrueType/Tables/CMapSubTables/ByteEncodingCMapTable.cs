@@ -9,18 +9,22 @@
         private const int GlyphMappingLength = 256;
         private readonly byte[] glyphMapping;
 
-        public int PlatformId { get; }
+        public TrueTypeCMapPlatform PlatformId { get; }
 
         public int EncodingId { get; }
 
-        private ByteEncodingCMapTable(int platformId, int encodingId, byte[] glyphMapping)
+        public int FirstCharacterCode { get; }
+
+        public int LastCharacterCode { get; }
+
+        private ByteEncodingCMapTable(TrueTypeCMapPlatform platformId, int encodingId, byte[] glyphMapping)
         {
             this.glyphMapping = glyphMapping;
             PlatformId = platformId;
             EncodingId = encodingId;
         }
 
-        public static ByteEncodingCMapTable Load(TrueTypeDataBytes data, int platformId, int encodingId)
+        public static ByteEncodingCMapTable Load(TrueTypeDataBytes data, TrueTypeCMapPlatform platformId, int encodingId)
         {
             // ReSharper disable UnusedVariable
             var length = data.ReadUnsignedShort();

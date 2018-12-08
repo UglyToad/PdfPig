@@ -130,22 +130,14 @@
             // cmap
             if (tables.TryGetValue(TrueTypeHeaderTable.Cmap, out var cmap))
             {
-                tableRegister.CMapTable = CMapTable.Load(data, cmap, tableRegister);
+                tableRegister.CMapTable = TableParser.Parse<CMapTable>(cmap, data, tableRegister);
             }
 
             // hmtx
             if (tables.TryGetValue(TrueTypeHeaderTable.Hmtx, out var hmtxHeaderTable))
             {
-                tableRegister.HorizontalMetricsTable = HorizontalMetricsTable.Load(data, hmtxHeaderTable, tableRegister);
+                tableRegister.HorizontalMetricsTable = TableParser.Parse<HorizontalMetricsTable>(hmtxHeaderTable, data, tableRegister);
             }
-
-            // name
-            if (tables.TryGetValue(TrueTypeHeaderTable.Name, out var nameHeaderTable))
-            {
-                // TODO: Not important
-            }
-
-            // os2
 
             // kern
             if (tables.TryGetValue(TrueTypeHeaderTable.Kern, out var kernHeaderTable))
