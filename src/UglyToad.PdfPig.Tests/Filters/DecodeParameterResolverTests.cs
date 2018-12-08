@@ -21,7 +21,7 @@
         [Fact]
         public void NegativeIndex_Throws()
         {
-            Action action = () => resolver.GetFilterParameters(new DictionaryToken(new Dictionary<IToken, IToken>()), -1);
+            Action action = () => resolver.GetFilterParameters(new DictionaryToken(new Dictionary<NameToken, IToken>()), -1);
 
             Assert.Throws<ArgumentOutOfRangeException>(action);
         }
@@ -29,7 +29,7 @@
         [Fact]
         public void EmptyDictionary_ReturnsEmptyDictionary()
         {
-            var result = resolver.GetFilterParameters(new DictionaryToken(new Dictionary<IToken, IToken>()), 0);
+            var result = resolver.GetFilterParameters(new DictionaryToken(new Dictionary<NameToken, IToken>()), 0);
 
             Assert.Empty(result.Data);
         }

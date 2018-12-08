@@ -73,14 +73,60 @@
 
             if (version == 0)
             {
-                return null;
+                return new Os2RevisedVersion0Table(header, version, xAvgCharWidth,
+                    weightClass, widthClass, typeFlags, ySubscriptXSize,
+                    ySubscriptYSize,
+                    ySubscriptXOffset,
+                    ySubscriptYOffset,
+                    ySuperscriptXSize,
+                    ySuperscriptYSize,
+                    ySuperscriptXOffset,
+                    ySuperscriptYOffset,
+                    yStrikeoutSize,
+                    yStrikeoutPosition,
+                    familyClass,
+                    panose,
+                    unicodeCharRange,
+                    Encoding.Unicode.GetString(vendorId),
+                    selectionFlags,
+                    firstCharacterIndex,
+                    lastCharacterIndex,
+                    sTypoAscender, 
+                    sTypoDescender,
+                    sTypoLineGap,
+                    usWinAscent,
+                    usWinDescent);
             }
 
-            var ulCodePageRange1 = data.ReadUnsignedInt();
-            var ulCodePageRange2 = data.ReadUnsignedInt();
+            var ulCodePageRange1 = (uint)data.ReadUnsignedInt();
+            var ulCodePageRange2 = (uint)data.ReadUnsignedInt();
             if (version == 1)
             {
-                return null;
+                return new Os2Version1Table(header, version, xAvgCharWidth,
+                    weightClass, widthClass, typeFlags, ySubscriptXSize,
+                    ySubscriptYSize,
+                    ySubscriptXOffset,
+                    ySubscriptYOffset,
+                    ySuperscriptXSize,
+                    ySuperscriptYSize,
+                    ySuperscriptXOffset,
+                    ySuperscriptYOffset,
+                    yStrikeoutSize,
+                    yStrikeoutPosition,
+                    familyClass,
+                    panose,
+                    unicodeCharRange,
+                    Encoding.Unicode.GetString(vendorId),
+                    selectionFlags,
+                    firstCharacterIndex,
+                    lastCharacterIndex,
+                    sTypoAscender,
+                    sTypoDescender,
+                    sTypoLineGap,
+                    usWinAscent,
+                    usWinDescent,
+                    ulCodePageRange1,
+                    ulCodePageRange2);
             }
 
             var sxHeight = data.ReadSignedShort();
@@ -91,14 +137,73 @@
 
             if (version < 5)
             {
-                return null;
+                return new Os2Version2To4OpenTypeTable(header, version, xAvgCharWidth,
+                    weightClass, widthClass, typeFlags, ySubscriptXSize,
+                    ySubscriptYSize,
+                    ySubscriptXOffset,
+                    ySubscriptYOffset,
+                    ySuperscriptXSize,
+                    ySuperscriptYSize,
+                    ySuperscriptXOffset,
+                    ySuperscriptYOffset,
+                    yStrikeoutSize,
+                    yStrikeoutPosition,
+                    familyClass,
+                    panose,
+                    unicodeCharRange,
+                    Encoding.Unicode.GetString(vendorId),
+                    selectionFlags,
+                    firstCharacterIndex,
+                    lastCharacterIndex,
+                    sTypoAscender,
+                    sTypoDescender,
+                    sTypoLineGap,
+                    usWinAscent,
+                    usWinDescent,
+                    ulCodePageRange1,
+                    ulCodePageRange2,
+                    sxHeight,
+                    sCapHeight,
+                    usDefaultChar,
+                    usBreakChar,
+                    usMaxContext);
             }
 
             var usLowerOpticalPointSize = data.ReadUnsignedShort();
             var usUpperOpticalPointSize = data.ReadUnsignedShort();
-
-
-            return null;
+            
+            return new Os2Version5OpenTypeTable(header, version, xAvgCharWidth,
+                weightClass, widthClass, typeFlags, ySubscriptXSize,
+                ySubscriptYSize,
+                ySubscriptXOffset,
+                ySubscriptYOffset,
+                ySuperscriptXSize,
+                ySuperscriptYSize,
+                ySuperscriptXOffset,
+                ySuperscriptYOffset,
+                yStrikeoutSize,
+                yStrikeoutPosition,
+                familyClass,
+                panose,
+                unicodeCharRange,
+                Encoding.Unicode.GetString(vendorId),
+                selectionFlags,
+                firstCharacterIndex,
+                lastCharacterIndex,
+                sTypoAscender,
+                sTypoDescender,
+                sTypoLineGap,
+                usWinAscent,
+                usWinDescent,
+                ulCodePageRange1,
+                ulCodePageRange2,
+                sxHeight,
+                sCapHeight,
+                usDefaultChar,
+                usBreakChar,
+                usMaxContext,
+                usLowerOpticalPointSize,
+                usUpperOpticalPointSize);
         }
     }
 }

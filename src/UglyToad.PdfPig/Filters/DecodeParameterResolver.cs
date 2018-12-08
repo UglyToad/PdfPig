@@ -55,7 +55,7 @@
                     break;
             }
 
-            return new DictionaryToken(new Dictionary<IToken, IToken>());
+            return new DictionaryToken(new Dictionary<NameToken, IToken>());
         }
 
         private static IToken GetDictionaryObject(DictionaryToken dictionary, NameToken first, NameToken second)

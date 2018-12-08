@@ -26,5 +26,10 @@
             Offset = offset;
             Value = value;
         }
+
+        public override string ToString()
+        {
+            return $"({PlatformId}, {NameId}) - {Value}";
+        }
     }
 }

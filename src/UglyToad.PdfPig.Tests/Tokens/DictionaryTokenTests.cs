@@ -20,7 +20,7 @@ namespace UglyToad.PdfPig.Tests.Tokens
         [Fact]
         public void EmptyDictionaryValid()
         {
-            var dictionary = new DictionaryToken(new Dictionary<IToken, IToken>());
+            var dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>());
 
             Assert.Empty(dictionary.Data);
         }
@@ -28,7 +28,7 @@ namespace UglyToad.PdfPig.Tests.Tokens
         [Fact]
         public void TryGetByName_EmptyDictionary()
         {
-            var dictionary = new DictionaryToken(new Dictionary<IToken, IToken>());
+            var dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>());
 
             var result = dictionary.TryGet(NameToken.ActualText, out var token);
 
@@ -39,7 +39,7 @@ namespace UglyToad.PdfPig.Tests.Tokens
         [Fact]
         public void TryGetByName_NullName_Throws()
         {
-            var dictionary = new DictionaryToken(new Dictionary<IToken, IToken>());
+            var dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>());
 
             Action action = () => dictionary.TryGet(null, out var _);
 
@@ -49,7 +49,7 @@ namespace UglyToad.PdfPig.Tests.Tokens
         [Fact]
         public void TryGetByName_NonEmptyDictionaryNotContainingKey()
         {
-            var dictionary = new DictionaryToken(new Dictionary<IToken, IToken>
+            var dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
             {
                 { NameToken.Create("Registry"), new StringToken("None") }
             });
@@ -63,7 +63,7 @@ namespace UglyToad.PdfPig.Tests.Tokens
         [Fact]
         public void TryGetByName_ContainingKey()
         {
-            var dictionary = new DictionaryToken(new Dictionary<IToken, IToken>
+            var dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
             {
                 { NameToken.Create("Fish"), new NumericToken(420) },
                 { NameToken.Create("Registry"), new StringToken("None") }
@@ -74,22 +74,11 @@ namespace UglyToad.PdfPig.Tests.Tokens
             Assert.True(result);
             Assert.Equal("None", Assert.IsType<StringToken>(token).Data);
         }
-
-        [Fact]
-        public void CreateWithNonNameTokensThrows()
-        {
-            Action action = () => new DictionaryToken(new Dictionary<IToken, IToken>
-            {
-                { new NumericToken(7), NameToken.N }
-            });
-
-            Assert.Throws<PdfDocumentFormatException>(action);
-        }
-
+        
         [Fact]
         public void GetWithObjectNotOfTypeOrReferenceThrows()
         {
-            var dictionary = new DictionaryToken(new Dictionary<IToken, IToken>
+            var dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
             {
                 { NameToken.Count, new StringToken("twelve") }
             });
@@ -102,7 +91,7 @@ namespace UglyToad.PdfPig.Tests.Tokens
         [Fact]
         public void WithCorrectlyAddsKey()
         {
-            var dictionary = new DictionaryToken(new Dictionary<IToken, IToken>
+            var dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
             {
                 { NameToken.Count, new StringToken("12") }
             });

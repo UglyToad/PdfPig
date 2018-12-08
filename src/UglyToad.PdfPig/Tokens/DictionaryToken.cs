@@ -24,26 +24,18 @@
         /// Create a new <see cref="DictionaryToken"/>.
         /// </summary>
         /// <param name="data">The data this dictionary will contain.</param>
-        public DictionaryToken([NotNull]IReadOnlyDictionary<IToken, IToken> data)
+        public DictionaryToken([NotNull]IReadOnlyDictionary<NameToken, IToken> data)
         {
             if (data == null)
             {
                 throw new ArgumentNullException(nameof(data));
             }
-            
+
             var result = new Dictionary<string, IToken>(data.Count);
 
             foreach (var keyValuePair in data)
             {
-                if (keyValuePair.Key is NameToken name)
-                {
-                    result[name.Data] = keyValuePair.Value;
-                }
-                else
-                {
-                    // For now:
-                    throw new PdfDocumentFormatException($"Key for dictionary token was not a name! {keyValuePair.Key}");
-                }
+                result[keyValuePair.Key.Data] = keyValuePair.Value;
             }
 
             Data = result;
@@ -68,7 +60,7 @@
 
             return typedToken;
         }
-        
+
         /// <summary>
         /// Try and get the entry with a given name.
         /// </summary>

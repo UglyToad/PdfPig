@@ -101,6 +101,18 @@
             var b = builder.Build();
 
             Assert.NotEmpty(b);
+
+            using (var document = PdfDocument.Open(b))
+            {
+                var page1 = document.GetPage(1);
+
+                Assert.Equal("Hello World!", page1.Text);
+
+                var h = page1.Letters[0];
+
+                Assert.Equal("H", h.Value);
+                Assert.Equal("Andada-Regular", h.FontName);
+            }
         }
     }
 }

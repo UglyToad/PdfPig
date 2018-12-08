@@ -88,13 +88,13 @@
 
             var streamBytes = BytesBetween(streamPosition.end + 1, endStreamPosition.start - 1, bytes);
 
-            var paramsDict = new DictionaryToken(new Dictionary<IToken, IToken>
+            var paramsDict = new DictionaryToken(new Dictionary<NameToken, IToken>
             {
                 { NameToken.Predictor, new NumericToken(12) },
                 { NameToken.Columns, new NumericToken(4) }
             });
 
-            var dictionary = new DictionaryToken(new Dictionary<IToken, IToken>
+            var dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
             {
                 {NameToken.Filter, NameToken.FlateDecode},
                 {NameToken.DecodeParms, paramsDict}
@@ -162,7 +162,7 @@
             return result.ToArray();
         }
 
-        private static string GetNthFilename(int n = 0)
+        private static string GetNthFilename()
         {
             var documentFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Integration", "Documents"));
 

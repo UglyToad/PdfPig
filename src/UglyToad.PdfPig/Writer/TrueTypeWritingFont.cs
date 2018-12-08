@@ -2,8 +2,11 @@
 {
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using Fonts;
+    using Fonts.Exceptions;
     using Fonts.TrueType;
+    using Fonts.TrueType.Tables;
     using Geometry;
     using Tokens;
 
@@ -28,14 +31,14 @@
         public ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context)
         {
             var bytes = fontFileBytes;
-            var embeddedFile = new StreamToken(new DictionaryToken(new Dictionary<IToken, IToken>
+            var embeddedFile = new StreamToken(new DictionaryToken(new Dictionary<NameToken, IToken>
             {
                 { NameToken.Length, new NumericToken(bytes.Count) }
             }), bytes);
 
             var fileRef = context.WriteObject(outputStream, embeddedFile);
 
-            var baseFont = NameToken.Create(font.TableRegister.NameTable.FontName);
+            var baseFont = NameToken.Create(font.TableRegister.NameTable.GetPostscriptName());
 
             var postscript = font.TableRegister.PostScriptTable;
             var hhead = font.TableRegister.HorizontalHeaderTable;
@@ -60,11 +63,36 @@
                 { NameToken.FontFile2, new IndirectReferenceToken(fileRef.Number) }
             };
 
-            var dictionary = new Dictionary<IToken, IToken>
+            var os2 = font.TableRegister.Os2Table;
+            if (os2 == null)
+            {
+                throw new InvalidFontFormatException("Embedding TrueType font requires OS/2 table.");
+            }
+            
+            if (os2 is Os2Version2To4OpenTypeTable twoPlus)
+            {
+                descriptorDictionary[NameToken.CapHeight] = new NumericToken(twoPlus.CapHeight);
+                descriptorDictionary[NameToken.Xheight] = new NumericToken(twoPlus.XHeight);
+            }
+
+            descriptorDictionary[NameToken.StemV] = new NumericToken(bbox.Width * scaling * 0.13m);
+
+            var widths = font.TableRegister.GlyphTable.Glyphs.Select(x => new NumericToken(x.Bounds.Width)).ToArray();
+
+            var widthsRef = context.WriteObject(outputStream, new ArrayToken(widths));
+
+            var descriptor = context.WriteObject(outputStream, new DictionaryToken(descriptorDictionary));
+
+            var dictionary = new Dictionary<NameToken, IToken>
             {
                 { NameToken.Type, NameToken.Font },
                 { NameToken.Subtype, NameToken.TrueType },
                 { NameToken.BaseFont, baseFont },
+                { NameToken.FontDescriptor, new IndirectReferenceToken(descriptor.Number) },
+                { NameToken.FirstChar, new NumericToken(0) },
+                { NameToken.LastChar, new NumericToken(font.TableRegister.GlyphTable.Glyphs.Count - 1) },
+                { NameToken.Widths, new IndirectReferenceToken(widthsRef.Number) },
+                { NameToken.Encoding, NameToken.WinAnsiEncoding }
             };
 
             var token = new DictionaryToken(dictionary);

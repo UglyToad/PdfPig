@@ -113,14 +113,14 @@
                     fontsWritten.Add(font.Key, fontObj);
                 }
 
-                var resources = new Dictionary<IToken, IToken>
+                var resources = new Dictionary<NameToken, IToken>
                 {
                     { NameToken.ProcSet, new ArrayToken(new []{ NameToken.Create("PDF"), NameToken.Create("Text") }) }
                 };
 
                 if (fontsWritten.Count > 0)
                 {
-                    var fontsDictionary = new DictionaryToken(fontsWritten.Select(x => ((IToken)fonts[x.Key].FontKey.Name, (IToken)new IndirectReferenceToken(x.Value.Number)))
+                    var fontsDictionary = new DictionaryToken(fontsWritten.Select(x => (fonts[x.Key].FontKey.Name, (IToken)new IndirectReferenceToken(x.Value.Number)))
                         .ToDictionary(x => x.Item1, x => x.Item2));
 
                     var fontsDictionaryRef = context.WriteObject(memory, fontsDictionary);
@@ -131,7 +131,7 @@
                 var pageReferences = new List<IndirectReferenceToken>();
                 foreach (var page in pages)
                 {
-                    var pageDictionary = new Dictionary<IToken, IToken>
+                    var pageDictionary = new Dictionary<NameToken, IToken>
                     {
                         {NameToken.Type, NameToken.Page},
                         {
@@ -155,7 +155,7 @@
                     pageReferences.Add(new IndirectReferenceToken(pageRef.Number));
                 }
 
-                var pagesDictionary = new DictionaryToken(new Dictionary<IToken, IToken>
+                var pagesDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
                 {
                     { NameToken.Type, NameToken.Pages },
                     { NameToken.Kids, new ArrayToken(pageReferences) },
@@ -164,7 +164,7 @@
 
                 var pagesRef = context.WriteObject(memory, pagesDictionary);
 
-                var catalog = new DictionaryToken(new Dictionary<IToken, IToken>
+                var catalog = new DictionaryToken(new Dictionary<NameToken, IToken>
                 {
                     { NameToken.Type, NameToken.Catalog },
                     { NameToken.Pages, new IndirectReferenceToken(pagesRef.Number) }
@@ -189,7 +189,7 @@
 
                 var bytes = memoryStream.ToArray();
 
-                var streamDictionary = new Dictionary<IToken, IToken>
+                var streamDictionary = new Dictionary<NameToken, IToken>
                 {
                     { NameToken.Length, new NumericToken(bytes.Length) }
                 };

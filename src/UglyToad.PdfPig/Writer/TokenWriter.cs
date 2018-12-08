@@ -150,7 +150,7 @@
             outputStream.Write(Trailer, 0, Trailer.Length);
             WriteLineBreak(outputStream);
 
-            var trailerDictionary = new DictionaryToken(new Dictionary<IToken, IToken>
+            var trailerDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
             {
                 {NameToken.Size, new NumericToken(objectOffsets.Count) },
                 {NameToken.Root, new IndirectReferenceToken(catalogToken.Number) }

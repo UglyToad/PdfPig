@@ -237,7 +237,7 @@
         {
             IToken previousToken = null;
 
-            var dictionary = new Dictionary<IToken, IToken>();
+            var dictionary = new Dictionary<NameToken, IToken>();
 
             // Skip the operators "dup" etc to reach "begin".
             while (scanner.MoveNext() && (!(scanner.CurrentToken is OperatorToken operatorToken) || operatorToken.Data != "begin"))

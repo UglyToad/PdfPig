@@ -9,7 +9,7 @@
 
     public class AsciiHexDecodeFilterTests
     {
-        private readonly DictionaryToken dictionary = new DictionaryToken(new Dictionary<IToken, IToken>());
+        private readonly DictionaryToken dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>());
 
         [Fact]
         public void DecodesEncodedTextProperly()

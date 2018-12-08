@@ -3,8 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using ContentStream;
-    using Cos;
     using Logging;
     using Tokens;
 
@@ -32,7 +30,7 @@
         public CrossReferenceTable Build(long firstCrossReferenceOffset, ILog log)
         {
             CrossReferenceType type = CrossReferenceType.Table;
-            DictionaryToken trailerDictionary = new DictionaryToken(new Dictionary<IToken, IToken>());
+            DictionaryToken trailerDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>());
             Dictionary<IndirectReference, long> objectOffsets = new Dictionary<IndirectReference, long>();
 
             List<long> xrefSeqBytePos = new List<long>();

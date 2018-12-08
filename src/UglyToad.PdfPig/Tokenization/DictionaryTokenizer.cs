@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tokenization
 {
     using System.Collections.Generic;
-    using ContentStream;
+    using Exceptions;
     using IO;
     using Parser.Parts;
     using Scanner;
@@ -58,19 +58,24 @@
             return true;
         }
 
-        private static Dictionary<IToken, IToken> ConvertToDictionary(IReadOnlyList<IToken> tokens)
+        private static Dictionary<NameToken, IToken> ConvertToDictionary(IReadOnlyList<IToken> tokens)
         {
-            var result = new Dictionary<IToken, IToken>();
+            var result = new Dictionary<NameToken, IToken>();
 
-            IToken key = null;
+            NameToken key = null;
             for (var i = 0; i < tokens.Count; i++)
             {
                 var token = tokens[i];
 
                 if (key == null)
                 {
-                    key = token;
-                    continue;
+                    if (token is NameToken name)
+                    {
+                        key = name;
+                        continue;
+                    }
+
+                    throw new PdfDocumentFormatException($"Expected name as dictionary key, instead got: " + token);
                 }
 
                 // Combine indirect references, e.g. 12 0 R

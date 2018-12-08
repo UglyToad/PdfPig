@@ -35,7 +35,7 @@
 
         public ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context)
         {
-            var dictionary = new Dictionary<IToken, IToken>
+            var dictionary = new Dictionary<NameToken, IToken>
             {
                 { NameToken.Type, NameToken.Font },
                 { NameToken.Subtype, NameToken.Type1  },

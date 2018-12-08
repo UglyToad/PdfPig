@@ -11,7 +11,7 @@
     {
         private readonly Ascii85Filter filter = new Ascii85Filter();
 
-        private readonly DictionaryToken dictionary = new DictionaryToken(new Dictionary<IToken, IToken>());
+        private readonly DictionaryToken dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>());
 
         [Fact]
         public void DecodesWikipediaExample()

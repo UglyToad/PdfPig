@@ -10,12 +10,12 @@
         /// <summary>
         /// This field is used to specify the code pages encompassed by the font file in the 'cmap' subtable for the Microsoft platform(3), Unicode BMP encoding (1). 
         /// </summary>
-        public byte CodePage1 { get; }
+        public uint CodePage1 { get; }
 
         /// <summary>
         /// This field is the second byte used to specify the code pages encompassed by the font file in the 'cmap' subtable for the Microsoft platform(3), Unicode BMP encoding (1). 
         /// </summary>
-        public byte CodePage2 { get; }
+        public uint CodePage2 { get; }
 
         public Os2Version1Table(TrueTypeHeaderTable directoryTable, ushort version, short xAverageCharacterWidth, ushort weightClass, ushort widthClass, 
             ushort typeFlags, 
@@ -41,8 +41,8 @@
             short typographicLineGap, 
             ushort windowsAscent, 
             ushort windowsDescent,
-            byte codePage1, 
-            byte codePage2) : base(directoryTable, version, xAverageCharacterWidth, weightClass, widthClass, 
+            uint codePage1,
+            uint codePage2) : base(directoryTable, version, xAverageCharacterWidth, weightClass, widthClass, 
             typeFlags, ySubscriptXSize, ySubscriptYSize, ySubscriptXOffset, ySubscriptYOffset, ySuperscriptXSize, 
             ySuperscriptYSize, ySuperscriptXOffset, ySuperscriptYOffset, yStrikeoutSize, yStrikeoutPosition, 
             familyClass, panose, unicodeRanges, vendorId, fontSelectionFlags, firstCharacterIndex, lastCharacterIndex,

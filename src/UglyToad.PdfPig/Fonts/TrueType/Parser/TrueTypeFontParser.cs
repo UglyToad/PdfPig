@@ -92,7 +92,7 @@
 
             if (tables.TryGetValue(TrueTypeHeaderTable.Name, out var nameTable))
             {
-                builder.NameTable = NameTable.Load(data, nameTable);
+                builder.NameTable = TableParser.Parse<NameTable>(nameTable, data, builder);
             }
 
             if (tables.TryGetValue(TrueTypeHeaderTable.Os2, out var os2Table))
