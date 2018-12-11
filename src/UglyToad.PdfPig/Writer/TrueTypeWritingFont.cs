@@ -5,10 +5,10 @@
     using System.IO;
     using System.Linq;
     using Fonts;
+    using Fonts.Encodings;
     using Fonts.Exceptions;
     using Fonts.TrueType;
     using Fonts.TrueType.Tables;
-    using Fonts.TrueType.Tables.CMapSubTables;
     using Geometry;
     using Tokens;
 
@@ -125,77 +125,63 @@
         private class CharacterCodeToGlyphIdMapper
         {
             private readonly TrueTypeFontProgram font;
-            private readonly ICMapSubTable cmapSubTable;
 
             public CharacterCodeToGlyphIdMapper(TrueTypeFontProgram font)
             {
-                var microsoftUnicode = font.TableRegister.CMapTable.SubTables.FirstOrDefault(x => x.PlatformId == TrueTypeCMapPlatform.Windows && x.EncodingId == 1);
-                cmapSubTable = microsoftUnicode ?? font.TableRegister.CMapTable.SubTables.FirstOrDefault(x => x.PlatformId == TrueTypeCMapPlatform.Macintosh && x.EncodingId == 0);
                 this.font = font ?? throw new ArgumentNullException(nameof(font));
             }
 
             public FontDictionaryMetrics GetMetrics()
             {
-                var widths = font.TableRegister.HorizontalMetricsTable.AdvancedWidths;
+                var encoding = ReadFontEncoding();
+                var firstCharacter = encoding.CodeToNameMap.Keys.Min();
+                var lastCharacter = encoding.CodeToNameMap.Keys.Max();
 
-                var lastCharacter = 0;
-                var fullWidths = new List<NumericToken>();
-                switch (cmapSubTable)
+                var glyphList = GlyphList.AdobeGlyphList;
+
+                var length = lastCharacter - firstCharacter + 1;
+                var widths = Enumerable.Range(0, length).Select(x => new NumericToken(0)).ToList();
+
+                foreach (var pair in encoding.CodeToNameMap)
                 {
-                    case Format4CMapTable format4:
+                    var unicode = glyphList.NameToUnicode(pair.Value);
+                    if (unicode == null)
                     {
-                        var firstCharacter = format4.Segments[0].StartCode;
-                        var gid = format4.CharacterCodeToGlyphIndex(firstCharacter);
-                        // Include unmapped character codes except for .notdef
-                        firstCharacter -= gid - 1;
-
-                        var widthIndex = 0;
-                        var lastSegment = default(Format4CMapTable.Segment?);
-
-                        for (var i = 0; i < format4.Segments.Count; i++)
-                        {
-                            var segment = format4.Segments[i];
-
-                            if (segment.StartCode + segment.IdDelta >= 0xFFF)
-                            {
-                                break;
-                            }
-
-                            if (lastSegment.HasValue)
-                            {
-                                var endGlyph = lastSegment.Value.EndCode + lastSegment.Value.IdDelta;
-                                var startGlyph = segment.StartCode + segment.IdDelta;
-                                var gap = startGlyph - endGlyph - 1;
-                                for (int j = 0; j < gap; j++)
-                                {
-                                    fullWidths.Add(new NumericToken(0));
-                                }
-                            }
-
-                            lastCharacter = segment.EndCode;
-
-                            for (int j = 0; j < (segment.EndCode - segment.StartCode); j++)
-                            {
-                                var width = widths[widthIndex];
-                                fullWidths.Add(new NumericToken(width));
-
-                                widthIndex++;
-                            }
-
-                            lastSegment = segment;
-                        }
-
-                        return new FontDictionaryMetrics
-                        {
-                            Widths = new ArrayToken(fullWidths),
-                            FirstChar = new NumericToken(firstCharacter),
-                            LastChar = new NumericToken(lastCharacter)
-                        };
+                        continue;
                     }
-                    case ByteEncodingCMapTable bytes:
-                    default:
-                        throw new NotSupportedException($"No dictionary mapping for format yet: {cmapSubTable.GetType().Name}.");
+
+                    var characterCode = (int) unicode[0];
+                    if (!font.TryGetBoundingAdvancedWidth(characterCode, out var width))
+                    {
+                        throw new InvalidFontFormatException();
+                    }
+
+                    widths[pair.Key - firstCharacter] = new NumericToken(width);
                 }
+
+                return new FontDictionaryMetrics
+                {
+                    FirstChar = new NumericToken(firstCharacter),
+                    LastChar = new NumericToken(lastCharacter),
+                    Widths = new ArrayToken(widths)
+                };
+            }
+
+            private Encoding ReadFontEncoding()
+            {
+                var codeToName = new Dictionary<int, string>();
+                var postscript = font.TableRegister.PostScriptTable;
+                for (int i = 0; i <= 256; i++)
+                {
+                    if (!font.TableRegister.CMapTable.TryGetGlyphIndex(i, out var glyphIndex))
+                    {
+                        continue;
+                    }
+
+                    codeToName[i] = postscript.GlyphNames[glyphIndex];
+                }
+
+                return new BuiltInEncoding(codeToName);
             }
         }
 

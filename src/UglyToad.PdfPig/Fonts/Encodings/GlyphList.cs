@@ -117,7 +117,7 @@
             }
             else
             {
-                throw new InvalidFontFormatException($"Could not find the unicode glyph for the name {name}.");
+                return null;
             }
 
             oddNameToUnicodeCache[name] = unicode;

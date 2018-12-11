@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Writer
 {
     using System;
-    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using Content;
@@ -126,11 +125,11 @@
                     var writerLetter = letters[i];
 
                     Assert.Equal(readerLetter.Value, writerLetter.Value);
-                    //Assert.Equal(readerLetter.Location, writerLetter.Location);
-                    //Assert.Equal(readerLetter.FontSize, writerLetter.FontSize);
-                    //Assert.Equal(readerLetter.GlyphRectangle.Width, writerLetter.GlyphRectangle.Width);
-                    //Assert.Equal(readerLetter.GlyphRectangle.Height, writerLetter.GlyphRectangle.Height);
-                    //Assert.Equal(readerLetter.GlyphRectangle.BottomLeft, writerLetter.GlyphRectangle.BottomLeft);
+                    Assert.Equal(readerLetter.Location, writerLetter.Location);
+                    Assert.Equal(readerLetter.FontSize, writerLetter.FontSize);
+                    Assert.Equal(readerLetter.GlyphRectangle.Width, writerLetter.GlyphRectangle.Width);
+                    Assert.Equal(readerLetter.GlyphRectangle.Height, writerLetter.GlyphRectangle.Height);
+                    Assert.Equal(readerLetter.GlyphRectangle.BottomLeft, writerLetter.GlyphRectangle.BottomLeft);
                 }
             }
         }
