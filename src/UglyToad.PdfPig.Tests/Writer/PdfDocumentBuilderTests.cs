@@ -134,6 +134,69 @@
             }
         }
 
+        [Fact]
+        public void WindowsOnlyCanWriteSinglePageHelloWorldSystemFont()
+        {
+            var builder = new PdfDocumentBuilder();
+
+            var page = builder.AddPage(PageSize.A4);
+
+            var file = @"C:\Windows\Fonts\BASKVILL.TTF";
+
+            if (!File.Exists(file))
+            {
+                return;
+            }
+
+            byte[] bytes;
+            try
+            {
+                bytes = File.ReadAllBytes(file);
+            }
+            catch
+            {
+                return;
+            }
+
+            var font = builder.AddTrueTypeFont(bytes);
+
+            var letters = page.AddText("Hello World!", 16, new PdfPoint(30, 520), font);
+            page.AddText("This is some further text continuing to write", 12, new PdfPoint(30, 500), font);
+
+            Assert.NotEmpty(page.Operations);
+
+            var b = builder.Build();
+
+            WriteFile(nameof(WindowsOnlyCanWriteSinglePageHelloWorldSystemFont), b);
+
+            Assert.NotEmpty(b);
+
+            using (var document = PdfDocument.Open(b))
+            {
+                var page1 = document.GetPage(1);
+
+                Assert.StartsWith("Hello World!", page1.Text);
+
+                var h = page1.Letters[0];
+
+                Assert.Equal("H", h.Value);
+                Assert.Equal("BaskOldFace", h.FontName);
+
+                for (int i = 0; i < letters.Count; i++)
+                {
+                    var readerLetter = page1.Letters[i];
+                    var writerLetter = letters[i];
+
+                    Assert.Equal(readerLetter.Value, writerLetter.Value);
+                    Assert.Equal(readerLetter.Location, writerLetter.Location);
+                    Assert.Equal(readerLetter.FontSize, writerLetter.FontSize);
+                    Assert.Equal(readerLetter.GlyphRectangle.Width, writerLetter.GlyphRectangle.Width);
+                    Assert.Equal(readerLetter.GlyphRectangle.Height, writerLetter.GlyphRectangle.Height);
+                    Assert.Equal(readerLetter.GlyphRectangle.BottomLeft, writerLetter.GlyphRectangle.BottomLeft);
+                }
+            }
+        }
+
         private static void WriteFile(string name, byte[] bytes)
         {
             try

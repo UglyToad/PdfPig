@@ -51,20 +51,14 @@
                 throw new ArgumentOutOfRangeException(nameof(fontSize), "Font size must be greater than 0");
             }
 
-            var fm = TransformationMatrix.FromValues(1 / 1000m, 0, 0, 1 / 1000m, 0, 0);
+            var fm = fontProgram.GetFontMatrix();
+
             var textMatrix = TransformationMatrix.FromValues(1, 0, 0, 1, position.X, position.Y);
 
             var letters = DrawLetters(text, fontProgram, fm, fontSize, textMatrix);
             
             try
             {
-                //var realWidth = widthRect.Width;
-
-                //if (realWidth + position.X > PageSize.Width)
-                //{
-                //    throw new InvalidOperationException("Text would exceed the bounds.");
-                //}
-
                 var beginText = BeginText.Value;
 
                 operations.Add(beginText);

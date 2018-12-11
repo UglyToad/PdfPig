@@ -17,7 +17,7 @@
 
     internal class PdfDocumentBuilder
     {
-        private static readonly byte Break = (byte)'\n';
+        private const byte Break = (byte) '\n';
         private static readonly TrueTypeFontParser Parser = new TrueTypeFontParser();
 
         private readonly Dictionary<int, PdfPageBuilder> pages = new Dictionary<int, PdfPageBuilder>();
@@ -25,6 +25,53 @@
 
         public IReadOnlyDictionary<int, PdfPageBuilder> Pages => pages;
         public IReadOnlyDictionary<Guid, IWritingFont> Fonts => fonts.ToDictionary(x => x.Key, x => x.Value.FontProgram);
+
+        public bool CanUseTrueTypeFont(IReadOnlyList<byte> fontFileBytes, out IReadOnlyList<string> reasons)
+        {
+            var reasonsMutable = new List<string>();
+            reasons = reasonsMutable;
+            try
+            {
+                if (fontFileBytes == null)
+                {
+                    reasonsMutable.Add("Provided bytes were null.");
+                    return false;
+                }
+
+                if (fontFileBytes.Count == 0)
+                {
+                    reasonsMutable.Add("Provided bytes were empty.");
+                    return false;
+                }
+
+                var font = Parser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFileBytes)));
+
+                if (font.TableRegister.CMapTable == null)
+                {
+                    reasonsMutable.Add("The provided font did not contain a cmap table, used to map character codes to glyph codes.");
+                    return false;
+                }
+
+                if (font.TableRegister.Os2Table == null)
+                {
+                    reasonsMutable.Add("The provided font did not contain an OS/2 table, used to fill in the font descriptor dictionary.");
+                    return false;
+                }
+
+                if (font.TableRegister.PostScriptTable == null)
+                {
+                    reasonsMutable.Add("The provided font did not contain a post PostScript table, used to map character codes to glyph codes.");
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                reasonsMutable.Add(ex.Message);
+                return false;
+            }
+        }
 
         public AddedFont AddTrueTypeFont(IReadOnlyList<byte> fontFileBytes)
         {

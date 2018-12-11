@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using Core;
     using Fonts;
     using Fonts.Encodings;
     using Fonts.Exceptions;
@@ -35,6 +36,12 @@
         public bool TryGetAdvanceWidth(char character, out decimal width)
         {
             return font.TryGetBoundingAdvancedWidth(character, out width);
+        }
+
+        public TransformationMatrix GetFontMatrix()
+        {
+            var unitsPerEm = font.GetFontMatrixMultiplier();
+            return TransformationMatrix.FromValues(1m/unitsPerEm, 0, 0, 1m/unitsPerEm, 0, 0);
         }
 
         public ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context)
@@ -86,7 +93,7 @@
 
             descriptorDictionary[NameToken.StemV] = new NumericToken(bbox.Width * scaling * 0.13m);
 
-            var metrics = charCodeToGlyphId.GetMetrics();
+            var metrics = charCodeToGlyphId.GetMetrics(scaling);
 
             var widthsRef = context.WriteObject(outputStream, metrics.Widths);
 
@@ -131,7 +138,7 @@
                 this.font = font ?? throw new ArgumentNullException(nameof(font));
             }
 
-            public FontDictionaryMetrics GetMetrics()
+            public FontDictionaryMetrics GetMetrics(decimal scaling)
             {
                 var encoding = ReadFontEncoding();
                 var firstCharacter = encoding.CodeToNameMap.Keys.Min();
@@ -151,12 +158,17 @@
                     }
 
                     var characterCode = (int) unicode[0];
-                    if (!font.TryGetBoundingAdvancedWidth(characterCode, out var width))
+                    if (characterCode < firstCharacter || characterCode > lastCharacter)
                     {
-                        throw new InvalidFontFormatException();
+                        continue;
                     }
 
-                    widths[pair.Key - firstCharacter] = new NumericToken(width);
+                    if (!font.TryGetBoundingAdvancedWidth(characterCode, out var width))
+                    {
+                        throw new InvalidFontFormatException($"Could not find advanced with for character named '{pair.Value}' with character code: {characterCode}.");
+                    }
+
+                    widths[pair.Key - firstCharacter] = new NumericToken(width * scaling);
                 }
 
                 return new FontDictionaryMetrics

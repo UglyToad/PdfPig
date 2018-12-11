@@ -2,6 +2,7 @@
 {
     using System.Collections.Generic;
     using System.IO;
+    using Core;
     using Fonts;
     using Fonts.Encodings;
     using Geometry;
@@ -46,6 +47,11 @@
             width = bbox.Width;
 
             return true;
+        }
+
+        public TransformationMatrix GetFontMatrix()
+        {
+            return TransformationMatrix.FromValues(1/1000m, 0, 0, 1/1000m, 0, 0);
         }
 
         public ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context)
