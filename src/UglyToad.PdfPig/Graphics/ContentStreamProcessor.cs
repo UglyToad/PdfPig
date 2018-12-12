@@ -16,6 +16,7 @@
 
     internal class ContentStreamProcessor : IOperationContext
     {
+        private readonly List<PdfPath> paths = new List<PdfPath>();
         private readonly IResourceStore resourceStore;
         private readonly UserSpaceUnit userSpaceUnit;
         private readonly bool isLenientParsing;
@@ -25,6 +26,9 @@
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
 
         public TextMatrices TextMatrices { get; } = new TextMatrices();
+
+        public PdfPath CurrentPath { get; private set; }
+        public PdfPoint CurrentPosition { get; set; }
 
         public int StackSize => graphicsStack.Count;
 
@@ -73,7 +77,7 @@
             graphicsStack.Push(saved.Peek().DeepClone());
             return saved;
         }
-
+        
         [DebuggerStepThrough]
         public CurrentGraphicsState GetCurrentState()
         {
@@ -243,6 +247,26 @@
             {
                 throw new InvalidOperationException($"XObject encountered with unexpected SubType {subType}. {xObjectStream.StreamDictionary}.");
             }
+        }
+
+        public void BeginSubpath()
+        {
+            CurrentPath = new PdfPath();
+        }
+
+        public void StrokePath(bool close)
+        {
+            if (close)
+            {
+                ClosePath();
+            }
+        }
+
+        public void ClosePath()
+        {
+            CurrentPath.ClosePath();
+            paths.Add(CurrentPath);
+            CurrentPath = null;
         }
 
         private void AdjustTextMatrix(decimal tx, decimal ty)

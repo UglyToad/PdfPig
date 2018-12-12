@@ -10,7 +10,7 @@
         [Fact]
         public void BezierCurveGeneratesCorrectBoundingBox()
         {
-            var curve = new CharacterPath.BezierCurve(new PdfPoint(60, 105),
+            var curve = new PdfPath.BezierCurve(new PdfPoint(60, 105),
                 new PdfPoint(75, 30), 
                 new PdfPoint(215, 115), 
                 new PdfPoint(140, 160));
@@ -28,7 +28,7 @@
         [Fact]
         public void LoopBezierCurveGeneratesCorrectBoundingBox()
         {
-            var curve = new CharacterPath.BezierCurve(new PdfPoint(166, 142),
+            var curve = new PdfPath.BezierCurve(new PdfPoint(166, 142),
                 new PdfPoint(75, 30),
                 new PdfPoint(215, 115),
                 new PdfPoint(140, 160));
@@ -47,7 +47,7 @@
         [Fact]
         public void BezierCurveAddsCorrectSvgCommand()
         {
-            var curve = new CharacterPath.BezierCurve(new PdfPoint(60, 105),
+            var curve = new PdfPath.BezierCurve(new PdfPoint(60, 105),
                 new PdfPoint(75, 30),
                 new PdfPoint(215, 115),
                 new PdfPoint(140, 160));

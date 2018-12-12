@@ -7,7 +7,7 @@
 
     internal class Type1BuildCharContext
     {
-        private readonly Func<int, CharacterPath> characterByIndexFactory;
+        private readonly Func<int, PdfPath> characterByIndexFactory;
         public IReadOnlyDictionary<int, Type1CharStrings.CommandSequence> Subroutines { get; }
 
         public decimal WidthX { get; set; }
@@ -21,7 +21,7 @@
         public bool IsFlexing { get; set; }
 
         [NotNull]
-        public CharacterPath Path { get; private set; } = new CharacterPath();
+        public PdfPath Path { get; private set; } = new PdfPath();
 
         public PdfPoint CurrentPosition { get; set; }
 
@@ -32,7 +32,7 @@
         public IReadOnlyList<PdfPoint> FlexPoints { get; }
 
         public Type1BuildCharContext(IReadOnlyDictionary<int, Type1CharStrings.CommandSequence> subroutines,
-            Func<int, CharacterPath> characterByIndexFactory)
+            Func<int, PdfPath> characterByIndexFactory)
         {
             this.characterByIndexFactory = characterByIndexFactory ?? throw new ArgumentNullException(nameof(characterByIndexFactory));
             Subroutines = subroutines ?? throw new ArgumentNullException(nameof(subroutines));
@@ -43,12 +43,12 @@
 
         }
 
-        public CharacterPath GetCharacter(int characterCode)
+        public PdfPath GetCharacter(int characterCode)
         {
             return characterByIndexFactory(characterCode);
         }
 
-        public void SetPath(CharacterPath path)
+        public void SetPath(PdfPath path)
         {
             Path = path ?? throw new ArgumentNullException(nameof(path));
         }

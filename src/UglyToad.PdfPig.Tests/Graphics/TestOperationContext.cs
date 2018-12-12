@@ -3,6 +3,7 @@
     using System.Collections.Generic;
     using Content;
     using PdfPig.Fonts;
+    using PdfPig.Geometry;
     using PdfPig.Graphics;
     using PdfPig.IO;
     using PdfPig.Tokens;
@@ -17,9 +18,14 @@
         public TextMatrices TextMatrices { get; set; }
             = new TextMatrices();
 
+        public PdfPath CurrentPath { get; set; }
+
+        public PdfPoint CurrentPosition { get; set; }
+
         public TestOperationContext()
         {
             StateStack.Push(new CurrentGraphicsState());
+            CurrentPath = new PdfPath();
         }
 
         public CurrentGraphicsState GetCurrentState()
@@ -46,6 +52,18 @@
         }
 
         public void ApplyXObject(StreamToken xObjectStream)
+        {
+        }
+
+        public void BeginSubpath()
+        {
+        }
+
+        public void StrokePath(bool close)
+        {
+        }
+
+        public void ClosePath()
         {
         }
     }

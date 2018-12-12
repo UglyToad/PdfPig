@@ -6,6 +6,8 @@
     using Core;
     using Geometry;
     using Graphics.Operations;
+    using Graphics.Operations.General;
+    using Graphics.Operations.PathConstruction;
     using Graphics.Operations.TextObjects;
     using Graphics.Operations.TextPositioning;
     using Graphics.Operations.TextShowing;
@@ -26,6 +28,39 @@
         {
             this.documentBuilder = documentBuilder ?? throw new ArgumentNullException(nameof(documentBuilder));
             PageNumber = number;
+        }
+
+        public void DrawLine(PdfPoint from, PdfPoint to, decimal lineWidth = 1)
+        {
+            if (lineWidth != 1)
+            {
+                operations.Add(new SetLineWidth(lineWidth));
+            }
+
+            operations.Add(new BeginNewSubpath(from.X, from.Y));
+            operations.Add(new AppendStraightLineSegment(to.X, to.Y));
+            operations.Add(StrokePath.Value);
+
+            if (lineWidth != 1)
+            {
+                operations.Add(new SetLineWidth(1));
+            }
+        }
+
+        public void DrawRectangle(PdfPoint position, decimal width, decimal height, decimal lineWidth = 1)
+        {
+            if (lineWidth != 1)
+            {
+                operations.Add(new SetLineWidth(lineWidth));
+            }
+
+            operations.Add(new AppendRectangle(position.X, position.Y, width, height));
+            operations.Add(StrokePath.Value);
+
+            if (lineWidth != 1)
+            {
+                operations.Add(new SetLineWidth(lineWidth));
+            }
         }
 
         public List<Letter> AddText(string text, decimal fontSize, PdfPoint position, PdfDocumentBuilder.AddedFont font)

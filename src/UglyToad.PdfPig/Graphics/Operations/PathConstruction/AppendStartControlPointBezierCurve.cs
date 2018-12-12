@@ -22,11 +22,27 @@
 
         public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
+            operationContext.CurrentPath.BezierCurveTo(operationContext.CurrentPosition.X,
+                operationContext.CurrentPosition.Y,
+                ControlPoint2.X,
+                ControlPoint2.Y,
+                End.X,
+                End.Y);
+            operationContext.CurrentPosition = End;
         }
 
         public void Write(Stream stream)
         {
-            throw new System.NotImplementedException();
+            stream.WriteDecimal(ControlPoint2.X);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(ControlPoint2.Y);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(End.X);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(End.Y);
+            stream.WriteWhiteSpace();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
         public override string ToString()

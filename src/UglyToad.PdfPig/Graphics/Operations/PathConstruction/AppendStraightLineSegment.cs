@@ -19,11 +19,18 @@
 
         public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
+            operationContext.CurrentPath.LineTo(End.X, End.Y);
+            operationContext.CurrentPosition = End;
         }
 
         public void Write(Stream stream)
         {
-            throw new System.NotImplementedException();
+            stream.WriteDecimal(End.X);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(End.Y);
+            stream.WriteWhiteSpace();
+            stream.WriteText(Symbol);
+            stream.WriteWhiteSpace();
         }
 
         public override string ToString()

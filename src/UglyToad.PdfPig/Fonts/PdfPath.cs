@@ -7,7 +7,7 @@ namespace UglyToad.PdfPig.Fonts
     using System.Text;
     using Geometry;
 
-    internal class CharacterPath
+    internal class PdfPath
     {
         private readonly List<IPathCommand> commands = new List<IPathCommand>();
         private PdfPoint? currentPosition;
@@ -239,8 +239,8 @@ namespace UglyToad.PdfPig.Fonts
                 double maxX;
                 if (StartPoint.X <= EndPoint.X)
                 {
-                    minX = (double) StartPoint.X;
-                    maxX = (double) EndPoint.X;
+                    minX = (double)StartPoint.X;
+                    maxX = (double)EndPoint.X;
                 }
                 else
                 {
@@ -254,9 +254,9 @@ namespace UglyToad.PdfPig.Fonts
                 {
                     minY = (double)StartPoint.Y;
                     maxY = (double)EndPoint.Y;
-                }      
-                else   
-                {      
+                }
+                else
+                {
                     minY = (double)EndPoint.Y;
                     maxY = (double)StartPoint.Y;
                 }
@@ -294,7 +294,7 @@ namespace UglyToad.PdfPig.Fonts
                 // P' = 3da(1-t)^2 + 6db(1-t)t + 3dct^2
                 // P' = 3da - 3dat - 3dat + 3dat^2 + 6dbt - 6dbt^2 + 3dct^2
                 // P' = (3da - 6db + 3dc)t^2 + (6db - 3da - 3da)t + 3da
-                var p1 = (double)( isX ? StartPoint.X : StartPoint.Y);
+                var p1 = (double)(isX ? StartPoint.X : StartPoint.Y);
                 var p2 = (double)(isX ? FirstControlPoint.X : FirstControlPoint.Y);
                 var p3 = (double)(isX ? SecondControlPoint.X : SecondControlPoint.Y);
                 var p4 = (double)(isX ? EndPoint.X : EndPoint.Y);
@@ -361,8 +361,8 @@ namespace UglyToad.PdfPig.Fonts
                 // P = (1−t)^3*P_1 + 3(1−t)^2*t*P_2 + 3(1−t)*t^2*P_3 + t^3*P_4
                 var oneMinusT = 1 - t;
                 var p = ((oneMinusT * oneMinusT * oneMinusT) * p1)
-                        + (3 * (oneMinusT * oneMinusT) * t * p2) 
-                        + (3 * oneMinusT * (t * t) * p3) 
+                        + (3 * (oneMinusT * oneMinusT) * t * p2)
+                        + (3 * oneMinusT * (t * t) * p3)
                         + ((t * t * t) * p4);
 
                 return p;
@@ -373,6 +373,10 @@ namespace UglyToad.PdfPig.Fonts
                 builder.AppendFormat("C {0} {1}, {2} {3}, {4} {5} ", FirstControlPoint.X, FirstControlPoint.Y, SecondControlPoint.X, SecondControlPoint.Y,
                     EndPoint.X, EndPoint.Y);
             }
+        }
+
+        public void Rectangle(decimal x, decimal y, decimal width, decimal height)
+        {
         }
     }
 }

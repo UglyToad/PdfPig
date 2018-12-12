@@ -25,7 +25,10 @@
 
         public void Write(Stream stream)
         {
-            throw new System.NotImplementedException();
+            stream.WriteDecimal(Width);
+            stream.WriteWhiteSpace();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
         public override string ToString()

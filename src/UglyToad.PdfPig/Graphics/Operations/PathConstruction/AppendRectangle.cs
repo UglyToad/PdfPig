@@ -26,11 +26,23 @@
 
         public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
+            operationContext.BeginSubpath();
+            operationContext.CurrentPath.Rectangle(LowerLeft.X, LowerLeft.Y, Width, Height);
+            operationContext.CurrentPath.ClosePath();
         }
 
         public void Write(Stream stream)
         {
-            throw new System.NotImplementedException();
+            stream.WriteDecimal(LowerLeft.X);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(LowerLeft.Y);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(Width);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(Height);
+            stream.WriteWhiteSpace();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
         public override string ToString()

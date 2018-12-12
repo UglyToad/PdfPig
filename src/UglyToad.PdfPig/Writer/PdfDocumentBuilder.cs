@@ -17,11 +17,14 @@
 
     internal class PdfDocumentBuilder
     {
-        private const byte Break = (byte) '\n';
+        private const byte Break = (byte)'\n';
         private static readonly TrueTypeFontParser Parser = new TrueTypeFontParser();
 
         private readonly Dictionary<int, PdfPageBuilder> pages = new Dictionary<int, PdfPageBuilder>();
         private readonly Dictionary<Guid, FontStored> fonts = new Dictionary<Guid, FontStored>();
+
+        public bool IncludeDocumentInformation { get; set; } = true;
+        public DocumentInformationBuilder DocumentInformation { get; } = new DocumentInformationBuilder();
 
         public IReadOnlyDictionary<int, PdfPageBuilder> Pages => pages;
         public IReadOnlyDictionary<Guid, IWritingFont> Fonts => fonts.ToDictionary(x => x.Key, x => x.Value.FontProgram);
@@ -219,7 +222,18 @@
 
                 var catalogRef = context.WriteObject(memory, catalog);
 
-                TokenWriter.WriteCrossReferenceTable(context.ObjectOffsets, catalogRef, memory);
+                var informationReference = default(IndirectReference?);
+                if (IncludeDocumentInformation)
+                {
+                    var informationDictionary = DocumentInformation.ToDictionary();
+                    if (informationDictionary.Count > 0)
+                    {
+                        var dictionary = new DictionaryToken(informationDictionary);
+                        informationReference = context.WriteObject(memory, dictionary).Number;
+                    }
+                }
+                
+                TokenWriter.WriteCrossReferenceTable(context.ObjectOffsets, catalogRef, memory, informationReference);
 
                 return memory.ToArray();
             }
@@ -257,7 +271,7 @@
                 new NumericToken(rectangle.TopRight.Y)
             });
         }
-        
+
         private static void WriteString(string text, MemoryStream stream, bool appendBreak = true)
         {
             var bytes = OtherEncodings.StringAsLatin1Bytes(text);
@@ -293,6 +307,53 @@
             {
                 Id = id;
                 Name = name ?? throw new ArgumentNullException(nameof(name));
+            }
+        }
+
+        internal class DocumentInformationBuilder
+        {
+            public string Title { get; set; }
+            public string Author { get; set; }
+            public string Subject { get; set; }
+            public string Keywords { get; set; }
+            public string Creator { get; set; }
+            public string Producer { get; set; } = "PdfPig";
+
+            internal Dictionary<NameToken, IToken> ToDictionary()
+            {
+                var result = new Dictionary<NameToken, IToken>();
+
+                if (Title != null)
+                {
+                    result[NameToken.Title] = new StringToken(Title);
+                }
+
+                if (Author != null)
+                {
+                    result[NameToken.Author] = new StringToken(Author);
+                }
+
+                if (Subject != null)
+                {
+                    result[NameToken.Subject] = new StringToken(Subject);
+                }
+
+                if (Keywords != null)
+                {
+                    result[NameToken.Keywords] = new StringToken(Keywords);
+                }
+
+                if (Creator != null)
+                {
+                    result[NameToken.Creator] = new StringToken(Creator);
+                }
+
+                if (Producer != null)
+                {
+                    result[NameToken.Producer] = new StringToken(Producer);
+                }
+
+                return result;
             }
         }
     }

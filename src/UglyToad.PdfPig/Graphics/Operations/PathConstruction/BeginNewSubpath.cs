@@ -19,11 +19,18 @@
 
         public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
+            operationContext.BeginSubpath();
+            operationContext.CurrentPosition = Point;
         }
 
         public void Write(Stream stream)
         {
-            throw new System.NotImplementedException();
+            stream.WriteDecimal(Point.X);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(Point.Y);
+            stream.WriteWhiteSpace();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
         public override string ToString()

@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Collections.ObjectModel;
     using System.IO;
     using System.Linq;
     using Tokens;
@@ -95,7 +96,8 @@
 
         public static void WriteCrossReferenceTable(IReadOnlyDictionary<IndirectReference, long> objectOffsets, 
             ObjectToken catalogToken,
-            Stream outputStream)
+            Stream outputStream,
+            IndirectReference? documentInformationReference)
         {
             if (objectOffsets.Count == 0)
             {
@@ -150,11 +152,18 @@
             outputStream.Write(Trailer, 0, Trailer.Length);
             WriteLineBreak(outputStream);
 
-            var trailerDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
+            var trailerDictionaryData = new Dictionary<NameToken, IToken>
             {
-                {NameToken.Size, new NumericToken(objectOffsets.Count) },
-                {NameToken.Root, new IndirectReferenceToken(catalogToken.Number) }
-            });
+                {NameToken.Size, new NumericToken(objectOffsets.Count)},
+                {NameToken.Root, new IndirectReferenceToken(catalogToken.Number)}
+            };
+
+            if (documentInformationReference.HasValue)
+            {
+                trailerDictionaryData[NameToken.Info] = new IndirectReferenceToken(documentInformationReference.Value);
+            }
+
+            var trailerDictionary = new DictionaryToken(trailerDictionaryData);
 
             WriteDictionary(trailerDictionary, outputStream);
             WriteLineBreak(outputStream);

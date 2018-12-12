@@ -46,7 +46,7 @@
         /// Evaluate the CharString for the character with a given name returning the path constructed for the glyph.
         /// </summary>
         /// <param name="name">The name of the character to retrieve the CharString for.</param>
-        /// <returns>A <see cref="CharacterPath"/> for the glyph.</returns>
+        /// <returns>A <see cref="PdfPath"/> for the glyph.</returns>
         public Type2Glyph Generate(string name)
         {
             Type2Glyph glyph;
@@ -171,7 +171,7 @@
         /// The path of the glyph.
         /// </summary>
         [NotNull]
-        public CharacterPath Path { get; }
+        public PdfPath Path { get; }
 
         /// <summary>
         /// The width of the glyph as a difference from the nominal width X for the font. Optional.
@@ -181,7 +181,7 @@
         /// <summary>
         /// Create a new <see cref="Type2Glyph"/>.
         /// </summary>
-        public Type2Glyph(CharacterPath path, decimal? widthDifferenceFromNominal)
+        public Type2Glyph(PdfPath path, decimal? widthDifferenceFromNominal)
         {
             Path = path ?? throw new ArgumentNullException(nameof(path));
             WidthDifferenceFromNominal = widthDifferenceFromNominal;

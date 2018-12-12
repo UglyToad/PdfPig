@@ -93,6 +93,14 @@
 
             var page = builder.AddPage(PageSize.A4);
 
+            page.DrawLine(new PdfPoint(30, 520), new PdfPoint(360, 520));
+            page.DrawLine(new PdfPoint(360, 520), new PdfPoint(360, 250));
+
+            page.DrawLine(new PdfPoint(25, 70), new PdfPoint(100, 70), 3);
+
+            page.DrawRectangle(new PdfPoint(30, 100), 250, 100, 0.5m);
+            page.DrawRectangle(new PdfPoint(30, 200), 250, 100, 0.5m);
+
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts", "TrueType");
             var file = Path.Combine(path, "Andada-Regular.ttf");
 
@@ -138,6 +146,8 @@
         public void WindowsOnlyCanWriteSinglePageHelloWorldSystemFont()
         {
             var builder = new PdfDocumentBuilder();
+
+            builder.DocumentInformation.Title = "Hello Windows!";
 
             var page = builder.AddPage(PageSize.A4);
 

@@ -17,11 +17,13 @@
 
         public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
+            operationContext.StrokePath(true);
         }
 
         public void Write(Stream stream)
         {
-            throw new System.NotImplementedException();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
         public override string ToString()
