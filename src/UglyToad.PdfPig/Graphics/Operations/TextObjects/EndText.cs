@@ -4,6 +4,9 @@
     using Content;
     using PdfPig.Core;
 
+    /// <summary>
+    /// End a text object, discarding the text matrix.
+    /// </summary>
     internal class EndText : IGraphicsStateOperation
     {
         public const string Symbol = "ET";

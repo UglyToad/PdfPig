@@ -4,9 +4,13 @@
     using System.IO;
     using Content;
 
+    /// <summary>
+    /// Restore the graphics state by removing the most recently saved state from the stack and making it the current state.
+    /// </summary>
     internal class Pop : IGraphicsStateOperation
     {
         public const string Symbol = "Q";
+
         public static readonly Pop Value = new Pop();
 
         public string Operator => Symbol;
@@ -30,7 +34,8 @@
 
         public void Write(Stream stream)
         {
-            throw new NotImplementedException();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
         public override string ToString()

@@ -165,7 +165,7 @@
 
                     if (!font.TryGetBoundingAdvancedWidth(characterCode, out var width))
                     {
-                        throw new InvalidFontFormatException($"Could not find advanced with for character named '{pair.Value}' with character code: {characterCode}.");
+                        width = font.TableRegister.HorizontalMetricsTable.AdvancedWidths[0];
                     }
 
                     widths[pair.Key - firstCharacter] = new NumericToken(width * scaling);

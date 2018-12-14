@@ -5,6 +5,9 @@
     using Content;
     using PdfPig.Core;
 
+    /// <summary>
+    /// Modify the current transformation matrix by concatenating the specified matrix. 
+    /// </summary>
     internal class ModifyCurrentTransformationMatrix : IGraphicsStateOperation
     {
         public const string Symbol = "cm";

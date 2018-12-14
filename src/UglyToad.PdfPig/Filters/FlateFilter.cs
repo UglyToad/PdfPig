@@ -77,7 +77,7 @@
             {
                 using (var memoryStream = new MemoryStream(input))
                 {
-                    // The first 2 bytes are the header which DelfateStream does not support.
+                    // The first 2 bytes are the header which DeflateStream does not support.
                     memoryStream.ReadByte();
                     memoryStream.ReadByte();
 

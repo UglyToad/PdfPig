@@ -5,6 +5,9 @@
     using Content;
     using PdfPig.Core;
 
+    /// <summary>
+    /// Set the text matrix and the text line matrix.
+    /// </summary>
     internal class SetTextMatrix : IGraphicsStateOperation
     {
         public const string Symbol = "Tm";
@@ -33,7 +36,20 @@
 
         public void Write(Stream stream)
         {
-            throw new NotImplementedException();
+            stream.WriteDecimal(Value[0]);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(Value[1]);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(Value[2]);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(Value[3]);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(Value[4]);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(Value[5]);
+            stream.WriteWhiteSpace();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
         public override string ToString()

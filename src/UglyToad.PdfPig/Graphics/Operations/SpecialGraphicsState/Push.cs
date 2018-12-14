@@ -3,6 +3,9 @@
     using System.IO;
     using Content;
 
+    /// <summary>
+    /// Save the current graphics state on the graphics state stack.
+    /// </summary>
     internal class Push : IGraphicsStateOperation
     {
         public const string Symbol = "q";
@@ -14,11 +17,6 @@
         {
         }
 
-        public override string ToString()
-        {
-            return Symbol;
-        }
-
         public void Run(IOperationContext context, IResourceStore resourceStore)
         {
             context.PushState();
@@ -26,7 +24,13 @@
 
         public void Write(Stream stream)
         {
-            throw new System.NotImplementedException();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
+        }
+
+        public override string ToString()
+        {
+            return Symbol;
         }
     }
 }

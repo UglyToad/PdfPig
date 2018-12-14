@@ -4,6 +4,9 @@
     using Content;
     using PdfPig.Core;
 
+    /// <summary>
+    /// Begin a text object, initializing the text matrix and the text line matrix to the identity matrix. Text objects cannot be nested.
+    /// </summary>
     internal class BeginText : IGraphicsStateOperation
     {
         public const string Symbol = "BT";

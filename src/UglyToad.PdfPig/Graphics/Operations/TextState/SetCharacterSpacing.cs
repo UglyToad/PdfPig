@@ -3,6 +3,10 @@
     using System.IO;
     using Content;
 
+    /// <summary>
+    /// Set the character spacing to a number expressed in unscaled text space units.
+    /// Initial value: 0. 
+    /// </summary>
     internal class SetCharacterSpacing : IGraphicsStateOperation
     {
         public const string Symbol = "Tc";
@@ -25,7 +29,10 @@
 
         public void Write(Stream stream)
         {
-            throw new System.NotImplementedException();
+            stream.WriteDecimal(Spacing);
+            stream.WriteWhiteSpace();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
         public override string ToString()

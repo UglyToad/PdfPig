@@ -4,6 +4,10 @@
     using Content;
     using TextState;
 
+    /// <summary>
+    /// Move to the start of the next line, offset from the start of the current line by (tx, ty).
+    /// This operator also sets the leading parameter in the text state.
+    /// </summary>
     internal class MoveToNextLineWithOffsetSetLeading : IGraphicsStateOperation
     {
         public const string Symbol = "TD";
@@ -33,7 +37,12 @@
 
         public void Write(Stream stream)
         {
-            throw new System.NotImplementedException();
+            stream.WriteDecimal(Tx);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(Ty);
+            stream.WriteWhiteSpace();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
         public override string ToString()

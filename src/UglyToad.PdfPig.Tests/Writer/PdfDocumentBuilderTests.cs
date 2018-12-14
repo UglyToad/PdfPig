@@ -207,6 +207,23 @@
             }
         }
 
+        [Fact]
+        public void CanWriteSinglePageWithAccentedCharacters()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page = builder.AddPage(PageSize.A4);
+            
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts", "TrueType");
+            var file = Path.Combine(path, "Roboto-Regular.ttf");
+
+            var font = builder.AddTrueTypeFont(File.ReadAllBytes(file));
+
+            page.AddText("é (lower case, upper case É).", 9, 
+                new PdfPoint(30, page.PageSize.Height - 50), font);
+
+            WriteFile(nameof(CanWriteSinglePageWithAccentedCharacters), builder.Build());
+        }
+
         private static void WriteFile(string name, byte[] bytes)
         {
             try
