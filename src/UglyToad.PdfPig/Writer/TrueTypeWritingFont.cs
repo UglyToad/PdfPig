@@ -108,7 +108,7 @@
                 { NameToken.FirstChar, metrics.FirstChar },
                 { NameToken.LastChar, metrics.LastChar },
                 { NameToken.Widths, new IndirectReferenceToken(widthsRef.Number) },
-                { NameToken.Encoding, NameToken.MacRomanEncoding }
+                { NameToken.Encoding, NameToken.WinAnsiEncoding }
             };
 
             var token = new DictionaryToken(dictionary);

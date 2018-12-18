@@ -221,7 +221,15 @@
             page.AddText("é (lower case, upper case É).", 9, 
                 new PdfPoint(30, page.PageSize.Height - 50), font);
 
-            WriteFile(nameof(CanWriteSinglePageWithAccentedCharacters), builder.Build());
+            var bytes = builder.Build();
+            WriteFile(nameof(CanWriteSinglePageWithAccentedCharacters), bytes);
+
+            using (var document = PdfDocument.Open(bytes))
+            {
+                var page1 = document.GetPage(1);
+
+                Assert.Equal("é (lower case, upper case É).", page1.Text);
+            }
         }
 
         private static void WriteFile(string name, byte[] bytes)
