@@ -3,6 +3,8 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using Annotations;
+    using Tokens;
     using Util;
     using Util.JetBrains.Annotations;
     using XObjects;
@@ -12,6 +14,9 @@
     /// </summary>
     public class Page
     {
+        private readonly DictionaryToken dictionary;
+        private readonly AnnotationProvider annotationProvider;
+
         /// <summary>
         /// The page number (starting at 1).
         /// </summary>
@@ -54,12 +59,16 @@
         [NotNull]
         public Experimental ExperimentalAccess { get; }
 
-        internal Page(int number, MediaBox mediaBox, CropBox cropBox, PageContent content)
+        internal Page(int number, DictionaryToken dictionary, MediaBox mediaBox, CropBox cropBox, PageContent content,
+            AnnotationProvider annotationProvider)
         {
             if (number <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(number), "Page number cannot be 0 or negative.");
             }
+
+            this.dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
+            this.annotationProvider = annotationProvider ?? throw new ArgumentNullException(nameof(annotationProvider));
 
             Number = number;
             MediaBox = mediaBox;
@@ -98,6 +107,11 @@
         public IEnumerable<Word> GetWords(IWordExtractor wordExtractor)
         {
             return (wordExtractor ?? DefaultWordExtractor.Instance).GetWords(Letters);
+        }
+
+        internal IEnumerable<Annotation> GetAnnotations()
+        {
+            return annotationProvider.GetAnnotations();
         }
 
         /// <summary>

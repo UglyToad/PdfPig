@@ -33,7 +33,7 @@
 
             var privateDictionary = CompactFontFormatPrivateDictionary.GetDefault();
 
-            if (topDictionary.PrivateDictionaryLocation.HasValue)
+            if (topDictionary.PrivateDictionaryLocation.HasValue && topDictionary.PrivateDictionaryLocation.Value.Size > 0)
             {
                 var privateDictionaryBytes = data.SnapshotPortion(topDictionary.PrivateDictionaryLocation.Value.Offset,
                     topDictionary.PrivateDictionaryLocation.Value.Size);

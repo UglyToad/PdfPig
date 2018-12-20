@@ -104,10 +104,7 @@
             {
                 var mediaBox = DirectObjectFinder.Get<ArrayToken>(token, pdfScanner);
 
-                pageTreeMembers.MediaBox = new MediaBox(new PdfRectangle(mediaBox.GetNumeric(0).Data,
-                    mediaBox.GetNumeric(1).Data,
-                    mediaBox.GetNumeric(2).Data,
-                    mediaBox.GetNumeric(3).Data));
+                pageTreeMembers.MediaBox = new MediaBox(mediaBox.ToRectangle());
             }
 
             if (!currentPageDictionary.TryGet(NameToken.Kids, out var kids)

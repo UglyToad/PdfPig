@@ -130,12 +130,8 @@
             {
                 return new PdfRectangle(0, 0, 0, 0);
             }
-            var x1 = boxArray.GetNumeric(0).Data;
-            var y1 = boxArray.GetNumeric(1).Data;
-            var x2 = boxArray.GetNumeric(2).Data;
-            var y2 = boxArray.GetNumeric(3).Data;
-            
-            return new PdfRectangle(x1, y1, x2, y2);
+
+            return boxArray.ToRectangle();
         }
 
         private static string GetCharSet(DictionaryToken dictionary)
