@@ -2,9 +2,15 @@
 {
     using System;
 
+    /// <summary>
+    /// Specifies various characteristics of a font.
+    /// </summary>
     [Flags]
-    internal enum FontFlags
+    public enum FontDescriptorFlags
     {
+        /// <summary>
+        /// No flags are set.
+        /// </summary>
         None = 0,
         /// <summary>
         /// All glyphs have the same width.

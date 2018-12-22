@@ -97,7 +97,7 @@
         {
             Encoding encoding;
             // Symbolic fonts default to standard encoding.
-            if (descriptor?.Flags.HasFlag(FontFlags.Symbolic) == true)
+            if (descriptor?.Flags.HasFlag(FontDescriptorFlags.Symbolic) == true)
             {
                 encoding = StandardEncoding.Instance;
             }

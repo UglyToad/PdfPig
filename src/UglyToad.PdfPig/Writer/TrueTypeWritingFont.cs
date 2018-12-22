@@ -69,7 +69,7 @@
                 { NameToken.Type, NameToken.FontDescriptor },
                 { NameToken.FontName, baseFont },
                 // TODO: get flags TrueTypeEmbedder.java
-                { NameToken.Flags, new NumericToken((int)FontFlags.Symbolic) },
+                { NameToken.Flags, new NumericToken((int)FontDescriptorFlags.Symbolic) },
                 { NameToken.FontBbox, GetBoundingBox(bbox, scaling) },
                 { NameToken.ItalicAngle, new NumericToken(postscript.ItalicAngle) },
                 { NameToken.Ascent, new NumericToken(hhead.Ascender * scaling) },

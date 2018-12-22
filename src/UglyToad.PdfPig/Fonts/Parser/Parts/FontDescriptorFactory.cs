@@ -25,7 +25,7 @@
             var charSet = GetCharSet(dictionary);
             var fontFile = GetFontFile(dictionary);
 
-            return new FontDescriptor(name, flags)
+            return new FontDescriptor.Builder(name, flags)
             {
                  FontFamily = family,
                  Stretch = stretch,
@@ -44,7 +44,7 @@
                  MissingWidth = GetDecimalOrDefault(dictionary, NameToken.MissingWidth),
                  FontFile = fontFile,
                  CharSet = charSet
-            };
+            }.Build();
         }
 
         private static decimal GetDecimalOrDefault(DictionaryToken dictionary, NameToken name)
@@ -100,7 +100,7 @@
             return stretchName.ConvertToFontStretch();
         }
 
-        private static FontFlags GetFlags(DictionaryToken dictionary, bool isLenientParsing)
+        private static FontDescriptorFlags GetFlags(DictionaryToken dictionary, bool isLenientParsing)
         {
             var flags = dictionary.GetIntOrDefault(NameToken.Flags, -1);
 
@@ -116,7 +116,7 @@
                 }
             }
 
-            return (FontFlags) flags;
+            return (FontDescriptorFlags) flags;
         }
 
         private static PdfRectangle GetBoundingBox(DictionaryToken dictionary)
