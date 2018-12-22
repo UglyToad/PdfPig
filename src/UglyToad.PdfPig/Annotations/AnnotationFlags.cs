@@ -6,7 +6,7 @@
     /// Specifies characteristics of an annotation in a PDF or FDF document.
     /// </summary>
     [Flags]
-    internal enum AnnotationFlags
+    public enum AnnotationFlags
     {
         /// <summary>
         /// Do not display the annotation if it is not one of the standard annotation types.

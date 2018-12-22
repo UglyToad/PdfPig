@@ -21,7 +21,9 @@
             {
                 for (var i = 0; i < document.NumberOfPages; i++)
                 {
-                    document.GetPage(i + 1);
+                    var page = document.GetPage(i + 1);
+
+                    Assert.NotNull(page.GetAnnotations().ToList());
                 }
             }
         }

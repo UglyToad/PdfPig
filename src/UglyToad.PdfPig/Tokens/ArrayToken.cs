@@ -19,6 +19,11 @@
         public IReadOnlyList<IToken> Data { get; }
 
         /// <summary>
+        /// The number of tokens in this array.
+        /// </summary>
+        public int Length { get; }
+
+        /// <summary>
         /// Create a new <see cref="ArrayToken"/>.
         /// </summary>
         /// <param name="data">The tokens contained by this array.</param>
@@ -53,6 +58,7 @@
             }
 
             Data = result;
+            Length = Data.Count;
         }
 
         /// <inheritdoc />
