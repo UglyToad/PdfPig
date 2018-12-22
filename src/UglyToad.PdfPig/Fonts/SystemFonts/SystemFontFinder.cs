@@ -9,12 +9,12 @@
     using TrueType;
     using TrueType.Parser;
 
-    internal class SystemFontFinder
+    internal class SystemFontFinder : ISystemFontFinder
     {
         private readonly TrueTypeFontParser trueTypeFontParser;
         private readonly Lazy<IReadOnlyList<SystemFontRecord>> availableFonts;
-
-        private readonly Dictionary<string, IFont> cache = new Dictionary<string, IFont>();
+        
+        private readonly Dictionary<string, TrueTypeFontProgram> cache = new Dictionary<string, TrueTypeFontProgram>(StringComparer.OrdinalIgnoreCase);
 
         public SystemFontFinder(TrueTypeFontParser trueTypeFontParser)
         {
@@ -42,6 +42,11 @@
 
         public TrueTypeFontProgram GetTrueTypeFont(string name)
         {
+            if (cache.TryGetValue(name, out var result))
+            {
+                return result;
+            }
+
             foreach (var record in availableFonts.Value)
             {
                 if (record.Type == SystemFontType.TrueType)
@@ -50,13 +55,21 @@
                     {
                         var input = new StreamInputBytes(fileStream);
                         var trueType = trueTypeFontParser.Parse(new TrueTypeDataBytes(input));
-                        //TODO: cache.
+                        var psName = trueType.TableRegister.NameTable?.GetPostscriptName() ?? trueType.Name;
+
+                        if (!cache.ContainsKey(psName))
+                        {
+                            cache[psName] = trueType;
+                        }
+
+                        if (string.Equals(psName, name, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return trueType;
+                        }
                     }
                 }
-                else if (record.Type == SystemFontType.OpenType)
-                {
-                    throw new NotImplementedException($"TODO: OpenType fonts. Found system font: {record.Path}.");
-                }
+
+                // TODO: OTF
             }
 
             return null;

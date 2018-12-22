@@ -12,6 +12,7 @@
     using Fonts.Parser;
     using Fonts.Parser.Handlers;
     using Fonts.Parser.Parts;
+    using Fonts.SystemFonts;
     using Fonts.TrueType.Parser;
     using Fonts.Type1.Parser;
     using Graphics;
@@ -107,7 +108,7 @@
             var fontFactory = new FontFactory(log, new Type0FontHandler(cidFontFactory,
                 cMapCache, 
                 filterProvider, pdfScanner),
-                new TrueTypeFontHandler(log, pdfScanner, filterProvider, cMapCache, fontDescriptorFactory, trueTypeFontParser, encodingReader),
+                new TrueTypeFontHandler(log, pdfScanner, filterProvider, cMapCache, fontDescriptorFactory, trueTypeFontParser, encodingReader, new SystemFontFinder(new TrueTypeFontParser())),
                 new Type1FontHandler(pdfScanner, cMapCache, filterProvider, fontDescriptorFactory, encodingReader, 
                     new Type1FontParser(new Type1EncryptedPortionParser()),
                     new CompactFontFormatParser(new CompactFontFormatIndividualFontParser(compactFontFormatIndexReader, new CompactFontFormatTopLevelDictionaryReader(), 

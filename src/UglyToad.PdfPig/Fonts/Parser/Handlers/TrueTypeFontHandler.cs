@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Parser.Handlers
 {
     using System;
+    using SystemFonts;
     using Cmap;
     using Encodings;
     using Exceptions;
@@ -18,18 +19,20 @@
     internal class TrueTypeFontHandler : IFontHandler
     {
         private readonly ILog log;
+        private readonly IPdfTokenScanner pdfScanner;
         private readonly IFilterProvider filterProvider;
         private readonly CMapCache cMapCache;
         private readonly FontDescriptorFactory fontDescriptorFactory;
         private readonly TrueTypeFontParser trueTypeFontParser;
         private readonly IEncodingReader encodingReader;
-        private readonly IPdfTokenScanner pdfScanner;
+        private readonly ISystemFontFinder systemFontFinder;
 
         public TrueTypeFontHandler(ILog log, IPdfTokenScanner pdfScanner, IFilterProvider filterProvider, 
             CMapCache cMapCache,
             FontDescriptorFactory fontDescriptorFactory,
             TrueTypeFontParser trueTypeFontParser,
-            IEncodingReader encodingReader)
+            IEncodingReader encodingReader,
+            ISystemFontFinder systemFontFinder)
         {
             this.log = log;
             this.filterProvider = filterProvider;
@@ -37,6 +40,7 @@
             this.fontDescriptorFactory = fontDescriptorFactory;
             this.trueTypeFontParser = trueTypeFontParser;
             this.encodingReader = encodingReader;
+            this.systemFontFinder = systemFontFinder;
             this.pdfScanner = pdfScanner;
         }
 
@@ -73,8 +77,16 @@
 
         private TrueTypeFontProgram ParseTrueTypeFont(FontDescriptor descriptor)
         {
-            if (descriptor?.FontFile == null)
+            if (descriptor.FontFile == null)
             {
+                try
+                {
+                    return systemFontFinder.GetTrueTypeFont(descriptor.FontName.Data);
+                }
+                catch (Exception ex)
+                {
+                    log.Error($"Failed finding system font by name: {descriptor.FontName}.", ex);
+                }
                 // TODO: check if this font is present on the host OS. See: FileSystemFontProvider.java
                 return null;
             }
