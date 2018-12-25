@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.ContentStream
 {
-    using PdfPig.ContentStream;
     using Xunit;
 
     public class IndirectReferenceTests

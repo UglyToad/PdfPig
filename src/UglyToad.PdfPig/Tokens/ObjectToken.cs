@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tokens
 {
     using System;
-    using ContentStream;
     using Util.JetBrains.Annotations;
 
     /// <summary>

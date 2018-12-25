@@ -11,7 +11,7 @@
 
         public string Operator => Symbol;
 
-        public LineCapStyle Cap { get; set; }
+        public LineCapStyle Cap { get; }
 
         public SetLineCap(int cap) : this((LineCapStyle)cap) { }
         public SetLineCap(LineCapStyle cap)
@@ -31,7 +31,10 @@
 
         public void Write(Stream stream)
         {
-            throw new NotImplementedException();
+            stream.WriteDecimal((int)Cap);
+            stream.WriteWhiteSpace();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
         public override string ToString()

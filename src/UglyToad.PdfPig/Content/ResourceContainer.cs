@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using ContentStream;
     using Fonts;
     using Parser.Parts;
     using Tokenization.Scanner;

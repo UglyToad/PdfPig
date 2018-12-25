@@ -11,7 +11,7 @@
 
         public string Operator => Symbol;
 
-        public LineJoinStyle Join { get; set; }
+        public LineJoinStyle Join { get; }
 
         public SetLineJoin(int join) : this((LineJoinStyle)join) { }
         public SetLineJoin(LineJoinStyle join)
@@ -31,7 +31,10 @@
 
         public void Write(Stream stream)
         {
-            throw new NotImplementedException();
+            stream.WriteDecimal((int)Join);
+            stream.WriteWhiteSpace();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
         public override string ToString()
