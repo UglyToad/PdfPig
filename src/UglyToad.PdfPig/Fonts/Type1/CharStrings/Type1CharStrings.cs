@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using Commands;
+    using Geometry;
     using Util;
 
     internal class Type1CharStrings

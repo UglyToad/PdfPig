@@ -15,6 +15,9 @@
     using Util;
     using Util.JetBrains.Annotations;
 
+    /// <summary>
+    /// Provides methods to construct new PDF documents.
+    /// </summary>
     internal class PdfDocumentBuilder
     {
         private const byte Break = (byte)'\n';
@@ -23,12 +26,31 @@
         private readonly Dictionary<int, PdfPageBuilder> pages = new Dictionary<int, PdfPageBuilder>();
         private readonly Dictionary<Guid, FontStored> fonts = new Dictionary<Guid, FontStored>();
 
+        /// <summary>
+        /// Whether to include the document information dictionary in the produced document.
+        /// </summary>
         public bool IncludeDocumentInformation { get; set; } = true;
+        /// <summary>
+        /// The values of the fields to include in the document information dictionary.
+        /// </summary>
         public DocumentInformationBuilder DocumentInformation { get; } = new DocumentInformationBuilder();
 
+        /// <summary>
+        /// The current page builders in the document and the corresponding 1 indexed page numbers. Use <see cref="AddPage"/> to add a new page.
+        /// </summary>
         public IReadOnlyDictionary<int, PdfPageBuilder> Pages => pages;
+
+        /// <summary>
+        /// The fonts currently available in the document builder added via <see cref="AddTrueTypeFont"/> or <see cref="AddStandard14Font"/>. Keyed by id for internal purposes.
+        /// </summary>
         public IReadOnlyDictionary<Guid, IWritingFont> Fonts => fonts.ToDictionary(x => x.Key, x => x.Value.FontProgram);
 
+        /// <summary>
+        /// Determines whether the bytes of the TrueType font file provided can be used in a PDF document.
+        /// </summary>
+        /// <param name="fontFileBytes">The bytes of a TrueType font file.</param>
+        /// <param name="reasons">Any reason messages explaining why the file can't be used, if applicable.</param>
+        /// <returns><see langword="true"/> if the file can be used, <see langword="false"/> otherwise.</returns>
         public bool CanUseTrueTypeFont(IReadOnlyList<byte> fontFileBytes, out IReadOnlyList<string> reasons)
         {
             var reasonsMutable = new List<string>();
@@ -76,6 +98,11 @@
             }
         }
 
+        /// <summary>
+        /// Adds a TrueType font to the builder so that pages in this document can use it.
+        /// </summary>
+        /// <param name="fontFileBytes">The bytes of a TrueType font.</param>
+        /// <returns>An identifier which can be passed to <see cref="PdfPageBuilder.AddText"/>.</returns>
         public AddedFont AddTrueTypeFont(IReadOnlyList<byte> fontFileBytes)
         {
             try
@@ -94,6 +121,11 @@
             }
         }
 
+        /// <summary>
+        /// Adds one of the Standard 14 fonts which are included by default in PDF programs so that pages in this document can use it. These Standard 14 fonts are old and possibly obsolete.
+        /// </summary>
+        /// <param name="type">The type of the Standard 14 font to use.</param>
+        /// <returns>An identifier which can be passed to <see cref="PdfPageBuilder.AddText"/>.</returns>
         public AddedFont AddStandard14Font(Standard14Font type)
         {
             var id = Guid.NewGuid();
@@ -104,6 +136,12 @@
             return added;
         }
 
+        /// <summary>
+        /// Add a new page with the specified size, this page will be included in the output when <see cref="Build"/> is called.
+        /// </summary>
+        /// <param name="size">The size of the page to add.</param>
+        /// <param name="isPortrait">Whether the page is in portait or landscape orientation.</param>
+        /// <returns>A builder for editing the new page.</returns>
         public PdfPageBuilder AddPage(PageSize size, bool isPortrait = true)
         {
             if (!size.TryGetPdfRectangle(out var rectangle))
@@ -137,16 +175,10 @@
             return builder;
         }
 
-        public void Generate(Stream stream)
-        {
-
-        }
-
-        public void Generate(string fileName)
-        {
-
-        }
-
+        /// <summary>
+        /// Builds a PDF document from the current content of this builder and its pages.
+        /// </summary>
+        /// <returns>The bytes of the resulting PDF document.</returns>
         public byte[] Build()
         {
             var context = new BuilderContext();

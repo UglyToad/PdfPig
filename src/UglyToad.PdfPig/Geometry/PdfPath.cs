@@ -1,11 +1,10 @@
 ﻿// ReSharper disable ArrangeRedundantParentheses
-namespace UglyToad.PdfPig.Fonts
+namespace UglyToad.PdfPig.Geometry
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
-    using Geometry;
 
     internal class PdfPath
     {
