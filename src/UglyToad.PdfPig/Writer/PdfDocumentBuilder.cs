@@ -18,7 +18,7 @@
     /// <summary>
     /// Provides methods to construct new PDF documents.
     /// </summary>
-    internal class PdfDocumentBuilder
+    public class PdfDocumentBuilder
     {
         private static readonly TrueTypeFontParser Parser = new TrueTypeFontParser();
 
@@ -29,6 +29,7 @@
         /// Whether to include the document information dictionary in the produced document.
         /// </summary>
         public bool IncludeDocumentInformation { get; set; } = true;
+
         /// <summary>
         /// The values of the fields to include in the document information dictionary.
         /// </summary>
@@ -42,7 +43,7 @@
         /// <summary>
         /// The fonts currently available in the document builder added via <see cref="AddTrueTypeFont"/> or <see cref="AddStandard14Font"/>. Keyed by id for internal purposes.
         /// </summary>
-        public IReadOnlyDictionary<Guid, IWritingFont> Fonts => fonts.ToDictionary(x => x.Key, x => x.Value.FontProgram);
+        internal IReadOnlyDictionary<Guid, IWritingFont> Fonts => fonts.ToDictionary(x => x.Key, x => x.Value.FontProgram);
 
         /// <summary>
         /// Determines whether the bytes of the TrueType font file provided can be used in a PDF document.
@@ -340,12 +341,25 @@
             }
         }
 
+        /// <summary>
+        /// A key representing a font available to use on the current document builder. Create by adding a font to a document using either
+        /// <see cref="AddStandard14Font"/> or <see cref="AddTrueTypeFont"/>.
+        /// </summary>
         public class AddedFont
         {
-            public Guid Id { get; }
+            /// <summary>
+            /// The Id uniquely identifying this font on the builder.
+            /// </summary>
+            internal Guid Id { get; }
 
+            /// <summary>
+            /// The name of this font.
+            /// </summary>
             public NameToken Name { get; }
 
+            /// <summary>
+            /// Create a new <see cref="AddedFont"/>.
+            /// </summary>
             internal AddedFont(Guid id, NameToken name)
             {
                 Id = id;
@@ -353,13 +367,40 @@
             }
         }
 
-        internal class DocumentInformationBuilder
+        /// <summary>
+        /// Sets the values of the <see cref="DocumentInformation"/> dictionary for the document being created.
+        /// Control inclusion of the document information dictionary on the output with <see cref="IncludeDocumentInformation"/>.
+        /// </summary>
+        public class DocumentInformationBuilder
         {
+            /// <summary>
+            /// <see cref="DocumentInformation.Title"/>.
+            /// </summary>
             public string Title { get; set; }
+
+            /// <summary>
+            /// <see cref="DocumentInformation.Author"/>.
+            /// </summary>
             public string Author { get; set; }
+
+            /// <summary>
+            /// <see cref="DocumentInformation.Subject"/>.
+            /// </summary>
             public string Subject { get; set; }
+
+            /// <summary>
+            /// <see cref="DocumentInformation.Keywords"/>.
+            /// </summary>
             public string Keywords { get; set; }
+
+            /// <summary>
+            /// <see cref="DocumentInformation.Creator"/>.
+            /// </summary>
             public string Creator { get; set; }
+
+            /// <summary>
+            /// <see cref="DocumentInformation.Producer"/>.
+            /// </summary>
             public string Producer { get; set; } = "PdfPig";
 
             internal Dictionary<NameToken, IToken> ToDictionary()

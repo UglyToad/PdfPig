@@ -28,6 +28,23 @@ The simplest usage at this stage is to open a document, reading the words from e
         }
     }
 
+New in v0.0.5 - To create documents use the class ```PdfDocumentBuilder```. Though they are deprecated within the PDF specification the Standard 14 fonts provide a quick way to get started:
+
+    PdfDocumentBuilder builder = new PdfDocumentBuilder();
+
+    PdfPageBuilder page = builder.AddPage(PageSize.A4);
+
+    // Fonts must be registered with the document builder prior to use to prevent duplication.
+    PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
+
+    page.AddText("Hello World!", 12, new PdfPoint(25, 520), font);
+
+    byte[] documentBytes = builder.Build();
+
+    File.WriteAllBytes(@"C:\\git\newPdf.pdf");
+
+Each font must be registered with the PdfDocumentBuilder prior to use enable pages to share the font resources. Currently only Standard 14 fonts and TrueType fonts (.ttf) are supported.
+
 ## Installation ##
 
 The package is available via the releases tab or from Nuget:
@@ -70,6 +87,47 @@ Since this is alpha software the consumer should wrap all access in a ```try cat
 The document contains the version of the PDF specification it complies with, accessed by ```document.Version```:
 
     decimal version = document.Version;
+
+### Document Creation ###
+
+New in v0.0.5 - The ```PdfDocumentBuilder``` creates a new document with no pages or content. First, for text content, a font must be registered with the builder. Currently this supports Standard 14 fonts provided by Adobe by default and TrueType format fonts.
+
+To add a Standard 14 font use:
+
+    public AddedFont AddStandard14Font(Standard14Font type)
+
+Or for a TrueType font use:
+
+    AddedFont AddTrueTypeFont(IReadOnlyList<byte> fontFileBytes)
+
+Passing in the bytes of a TrueType file (.ttf). You can check the suitability of a TrueType file for embedding in a PDF document using:
+
+    bool CanUseTrueTypeFont(IReadOnlyList<byte> fontFileBytes, out IReadOnlyList<string> reasons)
+
+Which provides a list of reasons why the font cannot be used if the check fails. You should check the license for a TrueType font prior to use, since the compressed font file is embedded in, and distributed with, the resultant document.
+
+The ```AddedFont``` class represents a key to the font stored on the document builder. This must be provided when adding text content to pages. To add a page to a document use:
+
+    PdfPageBuilder AddPage(PageSize size, bool isPortrait = true)
+
+This creates a new ```PdfPageBuilder``` with the specified size. The first added page is page number 1, then 2, then 3, etc. The page builder supports adding text, drawing lines and rectangles and measuring the size of text prior to drawing.
+
+To draw lines and rectangles in black (different colors are not currently supported) use the methods:
+
+    void DrawLine(PdfPoint from, PdfPoint to, decimal lineWidth = 1)
+    void DrawRectangle(PdfPoint position, decimal width, decimal height, decimal lineWidth = 1)
+
+The line width can be varied and defaults to 1.
+
+To write text to the page you must have a reference to an ```AddedFont``` from the methods on ```PdfDocumentBuilder``` as described above. You can then draw the text to the page using:
+
+    IReadOnlyList<Letter> AddText(string text, decimal fontSize, PdfPoint position, PdfDocumentBuilder.AddedFont font)
+
+Where ```position``` is the baseline of the text to draw. Currently **only ASCII text is supported** and the text will be drawn in black and the color cannot be varied. You can also measure the resulting size of text prior to drawing using the method:
+
+    IReadOnlyList<Letter> MeasureText(string text, decimal fontSize, PdfPoint position, PdfDocumentBuilder.AddedFont font)
+
+Which does not change the state of the page, unlike ```AddText```.
 
 ### Document Information ###
 

@@ -167,22 +167,4 @@
             return mappedName;
         }
     }
-
-    internal enum Standard14Font
-    {
-        TimesRoman = 0, 
-        TimesBold = 1, 
-        TimesItalic=2, 
-        TimesBoldItalic = 3,
-        Helvetica = 4,
-        HelveticaBold = 5,
-        HelveticaOblique = 6,
-        HelveticaBoldOblique = 7,
-        Courier = 8,
-        CourierBold = 9,
-        CourierOblique = 10,
-        CourierBoldOblique = 11,
-        Symbol = 12,
-        ZapfDingbats = 13
-    }
 }

@@ -50,6 +50,7 @@
                 "UglyToad.PdfPig.Fonts.FontDescriptor",
                 "UglyToad.PdfPig.Fonts.FontDescriptorFlags",
                 "UglyToad.PdfPig.Fonts.FontStretch",
+                "UglyToad.PdfPig.Fonts.Standard14Font",
                 "UglyToad.PdfPig.Tokens.ArrayToken",
                 "UglyToad.PdfPig.Tokens.BooleanToken",
                 "UglyToad.PdfPig.Tokens.CommentToken",
@@ -65,6 +66,9 @@
                 "UglyToad.PdfPig.Tokens.StreamToken",
                 "UglyToad.PdfPig.Tokens.StringToken",
                 "UglyToad.PdfPig.Util.IWordExtractor",
+                "UglyToad.PdfPig.Writer.PdfDocumentBuilder",
+                "UglyToad.PdfPig.Writer.PdfPageBuilder",
+                "UglyToad.PdfPig.Writer.TokenWriter",
                 "UglyToad.PdfPig.XObjects.XObjectImage"
             };
 

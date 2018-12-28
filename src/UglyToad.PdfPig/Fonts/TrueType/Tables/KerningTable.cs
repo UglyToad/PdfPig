@@ -87,6 +87,7 @@
             // TODO: Implement and test this;
             return null;
 
+#pragma warning disable 162
             var rowWidth = data.ReadUnsignedShort();
 
             var leftClassTableOffset = data.ReadUnsignedShort();
@@ -135,6 +136,7 @@
             }
 
             return new KerningSubTable(version, coverage, pairs);
+#pragma warning restore 162
         }
     }
 }

@@ -68,9 +68,9 @@
         {
             var builder = new PdfDocumentBuilder();
 
-            var page = builder.AddPage(PageSize.A4);
+            PdfPageBuilder page = builder.AddPage(PageSize.A4);
 
-            var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+            PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
 
             page.AddText("Hello World!", 12, new PdfPoint(25, 520), font);
 

@@ -38,7 +38,7 @@
         public string Keywords { get; }
 
         /// <summary>
-        /// The name of the application which created the original document before it was converted to PDF. if applicable.
+        /// The name of the application which created the original document before it was converted to PDF if applicable.
         /// </summary>
         [CanBeNull]
         public string Creator { get; }

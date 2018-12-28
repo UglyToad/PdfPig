@@ -16,7 +16,7 @@
     /// <summary>
     /// A builder used to add construct a page in a PDF document.
     /// </summary>
-    internal class PdfPageBuilder
+    public class PdfPageBuilder
     {
         private readonly PdfDocumentBuilder documentBuilder;
         private readonly List<IGraphicsStateOperation> operations = new List<IGraphicsStateOperation>();

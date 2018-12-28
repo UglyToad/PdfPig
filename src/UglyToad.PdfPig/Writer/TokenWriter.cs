@@ -8,7 +8,10 @@
     using Tokens;
     using Util;
 
-    internal class TokenWriter
+    /// <summary>
+    /// Writes any type of <see cref="IToken"/> to the corresponding PDF document format output.
+    /// </summary>
+    public class TokenWriter
     {
         private static readonly byte ArrayStart = GetByte("[");
         private static readonly byte ArrayEnd = GetByte("]");
@@ -52,6 +55,11 @@
 
         private static readonly byte[] Xref = OtherEncodings.StringAsLatin1Bytes("xref");
 
+        /// <summary>
+        /// Writes the given input token to the output stream with the correct PDF format and encoding including whitespace and line breaks as applicable.
+        /// </summary>
+        /// <param name="token">The token to write to the stream.</param>
+        /// <param name="outputStream">The stream to write the token to.</param>
         public static void WriteToken(IToken token, Stream outputStream)
         {
             switch (token)
@@ -96,14 +104,14 @@
             }
         }
 
-        private static void WriteHex(HexToken hex, Stream stream)
-        {
-            stream.WriteByte(HexStart);
-            stream.WriteText(hex.GetHexString());
-            stream.WriteByte(HexEnd);
-        }
-
-        public static void WriteCrossReferenceTable(IReadOnlyDictionary<IndirectReference, long> objectOffsets, 
+        /// <summary>
+        /// Writes a valid single section cross-reference (xref) table plus trailer dictionary to the output for the set of object offsets.
+        /// </summary>
+        /// <param name="objectOffsets">The byte offset from the start of the document for each object in the document.</param>
+        /// <param name="catalogToken">The object representing the catalog dictionary which is referenced from the trailer dictionary.</param>
+        /// <param name="outputStream">The output stream to write to.</param>
+        /// <param name="documentInformationReference">The object reference for the document information dictionary if present.</param>
+        internal static void WriteCrossReferenceTable(IReadOnlyDictionary<IndirectReference, long> objectOffsets, 
             ObjectToken catalogToken,
             Stream outputStream,
             IndirectReference? documentInformationReference)
@@ -196,6 +204,13 @@
 
             // Complete!
             outputStream.Write(Eof, 0, Eof.Length);
+        }
+
+        private static void WriteHex(HexToken hex, Stream stream)
+        {
+            stream.WriteByte(HexStart);
+            stream.WriteText(hex.GetHexString());
+            stream.WriteByte(HexEnd);
         }
 
         private static void WriteArray(ArrayToken array, Stream outputStream)
