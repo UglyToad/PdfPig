@@ -14,7 +14,6 @@
     using Geometry;
     using Logging;
     using Tokens;
-    using Util;
 
     internal class TrueTypeWritingFont : IWritingFont
     {
@@ -156,7 +155,8 @@
 
             public FontDictionaryMetrics GetMetrics(decimal scaling)
             {
-                var encoding = ReadFontEncoding();
+                // TODO: differences array
+                var encoding = WinAnsiEncoding.Instance;
                 var firstCharacter = encoding.CodeToNameMap.Keys.Min();
                 var lastCharacter = encoding.CodeToNameMap.Keys.Max();
 
@@ -199,14 +199,21 @@
             {
                 var codeToName = new Dictionary<int, string>();
                 var postscript = font.TableRegister.PostScriptTable;
-                for (int i = 0; i <= 256; i++)
+                for (var i = 0; i <= 256; i++)
                 {
                     if (!font.TableRegister.CMapTable.TryGetGlyphIndex(i, out var glyphIndex))
                     {
                         continue;
                     }
 
-                    codeToName[i] = postscript.GlyphNames[glyphIndex];
+                    var name = postscript.GlyphNames[glyphIndex];
+
+                    if (GlyphList.AdobeGlyphList.NameToUnicode(name) == null)
+                    {
+                        continue;
+                    }
+
+                    codeToName[i] = name;
                 }
 
                 return new BuiltInEncoding(codeToName);
