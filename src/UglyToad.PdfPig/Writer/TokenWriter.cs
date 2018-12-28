@@ -2,9 +2,9 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Collections.ObjectModel;
     using System.IO;
     using System.Linq;
+    using Graphics.Operations;
     using Tokens;
     using Util;
 
@@ -17,12 +17,13 @@
         private static readonly byte[] DictionaryEnd = OtherEncodings.StringAsLatin1Bytes(">>");
 
         private static readonly byte Comment = GetByte("%");
-
-        private static readonly byte EndOfLine = OtherEncodings.StringAsLatin1Bytes("\n")[0];
-
+        
         private static readonly byte[] Eof = OtherEncodings.StringAsLatin1Bytes("%%EOF");
 
         private static readonly byte[] FalseBytes = OtherEncodings.StringAsLatin1Bytes("false");
+
+        private static readonly byte HexStart = GetByte("<");
+        private static readonly byte HexEnd = GetByte(">");
 
         private static readonly byte InUseEntry = GetByte("n");
 
@@ -67,8 +68,9 @@
                 case DictionaryToken dictionary:
                     WriteDictionary(dictionary, outputStream);
                     break;
-                case HexToken _:
-                    throw new NotImplementedException();
+                case HexToken hex:
+                    WriteHex(hex, outputStream);
+                    break;
                 case IndirectReferenceToken reference:
                     WriteIndirectReference(reference, outputStream);
                     break;
@@ -94,6 +96,13 @@
             }
         }
 
+        private static void WriteHex(HexToken hex, Stream stream)
+        {
+            stream.WriteByte(HexStart);
+            stream.WriteText(hex.GetHexString());
+            stream.WriteByte(HexEnd);
+        }
+
         public static void WriteCrossReferenceTable(IReadOnlyDictionary<IndirectReference, long> objectOffsets, 
             ObjectToken catalogToken,
             Stream outputStream,
@@ -117,12 +126,15 @@
                 throw new NotSupportedException("Object numbers must form a contiguous range");
             }
 
-            WriteLong(min, outputStream);
+            WriteLong(0, outputStream);
             WriteWhitespace(outputStream);
-            WriteLong(max, outputStream);
+            // 1 extra for the free entry.
+            WriteLong(objectOffsets.Count + 1, outputStream);
             WriteWhitespace(outputStream);
             WriteLineBreak(outputStream);
 
+            WriteFirstXrefEmptyEntry(outputStream);
+            
             foreach (var keyValuePair in objectOffsets.OrderBy(x => x.Key.ObjectNumber))
             {
                 /*
@@ -152,10 +164,18 @@
             outputStream.Write(Trailer, 0, Trailer.Length);
             WriteLineBreak(outputStream);
 
+            var identifier = new ArrayToken(new IToken[]
+            {
+                new HexToken(Guid.NewGuid().ToString("N").ToCharArray()), 
+                new HexToken(Guid.NewGuid().ToString("N").ToCharArray()) 
+            });
+
             var trailerDictionaryData = new Dictionary<NameToken, IToken>
             {
-                {NameToken.Size, new NumericToken(objectOffsets.Count)},
-                {NameToken.Root, new IndirectReferenceToken(catalogToken.Number)}
+                // 1 for the free entry.
+                {NameToken.Size, new NumericToken(objectOffsets.Count + 1)},
+                {NameToken.Root, new IndirectReferenceToken(catalogToken.Number)},
+                {NameToken.Id, identifier}
             };
 
             if (documentInformationReference.HasValue)
@@ -310,7 +330,7 @@
 
         private static void WriteLineBreak(Stream outputStream)
         {
-            outputStream.WriteByte(EndOfLine);
+            outputStream.WriteNewLine();
         }
 
         private static void WriteLong(long value, Stream outputStream)
@@ -322,6 +342,22 @@
         private static void WriteWhitespace(Stream outputStream)
         {
             outputStream.WriteByte(Whitespace);
+        }
+
+        private static void WriteFirstXrefEmptyEntry(Stream outputStream)
+        {
+            /*
+             *  The first entry in the table (object number 0) is always free and has a generation number of 65,535;
+             * it is the head of the linked list of free objects. 
+             */
+
+            outputStream.WriteText(new string('0', 10));
+            outputStream.WriteWhiteSpace();
+            outputStream.WriteText("65535");
+            outputStream.WriteWhiteSpace();
+            outputStream.WriteText("f");
+            outputStream.WriteWhiteSpace();
+            outputStream.WriteNewLine();
         }
 
         private static byte GetByte(string value)

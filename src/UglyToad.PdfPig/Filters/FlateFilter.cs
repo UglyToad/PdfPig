@@ -109,5 +109,20 @@
                 throw;
             }
         }
+
+        public byte[] Encode(Stream input, DictionaryToken streamDictionary, int index)
+        {
+            var resx = new List<byte>{ 120, 156 };
+            using (var output = new MemoryStream())
+            using (var flater = new DeflateStream(output, CompressionMode.Compress, true))
+            {
+                input.CopyTo(flater);
+                flater.Close();
+
+                resx.AddRange(output.ToArray());
+            }
+
+            return resx.ToArray();
+        }
     }
 }

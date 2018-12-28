@@ -2,6 +2,7 @@ namespace UglyToad.PdfPig.Tokens
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Text;
     using Util.JetBrains.Annotations;
 
@@ -125,6 +126,14 @@ namespace UglyToad.PdfPig.Tokens
             }
 
             return value;
+        }
+
+        /// <summary>
+        /// Converts the binary data back to a hex string representation.
+        /// </summary>
+        public string GetHexString()
+        {
+            return BitConverter.ToString(Bytes.ToArray()).Replace("-", string.Empty);
         }
     }
 }

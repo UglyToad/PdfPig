@@ -20,7 +20,6 @@
     /// </summary>
     internal class PdfDocumentBuilder
     {
-        private const byte Break = (byte)'\n';
         private static readonly TrueTypeFontParser Parser = new TrueTypeFontParser();
 
         private readonly Dictionary<int, PdfPageBuilder> pages = new Dictionary<int, PdfPageBuilder>();
@@ -188,6 +187,14 @@
                 // Header
                 WriteString("%PDF-1.7", memory);
 
+                // Files with binary data should contain a 2nd comment line followed by 4 bytes with values > 127
+                memory.WriteText("%");
+                memory.WriteByte(169);
+                memory.WriteByte(205);
+                memory.WriteByte(196);
+                memory.WriteByte(210);
+                memory.WriteNewLine();
+
                 // Body
                 foreach (var font in fonts)
                 {
@@ -210,6 +217,9 @@
                     resources.Add(NameToken.Font, new IndirectReferenceToken(fontsDictionaryRef.Number));
                 }
 
+                var reserved = context.ReserveNumber();
+                var parentIndirect = new IndirectReferenceToken(new IndirectReference(reserved, 0));
+
                 var pageReferences = new List<IndirectReferenceToken>();
                 foreach (var page in pages)
                 {
@@ -220,7 +230,8 @@
                             NameToken.Resources,
                             new DictionaryToken(resources)
                         },
-                        {NameToken.MediaBox, RectangleToArray(page.Value.PageSize)}
+                        {NameToken.MediaBox, RectangleToArray(page.Value.PageSize)},
+                        {NameToken.Parent, parentIndirect}
                     };
 
                     if (page.Value.Operations.Count > 0)
@@ -244,7 +255,7 @@
                     { NameToken.Count, new NumericToken(1) }
                 });
 
-                var pagesRef = context.WriteObject(memory, pagesDictionary);
+                var pagesRef = context.WriteObject(memory, pagesDictionary, reserved);
 
                 var catalog = new DictionaryToken(new Dictionary<NameToken, IToken>
                 {
@@ -310,7 +321,7 @@
             stream.Write(bytes, 0, bytes.Length);
             if (appendBreak)
             {
-                stream.WriteByte(Break);
+                stream.WriteNewLine();
             }
         }
 

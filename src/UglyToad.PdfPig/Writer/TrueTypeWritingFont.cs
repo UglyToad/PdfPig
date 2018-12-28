@@ -5,13 +5,16 @@
     using System.IO;
     using System.Linq;
     using Core;
+    using Filters;
     using Fonts;
     using Fonts.Encodings;
     using Fonts.Exceptions;
     using Fonts.TrueType;
     using Fonts.TrueType.Tables;
     using Geometry;
+    using Logging;
     using Tokens;
+    using Util;
 
     internal class TrueTypeWritingFont : IWritingFont
     {
@@ -46,10 +49,12 @@
 
         public ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context)
         {
-            var bytes = fontFileBytes;
+            var bytes = CompressBytes();
             var embeddedFile = new StreamToken(new DictionaryToken(new Dictionary<NameToken, IToken>
             {
-                { NameToken.Length, new NumericToken(bytes.Count) }
+                { NameToken.Length, new NumericToken(bytes.Length) },
+                { NameToken.Length1, new NumericToken(fontFileBytes.Count) },
+                { NameToken.Filter, new ArrayToken(new []{ NameToken.FlateDecode }) }
             }), bytes);
 
             var fileRef = context.WriteObject(outputStream, embeddedFile);
@@ -116,6 +121,17 @@
             var result = context.WriteObject(outputStream, token);
 
             return result;
+        }
+
+        private byte[] CompressBytes()
+        {
+            using (var memoryStream = new MemoryStream(fontFileBytes.ToArray()))
+            {
+                var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>());
+                var flater = new FlateFilter(new DecodeParameterResolver(new NoOpLog()), new PngPredictor(), new NoOpLog());
+                var bytes = flater.Encode(memoryStream, parameters, 0);
+                return bytes;
+            }
         }
 
         private static ArrayToken GetBoundingBox(PdfRectangle boundingBox, decimal scaling)
