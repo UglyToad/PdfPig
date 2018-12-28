@@ -96,22 +96,50 @@
                                 break;
                             // TODO: CID Font Stuff
                             case 30:
+                                var registry = GetString(operands, stringIndex);
+                                operands.RemoveAt(0);
+                                var ordering = GetString(operands, stringIndex);
+                                operands.RemoveAt(0);
+                                var supplement = GetIntOrDefault(operands);
+                                dictionary.CidFontOperators.Ros = new RegistryOrderingSupplement
+                                {
+                                    Registry = registry,
+                                    Ordering = ordering,
+                                    Supplement = supplement
+                                };
+                                dictionary.IsCidFont = true;
                                 break;
                             case 31:
+                                dictionary.CidFontOperators.Version = GetIntOrDefault(operands);
+                                dictionary.IsCidFont = true;
                                 break;
                             case 32:
+                                dictionary.CidFontOperators.Revision = GetIntOrDefault(operands);
+                                dictionary.IsCidFont = true;
                                 break;
                             case 33:
+                                dictionary.CidFontOperators.Type = GetIntOrDefault(operands);
+                                dictionary.IsCidFont = true;
                                 break;
                             case 34:
+                                dictionary.CidFontOperators.Count = GetIntOrDefault(operands);
+                                dictionary.IsCidFont = true;
                                 break;
                             case 35:
+                                dictionary.CidFontOperators.UidBase = GetIntOrDefault(operands);
+                                dictionary.IsCidFont = true;
                                 break;
                             case 36:
+                                dictionary.CidFontOperators.FontDictionaryArray = GetIntOrDefault(operands);
+                                dictionary.IsCidFont = true;
                                 break;
                             case 37:
+                                dictionary.CidFontOperators.FontDictionarySelect = operands[0].Decimal;
+                                dictionary.IsCidFont = true;
                                 break;
                             case 38:
+                                dictionary.CidFontOperators.FontName = GetString(operands, stringIndex);
+                                dictionary.IsCidFont = true;
                                 break;
                         }
                     }

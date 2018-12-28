@@ -96,6 +96,7 @@
         public static readonly NameToken CharSet = new NameToken("CharSet");
         public static readonly NameToken CiciSignit = new NameToken("CICI.SignIt");
         public static readonly NameToken CidFontType0 = new NameToken("CIDFontType0");
+        public static readonly NameToken CidFontType0C = new NameToken("CIDFontType0C");
         public static readonly NameToken CidFontType2 = new NameToken("CIDFontType2");
         public static readonly NameToken CidToGidMap = new NameToken("CIDToGIDMap");
         public static readonly NameToken CidSet = new NameToken("CIDSet");

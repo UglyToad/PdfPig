@@ -74,7 +74,7 @@
             }
 
             // hhea
-            builder.HorizontalHeaderTable = HorizontalHeaderTable.Load(data, hHead);
+            builder.HorizontalHeaderTable = TableParser.Parse<HorizontalHeaderTable>(hHead, data, builder);
 
             if (!tables.TryGetValue(TrueTypeHeaderTable.Maxp, out var maxHeaderTable))
             {

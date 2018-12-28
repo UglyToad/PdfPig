@@ -7,6 +7,7 @@
     {
         private static readonly CMapTableParser CMapTableParser = new CMapTableParser();
         private static readonly HorizontalMetricsTableParser HorizontalMetricsTableParser = new HorizontalMetricsTableParser();
+        private static readonly HorizontalHeaderTableParser HorizontalHeaderTableParser = new HorizontalHeaderTableParser();
         private static readonly NameTableParser NameTableParser = new NameTableParser();
         private static readonly Os2TableParser Os2TableParser = new Os2TableParser();
 
@@ -30,6 +31,11 @@
             if (typeof(T) == typeof(Os2Table))
             {
                 return (T)(object)Os2TableParser.Parse(table, data, register);
+            }
+
+            if (typeof(T) == typeof(HorizontalHeaderTable))
+            {
+                return (T) (object) HorizontalHeaderTableParser.Parse(table, data, register);
             }
 
             throw new NotImplementedException();

@@ -59,6 +59,8 @@
 
         public bool IsCidFont { get; set; }
 
+        public CidFontOperators CidFontOperators { get; set; } = new CidFontOperators();
+
         public struct SizeAndOffset
         {
             public int Size { get; }
@@ -76,6 +78,36 @@
                 return $"Size: {Size}, Offset: {Offset}";
             }
         }
+    }
+
+    internal class CidFontOperators
+    {
+        public RegistryOrderingSupplement Ros { get; set; }
+
+        public int Version { get; set; } = 0;
+
+        public int Revision { get; set; } = 0;
+
+        public int Type { get; set; } = 0;
+
+        public int Count { get; set; } = 8720;
+
+        public decimal UidBase { get; set; }
+
+        public decimal FontDictionaryArray { get; set; }
+
+        public decimal FontDictionarySelect { get; set; }
+
+        public string FontName { get; set; }
+    }
+
+    internal class RegistryOrderingSupplement
+    {
+        public string Registry { get; set; }
+
+        public string Ordering { get; set; }
+
+        public decimal Supplement { get; set; }
     }
 
     /// <summary>

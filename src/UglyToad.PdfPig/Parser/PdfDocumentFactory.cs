@@ -99,20 +99,19 @@
             
             var trueTypeFontParser = new TrueTypeFontParser();
             var fontDescriptorFactory = new FontDescriptorFactory();
-
-            var cidFontFactory = new CidFontFactory(pdfScanner, fontDescriptorFactory, trueTypeFontParser, filterProvider);
-            var encodingReader = new EncodingReader(pdfScanner);
-            
             var compactFontFormatIndexReader = new CompactFontFormatIndexReader();
+            var compactFontFormatParser = new CompactFontFormatParser(new CompactFontFormatIndividualFontParser(compactFontFormatIndexReader, new CompactFontFormatTopLevelDictionaryReader(), 
+                        new CompactFontFormatPrivateDictionaryReader()), compactFontFormatIndexReader);
+
+            var cidFontFactory = new CidFontFactory(pdfScanner, fontDescriptorFactory, trueTypeFontParser, compactFontFormatParser, filterProvider);
+            var encodingReader = new EncodingReader(pdfScanner);
 
             var fontFactory = new FontFactory(log, new Type0FontHandler(cidFontFactory,
                 cMapCache, 
                 filterProvider, pdfScanner),
                 new TrueTypeFontHandler(log, pdfScanner, filterProvider, cMapCache, fontDescriptorFactory, trueTypeFontParser, encodingReader, new SystemFontFinder(new TrueTypeFontParser())),
                 new Type1FontHandler(pdfScanner, cMapCache, filterProvider, fontDescriptorFactory, encodingReader, 
-                    new Type1FontParser(new Type1EncryptedPortionParser()),
-                    new CompactFontFormatParser(new CompactFontFormatIndividualFontParser(compactFontFormatIndexReader, new CompactFontFormatTopLevelDictionaryReader(), 
-                        new CompactFontFormatPrivateDictionaryReader()), compactFontFormatIndexReader)),
+                    new Type1FontParser(new Type1EncryptedPortionParser()), compactFontFormatParser),
                 new Type3FontHandler(pdfScanner, cMapCache, filterProvider, encodingReader));
             
             var resourceContainer = new ResourceContainer(pdfScanner, fontFactory);

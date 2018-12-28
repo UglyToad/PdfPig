@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using CidFonts;
     using Core;
     using Geometry;
     using Util.JetBrains.Annotations;
@@ -11,7 +12,7 @@
     /// A Compact Font Format (CFF) font program as described in The Compact Font Format specification (Adobe Technical Note #5176).
     /// A CFF font may contain multiple fonts and achieves compression by sharing details between fonts in the set.
     /// </summary>
-    internal class CompactFontFormatFontProgram
+    internal class CompactFontFormatFontProgram : ICidFontProgram
     {
         /// <summary>
         /// The decoded header table for this font.
@@ -57,6 +58,31 @@
             }
 #endif
             return Fonts.First().Value;
+        }
+
+        public bool TryGetBoundingBox(int characterIdentifier, out PdfRectangle boundingBox)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool TryGetBoundingBox(int characterIdentifier, Func<int, int> characterIdentifierToGlyphIndex, out PdfRectangle boundingBox)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool TryGetBoundingAdvancedWidth(int characterIdentifier, Func<int, int> characterIdentifierToGlyphIndex, out decimal width)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool TryGetBoundingAdvancedWidth(int characterIdentifier, out decimal width)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int GetFontMatrixMultiplier()
+        {
+            return 1000;
         }
     }
 }

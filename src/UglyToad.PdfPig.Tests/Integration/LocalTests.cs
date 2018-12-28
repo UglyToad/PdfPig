@@ -10,7 +10,10 @@
         [Fact]
         public void Tests()
         {
-            
+            //using (var document = PdfDocument.Open(File.ReadAllBytes(@"C:\Users\eliot\Downloads\Motor Insurance claim form.pdf"), new ParsingOptions{UseLenientParsing = false}))
+            //{
+            //    var page1 = document.GetPage(1);
+            //}
         }
     }
 }
