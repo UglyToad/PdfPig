@@ -2,6 +2,8 @@
 {
     internal interface ICompactFontFormatCharset
     {
+        bool IsCidCharset { get; }
+
         string GetNameByGlyphId(int glyphId);
 
         string GetNameByStringId(int stringId);

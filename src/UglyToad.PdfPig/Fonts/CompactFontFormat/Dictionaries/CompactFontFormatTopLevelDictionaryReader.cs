@@ -134,7 +134,7 @@
                                 dictionary.IsCidFont = true;
                                 break;
                             case 37:
-                                dictionary.CidFontOperators.FontDictionarySelect = operands[0].Decimal;
+                                dictionary.CidFontOperators.FontDictionarySelect = GetIntOrDefault(operands);
                                 dictionary.IsCidFont = true;
                                 break;
                             case 38:

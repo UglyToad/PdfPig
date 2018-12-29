@@ -94,9 +94,9 @@
 
         public decimal UidBase { get; set; }
 
-        public decimal FontDictionaryArray { get; set; }
+        public int FontDictionaryArray { get; set; }
 
-        public decimal FontDictionarySelect { get; set; }
+        public int FontDictionarySelect { get; set; }
 
         public string FontName { get; set; }
     }

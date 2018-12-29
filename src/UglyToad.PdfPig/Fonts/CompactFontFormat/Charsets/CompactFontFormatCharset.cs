@@ -7,6 +7,8 @@
     {
         protected readonly IReadOnlyDictionary<int, (int stringId, string name)> GlyphIdToStringIdAndName;
 
+        public bool IsCidCharset { get; } = false;
+
         protected CompactFontFormatCharset(IReadOnlyList<(int glyphId, int stringId, string name)> data)
         {
             if (data == null)

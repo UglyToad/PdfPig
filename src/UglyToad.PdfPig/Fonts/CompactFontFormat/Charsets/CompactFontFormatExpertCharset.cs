@@ -181,6 +181,8 @@
 
         private readonly IReadOnlyDictionary<int, KeyValuePair<int, string>> characterIdToStringIdAndName;
 
+        public bool IsCidCharset { get; } = false;
+
         private CompactFontFormatExpertCharset()
         {
             var furtherMap = new Dictionary<int, KeyValuePair<int, string>>();

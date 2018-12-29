@@ -244,6 +244,8 @@
 
         private readonly IReadOnlyDictionary<int, KeyValuePair<int, string>> characterIdToStringIdAndName;
 
+        public bool IsCidCharset { get; } = false;
+
         private CompactFontFormatIsoAdobeCharset()
         {
             var furtherMap = new Dictionary<int, KeyValuePair<int, string>>();
