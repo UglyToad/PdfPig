@@ -45,6 +45,7 @@
   <ItemGroup>
     <None Remove="Fonts\CompactFontFormat\MinionPro.bin" />
     <None Remove="Fonts\TrueType\Roboto-Regular.GlyphData.txt" />
+    <None Remove="Parser\SimpleGoogleDocPageContent.txt" />
   </ItemGroup>
 
   <ItemGroup>
@@ -71,6 +72,9 @@
     <Content Include="Fonts\Type1\CMBX12.pfa" />
     <Content Include="Fonts\Type1\CMCSC10.pfa" />
     <Content Include="Fonts\Type1\Raleway-Black.pfb" />
+    <Content Include="Parser\SimpleGoogleDocPageContent.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
