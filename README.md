@@ -60,6 +60,7 @@ While the version is below 1.0.0 minor versions will change the public API witho
 ## API Changes ##
 
 + 0.0.3 - Changes to position data for ```Letter```. Letter has a Location, Width and GlyphRectangle property. Consult the [Wiki](https://github.com/UglyToad/PdfPig/wiki/Letters) for details of the new API. Adds ```PdfDocument.Structure``` property allowing access to raw data.
++ 0.0.5 - Adds the ability to create valid PDF documents with custom text, lines and rectangles. Use ```PdfDocumentBuilder``` to get started. Adds the ability to retrieve per-page annotations using the experimental access on the page level.
 
 ## Usage ##
 
