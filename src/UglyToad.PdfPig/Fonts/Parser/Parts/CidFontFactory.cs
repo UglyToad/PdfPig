@@ -2,11 +2,8 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
     using CidFonts;
     using CompactFontFormat;
-    using Core;
     using Exceptions;
     using Filters;
     using Geometry;
@@ -27,7 +24,7 @@
         private readonly IFilterProvider filterProvider;
         private readonly IPdfTokenScanner pdfScanner;
 
-        public CidFontFactory(IPdfTokenScanner pdfScanner, FontDescriptorFactory descriptorFactory, TrueTypeFontParser trueTypeFontParser, 
+        public CidFontFactory(IPdfTokenScanner pdfScanner, FontDescriptorFactory descriptorFactory, TrueTypeFontParser trueTypeFontParser,
             CompactFontFormatParser compactFontFormatParser,
             IFilterProvider filterProvider)
         {
@@ -60,7 +57,7 @@
             var baseFont = dictionary.GetNameOrDefault(NameToken.BaseFont);
 
             var systemInfo = GetSystemInfo(dictionary);
-            
+
             var subType = dictionary.GetNameOrDefault(NameToken.Subtype);
             if (NameToken.CidFontType0.Equals(subType))
             {
@@ -76,7 +73,7 @@
 
             return null;
         }
-        
+
         private bool TryGetFontDescriptor(DictionaryToken dictionary, out DictionaryToken descriptorDictionary)
         {
             descriptorDictionary = null;
@@ -87,7 +84,7 @@
             }
 
             var descriptor = DirectObjectFinder.Get<DictionaryToken>(baseValue, pdfScanner);
-            
+
             descriptorDictionary = descriptor;
 
             return true;
@@ -108,46 +105,46 @@
             }
 
             var fontFile = fontFileStream.Decode(filterProvider);
-            
+
             switch (descriptor.FontFile.FileType)
             {
                 case DescriptorFontFile.FontFileType.TrueType:
                     var input = new TrueTypeDataBytes(new ByteArrayInputBytes(fontFile));
                     return trueTypeFontParser.Parse(input);
                 case DescriptorFontFile.FontFileType.FromSubtype:
-                {
-                    if (!DirectObjectFinder.TryGet(descriptor.FontFile.ObjectKey, pdfScanner, out StreamToken str))
                     {
+                        if (!DirectObjectFinder.TryGet(descriptor.FontFile.ObjectKey, pdfScanner, out StreamToken str))
+                        {
+                            throw new NotSupportedException("Cannot read CID font from subtype.");
+                        }
+
+                        if (!str.StreamDictionary.TryGet(NameToken.Subtype, out NameToken subtypeName))
+                        {
+                            throw new PdfDocumentFormatException($"The font file stream did not contain a subtype entry: {str.StreamDictionary}.");
+                        }
+
+                        if (subtypeName == NameToken.CidFontType0C)
+                        {
+                            var bytes = str.Decode(filterProvider);
+                            var font = compactFontFormatParser.Parse(new CompactFontFormatData(bytes));
+                            throw new NotSupportedException($"Unsupported subtype for CID font {subtypeName}. Font: {font}");
+                        }
+
+                        if (subtypeName == NameToken.Type1C)
+                        {
+
+                        }
+                        else if (subtypeName == NameToken.OpenType)
+                        {
+
+                        }
+                        else
+                        {
+                            throw new PdfDocumentFormatException($"Unexpected subtype for CID font: {subtypeName}.");
+                        }
+
                         throw new NotSupportedException("Cannot read CID font from subtype.");
                     }
-
-                    if (!str.StreamDictionary.TryGet(NameToken.Subtype, out NameToken subtypeName))
-                    {
-                        throw new PdfDocumentFormatException($"The font file stream did not contain a subtype entry: {str.StreamDictionary}.");
-                    }
-
-                    if (subtypeName == NameToken.CidFontType0C)
-                    {
-                        var bytes = str.Decode(filterProvider);
-                        var font = compactFontFormatParser.Parse(new CompactFontFormatData(bytes));
-                        return font;
-                    }
-
-                    if (subtypeName == NameToken.Type1C)
-                    {
-
-                    }
-                    else if (subtypeName == NameToken.OpenType)
-                    {
-
-                    }
-                    else
-                    {
-                        throw new PdfDocumentFormatException($"Unexpected subtype for CID font: {subtypeName}.");
-                    }
-
-                    throw new NotSupportedException("Cannot read CID font from subtype.");
-                }
                 default:
                     throw new NotSupportedException("Currently only TrueType fonts are supported.");
             }
@@ -259,14 +256,14 @@
 
         private CharacterIdentifierSystemInfo GetSystemInfo(DictionaryToken dictionary)
         {
-            if(!dictionary.TryGet(NameToken.CidSystemInfo, out var cidEntry))
+            if (!dictionary.TryGet(NameToken.CidSystemInfo, out var cidEntry))
             {
                 throw new InvalidFontFormatException($"No CID System Info was found in the CID Font dictionary: {dictionary}");
             }
 
             if (cidEntry is DictionaryToken cidDictionary)
             {
-                
+
             }
             else
             {
