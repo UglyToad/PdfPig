@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using Cos;
     using CrossReference;
     using Exceptions;
     using IO;

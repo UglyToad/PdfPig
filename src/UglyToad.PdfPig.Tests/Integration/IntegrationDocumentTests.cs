@@ -23,7 +23,7 @@
                 {
                     var page = document.GetPage(i + 1);
 
-                    Assert.NotNull(page.GetAnnotations().ToList());
+                    Assert.NotNull(page.ExperimentalAccess.GetAnnotations().ToList());
                 }
             }
         }

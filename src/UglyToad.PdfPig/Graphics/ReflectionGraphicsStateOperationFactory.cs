@@ -4,7 +4,6 @@ namespace UglyToad.PdfPig.Graphics
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
-    using Cos;
     using Exceptions;
     using Operations;
     using Operations.TextShowing;

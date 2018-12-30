@@ -3,7 +3,6 @@
     using System;
     using System.Linq;
     using Exceptions;
-    using PdfPig.Cos;
     using PdfPig.CrossReference;
     using PdfPig.Parser.FileStructure;
     using PdfPig.Tokenization.Scanner;

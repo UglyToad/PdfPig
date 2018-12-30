@@ -8,6 +8,7 @@
     using Graphics.Operations;
     using Graphics.Operations.General;
     using Graphics.Operations.PathConstruction;
+    using Graphics.Operations.SpecialGraphicsState;
     using Graphics.Operations.TextObjects;
     using Graphics.Operations.TextPositioning;
     using Graphics.Operations.TextShowing;
@@ -82,6 +83,51 @@
             {
                 operations.Add(new SetLineWidth(lineWidth));
             }
+        }
+
+        /// <summary>
+        /// Sets the stroke color for any following operations to the RGB value. Use <see cref="ResetColor"/> to reset.
+        /// </summary>
+        /// <param name="r">Red - 0 to 255</param>
+        /// <param name="g">Green - 0 to 255</param>
+        /// <param name="b">Blue - 0 to 255</param>
+        public void SetStrokeColor(byte r, byte g, byte b)
+        {
+            operations.Add(Push.Value);
+            operations.Add(new SetStrokeColorDeviceRgb(RgbToDecimal(r), RgbToDecimal(g), RgbToDecimal(b)));
+        }
+
+        /// <summary>
+        /// Sets the stroke color with the exact decimal value between 0 and 1 for any following operations to the RGB value. Use <see cref="ResetColor"/> to reset.
+        /// </summary>
+        /// <param name="r">Red - 0 to 1</param>
+        /// <param name="g">Green - 0 to 1</param>
+        /// <param name="b">Blue - 0 to 1</param>
+        internal void SetStrokeColorExact(decimal r, decimal g, decimal b)
+        {
+            operations.Add(Push.Value);
+            operations.Add(new SetStrokeColorDeviceRgb(CheckRgbDecimal(r, nameof(r)), 
+                CheckRgbDecimal(g, nameof(g)), CheckRgbDecimal(b, nameof(b))));
+        }
+
+        /// <summary>
+        /// Sets the fill and text color for any following operations to the RGB value. Use <see cref="ResetColor"/> to reset.
+        /// </summary>
+        /// <param name="r">Red - 0 to 255</param>
+        /// <param name="g">Green - 0 to 255</param>
+        /// <param name="b">Blue - 0 to 255</param>
+        public void SetTextAndFillColor(byte r, byte g, byte b)
+        {
+            operations.Add(Push.Value);
+            operations.Add(new SetNonStrokeColorDeviceRgb(RgbToDecimal(r), RgbToDecimal(g), RgbToDecimal(b)));
+        }
+
+        /// <summary>
+        /// Restores the stroke, text and fill color to default (black).
+        /// </summary>
+        public void ResetColor()
+        {
+            operations.Add(Pop.Value);
         }
 
         /// <summary>
@@ -220,6 +266,29 @@
             }
 
             return letters;
+        }
+
+        private static decimal RgbToDecimal(byte value)
+        {
+            var res = Math.Max(0, value / (decimal)byte.MaxValue);
+            res = Math.Min(1, res);
+
+            return res;
+        }
+
+        private static decimal CheckRgbDecimal(decimal value, string argument)
+        {
+            if (value < 0)
+            {
+                throw new ArgumentOutOfRangeException(argument, $"Provided decimal for RGB color was less than zero: {value}.");
+            }
+
+            if (value > 1)
+            {
+                throw new ArgumentOutOfRangeException(argument, $"Provided decimal for RGB color was greater than one: {value}.");
+            }
+
+            return value;
         }
     }
 }

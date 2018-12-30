@@ -15,7 +15,6 @@
     public class Page
     {
         private readonly DictionaryToken dictionary;
-        private readonly AnnotationProvider annotationProvider;
 
         /// <summary>
         /// The page number (starting at 1).
@@ -68,7 +67,6 @@
             }
 
             this.dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
-            this.annotationProvider = annotationProvider ?? throw new ArgumentNullException(nameof(annotationProvider));
 
             Number = number;
             MediaBox = mediaBox;
@@ -80,7 +78,7 @@
             Height = mediaBox.Bounds.Height;
 
             Size = mediaBox.Bounds.GetPageSize();
-            ExperimentalAccess = new Experimental(this);
+            ExperimentalAccess = new Experimental(this, annotationProvider);
         }
 
         private static string GetText(PageContent content)
@@ -109,21 +107,18 @@
             return (wordExtractor ?? DefaultWordExtractor.Instance).GetWords(Letters);
         }
 
-        internal IEnumerable<Annotation> GetAnnotations()
-        {
-            return annotationProvider.GetAnnotations();
-        }
-
         /// <summary>
         /// Provides access to useful members which will change in future releases.
         /// </summary>
         public class Experimental
         {
             private readonly Page page;
+            private readonly AnnotationProvider annotationProvider;
 
-            internal Experimental(Page page)
+            internal Experimental(Page page, AnnotationProvider annotationProvider)
             {
                 this.page = page;
+                this.annotationProvider = annotationProvider;
             }
 
             /// <summary>
@@ -134,6 +129,15 @@
             public IEnumerable<XObjectImage> GetRawImages()
             {
                 return page.Content.GetImages();
+            }
+
+            /// <summary>
+            /// Get the annotation objects from the page.
+            /// </summary>
+            /// <returns>The lazily evaluated set of annotations on this page.</returns>
+            public IEnumerable<Annotation> GetAnnotations()
+            {
+                return annotationProvider.GetAnnotations();
             }
         }
     }

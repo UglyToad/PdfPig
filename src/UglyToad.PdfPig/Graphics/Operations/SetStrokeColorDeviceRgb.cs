@@ -28,7 +28,14 @@
 
         public void Write(Stream stream)
         {
-            throw new System.NotImplementedException();
+            stream.WriteDecimal(R);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(G);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(B);
+            stream.WriteWhiteSpace();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
         public override string ToString()

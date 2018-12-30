@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Parser.Parts.CrossReference
 {
     using System.Collections.Generic;
-    using Cos;
     using Exceptions;
     using Filters;
     using PdfPig.CrossReference;

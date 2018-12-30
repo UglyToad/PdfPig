@@ -112,22 +112,33 @@ The ```AddedFont``` class represents a key to the font stored on the document bu
 
 This creates a new ```PdfPageBuilder``` with the specified size. The first added page is page number 1, then 2, then 3, etc. The page builder supports adding text, drawing lines and rectangles and measuring the size of text prior to drawing.
 
-To draw lines and rectangles in black (different colors are not currently supported) use the methods:
+To draw lines and rectangles use the methods:
 
     void DrawLine(PdfPoint from, PdfPoint to, decimal lineWidth = 1)
     void DrawRectangle(PdfPoint position, decimal width, decimal height, decimal lineWidth = 1)
 
-The line width can be varied and defaults to 1.
+The line width can be varied and defaults to 1. Rectangles are unfilled and the fill color cannot be changed at present.
 
 To write text to the page you must have a reference to an ```AddedFont``` from the methods on ```PdfDocumentBuilder``` as described above. You can then draw the text to the page using:
 
     IReadOnlyList<Letter> AddText(string text, decimal fontSize, PdfPoint position, PdfDocumentBuilder.AddedFont font)
 
-Where ```position``` is the baseline of the text to draw. Currently **only ASCII text is supported** and the text will be drawn in black and the color cannot be varied. You can also measure the resulting size of text prior to drawing using the method:
+Where ```position``` is the baseline of the text to draw. Currently **only ASCII text is supported**. You can also measure the resulting size of text prior to drawing using the method:
 
     IReadOnlyList<Letter> MeasureText(string text, decimal fontSize, PdfPoint position, PdfDocumentBuilder.AddedFont font)
 
 Which does not change the state of the page, unlike ```AddText```.
+
+Changing the RGB color of text, lines and rectangles is supported using:
+
+    void SetStrokeColor(byte r, byte g, byte b)
+    void SetTextAndFillColor(byte r, byte g, byte b)
+
+Which take RGB values between 0 and 255. The color will remain active for all operations called after these methods until reset is called using:
+
+    void ResetColor()
+
+Which resets the color for stroke, fill and text drawing to black.
 
 ### Document Information ###
 
@@ -183,7 +194,6 @@ Due to the way a PDF is structured internally the page text may not be a readabl
 
 To help users resolve actual text order on the page, the ```Page``` file provides access to a list of the letters:
 
-
     IReadOnlyList<Letter> letters = page.Letters;
 
 These letters contain:
@@ -198,6 +208,14 @@ These letters contain:
 Letter position is measured in PDF coordinates where the origin is the lower left corner of the page. Therefore a higher Y value means closer to the top of the page.
 
 At this stage letter position is experimental and **will change in future versions**! Do not rely on letter positions remaining constant between different versions of this package.
+
+### Annotations ###
+
+New in v0.0.5 - Early support for retrieving annotations on each page is provided using the method:
+
+    page.ExperimentalAccess.GetAnnotations()
+
+This call is not cached and the document must not have been disposed prior to use. The annotations API may change in future.
 
 ## Issues ##
 
