@@ -253,7 +253,7 @@
                 {
                     { NameToken.Type, NameToken.Pages },
                     { NameToken.Kids, new ArrayToken(pageReferences) },
-                    { NameToken.Count, new NumericToken(1) }
+                    { NameToken.Count, new NumericToken(pageReferences.Count) }
                 });
 
                 var pagesRef = context.WriteObject(memory, pagesDictionary, reserved);

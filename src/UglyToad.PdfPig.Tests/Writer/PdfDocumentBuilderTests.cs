@@ -233,6 +233,45 @@
             }
         }
 
+        [Fact]
+        public void CanWriteTwoPageDocument()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page1 = builder.AddPage(PageSize.A4);
+            var page2 = builder.AddPage(PageSize.A4);
+
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts", "TrueType");
+            var file = Path.Combine(path, "Roboto-Regular.ttf");
+
+            var font = builder.AddTrueTypeFont(File.ReadAllBytes(file));
+
+            var topLine = new PdfPoint(30, page1.PageSize.Height - 60);
+            var letters = page1.AddText("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor", 9, topLine, font);
+            page1.AddText("incididunt ut labore et dolore magna aliqua.", 9, new PdfPoint(30, topLine.Y - letters.Max(x => x.GlyphRectangle.Height) - 5), font);
+
+            var page2Letters = page2.AddText("The very hungry caterpillar ate all the apples in the garden.", 12, topLine, font);
+            var left = page2Letters[0].GlyphRectangle.Left;
+            var bottom = page2Letters.Min(x => x.GlyphRectangle.Bottom);
+            var right = page2Letters[page2Letters.Count - 1].GlyphRectangle.Right;
+            var top = page2Letters.Max(x => x.GlyphRectangle.Top);
+            page2.SetStrokeColor(10, 250, 69);
+            page2.DrawRectangle(new PdfPoint(left, bottom), right - left, top - bottom);
+
+            var bytes = builder.Build();
+            WriteFile(nameof(CanWriteTwoPageDocument), bytes);
+
+            using (var document = PdfDocument.Open(bytes))
+            {
+                var page1Out = document.GetPage(1);
+
+                Assert.StartsWith("Lorem ipsum dolor sit", page1Out.Text);
+
+                var page2Out = document.GetPage(2);
+
+                Assert.StartsWith("The very hungry caterpillar", page2Out.Text);
+            }
+        }
+
         private static void WriteFile(string name, byte[] bytes)
         {
             try

@@ -65,7 +65,7 @@
         /// <summary>
         /// Draws a rectangle on the current page starting at the specified point with the given width, height and line width.
         /// </summary>
-        /// <param name="position">The position of the rectangle, for positive width and height this is the top-left corner.</param>
+        /// <param name="position">The position of the rectangle, for positive width and height this is the bottom-left corner.</param>
         /// <param name="width">The width of the rectangle.</param>
         /// <param name="height">The height of the rectangle.</param>
         /// <param name="lineWidth">The width of the line border of the rectangle.</param>
