@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using AcroForms;
     using Content;
     using CrossReference;
     using FileStructure;
@@ -127,9 +128,11 @@
             var catalog = catalogFactory.Create(pdfScanner, rootDictionary);
 
             var caching = new ParsingCachingProviders(bruteForceSearcher, resourceContainer);
+
+            var acroFormFactory = new AcroFormFactory(pdfScanner, filterProvider);
             
             return new PdfDocument(log, inputBytes, version, crossReferenceTable, isLenientParsing, caching, pageFactory, catalog, information,
-                pdfScanner);
+                pdfScanner, acroFormFactory);
         }
 
         private static DictionaryToken ParseTrailer(CrossReferenceTable crossReferenceTable, bool isLenientParsing, IPdfTokenScanner pdfTokenScanner)

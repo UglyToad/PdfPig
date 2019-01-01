@@ -4,6 +4,8 @@
     using Exceptions;
     using Geometry;
     using JetBrains.Annotations;
+    using Parser.Parts;
+    using Tokenization.Scanner;
     using Tokens;
 
     internal static class DictionaryTokenExtensions
@@ -67,6 +69,18 @@
             }
 
             return result;
+        }
+
+        public static bool TryGetOptionalTokenDirect<T>(this DictionaryToken token, NameToken name, IPdfTokenScanner scanner, out T result) where T : IToken
+        {
+            result = default(T);
+            if (token.TryGet(name, out var appearancesToken) && DirectObjectFinder.TryGet(appearancesToken, scanner, out T innerResult))
+            {
+                result = innerResult;
+                return true;
+            }
+
+            return false;
         }
     }
 

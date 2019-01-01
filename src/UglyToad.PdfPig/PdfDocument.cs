@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using AcroForms;
     using Content;
     using CrossReference;
     using IO;
@@ -17,6 +18,7 @@
     public class PdfDocument : IDisposable
     {
         private bool isDisposed;
+        private readonly Lazy<AcroForm> documentForm;
 
         private readonly bool isLenientParsing;
 
@@ -65,7 +67,8 @@
             ParsingCachingProviders cachingProviders,
             IPageFactory pageFactory,
             Catalog catalog,
-            DocumentInformation information, IPdfTokenScanner pdfScanner)
+            DocumentInformation information, IPdfTokenScanner pdfScanner,
+            AcroFormFactory acroFormFactory)
         {
             this.log = log;
             this.inputBytes = inputBytes;
@@ -76,6 +79,7 @@
             Information = information ?? throw new ArgumentNullException(nameof(information));
             pages = new Pages(log, catalog, pageFactory, isLenientParsing, pdfScanner);
             Structure = new Structure(catalog, crossReferenceTable, pdfScanner);
+            documentForm = new Lazy<AcroForm>(() => acroFormFactory.GetAcroForm(catalog));
         }
 
         /// <summary>
@@ -121,6 +125,20 @@
             log.Debug($"Accessing page {pageNumber}.");
 
             return pages.GetPage(pageNumber);
+        }
+
+        /// <summary>
+        /// Gets the form if this document contains one.
+        /// </summary>
+        /// <returns>An <see cref="AcroForm"/> from the document or <see langword="null"/> if not present.</returns>
+        internal AcroForm GetForm()
+        {
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException("Cannot access the form after the document is disposed.");
+            }
+
+            return documentForm.Value;
         }
         
         /// <inheritdoc />

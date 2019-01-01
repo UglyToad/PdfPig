@@ -30,7 +30,7 @@
         {
             var type = dictionary.GetNameOrDefault(NameToken.Type);
 
-            if (!type.Equals(NameToken.Font))
+            if (type != null && !type.Equals(NameToken.Font))
             {
                 var message = "The font dictionary did not have type 'Font'. " + dictionary;
 
