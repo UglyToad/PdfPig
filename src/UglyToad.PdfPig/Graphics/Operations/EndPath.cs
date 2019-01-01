@@ -3,27 +3,41 @@
     using System.IO;
     using Content;
 
+    /// <summary>
+    /// End path without filling or stroking.
+    /// </summary>
     internal class EndPath : IGraphicsStateOperation
     {
+        /// <summary>
+        /// The symbol for this operation in a stream.
+        /// </summary>
         public const string Symbol = "n";
 
+        /// <summary>
+        /// The instance of the <see cref="EndPath"/> operation.
+        /// </summary>
         public static readonly EndPath Value = new EndPath();
 
+        /// <inheritdoc />
         public string Operator => Symbol;
 
         private EndPath()
         {
         }
 
+        /// <inheritdoc />
         public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
         }
 
+        /// <inheritdoc />
         public void Write(Stream stream)
         {
-            throw new System.NotImplementedException();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return Symbol;

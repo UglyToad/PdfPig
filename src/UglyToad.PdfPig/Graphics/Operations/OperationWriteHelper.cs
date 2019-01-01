@@ -28,5 +28,13 @@
         {
             stream.WriteText(value.ToString("G"));
         }
+
+        public static void WriteNumberText(this Stream stream, decimal number, string text)
+        {
+            stream.WriteDecimal(number);
+            stream.WriteWhiteSpace();
+            stream.WriteText(text);
+            stream.WriteNewLine();
+        }
     }
 }

@@ -3,28 +3,45 @@
     using System.IO;
     using Content;
 
+    /// <summary>
+    /// Set the gray level for stroking operations.
+    /// </summary>
     internal class SetStrokeColorDeviceGray : IGraphicsStateOperation
     {
         public const string Symbol = "G";
 
+        /// <inheritdoc />
         public string Operator => Symbol;
 
+        /// <summary>
+        /// The gray level between 0 (black) and 1 (white).
+        /// </summary>
         public decimal Gray { get; }
 
+        /// <summary>
+        /// Create a new <see cref="SetStrokeColorDeviceGray"/>.
+        /// </summary>
+        /// <param name="gray">The gray level.</param>
         public SetStrokeColorDeviceGray(decimal gray)
         {
             Gray = gray;
         }
 
+        /// <inheritdoc />
         public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
         }
-
+        
+        /// <inheritdoc />
         public void Write(Stream stream)
         {
-            throw new System.NotImplementedException();
+            stream.WriteDecimal(Gray);
+            stream.WriteWhiteSpace();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"{Gray} {Symbol}";
