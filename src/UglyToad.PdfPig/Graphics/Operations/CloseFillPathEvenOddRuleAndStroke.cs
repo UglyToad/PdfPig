@@ -3,27 +3,41 @@
     using System.IO;
     using Content;
 
+    /// <summary>
+    /// Close, fill, and then stroke the path, using the even-odd rule to determine the region to fill.
+    /// </summary>
     internal class CloseFillPathEvenOddRuleAndStroke : IGraphicsStateOperation
     {
+        /// <summary>
+        /// The symbol for this operation in a stream.
+        /// </summary>
         public const string Symbol = "b*";
 
+        /// <summary>
+        /// The instance of the <see cref="CloseFillPathEvenOddRuleAndStroke"/> operation.
+        /// </summary>
         public static readonly CloseFillPathEvenOddRuleAndStroke Value = new CloseFillPathEvenOddRuleAndStroke();
 
+        /// <inheritdoc />
         public string Operator => Symbol;
 
         private CloseFillPathEvenOddRuleAndStroke()
         {
         }
 
+        /// <inheritdoc />
         public void Run(IOperationContext operationContext, IResourceStore resourceStore)
         {
         }
 
+        /// <inheritdoc />
         public void Write(Stream stream)
         {
-            throw new System.NotImplementedException();
+            stream.WriteText(Symbol);
+            stream.WriteNewLine();
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return Symbol;

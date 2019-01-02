@@ -8,6 +8,9 @@
     /// </summary>
     internal class SetStrokeColorDeviceGray : IGraphicsStateOperation
     {
+        /// <summary>
+        /// The symbol for this operation in a stream.
+        /// </summary>
         public const string Symbol = "G";
 
         /// <inheritdoc />
@@ -35,10 +38,7 @@
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            stream.WriteDecimal(Gray);
-            stream.WriteWhiteSpace();
-            stream.WriteText(Symbol);
-            stream.WriteNewLine();
+            stream.WriteNumberText(Gray, Symbol);
         }
 
         /// <inheritdoc />

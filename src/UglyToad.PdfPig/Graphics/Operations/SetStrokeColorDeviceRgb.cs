@@ -8,6 +8,9 @@
     /// </summary>
     internal class SetStrokeColorDeviceRgb : IGraphicsStateOperation
     {
+        /// <summary>
+        /// The symbol for this operation in a stream.
+        /// </summary>
         public const string Symbol = "RG";
 
         /// <inheritdoc />
