@@ -82,6 +82,24 @@
 
             return false;
         }
+
+        public static bool TryGetOptionalStringDirect(this DictionaryToken token, NameToken name, IPdfTokenScanner scanner, out string result)
+        {
+            result = default(string);
+            if (token.TryGetOptionalTokenDirect(name, scanner, out StringToken stringToken))
+            {
+                result = stringToken.Data;
+                return true;
+            }
+
+            if (token.TryGetOptionalTokenDirect(name, scanner, out HexToken hexToken))
+            {
+                result = hexToken.Data;
+                return true;
+            }
+
+            return false;
+        }
     }
 
     internal static class ArrayTokenExtensions

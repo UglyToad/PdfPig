@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.PdfPig.AcroForms
 {
     using System;
+    using System.Collections.Generic;
+    using Fields;
     using Tokens;
     using Util.JetBrains.Annotations;
 
@@ -30,13 +32,20 @@
         public bool NeedAppearances { get; }
 
         /// <summary>
+        /// All root fields in this form with their corresponding references.
+        /// </summary>
+        public IReadOnlyDictionary<IndirectReference, AcroFieldBase> Fields { get; }
+
+        /// <summary>
         /// Create a new <see cref="AcroForm"/>.
         /// </summary>
-        public AcroForm(DictionaryToken dictionary, SignatureFlags signatureFlags, bool needAppearances)
+        public AcroForm(DictionaryToken dictionary, SignatureFlags signatureFlags, bool needAppearances, 
+            IReadOnlyDictionary<IndirectReference, AcroFieldBase> fields)
         {
             Dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
             SignatureFlags = signatureFlags;
             NeedAppearances = needAppearances;
+            Fields = fields ?? throw new ArgumentNullException(nameof(fields));
         }
 
         /// <inheritdoc />
