@@ -1,6 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Core
 {
-    internal enum RenderingIntent
+    /// <summary>
+    /// Specifying a rendering intent allows a PDF file to set priorities regarding which properties to preserve and which to sacrifice for CIE colors. 
+    /// </summary>
+    public enum RenderingIntent
     {
         /// <summary>
         /// No correction for the output medium's white point. Colors 

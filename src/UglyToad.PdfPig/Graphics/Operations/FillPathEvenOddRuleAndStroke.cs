@@ -1,8 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations
 {
     using System.IO;
-    using Content;
 
+    /// <inheritdoc />
     /// <summary>
     /// Fill and then stroke the path, using the even-odd rule to determine the region to fill.
     /// </summary>
@@ -26,7 +26,7 @@
         }
 
         /// <inheritdoc />
-        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        public void Run(IOperationContext operationContext)
         {
         }
 

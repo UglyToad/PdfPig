@@ -57,9 +57,8 @@
             var setFontAndSize = new SetFontAndSize(Font1Name, 69.42m);
 
             var context = new TestOperationContext();
-            var store = new TestResourceStore();
 
-            setFontAndSize.Run(context, store);
+            setFontAndSize.Run(context);
 
             var state = context.GetCurrentState();
 

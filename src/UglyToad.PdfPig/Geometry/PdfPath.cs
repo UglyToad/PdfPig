@@ -6,18 +6,21 @@ namespace UglyToad.PdfPig.Geometry
     using System.Linq;
     using System.Text;
 
-    internal class PdfPath
+    /// <summary>
+    /// A path in a PDF document, used by glyphs and page content.
+    /// </summary>
+    public class PdfPath
     {
         private readonly List<IPathCommand> commands = new List<IPathCommand>();
         private PdfPoint? currentPosition;
 
-        public void MoveTo(decimal x, decimal y)
+        internal void MoveTo(decimal x, decimal y)
         {
             currentPosition = new PdfPoint(x, y);
             commands.Add(new Move(currentPosition.Value));
         }
 
-        public void LineTo(decimal x, decimal y)
+        internal void LineTo(decimal x, decimal y)
         {
             if (currentPosition.HasValue)
             {
@@ -31,9 +34,9 @@ namespace UglyToad.PdfPig.Geometry
             }
         }
 
-        public void QuadraticCurveTo(decimal x1, decimal y1, decimal x2, decimal y2) { }
+        internal void QuadraticCurveTo(decimal x1, decimal y1, decimal x2, decimal y2) { }
 
-        public void BezierCurveTo(decimal x1, decimal y1, decimal x2, decimal y2, decimal x3, decimal y3)
+        internal void BezierCurveTo(decimal x1, decimal y1, decimal x2, decimal y2, decimal x3, decimal y3)
         {
             if (currentPosition.HasValue)
             {
@@ -48,14 +51,14 @@ namespace UglyToad.PdfPig.Geometry
             }
         }
 
-        public void SetWindingRuleMode(int windingRule) { }
+        internal void SetWindingRuleMode(int windingRule) { }
 
-        public void ClosePath()
+        internal void ClosePath()
         {
             commands.Add(new Close());
         }
 
-        public PdfRectangle? GetBoundingRectangle()
+        internal PdfRectangle? GetBoundingRectangle()
         {
             if (commands.Count == 0)
             {
@@ -100,7 +103,7 @@ namespace UglyToad.PdfPig.Geometry
             return new PdfRectangle(minX, minY, maxX, maxY);
         }
 
-        public string ToSvg()
+        internal string ToSvg()
         {
             var builder = new StringBuilder();
             foreach (var pathCommand in commands)
@@ -121,7 +124,7 @@ namespace UglyToad.PdfPig.Geometry
             return builder.ToString();
         }
 
-        public string ToFullSvg()
+        internal string ToFullSvg()
         {
             string BboxToRect(PdfRectangle box, string stroke)
             {
@@ -150,7 +153,7 @@ namespace UglyToad.PdfPig.Geometry
             return result;
         }
 
-        public interface IPathCommand
+        internal interface IPathCommand
         {
             PdfRectangle? GetBoundingRectangle();
 
@@ -213,7 +216,7 @@ namespace UglyToad.PdfPig.Geometry
             }
         }
 
-        public class BezierCurve : IPathCommand
+        internal class BezierCurve : IPathCommand
         {
             public PdfPoint StartPoint { get; }
 
@@ -374,7 +377,7 @@ namespace UglyToad.PdfPig.Geometry
             }
         }
 
-        public void Rectangle(decimal x, decimal y, decimal width, decimal height)
+        internal void Rectangle(decimal x, decimal y, decimal width, decimal height)
         {
         }
     }

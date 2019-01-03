@@ -5,7 +5,6 @@
 
     public class SetMiterLimitTests
     {
-        private readonly TestResourceStore resourceStore = new TestResourceStore();
         private readonly TestOperationContext context = new TestOperationContext();
 
         [Fact]
@@ -13,7 +12,7 @@
         {
             var limit = new SetMiterLimit(25);
             
-            limit.Run(context, resourceStore);
+            limit.Run(context);
 
             Assert.Equal(25, context.GetCurrentState().MiterLimit);
         }

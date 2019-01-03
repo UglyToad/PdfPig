@@ -1,15 +1,16 @@
-﻿namespace UglyToad.PdfPig.Graphics
+﻿// ReSharper disable RedundantDefaultMemberInitializer
+namespace UglyToad.PdfPig.Graphics
 {
     using Core;
     using PdfPig.Core;
 
     /// <summary>
-    /// The state of the current graphics control parameters.
+    /// The state of the current graphics control parameters set by operations in the content stream.
     /// </summary>
     /// <remarks>
     /// Initialized per page.
     /// </remarks>
-    internal class CurrentGraphicsState : IDeepCloneable<CurrentGraphicsState>
+    public class CurrentGraphicsState : IDeepCloneable<CurrentGraphicsState>
     {
         /// <summary>
         /// The <see cref="CurrentFontState"/> for this graphics state.
@@ -97,6 +98,7 @@
 
         #endregion
 
+        /// <inheritdoc />
         public CurrentGraphicsState DeepClone()
         {
             return new CurrentGraphicsState

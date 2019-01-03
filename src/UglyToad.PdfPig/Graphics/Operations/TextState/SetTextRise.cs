@@ -1,12 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextState
 {
     using System.IO;
-    using Content;
 
+    /// <inheritdoc />
     /// <summary>
     /// Set text rise.
     /// </summary>
-    internal class SetTextRise : IGraphicsStateOperation
+    public class SetTextRise : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
@@ -31,7 +31,7 @@
         }
 
         /// <inheritdoc />
-        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        public void Run(IOperationContext operationContext)
         {
             var currentState = operationContext.GetCurrentState();
 

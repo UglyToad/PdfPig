@@ -1,17 +1,21 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextPositioning
 {
     using System.IO;
-    using Content;
     using TextState;
 
+    /// <inheritdoc />
     /// <summary>
     /// Move to the start of the next line, offset from the start of the current line by (tx, ty).
     /// This operator also sets the leading parameter in the text state.
     /// </summary>
     internal class MoveToNextLineWithOffsetSetLeading : IGraphicsStateOperation
     {
+        /// <summary>
+        /// The symbol for this operation in a stream.
+        /// </summary>
         public const string Symbol = "TD";
 
+        /// <inheritdoc />
         public string Operator => Symbol;
 
         public decimal Tx { get; }
@@ -24,17 +28,19 @@
             Ty = ty;
         }
 
-        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        /// <inheritdoc />
+        public void Run(IOperationContext operationContext)
         {
             var tlOperation = new SetTextLeading(-Ty);
 
-            tlOperation.Run(operationContext, resourceStore);
+            tlOperation.Run(operationContext);
 
             var tdOperation = new MoveToNextLineWithOffset(Tx, Ty);
 
-            tdOperation.Run(operationContext, resourceStore);
+            tdOperation.Run(operationContext);
         }
 
+        /// <inheritdoc />
         public void Write(Stream stream)
         {
             stream.WriteDecimal(Tx);
@@ -45,6 +51,7 @@
             stream.WriteNewLine();
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"{Tx} {Ty} {Symbol}";

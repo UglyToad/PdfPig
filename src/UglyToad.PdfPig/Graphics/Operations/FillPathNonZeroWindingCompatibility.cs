@@ -1,13 +1,13 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations
 {
     using System.IO;
-    using Content;
 
+    /// <inheritdoc />
     /// <summary>
     /// Equivalent to <see cref="FillPathNonZeroWinding"/> included only for compatibility. 
     /// Although PDF consumer applications must be able to accept this operator, PDF producer applications should use <see cref="FillPathNonZeroWinding"/> instead.
     /// </summary>
-    internal class FillPathNonZeroWindingCompatibility : IGraphicsStateOperation
+    public class FillPathNonZeroWindingCompatibility : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
@@ -27,7 +27,7 @@
         }
 
         /// <inheritdoc />
-        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        public void Run(IOperationContext operationContext)
         {
         }
 

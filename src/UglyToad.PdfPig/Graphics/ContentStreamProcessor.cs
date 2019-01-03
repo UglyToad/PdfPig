@@ -66,7 +66,7 @@
         {
             foreach (var stateOperation in operations)
             {
-                stateOperation.Run(this, resourceStore);
+                stateOperation.Run(this);
             }
         }
 
@@ -221,8 +221,10 @@
             }
         }
 
-        public void ApplyXObject(StreamToken xObjectStream)
+        public void ApplyXObject(NameToken xObjectName)
         {
+            var xObjectStream = resourceStore.GetXObject(xObjectName);
+
             // For now we will determine the type and store the object with the graphics state information preceding it.
             // Then consumers of the page can request the object/s to be retrieved by type.
             var subType = (NameToken)xObjectStream.StreamDictionary.Data[NameToken.Subtype.Data];

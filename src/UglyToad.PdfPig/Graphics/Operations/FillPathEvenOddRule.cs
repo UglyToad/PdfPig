@@ -1,12 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations
 {
     using System.IO;
-    using Content;
 
+    /// <inheritdoc />
     /// <summary>
     /// Fill the path, using the even-odd rule to determine the region to fill.
     /// </summary>
-    internal class FillPathEvenOddRule : IGraphicsStateOperation
+    public class FillPathEvenOddRule : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
@@ -26,7 +26,7 @@
         }
 
         /// <inheritdoc />
-        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        public void Run(IOperationContext operationContext)
         {
         }
 

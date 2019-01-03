@@ -56,7 +56,7 @@ ET";
             Assert.Equal(38, nextLine.Ty);
 
             var renderingMode = Assert.IsType<SetTextRenderingMode>(result[3]);
-            Assert.Equal(RenderingMode.Stroke, renderingMode.Mode);
+            Assert.Equal(TextRenderingMode.Stroke, renderingMode.Mode);
 
             var lineWidth = Assert.IsType<SetLineWidth>(result[4]);
             Assert.Equal(2, lineWidth.Width);
@@ -88,7 +88,7 @@ ET";
             Assert.Equal(32, moveLine.Ty);
 
             var renderingMode = Assert.IsType<SetTextRenderingMode>(result[2]);
-            Assert.Equal(RenderingMode.Fill, renderingMode.Mode);
+            Assert.Equal(TextRenderingMode.Fill, renderingMode.Mode);
 
             Assert.Equal(EndText.Value, result[3]);
         }

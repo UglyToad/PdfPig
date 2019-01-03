@@ -2,20 +2,31 @@
 {
     using System;
     using System.IO;
-    using Content;
     using PdfPig.Core;
 
+    /// <inheritdoc />
     /// <summary>
     /// Modify the current transformation matrix by concatenating the specified matrix. 
     /// </summary>
-    internal class ModifyCurrentTransformationMatrix : IGraphicsStateOperation
+    public class ModifyCurrentTransformationMatrix : IGraphicsStateOperation
     {
+        /// <summary>
+        /// The symbol for this operation in a stream.
+        /// </summary>
         public const string Symbol = "cm";
 
+        /// <inheritdoc />
         public string Operator => Symbol;
 
+        /// <summary>
+        /// The 6 values for the transformation matrix.
+        /// </summary>
         public decimal[] Value { get; }
 
+        /// <summary>
+        /// Create a new <see cref="ModifyCurrentTransformationMatrix"/>.
+        /// </summary>
+        /// <param name="value">The 6 transformation matrix values.</param>
         public ModifyCurrentTransformationMatrix(decimal[] value)
         {
             if (value == null)
@@ -30,7 +41,8 @@
             Value = value;
         }
 
-        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        /// <inheritdoc />
+        public void Run(IOperationContext operationContext)
         {
             var newMatrix = TransformationMatrix.FromArray(Value);
 
@@ -41,6 +53,7 @@
             operationContext.GetCurrentState().CurrentTransformationMatrix = newCtm;
         }
 
+        /// <inheritdoc />
         public void Write(Stream stream)
         {
             stream.WriteDecimal(Value[0]);
@@ -59,6 +72,7 @@
             stream.WriteNewLine();
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"{Value[0]} {Value[1]} {Value[2]} {Value[3]} {Value[4]} {Value[5]} {Symbol}";

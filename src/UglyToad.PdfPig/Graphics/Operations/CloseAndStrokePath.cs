@@ -1,12 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations
 {
     using System.IO;
-    using Content;
 
+    /// <inheritdoc />
     /// <summary>
     /// Close and stroke the path.
     /// </summary>
-    internal class CloseAndStrokePath : IGraphicsStateOperation
+    public class CloseAndStrokePath : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
@@ -26,7 +26,7 @@
         }
 
         /// <inheritdoc />
-        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        public void Run(IOperationContext operationContext)
         {
             operationContext.StrokePath(true);
         }

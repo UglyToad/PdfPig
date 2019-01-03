@@ -3,14 +3,14 @@
     using System;
     using System.IO;
     using System.Linq;
-    using Content;
     using TextPositioning;
     using Util.JetBrains.Annotations;
 
+    /// <inheritdoc />
     /// <summary>
     /// Move to the next line and show a text string.
     /// </summary>
-    internal class MoveToNextLineShowText : IGraphicsStateOperation
+    public class MoveToNextLineShowText : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
@@ -51,14 +51,14 @@
         }
 
         /// <inheritdoc />
-        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        public void Run(IOperationContext operationContext)
         {
             var move = MoveToNextLine.Value;
 
             var showText = Text != null ? new ShowText(Text) : new ShowText(Bytes);
 
-            move.Run(operationContext, resourceStore);
-            showText.Run(operationContext, resourceStore);
+            move.Run(operationContext);
+            showText.Run(operationContext);
         }
 
         /// <inheritdoc />

@@ -1,34 +1,50 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextState
 {
     using System.IO;
-    using Content;
     using Core;
 
-    internal class SetTextRenderingMode : IGraphicsStateOperation
+    /// <inheritdoc />
+    /// <summary>
+    /// Set the text rendering mode.
+    /// </summary>
+    public class SetTextRenderingMode : IGraphicsStateOperation
     {
+        /// <summary>
+        /// The symbol for this operation in a stream.
+        /// </summary>
         public const string Symbol = "Tr";
 
+        /// <inheritdoc />
         public string Operator => Symbol;
 
-        public RenderingMode Mode { get; }
+        /// <summary>
+        /// The text rendering mode to set.
+        /// </summary>
+        public TextRenderingMode Mode { get; }
 
+        /// <summary>
+        /// Create a new <see cref="SetTextRenderingMode"/>.
+        /// </summary>
         public SetTextRenderingMode(int mode)
         {
-            Mode = (RenderingMode)mode;
+            Mode = (TextRenderingMode)mode;
         }
 
-        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        /// <inheritdoc />
+        public void Run(IOperationContext operationContext)
         {
             var currentState = operationContext.GetCurrentState();
 
-            currentState.FontState.RenderingMode = Mode;
+            currentState.FontState.TextRenderingMode = Mode;
         }
 
+        /// <inheritdoc />
         public void Write(Stream stream)
         {
-            throw new System.NotImplementedException();
+            stream.WriteNumberText((int)Mode, Symbol);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"{Mode} {Symbol}";

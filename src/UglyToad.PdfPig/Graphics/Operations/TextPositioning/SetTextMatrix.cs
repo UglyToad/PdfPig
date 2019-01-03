@@ -2,16 +2,20 @@
 {
     using System;
     using System.IO;
-    using Content;
     using PdfPig.Core;
 
+    /// <inheritdoc />
     /// <summary>
     /// Set the text matrix and the text line matrix.
     /// </summary>
     internal class SetTextMatrix : IGraphicsStateOperation
     {
+        /// <summary>
+        /// The symbol for this operation in a stream.
+        /// </summary>
         public const string Symbol = "Tm";
 
+        /// <inheritdoc />
         public string Operator => Symbol;
 
         public decimal[] Value { get; }
@@ -25,8 +29,9 @@
 
             Value = value;
         }
-        
-        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+
+        /// <inheritdoc />
+        public void Run(IOperationContext operationContext)
         {
             var newMatrix = TransformationMatrix.FromArray(Value);
 
@@ -34,6 +39,7 @@
             operationContext.TextMatrices.TextLineMatrix = newMatrix;
         }
 
+        /// <inheritdoc />
         public void Write(Stream stream)
         {
             stream.WriteDecimal(Value[0]);
@@ -52,6 +58,7 @@
             stream.WriteNewLine();
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"{Value[0]} {Value[1]} {Value[2]} {Value[3]} {Value[4]} {Value[5]} {Symbol}";

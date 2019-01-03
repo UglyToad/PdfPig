@@ -7,7 +7,6 @@
 
     public class PopTests
     {
-        private readonly TestResourceStore resourceStore = new TestResourceStore();
         private readonly TestOperationContext context = new TestOperationContext();
 
         [Fact]
@@ -20,7 +19,7 @@
         [Fact]
         public void CannotPopWithSingleFrame()
         {
-            Action action = () => Pop.Value.Run(context, resourceStore);
+            Action action = () => Pop.Value.Run(context);
 
             Assert.Throws<InvalidOperationException>(action);
         }
@@ -30,7 +29,7 @@
         {
             context.StateStack.Pop();
 
-            Action action = () => Pop.Value.Run(context, resourceStore);
+            Action action = () => Pop.Value.Run(context);
 
             Assert.Throws<InvalidOperationException>(action);
         }
@@ -43,7 +42,7 @@
                 LineWidth = 23
             });
 
-            Pop.Value.Run(context, resourceStore);
+            Pop.Value.Run(context);
 
             Assert.Equal(1, context.StackSize);
             Assert.Equal(1, context.GetCurrentState().LineWidth);

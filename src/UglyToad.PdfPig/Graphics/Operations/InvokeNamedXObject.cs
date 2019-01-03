@@ -1,16 +1,17 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations
 {
+    using System;
     using System.IO;
-    using Content;
     using Tokens;
 
+    /// <inheritdoc />
     /// <summary>
     /// Paint the specified XObject. 
     /// The operand name must appear as a key in the XObject subdictionary of the current resource dictionary. 
     /// The associated value must be a stream whose Type entry, if present, is XObject.
-    /// The effect of <see cref="InvokeNamedXObject"/> depends on the value of the XObject's Subtype entry, which may be Image, Form or PS. 
+    /// The effect of <see cref="T:UglyToad.PdfPig.Graphics.Operations.InvokeNamedXObject" /> depends on the value of the XObject's Subtype entry, which may be Image, Form or PS. 
     /// </summary>
-    internal class InvokeNamedXObject : IGraphicsStateOperation
+    public class InvokeNamedXObject : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
@@ -31,15 +32,13 @@
         /// <param name="name">The name of the XObject.</param>
         public InvokeNamedXObject(NameToken name)
         {
-            Name = name;
+            Name = name ?? throw new ArgumentNullException(nameof(name));
         }
 
         /// <inheritdoc />
-        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        public void Run(IOperationContext operationContext)
         {
-            var xobject = resourceStore.GetXObject(Name);
-
-            operationContext.ApplyXObject(xobject);
+            operationContext.ApplyXObject(Name);
         }
 
         /// <inheritdoc />

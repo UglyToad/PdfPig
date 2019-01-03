@@ -1,12 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations
 {
     using System.IO;
-    using Content;
 
+    /// <inheritdoc />
     /// <summary>
     /// Set the non-stroking color space to DeviceCMYK and set the color to use for stroking operations.
     /// </summary>
-    internal class SetNonStrokeColorDeviceCmyk : IGraphicsStateOperation
+    public class SetNonStrokeColorDeviceCmyk : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
@@ -52,7 +52,7 @@
         }
 
         /// <inheritdoc />
-        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        public void Run(IOperationContext operationContext)
         {
         }
 

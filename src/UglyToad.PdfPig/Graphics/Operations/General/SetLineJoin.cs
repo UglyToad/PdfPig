@@ -2,18 +2,31 @@
 {
     using System;
     using System.IO;
-    using Content;
     using Core;
 
-    internal class SetLineJoin : IGraphicsStateOperation
+    /// <inheritdoc />
+    public class SetLineJoin : IGraphicsStateOperation
     {
+        /// <summary>
+        /// The symbol for this operation in a stream.
+        /// </summary>
         public const string Symbol = "j";
 
+        /// <inheritdoc />
         public string Operator => Symbol;
 
+        /// <summary>
+        /// The line join style.
+        /// </summary>
         public LineJoinStyle Join { get; }
 
+        /// <summary>
+        /// Create a new <see cref="SetLineJoin"/>.
+        /// </summary>
         public SetLineJoin(int join) : this((LineJoinStyle)join) { }
+        /// <summary>
+        /// Create a new <see cref="SetLineJoin"/>.
+        /// </summary>
         public SetLineJoin(LineJoinStyle join)
         {
             if (join < 0 || (int)join > 2)
@@ -24,19 +37,19 @@
             Join = join;
         }
 
-        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        /// <inheritdoc />
+        public void Run(IOperationContext operationContext)
         {
             operationContext.GetCurrentState().JoinStyle = Join;
         }
 
+        /// <inheritdoc />
         public void Write(Stream stream)
         {
-            stream.WriteDecimal((int)Join);
-            stream.WriteWhiteSpace();
-            stream.WriteText(Symbol);
-            stream.WriteNewLine();
+            stream.WriteNumberText((int)Join, Symbol);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"{(int)Join} {Symbol}";

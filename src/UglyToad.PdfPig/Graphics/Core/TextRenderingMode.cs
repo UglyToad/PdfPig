@@ -1,6 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Core
 {
-    internal enum RenderingMode
+    /// <summary>
+    /// The text rendering mode determines whether showing text causes glyph outlines to be stroked, filled, used as a clipping boundary,
+    ///  or some combination of the three.
+    /// </summary>
+    public enum TextRenderingMode
     {
         /// <summary>
         /// Fill text.

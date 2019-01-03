@@ -8,7 +8,7 @@ namespace UglyToad.PdfPig.Graphics
     /// <summary>
     /// The current state of text related parameters for a content stream.
     /// </summary>
-    internal class CurrentFontState : IDeepCloneable<CurrentFontState>
+    public class CurrentFontState : IDeepCloneable<CurrentFontState>
     {
         /// <summary>
         /// A value in unscaled text space units which is added to the horizontal (or vertical if in vertical writing mode)
@@ -39,19 +39,25 @@ namespace UglyToad.PdfPig.Graphics
         /// </summary>
         public decimal Leading { get; set; }
 
+        /// <summary>
+        /// The name of the currently active font.
+        /// </summary>
         public NameToken FontName { get; set; }
 
+        /// <summary>
+        /// The current font size.
+        /// </summary>
         public decimal FontSize { get; set; }
 
         /// <summary>
-        /// The <see cref="RenderingMode"/> for glyph outlines.
+        /// The <see cref="TextRenderingMode"/> for glyph outlines.
         /// </summary>
         /// <remarks>
         /// When the rendering mode requires filling the current non-stroking color in the state is used.<br/>
         /// When the rendering mode requires stroking the current stroking color in the state is used.<br/>
         /// The rendering mode has no impact on Type 3 fonts.
         /// </remarks>
-        public RenderingMode RenderingMode { get; set; } = RenderingMode.Fill;
+        public TextRenderingMode TextRenderingMode { get; set; } = TextRenderingMode.Fill;
 
         /// <summary>
         /// The distance in unscaled text space units to move the default baseline either up or down.
@@ -62,16 +68,17 @@ namespace UglyToad.PdfPig.Graphics
         public decimal Rise { get; set; }
 
         /// <summary>
-        /// Are all glpyhs in a text object treated as a single elementary object for the purpose of the transparent imaging model?
+        /// Are all glyphs in a text object treated as a single elementary object for the purpose of the transparent imaging model?
         /// </summary>
         public bool Knockout { get; set; }
 
+        /// <inheritdoc />
         public CurrentFontState DeepClone()
         {
             return new CurrentFontState
             {
                 CharacterSpacing = CharacterSpacing,
-                RenderingMode = RenderingMode,
+                TextRenderingMode = TextRenderingMode,
                 Rise = Rise,
                 Leading = Leading,
                 WordSpacing = WordSpacing,

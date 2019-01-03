@@ -2,28 +2,28 @@
 {
     internal static class RenderingModeExtensions
     {
-        public static bool IsFill(this RenderingMode mode)
+        public static bool IsFill(this TextRenderingMode mode)
         {
-            return mode == RenderingMode.Fill
-                   || mode == RenderingMode.FillThenStroke
-                   || mode == RenderingMode.FillClip
-                   || mode == RenderingMode.FillThenStrokeClip;
+            return mode == TextRenderingMode.Fill
+                   || mode == TextRenderingMode.FillThenStroke
+                   || mode == TextRenderingMode.FillClip
+                   || mode == TextRenderingMode.FillThenStrokeClip;
         }
 
-        public static bool IsStroke(this RenderingMode mode)
+        public static bool IsStroke(this TextRenderingMode mode)
         {
-            return mode == RenderingMode.Stroke
-                   || mode == RenderingMode.FillThenStroke
-                   || mode == RenderingMode.StrokeClip
-                   || mode == RenderingMode.FillThenStrokeClip;
+            return mode == TextRenderingMode.Stroke
+                   || mode == TextRenderingMode.FillThenStroke
+                   || mode == TextRenderingMode.StrokeClip
+                   || mode == TextRenderingMode.FillThenStrokeClip;
         }
 
-        public static bool IsClip(this RenderingMode mode)
+        public static bool IsClip(this TextRenderingMode mode)
         {
-            return mode == RenderingMode.FillClip
-                   || mode == RenderingMode.StrokeClip
-                   || mode == RenderingMode.FillThenStrokeClip
-                   || mode == RenderingMode.NeitherClip;
+            return mode == TextRenderingMode.FillClip
+                   || mode == TextRenderingMode.StrokeClip
+                   || mode == TextRenderingMode.FillThenStrokeClip
+                   || mode == TextRenderingMode.NeitherClip;
         }
     }
 }

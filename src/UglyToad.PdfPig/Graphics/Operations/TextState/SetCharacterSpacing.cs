@@ -1,40 +1,51 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextState
 {
     using System.IO;
-    using Content;
 
+    /// <inheritdoc />
     /// <summary>
     /// Set the character spacing to a number expressed in unscaled text space units.
     /// Initial value: 0. 
     /// </summary>
-    internal class SetCharacterSpacing : IGraphicsStateOperation
+    public class SetCharacterSpacing : IGraphicsStateOperation
     {
+        /// <summary>
+        /// The symbol for this operation in a stream.
+        /// </summary>
         public const string Symbol = "Tc";
 
+        /// <inheritdoc />
         public string Operator => Symbol;
 
+        /// <summary>
+        /// The character spacing.
+        /// </summary>
         public decimal Spacing { get; }
 
+        /// <summary>
+        /// Create a new <see cref="SetCharacterSpacing"/>.
+        /// </summary>
+        /// <param name="spacing">The character spacing.</param>
         public SetCharacterSpacing(decimal spacing)
         {
             Spacing = spacing;
         }
 
-        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        /// <inheritdoc />
+        public void Run(IOperationContext operationContext)
         {
             var currentState = operationContext.GetCurrentState();
 
             currentState.FontState.CharacterSpacing = Spacing;
         }
 
+        /// <inheritdoc />
         public void Write(Stream stream)
         {
-            stream.WriteDecimal(Spacing);
-            stream.WriteWhiteSpace();
-            stream.WriteText(Symbol);
-            stream.WriteNewLine();
+            stream.WriteNumberText(Spacing, Symbol);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"{Spacing} {Symbol}";

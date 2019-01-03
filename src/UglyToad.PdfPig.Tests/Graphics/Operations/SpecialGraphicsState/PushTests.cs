@@ -5,7 +5,6 @@
 
     public class PushTests
     {
-        private readonly TestResourceStore resourceStore = new TestResourceStore();
         private readonly TestOperationContext context = new TestOperationContext();
 
         [Fact]
@@ -18,7 +17,7 @@
         [Fact]
         public void PushAddsToStack()
         {
-            Push.Value.Run(context, resourceStore);
+            Push.Value.Run(context);
 
             Assert.Equal(2, context.StackSize);
         }

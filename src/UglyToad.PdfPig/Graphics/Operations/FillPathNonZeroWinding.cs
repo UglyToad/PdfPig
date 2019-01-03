@@ -1,13 +1,13 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations
 {
     using System.IO;
-    using Content;
 
+    /// <inheritdoc />
     /// <summary>
     /// Fill the path, using the nonzero winding number rule to determine the region to fill. 
     /// Any subpaths that are open are implicitly closed before being filled.
     /// </summary>
-    internal class FillPathNonZeroWinding : IGraphicsStateOperation
+    public class FillPathNonZeroWinding : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
@@ -27,7 +27,7 @@
         }
 
         /// <inheritdoc />
-        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        public void Run(IOperationContext operationContext)
         {
         }
 

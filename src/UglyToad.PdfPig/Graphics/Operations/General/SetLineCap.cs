@@ -2,18 +2,36 @@
 {
     using System;
     using System.IO;
-    using Content;
     using Core;
 
-    internal class SetLineCap : IGraphicsStateOperation
+    /// <inheritdoc />
+    /// <summary>
+    /// Set the line cap style in the graphics state.
+    /// </summary>
+    public class SetLineCap : IGraphicsStateOperation
     {
+        /// <summary>
+        /// The symbol for this operation in a stream.
+        /// </summary>
         public const string Symbol = "J";
 
+        /// <inheritdoc />
         public string Operator => Symbol;
 
+        /// <summary>
+        /// The cap style.
+        /// </summary>
         public LineCapStyle Cap { get; }
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Create a new <see cref="T:UglyToad.PdfPig.Graphics.Operations.General.SetLineCap" />.
+        /// </summary>
         public SetLineCap(int cap) : this((LineCapStyle)cap) { }
+
+        /// <summary>
+        /// Create a new <see cref="SetLineCap"/>.
+        /// </summary>
         public SetLineCap(LineCapStyle cap)
         {
             if (cap < 0 || (int)cap > 2)
@@ -24,19 +42,19 @@
             Cap = cap;
         }
 
-        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        /// <inheritdoc />
+        public void Run(IOperationContext operationContext)
         {
             operationContext.GetCurrentState().CapStyle = Cap;
         }
 
+        /// <inheritdoc />
         public void Write(Stream stream)
         {
-            stream.WriteDecimal((int)Cap);
-            stream.WriteWhiteSpace();
-            stream.WriteText(Symbol);
-            stream.WriteNewLine();
+            stream.WriteNumberText((int)Cap, Symbol);
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"{(int) Cap} {Symbol}";

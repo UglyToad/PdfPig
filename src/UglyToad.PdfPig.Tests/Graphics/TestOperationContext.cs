@@ -51,7 +51,7 @@
         {
         }
 
-        public void ApplyXObject(StreamToken xObjectStream)
+        public void ApplyXObject(NameToken xObjectName)
         {
         }
 

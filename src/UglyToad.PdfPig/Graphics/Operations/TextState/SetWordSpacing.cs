@@ -1,12 +1,11 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextState
 {
     using System.IO;
-    using Content;
 
     /// <summary>
     /// Sets the word spacing.
     /// </summary>
-    internal class SetWordSpacing : IGraphicsStateOperation
+    public class SetWordSpacing : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
@@ -33,7 +32,7 @@
         }
 
         /// <inheritdoc />
-        public void Run(IOperationContext operationContext, IResourceStore resourceStore)
+        public void Run(IOperationContext operationContext)
         {
             var currentState = operationContext.GetCurrentState();
 
