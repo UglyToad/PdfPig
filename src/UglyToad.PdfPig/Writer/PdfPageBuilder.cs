@@ -33,10 +33,16 @@
         /// </summary>
         public PdfRectangle PageSize { get; set; }
 
+        /// <summary>
+        /// Access to the underlying data structures for advanced use cases.
+        /// </summary>
+        public AdvancedEditing Advanced { get; }
+
         internal PdfPageBuilder(int number, PdfDocumentBuilder documentBuilder)
         {
             this.documentBuilder = documentBuilder ?? throw new ArgumentNullException(nameof(documentBuilder));
             PageNumber = number;
+            Advanced = new AdvancedEditing(operations);
         }
 
         /// <summary>
@@ -289,6 +295,25 @@
             }
 
             return value;
+        }
+
+        /// <summary>
+        /// Provides access to the raw page data structures for advanced editing use cases.
+        /// </summary>
+        public class AdvancedEditing
+        {
+            /// <summary>
+            /// The operations making up the page content stream.
+            /// </summary>
+            public List<IGraphicsStateOperation> Operations { get; }
+
+            /// <summary>
+            /// Create a new <see cref="AdvancedEditing"/>.
+            /// </summary>
+            internal AdvancedEditing(List<IGraphicsStateOperation> operations)
+            {
+                Operations = operations;
+            }
         }
     }
 }
