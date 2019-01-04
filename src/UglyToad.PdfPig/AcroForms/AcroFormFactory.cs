@@ -220,33 +220,35 @@
                                 throw new PdfDocumentFormatException($"An option array containing array elements should contain 2 strings, instead got: {optionArrayToken}.");
                             }
 
+                            string exportValue;
                             if (DirectObjectFinder.TryGet(optionArrayToken.Data[0], tokenScanner, out StringToken exportValueStringToken))
                             {
-                                
+                                exportValue = exportValueStringToken.Data;
                             }
                             else if (DirectObjectFinder.TryGet(optionArrayToken.Data[0], tokenScanner, out HexToken exportValueHexToken))
                             {
-
+                                exportValue = exportValueHexToken.Data;
                             }
                             else
                             {
                                 throw new PdfDocumentFormatException($"An option array array element's first value should be the export value string, instead got: {optionArrayToken.Data[0]}.");
                             }
 
+                            string name;
                             if (DirectObjectFinder.TryGet(optionArrayToken.Data[1], tokenScanner, out StringToken nameStringToken))
                             {
-
+                                name = nameStringToken.Data;
                             }
                             else if (DirectObjectFinder.TryGet(optionArrayToken.Data[1], tokenScanner, out HexToken nameHexToken))
                             {
-
+                                name = nameHexToken.Data;
                             }
                             else
                             {
                                 throw new PdfDocumentFormatException($"An option array array element's second value should be the option name string, instead got: {optionArrayToken.Data[1]}.");
                             }
 
-
+                            options.Add(new AcroChoiceOption(i, name, exportValue));
                         }
                         else
                         {
@@ -264,7 +266,7 @@
                 }
                 else
                 {
-                    var field = new AcroListBoxField(fieldDictionary, fieldType, choiceFlags, information);
+                    var field = new AcroListBoxField(fieldDictionary, fieldType, choiceFlags, information, options);
                     result = field;
                 }
             }

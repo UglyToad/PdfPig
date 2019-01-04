@@ -114,11 +114,14 @@
     {
         public AcroChoiceFieldFlags Flags { get; }
 
-        public AcroListBoxField(DictionaryToken dictionary, string fieldType, AcroChoiceFieldFlags fieldFlags, 
-            AcroFieldCommonInformation information) : 
+        public IReadOnlyList<AcroChoiceOption> Options { get; }
+
+        public AcroListBoxField(DictionaryToken dictionary, string fieldType, AcroChoiceFieldFlags fieldFlags,
+            AcroFieldCommonInformation information, IReadOnlyList<AcroChoiceOption> options) : 
             base(dictionary, fieldType, (uint)fieldFlags, information)
         {
             Flags = fieldFlags;
+            Options = options ?? throw new ArgumentNullException(nameof(options));
         }
     }
 

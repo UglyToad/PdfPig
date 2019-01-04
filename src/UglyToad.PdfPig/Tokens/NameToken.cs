@@ -3,6 +3,7 @@
     using System;
     using Util.JetBrains.Annotations;
 
+    /// <inheritdoc />
     /// <summary>
     /// A name object is an atomic symbol uniquely defined by a sequence of characters.
     /// Each name is considered identical if it has the same sequence of characters. Names are used in
@@ -10,6 +11,7 @@
     /// </summary>
     public partial class NameToken : IDataToken<string>
     {
+        /// <inheritdoc />
         /// <summary>
         /// The string representation of the name.
         /// </summary>
@@ -71,6 +73,27 @@
         public static implicit operator string(NameToken name)
         {
             return name?.Data;
+        }
+
+        /// <summary>
+        /// Checks if two names are equal.
+        /// </summary>
+        public static bool operator ==(NameToken name1, NameToken name2)
+        {
+            if (ReferenceEquals(name1, name2))
+            {
+                return true;
+            }
+
+            return name1?.Equals(name2) ?? false;
+        }
+
+        /// <summary>
+        /// Checks two names for lack of equality.
+        /// </summary>
+        public static bool operator !=(NameToken name1, NameToken name2)
+        {
+            return !(name1 == name2);
         }
 
         /// <inheritdoc />
