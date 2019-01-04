@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using Annotations;
+    using Graphics.Operations;
     using Tokens;
     using Util;
     using Util.JetBrains.Annotations;
@@ -51,6 +52,11 @@
         /// The size of the page according to the standard page sizes or Custom if no matching standard size found.
         /// </summary>
         public PageSize Size { get; }
+
+        /// <summary>
+        /// The parsed graphics state operations in the content stream for this page. 
+        /// </summary>
+        public IReadOnlyList<IGraphicsStateOperation> Operations => Content.GraphicsStateOperations;
 
         /// <summary>
         /// Access to members whose future locations within the API will change without warning.

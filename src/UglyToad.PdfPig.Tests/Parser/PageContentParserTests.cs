@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using System.Text.RegularExpressions;
     using PdfPig.Graphics;
     using PdfPig.Graphics.Core;
     using PdfPig.Graphics.Operations.General;
@@ -11,6 +12,7 @@
     using PdfPig.Graphics.Operations.TextState;
     using PdfPig.Parser;
     using PdfPig.Tokens;
+    using PdfPig.Util;
     using Xunit;
 
     public class PageContentParserTests
@@ -27,6 +29,64 @@
             var result = parser.Parse(input.Bytes);
 
             Assert.NotEmpty(result);
+        }
+
+        [Fact]
+        public void CorrectlyWritesOperations()
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Parser", "SimpleGoogleDocPageContent.txt");
+            var content = File.ReadAllText(path);
+            var input = StringBytesTestConverter.Convert(content, false);
+
+            var result = parser.Parse(input.Bytes);
+
+            var replacementRegex = new Regex(@"\s(\.\d+)\b");
+
+            using (var stream = new MemoryStream())
+            {
+                foreach (var operation in result)
+                {
+                    operation.Write(stream);
+                }
+
+                var text = OtherEncodings.BytesAsLatin1String(stream.ToArray());
+
+                text = text.Replace("\n", " ");
+                content = content.Replace("\r\n", " ");
+                content = replacementRegex.Replace(content, " 0$1");
+
+                Assert.Equal(content, text);
+            }
+        }
+
+        [Fact]
+        public void CorrectlyWritesSmallTextContent()
+        {
+            const string s = @"BT
+/F13 48 Tf
+20 38 Td
+1 Tr
+2 w
+(ABC) Tj
+ET";
+            var input = StringBytesTestConverter.Convert(s, false);
+
+            var result = parser.Parse(input.Bytes);
+
+            using (var stream = new MemoryStream())
+            {
+                foreach (var operation in result)
+                {
+                    operation.Write(stream);
+                }
+
+                var text = OtherEncodings.BytesAsLatin1String(stream.ToArray());
+
+                text = text.Replace("\n", " ").Trim();
+                var expected = s.Replace("\r\n", " ");
+
+                Assert.Equal(expected, text);
+            }
         }
 
         [Fact]

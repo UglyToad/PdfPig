@@ -92,6 +92,7 @@
                 "UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState.ModifyCurrentTransformationMatrix",
                 "UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState.Pop",
                 "UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState.Push",
+                "UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState.SetGraphicsStateParametersFromDictionary",
                 "UglyToad.PdfPig.Graphics.Operations.StrokePath",
                 "UglyToad.PdfPig.Graphics.Operations.TextObjects.BeginText",
                 "UglyToad.PdfPig.Graphics.Operations.TextObjects.EndText",
