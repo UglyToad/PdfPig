@@ -8,7 +8,7 @@
     /// Move to the start of the next line, offset from the start of the current line by (tx, ty).
     /// This operator also sets the leading parameter in the text state.
     /// </summary>
-    internal class MoveToNextLineWithOffsetSetLeading : IGraphicsStateOperation
+    public class MoveToNextLineWithOffsetSetLeading : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
@@ -18,10 +18,21 @@
         /// <inheritdoc />
         public string Operator => Symbol;
 
+        /// <summary>
+        /// The x value of the offset.
+        /// </summary>
         public decimal Tx { get; }
 
+        /// <summary>
+        /// The y value of the offset and the inverse of the leading parameter.
+        /// </summary>
         public decimal Ty { get; }
 
+        /// <summary>
+        /// Create a new <see cref="MoveToNextLineWithOffsetSetLeading"/>.
+        /// </summary>
+        /// <param name="tx">The x value of the offset.</param>
+        /// <param name="ty">The y value of the offset and the inverse of the leading parameter.</param>
         public MoveToNextLineWithOffsetSetLeading(decimal tx, decimal ty)
         {
             Tx = tx;

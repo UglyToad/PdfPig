@@ -59,8 +59,11 @@
                 "UglyToad.PdfPig.Graphics.Operations.ClippingPaths.ModifyClippingByEvenOddIntersect",
                 "UglyToad.PdfPig.Graphics.Operations.ClippingPaths.ModifyClippingByNonZeroWindingIntersect",
                 "UglyToad.PdfPig.Graphics.Operations.CloseAndStrokePath",
+                "UglyToad.PdfPig.Graphics.Operations.CloseFillPathEvenOddRuleAndStroke",
+                "UglyToad.PdfPig.Graphics.Operations.CloseFillPathNonZeroWindingAndStroke",
                 "UglyToad.PdfPig.Graphics.Operations.EndPath",
                 "UglyToad.PdfPig.Graphics.Operations.FillPathEvenOddRule",
+                "UglyToad.PdfPig.Graphics.Operations.FillPathEvenOddRuleAndStroke",
                 "UglyToad.PdfPig.Graphics.Operations.FillPathNonZeroWinding",
                 "UglyToad.PdfPig.Graphics.Operations.FillPathNonZeroWindingAndStroke",
                 "UglyToad.PdfPig.Graphics.Operations.FillPathNonZeroWindingCompatibility",
@@ -81,7 +84,10 @@
                 "UglyToad.PdfPig.Graphics.Operations.PathConstruction.BeginNewSubpath",
                 "UglyToad.PdfPig.Graphics.Operations.PathConstruction.CloseSubpath",
                 "UglyToad.PdfPig.Graphics.Operations.SetNonStrokeColorDeviceCmyk",
+                "UglyToad.PdfPig.Graphics.Operations.SetNonStrokeColorDeviceGray",
                 "UglyToad.PdfPig.Graphics.Operations.SetNonStrokeColorDeviceRgb",
+                "UglyToad.PdfPig.Graphics.Operations.SetStrokeColorDeviceCmyk",
+                "UglyToad.PdfPig.Graphics.Operations.SetStrokeColorDeviceGray",
                 "UglyToad.PdfPig.Graphics.Operations.SetStrokeColorDeviceRgb",
                 "UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState.ModifyCurrentTransformationMatrix",
                 "UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState.Pop",
@@ -90,9 +96,13 @@
                 "UglyToad.PdfPig.Graphics.Operations.TextObjects.BeginText",
                 "UglyToad.PdfPig.Graphics.Operations.TextObjects.EndText",
                 "UglyToad.PdfPig.Graphics.Operations.TextPositioning.MoveToNextLine",
+                "UglyToad.PdfPig.Graphics.Operations.TextPositioning.MoveToNextLineWithOffset",
+                "UglyToad.PdfPig.Graphics.Operations.TextPositioning.MoveToNextLineWithOffsetSetLeading",
+                "UglyToad.PdfPig.Graphics.Operations.TextPositioning.SetTextMatrix",
                 "UglyToad.PdfPig.Graphics.Operations.TextShowing.MoveToNextLineShowText",
                 "UglyToad.PdfPig.Graphics.Operations.TextShowing.MoveToNextLineShowTextWithSpacing",
                 "UglyToad.PdfPig.Graphics.Operations.TextShowing.ShowText",
+                "UglyToad.PdfPig.Graphics.Operations.TextShowing.ShowTextsWithPositioning",
                 "UglyToad.PdfPig.Graphics.Operations.TextState.SetCharacterSpacing",
                 "UglyToad.PdfPig.Graphics.Operations.TextState.SetFontAndSize",
                 "UglyToad.PdfPig.Graphics.Operations.TextState.SetHorizontalScaling",
@@ -127,7 +137,7 @@
                 "UglyToad.PdfPig.Writer.TokenWriter",
                 "UglyToad.PdfPig.XObjects.XObjectImage"
             };
-            
+
             foreach (var publicTypeName in publicTypeNames)
             {
                 Assert.True(expected.Contains(publicTypeName), $"Type should not be public: {publicTypeName}.");

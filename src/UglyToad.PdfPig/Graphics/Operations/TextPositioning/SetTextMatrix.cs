@@ -8,7 +8,7 @@
     /// <summary>
     /// Set the text matrix and the text line matrix.
     /// </summary>
-    internal class SetTextMatrix : IGraphicsStateOperation
+    public class SetTextMatrix : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
@@ -18,8 +18,15 @@
         /// <inheritdoc />
         public string Operator => Symbol;
 
+        /// <summary>
+        /// The values of the text matrix.
+        /// </summary>
         public decimal[] Value { get; }
 
+        /// <summary>
+        /// Create a new <see cref="SetTextMatrix"/>.
+        /// </summary>
+        /// <param name="value">The values of the text matrix.</param>
         public SetTextMatrix(decimal[] value)
         {
             if (value.Length != 6)

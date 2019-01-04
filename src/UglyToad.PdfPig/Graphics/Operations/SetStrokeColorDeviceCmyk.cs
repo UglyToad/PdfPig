@@ -6,7 +6,7 @@
     /// <summary>
     /// Set the stroking color space to DeviceCMYK and set the color to use for stroking operations.
     /// </summary>
-    internal class SetStrokeColorDeviceCmyk : IGraphicsStateOperation
+    public class SetStrokeColorDeviceCmyk : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.

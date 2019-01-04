@@ -13,7 +13,7 @@
     /// Tm = Tlm = 0  1  0  * Tlm<br />
     ///            tx ty 1
     /// </remarks>
-    internal class MoveToNextLineWithOffset : IGraphicsStateOperation
+    public class MoveToNextLineWithOffset : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.

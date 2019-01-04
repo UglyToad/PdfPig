@@ -6,7 +6,7 @@
     /// <summary>
     /// Fill and then stroke the path, using the even-odd rule to determine the region to fill.
     /// </summary>
-    internal class FillPathEvenOddRuleAndStroke : IGraphicsStateOperation
+    public class FillPathEvenOddRuleAndStroke : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.

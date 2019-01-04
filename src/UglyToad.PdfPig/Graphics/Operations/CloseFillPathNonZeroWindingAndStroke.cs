@@ -6,7 +6,7 @@
     /// <summary>
     /// Close, fill, and then stroke the path, using the nonzero winding number rule to determine the region to fill. 
     /// </summary>
-    internal class CloseFillPathNonZeroWindingAndStroke : IGraphicsStateOperation
+    public class CloseFillPathNonZeroWindingAndStroke : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.

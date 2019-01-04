@@ -6,7 +6,7 @@
     /// <summary>
     /// Set the gray level for stroking operations.
     /// </summary>
-    internal class SetStrokeColorDeviceGray : IGraphicsStateOperation
+    public class SetStrokeColorDeviceGray : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
