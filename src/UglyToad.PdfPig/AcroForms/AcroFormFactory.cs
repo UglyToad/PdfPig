@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using Content;
     using Exceptions;
     using Fields;
@@ -199,76 +200,7 @@
             }
             else if (fieldType == NameToken.Ch)
             {
-                var options = new List<AcroChoiceOption>();
-                if (fieldDictionary.TryGetOptionalTokenDirect(NameToken.Opt, tokenScanner, out ArrayToken optionsArrayToken))
-                {
-                    for (var i = 0; i < optionsArrayToken.Data.Count; i++)
-                    {
-                        var optionToken = optionsArrayToken.Data[i];
-                        if (DirectObjectFinder.TryGet(optionToken, tokenScanner, out StringToken optionStringToken))
-                        {
-                            options.Add(new AcroChoiceOption(i, optionStringToken.Data));
-                        }
-                        else if (DirectObjectFinder.TryGet(optionToken, tokenScanner, out HexToken optionHexToken))
-                        {
-                            options.Add(new AcroChoiceOption(i, optionHexToken.Data));
-                        }
-                        else if (DirectObjectFinder.TryGet(optionToken, tokenScanner, out ArrayToken optionArrayToken))
-                        {
-                            if (optionArrayToken.Length != 2)
-                            {
-                                throw new PdfDocumentFormatException($"An option array containing array elements should contain 2 strings, instead got: {optionArrayToken}.");
-                            }
-
-                            string exportValue;
-                            if (DirectObjectFinder.TryGet(optionArrayToken.Data[0], tokenScanner, out StringToken exportValueStringToken))
-                            {
-                                exportValue = exportValueStringToken.Data;
-                            }
-                            else if (DirectObjectFinder.TryGet(optionArrayToken.Data[0], tokenScanner, out HexToken exportValueHexToken))
-                            {
-                                exportValue = exportValueHexToken.Data;
-                            }
-                            else
-                            {
-                                throw new PdfDocumentFormatException($"An option array array element's first value should be the export value string, instead got: {optionArrayToken.Data[0]}.");
-                            }
-
-                            string name;
-                            if (DirectObjectFinder.TryGet(optionArrayToken.Data[1], tokenScanner, out StringToken nameStringToken))
-                            {
-                                name = nameStringToken.Data;
-                            }
-                            else if (DirectObjectFinder.TryGet(optionArrayToken.Data[1], tokenScanner, out HexToken nameHexToken))
-                            {
-                                name = nameHexToken.Data;
-                            }
-                            else
-                            {
-                                throw new PdfDocumentFormatException($"An option array array element's second value should be the option name string, instead got: {optionArrayToken.Data[1]}.");
-                            }
-
-                            options.Add(new AcroChoiceOption(i, name, exportValue));
-                        }
-                        else
-                        {
-                            throw new PdfDocumentFormatException($"An option array should contain either strings or 2 element arrays, instead got: {optionToken}.");
-                        }
-                    }
-                }
-
-                var choiceFlags = (AcroChoiceFieldFlags)fieldFlags;
-
-                if (choiceFlags.HasFlag(AcroChoiceFieldFlags.Combo))
-                {
-                    var field = new AcroComboBoxField(fieldDictionary, fieldType, choiceFlags, information);
-                    result = field;
-                }
-                else
-                {
-                    var field = new AcroListBoxField(fieldDictionary, fieldType, choiceFlags, information, options);
-                    result = field;
-                }
+                result = GetChoiceField(fieldDictionary, fieldType, fieldFlags, information);
             }
             else if (fieldType == NameToken.Sig)
             {
@@ -281,6 +213,163 @@
             }
 
             return result;
+        }
+
+        private AcroFieldBase GetChoiceField(DictionaryToken fieldDictionary, NameToken fieldType, uint fieldFlags, AcroFieldCommonInformation information)
+        {
+            var selectedOptions = Array.Empty<string>();
+            if (fieldDictionary.TryGet(NameToken.V, out var valueToken))
+            {
+                if (DirectObjectFinder.TryGet(valueToken, tokenScanner, out StringToken valueString))
+                {
+                    selectedOptions = new[] {valueString.Data};
+                }
+                else if (DirectObjectFinder.TryGet(valueToken, tokenScanner, out HexToken valueHex))
+                {
+                    selectedOptions = new[] {valueHex.Data};
+
+                }
+                else if (DirectObjectFinder.TryGet(valueToken, tokenScanner, out ArrayToken valueArray))
+                {
+                    selectedOptions = new string[valueArray.Length];
+                    for (var i = 0; i < valueArray.Length; i++)
+                    {
+                        var valueOptToken = valueArray.Data[i];
+
+                        if (DirectObjectFinder.TryGet(valueOptToken, tokenScanner, out StringToken valueOptString))
+                        {
+                            selectedOptions[i] = valueOptString.Data;
+                        }
+                        else if (DirectObjectFinder.TryGet(valueOptToken, tokenScanner, out HexToken valueOptHex))
+                        {
+                            selectedOptions[i] = valueOptHex.Data;
+                        }
+                    }
+                }
+            }
+
+            var selectedIndices = default(int[]);
+            if (fieldDictionary.TryGetOptionalTokenDirect(NameToken.I, tokenScanner, out ArrayToken indicesArray))
+            {
+                selectedIndices = new int[indicesArray.Length];
+                for (var i = 0; i < indicesArray.Data.Count; i++)
+                {
+                    var token = indicesArray.Data[i];
+                    var numericToken = DirectObjectFinder.Get<NumericToken>(token, tokenScanner);
+                    selectedIndices[i] = numericToken.Int;
+                }
+            }
+
+            var options = new List<AcroChoiceOption>();
+            if (fieldDictionary.TryGetOptionalTokenDirect(NameToken.Opt, tokenScanner, out ArrayToken optionsArrayToken))
+            {
+                for (var i = 0; i < optionsArrayToken.Data.Count; i++)
+                {
+                    var optionToken = optionsArrayToken.Data[i];
+                    if (DirectObjectFinder.TryGet(optionToken, tokenScanner, out StringToken optionStringToken))
+                    {
+                        var name = optionStringToken.Data;
+                        var isSelected = IsChoiceSelected(selectedOptions, selectedIndices, i, name);
+                        options.Add(new AcroChoiceOption(i, isSelected, optionStringToken.Data));
+                    }
+                    else if (DirectObjectFinder.TryGet(optionToken, tokenScanner, out HexToken optionHexToken))
+                    {
+                        var name = optionHexToken.Data;
+                        var isSelected = IsChoiceSelected(selectedOptions, selectedIndices, i, name);
+                        options.Add(new AcroChoiceOption(i, isSelected, optionHexToken.Data));
+                    }
+                    else if (DirectObjectFinder.TryGet(optionToken, tokenScanner, out ArrayToken optionArrayToken))
+                    {
+                        if (optionArrayToken.Length != 2)
+                        {
+                            throw new PdfDocumentFormatException($"An option array containing array elements should contain 2 strings, instead got: {optionArrayToken}.");
+                        }
+
+                        string exportValue;
+                        if (DirectObjectFinder.TryGet(optionArrayToken.Data[0], tokenScanner, out StringToken exportValueStringToken))
+                        {
+                            exportValue = exportValueStringToken.Data;
+                        }
+                        else if (DirectObjectFinder.TryGet(optionArrayToken.Data[0], tokenScanner, out HexToken exportValueHexToken))
+                        {
+                            exportValue = exportValueHexToken.Data;
+                        }
+                        else
+                        {
+                            throw new PdfDocumentFormatException($"An option array array element's first value should be the export value string, instead got: {optionArrayToken.Data[0]}.");
+                        }
+
+                        string name;
+                        if (DirectObjectFinder.TryGet(optionArrayToken.Data[1], tokenScanner, out StringToken nameStringToken))
+                        {
+                            name = nameStringToken.Data;
+                        }
+                        else if (DirectObjectFinder.TryGet(optionArrayToken.Data[1], tokenScanner, out HexToken nameHexToken))
+                        {
+                            name = nameHexToken.Data;
+                        }
+                        else
+                        {
+                            throw new PdfDocumentFormatException($"An option array array element's second value should be the option name string, instead got: {optionArrayToken.Data[1]}.");
+                        }
+
+                        var isSelected = IsChoiceSelected(selectedOptions, selectedIndices, i, name);
+                        options.Add(new AcroChoiceOption(i, isSelected, name, exportValue));
+                    }
+                    else
+                    {
+                        throw new PdfDocumentFormatException($"An option array should contain either strings or 2 element arrays, instead got: {optionToken}.");
+                    }
+                }
+            }
+            
+            var choiceFlags = (AcroChoiceFieldFlags)fieldFlags;
+            
+            if (choiceFlags.HasFlag(AcroChoiceFieldFlags.Combo))
+            {
+                var field = new AcroComboBoxField(fieldDictionary, fieldType, choiceFlags, information, options, selectedOptions, selectedIndices);
+                return field;
+            }
+
+            var topIndex = default(int?);
+            if (fieldDictionary.TryGetOptionalTokenDirect(NameToken.Ti, tokenScanner, out NumericToken topIndexToken))
+            {
+                topIndex = topIndexToken.Int;
+            }
+
+            return new AcroListBoxField(fieldDictionary, fieldType, choiceFlags, information, options, selectedOptions, selectedIndices, topIndex);
+        }
+
+        private static bool IsChoiceSelected(IReadOnlyList<string> selectedOptionNames, IReadOnlyList<int> selectedOptionIndices, int index, string name)
+        {
+            if (selectedOptionNames.Count == 0)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < selectedOptionNames.Count; i++)
+            {
+                var optionName = selectedOptionNames[i];
+
+                if (optionName != name)
+                {
+                    continue;
+                }
+
+                if (selectedOptionIndices == null)
+                {
+                    return true;
+                }
+
+                if (selectedOptionIndices.Contains(index))
+                {
+                    return true;
+                }
+
+                return false;
+            }
+
+            return false;
         }
     }
 }

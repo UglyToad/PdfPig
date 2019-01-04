@@ -110,30 +110,106 @@
         }
     }
 
+    /// <inheritdoc />
+    /// <summary>
+    /// A scrollable list box field.
+    /// </summary>
     internal class AcroListBoxField : AcroFieldBase
     {
+        /// <summary>
+        /// The flags specifying the behaviour of this field.
+        /// </summary>
         public AcroChoiceFieldFlags Flags { get; }
 
+        /// <summary>
+        /// The options to be presented to the user.
+        /// </summary>
+        [NotNull]
         public IReadOnlyList<AcroChoiceOption> Options { get; }
 
+        /// <summary>
+        /// The names of any currently selected options.
+        /// </summary>
+        [NotNull]
+        public IReadOnlyList<string> SelectedOptions { get; }
+
+        /// <summary>
+        /// For multiple select lists with duplicate names gives the indices of the selected options.
+        /// </summary>
+        [CanBeNull]
+        public IReadOnlyList<int> SelectedOptionIndices { get; }
+
+        /// <summary>
+        /// For scrollable list boxes gives the index of the first visible option.
+        /// </summary>
+        public int TopIndex { get; }
+
+        /// <summary>
+        /// Whether the field allows multiple selections.
+        /// </summary>
+        public bool SupportsMultiSelect => Flags.Equals(AcroChoiceFieldFlags.MultiSelect);
+
+        /// <summary>
+        /// Create a new <see cref="AcroListBoxField"/>.
+        /// </summary>
+        /// <param name="dictionary">The dictionary for this field.</param>
+        /// <param name="fieldType">The type of this field, must be <see cref="NameToken.Ch"/>.</param>
+        /// <param name="fieldFlags">The flags specifying behaviour for this field.</param>
+        /// <param name="information">Additional information for this field.</param>
+        /// <param name="options">The options in this field.</param>
+        /// <param name="selectedOptionIndices"></param>
+        /// <param name="topIndex">The first visible option index.</param>
+        /// <param name="selectedOptions"></param>
         public AcroListBoxField(DictionaryToken dictionary, string fieldType, AcroChoiceFieldFlags fieldFlags,
-            AcroFieldCommonInformation information, IReadOnlyList<AcroChoiceOption> options) : 
+            AcroFieldCommonInformation information, IReadOnlyList<AcroChoiceOption> options,
+            IReadOnlyList<string> selectedOptions, 
+            IReadOnlyList<int> selectedOptionIndices,
+            int? topIndex) : 
             base(dictionary, fieldType, (uint)fieldFlags, information)
         {
             Flags = fieldFlags;
             Options = options ?? throw new ArgumentNullException(nameof(options));
+            SelectedOptions = selectedOptions ?? throw new ArgumentNullException(nameof(selectedOptions));
+            SelectedOptionIndices = selectedOptionIndices;
+            TopIndex = topIndex ?? 0;
         }
     }
 
     internal class AcroComboBoxField : AcroFieldBase
     {
+        /// <summary>
+        /// The flags specifying the behaviour of this field.
+        /// </summary>
         public AcroChoiceFieldFlags Flags { get; }
 
-        public AcroComboBoxField(DictionaryToken dictionary, string fieldType, AcroChoiceFieldFlags fieldFlags, 
-            AcroFieldCommonInformation information) :
+        /// <summary>
+        /// The options to be presented to the user.
+        /// </summary>
+        [NotNull]
+        public IReadOnlyList<AcroChoiceOption> Options { get; }
+
+        /// <summary>
+        /// The names of any currently selected options.
+        /// </summary>
+        [NotNull]
+        public IReadOnlyList<string> SelectedOptions { get; }
+
+        /// <summary>
+        /// For multiple select lists with duplicate names gives the indices of the selected options.
+        /// </summary>
+        [CanBeNull]
+        public IReadOnlyList<int> SelectedOptionIndices { get; }
+
+        public AcroComboBoxField(DictionaryToken dictionary, string fieldType, AcroChoiceFieldFlags fieldFlags,
+            AcroFieldCommonInformation information, IReadOnlyList<AcroChoiceOption> options, 
+            IReadOnlyList<string> selectedOptions, 
+            IReadOnlyList<int> selectedOptionIndices) :
             base(dictionary, fieldType, (uint)fieldFlags, information)
         {
             Flags = fieldFlags;
+            Options = options ?? throw new ArgumentNullException(nameof(options));
+            SelectedOptions = selectedOptions ?? throw new ArgumentNullException(nameof(selectedOptions));
+            SelectedOptionIndices = selectedOptionIndices;
         }
     }
 
@@ -148,6 +224,11 @@
         public int Index { get; }
 
         /// <summary>
+        /// Whether this option is selected.
+        /// </summary>
+        public bool IsSelected { get; }
+
+        /// <summary>
         /// The text of the option.
         /// </summary>
         public string Name { get; }
@@ -160,9 +241,10 @@
         /// <summary>
         /// Create a new <see cref="AcroChoiceOption"/>.
         /// </summary>
-        public AcroChoiceOption(int index, string name, string exportValue = null)
+        public AcroChoiceOption(int index, bool isSelected, string name, string exportValue = null)
         {
             Index = index;
+            IsSelected = isSelected;
             Name = name;
             ExportValue = exportValue;
         }
