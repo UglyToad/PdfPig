@@ -7,7 +7,7 @@
 
     /// <inheritdoc />
     /// <summary>
-    /// Move to the next line and show a text string, using the first number as the word spacing and the second as the character spacing
+    /// Move to the next line and show a text string, using the first number as the word spacing and the second as the character spacing.
     /// </summary>
     public class MoveToNextLineShowTextWithSpacing : IGraphicsStateOperation
     {
@@ -84,7 +84,21 @@
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            throw new System.NotImplementedException();
+            stream.WriteDecimal(WordSpacing);
+            stream.WriteWhiteSpace();
+            stream.WriteDecimal(CharacterSpacing);
+            stream.WriteWhiteSpace();
+
+            if (Bytes != null)
+            {
+                stream.WriteHex(Bytes);
+            }
+            else
+            {
+                stream.WriteText($"({Text})");
+            }
+
+            stream.WriteNewLine();
         }
 
         /// <inheritdoc />

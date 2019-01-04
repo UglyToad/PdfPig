@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations
 {
+    using System;
     using System.IO;
     using Util;
 
@@ -12,6 +13,12 @@
         {
             var bytes = OtherEncodings.StringAsLatin1Bytes(text);
             stream.Write(bytes, 0, bytes.Length);
+        }
+
+        public static void WriteHex(this Stream stream, byte[] bytes)
+        {
+            var text = BitConverter.ToString(bytes).Replace("-", string.Empty);
+            stream.WriteText($"<{text}>");
         }
 
         public static void WriteWhiteSpace(this Stream stream)

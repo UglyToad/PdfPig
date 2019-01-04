@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextShowing
 {
-    using System;
     using System.IO;
     using IO;
     using Util;
@@ -72,12 +71,15 @@
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            if (Text == null && Bytes != null)
+            if (Bytes != null)
             {
-                throw new NotImplementedException("Support for writing hex not done yet.");
+                stream.WriteHex(Bytes);
+            }
+            else
+            {
+                stream.WriteText($"({Text})");
             }
 
-            stream.WriteText($"({Text})");
             stream.WriteWhiteSpace();
             stream.WriteText(Symbol);
             stream.WriteNewLine();

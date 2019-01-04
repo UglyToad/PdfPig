@@ -1,8 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextShowing
 {
-    using System;
     using System.IO;
-    using System.Linq;
     using TextPositioning;
     using Util.JetBrains.Annotations;
 
@@ -71,8 +69,9 @@
             }
             else
             {
-                var hex = BitConverter.ToString(Bytes.ToArray()).Replace("-", string.Empty);
-                stream.WriteText($"<{hex}> {Symbol}");
+                stream.WriteHex(Bytes);
+                stream.WriteWhiteSpace();
+                stream.WriteText(Symbol);
                 stream.WriteNewLine();
             }
         }
