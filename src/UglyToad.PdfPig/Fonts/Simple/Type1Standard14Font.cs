@@ -7,6 +7,9 @@
     using IO;
     using Tokens;
 
+    /// <summary>
+    /// A font using one of the Adobe Standard 14 fonts. Can use a custom encoding.
+    /// </summary>
     internal class Type1Standard14Font: IFont
     {
         private readonly FontMetrics standardFontMetrics;
@@ -17,10 +20,10 @@
 
         private readonly TransformationMatrix fontMatrix = TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);
 
-        public Type1Standard14Font(FontMetrics standardFontMetrics)
+        public Type1Standard14Font(FontMetrics standardFontMetrics, Encoding overrideEncoding = null)
         {
             this.standardFontMetrics = standardFontMetrics ?? throw new ArgumentNullException(nameof(standardFontMetrics));
-            encoding = new AdobeFontMetricsEncoding(standardFontMetrics);
+            encoding = overrideEncoding ?? new AdobeFontMetricsEncoding(standardFontMetrics);
 
             Name = NameToken.Create(standardFontMetrics.FontName);
             

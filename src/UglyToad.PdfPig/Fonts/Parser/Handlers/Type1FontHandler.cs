@@ -65,6 +65,19 @@
 
             var widths = FontDictionaryAccessHelper.GetWidths(pdfScanner, dictionary, isLenientParsing);
 
+            if (!dictionary.TryGet(NameToken.FontDescriptor, out var _))
+            {
+                if (dictionary.TryGet(NameToken.BaseFont, out var baseFontToken)  && 
+                    DirectObjectFinder.TryGet(baseFontToken, pdfScanner, out NameToken baseFontName))
+                {
+                    var metrics = Standard14.GetAdobeFontMetrics(baseFontName.Data);
+
+                    var overrideEncoding = encodingReader.Read(dictionary, isLenientParsing);
+
+                    return new Type1Standard14Font(metrics, overrideEncoding);
+                }
+            }
+
             var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfScanner, fontDescriptorFactory, dictionary, isLenientParsing);
 
             var font = ParseFontProgram(descriptor, isLenientParsing);
