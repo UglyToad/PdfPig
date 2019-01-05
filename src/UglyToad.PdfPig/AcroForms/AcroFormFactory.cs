@@ -176,27 +176,7 @@
             }
             else if (fieldType == NameToken.Tx)
             {
-                var textFlags = (AcroTextFieldFlags)fieldFlags;
-
-                var textValue = default(string);
-                if (fieldDictionary.TryGet(NameToken.V, out var textValueToken))
-                {
-                    if (DirectObjectFinder.TryGet(textValueToken, tokenScanner, out StringToken valueStringToken))
-                    {
-                        textValue = valueStringToken.Data;
-                    }
-                    else if (DirectObjectFinder.TryGet(textValueToken, tokenScanner, out HexToken valueHexToken))
-                    {
-                        textValue = valueHexToken.Data;
-                    }
-                    else if (DirectObjectFinder.TryGet(textValueToken, tokenScanner, out StreamToken valueStreamToken))
-                    {
-                        
-                    }
-                }
-
-                var field = new AcroTextField(fieldDictionary, fieldType, textFlags, information, textValue);
-                result = field;
+                result = GetTextField(fieldDictionary, fieldType, fieldFlags, information);
             }
             else if (fieldType == NameToken.Ch)
             {
@@ -213,6 +193,38 @@
             }
 
             return result;
+        }
+
+        private AcroFieldBase GetTextField(DictionaryToken fieldDictionary, NameToken fieldType, uint fieldFlags, AcroFieldCommonInformation information)
+        {
+            var textFlags = (AcroTextFieldFlags)fieldFlags;
+
+            var textValue = default(string);
+            if (fieldDictionary.TryGet(NameToken.V, out var textValueToken))
+            {
+                if (DirectObjectFinder.TryGet(textValueToken, tokenScanner, out StringToken valueStringToken))
+                {
+                    textValue = valueStringToken.Data;
+                }
+                else if (DirectObjectFinder.TryGet(textValueToken, tokenScanner, out HexToken valueHexToken))
+                {
+                    textValue = valueHexToken.Data;
+                }
+                else if (DirectObjectFinder.TryGet(textValueToken, tokenScanner, out StreamToken valueStreamToken))
+                {
+                    textValue = OtherEncodings.BytesAsLatin1String(valueStreamToken.Decode(filterProvider).ToArray());
+                }
+            }
+
+            var maxLength = default(int?);
+            if (fieldDictionary.TryGetOptionalTokenDirect(NameToken.MaxLen, tokenScanner, out NumericToken maxLenToken))
+            {
+                maxLength = maxLenToken.Int;
+            }
+
+            var field = new AcroTextField(fieldDictionary, fieldType, textFlags, information, textValue, maxLength);
+
+            return field;
         }
 
         private AcroFieldBase GetChoiceField(DictionaryToken fieldDictionary, NameToken fieldType, uint fieldFlags, AcroFieldCommonInformation information)

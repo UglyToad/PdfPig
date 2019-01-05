@@ -51,8 +51,8 @@
 
                 var text = OtherEncodings.BytesAsLatin1String(stream.ToArray());
 
-                text = text.Replace("\n", " ");
-                content = content.Replace("\r\n", " ");
+                text = LineEndingsToWhiteSpace(text);
+                content = LineEndingsToWhiteSpace(content);
                 content = replacementRegex.Replace(content, " 0$1");
 
                 Assert.Equal(content, text);
@@ -82,8 +82,8 @@ ET";
 
                 var text = OtherEncodings.BytesAsLatin1String(stream.ToArray());
 
-                text = text.Replace("\n", " ").Trim();
-                var expected = s.Replace("\r\n", " ");
+                text = LineEndingsToWhiteSpace(text).Trim();
+                var expected = LineEndingsToWhiteSpace(s);
 
                 Assert.Equal(expected, text);
             }
@@ -151,6 +151,11 @@ ET";
             Assert.Equal(TextRenderingMode.Fill, renderingMode.Mode);
 
             Assert.Equal(EndText.Value, result[3]);
+        }
+
+        private static string LineEndingsToWhiteSpace(string str)
+        {
+            return str.Replace("\r\n", " ").Replace('\n', ' ').Replace('\r', ' ');
         }
     }
 }

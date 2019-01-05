@@ -24,6 +24,12 @@
 
             var expected = new List<string>
             {
+                "UglyToad.PdfPig.AcroForms.Fields.AcroChoiceFieldFlags",
+                "UglyToad.PdfPig.AcroForms.Fields.AcroChoiceOption",
+                "UglyToad.PdfPig.AcroForms.Fields.AcroComboBoxField",
+                "UglyToad.PdfPig.AcroForms.Fields.AcroFieldBase",
+                "UglyToad.PdfPig.AcroForms.Fields.AcroFieldCommonInformation",
+                "UglyToad.PdfPig.AcroForms.Fields.AcroListBoxField",
                 "UglyToad.PdfPig.Annotations.Annotation",
                 "UglyToad.PdfPig.Annotations.AnnotationBorder",
                 "UglyToad.PdfPig.Annotations.AnnotationFlags",
@@ -142,6 +148,11 @@
             foreach (var publicTypeName in publicTypeNames)
             {
                 Assert.True(expected.Contains(publicTypeName), $"Type should not be public: {publicTypeName}.");
+            }
+
+            foreach (var expectedPublicType in expected)
+            {
+                Assert.True(publicTypeNames.Contains(expectedPublicType), $"Type should be public: {expectedPublicType}.");
             }
         }
     }

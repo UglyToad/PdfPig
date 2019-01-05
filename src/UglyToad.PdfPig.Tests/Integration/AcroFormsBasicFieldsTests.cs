@@ -31,5 +31,15 @@
 
             Assert.Throws<ObjectDisposedException>(action);
         }
+
+        [Fact]
+        public void GetsAllFormFields()
+        {
+            using (var document = PdfDocument.Open(GetFilename(), new ParsingOptions { UseLenientParsing = false }))
+            {
+                var form = document.GetForm();
+                Assert.Equal(16, form.Fields.Count);
+            }
+        }
     }
 }
