@@ -30,6 +30,8 @@
                 "UglyToad.PdfPig.AcroForms.Fields.AcroFieldBase",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroFieldCommonInformation",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroListBoxField",
+                "UglyToad.PdfPig.AcroForms.Fields.AcroTextField",
+                "UglyToad.PdfPig.AcroForms.Fields.AcroTextFieldFlags",
                 "UglyToad.PdfPig.Annotations.Annotation",
                 "UglyToad.PdfPig.Annotations.AnnotationBorder",
                 "UglyToad.PdfPig.Annotations.AnnotationFlags",
