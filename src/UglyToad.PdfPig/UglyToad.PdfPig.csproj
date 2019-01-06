@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net45;net451;net452;net46;net461;net462;net47</TargetFrameworks>
     <PackageId>PdfPig</PackageId>
     <DebugType>full</DebugType>
     <Authors>UglyToad</Authors>
@@ -46,6 +46,16 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='net45' 
+             OR '$(TargetFramework)'=='net451' 
+             OR '$(TargetFramework)'=='net452' 
+             OR '$(TargetFramework)'=='net46' 
+             OR '$(TargetFramework)'=='net461' 
+             OR '$(TargetFramework)'=='net462' 
+             OR '$(TargetFramework)'=='net47'">
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />    
   </ItemGroup>
   
 </Project>

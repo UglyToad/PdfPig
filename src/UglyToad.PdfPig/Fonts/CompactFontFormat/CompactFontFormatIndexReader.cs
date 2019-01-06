@@ -2,6 +2,8 @@
 
 namespace UglyToad.PdfPig.Fonts.CompactFontFormat
 {
+    using Util;
+
     internal class CompactFontFormatIndexReader
     {
         public CompactFontFormatIndex ReadDictionaryData(CompactFontFormatData data)
@@ -43,7 +45,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat
 
             if (count == 0)
             {
-                return Array.Empty<int>();
+                return EmptyArray<int>.Instance;
             }
 
             var offsetSize = data.ReadOffsize();
