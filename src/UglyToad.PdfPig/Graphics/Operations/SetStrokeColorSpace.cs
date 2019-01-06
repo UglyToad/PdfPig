@@ -1,35 +1,36 @@
-﻿namespace UglyToad.PdfPig.Graphics.Operations.MarkedContent
+﻿namespace UglyToad.PdfPig.Graphics.Operations
 {
+    using System;
     using System.IO;
     using Tokens;
     using Writer;
 
     /// <inheritdoc />
     /// <summary>
-    /// Designate a single marked-content point in the content stream.
+    /// Set the current color space to use for stroking operations. 
     /// </summary>
-    public class DesignateMarkedContentPoint : IGraphicsStateOperation
+    public class SetStrokeColorSpace : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
         /// </summary>
-        public const string Symbol = "MP";
+        public const string Symbol = "CS";
 
         /// <inheritdoc />
         public string Operator => Symbol;
 
         /// <summary>
-        /// A name indicating the role or significance of the point.
+        /// The name of the color space.
         /// </summary>
         public NameToken Name { get; }
 
         /// <summary>
-        /// Create a new <see cref="DesignateMarkedContentPoint"/>.
+        /// Create a new <see cref="SetStrokeColorSpace"/>.
         /// </summary>
-        /// <param name="name">The name of the marked-content point.</param>
-        public DesignateMarkedContentPoint(NameToken name)
+        /// <param name="name">The name of the color space.</param>
+        public SetStrokeColorSpace(NameToken name)
         {
-            Name = name;
+            Name = name ?? throw new ArgumentNullException(nameof(name));
         }
 
         /// <inheritdoc />
@@ -41,7 +42,6 @@
         public void Write(Stream stream)
         {
             TokenWriter.WriteToken(Name, stream);
-            stream.WriteWhiteSpace();
             stream.WriteText(Symbol);
             stream.WriteNewLine();
         }

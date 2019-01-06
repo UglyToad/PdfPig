@@ -11,7 +11,7 @@
         /// <summary>
         /// The symbol for this operation in a stream.
         /// </summary>
-        public const string Symbol = "K";
+        public const string Symbol = "k";
 
         /// <inheritdoc />
         public string Operator => Symbol;

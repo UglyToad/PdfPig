@@ -6,28 +6,28 @@
 
     /// <inheritdoc />
     /// <summary>
-    /// Designate a single marked-content point in the content stream.
+    /// Begin a marked-content sequence terminated by a balancing <see cref="EndMarkedContent"/> operator.
     /// </summary>
-    public class DesignateMarkedContentPoint : IGraphicsStateOperation
+    public class BeginMarkedContent : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
         /// </summary>
-        public const string Symbol = "MP";
+        public const string Symbol = "BMC";
 
         /// <inheritdoc />
         public string Operator => Symbol;
 
         /// <summary>
-        /// A name indicating the role or significance of the point.
+        /// A name indicating the role or significance of the sequence.
         /// </summary>
         public NameToken Name { get; }
 
         /// <summary>
-        /// Create a new <see cref="DesignateMarkedContentPoint"/>.
+        /// Create a new <see cref="BeginMarkedContent"/>.
         /// </summary>
-        /// <param name="name">The name of the marked-content point.</param>
-        public DesignateMarkedContentPoint(NameToken name)
+        /// <param name="name">The name of the marked-content sequence.</param>
+        public BeginMarkedContent(NameToken name)
         {
             Name = name;
         }

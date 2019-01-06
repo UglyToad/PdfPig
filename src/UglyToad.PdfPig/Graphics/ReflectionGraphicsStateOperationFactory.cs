@@ -6,6 +6,7 @@ namespace UglyToad.PdfPig.Graphics
     using System.Reflection;
     using Exceptions;
     using Operations;
+    using Operations.MarkedContent;
     using Operations.TextShowing;
     using Operations.TextState;
     using Tokens;
@@ -84,6 +85,56 @@ namespace UglyToad.PdfPig.Graphics
 
                     var information = string.Join(", ", operands.Select(x => x.ToString()));
                     throw new PdfDocumentFormatException($"Attempted to set font with wrong number of parameters: [{information}]");
+                case DesignateMarkedContentPointWithProperties.Symbol:
+                    var dpName = (NameToken)operands[0];
+                    if (operands[1] is DictionaryToken contentPointDictionary)
+                    {
+                        return new DesignateMarkedContentPointWithProperties(dpName, contentPointDictionary);
+                    }
+                    else if (operands[1] is NameToken contentPointName)
+                    {
+                        return new DesignateMarkedContentPointWithProperties(dpName, contentPointName);
+                    }
+
+                    var errorMessageDp = string.Join(", ", operands.Select(x => x.ToString()));
+                    throw new PdfDocumentFormatException($"Attempted to set a marked-content point with invalid parameters: [{errorMessageDp}]");
+                case BeginMarkedContentWithProperties.Symbol:
+                    var bdcName = (NameToken) operands[0];
+                    if (operands[1] is DictionaryToken contentSequenceDictionary)
+                    {
+                        return new BeginMarkedContentWithProperties(bdcName, contentSequenceDictionary);
+                    }
+                    else if (operands[1] is NameToken contentSequenceName)
+                    {
+                        return new BeginMarkedContentWithProperties(bdcName, contentSequenceName);
+                    }
+
+                    var errorMessageBdc = string.Join(", ", operands.Select(x => x.ToString()));
+                    throw new PdfDocumentFormatException($"Attempted to set a marked-content sequence with invalid parameters: [{errorMessageBdc}]");
+                case SetStrokeColorAdvanced.Symbol:
+                    if (operands[operands.Count - 1] is NameToken scnPatternName)
+                    {
+                        return new SetStrokeColorAdvanced(operands.Take(operands.Count - 1).Select(x => ((NumericToken)x).Data).ToList(), scnPatternName);
+                    }
+                    else if(operands.All(x => x is NumericToken))
+                    {
+                        return new SetStrokeColorAdvanced(operands.Select(x => ((NumericToken)x).Data).ToList());
+                    }
+
+                    var errorMessageScn = string.Join(", ", operands.Select(x => x.ToString()));
+                    throw new PdfDocumentFormatException($"Attempted to set a stroke color space (SCN) with invalid arguments: [{errorMessageScn}]");
+                case SetNonStrokeColorAdvanced.Symbol:
+                    if (operands[operands.Count - 1] is NameToken scnLowerPatternName)
+                    {
+                        return new SetStrokeColorAdvanced(operands.Take(operands.Count - 1).Select(x => ((NumericToken)x).Data).ToList(), scnLowerPatternName);
+                    }
+                    else if (operands.All(x => x is NumericToken))
+                    {
+                        return new SetStrokeColorAdvanced(operands.Select(x => ((NumericToken)x).Data).ToList());
+                    }
+
+                    var errorMessageScnLower = string.Join(", ", operands.Select(x => x.ToString()));
+                    throw new PdfDocumentFormatException($"Attempted to set a non-stroke color space (scn) with invalid arguments: [{errorMessageScnLower}]");
             }
 
             if (!operations.TryGetValue(op.Data, out Type operationType))

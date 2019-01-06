@@ -1,6 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Tests
 {
     using System.Collections.Generic;
+    using System.Linq;
+    using System.Reflection;
+    using PdfPig.Graphics.Operations;
     using Xunit;
 
     public class PublicApiScannerTests
@@ -66,6 +69,8 @@
                 "UglyToad.PdfPig.Graphics.IOperationContext",
                 "UglyToad.PdfPig.Graphics.Operations.ClippingPaths.ModifyClippingByEvenOddIntersect",
                 "UglyToad.PdfPig.Graphics.Operations.ClippingPaths.ModifyClippingByNonZeroWindingIntersect",
+                "UglyToad.PdfPig.Graphics.Operations.Compatibility.BeginCompatibilitySection",
+                "UglyToad.PdfPig.Graphics.Operations.Compatibility.EndCompatibilitySection",
                 "UglyToad.PdfPig.Graphics.Operations.CloseAndStrokePath",
                 "UglyToad.PdfPig.Graphics.Operations.CloseFillPathEvenOddRuleAndStroke",
                 "UglyToad.PdfPig.Graphics.Operations.CloseFillPathNonZeroWindingAndStroke",
@@ -83,10 +88,16 @@
                 "UglyToad.PdfPig.Graphics.Operations.General.SetLineWidth",
                 "UglyToad.PdfPig.Graphics.Operations.General.SetMiterLimit",
                 "UglyToad.PdfPig.Graphics.Operations.IGraphicsStateOperation",
+                "UglyToad.PdfPig.Graphics.Operations.InlineImages.BeginInlineImage",
+                "UglyToad.PdfPig.Graphics.Operations.InlineImages.BeginInlineImageData",
+                "UglyToad.PdfPig.Graphics.Operations.InlineImages.EndInlineImage",
                 "UglyToad.PdfPig.Graphics.Operations.InvokeNamedXObject",
                 "UglyToad.PdfPig.Graphics.Operations.MarkedContent.BeginMarkedContent",
+                "UglyToad.PdfPig.Graphics.Operations.MarkedContent.BeginMarkedContentWithProperties",
                 "UglyToad.PdfPig.Graphics.Operations.MarkedContent.DesignateMarkedContentPoint",
+                "UglyToad.PdfPig.Graphics.Operations.MarkedContent.DesignateMarkedContentPointWithProperties",
                 "UglyToad.PdfPig.Graphics.Operations.MarkedContent.EndMarkedContent",
+                "UglyToad.PdfPig.Graphics.Operations.PaintShading",
                 "UglyToad.PdfPig.Graphics.Operations.PathConstruction.AppendDualControlPointBezierCurve",
                 "UglyToad.PdfPig.Graphics.Operations.PathConstruction.AppendEndControlPointBezierCurve",
                 "UglyToad.PdfPig.Graphics.Operations.PathConstruction.AppendRectangle",
@@ -94,12 +105,18 @@
                 "UglyToad.PdfPig.Graphics.Operations.PathConstruction.AppendStraightLineSegment",
                 "UglyToad.PdfPig.Graphics.Operations.PathConstruction.BeginNewSubpath",
                 "UglyToad.PdfPig.Graphics.Operations.PathConstruction.CloseSubpath",
+                "UglyToad.PdfPig.Graphics.Operations.SetNonStrokeColor",
+                "UglyToad.PdfPig.Graphics.Operations.SetNonStrokeColorAdvanced",
                 "UglyToad.PdfPig.Graphics.Operations.SetNonStrokeColorDeviceCmyk",
                 "UglyToad.PdfPig.Graphics.Operations.SetNonStrokeColorDeviceGray",
                 "UglyToad.PdfPig.Graphics.Operations.SetNonStrokeColorDeviceRgb",
+                "UglyToad.PdfPig.Graphics.Operations.SetNonStrokeColorSpace",
                 "UglyToad.PdfPig.Graphics.Operations.SetStrokeColorDeviceCmyk",
+                "UglyToad.PdfPig.Graphics.Operations.SetStrokeColor",
+                "UglyToad.PdfPig.Graphics.Operations.SetStrokeColorAdvanced",
                 "UglyToad.PdfPig.Graphics.Operations.SetStrokeColorDeviceGray",
                 "UglyToad.PdfPig.Graphics.Operations.SetStrokeColorDeviceRgb",
+                "UglyToad.PdfPig.Graphics.Operations.SetStrokeColorSpace",
                 "UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState.ModifyCurrentTransformationMatrix",
                 "UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState.Pop",
                 "UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState.Push",
@@ -122,6 +139,8 @@
                 "UglyToad.PdfPig.Graphics.Operations.TextState.SetTextRenderingMode",
                 "UglyToad.PdfPig.Graphics.Operations.TextState.SetTextRise",
                 "UglyToad.PdfPig.Graphics.Operations.TextState.SetWordSpacing",
+                "UglyToad.PdfPig.Graphics.Operations.TextState.Type3SetGlyphWidth",
+                "UglyToad.PdfPig.Graphics.Operations.TextState.Type3SetGlyphWidthAndBoundingBox",
                 "UglyToad.PdfPig.Graphics.TextMatrices",
                 "UglyToad.PdfPig.IndirectReference",
                 "UglyToad.PdfPig.IO.IInputBytes",
@@ -158,6 +177,104 @@
             foreach (var expectedPublicType in expected)
             {
                 Assert.True(publicTypeNames.Contains(expectedPublicType), $"Type should be public: {expectedPublicType}.");
+            }
+        }
+
+        [Fact]
+        public void AllSpecificationOperatorsArePresent()
+        {
+            var assembly = typeof(PdfDocument).Assembly;
+
+            var types = assembly.GetTypes().Where(x => typeof(IGraphicsStateOperation).IsAssignableFrom(x) && !x.IsInterface);
+
+            var expectedSymbols = new[]
+            {
+                "b",
+                "B",
+                "b*",
+                "B*",
+                "BDC",
+                "BI",
+                "BMC",
+                "BT",
+                "BX",
+                "c",
+                "cm",
+                "CS",
+                "cs",
+                "d",
+                "d0",
+                "d1",
+                "Do",
+                "DP",
+                "EI",
+                "EMC",
+                "ET",
+                "EX",
+                "f",
+                "F",
+                "f*",
+                "G",
+                "g",
+                "gs",
+                "h",
+                "i",
+                "ID",
+                "j",
+                "J",
+                "K",
+                "k",
+                "l",
+                "m",
+                "M",
+                "MP",
+                "n",
+                "q",
+                "Q",
+                "re",
+                "RG",
+                "rg",
+                "ri",
+                "s",
+                "S",
+                "SC",
+                "sc",
+                "SCN",
+                "scn",
+                "sh",
+                "T*",
+                "Tc",
+                "Td",
+                "TD",
+                "Tf",
+                "Tj",
+                "TJ",
+                "TL",
+                "Tm",
+                "Tr",
+                "Ts",
+                "Tw",
+                "Tz",
+                "v",
+                "w",
+                "W",
+                "W*",
+                "y",
+                "'",
+                "\""
+            };
+
+            var symbols = new List<string>();
+
+            foreach (var type in types)
+            {
+                var symbol = type.GetField("Symbol", BindingFlags.Public | BindingFlags.Static);
+                symbols.Add(symbol.GetValue(null).ToString());
+            }
+
+            foreach (var expectedSymbol in expectedSymbols)
+            {
+                Assert.True(symbols.Contains(expectedSymbol), $"There is no operation defined with the symbol: {expectedSymbol}.");
             }
         }
     }
