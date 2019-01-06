@@ -229,7 +229,7 @@
 
         private AcroFieldBase GetChoiceField(DictionaryToken fieldDictionary, NameToken fieldType, uint fieldFlags, AcroFieldCommonInformation information)
         {
-            var selectedOptions = Array.Empty<string>();
+            var selectedOptions = EmptyArray<string>.Instance;
             if (fieldDictionary.TryGet(NameToken.V, out var valueToken))
             {
                 if (DirectObjectFinder.TryGet(valueToken, tokenScanner, out StringToken valueString))

@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using Util;
     using Util.JetBrains.Annotations;
 
     /// <summary>
@@ -150,17 +151,17 @@
                 throw new ArgumentNullException(nameof(builder));
             }
 
-            BlueValues = builder.BlueValues ?? Array.Empty<int>();
-            OtherBlues = builder.OtherBlues ?? Array.Empty<int>();
-            FamilyBlues = builder.FamilyBlues ?? Array.Empty<int>();
-            FamilyOtherBlues = builder.FamilyOtherBlues ?? Array.Empty<int>();
+            BlueValues = builder.BlueValues ?? EmptyArray<int>.Instance;
+            OtherBlues = builder.OtherBlues ?? EmptyArray<int>.Instance;
+            FamilyBlues = builder.FamilyBlues ?? EmptyArray<int>.Instance;
+            FamilyOtherBlues = builder.FamilyOtherBlues ?? EmptyArray<int>.Instance;
             BlueScale = builder.BlueScale ?? DefaultBlueScale;
             BlueFuzz = builder.BlueFuzz ?? DefaultBlueFuzz;
             BlueShift = builder.BlueShift ?? DefaultBlueShift;
             StandardHorizontalWidth = builder.StandardHorizontalWidth;
             StandardVerticalWidth = builder.StandardVerticalWidth;
-            StemSnapHorizontalWidths = builder.StemSnapHorizontalWidths ?? Array.Empty<decimal>();
-            StemSnapVerticalWidths = builder.StemSnapVerticalWidths ?? Array.Empty<decimal>();
+            StemSnapHorizontalWidths = builder.StemSnapHorizontalWidths ?? EmptyArray<decimal>.Instance;
+            StemSnapVerticalWidths = builder.StemSnapVerticalWidths ?? EmptyArray<decimal>.Instance;
             ForceBold = builder.ForceBold ?? false;
             LanguageGroup = builder.LanguageGroup ?? DefaultLanguageGroup;
             ExpansionFactor = builder.ExpansionFactor ?? DefaultExpansionFactor;
