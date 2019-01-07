@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CompactFontFormat
 {
     using System;
+    using System.Collections.Generic;
     using Charsets;
     using CharStrings;
     using Dictionaries;
@@ -32,6 +33,28 @@
                 x => { result = x.Generate(characterName).Path.GetBoundingRectangle(); });
 
             return result;
+        }
+    }
+
+    internal class CompactFontFormatCidFont : CompactFontFormatFont
+    {
+        public IReadOnlyList<CompactFontFormatTopLevelDictionary> FontDictionaries { get; }
+        public IReadOnlyList<CompactFontFormatPrivateDictionary> PrivateDictionaries { get; }
+        public IReadOnlyList<CompactFontFormatIndex> LocalSubroutines { get; }
+        public ICompactFontFormatFdSelect FdSelect { get; }
+
+        public CompactFontFormatCidFont(CompactFontFormatTopLevelDictionary topDictionary, CompactFontFormatPrivateDictionary privateDictionary, 
+            ICompactFontFormatCharset charset, 
+            Union<Type1CharStrings, Type2CharStrings> charStrings,
+            IReadOnlyList<CompactFontFormatTopLevelDictionary> fontDictionaries,
+            IReadOnlyList<CompactFontFormatPrivateDictionary> privateDictionaries,
+            IReadOnlyList<CompactFontFormatIndex> localSubroutines,
+            ICompactFontFormatFdSelect fdSelect) : base(topDictionary, privateDictionary, charset, charStrings)
+        {
+            FontDictionaries = fontDictionaries;
+            PrivateDictionaries = privateDictionaries;
+            LocalSubroutines = localSubroutines;
+            FdSelect = fdSelect;
         }
     }
 }

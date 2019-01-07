@@ -12,6 +12,7 @@
         private const string SinglePageFormattedType0Content = "Type0 Font";
         private const string SinglePageType1Content = "ICML03-081";
         private const string SingleInkscapePage = "Single Page Simple - from inkscape";
+        private const string MotorInsuranceClaim = "Motor Insurance claim form";
         private const string PigProduction = "Pig Production Handbook";
 
         private static string GetFilename(string name)
@@ -78,6 +79,12 @@
         public void MultiPageMortalityStatistics()
         {
             Run("Multiple Page - from Mortality Statistics");
+        }
+
+        [Fact]
+        public void MotorInsuranceClaimForm()
+        {
+            Run(MotorInsuranceClaim, 841);
         }
 
         private static void Run(string file, int imageHeight = 792)

@@ -110,7 +110,7 @@
 
             if (topDictionary.IsCidFont)
             {
-                ReadCidFont(data, topDictionary, charStringIndex.Count, stringIndex);
+                return ReadCidFont(data, topDictionary, charStringIndex.Count, stringIndex, privateDictionary, charset, Union<Type1CharStrings, Type2CharStrings>.Two(charStrings));
             }
 
             return new CompactFontFormatFont(topDictionary, privateDictionary, charset, Union<Type1CharStrings, Type2CharStrings>.Two(charStrings));
@@ -184,9 +184,12 @@
             return "SID" + index;
         }
 
-        private void ReadCidFont(CompactFontFormatData data, CompactFontFormatTopLevelDictionary topLevelDictionary,
+        private CompactFontFormatCidFont ReadCidFont(CompactFontFormatData data, CompactFontFormatTopLevelDictionary topLevelDictionary,
             int numberOfGlyphs,
-            IReadOnlyList<string> stringIndex)
+            IReadOnlyList<string> stringIndex,
+            CompactFontFormatPrivateDictionary privateDictionary,
+            ICompactFontFormatCharset charset,
+            Union<Type1CharStrings, Type2CharStrings> charstrings)
         {
             var offset = topLevelDictionary.CidFontOperators.FontDictionaryArray;
 
@@ -194,6 +197,9 @@
 
             var fontDict = indexReader.ReadDictionaryData(data);
 
+            var privateDictionaries = new List<CompactFontFormatPrivateDictionary>();
+            var fontDictionaries = new List<CompactFontFormatTopLevelDictionary>();
+            var fontLocalSubroutines = new List<CompactFontFormatIndex>();
             foreach (var index in fontDict)
             {
                 var topLevelDictionaryCid = topLevelDictionaryReader.Read(new CompactFontFormatData(index), stringIndex);
@@ -206,14 +212,18 @@
                 var privateDictionaryBytes = data.SnapshotPortion(topLevelDictionaryCid.PrivateDictionaryLocation.Value.Offset,
                     topLevelDictionaryCid.PrivateDictionaryLocation.Value.Size);
 
-                var privateDictionaryCid = privateDictionaryReader.Read(data, stringIndex);
+                var privateDictionaryCid = privateDictionaryReader.Read(privateDictionaryBytes, stringIndex);
 
                 // CFFParser.java line 625 - read the local subroutines.
                 if (privateDictionaryCid.LocalSubroutineOffset.HasValue && privateDictionaryCid.LocalSubroutineOffset.Value > 0)
                 {
                     data.Seek(topLevelDictionaryCid.PrivateDictionaryLocation.Value.Offset + privateDictionaryCid.LocalSubroutineOffset.Value);
                     var localSubroutines = indexReader.ReadDictionaryData(data);
+                    fontLocalSubroutines.Add(localSubroutines);
                 }
+
+                fontDictionaries.Add(topLevelDictionaryCid);
+                privateDictionaries.Add(privateDictionaryCid);
             }
 
             data.Seek(topLevelDictionary.CidFontOperators.FontDictionarySelect);
@@ -236,6 +246,9 @@
                 default:
                     throw new InvalidFontFormatException($"Invalid Font Dictionary Select format: {format}.");
             }
+
+            return new CompactFontFormatCidFont(topLevelDictionary, privateDictionary, charset, charstrings,
+                fontDictionaries, privateDictionaries, fontLocalSubroutines, fdSelect);
         }
 
         private static CompactFontFormat0FdSelect ReadFormat0FdSelect(CompactFontFormatData data, int numberOfGlyphs,

@@ -61,7 +61,7 @@
             var subType = dictionary.GetNameOrDefault(NameToken.Subtype);
             if (NameToken.CidFontType0.Equals(subType))
             {
-                return new Type0CidFont(fontProgram, type, subType, baseFont, systemInfo, descriptor);
+                return new Type0CidFont(fontProgram, type, subType, baseFont, systemInfo, descriptor, widths);
             }
 
             if (NameToken.CidFontType2.Equals(subType))
@@ -127,7 +127,7 @@
                         {
                             var bytes = str.Decode(filterProvider);
                             var font = compactFontFormatParser.Parse(new CompactFontFormatData(bytes));
-                            throw new NotSupportedException($"Unsupported subtype for CID font {subtypeName}. Font: {font}");
+                            return font;
                         }
 
                         if (subtypeName == NameToken.Type1C)

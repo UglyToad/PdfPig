@@ -62,7 +62,8 @@
 
         public bool TryGetBoundingBox(int characterIdentifier, out PdfRectangle boundingBox)
         {
-            throw new NotImplementedException();
+            boundingBox = new PdfRectangle(0, 0, 250, 0);
+            return true;
         }
 
         public bool TryGetBoundingBox(int characterIdentifier, Func<int, int> characterIdentifierToGlyphIndex, out PdfRectangle boundingBox)
