@@ -144,7 +144,9 @@
                         throw new InvalidOperationException($"The composite glyph required a contour at index {glyphIndex} but there was no simple or composite glyph at this location.");
                     }
 
+                    var position = data.Position;
                     childGlyph = ReadCompositeGlyph(data, missingComposite, compositeLocations, glyphs, emptyGlyph);
+                    data.Seek(position);
 
                     glyphs[glyphIndex] = childGlyph;
                 }

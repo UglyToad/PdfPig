@@ -13,8 +13,9 @@
     {
         private readonly TrueTypeFontParser trueTypeFontParser;
         private readonly Lazy<IReadOnlyList<SystemFontRecord>> availableFonts;
-        
+
         private readonly Dictionary<string, TrueTypeFontProgram> cache = new Dictionary<string, TrueTypeFontProgram>(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> readFiles = new HashSet<string>();
 
         public SystemFontFinder(TrueTypeFontParser trueTypeFontParser)
         {
@@ -52,32 +53,60 @@
                 return result;
             }
 
+            var nameCandidates = availableFonts.Value.Where(x => Path.GetFileName(x.Path)?.StartsWith(name[0].ToString(), StringComparison.OrdinalIgnoreCase) == true);
+
+            foreach (var systemFontRecord in nameCandidates)
+            {
+                if (TryGetTrueTypeFont(name, systemFontRecord, out var font))
+                {
+                    return font;
+                }
+            }
+
             foreach (var record in availableFonts.Value)
             {
-                if (record.Type == SystemFontType.TrueType)
+                if (TryGetTrueTypeFont(name, record, out var font))
                 {
-                    using (var fileStream = File.OpenRead(record.Path))
-                    {
-                        var input = new StreamInputBytes(fileStream);
-                        var trueType = trueTypeFontParser.Parse(new TrueTypeDataBytes(input));
-                        var psName = trueType.TableRegister.NameTable?.GetPostscriptName() ?? trueType.Name;
-
-                        if (!cache.ContainsKey(psName))
-                        {
-                            cache[psName] = trueType;
-                        }
-
-                        if (string.Equals(psName, name, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return trueType;
-                        }
-                    }
+                    return font;
                 }
 
                 // TODO: OTF
             }
 
             return null;
+        }
+
+        private bool TryGetTrueTypeFont(string name, SystemFontRecord record, out TrueTypeFontProgram font)
+        {
+            font = null;
+            if (record.Type == SystemFontType.TrueType)
+            {
+                if (readFiles.Contains(record.Path))
+                {
+                    return false;
+                }
+
+                using (var fileStream = File.OpenRead(record.Path))
+                {
+                    readFiles.Add(record.Path);
+
+                    var input = new StreamInputBytes(fileStream);
+                    var trueType = trueTypeFontParser.Parse(new TrueTypeDataBytes(input));
+                    var psName = trueType.TableRegister.NameTable?.GetPostscriptName() ?? trueType.Name;
+                    if (!cache.ContainsKey(psName))
+                    {
+                        cache[psName] = trueType;
+                    }
+
+                    if (string.Equals(psName, name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        font = trueType;
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
     }
 }
