@@ -60,10 +60,9 @@
             CharStrings = charStrings ?? throw new ArgumentNullException(nameof(charStrings));
         }
 
-        public PdfRectangle? GetCharacterBoundingBox(int characterCode)
+        public PdfRectangle? GetCharacterBoundingBox(string characterName)
         {
-            var b = Encoding[characterCode];
-            var glyph = CharStrings.Generate(b);
+            var glyph = CharStrings.Generate(characterName);
             var bbox = glyph.GetBoundingRectangle();
 
             return bbox;

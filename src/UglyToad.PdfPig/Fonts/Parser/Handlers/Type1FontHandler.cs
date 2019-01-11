@@ -132,11 +132,10 @@
                 if (stream.StreamDictionary.TryGet(NameToken.Subtype, out NameToken subTypeName)
                 && NameToken.Type1C.Equals(subTypeName))
                 {
-                    var str = OtherEncodings.BytesAsLatin1String(bytes.ToArray());
                     var cffFont = compactFontFormatParser.Parse(new CompactFontFormatData(bytes));
                     return Union<Type1FontProgram, CompactFontFormatFontProgram>.Two(cffFont);
                 }
-
+                
                 var length1 = stream.StreamDictionary.Get<NumericToken>(NameToken.Length1, pdfScanner);
                 var length2 = stream.StreamDictionary.Get<NumericToken>(NameToken.Length2, pdfScanner);
                 

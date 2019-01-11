@@ -24,7 +24,7 @@
             }
 
             var decrypted = Decrypt(bytes, EexecEncryptionKey, EexecRandomBytes);
-            
+
             var tokenizer = new Type1Tokenizer(new ByteArrayInputBytes(decrypted));
 
             /*
@@ -494,6 +494,24 @@
                     if (string.Equals(token.Text, "def", StringComparison.OrdinalIgnoreCase))
                     {
                         break;
+                    }
+
+                    // PostScript wrapper (ignored for now)
+                    if (string.Equals(token.Text, "systemdict"))
+                    {
+                        ReadExpected(tokenizer, Type1Token.TokenType.Literal, "internaldict");
+                        ReadExpected(tokenizer, Type1Token.TokenType.Name, "known");
+                        ReadExpected(tokenizer, Type1Token.TokenType.StartProc);
+
+                        // TODO: read values from the wrapper, see line 396 of Type1Parser.java
+                        // Skips the entire contents
+                        while ((token = tokenizer.GetNext()) != null)
+                        {
+                            if (token.Type == Type1Token.TokenType.Name && (token.Text == "ND" || token.Text == "def"))
+                            {
+                                return;
+                            }
+                        }
                     }
                 }
                 else if (!skip)

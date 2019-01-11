@@ -120,7 +120,7 @@
             {
                 return box;
             }
-
+            
             var boundingBox = GetBoundingBoxInGlyphSpace(characterCode);
 
             var matrix = fontMatrix;
@@ -151,7 +151,8 @@
             var rect = default(PdfRectangle?);
             fontProgram.Match(x =>
                 {
-                    rect = x.GetCharacterBoundingBox(characterCode);
+                    var name = encoding.GetName(characterCode);
+                    rect = x.GetCharacterBoundingBox(name);
                 },
                 x =>
                 {
