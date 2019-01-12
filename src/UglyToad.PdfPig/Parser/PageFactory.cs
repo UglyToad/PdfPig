@@ -9,6 +9,7 @@
     using Geometry;
     using Graphics;
     using IO;
+    using Logging;
     using Parts;
     using Tokenization.Scanner;
     using Tokens;
@@ -17,20 +18,23 @@
 
     internal class PageFactory : IPageFactory
     {
+        private readonly IPdfTokenScanner pdfScanner;
         private readonly IResourceStore resourceStore;
         private readonly IFilterProvider filterProvider;
         private readonly IPageContentParser pageContentParser;
         private readonly XObjectFactory xObjectFactory;
-        private readonly IPdfTokenScanner pdfScanner;
+        private readonly ILog log;
 
         public PageFactory(IPdfTokenScanner pdfScanner, IResourceStore resourceStore, IFilterProvider filterProvider,
             IPageContentParser pageContentParser,
-            XObjectFactory xObjectFactory)
+            XObjectFactory xObjectFactory,
+            ILog log)
         {
             this.resourceStore = resourceStore;
             this.filterProvider = filterProvider;
             this.pageContentParser = pageContentParser;
             this.xObjectFactory = xObjectFactory;
+            this.log = log;
             this.pdfScanner = pdfScanner;
         }
 
@@ -108,7 +112,7 @@
         {
             var operations = pageContentParser.Parse(new ByteArrayInputBytes(contentBytes));
 
-            var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit, isLenientParsing, pdfScanner, xObjectFactory);
+            var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit, isLenientParsing, pdfScanner, xObjectFactory, log);
 
             return context.Process(operations);
         }

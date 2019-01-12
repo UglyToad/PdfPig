@@ -7,6 +7,7 @@
     using Fonts;
     using Geometry;
     using IO;
+    using Logging;
     using Operations;
     using PdfPig.Core;
     using Tokenization.Scanner;
@@ -22,6 +23,7 @@
         private readonly bool isLenientParsing;
         private readonly IPdfTokenScanner pdfScanner;
         private readonly XObjectFactory xObjectFactory;
+        private readonly ILog log;
 
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
 
@@ -43,13 +45,15 @@
 
         public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit, bool isLenientParsing, 
             IPdfTokenScanner pdfScanner,
-            XObjectFactory xObjectFactory)
+            XObjectFactory xObjectFactory,
+            ILog log)
         {
             this.resourceStore = resourceStore;
             this.userSpaceUnit = userSpaceUnit;
             this.isLenientParsing = isLenientParsing;
             this.pdfScanner = pdfScanner;
             this.xObjectFactory = xObjectFactory;
+            this.log = log;
             graphicsStack.Push(new CurrentGraphicsState());
         }
 
@@ -125,10 +129,9 @@
 
                 var foundUnicode = font.TryGetUnicode(code, out var unicode);
 
-                if (!foundUnicode && !isLenientParsing)
+                if (!foundUnicode || unicode == null)
                 {
-                    // TODO: record warning
-                    // throw new InvalidOperationException($"We could not find the corresponding character with code {code} in font {font.Name}.");
+                    log.Warn($"We could not find the corresponding character with code {code} in font {font.Name}.");
                 }
 
                 var wordSpacing = 0m;

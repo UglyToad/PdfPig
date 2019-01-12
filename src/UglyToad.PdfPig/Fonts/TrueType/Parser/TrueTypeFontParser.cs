@@ -125,6 +125,41 @@
             return new TrueTypeFontProgram(version, tables, builder.Build());
         }
 
+        public NameTable GetNameTable(TrueTypeDataBytes data)
+        {
+            if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+            
+            // Read these data points to move to the correct data location.
+            data.Read32Fixed();
+            int numberOfTables = data.ReadUnsignedShort();
+            data.ReadUnsignedShort();
+            data.ReadUnsignedShort();
+            data.ReadUnsignedShort();
+
+            TrueTypeHeaderTable? name = null;
+
+            for (var i = 0; i < numberOfTables; i++)
+            {
+                var tableHeader = ReadTable(data);
+
+                if (tableHeader.HasValue && tableHeader.Value.Tag == TrueTypeHeaderTable.Name)
+                {
+                    name = tableHeader;
+                    break;
+                }
+            }
+
+            if (!name.HasValue)
+            {
+                return null;
+            }
+
+            return TableParser.Parse<NameTable>(name.Value, data, new TableRegister.Builder());
+        }
+
         private static void OptionallyParseTables(IReadOnlyDictionary<string, TrueTypeHeaderTable> tables, TrueTypeDataBytes data, TableRegister.Builder tableRegister)
         {
             // cmap

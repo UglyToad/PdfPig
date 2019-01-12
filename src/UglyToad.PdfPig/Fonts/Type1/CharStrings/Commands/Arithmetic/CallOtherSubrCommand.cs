@@ -44,10 +44,11 @@
                 case FlexEnd:
                 {
                     context.IsFlexing = false;
-                    if (context.FlexPoints.Count < 7)
-                    {
-                        throw new NotSupportedException("There must be at least 7 flex points defined by an other subroutine.");
-                    }
+                    // TODO: I don't really care about flexpoints, but we should probably handle them... one day.
+                    //if (context.FlexPoints.Count < 7)
+                    //{
+                    //    throw new NotSupportedException("There must be at least 7 flex points defined by an other subroutine.");
+                    //}
 
                     context.ClearFlexPoints();
                     break;

@@ -15,6 +15,7 @@
     using Tokens;
     using TrueType;
     using TrueType.Parser;
+    using Util;
 
     internal class TrueTypeFontHandler : IFontHandler
     {
@@ -46,7 +47,29 @@
 
         public IFont Generate(DictionaryToken dictionary, bool isLenientParsing)
         {
-            var firstCharacter = FontDictionaryAccessHelper.GetFirstCharacter(dictionary);
+            if (!dictionary.TryGetOptionalTokenDirect(NameToken.FirstChar, pdfScanner, out NumericToken firstCharacterToken))
+            {
+                if (!dictionary.TryGetOptionalTokenDirect(NameToken.BaseFont, pdfScanner, out NameToken baseFont))
+                {
+                    throw new InvalidFontFormatException($"The provided TrueType font dictionary did not contain a /FirstChar or a /BaseFont entry: {dictionary}.");
+                }
+
+                // Can use the AFM descriptor despite not being Type 1!
+                var standard14Font = Standard14.GetAdobeFontMetrics(baseFont.Data);
+
+                if (standard14Font == null)
+                {
+                    throw new InvalidFontFormatException($"The provided TrueType font dictionary did not have a /FirstChar and did not match a Standard 14 font: {dictionary}.");
+                }
+
+                var fileSystemFont = systemFontFinder.GetTrueTypeFont(baseFont.Data);
+
+                var thisEncoding = encodingReader.Read(dictionary, isLenientParsing);
+
+                return new TrueTypeStandard14FallbackSimpleFont(baseFont, standard14Font, thisEncoding, fileSystemFont);
+            }
+
+            var firstCharacter = firstCharacterToken.Int;
 
             var widths = FontDictionaryAccessHelper.GetWidths(pdfScanner, dictionary, isLenientParsing);
 

@@ -87,9 +87,14 @@
 
                 var uniStr = new StringBuilder();
 
+                var foundUnicode = true;
                 for (int chPos = 3; chPos + 4 <= nameLength; chPos += 4)
                 {
-                    int codePoint = int.Parse(name.Substring(chPos, 4), NumberStyles.HexNumber);
+                    if (!int.TryParse(name.Substring(chPos, 4), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var codePoint))
+                    {
+                        foundUnicode = false;
+                        break;
+                    }
 
                     if (codePoint > 0xD7FF && codePoint < 0xE000)
                     {
@@ -98,6 +103,11 @@
                     }
 
                     uniStr.Append((char)codePoint);
+                }
+
+                if (!foundUnicode)
+                {
+                    return null;
                 }
 
                 unicode = uniStr.ToString();

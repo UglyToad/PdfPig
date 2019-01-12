@@ -117,7 +117,9 @@
             
             var resourceContainer = new ResourceContainer(pdfScanner, fontFactory);
 
-            var pageFactory = new PageFactory(pdfScanner, resourceContainer, filterProvider, new PageContentParser(new ReflectionGraphicsStateOperationFactory()), new XObjectFactory());
+            var pageFactory = new PageFactory(pdfScanner, resourceContainer, filterProvider, 
+                new PageContentParser(new ReflectionGraphicsStateOperationFactory()), 
+                new XObjectFactory(), log);
             var informationFactory = new DocumentInformationFactory();
             
 
