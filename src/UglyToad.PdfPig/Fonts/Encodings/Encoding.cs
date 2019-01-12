@@ -37,7 +37,7 @@
             return CodeToName.ContainsKey(code);
         }
 
-        public string GetName(int code)
+        public virtual string GetName(int code)
         {
             if (!CodeToName.TryGetValue(code, out var name))
             {

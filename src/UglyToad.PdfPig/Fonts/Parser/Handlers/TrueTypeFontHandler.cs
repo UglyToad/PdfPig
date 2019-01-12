@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Parser.Handlers
 {
     using System;
+    using System.IO;
+    using System.Linq;
     using SystemFonts;
     using Cmap;
     using Encodings;
@@ -126,6 +128,8 @@
                 var fontFileStream = DirectObjectFinder.Get<StreamToken>(descriptor.FontFile.ObjectKey, pdfScanner);
             
                 var fontFile = fontFileStream.Decode(filterProvider);
+
+                File.WriteAllBytes(@"C:\git\conzantashby.ttf", fontFile.ToArray());
 
                 var font = trueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFile)));
 

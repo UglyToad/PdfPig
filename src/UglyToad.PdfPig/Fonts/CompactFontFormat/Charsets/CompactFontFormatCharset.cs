@@ -39,9 +39,14 @@
             throw new NotImplementedException();
         }
 
-        public virtual string GetStringIdByGlyphId(int glyphId)
+        public virtual int GetStringIdByGlyphId(int glyphId)
         {
-            throw new NotImplementedException();
+            if (GlyphIdToStringIdAndName.TryGetValue(glyphId, out var strings))
+            {
+                return strings.stringId;
+            }
+
+            return 0;
         }
     }
 }

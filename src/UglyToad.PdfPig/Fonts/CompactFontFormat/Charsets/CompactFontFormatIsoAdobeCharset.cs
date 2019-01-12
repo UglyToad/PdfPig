@@ -268,7 +268,7 @@
             throw new System.NotImplementedException();
         }
 
-        public string GetStringIdByGlyphId(int glyphId)
+        public int GetStringIdByGlyphId(int glyphId)
         {
             throw new System.NotImplementedException();
         }

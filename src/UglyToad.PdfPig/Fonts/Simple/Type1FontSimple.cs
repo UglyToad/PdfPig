@@ -163,7 +163,7 @@
                     }
                     else
                     {
-                        throw new NotImplementedException("Unclear how to access the character name for CFF fonts when no encoding is present.");
+                        characterName = x.GetCharacterName(characterCode);
                     }
                     rect = x.GetCharacterBoundingBox(characterName);
                 });

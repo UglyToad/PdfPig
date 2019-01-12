@@ -26,7 +26,7 @@
             throw new NotSupportedException("Cid Charsets do not support named glyphs.");
         }
 
-        public string GetStringIdByGlyphId(int glyphId)
+        public int GetStringIdByGlyphId(int glyphId)
         {
             throw new NotSupportedException("Cid Charsets do not support named glyphs.");
         }

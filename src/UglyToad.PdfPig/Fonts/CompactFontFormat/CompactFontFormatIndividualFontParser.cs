@@ -6,6 +6,7 @@
     using Charsets;
     using CharStrings;
     using Dictionaries;
+    using Encodings;
     using Exceptions;
     using Type1.CharStrings;
     using Util;
@@ -113,7 +114,27 @@
                 return ReadCidFont(data, topDictionary, charStringIndex.Count, stringIndex, privateDictionary, charset, Union<Type1CharStrings, Type2CharStrings>.Two(charStrings));
             }
 
-            return new CompactFontFormatFont(topDictionary, privateDictionary, charset, Union<Type1CharStrings, Type2CharStrings>.Two(charStrings));
+            var encoding = topDictionary.EncodingOffset;
+
+            Encoding fontEncoding = null;
+            if (encoding != CompactFontFormatTopLevelDictionary.UnsetOffset)
+            {
+                if (encoding == 0)
+                {
+                    fontEncoding = CompactFontFormatStandardEncoding.Instance;
+                }
+                else if (encoding == 1)
+                {
+                    fontEncoding = CompactFontFormatExpertEncoding.Instance;
+                }
+                else
+                {
+                    data.Seek(encoding);
+                    fontEncoding = CompactFontFormatEncodingReader.ReadEncoding(data, charset, stringIndex);
+                }
+            }
+
+            return new CompactFontFormatFont(topDictionary, privateDictionary, charset, Union<Type1CharStrings, Type2CharStrings>.Two(charStrings), fontEncoding);
         }
 
         private static ICompactFontFormatCharset ReadCharset(CompactFontFormatData data, CompactFontFormatTopLevelDictionary topDictionary,

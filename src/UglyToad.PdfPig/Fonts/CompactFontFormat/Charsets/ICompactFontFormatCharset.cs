@@ -8,6 +8,6 @@
 
         string GetNameByStringId(int stringId);
 
-        string GetStringIdByGlyphId(int glyphId);
+        int GetStringIdByGlyphId(int glyphId);
     }
 }

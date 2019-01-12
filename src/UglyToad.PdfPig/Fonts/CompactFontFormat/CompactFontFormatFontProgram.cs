@@ -85,5 +85,17 @@
         {
             return 1000;
         }
+
+        public string GetCharacterName(int characterCode)
+        {
+            var font = GetFont();
+
+            if (font.Encoding != null)
+            {
+                return font.Encoding.GetName(characterCode);
+            }
+
+            return ".notdef";
+        }
     }
 }

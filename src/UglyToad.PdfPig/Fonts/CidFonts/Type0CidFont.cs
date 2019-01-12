@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CidFonts
 {
+    using System;
     using System.Collections.Generic;
     using Core;
     using Geometry;
@@ -44,12 +45,33 @@
 
         public decimal GetWidthFromDictionary(int cid)
         {
-            return Widths[cid];
+            if (cid < 0)
+            {
+                throw new ArgumentException($"The provided character code was negative: {cid}.");
+            }
+
+            if (cid < Widths.Count)
+            {
+                return Widths[cid];
+            }
+
+            // TODO: correct values
+            return 250;
         }
 
         public PdfRectangle GetBoundingBox(int characterIdentifier)
         {
-            return new PdfRectangle(0, 0, Widths[characterIdentifier], 0);
+            // TODO: correct values
+            if (characterIdentifier < 0)
+            {
+                throw new ArgumentException($"The provided character identifier was negative: {characterIdentifier}.");
+            }
+
+            if (characterIdentifier < Widths.Count)
+            {
+                return new PdfRectangle(0, 0, Widths[characterIdentifier], 0);
+            }
+            
             if (fontProgram.TryGetBoundingBox(characterIdentifier, out var boundingBox))
             {
                 return boundingBox;

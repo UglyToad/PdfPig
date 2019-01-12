@@ -7,6 +7,7 @@
 
     public class GenerateLetterBoundingBoxImages
     {
+        private const string ByzantineGenerals = "byz";
         private const string NonLatinAcrobatDistiller = "Single Page Non Latin - from acrobat distiller";
         private const string SingleGoogleDrivePage = "Single Page Simple - from google drive";
         private const string SinglePageFormattedType0Content = "Type0 Font";
@@ -85,6 +86,12 @@
         public void MotorInsuranceClaimForm()
         {
             Run(MotorInsuranceClaim, 841);
+        }
+
+        [Fact]
+        public void ByzantineGeneralsTrueTypeStandard14()
+        {
+            Run(ByzantineGenerals, 702);
         }
 
         private static void Run(string file, int imageHeight = 792)

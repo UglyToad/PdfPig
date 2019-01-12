@@ -10,6 +10,7 @@
             var metricCount = register.HorizontalHeaderTable.NumberOfHeaderMetrics;
 
             data.Seek(header.Offset);
+            var bytesRead = 0;
 
             // The number of entries in the left side bearing field per entry is number of glyphs - number of metrics
             var additionalLeftSideBearingLength = glyphCount - metricCount;
@@ -23,11 +24,18 @@
             {
                 advancedWidths[i] = data.ReadUnsignedShort();
                 leftSideBearings[i] = data.ReadSignedShort();
+                bytesRead += 4;
             }
 
             for (var i = 0; i < additionalLeftSideBearingLength; i++)
             {
+                if (bytesRead >= header.Length)
+                {
+                    break;
+                }
+
                 leftSideBearings[metricCount + i] = data.ReadSignedShort();
+                bytesRead += 2;
             }
 
             return new HorizontalMetricsTable(header, advancedWidths, leftSideBearings, metricCount);

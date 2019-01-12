@@ -83,6 +83,11 @@
         {
             var index = indexReader.ReadIndex(data);
 
+            if (index.Length == 0)
+            {
+                return EmptyArray<string>.Instance;
+            }
+
             var count = index.Length - 1;
 
             var result = new string[count];
