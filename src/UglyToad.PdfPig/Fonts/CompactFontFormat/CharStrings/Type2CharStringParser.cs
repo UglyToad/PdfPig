@@ -264,7 +264,7 @@
                     ctx.Stack.Clear();
                 })
             },
-            { 23,  new LazyType2Command("vstemh", ctx =>
+            { 23,  new LazyType2Command("vstemhm", ctx =>
                 {
                     // Same as vstem except the charstring contains hintmask
                     var numberOfEdgeHints = ctx.Stack.Length / 2;
