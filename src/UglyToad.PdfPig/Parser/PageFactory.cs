@@ -53,8 +53,8 @@
                 throw new InvalidOperationException($"Page {number} had its type specified as {type} rather than 'Page'.");
             }
 
-            MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers, isLenientParsing);
-            CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox);
+            MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers, log, isLenientParsing);
+            CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox, log, isLenientParsing);
             
             UserSpaceUnit userSpaceUnit = GetUserSpaceUnits(dictionary);
 
@@ -128,11 +128,20 @@
             return spaceUnits;
         }
 
-        private static CropBox GetCropBox(DictionaryToken dictionary, PageTreeMembers pageTreeMembers, MediaBox mediaBox)
+        private static CropBox GetCropBox(DictionaryToken dictionary, PageTreeMembers pageTreeMembers, MediaBox mediaBox, ILog log, bool isLenientParsing)
         {
             CropBox cropBox;
             if (dictionary.TryGet(NameToken.CropBox, out var cropBoxObject) && cropBoxObject is ArrayToken cropBoxArray)
             {
+                if (cropBoxArray.Length != 4 && isLenientParsing)
+                {
+                    log.Error($"The CropBox was the wrong length in the dictionary: {dictionary}. Array was: {cropBoxArray}.");
+                    
+                    cropBox = new CropBox(mediaBox.Bounds);
+
+                    return cropBox;
+                }
+
                 cropBox = new CropBox(cropBoxArray.ToIntRectangle());
             }
             else
@@ -143,11 +152,20 @@
             return cropBox;
         }
 
-        private static MediaBox GetMediaBox(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers, bool isLenientParsing)
+        private static MediaBox GetMediaBox(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers, ILog log, bool isLenientParsing)
         {
             MediaBox mediaBox;
             if (dictionary.TryGet(NameToken.MediaBox, out var mediaboxObject) && mediaboxObject is ArrayToken mediaboxArray)
             {
+                if (mediaboxArray.Length != 4 && isLenientParsing)
+                {
+                    log.Error($"The MediaBox was the wrong length in the dictionary: {dictionary}. Array was: {mediaboxArray}.");
+
+                    mediaBox = MediaBox.A4;
+
+                    return mediaBox;
+                }
+
                 mediaBox = new MediaBox(mediaboxArray.ToIntRectangle());
             }
             else
