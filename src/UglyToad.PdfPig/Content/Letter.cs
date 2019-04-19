@@ -13,9 +13,24 @@
         public string Value { get; }
 
         /// <summary>
-        /// The placement position of the character in PDF space.
+        /// Text direction of the letter.
         /// </summary>
-        public PdfPoint Location { get; }
+        public TextDirection TextDirection { get; }
+
+        /// <summary>
+        /// The placement position of the character in PDF space. See <see cref="StartBaseLine"/>
+        /// </summary>
+        public PdfPoint Location => StartBaseLine;
+
+        /// <summary>
+        /// The placement position of the character in PDF space (the start point of the baseline). See <see cref="Location"/>
+        /// </summary>
+        public PdfPoint StartBaseLine { get; }
+
+        /// <summary>
+        /// The end point of the baseline.
+        /// </summary>
+        public PdfPoint EndBaseLine { get; }
 
         /// <summary>
         /// The width occupied by the character within the PDF content.
@@ -47,15 +62,17 @@
         /// <summary>
         /// Create a new letter to represent some text drawn by the Tj operator.
         /// </summary>
-        internal Letter(string value, PdfRectangle glyphRectangle, PdfPoint location, decimal width, decimal fontSize, string fontName, decimal pointSize)
+        internal Letter(string value, PdfRectangle glyphRectangle, PdfPoint startBaseLine, PdfPoint endBaseLine, decimal width, decimal fontSize, string fontName, decimal pointSize)
         {
             Value = value;
             GlyphRectangle = glyphRectangle;
             FontSize = fontSize;
             FontName = fontName;
             PointSize = pointSize;
-            Location = location;
             Width = width;
+            StartBaseLine = startBaseLine;
+            EndBaseLine = endBaseLine;
+            TextDirection = getTextDirection();
         }
 
         /// <summary>
@@ -64,6 +81,23 @@
         public override string ToString()
         {
             return $"{Value} {Location} {FontName} {PointSize}";
+        }
+
+        private TextDirection getTextDirection()
+        {
+            if (System.Math.Abs(StartBaseLine.Y - EndBaseLine.Y) < 10e-5m)
+            {
+                return TextDirection.Horizontal;
+            }
+            else if (System.Math.Abs(StartBaseLine.X - EndBaseLine.X) < 10e-5m)
+            {
+                if (StartBaseLine.Y > EndBaseLine.Y)
+                {
+                    return TextDirection.Rotate90;
+                }
+                return TextDirection.Rotate270;
+            }
+            return TextDirection.Unknown;
         }
     }
 }

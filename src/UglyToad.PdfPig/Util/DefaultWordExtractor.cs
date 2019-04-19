@@ -67,8 +67,9 @@
                 var nextIsWhiteSpace = string.IsNullOrWhiteSpace(letter.Value);
                 var nextFontDiffers = !string.Equals(letter.FontName, lastLetter.FontName, StringComparison.OrdinalIgnoreCase) && gap > letter.Width * 0.1m;
                 var nextFontSizeDiffers = Math.Abs(letter.FontSize - lastLetter.FontSize) > 0.1m;
+                var nextTextDirectionDiffers = letter.TextDirection != lastLetter.TextDirection;
 
-                if (nextToLeft || nextBigSpace || nextIsWhiteSpace || nextFontDiffers || nextFontSizeDiffers)
+                if (nextToLeft || nextBigSpace || nextIsWhiteSpace || nextFontDiffers || nextFontSizeDiffers || nextTextDirectionDiffers)
                 {
                     if (lettersSoFar.Count > 0)
                     {
