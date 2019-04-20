@@ -45,6 +45,7 @@
                 "UglyToad.PdfPig.Content.Page",
                 "UglyToad.PdfPig.Content.PageSize",
                 "UglyToad.PdfPig.Content.Word",
+                "UglyToad.PdfPig.Content.TextDirection",
                 "UglyToad.PdfPig.Core.TransformationMatrix",
                 "UglyToad.PdfPig.CrossReference.CrossReferenceTable",
                 "UglyToad.PdfPig.CrossReference.CrossReferenceType",
