@@ -87,6 +87,10 @@
         {
             if (System.Math.Abs(StartBaseLine.Y - EndBaseLine.Y) < 10e-5m)
             {
+                if (StartBaseLine.X > EndBaseLine.X)
+                {
+                    return TextDirection.Rotate180;
+                }
                 return TextDirection.Horizontal;
             }
             else if (System.Math.Abs(StartBaseLine.X - EndBaseLine.X) < 10e-5m)

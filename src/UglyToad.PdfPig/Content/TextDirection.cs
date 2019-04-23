@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace UglyToad.PdfPig.Content
+﻿namespace UglyToad.PdfPig.Content
 {
     /// <summary>
     /// Direction of the text.
@@ -18,6 +14,11 @@ namespace UglyToad.PdfPig.Content
         /// Usual text direction (Left to Right).
         /// </summary>
         Horizontal,
+
+        /// <summary>
+        /// Horizontal text, upside down.
+        /// </summary>
+        Rotate180,
 
         /// <summary>
         /// Rotated text going down.
