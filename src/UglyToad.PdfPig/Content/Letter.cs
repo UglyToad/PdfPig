@@ -72,7 +72,7 @@
             Width = width;
             StartBaseLine = startBaseLine;
             EndBaseLine = endBaseLine;
-            TextDirection = getTextDirection();
+            TextDirection = GetTextDirection();
         }
 
         /// <summary>
@@ -83,7 +83,7 @@
             return $"{Value} {Location} {FontName} {PointSize}";
         }
 
-        private TextDirection getTextDirection()
+        private TextDirection GetTextDirection()
         {
             if (System.Math.Abs(StartBaseLine.Y - EndBaseLine.Y) < 10e-5m)
             {
