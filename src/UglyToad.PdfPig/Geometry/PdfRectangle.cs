@@ -33,17 +33,17 @@
         /// <summary>
         /// Width of the rectangle.
         /// </summary>
-        public decimal Width { get; }
+        public decimal Width => Right - Left;
 
         /// <summary>
         /// Height of the rectangle.
         /// </summary>
-        public decimal Height { get; }
+        public decimal Height => Top - Bottom;
 
         /// <summary>
         /// Area of the rectangle.
         /// </summary>
-        public decimal Area { get; }
+        public decimal Area => Width * Height;
 
         /// <summary>
         /// Left.
@@ -101,11 +101,6 @@
 
             BottomLeft = new PdfPoint(left, bottom);
             BottomRight = new PdfPoint(right, bottom);
-
-            Width = right - left;
-            Height = top - bottom;
-
-            Area = Width * Height;
         }
 
         internal PdfRectangle(PdfVector topLeft, PdfVector topRight, PdfVector bottomLeft, PdfVector bottomRight)
@@ -115,11 +110,6 @@
 
             BottomLeft = bottomLeft.ToPoint();
             BottomRight = bottomRight.ToPoint();
-
-            Width = bottomRight.Subtract(bottomLeft).GetMagnitude();
-            Height = topLeft.Subtract(bottomLeft).GetMagnitude();
-
-            Area = Width * Height;
         }
 
         internal PdfRectangle(PdfPoint topLeft, PdfPoint topRight, PdfPoint bottomLeft, PdfPoint bottomRight)
@@ -129,11 +119,6 @@
 
             BottomLeft = bottomLeft;
             BottomRight = bottomRight;
-
-            Width = bottomRight.X - bottomLeft.X;
-            Height = topLeft.Y - bottomLeft.Y;
-
-            Area = Width * Height;
         }
 
         /// <summary>

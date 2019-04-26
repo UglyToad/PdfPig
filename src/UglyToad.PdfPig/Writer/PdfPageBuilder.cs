@@ -27,7 +27,7 @@
         /// The number of this page, 1-indexed.
         /// </summary>
         public int PageNumber { get; }
-        
+
         /// <summary>
         /// The current size of the page.
         /// </summary>
@@ -112,7 +112,7 @@
         internal void SetStrokeColorExact(decimal r, decimal g, decimal b)
         {
             operations.Add(Push.Value);
-            operations.Add(new SetStrokeColorDeviceRgb(CheckRgbDecimal(r, nameof(r)), 
+            operations.Add(new SetStrokeColorDeviceRgb(CheckRgbDecimal(r, nameof(r)),
                 CheckRgbDecimal(g, nameof(g)), CheckRgbDecimal(b, nameof(b))));
         }
 
@@ -258,7 +258,7 @@
 
                 var documentSpace = textMatrix.Transform(renderingMatrix.Transform(fontMatrix.Transform(rect)));
 
-                var letter = new Letter(c.ToString(), documentSpace, advanceRect.BottomLeft, width, fontSize, font.Name, fontSize);
+                var letter = new Letter(c.ToString(), documentSpace, advanceRect.BottomLeft, advanceRect.BottomRight, width, fontSize, font.Name, fontSize);
                 letters.Add(letter);
 
                 var tx = advanceRect.Width * horizontalScaling;

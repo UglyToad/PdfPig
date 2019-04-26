@@ -155,7 +155,7 @@
                     .Transform(TextMatrices.TextMatrix
                         .Transform(renderingMatrix.Transform(new PdfRectangle(0, 0, boundingBox.Width, 0))));
 
-                ShowGlyph(font, transformedGlyphBounds, transformedPdfBounds.BottomLeft, transformedPdfBounds.Width, unicode, fontSize, pointSize);
+                ShowGlyph(font, transformedGlyphBounds, transformedPdfBounds.BottomLeft, transformedPdfBounds.BottomRight, transformedPdfBounds.Width, unicode, fontSize, pointSize);
 
                 decimal tx, ty;
                 if (font.IsVertical)
@@ -283,9 +283,9 @@
             TextMatrices.TextMatrix = newMatrix;
         }
 
-        private void ShowGlyph(IFont font, PdfRectangle glyphRectangle, PdfPoint position, decimal width, string unicode, decimal fontSize, decimal pointSize)
+        private void ShowGlyph(IFont font, PdfRectangle glyphRectangle, PdfPoint startBaseLine, PdfPoint endBaseLine, decimal width, string unicode, decimal fontSize, decimal pointSize)
         {
-            var letter = new Letter(unicode, glyphRectangle, position, width, fontSize, font.Name.Data, pointSize);
+            var letter = new Letter(unicode, glyphRectangle, startBaseLine, endBaseLine, width, fontSize, font.Name.Data, pointSize);
 
             Letters.Add(letter);
         }
