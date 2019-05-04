@@ -4,6 +4,7 @@
     using SystemFonts;
     using Cmap;
     using Encodings;
+    using Encryption;
     using Exceptions;
     using Filters;
     using IO;
@@ -22,6 +23,7 @@
         private readonly ILog log;
         private readonly IPdfTokenScanner pdfScanner;
         private readonly IFilterProvider filterProvider;
+        private readonly IEncryptionHandler encryptionHandler;
         private readonly CMapCache cMapCache;
         private readonly FontDescriptorFactory fontDescriptorFactory;
         private readonly TrueTypeFontParser trueTypeFontParser;
@@ -29,6 +31,7 @@
         private readonly ISystemFontFinder systemFontFinder;
 
         public TrueTypeFontHandler(ILog log, IPdfTokenScanner pdfScanner, IFilterProvider filterProvider, 
+            IEncryptionHandler encryptionHandler,
             CMapCache cMapCache,
             FontDescriptorFactory fontDescriptorFactory,
             TrueTypeFontParser trueTypeFontParser,
@@ -37,6 +40,7 @@
         {
             this.log = log;
             this.filterProvider = filterProvider;
+            this.encryptionHandler = encryptionHandler;
             this.cMapCache = cMapCache;
             this.fontDescriptorFactory = fontDescriptorFactory;
             this.trueTypeFontParser = trueTypeFontParser;
@@ -85,7 +89,7 @@
             {
                 var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, pdfScanner);
 
-                var decodedUnicodeCMap = toUnicode.Decode(filterProvider);
+                var decodedUnicodeCMap = toUnicode.Decode(filterProvider, encryptionHandler);
 
                 if (decodedUnicodeCMap != null)
                 {
@@ -125,7 +129,7 @@
 
                 var fontFileStream = DirectObjectFinder.Get<StreamToken>(descriptor.FontFile.ObjectKey, pdfScanner);
             
-                var fontFile = fontFileStream.Decode(filterProvider);
+                var fontFile = fontFileStream.Decode(filterProvider, encryptionHandler);
 
                 var font = trueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFile)));
 

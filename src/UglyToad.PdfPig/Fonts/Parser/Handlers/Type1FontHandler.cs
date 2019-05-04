@@ -4,6 +4,7 @@
     using Cmap;
     using CompactFontFormat;
     using Encodings;
+    using Encryption;
     using Exceptions;
     using Filters;
     using IO;
@@ -21,12 +22,14 @@
         private readonly IPdfTokenScanner pdfScanner;
         private readonly CMapCache cMapCache;
         private readonly IFilterProvider filterProvider;
+        private readonly IEncryptionHandler encryptionHandler;
         private readonly FontDescriptorFactory fontDescriptorFactory;
         private readonly IEncodingReader encodingReader;
         private readonly Type1FontParser type1FontParser;
         private readonly CompactFontFormatParser compactFontFormatParser;
 
         public Type1FontHandler(IPdfTokenScanner pdfScanner, CMapCache cMapCache, IFilterProvider filterProvider, 
+            IEncryptionHandler encryptionHandler,
             FontDescriptorFactory fontDescriptorFactory, 
             IEncodingReader encodingReader,
             Type1FontParser type1FontParser,
@@ -35,6 +38,7 @@
             this.pdfScanner = pdfScanner;
             this.cMapCache = cMapCache;
             this.filterProvider = filterProvider;
+            this.encryptionHandler = encryptionHandler;
             this.fontDescriptorFactory = fontDescriptorFactory;
             this.encodingReader = encodingReader;
             this.type1FontParser = type1FontParser;
@@ -89,7 +93,7 @@
             {
                 var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, pdfScanner);
 
-                var decodedUnicodeCMap = toUnicode?.Decode(filterProvider);
+                var decodedUnicodeCMap = toUnicode?.Decode(filterProvider, encryptionHandler);
 
                 if (decodedUnicodeCMap != null)
                 {
@@ -126,7 +130,7 @@
                     return null;
                 }
 
-                var bytes = stream.Decode(filterProvider);
+                var bytes = stream.Decode(filterProvider, encryptionHandler);
 
                 // We have a Compact Font Format font rather than an Adobe Type 1 Font.
                 if (stream.StreamDictionary.TryGet(NameToken.Subtype, out NameToken subTypeName)

@@ -85,6 +85,10 @@
                     {
                         ids.Add(str.Data);
                     }
+                    else if (token is HexToken hex)
+                    {
+                        ids.Add(hex.Data);
+                    }
                 }
 
                 Identifier = ids;

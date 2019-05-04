@@ -5,6 +5,7 @@
     using AcroForms;
     using Content;
     using CrossReference;
+    using Encryption;
     using IO;
     using Logging;
     using Parser;
@@ -32,6 +33,10 @@
         [NotNull]
         private readonly ParsingCachingProviders cachingProviders;
 
+        [CanBeNull]
+        private readonly EncryptionDictionary encryptionDictionary;
+
+        [NotNull]
         private readonly IPdfTokenScanner pdfScanner;
         
         [NotNull]
@@ -59,6 +64,11 @@
         /// </summary>
         public int NumberOfPages => pages.Count;
 
+        /// <summary>
+        /// Whether the document content is encrypted.
+        /// </summary>
+        public bool IsEncrypted => encryptionDictionary != null;
+
         internal PdfDocument(ILog log, 
             IInputBytes inputBytes,
             HeaderVersion version, 
@@ -67,7 +77,9 @@
             ParsingCachingProviders cachingProviders,
             IPageFactory pageFactory,
             Catalog catalog,
-            DocumentInformation information, IPdfTokenScanner pdfScanner,
+            DocumentInformation information, 
+            EncryptionDictionary encryptionDictionary,
+            IPdfTokenScanner pdfScanner,
             AcroFormFactory acroFormFactory)
         {
             this.log = log;
@@ -75,6 +87,7 @@
             this.version = version ?? throw new ArgumentNullException(nameof(version));
             this.isLenientParsing = isLenientParsing;
             this.cachingProviders = cachingProviders ?? throw new ArgumentNullException(nameof(cachingProviders));
+            this.encryptionDictionary = encryptionDictionary;
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
             Information = information ?? throw new ArgumentNullException(nameof(information));
             pages = new Pages(log, catalog, pageFactory, isLenientParsing, pdfScanner);

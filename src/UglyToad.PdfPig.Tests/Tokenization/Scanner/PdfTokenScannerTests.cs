@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
+    using Encryption;
     using PdfPig.IO;
     using PdfPig.Tokenization.Scanner;
     using PdfPig.Tokens;
@@ -300,7 +301,7 @@ endobj
 endobj";
             var inputBytes = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(s));
 
-            var scanner = new PdfTokenScanner(inputBytes, new TestObjectLocationProvider(), new TestFilterProvider());
+            var scanner = new PdfTokenScanner(inputBytes, new TestObjectLocationProvider(), new TestFilterProvider(), NoOpEncryptionHandler.Instance);
 
             var token = ReadToEnd(scanner)[1];
 
@@ -313,7 +314,7 @@ endobj";
             var input = StringBytesTestConverter.Convert(s, false);
 
             return new PdfTokenScanner(input.Bytes, locationProvider ?? new TestObjectLocationProvider(),
-                new TestFilterProvider());
+                new TestFilterProvider(), NoOpEncryptionHandler.Instance);
         }
 
         private static IReadOnlyList<ObjectToken> ReadToEnd(PdfTokenScanner scanner)

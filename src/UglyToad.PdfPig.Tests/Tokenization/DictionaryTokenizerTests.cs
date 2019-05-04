@@ -176,6 +176,23 @@ endobj
             Assert.Equal(3, dictionary.Data.Count);
         }
 
+        [Fact]
+        public void SupportTicket29()
+        {
+            var input = StringBytesTestConverter.Convert("<< /Type /Page /Parent 4 0 R /MediaBox [ 0 0      \r\n   100.28 841.89 ] /Resources >>");
+
+            tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            var dict = AssertDictionaryToken(token);
+
+            var mediaBox = dict.Data["MediaBox"] as ArrayToken;
+
+            Assert.NotNull(mediaBox);
+
+            Assert.Equal(4, mediaBox.Length);
+        }
+
+
         private static void AssertDictionaryEntry<TValue, TValueData>(DictionaryToken dictionary, NameToken key,
             TValueData value) where TValue : IDataToken<TValueData>
         {

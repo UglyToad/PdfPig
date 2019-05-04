@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using CidFonts;
     using CompactFontFormat;
+    using Encryption;
     using Exceptions;
     using Filters;
     using Geometry;
@@ -22,17 +23,21 @@
         private readonly TrueTypeFontParser trueTypeFontParser;
         private readonly CompactFontFormatParser compactFontFormatParser;
         private readonly IFilterProvider filterProvider;
+        private readonly IEncryptionHandler encryptionHandler;
         private readonly IPdfTokenScanner pdfScanner;
 
-        public CidFontFactory(IPdfTokenScanner pdfScanner, FontDescriptorFactory descriptorFactory, TrueTypeFontParser trueTypeFontParser,
+        public CidFontFactory(IPdfTokenScanner pdfScanner, FontDescriptorFactory descriptorFactory, 
+            TrueTypeFontParser trueTypeFontParser,
             CompactFontFormatParser compactFontFormatParser,
-            IFilterProvider filterProvider)
+            IFilterProvider filterProvider,
+            IEncryptionHandler encryptionHandler)
         {
             this.pdfScanner = pdfScanner;
             this.descriptorFactory = descriptorFactory;
             this.trueTypeFontParser = trueTypeFontParser;
             this.compactFontFormatParser = compactFontFormatParser;
             this.filterProvider = filterProvider;
+            this.encryptionHandler = encryptionHandler;
         }
 
         public ICidFont Generate(DictionaryToken dictionary, bool isLenientParsing)
@@ -104,7 +109,7 @@
                 return null;
             }
 
-            var fontFile = fontFileStream.Decode(filterProvider);
+            var fontFile = fontFileStream.Decode(filterProvider, encryptionHandler);
 
             switch (descriptor.FontFile.FileType)
             {
@@ -125,7 +130,7 @@
 
                         if (subtypeName == NameToken.CidFontType0C)
                         {
-                            var bytes = str.Decode(filterProvider);
+                            var bytes = str.Decode(filterProvider, encryptionHandler);
                             var font = compactFontFormatParser.Parse(new CompactFontFormatData(bytes));
                             return font;
                         }
@@ -297,7 +302,7 @@
 
             var stream = DirectObjectFinder.Get<StreamToken>(entry, pdfScanner);
 
-            var bytes = stream.Decode(filterProvider);
+            var bytes = stream.Decode(filterProvider, encryptionHandler);
 
             return new CharacterIdentifierToGlyphIndexMap(bytes);
         }

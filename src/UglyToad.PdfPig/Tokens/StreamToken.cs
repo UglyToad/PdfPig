@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using Encryption;
     using Filters;
     using Util.JetBrains.Annotations;
 
@@ -38,7 +39,7 @@
             Data = data ?? throw new ArgumentNullException(nameof(data));
         }
 
-        internal IReadOnlyList<byte> Decode(IFilterProvider filterProvider)
+        internal IReadOnlyList<byte> Decode(IFilterProvider filterProvider, IEncryptionHandler encryptionHandler)
         {
             lock (lockObject)
             {
@@ -49,7 +50,7 @@
                 
                 var filters = filterProvider.GetFilters(StreamDictionary);
 
-                var transform = Data;
+                var transform = encryptionHandler.Decrypt(this);
                 for (var i = 0; i < filters.Count; i++)
                 {
                     transform = filters[i].Decode(transform, StreamDictionary, i);

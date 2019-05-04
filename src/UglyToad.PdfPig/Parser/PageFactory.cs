@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using Annotations;
     using Content;
+    using Encryption;
     using Exceptions;
     using Filters;
     using Geometry;
@@ -21,17 +22,20 @@
         private readonly IPdfTokenScanner pdfScanner;
         private readonly IResourceStore resourceStore;
         private readonly IFilterProvider filterProvider;
+        private readonly IEncryptionHandler encryptionHandler;
         private readonly IPageContentParser pageContentParser;
         private readonly XObjectFactory xObjectFactory;
         private readonly ILog log;
 
         public PageFactory(IPdfTokenScanner pdfScanner, IResourceStore resourceStore, IFilterProvider filterProvider,
+            IEncryptionHandler encryptionHandler,
             IPageContentParser pageContentParser,
             XObjectFactory xObjectFactory,
             ILog log)
         {
             this.resourceStore = resourceStore;
             this.filterProvider = filterProvider;
+            this.encryptionHandler = encryptionHandler;
             this.pageContentParser = pageContentParser;
             this.xObjectFactory = xObjectFactory;
             this.log = log;
@@ -84,7 +88,7 @@
                         throw new InvalidOperationException($"Could not find the contents for object {obj}.");
                     }
 
-                    bytes.AddRange(contentStream.Decode(filterProvider));
+                    bytes.AddRange(contentStream.Decode(filterProvider, encryptionHandler));
                 }
 
                 content = GetContent(bytes, cropBox, userSpaceUnit, isLenientParsing);
@@ -98,7 +102,7 @@
                     throw new InvalidOperationException("Failed to parse the content for the page: " + number);
                 }
 
-                var bytes = contentStream.Decode(filterProvider);
+                var bytes = contentStream.Decode(filterProvider, encryptionHandler);
 
                 content = GetContent(bytes, cropBox, userSpaceUnit, isLenientParsing);
             }

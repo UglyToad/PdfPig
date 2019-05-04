@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using Content;
+    using Encryption;
     using Exceptions;
     using Fields;
     using Filters;
@@ -20,11 +21,13 @@
     {
         private readonly IPdfTokenScanner tokenScanner;
         private readonly IFilterProvider filterProvider;
+        private readonly IEncryptionHandler encryptionHandler;
 
-        public AcroFormFactory(IPdfTokenScanner tokenScanner, IFilterProvider filterProvider)
+        public AcroFormFactory(IPdfTokenScanner tokenScanner, IFilterProvider filterProvider, IEncryptionHandler encryptionHandler)
         {
             this.tokenScanner = tokenScanner ?? throw new ArgumentNullException(nameof(tokenScanner));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
+            this.encryptionHandler = encryptionHandler ?? throw new ArgumentNullException(nameof(encryptionHandler));
         }
 
         /// <summary>
@@ -212,7 +215,7 @@
                 }
                 else if (DirectObjectFinder.TryGet(textValueToken, tokenScanner, out StreamToken valueStreamToken))
                 {
-                    textValue = OtherEncodings.BytesAsLatin1String(valueStreamToken.Decode(filterProvider).ToArray());
+                    textValue = OtherEncodings.BytesAsLatin1String(valueStreamToken.Decode(filterProvider, encryptionHandler).ToArray());
                 }
             }
 

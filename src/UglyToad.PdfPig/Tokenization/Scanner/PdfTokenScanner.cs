@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
+    using Encryption;
     using Exceptions;
     using Filters;
     using IO;
@@ -30,6 +31,8 @@
         private readonly IFilterProvider filterProvider;
         private readonly CoreTokenScanner coreTokenScanner;
 
+        private IEncryptionHandler encryptionHandler;
+
         /// <summary>
         /// Stores tokens encountered between obj - endobj markers for each <see cref="MoveNext"/> call.
         /// Cleared after each operation.
@@ -44,12 +47,19 @@
 
         public long CurrentPosition => coreTokenScanner.CurrentPosition;
 
-        public PdfTokenScanner(IInputBytes inputBytes, IObjectLocationProvider objectLocationProvider, IFilterProvider filterProvider)
+        public PdfTokenScanner(IInputBytes inputBytes, IObjectLocationProvider objectLocationProvider, IFilterProvider filterProvider, 
+            IEncryptionHandler encryptionHandler)
         {
             this.inputBytes = inputBytes;
             this.objectLocationProvider = objectLocationProvider;
             this.filterProvider = filterProvider;
+            this.encryptionHandler = encryptionHandler;
             coreTokenScanner = new CoreTokenScanner(inputBytes);
+        }
+
+        public void UpdateEncryptionHandler(IEncryptionHandler newHandler)
+        {
+            encryptionHandler = newHandler ?? throw new ArgumentNullException(nameof(newHandler));
         }
 
         public bool MoveNext()
@@ -527,7 +537,7 @@
             }
 
             // Read the N integers
-            var bytes = new ByteArrayInputBytes(stream.Decode(filterProvider));
+            var bytes = new ByteArrayInputBytes(stream.Decode(filterProvider, encryptionHandler));
 
             var scanner = new CoreTokenScanner(bytes);
 

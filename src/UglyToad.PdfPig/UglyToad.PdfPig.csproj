@@ -48,13 +48,7 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)'=='net45' 
-             OR '$(TargetFramework)'=='net451' 
-             OR '$(TargetFramework)'=='net452' 
-             OR '$(TargetFramework)'=='net46' 
-             OR '$(TargetFramework)'=='net461' 
-             OR '$(TargetFramework)'=='net462' 
-             OR '$(TargetFramework)'=='net47'">
+  <ItemGroup Condition="'$(TargetFramework)'=='net45' &#xD;&#xA;             OR '$(TargetFramework)'=='net451' &#xD;&#xA;             OR '$(TargetFramework)'=='net452' &#xD;&#xA;             OR '$(TargetFramework)'=='net46' &#xD;&#xA;             OR '$(TargetFramework)'=='net461' &#xD;&#xA;             OR '$(TargetFramework)'=='net462' &#xD;&#xA;             OR '$(TargetFramework)'=='net47'">
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />    
   </ItemGroup>
   
