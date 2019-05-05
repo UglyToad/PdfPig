@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
-    using Encryption;
+    using PdfPig.Encryption;
     using PdfPig.IO;
     using PdfPig.Tokenization.Scanner;
     using PdfPig.Tokens;

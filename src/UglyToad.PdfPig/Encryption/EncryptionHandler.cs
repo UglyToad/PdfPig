@@ -32,6 +32,10 @@
         [NotNull]
         private readonly string password;
 
+        private readonly byte[] encryptionKey;
+
+        private readonly bool useAes;
+
         public EncryptionHandler(EncryptionDictionary encryptionDictionary, TrailerDictionary trailerDictionary, string password)
         {
             this.encryptionDictionary = encryptionDictionary;
@@ -63,7 +67,7 @@
                 ? 5 
                 : encryptionDictionary.KeyLength.GetValueOrDefault() / 8;
 
-            CalculateKeyRevisions2To4(passwordBytes, ownerKey, (int) encryptionDictionary.UserAccessPermissions, encryptionDictionary.StandardSecurityHandlerRevision,
+            encryptionKey = CalculateKeyRevisions2To4(passwordBytes, ownerKey, (int) encryptionDictionary.UserAccessPermissions, encryptionDictionary.StandardSecurityHandlerRevision,
                 length, documentIdBytes, encryptionDictionary.EncryptMetadata);
         }
         
@@ -80,6 +84,87 @@
             }
 
             throw new NotImplementedException($"Encryption is not supported yet. Encryption used in document was: {encryptionDictionary.Dictionary}.");
+        }
+
+        public void Decrypt(IndirectReference reference, IToken token)
+        {
+            if (token is StreamToken stream)
+            {
+                
+            }
+            else if (token is StringToken stringToken)
+            {
+                
+            }
+            else if (token is DictionaryToken dictionary)
+            {
+                
+            }
+            else if (token is ArrayToken array)
+            {
+
+            }
+        }
+
+        private byte[] DecryptData(byte[] data, IndirectReference reference)
+        {
+            if (useAes && encryptionKey.Length == 32)
+            {
+                throw new NotImplementedException("Decryption for AES-256 not currently supported.");
+            }
+
+            var finalKey = GetObjectKey(reference);
+
+            if (useAes)
+            {
+                throw new NotImplementedException("Decryption for AES-128 not currently supported.");
+            }
+            
+            return RC4.Encrypt(finalKey, data);
+        }
+
+        private byte[] GetObjectKey(IndirectReference reference)
+        { 
+            // 1. Get the object and generation number from the object
+
+            // 2. Treating the object and generation number as binary integers extend the
+            // original n byte encryption key to n + 5 bytes by taking the low-order 3 bytes
+            // of the object number and the low-order 2 bytes of the generation number, low order
+            // byte first.
+            var finalKey = new byte[encryptionKey.Length + 5 + (useAes ? 4 : 0)];
+            Array.Copy(encryptionKey, finalKey, encryptionKey.Length);
+
+            finalKey[encryptionKey.Length] = (byte) reference.ObjectNumber;
+            finalKey[encryptionKey.Length + 1] = (byte) (reference.ObjectNumber >> 1);
+            finalKey[encryptionKey.Length + 2] = (byte) (reference.ObjectNumber >> 2);
+
+            finalKey[encryptionKey.Length + 3] = (byte) reference.Generation;
+            finalKey[encryptionKey.Length + 4] = (byte) (reference.Generation >> 1);
+            
+            // 2. If using the AES algorithm extend the encryption key by 4 bytes by adding the value "sAlT".
+            if (useAes)
+            {
+                finalKey[encryptionKey.Length + 5] = (byte)'s';
+                finalKey[encryptionKey.Length + 6] = (byte)'A';
+                finalKey[encryptionKey.Length + 7] = (byte)'l';
+                finalKey[encryptionKey.Length + 8] = (byte)'T';
+            }
+
+            // 3. Initialize the MD5 hash function and pass the result of 2 as input.
+            using (var md5 = MD5.Create())
+            {
+                md5.ComputeHash(finalKey);
+
+                // 4. Use the first (n + 5) bytes (maximum of 16) of the MD5 output as the key for the
+                // RC4 or AES symmetric key algorithms along with the string or stream data to en/de-crypt
+                // If using AES the Cipher Block Chaining mode with block size of 16 bytes is used. The
+                // initialization vector is a 16-byte random number stored as the first 16 bytes of the stream of string.
+                var length = Math.Min(16, encryptionKey.Length + 5);
+                var result = new byte[length];
+                Array.Copy(md5.Hash, result, length);
+
+                return result;
+            }
         }
 
         private static bool IsUserPassword(byte[] password, byte[] userKey, byte[] ownerKey, int permissions,
@@ -141,9 +226,25 @@
                 // 7. Do the following 50 times: Take the output from the previous MD5 hash and
                 // pass the first n bytes of the output as input into a new MD5 hash,
                 // where n is the number of bytes of the encryption key as defined by the value
-                // of the encryption dictionary’s Length entry. 
+                // of the encryption dictionary's Length entry. 
+                if (revision == 3 || revision == 4)
+                {
+                    var n = length;
 
-                return md5.Hash;
+                    var input = md5.Hash;
+
+                    for (var i = 0; i < 50; i++)
+                    {
+                        md5.ComputeHash(input, 0, n);
+                        input = md5.Hash;
+                    }
+                }
+
+                var result = new byte[length];
+
+                Array.Copy(md5.Hash, result, length);
+
+                return result;
             }
         }
 
