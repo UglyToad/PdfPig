@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Security.Cryptography;
     using System.Text;
     using CrossReference;
@@ -11,7 +12,7 @@
 
     internal class EncryptionHandler : IEncryptionHandler
     {
-        private static readonly byte[] PaddingBytes = 
+        private static readonly byte[] PaddingBytes =
         {
             0x28, 0xBF, 0x4E, 0x5E,
             0x4E, 0x75, 0x8A, 0x41,
@@ -22,6 +23,8 @@
             0x2F, 0x0C, 0xA9, 0xFE,
             0x64, 0x53, 0x69, 0x7A
         };
+
+        private readonly HashSet<IndirectReference> previouslyDecrypted = new HashSet<IndirectReference>();
 
         [CanBeNull]
         private readonly EncryptionDictionary encryptionDictionary;
@@ -40,7 +43,7 @@
         {
             this.encryptionDictionary = encryptionDictionary;
 
-            documentIdBytes = trailerDictionary.Identifier != null && trailerDictionary.Identifier.Count == 2 ? 
+            documentIdBytes = trailerDictionary.Identifier != null && trailerDictionary.Identifier.Count == 2 ?
                 OtherEncodings.StringAsLatin1Bytes(trailerDictionary.Identifier[0])
                 : EmptyArray<byte>.Instance;
             this.password = password ?? string.Empty;
@@ -63,47 +66,114 @@
 
             var passwordBytes = charset.GetBytes(this.password);
 
-            var length = encryptionDictionary.EncryptionAlgorithmCode == EncryptionAlgorithmCode.Rc4OrAes40BitKey 
-                ? 5 
+            var length = encryptionDictionary.EncryptionAlgorithmCode == EncryptionAlgorithmCode.Rc4OrAes40BitKey
+                ? 5
                 : encryptionDictionary.KeyLength.GetValueOrDefault() / 8;
 
-            encryptionKey = CalculateKeyRevisions2To4(passwordBytes, ownerKey, (int) encryptionDictionary.UserAccessPermissions, encryptionDictionary.StandardSecurityHandlerRevision,
+            encryptionKey = CalculateKeyRevisions2To4(passwordBytes, ownerKey, (int)encryptionDictionary.UserAccessPermissions, encryptionDictionary.StandardSecurityHandlerRevision,
                 length, documentIdBytes, encryptionDictionary.EncryptMetadata);
-        }
-        
-        public IReadOnlyList<byte> Decrypt(StreamToken stream)
-        {
-            if (encryptionDictionary == null)
-            {
-                return stream?.Data;
-            }
 
-            if (stream == null)
-            {
-                throw new ArgumentNullException(nameof(stream));
-            }
-
-            throw new NotImplementedException($"Encryption is not supported yet. Encryption used in document was: {encryptionDictionary.Dictionary}.");
+            useAes = false;
         }
 
-        public void Decrypt(IndirectReference reference, IToken token)
+        public IToken Decrypt(IndirectReference reference, IToken token)
         {
-            if (token is StreamToken stream)
+            if (token == null)
             {
-                
+                throw new ArgumentNullException(nameof(token));
             }
-            else if (token is StringToken stringToken)
-            {
-                
-            }
-            else if (token is DictionaryToken dictionary)
-            {
-                
-            }
-            else if (token is ArrayToken array)
-            {
+            
+            token = DecryptInternal(reference, token);
 
+            previouslyDecrypted.Add(reference);
+
+            return token;
+        }
+
+        private IToken DecryptInternal(IndirectReference reference, IToken token)
+        {
+            switch (token)
+            {
+                case StreamToken stream:
+                    {
+                        if (stream.StreamDictionary.TryGet(NameToken.Type, out NameToken typeName))
+                        {
+                            if (NameToken.Xref.Equals(typeName))
+                            {
+                                return token;
+                            }
+
+                            if (!encryptionDictionary.EncryptMetadata && NameToken.Metadata.Equals(typeName))
+                            {
+                                return token;
+                            }
+
+                            // TODO: check unencrypted metadata
+                        }
+
+                        var streamDictionary = (DictionaryToken)DecryptInternal(reference, stream.StreamDictionary);
+
+                        var decrypted = DecryptData(stream.Data.ToArray(), reference);
+
+                        token = new StreamToken(streamDictionary, decrypted);
+
+                        break;
+                    }
+                case StringToken stringToken:
+                    {
+                        var data = OtherEncodings.StringAsLatin1Bytes(stringToken.Data);
+
+                        var decrypted = DecryptData(data, reference);
+
+                        token = new StringToken(OtherEncodings.BytesAsLatin1String(decrypted));
+
+                        break;
+                    }
+                case DictionaryToken dictionary:
+                    {
+                        // PDFBOX-2936: avoid orphan /CF dictionaries found in US govt "I-" files
+                        if (dictionary.TryGet(NameToken.Cf, out _))
+                        {
+                            return token;
+                        }
+
+                        var isSignatureDictionary = dictionary.TryGet(NameToken.Type, out NameToken typeName)
+                                                    && (typeName.Equals(NameToken.Sig) || typeName.Equals(NameToken.DocTimeStamp));
+
+                        foreach (var keyValuePair in dictionary.Data)
+                        {
+                            if (isSignatureDictionary && keyValuePair.Key == NameToken.Contents.Data)
+                            {
+                                continue;
+                            }
+
+                            if (keyValuePair.Value is StringToken || keyValuePair.Value is ArrayToken || keyValuePair.Value is DictionaryToken)
+                            {
+                                var inner = DecryptInternal(reference, keyValuePair.Value);
+                                dictionary = dictionary.With(keyValuePair.Key, inner);
+                            }
+                        }
+
+                        token = dictionary;
+
+                        break;
+                    }
+                case ArrayToken array:
+                    {
+                        var result = new IToken[array.Length];
+
+                        for (var i = 0; i < array.Length; i++)
+                        {
+                            result[i] = DecryptInternal(reference, array.Data[i]);
+                        }
+
+                        token = new ArrayToken(result);
+
+                        break;
+                    }
             }
+
+            return token;
         }
 
         private byte[] DecryptData(byte[] data, IndirectReference reference)
@@ -119,12 +189,12 @@
             {
                 throw new NotImplementedException("Decryption for AES-128 not currently supported.");
             }
-            
+
             return RC4.Encrypt(finalKey, data);
         }
 
         private byte[] GetObjectKey(IndirectReference reference)
-        { 
+        {
             // 1. Get the object and generation number from the object
 
             // 2. Treating the object and generation number as binary integers extend the
@@ -134,13 +204,13 @@
             var finalKey = new byte[encryptionKey.Length + 5 + (useAes ? 4 : 0)];
             Array.Copy(encryptionKey, finalKey, encryptionKey.Length);
 
-            finalKey[encryptionKey.Length] = (byte) reference.ObjectNumber;
-            finalKey[encryptionKey.Length + 1] = (byte) (reference.ObjectNumber >> 1);
-            finalKey[encryptionKey.Length + 2] = (byte) (reference.ObjectNumber >> 2);
+            finalKey[encryptionKey.Length] = (byte)reference.ObjectNumber;
+            finalKey[encryptionKey.Length + 1] = (byte)(reference.ObjectNumber >> 8);
+            finalKey[encryptionKey.Length + 2] = (byte)(reference.ObjectNumber >> 16);
 
-            finalKey[encryptionKey.Length + 3] = (byte) reference.Generation;
-            finalKey[encryptionKey.Length + 4] = (byte) (reference.Generation >> 1);
-            
+            finalKey[encryptionKey.Length + 3] = (byte)reference.Generation;
+            finalKey[encryptionKey.Length + 4] = (byte)(reference.Generation >> 8);
+
             // 2. If using the AES algorithm extend the encryption key by 4 bytes by adding the value "sAlT".
             if (useAes)
             {
@@ -195,32 +265,28 @@
             using (var md5 = MD5.Create())
             {
                 // 2. Initialize the MD5 hash function and pass the result of step 1 as input to this function.
-                var has = md5.ComputeHash(passwordFull);
+                UpdateMd5(md5, passwordFull);
 
                 // 3. Pass the value of the encryption dictionary's owner key entry to the MD5 hash function. 
-                var has1 = md5.ComputeHash(ownerKey);
+                UpdateMd5(md5, ownerKey);
 
                 // 4. Treat the value of the P entry as an unsigned 4-byte integer. 
-                var unsigned = (uint) permissions;
-                var permissionsBytes = new []
-                {
-                    (byte) (unsigned),
-                    (byte) (unsigned >> 8),
-                    (byte) (unsigned >> 16),
-                    (byte) (unsigned >> 24)
-                };
+                var unsigned = (uint)permissions;
 
                 // 4. Pass these bytes to the MD5 hash function, low-order byte first.
-                var has2 = md5.ComputeHash(permissionsBytes);
+                UpdateMd5(md5, new[] { (byte)(unsigned) });
+                UpdateMd5(md5, new[] { (byte)(unsigned >> 8) });
+                UpdateMd5(md5, new[] { (byte)(unsigned >> 16) });
+                UpdateMd5(md5, new[] { (byte)(unsigned >> 24) });
 
                 // 5. Pass the first element of the file's file identifier array to the hash.
-                var has3 = md5.ComputeHash(documentId);
+                UpdateMd5(md5, documentId);
 
                 // 6. (Revision 4 or greater) If document metadata is not being encrypted, pass 4 bytes
                 // with the value 0xFFFFFFFF to the MD5 hash function.
                 if (revision >= 4)
                 {
-                    md5.ComputeHash(new byte[] {0xFF, 0xFF, 0xFF, 0xFF});
+                    UpdateMd5(md5, new byte[] { 0xFF, 0xFF, 0xFF, 0xFF });
                 }
 
                 // 7. Do the following 50 times: Take the output from the previous MD5 hash and
@@ -235,10 +301,12 @@
 
                     for (var i = 0; i < 50; i++)
                     {
-                        md5.ComputeHash(input, 0, n);
+                        UpdateMd5(md5, input.Take(n).ToArray());
                         input = md5.Hash;
                     }
                 }
+
+                md5.TransformFinalBlock(EmptyArray<byte>.Instance, 0, 0);
 
                 var result = new byte[length];
 
@@ -246,6 +314,11 @@
 
                 return result;
             }
+        }
+
+        private static void UpdateMd5(MD5 md5, byte[] data)
+        {
+            md5.TransformBlock(data, 0, data.Length, null, 0);
         }
 
         private static byte[] GetPaddedPassword(byte[] password)

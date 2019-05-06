@@ -4,7 +4,6 @@
     using CidFonts;
     using Cmap;
     using Composite;
-    using Encryption;
     using Exceptions;
     using Filters;
     using IO;
@@ -19,17 +18,14 @@
         private readonly CidFontFactory cidFontFactory;
         private readonly CMapCache cMapCache;
         private readonly IFilterProvider filterProvider;
-        private readonly IEncryptionHandler encryptionHandler;
         private readonly IPdfTokenScanner scanner;
 
         public Type0FontHandler(CidFontFactory cidFontFactory, CMapCache cMapCache, IFilterProvider filterProvider,
-            IEncryptionHandler encryptionHandler,
             IPdfTokenScanner scanner)
         {
             this.cidFontFactory = cidFontFactory;
             this.cMapCache = cMapCache;
             this.filterProvider = filterProvider;
-            this.encryptionHandler = encryptionHandler;
             this.scanner = scanner;
         }
 
@@ -72,7 +68,7 @@
 
                 var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeValue, scanner);
 
-                var decodedUnicodeCMap = toUnicode?.Decode(filterProvider, encryptionHandler);
+                var decodedUnicodeCMap = toUnicode?.Decode(filterProvider);
 
                 if (decodedUnicodeCMap != null)
                 {
@@ -151,7 +147,7 @@
                 }
                 else if (value is StreamToken stream)
                 {
-                    var decoded = stream.Decode(filterProvider, encryptionHandler);
+                    var decoded = stream.Decode(filterProvider);
 
                     var cmap = cMapCache.Parse(new ByteArrayInputBytes(decoded), false);
 

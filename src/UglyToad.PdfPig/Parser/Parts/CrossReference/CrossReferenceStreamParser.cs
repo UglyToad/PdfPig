@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Parser.Parts.CrossReference
 {
     using System.Collections.Generic;
-    using Encryption;
     using Exceptions;
     using Filters;
     using PdfPig.CrossReference;
@@ -22,7 +21,7 @@
         /// </summary>
         public CrossReferenceTablePart Parse(long streamOffset, StreamToken stream)
         {
-            var decoded = stream.Decode(filterProvider, NoOpEncryptionHandler.Instance);
+            var decoded = stream.Decode(filterProvider);
 
             var fieldSizes = new CrossReferenceStreamFieldSize(stream.StreamDictionary);
 

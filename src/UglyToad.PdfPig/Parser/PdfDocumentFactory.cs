@@ -107,25 +107,25 @@
             
             var rootDictionary = ParseTrailer(crossReferenceTable, isLenientParsing, pdfScanner, out var encryptionDictionary);
 
-            var encryptionHandler = new EncryptionHandler(encryptionDictionary, crossReferenceTable.Trailer, string.Empty);
+            var encryptionHandler = encryptionDictionary != null ? (IEncryptionHandler)new EncryptionHandler(encryptionDictionary, crossReferenceTable.Trailer, string.Empty)
+                : NoOpEncryptionHandler.Instance;
 
             pdfScanner.UpdateEncryptionHandler(encryptionHandler);
 
-            var cidFontFactory = new CidFontFactory(pdfScanner, fontDescriptorFactory, trueTypeFontParser, compactFontFormatParser, filterProvider, encryptionHandler);
+            var cidFontFactory = new CidFontFactory(pdfScanner, fontDescriptorFactory, trueTypeFontParser, compactFontFormatParser, filterProvider);
             var encodingReader = new EncodingReader(pdfScanner);
 
             var fontFactory = new FontFactory(log, new Type0FontHandler(cidFontFactory,
                 cMapCache, 
-                filterProvider, encryptionHandler, pdfScanner),
-                new TrueTypeFontHandler(log, pdfScanner, filterProvider, encryptionHandler, cMapCache, fontDescriptorFactory, trueTypeFontParser, encodingReader, new SystemFontFinder(new TrueTypeFontParser())),
-                new Type1FontHandler(pdfScanner, cMapCache, filterProvider, encryptionHandler, fontDescriptorFactory, encodingReader, 
+                filterProvider, pdfScanner),
+                new TrueTypeFontHandler(log, pdfScanner, filterProvider, cMapCache, fontDescriptorFactory, trueTypeFontParser, encodingReader, new SystemFontFinder(new TrueTypeFontParser())),
+                new Type1FontHandler(pdfScanner, cMapCache, filterProvider, fontDescriptorFactory, encodingReader, 
                     new Type1FontParser(new Type1EncryptedPortionParser()), compactFontFormatParser),
-                new Type3FontHandler(pdfScanner, cMapCache, filterProvider, encryptionHandler, encodingReader));
+                new Type3FontHandler(pdfScanner, cMapCache, filterProvider, encodingReader));
             
             var resourceContainer = new ResourceContainer(pdfScanner, fontFactory);
             
             var pageFactory = new PageFactory(pdfScanner, resourceContainer, filterProvider, 
-                encryptionHandler,
                 new PageContentParser(new ReflectionGraphicsStateOperationFactory()), 
                 new XObjectFactory(), log);
             var informationFactory = new DocumentInformationFactory();
@@ -136,7 +136,7 @@
 
             var caching = new ParsingCachingProviders(bruteForceSearcher, resourceContainer);
 
-            var acroFormFactory = new AcroFormFactory(pdfScanner, filterProvider, encryptionHandler);
+            var acroFormFactory = new AcroFormFactory(pdfScanner, filterProvider);
             
             return new PdfDocument(log, inputBytes, version, crossReferenceTable, isLenientParsing, caching, pageFactory, catalog, information,
                 encryptionDictionary,

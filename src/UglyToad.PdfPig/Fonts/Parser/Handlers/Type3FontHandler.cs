@@ -3,7 +3,6 @@
     using Cmap;
     using Core;
     using Encodings;
-    using Encryption;
     using Exceptions;
     using Filters;
     using Geometry;
@@ -18,17 +17,14 @@
     {
         private readonly CMapCache cMapCache;
         private readonly IFilterProvider filterProvider;
-        private readonly IEncryptionHandler encryptionHandler;
         private readonly IEncodingReader encodingReader;
         private readonly IPdfTokenScanner scanner;
 
         public Type3FontHandler(IPdfTokenScanner scanner, CMapCache cMapCache, IFilterProvider filterProvider,
-            IEncryptionHandler encryptionHandler,
             IEncodingReader encodingReader)
         {
             this.cMapCache = cMapCache;
             this.filterProvider = filterProvider;
-            this.encryptionHandler = encryptionHandler;
             this.encodingReader = encodingReader;
             this.scanner = scanner;
         }
@@ -50,7 +46,7 @@
             {
                 var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, scanner);
 
-                var decodedUnicodeCMap = toUnicode?.Decode(filterProvider, encryptionHandler);
+                var decodedUnicodeCMap = toUnicode?.Decode(filterProvider);
 
                 if (decodedUnicodeCMap != null)
                 {

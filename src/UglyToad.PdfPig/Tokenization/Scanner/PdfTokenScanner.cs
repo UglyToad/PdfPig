@@ -158,6 +158,8 @@
                 token = readTokens[readTokens.Count - 1];
             }
 
+            token = encryptionHandler.Decrypt(reference, token);
+
             CurrentToken = new ObjectToken(startPosition, reference, token);
 
             objectLocationProvider.UpdateOffset(reference, startPosition);
@@ -537,7 +539,7 @@
             }
 
             // Read the N integers
-            var bytes = new ByteArrayInputBytes(stream.Decode(filterProvider, encryptionHandler));
+            var bytes = new ByteArrayInputBytes(stream.Decode(filterProvider));
 
             var scanner = new CoreTokenScanner(bytes);
 

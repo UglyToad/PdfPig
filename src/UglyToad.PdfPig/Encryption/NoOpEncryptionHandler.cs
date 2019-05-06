@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Encryption
 {
-    using System.Collections.Generic;
     using Tokens;
 
     internal class NoOpEncryptionHandler : IEncryptionHandler
@@ -11,9 +10,9 @@
         {
         }
 
-        public IReadOnlyList<byte> Decrypt(StreamToken stream)
+        public IToken Decrypt(IndirectReference reference, IToken token)
         {
-            return stream.Data;
+            return token;
         }
     }
 }

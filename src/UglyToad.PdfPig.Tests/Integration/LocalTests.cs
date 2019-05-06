@@ -3,17 +3,17 @@
     //using System;
     //using System.Diagnostics;
     //using System.IO;
-    using Xunit;
+    //using Xunit;
 
     /// <summary>
     /// A class for testing files which are not checked in to source control.
     /// </summary>
     public class LocalTests
     {
-        [Fact]
-        public void Tests()
-        {
-        //    var files = new[]{ @"C:\Users\eliot\Downloads\Encrypted1.pdf" };
+        //[Fact]
+        //public void Tests()
+        //{
+        //    var files = new[] { @"C:\Users\eliot\Downloads\Encrypted1.pdf" };
 
         //    foreach (var file in files)
         //    {
@@ -34,6 +34,6 @@
         //            throw new InvalidOperationException($"Error parsing: {Path.GetFileName(file)}.", ex);
         //        }
         //    }
-        }
+        //}
     }
 }
