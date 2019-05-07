@@ -19,6 +19,10 @@
 
         public string UserPasswordCheck { get; }
 
+        public byte[] OwnerBytes { get; }
+
+        public byte[] UserBytes { get; }
+
         public UserAccessPermissions UserAccessPermissions { get; }
 
         public bool IsStandardFilter => string.Equals(Filter, "Standard", StringComparison.OrdinalIgnoreCase);
@@ -45,6 +49,9 @@
             UserAccessPermissions = userAccessPermissions;
             Dictionary = dictionary;
             EncryptMetadata = encryptMetadata;
+
+            OwnerBytes = OtherEncodings.StringAsLatin1Bytes(ownerPasswordCheck);
+            UserBytes = OtherEncodings.StringAsLatin1Bytes(userPasswordCheck);
         }
     }
 
