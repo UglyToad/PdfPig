@@ -34,7 +34,15 @@
                 {"ZapfDingbats", new[] {"ZapfDingbatsITC", "Dingbats", "MS-Gothic"}}
             };
 
-            var names = Standard14.GetNames();
+            HashSet<string> names;
+            try
+            {
+                names = Standard14.GetNames();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to load the Standard 14 fonts from the assembly's resources.", ex);
+            }
 
             foreach (var name in names)
             {
@@ -48,7 +56,7 @@
                     }
                     else
                     {
-                        dict[name] = new[] {value};
+                        dict[name] = new[] { value };
                     }
                 }
             }
@@ -149,7 +157,7 @@
 
         private TrueTypeFontProgram GetTrueTypeFontNamed(string name)
         {
-if (cache.TryGetValue(name, out var result))
+            if (cache.TryGetValue(name, out var result))
             {
                 return result;
             }
