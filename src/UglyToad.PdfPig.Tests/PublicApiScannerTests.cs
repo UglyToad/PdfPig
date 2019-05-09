@@ -50,6 +50,7 @@
                 "UglyToad.PdfPig.CrossReference.CrossReferenceTable",
                 "UglyToad.PdfPig.CrossReference.CrossReferenceType",
                 "UglyToad.PdfPig.CrossReference.TrailerDictionary",
+                "UglyToad.PdfPig.Exceptions.PdfDocumentEncryptedException",
                 "UglyToad.PdfPig.Exceptions.PdfDocumentFormatException",
                 "UglyToad.PdfPig.Fonts.DescriptorFontFile",
                 "UglyToad.PdfPig.Fonts.Exceptions.InvalidFontFormatException",

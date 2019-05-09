@@ -6,6 +6,7 @@
     using Content;
     using CrossReference;
     using Encryption;
+    using Exceptions;
     using IO;
     using Logging;
     using Parser;
@@ -137,7 +138,19 @@
 
             log.Debug($"Accessing page {pageNumber}.");
 
-            return pages.GetPage(pageNumber);
+            try
+            {
+                return pages.GetPage(pageNumber);
+            }
+            catch (Exception ex)
+            {
+                if (IsEncrypted)
+                {
+                    throw new PdfDocumentEncryptedException("Document was encrypted which may have caused error when retrieving page.", encryptionDictionary, ex);
+                }
+
+                throw;
+            }
         }
 
         /// <summary>

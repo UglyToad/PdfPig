@@ -21,5 +21,10 @@
             get => logger ?? new NoOpLog();
             set => logger = value;
         }
+
+        /// <summary>
+        /// The password to use to open the document if it is encrypted.
+        /// </summary>
+        public string Password { get; set; } = string.Empty;
     }
 }

@@ -6,6 +6,7 @@
     using System.Security.Cryptography;
     using System.Text;
     using CrossReference;
+    using Exceptions;
     using Tokens;
     using Util;
     using Util.JetBrains.Annotations;
@@ -28,13 +29,7 @@
 
         [CanBeNull]
         private readonly EncryptionDictionary encryptionDictionary;
-
-        [NotNull]
-        private readonly byte[] documentIdBytes;
-
-        [NotNull]
-        private readonly string password;
-
+        
         private readonly byte[] encryptionKey;
 
         private readonly bool useAes;
@@ -43,52 +38,74 @@
         {
             this.encryptionDictionary = encryptionDictionary;
 
-            documentIdBytes = trailerDictionary.Identifier != null && trailerDictionary.Identifier.Count == 2 ?
+            var documentIdBytes = trailerDictionary.Identifier != null && trailerDictionary.Identifier.Count == 2 ?
                 OtherEncodings.StringAsLatin1Bytes(trailerDictionary.Identifier[0])
                 : EmptyArray<byte>.Instance;
 
-            this.password = password ?? string.Empty;
+            password = password ?? string.Empty;
 
             if (encryptionDictionary == null)
             {
                 return;
             }
 
-            var userKey = OtherEncodings.StringAsLatin1Bytes(encryptionDictionary.UserPasswordCheck);
-            var ownerKey = OtherEncodings.StringAsLatin1Bytes(encryptionDictionary.OwnerPasswordCheck);
+            if (encryptionDictionary.EncryptionAlgorithmCode == EncryptionAlgorithmCode.SecurityHandlerInDocument)
+            {
+                throw new PdfDocumentEncryptedException("Document encrypted with unsupported algorithm.", encryptionDictionary);
+            }
 
             var charset = OtherEncodings.Iso88591;
 
             if (encryptionDictionary.StandardSecurityHandlerRevision == 5 || encryptionDictionary.StandardSecurityHandlerRevision == 6)
             {
+                // ReSharper disable once RedundantAssignment
                 charset = Encoding.UTF8;
-                throw new NotSupportedException($"Revision of {encryptionDictionary.StandardSecurityHandlerRevision} not supported, please raise an issue.");
+
+                throw new PdfDocumentEncryptedException($"Revision of {encryptionDictionary.StandardSecurityHandlerRevision} not supported, please raise an issue.",
+                    encryptionDictionary);
             }
 
-            var passwordBytes = charset.GetBytes(this.password);
+            var passwordBytes = charset.GetBytes(password);
+
+            byte[] decryptionPasswordBytes;
 
             var length = encryptionDictionary.EncryptionAlgorithmCode == EncryptionAlgorithmCode.Rc4OrAes40BitKey
                 ? 5
                 : encryptionDictionary.KeyLength.GetValueOrDefault() / 8;
 
-            if (IsUserPassword(passwordBytes, length))
+            if (IsUserPassword(passwordBytes, encryptionDictionary, length, documentIdBytes))
             {
-                encryptionKey = CalculateKeyRevisions2To4(passwordBytes, ownerKey, (int) encryptionDictionary.UserAccessPermissions, encryptionDictionary.StandardSecurityHandlerRevision,
-                    length, documentIdBytes, encryptionDictionary.EncryptMetadata);
+                decryptionPasswordBytes = passwordBytes;
+            }
+            else if (IsOwnerPassword(passwordBytes, encryptionDictionary, length, documentIdBytes, out var userPassBytes))
+            {
+                if (encryptionDictionary.StandardSecurityHandlerRevision == 5 || encryptionDictionary.StandardSecurityHandlerRevision == 6)
+                {
+                    decryptionPasswordBytes = passwordBytes;
+                }
+                else
+                {
+                    decryptionPasswordBytes = userPassBytes;
+                }
             }
             else
             {
-                throw new NotImplementedException("TODO: check owner password.");
+                throw new PdfDocumentEncryptedException("The document was encrypted and the provided password was neither the user or owner password.", encryptionDictionary);
             }
+
+            encryptionKey = CalculateKeyRevisions2To4(decryptionPasswordBytes, encryptionDictionary.OwnerBytes, (int)encryptionDictionary.UserAccessPermissions,
+                encryptionDictionary.StandardSecurityHandlerRevision,
+                length,
+                documentIdBytes);
 
             useAes = false;
         }
 
-        private bool IsUserPassword(byte[] passwordBytes, int length)
+        private static bool IsUserPassword(byte[] passwordBytes, EncryptionDictionary encryptionDictionary, int length, byte[] documentIdBytes)
         {
             // 1. Create an encryption key based on the user password string.
-            var password = CalculateKeyRevisions2To4(passwordBytes, encryptionDictionary.OwnerBytes, (int) encryptionDictionary.UserAccessPermissions,
-                    encryptionDictionary.StandardSecurityHandlerRevision, length, documentIdBytes, encryptionDictionary.EncryptMetadata);
+            var calculatedEncryptionKey = CalculateKeyRevisions2To4(passwordBytes, encryptionDictionary.OwnerBytes, (int)encryptionDictionary.UserAccessPermissions,
+                    encryptionDictionary.StandardSecurityHandlerRevision, length, documentIdBytes);
 
             byte[] output;
 
@@ -106,7 +123,7 @@
                     var result = md5.Hash;
 
                     // 4. Encrypt the 16-byte result of the hash, using an RC4 encryption function with the encryption key from step 1.
-                    var temp = RC4.Encrypt(password, result);
+                    var temp = RC4.Encrypt(calculatedEncryptionKey, result);
 
                     // 5. Do the following 19 times:
                     for (byte i = 1; i <= 19; i++)
@@ -116,7 +133,7 @@
 
                         // Use an encryption key generated by taking each byte of the original encryption key (from step 1) 
                         // and performing an XOR operation between that byte and the single-byte value of the iteration counter. 
-                        var key = password.Select(x => (byte)(x ^ i)).ToArray();
+                        var key = calculatedEncryptionKey.Select(x => (byte)(x ^ i)).ToArray();
                         temp = RC4.Encrypt(key, temp);
                     }
 
@@ -126,7 +143,7 @@
             else
             {
                 // 2. Encrypt the 32-byte padding string using an RC4 encryption function with the encryption key from the preceding step.
-                output = RC4.Encrypt(password, PaddingBytes);
+                output = RC4.Encrypt(calculatedEncryptionKey, PaddingBytes);
             }
 
             if (encryptionDictionary.StandardSecurityHandlerRevision >= 3)
@@ -137,18 +154,89 @@
             return encryptionDictionary.UserBytes.SequenceEqual(output);
         }
 
+        private static bool IsOwnerPassword(byte[] passwordBytes, EncryptionDictionary encryptionDictionary, int length, byte[] documentIdBytes,
+            out byte[] userPassword)
+        {
+            userPassword = null;
+
+            // 1. Pad or truncate the owner password string, if there is no owner password use the user password instead.
+            var paddedPassword = GetPaddedPassword(passwordBytes);
+
+            using (var md5 = MD5.Create())
+            {
+                // 2. Initialize the MD5 hash function and pass the result of step 1 as input.
+                var hash = md5.ComputeHash(paddedPassword);
+
+                // 3. (Revision 3 or greater) Do the following 50 times: 
+                if (encryptionDictionary.StandardSecurityHandlerRevision >= 3)
+                {
+                    // Take the output from the previous MD5 hash and pass it as input into a new MD5 hash.
+                    for (var i = 0; i < 50; i++)
+                    {
+                        hash = md5.ComputeHash(md5.Hash);
+                    }
+                }
+
+                // 4. Create an RC4 encryption key using the first n bytes of the output from the final MD5 hash,
+                // where n is always 5 for revision 2 but for revision 3 or greater depends on the value of the encryption dictionary's Length entry. 
+                var key = hash.Take(length).ToArray();
+
+                if (encryptionDictionary.StandardSecurityHandlerRevision == 2)
+                {
+                    // 5. (Revision 2 only) Decrypt the value of the encryption dictionary's owner entry, 
+                    // using an RC4 encryption function with the encryption key computed in step 1 - 4.
+                    userPassword = RC4.Encrypt(key, encryptionDictionary.OwnerBytes);
+                }
+                else
+                {
+                    // 5. (Revision 3 or greater) Do the following 20 times:
+                    byte[] output = null;
+                    for (var i = 0; i < 20; i++)
+                    {
+                        // Generate a per iteration key by taking the original key and performing an XOR operation between each
+                        // byte of the key and the single-byte value of the iteration counter (from 19 to 0).
+                        var keyIter = key.Select(x => (byte)(x ^ (19 - i))).ToArray();
+
+                        if (i == 0)
+                        {
+                            output = encryptionDictionary.OwnerBytes;
+                        }
+
+                        // Decrypt the value of the encryption dictionary's owner entry (first iteration) 
+                        // or the output from the previous iteration using an RC4 encryption function. 
+                        output = RC4.Encrypt(keyIter, output);
+                    }
+
+                    userPassword = output;
+                }
+
+                // 6. The result of step 5 purports to be the user password. 
+                // Authenticate this user password, if it is correct, the password supplied is the owner password. 
+                var result = IsUserPassword(userPassword, encryptionDictionary, length, documentIdBytes);
+
+                return result;
+            }
+        }
+
         public IToken Decrypt(IndirectReference reference, IToken token)
         {
             if (token == null)
             {
                 throw new ArgumentNullException(nameof(token));
             }
-            
-            token = DecryptInternal(reference, token);
 
-            previouslyDecrypted.Add(reference);
+            try
+            {
+                token = DecryptInternal(reference, token);
 
-            return token;
+                previouslyDecrypted.Add(reference);
+
+                return token;
+            }
+            catch (Exception ex)
+            {
+                throw new PdfDocumentEncryptedException($"The document was encrypted and decryption of a token failed. Token was: {token}.", encryptionDictionary, ex);
+            }
         }
 
         private IToken DecryptInternal(IndirectReference reference, IToken token)
@@ -241,14 +329,14 @@
         {
             if (useAes && encryptionKey.Length == 32)
             {
-                throw new NotImplementedException("Decryption for AES-256 not currently supported.");
+                throw new PdfDocumentEncryptedException("Decryption for AES-256 not currently supported.", encryptionDictionary);
             }
 
             var finalKey = GetObjectKey(reference);
 
             if (useAes)
             {
-                throw new NotImplementedException("Decryption for AES-128 not currently supported.");
+                throw new PdfDocumentEncryptedException("Decryption for AES-128 not currently supported.", encryptionDictionary);
             }
 
             return RC4.Encrypt(finalKey, data);
@@ -298,27 +386,8 @@
             }
         }
 
-        private static bool IsUserPassword(byte[] password, byte[] userKey, byte[] ownerKey, int permissions,
-            byte[] documentId, int revision, int length, bool encryptMetadata)
-        {
-            switch (revision)
-            {
-                case 2:
-                case 3:
-                case 4:
-                    break;
-                case 5:
-                case 6:
-                    break;
-                default:
-                    throw new NotSupportedException($"Unsupported encryption revision: {revision}.");
-            }
-
-            return false;
-        }
-
         private static byte[] CalculateKeyRevisions2To4(byte[] password, byte[] ownerKey,
-            int permissions, int revision, int length, byte[] documentId, bool encryptMetadata)
+            int permissions, int revision, int length, byte[] documentId)
         {
             // 1. Pad or truncate the password string to exactly 32 bytes. 
             var passwordFull = GetPaddedPassword(password);

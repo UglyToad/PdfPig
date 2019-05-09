@@ -62,12 +62,12 @@
             
             var tokenScanner = new CoreTokenScanner(inputBytes);
 
-            var document = OpenDocument(inputBytes, tokenScanner, container, isLenientParsing);
+            var document = OpenDocument(inputBytes, tokenScanner, container, isLenientParsing, options?.Password);
 
             return document;
         }
 
-        private static PdfDocument OpenDocument(IInputBytes inputBytes, ISeekableTokenScanner scanner, IContainer container, bool isLenientParsing)
+        private static PdfDocument OpenDocument(IInputBytes inputBytes, ISeekableTokenScanner scanner, IContainer container, bool isLenientParsing, string password)
         {
             var log = container.Get<ILog>();
             var filterProvider = container.Get<IFilterProvider>();
@@ -107,7 +107,7 @@
             
             var rootDictionary = ParseTrailer(crossReferenceTable, isLenientParsing, pdfScanner, out var encryptionDictionary);
 
-            var encryptionHandler = encryptionDictionary != null ? (IEncryptionHandler)new EncryptionHandler(encryptionDictionary, crossReferenceTable.Trailer, string.Empty)
+            var encryptionHandler = encryptionDictionary != null ? (IEncryptionHandler)new EncryptionHandler(encryptionDictionary, crossReferenceTable.Trailer, password ?? string.Empty)
                 : NoOpEncryptionHandler.Instance;
 
             pdfScanner.UpdateEncryptionHandler(encryptionHandler);
