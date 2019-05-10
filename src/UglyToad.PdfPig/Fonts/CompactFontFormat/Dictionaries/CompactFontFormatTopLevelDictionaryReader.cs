@@ -71,12 +71,18 @@
                                 {
                                     var array = ToArray(operands);
 
-                                    if (array.Length != 4)
+                                    if (array.Length == 4)
+                                    {
+                                        dictionary.FontMatrix = TransformationMatrix.FromArray(array);
+                                    }
+                                    else if (array.Length == 6)
+                                    {
+                                        dictionary.FontMatrix = TransformationMatrix.FromArray(array);
+                                    }
+                                    else
                                     {
                                         throw new InvalidOperationException($"Expected four values for the font matrix, instead got: {array}.");
                                     }
-
-                                    dictionary.FontMatrix = TransformationMatrix.FromArray(array);
                                 }
                                 break;
                             case 8:

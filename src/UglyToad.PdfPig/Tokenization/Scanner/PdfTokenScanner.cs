@@ -304,7 +304,7 @@
 
                         endStreamPosition = 0;
                         endObjPosition = 0;
-                        commonPartPosition = 0;
+                        commonPartPosition = (inputBytes.CurrentByte == commonPart[0]) ? 1  : 0;
                     }
                     
                     binaryWrite.Write(inputBytes.CurrentByte);
