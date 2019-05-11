@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using Annotations;
     using Content;
-    using Encryption;
     using Exceptions;
     using Filters;
     using Geometry;
@@ -70,24 +69,31 @@
             else if (DirectObjectFinder.TryGet<ArrayToken>(contents, pdfScanner, out var array))
             {
                 var bytes = new List<byte>();
-                
-                foreach (var item in array.Data)
+
+                for (var i = 0; i < array.Data.Count; i++)
                 {
+                    var item = array.Data[i];
+
                     if (!(item is IndirectReferenceToken obj))
                     {
                         throw new PdfDocumentFormatException($"The contents contained something which was not an indirect reference: {item}.");
                     }
 
                     var contentStream = DirectObjectFinder.Get<StreamToken>(obj, pdfScanner);
-                    
+
                     if (contentStream == null)
                     {
                         throw new InvalidOperationException($"Could not find the contents for object {obj}.");
                     }
 
                     bytes.AddRange(contentStream.Decode(filterProvider));
-                }
 
+                    if (i < array.Data.Count - 1)
+                    {
+                        bytes.Add((byte)'\n');
+                    }
+                }
+                
                 content = GetContent(bytes, cropBox, userSpaceUnit, isLenientParsing);
             }
             else
