@@ -17,7 +17,7 @@
 
         public IReadOnlyDictionary<int, CommandSequence> Subroutines { get; }
 
-        public Type1CharStrings(IReadOnlyDictionary<string, CommandSequence> charStrings, IReadOnlyDictionary<int, string> charStringIndexToName, 
+        public Type1CharStrings(IReadOnlyDictionary<string, CommandSequence> charStrings, IReadOnlyDictionary<int, string> charStringIndexToName,
             IReadOnlyDictionary<int, CommandSequence> subroutines)
         {
             this.charStringIndexToName = charStringIndexToName ?? throw new ArgumentNullException(nameof(charStringIndexToName));
@@ -72,7 +72,25 @@
                 glyphs[name] = path;
 
                 return path;
+            }, s =>
+            {
+                if (glyphs.TryGetValue(s, out var result))
+                {
+                    return result;
+                }
+
+                if (!CharStrings.TryGetValue(s, out var charstring))
+                {
+                    throw new InvalidOperationException($"Tried to retrieve Type 1 charstring by name {s} but it was not found in the charstrings.");
+                }
+
+                var path = Run(charstring);
+
+                glyphs[s] = path;
+
+                return path;
             });
+
             foreach (var command in sequence.Commands)
             {
                 command.Match(x => context.Stack.Push(x),

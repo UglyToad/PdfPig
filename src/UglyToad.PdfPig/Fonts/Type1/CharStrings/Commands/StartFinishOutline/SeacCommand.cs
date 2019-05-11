@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands.StartFinishOutline
 {
+    using Encodings;
+
     /// <summary>
     /// Standard encoding accented character.
     /// Makes an accented character from two other characters in the font program.
@@ -21,11 +23,15 @@
             var accentLeftSidebearingX = context.Stack.PopBottom();
             var accentOriginX = context.Stack.PopBottom();
             var accentOriginY = context.Stack.PopBottom();
-            var baseCharacterCode = context.Stack.PopBottom();
-            var accentCharacterCode = context.Stack.PopBottom();
+            var baseCharacterCode = (int)context.Stack.PopBottom();
+            var accentCharacterCode = (int)context.Stack.PopBottom();
 
-            var baseCharacter = context.GetCharacter((int)baseCharacterCode);
-            var accentCharacter = context.GetCharacter((int) accentCharacterCode);
+            // Both bchar and achar are codes that these characters are assigned in the Adobe StandardEncoding vector
+            var baseCharacterName = StandardEncoding.Instance.CodeToNameMap[baseCharacterCode];
+            var accentCharacterName = StandardEncoding.Instance.CodeToNameMap[accentCharacterCode];
+
+            var baseCharacter = context.GetCharacter(baseCharacterName);
+            var accentCharacter = context.GetCharacter(accentCharacterName);
 
             // TODO: full seac implementation.
             context.SetPath(baseCharacter);
