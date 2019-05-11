@@ -247,6 +247,20 @@ are the same.)";
             Assert.Equal(@"this does not end with bracket", AssertStringToken(token).Data);
         }
 
+        [Fact]
+        public void HandlesEscapedEscapeCharacters()
+        {
+            const string s = @"(   \(sleep 1; printf ""QUIT\\r\\n""\) | )";
+
+            var input = StringBytesTestConverter.Convert(s);
+
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            Assert.True(result);
+
+            Assert.Equal(@"   (sleep 1; printf ""QUIT\r\n"") | ", AssertStringToken(token).Data);
+        }
+
         private static StringToken AssertStringToken(IToken token)
         {
             Assert.NotNull(token);

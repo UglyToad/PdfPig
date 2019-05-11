@@ -98,7 +98,7 @@
             }
 
             Encoding fromFont = null;
-            font.Match(x => fromFont = x.Encoding != null ? new BuiltInEncoding(x.Encoding) : default(Encoding), x =>
+            font?.Match(x => fromFont = x.Encoding != null ? new BuiltInEncoding(x.Encoding) : default(Encoding), x =>
             {
                 if (x.Fonts != null && x.Fonts.Count > 0)
                 {

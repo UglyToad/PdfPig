@@ -109,6 +109,7 @@
                         if (isEscapeActive)
                         {
                             builder.Append(c);
+                            isEscapeActive = false;
                         }
                         else
                         {

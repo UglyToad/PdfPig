@@ -6,6 +6,7 @@
     using PdfPig.Graphics;
     using PdfPig.Graphics.Core;
     using PdfPig.Graphics.Operations.General;
+    using PdfPig.Graphics.Operations.SpecialGraphicsState;
     using PdfPig.Graphics.Operations.TextObjects;
     using PdfPig.Graphics.Operations.TextPositioning;
     using PdfPig.Graphics.Operations.TextShowing;
@@ -151,6 +152,33 @@ ET";
             Assert.Equal(TextRenderingMode.Fill, renderingMode.Mode);
 
             Assert.Equal(EndText.Value, result[3]);
+        }
+
+        [Fact]
+        public void HandlesEscapedLineBreaks()
+        {
+            const string s = @"q 1 0 0 1 48 434
+cm BT 0.0001 Tc 19 0 0 19 0 0 Tm /Tc1 1 Tf (   \(sleep 1; printf ""QUIT\\r\\n""\) | )
+            Tj ET Q";
+
+            var input = StringBytesTestConverter.Convert(s, false);
+
+            var result = parser.Parse(input.Bytes);
+
+            Assert.Equal(9, result.Count);
+
+            Assert.IsType<Push>(result[0]);
+            Assert.IsType<ModifyCurrentTransformationMatrix>(result[1]);
+            Assert.IsType<BeginText>(result[2]);
+            Assert.IsType<SetCharacterSpacing>(result[3]);
+            Assert.IsType<SetTextMatrix>(result[4]);
+
+            Assert.IsType<SetFontAndSize>(result[5]);
+            var text = Assert.IsType<ShowText>(result[6]);
+            Assert.IsType<EndText>(result[7]);
+            Assert.IsType<Pop>(result[8]);
+
+            Assert.Equal(@"   (sleep 1; printf ""QUIT\r\n"") | ", text.Text);
         }
 
         private static string LineEndingsToWhiteSpace(string str)
