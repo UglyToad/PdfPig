@@ -31,7 +31,7 @@
             if (CanMapToUnicode)
             {
                 IsUsingIdentityAsUnicodeMap =
-                    cMap.Name.StartsWith("Identity-", StringComparison.InvariantCultureIgnoreCase);
+                    cMap.Name?.StartsWith("Identity-", StringComparison.InvariantCultureIgnoreCase) == true;
             }
         }
 

@@ -151,7 +151,7 @@
             }
         }
 
-        private static IReadOnlyDictionary<int, decimal> ReadWidths(DictionaryToken dict)
+        private IReadOnlyDictionary<int, decimal> ReadWidths(DictionaryToken dict)
         {
             var widths = new Dictionary<int, decimal>();
 
@@ -166,7 +166,7 @@
             {
                 var firstCode = (NumericToken)widthArray.Data[counter++];
                 var next = widthArray.Data[counter++];
-                if (next is ArrayToken array)
+                if (DirectObjectFinder.TryGet(next, pdfScanner, out ArrayToken array))
                 {
                     int startRange = firstCode.Int;
                     int arraySize = array.Data.Count;

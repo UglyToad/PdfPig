@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Text;
+    using Util;
 
     /// <summary>
     /// Provides access to the raw bytes of this Compact Font Format file with utility methods for reading data types from it.
@@ -112,6 +113,11 @@
 
         public CompactFontFormatData SnapshotPortion(int startLocation, int length)
         {
+            if (length == 0)
+            {
+                return new CompactFontFormatData(EmptyArray<byte>.Instance);
+            }
+
             if (startLocation > dataBytes.Count - 1 || startLocation + length > dataBytes.Count)
             {
                 throw new ArgumentException($"Attempted to create a snapshot of an invalid portion of the data. Length was {dataBytes.Count}, requested start: {startLocation} and requested length: {length}.");
