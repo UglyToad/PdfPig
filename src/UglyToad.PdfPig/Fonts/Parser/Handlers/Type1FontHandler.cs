@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Parser.Handlers
 {
+    using System.Linq;
     using Cmap;
     using CompactFontFormat;
     using Encodings;
@@ -96,7 +97,16 @@
                 }
             }
 
-            Encoding encoding = encodingReader.Read(dictionary, isLenientParsing, descriptor);
+            Encoding fromFont = null;
+            font.Match(x => fromFont = x.Encoding != null ? new BuiltInEncoding(x.Encoding) : default(Encoding), x =>
+            {
+                if (x.Fonts != null && x.Fonts.Count > 0)
+                {
+                    fromFont = x.Fonts.First().Value.Encoding;
+                }
+            });
+
+            Encoding encoding = encodingReader.Read(dictionary, isLenientParsing, descriptor, fromFont);
 
             if (encoding == null)
             {

@@ -17,7 +17,8 @@
             this.pdfScanner = pdfScanner;
         }
 
-        public Encoding Read(DictionaryToken fontDictionary, bool isLenientParsing, FontDescriptor descriptor = null)
+        public Encoding Read(DictionaryToken fontDictionary, bool isLenientParsing, FontDescriptor descriptor = null,
+            Encoding fontEncoding = null)
         {
             if (!fontDictionary.TryGet(NameToken.Encoding, out var baseEncodingObject))
             {
@@ -31,12 +32,12 @@
 
             DictionaryToken encodingDictionary = DirectObjectFinder.Get<DictionaryToken>(baseEncodingObject, pdfScanner);
            
-            var encoding = ReadEncodingDictionary(encodingDictionary);
+            var encoding = ReadEncodingDictionary(encodingDictionary, fontEncoding);
 
             return encoding;
         }
 
-        private Encoding ReadEncodingDictionary(DictionaryToken encodingDictionary)
+        private Encoding ReadEncodingDictionary(DictionaryToken encodingDictionary, Encoding fontEncoding)
         {
             Encoding baseEncoding;
             if (encodingDictionary.TryGet(NameToken.BaseEncoding, out var baseEncodingToken) && baseEncodingToken is NameToken baseEncodingName)
@@ -49,7 +50,7 @@
             else
             {
                 // TODO: This isn't true for non-symbolic fonts or latin fonts (based on OS?) see section 5.5.5
-                baseEncoding = StandardEncoding.Instance;
+                baseEncoding = fontEncoding ?? StandardEncoding.Instance;
             }
 
             if (!encodingDictionary.TryGet(NameToken.Differences, out var differencesBase))

@@ -17,18 +17,22 @@
 
             var format = data.ReadCard8();
 
-            switch (format)
+            // A few fonts have multiply encoded glyphs which are indicated by setting the high order bit of the format byte.
+            // To get the real format out & with 0111 1111 (0x7f).
+            var baseFormat = format & 0x7f;
+
+            switch (baseFormat)
             {
                 case 0:
-                    return ReadFormat0Encoding(data, charset, stringIndex);
+                    return ReadFormat0Encoding(data, charset, stringIndex, format);
                 case 1:
-                    return ReadFormat1Encoding(data, charset, stringIndex);
+                    return ReadFormat1Encoding(data, charset, stringIndex, format);
                 default:
                     throw new InvalidFontFormatException($"The provided format {format} for this Compact Font Format encoding was invalid.");
             }
         }
 
-        private static CompactFontFormatFormat0Encoding ReadFormat0Encoding(CompactFontFormatData data, ICompactFontFormatCharset charset, IReadOnlyList<string> stringIndex)
+        private static CompactFontFormatFormat0Encoding ReadFormat0Encoding(CompactFontFormatData data, ICompactFontFormatCharset charset, IReadOnlyList<string> stringIndex, byte format)
         {
             var numberOfCodes = data.ReadCard8();
 
@@ -41,10 +45,16 @@
                 values.Add((code, sid, str));
             }
 
-            return new CompactFontFormatFormat0Encoding(values);
+            IReadOnlyList<CompactFontFormatBuiltInEncoding.Supplement> supplements = new List<CompactFontFormatBuiltInEncoding.Supplement>();
+            if (HasSupplement(format))
+            {
+                supplements = ReadSupplement(data, stringIndex);
+            }
+
+            return new CompactFontFormatFormat0Encoding(values, supplements);
         }
 
-        private static CompactFontFormatFormat1Encoding ReadFormat1Encoding(CompactFontFormatData data, ICompactFontFormatCharset charset, IReadOnlyList<string> stringIndex)
+        private static CompactFontFormatFormat1Encoding ReadFormat1Encoding(CompactFontFormatData data, ICompactFontFormatCharset charset, IReadOnlyList<string> stringIndex, byte format)
         {
             var numberOfRanges = data.ReadCard8();
 
@@ -65,7 +75,11 @@
                 }
             }
 
-            var supplements = ReadSupplement(data, stringIndex);
+            IReadOnlyList<CompactFontFormatBuiltInEncoding.Supplement> supplements = new List<CompactFontFormatBuiltInEncoding.Supplement>();
+            if (HasSupplement(format))
+            {
+                supplements = ReadSupplement(data, stringIndex);
+            }
 
             return new CompactFontFormatFormat1Encoding(numberOfRanges, fromRanges, supplements);
         }
@@ -102,5 +116,10 @@
             return "SID" + index;
         }
 
+        private static bool HasSupplement(byte format)
+        {
+            // A few fonts have multiply encoded glyphs which are indicated by setting the high order bit of the format byte.
+            return (format & 0x80) != 0;
+        }
     }
 }

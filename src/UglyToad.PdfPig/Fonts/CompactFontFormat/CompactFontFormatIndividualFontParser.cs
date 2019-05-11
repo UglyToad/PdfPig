@@ -32,8 +32,7 @@
             var individualData = new CompactFontFormatData(topDictionaryIndex.ToArray());
 
             var topDictionary = topLevelDictionaryReader.Read(individualData, stringIndex);
-
-
+            
             var privateDictionary = CompactFontFormatPrivateDictionary.GetDefault();
 
             if (topDictionary.PrivateDictionaryLocation.HasValue && topDictionary.PrivateDictionaryLocation.Value.Size > 0)

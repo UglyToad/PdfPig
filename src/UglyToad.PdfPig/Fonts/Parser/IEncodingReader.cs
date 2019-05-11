@@ -5,6 +5,7 @@
 
     internal interface IEncodingReader
     {
-        Encoding Read(DictionaryToken fontDictionary, bool isLenientParsing, FontDescriptor descriptor = null);
+        Encoding Read(DictionaryToken fontDictionary, bool isLenientParsing, FontDescriptor descriptor = null,
+            Encoding fontEncoding = null);
     }
 }
