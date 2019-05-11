@@ -66,6 +66,11 @@
 
                 var thisEncoding = encodingReader.Read(dictionary, isLenientParsing);
 
+                if (thisEncoding == null)
+                {
+                    thisEncoding = new AdobeFontMetricsEncoding(standard14Font);
+                }
+
                 return new TrueTypeStandard14FallbackSimpleFont(baseFont, standard14Font, thisEncoding, fileSystemFont);
             }
 
