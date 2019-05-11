@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
 
     internal abstract class CompactFontFormatCharset : ICompactFontFormatCharset
     {
@@ -36,7 +37,7 @@
 
         public virtual string GetNameByStringId(int stringId)
         {
-            throw new NotImplementedException();
+            return GlyphIdToStringIdAndName.Single(x => x.Value.stringId == stringId).Value.name;
         }
 
         public virtual int GetStringIdByGlyphId(int glyphId)

@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CompactFontFormat.Charsets
 {
     using System.Collections.Generic;
+    using System.Linq;
 
     /// <summary>
     /// A predefined Charset for a Compact Font Format font with Charset Id of 2.
@@ -110,7 +111,7 @@
             var i = 0;
             foreach (var pair in StringIdToName)
             {
-                furtherMap[i] = pair;
+                furtherMap[i++] = pair;
             }
 
             characterIdToStringIdAndName = furtherMap;
@@ -123,12 +124,12 @@
 
         public string GetNameByStringId(int stringId)
         {
-            throw new System.NotImplementedException();
+            return characterIdToStringIdAndName.Single(x => x.Value.Key == stringId).Value.Value;
         }
 
         public int GetStringIdByGlyphId(int glyphId)
         {
-            throw new System.NotImplementedException();
+            return characterIdToStringIdAndName[glyphId].Key;
         }
     }
 }
