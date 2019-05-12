@@ -67,7 +67,15 @@
 
         internal PdfRectangle(PdfPoint point1, PdfPoint point2) : this(point1.X, point1.Y, point2.X, point2.Y) { }
         internal PdfRectangle(short x1, short y1, short x2, short y2) : this((decimal) x1, y1, x2, y2) { }
-        internal PdfRectangle(decimal x1, decimal y1, decimal x2, decimal y2)
+
+        /// <summary>
+        /// A rectangle in a PDF file. 
+        /// </summary>
+        /// <param name="x1"></param>
+        /// <param name="y1"></param>
+        /// <param name="x2"></param>
+        /// <param name="y2"></param>
+        public PdfRectangle(decimal x1, decimal y1, decimal x2, decimal y2)
         {
             decimal bottom;
             decimal top;

@@ -16,6 +16,11 @@
         public string Text { get; }
 
         /// <summary>
+        /// The text direction of the word.
+        /// </summary>
+        public TextDirection TextDirection { get; }
+
+        /// <summary>
         /// The rectangle completely containing the word.
         /// </summary>
         public PdfRectangle BoundingBox { get; }
@@ -24,6 +29,11 @@
         /// The name of the font for the word.
         /// </summary>
         public string FontName { get; }
+
+        /// <summary>
+        /// The letters contained in the word.
+        /// </summary>
+        public IReadOnlyList<Letter> Letters { get; }
 
         /// <summary>
         /// Create a new <see cref="Word"/>.
@@ -41,15 +51,18 @@
                 throw new ArgumentException("Empty letters provided.", nameof(letters));
             }
 
+            Letters = letters;
+
             Text = string.Join(string.Empty, letters.Select(x => x.Value));
 
             var minX = letters.Min(x => x.Location.X);
             var minY = letters.Min(x => x.Location.Y);
             var maxX = letters.Max(x => x.Location.X + x.Width);
             var maxY = letters.Max(x => x.GlyphRectangle.Top);
-
             BoundingBox = new PdfRectangle(minX, minY, maxX, maxY);
+
             FontName = letters[0].FontName;
+            TextDirection = letters[0].TextDirection;
         }
 
         /// <inheritdoc />
