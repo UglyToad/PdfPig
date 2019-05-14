@@ -869,7 +869,7 @@
                     x =>
                     {
                         // The numbers preceding the first hintmask following hinting can act as vertical hints.
-                        if (x.Name == "hintmask" && !hasEncounteredInitialHintMask)
+                        if ((x.Name == "hintmask" || x.Name == "cntrmask") && !hasEncounteredInitialHintMask)
                         {
                             hasEncounteredInitialHintMask = true;
                             stemCount += SafeStemCount(precedingNumbers);
