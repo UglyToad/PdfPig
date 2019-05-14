@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace UglyToad.PdfPig.Geometry
+﻿namespace UglyToad.PdfPig.Geometry
 {
     /// <summary>
     /// A line in a PDF file. 
@@ -15,6 +11,18 @@ namespace UglyToad.PdfPig.Geometry
     public struct PdfLine
     {
         /// <summary>
+        /// Length of the line.
+        /// </summary>
+        public decimal Length
+        {
+            get
+            {
+                decimal l = (Point1.X - Point1.X) * (Point1.X - Point1.X) + (Point1.Y - Point1.Y) * (Point1.Y - Point1.Y);
+                return (decimal)System.Math.Sqrt((double)l);
+            }
+        }
+
+        /// <summary>
         /// First point of the line.
         /// </summary>
         public PdfPoint Point1 { get; }
@@ -25,7 +33,7 @@ namespace UglyToad.PdfPig.Geometry
         public PdfPoint Point2 { get; }
 
         /// <summary>
-        /// A line in a PDF file. 
+        /// Create a new <see cref="PdfLine"/>.
         /// </summary>
         /// <param name="x1"></param>
         /// <param name="y1"></param>
@@ -34,7 +42,7 @@ namespace UglyToad.PdfPig.Geometry
         public PdfLine(decimal x1, decimal y1, decimal x2, decimal y2) : this(new PdfPoint(x1, y1), new PdfPoint(x2, y2)) { }
 
         /// <summary>
-        /// A line in a PDF file. 
+        /// Create a new <see cref="PdfLine"/>.
         /// </summary>
         /// <param name="point1">First point of the line.</param>
         /// <param name="point2">Second point of the line.</param>

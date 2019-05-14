@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using UglyToad.PdfPig.Geometry;
 using System.Linq;
+using UglyToad.PdfPig.Geometry;
 
 namespace UglyToad.PdfPig.Content
 {
     /// <summary>
-    /// A line.
+    /// A line of text.
     /// </summary>
-    public class Line
+    public class TextLine
     {
         /// <summary>
         /// The text of the line.
@@ -32,10 +31,10 @@ namespace UglyToad.PdfPig.Content
         public IReadOnlyList<Word> Words { get; }
 
         /// <summary>
-        /// Create a new <see cref="Word"/>.
+        /// Create a new <see cref="TextLine"/>.
         /// </summary>
-        /// <param name="words">The letters contained in the word.</param>
-        public Line(IReadOnlyList<Word> words)
+        /// <param name="words">The words contained in the word.</param>
+        public TextLine(IReadOnlyList<Word> words)
         {
             if (words == null)
             {
@@ -57,7 +56,14 @@ namespace UglyToad.PdfPig.Content
             var maxY = words.Max(x => x.BoundingBox.Top);
             BoundingBox = new PdfRectangle(minX, minY, maxX, maxY);
 
-            TextDirection = words[0].TextDirection;
+            if (words.All(x => x.TextDirection == words[0].TextDirection))
+            {
+                TextDirection = words[0].TextDirection;
+            }
+            else
+            {
+                TextDirection = TextDirection.Unknown;
+            }
         }
 
         /// <inheritdoc />

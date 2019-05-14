@@ -69,7 +69,7 @@
         internal PdfRectangle(short x1, short y1, short x2, short y2) : this((decimal) x1, y1, x2, y2) { }
 
         /// <summary>
-        /// A rectangle in a PDF file. 
+        /// Create a new <see cref="PdfRectangle"/>.
         /// </summary>
         /// <param name="x1"></param>
         /// <param name="y1"></param>
