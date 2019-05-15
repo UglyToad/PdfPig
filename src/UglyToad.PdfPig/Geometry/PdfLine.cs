@@ -17,7 +17,8 @@
         {
             get
             {
-                decimal l = (Point1.X - Point1.X) * (Point1.X - Point1.X) + (Point1.Y - Point1.Y) * (Point1.Y - Point1.Y);
+                decimal l = (Point1.X - Point2.X) * (Point1.X - Point2.X) + 
+                    (Point1.Y - Point2.Y) * (Point1.Y - Point2.Y);
                 return (decimal)System.Math.Sqrt((double)l);
             }
         }
