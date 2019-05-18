@@ -33,7 +33,7 @@ namespace UglyToad.PdfPig.Content
         /// <summary>
         /// Create a new <see cref="TextLine"/>.
         /// </summary>
-        /// <param name="words">The words contained in the word.</param>
+        /// <param name="words">The words contained in the line.</param>
         public TextLine(IReadOnlyList<Word> words)
         {
             if (words == null)

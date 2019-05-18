@@ -71,10 +71,6 @@
         /// <summary>
         /// Create a new <see cref="PdfRectangle"/>.
         /// </summary>
-        /// <param name="x1"></param>
-        /// <param name="y1"></param>
-        /// <param name="x2"></param>
-        /// <param name="y2"></param>
         public PdfRectangle(decimal x1, decimal y1, decimal x2, decimal y2)
         {
             decimal bottom;
@@ -132,7 +128,6 @@
         /// <summary>
         /// To string override.
         /// </summary>
-        /// <returns></returns>
         public override string ToString()
         {
             return $"[{TopLeft}, {Width}, {Height}]";
