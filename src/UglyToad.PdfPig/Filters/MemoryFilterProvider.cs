@@ -17,6 +17,7 @@
             IFilter AsciiHexFunc() => new AsciiHexDecodeFilter();
             IFilter FlateFunc() => new FlateFilter(decodeParameterResolver, pngPredictor, log);
             IFilter RunLengthFunc() => new RunLengthFilter();
+            IFilter LzwFunc() => new LzwFilter(decodeParameterResolver, pngPredictor);
 
             filterFactories = new Dictionary<string, Func<IFilter>>
             {
@@ -27,7 +28,9 @@
                 {NameToken.FlateDecode.Data, FlateFunc},
                 {NameToken.FlateDecodeAbbreviation.Data, FlateFunc},
                 {NameToken.RunLengthDecode.Data, RunLengthFunc},
-                {NameToken.RunLengthDecodeAbbreviation.Data, RunLengthFunc}
+                {NameToken.RunLengthDecodeAbbreviation.Data, RunLengthFunc},
+                {NameToken.LzwDecode, LzwFunc},
+                {NameToken.LzwDecodeAbbreviation, LzwFunc}
             };
         }
 
