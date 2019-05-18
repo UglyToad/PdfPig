@@ -127,13 +127,30 @@
 
             boundingBox = matrix.Transform(boundingBox);
 
-            var width = matrix.TransformX(widths[characterCode - firstChar]);
+            var width = matrix.TransformX(GetWidth(characterCode, boundingBox));
 
             var result = new CharacterBoundingBox(boundingBox, width);
 
             cachedBoundingBoxes[characterCode] = result;
 
             return result;
+        }
+
+        private decimal GetWidth(int characterCode, PdfRectangle boundingBox)
+        {
+            var widthIndex = characterCode - firstChar;
+
+            if (widthIndex >= 0 && widthIndex < widths.Length)
+            {
+                return widths[widthIndex];
+            }
+
+            if (fontDescriptor?.MissingWidth != null)
+            {
+                return fontDescriptor.MissingWidth;
+            }
+
+            return boundingBox.Width;
         }
         
         private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
