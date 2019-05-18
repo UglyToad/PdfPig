@@ -155,6 +155,11 @@
                 return ToUnicode.TryGet(characterCode, out value);
             }
 
+            if (encoding == null)
+            {
+                return false;
+            }
+
             // If the font is a simple font that uses one of the predefined encodings MacRomanEncoding, MacExpertEncoding, or WinAnsiEncoding...
 
             //  Map the character code to a character name.

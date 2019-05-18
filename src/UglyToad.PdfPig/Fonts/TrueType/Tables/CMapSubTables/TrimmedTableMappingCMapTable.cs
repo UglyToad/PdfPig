@@ -43,6 +43,11 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
 
             var offset = characterCode - FirstCharacterCode;
 
+            if (offset < 0 || offset >= glyphIndices.Length)
+            {
+                return 0;
+            }
+
             return glyphIndices[offset];
         }
 

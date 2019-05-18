@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Parser.Handlers
 {
     using System;
+    using System.Collections.Generic;
     using SystemFonts;
     using Cmap;
     using Encodings;
@@ -99,6 +100,34 @@
             }
 
             Encoding encoding = encodingReader.Read(dictionary, isLenientParsing, descriptor);
+
+            if (encoding == null && font?.TableRegister?.CMapTable != null
+                                 && font.TableRegister.PostScriptTable?.GlyphNames != null)
+            {
+                var postscript = font.TableRegister.PostScriptTable;
+
+                // Synthesize an encoding
+                var fakeEncoding = new Dictionary<int, string>();
+                for (var i = 0; i < 256; i++)
+                {
+                    if (font.TableRegister.CMapTable.TryGetGlyphIndex(i, out var index))
+                    {
+                        string glyphName;
+                        if (index >= 0 && index < postscript.GlyphNames.Length)
+                        {
+                            glyphName = postscript.GlyphNames[index];
+                        }
+                        else
+                        {
+                            glyphName = index.ToString();
+                        }
+
+                        fakeEncoding[i] = glyphName;
+                    }
+                }
+
+                encoding = new BuiltInEncoding(fakeEncoding);
+            }
 
             return new TrueTypeSimpleFont(name, descriptor, toUnicodeCMap, encoding, font, firstCharacter, widths);
         }

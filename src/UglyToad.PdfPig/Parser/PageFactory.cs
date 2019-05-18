@@ -53,8 +53,8 @@
                 throw new InvalidOperationException($"Page {number} had its type specified as {type} rather than 'Page'.");
             }
 
-            MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers, log, isLenientParsing);
-            CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox, log, isLenientParsing);
+            MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers, isLenientParsing);
+            CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox, isLenientParsing);
             
             UserSpaceUnit userSpaceUnit = GetUserSpaceUnits(dictionary);
 
@@ -135,10 +135,11 @@
             return spaceUnits;
         }
 
-        private static CropBox GetCropBox(DictionaryToken dictionary, PageTreeMembers pageTreeMembers, MediaBox mediaBox, ILog log, bool isLenientParsing)
+        private CropBox GetCropBox(DictionaryToken dictionary, PageTreeMembers pageTreeMembers, MediaBox mediaBox, bool isLenientParsing)
         {
             CropBox cropBox;
-            if (dictionary.TryGet(NameToken.CropBox, out var cropBoxObject) && cropBoxObject is ArrayToken cropBoxArray)
+            if (dictionary.TryGet(NameToken.CropBox, out var cropBoxObject) &&
+                DirectObjectFinder.TryGet(cropBoxObject, pdfScanner, out ArrayToken cropBoxArray))
             {
                 if (cropBoxArray.Length != 4 && isLenientParsing)
                 {
@@ -159,10 +160,11 @@
             return cropBox;
         }
 
-        private static MediaBox GetMediaBox(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers, ILog log, bool isLenientParsing)
+        private MediaBox GetMediaBox(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers, bool isLenientParsing)
         {
             MediaBox mediaBox;
-            if (dictionary.TryGet(NameToken.MediaBox, out var mediaboxObject) && mediaboxObject is ArrayToken mediaboxArray)
+            if (dictionary.TryGet(NameToken.MediaBox, out var mediaboxObject) 
+                && DirectObjectFinder.TryGet(mediaboxObject, pdfScanner, out ArrayToken mediaboxArray))
             {
                 if (mediaboxArray.Length != 4 && isLenientParsing)
                 {
