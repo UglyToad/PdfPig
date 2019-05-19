@@ -83,7 +83,8 @@
 
                     if (command == null)
                     {
-                        throw new InvalidOperationException($"Could not find command with code {b}.");
+                        // Treat as invalid but skip
+                        continue;
                     }
 
                     interpreted.Add(new Union<decimal, LazyType1Command>.Case2(command));

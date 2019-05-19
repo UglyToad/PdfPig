@@ -34,5 +34,10 @@
             Subroutine,
             Charstring
         }
+
+        public override string ToString()
+        {
+            return $"{Name} {Source} {Index} {Bytes.Count} bytes";
+        }
     }
 }
