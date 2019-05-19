@@ -15,7 +15,10 @@
     /// </summary>
     public class Page
     {
-        private readonly DictionaryToken dictionary;
+        /// <summary>
+        /// The raw PDF dictionary token for this page in the document.
+        /// </summary>
+        public DictionaryToken Dictionary { get; }
 
         /// <summary>
         /// The page number (starting at 1).
@@ -72,7 +75,7 @@
                 throw new ArgumentOutOfRangeException(nameof(number), "Page number cannot be 0 or negative.");
             }
 
-            this.dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
+            Dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
 
             Number = number;
             MediaBox = mediaBox;

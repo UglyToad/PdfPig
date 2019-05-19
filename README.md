@@ -2,7 +2,6 @@
 
 # PdfPig #
 
-
 [![Build status](https://ci.appveyor.com/api/projects/status/ni7et2j2ml60pdi3?svg=true)](https://ci.appveyor.com/project/EliotJones/pdf)
 [![codecov](https://codecov.io/gh/UglyToad/PdfPig/branch/master/graph/badge.svg)](https://codecov.io/gh/UglyToad/PdfPig)
 
@@ -58,11 +57,6 @@ Or from the package manager console:
 
 While the version is below 1.0.0 minor versions will change the public API without warning (SemVer will not be followed until 1.0.0 is reached).
 
-## API Changes ##
-
-+ 0.0.3 - Changes to position data for ```Letter```. Letter has a Location, Width and GlyphRectangle property. Consult the [Wiki](https://github.com/UglyToad/PdfPig/wiki/Letters) for details of the new API. Adds ```PdfDocument.Structure``` property allowing access to raw data.
-+ 0.0.5 - Adds the ability to create valid PDF documents with custom text, lines and rectangles. Use ```PdfDocumentBuilder``` to get started. Adds the ability to retrieve per-page annotations using the experimental access on the page level.
-
 ## Usage ##
 
 The ```PdfDocument``` class provides access to the contents of a document loaded either from file or passed in as bytes. To open from a file use the ```PdfDocument.Open``` static method:
@@ -83,6 +77,8 @@ The ```PdfDocument``` class provides access to the contents of a document loaded
     }
     
 ```PdfDocument``` should only be used in a ```using``` statement since it implements ```IDisposable``` (unless the consumer disposes of it elsewhere).
+
+Documents which are encrypted using the RC4 algorithm can be opened with PdfPig (AES is unsupported at the moment). To provide an owner or user password provide the optional `ParsingOptions` when calling `Open` with the `Password` property defined.
 
 Since this is alpha software the consumer should wrap all access in a ```try catch``` block since it is extremely likely to throw exceptions. As a fallback you can try running PDFBox using [IKVM](https://www.ikvm.net/) or using [PDFsharp](http://www.pdfsharp.net) or by a native library wrapper using [docnet](https://github.com/GowenGit/docnet).
 
@@ -184,6 +180,12 @@ There is a new (0.0.3) method which provides access to the words. This uses basi
 
     IEnumerable<Word> words = page.GetWords();
 
+You can also (0.0.6) access the raw operations used in the page's content stream for drawing graphics and content on the page:
+
+    IReadOnlyList<IGraphicsStateOperation> operations = page.Operations;
+
+Consult the PDF specification for the meaning of individual operators.
+
 There is also an early access (0.0.3) API for retrieving the raw bytes of PDF image objects per page:
 
     IEnumerable<XObjectImage> images = page.ExperimentalAccess.GetRawImages();
@@ -206,10 +208,9 @@ These letters contain:
 + The font size in unscaled relative text units (these sizes are internal to the PDF and do not correspond to sizes in pixels, points or other units): ```letter.FontSize```.
 + The name of the font used to render the letter if available: ```letter.FontName```.
 + A rectangle which is the smallest rectangle that completely contains the visible region of the letter/glyph: ```letter.GlyphRectangle```.
++ The points at the start and end of the baseline `StartBaseLine` and `EndBaseLine` which indicate if the letter is rotated. The `TextDirection` indicates if this is a commonly used rotation or a custom rotation.
 
 Letter position is measured in PDF coordinates where the origin is the lower left corner of the page. Therefore a higher Y value means closer to the top of the page.
-
-At this stage letter position is experimental and **will change in future versions**! Do not rely on letter positions remaining constant between different versions of this package.
 
 ### Annotations ###
 
@@ -227,21 +228,11 @@ Please do file an issue if you encounter a bug.
 
 However in order for us to assist you, you **must** provide the file which causes your issue. Please host this in a publically available place.
 
-Issues on unplanned features are off topic for now and will probably be closed with a comment explaining roughly the importance on the road map.
-
 ## Status ##
 
-*Why is class or property X internal?* With the exception of ```letter.Location``` and ```XObjectImage``` internal properties and classes are not stable enough for the end user yet. If you want to access them feel free to use reflection but be aware they may change or disappear between versions.
+*Why is class or property X internal?* Internal properties and classes are not stable enough for the end user yet. If you want to access them feel free to use reflection but be aware they may change or disappear between versions.
 
-The initial version of this package aims only to support reading text content from unencrypted PDF files. Due to the legal and dependency consequences of decrypting, handling encrypted documents is not in scope.
-
-An encrypted document will throw a ```NotSupportedException```.
-
-We plan to eventually support writing PDFs as well as reading images, form objects and graphics from the PDF however these are future enhancements which do not feature in the first version.
-
-Additionally most testing has taken place with Latin character sets. Due to the more complex way the PDF specification handles CJK (Chinese, Japanese and Korean) character sets these will probably not be handled correctly for now.
-
-Please raise an issue (or preferably a pull request) if you're trying to read these documents however we may not get to it for a while depending on the volume of bugs.
+Most testing has taken place with Latin character sets. Due to the more complex way the PDF specification handles CJK (Chinese, Japanese and Korean) character sets these will probably not be handled correctly for now. Please raise an issue (or preferably a pull request) if you have problems trying to read these documents.
 
 ## Credit ##
 
