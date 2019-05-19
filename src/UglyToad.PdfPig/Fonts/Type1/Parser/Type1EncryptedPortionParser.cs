@@ -24,7 +24,7 @@
             }
 
             var decrypted = Decrypt(bytes, EexecEncryptionKey, EexecRandomBytes);
-
+            
             var tokenizer = new Type1Tokenizer(new ByteArrayInputBytes(decrypted));
 
             /*
@@ -481,6 +481,11 @@
 
         private static void ReadTillDef(Type1Tokenizer tokenizer, bool skip = false)
         {
+            if (string.Equals(tokenizer.CurrentToken.Text, "def", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
             Type1Token token;
             while ((token = tokenizer.GetNext()) != null)
             {
