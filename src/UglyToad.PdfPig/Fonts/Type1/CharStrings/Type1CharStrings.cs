@@ -25,27 +25,27 @@
             Subroutines = subroutines ?? throw new ArgumentNullException(nameof(subroutines));
         }
 
-        public PdfPath Generate(string name)
+        public bool TryGenerate(string name, out PdfPath path)
         {
-            PdfPath glyph;
+            path = default(PdfPath);
             lock (locker)
             {
-                if (glyphs.TryGetValue(name, out var result))
+                if (glyphs.TryGetValue(name, out path))
                 {
-                    return result;
+                    return true;
                 }
 
                 if (!CharStrings.TryGetValue(name, out var sequence))
                 {
-                    throw new InvalidOperationException($"No charstring sequence with the name /{name} in this font.");
+                    return false;
                 }
 
-                glyph = Run(sequence);
+                path = Run(sequence);
 
-                glyphs[name] = glyph;
+                glyphs[name] = path;
             }
 
-            return glyph;
+            return true;
         }
 
         private PdfPath Run(CommandSequence sequence)

@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using CharStrings;
     using Core;
     using Geometry;
@@ -62,7 +61,11 @@
 
         public PdfRectangle? GetCharacterBoundingBox(string characterName)
         {
-            var glyph = CharStrings.Generate(characterName);
+            if (!CharStrings.TryGenerate(characterName, out var glyph))
+            {
+                return null;
+            }
+
             var bbox = glyph.GetBoundingRectangle();
 
             return bbox;
@@ -77,7 +80,7 @@
         {
             if (FontMatrix == null || FontMatrix.Data.Count != 6)
             {
-                return TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);;
+                return TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);
             }
 
             var a = ((NumericToken) FontMatrix.Data[0]).Data;

@@ -94,6 +94,12 @@
                     result[key] = token;
                 }
 
+                // skip def.
+                if (PeekNext(tokens, i) == OperatorToken.Def)
+                {
+                    i++;
+                }
+
                 key = null;
             }
 

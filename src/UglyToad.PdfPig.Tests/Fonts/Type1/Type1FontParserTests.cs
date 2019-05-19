@@ -63,7 +63,7 @@
             var builder = new StringBuilder("<!DOCTYPE html><html><head></head><body>");
             foreach (var charString in result.CharStrings.CharStrings)
             {
-                var path = result.CharStrings.Generate(charString.Key);
+                Assert.True(result.CharStrings.TryGenerate(charString.Key, out var path));
                 builder.AppendLine(path.ToFullSvg());
             }
 
