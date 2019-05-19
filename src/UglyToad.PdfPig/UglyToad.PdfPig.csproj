@@ -9,12 +9,12 @@
     <Description>Reads text content from PDF documents and supports document creation.</Description>
     <PackageLicenseUrl>https://raw.githubusercontent.com/UglyToad/PdfPig/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/UglyToad/PdfPig</PackageProjectUrl>
-    <PackageTags>PDF;Reader;Document;Adobe;PDFBox;PdfPig</PackageTags>
+    <PackageTags>PDF;Reader;Document;Adobe;PDFBox;PdfPig;pdf-extract</PackageTags>
     <RepositoryUrl>https://github.com/UglyToad/PdfPig</RepositoryUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>0.0.5</Version>
-    <AssemblyVersion>0.0.5.0</AssemblyVersion>
-    <FileVersion>0.0.3.0</FileVersion>
+    <Version>0.0.6</Version>
+    <AssemblyVersion>0.0.6.0</AssemblyVersion>
+    <FileVersion>0.0.6.0</FileVersion>
     <PackageIconUrl>https://raw.githubusercontent.com/UglyToad/PdfPig/master/documentation/pdfpig.png</PackageIconUrl>
     <Product>PdfPig</Product>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -42,7 +42,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta-63127-02">
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta2-18618-05">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
