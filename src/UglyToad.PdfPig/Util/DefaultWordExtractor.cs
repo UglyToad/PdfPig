@@ -96,7 +96,7 @@
 
         private static Word GenerateWord(List<Letter> letters)
         {
-            return new Word(letters);
+            return new Word(letters.ToList());
         }
 
         public static IWordExtractor Instance { get; } = new DefaultWordExtractor();
