@@ -146,7 +146,32 @@
                 }
             }
 
-            token = new StringToken(builder.ToString());
+            string tokenStr;
+            if (builder.Length >= 2)
+            {
+                if (builder[0] == 0xFE && builder[1] == 0xFF)
+                {
+                    var rawBytes = OtherEncodings.StringAsLatin1Bytes(builder.ToString());
+
+                    tokenStr = Encoding.BigEndianUnicode.GetString(rawBytes);
+                }
+                else if (builder[0] == 0xFF && builder[1] == 0xFE)
+                {
+                    var rawBytes = OtherEncodings.StringAsLatin1Bytes(builder.ToString());
+
+                    tokenStr = Encoding.Unicode.GetString(rawBytes);
+                }
+                else
+                {
+                    tokenStr = builder.ToString();
+                }
+            }
+            else
+            {
+                tokenStr = builder.ToString();
+            }
+
+            token = new StringToken(tokenStr);
 
             return true;
         }

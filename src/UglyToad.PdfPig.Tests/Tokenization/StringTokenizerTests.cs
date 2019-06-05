@@ -18,7 +18,6 @@
         }
 
         [Theory]
-        [InlineData(')')]
         [InlineData('<')]
         [InlineData('\\')]
         [InlineData('A')]
@@ -259,6 +258,22 @@ are the same.)";
             Assert.True(result);
 
             Assert.Equal(@"   (sleep 1; printf ""QUIT\r\n"") | ", AssertStringToken(token).Data);
+        }
+
+        [Fact]
+        public void HandlesUtf16Strings()
+        {
+            var input = new ByteArrayInputBytes(new byte[]
+            {
+                0xFE, 0xFF, 0x00, 0x4D, 0x00, 0x69, 0x00,
+                0x63, 0x29
+            });
+
+            var result = tokenizer.TryTokenize(0x28, input, out var token);
+
+            Assert.True(result);
+
+            Assert.Equal(@"﻿Mic", AssertStringToken(token).Data);
         }
 
         private static StringToken AssertStringToken(IToken token)
