@@ -45,9 +45,11 @@
 
         public IToken CurrentToken { get; private set; }
 
+        private IndirectReference? callingObject;
+
         public long CurrentPosition => coreTokenScanner.CurrentPosition;
 
-        public PdfTokenScanner(IInputBytes inputBytes, IObjectLocationProvider objectLocationProvider, IFilterProvider filterProvider, 
+        public PdfTokenScanner(IInputBytes inputBytes, IObjectLocationProvider objectLocationProvider, IFilterProvider filterProvider,
             IEncryptionHandler encryptionHandler)
         {
             this.inputBytes = inputBytes;
@@ -94,8 +96,7 @@
 
             if (objectNumber == null || generation == null)
             {
-                throw new PdfDocumentFormatException("The obj operator (start object) was not preceded by a 2 numbers." +
-                                                     $"Instead got: {previousTokens[0]} {previousTokens[1]} obj");
+                return false;
             }
 
             // Read all tokens between obj and endobj.
@@ -115,11 +116,27 @@
 
                 if (ReferenceEquals(coreTokenScanner.CurrentToken, OperatorToken.StartStream))
                 {
-                    // Read stream: special case.
-                    if (TryReadStream(coreTokenScanner.CurrentTokenStart, out var stream))
+                    var streamIdentifier = new IndirectReference(objectNumber.Long, generation.Int);
+
+                    // Prevent an infinite loop where a stream's length references the stream or the stream's offset.
+                    var getLengthFromFile = !(callingObject.HasValue && callingObject.Value.Equals(streamIdentifier));
+
+                    var outerCallingObject = callingObject;
+
+                    try
                     {
-                        readTokens.Clear();
-                        readTokens.Add(stream);
+                        callingObject = streamIdentifier;
+
+                        // Read stream: special case.
+                        if (TryReadStream(coreTokenScanner.CurrentTokenStart, getLengthFromFile, out var stream))
+                        {
+                            readTokens.Clear();
+                            readTokens.Add(stream);
+                        }
+                    }
+                    finally
+                    {
+                        callingObject = outerCallingObject;
                     }
                 }
                 else
@@ -168,14 +185,14 @@
             return true;
         }
 
-        private bool TryReadStream(long startStreamTokenOffset, out StreamToken stream)
+        private bool TryReadStream(long startStreamTokenOffset, bool getLength, out StreamToken stream)
         {
             stream = null;
 
             DictionaryToken streamDictionaryToken = GetStreamDictionary();
 
             // Get the expected length from the stream dictionary if present.
-            long? length = GetStreamLength(streamDictionaryToken);
+            long? length = getLength ? GetStreamLength(streamDictionaryToken) : default(long?);
 
             // Verify again that we start with "stream"
             var hasStartStreamToken = ReadStreamTokenStart(inputBytes, startStreamTokenOffset);
@@ -218,7 +235,7 @@
 
             // Track any 'endobj' or 'endstream' operators we see.
             var observedEndLocations = new List<PossibleStreamEndLocation>();
-            
+
             // Begin reading the stream.
             using (var memoryStream = new MemoryStream())
             using (var binaryWrite = new BinaryWriter(memoryStream))
@@ -304,9 +321,9 @@
 
                         endStreamPosition = 0;
                         endObjPosition = 0;
-                        commonPartPosition = (inputBytes.CurrentByte == commonPart[0]) ? 1  : 0;
+                        commonPartPosition = (inputBytes.CurrentByte == commonPart[0]) ? 1 : 0;
                     }
-                    
+
                     binaryWrite.Write(inputBytes.CurrentByte);
 
                     read++;
@@ -491,10 +508,30 @@
 
             if (!MoveNext())
             {
-                throw new InvalidOperationException($"Could not parse the object with reference: {reference}.");
+                throw new PdfDocumentFormatException($"Could not parse the object with reference: {reference}.");
             }
 
-            return (ObjectToken)CurrentToken;
+            var found = (ObjectToken)CurrentToken;
+
+            if (found.Number.Equals(reference))
+            {
+                return found;
+            }
+
+            // Brute force read the entire file
+            Seek(0);
+
+            while (MoveNext())
+            {
+                objectLocationProvider.Cache((ObjectToken)CurrentToken);
+            }
+
+            if (!objectLocationProvider.TryGetCached(reference, out objectToken))
+            {
+                throw new PdfDocumentFormatException($"Could not locate object with reference: {reference} despite a full document search.");
+            }
+
+            return objectToken;
         }
 
         private ObjectToken GetObjectFromStream(IndirectReference reference, long offset)
@@ -548,9 +585,9 @@
             for (var i = 0; i < numberOfObjects.Int; i++)
             {
                 scanner.MoveNext();
-                var objectNumber = (NumericToken) scanner.CurrentToken;
+                var objectNumber = (NumericToken)scanner.CurrentToken;
                 scanner.MoveNext();
-                var byteOffset = (NumericToken) scanner.CurrentToken;
+                var byteOffset = (NumericToken)scanner.CurrentToken;
 
                 objects.Add(Tuple.Create(objectNumber.Long, byteOffset.Long));
             }
