@@ -39,6 +39,7 @@
         public static readonly NameToken Ascii85Decode = new NameToken("ASCII85Decode");
         public static readonly NameToken Ascii85DecodeAbbreviation = new NameToken("A85");
         public static readonly NameToken Attached = new NameToken("Attached");
+        public static readonly NameToken AuthEvent = new NameToken("AuthEvent");
         public static readonly NameToken Author = new NameToken("Author");
         public static readonly NameToken AvgWidth = new NameToken("AvgWidth");
         #endregion
@@ -126,6 +127,7 @@
         public static readonly NameToken Creator = new NameToken("Creator");
         public static readonly NameToken CropBox = new NameToken("CropBox");
         public static readonly NameToken Crypt = new NameToken("Crypt");
+        public static readonly NameToken CryptFilter = new NameToken("CryptFilter");
         public static readonly NameToken Cs = new NameToken("CS");
         // D
         public static readonly NameToken D = new NameToken("D");
@@ -164,6 +166,7 @@
         public static readonly NameToken Dl = new NameToken("DL");
         public static readonly NameToken Dm = new NameToken("Dm");
         public static readonly NameToken Doc = new NameToken("Doc");
+        public static readonly NameToken DocOpen = new NameToken("DocOpen");
         public static readonly NameToken DocChecksum = new NameToken("DocChecksum");
         public static readonly NameToken DocTimeStamp = new NameToken("DocTimeStamp");
         public static readonly NameToken Docmdp = new NameToken("DocMDP");
@@ -181,6 +184,7 @@
         public static readonly NameToken E = new NameToken("E");
         public static readonly NameToken EarlyChange = new NameToken("EarlyChange");
         public static readonly NameToken Ef = new NameToken("EF");
+        public static readonly NameToken EfOpen = new NameToken("EFOpen");
         public static readonly NameToken EmbeddedFdfs = new NameToken("EmbeddedFDFs");
         public static readonly NameToken EmbeddedFiles = new NameToken("EmbeddedFiles");
         public static readonly NameToken Empty = new NameToken("");
@@ -527,6 +531,7 @@
         public static readonly NameToken UserUnit = new NameToken("UserUnit");
         // V
         public static readonly NameToken V = new NameToken("V");
+        public static readonly NameToken V2 = new NameToken("V2");
         public static readonly NameToken VerisignPpkvs = new NameToken("VeriSign.PPKVS");
         public static readonly NameToken Version = new NameToken("Version");
         public static readonly NameToken Vertices = new NameToken("Vertices");

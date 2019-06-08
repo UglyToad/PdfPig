@@ -29,7 +29,10 @@
 
         [CanBeNull]
         private readonly EncryptionDictionary encryptionDictionary;
-        
+
+        [CanBeNull]
+        private readonly CryptHandler cryptHandler;
+
         private readonly byte[] encryptionKey;
 
         private readonly bool useAes;
@@ -49,9 +52,18 @@
                 return;
             }
 
+            useAes = false;
+
             if (encryptionDictionary.EncryptionAlgorithmCode == EncryptionAlgorithmCode.SecurityHandlerInDocument)
             {
-                throw new PdfDocumentEncryptedException("Document encrypted with unsupported algorithm.", encryptionDictionary);
+                if (!encryptionDictionary.TryGetCryptHandler(out var cryptHandlerLocal))
+                {
+                    throw new PdfDocumentEncryptedException("Document encrypted with security handler in document but no crypt dictionary found.", encryptionDictionary);
+                }
+
+                cryptHandler = cryptHandlerLocal;
+
+                useAes = cryptHandlerLocal?.StreamDictionary?.Name == CryptDictionary.Method.AesV2;
             }
 
             var charset = OtherEncodings.Iso88591;
@@ -93,19 +105,15 @@
                 throw new PdfDocumentEncryptedException("The document was encrypted and the provided password was neither the user or owner password.", encryptionDictionary);
             }
 
-            encryptionKey = CalculateKeyRevisions2To4(decryptionPasswordBytes, encryptionDictionary.OwnerBytes, (int)encryptionDictionary.UserAccessPermissions,
-                encryptionDictionary.StandardSecurityHandlerRevision,
+            encryptionKey = CalculateKeyRevisions2To4(decryptionPasswordBytes, encryptionDictionary,
                 length,
                 documentIdBytes);
-
-            useAes = false;
         }
 
         private static bool IsUserPassword(byte[] passwordBytes, EncryptionDictionary encryptionDictionary, int length, byte[] documentIdBytes)
         {
             // 1. Create an encryption key based on the user password string.
-            var calculatedEncryptionKey = CalculateKeyRevisions2To4(passwordBytes, encryptionDictionary.OwnerBytes, (int)encryptionDictionary.UserAccessPermissions,
-                    encryptionDictionary.StandardSecurityHandlerRevision, length, documentIdBytes);
+            var calculatedEncryptionKey = CalculateKeyRevisions2To4(passwordBytes, encryptionDictionary, length, documentIdBytes);
 
             byte[] output;
 
@@ -245,6 +253,13 @@
             {
                 case StreamToken stream:
                     {
+                        if (cryptHandler?.StreamDictionary?.IsIdentity == true
+                            || cryptHandler?.StreamDictionary?.Name == CryptDictionary.Method.None)
+                        {
+                            // TODO: No idea if this is right.
+                            return token;
+                        }
+
                         if (stream.StreamDictionary.TryGet(NameToken.Type, out NameToken typeName))
                         {
                             if (NameToken.Xref.Equals(typeName))
@@ -270,6 +285,13 @@
                     }
                 case StringToken stringToken:
                     {
+                        if (cryptHandler?.StringDictionary?.IsIdentity == true
+                            || cryptHandler?.StringDictionary?.Name == CryptDictionary.Method.None)
+                        {
+                            // TODO: No idea if this is right.
+                            return token;
+                        }
+
                         var data = OtherEncodings.StringAsLatin1Bytes(stringToken.Data);
 
                         var decrypted = DecryptData(data, reference);
@@ -386,11 +408,12 @@
             }
         }
 
-        private static byte[] CalculateKeyRevisions2To4(byte[] password, byte[] ownerKey,
-            int permissions, int revision, int length, byte[] documentId)
+        private static byte[] CalculateKeyRevisions2To4(byte[] password, EncryptionDictionary encryptionDictionary, int length, byte[] documentId)
         {
             // 1. Pad or truncate the password string to exactly 32 bytes. 
             var passwordFull = GetPaddedPassword(password);
+
+            var revision = encryptionDictionary.StandardSecurityHandlerRevision;
 
             using (var md5 = MD5.Create())
             {
@@ -398,10 +421,10 @@
                 UpdateMd5(md5, passwordFull);
 
                 // 3. Pass the value of the encryption dictionary's owner key entry to the MD5 hash function. 
-                UpdateMd5(md5, ownerKey);
+                UpdateMd5(md5, encryptionDictionary.OwnerBytes);
 
                 // 4. Treat the value of the P entry as an unsigned 4-byte integer. 
-                var unsigned = (uint)permissions;
+                var unsigned = (uint)encryptionDictionary.UserAccessPermissions;
 
                 // 4. Pass these bytes to the MD5 hash function, low-order byte first.
                 UpdateMd5(md5, new[] { (byte)(unsigned) });
@@ -414,7 +437,7 @@
 
                 // 6. (Revision 4 or greater) If document metadata is not being encrypted, pass 4 bytes
                 // with the value 0xFFFFFFFF to the MD5 hash function.
-                if (revision >= 4)
+                if (revision >= 4 && !encryptionDictionary.EncryptMetadata)
                 {
                     UpdateMd5(md5, new byte[] { 0xFF, 0xFF, 0xFF, 0xFF });
                 }
@@ -427,22 +450,33 @@
                 {
                     var n = length;
 
+                    md5.TransformFinalBlock(EmptyArray<byte>.Instance, 0, 0);
+
                     var input = md5.Hash;
-
-                    for (var i = 0; i < 50; i++)
+                    using (var newMd5 = MD5.Create())
                     {
-                        UpdateMd5(md5, input.Take(n).ToArray());
-                        input = md5.Hash;
+                        for (var i = 0; i < 50; i++)
+                        {
+                            input = newMd5.ComputeHash(input.Take(n).ToArray());
+                        }
                     }
+
+                    var result = new byte[length];
+
+                    Array.Copy(input, result, length);
+
+                    return result;
                 }
+                else
+                {
+                    md5.TransformFinalBlock(EmptyArray<byte>.Instance, 0, 0);
 
-                md5.TransformFinalBlock(EmptyArray<byte>.Instance, 0, 0);
+                    var result = new byte[length];
 
-                var result = new byte[length];
+                    Array.Copy(md5.Hash, result, length);
 
-                Array.Copy(md5.Hash, result, length);
-
-                return result;
+                    return result;
+                }
             }
         }
 
