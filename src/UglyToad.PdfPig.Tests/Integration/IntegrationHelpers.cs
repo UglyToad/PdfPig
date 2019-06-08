@@ -16,5 +16,17 @@
 
             return Path.Combine(documentFolder, name);
         }
+
+        public static string GetSpecificTestDocumentPath(string name, bool isPdf = true)
+        {
+            var documentFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Integration", "SpecificTestDocuments"));
+
+            if (!name.EndsWith(".pdf") && isPdf)
+            {
+                name += ".pdf";
+            }
+
+            return Path.Combine(documentFolder, name);
+        }
     }
 }

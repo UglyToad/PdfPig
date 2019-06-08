@@ -13,6 +13,7 @@
     <None Remove="Fonts\Type1\*.pfa" />
      <None Remove="Fonts\Type1\*.pfb" />
     <None Remove="Integration\Documents\*" />
+    <None Remove="Integration\SpecificTestDocuments\*" />
   </ItemGroup>
 
   <ItemGroup>
@@ -72,6 +73,7 @@
     <Content Include="Fonts\Type1\CMBX12.pfa" />
     <Content Include="Fonts\Type1\CMCSC10.pfa" />
     <Content Include="Fonts\Type1\Raleway-Black.pfb" />
+    <Content Include="Integration\SpecificTestDocuments\invalid-xref-loop.pdf" />
     <Content Include="Parser\SimpleGoogleDocPageContent.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
