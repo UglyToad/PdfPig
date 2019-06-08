@@ -358,7 +358,7 @@
 
             if (useAes)
             {
-                throw new PdfDocumentEncryptedException("Decryption for AES-128 not currently supported.", encryptionDictionary);
+                return AesEncryptionHelper.Decrypt(data, finalKey);
             }
 
             return RC4.Encrypt(finalKey, data);

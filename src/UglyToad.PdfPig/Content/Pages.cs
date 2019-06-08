@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using Geometry;
     using Logging;
     using Parser.Parts;
     using Tokenization.Scanner;
