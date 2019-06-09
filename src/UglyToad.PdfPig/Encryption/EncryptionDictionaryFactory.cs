@@ -46,9 +46,23 @@
                 access = (UserAccessPermissions) accessToken.Int;
             }
 
+            byte[] userEncryptionBytes = null, ownerEncryptionBytes = null;
+            if (revision >= 5)
+            {
+                var oe = encryptionDictionary.Get<StringToken>(NameToken.Oe, tokenScanner);
+                var ue = encryptionDictionary.Get<StringToken>(NameToken.Ue, tokenScanner);
+
+                ownerEncryptionBytes = OtherEncodings.StringAsLatin1Bytes(oe.Data);
+                userEncryptionBytes = OtherEncodings.StringAsLatin1Bytes(ue.Data);
+            }
+
             encryptionDictionary.TryGetOptionalTokenDirect(NameToken.EncryptMetaData, tokenScanner, out BooleanToken encryptMetadata);
 
-            return new EncryptionDictionary(filter.Data, code, length, revision, ownerString, userString, access, encryptionDictionary,
+            return new EncryptionDictionary(filter.Data, code, length, revision, ownerString, userString, 
+                ownerEncryptionBytes,
+                userEncryptionBytes,
+                access, 
+                encryptionDictionary,
                 encryptMetadata?.Data ?? true);
         }
     }

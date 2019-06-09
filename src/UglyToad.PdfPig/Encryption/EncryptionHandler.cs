@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Security.Cryptography;
     using System.Text;
@@ -68,13 +69,10 @@
 
             var charset = OtherEncodings.Iso88591;
 
-            if (encryptionDictionary.StandardSecurityHandlerRevision == 5 || encryptionDictionary.StandardSecurityHandlerRevision == 6)
+            if (encryptionDictionary.Revision == 5 || encryptionDictionary.Revision == 6)
             {
                 // ReSharper disable once RedundantAssignment
                 charset = Encoding.UTF8;
-
-                throw new PdfDocumentEncryptedException($"Revision of {encryptionDictionary.StandardSecurityHandlerRevision} not supported, please raise an issue.",
-                    encryptionDictionary);
             }
 
             var passwordBytes = charset.GetBytes(password);
@@ -85,13 +83,15 @@
                 ? 5
                 : encryptionDictionary.KeyLength.GetValueOrDefault() / 8;
 
+            var isUserPassword = false;
             if (IsUserPassword(passwordBytes, encryptionDictionary, length, documentIdBytes))
             {
                 decryptionPasswordBytes = passwordBytes;
+                isUserPassword = true;
             }
             else if (IsOwnerPassword(passwordBytes, encryptionDictionary, length, documentIdBytes, out var userPassBytes))
             {
-                if (encryptionDictionary.StandardSecurityHandlerRevision == 5 || encryptionDictionary.StandardSecurityHandlerRevision == 6)
+                if (encryptionDictionary.Revision == 5 || encryptionDictionary.Revision == 6)
                 {
                     decryptionPasswordBytes = passwordBytes;
                 }
@@ -105,19 +105,25 @@
                 throw new PdfDocumentEncryptedException("The document was encrypted and the provided password was neither the user or owner password.", encryptionDictionary);
             }
 
-            encryptionKey = CalculateKeyRevisions2To4(decryptionPasswordBytes, encryptionDictionary,
+            encryptionKey = CalculateEncryptionKey(decryptionPasswordBytes, encryptionDictionary,
                 length,
-                documentIdBytes);
+                documentIdBytes,
+                isUserPassword);
         }
 
         private static bool IsUserPassword(byte[] passwordBytes, EncryptionDictionary encryptionDictionary, int length, byte[] documentIdBytes)
         {
+            if (encryptionDictionary.Revision == 5 || encryptionDictionary.Revision == 6)
+            {
+                return IsUserPasswordRevision5And6(passwordBytes, encryptionDictionary);
+            }
+
             // 1. Create an encryption key based on the user password string.
             var calculatedEncryptionKey = CalculateKeyRevisions2To4(passwordBytes, encryptionDictionary, length, documentIdBytes);
 
             byte[] output;
 
-            if (encryptionDictionary.StandardSecurityHandlerRevision >= 3)
+            if (encryptionDictionary.Revision >= 3)
             {
                 using (var md5 = MD5.Create())
                 {
@@ -154,7 +160,7 @@
                 output = RC4.Encrypt(calculatedEncryptionKey, PaddingBytes);
             }
 
-            if (encryptionDictionary.StandardSecurityHandlerRevision >= 3)
+            if (encryptionDictionary.Revision >= 3)
             {
                 return encryptionDictionary.UserBytes.Take(16).SequenceEqual(output.Take(16));
             }
@@ -162,10 +168,37 @@
             return encryptionDictionary.UserBytes.SequenceEqual(output);
         }
 
+        private static bool IsUserPasswordRevision5And6(byte[] passwordBytes, EncryptionDictionary encryptionDictionary)
+        {
+            // Test the password against the user key by computing the SHA-256 hash of the UTF-8 password concatenated with the 8 bytes of User Validation Salt.
+            // If the 32-byte result matches the first 32 bytes of the U string, this is the user password
+            var truncatedPassword = TruncatePasswordTo127Bytes(passwordBytes);
+
+            // The 48-byte string consisting of the 32-byte hash followed by the User Validation Salt followed by the User Key Salt is stored as the U key
+            var userPasswordHash = new byte[32];
+            var userValidationSalt = new byte[8];
+            Array.Copy(encryptionDictionary.UserBytes, userPasswordHash, 32);
+            Array.Copy(encryptionDictionary.UserBytes, 32, userValidationSalt, 0, 8);
+
+            if (encryptionDictionary.Revision == 6)
+            {
+                throw new PdfDocumentEncryptedException($"Support for revision 6 encryption not implemented: {encryptionDictionary}.");
+            }
+
+            var result = ComputeSha256Hash(truncatedPassword, userValidationSalt);
+
+            return result.SequenceEqual(userPasswordHash);
+        }
+
         private static bool IsOwnerPassword(byte[] passwordBytes, EncryptionDictionary encryptionDictionary, int length, byte[] documentIdBytes,
             out byte[] userPassword)
         {
             userPassword = null;
+
+            if (encryptionDictionary.Revision == 5 || encryptionDictionary.Revision == 6)
+            {
+                return IsOwnerPasswordRevision5And6(passwordBytes, encryptionDictionary);
+            }
 
             // 1. Pad or truncate the owner password string, if there is no owner password use the user password instead.
             var paddedPassword = GetPaddedPassword(passwordBytes);
@@ -176,7 +209,7 @@
                 var hash = md5.ComputeHash(paddedPassword);
 
                 // 3. (Revision 3 or greater) Do the following 50 times: 
-                if (encryptionDictionary.StandardSecurityHandlerRevision >= 3)
+                if (encryptionDictionary.Revision >= 3)
                 {
                     // Take the output from the previous MD5 hash and pass it as input into a new MD5 hash.
                     for (var i = 0; i < 50; i++)
@@ -189,7 +222,7 @@
                 // where n is always 5 for revision 2 but for revision 3 or greater depends on the value of the encryption dictionary's Length entry. 
                 var key = hash.Take(length).ToArray();
 
-                if (encryptionDictionary.StandardSecurityHandlerRevision == 2)
+                if (encryptionDictionary.Revision == 2)
                 {
                     // 5. (Revision 2 only) Decrypt the value of the encryption dictionary's owner entry, 
                     // using an RC4 encryption function with the encryption key computed in step 1 - 4.
@@ -224,6 +257,29 @@
 
                 return result;
             }
+        }
+
+        private static bool IsOwnerPasswordRevision5And6(byte[] passwordBytes, EncryptionDictionary encryptionDictionary)
+        {
+            // Test the password against the user key by computing the SHA-256 hash of the UTF-8 password concatenated with the 8 bytes of Owner Validation Salt and the 48 byte  U string.
+            // If the 32 byte result matches the first 32 bytes of the O string, this is the user password.
+
+            var truncatedPassword = TruncatePasswordTo127Bytes(passwordBytes);
+
+            // The 48-byte string consisting of the 32-byte hash followed by the Owner Validation Salt followed by the Owner Key Salt is stored as the O key.
+            var ownerHash = new byte[32];
+            var validationSalt = new byte[8];
+            Array.Copy(encryptionDictionary.OwnerBytes, ownerHash, ownerHash.Length);
+            Array.Copy(encryptionDictionary.OwnerBytes, ownerHash.Length, validationSalt, 0, validationSalt.Length);
+
+            if (encryptionDictionary.Revision == 6)
+            {
+                throw new PdfDocumentEncryptedException($"Support for revision 6 encryption not implemented: {encryptionDictionary}.");
+            }
+
+            var result = ComputeSha256Hash(truncatedPassword, validationSalt);
+
+            return result.SequenceEqual(ownerHash);
         }
 
         public IToken Decrypt(IndirectReference reference, IToken token)
@@ -408,12 +464,27 @@
             }
         }
 
+        private static byte[] CalculateEncryptionKey(byte[] password, EncryptionDictionary encryptionDictionary, int length, byte[] documentId, bool isUserPassword)
+        {
+            if (encryptionDictionary.Revision >= 2 && encryptionDictionary.Revision <= 4)
+            {
+                return CalculateKeyRevisions2To4(password, encryptionDictionary, length, documentId);
+            }
+
+            if (encryptionDictionary.Revision <= 6)
+            {
+                return CalculateKeyRevisions5And6(password, encryptionDictionary, isUserPassword);
+            }
+
+            throw new PdfDocumentEncryptedException($"PDF encrypted with unrecognized revision: {encryptionDictionary}.");
+        }
+
         private static byte[] CalculateKeyRevisions2To4(byte[] password, EncryptionDictionary encryptionDictionary, int length, byte[] documentId)
         {
             // 1. Pad or truncate the password string to exactly 32 bytes. 
             var passwordFull = GetPaddedPassword(password);
 
-            var revision = encryptionDictionary.StandardSecurityHandlerRevision;
+            var revision = encryptionDictionary.Revision;
 
             using (var md5 = MD5.Create())
             {
@@ -480,6 +551,63 @@
             }
         }
 
+        private static byte[] CalculateKeyRevisions5And6(byte[] password, EncryptionDictionary encryptionDictionary, bool isUserPassword)
+        {
+            // Truncate the UTF-8 representation of the password to 127 bytes if it is longer than 127 bytes
+            password = TruncatePasswordTo127Bytes(password);
+
+            // If the password is the owner password:
+            // Compute an intermediate owner key by computing the SHA-256 hash of the UTF-8 password concatenated with the 8 bytes of owner Key Salt,
+            // concatenated with the 48-byte U string. The 32-byte result is the key used to decrypt the 32-byte OE string using AES-256 in CBC mode
+            // with no padding and an initialization vector of zero. The 32-byte result is the file encryption key.
+            if (!isUserPassword)
+            {
+                throw new PdfDocumentEncryptedException($"Unsupported owner key encryption with revision: {encryptionDictionary.Revision}.");
+            }
+
+            // If the password is the user password:
+            // Compute an intermediate user key by computing the SHA-256 hash of the UTF-8 password concatenated with the 8 bytes of user Key Salt.
+            // The 32-byte result is the key used to decrypt the 32-byte UE string using AES-256 in CBC mode with no padding and an initialization vector of zero.
+            // The 32-byte result is the file encryption key.
+            var userKeySalt = new byte[8];
+            Array.Copy(encryptionDictionary.UserBytes, 40, userKeySalt, 0, 8);
+
+            var intermediateKey = ComputeSha256Hash(password, userKeySalt);
+
+            var iv = new byte[16];
+
+            using (var rijndaelManaged = new RijndaelManaged { Key = intermediateKey, IV = iv, Mode = CipherMode.CBC, Padding = PaddingMode.None })
+            using (var memoryStream = new MemoryStream(encryptionDictionary.UserEncryptionBytes))
+            using (var output = new MemoryStream())
+            using (var cryptoStream = new CryptoStream(memoryStream, rijndaelManaged.CreateDecryptor(intermediateKey, iv), CryptoStreamMode.Read))
+            {
+                cryptoStream.CopyTo(output);
+                var result = output.ToArray();
+
+                return result;
+            }
+        }
+
+        private static byte[] ComputeSha256Hash(byte[] input1, byte[] input2, byte[] input3 = null)
+        {
+            using (var sha = SHA256.Create())
+            {
+                sha.TransformBlock(input1, 0, input1.Length, null, 0);
+                sha.TransformBlock(input2, 0, input2.Length, null, 0);
+
+                if (input3 != null)
+                {
+                    sha.TransformFinalBlock(input3, 0, input3.Length);
+                }
+                else
+                {
+                    sha.TransformFinalBlock(EmptyArray<byte>.Instance, 0, 0);
+                }
+
+                return sha.Hash;
+            }
+        }
+
         private static void UpdateMd5(MD5 md5, byte[] data)
         {
             md5.TransformBlock(data, 0, data.Length, null, 0);
@@ -505,6 +633,18 @@
                 Array.ConstrainedCopy(PaddingBytes, 0, result, passwordBytes, paddingBytes);
             }
 
+            return result;
+        }
+
+        private static byte[] TruncatePasswordTo127Bytes(byte[] password)
+        {
+            if (password.Length <= 127)
+            {
+                return password;
+            }
+
+            var result = new byte[127];
+            Array.Copy(password, result, 127);
             return result;
         }
     }

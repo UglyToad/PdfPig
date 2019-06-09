@@ -4,6 +4,7 @@
     using Exceptions;
     using Tokens;
     using Util;
+    using Util.JetBrains.Annotations;
 
     internal class EncryptionDictionary
     {
@@ -13,7 +14,7 @@
 
         public int? KeyLength { get; }
 
-        public int StandardSecurityHandlerRevision { get; }
+        public int Revision { get; }
 
         public string OwnerPasswordCheck { get; }
 
@@ -22,6 +23,18 @@
         public byte[] OwnerBytes { get; }
 
         public byte[] UserBytes { get; }
+
+        /// <summary>
+        /// Required if <see cref="Revision"/> is 5 or above. A 32-byte string, based on the owner and user passwords that is used in computing the encryption key.
+        /// </summary>
+        [CanBeNull]
+        public byte[] OwnerEncryptionBytes { get; }
+
+        /// <summary>
+        /// Required if <see cref="Revision"/> is 5 or above. A 32-byte string, based on the user password that is used in computing the encryption key.
+        /// </summary>
+        [CanBeNull]
+        public byte[] UserEncryptionBytes { get; }
 
         public UserAccessPermissions UserAccessPermissions { get; }
 
@@ -33,9 +46,11 @@
 
         public EncryptionDictionary(string filter, EncryptionAlgorithmCode encryptionAlgorithmCode, 
             int? keyLength, 
-            int standardSecurityHandlerRevision, 
+            int revision, 
             string ownerPasswordCheck, 
             string userPasswordCheck, 
+            byte[] ownerEncryptionBytes,
+            byte[] userEncryptionBytes,
             UserAccessPermissions userAccessPermissions, 
             DictionaryToken dictionary, 
             bool encryptMetadata)
@@ -43,9 +58,11 @@
             Filter = filter;
             EncryptionAlgorithmCode = encryptionAlgorithmCode;
             KeyLength = keyLength;
-            StandardSecurityHandlerRevision = standardSecurityHandlerRevision;
+            Revision = revision;
             OwnerPasswordCheck = ownerPasswordCheck;
             UserPasswordCheck = userPasswordCheck;
+            OwnerEncryptionBytes = ownerEncryptionBytes;
+            UserEncryptionBytes = userEncryptionBytes;
             UserAccessPermissions = userAccessPermissions;
             Dictionary = dictionary;
             EncryptMetadata = encryptMetadata;
