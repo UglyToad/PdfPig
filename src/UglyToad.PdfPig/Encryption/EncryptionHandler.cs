@@ -55,7 +55,8 @@
 
             useAes = false;
 
-            if (encryptionDictionary.EncryptionAlgorithmCode == EncryptionAlgorithmCode.SecurityHandlerInDocument)
+            if (encryptionDictionary.EncryptionAlgorithmCode == EncryptionAlgorithmCode.SecurityHandlerInDocument
+                || encryptionDictionary.EncryptionAlgorithmCode == EncryptionAlgorithmCode.SecurityHandlerInDocument256)
             {
                 if (!encryptionDictionary.TryGetCryptHandler(out var cryptHandlerLocal))
                 {
@@ -64,7 +65,8 @@
 
                 cryptHandler = cryptHandlerLocal;
 
-                useAes = cryptHandlerLocal?.StreamDictionary?.Name == CryptDictionary.Method.AesV2;
+                useAes = cryptHandlerLocal?.StreamDictionary?.Name == CryptDictionary.Method.AesV2
+                    || cryptHandlerLocal?.StreamDictionary?.Name == CryptDictionary.Method.AesV3;
             }
 
             var charset = OtherEncodings.Iso88591;
@@ -407,7 +409,7 @@
         {
             if (useAes && encryptionKey.Length == 32)
             {
-                throw new PdfDocumentEncryptedException("Decryption for AES-256 not currently supported.", encryptionDictionary);
+                return AesEncryptionHelper.Decrypt(data, encryptionKey);
             }
 
             var finalKey = GetObjectKey(reference);

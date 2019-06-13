@@ -45,7 +45,13 @@
             /// (PDF 1.6) The application asks the security handler for the encryption key and implicitly decrypts data using the AES algorithm in Cipher Block Chaining (CBC) mode
             /// with a 16-byte block size and an initialization vector that is randomly generated and placed as the first 16 bytes in the stream or string. 
             /// </summary>
-            AesV2
+            AesV2,
+            /// <summary>
+            /// The application asks the security handler for the encryption key and implicitly decrypts data using the AES-256 algorithm in Cipher Block Chaining (CBC) with padding mode 
+            /// with a 16-byte block size and an initialization vector that is randomly generated and placed as the first 16 bytes in the stream or string. 
+            /// The key size shall be 256 bits.
+            /// </summary>
+            AesV3
         }
 
         /// <summary>

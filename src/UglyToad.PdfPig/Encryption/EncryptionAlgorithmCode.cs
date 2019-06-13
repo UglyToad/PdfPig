@@ -22,8 +22,12 @@
         /// </summary>
         UnpublishedAlgorithm40To128BitKey = 3,
         /// <summary>
-        ///  The security handler defines the use of encryption and decryption in the document.
+        ///  The security handler defines the use of encryption and decryption in the document with a key length of 128 bits.
         /// </summary>
-        SecurityHandlerInDocument
+        SecurityHandlerInDocument = 4,
+        /// <summary>
+        ///  The security handler defines the use of encryption and decryption in the document with a key length of 256 bits.
+        /// </summary>
+        SecurityHandlerInDocument256 = 5
     }
 }

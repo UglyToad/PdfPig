@@ -72,6 +72,10 @@
             {
                 method = CryptDictionary.Method.AesV2;
             }
+            else if (cfmName == NameToken.Aesv3)
+            {
+                method = CryptDictionary.Method.AesV3;
+            }
             else
             {
                 throw new PdfDocumentEncryptedException($"Unrecognized CFM option for crypt filter {cfm}: {cryptDictionaryToken}.");

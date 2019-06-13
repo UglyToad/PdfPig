@@ -75,7 +75,8 @@
         {
             cryptHandler = null;
 
-            if (EncryptionAlgorithmCode != EncryptionAlgorithmCode.SecurityHandlerInDocument)
+            if (EncryptionAlgorithmCode != EncryptionAlgorithmCode.SecurityHandlerInDocument
+                && EncryptionAlgorithmCode != EncryptionAlgorithmCode.SecurityHandlerInDocument256)
             {
                 return false;
             }
