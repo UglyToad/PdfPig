@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
+    using System.Text.RegularExpressions;
     using Encryption;
     using Exceptions;
     using Filters;
@@ -26,6 +27,8 @@
 
     internal class PdfTokenScanner : IPdfTokenScanner
     {
+        private static readonly Regex EndsWithNumberRegex = new Regex(@"(?<=^[^\s\d]+)\d+$");
+
         private readonly IInputBytes inputBytes;
         private readonly IObjectLocationProvider objectLocationProvider;
         private readonly IFilterProvider filterProvider;
@@ -96,7 +99,26 @@
 
             if (objectNumber == null || generation == null)
             {
-                return false;
+                // Handle case where the scanner correctly reads most of an object token but includes too much of the first token
+                // specifically %%EOF1 0 obj where scanning starts from 'F'.
+                if (generation != null && previousTokens[0] is OperatorToken op)
+                {
+                    var match = EndsWithNumberRegex.Match(op.Data);
+
+                    if (match.Success && int.TryParse(match.Value, out var number))
+                    {
+                        startPosition = previousTokenPositions[0] + match.Index;
+                        objectNumber = new NumericToken(number);
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
             }
 
             // Read all tokens between obj and endobj.
