@@ -18,37 +18,37 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// Get the blocks.
         /// </summary>
         /// <param name="pageWords">The words in a page.</param>
-        /// <param name="minimumWidht">The minimum widht for a block.</param>
+        /// <param name="minimumWidth">The minimum width for a block.</param>
         /// <param name="dominantFontWidth">The dominant font width.</param>
         /// <param name="dominantFontHeight">The dominant font height.</param>
         /// <returns></returns>
-        public static XYNode GetBlocks(IEnumerable<Word> pageWords, decimal minimumWidht,
+        public static XYNode GetBlocks(IEnumerable<Word> pageWords, decimal minimumWidth,
             decimal dominantFontWidth, decimal dominantFontHeight)
         {
-            return GetBlocks(pageWords, minimumWidht, k => dominantFontWidth, k => dominantFontHeight);
+            return GetBlocks(pageWords, minimumWidth, k => dominantFontWidth, k => dominantFontHeight);
         }
 
         /// <summary>
         /// Get the blocks.
         /// </summary>
         /// <param name="pageWords">The words in a page.</param>
-        /// <param name="minimumWidht">The minimum widht for a block.</param>
+        /// <param name="minimumWidth">The minimum width for a block.</param>
         /// <param name="dominantFontWidthFunc">The function that determines the dominant font width.</param>
         /// <param name="dominantFontHeightFunc">The function that determines the dominant font height.</param>
         /// <returns></returns>
-        public static XYNode GetBlocks(IEnumerable<Word> pageWords, decimal minimumWidht,
+        public static XYNode GetBlocks(IEnumerable<Word> pageWords, decimal minimumWidth,
             Func<IEnumerable<decimal>, decimal> dominantFontWidthFunc,
             Func<IEnumerable<decimal>, decimal> dominantFontHeightFunc)
         {
             var root = new XYLeef(pageWords);
-            return VerticalCut(root, minimumWidht, dominantFontWidthFunc, dominantFontHeightFunc);
+            return VerticalCut(root, minimumWidth, dominantFontWidthFunc, dominantFontHeightFunc);
         }
 
-        private static XYNode VerticalCut(XYLeef leef, decimal minimumWidht,
+        private static XYNode VerticalCut(XYLeef leef, decimal minimumWidth,
             Func<IEnumerable<decimal>, decimal> dominantFontWidthFunc,
             Func<IEnumerable<decimal>, decimal> dominantFontHeightFunc, int level = 0)
         {
-            if (leef.CountWords() <= 1 || leef.BoundingBox.Width <= minimumWidht)
+            if (leef.CountWords() <= 1 || leef.BoundingBox.Width <= minimumWidth)
             {
                 // we stop cutting if 
                 // - only one word remains
@@ -103,7 +103,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                         // |____| |____|
                         currentProj[1] = words[i].BoundingBox.Right;
                     }
-                    else if (currentProj[1] - currentProj[0] < minimumWidht)
+                    else if (currentProj[1] - currentProj[0] < minimumWidth)
                     {
                         // still too small
                         currentProj[1] = words[i].BoundingBox.Right;
@@ -125,7 +125,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             var newLeefsEnums = projectionProfile.Select(p => leef.Words.Where(w => w.BoundingBox.Left >= p[0] && w.BoundingBox.Right <= p[1]));
             var newLeefs = newLeefsEnums.Where(e => e.Count() > 0).Select(e => new XYLeef(e));
 
-            var newNodes = newLeefs.Select(l => HorizontalCut(l, minimumWidht,
+            var newNodes = newLeefs.Select(l => HorizontalCut(l, minimumWidth,
                 dominantFontWidthFunc, dominantFontHeightFunc, level)).ToList();
 
             var lost = leef.Words.Except(newLeefsEnums.SelectMany(x => x)).Where(x => !string.IsNullOrWhiteSpace(x.Text)).ToList();
@@ -137,7 +137,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             return new XYNode(newNodes);
         }
 
-        private static XYNode HorizontalCut(XYLeef leef, decimal minimumWidht,
+        private static XYNode HorizontalCut(XYLeef leef, decimal minimumWidth,
             Func<IEnumerable<decimal>, decimal> dominantFontWidthFunc,
             Func<IEnumerable<decimal>, decimal> dominantFontHeightFunc, int level = 0)
         {
@@ -210,7 +210,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             var newLeefsEnums = projectionProfile.Select(p =>
                 leef.Words.Where(w => w.BoundingBox.Bottom >= p[0] && w.BoundingBox.Top <= p[1]));
             var newLeefs = newLeefsEnums.Where(e => e.Count() > 0).Select(e => new XYLeef(e));
-            var newNodes = newLeefs.Select(l => VerticalCut(l, minimumWidht,
+            var newNodes = newLeefs.Select(l => VerticalCut(l, minimumWidth,
                 dominantFontWidthFunc, dominantFontHeightFunc, level)).ToList();
 
             var lost = leef.Words.Except(newLeefsEnums.SelectMany(x => x)).Where(x => !string.IsNullOrWhiteSpace(x.Text)).ToList();
