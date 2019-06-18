@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
     using System;
+    using System.Globalization;
     using Content;
     using Xunit;
 
@@ -29,15 +30,15 @@
                 throw new ArgumentException($"Expected 6 parts to the line, instead got {parts.Length}");
             }
 
-            var height = parts.Length < 7 ? 0 : decimal.Parse(parts[6]);
+            var height = parts.Length < 7 ? 0 : decimal.Parse(parts[6], CultureInfo.InvariantCulture);
 
             return new AssertablePositionData
             {
-                X = decimal.Parse(parts[0]),
-                Y = decimal.Parse(parts[1]),
-                Width = decimal.Parse(parts[2]),
+                X = decimal.Parse(parts[0], CultureInfo.InvariantCulture),
+                Y = decimal.Parse(parts[1], CultureInfo.InvariantCulture),
+                Width = decimal.Parse(parts[2], CultureInfo.InvariantCulture),
                 Text = parts[3],
-                FontSize = decimal.Parse(parts[4]),
+                FontSize = decimal.Parse(parts[4], CultureInfo.InvariantCulture),
                 FontName = parts[5],
                 Height = height
             };

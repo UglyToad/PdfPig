@@ -173,7 +173,7 @@
                 return 0m;
             }
 
-            return hasExponent ? decimal.Parse(sb.ToString(), NumberStyles.Float) : decimal.Parse(sb.ToString());
+            return hasExponent ? decimal.Parse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture) : decimal.Parse(sb.ToString(), CultureInfo.InvariantCulture);
         }
 
         protected abstract void ApplyOperation(TBuilder builder, List<Operand> operands, OperandKey operandKey, IReadOnlyList<string> stringIndex);

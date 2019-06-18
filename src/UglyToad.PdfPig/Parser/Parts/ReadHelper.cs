@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Text;
     using Exceptions;
     using IO;
@@ -162,7 +163,7 @@
 
             try
             {
-                retval = long.Parse(longBuffer.ToString());
+                retval = long.Parse(longBuffer.ToString(), CultureInfo.InvariantCulture);
             }
             catch (FormatException e)
             {
@@ -228,7 +229,7 @@
 
             try
             {
-                result = int.Parse(intBuffer.ToString());
+                result = int.Parse(intBuffer.ToString(), CultureInfo.InvariantCulture);
             }
             catch (Exception e)
             {

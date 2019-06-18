@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Text;
     using IO;
     using PdfPig.Parser.Parts;
@@ -312,7 +313,7 @@
             bytes.Seek(bytes.CurrentOffset - 1);
             if (radix != null)
             {
-                var number = Convert.ToInt32(sb.ToString(), int.Parse(radix.ToString()));
+                var number = Convert.ToInt32(sb.ToString(), int.Parse(radix.ToString(), CultureInfo.InvariantCulture));
                 numberToken = new Type1Token(number.ToString(), Type1Token.TokenType.Integer);
             }
             else

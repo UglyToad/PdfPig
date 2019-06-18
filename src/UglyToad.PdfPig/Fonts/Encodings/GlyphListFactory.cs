@@ -63,7 +63,7 @@
                     var value = string.Empty;
                     foreach (var s in values)
                     {
-                        var code = int.Parse(s, NumberStyles.HexNumber);
+                        var code = int.Parse(s, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
 
                         value += char.ConvertFromUtf32(code);
                     }

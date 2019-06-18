@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Text;
     using IO;
     using Util.JetBrains.Annotations;
@@ -127,8 +128,8 @@
                     continue;
                 }
 
-                var obj = long.Parse(objectNumberBytes.ToString());
-                var generation = int.Parse(generationBytes.ToString());
+                var obj = long.Parse(objectNumberBytes.ToString(), CultureInfo.InvariantCulture);
+                var generation = int.Parse(generationBytes.ToString(), CultureInfo.InvariantCulture);
 
                 results[new IndirectReference(obj, generation)] = bytes.CurrentOffset + 1;
 

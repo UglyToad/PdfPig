@@ -98,8 +98,7 @@
 
                     if (codePoint > 0xD7FF && codePoint < 0xE000)
                     {
-                        throw new InvalidFontFormatException(
-                            $"Unicode character name with disallowed code area: {name}");
+                        throw new InvalidFontFormatException($"Unicode character name with disallowed code area: {name}");
                     }
 
                     uniStr.Append((char)codePoint);
@@ -115,7 +114,7 @@
             else if (name.StartsWith("u") && name.Length == 5)
             {
                 // test for an alternate Unicode name representation uXXXX
-                    int codePoint = int.Parse(name.Substring(1), NumberStyles.HexNumber);
+                    var codePoint = int.Parse(name.Substring(1), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
 
                     if (codePoint > 0xD7FF && codePoint < 0xE000)
                 {

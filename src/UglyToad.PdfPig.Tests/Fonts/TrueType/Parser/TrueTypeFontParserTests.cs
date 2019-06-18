@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
 {
     using System;
+    using System.Globalization;
     using System.IO;
     using System.Text;
     using System.Text.RegularExpressions;
@@ -121,9 +122,9 @@
 
                 var match = font.TableHeaders[name];
 
-                var offset = long.Parse(parts[1]);
-                var length = long.Parse(parts[2]);
-                var checksum = long.Parse(parts[3]);
+                var offset = long.Parse(parts[1], CultureInfo.InvariantCulture);
+                var length = long.Parse(parts[2], CultureInfo.InvariantCulture);
+                var checksum = long.Parse(parts[3], CultureInfo.InvariantCulture);
 
                 Assert.Equal(offset, match.Offset);
                 Assert.Equal(length, match.Length);
@@ -187,9 +188,9 @@
             {
                 var match = regex.Match(lines[i]);
 
-                var width = decimal.Parse(match.Groups["width"].Value);
-                var height = decimal.Parse(match.Groups["height"].Value);
-                var points = int.Parse(match.Groups["points"].Value);
+                var width = decimal.Parse(match.Groups["width"].Value, CultureInfo.InvariantCulture);
+                var height = decimal.Parse(match.Groups["height"].Value, CultureInfo.InvariantCulture);
+                var points = int.Parse(match.Groups["points"].Value, CultureInfo.InvariantCulture);
 
                 var glyph = font.TableRegister.GlyphTable.Glyphs[i];
 

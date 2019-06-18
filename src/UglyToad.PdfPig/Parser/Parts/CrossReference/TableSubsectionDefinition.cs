@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Parser.Parts.CrossReference
 {
     using System;
+    using System.Globalization;
     using IO;
     using Logging;
 
@@ -61,14 +62,12 @@
 
             try
             {
-
-                var firstObjectId = long.Parse(parts[0]);
-                var objectCount = int.Parse(parts[1]);
+                var firstObjectId = long.Parse(parts[0], CultureInfo.InvariantCulture);
+                var objectCount = int.Parse(parts[1], CultureInfo.InvariantCulture);
 
                 definition = new TableSubsectionDefinition(firstObjectId, objectCount);
 
                 return true;
-
             }
             catch (Exception ex)
             {

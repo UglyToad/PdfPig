@@ -40,7 +40,7 @@
             {
                 if (char.IsNumber(part[0]) || part[0] == '-')
                 {
-                    if (decimal.TryParse(part, NumberStyles.AllowLeadingSign, null, out var value))
+                    if (decimal.TryParse(part, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var value))
                     {
                         tokens.Add(new NumericToken(value));
                     }

@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
 
     internal class Type1DataToken : Type1Token
     {
@@ -46,7 +47,7 @@
 
         public decimal AsDecimal()
         {
-            return decimal.Parse(Text);
+            return decimal.Parse(Text, CultureInfo.InvariantCulture);
         }
 
         public bool AsBool()

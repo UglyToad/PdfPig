@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Parser.FileStructure
 {
     using System;
+    using System.Globalization;
     using System.Text.RegularExpressions;
     using Content;
     using Exceptions;
@@ -74,7 +75,7 @@
             
             var match = VersionRegex.Match(comment.Data);
 
-            if (!match.Success || !decimal.TryParse(match.Groups["version"].Value, out decimal version))
+            if (!match.Success || !decimal.TryParse(match.Groups["version"].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var version))
             {
                 if (isLenientParsing)
                 {

@@ -56,9 +56,8 @@
                 }
                 else
                 {
-                    value = decimal.Parse(characters.ToString(), NumberStyles.Any);
+                    value = decimal.Parse(characters.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture);
                 }
-
             }
             catch (FormatException)
             {

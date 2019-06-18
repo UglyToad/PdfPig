@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Globalization;
     using System.IO;
     using System.Text.RegularExpressions;
     using Encryption;
@@ -105,7 +106,7 @@
                 {
                     var match = EndsWithNumberRegex.Match(op.Data);
 
-                    if (match.Success && int.TryParse(match.Value, out var number))
+                    if (match.Success && int.TryParse(match.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var number))
                     {
                         startPosition = previousTokenPositions[0] + match.Index;
                         objectNumber = new NumericToken(number);
