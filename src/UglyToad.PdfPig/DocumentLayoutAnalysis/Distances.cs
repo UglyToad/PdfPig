@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UglyToad.PdfPig.Geometry;
 
@@ -14,7 +15,6 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// </summary>
         /// <param name="point1">The first point.</param>
         /// <param name="point2">The second point.</param>
-        /// <returns></returns>
         public static double Euclidean(PdfPoint point1, PdfPoint point2)
         {
             double dx = (double)(point1.X - point2.X);
@@ -29,8 +29,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="point2">The second point.</param>
         /// <param name="wX">The weight of the X coordinates. Default is 1.</param>
         /// <param name="wY">The weight of the Y coordinates. Default is 1.</param>
-        /// <returns></returns>
-        public static double WghtdEuclidean(PdfPoint point1, PdfPoint point2, double wX = 1.0, double wY = 1.0)
+        public static double WeightedEuclidean(PdfPoint point1, PdfPoint point2, double wX = 1.0, double wY = 1.0)
         {
             double dx = (double)(point1.X - point2.X);
             double dy = (double)(point1.Y - point2.Y);
@@ -43,7 +42,6 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// </summary>
         /// <param name="point1">The first point.</param>
         /// <param name="point2">The second point.</param>
-        /// <returns></returns>
         public static double Manhattan(PdfPoint point1, PdfPoint point2)
         {
             return (double)(Math.Abs(point1.X - point2.X) + Math.Abs(point1.Y - point2.Y));
@@ -54,16 +52,35 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// </summary>
         /// <param name="pdfPoint">The reference point, for which to find the nearest neighbour.</param>
         /// <param name="points">The list of neighbours candidates.</param>
-        /// <param name="measure">The distance measure to use.</param>
-        /// <param name="dist">The distance between reference point, and its nearest neighbour</param>
-        /// <returns></returns>
-        public static PdfPoint FindNearest(this PdfPoint pdfPoint, PdfPoint[] points,
-            Func<PdfPoint, PdfPoint, double> measure, out double dist)
+        /// <param name="distanceMeasure">The distance measure to use.</param>
+        /// <param name="distance">The distance between reference point, and its nearest neighbour</param>
+        public static PdfPoint FindNearest(this PdfPoint pdfPoint, IReadOnlyList<PdfPoint> points,
+            Func<PdfPoint, PdfPoint, double> distanceMeasure, out double distance)
         {
-            double d = points.Min(k => measure(k, pdfPoint));
-            PdfPoint point = points.First(x => measure(x, pdfPoint) == d);
-            dist = d;
-            return point;
+            if (points == null || points.Count == 0)
+            {
+                throw new ArgumentException("Distances.FindNearest(): The list of neighbours candidates is either null or empty.", "points");
+            }
+
+            if (distanceMeasure == null)
+            {
+                throw new ArgumentException("Distances.FindNearest(): The distance measure must not be null.", "distanceMeasure");
+            }
+            
+            distance = double.MaxValue;
+            PdfPoint closestPoint = default;
+
+            for (var i = 0; i < points.Count; i++)
+            {
+                double currentDistance = distanceMeasure(points[i], pdfPoint);
+                if (currentDistance < distance)
+                {
+                    distance = currentDistance;
+                    closestPoint = points[i];
+                }
+            }
+
+            return closestPoint;
         }
 
         /// <summary>
@@ -71,16 +88,35 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// </summary>
         /// <param name="pdfPoint">The reference point, for which to find the nearest neighbour.</param>
         /// <param name="points">The list of neighbours candidates.</param>
-        /// <param name="measure">The distance measure to use.</param>
-        /// <param name="dist">The distance between reference point, and its nearest neighbour</param>
-        /// <returns></returns>
-        public static int FindIndexNearest(this PdfPoint pdfPoint, PdfPoint[] points,
-            Func<PdfPoint, PdfPoint, double> measure, out double dist)
+        /// <param name="distanceMeasure">The distance measure to use.</param>
+        /// <param name="distance">The distance between reference point, and its nearest neighbour</param>
+        public static int FindIndexNearest(this PdfPoint pdfPoint, IReadOnlyList<PdfPoint> points,
+            Func<PdfPoint, PdfPoint, double> distanceMeasure, out double distance)
         {
-            double d = points.Min(k => measure(k, pdfPoint));
-            int index = Array.FindIndex(points, x => measure(x, pdfPoint) == d);
-            dist = d;
-            return index;
+            if (points == null || points.Count == 0)
+            {
+                throw new ArgumentException("Distances.FindIndexNearest(): The list of neighbours candidates is either null or empty.", "points");
+            }
+
+            if (distanceMeasure == null)
+            {
+                throw new ArgumentException("Distances.FindIndexNearest(): The distance measure must not be null.", "distanceMeasure");
+            }
+
+            distance = double.MaxValue;
+            int closestPointIndex = -1;
+
+            for (var i = 0; i < points.Count; i++)
+            {
+                double currentDistance = distanceMeasure(points[i], pdfPoint);
+                if (currentDistance < distance)
+                {
+                    distance = currentDistance;
+                    closestPointIndex = i;
+                }
+            }
+
+            return closestPointIndex;
         }
     }
 }

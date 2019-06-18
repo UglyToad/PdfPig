@@ -12,18 +12,17 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
     /// Nearest Neighbour Word Extractor, using the <see cref="Distances.Manhattan"/> distance.
     /// This implementation leverages bounding boxes.
     /// </summary>
-    public class NNWordExtractor : IWordExtractor
+    public class NearestNeighbourWordExtractor : IWordExtractor
     {
         /// <summary>
-        /// Create an instance of Nearest Neighbour Word Extractor, <see cref="NNWordExtractor"/>.
+        /// Create an instance of Nearest Neighbour Word Extractor, <see cref="NearestNeighbourWordExtractor"/>.
         /// </summary>
-        public static IWordExtractor Instance { get; } = new NNWordExtractor();
+        public static IWordExtractor Instance { get; } = new NearestNeighbourWordExtractor();
 
         /// <summary>
         /// Gets the words.
         /// </summary>
-        /// <param name="letters"></param>
-        /// <returns></returns>
+        /// <param name="letters">The letters in the page.</param>
         public IEnumerable<Word> GetWords(IReadOnlyList<Letter> letters)
         {
             List<Word> wordsH = GetWords(
@@ -64,7 +63,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         }
 
         /// <summary>
-        /// 
+        /// Private method to get the words.
         /// </summary>
         /// <param name="pageLetters">The letters in the page, they must have
         /// the same text directions.</param>
@@ -72,7 +71,6 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// between 2 letters, e.g. GlyphRectangle.Width or GlyphRectangle.Height.</param>
         /// <param name="distMeasure">The distance measure between two start and end base line points,
         /// e.g. the Manhattan distance.</param>
-        /// <returns></returns>
         private static List<Word> GetWords(IEnumerable<Letter> pageLetters,
             Func<Letter, decimal> metric, Func<PdfPoint, PdfPoint, double> distMeasure)
         {
@@ -85,7 +83,8 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 
             Letter[] letters = pageLetters.ToArray();
             int lettersCount = letters.Length;
-            PdfPoint[] startBaseLines = letters.Select(x => x.StartBaseLine).ToArray();
+            List<PdfPoint> startBaseLines = letters.Select(x => x.StartBaseLine).ToList();
+
             int[] indexes = Enumerable.Repeat((int)-1, lettersCount).ToArray();
 
             // Find nearest neighbours indexes

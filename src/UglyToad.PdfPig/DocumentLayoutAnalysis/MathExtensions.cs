@@ -11,8 +11,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <summary>
         /// Computes the mode of a sequence of float values.
         /// </summary>
-        /// <param name="array"></param>
-        /// <returns></returns>
+        /// <param name="array">The array of floats.</param>
         public static float Mode(this IEnumerable<float> array)
         {
             if (array == null || array.Count() == 0) return float.NaN;
@@ -22,8 +21,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <summary>
         /// Computes the mode of a sequence of decimal values.
         /// </summary>
-        /// <param name="array"></param>
-        /// <returns></returns>
+        /// <param name="array">The array of decimal.</param>
         public static decimal Mode(this IEnumerable<decimal> array)
         {
             return array.GroupBy(v => v).OrderByDescending(g => g.Count()).First().Key;

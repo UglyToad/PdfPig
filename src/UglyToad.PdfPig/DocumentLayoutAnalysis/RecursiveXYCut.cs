@@ -10,14 +10,14 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
     /// The recursive X-Y cut is a top-down page segmentation technique that decomposes a document 
     /// recursively into a set of rectangular blocks. This implementation leverages bounding boxes.
     /// https://en.wikipedia.org/wiki/Recursive_X-Y_cut
-    /// <para>See 'Recursive X-Y Cut using Bounding Boxes of Connected Components' by Jaekyu Ha and Robert M.Haralick Ihsin T. Phillips</para>
+    /// <para>See 'Recursive X-Y Cut using Bounding Boxes of Connected Components' by Jaekyu Ha, Robert M.Haralick and Ihsin T. Phillips</para>
     /// </summary>
     public class RecursiveXYCut
     {
         /// <summary>
         /// Get the blocks.
         /// </summary>
-        /// <param name="pageWords">The words in a page.</param>
+        /// <param name="pageWords">The words in the page.</param>
         /// <param name="minimumWidth">The minimum width for a block.</param>
         /// <param name="dominantFontWidth">The dominant font width.</param>
         /// <param name="dominantFontHeight">The dominant font height.</param>
@@ -31,7 +31,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <summary>
         /// Get the blocks.
         /// </summary>
-        /// <param name="pageWords">The words in a page.</param>
+        /// <param name="pageWords">The words in the page.</param>
         /// <param name="minimumWidth">The minimum width for a block.</param>
         /// <param name="dominantFontWidthFunc">The function that determines the dominant font width.</param>
         /// <param name="dominantFontHeightFunc">The function that determines the dominant font height.</param>
@@ -40,24 +40,24 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             Func<IEnumerable<decimal>, decimal> dominantFontWidthFunc,
             Func<IEnumerable<decimal>, decimal> dominantFontHeightFunc)
         {
-            var root = new XYLeef(pageWords);
+            var root = new XYLeaf(pageWords);
             return VerticalCut(root, minimumWidth, dominantFontWidthFunc, dominantFontHeightFunc);
         }
 
-        private static XYNode VerticalCut(XYLeef leef, decimal minimumWidth,
+        private static XYNode VerticalCut(XYLeaf leaf, decimal minimumWidth,
             Func<IEnumerable<decimal>, decimal> dominantFontWidthFunc,
             Func<IEnumerable<decimal>, decimal> dominantFontHeightFunc, int level = 0)
         {
-            if (leef.CountWords() <= 1 || leef.BoundingBox.Width <= minimumWidth)
+            if (leaf.CountWords() <= 1 || leaf.BoundingBox.Width <= minimumWidth)
             {
                 // we stop cutting if 
                 // - only one word remains
                 // - width is too small
-                return leef;
+                return leaf;
             }
 
             // order words left to right
-            var words = leef.Words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).OrderBy(w => w.BoundingBox.Left).ToArray();
+            var words = leaf.Words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).OrderBy(w => w.BoundingBox.Left).ToArray();
 
             // determine dominantFontWidth and dominantFontHeight
             decimal domFontWidth = dominantFontWidthFunc(words.SelectMany(x => x.Letters)
@@ -122,33 +122,33 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                 if (i == wordsCount - 1) projectionProfile.Add(currentProj);
             }
 
-            var newLeefsEnums = projectionProfile.Select(p => leef.Words.Where(w => w.BoundingBox.Left >= p[0] && w.BoundingBox.Right <= p[1]));
-            var newLeefs = newLeefsEnums.Where(e => e.Count() > 0).Select(e => new XYLeef(e));
+            var newLeafsEnums = projectionProfile.Select(p => leaf.Words.Where(w => w.BoundingBox.Left >= p[0] && w.BoundingBox.Right <= p[1]));
+            var newLeafs = newLeafsEnums.Where(e => e.Count() > 0).Select(e => new XYLeaf(e));
 
-            var newNodes = newLeefs.Select(l => HorizontalCut(l, minimumWidth,
+            var newNodes = newLeafs.Select(l => HorizontalCut(l, minimumWidth,
                 dominantFontWidthFunc, dominantFontHeightFunc, level)).ToList();
 
-            var lost = leef.Words.Except(newLeefsEnums.SelectMany(x => x)).Where(x => !string.IsNullOrWhiteSpace(x.Text)).ToList();
+            var lost = leaf.Words.Except(newLeafsEnums.SelectMany(x => x)).Where(x => !string.IsNullOrWhiteSpace(x.Text)).ToList();
             if (lost.Count > 0)
             {
-                newNodes.AddRange(lost.Select(w => new XYLeef(w)));
+                newNodes.AddRange(lost.Select(w => new XYLeaf(w)));
             }
 
             return new XYNode(newNodes);
         }
 
-        private static XYNode HorizontalCut(XYLeef leef, decimal minimumWidth,
+        private static XYNode HorizontalCut(XYLeaf leaf, decimal minimumWidth,
             Func<IEnumerable<decimal>, decimal> dominantFontWidthFunc,
             Func<IEnumerable<decimal>, decimal> dominantFontHeightFunc, int level = 0)
         {
-            if (leef.CountWords() <= 1)
+            if (leaf.CountWords() <= 1)
             {
                 // we stop cutting if 
                 // - only one word remains
-                return leef;
+                return leaf;
             }
 
-            var words = leef.Words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).OrderBy(w => w.BoundingBox.Bottom).ToArray(); // order bottom to top
+            var words = leaf.Words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).OrderBy(w => w.BoundingBox.Bottom).ToArray(); // order bottom to top
 
             // determine dominantFontWidth and dominantFontHeight
             decimal domFontWidth = dominantFontWidthFunc(words.SelectMany(x => x.Letters)
@@ -199,7 +199,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             {
                 if (level >= 1)
                 {
-                    return leef;
+                    return leaf;
                 }
                 else
                 {
@@ -207,16 +207,16 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                 }
             }
 
-            var newLeefsEnums = projectionProfile.Select(p =>
-                leef.Words.Where(w => w.BoundingBox.Bottom >= p[0] && w.BoundingBox.Top <= p[1]));
-            var newLeefs = newLeefsEnums.Where(e => e.Count() > 0).Select(e => new XYLeef(e));
-            var newNodes = newLeefs.Select(l => VerticalCut(l, minimumWidth,
+            var newLeafsEnums = projectionProfile.Select(p =>
+                leaf.Words.Where(w => w.BoundingBox.Bottom >= p[0] && w.BoundingBox.Top <= p[1]));
+            var newLeafs = newLeafsEnums.Where(e => e.Count() > 0).Select(e => new XYLeaf(e));
+            var newNodes = newLeafs.Select(l => VerticalCut(l, minimumWidth,
                 dominantFontWidthFunc, dominantFontHeightFunc, level)).ToList();
 
-            var lost = leef.Words.Except(newLeefsEnums.SelectMany(x => x)).Where(x => !string.IsNullOrWhiteSpace(x.Text)).ToList();
+            var lost = leaf.Words.Except(newLeafsEnums.SelectMany(x => x)).Where(x => !string.IsNullOrWhiteSpace(x.Text)).ToList();
             if (lost.Count > 0)
             {
-                newNodes.AddRange(lost.Select(w => new XYLeef(w)));
+                newNodes.AddRange(lost.Select(w => new XYLeaf(w)));
             }
             return new XYNode(newNodes);
         }
@@ -228,9 +228,9 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
     public class XYNode
     {
         /// <summary>
-        /// Returns true if this node is a leef, false otherwise.
+        /// Returns true if this node is a leaf, false otherwise.
         /// </summary>
-        public virtual bool IsLeef => false;
+        public virtual bool IsLeaf => false;
 
         /// <summary>
         /// The rectangle completely containing the node.
@@ -255,16 +255,16 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         }
 
         /// <summary>
-        /// Recursively gets the leefs (last nodes) of this node.
+        /// Recursively gets the leafs (last nodes) of this node.
         /// </summary>
         /// <returns></returns>
-        public virtual List<XYLeef> GetLeefs()
+        public virtual List<XYLeaf> GetLeafs()
         {
-            List<XYLeef> leefs = new List<XYLeef>();
-            if (Children == null || Children.Count() == 0) return leefs;
+            List<XYLeaf> leafs = new List<XYLeaf>();
+            if (Children == null || Children.Count() == 0) return leafs;
             int level = 0;
-            RecursiveGetLeefs(Children, ref leefs, level);
-            return leefs;
+            RecursiveGetLeafs(Children, ref leafs, level);
+            return leafs;
         }
 
         /// <summary>
@@ -297,86 +297,83 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         private void RecursiveCount(IEnumerable<XYNode> children, ref int count)
         {
             if (children.Count() == 0) return;
-            foreach (XYNode node in children.Where(x => x.IsLeef))
+            foreach (XYNode node in children.Where(x => x.IsLeaf))
             {
                 count += node.CountWords();
             }
 
-            foreach (XYNode node in children.Where(x => !x.IsLeef))
+            foreach (XYNode node in children.Where(x => !x.IsLeaf))
             {
                 RecursiveCount(node.Children, ref count);
             }
         }
 
-        private void RecursiveGetLeefs(IEnumerable<XYNode> children, ref List<XYLeef> leefs, int level)
+        private void RecursiveGetLeafs(IEnumerable<XYNode> children, ref List<XYLeaf> leafs, int level)
         {
             if (children.Count() == 0) return;
             bool isVerticalCut = level % 2 == 0;
 
-            foreach (XYLeef node in children.Where(x => x.IsLeef))
+            foreach (XYLeaf node in children.Where(x => x.IsLeaf))
             {
-                leefs.Add(node);
+                leafs.Add(node);
             }
 
             level++;
 
-            IEnumerable<XYNode> notLeefs = children.Where(x => !x.IsLeef);
+            IEnumerable<XYNode> notLeafs = children.Where(x => !x.IsLeaf);
 
             if (isVerticalCut)
             {
-                notLeefs = notLeefs.OrderBy(x => x.BoundingBox.Left).ToList();
+                notLeafs = notLeafs.OrderBy(x => x.BoundingBox.Left).ToList();
             }
             else
             {
-                notLeefs = notLeefs.OrderByDescending(x => x.BoundingBox.Top).ToList();
+                notLeafs = notLeafs.OrderByDescending(x => x.BoundingBox.Top).ToList();
             }
 
-            foreach (XYNode node in notLeefs)
+            foreach (XYNode node in notLeafs)
             {
-                RecursiveGetLeefs(node.Children, ref leefs, level);
+                RecursiveGetLeafs(node.Children, ref leafs, level);
             }
         }
 
         public override string ToString()
         {
-            return (IsLeef ? "Leef" : "Node");
+            return (IsLeaf ? "Leaf" : "Node");
         }
     }
 
     /// <summary>
-    /// A Leef node used in the <see cref="RecursiveXYCut"/> algorithm, i.e. a block.
+    /// A Leaf node used in the <see cref="RecursiveXYCut"/> algorithm, i.e. a block.
     /// </summary>
-    public class XYLeef : XYNode
+    public class XYLeaf : XYNode
     {
         /// <summary>
-        /// Returns true if this node is a leef, false otherwise.
+        /// Returns true if this node is a leaf, false otherwise.
         /// </summary>
-        public override bool IsLeef => true;
+        public override bool IsLeaf => true;
 
         /// <summary>
-        /// The words in the leef.
+        /// The words in the leaf.
         /// </summary>
         public Word[] Words { get; set; }
 
         /// <summary>
-        /// The number of words in the leef.
+        /// The number of words in the leaf.
         /// </summary>
-        /// <returns></returns>
         public override int CountWords() => Words == null ? 0 : Words.Length;
 
         /// <summary>
-        /// Returns null as a leef doesn't have leefs.
+        /// Returns null as a leaf doesn't have leafs.
         /// </summary>
-        /// <returns></returns>
-        public override List<XYLeef> GetLeefs()
+        public override List<XYLeaf> GetLeafs()
         {
             return null;
         }
 
         /// <summary>
-        /// Gets the lines of the leef.
+        /// Gets the lines of the leaf.
         /// </summary>
-        /// <returns></returns>
         public TextLine[] GetLines()
         {
             var groupedWords = Words.GroupBy(x => x.BoundingBox.Bottom).ToDictionary(x => x.Key, x => x.ToList());
@@ -384,19 +381,19 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         }
 
         /// <summary>
-        /// Create a new <see cref="XYLeef"/>.
+        /// Create a new <see cref="XYLeaf"/>.
         /// </summary>
-        /// <param name="words">The words contained in the leef.</param>
-        public XYLeef(params Word[] words) : this(words == null ? null : words.ToList())
+        /// <param name="words">The words contained in the leaf.</param>
+        public XYLeaf(params Word[] words) : this(words == null ? null : words.ToList())
         {
 
         }
 
         /// <summary>
-        /// Create a new <see cref="XYLeef"/>.
+        /// Create a new <see cref="XYLeaf"/>.
         /// </summary>
-        /// <param name="words">The words contained in the leef.</param>
-        public XYLeef(IEnumerable<Word> words) : base(null)
+        /// <param name="words">The words contained in the leaf.</param>
+        public XYLeaf(IEnumerable<Word> words) : base(null)
         {
             decimal left = words.Min(b => b.BoundingBox.Left);
             decimal right = words.Max(b => b.BoundingBox.Right);
