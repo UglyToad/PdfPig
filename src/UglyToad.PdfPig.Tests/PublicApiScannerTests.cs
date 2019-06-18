@@ -53,7 +53,7 @@
                 "UglyToad.PdfPig.CrossReference.TrailerDictionary",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.Distances",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.MathExtensions",
-                "UglyToad.PdfPig.DocumentLayoutAnalysis.NNWordExtractor",
+                "UglyToad.PdfPig.DocumentLayoutAnalysis.NearestNeighbourWordExtractor",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.RecursiveXYCut",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.XYNode",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.XYLeaf",
