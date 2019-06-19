@@ -64,7 +64,17 @@
             {
                 return new PdfRectangle(0, 0, 250, 0);
             }
+            
+            if (metrics.WidthX == 0 && metrics.BoundingBox.Width > 0)
+            {
+                metrics.WidthX = metrics.BoundingBox.Width;
+            }
 
+            if (metrics.WidthY == 0 && metrics.BoundingBox.Height > 0)
+            {
+                metrics.WidthY = metrics.BoundingBox.Height;
+            }
+            
             return new PdfRectangle(0, 0, metrics.WidthX, metrics.WidthY);
         }
 
