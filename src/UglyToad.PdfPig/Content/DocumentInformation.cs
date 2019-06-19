@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
+    using System.Collections.Generic;
     using System.Text;
+    using Tokens;
     using Util.JetBrains.Annotations;
 
     /// <summary>
@@ -9,9 +11,14 @@
     public class DocumentInformation
     {
         internal static DocumentInformation Default { get; }
-            = new DocumentInformation(null, null, null, null, null, null);
+            = new DocumentInformation(null, null, null, null, null, null, null);
 
         private readonly string representation;
+
+        /// <summary>
+        /// The underlying document information PDF dictionary from the document.
+        /// </summary>
+        public DictionaryToken DocumentInformationDictionary { get; }
 
         /// <summary>
         /// The title of this document if applicable.
@@ -49,8 +56,9 @@
         [CanBeNull]
         public string Producer { get; }
 
-        internal DocumentInformation(string title, string author, string subject, string keywords, string creator, string producer)
+        internal DocumentInformation(DictionaryToken documentInformationDictionary, string title, string author, string subject, string keywords, string creator, string producer)
         {
+            DocumentInformationDictionary = documentInformationDictionary ?? new DictionaryToken(new Dictionary<NameToken, IToken>());
             Title = title;
             Author = author;
             Subject = subject;
@@ -67,7 +75,7 @@
             AppendPart("Creator", creator, builder);
             AppendPart("Producer", producer, builder);
 
-            representation = builder.ToString() ?? string.Empty;
+            representation = builder.ToString();
         }
 
         /// <summary>

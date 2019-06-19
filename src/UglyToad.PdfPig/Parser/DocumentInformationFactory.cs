@@ -24,7 +24,7 @@
             var creator = GetEntryOrDefault(infoParsed, NameToken.Creator);
             var producer = GetEntryOrDefault(infoParsed, NameToken.Producer);
 
-            return new DocumentInformation(title, author, subject,
+            return new DocumentInformation(infoParsed, title, author, subject,
                 keywords, creator, producer);
         }
 
