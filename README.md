@@ -4,6 +4,7 @@
 
 [![Build status](https://ci.appveyor.com/api/projects/status/ni7et2j2ml60pdi3?svg=true)](https://ci.appveyor.com/project/EliotJones/pdf)
 [![codecov](https://codecov.io/gh/UglyToad/PdfPig/branch/master/graph/badge.svg)](https://codecov.io/gh/UglyToad/PdfPig)
+[![Gitter](https://badges.gitter.im/pdfpig/community.svg)](https://gitter.im/pdfpig/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 This project allows users to read and extract text and other content from PDF files. In addition the library can be used to create simple PDF documents
 containing text and geometrical shapes.
