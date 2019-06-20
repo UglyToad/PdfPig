@@ -75,10 +75,25 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             Func<Letter, decimal> metric, Func<PdfPoint, PdfPoint, double> distMeasure)
         {
             if (pageLetters == null || pageLetters.Count() == 0) return new List<Word>();
+            TextDirection textDirection = pageLetters.ElementAt(0).TextDirection;
 
-            if (pageLetters.Any(x => pageLetters.ElementAt(0).TextDirection != x.TextDirection))
+            if (pageLetters.Any(x => textDirection != x.TextDirection))
             {
                 throw new ArgumentException("NNWordExtractor.GetWords(): Mixed Text Direction.");
+            }
+
+            Func<IEnumerable<Letter>, IReadOnlyList<Letter>> orderFunc = l => l.OrderBy(x => x.GlyphRectangle.Left).ToList();
+            if (textDirection == TextDirection.Rotate180)
+            {
+                orderFunc = l => l.OrderByDescending(x => x.GlyphRectangle.Right).ToList();
+            }
+            else if (textDirection == TextDirection.Rotate90)
+            {
+                orderFunc = l => l.OrderByDescending(x => x.GlyphRectangle.Top).ToList();
+            }
+            else if (textDirection == TextDirection.Rotate270)
+            {
+                orderFunc = l => l.OrderBy(x => x.GlyphRectangle.Bottom).ToList();
             }
 
             Letter[] letters = pageLetters.ToArray();
@@ -183,7 +198,8 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                 {
                     groupedLetters.Add(letters[s]);
                 }
-                words.Add(new Word(groupedLetters));
+
+                words.Add(new Word(orderFunc(groupedLetters)));
             }
 
             List<int> indexesNotDone = Enumerable.Range(0, lettersCount).Except(groupedIndexes.SelectMany(x => x)).ToList();
