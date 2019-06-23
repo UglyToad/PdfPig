@@ -62,7 +62,6 @@ namespace UglyToad.PdfPig.Tokens
             }
 
             var bytes = new List<byte>();
-            var builder = new StringBuilder();
 
             for (var i = 0; i < characters.Count; i += 2)
             {
@@ -79,15 +78,29 @@ namespace UglyToad.PdfPig.Tokens
 
                 var b = Convert(high, low);
                 bytes.Add(b);
+            }
 
-                if (b != '\0')
+            // Handle UTF-16BE format strings.
+            if (bytes.Count >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF)
+            {
+                Data = Encoding.BigEndianUnicode.GetString(bytes.ToArray(), 2, bytes.Count - 2);
+            }
+            else
+            {
+                var builder = new StringBuilder();
+
+                foreach (var b in bytes)
                 {
-                    builder.Append((char)b);
+                    if (b != '\0')
+                    {
+                        builder.Append((char)b);
+                    }
                 }
+
+                Data = builder.ToString();
             }
 
             Bytes = bytes;
-            Data = builder.ToString();
         }
 
         /// <summary>
