@@ -273,7 +273,23 @@ are the same.)";
 
             Assert.True(result);
 
-            Assert.Equal(@"﻿Mic", AssertStringToken(token).Data);
+            Assert.Equal(@"Mic", AssertStringToken(token).Data);
+        }
+
+        [Fact]
+        public void HandlesUtf16BigEndianStrings()
+        {
+            var input = new ByteArrayInputBytes(new byte[]
+            {
+                0xFF, 0xFE, 0x4D, 0x00, 0x69, 0x00, 0x63,
+                0x00, 0x29
+            });
+
+            var result = tokenizer.TryTokenize(0x28, input, out var token);
+
+            Assert.True(result);
+
+            Assert.Equal(@"Mic", AssertStringToken(token).Data);
         }
 
         private static StringToken AssertStringToken(IToken token)

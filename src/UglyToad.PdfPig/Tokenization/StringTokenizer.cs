@@ -153,13 +153,13 @@
                 {
                     var rawBytes = OtherEncodings.StringAsLatin1Bytes(builder.ToString());
 
-                    tokenStr = Encoding.BigEndianUnicode.GetString(rawBytes);
+                    tokenStr = Encoding.BigEndianUnicode.GetString(rawBytes).Substring(1);
                 }
                 else if (builder[0] == 0xFF && builder[1] == 0xFE)
                 {
                     var rawBytes = OtherEncodings.StringAsLatin1Bytes(builder.ToString());
 
-                    tokenStr = Encoding.Unicode.GetString(rawBytes);
+                    tokenStr = Encoding.Unicode.GetString(rawBytes).Substring(1);
                 }
                 else
                 {
@@ -187,34 +187,6 @@
 
             octals[0] = value;
         }
-
-        //private static int CheckForEndOfString(IRandomAccessRead reader, int bracesParameter)
-        //{
-        //    int braces = bracesParameter;
-        //    byte[] nextThreeBytes = new byte[3];
-        //    int amountRead = reader.Read(nextThreeBytes);
-
-        //    // Check the next 3 bytes if available
-        //    // The following cases are valid indicators for the end of the string
-        //    // 1. Next line contains another COSObject: CR + LF + '/'
-        //    // 2. CosDictionary ends in the next line: CR + LF + '>'
-        //    // 3. Next line contains another COSObject: CR + '/'
-        //    // 4. CosDictionary ends in the next line: CR + '>'
-        //    if (amountRead == 3 && nextThreeBytes[0] == ReadHelper.AsciiCarriageReturn)
-        //    {
-        //        if (nextThreeBytes[1] == ReadHelper.AsciiLineFeed && nextThreeBytes[2] == '/' || nextThreeBytes[2] == '>'
-        //            || nextThreeBytes[1] == '/' || nextThreeBytes[1] == '>')
-        //        {
-        //            braces = 0;
-        //        }
-        //    }
-        //    if (amountRead > 0)
-        //    {
-        //        reader.Unread(nextThreeBytes, 0, amountRead);
-        //    }
-        //    return braces;
-        //}
-        //}
 
         private static void ProcessEscapedCharacter(char c, StringBuilder builder, short[] octal, ref bool isOctalActive,
             ref int octalsRead, ref bool isLineBreaking)
