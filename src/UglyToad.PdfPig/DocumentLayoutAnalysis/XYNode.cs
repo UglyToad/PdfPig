@@ -26,29 +26,6 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         public XYNode[] Children { get; set; }
 
         /// <summary>
-        /// Recursively counts the words included in this node.
-        /// </summary>
-        public virtual int CountWords()
-        {
-            if (Children == null) return 0;
-            int count = 0;
-            RecursiveCount(Children, ref count);
-            return count;
-        }
-
-        /// <summary>
-        /// Recursively gets the leafs (last nodes) of this node.
-        /// </summary>
-        public virtual List<XYLeaf> GetLeafs()
-        {
-            List<XYLeaf> leafs = new List<XYLeaf>();
-            if (Children == null || Children.Count() == 0) return leafs;
-            int level = 0;
-            RecursiveGetLeafs(Children, ref leafs, level);
-            return leafs;
-        }
-
-        /// <summary>
         /// Create a new <see cref="XYNode"/>.
         /// </summary>
         /// <param name="children">The node's children.</param>
@@ -77,6 +54,37 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             {
                 Children = EmptyArray<XYNode>.Instance;
             }
+        }
+
+        /// <summary>
+        /// Recursively counts the words included in this node.
+        /// </summary>
+        public virtual int CountWords()
+        {
+            if (Children == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            RecursiveCount(Children, ref count);
+            return count;
+        }
+
+        /// <summary>
+        /// Recursively gets the leafs (last nodes) of this node.
+        /// </summary>
+        public virtual List<XYLeaf> GetLeafs()
+        {
+            List<XYLeaf> leafs = new List<XYLeaf>();
+            if (Children == null || Children.Length == 0)
+            {
+                return leafs;
+            }
+
+            int level = 0;
+            RecursiveGetLeafs(Children, ref leafs, level);
+            return leafs;
         }
 
         private void RecursiveCount(IEnumerable<XYNode> children, ref int count)
@@ -122,9 +130,10 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             }
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
-            return (IsLeaf ? "Leaf" : "Node");
+            return IsLeaf ? "Leaf" : "Node";
         }
     }
 }

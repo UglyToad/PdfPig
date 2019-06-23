@@ -78,6 +78,26 @@
         }
 
         /// <summary>
+        /// Try and get the entry with a given name and type or look-up the object if it's an indirect reference.
+        /// </summary>
+        internal bool TryGet<T>(NameToken name, IPdfTokenScanner tokenScanner, out T token) where T : IToken
+        {
+            token = default(T);
+            if (!TryGet(name, out var t) || !(t is T typedToken))
+            {
+                if (t is IndirectReferenceToken reference)
+                {
+                    return DirectObjectFinder.TryGet(reference, tokenScanner, out token);
+                }
+
+                return false;
+            }
+
+            token = typedToken;
+            return true;
+        }
+
+        /// <summary>
         /// Try and get the entry with a given name and a specific data type.
         /// </summary>
         /// <typeparam name="T">The expected data type of the dictionary value.</typeparam>
