@@ -358,6 +358,16 @@
 
                         break;
                     }
+                case HexToken hexToken:
+                {
+                    var data = hexToken.Bytes.ToArray();
+
+                    var decrypted = DecryptData(data, reference);
+
+                    token = new HexToken(Hex.GetString(decrypted).ToCharArray());
+
+                    break;
+                }
                 case DictionaryToken dictionary:
                     {
                         // PDFBOX-2936: avoid orphan /CF dictionaries found in US govt "I-" files

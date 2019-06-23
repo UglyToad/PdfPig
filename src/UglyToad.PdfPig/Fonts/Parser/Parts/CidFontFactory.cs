@@ -322,7 +322,17 @@
 
             if (token is IndirectReferenceToken obj)
             {
-                return DirectObjectFinder.Get<StringToken>(obj, pdfScanner).Data;
+                if (DirectObjectFinder.TryGet(obj, pdfScanner, out StringToken stringToken))
+                {
+                    return stringToken.Data;
+                }
+
+                if (DirectObjectFinder.TryGet(obj, pdfScanner, out HexToken hexToken))
+                {
+                    return hexToken.Data;
+                }
+
+                throw new PdfDocumentFormatException($"Could not get key for name: {keyName} in {dictionary}.");
             }
 
             return string.Empty;
