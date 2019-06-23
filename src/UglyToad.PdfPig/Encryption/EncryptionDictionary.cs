@@ -3,7 +3,6 @@
     using System;
     using Exceptions;
     using Tokens;
-    using Util;
     using Util.JetBrains.Annotations;
 
     internal class EncryptionDictionary
@@ -15,10 +14,6 @@
         public int? KeyLength { get; }
 
         public int Revision { get; }
-
-        public string OwnerPasswordCheck { get; }
-
-        public string UserPasswordCheck { get; }
 
         public byte[] OwnerBytes { get; }
 
@@ -47,8 +42,8 @@
         public EncryptionDictionary(string filter, EncryptionAlgorithmCode encryptionAlgorithmCode, 
             int? keyLength, 
             int revision, 
-            string ownerPasswordCheck, 
-            string userPasswordCheck, 
+            byte[] ownerBytes, 
+            byte[] userBytes, 
             byte[] ownerEncryptionBytes,
             byte[] userEncryptionBytes,
             UserAccessPermissions userAccessPermissions, 
@@ -59,16 +54,13 @@
             EncryptionAlgorithmCode = encryptionAlgorithmCode;
             KeyLength = keyLength;
             Revision = revision;
-            OwnerPasswordCheck = ownerPasswordCheck;
-            UserPasswordCheck = userPasswordCheck;
+            OwnerBytes = ownerBytes;
+            UserBytes = userBytes;
             OwnerEncryptionBytes = ownerEncryptionBytes;
             UserEncryptionBytes = userEncryptionBytes;
             UserAccessPermissions = userAccessPermissions;
             Dictionary = dictionary;
             EncryptMetadata = encryptMetadata;
-
-            OwnerBytes = OtherEncodings.StringAsLatin1Bytes(ownerPasswordCheck);
-            UserBytes = OtherEncodings.StringAsLatin1Bytes(userPasswordCheck);
         }
 
         public bool TryGetCryptHandler(out CryptHandler cryptHandler)

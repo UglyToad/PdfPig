@@ -127,6 +127,7 @@
         public static readonly NameToken Creator = new NameToken("Creator");
         public static readonly NameToken CropBox = new NameToken("CropBox");
         public static readonly NameToken Crypt = new NameToken("Crypt");
+        public static readonly NameToken CryptAlgorithm = new NameToken("CryptAlgorithm");
         public static readonly NameToken CryptFilter = new NameToken("CryptFilter");
         public static readonly NameToken Cs = new NameToken("CS");
         // D

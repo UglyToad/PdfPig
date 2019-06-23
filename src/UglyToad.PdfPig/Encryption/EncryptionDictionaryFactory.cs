@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Encryption
 {
     using System;
+    using System.Linq;
     using Tokenization.Scanner;
     using Tokens;
     using Util;
@@ -36,9 +37,32 @@
                 revision = revisionToken.Int;
             }
 
-            encryptionDictionary.TryGetOptionalStringDirect(NameToken.O, tokenScanner, out var ownerString);
-            encryptionDictionary.TryGetOptionalStringDirect(NameToken.U, tokenScanner, out var userString);
-
+            byte[] ownerBytes = null;
+            if (encryptionDictionary.TryGet(NameToken.O, out IToken ownerToken))
+            {
+                if (ownerToken is StringToken ownerString)
+                {
+                    ownerBytes = OtherEncodings.StringAsLatin1Bytes(ownerString.Data);
+                }
+                else if (ownerToken is HexToken ownerHex)
+                {
+                    ownerBytes = ownerHex.Bytes.ToArray();
+                }
+            }
+            
+            byte[] userBytes = null;
+            if (encryptionDictionary.TryGet(NameToken.U, out IToken userToken))
+            {
+                if (userToken is StringToken userString)
+                {
+                    userBytes = OtherEncodings.StringAsLatin1Bytes(userString.Data);
+                }
+                else if (userToken is HexToken userHex)
+                {
+                    userBytes = userHex.Bytes.ToArray();
+                }
+            }
+            
             var access = default(UserAccessPermissions);
 
             if (encryptionDictionary.TryGetOptionalTokenDirect(NameToken.P, tokenScanner, out NumericToken accessToken))
@@ -58,7 +82,7 @@
 
             encryptionDictionary.TryGetOptionalTokenDirect(NameToken.EncryptMetaData, tokenScanner, out BooleanToken encryptMetadata);
 
-            return new EncryptionDictionary(filter.Data, code, length, revision, ownerString, userString, 
+            return new EncryptionDictionary(filter.Data, code, length, revision, ownerBytes, userBytes, 
                 ownerEncryptionBytes,
                 userEncryptionBytes,
                 access, 

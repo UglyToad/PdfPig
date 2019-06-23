@@ -52,7 +52,7 @@
                 throw new PdfDocumentEncryptedException($"Could not find named crypt filter {name} for decryption in crypt dictionary: {cryptDictionaryToken}.");
             }
 
-            if (cryptDictionaryToken.TryGet(NameToken.Type, out NameToken typeName) && typeName != NameToken.CryptFilter)
+            if (cryptDictionaryToken.TryGet(NameToken.Type, out NameToken typeName) && typeName != NameToken.CryptFilter && typeName != NameToken.CryptAlgorithm)
             {
                 throw new PdfDocumentEncryptedException($"Invalid crypt dictionary type {typeName} for crypt filter {name}: {cryptDictionaryToken}.");
             }
