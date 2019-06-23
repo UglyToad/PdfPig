@@ -45,8 +45,10 @@
             var prevSet = new HashSet<long>();
             long previousCrossReferenceLocation = crossReferenceLocation;
 
+            var missedAttempts = 0;
+            
             // Parse all cross reference tables and streams.
-            while (previousCrossReferenceLocation > 0)
+            while (previousCrossReferenceLocation > 0 && missedAttempts < 100)
             {
                 log.Debug($"Reading cross reference table or stream at {previousCrossReferenceLocation}.");
 
@@ -57,6 +59,7 @@
 
                 if (tokenScanner.CurrentToken is OperatorToken tableToken && tableToken.Data == "xref")
                 {
+                    missedAttempts = 0;
                     log.Debug("Element was cross reference table.");
 
                     CrossReferenceTablePart tablePart = crossReferenceTableParser.Parse(tokenScanner,
@@ -132,6 +135,8 @@
                 {
                     log.Debug("Element was cross reference stream.");
 
+                    missedAttempts = 0;
+
                     // Unread the numeric token.
                     tokenScanner.Seek(previousCrossReferenceLocation);
 
@@ -153,10 +158,14 @@
                 }
                 else
                 {
-                    log.Debug("Element was invalid.");
+                    log.Debug($"The cross reference found at this location ({previousCrossReferenceLocation}) was not a table or stream. " +
+                              $"Found token ({tokenScanner.CurrentToken}) ending at {tokenScanner.CurrentPosition} instead. Seeking next token.");
 
-                    throw new PdfDocumentFormatException("The cross reference found at this location was not a " +
-                                                         $"table or a stream: Location - {previousCrossReferenceLocation}, {tokenScanner.CurrentPosition}.");
+                    previousCrossReferenceLocation = tokenScanner.CurrentPosition;
+
+                    missedAttempts++;
+
+                    continue;
                 }
 
                 if (prevSet.Contains(previousCrossReferenceLocation))
@@ -165,6 +174,12 @@
                 }
 
                 prevSet.Add(previousCrossReferenceLocation);
+            }
+
+            if (missedAttempts == 100)
+            {
+                // TODO: scan the document to find the correct token.
+                throw new PdfDocumentFormatException("The cross reference was not found.");
             }
 
             var resolved = table.Build(crossReferenceLocation, log);
