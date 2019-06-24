@@ -28,6 +28,10 @@
         /// <summary>
         ///  The security handler defines the use of encryption and decryption in the document with a key length of 256 bits.
         /// </summary>
-        SecurityHandlerInDocument256 = 5
+        SecurityHandlerInDocument256 = 5,
+        /// <summary>
+        /// Since ISO isn't fit for purpose they charge £200 to see the PDF 2 spec so it's not possible to know what the specification for this revision is. 
+        /// </summary>
+        UndocumentedDueToIso = 6
     }
 }
