@@ -86,12 +86,7 @@
                 : encryptionDictionary.KeyLength.GetValueOrDefault() / 8;
 
             var isUserPassword = false;
-            if (IsUserPassword(passwordBytes, encryptionDictionary, length, documentIdBytes))
-            {
-                decryptionPasswordBytes = passwordBytes;
-                isUserPassword = true;
-            }
-            else if (IsOwnerPassword(passwordBytes, encryptionDictionary, length, documentIdBytes, out var userPassBytes))
+            if (IsOwnerPassword(passwordBytes, encryptionDictionary, length, documentIdBytes, out var userPassBytes))
             {
                 if (encryptionDictionary.Revision == 5 || encryptionDictionary.Revision == 6)
                 {
@@ -101,6 +96,11 @@
                 {
                     decryptionPasswordBytes = userPassBytes;
                 }
+            }
+            else if (IsUserPassword(passwordBytes, encryptionDictionary, length, documentIdBytes))
+            {
+                decryptionPasswordBytes = passwordBytes;
+                isUserPassword = true;
             }
             else
             {
@@ -277,12 +277,15 @@
             Array.Copy(encryptionDictionary.OwnerBytes, ownerHash, ownerHash.Length);
             Array.Copy(encryptionDictionary.OwnerBytes, ownerHash.Length, validationSalt, 0, validationSalt.Length);
 
+            byte[] result;
             if (encryptionDictionary.Revision == 6)
             {
-                throw new PdfDocumentEncryptedException($"Support for revision 6 encryption not implemented: {encryptionDictionary}.");
+                result = ComputeStupidIsoHash(truncatedPassword, validationSalt, encryptionDictionary.UserBytes);
             }
-
-            var result = ComputeSha256Hash(truncatedPassword, validationSalt);
+            else
+            {
+                result = ComputeSha256Hash(truncatedPassword, validationSalt, encryptionDictionary.UserBytes);
+            }
 
             return result.SequenceEqual(ownerHash);
         }
@@ -571,36 +574,53 @@
             // Truncate the UTF-8 representation of the password to 127 bytes if it is longer than 127 bytes
             password = TruncatePasswordTo127Bytes(password);
 
+            byte[] intermediateKey;
+            byte[] encryptedFileKey;
             // If the password is the owner password:
             // Compute an intermediate owner key by computing the SHA-256 hash of the UTF-8 password concatenated with the 8 bytes of owner Key Salt,
             // concatenated with the 48-byte U string. The 32-byte result is the key used to decrypt the 32-byte OE string using AES-256 in CBC mode
             // with no padding and an initialization vector of zero. The 32-byte result is the file encryption key.
             if (!isUserPassword)
             {
-                throw new PdfDocumentEncryptedException($"Unsupported owner key encryption with revision: {encryptionDictionary.Revision}.");
-            }
+                var ownerKeySalt = new byte[8];
+                Array.Copy(encryptionDictionary.OwnerBytes, 40, ownerKeySalt, 0, ownerKeySalt.Length);
 
-            // If the password is the user password:
-            // Compute an intermediate user key by computing the SHA-256 hash of the UTF-8 password concatenated with the 8 bytes of user Key Salt.
-            // The 32-byte result is the key used to decrypt the 32-byte UE string using AES-256 in CBC mode with no padding and an initialization vector of zero.
-            // The 32-byte result is the file encryption key.
-            var userKeySalt = new byte[8];
-            Array.Copy(encryptionDictionary.UserBytes, 40, userKeySalt, 0, 8);
+                if (encryptionDictionary.Revision == 6)
+                {
+                    intermediateKey = ComputeStupidIsoHash(password, ownerKeySalt, encryptionDictionary.UserBytes);
+                }
+                else
+                {
+                    intermediateKey = ComputeSha256Hash(password, ownerKeySalt, encryptionDictionary.UserBytes);
+                }
 
-            byte[] intermediateKey;
-            if (encryptionDictionary.Revision == 6)
-            {
-                intermediateKey = ComputeStupidIsoHash(password, userKeySalt, null);
+                encryptedFileKey = encryptionDictionary.OwnerEncryptionBytes;
             }
             else
             {
-                intermediateKey = ComputeSha256Hash(password, userKeySalt);
+                // If the password is the user password:
+                // Compute an intermediate user key by computing the SHA-256 hash of the UTF-8 password concatenated with the 8 bytes of user Key Salt.
+                // The 32-byte result is the key used to decrypt the 32-byte UE string using AES-256 in CBC mode with no padding and an initialization vector of zero.
+                // The 32-byte result is the file encryption key.
+                var userKeySalt = new byte[8];
+                Array.Copy(encryptionDictionary.UserBytes, 40, userKeySalt, 0, 8);
+
+                if (encryptionDictionary.Revision == 6)
+                {
+                    intermediateKey = ComputeStupidIsoHash(password, userKeySalt, null);
+                }
+                else
+                {
+                    intermediateKey = ComputeSha256Hash(password, userKeySalt);
+                }
+
+                encryptedFileKey = encryptionDictionary.UserEncryptionBytes;
             }
-            
+
             var iv = new byte[16];
 
             using (var rijndaelManaged = new RijndaelManaged { Key = intermediateKey, IV = iv, Mode = CipherMode.CBC, Padding = PaddingMode.None })
-            using (var memoryStream = new MemoryStream(encryptionDictionary.UserEncryptionBytes))
+            using (var memoryStream = new MemoryStream(encryptedFileKey))
             using (var output = new MemoryStream())
             using (var cryptoStream = new CryptoStream(memoryStream, rijndaelManaged.CreateDecryptor(intermediateKey, iv), CryptoStreamMode.Read))
             {
