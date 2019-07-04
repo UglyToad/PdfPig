@@ -74,6 +74,7 @@
     <Content Include="Fonts\Type1\CMCSC10.pfa" />
     <Content Include="Fonts\Type1\Raleway-Black.pfb" />
     <Content Include="Integration\SpecificTestDocuments\invalid-xref-loop.pdf" />
+    <Content Include="Integration\SpecificTestDocuments\custom-properties.pdf" />
     <Content Include="Parser\SimpleGoogleDocPageContent.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
