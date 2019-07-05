@@ -11,5 +11,7 @@
         }
 
         public MediaBox MediaBox { get; set; }
+
+        public int Rotation { get; set; }
     }
 }

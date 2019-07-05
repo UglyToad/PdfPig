@@ -106,6 +106,11 @@
                 pageTreeMembers.MediaBox = new MediaBox(mediaBox.ToRectangle());
             }
 
+            if (currentPageDictionary.TryGet(NameToken.Rotate, pdfScanner, out NumericToken rotateToken))
+            {
+                pageTreeMembers.Rotation = rotateToken.Int;
+            }
+
             if (!currentPageDictionary.TryGet(NameToken.Kids, out var kids)
             || !(kids is ArrayToken kidsArray))
             {

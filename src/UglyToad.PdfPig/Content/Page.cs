@@ -29,6 +29,11 @@
 
         internal CropBox CropBox { get; }
 
+        /// <summary>
+        /// The rotation of the page in degrees (clockwise). Valid values are 0, 90, 180 and 270.
+        /// </summary>
+        public int Rotation { get; }
+
         internal PageContent Content { get; }
 
         /// <summary>
@@ -67,7 +72,7 @@
         [NotNull]
         public Experimental ExperimentalAccess { get; }
 
-        internal Page(int number, DictionaryToken dictionary, MediaBox mediaBox, CropBox cropBox, PageContent content,
+        internal Page(int number, DictionaryToken dictionary, MediaBox mediaBox, CropBox cropBox, int rotation, PageContent content,
             AnnotationProvider annotationProvider)
         {
             if (number <= 0)
@@ -75,11 +80,17 @@
                 throw new ArgumentOutOfRangeException(nameof(number), "Page number cannot be 0 or negative.");
             }
 
+            if (rotation != 0 && rotation != 90 && rotation != 180 && rotation != 270)
+            {
+                throw new ArgumentOutOfRangeException(nameof(rotation), $"Rotation must be 0, 90, 180 or 270. Got: {rotation}.");
+            }
+
             Dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
 
             Number = number;
             MediaBox = mediaBox;
             CropBox = cropBox;
+            Rotation = rotation;
             Content = content;
             Text = GetText(content);
 

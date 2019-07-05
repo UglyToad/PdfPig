@@ -53,6 +53,12 @@
                 throw new InvalidOperationException($"Page {number} had its type specified as {type} rather than 'Page'.");
             }
 
+            var rotation = pageTreeMembers.Rotation;
+            if (dictionary.TryGet(NameToken.Rotate, pdfScanner, out NumericToken rotateToken))
+            {
+                rotation = rotateToken.Int;
+            }
+
             MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers, isLenientParsing);
             CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox, isLenientParsing);
             
@@ -110,7 +116,7 @@
                 content = GetContent(bytes, cropBox, userSpaceUnit, isLenientParsing);
             }
 
-            var page = new Page(number, dictionary, mediaBox, cropBox, content, new AnnotationProvider(pdfScanner, dictionary, isLenientParsing));
+            var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, new AnnotationProvider(pdfScanner, dictionary, isLenientParsing));
 
             return page;
         }
