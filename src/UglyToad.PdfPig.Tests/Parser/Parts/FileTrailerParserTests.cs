@@ -31,7 +31,7 @@ startxref
         }
 
         [Fact]
-        public void IgnoresStartXrefFollowingEndOfFile()
+        public void IncludesStartXrefFollowingEndOfFile()
         {
             var input = StringBytesTestConverter.Convert(@"11 0 obj
 << /Type/Something /W[12 0 5 6] >>
@@ -53,7 +53,7 @@ startxref
 
             var result = parser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes), false);
 
-            Assert.Equal(1384733, result);
+            Assert.Equal(17, result);
         }
 
         [Fact]

@@ -27,15 +27,6 @@
         /// </summary>
         private const int EndOfFileSearchRange = 1024;
 
-        private static readonly byte[] EndOfFileBytes = 
-        {
-            (byte)'%',
-            (byte)'%',
-            (byte)'E',
-            (byte)'O',
-            (byte)'F'
-        };
-
         private static readonly byte[] StartXRefBytes =
         {
             (byte) 's',
@@ -106,7 +97,6 @@
             var startXrefs = new List<int>();
 
             var index = 0;
-            var eofIndex = 0;
             var offset = 0;
             
             // Starting scanning the last 1024 bytes.
@@ -116,18 +106,10 @@
                 if (bytes.CurrentByte == StartXRefBytes[index])
                 {
                     // We might be reading "startxref".
-                    eofIndex = 0;
                     index++;
-                }
-                else if (bytes.CurrentByte == EndOfFileBytes[eofIndex])
-                {
-                    // We might be reading "%%EOF".
-                    eofIndex++;
-                    index = 0;
                 }
                 else
                 {
-                    eofIndex = 0;
                     index = 0;
                 }
 
@@ -138,11 +120,6 @@
 
                     // Continue scanning in case there are further "startxref"s. Not sure if this ever happens.
                     index = 0;
-                }
-                else if (eofIndex == EndOfFileBytes.Length)
-                {
-                    // Stop at the EOF if present.
-                    break;
                 }
             }
 
