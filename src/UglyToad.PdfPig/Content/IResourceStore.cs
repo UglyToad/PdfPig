@@ -10,5 +10,9 @@
         IFont GetFont(NameToken name);
 
         StreamToken GetXObject(NameToken name);
+
+        DictionaryToken GetExtendedGraphicsStateDictionary(NameToken name);
+
+        IFont GetFontDirectly(IndirectReferenceToken fontReferenceToken, bool isLenientParsing);
     }
 }

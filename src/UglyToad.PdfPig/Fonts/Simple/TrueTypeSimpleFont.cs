@@ -11,89 +11,6 @@
     using TrueType;
     using Util.JetBrains.Annotations;
 
-    /// <summary>
-    /// Some TrueType fonts use both the Standard 14 descriptor and the TrueType font from disk.
-    /// </summary>
-    internal class TrueTypeStandard14FallbackSimpleFont : IFont
-    {
-        private static readonly TransformationMatrix DefaultTransformation =
-            TransformationMatrix.FromValues(1m / 1000m, 0, 0, 1m / 1000m, 0, 0);
-
-        private readonly FontMetrics fontMetrics;
-        private readonly Encoding encoding;
-        private readonly TrueTypeFontProgram font;
-
-        public NameToken Name { get; }
-
-        public bool IsVertical { get; } = false;
-
-        public TrueTypeStandard14FallbackSimpleFont(NameToken name, FontMetrics fontMetrics, Encoding encoding, TrueTypeFontProgram font)
-        {
-            this.fontMetrics = fontMetrics;
-            this.encoding = encoding ?? throw new ArgumentNullException(nameof(encoding));
-            this.font = font;
-            Name = name;
-        }
-
-        public int ReadCharacterCode(IInputBytes bytes, out int codeLength)
-        {
-            codeLength = 1;
-            return bytes.CurrentByte;
-        }
-
-        public bool TryGetUnicode(int characterCode, out string value)
-        {
-            value = null;
-
-            // If the font is a simple font that uses one of the predefined encodings MacRomanEncoding, MacExpertEncoding, or WinAnsiEncoding...
-
-            //  Map the character code to a character name.
-            var encodedCharacterName = encoding.GetName(characterCode);
-
-            // Look up the character name in the Adobe Glyph List.
-            try
-            {
-                value = GlyphList.AdobeGlyphList.NameToUnicode(encodedCharacterName);
-            }
-            catch
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        public CharacterBoundingBox GetBoundingBox(int characterCode)
-        {
-            var fontMatrix = GetFontMatrix();
-            if (font != null && font.TryGetBoundingBox(characterCode, out var bounds))
-            {
-                bounds = fontMatrix.Transform(bounds);
-                return new CharacterBoundingBox(bounds, bounds.Width);
-            }
-
-            var name = encoding.GetName(characterCode);
-            var metrics = fontMetrics.CharacterMetrics[name];
-
-            bounds = fontMatrix.Transform(metrics.BoundingBox);
-            var width = fontMatrix.TransformX(metrics.WidthX);
-
-            return new CharacterBoundingBox(bounds, width);
-        }
-
-        public TransformationMatrix GetFontMatrix()
-        {
-            if (font?.TableRegister.HeaderTable != null)
-            {
-                var scale = (decimal)font.GetFontMatrixMultiplier();
-
-                return TransformationMatrix.FromValues(1 / scale, 0, 0, 1 / scale, 0, 0);
-            }
-
-            return DefaultTransformation;
-        }
-    }
-
     internal class TrueTypeSimpleFont : IFont
     {
         private static readonly TransformationMatrix DefaultTransformation =
@@ -194,14 +111,14 @@
             {
                 boundingBox = DefaultTransformation.Transform(boundingBox);
             }
-            
+
             decimal width;
 
             var index = characterCode - firstCharacter;
             if (widths != null && index >= 0 && index < widths.Length)
             {
                 fromFont = false;
-                 width = widths[index];
+                width = widths[index];
             }
             else if (fontProgram != null)
             {
@@ -214,7 +131,7 @@
             {
                 throw new InvalidOperationException($"Could not retrieve width for character code: {characterCode} in font {Name}.");
             }
-            
+
             if (fromFont)
             {
                 width = fontMatrix.Transform(new PdfVector(width, 0)).X;
@@ -227,10 +144,22 @@
             return new CharacterBoundingBox(boundingBox, width);
         }
 
+        public TransformationMatrix GetFontMatrix()
+        {
+            var scale = 1000m;
+
+            if (fontProgram?.TableRegister.HeaderTable != null)
+            {
+                scale = fontProgram.GetFontMatrixMultiplier();
+            }
+
+            return TransformationMatrix.FromValues(1m / scale, 0, 0, 1m / scale, 0, 0);
+        }
+
         private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode, out bool fromFont)
         {
             fromFont = true;
-            
+
             if (fontProgram == null)
             {
                 return descriptor.BoundingBox;
@@ -261,18 +190,6 @@
             }
 
             return widths[index];
-        }
-
-        public TransformationMatrix GetFontMatrix()
-        {
-            var scale = 1000m;
-
-            if (fontProgram?.TableRegister.HeaderTable != null)
-            {
-                scale = fontProgram.GetFontMatrixMultiplier();
-            }
-
-            return TransformationMatrix.FromValues(1m / scale, 0, 0, 1m / scale, 0, 0);
         }
     }
 }

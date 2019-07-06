@@ -43,6 +43,7 @@
                 "UglyToad.PdfPig.Content.DocumentInformation",
                 "UglyToad.PdfPig.Content.Letter",
                 "UglyToad.PdfPig.Content.Page",
+                "UglyToad.PdfPig.Content.PageRotationDegrees",
                 "UglyToad.PdfPig.Content.PageSize",
                 "UglyToad.PdfPig.Content.Word",
                 "UglyToad.PdfPig.Content.TextLine",

@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts
 {
     using Core;
-    using Geometry;
     using IO;
     using Tokens;
 
@@ -18,18 +17,5 @@
         CharacterBoundingBox GetBoundingBox(int characterCode);
 
         TransformationMatrix GetFontMatrix();
-    }
-
-    internal class CharacterBoundingBox
-    {
-        public PdfRectangle GlyphBounds { get; }
-
-        public decimal Width { get; }
-
-        public CharacterBoundingBox(PdfRectangle glyphBounds, decimal width)
-        {
-            GlyphBounds = glyphBounds;
-            Width = width;
-        }
     }
 }

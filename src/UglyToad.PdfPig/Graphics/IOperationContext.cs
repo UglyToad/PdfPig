@@ -81,5 +81,11 @@
         /// Close the current path.
         /// </summary>
         void ClosePath();
+
+        /// <summary>
+        /// Update the graphics state to apply the state from the named ExtGState dictionary.
+        /// </summary>
+        /// <param name="stateName">The name of the state to apply.</param>
+        void SetNamedGraphicsState(NameToken stateName);
     }
 }

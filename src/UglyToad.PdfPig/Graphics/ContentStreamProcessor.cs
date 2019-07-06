@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using Content;
+    using Core;
     using Fonts;
     using Geometry;
     using IO;
@@ -20,12 +21,14 @@
         private readonly List<PdfPath> paths = new List<PdfPath>();
         private readonly IResourceStore resourceStore;
         private readonly UserSpaceUnit userSpaceUnit;
+        private readonly PageRotationDegrees rotation;
         private readonly bool isLenientParsing;
         private readonly IPdfTokenScanner pdfScanner;
         private readonly XObjectFactory xObjectFactory;
         private readonly ILog log;
 
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
+        private IFont activeExtendedGraphicsStateFont = null;
 
         public TextMatrices TextMatrices { get; } = new TextMatrices();
 
@@ -43,13 +46,14 @@
 
         public List<Letter> Letters = new List<Letter>();
 
-        public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit, bool isLenientParsing, 
+        public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation, bool isLenientParsing, 
             IPdfTokenScanner pdfScanner,
             XObjectFactory xObjectFactory,
             ILog log)
         {
             this.resourceStore = resourceStore;
             this.userSpaceUnit = userSpaceUnit;
+            this.rotation = rotation;
             this.isLenientParsing = isLenientParsing;
             this.pdfScanner = pdfScanner;
             this.xObjectFactory = xObjectFactory;
@@ -91,6 +95,7 @@
         public void PopState()
         {
             graphicsStack.Pop();
+            activeExtendedGraphicsStateFont = null;
         }
 
         public void PushState()
@@ -102,7 +107,7 @@
         {
             var currentState = GetCurrentState();
 
-            var font = resourceStore.GetFont(currentState.FontState.FontName);
+            var font = currentState.FontState.FromExtendedGraphicsState ? activeExtendedGraphicsStateFont : resourceStore.GetFont(currentState.FontState.FontName);
 
             if (font == null)
             {
@@ -147,11 +152,11 @@
 
                 var boundingBox = font.GetBoundingBox(code);
 
-                var transformedGlyphBounds = transformationMatrix
+                var transformedGlyphBounds = rotation.Rotate(transformationMatrix)
                     .Transform(TextMatrices.TextMatrix
                     .Transform(renderingMatrix
                     .Transform(boundingBox.GlyphBounds)));
-                var transformedPdfBounds = transformationMatrix
+                var transformedPdfBounds = rotation.Rotate(transformationMatrix)
                     .Transform(TextMatrices.TextMatrix
                         .Transform(renderingMatrix.Transform(new PdfRectangle(0, 0, boundingBox.Width, 0))));
 
@@ -272,6 +277,36 @@
             CurrentPath.ClosePath();
             paths.Add(CurrentPath);
             CurrentPath = null;
+        }
+
+        public void SetNamedGraphicsState(NameToken stateName)
+        {
+            var currentGraphicsState = GetCurrentState();
+
+            var state = resourceStore.GetExtendedGraphicsStateDictionary(stateName);
+
+            if (state.TryGet(NameToken.Lw, pdfScanner, out NumericToken lwToken))
+            {
+                currentGraphicsState.LineWidth = lwToken.Data;
+            }
+
+            if (state.TryGet(NameToken.Lc, pdfScanner, out NumericToken lcToken))
+            {
+                currentGraphicsState.CapStyle = (LineCapStyle) lcToken.Int;
+            }
+
+            if (state.TryGet(NameToken.Lj, pdfScanner, out NumericToken ljToken))
+            {
+                currentGraphicsState.JoinStyle = (LineJoinStyle) ljToken.Int;
+            }
+
+            if (state.TryGet(NameToken.Font, pdfScanner, out ArrayToken fontArray) && fontArray.Length == 2
+                && fontArray.Data[0] is IndirectReferenceToken fontReference && fontArray.Data[1] is NumericToken sizeToken)
+            {
+                currentGraphicsState.FontState.FromExtendedGraphicsState = true;
+                currentGraphicsState.FontState.FontSize = sizeToken.Data;
+                activeExtendedGraphicsStateFont = resourceStore.GetFontDirectly(fontReference, isLenientParsing);
+            }
         }
 
         private void AdjustTextMatrix(decimal tx, decimal ty)

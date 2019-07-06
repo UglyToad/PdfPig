@@ -53,10 +53,10 @@
                 throw new InvalidOperationException($"Page {number} had its type specified as {type} rather than 'Page'.");
             }
 
-            var rotation = pageTreeMembers.Rotation;
+            var rotation = new PageRotationDegrees(pageTreeMembers.Rotation);
             if (dictionary.TryGet(NameToken.Rotate, pdfScanner, out NumericToken rotateToken))
             {
-                rotation = rotateToken.Int;
+                rotation = new PageRotationDegrees(rotateToken.Int);
             }
 
             MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers, isLenientParsing);
@@ -100,7 +100,7 @@
                     }
                 }
                 
-                content = GetContent(bytes, cropBox, userSpaceUnit, isLenientParsing);
+                content = GetContent(bytes, cropBox, userSpaceUnit, rotation, isLenientParsing);
             }
             else
             {
@@ -113,7 +113,7 @@
 
                 var bytes = contentStream.Decode(filterProvider);
 
-                content = GetContent(bytes, cropBox, userSpaceUnit, isLenientParsing);
+                content = GetContent(bytes, cropBox, userSpaceUnit, rotation, isLenientParsing);
             }
 
             var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, new AnnotationProvider(pdfScanner, dictionary, isLenientParsing));
@@ -121,11 +121,11 @@
             return page;
         }
 
-        private PageContent GetContent(IReadOnlyList<byte> contentBytes, CropBox cropBox, UserSpaceUnit userSpaceUnit, bool isLenientParsing)
+        private PageContent GetContent(IReadOnlyList<byte> contentBytes, CropBox cropBox, UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation, bool isLenientParsing)
         {
             var operations = pageContentParser.Parse(new ByteArrayInputBytes(contentBytes));
 
-            var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit, isLenientParsing, pdfScanner, xObjectFactory, log);
+            var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit, rotation, isLenientParsing, pdfScanner, xObjectFactory, log);
 
             return context.Process(operations);
         }

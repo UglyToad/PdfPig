@@ -2,6 +2,7 @@
 namespace UglyToad.PdfPig.Graphics
 {
     using Core;
+    using Operations.SpecialGraphicsState;
     using PdfPig.Core;
     using Tokens;
 
@@ -10,6 +11,11 @@ namespace UglyToad.PdfPig.Graphics
     /// </summary>
     public class CurrentFontState : IDeepCloneable<CurrentFontState>
     {
+        /// <summary>
+        /// Whether the font comes from the extended graphics state via the <see cref="SetGraphicsStateParametersFromDictionary"/> operator.
+        /// </summary>
+        public bool FromExtendedGraphicsState { get; set; } = false;
+
         /// <summary>
         /// A value in unscaled text space units which is added to the horizontal (or vertical if in vertical writing mode)
         /// glyph displacement.

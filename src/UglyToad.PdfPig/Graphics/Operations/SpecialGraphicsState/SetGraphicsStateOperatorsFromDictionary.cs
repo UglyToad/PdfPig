@@ -34,6 +34,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
+            operationContext.SetNamedGraphicsState(Name);
         }
 
         /// <inheritdoc />

@@ -1,8 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Graphics
 {
     using System.Collections.Generic;
-    using Content;
-    using PdfPig.Fonts;
     using PdfPig.Geometry;
     using PdfPig.Graphics;
     using PdfPig.IO;
@@ -66,22 +64,9 @@
         public void ClosePath()
         {
         }
-    }
 
-    internal class TestResourceStore : IResourceStore
-    {
-        public void LoadResourceDictionary(DictionaryToken dictionary, bool isLenientParsing)
+        public void SetNamedGraphicsState(NameToken stateName)
         {
-        }
-
-        public IFont GetFont(NameToken name)
-        {
-            return null;
-        }
-
-        public StreamToken GetXObject(NameToken name)
-        {
-            return null;
         }
     }
 }

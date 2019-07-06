@@ -240,6 +240,7 @@
                     }
                 }
 
+                data.Seek(0);
                 font = trueTypeFontParser.Parse(data);
                 var psName = font.TableRegister.NameTable?.GetPostscriptName() ?? font.Name;
                 if (!cache.ContainsKey(psName))
