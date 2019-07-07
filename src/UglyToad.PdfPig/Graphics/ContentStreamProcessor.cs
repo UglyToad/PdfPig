@@ -126,7 +126,7 @@
 
             // TODO: this does not seem correct, produces the correct result for now but we need to revisit.
             // see: https://stackoverflow.com/questions/48010235/pdf-specification-get-font-size-in-points
-            var pointSize = decimal.Round(fontSize * transformationMatrix.A, 2);
+            var pointSize = decimal.Round(rotation.Rotate(transformationMatrix).Multiply(TextMatrices.TextMatrix).Multiply(fontSize).A, 2);
             
             while (bytes.MoveNext())
             {

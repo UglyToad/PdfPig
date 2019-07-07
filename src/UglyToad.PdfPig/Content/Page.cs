@@ -154,6 +154,15 @@
             {
                 return annotationProvider.GetAnnotations();
             }
+
+            /// <summary>
+            /// Gets the calculated letter size in points.
+            /// This is considered experimental because the calculated value is incorrect for some documents at present.
+            /// </summary>
+            public decimal GetPointSize(Letter letter)
+            {
+                return letter.PointSize;
+            }
         }
     }
 }
