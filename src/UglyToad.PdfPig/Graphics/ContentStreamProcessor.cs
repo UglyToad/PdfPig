@@ -137,6 +137,8 @@
                 if (!foundUnicode || unicode == null)
                 {
                     log.Warn($"We could not find the corresponding character with code {code} in font {font.Name}.");
+                    // Try casting directly to string as in PDFBox 1.8.
+                    unicode = new string((char)code, 1);
                 }
 
                 var wordSpacing = 0m;

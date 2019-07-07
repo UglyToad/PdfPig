@@ -24,7 +24,7 @@
 
                 var page2 = document.GetPage(2);
 
-                Assert.Contains("isθc={θc1,θc2,...,θcn},", page2.Text);
+                Assert.Contains("is~θc={θc1,θc2,...,θcn},", page2.Text);
             }
         }
 
