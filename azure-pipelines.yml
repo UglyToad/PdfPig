@@ -30,7 +30,11 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
-- task: VSTest@2
-  inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+- script: |
+    dotnet test ./src/UglyToad.PdfPig.Tests/UglyToad.PdfPig.Tests.csproj -c Debug --logger trx /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+  displayName: 'Build source, tests and run tests with coverage'
+
+# Upload coverage to codecov.io
+- script: |
+    %USERPROFILE%\.nuget\packages\codecov\1.5.0\tools\codecov.exe -f "./src/UglyToad.PdfPig.Tests/coverage.opencover.xml" -t $(codecov)
+  displayName: Upload coverage to codecov.io
