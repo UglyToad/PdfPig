@@ -32,7 +32,16 @@ steps:
 
 - script: |
     dotnet test ./src/UglyToad.PdfPig.Tests/UglyToad.PdfPig.Tests.csproj -c Debug --logger trx /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+    cd ./src/UglyToad.PdfPig.Tests
+    dir
   displayName: 'Build source, tests and run tests with coverage'
+
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'VSTest'
+    testResultsFiles: '**/*.trx'
+    failTaskOnFailedTests: true
+    testRunTitle: 'Gather test results'
 
 # Upload coverage to codecov.io
 - script: |
