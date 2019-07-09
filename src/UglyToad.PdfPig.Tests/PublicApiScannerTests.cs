@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
@@ -19,6 +20,12 @@
 
             foreach (var type in types)
             {
+                // Skip coverage measuring instrumentation classes.
+                if (type.FullName.StartsWith("Coverlet", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 if (type.IsPublic)
                 {
                     publicTypeNames.Add(type.FullName);

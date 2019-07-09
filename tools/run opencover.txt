@@ -1,7 +1,0 @@
-src\CodeCoverage\CodeCoverage.cmd
-
-pwd
-
-Expand-Archive tools\Codecov.zip -DestinationPath "tools"
-
-tools\Codecov\codecov.exe -f "src\test-results.xml"
