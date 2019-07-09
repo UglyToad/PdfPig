@@ -33,7 +33,7 @@ steps:
 - task: NuGetCommand@2
   inputs:
     command: 'pack'
-    packagesToPack: './src/UglyToad.PdfPig/UglyToad.PdfPig.csproj'
+    packagesToPack: '**/UglyToad.PdfPig.csproj'
     configuration: '$(buildConfiguration)'
     versioningScheme: 'off'
 
