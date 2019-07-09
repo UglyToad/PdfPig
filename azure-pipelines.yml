@@ -30,11 +30,11 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
-- task: NuGetCommand@2
+- task: DotNetCoreCLI@2
   inputs:
     command: 'pack'
     packagesToPack: '**/UglyToad.PdfPig.csproj'
-    configuration: '$(buildConfiguration)'
+    includesymbols: true
     versioningScheme: 'off'
 
 - script: |
