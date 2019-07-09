@@ -30,6 +30,13 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
+- task: NuGetCommand@2
+  inputs:
+    command: 'pack'
+    packagesToPack: './src/UglyToad.PdfPig/UglyToad.PdfPig.csproj'
+    configuration: '$(buildConfiguration)'
+    versioningScheme: 'off'
+
 - script: |
     dotnet test ./src/UglyToad.PdfPig.Tests/UglyToad.PdfPig.Tests.csproj -c Debug --logger trx /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
     cd ./src/UglyToad.PdfPig.Tests
@@ -47,10 +54,3 @@ steps:
 - script: |
     %USERPROFILE%\.nuget\packages\codecov\1.5.0\tools\codecov.exe -f "./src/UglyToad.PdfPig.Tests/coverage.opencover.xml" -t $(codecov)
   displayName: Upload coverage to codecov.io
-
-- task: NuGetCommand@2
-  inputs:
-    command: 'pack'
-    packagesToPack: './src/UglyToad.PdfPig/UglyToad.PdfPig.csproj'
-    configuration: 'Release'
-    versioningScheme: 'off'
