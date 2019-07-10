@@ -36,6 +36,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
+            operationContext.ColorspaceContext.SetNonStrokingColorspace(Name);
         }
 
         /// <inheritdoc />

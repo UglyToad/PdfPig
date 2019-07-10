@@ -84,6 +84,7 @@
                 "UglyToad.PdfPig.Graphics.Core.TextRenderingMode",
                 "UglyToad.PdfPig.Graphics.CurrentFontState",
                 "UglyToad.PdfPig.Graphics.CurrentGraphicsState",
+                "UglyToad.PdfPig.Graphics.IColorspaceContext",
                 "UglyToad.PdfPig.Graphics.IOperationContext",
                 "UglyToad.PdfPig.Graphics.Operations.ClippingPaths.ModifyClippingByEvenOddIntersect",
                 "UglyToad.PdfPig.Graphics.Operations.ClippingPaths.ModifyClippingByNonZeroWindingIntersect",

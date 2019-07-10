@@ -33,6 +33,9 @@
         public TextMatrices TextMatrices { get; } = new TextMatrices();
 
         public PdfPath CurrentPath { get; private set; }
+
+        public IColorspaceContext ColorspaceContext { get; } = new ColorspaceContext();
+
         public PdfPoint CurrentPosition { get; set; }
 
         public int StackSize => graphicsStack.Count;

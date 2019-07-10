@@ -33,6 +33,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
+            operationContext.ColorspaceContext.SetStrokingColorGray(Gray);
         }
         
         /// <inheritdoc />

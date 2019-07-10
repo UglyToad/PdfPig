@@ -14,7 +14,7 @@
         /// The symbol for this operation in a stream.
         /// </summary>
         public const string Symbol = "SC";
-        
+
         /// <inheritdoc />
         public string Operator => Symbol;
 
@@ -35,6 +35,20 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
+            switch (Operands.Count)
+            {
+                case 1:
+                    operationContext.ColorspaceContext.SetStrokingColorGray(Operands[0]);
+                    break;
+                case 3:
+                    operationContext.ColorspaceContext.SetStrokingColorRgb(Operands[0], Operands[1], Operands[2]);
+                    break;
+                case 4:
+                    operationContext.ColorspaceContext.SetStrokingColorCmyk(Operands[0], Operands[1], Operands[2], Operands[3]);
+                    break;
+                default:
+                    return;
+            }
         }
 
         /// <inheritdoc />

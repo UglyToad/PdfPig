@@ -18,7 +18,12 @@
         PdfPath CurrentPath { get; }
 
         /// <summary>
-        /// The current p
+        /// The active colorspaces for this content stream.
+        /// </summary>
+        IColorspaceContext ColorspaceContext { get; }
+
+        /// <summary>
+        /// The current position.
         /// </summary>
         PdfPoint CurrentPosition { get; set; }
 
