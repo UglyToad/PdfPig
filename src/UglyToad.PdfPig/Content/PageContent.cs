@@ -5,6 +5,7 @@
     using Graphics.Operations;
     using Tokenization.Scanner;
     using XObjects;
+    using UglyToad.PdfPig.Geometry;
 
     /// <summary>
     /// 
@@ -23,8 +24,9 @@
         internal IReadOnlyList<IGraphicsStateOperation> GraphicsStateOperations { get; }
 
         public IReadOnlyList<Letter> Letters { get; }
+        public List<PdfPath> Paths { get; }
 
-        internal PageContent(IReadOnlyList<IGraphicsStateOperation> graphicsStateOperations, IReadOnlyList<Letter> letters,
+        internal PageContent(IReadOnlyList<IGraphicsStateOperation> graphicsStateOperations, IReadOnlyList<Letter> letters, List<PdfPath> paths,
             IReadOnlyDictionary<XObjectType, List<XObjectContentRecord>> xObjects,
             IPdfTokenScanner pdfScanner,
             XObjectFactory xObjectFactory,
@@ -32,6 +34,7 @@
         {
             GraphicsStateOperations = graphicsStateOperations;
             Letters = letters;
+            Paths = paths;
             this.xObjects = xObjects;
             this.pdfScanner = pdfScanner;
             this.xObjectFactory = xObjectFactory;

@@ -37,6 +37,7 @@
         {
             operationContext.BeginSubpath();
             operationContext.CurrentPosition = Point;
+            operationContext.CurrentPath.LineTo(Point.X, Point.Y);
         }
 
         /// <inheritdoc />

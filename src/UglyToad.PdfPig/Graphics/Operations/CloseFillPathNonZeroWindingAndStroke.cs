@@ -22,12 +22,13 @@
         public string Operator => Symbol;
 
         private CloseFillPathNonZeroWindingAndStroke()
-        {
+        {            
         }
 
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
+            operationContext.FillPath(true);
         }
 
         /// <inheritdoc />
