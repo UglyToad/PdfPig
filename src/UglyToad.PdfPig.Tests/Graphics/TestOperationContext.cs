@@ -62,6 +62,9 @@
         public void StrokePath(bool close)
         {
         }
+        public void FillPath(bool close)
+        {
+        }
 
         public void ClosePath()
         {
