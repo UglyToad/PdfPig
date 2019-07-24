@@ -24,7 +24,7 @@
         internal IReadOnlyList<IGraphicsStateOperation> GraphicsStateOperations { get; }
 
         public IReadOnlyList<Letter> Letters { get; }
-        public List<PdfPath> Paths { get; }
+        public IReadOnlyList<PdfPath> Paths { get; }
 
         internal PageContent(IReadOnlyList<IGraphicsStateOperation> graphicsStateOperations, IReadOnlyList<Letter> letters, List<PdfPath> paths,
             IReadOnlyDictionary<XObjectType, List<XObjectContentRecord>> xObjects,
