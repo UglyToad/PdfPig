@@ -5,6 +5,7 @@
     using PdfPig.Graphics;
     using PdfPig.IO;
     using PdfPig.Tokens;
+    using UglyToad.PdfPig.Core;
 
     internal class TestOperationContext : IOperationContext
     {
@@ -16,6 +17,11 @@
         public TextMatrices TextMatrices { get; set; }
             = new TextMatrices();
 
+        public TransformationMatrix CurrentTransformationMatrix
+        {
+            get { return GetCurrentState().CurrentTransformationMatrix; }
+        }
+
         public PdfPath CurrentPath { get; set; }
 
         public IColorspaceContext ColorspaceContext { get; } = new ColorspaceContext();
@@ -25,7 +31,7 @@
         public TestOperationContext()
         {
             StateStack.Push(new CurrentGraphicsState());
-            CurrentPath = new PdfPath();
+            CurrentPath = new PdfPath(CurrentTransformationMatrix);
         }
 
         public CurrentGraphicsState GetCurrentState()

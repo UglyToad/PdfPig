@@ -12,22 +12,29 @@ namespace UglyToad.PdfPig.Geometry
     /// </summary>
     public class PdfPath
     {
-        public readonly List<IPathCommand> Commands = new List<IPathCommand>();
+        private readonly List<IPathCommand> commands = new List<IPathCommand>();
+        public IReadOnlyList<IPathCommand> Commands => commands;
+
         private PdfPoint? currentPosition;
-        internal TransformationMatrix CurrentTransformationMatrix;
+        private TransformationMatrix currentTransformationMatrix = TransformationMatrix.Identity;
+
+        public PdfPath(TransformationMatrix transformationMatrix)
+        {
+            currentTransformationMatrix = transformationMatrix;
+        }
 
         internal void MoveTo(decimal x, decimal y)
         {
-            currentPosition = CurrentTransformationMatrix.Transform(new PdfPoint(x, y));
-            Commands.Add(new Move(currentPosition.Value));
+            currentPosition = currentTransformationMatrix.Transform(new PdfPoint(x, y));
+            commands.Add(new Move(currentPosition.Value));
         }
 
         internal void LineTo(decimal x, decimal y)
         {
             if (currentPosition.HasValue)
             {
-                var to = CurrentTransformationMatrix.Transform(new PdfPoint(x, y));
-                Commands.Add(new Line(currentPosition.Value, to));
+                var to = currentTransformationMatrix.Transform(new PdfPoint(x, y));
+                commands.Add(new Line(currentPosition.Value, to));
                 currentPosition = to;
             }
             else
@@ -42,9 +49,9 @@ namespace UglyToad.PdfPig.Geometry
         {
             if (currentPosition.HasValue)
             {
-                var to = CurrentTransformationMatrix.Transform(new PdfPoint(x3, y3));
-                Commands.Add(new BezierCurve(currentPosition.Value,
-                    CurrentTransformationMatrix.Transform(new PdfPoint(x1, y1)), CurrentTransformationMatrix.Transform(new PdfPoint(x2, y2)), to));
+                var to = currentTransformationMatrix.Transform(new PdfPoint(x3, y3));
+                commands.Add(new BezierCurve(currentPosition.Value,
+                    currentTransformationMatrix.Transform(new PdfPoint(x1, y1)), currentTransformationMatrix.Transform(new PdfPoint(x2, y2)), to));
                 currentPosition = to;
             }
             else
@@ -57,12 +64,12 @@ namespace UglyToad.PdfPig.Geometry
 
         internal void ClosePath()
         {
-            Commands.Add(new Close());
+            commands.Add(new Close());
         }
 
         internal PdfRectangle? GetBoundingRectangle()
         {
-            if (Commands.Count == 0)
+            if (commands.Count == 0)
             {
                 return null;
             }
@@ -73,7 +80,7 @@ namespace UglyToad.PdfPig.Geometry
             var minY = decimal.MaxValue;
             var maxY = decimal.MinValue;
 
-            foreach (var command in Commands)
+            foreach (var command in commands)
             {
                 var rect = command.GetBoundingRectangle();
                 if (rect == null)
@@ -108,7 +115,7 @@ namespace UglyToad.PdfPig.Geometry
         internal string ToSvg()
         {
             var builder = new StringBuilder();
-            foreach (var pathCommand in Commands)
+            foreach (var pathCommand in commands)
             {
                 pathCommand.WriteSvg(builder);
             }
@@ -138,7 +145,7 @@ namespace UglyToad.PdfPig.Geometry
             var bbox = GetBoundingRectangle();
             var bboxes = new List<PdfRectangle>();
 
-            foreach (var command in Commands)
+            foreach (var command in commands)
             {
                 var segBbox = command.GetBoundingRectangle();
                 if (segBbox.HasValue)
@@ -381,7 +388,7 @@ namespace UglyToad.PdfPig.Geometry
 
         internal void Rectangle(decimal x, decimal y, decimal width, decimal height)
         {
-            currentPosition = CurrentTransformationMatrix.Transform(new PdfPoint(x, y));
+            currentPosition = currentTransformationMatrix.Transform(new PdfPoint(x, y));
             LineTo(x + width, y);
             LineTo(x + width, y + height);
             LineTo(x, y + height);

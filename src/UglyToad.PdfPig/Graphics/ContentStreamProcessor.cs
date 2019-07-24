@@ -32,6 +32,11 @@
 
         public TextMatrices TextMatrices { get; } = new TextMatrices();
 
+        public TransformationMatrix CurrentTransformationMatrix
+        {
+            get { return GetCurrentState().CurrentTransformationMatrix; }
+        }
+
         public PdfPath CurrentPath { get; private set; }
 
         public IColorspaceContext ColorspaceContext { get; } = new ColorspaceContext();
@@ -265,8 +270,7 @@
 
         public void BeginSubpath()
         {
-            CurrentPath = new PdfPath();
-            CurrentPath.CurrentTransformationMatrix = GetCurrentState().CurrentTransformationMatrix;
+            CurrentPath = new PdfPath(CurrentTransformationMatrix);
         }
 
         public void StrokePath(bool close)
