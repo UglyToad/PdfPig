@@ -45,7 +45,7 @@
         /// <summary>
         /// The set of <see cref="PdfPath"/>s drawn by the PDF content.
         /// </summary>
-        public List<PdfPath> Paths => Content?.Paths ?? new List<PdfPath>();
+        public IReadOnlyList<PdfPath> Paths => Content?.Paths ?? new List<PdfPath>();
 
         /// <summary>
         /// The full text of all characters on the page in the order they are presented in the PDF content.
