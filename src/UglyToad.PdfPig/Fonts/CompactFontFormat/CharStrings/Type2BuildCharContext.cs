@@ -9,7 +9,7 @@
     internal class Type2BuildCharContext
     {
         private readonly Dictionary<int, decimal> transientArray = new Dictionary<int, decimal>();
-        
+
         /// <summary>
         /// The numbers currently on the Type 2 Build Char stack.
         /// </summary>
@@ -18,7 +18,7 @@
         /// <summary>
         /// The current path.
         /// </summary>
-        public PdfPath Path { get; } = new PdfPath();
+        public PdfPath Path { get; } = new PdfPath(Core.TransformationMatrix.Identity);
 
         /// <summary>
         /// The current location of the active point.

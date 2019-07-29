@@ -5,6 +5,7 @@ namespace UglyToad.PdfPig.Geometry
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
+    using UglyToad.PdfPig.Core;
 
     /// <summary>
     /// A path in a PDF document, used by glyphs and page content.
@@ -12,11 +13,19 @@ namespace UglyToad.PdfPig.Geometry
     public class PdfPath
     {
         private readonly List<IPathCommand> commands = new List<IPathCommand>();
+        public IReadOnlyList<IPathCommand> Commands => commands;
+
         private PdfPoint? currentPosition;
+        private TransformationMatrix currentTransformationMatrix = TransformationMatrix.Identity;
+
+        public PdfPath(TransformationMatrix transformationMatrix)
+        {
+            currentTransformationMatrix = transformationMatrix;
+        }
 
         internal void MoveTo(decimal x, decimal y)
         {
-            currentPosition = new PdfPoint(x, y);
+            currentPosition = currentTransformationMatrix.Transform(new PdfPoint(x, y));
             commands.Add(new Move(currentPosition.Value));
         }
 
@@ -24,7 +33,7 @@ namespace UglyToad.PdfPig.Geometry
         {
             if (currentPosition.HasValue)
             {
-                var to = new PdfPoint(x, y);
+                var to = currentTransformationMatrix.Transform(new PdfPoint(x, y));
                 commands.Add(new Line(currentPosition.Value, to));
                 currentPosition = to;
             }
@@ -40,9 +49,9 @@ namespace UglyToad.PdfPig.Geometry
         {
             if (currentPosition.HasValue)
             {
-                var to = new PdfPoint(x3, y3);
+                var to = currentTransformationMatrix.Transform(new PdfPoint(x3, y3));
                 commands.Add(new BezierCurve(currentPosition.Value,
-                    new PdfPoint(x1, y1), new PdfPoint(x2, y2), to));
+                    currentTransformationMatrix.Transform(new PdfPoint(x1, y1)), currentTransformationMatrix.Transform(new PdfPoint(x2, y2)), to));
                 currentPosition = to;
             }
             else
@@ -153,7 +162,7 @@ namespace UglyToad.PdfPig.Geometry
             return result;
         }
 
-        internal interface IPathCommand
+        public interface IPathCommand
         {
             PdfRectangle? GetBoundingRectangle();
 
@@ -173,7 +182,7 @@ namespace UglyToad.PdfPig.Geometry
             }
         }
 
-        private class Move : IPathCommand
+        public class Move : IPathCommand
         {
             public PdfPoint Location { get; }
 
@@ -193,7 +202,7 @@ namespace UglyToad.PdfPig.Geometry
             }
         }
 
-        private class Line : IPathCommand
+        public class Line : IPathCommand
         {
             public PdfPoint From { get; }
 
@@ -216,7 +225,7 @@ namespace UglyToad.PdfPig.Geometry
             }
         }
 
-        internal class BezierCurve : IPathCommand
+        public class BezierCurve : IPathCommand
         {
             public PdfPoint StartPoint { get; }
 
@@ -379,6 +388,11 @@ namespace UglyToad.PdfPig.Geometry
 
         internal void Rectangle(decimal x, decimal y, decimal width, decimal height)
         {
+            currentPosition = currentTransformationMatrix.Transform(new PdfPoint(x, y));
+            LineTo(x + width, y);
+            LineTo(x + width, y + height);
+            LineTo(x, y + height);
+            LineTo(x, y);
         }
     }
 }

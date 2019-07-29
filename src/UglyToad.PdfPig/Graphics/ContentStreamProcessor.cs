@@ -32,6 +32,11 @@
 
         public TextMatrices TextMatrices { get; } = new TextMatrices();
 
+        public TransformationMatrix CurrentTransformationMatrix
+        {
+            get { return GetCurrentState().CurrentTransformationMatrix; }
+        }
+
         public PdfPath CurrentPath { get; private set; }
 
         public IColorspaceContext ColorspaceContext { get; } = new ColorspaceContext();
@@ -48,8 +53,7 @@
         };
 
         public List<Letter> Letters = new List<Letter>();
-
-        public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation, bool isLenientParsing, 
+        public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation, bool isLenientParsing,
             IPdfTokenScanner pdfScanner,
             XObjectFactory xObjectFactory,
             ILog log)
@@ -69,8 +73,8 @@
             var currentState = CloneAllStates();
 
             ProcessOperations(operations);
-            
-            return new PageContent(operations, Letters, xObjects, pdfScanner, xObjectFactory, isLenientParsing);
+
+            return new PageContent(operations, Letters, paths, xObjects, pdfScanner, xObjectFactory, isLenientParsing);
         }
 
         private void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
@@ -88,7 +92,7 @@
             graphicsStack.Push(saved.Peek().DeepClone());
             return saved;
         }
-        
+
         [DebuggerStepThrough]
         public CurrentGraphicsState GetCurrentState()
         {
@@ -116,7 +120,7 @@
             {
                 throw new InvalidOperationException($"Could not find the font with name {currentState.FontState.FontName} in the resource store. It has not been loaded yet.");
             }
-            
+
             var fontSize = currentState.FontState.FontSize;
             var horizontalScaling = currentState.FontState.HorizontalScaling / 100m;
             var characterSpacing = currentState.FontState.CharacterSpacing;
@@ -130,7 +134,7 @@
             // TODO: this does not seem correct, produces the correct result for now but we need to revisit.
             // see: https://stackoverflow.com/questions/48010235/pdf-specification-get-font-size-in-points
             var pointSize = decimal.Round(rotation.Rotate(transformationMatrix).Multiply(TextMatrices.TextMatrix).Multiply(fontSize).A, 2);
-            
+
             while (bytes.MoveNext())
             {
                 var code = font.ReadCharacterCode(bytes, out int codeLength);
@@ -149,7 +153,7 @@
                 {
                     wordSpacing += GetCurrentState().FontState.WordSpacing;
                 }
-                
+
                 if (font.IsVertical)
                 {
                     throw new NotImplementedException("Vertical fonts are currently unsupported, please submit a pull request or issue with an example file.");
@@ -192,7 +196,7 @@
             var textState = currentState.FontState;
 
             var fontSize = textState.FontSize;
-            var horizontalScaling = textState.HorizontalScaling/100m;
+            var horizontalScaling = textState.HorizontalScaling / 100m;
             var font = resourceStore.GetFont(textState.FontName);
 
             var isVertical = font.IsVertical;
@@ -226,7 +230,7 @@
                     }
                     else
                     {
-                        bytes = OtherEncodings.StringAsLatin1Bytes(((StringToken) token).Data);
+                        bytes = OtherEncodings.StringAsLatin1Bytes(((StringToken)token).Data);
                     }
 
                     ShowText(new ByteArrayInputBytes(bytes));
@@ -248,7 +252,7 @@
 
             if (subType.Equals(NameToken.Ps))
             {
-               xObjects[XObjectType.PostScript].Add(new XObjectContentRecord(XObjectType.PostScript, xObjectStream, matrix));
+                xObjects[XObjectType.PostScript].Add(new XObjectContentRecord(XObjectType.PostScript, xObjectStream, matrix));
             }
             else if (subType.Equals(NameToken.Image))
             {
@@ -266,7 +270,7 @@
 
         public void BeginSubpath()
         {
-            CurrentPath = new PdfPath();
+            CurrentPath = new PdfPath(CurrentTransformationMatrix);
         }
 
         public void StrokePath(bool close)
@@ -275,12 +279,21 @@
             {
                 ClosePath();
             }
+            paths.Add(CurrentPath);
+        }
+
+        public void FillPath(bool close)
+        {
+            if (close)
+            {
+                ClosePath();
+            }
+            paths.Add(CurrentPath);
         }
 
         public void ClosePath()
         {
             CurrentPath.ClosePath();
-            paths.Add(CurrentPath);
             CurrentPath = null;
         }
 
@@ -297,12 +310,12 @@
 
             if (state.TryGet(NameToken.Lc, pdfScanner, out NumericToken lcToken))
             {
-                currentGraphicsState.CapStyle = (LineCapStyle) lcToken.Int;
+                currentGraphicsState.CapStyle = (LineCapStyle)lcToken.Int;
             }
 
             if (state.TryGet(NameToken.Lj, pdfScanner, out NumericToken ljToken))
             {
-                currentGraphicsState.JoinStyle = (LineJoinStyle) ljToken.Int;
+                currentGraphicsState.JoinStyle = (LineJoinStyle)ljToken.Int;
             }
 
             if (state.TryGet(NameToken.Font, pdfScanner, out ArrayToken fontArray) && fontArray.Length == 2

@@ -4,6 +4,7 @@
     using Geometry;
     using IO;
     using Tokens;
+    using UglyToad.PdfPig.Core;
     using Util.JetBrains.Annotations;
 
     /// <summary>
@@ -37,6 +38,11 @@
         /// The matrices for the current text state.
         /// </summary>
         TextMatrices TextMatrices { get; }
+
+        /// <summary>
+        /// The current transformation matrix
+        /// </summary>
+        TransformationMatrix CurrentTransformationMatrix { get; }
 
         /// <summary>
         /// The number of graphics states on the stack.
@@ -81,6 +87,12 @@
         /// </summary>
         /// <param name="close">Whether to also close the path.</param>
         void StrokePath(bool close);
+
+        /// <summary>
+        /// Fill the current path.
+        /// </summary>
+        /// <param name="close">Whether to also close the path.</param>
+        void FillPath(bool close);
 
         /// <summary>
         /// Close the current path.

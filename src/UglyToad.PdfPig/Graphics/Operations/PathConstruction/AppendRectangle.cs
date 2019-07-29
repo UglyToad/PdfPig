@@ -52,7 +52,6 @@
         {
             operationContext.BeginSubpath();
             operationContext.CurrentPath.Rectangle(LowerLeft.X, LowerLeft.Y, Width, Height);
-            operationContext.CurrentPath.ClosePath();
         }
 
         /// <inheritdoc />

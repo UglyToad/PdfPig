@@ -28,6 +28,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
+            operationContext.FillPath(false);
         }
 
         /// <inheritdoc />
