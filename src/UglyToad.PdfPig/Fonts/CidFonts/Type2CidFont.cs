@@ -48,6 +48,11 @@
 
         public decimal GetWidthFromFont(int characterIdentifier)
         {
+            if (fontProgram == null)
+            {
+                return GetWidthFromDictionary(characterIdentifier);
+            }
+
             if (fontProgram.TryGetBoundingAdvancedWidth(characterIdentifier, cidToGid.GetGlyphIndex, out var width))
             {
                 return width;
