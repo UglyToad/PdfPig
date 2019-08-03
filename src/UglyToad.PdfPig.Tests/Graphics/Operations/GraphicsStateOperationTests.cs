@@ -6,6 +6,7 @@
     using System.Linq;
     using System.Reflection;
     using PdfPig.Graphics.Operations;
+    using PdfPig.Graphics.Operations.InlineImages;
     using PdfPig.Tokens;
     using Xunit;
 
@@ -40,6 +41,10 @@
                     }
 
                     operation = (IGraphicsStateOperation)field.GetValue(null);
+                }
+                else if (operationType == typeof(EndInlineImage))
+                {
+                    operation = new EndInlineImage(new List<IToken>(), new List<byte>());
                 }
                 else
                 {

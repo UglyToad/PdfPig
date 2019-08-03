@@ -1,6 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.InlineImages
 {
+    using System;
+    using System.Collections.Generic;
     using System.IO;
+    using Tokens;
 
     /// <inheritdoc />
     /// <summary>
@@ -14,15 +17,27 @@
         public const string Symbol = "EI";
 
         /// <summary>
-        /// The instance of the <see cref="EndInlineImage"/> operation.
+        /// The tokens declared in order for this inline image object.
         /// </summary>
-        public static readonly EndInlineImage Value = new EndInlineImage();
+        public IReadOnlyList<IToken> ImageTokens { get; }
 
+        /// <summary>
+        /// The raw data for the inline image which should be interpreted according to the <see cref="ImageTokens"/>.
+        /// </summary>
+        public IReadOnlyList<byte> ImageData { get; }
+        
         /// <inheritdoc />
         public string Operator => Symbol;
 
-        private EndInlineImage()
+        /// <summary>
+        /// Create a new <see cref="EndInlineImage"/> operation.
+        /// </summary>
+        /// <param name="imageTokens">The tokens which were set during the declaration of this image.</param>
+        /// <param name="imageData">The raw byte data of this image.</param>
+        public EndInlineImage(IReadOnlyList<IToken> imageTokens, IReadOnlyList<byte> imageData)
         {
+            ImageTokens = imageTokens ?? throw new ArgumentNullException(nameof(imageTokens));
+            ImageData = imageData ?? throw new ArgumentNullException(nameof(imageData));
         }
 
         /// <inheritdoc />

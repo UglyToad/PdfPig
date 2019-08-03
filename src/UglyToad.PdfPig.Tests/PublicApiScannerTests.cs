@@ -174,6 +174,7 @@
                 "UglyToad.PdfPig.Tokens.HexToken",
                 "UglyToad.PdfPig.Tokens.IDataToken`1",
                 "UglyToad.PdfPig.Tokens.IndirectReferenceToken",
+                "UglyToad.PdfPig.Tokens.InlineImageDataToken",
                 "UglyToad.PdfPig.Tokens.IToken",
                 "UglyToad.PdfPig.Tokens.NameToken",
                 "UglyToad.PdfPig.Tokens.NullToken",
