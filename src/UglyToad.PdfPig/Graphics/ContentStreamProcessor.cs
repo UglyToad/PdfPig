@@ -39,7 +39,7 @@
 
         public PdfPath CurrentPath { get; private set; }
 
-        public IColorspaceContext ColorspaceContext { get; } = new ColorspaceContext();
+        public IColorSpaceContext ColorSpaceContext { get; } = new ColorSpaceContext();
 
         public PdfPoint CurrentPosition { get; set; }
 

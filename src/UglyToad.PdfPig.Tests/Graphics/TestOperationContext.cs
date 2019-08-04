@@ -3,9 +3,10 @@
     using System.Collections.Generic;
     using PdfPig.Geometry;
     using PdfPig.Graphics;
+    using PdfPig.Graphics.Colors;
     using PdfPig.IO;
     using PdfPig.Tokens;
-    using UglyToad.PdfPig.Core;
+    using PdfPig.Core;
 
     internal class TestOperationContext : IOperationContext
     {
@@ -17,14 +18,11 @@
         public TextMatrices TextMatrices { get; set; }
             = new TextMatrices();
 
-        public TransformationMatrix CurrentTransformationMatrix
-        {
-            get { return GetCurrentState().CurrentTransformationMatrix; }
-        }
+        public TransformationMatrix CurrentTransformationMatrix => GetCurrentState().CurrentTransformationMatrix;
 
         public PdfPath CurrentPath { get; set; }
 
-        public IColorspaceContext ColorspaceContext { get; } = new ColorspaceContext();
+        public IColorSpaceContext ColorSpaceContext { get; } = new ColorSpaceContext();
 
         public PdfPoint CurrentPosition { get; set; }
 
@@ -81,8 +79,16 @@
         }
     }
 
-    public class TestColorspaceContext : IColorspaceContext
+    public class TestColorSpaceContext : IColorSpaceContext
     {
+        public ColorSpace CurrentStrokingColorSpace { get; } = ColorSpace.DeviceGray;
+
+        public ColorSpace CurrentNonStrokingColorSpace { get; } = ColorSpace.DeviceGray;
+
+        public IColor CurrentStrokingColor { get; } = GrayColor.Black;
+
+        public IColor CurrentNonStrokingColor { get; } = GrayColor.Black;
+
         public void SetStrokingColorspace(NameToken colorspace)
         {
         }

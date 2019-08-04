@@ -1,12 +1,33 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
+    using Colors;
     using Tokens;
 
     /// <summary>
     /// Methods for manipulating and retrieving the current color state for a PDF content stream.
     /// </summary>
-    public interface IColorspaceContext
+    public interface IColorSpaceContext
     {
+        /// <summary>
+        /// The <see cref="ColorSpace"/> used for stroking operations.
+        /// </summary>
+        ColorSpace CurrentStrokingColorSpace { get; }
+
+        /// <summary>
+        /// The <see cref="ColorSpace"/> used for non-stroking operations.
+        /// </summary>
+        ColorSpace CurrentNonStrokingColorSpace { get; }
+
+        /// <summary>
+        /// The <see cref="IColor"/> used for stroking operations.
+        /// </summary>
+        IColor CurrentStrokingColor { get; }
+
+        /// <summary>
+        /// The <see cref="IColor"/> used for non-stroking operations.
+        /// </summary>
+        IColor CurrentNonStrokingColor { get; }
+
         /// <summary>
         ///  Set the current color space to use for stroking operations.
         /// </summary>
@@ -39,7 +60,7 @@
         /// <param name="y">Yellow - A number between 0 (minimum concentration) and 1 (maximum concentration).</param>
         /// <param name="k">Black - A number between 0 (minimum concentration) and 1 (maximum concentration).</param>
         void SetStrokingColorCmyk(decimal c, decimal m, decimal y, decimal k);
-        
+
         /// <summary>
         /// Set the nonstroking color space to DeviceGray and set the gray level to use for nonstroking operations.
         /// </summary>
