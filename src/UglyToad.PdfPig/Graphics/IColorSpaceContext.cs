@@ -17,17 +17,7 @@
         /// The <see cref="ColorSpace"/> used for non-stroking operations.
         /// </summary>
         ColorSpace CurrentNonStrokingColorSpace { get; }
-
-        /// <summary>
-        /// The <see cref="IColor"/> used for stroking operations.
-        /// </summary>
-        IColor CurrentStrokingColor { get; }
-
-        /// <summary>
-        /// The <see cref="IColor"/> used for non-stroking operations.
-        /// </summary>
-        IColor CurrentNonStrokingColor { get; }
-
+        
         /// <summary>
         ///  Set the current color space to use for stroking operations.
         /// </summary>

@@ -29,5 +29,11 @@
         {
             return (Gray, Gray, Gray);
         }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"Gray: {Gray}";
+        }
     }
 }

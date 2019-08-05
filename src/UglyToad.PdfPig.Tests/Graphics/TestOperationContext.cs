@@ -3,7 +3,6 @@
     using System.Collections.Generic;
     using PdfPig.Geometry;
     using PdfPig.Graphics;
-    using PdfPig.Graphics.Colors;
     using PdfPig.IO;
     using PdfPig.Tokens;
     using PdfPig.Core;
@@ -22,7 +21,7 @@
 
         public PdfPath CurrentPath { get; set; }
 
-        public IColorSpaceContext ColorSpaceContext { get; } = new ColorSpaceContext();
+        public IColorSpaceContext ColorSpaceContext { get; }
 
         public PdfPoint CurrentPosition { get; set; }
 
@@ -30,6 +29,7 @@
         {
             StateStack.Push(new CurrentGraphicsState());
             CurrentPath = new PdfPath(CurrentTransformationMatrix);
+            ColorSpaceContext = new ColorSpaceContext(GetCurrentState);
         }
 
         public CurrentGraphicsState GetCurrentState()
@@ -75,49 +75,6 @@
         }
 
         public void SetNamedGraphicsState(NameToken stateName)
-        {
-        }
-    }
-
-    public class TestColorSpaceContext : IColorSpaceContext
-    {
-        public ColorSpace CurrentStrokingColorSpace { get; } = ColorSpace.DeviceGray;
-
-        public ColorSpace CurrentNonStrokingColorSpace { get; } = ColorSpace.DeviceGray;
-
-        public IColor CurrentStrokingColor { get; } = GrayColor.Black;
-
-        public IColor CurrentNonStrokingColor { get; } = GrayColor.Black;
-
-        public void SetStrokingColorspace(NameToken colorspace)
-        {
-        }
-
-        public void SetNonStrokingColorspace(NameToken colorspace)
-        {
-        }
-
-        public void SetStrokingColorGray(decimal gray)
-        {
-        }
-
-        public void SetStrokingColorRgb(decimal r, decimal g, decimal b)
-        {
-        }
-
-        public void SetStrokingColorCmyk(decimal c, decimal m, decimal y, decimal k)
-        {
-        }
-
-        public void SetNonStrokingColorGray(decimal gray)
-        {
-        }
-
-        public void SetNonStrokingColorRgb(decimal r, decimal g, decimal b)
-        {
-        }
-
-        public void SetNonStrokingColorCmyk(decimal c, decimal m, decimal y, decimal k)
         {
         }
     }

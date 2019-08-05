@@ -45,9 +45,15 @@
         /// <inheritdoc/>
         public (decimal r, decimal g, decimal b) ToRGBValues()
         {
-            return ((255 * (1 - C) * (1 - K)) / 255m,
-                (255 * (1 - M) * (1 - K)) / 255m,
-                (255 * (1 - Y) * (1 - K)) / 255m);
+            return ((1 - C) * (1 - K),
+                (1 - M) * (1 - K),
+                (1 - Y) * (1 - K));
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"CMYK: ({C}, {M}, {Y}, {K})";
         }
     }
 }

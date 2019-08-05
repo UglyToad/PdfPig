@@ -41,5 +41,11 @@
         {
             return (R, G, B);
         }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"RGB: ({R}, {G}, {B})";
+        }
     }
 }
