@@ -42,7 +42,7 @@ New in v0.0.5 - To create documents use the class ```PdfDocumentBuilder```. Thou
 
     byte[] documentBytes = builder.Build();
 
-    File.WriteAllBytes(@"C:\git\newPdf.pdf");
+    File.WriteAllBytes(@"C:\git\newPdf.pdf", documentBytes);
 
 Each font must be registered with the PdfDocumentBuilder prior to use enable pages to share the font resources. Currently only Standard 14 fonts and TrueType fonts (.ttf) are supported.
 
