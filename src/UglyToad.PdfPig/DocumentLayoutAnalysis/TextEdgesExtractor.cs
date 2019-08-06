@@ -9,8 +9,8 @@ using UglyToad.PdfPig.Geometry;
 namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
     /// <summary>
-    /// Text edges extractor. Text edges are where words have either there BoundingBox's left, right or mid coordinate aligned on the same vertical line.
-    /// <para>Useful to detect tables, justified text, lists, etc.</para>
+    /// Text edges extractor. Text edges are where words have either there BoundingBox's left, right or mid coordinates aligned on the same vertical line.
+    /// <para>Useful to detect text columns, tables, justified text, lists, etc.</para>
     /// </summary>
     public class TextEdgesExtractor
     {
