@@ -12,7 +12,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
     /// Text edges extractor. Text edges are where words have either their BoundingBox's left, right or mid coordinates aligned on the same vertical line.
     /// <para>Useful to detect text columns, tables, justified text, lists, etc.</para>
     /// </summary>
-    public class TextEdgesExtractor
+    public static class TextEdgesExtractor
     {
         /// <summary>
         /// Functions used to define left, middle and right edges.
