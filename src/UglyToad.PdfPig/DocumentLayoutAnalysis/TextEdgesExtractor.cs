@@ -80,4 +80,25 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             return cleanEdges.SelectMany(x => x.Value.Select(y => new PdfLine(x.Key, y.Min(w => w.BoundingBox.Bottom), x.Key, y.Max(w => w.BoundingBox.Top)))).ToList();
         }
     }
+
+    /// <summary>
+    /// The type of edge.
+    /// </summary>
+    public enum EdgeType
+    {
+        /// <summary>
+        /// Text edges where words have their BoundingBox's left coordinate aligned on the same vertical line.
+        /// </summary>
+        Left = 0,
+
+        /// <summary>
+        /// Text edges where words have their BoundingBox's mid coordinate aligned on the same vertical line.
+        /// </summary>
+        Mid = 1,
+
+        /// <summary>
+        /// Text edges where words have their BoundingBox's right coordinate aligned on the same vertical line.
+        /// </summary>
+        Right = 2
+    }
 }
