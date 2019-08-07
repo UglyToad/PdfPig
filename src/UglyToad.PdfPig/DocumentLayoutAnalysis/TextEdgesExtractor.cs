@@ -9,7 +9,7 @@ using UglyToad.PdfPig.Geometry;
 namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
     /// <summary>
-    /// Text edges extractor. Text edges are where words have either there BoundingBox's left, right or mid coordinates aligned on the same vertical line.
+    /// Text edges extractor. Text edges are where words have either their BoundingBox's left, right or mid coordinates aligned on the same vertical line.
     /// <para>Useful to detect text columns, tables, justified text, lists, etc.</para>
     /// </summary>
     public class TextEdgesExtractor
@@ -17,11 +17,11 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <summary>
         /// Functions used to define left, middle and right edges.
         /// </summary>
-        private static readonly Tuple<string, Func<PdfRectangle, decimal>>[] edgesFuncs = new Tuple<string, Func<PdfRectangle, decimal>>[]
+        private static readonly Tuple<EdgeType, Func<PdfRectangle, decimal>>[] edgesFuncs = new Tuple<EdgeType, Func<PdfRectangle, decimal>>[]
         {
-            Tuple.Create<string, Func<PdfRectangle, decimal>>("left",   x => Math.Round(x.Left, 0)),                // use BoundingBox's left coordinate
-            Tuple.Create<string, Func<PdfRectangle, decimal>>("mid", x => Math.Round(x.Left + x.Width / 2, 0)),     // use BoundingBox's mid coordinate
-            Tuple.Create<string, Func<PdfRectangle, decimal>>("right",  x => Math.Round(x.Right, 0))                // use BoundingBox's right coordinate
+            Tuple.Create<EdgeType, Func<PdfRectangle, decimal>>(EdgeType.Left,   x => Math.Round(x.Left, 0)),                // use BoundingBox's left coordinate
+            Tuple.Create<EdgeType, Func<PdfRectangle, decimal>>(EdgeType.Mid, x => Math.Round(x.Left + x.Width / 2, 0)),     // use BoundingBox's mid coordinate
+            Tuple.Create<EdgeType, Func<PdfRectangle, decimal>>(EdgeType.Right,  x => Math.Round(x.Right, 0))                // use BoundingBox's right coordinate
         };
 
         /// <summary>
@@ -29,11 +29,16 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// </summary>
         /// <param name="pageWords">The words in the page.</param>
         /// <param name="minimumElements">The minimum number of elements to define a text edge.</param>
-        public static Dictionary<string, List<PdfLine>> GetEdges(IEnumerable<Word> pageWords, int minimumElements = 4)
+        public static IReadOnlyDictionary<EdgeType, List<PdfLine>> GetEdges(IEnumerable<Word> pageWords, int minimumElements = 4)
         {
+            if (minimumElements < 0)
+            {
+                throw new ArgumentException("TextEdgesExtractor.GetEdges(): The minimum number of elements should be positive.", "minimumElements");
+            }
+
             var cleanWords = pageWords.Where(x => !string.IsNullOrWhiteSpace(x.Text.Trim()));
 
-            ConcurrentDictionary<string, List<PdfLine>> dictionary = new ConcurrentDictionary<string, List<PdfLine>>();
+            ConcurrentDictionary<EdgeType, List<PdfLine>> dictionary = new ConcurrentDictionary<EdgeType, List<PdfLine>>();
 
             Parallel.ForEach(edgesFuncs, f =>
             {
