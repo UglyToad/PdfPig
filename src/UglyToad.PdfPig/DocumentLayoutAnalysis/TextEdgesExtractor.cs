@@ -87,7 +87,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
     }
 
     /// <summary>
-    /// The type of edge.
+    /// The type of text edge.
     /// </summary>
     public enum EdgeType
     {
