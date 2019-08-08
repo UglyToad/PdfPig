@@ -64,6 +64,12 @@
 
                 Assert.True(stream.IsAtEnd());
                 Assert.True(array.IsAtEnd());
+
+                stream.Seek(0);
+                array.Seek(0);
+
+                Assert.False(stream.IsAtEnd());
+                Assert.False(array.IsAtEnd());
             }
         }
     }
