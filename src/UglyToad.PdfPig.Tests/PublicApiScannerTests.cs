@@ -65,6 +65,8 @@
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.RecursiveXYCut",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.XYNode",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.XYLeaf",
+                "UglyToad.PdfPig.DocumentLayoutAnalysis.TextEdgesExtractor",
+                "UglyToad.PdfPig.DocumentLayoutAnalysis.EdgeType",
                 "UglyToad.PdfPig.Exceptions.PdfDocumentEncryptedException",
                 "UglyToad.PdfPig.Exceptions.PdfDocumentFormatException",
                 "UglyToad.PdfPig.Fonts.DescriptorFontFile",
