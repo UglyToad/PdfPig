@@ -22,7 +22,7 @@
         public bool IsFlexing { get; set; }
 
         [NotNull]
-        public PdfPath Path { get; private set; } = new PdfPath(Core.TransformationMatrix.Identity);
+        public PdfPath Path { get; private set; } = new PdfPath();
 
         public PdfPoint CurrentPosition { get; set; }
 

@@ -44,12 +44,14 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.CurrentPath.BezierCurveTo(ControlPoint1.X, ControlPoint1.Y,
-                End.X,
-                End.Y,
-                End.X,
-                End.Y);
-            operationContext.CurrentPosition = End;
+            var controlPoint1Transform = operationContext.CurrentTransformationMatrix.Transform(ControlPoint1);
+            var endTransform = operationContext.CurrentTransformationMatrix.Transform(End);
+            operationContext.CurrentPath.BezierCurveTo(controlPoint1Transform.X, controlPoint1Transform.Y,
+                endTransform.X,
+                endTransform.Y,
+                endTransform.X,
+                endTransform.Y);
+            operationContext.CurrentPosition = endTransform;
         }
 
         /// <inheritdoc />

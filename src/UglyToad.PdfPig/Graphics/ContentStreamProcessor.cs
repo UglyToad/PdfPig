@@ -288,7 +288,7 @@
 
         public void BeginSubpath()
         {
-            CurrentPath = new PdfPath(CurrentTransformationMatrix);
+            CurrentPath = new PdfPath();
         }
 
         public void StrokePath(bool close)

@@ -36,8 +36,9 @@
         public void Run(IOperationContext operationContext)
         {
             operationContext.BeginSubpath();
-            operationContext.CurrentPosition = Point;
-            operationContext.CurrentPath.LineTo(Point.X, Point.Y);
+            var pointTransform = operationContext.CurrentTransformationMatrix.Transform(Point);
+            operationContext.CurrentPosition = pointTransform;
+            operationContext.CurrentPath.MoveTo(pointTransform.X, pointTransform.Y);
         }
 
         /// <inheritdoc />

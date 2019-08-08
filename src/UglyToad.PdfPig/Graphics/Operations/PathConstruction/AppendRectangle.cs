@@ -51,7 +51,8 @@
         public void Run(IOperationContext operationContext)
         {
             operationContext.BeginSubpath();
-            operationContext.CurrentPath.Rectangle(LowerLeft.X, LowerLeft.Y, Width, Height);
+            var lowerLeftTransform = operationContext.CurrentTransformationMatrix.Transform(LowerLeft);
+            operationContext.CurrentPath.Rectangle(lowerLeftTransform.X, lowerLeftTransform.Y, Width, Height);
         }
 
         /// <inheritdoc />
