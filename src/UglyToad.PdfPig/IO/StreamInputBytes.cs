@@ -75,6 +75,8 @@
 
         public void Seek(long position)
         {
+            isAtEnd = false;
+
             if (position == 0)
             {
                 stream.Seek(0, SeekOrigin.Begin);
