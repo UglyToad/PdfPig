@@ -11,7 +11,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
     /// https://en.wikipedia.org/wiki/Recursive_X-Y_cut
     /// <para>See 'Recursive X-Y Cut using Bounding Boxes of Connected Components' by Jaekyu Ha, Robert M.Haralick and Ihsin T. Phillips</para>
     /// </summary>
-    public class RecursiveXYCut
+    public static class RecursiveXYCut
     {
         /// <summary>
         /// Get the blocks.
