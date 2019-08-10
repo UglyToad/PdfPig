@@ -8,7 +8,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
     /// <summary>
     /// A Node used in the <see cref="RecursiveXYCut"/> algorithm.
     /// </summary>
-    public class XYNode
+    internal class XYNode
     {
         /// <summary>
         /// Returns true if this node is a leaf, false otherwise.

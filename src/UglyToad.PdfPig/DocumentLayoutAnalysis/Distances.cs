@@ -48,6 +48,39 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         }
 
         /// <summary>
+        /// The angle in degrees between the horizontal axis and the line between two points.
+        /// </summary>
+        /// <param name="point1">The first point.</param>
+        /// <param name="point2">The second point.</param>
+        /// <returns></returns>
+        public static double Angle(PdfPoint point1, PdfPoint point2)
+        {
+            return Math.Atan2((float)(point2.Y - point1.Y), (float)(point2.X - point1.X)) * 180.0 / Math.PI;
+        }
+
+        /// <summary>
+        /// The absolute distance between the Y coordinates of two points.
+        /// </summary>
+        /// <param name="point1">The first point.</param>
+        /// <param name="point2">The second point.</param>
+        /// <returns></returns>
+        public static double Vertical(PdfPoint point1, PdfPoint point2)
+        {
+            return Math.Abs((double)(point2.Y - point1.Y));
+        }
+
+        /// <summary>
+        /// The absolute distance between the X coordinates of two points.
+        /// </summary>
+        /// <param name="point1">The first point.</param>
+        /// <param name="point2">The second point.</param>
+        /// <returns></returns>
+        public static double Horizontal(PdfPoint point1, PdfPoint point2)
+        {
+            return Math.Abs((double)(point2.X - point1.X));
+        }
+
+        /// <summary>
         /// Find the nearest point.
         /// </summary>
         /// <param name="pdfPoint">The reference point, for which to find the nearest neighbour.</param>
