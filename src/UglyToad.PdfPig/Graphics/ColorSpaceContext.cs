@@ -76,13 +76,37 @@
         public void SetStrokingColorGray(decimal gray)
         {
             CurrentStrokingColorSpace = ColorSpace.DeviceGray;
-            currentStateFunc().CurrentStrokingColor = new GrayColor(gray);
+
+            if (gray == 0)
+            {
+                currentStateFunc().CurrentStrokingColor = GrayColor.Black;
+            }
+            else if (gray == 1)
+            {
+                currentStateFunc().CurrentStrokingColor = GrayColor.White;
+            }
+            else
+            {
+                currentStateFunc().CurrentStrokingColor = new GrayColor(gray);
+            }
         }
 
         public void SetStrokingColorRgb(decimal r, decimal g, decimal b)
         {
             CurrentStrokingColorSpace = ColorSpace.DeviceRGB;
-            currentStateFunc().CurrentStrokingColor = new RGBColor(r, g, b);
+
+            if (r == 0 && g == 0 && b == 0)
+            {
+                currentStateFunc().CurrentStrokingColor = RGBColor.Black;
+            }
+            else if (r == 1 && g == 1 && b == 1)
+            {
+                currentStateFunc().CurrentStrokingColor = RGBColor.White;
+            }
+            else
+            {
+                currentStateFunc().CurrentStrokingColor = new RGBColor(r, g, b);
+            }
         }
 
         public void SetStrokingColorCmyk(decimal c, decimal m, decimal y, decimal k)
@@ -94,13 +118,37 @@
         public void SetNonStrokingColorGray(decimal gray)
         {
             CurrentNonStrokingColorSpace = ColorSpace.DeviceGray;
-            currentStateFunc().CurrentNonStrokingColor = new GrayColor(gray);
+
+            if (gray == 0)
+            {
+                currentStateFunc().CurrentNonStrokingColor = GrayColor.Black;
+            }
+            else if (gray == 1)
+            {
+                currentStateFunc().CurrentNonStrokingColor = GrayColor.White;
+            }
+            else
+            {
+                currentStateFunc().CurrentNonStrokingColor = new GrayColor(gray);
+            }
         }
 
         public void SetNonStrokingColorRgb(decimal r, decimal g, decimal b)
         {
             CurrentNonStrokingColorSpace = ColorSpace.DeviceRGB;
-            currentStateFunc().CurrentNonStrokingColor = new RGBColor(r, g, b);
+
+            if (r == 0 && g == 0 && b == 0)
+            {
+                currentStateFunc().CurrentNonStrokingColor = RGBColor.Black;
+            }
+            else if (r == 1 && g == 1 && b == 1)
+            {
+                currentStateFunc().CurrentNonStrokingColor = RGBColor.White;
+            }
+            else
+            {
+                currentStateFunc().CurrentNonStrokingColor = new RGBColor(r, g, b);
+            }
         }
 
         public void SetNonStrokingColorCmyk(decimal c, decimal m, decimal y, decimal k)

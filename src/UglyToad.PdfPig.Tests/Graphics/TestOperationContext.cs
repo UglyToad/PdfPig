@@ -28,7 +28,7 @@
         public TestOperationContext()
         {
             StateStack.Push(new CurrentGraphicsState());
-            CurrentPath = new PdfPath(CurrentTransformationMatrix);
+            CurrentPath = new PdfPath();
             ColorSpaceContext = new ColorSpaceContext(GetCurrentState);
         }
 
