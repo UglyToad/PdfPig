@@ -31,6 +31,11 @@
         public PdfPoint BottomLeft { get; }
 
         /// <summary>
+        /// Centroid point of the rectangle.
+        /// </summary>
+        public PdfPoint Centroid { get; }
+
+        /// <summary>
         /// Width of the rectangle.
         /// </summary>
         public decimal Width => Right - Left;
@@ -105,15 +110,14 @@
 
             BottomLeft = new PdfPoint(left, bottom);
             BottomRight = new PdfPoint(right, bottom);
+
+            Centroid = new PdfPoint(left + (right - left) / 2, bottom + (top - bottom) / 2);
         }
 
         internal PdfRectangle(PdfVector topLeft, PdfVector topRight, PdfVector bottomLeft, PdfVector bottomRight)
+            : this(topLeft.ToPoint(), topRight.ToPoint(), bottomLeft.ToPoint(), bottomRight.ToPoint())
         {
-            TopLeft = topLeft.ToPoint();
-            TopRight = topRight.ToPoint();
 
-            BottomLeft = bottomLeft.ToPoint();
-            BottomRight = bottomRight.ToPoint();
         }
 
         internal PdfRectangle(PdfPoint topLeft, PdfPoint topRight, PdfPoint bottomLeft, PdfPoint bottomRight)
@@ -123,6 +127,8 @@
 
             BottomLeft = bottomLeft;
             BottomRight = bottomRight;
+
+            Centroid = new PdfPoint(topLeft.X + (topRight.X - topLeft.X) / 2, bottomLeft.Y + (topLeft.Y - bottomLeft.Y) / 2);
         }
 
         /// <summary>

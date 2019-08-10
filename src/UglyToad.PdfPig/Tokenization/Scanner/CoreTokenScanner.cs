@@ -20,11 +20,12 @@
 
         private readonly ScannerScope scope;
         private readonly IInputBytes inputBytes;
-        private readonly List<byte> currentBuffer = new List<byte>();
         private readonly List<(byte firstByte, ITokenizer tokenizer)> customTokenizers = new List<(byte, ITokenizer)>();
         
         internal long CurrentTokenStart { get; private set; }
+
         public IToken CurrentToken { get; private set; }
+
         public bool TryReadToken<T>(out T token) where T : class, IToken
         {
             token = default(T);
@@ -51,6 +52,7 @@
         public long CurrentPosition => inputBytes.CurrentOffset;
         
         private bool hasBytePreRead;
+        private bool isInInlineImage;
 
         internal CoreTokenScanner(IInputBytes inputBytes, ScannerScope scope = ScannerScope.None)
         {
@@ -60,8 +62,6 @@
 
         public bool MoveNext()
         {
-            currentBuffer.Clear();
-
             var endAngleBracesRead = 0;
 
             bool isSkippingSymbol = false;
@@ -88,7 +88,6 @@
                         isSkippingSymbol = false;
                         continue;
                     }
-
 
                     // If we failed to read the symbol for whatever reason we pass over it.
                     if (isSkippingSymbol && c != '>')
@@ -161,6 +160,23 @@
                     continue;
                 }
 
+                if (token is OperatorToken op)
+                {
+                    if (op.Data == "BI")
+                    {
+                        isInInlineImage = true;
+                    }
+                    else if (isInInlineImage && op.Data == "ID")
+                    {
+                        // Special case handling for inline images.
+                        var imageData = ReadInlineImageData();
+                        isInInlineImage = false;
+                        CurrentToken = new InlineImageDataToken(imageData);
+                        hasBytePreRead = false;
+                        return true;
+                    }
+                }
+
                 CurrentToken = token;
 
                 /* 
@@ -188,6 +204,35 @@
         public void DeregisterCustomTokenizer(ITokenizer tokenizer)
         {
             customTokenizers.RemoveAll(x => ReferenceEquals(x.tokenizer, tokenizer));
+        }
+
+        private IReadOnlyList<byte> ReadInlineImageData()
+        {
+            // The ID operator should be followed by a single white-space character, and the next character is interpreted
+            // as the first byte of image data. 
+            if (inputBytes.CurrentByte != ' ')
+            {
+                throw new PdfDocumentFormatException($"No whitespace character following the image data (ID) operator. Position: {inputBytes.CurrentOffset}.");
+            }
+
+            var startsAt = inputBytes.CurrentOffset - 2;
+
+            var imageData = new List<byte>();
+            byte prevByte = 0;
+            while (inputBytes.MoveNext())
+            {
+                if (inputBytes.CurrentByte == 'I' && prevByte == 'E')
+                {
+                    imageData.RemoveAt(imageData.Count - 1);
+                    return imageData;
+                }
+
+                imageData.Add(inputBytes.CurrentByte);
+
+                prevByte = inputBytes.CurrentByte;
+            }
+
+            throw new PdfDocumentFormatException($"No end of inline image data (EI) was found for image data at position {startsAt}.");
         }
 
         private static bool IsEmpty(byte b)

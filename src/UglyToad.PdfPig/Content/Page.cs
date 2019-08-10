@@ -9,7 +9,7 @@
     using Util;
     using Util.JetBrains.Annotations;
     using XObjects;
-    using UglyToad.PdfPig.Geometry;
+    using Geometry;
 
     /// <summary>
     /// Contains the content and provides access to methods of a single page in the <see cref="PdfDocument"/>.
@@ -30,23 +30,18 @@
 
         internal CropBox CropBox { get; }
 
+        internal PageContent Content { get; }
+
         /// <summary>
         /// The rotation of the page in degrees (clockwise). Valid values are 0, 90, 180 and 270.
         /// </summary>
         public PageRotationDegrees Rotation { get; }
 
-        internal PageContent Content { get; }
-
         /// <summary>
         /// The set of <see cref="Letter"/>s drawn by the PDF content.
         /// </summary>
         public IReadOnlyList<Letter> Letters => Content?.Letters ?? new Letter[0];
-
-        /// <summary>
-        /// The set of <see cref="PdfPath"/>s drawn by the PDF content.
-        /// </summary>
-        public IReadOnlyList<PdfPath> Paths => Content?.Paths ?? new List<PdfPath>();
-
+        
         /// <summary>
         /// The full text of all characters on the page in the order they are presented in the PDF content.
         /// </summary>
@@ -135,6 +130,11 @@
         {
             private readonly Page page;
             private readonly AnnotationProvider annotationProvider;
+
+            /// <summary>
+            /// The set of <see cref="PdfPath"/>s drawn by the PDF content.
+            /// </summary>
+            public IReadOnlyList<PdfPath> Paths => page.Content?.Paths ?? new List<PdfPath>();
 
             internal Experimental(Page page, AnnotationProvider annotationProvider)
             {

@@ -5,19 +5,28 @@ namespace UglyToad.PdfPig.Geometry
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
-    using UglyToad.PdfPig.Core;
+    using Core;
 
     /// <summary>
-    /// A path in a PDF document, used by glyphs and page content.
+    /// A path in a PDF document, used by glyphs and page content. Can contain multiple sub-paths.
     /// </summary>
     public class PdfPath
     {
         private readonly List<IPathCommand> commands = new List<IPathCommand>();
+
+        /// <summary>
+        /// The sequence of sub-paths which form this <see cref="PdfPath"/>.
+        /// </summary>
         public IReadOnlyList<IPathCommand> Commands => commands;
 
         private PdfPoint? currentPosition;
-        private TransformationMatrix currentTransformationMatrix = TransformationMatrix.Identity;
 
+        private readonly TransformationMatrix currentTransformationMatrix;
+
+        /// <summary>
+        /// Create a new <see cref="PdfPath"/>.
+        /// </summary>
+        /// <param name="transformationMatrix">The transformation to apply to all points in this path.</param>
         public PdfPath(TransformationMatrix transformationMatrix)
         {
             currentTransformationMatrix = transformationMatrix;
@@ -162,79 +171,140 @@ namespace UglyToad.PdfPig.Geometry
             return result;
         }
 
+        /// <summary>
+        /// A command in a <see cref="PdfPath"/>.
+        /// </summary>
         public interface IPathCommand
         {
+            /// <summary>
+            /// Returns the smallest rectangle which contains the path region given by this command.
+            /// </summary>
+            /// <returns></returns>
             PdfRectangle? GetBoundingRectangle();
 
+            /// <summary>
+            /// Converts from the path command to an SVG string representing the path operation.
+            /// </summary>
             void WriteSvg(StringBuilder builder);
         }
 
-        private class Close : IPathCommand
+        /// <summary>
+        /// Close the current <see cref="PdfPath"/>.
+        /// </summary>
+        public class Close : IPathCommand
         {
+            /// <inheritdoc />
             public PdfRectangle? GetBoundingRectangle()
             {
                 return null;
             }
 
+            /// <inheritdoc />
             public void WriteSvg(StringBuilder builder)
             {
                 builder.Append("Z ");
             }
         }
 
+        /// <summary>
+        /// Move drawing of the current <see cref="PdfPath"/> to the specified location.
+        /// </summary>
         public class Move : IPathCommand
         {
+            /// <summary>
+            /// The location to move to.
+            /// </summary>
             public PdfPoint Location { get; }
 
+            /// <summary>
+            /// Create a new <see cref="Move"/> path command.
+            /// </summary>
+            /// <param name="location"></param>
             public Move(PdfPoint location)
             {
                 Location = location;
             }
 
+            /// <summary>
+            /// Returns <see langword="null"/> since this generates no visible path.
+            /// </summary>
             public PdfRectangle? GetBoundingRectangle()
             {
                 return null;
             }
 
+            /// <inheritdoc />
             public void WriteSvg(StringBuilder builder)
             {
                 builder.Append("M ").Append(Location.X).Append(' ').Append(Location.Y).Append(' ');
             }
         }
 
+        /// <summary>
+        /// Draw a straight line between two points.
+        /// </summary>
         public class Line : IPathCommand
         {
+            /// <summary>
+            /// The start of the line.
+            /// </summary>
             public PdfPoint From { get; }
 
+            /// <summary>
+            /// The end of the line.
+            /// </summary>
             public PdfPoint To { get; }
 
+            /// <summary>
+            /// Create a new <see cref="Line"/>.
+            /// </summary>
             public Line(PdfPoint from, PdfPoint to)
             {
                 From = from;
                 To = to;
             }
 
+            /// <inheritdoc />
             public PdfRectangle? GetBoundingRectangle()
             {
                 return new PdfRectangle(From, To);
             }
 
+            /// <inheritdoc />
             public void WriteSvg(StringBuilder builder)
             {
                 builder.AppendFormat("L {0} {1} ", To.X, To.Y);
             }
         }
 
+        /// <summary>
+        /// Draw a Bezier curve given by the start, control and end points.
+        /// </summary>
         public class BezierCurve : IPathCommand
         {
+            /// <summary>
+            /// The start point of the Bezier curve.
+            /// </summary>
             public PdfPoint StartPoint { get; }
 
+            /// <summary>
+            /// The first control point of the curve.
+            /// </summary>
             public PdfPoint FirstControlPoint { get; }
 
+            /// <summary>
+            /// The second control point of the curve.
+            /// </summary>
             public PdfPoint SecondControlPoint { get; }
 
+            /// <summary>
+            /// The end point of the curve.
+            /// </summary>
             public PdfPoint EndPoint { get; }
 
+            /// <summary>
+            /// Create a Bezier curve at the provided points.
+            /// </summary>
             public BezierCurve(PdfPoint startPoint, PdfPoint firstControlPoint, PdfPoint secondControlPoint, PdfPoint endPoint)
             {
                 StartPoint = startPoint;
@@ -243,6 +313,7 @@ namespace UglyToad.PdfPig.Geometry
                 EndPoint = endPoint;
             }
 
+            /// <inheritdoc />
             public PdfRectangle? GetBoundingRectangle()
             {
                 // Optimised
@@ -285,6 +356,13 @@ namespace UglyToad.PdfPig.Geometry
                 }
 
                 return new PdfRectangle((decimal)minX, (decimal)minY, (decimal)maxX, (decimal)maxY);
+            }
+
+            /// <inheritdoc />
+            public void WriteSvg(StringBuilder builder)
+            {
+                builder.AppendFormat("C {0} {1}, {2} {3}, {4} {5} ", FirstControlPoint.X, FirstControlPoint.Y, SecondControlPoint.X, SecondControlPoint.Y,
+                    EndPoint.X, EndPoint.Y);
             }
 
 
@@ -377,12 +455,6 @@ namespace UglyToad.PdfPig.Geometry
                         + ((t * t * t) * p4);
 
                 return p;
-            }
-
-            public void WriteSvg(StringBuilder builder)
-            {
-                builder.AppendFormat("C {0} {1}, {2} {3}, {4} {5} ", FirstControlPoint.X, FirstControlPoint.Y, SecondControlPoint.X, SecondControlPoint.Y,
-                    EndPoint.X, EndPoint.Y);
             }
         }
 

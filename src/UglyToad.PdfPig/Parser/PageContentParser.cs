@@ -3,6 +3,7 @@
     using System.Collections.Generic;
     using Graphics;
     using Graphics.Operations;
+    using Graphics.Operations.InlineImages;
     using IO;
     using Tokenization.Scanner;
     using Tokens;
@@ -27,7 +28,13 @@
             {
                 var token = scanner.CurrentToken;
 
-                if (token is OperatorToken op)
+                if (token is InlineImageDataToken inlineImageData)
+                {
+                    graphicsStateOperations.Add(BeginInlineImageData.Value);
+                    graphicsStateOperations.Add(new EndInlineImage(precedingTokens, inlineImageData.Data));
+                    precedingTokens.Clear();
+                }
+                else if (token is OperatorToken op)
                 {
                     var operation = operationFactory.Create(op, precedingTokens);
 
