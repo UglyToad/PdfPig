@@ -83,6 +83,27 @@
         }
 
         /// <summary>
+        /// Returns a value indicating whether this <see cref="PdfPoint"/> is equal to a specified <see cref="PdfPoint"/> .
+        /// </summary>
+        /// <param name="obj"></param>
+        public override bool Equals(object obj)
+        {
+            if (obj is PdfPoint point)
+            {
+                return point.X == this.X && point.Y == this.Y;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Returns the hash code for this <see cref="PdfPoint"/>.
+        /// </summary>
+        public override int GetHashCode()
+        {
+            return (X, Y).GetHashCode();
+        }
+
+        /// <summary>
         /// Get a string representation of this point.
         /// </summary>
         public override string ToString()
