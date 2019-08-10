@@ -83,9 +83,8 @@
         }
 
         /// <summary>
-        /// Converts this <see cref="PdfPoint"/> into an array.
+        /// Converts this <see cref="PdfPoint"/> into an double array.
         /// </summary>
-        /// <returns></returns>
         public double[] ToDouble()
         {
             return new double[] { (double)this.X, (double)this.Y };
@@ -95,12 +94,10 @@
         /// Returns a value indicating whether this <see cref="PdfPoint"/> is equal to a specified <see cref="PdfPoint"/> .
         /// </summary>
         /// <param name="obj"></param>
-        /// <returns></returns>
         public override bool Equals(object obj)
         {
-            if (obj is PdfPoint)
+            if (obj is PdfPoint point)
             {
-                PdfPoint point = (PdfPoint)obj;
                 return point.X == this.X && point.Y == this.Y;
             }
             return false;
@@ -109,10 +106,9 @@
         /// <summary>
         /// Returns the hash code for this <see cref="PdfPoint"/>.
         /// </summary>
-        /// <returns></returns>
         public override int GetHashCode()
         {
-            return (int)(this.X * 10_000 + 31 * this.Y * 10_000);
+            return (X, Y).GetHashCode();
         }
 
         /// <summary>
