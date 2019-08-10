@@ -83,14 +83,6 @@
         }
 
         /// <summary>
-        /// Converts this <see cref="PdfPoint"/> into an double array.
-        /// </summary>
-        public double[] ToDouble()
-        {
-            return new double[] { (double)this.X, (double)this.Y };
-        }
-
-        /// <summary>
         /// Returns a value indicating whether this <see cref="PdfPoint"/> is equal to a specified <see cref="PdfPoint"/> .
         /// </summary>
         /// <param name="obj"></param>
