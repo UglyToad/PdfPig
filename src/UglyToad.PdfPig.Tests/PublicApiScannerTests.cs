@@ -60,7 +60,6 @@
                 "UglyToad.PdfPig.CrossReference.CrossReferenceTable",
                 "UglyToad.PdfPig.CrossReference.CrossReferenceType",
                 "UglyToad.PdfPig.CrossReference.TrailerDictionary",
-                "UglyToad.PdfPig.DocumentLayoutAnalysis.ClusteringAlgorithms",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.Distances",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.DocstrumBB",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.IPageSegmenter",
