@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Geometry;
 using UglyToad.PdfPig.Util;
@@ -71,7 +70,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// between 2 letters, e.g. GlyphRectangle.Width or GlyphRectangle.Height.</param>
         /// <param name="distMeasure">The distance measure between two start and end base line points,
         /// e.g. the Manhattan distance.</param>
-        private static List<Word> GetWords(IEnumerable<Letter> pageLetters,
+        private List<Word> GetWords(IEnumerable<Letter> pageLetters,
             Func<Letter, decimal> metric, Func<PdfPoint, PdfPoint, double> distMeasure)
         {
             if (pageLetters == null || pageLetters.Count() == 0) return new List<Word>();
@@ -97,116 +96,18 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             }
 
             Letter[] letters = pageLetters.ToArray();
-            int lettersCount = letters.Length;
-            List<PdfPoint> startBaseLines = letters.Select(x => x.StartBaseLine).ToList();
 
-            int[] indexes = Enumerable.Repeat((int)-1, lettersCount).ToArray();
-
-            // Find nearest neighbours indexes
-            Parallel.For(0, lettersCount, c =>
-            {
-                var currentLetter = letters[c];
-                // only check neighbours if not a white space
-                if (!string.IsNullOrWhiteSpace(currentLetter.Value))
-                {
-                    int index = currentLetter.EndBaseLine.FindIndexNearest(startBaseLines, distMeasure, out double dist);
-                    var pairedLetter = letters[index];
-
-                    if (!string.IsNullOrWhiteSpace(pairedLetter.Value) &&
-                        string.Equals(currentLetter.FontName, pairedLetter.FontName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        decimal minDist = Math.Max(Math.Abs(metric(currentLetter)), Math.Abs(metric(pairedLetter))) * 0.60m;
-                        if ((decimal)dist < minDist)
-                        {
-                            indexes[c] = index;
-                        }
-                    }
-                }
-            });
-
-            // Group indexes
-            List<List<int>> groupedIndexes = new List<List<int>>();
-            List<int> indexDone = new List<int>();
-            for (int c = 0; c < lettersCount; c++)
-            {
-                int i = indexes[c];
-                if (i == -1) continue;
-
-                bool isDoneC = indexDone.Contains(c);
-                bool isDoneI = indexDone.Contains(i);
-                if (isDoneC || isDoneI)
-                {
-                    if (isDoneC && !isDoneI)
-                    {
-                        foreach (var pair in groupedIndexes.Where(x => x.Contains(c)))
-                        {
-                            pair.Add(i);
-                        }
-                        indexDone.Add(i);
-                    }
-                    else if (!isDoneC && isDoneI)
-                    {
-                        foreach (var pair in groupedIndexes.Where(x => x.Contains(i)))
-                        {
-                            pair.Add(c);
-                        }
-                        indexDone.Add(c);
-                    }
-                    else
-                    {
-                        foreach (var pair in groupedIndexes.Where(x => x.Contains(i)))
-                        {
-                            if (!pair.Contains(c)) pair.Add(c);
-                        }
-
-                        foreach (var pair in groupedIndexes.Where(x => x.Contains(c)))
-                        {
-                            if (!pair.Contains(i)) pair.Add(i);
-                        }
-                    }
-                }
-                else
-                {
-                    List<int> pair = new List<int>() { c, i };
-                    groupedIndexes.Add(pair);
-                    indexDone.AddRange(pair);
-                }
-            }
-
-            // Merge lists with common index 
-            for (int c = 0; c < lettersCount; c++)
-            {
-                List<List<int>> candidates = groupedIndexes.Where(x => x.Any(t => t == c)).ToList();
-                if (candidates.Count < 2) continue; // only one group with this index
-
-                List<int> merged = candidates.First();
-                groupedIndexes.Remove(merged);
-                for (int i = 1; i < candidates.Count; i++)
-                {
-                    var current = candidates[i];
-                    merged = merged.Union(current).ToList();
-                    groupedIndexes.Remove(current);
-                }
-                groupedIndexes.Add(merged);
-            }
+            var groupedIndexes = ClusteringAlgorithms.SimpleTransitiveClosure(letters,
+                distMeasure,
+                (l1, l2) => Math.Max((double)metric(l1), (double)metric(l2)) * 0.60,
+                l => l.EndBaseLine, l => l.StartBaseLine,
+                l => !string.IsNullOrWhiteSpace(l.Value),
+                (l1, l2) => string.Equals(l1.FontName, l2.FontName, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(l2.Value)).ToList();
 
             List<Word> words = new List<Word>();
             for (int a = 0; a < groupedIndexes.Count(); a++)
             {
-                List<Letter> groupedLetters = new List<Letter>();
-                foreach (int s in groupedIndexes[a])
-                {
-                    groupedLetters.Add(letters[s]);
-                }
-
-                words.Add(new Word(orderFunc(groupedLetters)));
-            }
-
-            List<int> indexesNotDone = Enumerable.Range(0, lettersCount).Except(groupedIndexes.SelectMany(x => x)).ToList();
-            for (int n = 0; n < indexesNotDone.Count(); n++)
-            {
-                Letter letter = letters[indexesNotDone[n]];
-                words.Add(new Word(new Letter[] { letter }));
+                words.Add(new Word(orderFunc(groupedIndexes[a].Select(i => letters[i]))));
             }
 
             return words;

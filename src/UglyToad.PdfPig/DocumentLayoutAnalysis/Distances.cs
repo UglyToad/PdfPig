@@ -48,12 +48,45 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         }
 
         /// <summary>
+        /// The angle in degrees between the horizontal axis and the line between two points.
+        /// </summary>
+        /// <param name="point1">The first point.</param>
+        /// <param name="point2">The second point.</param>
+        /// <returns></returns>
+        public static double Angle(PdfPoint point1, PdfPoint point2)
+        {
+            return Math.Atan2((float)(point2.Y - point1.Y), (float)(point2.X - point1.X)) * 180.0 / Math.PI;
+        }
+
+        /// <summary>
+        /// The absolute distance between the Y coordinates of two points.
+        /// </summary>
+        /// <param name="point1">The first point.</param>
+        /// <param name="point2">The second point.</param>
+        /// <returns></returns>
+        public static double Vertical(PdfPoint point1, PdfPoint point2)
+        {
+            return Math.Abs((double)(point2.Y - point1.Y));
+        }
+
+        /// <summary>
+        /// The absolute distance between the X coordinates of two points.
+        /// </summary>
+        /// <param name="point1">The first point.</param>
+        /// <param name="point2">The second point.</param>
+        /// <returns></returns>
+        public static double Horizontal(PdfPoint point1, PdfPoint point2)
+        {
+            return Math.Abs((double)(point2.X - point1.X));
+        }
+
+        /// <summary>
         /// Find the nearest point.
         /// </summary>
         /// <param name="pdfPoint">The reference point, for which to find the nearest neighbour.</param>
         /// <param name="points">The list of neighbours candidates.</param>
         /// <param name="distanceMeasure">The distance measure to use.</param>
-        /// <param name="distance">The distance between reference point, and its nearest neighbour</param>
+        /// <param name="distance">The distance between reference point, and its nearest neighbour.</param>
         public static PdfPoint FindNearest(this PdfPoint pdfPoint, IReadOnlyList<PdfPoint> points,
             Func<PdfPoint, PdfPoint, double> distanceMeasure, out double distance)
         {
@@ -89,7 +122,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="pdfPoint">The reference point, for which to find the nearest neighbour.</param>
         /// <param name="points">The list of neighbours candidates.</param>
         /// <param name="distanceMeasure">The distance measure to use.</param>
-        /// <param name="distance">The distance between reference point, and its nearest neighbour</param>
+        /// <param name="distance">The distance between reference point, and its nearest neighbour.</param>
         public static int FindIndexNearest(this PdfPoint pdfPoint, IReadOnlyList<PdfPoint> points,
             Func<PdfPoint, PdfPoint, double> distanceMeasure, out double distance)
         {
@@ -117,6 +150,42 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             }
 
             return closestPointIndex;
+        }
+
+        /// <summary>
+        /// Find the index of the nearest line.
+        /// </summary>
+        /// <param name="pdfLine">The reference line, for which to find the nearest neighbour.</param>
+        /// <param name="lines">The list of neighbours candidates.</param>
+        /// <param name="distanceMeasure">The distance measure between two lines to use.</param>
+        /// <param name="distance">The distance between reference line, and its nearest neighbour.</param>
+        public static int FindIndexNearest(this PdfLine pdfLine, IReadOnlyList<PdfLine> lines,
+            Func<PdfLine, PdfLine, double> distanceMeasure, out double distance)
+        {
+            if (lines == null || lines.Count == 0)
+            {
+                throw new ArgumentException("Distances.FindIndexNearest(): The list of neighbours candidates is either null or empty.", "lines");
+            }
+
+            if (distanceMeasure == null)
+            {
+                throw new ArgumentException("Distances.FindIndexNearest(): The distance measure must not be null.", "distanceMeasure");
+            }
+
+            distance = double.MaxValue;
+            int closestLineIndex = -1;
+
+            for (var i = 0; i < lines.Count; i++)
+            {
+                double currentDistance = distanceMeasure(lines[i], pdfLine);
+                if (currentDistance < distance)
+                {
+                    distance = currentDistance;
+                    closestLineIndex = i;
+                }
+            }
+
+            return closestLineIndex;
         }
     }
 }
