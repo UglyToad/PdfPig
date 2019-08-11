@@ -21,6 +21,10 @@
     {
         private readonly PdfDocumentBuilder documentBuilder;
         private readonly List<IGraphicsStateOperation> operations = new List<IGraphicsStateOperation>();
+
+        //a sequence number of ShowText operation to determine whether letters belong to same operation or not (letters that belong to different operations have less changes to belong to same word)
+        private static int textSequence = 0;
+
         internal IReadOnlyList<IGraphicsStateOperation> Operations => operations;
 
         /// <summary>
@@ -239,6 +243,8 @@
 
             var width = 0m;
 
+            textSequence++;
+
             for (var i = 0; i < text.Length; i++)
             {
                 var c = text[i];
@@ -258,7 +264,7 @@
 
                 var documentSpace = textMatrix.Transform(renderingMatrix.Transform(fontMatrix.Transform(rect)));
 
-                var letter = new Letter(c.ToString(), documentSpace, advanceRect.BottomLeft, advanceRect.BottomRight, width, fontSize, font.Name, fontSize);
+                var letter = new Letter(c.ToString(), documentSpace, advanceRect.BottomLeft, advanceRect.BottomRight, width, fontSize, font.Name, fontSize, textSequence);
                 letters.Add(letter);
 
                 var tx = advanceRect.Width * horizontalScaling;

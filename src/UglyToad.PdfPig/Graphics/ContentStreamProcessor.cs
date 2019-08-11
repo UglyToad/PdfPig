@@ -30,6 +30,9 @@
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
         private IFont activeExtendedGraphicsStateFont = null;
 
+        //a sequence number of ShowText operation to determine whether letters belong to same operation or not (letters that belong to different operations have less changes to belong to same word)
+        private int textSequence = 0;
+
         public TextMatrices TextMatrices { get; } = new TextMatrices();
 
         public TransformationMatrix CurrentTransformationMatrix
@@ -169,7 +172,7 @@
                     .Transform(TextMatrices.TextMatrix
                         .Transform(renderingMatrix.Transform(new PdfRectangle(0, 0, boundingBox.Width, 0))));
 
-                ShowGlyph(font, transformedGlyphBounds, transformedPdfBounds.BottomLeft, transformedPdfBounds.BottomRight, transformedPdfBounds.Width, unicode, fontSize, pointSize);
+                ShowGlyph(font, transformedGlyphBounds, transformedPdfBounds.BottomLeft, transformedPdfBounds.BottomRight, transformedPdfBounds.Width, unicode, fontSize, pointSize, textSequence);
 
                 decimal tx, ty;
                 if (font.IsVertical)
@@ -191,6 +194,8 @@
 
         public void ShowPositionedText(IReadOnlyList<IToken> tokens)
         {
+            textSequence++;
+
             var currentState = GetCurrentState();
 
             var textState = currentState.FontState;
@@ -336,9 +341,9 @@
             TextMatrices.TextMatrix = newMatrix;
         }
 
-        private void ShowGlyph(IFont font, PdfRectangle glyphRectangle, PdfPoint startBaseLine, PdfPoint endBaseLine, decimal width, string unicode, decimal fontSize, decimal pointSize)
+        private void ShowGlyph(IFont font, PdfRectangle glyphRectangle, PdfPoint startBaseLine, PdfPoint endBaseLine, decimal width, string unicode, decimal fontSize, decimal pointSize, int textSequence)
         {
-            var letter = new Letter(unicode, glyphRectangle, startBaseLine, endBaseLine, width, fontSize, font.Name.Data, pointSize);
+            var letter = new Letter(unicode, glyphRectangle, startBaseLine, endBaseLine, width, fontSize, font.Name.Data, pointSize, textSequence);
 
             Letters.Add(letter);
         }
