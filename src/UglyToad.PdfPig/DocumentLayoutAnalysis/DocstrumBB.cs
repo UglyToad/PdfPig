@@ -9,7 +9,7 @@ using UglyToad.PdfPig.Geometry;
 namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
     /// <summary>
-    /// The Docstrum algorithm is a bottom-up page segmentation technique based on nearest-neighborhood 
+    /// The Docstrum algorithm is a bottom-up page segmentation technique based on nearest-neighbourhood 
     /// clustering of connected components extracted from the document. 
     /// This implementation leverages bounding boxes and does not exactly replicates the original algorithm.
     /// <para>See 'The document spectrum for page layout analysis.' by L. O’Gorman.</para>
