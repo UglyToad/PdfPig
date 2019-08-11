@@ -77,11 +77,48 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 
             // 2. Find lines of text
             double maxDistWL = Math.Min(3 * withinLineDistance, Math.Sqrt(2) * betweenLineDistance);
-            var lines = GetLines(pageWordsArr, maxDistWL).ToArray();
+            var lines = GetLines(pageWordsArr, maxDistWL, wlAngleLB, wlAngleUB).ToArray();
 
             // 3. Find blocks of text
             double maxDistBL = blMultiplier * betweenLineDistance;
-            return GetLinesGroups(lines, maxDistBL).ToList();
+            var blocks = GetLinesGroups(lines, maxDistBL).ToList();
+
+            // 4. Merge overlapping blocks - might happen in certain conditions, e.g. justified text.
+            for (int b = 0; b < blocks.Count; b++)
+            {
+                if (blocks[b] == null) continue;
+
+                for (int c = 0; c < blocks.Count; c++)
+                {
+                    if (b == c) continue;
+                    if (blocks[c] == null) continue;
+
+                    if (AreRectangleOverlapping(blocks[b].BoundingBox, blocks[c].BoundingBox))
+                    {
+                        // Merge
+                        // 1. Merge all words
+                        var mergedWords = new List<Word>(blocks[b].TextLines.SelectMany(l => l.Words));
+                        mergedWords.AddRange(blocks[c].TextLines.SelectMany(l => l.Words));
+
+                        // 2. Rebuild lines, using max distance = +Inf as we know all words will be in the
+                        // same block. Filtering will still be done based on angle.
+                        var mergedLines = GetLines(mergedWords.ToArray(), wlAngleLB, wlAngleUB, double.MaxValue);
+                        blocks[b] = new TextBlock(mergedLines.ToList());
+
+                        // Remove
+                        blocks[c] = null;
+                    }
+                }
+            }
+
+            return blocks.Where(b => b != null).ToList();
+        }
+
+        private bool AreRectangleOverlapping(PdfRectangle rectangle1, PdfRectangle rectangle2)
+        {
+            if (rectangle1.Left > rectangle2.Right || rectangle2.Left > rectangle1.Right) return false;
+            if (rectangle1.Top < rectangle2.Bottom || rectangle2.Top < rectangle1.Bottom) return false;
+            return true;
         }
 
         /// <summary>
@@ -104,6 +141,8 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             Func<PdfPoint, PdfPoint, double> finalDistMEasure)
         {
             var pointR = funcPivotDist(pivot.BoundingBox);
+
+            // Filter by angle
             var filtered = words.Where(w =>
             {
                 var angleWL = Distances.Angle(funcPivotAngle(pivot.BoundingBox), funcPointsAngle(w.BoundingBox));
@@ -135,18 +174,27 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// </summary>
         /// <param name="words"></param>
         /// <param name="maxDist"></param>
+        /// <param name="wlAngleLB"></param>
+        /// <param name="wlAngleUB"></param>
         /// <returns></returns>
-        private IEnumerable<TextLine> GetLines(Word[] words, double maxDist)
+        private IEnumerable<TextLine> GetLines(Word[] words, double maxDist, double wlAngleLB, double wlAngleUB)
         {
+            /***************************************************************************************************
+             * /!\ WARNING: Given how FindIndexNearest() works, if 'maxDist' > 'word Width', the algo might not 
+             * work as the FindIndexNearest() function might pair the pivot with itself (the pivot's right point 
+             * (distance = width) is closer than other words' left point).
+             * -> Solution would be to find more than one nearest neighbours. Use KDTree?
+             ***************************************************************************************************/
+
             TextDirection textDirection = words[0].TextDirection;
             var groupedIndexes = ClusteringAlgorithms.SimpleTransitiveClosure(words, Distances.Euclidean,
-                (w1, w2) => maxDist,
-                w => w.BoundingBox.BottomRight, w => w.BoundingBox.BottomLeft,
-                w => true,
-                (w1, w2) =>
+                (pivot, candidate) => maxDist,
+                pivot => pivot.BoundingBox.BottomRight, candidate => candidate.BoundingBox.BottomLeft,
+                pivot => true,
+                (pivot, candidate) =>
                 {
-                    var angleWL = Distances.Angle(w1.BoundingBox.BottomRight, w2.BoundingBox.BottomLeft); // compare bottom right with bottom left for angle
-                    return (angleWL >= -30 && angleWL <= 30);
+                    var angleWL = Distances.Angle(pivot.BoundingBox.BottomRight, candidate.BoundingBox.BottomLeft); // compare bottom right with bottom left for angle
+                    return (angleWL >= wlAngleLB && angleWL <= wlAngleUB);
                 }).ToList();
 
             Func<IEnumerable<Word>, IReadOnlyList<Word>> orderFunc = l => l.OrderBy(x => x.BoundingBox.Left).ToList();
@@ -177,10 +225,37 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <returns></returns>
         private IEnumerable<TextBlock> GetLinesGroups(TextLine[] lines, double maxDist)
         {
-            var groupedIndexes = ClusteringAlgorithms.SimpleTransitiveClosure(lines, Distances.Euclidean,
-                (l1, l2) => maxDist,
-                l => l.BoundingBox.TopLeft, l => l.BoundingBox.BottomLeft,
-                l => true, (l1, l2) => true).ToList();
+            /**************************************************************************************************
+             * We want to measure the distance between two lines using the following method:
+             *  We check if two lines are overlapping horizontally.
+             *  If they are overlapping, we compute the middle point (new X coordinate) of the overlapping area.
+             *  We finally compute the Euclidean distance between these two middle points.
+             *  If the two lines are not overlapping, the distance is set to the max distance.
+             * 
+             * /!\ WARNING: Given how FindIndexNearest() works, if 'maxDist' > 'line Height', the algo won't 
+             * work as the FindIndexNearest() function will always pair the pivot with itself (the pivot's top
+             * point (distance = height) is closer than other lines' top point).
+             * -> Solution would be to find more than one nearest neighbours. Use KDTree?
+             **************************************************************************************************/
+
+            Func<PdfLine, PdfLine, double> euclidianOverlappingMiddleDistance = (l1, l2) =>
+            {
+                var left = Math.Max(l1.Point1.X, l2.Point1.X);
+                var d = (Math.Min(l1.Point2.X, l2.Point2.X) - left);
+
+                if (d < 0) return double.MaxValue; // not overlapping -> max distance
+
+                return Distances.Euclidean(
+                    new PdfPoint(left + d / 2, l1.Point1.Y),
+                    new PdfPoint(left + d / 2, l2.Point1.Y));
+            };
+
+            var groupedIndexes = ClusteringAlgorithms.SimpleTransitiveClosure(lines, 
+                euclidianOverlappingMiddleDistance,
+                (pivot, candidate) => maxDist,
+                pivot => new PdfLine(pivot.BoundingBox.BottomLeft, pivot.BoundingBox.BottomRight),
+                candidate => new PdfLine(candidate.BoundingBox.TopLeft, candidate.BoundingBox.TopRight),
+                pivot => true, (pivot, candidate) => true).ToList();
 
             for (int a = 0; a < groupedIndexes.Count(); a++)
             {

@@ -86,7 +86,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="pdfPoint">The reference point, for which to find the nearest neighbour.</param>
         /// <param name="points">The list of neighbours candidates.</param>
         /// <param name="distanceMeasure">The distance measure to use.</param>
-        /// <param name="distance">The distance between reference point, and its nearest neighbour</param>
+        /// <param name="distance">The distance between reference point, and its nearest neighbour.</param>
         public static PdfPoint FindNearest(this PdfPoint pdfPoint, IReadOnlyList<PdfPoint> points,
             Func<PdfPoint, PdfPoint, double> distanceMeasure, out double distance)
         {
@@ -122,7 +122,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="pdfPoint">The reference point, for which to find the nearest neighbour.</param>
         /// <param name="points">The list of neighbours candidates.</param>
         /// <param name="distanceMeasure">The distance measure to use.</param>
-        /// <param name="distance">The distance between reference point, and its nearest neighbour</param>
+        /// <param name="distance">The distance between reference point, and its nearest neighbour.</param>
         public static int FindIndexNearest(this PdfPoint pdfPoint, IReadOnlyList<PdfPoint> points,
             Func<PdfPoint, PdfPoint, double> distanceMeasure, out double distance)
         {
@@ -150,6 +150,42 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             }
 
             return closestPointIndex;
+        }
+
+        /// <summary>
+        /// Find the index of the nearest line.
+        /// </summary>
+        /// <param name="pdfLine">The reference line, for which to find the nearest neighbour.</param>
+        /// <param name="lines">The list of neighbours candidates.</param>
+        /// <param name="distanceMeasure">The distance measure between two lines to use.</param>
+        /// <param name="distance">The distance between reference line, and its nearest neighbour.</param>
+        public static int FindIndexNearest(this PdfLine pdfLine, IReadOnlyList<PdfLine> lines,
+            Func<PdfLine, PdfLine, double> distanceMeasure, out double distance)
+        {
+            if (lines == null || lines.Count == 0)
+            {
+                throw new ArgumentException("Distances.FindIndexNearest(): The list of neighbours candidates is either null or empty.", "lines");
+            }
+
+            if (distanceMeasure == null)
+            {
+                throw new ArgumentException("Distances.FindIndexNearest(): The distance measure must not be null.", "distanceMeasure");
+            }
+
+            distance = double.MaxValue;
+            int closestLineIndex = -1;
+
+            for (var i = 0; i < lines.Count; i++)
+            {
+                double currentDistance = distanceMeasure(lines[i], pdfLine);
+                if (currentDistance < distance)
+                {
+                    distance = currentDistance;
+                    closestLineIndex = i;
+                }
+            }
+
+            return closestLineIndex;
         }
     }
 }
