@@ -20,12 +20,11 @@
                 Assert.Contains("catus", page.Text);
             }
         }
-
-
+        
         [Fact]
         public void CanGetAnnotations()
         {
-            using (var document = PdfDocument.Open(GetFilename(), new ParsingOptions { UseLenientParsing = false }))
+            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
                 var page = document.GetPage(1);
 

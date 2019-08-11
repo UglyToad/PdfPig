@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using PdfPig.Util;
     using Xunit;
 
     public class LaTexTests
@@ -16,7 +17,7 @@
         [Fact]
         public void CanReadContent()
         {
-            using (var document = PdfDocument.Open(GetFilename()))
+            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
                 var page = document.GetPage(1);
 
@@ -122,6 +123,25 @@ used per estimate, we introduce a “complement class”Naive Bayes is often us
                     Assert.True(string.Equals(expected[i], words[i].Text, StringComparison.Ordinal),
                         $"Expected word {expected[i]} got word {words[i].Text} at index {i}.");
                 }
+            }
+        }
+
+        [Fact]
+        public void CanGetMetadata()
+        {
+            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
+            {
+                var hasMetadata = document.TryGetXmpMetadata(out var metadata);
+
+                Assert.True(hasMetadata);
+
+                var xDocument = metadata.GetXDocument();
+
+                Assert.NotNull(xDocument);
+
+                var text = OtherEncodings.BytesAsLatin1String(metadata.GetXmlBytes().ToArray());
+
+                Assert.StartsWith("<?xpacket begin='' id='W5M0MpCehiHzreSzNTczkc9d'", text);
             }
         }
 

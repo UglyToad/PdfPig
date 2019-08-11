@@ -140,7 +140,8 @@
             
             return new PdfDocument(log, inputBytes, version, crossReferenceTable, isLenientParsing, caching, pageFactory, catalog, information,
                 encryptionDictionary,
-                pdfScanner, 
+                pdfScanner,
+                filterProvider,
                 acroFormFactory);
         }
 

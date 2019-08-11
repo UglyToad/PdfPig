@@ -55,6 +55,7 @@
                 "UglyToad.PdfPig.Content.Word",
                 "UglyToad.PdfPig.Content.TextLine",
                 "UglyToad.PdfPig.Content.TextDirection",
+                "UglyToad.PdfPig.Content.XmpMetadata",
                 "UglyToad.PdfPig.Core.TransformationMatrix",
                 "UglyToad.PdfPig.CrossReference.CrossReferenceTable",
                 "UglyToad.PdfPig.CrossReference.CrossReferenceType",
