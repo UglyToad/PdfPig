@@ -30,6 +30,27 @@
 
         [Theory]
         [MemberData(nameof(GetAllDocuments))]
+        public void CanUseStreamForFirstPage(string documentName)
+        {
+            // Add the full path back on, we removed it so we could see it in the test explorer.
+            documentName = Path.Combine(DocumentFolder.Value, documentName);
+
+            var bytes = File.ReadAllBytes(documentName);
+
+            using (var memoryStream = new MemoryStream(bytes))
+            using (var document = PdfDocument.Open(memoryStream, new ParsingOptions { UseLenientParsing = false }))
+            {
+                for (var i = 0; i < document.NumberOfPages; i++)
+                {
+                    var page = document.GetPage(i + 1);
+
+                    Assert.NotNull(page.ExperimentalAccess.GetAnnotations().ToList());
+                }
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(GetAllDocuments))]
         public void CanTokenizeAllAccessibleObjects(string documentName)
         {
             documentName = Path.Combine(DocumentFolder.Value, documentName);

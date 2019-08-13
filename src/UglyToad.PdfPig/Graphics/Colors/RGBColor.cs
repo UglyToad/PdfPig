@@ -6,7 +6,7 @@
     /// <summary>
     /// A color with red, green and blue components.
     /// </summary>
-    internal class RGBColor : IColor, IEquatable<RGBColor>
+    public class RGBColor : IColor, IEquatable<RGBColor>
     {
         /// <summary>
         /// RGB Black value (all 0).
@@ -78,9 +78,15 @@
         /// <inheritdoc />
         public override int GetHashCode() => (R, G, B).GetHashCode();
 
+        /// <summary>
+        /// Equals.
+        /// </summary>
         public static bool operator ==(RGBColor color1, RGBColor color2) =>
             EqualityComparer<RGBColor>.Default.Equals(color1, color2);
 
+        /// <summary>
+        /// Not Equals.
+        /// </summary>
         public static bool operator !=(RGBColor color1, RGBColor color2) => !(color1 == color2);
 
         /// <inheritdoc />

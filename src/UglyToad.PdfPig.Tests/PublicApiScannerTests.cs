@@ -20,6 +20,11 @@
 
             foreach (var type in types)
             {
+                if (type.FullName == null)
+                {
+                    continue;
+                }
+
                 // Skip coverage measuring instrumentation classes.
                 if (type.FullName.StartsWith("Coverlet", StringComparison.OrdinalIgnoreCase))
                 {
@@ -77,10 +82,13 @@
                 "UglyToad.PdfPig.Geometry.PdfPoint",
                 "UglyToad.PdfPig.Geometry.PdfLine",
                 "UglyToad.PdfPig.Geometry.PdfRectangle",
+                "UglyToad.PdfPig.Graphics.Colors.CMYKColor",
                 "UglyToad.PdfPig.Graphics.Colors.ColorSpace",
                 "UglyToad.PdfPig.Graphics.Colors.ColorSpaceExtensions",
                 "UglyToad.PdfPig.Graphics.Colors.ColorSpaceFamily",
+                "UglyToad.PdfPig.Graphics.Colors.GrayColor",
                 "UglyToad.PdfPig.Graphics.Colors.IColor",
+                "UglyToad.PdfPig.Graphics.Colors.RGBColor",
                 "UglyToad.PdfPig.Graphics.Core.LineCapStyle",
                 "UglyToad.PdfPig.Graphics.Core.LineDashPattern",
                 "UglyToad.PdfPig.Graphics.Core.LineJoinStyle",
@@ -293,6 +301,11 @@
             foreach (var type in types)
             {
                 var symbol = type.GetField("Symbol", BindingFlags.Public | BindingFlags.Static);
+                if (symbol == null)
+                {
+                    continue;
+                }
+
                 symbols.Add(symbol.GetValue(null).ToString());
             }
 
