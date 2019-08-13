@@ -21,7 +21,7 @@
         /// <summary>
         /// The active colorspaces for this content stream.
         /// </summary>
-        IColorspaceContext ColorspaceContext { get; }
+        IColorSpaceContext ColorSpaceContext { get; }
 
         /// <summary>
         /// The current position.

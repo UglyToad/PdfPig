@@ -126,11 +126,11 @@ namespace UglyToad.PdfPig.Graphics
                 case SetNonStrokeColorAdvanced.Symbol:
                     if (operands[operands.Count - 1] is NameToken scnLowerPatternName)
                     {
-                        return new SetStrokeColorAdvanced(operands.Take(operands.Count - 1).Select(x => ((NumericToken)x).Data).ToList(), scnLowerPatternName);
+                        return new SetNonStrokeColorAdvanced(operands.Take(operands.Count - 1).Select(x => ((NumericToken)x).Data).ToList(), scnLowerPatternName);
                     }
                     else if (operands.All(x => x is NumericToken))
                     {
-                        return new SetStrokeColorAdvanced(operands.Select(x => ((NumericToken)x).Data).ToList());
+                        return new SetNonStrokeColorAdvanced(operands.Select(x => ((NumericToken)x).Data).ToList());
                     }
 
                     var errorMessageScnLower = string.Join(", ", operands.Select(x => x.ToString()));

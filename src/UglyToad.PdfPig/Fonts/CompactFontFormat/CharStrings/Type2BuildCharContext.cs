@@ -18,7 +18,7 @@
         /// <summary>
         /// The current path.
         /// </summary>
-        public PdfPath Path { get; } = new PdfPath(Core.TransformationMatrix.Identity);
+        public PdfPath Path { get; } = new PdfPath();
 
         /// <summary>
         /// The current location of the active point.

@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
     using Geometry;
+    using Graphics.Colors;
 
     /// <summary>
     /// A glyph or combination of glyphs (characters) drawn by a PDF content stream.
@@ -55,6 +56,11 @@
         public string FontName { get; }
 
         /// <summary>
+        /// The color of the letter.
+        /// </summary>
+        public IColor Color { get; }
+
+        /// <summary>
         /// The size of the font in points. This is not ready for public consumption as the calculation is incorrect.
         /// </summary>
         internal decimal PointSize { get; }
@@ -62,25 +68,25 @@
         /// <summary>
         /// Create a new letter to represent some text drawn by the Tj operator.
         /// </summary>
-        internal Letter(string value, PdfRectangle glyphRectangle, PdfPoint startBaseLine, PdfPoint endBaseLine, decimal width, decimal fontSize, string fontName, decimal pointSize)
+        internal Letter(string value, PdfRectangle glyphRectangle, 
+            PdfPoint startBaseLine, 
+            PdfPoint endBaseLine,
+            decimal width, 
+            decimal fontSize,
+            string fontName, 
+            IColor color,
+            decimal pointSize)
         {
             Value = value;
             GlyphRectangle = glyphRectangle;
-            FontSize = fontSize;
-            FontName = fontName;
-            PointSize = pointSize;
-            Width = width;
             StartBaseLine = startBaseLine;
             EndBaseLine = endBaseLine;
+            Width = width;
+            FontSize = fontSize;
+            FontName = fontName;
+            Color = color ?? GrayColor.Black;
+            PointSize = pointSize;
             TextDirection = GetTextDirection();
-        }
-
-        /// <summary>
-        /// Produces a string representation of the letter and its position.
-        /// </summary>
-        public override string ToString()
-        {
-            return $"{Value} {Location} {FontName} {PointSize}";
         }
 
         private TextDirection GetTextDirection()
@@ -91,17 +97,29 @@
                 {
                     return TextDirection.Rotate180;
                 }
+
                 return TextDirection.Horizontal;
             }
-            else if (System.Math.Abs(StartBaseLine.X - EndBaseLine.X) < 10e-5m)
+
+            if (System.Math.Abs(StartBaseLine.X - EndBaseLine.X) < 10e-5m)
             {
                 if (StartBaseLine.Y > EndBaseLine.Y)
                 {
                     return TextDirection.Rotate90;
                 }
+
                 return TextDirection.Rotate270;
             }
+
             return TextDirection.Unknown;
+        }
+
+        /// <summary>
+        /// Produces a string representation of the letter and its position.
+        /// </summary>
+        public override string ToString()
+        {
+            return $"{Value} {Location} {FontName} {PointSize}";
         }
     }
 }

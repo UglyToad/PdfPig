@@ -5,7 +5,6 @@ namespace UglyToad.PdfPig.Geometry
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
-    using Core;
 
     /// <summary>
     /// A path in a PDF document, used by glyphs and page content. Can contain multiple sub-paths.
@@ -20,21 +19,10 @@ namespace UglyToad.PdfPig.Geometry
         public IReadOnlyList<IPathCommand> Commands => commands;
 
         private PdfPoint? currentPosition;
-
-        private readonly TransformationMatrix currentTransformationMatrix;
-
-        /// <summary>
-        /// Create a new <see cref="PdfPath"/>.
-        /// </summary>
-        /// <param name="transformationMatrix">The transformation to apply to all points in this path.</param>
-        public PdfPath(TransformationMatrix transformationMatrix)
-        {
-            currentTransformationMatrix = transformationMatrix;
-        }
-
+        
         internal void MoveTo(decimal x, decimal y)
         {
-            currentPosition = currentTransformationMatrix.Transform(new PdfPoint(x, y));
+            currentPosition = new PdfPoint(x, y);
             commands.Add(new Move(currentPosition.Value));
         }
 
@@ -42,12 +30,13 @@ namespace UglyToad.PdfPig.Geometry
         {
             if (currentPosition.HasValue)
             {
-                var to = currentTransformationMatrix.Transform(new PdfPoint(x, y));
+                var to = new PdfPoint(x, y);
                 commands.Add(new Line(currentPosition.Value, to));
                 currentPosition = to;
             }
             else
             {
+                // TODO: probably the wrong behaviour here, maybe line starts from (0, 0)?
                 MoveTo(x, y);
             }
         }
@@ -58,9 +47,9 @@ namespace UglyToad.PdfPig.Geometry
         {
             if (currentPosition.HasValue)
             {
-                var to = currentTransformationMatrix.Transform(new PdfPoint(x3, y3));
+                var to = new PdfPoint(x3, y3);
                 commands.Add(new BezierCurve(currentPosition.Value,
-                    currentTransformationMatrix.Transform(new PdfPoint(x1, y1)), currentTransformationMatrix.Transform(new PdfPoint(x2, y2)), to));
+                    new PdfPoint(x1, y1), new PdfPoint(x2, y2), to));
                 currentPosition = to;
             }
             else
@@ -460,7 +449,7 @@ namespace UglyToad.PdfPig.Geometry
 
         internal void Rectangle(decimal x, decimal y, decimal width, decimal height)
         {
-            currentPosition = currentTransformationMatrix.Transform(new PdfPoint(x, y));
+            currentPosition = new PdfPoint(x, y);
             LineTo(x + width, y);
             LineTo(x + width, y + height);
             LineTo(x, y + height);

@@ -1,6 +1,7 @@
 ﻿// ReSharper disable RedundantDefaultMemberInitializer
 namespace UglyToad.PdfPig.Graphics
 {
+    using Colors;
     using Core;
     using PdfPig.Core;
 
@@ -96,6 +97,16 @@ namespace UglyToad.PdfPig.Graphics
         /// </summary>
         public decimal Smoothness { get; set; } = 0;
 
+        /// <summary>
+        /// The current active stroking color for paths.
+        /// </summary>
+        public IColor CurrentStrokingColor { get; set; }
+
+        /// <summary>
+        /// The current active non-stroking color for text and fill.
+        /// </summary>
+        public IColor CurrentNonStrokingColor { get; set; }
+
         #endregion
 
         /// <inheritdoc />
@@ -118,7 +129,9 @@ namespace UglyToad.PdfPig.Graphics
                 NonStrokingOverprint = NonStrokingOverprint,
                 OverprintMode = OverprintMode,
                 Smoothness = Smoothness,
-                StrokeAdjustment = StrokeAdjustment
+                StrokeAdjustment = StrokeAdjustment,
+                CurrentStrokingColor = CurrentStrokingColor,
+                CurrentNonStrokingColor = CurrentNonStrokingColor
             };
         }
     }
