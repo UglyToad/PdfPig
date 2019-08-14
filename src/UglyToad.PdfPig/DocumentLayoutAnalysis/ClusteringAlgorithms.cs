@@ -36,6 +36,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
              *  e.g. if nearest neighbour of point i is point j, then indexes[i] = j.
              *  Only conciders a neighbour if it is within the maximum distance. 
              *  If not within the maximum distance, index will be set to -1.
+             *  Each element has only one connected neighbour.
              *  NB: Given the possible asymmetry in the relationship, it is possible 
              *  that if indexes[i] = j then indexes[j] != i.
              *  
@@ -43,10 +44,6 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
              *  Group indexes if share neighbours in common - Transitive closure
              *  e.g. if we have indexes[i] = j, indexes[j] = k, indexes[m] = n and indexes[n] = -1
              *  (i,j,k) will form a group and (m,n) will form another group.
-             *  
-             * 3. Merge groups that have indexes in common - If any
-             *  If there are group with indexes in common, merge them.
-             *  (Could be improved and put in step 2)
              *************************************************************************************/
 
             int[] indexes = Enumerable.Repeat((int)-1, elements.Length).ToArray();
@@ -70,8 +67,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             });
 
             // 2. Group indexes
-            // 3. Merge groups that have indexes in common
-            var groupedIndexes = GroupMergeIndexes(indexes);
+            var groupedIndexes = GroupIndexes(indexes);
 
             return groupedIndexes;
         }
@@ -101,6 +97,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
              *  e.g. if nearest neighbour of point i is point j, then indexes[i] = j.
              *  Only conciders a neighbour if it is within the maximum distance. 
              *  If not within the maximum distance, index will be set to -1.
+             *  Each element has only one connected neighbour.
              *  NB: Given the possible asymmetry in the relationship, it is possible 
              *  that if indexes[i] = j then indexes[j] != i.
              *  
@@ -108,10 +105,6 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
              *  Group indexes if share neighbours in common - Transitive closure
              *  e.g. if we have indexes[i] = j, indexes[j] = k, indexes[m] = n and indexes[n] = -1
              *  (i,j,k) will form a group and (m,n) will form another group.
-             *  
-             * 3. Merge groups that have indexes in common - If any
-             *  If there are group with indexes in common, merge them.
-             *  (Could be improved and put in step 2)
              *************************************************************************************/
 
             int[] indexes = Enumerable.Repeat((int)-1, elements.Length).ToArray();
@@ -135,108 +128,109 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             });
 
             // 2. Group indexes
-            // 3. Merge groups that have indexes in common
-            var groupedIndexes = GroupMergeIndexes(indexes);
+            var groupedIndexes = GroupIndexes(indexes);
 
             return groupedIndexes;
         }
 
         /// <summary>
-        /// Group elements via transitive closure.
+        /// Group elements via transitive closure. Each element has only one connected neighbour.
         /// https://en.wikipedia.org/wiki/Transitive_closure
         /// </summary>
         /// <param name="indexes">Array of paired elements index.</param>
         /// <returns></returns>
-        internal static List<HashSet<int>> GroupMergeIndexes(int[] indexes)
+        private static List<HashSet<int>> GroupIndexes(int[] indexes)
         {
-            // 2. Group indexes
+            int[][] adjacency = new int[indexes.Length][];
+            for (int i = 0; i < indexes.Length; i++)
+            {
+                HashSet<int> matches = new HashSet<int>();
+                for (int j = 0; j < indexes.Length; ++j)
+                {
+                    if (indexes[j] == i) matches.Add(j);
+                }
+                adjacency[i] = matches.ToArray();
+            }
+
             List<HashSet<int>> groupedIndexes = new List<HashSet<int>>();
-            HashSet<int> indexDone = new HashSet<int>();
+            bool[] isDone = new bool[indexes.Length];
 
-            for (int e = 0; e < indexes.Length; e++)
+            for (int p = 0; p < indexes.Length; p++)
             {
-                int index = indexes[e];
+                if (isDone[p]) continue;
 
-                if (index == -1) // This element is not connected
-                {
-                    // Check if another element's index is connected to this element (nb: distance measure is asymmetric)
-                    if (!indexes.Contains(e))
-                    {
-                        // If no other element is connected to this element, add it as a standalone element
-                        groupedIndexes.Add(new HashSet<int>() { e });
-                        indexDone.Add(e);
-                    }
-                    continue;
-                }
+                LinkedList<int[]> L = new LinkedList<int[]>();
+                HashSet<int> grouped = new HashSet<int>();
+                L.AddLast(new[] { p, indexes[p] });
 
-                bool isDoneC = indexDone.Contains(e);
-                bool isDoneI = indexDone.Contains(index);
-                if (isDoneC || isDoneI)
+                while (L.Any())
                 {
-                    if (isDoneC && !isDoneI)
+                    var current = L.First.Value;
+                    L.RemoveFirst();
+                    var current0 = current[0];
+                    var current1 = current[1];
+
+                    if (current0 != -1 && !isDone[current0])
                     {
-                        foreach (var pair in groupedIndexes.Where(x => x.Contains(e)))
+                        var adjs = adjacency[current0];
+                        foreach (var k in adjs)
                         {
-                            pair.Add(index);
-                        }
-                        indexDone.Add(index);
-                    }
-                    else if (!isDoneC && isDoneI)
-                    {
-                        foreach (var pair in groupedIndexes.Where(x => x.Contains(index)))
-                        {
-                            pair.Add(e);
-                        }
-                        indexDone.Add(e);
-                    }
-                    else // isDoneC && isDoneI
-                    {
-                        foreach (var pair in groupedIndexes.Where(x => x.Contains(index)))
-                        {
-                            if (!pair.Contains(e)) pair.Add(e);
+                            if (isDone[k]) continue;
+                            L.AddLast(new[] { k, current0 });
                         }
 
-                        foreach (var pair in groupedIndexes.Where(x => x.Contains(e)))
+                        int current0P = indexes[current0];
+                        if (current0P != -1)
                         {
-                            if (!pair.Contains(index)) pair.Add(index);
+                            var adjsP = adjacency[current0P];
+                            foreach (var k in adjsP)
+                            {
+                                if (isDone[k]) continue;
+                                L.AddLast(new[] { k, current0P });
+                                isDone[k] = true;
+                                grouped.Add(k);
+                            }
+                        }
+                        else
+                        {
+                            L.AddLast(new[] { current0, current0P });
+                            isDone[current0] = true;
+                            grouped.Add(current0);
+                        }
+                    }
+
+                    if (current1 != -1 && !isDone[current1])
+                    {
+                        var adjs = adjacency[current1];
+                        foreach (var k in adjs)
+                        {
+                            if (isDone[k]) continue;
+                            L.AddLast(new[] { k, current1 });
+                        }
+
+                        int current1P = indexes[current1];
+                        if (current1P != -1)
+                        {
+                            var adjsP = adjacency[current1P];
+                            foreach (var k in adjsP)
+                            {
+                                if (isDone[k]) continue;
+                                L.AddLast(new[] { k, current1P });
+                                isDone[k] = true;
+                                grouped.Add(k);
+                            }
+                        }
+                        else
+                        {
+                            L.AddLast(new[] { current1, current1P });
+                            isDone[current1] = true;
+                            grouped.Add(current1);
                         }
                     }
                 }
-                else
-                {
-                    groupedIndexes.Add(new HashSet<int>() { e, index });
-                    indexDone.Add(e);
-                    indexDone.Add(index);
-                }
+                groupedIndexes.Add(grouped);
             }
 
-            // Check that all elements are done
-            if (indexes.Length != indexDone.Count)
-            {
-                throw new Exception("ClusteringAlgorithms.GetNNGroupedIndexes(): Some elements were not done.");
-            }
-
-            // 3. Merge groups that have indexes in common
-            // Check if duplicates (if duplicates, then same index in different groups)
-            if (indexDone.Count != groupedIndexes.SelectMany(x => x).Count())
-            {
-                for (int e = 0; e < indexes.Length; e++)
-                {
-                    List<HashSet<int>> candidates = groupedIndexes.Where(x => x.Contains(e)).ToList();
-                    int count = candidates.Count();
-                    if (count < 2) continue; // Only one group with this index
-
-                    HashSet<int> merged = candidates.First();
-                    groupedIndexes.Remove(merged);
-                    for (int i = 1; i < count; i++)
-                    {
-                        var current = candidates.ElementAt(i);
-                        merged.UnionWith(current);
-                        groupedIndexes.Remove(current);
-                    }
-                    groupedIndexes.Add(merged);
-                }
-            }
             return groupedIndexes;
         }
     }
