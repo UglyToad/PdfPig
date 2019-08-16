@@ -35,8 +35,9 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.CurrentPath.LineTo(End.X, End.Y);
-            operationContext.CurrentPosition = End;
+            var endPoint = operationContext.CurrentTransformationMatrix.Transform(new PdfPoint(End.X, End.Y));
+            operationContext.CurrentPath.LineTo(endPoint.X, endPoint.Y);
+            operationContext.CurrentPosition = endPoint;
         }
 
         /// <inheritdoc />

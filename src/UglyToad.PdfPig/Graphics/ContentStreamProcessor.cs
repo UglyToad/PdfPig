@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using Colors;
     using Content;
     using Core;
     using Fonts;
@@ -42,7 +43,7 @@
 
         public PdfPath CurrentPath { get; private set; }
 
-        public IColorspaceContext ColorspaceContext { get; } = new ColorspaceContext();
+        public IColorSpaceContext ColorSpaceContext { get; } 
 
         public PdfPoint CurrentPosition { get; set; }
 
@@ -69,6 +70,7 @@
             this.xObjectFactory = xObjectFactory;
             this.log = log;
             graphicsStack.Push(new CurrentGraphicsState());
+            ColorSpaceContext = new ColorSpaceContext(GetCurrentState);
         }
 
         public PageContent Process(IReadOnlyList<IGraphicsStateOperation> operations)
@@ -168,11 +170,28 @@
                     .Transform(TextMatrices.TextMatrix
                     .Transform(renderingMatrix
                     .Transform(boundingBox.GlyphBounds)));
+
                 var transformedPdfBounds = rotation.Rotate(transformationMatrix)
                     .Transform(TextMatrices.TextMatrix
                         .Transform(renderingMatrix.Transform(new PdfRectangle(0, 0, boundingBox.Width, 0))));
 
-                ShowGlyph(font, transformedGlyphBounds, transformedPdfBounds.BottomLeft, transformedPdfBounds.BottomRight, transformedPdfBounds.Width, unicode, fontSize, pointSize, textSequence);
+                // If the text rendering mode calls for filling, the current nonstroking color in the graphics state is used; 
+                // if it calls for stroking, the current stroking color is used.
+                // In modes that perform both filling and stroking, the effect is as if each glyph outline were filled and then stroked in separate operations.
+                // TODO: expose color as something more advanced
+                var color = currentState.FontState.TextRenderingMode != TextRenderingMode.Stroke
+                    ? currentState.CurrentNonStrokingColor
+                    : currentState.CurrentStrokingColor;
+
+                ShowGlyph(font, transformedGlyphBounds, 
+                    transformedPdfBounds.BottomLeft, 
+                    transformedPdfBounds.BottomRight, 
+                    transformedPdfBounds.Width,
+                    unicode, 
+                    fontSize,
+                    color,
+                    pointSize,
+                    textSequence);
 
                 decimal tx, ty;
                 if (font.IsVertical)
@@ -275,7 +294,7 @@
 
         public void BeginSubpath()
         {
-            CurrentPath = new PdfPath(CurrentTransformationMatrix);
+            CurrentPath = new PdfPath();
         }
 
         public void StrokePath(bool close)
@@ -341,9 +360,25 @@
             TextMatrices.TextMatrix = newMatrix;
         }
 
-        private void ShowGlyph(IFont font, PdfRectangle glyphRectangle, PdfPoint startBaseLine, PdfPoint endBaseLine, decimal width, string unicode, decimal fontSize, decimal pointSize, int textSequence)
+        private void ShowGlyph(IFont font, PdfRectangle glyphRectangle,
+            PdfPoint startBaseLine, 
+            PdfPoint endBaseLine, 
+            decimal width, 
+            string unicode,
+            decimal fontSize,
+            IColor color,
+            decimal pointSize,
+            int textSequence)
         {
-            var letter = new Letter(unicode, glyphRectangle, startBaseLine, endBaseLine, width, fontSize, font.Name.Data, pointSize, textSequence);
+            var letter = new Letter(unicode, glyphRectangle, 
+                startBaseLine, 
+                endBaseLine,
+                width, 
+                fontSize, 
+                font.Name.Data,
+                color,
+                pointSize,
+                textSequence);
 
             Letters.Add(letter);
         }

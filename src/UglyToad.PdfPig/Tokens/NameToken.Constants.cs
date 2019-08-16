@@ -552,11 +552,12 @@
         public static readonly NameToken WinAnsiEncoding = new NameToken("WinAnsiEncoding");
         // X
         public static readonly NameToken Xfa = new NameToken("XFA");
-        public static readonly NameToken XStep = new NameToken("XStep");
         public static readonly NameToken Xheight = new NameToken("XHeight");
+        public static readonly NameToken Xml = new NameToken("XML");
         public static readonly NameToken Xobject = new NameToken("XObject");
         public static readonly NameToken Xref = new NameToken("XRef");
         public static readonly NameToken XrefStm = new NameToken("XRefStm");
+        public static readonly NameToken XStep = new NameToken("XStep");
         // Y
         public static readonly NameToken YStep = new NameToken("YStep");
         public static readonly NameToken Yes = new NameToken("Yes");

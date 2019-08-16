@@ -8,6 +8,14 @@
     public class ParsingOptions
     {
         /// <summary>
+        /// A default <see cref="ParsingOptions"/> with <see cref="UseLenientParsing"/> set to false.
+        /// </summary>
+        public static ParsingOptions LenientParsingOff { get; } = new ParsingOptions
+        {
+            UseLenientParsing = false
+        };
+
+        /// <summary>
         /// Should the parser ignore issues where the document does not conform to the PDF specification?
         /// </summary>
         public bool UseLenientParsing { get; set; } = true;

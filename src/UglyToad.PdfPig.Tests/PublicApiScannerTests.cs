@@ -20,6 +20,11 @@
 
             foreach (var type in types)
             {
+                if (type.FullName == null)
+                {
+                    continue;
+                }
+
                 // Skip coverage measuring instrumentation classes.
                 if (type.FullName.StartsWith("Coverlet", StringComparison.OrdinalIgnoreCase))
                 {
@@ -54,17 +59,19 @@
                 "UglyToad.PdfPig.Content.PageSize",
                 "UglyToad.PdfPig.Content.Word",
                 "UglyToad.PdfPig.Content.TextLine",
+                "UglyToad.PdfPig.Content.TextBlock",
                 "UglyToad.PdfPig.Content.TextDirection",
+                "UglyToad.PdfPig.Content.XmpMetadata",
                 "UglyToad.PdfPig.Core.TransformationMatrix",
                 "UglyToad.PdfPig.CrossReference.CrossReferenceTable",
                 "UglyToad.PdfPig.CrossReference.CrossReferenceType",
                 "UglyToad.PdfPig.CrossReference.TrailerDictionary",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.Distances",
+                "UglyToad.PdfPig.DocumentLayoutAnalysis.DocstrumBB",
+                "UglyToad.PdfPig.DocumentLayoutAnalysis.IPageSegmenter",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.MathExtensions",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.NearestNeighbourWordExtractor",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.RecursiveXYCut",
-                "UglyToad.PdfPig.DocumentLayoutAnalysis.XYNode",
-                "UglyToad.PdfPig.DocumentLayoutAnalysis.XYLeaf",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.TextEdgesExtractor",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.EdgeType",
                 "UglyToad.PdfPig.Exceptions.PdfDocumentEncryptedException",
@@ -79,6 +86,13 @@
                 "UglyToad.PdfPig.Geometry.PdfPoint",
                 "UglyToad.PdfPig.Geometry.PdfLine",
                 "UglyToad.PdfPig.Geometry.PdfRectangle",
+                "UglyToad.PdfPig.Graphics.Colors.CMYKColor",
+                "UglyToad.PdfPig.Graphics.Colors.ColorSpace",
+                "UglyToad.PdfPig.Graphics.Colors.ColorSpaceExtensions",
+                "UglyToad.PdfPig.Graphics.Colors.ColorSpaceFamily",
+                "UglyToad.PdfPig.Graphics.Colors.GrayColor",
+                "UglyToad.PdfPig.Graphics.Colors.IColor",
+                "UglyToad.PdfPig.Graphics.Colors.RGBColor",
                 "UglyToad.PdfPig.Graphics.Core.LineCapStyle",
                 "UglyToad.PdfPig.Graphics.Core.LineDashPattern",
                 "UglyToad.PdfPig.Graphics.Core.LineJoinStyle",
@@ -86,7 +100,7 @@
                 "UglyToad.PdfPig.Graphics.Core.TextRenderingMode",
                 "UglyToad.PdfPig.Graphics.CurrentFontState",
                 "UglyToad.PdfPig.Graphics.CurrentGraphicsState",
-                "UglyToad.PdfPig.Graphics.IColorspaceContext",
+                "UglyToad.PdfPig.Graphics.IColorSpaceContext",
                 "UglyToad.PdfPig.Graphics.IOperationContext",
                 "UglyToad.PdfPig.Graphics.Operations.ClippingPaths.ModifyClippingByEvenOddIntersect",
                 "UglyToad.PdfPig.Graphics.Operations.ClippingPaths.ModifyClippingByNonZeroWindingIntersect",
@@ -291,6 +305,11 @@
             foreach (var type in types)
             {
                 var symbol = type.GetField("Symbol", BindingFlags.Public | BindingFlags.Static);
+                if (symbol == null)
+                {
+                    continue;
+                }
+
                 symbols.Add(symbol.GetValue(null).ToString());
             }
 

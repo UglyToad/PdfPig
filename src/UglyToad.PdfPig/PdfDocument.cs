@@ -7,10 +7,12 @@
     using CrossReference;
     using Encryption;
     using Exceptions;
+    using Filters;
     using IO;
     using Logging;
     using Parser;
     using Tokenization.Scanner;
+    using Tokens;
     using Util.JetBrains.Annotations;
 
     /// <inheritdoc />
@@ -39,7 +41,9 @@
 
         [NotNull]
         private readonly IPdfTokenScanner pdfScanner;
-        
+
+        private readonly IFilterProvider filterProvider;
+
         [NotNull]
         private readonly Pages pages;
 
@@ -81,6 +85,7 @@
             DocumentInformation information, 
             EncryptionDictionary encryptionDictionary,
             IPdfTokenScanner pdfScanner,
+            IFilterProvider filterProvider,
             AcroFormFactory acroFormFactory)
         {
             this.log = log;
@@ -90,6 +95,7 @@
             this.cachingProviders = cachingProviders ?? throw new ArgumentNullException(nameof(cachingProviders));
             this.encryptionDictionary = encryptionDictionary;
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
+            this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             Information = information ?? throw new ArgumentNullException(nameof(information));
             pages = new Pages(log, catalog, pageFactory, isLenientParsing, pdfScanner);
             Structure = new Structure(catalog, crossReferenceTable, pdfScanner);
@@ -154,8 +160,35 @@
         }
 
         /// <summary>
+        /// Get the document level metadata if present.
+        /// The metadata is XML in the (Extensible Metadata Platform) XMP format.
+        /// </summary>
+        /// <remarks>This will throw a <see cref="ObjectDisposedException"/> if called on a disposed <see cref="PdfDocument"/>.</remarks>
+        /// <param name="metadata">The metadata stream if it exists.</param>
+        /// <returns><see langword="true"/> if the metadata is present, <see langword="false"/> otherwise.</returns>
+        public bool TryGetXmpMetadata(out XmpMetadata metadata)
+        {
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException("Cannot access the document metadata after the document is disposed.");
+            }
+
+            metadata = null;
+
+            if (!Structure.Catalog.CatalogDictionary.TryGet(NameToken.Metadata, pdfScanner, out StreamToken xmpStreamToken))
+            {
+                return false;
+            }
+
+            metadata = new XmpMetadata(xmpStreamToken, filterProvider);
+
+            return true;
+        }
+
+        /// <summary>
         /// Gets the form if this document contains one.
         /// </summary>
+        /// <remarks>This will throw a <see cref="ObjectDisposedException"/> if called on a disposed <see cref="PdfDocument"/>.</remarks>
         /// <returns>An <see cref="AcroForm"/> from the document or <see langword="null"/> if not present.</returns>
         internal AcroForm GetForm()
         {

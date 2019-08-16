@@ -3,6 +3,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using Colors;
     using Tokens;
     using Writer;
 
@@ -40,7 +41,7 @@
         }
 
         /// <summary>
-        /// Create a new <see cref="SetStrokeColor"/>.
+        /// Create a new <see cref="SetStrokeColorAdvanced"/>.
         /// </summary>
         /// <param name="operands">The color operands.</param>
         /// <param name="patternName">The pattern name.</param>
@@ -53,6 +54,25 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
+            if (operationContext.ColorSpaceContext.CurrentStrokingColorSpace.GetFamily() != ColorSpaceFamily.Device)
+            {
+                return;
+            }
+
+            switch (Operands.Count)
+            {
+                case 1:
+                    operationContext.ColorSpaceContext.SetStrokingColorGray(Operands[0]);
+                    break;
+                case 3:
+                    operationContext.ColorSpaceContext.SetStrokingColorRgb(Operands[0], Operands[1], Operands[2]);
+                    break;
+                case 4:
+                    operationContext.ColorSpaceContext.SetStrokingColorCmyk(Operands[0], Operands[1], Operands[2], Operands[3]);
+                    break;
+                default:
+                    return;
+            }
         }
 
         /// <inheritdoc />

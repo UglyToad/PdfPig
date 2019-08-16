@@ -5,6 +5,7 @@
     using Content;
     using Core;
     using Geometry;
+    using Graphics.Colors;
     using Graphics.Operations;
     using Graphics.Operations.General;
     using Graphics.Operations.PathConstruction;
@@ -264,7 +265,11 @@
 
                 var documentSpace = textMatrix.Transform(renderingMatrix.Transform(fontMatrix.Transform(rect)));
 
-                var letter = new Letter(c.ToString(), documentSpace, advanceRect.BottomLeft, advanceRect.BottomRight, width, fontSize, font.Name, fontSize, textSequence);
+                var letter = new Letter(c.ToString(), documentSpace, advanceRect.BottomLeft, advanceRect.BottomRight, width, fontSize, font.Name,
+                    GrayColor.Black, 
+                    fontSize,
+                    textSequence);
+
                 letters.Add(letter);
 
                 var tx = advanceRect.Width * horizontalScaling;

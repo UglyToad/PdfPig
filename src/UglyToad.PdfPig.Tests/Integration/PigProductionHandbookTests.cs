@@ -28,6 +28,39 @@
         }
 
         [Fact]
+        public void LettersHaveCorrectColors()
+        {
+            using (var document = PdfDocument.Open(GetFilename(), new ParsingOptions
+            {
+                UseLenientParsing = false
+            }))
+            {
+                var page = document.GetPage(1);
+
+                // Pinkish.
+                var (r, g , b) = page.Letters[0].Color.ToRGBValues();
+
+                Assert.Equal(1, r);
+                Assert.Equal(0.914m, g);
+                Assert.Equal(0.765m, b);
+
+                // White.
+                (r, g, b) = page.Letters[37].Color.ToRGBValues();
+
+                Assert.Equal(1, r);
+                Assert.Equal(1, g);
+                Assert.Equal(1, b);
+
+                // Blackish.
+                (r, g, b) = page.Letters[76].Color.ToRGBValues();
+
+                Assert.Equal(0.137m, r);
+                Assert.Equal(0.122m, g);
+                Assert.Equal(0.125m, b);
+            }
+        }
+
+        [Fact]
         public void Page1HasCorrectWords()
         {
             var expected = new List<string>

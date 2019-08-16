@@ -11,14 +11,31 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
     /// https://en.wikipedia.org/wiki/Recursive_X-Y_cut
     /// <para>See 'Recursive X-Y Cut using Bounding Boxes of Connected Components' by Jaekyu Ha, Robert M.Haralick and Ihsin T. Phillips</para>
     /// </summary>
-    public static class RecursiveXYCut
+    public class RecursiveXYCut : IPageSegmenter
     {
         /// <summary>
+        /// Create an instance of Recursive X-Y Cut page segmenter, <see cref="RecursiveXYCut"/>.
+        /// </summary>
+        public static RecursiveXYCut Instance { get; } = new RecursiveXYCut();
+
+        /// <summary>
         /// Get the blocks.
+        /// <para>Uses 'minimumWidth' = 0, 'dominantFontWidthFunc' = Mode(Width), 'dominantFontHeightFunc' = 1.5 x Mode(Height)</para>
+        /// </summary>
+        /// <param name="pageWords">The words in the page.</param>
+        /// <returns></returns>
+        public IReadOnlyList<TextBlock> GetBlocks(IEnumerable<Word> pageWords)
+        {
+            return GetBlocks(pageWords, 0);
+        }
+
+        /// <summary>
+        /// Get the blocks.
+        /// <para>Uses 'dominantFontWidthFunc' = Mode(Width), 'dominantFontHeightFunc' = 1.5 x Mode(Height)</para>
         /// </summary>
         /// <param name="pageWords">The words in the page.</param>
         /// <param name="minimumWidth">The minimum width for a block.</param>
-        public static XYNode GetBlocks(IEnumerable<Word> pageWords, decimal minimumWidth = 0)
+        public IReadOnlyList<TextBlock> GetBlocks(IEnumerable<Word> pageWords, decimal minimumWidth)
         {
             return GetBlocks(pageWords, minimumWidth, k => Math.Round(k.Mode(), 3), k => Math.Round(k.Mode() * 1.5m, 3));
         }
@@ -30,7 +47,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="minimumWidth">The minimum width for a block.</param>
         /// <param name="dominantFontWidth">The dominant font width.</param>
         /// <param name="dominantFontHeight">The dominant font height.</param>
-        public static XYNode GetBlocks(IEnumerable<Word> pageWords, decimal minimumWidth,
+        public IReadOnlyList<TextBlock> GetBlocks(IEnumerable<Word> pageWords, decimal minimumWidth,
             decimal dominantFontWidth, decimal dominantFontHeight)
         {
             return GetBlocks(pageWords, minimumWidth, k => dominantFontWidth, k => dominantFontHeight);
@@ -43,15 +60,24 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="minimumWidth">The minimum width for a block.</param>
         /// <param name="dominantFontWidthFunc">The function that determines the dominant font width.</param>
         /// <param name="dominantFontHeightFunc">The function that determines the dominant font height.</param>
-        public static XYNode GetBlocks(IEnumerable<Word> pageWords, decimal minimumWidth,
+        public IReadOnlyList<TextBlock> GetBlocks(IEnumerable<Word> pageWords, decimal minimumWidth,
             Func<IEnumerable<decimal>, decimal> dominantFontWidthFunc,
             Func<IEnumerable<decimal>, decimal> dominantFontHeightFunc)
         {
-            var root = new XYLeaf(pageWords); // Create a root node.
-            return VerticalCut(root, minimumWidth, dominantFontWidthFunc, dominantFontHeightFunc);
+            XYLeaf root = new XYLeaf(pageWords); // Create a root node.
+            XYNode node = VerticalCut(root, minimumWidth, dominantFontWidthFunc, dominantFontHeightFunc);
+
+            var leafs = node.GetLeafs();
+
+            if (leafs.Count > 0)
+            {
+                return leafs.Select(l => new TextBlock(l.GetLines())).ToList();
+            }
+
+            return new List<TextBlock>();
         }
 
-        private static XYNode VerticalCut(XYLeaf leaf, decimal minimumWidth,
+        private XYNode VerticalCut(XYLeaf leaf, decimal minimumWidth,
             Func<IEnumerable<decimal>, decimal> dominantFontWidthFunc,
             Func<IEnumerable<decimal>, decimal> dominantFontHeightFunc, int level = 0)
         {
@@ -144,7 +170,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             return new XYNode(newNodes);
         }
 
-        private static XYNode HorizontalCut(XYLeaf leaf, decimal minimumWidth,
+        private XYNode HorizontalCut(XYLeaf leaf, decimal minimumWidth,
             Func<IEnumerable<decimal>, decimal> dominantFontWidthFunc,
             Func<IEnumerable<decimal>, decimal> dominantFontHeightFunc, int level = 0)
         {

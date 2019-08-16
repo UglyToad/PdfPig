@@ -54,7 +54,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.ColorspaceContext.SetNonStrokingColorCmyk(C, M, Y, K);
+            operationContext.ColorSpaceContext.SetNonStrokingColorCmyk(C, M, Y, K);
         }
 
         /// <inheritdoc />
