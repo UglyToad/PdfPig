@@ -31,6 +31,9 @@
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
         private IFont activeExtendedGraphicsStateFont = null;
 
+        //a sequence number of ShowText operation to determine whether letters belong to same operation or not (letters that belong to different operations have less changes to belong to same word)
+        private int textSequence = 0;
+
         public TextMatrices TextMatrices { get; } = new TextMatrices();
 
         public TransformationMatrix CurrentTransformationMatrix
@@ -187,7 +190,8 @@
                     unicode, 
                     fontSize,
                     color,
-                    pointSize);
+                    pointSize,
+                    textSequence);
 
                 decimal tx, ty;
                 if (font.IsVertical)
@@ -209,6 +213,8 @@
 
         public void ShowPositionedText(IReadOnlyList<IToken> tokens)
         {
+            textSequence++;
+
             var currentState = GetCurrentState();
 
             var textState = currentState.FontState;
@@ -361,7 +367,8 @@
             string unicode,
             decimal fontSize,
             IColor color,
-            decimal pointSize)
+            decimal pointSize,
+            int textSequence)
         {
             var letter = new Letter(unicode, glyphRectangle, 
                 startBaseLine, 
@@ -370,7 +377,8 @@
                 fontSize, 
                 font.Name.Data,
                 color,
-                pointSize);
+                pointSize,
+                textSequence);
 
             Letters.Add(letter);
         }

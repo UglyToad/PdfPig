@@ -66,6 +66,11 @@
         internal decimal PointSize { get; }
 
         /// <summary>
+        /// Sequence number of the ShowText operation that printed this letter.
+        /// </summary>
+        public int TextSequence { get; }
+
+        /// <summary>
         /// Create a new letter to represent some text drawn by the Tj operator.
         /// </summary>
         internal Letter(string value, PdfRectangle glyphRectangle, 
@@ -75,7 +80,8 @@
             decimal fontSize,
             string fontName, 
             IColor color,
-            decimal pointSize)
+            decimal pointSize,
+            int textSequence)
         {
             Value = value;
             GlyphRectangle = glyphRectangle;
@@ -86,6 +92,7 @@
             FontName = fontName;
             Color = color ?? GrayColor.Black;
             PointSize = pointSize;
+            TextSequence = textSequence;
             TextDirection = GetTextDirection();
         }
 
