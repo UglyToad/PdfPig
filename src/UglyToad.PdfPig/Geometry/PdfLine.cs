@@ -52,5 +52,28 @@
             Point1 = point1;
             Point2 = point2;
         }
+
+        /// <summary>
+        /// Returns a value indicating whether this <see cref="PdfLine"/> is equal to a specified <see cref="PdfLine"/> .
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public override bool Equals(object obj)
+        {
+            if (obj is PdfLine line)
+            {
+                return line.Point1.Equals(this.Point1) && line.Point2.Equals(this.Point2);
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Returns the hash code for this <see cref="PdfLine"/>.
+        /// </summary>
+        /// <returns></returns>
+        public override int GetHashCode()
+        {
+            return (Point1, Point2).GetHashCode();
+        }
     }
 }
