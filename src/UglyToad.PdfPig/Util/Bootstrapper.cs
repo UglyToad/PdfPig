@@ -26,7 +26,6 @@
                 logger = new NoOpLog();
             }
 
-            var headerParser = new FileHeaderParser(logger);
             var trailerParser = new FileTrailerParser();
             var filterProvider = new MemoryFilterProvider(new DecodeParameterResolver(logger), new PngPredictor(), logger);
             
@@ -34,7 +33,6 @@
             var afmParser = new AdobeFontMetricsParser();
             
             var container = new Container();
-            container.Register(headerParser);
             container.Register(trailerParser);
             container.Register(filterProvider);
             container.Register(cmapParser);

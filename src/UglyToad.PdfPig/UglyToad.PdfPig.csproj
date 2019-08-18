@@ -7,7 +7,6 @@
     <Authors>UglyToad</Authors>
     <Title>PdfPig</Title>
     <Description>Reads text content from PDF documents and supports document creation. Apache 2.0 licensed.</Description>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageLicenseUrl>https://raw.githubusercontent.com/UglyToad/PdfPig/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/UglyToad/PdfPig</PackageProjectUrl>
     <PackageTags>PDF;Reader;Document;Adobe;PDFBox;PdfPig;pdf-extract</PackageTags>

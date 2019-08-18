@@ -13,7 +13,7 @@
 
         public IReadOnlyDictionary<int, string> CodeToNameMap => CodeToName;
 
-        protected readonly Dictionary<string, int> NameToCode = new Dictionary<string, int>(250);
+        protected readonly Dictionary<string, int> NameToCode = new Dictionary<string, int>(250, StringComparer.OrdinalIgnoreCase);
 
         public IReadOnlyDictionary<string, int> NameToCodeMap => NameToCode;
 
@@ -21,15 +21,7 @@
 
         public bool ContainsName(string name)
         {
-            foreach (var keyValuePair in CodeToNameMap)
-            {
-                if (string.Equals(keyValuePair.Value, name, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return NameToCode.ContainsKey(name);
         }
 
         public bool ContainsCode(int code)
