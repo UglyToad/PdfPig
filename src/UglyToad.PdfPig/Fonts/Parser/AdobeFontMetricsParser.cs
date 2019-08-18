@@ -317,114 +317,120 @@
 
         public const string KernPairKpy = "KPY";
 
+        private static readonly char[] IndividualCharmetricsSplit = {';'};
+
+        private static readonly char[] CharmetricsKeySplit = {' '};
+        
         public FontMetrics Parse(IInputBytes bytes, bool useReducedDataSet)
         {
-            var token = ReadString(bytes);
+            var stringBuilder = new StringBuilder();
+
+            var token = ReadString(bytes, stringBuilder);
 
             if (!string.Equals(StartFontMetrics, token, StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidFontFormatException($"The AFM file was not valid, it did not start with {StartFontMetrics}.");
             }
 
-            var version = ReadDecimal(bytes);
+            var version = ReadDecimal(bytes, stringBuilder);
 
             var builder = new FontMetricsBuilder(version);
 
-            while ((token = ReadString(bytes)) != EndFontMetrics)
+            while ((token = ReadString(bytes, stringBuilder)) != EndFontMetrics)
             {
                 switch (token)
                 {
                     case Comment:
-                        builder.Comments.Add(ReadLine(bytes));
+                        builder.Comments.Add(ReadLine(bytes, stringBuilder));
                         break;
                     case FontName:
-                        builder.FontName = ReadLine(bytes);
+                        builder.FontName = ReadLine(bytes, stringBuilder);
                         break;
                     case FullName:
-                        builder.FullName = ReadLine(bytes);
+                        builder.FullName = ReadLine(bytes, stringBuilder);
                         break;
                     case FamilyName:
-                        builder.FamilyName = ReadLine(bytes);
+                        builder.FamilyName = ReadLine(bytes, stringBuilder);
                         break;
                     case Weight:
-                        builder.Weight = ReadLine(bytes);
+                        builder.Weight = ReadLine(bytes, stringBuilder);
                         break;
                     case ItalicAngle:
-                        builder.ItalicAngle = ReadDecimal(bytes);
+                        builder.ItalicAngle = ReadDecimal(bytes, stringBuilder);
                         break;
                     case IsFixedPitch:
-                        builder.IsFixedPitch = ReadBool(bytes);
+                        builder.IsFixedPitch = ReadBool(bytes, stringBuilder);
                         break;
                     case FontBbox:
-                        builder.SetBoundingBox(ReadDecimal(bytes), ReadDecimal(bytes),
-                            ReadDecimal(bytes), ReadDecimal(bytes));
+                        builder.SetBoundingBox(ReadDecimal(bytes, stringBuilder), ReadDecimal(bytes, stringBuilder),
+                            ReadDecimal(bytes, stringBuilder), ReadDecimal(bytes, stringBuilder));
                         break;
                     case UnderlinePosition:
-                        builder.UnderlinePosition = ReadDecimal(bytes);
+                        builder.UnderlinePosition = ReadDecimal(bytes, stringBuilder);
                         break;
                     case UnderlineThickness:
-                        builder.UnderlineThickness = ReadDecimal(bytes);
+                        builder.UnderlineThickness = ReadDecimal(bytes, stringBuilder);
                         break;
                     case Version:
-                        builder.Version = ReadLine(bytes);
+                        builder.Version = ReadLine(bytes, stringBuilder);
                         break;
                     case Notice:
-                        builder.Notice = ReadLine(bytes);
+                        builder.Notice = ReadLine(bytes, stringBuilder);
                         break;
                     case EncodingScheme:
-                        builder.EncodingScheme = ReadLine(bytes);
+                        builder.EncodingScheme = ReadLine(bytes, stringBuilder);
                         break;
                     case MappingScheme:
-                        builder.MappingScheme = (int)ReadDecimal(bytes);
+                        builder.MappingScheme = (int)ReadDecimal(bytes, stringBuilder);
                         break;
                     case CharacterSet:
-                        builder.CharacterSet = ReadLine(bytes);
+                        builder.CharacterSet = ReadLine(bytes, stringBuilder);
                         break;
                     case EscChar:
-                        builder.EscapeCharacter = (int) ReadDecimal(bytes);
+                        builder.EscapeCharacter = (int) ReadDecimal(bytes, stringBuilder);
                         break;
                     case Characters:
-                        builder.Characters = (int) ReadDecimal(bytes);
+                        builder.Characters = (int) ReadDecimal(bytes, stringBuilder);
                         break;
                     case IsBaseFont:
-                        builder.IsBaseFont = ReadBool(bytes);
+                        builder.IsBaseFont = ReadBool(bytes, stringBuilder);
                         break;
                     case CapHeight:
-                        builder.CapHeight = ReadDecimal(bytes);
+                        builder.CapHeight = ReadDecimal(bytes, stringBuilder);
                         break;
                     case XHeight:
-                        builder.XHeight = ReadDecimal(bytes);
+                        builder.XHeight = ReadDecimal(bytes, stringBuilder);
                         break;
                     case Ascender:
-                        builder.Ascender = ReadDecimal(bytes);
+                        builder.Ascender = ReadDecimal(bytes, stringBuilder);
                         break;
                     case Descender:
-                        builder.Descender = ReadDecimal(bytes);
+                        builder.Descender = ReadDecimal(bytes, stringBuilder);
                         break;
                     case StdHw:
-                        builder.StdHw = ReadDecimal(bytes);
+                        builder.StdHw = ReadDecimal(bytes, stringBuilder);
                         break;
                     case StdVw:
-                        builder.StdVw = ReadDecimal(bytes);
+                        builder.StdVw = ReadDecimal(bytes, stringBuilder);
                         break;
                     case CharWidth:
-                        builder.SetCharacterWidth(ReadDecimal(bytes), ReadDecimal(bytes));
+                        builder.SetCharacterWidth(ReadDecimal(bytes, stringBuilder), ReadDecimal(bytes, stringBuilder));
                         break;
                     case VVector:
-                        builder.SetVVector(ReadDecimal(bytes), ReadDecimal(bytes));
+                        builder.SetVVector(ReadDecimal(bytes, stringBuilder), ReadDecimal(bytes, stringBuilder));
                         break;
                     case IsFixedV:
-                        builder.IsFixedV = ReadBool(bytes);
+                        builder.IsFixedV = ReadBool(bytes, stringBuilder);
                         break;
                     case StartCharMetrics:
-                        var count = (int)ReadDecimal(bytes);
-                        for (int i = 0; i < count; i++)
+                        var count = (int)ReadDecimal(bytes, stringBuilder);
+                        for (var i = 0; i < count; i++)
                         {
-                            var metric = ReadCharacterMetric(bytes);
+                            var metric = ReadCharacterMetric(bytes, stringBuilder);
                             builder.CharacterMetrics.Add(metric);
                         }
 
-                        var end = ReadString(bytes);
+                        var end = ReadString(bytes, stringBuilder);
                         if (end != EndCharMetrics)
                         {
                             throw new InvalidFontFormatException($"The character metrics section did not end with {EndCharMetrics} instead it was {end}.");
@@ -439,16 +445,16 @@
             return builder.Build();
         }
 
-        private static decimal ReadDecimal(IInputBytes input)
+        private static decimal ReadDecimal(IInputBytes input, StringBuilder stringBuilder)
         {
-            var str = ReadString(input);
+            var str = ReadString(input, stringBuilder);
 
             return decimal.Parse(str, CultureInfo.InvariantCulture);
         }
 
-        private static bool ReadBool(IInputBytes input)
+        private static bool ReadBool(IInputBytes input, StringBuilder stringBuilder)
         {
-            var boolean = ReadString(input);
+            var boolean = ReadString(input, stringBuilder);
 
             switch (boolean)
             {
@@ -460,12 +466,10 @@
                     throw new InvalidFontFormatException($"The AFM should have contained a boolean but instead contained: {boolean}.");
             }
         }
-
-        private static readonly StringBuilder Builder = new StringBuilder();
-
-        private static string ReadString(IInputBytes input)
+        
+        private static string ReadString(IInputBytes input, StringBuilder stringBuilder)
         {
-            Builder.Clear();
+            stringBuilder.Clear();
 
             if (input.IsAtEnd())
             {
@@ -476,45 +480,45 @@
             {
             }
 
-            Builder.Append((char)input.CurrentByte);
+            stringBuilder.Append((char)input.CurrentByte);
 
             while (input.MoveNext() && !ReadHelper.IsWhitespace(input.CurrentByte))
             {
-                Builder.Append((char)input.CurrentByte);
+                stringBuilder.Append((char)input.CurrentByte);
             }
 
-            return Builder.ToString();
+            return stringBuilder.ToString();
         }
 
-        private static string ReadLine(IInputBytes input)
+        private static string ReadLine(IInputBytes input, StringBuilder stringBuilder)
         {
-            Builder.Clear();
+            stringBuilder.Clear();
 
             while (ReadHelper.IsWhitespace(input.CurrentByte) && input.MoveNext())
             {
             }
 
-            Builder.Append((char)input.CurrentByte);
+            stringBuilder.Append((char)input.CurrentByte);
 
             while (input.MoveNext() && !ReadHelper.IsEndOfLine(input.CurrentByte))
             {
-                Builder.Append((char)input.CurrentByte);
+                stringBuilder.Append((char)input.CurrentByte);
             }
 
-            return Builder.ToString();
+            return stringBuilder.ToString();
         }
 
-        private static IndividualCharacterMetric ReadCharacterMetric(IInputBytes bytes)
+        private static IndividualCharacterMetric ReadCharacterMetric(IInputBytes bytes, StringBuilder stringBuilder)
         {
-            var line = ReadLine(bytes);
+            var line = ReadLine(bytes, stringBuilder);
 
-            var split = line.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+            var split = line.Split(IndividualCharmetricsSplit, StringSplitOptions.RemoveEmptyEntries);
 
             var metric = new IndividualCharacterMetric();
 
             foreach (var s in split)
             {
-                var parts = s.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                var parts = s.Split(CharmetricsKeySplit, StringSplitOptions.RemoveEmptyEntries);
 
                 switch (parts[0])
                 {
