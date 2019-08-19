@@ -14,6 +14,9 @@
     {
         private static readonly IReadOnlyDictionary<string, string[]> NameSubstitutes;
 
+        private static readonly object CacheLock = new object();
+        private static readonly Dictionary<string, TrueTypeFontProgram> Cache = new Dictionary<string, TrueTypeFontProgram>(StringComparer.OrdinalIgnoreCase);
+
         static SystemFontFinder()
         {
             var dict = new Dictionary<string, string[]>
@@ -67,7 +70,6 @@
         private readonly TrueTypeFontParser trueTypeFontParser;
         private readonly Lazy<IReadOnlyList<SystemFontRecord>> availableFonts;
 
-        private readonly Dictionary<string, TrueTypeFontProgram> cache = new Dictionary<string, TrueTypeFontProgram>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, string> nameToFileNameMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> readFiles = new HashSet<string>();
 
@@ -157,14 +159,17 @@
 
         private TrueTypeFontProgram GetTrueTypeFontNamed(string name)
         {
-            if (cache.TryGetValue(name, out var result))
+            lock (CacheLock)
             {
-                return result;
+                if (Cache.TryGetValue(name, out var cachedResult))
+                {
+                    return cachedResult;
+                }
             }
 
             if (nameToFileNameMap.TryGetValue(name, out var fileName))
             {
-                if (TryReadFile(fileName, false, name, out result))
+                if (TryReadFile(fileName, false, name, out var result))
                 {
                     return result;
                 }
@@ -216,40 +221,42 @@
             font = null;
             readFiles.Add(fileName);
 
-            using (var fileStream = File.OpenRead(fileName))
+            var bytes = File.ReadAllBytes(fileName);
+
+            var data = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
+
+            if (readNameFirst)
             {
-                var input = new StreamInputBytes(fileStream);
-                var data = new TrueTypeDataBytes(input);
+                var name = trueTypeFontParser.GetNameTable(data);
 
-                if (readNameFirst)
+                if (name == null)
                 {
-                    var name = trueTypeFontParser.GetNameTable(data);
-
-                    if (name == null)
-                    {
-                        return false;
-                    }
-
-                    var fontNameFromFile = name.GetPostscriptName() ?? name.FontName;
-
-                    nameToFileNameMap[fontNameFromFile] = fileName;
-
-                    if (!string.Equals(fontNameFromFile, fontName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return false;
-                    }
+                    return false;
                 }
 
-                data.Seek(0);
-                font = trueTypeFontParser.Parse(data);
-                var psName = font.TableRegister.NameTable?.GetPostscriptName() ?? font.Name;
-                if (!cache.ContainsKey(psName))
-                {
-                    cache[psName] = font;
-                }
+                var fontNameFromFile = name.GetPostscriptName() ?? name.FontName;
 
-                return true;
+                nameToFileNameMap[fontNameFromFile] = fileName;
+
+                if (!string.Equals(fontNameFromFile, fontName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
             }
+
+            data.Seek(0);
+            font = trueTypeFontParser.Parse(data);
+            var psName = font.TableRegister.NameTable?.GetPostscriptName() ?? font.Name;
+
+            lock (CacheLock)
+            {
+                if (!Cache.ContainsKey(psName))
+                {
+                    Cache[psName] = font;
+                }
+            }
+
+            return true;
         }
     }
 }
