@@ -9,6 +9,10 @@
     /// </summary>
     public struct PageRotationDegrees : IEquatable<PageRotationDegrees>
     {
+        private static readonly TransformationMatrix Rotate90 = TransformationMatrix.FromArray(new[] {0m, -1, 1, 0});
+        private static readonly TransformationMatrix Rotate180 = TransformationMatrix.FromArray(new[] { -1m, 0, 0, -1 });
+        private static readonly TransformationMatrix Rotate270 = TransformationMatrix.FromArray(new[] { 0m, 1, -1, 0 });
+
         /// <summary>
         /// The rotation of the page in degrees clockwise.
         /// </summary>
@@ -54,26 +58,19 @@
         [Pure]
         internal TransformationMatrix Rotate(TransformationMatrix matrix)
         {
-            TransformationMatrix thisMatrix;
             switch (Value)
             {
                 case 0:
-                    thisMatrix = TransformationMatrix.FromArray(new[]{ 1m, 0, 0, 1 });
-                    break;
+                    return matrix;
                 case 90:
-                    thisMatrix = TransformationMatrix.FromArray(new[] {0m, -1, 1, 0});
-                    break;
+                    return Rotate90.Multiply(matrix);
                 case 180:
-                    thisMatrix = TransformationMatrix.FromArray(new[] {-1m, 0, 0, -1});
-                    break;
+                    return Rotate180.Multiply(matrix);
                 case 270:
-                    thisMatrix = TransformationMatrix.FromArray(new[] {0m, 1, -1, 0});
-                    break;
+                    return Rotate270.Multiply(matrix);
                 default:
                     throw new InvalidOperationException($"Invalid value for rotation: {Value}.");
             }
-
-            return thisMatrix.Multiply(matrix);
         }
 
         /// <inheritdoc />

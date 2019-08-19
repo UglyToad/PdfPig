@@ -76,6 +76,7 @@
             try
             {
                 using (var memoryStream = new MemoryStream(input))
+                using (var output = new MemoryStream())
                 {
                     // The first 2 bytes are the header which DeflateStream does not support.
                     memoryStream.ReadByte();
@@ -83,23 +84,8 @@
 
                     using (var deflate = new DeflateStream(memoryStream, CompressionMode.Decompress))
                     {
-                        var bytes = new List<byte>();
-
-                        var x = deflate.ReadByte();
-                        while (x != -1)
-                        {
-                            bytes.Add((byte)x);
-                            x = deflate.ReadByte();
-                        }
-
-                        var result = new byte[bytes.Count];
-
-                        for (var i = 0; i < bytes.Count; i++)
-                        {
-                            result[i] = bytes[i];
-                        }
-
-                        return result;
+                        deflate.CopyTo(output);
+                        return output.ToArray();
                     }
                 }
             }

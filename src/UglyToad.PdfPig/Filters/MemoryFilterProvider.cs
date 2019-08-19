@@ -2,35 +2,35 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using Exceptions;
     using Logging;
     using Tokens;
+    using Util;
 
     internal class MemoryFilterProvider : IFilterProvider
     {
-        private readonly IReadOnlyDictionary<string, Func<IFilter>> filterFactories; 
+        private readonly IReadOnlyDictionary<string, IFilter> filterInstances; 
 
         public MemoryFilterProvider(IDecodeParameterResolver decodeParameterResolver, IPngPredictor pngPredictor, ILog log)
         {
-            IFilter Ascii85Func() => new Ascii85Filter();
-            IFilter AsciiHexFunc() => new AsciiHexDecodeFilter();
-            IFilter FlateFunc() => new FlateFilter(decodeParameterResolver, pngPredictor, log);
-            IFilter RunLengthFunc() => new RunLengthFilter();
-            IFilter LzwFunc() => new LzwFilter(decodeParameterResolver, pngPredictor);
+            var ascii85 = new Ascii85Filter();
+            var asciiHex = new AsciiHexDecodeFilter();
+            var flate = new FlateFilter(decodeParameterResolver, pngPredictor, log);
+            var runLength = new RunLengthFilter();
+            var lzw = new LzwFilter(decodeParameterResolver, pngPredictor);
 
-            filterFactories = new Dictionary<string, Func<IFilter>>
+            filterInstances = new Dictionary<string, IFilter>
             {
-                {NameToken.Ascii85Decode.Data, Ascii85Func},
-                {NameToken.Ascii85DecodeAbbreviation.Data, Ascii85Func},
-                {NameToken.AsciiHexDecode.Data, AsciiHexFunc},
-                {NameToken.AsciiHexDecodeAbbreviation.Data, AsciiHexFunc},
-                {NameToken.FlateDecode.Data, FlateFunc},
-                {NameToken.FlateDecodeAbbreviation.Data, FlateFunc},
-                {NameToken.RunLengthDecode.Data, RunLengthFunc},
-                {NameToken.RunLengthDecodeAbbreviation.Data, RunLengthFunc},
-                {NameToken.LzwDecode, LzwFunc},
-                {NameToken.LzwDecodeAbbreviation, LzwFunc}
+                {NameToken.Ascii85Decode.Data, ascii85},
+                {NameToken.Ascii85DecodeAbbreviation.Data, ascii85},
+                {NameToken.AsciiHexDecode.Data, asciiHex},
+                {NameToken.AsciiHexDecodeAbbreviation.Data, asciiHex},
+                {NameToken.FlateDecode.Data, flate},
+                {NameToken.FlateDecodeAbbreviation.Data, flate},
+                {NameToken.RunLengthDecode.Data, runLength},
+                {NameToken.RunLengthDecodeAbbreviation.Data, runLength},
+                {NameToken.LzwDecode, lzw},
+                {NameToken.LzwDecodeAbbreviation, lzw}
             };
         }
 
@@ -43,14 +43,21 @@
 
             if (!dictionary.TryGet(NameToken.Filter, out var token))
             {
-                return new IFilter[0];
+                return EmptyArray<IFilter>.Instance;
             }
 
             switch (token)
             {
                 case ArrayToken filters:
-                    // TODO: presumably this may be invalid...
-                    return filters.Data.Select(x => GetFilterStrict(((NameToken)x).Data)).ToList();
+                    var result = new IFilter[filters.Data.Count];
+                    for (var i = 0; i < filters.Data.Count; i++)
+                    {
+                        var filterToken = filters.Data[i];
+                        var filterName = ((NameToken) filterToken).Data;
+                        result[i] = GetFilterStrict(filterName);
+                    }
+
+                    return result;
                 case NameToken name:
                     return new[] { GetFilterStrict(name.Data) };
                 default:
@@ -60,12 +67,12 @@
         
         private IFilter GetFilterStrict(string name)
         {
-            if (!filterFactories.TryGetValue(name, out var factory))
+            if (!filterInstances.TryGetValue(name, out var factory))
             {
                 throw new NotSupportedException($"The filter with the name {name} is not supported yet. Please raise an issue.");
             }
 
-            return factory();
+            return factory;
         }
 
         public IReadOnlyList<IFilter> GetAllFilters()

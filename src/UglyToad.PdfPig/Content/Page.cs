@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
+    using System.Text;
     using Annotations;
     using Graphics.Operations;
     using Tokens;
@@ -104,7 +104,13 @@
                 return string.Empty;
             }
 
-            return string.Join(string.Empty, content.Letters.Select(x => x.Value));
+            var builder = new StringBuilder();
+            for (var i = 0; i < content.Letters.Count; i++)
+            {
+                builder.Append(content.Letters[i].Value);
+            }
+
+            return builder.ToString();
         }
 
         /// <summary>
