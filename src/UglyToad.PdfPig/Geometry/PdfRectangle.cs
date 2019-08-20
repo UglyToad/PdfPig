@@ -33,7 +33,7 @@
         /// <summary>
         /// Centroid point of the rectangle.
         /// </summary>
-        public PdfPoint Centroid { get; }
+        public PdfPoint Centroid => new PdfPoint(TopLeft.X + (TopLeft.X - TopLeft.X) / 2, BottomLeft.Y + (TopLeft.Y - BottomLeft.Y) / 2);
 
         /// <summary>
         /// Width of the rectangle.
@@ -71,7 +71,7 @@
         public decimal Bottom => BottomRight.Y;
 
         internal PdfRectangle(PdfPoint point1, PdfPoint point2) : this(point1.X, point1.Y, point2.X, point2.Y) { }
-        internal PdfRectangle(short x1, short y1, short x2, short y2) : this((decimal) x1, y1, x2, y2) { }
+        internal PdfRectangle(short x1, short y1, short x2, short y2) : this((decimal)x1, y1, x2, y2) { }
 
         /// <summary>
         /// Create a new <see cref="PdfRectangle"/>.
@@ -110,14 +110,11 @@
 
             BottomLeft = new PdfPoint(left, bottom);
             BottomRight = new PdfPoint(right, bottom);
-
-            Centroid = new PdfPoint(left + (right - left) / 2, bottom + (top - bottom) / 2);
         }
 
         internal PdfRectangle(PdfVector topLeft, PdfVector topRight, PdfVector bottomLeft, PdfVector bottomRight)
             : this(topLeft.ToPoint(), topRight.ToPoint(), bottomLeft.ToPoint(), bottomRight.ToPoint())
         {
-
         }
 
         internal PdfRectangle(PdfPoint topLeft, PdfPoint topRight, PdfPoint bottomLeft, PdfPoint bottomRight)
@@ -127,8 +124,6 @@
 
             BottomLeft = bottomLeft;
             BottomRight = bottomRight;
-
-            Centroid = new PdfPoint(topLeft.X + (topRight.X - topLeft.X) / 2, bottomLeft.Y + (topLeft.Y - bottomLeft.Y) / 2);
         }
 
         /// <summary>
