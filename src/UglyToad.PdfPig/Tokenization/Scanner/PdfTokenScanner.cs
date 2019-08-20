@@ -28,6 +28,11 @@
 
     internal class PdfTokenScanner : IPdfTokenScanner
     {
+        private static readonly byte[] EndstreamBytes =
+        {
+            (byte)'e', (byte)'n', (byte)'d', (byte)'s', (byte)'t', (byte)'r', (byte)'e', (byte)'a', (byte)'m'
+        };
+
         private static readonly Regex EndsWithNumberRegex = new Regex(@"(?<=^[^\s\d]+)\d+$");
 
         private readonly IInputBytes inputBytes;
@@ -256,6 +261,12 @@
             const string streamPart = "stream";
             const string objPart = "obj";
 
+            if (TryReadUsingLength(inputBytes, length, startDataOffset, out var streamData))
+            {
+                stream = new StreamToken(streamDictionaryToken, streamData);
+                return true;
+            }
+
             // Track any 'endobj' or 'endstream' operators we see.
             var observedEndLocations = new List<PossibleStreamEndLocation>();
 
@@ -400,6 +411,82 @@
                     stream = new StreamToken(streamDictionaryToken, data);
                 }
             }
+
+            return true;
+        }
+
+        private static bool TryReadUsingLength(IInputBytes inputBytes, long? length, long startDataOffset, out byte[] data)
+        {
+            data = null;
+
+            if (!length.HasValue || length.Value + startDataOffset >= inputBytes.Length)
+            {
+                return false;
+            }
+
+            var readBuffer = new byte[EndstreamBytes.Length];
+
+            var newlineCount = 0;
+
+            inputBytes.Seek(length.Value + startDataOffset);
+
+            var next = inputBytes.Peek();
+
+            if (next.HasValue && ReadHelper.IsEndOfLine(next.Value))
+            {
+                newlineCount++;
+                inputBytes.MoveNext();
+
+                next = inputBytes.Peek();
+
+                if (next.HasValue && ReadHelper.IsEndOfLine(next.Value))
+                {
+                    newlineCount++;
+                    inputBytes.MoveNext();
+                }
+            }
+
+            var readLength = inputBytes.Read(readBuffer);
+
+            if (readLength != readBuffer.Length)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < EndstreamBytes.Length; i++)
+            {
+                if (readBuffer[i] != EndstreamBytes[i])
+                {
+                    inputBytes.Seek(startDataOffset);
+                    return false;
+                }
+            }
+            
+            inputBytes.Seek(startDataOffset);
+
+            data = new byte[(int)length.Value];
+
+            var countRead = inputBytes.Read(data);
+
+            if (countRead != data.Length)
+            {
+                throw new InvalidOperationException($"Reading using the stream length failed to read as many bytes as the stream specified. Wanted {length.Value}, got {countRead} at {startDataOffset + 1}.");
+            }
+
+            inputBytes.Read(readBuffer);
+            // Skip for the line break before 'endstream'.
+            for (var i = 0; i < newlineCount; i++)
+            {
+                var read = inputBytes.MoveNext();
+                if (!read)
+                {
+                    inputBytes.Seek(startDataOffset);
+                    return false;
+                }
+            }
+
+            // 1 skip to move past the 'm' in 'endstream'
+            inputBytes.MoveNext();
 
             return true;
         }

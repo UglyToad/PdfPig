@@ -42,5 +42,13 @@
         /// Move to a given position.
         /// </summary>
         void Seek(long position);
+
+        /// <summary>
+        /// Fill the buffer with bytes starting from the current position.
+        /// </summary>
+        /// <param name="buffer">A buffer with a length corresponding to the number of bytes to read.</param>
+        /// <param name="length">Optional override for the number of bytes to read.</param>
+        /// <returns>The number of bytes successfully read.</returns>
+        int Read(byte[] buffer, int? length = null);
     }
 }
