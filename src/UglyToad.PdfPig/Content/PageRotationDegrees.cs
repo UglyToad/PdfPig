@@ -9,9 +9,9 @@
     /// </summary>
     public struct PageRotationDegrees : IEquatable<PageRotationDegrees>
     {
-        private static readonly TransformationMatrix Rotate90 = TransformationMatrix.FromArray(new[] {0m, -1, 1, 0});
-        private static readonly TransformationMatrix Rotate180 = TransformationMatrix.FromArray(new[] { -1m, 0, 0, -1 });
-        private static readonly TransformationMatrix Rotate270 = TransformationMatrix.FromArray(new[] { 0m, 1, -1, 0 });
+        private static readonly TransformationMatrix Rotate90 = TransformationMatrix.FromValues(0m, -1, 1, 0);
+        private static readonly TransformationMatrix Rotate180 = TransformationMatrix.FromValues(-1m, 0, 0, -1);
+        private static readonly TransformationMatrix Rotate270 = TransformationMatrix.FromValues(0m, 1, -1, 0);
 
         /// <summary>
         /// The rotation of the page in degrees clockwise.

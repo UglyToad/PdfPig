@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Core
 {
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics.Contracts;
     using Geometry;
 
@@ -13,40 +12,46 @@
         /// <summary>
         /// The default <see cref="TransformationMatrix"/>.
         /// </summary>
-        public static TransformationMatrix Identity = new TransformationMatrix(new decimal[]
-        {
-            1,0,0,
+        public static TransformationMatrix Identity = new TransformationMatrix(1,0,0,
             0,1,0,
-            0,0,1
-        });
+            0,0,1);
+        
+        /// <summary>
+        /// Create a new <see cref="TransformationMatrix"/> with the X and Y translation values set.
+        /// </summary>
+        public static TransformationMatrix GetTranslationMatrix(decimal x, decimal y) => new TransformationMatrix(1, 0, 0,
+            0, 1, 0,
+            x, y, 1);
 
-        private readonly decimal[] value;
+        private readonly decimal row1;
+        private readonly decimal row2;
+        private readonly decimal row3;
 
         /// <summary>
-        /// The scale for the X dimension.
+        /// The value at (0, 0) - The scale for the X dimension.
         /// </summary>
-        public decimal A => value[0];
+        public readonly decimal A;
         /// <summary>
         /// The value at (0, 1).
         /// </summary>
-        public decimal B => value[1];
+        public readonly decimal B;
         /// <summary>
         /// The value at (1, 0).
         /// </summary>
-        public decimal C => value[3];
+        public readonly decimal C;
         /// <summary>
-        /// The scale for the Y dimension.
+        /// The value at (1, 1) - The scale for the Y dimension.
         /// </summary>
-        public decimal D => value[4];
+        public readonly decimal D;
         /// <summary>
         /// The value at (2, 0) - translation in X.
         /// </summary>
-        public decimal E => value[6];
+        public readonly decimal E;
         /// <summary>
         /// The value at (2, 1) - translation in Y.
         /// </summary>
-        public decimal F => value[7];
-
+        public readonly decimal F;
+        
         /// <summary>
         /// Get the value at the specific row and column.
         /// </summary>
@@ -74,14 +79,53 @@
                     throw new ArgumentOutOfRangeException(nameof(col), "Cannot access negative columns in a matrix.");
                 }
 
-                var resultIndex = row * Rows + col;
-
-                if (resultIndex > value.Length - 1)
+                switch (row)
                 {
-                    throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} mapped to the index {resultIndex} which was not in the value array.");
+                    case 0:
+                        {
+                            switch (col)
+                            {
+                                case 0:
+                                    return A;
+                                case 1:
+                                    return B;
+                                case 2:
+                                    return row1;
+                                default:
+                                    throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.");
+                            }
+                        }
+                    case 1:
+                        {
+                            switch (col)
+                            {
+                                case 0:
+                                    return C;
+                                case 1:
+                                    return D;
+                                case 2:
+                                    return row2;
+                                default:
+                                    throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.");
+                            }
+                        }
+                    case 2:
+                        {
+                            switch (col)
+                            {
+                                case 0:
+                                    return E;
+                                case 1:
+                                    return F;
+                                case 2:
+                                    return row3;
+                                default:
+                                    throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.");
+                            }
+                        }
+                    default:
+                        throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.");
                 }
-
-                return value[resultIndex];
             }
         }
 
@@ -93,26 +137,31 @@
         /// The number of columns in the matrix.
         /// </summary>
         public const int Columns = 3;
-        
+
         /// <summary>
         /// Create a new <see cref="TransformationMatrix"/>.
         /// </summary>
         /// <param name="value">The 9 values of the matrix.</param>
-        public TransformationMatrix(decimal[] value)
+        public TransformationMatrix(decimal[] value) : this(value[0], value[1], value[2], value[3], value[4], value[5], value[6], value[7], value[8])
         {
-            if (value == null)
-            {
-                throw new ArgumentNullException(nameof(value));
-            }
-
-            if (value.Length != 9)
-            {
-                throw new ArgumentException("The constructor for the PDF transformation matrix must contain 9 elements. Instead got: " + value);
-            }
-
-            this.value = value;
         }
-        
+
+        /// <summary>
+        /// Create a new <see cref="TransformationMatrix"/>.
+        /// </summary>
+        public TransformationMatrix(decimal a, decimal b, decimal r1, decimal c, decimal d, decimal r2, decimal e, decimal f, decimal r3)
+        {
+            A = a;
+            B = b;
+            row1 = r1;
+            C = c;
+            D = d;
+            row2 = r2;
+            E = e;
+            F = f;
+            row3 = r3;
+        }
+
         /// <summary>
         /// Transform a point using this transformation matrix.
         /// </summary>
@@ -170,11 +219,37 @@
             );
         }
 
+        [Pure]
+        internal TransformationMatrix Translate(decimal x, decimal y)
+        {
+            var a = A;
+            var b = B;
+            var r1 = row1;
+
+            var c = C;
+            var d = D;
+            var r2 = row2;
+
+            var e = (x * A) + (y * C) + E;
+            var f = (x * B) + (y * D) + F;
+            var r3 = (x * row1) + (y * row2) + row3;
+
+            return new TransformationMatrix(a, b, r1,
+                c, d, r2,
+                e, f, r3);
+        }
+
         /// <summary>
         /// Create a new <see cref="TransformationMatrix"/> from the 6 values provided in the default PDF order.
         /// </summary>
         public static TransformationMatrix FromValues(decimal a, decimal b, decimal c, decimal d, decimal e, decimal f)
-            => FromArray(new[] {a, b, c, d, e, f});
+            => new TransformationMatrix(a, b, 0, c, d, 0, e, f, 1);
+
+        /// <summary>
+        /// Create a new <see cref="TransformationMatrix"/> from the 4 values provided in the default PDF order.
+        /// </summary>
+        public static TransformationMatrix FromValues(decimal a, decimal b, decimal c, decimal d)
+            => new TransformationMatrix(a, b, 0, c, d, 0, 0, 0, 1);
 
         /// <summary>
         /// Create a new <see cref="TransformationMatrix"/> from the values.
@@ -190,22 +265,16 @@
 
             if (values.Length == 6)
             {
-                return new TransformationMatrix(new []
-                {
-                    values[0], values[1], 0,
+                return new TransformationMatrix(values[0], values[1], 0,
                     values[2], values[3], 0,
-                    values[4], values[5], 1
-                });
+                    values[4], values[5], 1);
             }
 
             if (values.Length == 4)
             {
-                return new TransformationMatrix(new []
-                {
-                    values[0], values[1], 0,
+                return new TransformationMatrix(values[0], values[1], 0,
                     values[2], values[3], 0,
-                    0, 0, 1
-                });
+                    0, 0, 1);
             }
 
             throw new ArgumentException("The array must either define all 9 elements of the matrix or all 6 key elements. Instead array was: " + values);
@@ -219,24 +288,21 @@
         [Pure]
         public TransformationMatrix Multiply(TransformationMatrix matrix)
         {
-            var result = new decimal[9];
+            var a = (A * matrix.A) + (B * matrix.C) + (row1 * matrix.E);
+            var b = (A * matrix.B) + (B * matrix.D) + (row1 * matrix.F);
+            var r1 = (A * matrix.row1) + (B * matrix.row2) + (row1 * matrix.row3);
 
-            for (var i = 0; i < Rows; i++)
-            {
-                var rowIndexPart = i * Rows;
+            var c = (C * matrix.A) + (D * matrix.C) + (row2 * matrix.E);
+            var d = (C * matrix.B) + (D * matrix.D) + (row2 * matrix.F);
+            var r2 = (C * matrix.row1) + (D * matrix.row2) + (row2 * matrix.row3);
 
-                for (var j = 0; j < Columns; j++)
-                {
-                    var index = rowIndexPart + j;
+            var e = (E * matrix.A) + (F * matrix.C) + (row3 * matrix.E);
+            var f = (E * matrix.B) + (F * matrix.D) + (row3 * matrix.F);
+            var r3 = (E * matrix.row1) + (F * matrix.row2) + (row3 * matrix.row3);
 
-                    for (var x = 0; x < Rows; x++)
-                    {
-                        result[index] += this[i, x] * matrix[x, j];
-                    }
-                }
-            }
-
-            return new TransformationMatrix(result);
+            return new TransformationMatrix(a, b, r1, 
+                c, d, r2, 
+                e, f, r3);
         }
 
         /// <summary>
@@ -247,22 +313,9 @@
         [Pure]
         public TransformationMatrix Multiply(decimal scalar)
         {
-            var result = new decimal[9];
-
-            for (var i = 0; i < Rows; i++)
-            {
-                for (var j = 0; j < Columns; j++)
-                {
-                    var index = (i * Rows) + j;
-
-                    for (var x = 0; x < Rows; x++)
-                    {
-                        result[index] += this[i, x] * scalar;
-                    }
-                }
-            }
-
-            return new TransformationMatrix(result);
+            return new TransformationMatrix(A * scalar, B * scalar, row1 * scalar,
+                C * scalar, D * scalar, row2 * scalar,
+                E * scalar, F * scalar, row3 * scalar);
         }
 
         /// <summary>
@@ -292,7 +345,7 @@
              */
             if (!(B == 0m && C == 0m))
             {
-                xScale = (decimal)Math.Sqrt((double)(A*A + B*B));
+                xScale = (decimal)Math.Sqrt((double)(A * A + B * B));
             }
 
             return xScale;
@@ -331,29 +384,23 @@
         /// <inheritdoc />
         public override int GetHashCode()
         {
-            var hashCode = 1113510858;
-            hashCode = hashCode * -1521134295 + base.GetHashCode();
-            hashCode = hashCode * -1521134295 + EqualityComparer<decimal[]>.Default.GetHashCode(value);
+            var hashCode = 472622392;
+            hashCode = hashCode * -1521134295 + row1.GetHashCode();
+            hashCode = hashCode * -1521134295 + row2.GetHashCode();
+            hashCode = hashCode * -1521134295 + row3.GetHashCode();
+            hashCode = hashCode * -1521134295 + A.GetHashCode();
+            hashCode = hashCode * -1521134295 + B.GetHashCode();
+            hashCode = hashCode * -1521134295 + C.GetHashCode();
+            hashCode = hashCode * -1521134295 + D.GetHashCode();
+            hashCode = hashCode * -1521134295 + E.GetHashCode();
+            hashCode = hashCode * -1521134295 + F.GetHashCode();
             return hashCode;
         }
 
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"{A}, {B}, 0\r\n{C}, {D}, 0\r\n{E}, {F}, 1";
-        }
-
-        /// <summary>
-        /// Create a new <see cref="TransformationMatrix"/> with the X and Y translation values set.
-        /// </summary>
-        public static TransformationMatrix GetTranslationMatrix(decimal x, decimal y)
-        {
-            return new TransformationMatrix(new []
-            {
-                1, 0, 0,
-                0, 1, 0,
-                x, y, 1
-            });
+            return $"{A}, {B}, {row1}\r\n{C}, {D}, {row2}\r\n{E}, {F}, {row3}";
         }
     }
 }

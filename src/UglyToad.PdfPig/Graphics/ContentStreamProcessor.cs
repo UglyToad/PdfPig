@@ -204,10 +204,8 @@
                     tx = (boundingBox.Width * fontSize + characterSpacing + wordSpacing) * horizontalScaling;
                     ty = 0;
                 }
-
-                var translate = TransformationMatrix.GetTranslationMatrix(tx, ty);
-
-                TextMatrices.TextMatrix = translate.Multiply(TextMatrices.TextMatrix);
+                
+                TextMatrices.TextMatrix = TextMatrices.TextMatrix.Translate(tx, ty);
             }
         }
 
