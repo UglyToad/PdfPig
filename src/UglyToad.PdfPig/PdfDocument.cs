@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using AcroForms;
     using Content;
@@ -156,6 +157,17 @@
                 }
 
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets all pages in this document in order.
+        /// </summary>
+        public IEnumerable<Page> GetPages()
+        {
+            for (var i = 0; i < NumberOfPages; i++)
+            {
+                yield return GetPage(i + 1);
             }
         }
 
