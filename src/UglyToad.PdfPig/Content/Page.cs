@@ -16,6 +16,8 @@
     /// </summary>
     public class Page
     {
+        private readonly Lazy<string> textLazy;
+
         /// <summary>
         /// The raw PDF dictionary token for this page in the document.
         /// </summary>
@@ -41,11 +43,11 @@
         /// The set of <see cref="Letter"/>s drawn by the PDF content.
         /// </summary>
         public IReadOnlyList<Letter> Letters => Content?.Letters ?? new Letter[0];
-        
+
         /// <summary>
         /// The full text of all characters on the page in the order they are presented in the PDF content.
         /// </summary>
-        public string Text { get; }
+        public string Text => textLazy.Value;
 
         /// <summary>
         /// Gets the width of the page in points.
@@ -88,7 +90,7 @@
             CropBox = cropBox;
             Rotation = rotation;
             Content = content;
-            Text = GetText(content);
+            textLazy = new Lazy<string>(() => GetText(Content));
 
             Width = mediaBox.Bounds.Width;
             Height = mediaBox.Bounds.Height;

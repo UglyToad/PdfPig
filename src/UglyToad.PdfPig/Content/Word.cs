@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
+    using System.Text;
     using Geometry;
 
     /// <summary>
@@ -53,12 +53,41 @@
 
             Letters = letters;
 
-            Text = string.Join(string.Empty, letters.Select(x => x.Value));
+            var builder = new StringBuilder();
 
-            var minX = letters.Min(x => x.Location.X);
-            var minY = letters.Min(x => x.Location.Y);
-            var maxX = letters.Max(x => x.Location.X + x.Width);
-            var maxY = letters.Max(x => x.GlyphRectangle.Top);
+            var minX = decimal.MaxValue;
+            var minY = decimal.MaxValue;
+            var maxX = decimal.MinValue;
+            var maxY = decimal.MinValue;
+
+            for (var i = 0; i < letters.Count; i++)
+            {
+                var letter = letters[i];
+                builder.Append(letter.Value);
+
+                if (letter.Location.X < minX)
+                {
+                    minX = letter.Location.X;
+                }
+
+                if (letter.Location.Y < minY)
+                {
+                    minY = letter.Location.Y;
+                }
+
+                var right = letter.Location.X + letter.Width;
+                if (right > maxX)
+                {
+                    maxX = right;
+                }
+
+                if (letter.GlyphRectangle.Top > maxY)
+                {
+                    maxY = letter.GlyphRectangle.Top;
+                }
+            }
+
+            Text = builder.ToString();
             BoundingBox = new PdfRectangle(minX, minY, maxX, maxY);
 
             FontName = letters[0].FontName;
