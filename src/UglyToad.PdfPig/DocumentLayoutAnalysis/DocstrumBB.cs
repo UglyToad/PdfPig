@@ -102,7 +102,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 
                         // 2. Rebuild lines, using max distance = +Inf as we know all words will be in the
                         // same block. Filtering will still be done based on angle.
-                        var mergedLines = GetLines(mergedWords.ToArray(), wlAngleLB, wlAngleUB, double.MaxValue);
+                        var mergedLines = GetLines(mergedWords.ToArray(), double.MaxValue, wlAngleLB, wlAngleUB);
                         blocks[b] = new TextBlock(mergedLines.ToList());
 
                         // Remove
