@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UglyToad.PdfPig.Content;
+using UglyToad.PdfPig.Util;
 
 namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
@@ -64,6 +65,8 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             Func<IEnumerable<decimal>, decimal> dominantFontWidthFunc,
             Func<IEnumerable<decimal>, decimal> dominantFontHeightFunc)
         {
+            if (pageWords.Count() == 0) return EmptyArray<TextBlock>.Instance;
+
             XYLeaf root = new XYLeaf(pageWords); // Create a root node.
             XYNode node = VerticalCut(root, minimumWidth, dominantFontWidthFunc, dominantFontHeightFunc);
 
