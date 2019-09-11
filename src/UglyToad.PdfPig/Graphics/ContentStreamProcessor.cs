@@ -43,7 +43,7 @@
 
         public PdfPath CurrentPath { get; private set; }
 
-        public IColorSpaceContext ColorSpaceContext { get; } 
+        public IColorSpaceContext ColorSpaceContext { get; }
 
         public PdfPoint CurrentPosition { get; set; }
 
@@ -183,11 +183,11 @@
                     ? currentState.CurrentNonStrokingColor
                     : currentState.CurrentStrokingColor;
 
-                ShowGlyph(font, transformedGlyphBounds, 
-                    transformedPdfBounds.BottomLeft, 
-                    transformedPdfBounds.BottomRight, 
+                ShowGlyph(font, transformedGlyphBounds,
+                    transformedPdfBounds.BottomLeft,
+                    transformedPdfBounds.BottomRight,
                     transformedPdfBounds.Width,
-                    unicode, 
+                    unicode,
                     fontSize,
                     color,
                     pointSize,
@@ -204,7 +204,7 @@
                     tx = (boundingBox.Width * fontSize + characterSpacing + wordSpacing) * horizontalScaling;
                     ty = 0;
                 }
-                
+
                 TextMatrices.TextMatrix = TextMatrices.TextMatrix.Translate(tx, ty);
             }
         }
@@ -292,6 +292,11 @@
 
         public void BeginSubpath()
         {
+            if (CurrentPath != null && CurrentPath.Commands.Count > 0 && !paths.Contains(CurrentPath))
+            {
+                paths.Add(CurrentPath);
+            }
+
             CurrentPath = new PdfPath();
         }
 
@@ -301,7 +306,10 @@
             {
                 ClosePath();
             }
-            paths.Add(CurrentPath);
+            else
+            {
+                paths.Add(CurrentPath);
+            }
         }
 
         public void FillPath(bool close)
@@ -310,12 +318,16 @@
             {
                 ClosePath();
             }
-            paths.Add(CurrentPath);
+            else
+            {
+                paths.Add(CurrentPath);
+            }
         }
 
         public void ClosePath()
         {
             CurrentPath.ClosePath();
+            paths.Add(CurrentPath);
             CurrentPath = null;
         }
 
@@ -359,20 +371,20 @@
         }
 
         private void ShowGlyph(IFont font, PdfRectangle glyphRectangle,
-            PdfPoint startBaseLine, 
-            PdfPoint endBaseLine, 
-            decimal width, 
+            PdfPoint startBaseLine,
+            PdfPoint endBaseLine,
+            decimal width,
             string unicode,
             decimal fontSize,
             IColor color,
             decimal pointSize,
             int textSequence)
         {
-            var letter = new Letter(unicode, glyphRectangle, 
-                startBaseLine, 
+            var letter = new Letter(unicode, glyphRectangle,
+                startBaseLine,
                 endBaseLine,
-                width, 
-                fontSize, 
+                width,
+                fontSize,
                 font.Name.Data,
                 color,
                 pointSize,
