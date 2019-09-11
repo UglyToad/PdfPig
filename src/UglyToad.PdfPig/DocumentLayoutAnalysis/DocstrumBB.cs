@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Geometry;
+using UglyToad.PdfPig.Util;
 
 namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
@@ -47,6 +48,8 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         public IReadOnlyList<TextBlock> GetBlocks(IEnumerable<Word> pageWords, double wlAngleLB, double wlAngleUB,
             double blAngleLB, double blAngleUB, double blMultiplier)
         {
+            if (pageWords.Count() == 0) return EmptyArray<TextBlock>.Instance;
+
             var pageWordsArr = pageWords.Where(w => !string.IsNullOrWhiteSpace(w.Text)).ToArray(); // remove white spaces
 
             var withinLineDistList = new ConcurrentBag<double[]>();
@@ -102,7 +105,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 
                         // 2. Rebuild lines, using max distance = +Inf as we know all words will be in the
                         // same block. Filtering will still be done based on angle.
-                        var mergedLines = GetLines(mergedWords.ToArray(), wlAngleLB, wlAngleUB, double.MaxValue);
+                        var mergedLines = GetLines(mergedWords.ToArray(), double.MaxValue, wlAngleLB, wlAngleUB);
                         blocks[b] = new TextBlock(mergedLines.ToList());
 
                         // Remove
