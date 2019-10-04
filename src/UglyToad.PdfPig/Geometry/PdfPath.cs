@@ -37,7 +37,7 @@ namespace UglyToad.PdfPig.Geometry
         }
 
         /// <summary>
-        /// Return true if points are organised with a clockwise order. Works only with closed paths.
+        /// Return true if points are organised in a clockwise order. Works only with closed paths.
         /// </summary>
         /// <returns></returns>
         public bool IsClockwise
@@ -50,7 +50,7 @@ namespace UglyToad.PdfPig.Geometry
         }
 
         /// <summary>
-        /// Return true if points are organised with a counterclockwise order. Works only with closed paths.
+        /// Return true if points are organised in a counterclockwise order. Works only with closed paths.
         /// </summary>
         /// <returns></returns>
         public bool IsCounterClockwise
