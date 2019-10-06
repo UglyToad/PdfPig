@@ -200,6 +200,14 @@ namespace UglyToad.PdfPig.Geometry
 
         internal void ClosePath()
         {
+            if (currentPosition.HasValue)
+            {
+                var startPoint = GetStartPoint(commands.First());
+                if (!startPoint.Equals(currentPosition.Value))
+                {
+                    shoeLaceSum += (double)((startPoint.X - currentPosition.Value.X) * (startPoint.Y + currentPosition.Value.Y));
+                }
+            }
             commands.Add(new Close());
         }
 
