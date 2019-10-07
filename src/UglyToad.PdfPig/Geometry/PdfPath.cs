@@ -19,7 +19,140 @@ namespace UglyToad.PdfPig.Geometry
         public IReadOnlyList<IPathCommand> Commands => commands;
 
         private PdfPoint? currentPosition;
-        
+
+        private double shoeLaceSum;
+
+        /// <summary>
+        /// Return true if it is a closed path.
+        /// </summary>
+        /// <returns></returns>
+        public bool IsClosed()
+        {
+            // need to check if filled -> true if filled
+            if (Commands.Any(c => c is Close)) return true;
+            var filtered = Commands.Where(c => c is Line || c is BezierCurve).ToList();
+            if (filtered.Count < 2) return false;
+            if (!GetStartPoint(filtered.First()).Equals(GetEndPoint(filtered.Last()))) return false;
+            return true;
+        }
+
+        /// <summary>
+        /// Return true if points are organised in a clockwise order. Works only with closed paths.
+        /// </summary>
+        /// <returns></returns>
+        public bool IsClockwise
+        {
+            get
+            {
+                if (!IsClosed()) return false;
+                return shoeLaceSum > 0;
+            }
+        }
+
+        /// <summary>
+        /// Return true if points are organised in a counterclockwise order. Works only with closed paths.
+        /// </summary>
+        /// <returns></returns>
+        public bool IsCounterClockwise
+        {
+            get
+            {
+                if (!IsClosed()) return false;
+                return shoeLaceSum < 0;
+            }
+        }
+
+        /// <summary>
+        /// Get the <see cref="PdfPath"/>'s centroid point.
+        /// </summary>
+        /// <returns></returns>
+        public PdfPoint GetCentroid()
+        {
+            var filtered = commands.Where(c => c is Line || c is BezierCurve);
+            if (filtered.Count() == 0) return new PdfPoint();
+            var points = filtered.Select(c => GetStartPoint(c)).ToList();
+            points.AddRange(filtered.Select(c => GetEndPoint(c)));
+            return new PdfPoint(points.Average(p => p.X), points.Average(p => p.Y));
+        }
+
+        internal static PdfPoint GetStartPoint(IPathCommand command)
+        {
+            if (command is Line line)
+            {
+                return line.From;
+            }
+            else if (command is BezierCurve curve)
+            {
+                return curve.StartPoint;
+            }
+            else if (command is Move move)
+            {
+                return move.Location;
+            }
+            else
+            {
+                throw new ArgumentException();
+            }
+        }
+
+        internal static PdfPoint GetEndPoint(IPathCommand command)
+        {
+            if (command is Line line)
+            {
+                return line.To;
+            }
+            else if (command is BezierCurve curve)
+            {
+                return curve.EndPoint;
+            }
+            else if (command is Move move)
+            {
+                return move.Location;
+            }
+            else
+            {
+                throw new ArgumentException();
+            }
+        }
+
+        /// <summary>
+        /// Simplify this <see cref="PdfPath"/> by converting everything to <see cref="PdfLine"/>s.
+        /// </summary>
+        /// <returns></returns>
+        internal PdfPath Simplify()
+        {
+            PdfPath simplifiedPath = new PdfPath();
+            var startPoint = GetStartPoint(Commands.First());
+            simplifiedPath.MoveTo(startPoint.X, startPoint.Y);
+
+            foreach (var command in Commands)
+            {
+                if (command is Line line)
+                {
+                    simplifiedPath.LineTo(line.To.X, line.To.Y);
+                }
+                else if (command is BezierCurve curve)
+                {
+                    foreach (var lineB in curve.ToLines(4))
+                    {
+                        simplifiedPath.LineTo(lineB.To.X, lineB.To.Y);
+                    }
+                }
+            }
+
+            // Check if Closed, if yes: make sure it is actually closed (last TO = first FROM)
+            if (IsClosed())
+            {
+                var first = GetStartPoint(simplifiedPath.Commands.First());
+                if (!first.Equals(GetEndPoint(simplifiedPath.Commands.Last())))
+                {
+                    simplifiedPath.LineTo(first.X, first.Y);
+                }
+            }
+
+            return simplifiedPath;
+        }
+
         internal void MoveTo(decimal x, decimal y)
         {
             currentPosition = new PdfPoint(x, y);
@@ -30,6 +163,8 @@ namespace UglyToad.PdfPig.Geometry
         {
             if (currentPosition.HasValue)
             {
+                shoeLaceSum += (double)((x - currentPosition.Value.X) * (y + currentPosition.Value.Y));
+
                 var to = new PdfPoint(x, y);
                 commands.Add(new Line(currentPosition.Value, to));
                 currentPosition = to;
@@ -47,9 +182,12 @@ namespace UglyToad.PdfPig.Geometry
         {
             if (currentPosition.HasValue)
             {
+                shoeLaceSum += (double)((x1 - currentPosition.Value.X) * (y1 + currentPosition.Value.Y));
+                shoeLaceSum += (double)((x2 - x1) * (y2 + y1));
+                shoeLaceSum += (double)((x3 - x2) * (y3 + y2));
+
                 var to = new PdfPoint(x3, y3);
-                commands.Add(new BezierCurve(currentPosition.Value,
-                    new PdfPoint(x1, y1), new PdfPoint(x2, y2), to));
+                commands.Add(new BezierCurve(currentPosition.Value, new PdfPoint(x1, y1), new PdfPoint(x2, y2), to));
                 currentPosition = to;
             }
             else
@@ -62,10 +200,18 @@ namespace UglyToad.PdfPig.Geometry
 
         internal void ClosePath()
         {
+            if (currentPosition.HasValue)
+            {
+                var startPoint = GetStartPoint(commands.First());
+                if (!startPoint.Equals(currentPosition.Value))
+                {
+                    shoeLaceSum += (double)((startPoint.X - currentPosition.Value.X) * (startPoint.Y + currentPosition.Value.Y));
+                }
+            }
             commands.Add(new Close());
         }
 
-        internal PdfRectangle? GetBoundingRectangle()
+        public PdfRectangle? GetBoundingRectangle()
         {
             if (commands.Count == 0)
             {
@@ -105,6 +251,14 @@ namespace UglyToad.PdfPig.Geometry
                 {
                     maxY = rect.Value.Top;
                 }
+            }
+
+            if (minX == decimal.MaxValue ||
+                maxX == decimal.MinValue ||
+                minY == decimal.MaxValue ||
+                maxY == decimal.MinValue)
+            {
+                return null;
             }
 
             return new PdfRectangle(minX, minY, maxX, maxY);
@@ -444,6 +598,32 @@ namespace UglyToad.PdfPig.Geometry
                         + ((t * t * t) * p4);
 
                 return p;
+            }
+
+            /// <summary>
+            /// Converts the bezier curve into approximated lines.
+            /// </summary>
+            /// <param name="n">Number of lines required (minimum is 1).</param>
+            /// <returns></returns>
+            public IReadOnlyList<Line> ToLines(int n)
+            {
+                if (n < 1)
+                {
+                    throw new ArgumentException("BezierCurve.ToLines(): n must be greater than 0.");
+                }
+
+                List<Line> lines = new List<Line>();
+                var previousPoint = StartPoint;
+
+                for (int p = 1; p <= n; p++)
+                {
+                    double t = (double)p / (double)n;
+                    var currentPoint = new PdfPoint(ValueWithT((double)StartPoint.X, (double)FirstControlPoint.X, (double)SecondControlPoint.X, (double)EndPoint.X, t),
+                                                    ValueWithT((double)StartPoint.Y, (double)FirstControlPoint.Y, (double)SecondControlPoint.Y, (double)EndPoint.Y, t));
+                    lines.Add(new Line(previousPoint, currentPoint));
+                    previousPoint = currentPoint;
+                }
+                return lines;
             }
         }
 
