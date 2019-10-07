@@ -77,6 +77,8 @@
                 "UglyToad.PdfPig.Exceptions.PdfDocumentEncryptedException",
                 "UglyToad.PdfPig.Exceptions.PdfDocumentFormatException",
                 "UglyToad.PdfPig.Export.ITextExporter",
+                "UglyToad.PdfPig.Export.AltoDocument",
+                "UglyToad.PdfPig.Export.PageXmlDocument",
                 "UglyToad.PdfPig.Fonts.DescriptorFontFile",
                 "UglyToad.PdfPig.Fonts.Exceptions.InvalidFontFormatException",
                 "UglyToad.PdfPig.Fonts.FontDescriptor",
