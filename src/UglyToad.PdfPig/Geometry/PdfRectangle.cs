@@ -33,7 +33,7 @@
         /// <summary>
         /// Centroid point of the rectangle.
         /// </summary>
-        public PdfPoint Centroid => new PdfPoint(TopLeft.X + (TopLeft.X - TopLeft.X) / 2, BottomLeft.Y + (TopLeft.Y - BottomLeft.Y) / 2);
+        public PdfPoint Centroid => new PdfPoint(Left + (Right - Left) / 2, Bottom + (Top - Bottom) / 2);
 
         /// <summary>
         /// Width of the rectangle.
