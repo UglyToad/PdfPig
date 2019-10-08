@@ -98,8 +98,8 @@ namespace UglyToad.PdfPig.Export
         /// <returns></returns>
         private string PointToString(PdfPoint point, decimal height)
         {
-            decimal x = point.X * scale;
-            decimal y = (height - point.Y) * scale;
+            decimal x = Math.Round(point.X * scale);
+            decimal y = Math.Round((height - point.Y) * scale);
             return (x > 0 ? x : 0).ToString("0") + "," + (y > 0 ? y : 0).ToString("0");
         }
 
@@ -175,8 +175,8 @@ namespace UglyToad.PdfPig.Export
                 //    }
                 //},
                 ImageFilename = "unknown",
-                ImageHeight = (int)page.Height,
-                ImageWidth = (int)page.Width,
+                ImageHeight = (int)Math.Round(page.Height * scale),
+                ImageWidth = (int)Math.Round(page.Width * scale),
                 //PrintSpace = new PageXmlPrintSpace()
                 //{
                 //    Coords = new PageXmlCoords()
