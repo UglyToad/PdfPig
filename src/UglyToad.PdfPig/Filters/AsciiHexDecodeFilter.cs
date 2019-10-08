@@ -5,6 +5,10 @@
     using System.IO;
     using Tokens;
 
+    /// <inheritdoc />
+    /// <summary>
+    /// Encodes/decodes data using the ASCII hexadecimal encoding where each byte is represented by two ASCII characters.
+    /// </summary>
     internal class AsciiHexDecodeFilter : IFilter
     {
         private static readonly short[] ReverseHex = 
@@ -22,6 +26,10 @@
             /* 100 */  13, 14, 15
         };
 
+        /// <inheritdoc />
+        public bool IsSupported { get; } = true;
+
+        /// <inheritdoc />
         public byte[] Decode(IReadOnlyList<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
             var pair = new byte[2];

@@ -5,6 +5,7 @@
     using System.IO;
     using Tokens;
 
+    /// <inheritdoc />
     /// <summary>
     /// ASCII 85 (Base85) is a binary to text encoding using 5 ASCII characters per 4 bytes of data.
     /// </summary>
@@ -24,6 +25,10 @@
             85 * 85 * 85 *85
         };
 
+        /// <inheritdoc />
+        public bool IsSupported { get; } = true;
+
+        /// <inheritdoc />
         public byte[] Decode(IReadOnlyList<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
             var asciiBuffer = new byte[5];

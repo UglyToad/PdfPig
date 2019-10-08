@@ -6,6 +6,10 @@
 
     internal class DctDecodeFilter : IFilter
     {
+        /// <inheritdoc />
+        public bool IsSupported { get; } = false;
+
+        /// <inheritdoc />
         public byte[] Decode(IReadOnlyList<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
             throw new NotSupportedException("The DST (Discrete Cosine Transform) Filter indicates data is encoded in JPEG format. " +
