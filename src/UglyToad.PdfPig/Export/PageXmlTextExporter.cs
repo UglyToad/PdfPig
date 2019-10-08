@@ -186,13 +186,19 @@ namespace UglyToad.PdfPig.Export
                 //}
             };
 
-            var words = page.GetWords(wordExtractor);
             var regions = new List<PageXmlDocument.PageXmlRegion>();
 
+            var words = page.GetWords(wordExtractor);
             if (words.Count() > 0)
             {
                 var blocks = pageSegmenter.GetBlocks(words);
                 regions.AddRange(blocks.Select(b => ToPageXmlTextRegion(b, page.Height)));
+            }
+
+            var images = page.GetImages();
+            if (images.Count() > 0)
+            {
+                regions.AddRange(images.Select(i => ToPageXmlImageRegion(i, page.Height)));
             }
 
             if (includePaths)
@@ -221,6 +227,17 @@ namespace UglyToad.PdfPig.Export
                 };
             }
             return null;
+        }
+
+        private PageXmlDocument.PageXmlImageRegion ToPageXmlImageRegion(IPdfImage pdfImage, decimal height)
+        {
+            regionCount++;
+            var bbox = pdfImage.Bounds;
+            return new PageXmlDocument.PageXmlImageRegion()
+            {
+                Coords = ToCoords(bbox, height),
+                Id = "r" + regionCount
+            };
         }
 
         /// <summary>

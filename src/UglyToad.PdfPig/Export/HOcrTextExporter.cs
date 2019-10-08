@@ -28,6 +28,7 @@ namespace UglyToad.PdfPig.Export
         private int wordCount = 0;
         private int pathCount = 0;
         private int paraCount = 0;
+        private int imageCount = 0;
 
         /// <summary>
         /// hOCR v1.2 (HTML)
@@ -152,6 +153,11 @@ namespace UglyToad.PdfPig.Export
                 }
             }
 
+            foreach (var image in page.GetImages())
+            {
+                hocr += "\n" + GetCode(image, page.Height, level + 1);
+            }
+
             var words = page.GetWords(wordExtractor);
 
             if (words.Count() > 0)
@@ -212,10 +218,17 @@ namespace UglyToad.PdfPig.Export
                     hocr += GetIndent(level) + @"<span class='ocr_linedrawing' id='drawing_" + pageCount + "_"
                             + pathCount + "' title='" + GetCode(bbox.Value, pageHeight) + "' />";
                 }
-
             }
 
             return hocr;
+        }
+
+        private string GetCode(IPdfImage pdfImage, decimal pageHeight, int level)
+        {
+            imageCount++;
+            var bbox = pdfImage.Bounds;
+            return GetIndent(level) + @"<span class='ocr_image' id='image_" + pageCount + "_"
+                            + imageCount + "' title='" + GetCode(bbox, pageHeight) + "' />";
         }
 
         /// <summary>

@@ -29,6 +29,7 @@ namespace UglyToad.PdfPig.Export
         int pageCount = 0;
         int pageSpaceCount = 0;
         int graphicalElementCount = 0;
+        int illustrationCount = 0;
         int textBlockCount = 0;
         int textLineCount = 0;
         int stringCount = 0;
@@ -128,7 +129,6 @@ namespace UglyToad.PdfPig.Export
             pageCount = page.Number;
             pageSpaceCount++;
 
-            var words = page.GetWords(wordExtractor);
             var altoPage = new AltoDocument.AltoPage()
             {
                 Height = (float)Math.Round(page.Height * scale),
@@ -164,10 +164,17 @@ namespace UglyToad.PdfPig.Export
                 Id = "P" + pageCount
             };
 
+            var words = page.GetWords(wordExtractor);
             if (words.Count() > 0)
             {
                 var blocks = pageSegmenter.GetBlocks(words);
-                altoPage.PrintSpace.TextBlock = blocks.Select(b => ToAltoTextBlock(b, page.Height)).ToArray();
+                altoPage.PrintSpace.TextBlock = blocks.Select(b => ToAltoTextBlock(b, page.Height)).ToArray();   
+            }
+            
+            var images = page.GetImages();
+            if (images.Count() > 0)
+            {
+                altoPage.PrintSpace.Illustrations = images.Select(i => ToAltoIllustration(i, page.Height)).ToArray();
             }
 
             if (includePaths)
@@ -211,6 +218,24 @@ namespace UglyToad.PdfPig.Export
                 };
             }
             return null;
+        }
+
+        private AltoDocument.AltoIllustration ToAltoIllustration(IPdfImage pdfImage, decimal height)
+        {
+            illustrationCount++;
+            var rectangle = pdfImage.Bounds;
+
+            return new AltoDocument.AltoIllustration()
+            {
+                VPos = (float)Math.Round((height - rectangle.Top) * scale),
+                HPos = (float)Math.Round(rectangle.Left * scale),
+                Height = (float)Math.Round(rectangle.Height * scale),
+                Width = (float)Math.Round(rectangle.Width * scale),
+                FileId = "",
+                Rotation = 0,
+                //IdNext = "NA", // for reading order
+                Id = "P" + pageCount + "_I" + illustrationCount.ToString("#00000")
+            };
         }
 
         /// <summary>
@@ -559,9 +584,11 @@ namespace UglyToad.PdfPig.Export
                 }
             }
 
-            /// <remarks/>
+            /// <summary>
+            /// Element deprecated. 'Processing' should be used instead.
+            /// </summary>
             [XmlElementAttribute("OCRProcessing")]
-            [Obsolete("Element deprecated. 'Processing' should be used instead.")]
+            //[Obsolete("Element deprecated. 'Processing' should be used instead.")]
             public AltoDescriptionOcrProcessing[] OCRProcessing
             {
                 get
@@ -2466,7 +2493,7 @@ namespace UglyToad.PdfPig.Export
             /// Attribute deprecated. LANG should be used instead.
             /// </summary>
             [XmlAttributeAttribute("language", DataType = "language")]
-            [Obsolete("Attribute deprecated. LANG should be used instead.")]
+            //[Obsolete("Attribute deprecated. LANG should be used instead.")]
             public string Language
             {
                 get
@@ -4785,6 +4812,7 @@ namespace UglyToad.PdfPig.Export
 
         /// <summary>
         /// [Alto] Ocr Processing
+        /// <para>Element deprecated. 'AltoProcessing' should be used instead.</para>
         /// </summary>
         [EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [GeneratedCodeAttribute("xsd", "4.6.1055.0")]
@@ -4792,7 +4820,7 @@ namespace UglyToad.PdfPig.Export
         [DebuggerStepThroughAttribute()]
         [DesignerCategoryAttribute("code")]
         [XmlTypeAttribute(Namespace = "http://www.loc.gov/standards/alto/ns-v4#")]
-        [Obsolete("Element deprecated. 'AltoProcessing' should be used instead.")]
+        //[Obsolete("Element deprecated. 'AltoProcessing' should be used instead.")]
         public class AltoOcrProcessing
         {
 
@@ -4897,6 +4925,7 @@ namespace UglyToad.PdfPig.Export
 
         /// <summary>
         /// [Alto] Description Ocr Processing
+        /// <para>Element deprecated. 'AltoProcessing' should be used instead.</para>
         /// </summary>
         [EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [GeneratedCodeAttribute("xsd", "4.6.1055.0")]
@@ -4904,7 +4933,7 @@ namespace UglyToad.PdfPig.Export
         [DebuggerStepThroughAttribute()]
         [DesignerCategoryAttribute("code")]
         [XmlTypeAttribute(AnonymousType = true, Namespace = "http://www.loc.gov/standards/alto/ns-v4#")]
-        [Obsolete("Element deprecated. 'AltoProcessing' should be used instead.")]
+        //[Obsolete("Element deprecated. 'AltoProcessing' should be used instead.")]
         public class AltoDescriptionOcrProcessing : AltoOcrProcessing
         {
 

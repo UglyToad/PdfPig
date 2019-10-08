@@ -211,6 +211,10 @@ namespace UglyToad.PdfPig.Geometry
             commands.Add(new Close());
         }
 
+        /// <summary>
+        /// The rectangle completely containing the path.
+        /// </summary>
+        /// <returns></returns>
         public PdfRectangle? GetBoundingRectangle()
         {
             if (commands.Count == 0)
