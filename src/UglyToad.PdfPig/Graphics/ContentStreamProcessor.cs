@@ -6,6 +6,8 @@
     using Colors;
     using Content;
     using Core;
+    using Exceptions;
+    using Filters;
     using Fonts;
     using Geometry;
     using IO;
@@ -19,27 +21,43 @@
 
     internal class ContentStreamProcessor : IOperationContext
     {
+        /// <summary>
+        /// Stores each letter as it is encountered in the content stream.
+        /// </summary>
+        private readonly List<Letter> letters = new List<Letter>();
+
+        /// <summary>
+        /// Stores each path as it is encountered in the content stream.
+        /// </summary>
         private readonly List<PdfPath> paths = new List<PdfPath>();
+
+        /// <summary>
+        /// Stores a link to each image (either inline or XObject) as it is encountered in the content stream.
+        /// </summary>
+        private readonly List<Union<XObjectContentRecord, InlineImage>> images = new List<Union<XObjectContentRecord, InlineImage>>();
+
         private readonly IResourceStore resourceStore;
         private readonly UserSpaceUnit userSpaceUnit;
         private readonly PageRotationDegrees rotation;
         private readonly bool isLenientParsing;
         private readonly IPdfTokenScanner pdfScanner;
-        private readonly XObjectFactory xObjectFactory;
+        private readonly IFilterProvider filterProvider;
         private readonly ILog log;
 
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
-        private IFont activeExtendedGraphicsStateFont = null;
+        private IFont activeExtendedGraphicsStateFont;
+        private InlineImageBuilder inlineImageBuilder;
 
-        //a sequence number of ShowText operation to determine whether letters belong to same operation or not (letters that belong to different operations have less changes to belong to same word)
-        private int textSequence = 0;
+        /// <summary>
+        /// A counter to track individual calls to <see cref="ShowText"/> operations used to determine if letters are likely to be
+        /// in the same word/group. This exposes internal grouping of letters used by the PDF creator which may correspond to the
+        /// intended grouping of letters into words.
+        /// </summary>
+        private int textSequence;
 
         public TextMatrices TextMatrices { get; } = new TextMatrices();
 
-        public TransformationMatrix CurrentTransformationMatrix
-        {
-            get { return GetCurrentState().CurrentTransformationMatrix; }
-        }
+        public TransformationMatrix CurrentTransformationMatrix => GetCurrentState().CurrentTransformationMatrix;
 
         public PdfPath CurrentPath { get; private set; }
 
@@ -56,18 +74,18 @@
             {XObjectType.PostScript, new List<XObjectContentRecord>()}
         };
 
-        public List<Letter> Letters = new List<Letter>();
-        public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation, bool isLenientParsing,
+        public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation,
+            bool isLenientParsing,
             IPdfTokenScanner pdfScanner,
-            XObjectFactory xObjectFactory,
+            IFilterProvider filterProvider,
             ILog log)
         {
             this.resourceStore = resourceStore;
             this.userSpaceUnit = userSpaceUnit;
             this.rotation = rotation;
             this.isLenientParsing = isLenientParsing;
-            this.pdfScanner = pdfScanner;
-            this.xObjectFactory = xObjectFactory;
+            this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
+            this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.log = log;
             graphicsStack.Push(new CurrentGraphicsState());
             ColorSpaceContext = new ColorSpaceContext(GetCurrentState);
@@ -75,11 +93,11 @@
 
         public PageContent Process(IReadOnlyList<IGraphicsStateOperation> operations)
         {
-            var currentState = CloneAllStates();
+            CloneAllStates();
 
             ProcessOperations(operations);
 
-            return new PageContent(operations, Letters, paths, xObjects, pdfScanner, xObjectFactory, isLenientParsing);
+            return new PageContent(operations, letters, paths, images, pdfScanner, filterProvider, resourceStore, isLenientParsing);
         }
 
         private void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
@@ -265,7 +283,7 @@
             var xObjectStream = resourceStore.GetXObject(xObjectName);
 
             // For now we will determine the type and store the object with the graphics state information preceding it.
-            // Then consumers of the page can request the object/s to be retrieved by type.
+            // Then consumers of the page can request the object(s) to be retrieved by type.
             var subType = (NameToken)xObjectStream.StreamDictionary.Data[NameToken.Subtype.Data];
 
             var state = GetCurrentState();
@@ -274,15 +292,15 @@
 
             if (subType.Equals(NameToken.Ps))
             {
-                xObjects[XObjectType.PostScript].Add(new XObjectContentRecord(XObjectType.PostScript, xObjectStream, matrix));
+                xObjects[XObjectType.PostScript].Add(new XObjectContentRecord(XObjectType.PostScript, xObjectStream, matrix, state.RenderingIntent));
             }
             else if (subType.Equals(NameToken.Image))
             {
-                xObjects[XObjectType.Image].Add(new XObjectContentRecord(XObjectType.Image, xObjectStream, matrix));
+                images.Add(Union<XObjectContentRecord, InlineImage>.One(new XObjectContentRecord(XObjectType.Image, xObjectStream, matrix, state.RenderingIntent)));
             }
             else if (subType.Equals(NameToken.Form))
             {
-                xObjects[XObjectType.Form].Add(new XObjectContentRecord(XObjectType.Form, xObjectStream, matrix));
+                xObjects[XObjectType.Form].Add(new XObjectContentRecord(XObjectType.Form, xObjectStream, matrix, state.RenderingIntent));
             }
             else
             {
@@ -361,6 +379,52 @@
             }
         }
 
+        public void BeginInlineImage()
+        {
+            if (inlineImageBuilder != null && !isLenientParsing)
+            {
+                throw new PdfDocumentFormatException("Begin inline image (BI) command encountered while another inline image was active.");
+            }
+
+            inlineImageBuilder = new InlineImageBuilder();
+        }
+
+        public void SetInlineImageProperties(IReadOnlyDictionary<NameToken, IToken> properties)
+        {
+            if (inlineImageBuilder == null)
+            {
+                if (isLenientParsing)
+                {
+                    return;
+                }
+
+                throw new PdfDocumentFormatException("Begin inline image data (ID) command encountered without a corresponding begin inline image (BI) command.");
+            }
+
+            inlineImageBuilder.Properties = properties;
+        }
+
+        public void EndInlineImage(IReadOnlyList<byte> bytes)
+        {
+            if (inlineImageBuilder == null)
+            {
+                if (isLenientParsing)
+                {
+                    return;
+                }
+
+                throw new PdfDocumentFormatException("End inline image (EI) command encountered without a corresponding begin inline image (BI) command.");
+            }
+
+            inlineImageBuilder.Bytes = bytes;
+
+            var image = inlineImageBuilder.CreateInlineImage(CurrentTransformationMatrix, filterProvider, pdfScanner, GetCurrentState().RenderingIntent, resourceStore);
+
+            images.Add(Union<XObjectContentRecord, InlineImage>.Two(image));
+
+            inlineImageBuilder = null;
+        }
+
         private void AdjustTextMatrix(decimal tx, decimal ty)
         {
             var matrix = TransformationMatrix.GetTranslationMatrix(tx, ty);
@@ -390,7 +454,7 @@
                 pointSize,
                 textSequence);
 
-            Letters.Add(letter);
+            letters.Add(letter);
         }
     }
 }

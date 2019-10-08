@@ -1,14 +1,17 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
+    using System;
     using System.Collections.Generic;
+    using Filters;
     using Graphics;
     using Graphics.Operations;
     using Tokenization.Scanner;
     using XObjects;
-    using UglyToad.PdfPig.Geometry;
+    using Geometry;
+    using Util;
 
     /// <summary>
-    /// 
+    /// Wraps content parsed from a page content stream for access.
     /// </summary>
     /// <remarks>
     /// This should contain a replayable stack of drawing instructions for page content
@@ -16,36 +19,46 @@
     /// </remarks>
     internal class PageContent
     {
-        private readonly IReadOnlyDictionary<XObjectType, List<XObjectContentRecord>> xObjects;
+        private readonly IReadOnlyList<Union<XObjectContentRecord, InlineImage>> images;
         private readonly IPdfTokenScanner pdfScanner;
-        private readonly XObjectFactory xObjectFactory;
+        private readonly IFilterProvider filterProvider;
+        private readonly IResourceStore resourceStore;
         private readonly bool isLenientParsing;
 
         internal IReadOnlyList<IGraphicsStateOperation> GraphicsStateOperations { get; }
 
         public IReadOnlyList<Letter> Letters { get; }
+
         public IReadOnlyList<PdfPath> Paths { get; }
 
-        internal PageContent(IReadOnlyList<IGraphicsStateOperation> graphicsStateOperations, IReadOnlyList<Letter> letters, List<PdfPath> paths,
-            IReadOnlyDictionary<XObjectType, List<XObjectContentRecord>> xObjects,
+        internal PageContent(IReadOnlyList<IGraphicsStateOperation> graphicsStateOperations, IReadOnlyList<Letter> letters,
+            IReadOnlyList<PdfPath> paths,
+            IReadOnlyList<Union<XObjectContentRecord, InlineImage>> images,
             IPdfTokenScanner pdfScanner,
-            XObjectFactory xObjectFactory,
+            IFilterProvider filterProvider,
+            IResourceStore resourceStore,
             bool isLenientParsing)
         {
             GraphicsStateOperations = graphicsStateOperations;
             Letters = letters;
             Paths = paths;
-            this.xObjects = xObjects;
-            this.pdfScanner = pdfScanner;
-            this.xObjectFactory = xObjectFactory;
+            this.images = images;
+            this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
+            this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
+            this.resourceStore = resourceStore ?? throw new ArgumentNullException(nameof(resourceStore));
             this.isLenientParsing = isLenientParsing;
         }
 
-        public IEnumerable<XObjectImage> GetImages()
+        public IEnumerable<IPdfImage> GetImages()
         {
-            foreach (var contentRecord in xObjects[XObjectType.Image])
+            foreach (var image in images)
             {
-                yield return xObjectFactory.CreateImage(contentRecord, pdfScanner, isLenientParsing);
+
+                IPdfImage result = null;
+                image.Match(x => { result = XObjectFactory.ReadImage(x, pdfScanner, filterProvider, resourceStore, isLenientParsing); },
+                    x => { result = x; });
+
+                yield return result;
             }
         }
     }

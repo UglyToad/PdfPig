@@ -13,19 +13,6 @@
     using Parser.Parts;
     using Tokens;
 
-    /// <summary>
-    /// Tokenizes objects from bytes in a PDF file.
-    /// </summary>
-    internal interface IPdfTokenScanner : ISeekableTokenScanner
-    {
-        /// <summary>
-        /// Tokenize the object with a given object number.
-        /// </summary>
-        /// <param name="reference">The object number for the object to tokenize.</param>
-        /// <returns>The tokenized object.</returns>
-        ObjectToken Get(IndirectReference reference);
-    }
-
     internal class PdfTokenScanner : IPdfTokenScanner
     {
         private static readonly byte[] EndstreamBytes =
@@ -41,6 +28,7 @@
         private readonly CoreTokenScanner coreTokenScanner;
 
         private IEncryptionHandler encryptionHandler;
+        private bool isDisposed;
 
         /// <summary>
         /// Stores tokens encountered between obj - endobj markers for each <see cref="MoveNext"/> call.
@@ -75,6 +63,11 @@
 
         public bool MoveNext()
         {
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(PdfTokenScanner));
+            }
+
             // Read until we find object-number generation obj, e.g. "69 420 obj".
             int tokensRead = 0;
             while (coreTokenScanner.MoveNext() && !Equals(coreTokenScanner.CurrentToken, OperatorToken.StartObject))
@@ -576,26 +569,51 @@
 
         public bool TryReadToken<T>(out T token) where T : class, IToken
         {
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(PdfTokenScanner));
+            }
+
             return coreTokenScanner.TryReadToken(out token);
         }
 
         public void Seek(long position)
         {
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(PdfTokenScanner));
+            }
+
             coreTokenScanner.Seek(position);
         }
 
         public void RegisterCustomTokenizer(byte firstByte, ITokenizer tokenizer)
         {
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(PdfTokenScanner));
+            }
+
             coreTokenScanner.RegisterCustomTokenizer(firstByte, tokenizer);
         }
 
         public void DeregisterCustomTokenizer(ITokenizer tokenizer)
         {
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(PdfTokenScanner));
+            }
+
             coreTokenScanner.DeregisterCustomTokenizer(tokenizer);
         }
 
         public ObjectToken Get(IndirectReference reference)
         {
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(PdfTokenScanner));
+            }
+
             if (objectLocationProvider.TryGetCached(reference, out var objectToken))
             {
                 return objectToken;
@@ -716,6 +734,12 @@
             }
 
             return results;
+        }
+
+        public void Dispose()
+        {
+            inputBytes?.Dispose();
+            isDisposed = true;
         }
     }
 }

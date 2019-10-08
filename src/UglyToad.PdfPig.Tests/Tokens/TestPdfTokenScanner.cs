@@ -42,5 +42,9 @@ namespace UglyToad.PdfPig.Tests.Tokens
         {
             return Objects[reference];
         }
+
+        public void Dispose()
+        {
+        }
     }
 }
