@@ -14,7 +14,6 @@
     using Tokenization.Scanner;
     using Tokens;
     using Util;
-    using XObjects;
 
     internal class PageFactory : IPageFactory
     {
@@ -22,18 +21,15 @@
         private readonly IResourceStore resourceStore;
         private readonly IFilterProvider filterProvider;
         private readonly IPageContentParser pageContentParser;
-        private readonly XObjectFactory xObjectFactory;
         private readonly ILog log;
 
         public PageFactory(IPdfTokenScanner pdfScanner, IResourceStore resourceStore, IFilterProvider filterProvider,
             IPageContentParser pageContentParser,
-            XObjectFactory xObjectFactory,
             ILog log)
         {
             this.resourceStore = resourceStore;
             this.filterProvider = filterProvider;
             this.pageContentParser = pageContentParser;
-            this.xObjectFactory = xObjectFactory;
             this.log = log;
             this.pdfScanner = pdfScanner;
         }
@@ -125,7 +121,7 @@
         {
             var operations = pageContentParser.Parse(new ByteArrayInputBytes(contentBytes));
 
-            var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit, rotation, isLenientParsing, pdfScanner, xObjectFactory, log);
+            var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit, rotation, isLenientParsing, pdfScanner, filterProvider, log);
 
             return context.Process(operations);
         }

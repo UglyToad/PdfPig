@@ -44,7 +44,11 @@
                 }
                 else if (operationType == typeof(EndInlineImage))
                 {
-                    operation = new EndInlineImage(new List<IToken>(), new List<byte>());
+                    operation = new EndInlineImage(new List<byte>());
+                }
+                else if (operationType == typeof(BeginInlineImageData))
+                {
+                    operation = new BeginInlineImageData(new Dictionary<NameToken, IToken>());
                 }
                 else
                 {

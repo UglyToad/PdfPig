@@ -14,5 +14,7 @@
         DictionaryToken GetExtendedGraphicsStateDictionary(NameToken name);
 
         IFont GetFontDirectly(IndirectReferenceToken fontReferenceToken, bool isLenientParsing);
+
+        bool TryGetNamedColorSpace(NameToken name, out IToken namedColorSpace);
     }
 }

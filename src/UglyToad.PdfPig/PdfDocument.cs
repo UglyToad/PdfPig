@@ -220,6 +220,7 @@
         {
             try
             {
+                pdfScanner.Dispose();
                 inputBytes.Dispose();
             }
             catch (Exception ex)

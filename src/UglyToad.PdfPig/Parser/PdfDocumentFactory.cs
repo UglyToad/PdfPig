@@ -26,7 +26,6 @@
     using Tokenization.Scanner;
     using Tokens;
     using Util;
-    using XObjects;
 
     internal static class PdfDocumentFactory
     {
@@ -123,11 +122,11 @@
                     new Type1FontParser(new Type1EncryptedPortionParser()), compactFontFormatParser),
                 new Type3FontHandler(pdfScanner, cMapCache, filterProvider, encodingReader));
             
-            var resourceContainer = new ResourceContainer(pdfScanner, fontFactory);
+            var resourceContainer = new ResourceStore(pdfScanner, fontFactory);
             
             var pageFactory = new PageFactory(pdfScanner, resourceContainer, filterProvider, 
                 new PageContentParser(new ReflectionGraphicsStateOperationFactory()), 
-                new XObjectFactory(), log);
+                log);
             var informationFactory = new DocumentInformationFactory();
 
             var information = informationFactory.Create(pdfScanner, crossReferenceTable.Trailer);

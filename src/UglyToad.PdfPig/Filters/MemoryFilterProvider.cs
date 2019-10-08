@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using Exceptions;
     using Logging;
     using Tokens;
@@ -15,7 +16,11 @@
         {
             var ascii85 = new Ascii85Filter();
             var asciiHex = new AsciiHexDecodeFilter();
+            var ccitt = new CcittFaxDecodeFilter();
+            var dct = new DctDecodeFilter();
             var flate = new FlateFilter(decodeParameterResolver, pngPredictor, log);
+            var jbig2 = new Jbig2DecodeFilter();
+            var jpx = new JpxDecodeFilter();
             var runLength = new RunLengthFilter();
             var lzw = new LzwFilter(decodeParameterResolver, pngPredictor);
 
@@ -25,8 +30,14 @@
                 {NameToken.Ascii85DecodeAbbreviation.Data, ascii85},
                 {NameToken.AsciiHexDecode.Data, asciiHex},
                 {NameToken.AsciiHexDecodeAbbreviation.Data, asciiHex},
+                {NameToken.CcittfaxDecode.Data, ccitt},
+                {NameToken.CcittfaxDecodeAbbreviation.Data, ccitt},
+                {NameToken.DctDecode.Data, dct},
+                {NameToken.DctDecodeAbbreviation.Data, dct},
                 {NameToken.FlateDecode.Data, flate},
                 {NameToken.FlateDecodeAbbreviation.Data, flate},
+                {NameToken.Jbig2Decode.Data, jbig2},
+                {NameToken.JpxDecode.Data, jpx},
                 {NameToken.RunLengthDecode.Data, runLength},
                 {NameToken.RunLengthDecodeAbbreviation.Data, runLength},
                 {NameToken.LzwDecode, lzw},
@@ -64,6 +75,23 @@
                     throw new PdfDocumentFormatException($"The filter for the stream was not a valid object. Expected name or array, instead got: {token}.");
             }
         }
+
+        public IReadOnlyList<IFilter> GetNamedFilters(IReadOnlyList<NameToken> names)
+        {
+            if (names == null)
+            {
+                throw new ArgumentNullException(nameof(names));
+            }
+
+            var result = new List<IFilter>();
+
+            foreach (var name in names)
+            {
+                result.Add(GetFilterStrict(name));
+            }
+
+            return result;
+        }
         
         private IFilter GetFilterStrict(string name)
         {
@@ -77,7 +105,7 @@
 
         public IReadOnlyList<IFilter> GetAllFilters()
         {
-            throw new System.NotImplementedException();
+            return filterInstances.Values.Distinct().ToList();
         }
     }
 }
