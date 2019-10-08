@@ -33,8 +33,6 @@
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream))
             {
-
-
                 for (var i = 0; i < input.Count; i++)
                 {
                     var value = input[i];

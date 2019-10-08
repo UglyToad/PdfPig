@@ -8,7 +8,7 @@
     using Tokenization.Scanner;
     using Tokens;
 
-    internal class ResourceContainer : IResourceStore
+    internal class ResourceStore : IResourceStore
     {
         private readonly IPdfTokenScanner scanner;
         private readonly IFontFactory fontFactory;
@@ -18,7 +18,9 @@
 
         private readonly Dictionary<NameToken, DictionaryToken> extendedGraphicsStates = new Dictionary<NameToken, DictionaryToken>();
 
-        public ResourceContainer(IPdfTokenScanner scanner, IFontFactory fontFactory)
+        private readonly Dictionary<NameToken, NameToken> colorSpaceNames = new Dictionary<NameToken, NameToken>();
+
+        public ResourceStore(IPdfTokenScanner scanner, IFontFactory fontFactory)
         {
             this.scanner = scanner;
             this.fontFactory = fontFactory;
@@ -56,6 +58,39 @@
                     var state = DirectObjectFinder.Get<DictionaryToken>(pair.Value, scanner);
 
                     extendedGraphicsStates[name] = state;
+                }
+            }
+
+            if (resourceDictionary.TryGet(NameToken.ColorSpace, scanner, out DictionaryToken colorSpaceDictionary))
+            {
+                foreach (var nameColorSpacePair in colorSpaceDictionary.Data)
+                {
+                    var name = NameToken.Create(nameColorSpacePair.Key);
+
+                    if (DirectObjectFinder.TryGet(nameColorSpacePair.Value, scanner, out NameToken colorSpaceName))
+                    {
+                        colorSpaceNames[name] = colorSpaceName;
+                    }
+                    else if (DirectObjectFinder.TryGet(nameColorSpacePair.Value, scanner, out ArrayToken colorSpaceArray))
+                    {
+                        if (colorSpaceArray.Length == 0)
+                        {
+                            throw new PdfDocumentFormatException($"Empty ColorSpace array encountered in page resource dictionary: {resourceDictionary}.");
+                        }
+
+                        var first = colorSpaceArray.Data[0];
+
+                        if (!(first is NameToken arrayNamedColorSpace))
+                        {
+                            throw new PdfDocumentFormatException($"Invalid ColorSpace array encountered in page resource dictionary: {colorSpaceArray}.");
+                        }
+
+                        colorSpaceNames[name] = arrayNamedColorSpace;
+                    }
+                    else
+                    {
+                        throw new PdfDocumentFormatException($"Invalid ColorSpace token encountered in page resource dictionary: {nameColorSpacePair.Value}.");
+                    }
                 }
             }
         }
@@ -113,6 +148,25 @@
             var font = fontFactory.Get(fontDictionaryToken, isLenientParsing);
 
             return font;
+        }
+
+        public bool TryGetNamedColorSpace(NameToken name, out IToken namedToken)
+        {
+            namedToken = null;
+
+            if (name == null)
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+
+            if (!colorSpaceNames.TryGetValue(name, out var colorSpaceName))
+            {
+                return false;
+            }
+
+            namedToken = colorSpaceName;
+
+            return true;
         }
 
         public StreamToken GetXObject(NameToken name)

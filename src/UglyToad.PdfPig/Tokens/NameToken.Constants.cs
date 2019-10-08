@@ -114,7 +114,7 @@
         public static readonly NameToken ColorDodge = new NameToken("ColorDodge");
         public static readonly NameToken Colorants = new NameToken("Colorants");
         public static readonly NameToken Colors = new NameToken("Colors");
-        public static readonly NameToken Colorspace = new NameToken("ColorSpace");
+        public static readonly NameToken ColorSpace = new NameToken("ColorSpace");
         public static readonly NameToken Columns = new NameToken("Columns");
         public static readonly NameToken Compatible = new NameToken("Compatible");
         public static readonly NameToken Components = new NameToken("Components");
@@ -272,6 +272,7 @@
         public static readonly NameToken Info = new NameToken("Info");
         public static readonly NameToken Ink = new NameToken("Ink");
         public static readonly NameToken Inklist = new NameToken("InkList");
+        public static readonly NameToken Intent = new NameToken("Intent");
         public static readonly NameToken Interpolate = new NameToken("Interpolate");
         public static readonly NameToken It = new NameToken("IT");
         public static readonly NameToken ItalicAngle = new NameToken("ItalicAngle");

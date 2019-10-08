@@ -53,6 +53,8 @@
                 "UglyToad.PdfPig.Annotations.AnnotationType",
                 "UglyToad.PdfPig.Content.Catalog",
                 "UglyToad.PdfPig.Content.DocumentInformation",
+                "UglyToad.PdfPig.Content.InlineImage",
+                "UglyToad.PdfPig.Content.IPdfImage",
                 "UglyToad.PdfPig.Content.Letter",
                 "UglyToad.PdfPig.Content.Page",
                 "UglyToad.PdfPig.Content.PageRotationDegrees",

@@ -7,6 +7,8 @@
     {
         IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary);
 
+        IReadOnlyList<IFilter> GetNamedFilters(IReadOnlyList<NameToken> names);
+
         IReadOnlyList<IFilter> GetAllFilters();
     }
 }

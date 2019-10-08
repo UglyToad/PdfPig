@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using Tokens;
 
     /// <inheritdoc />
     /// <summary>
@@ -15,14 +14,9 @@
         /// The symbol for this operation in a stream.
         /// </summary>
         public const string Symbol = "EI";
-
+        
         /// <summary>
-        /// The tokens declared in order for this inline image object.
-        /// </summary>
-        public IReadOnlyList<IToken> ImageTokens { get; }
-
-        /// <summary>
-        /// The raw data for the inline image which should be interpreted according to the <see cref="ImageTokens"/>.
+        /// The raw data for the inline image which should be interpreted according to the corresponding <see cref="BeginInlineImageData.Dictionary"/>.
         /// </summary>
         public IReadOnlyList<byte> ImageData { get; }
         
@@ -32,17 +26,16 @@
         /// <summary>
         /// Create a new <see cref="EndInlineImage"/> operation.
         /// </summary>
-        /// <param name="imageTokens">The tokens which were set during the declaration of this image.</param>
         /// <param name="imageData">The raw byte data of this image.</param>
-        public EndInlineImage(IReadOnlyList<IToken> imageTokens, IReadOnlyList<byte> imageData)
+        public EndInlineImage(IReadOnlyList<byte> imageData)
         {
-            ImageTokens = imageTokens ?? throw new ArgumentNullException(nameof(imageTokens));
             ImageData = imageData ?? throw new ArgumentNullException(nameof(imageData));
         }
 
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
+            operationContext.EndInlineImage(ImageData);
         }
 
         /// <inheritdoc />

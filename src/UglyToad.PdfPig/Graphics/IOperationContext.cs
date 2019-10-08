@@ -4,7 +4,7 @@
     using Geometry;
     using IO;
     using Tokens;
-    using UglyToad.PdfPig.Core;
+    using PdfPig.Core;
     using Util.JetBrains.Annotations;
 
     /// <summary>
@@ -104,5 +104,20 @@
         /// </summary>
         /// <param name="stateName">The name of the state to apply.</param>
         void SetNamedGraphicsState(NameToken stateName);
+
+        /// <summary>
+        /// Indicate that an inline image is being defined.
+        /// </summary>
+        void BeginInlineImage();
+
+        /// <summary>
+        /// Define the properties of the inline image currently being drawn.
+        /// </summary>
+        void SetInlineImageProperties(IReadOnlyDictionary<NameToken, IToken> properties);
+
+        /// <summary>
+        /// Indicates that the current inline image is complete.
+        /// </summary>
+        void EndInlineImage(IReadOnlyList<byte> bytes);
     }
 }

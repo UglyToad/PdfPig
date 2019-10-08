@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Util
 {
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Text;
 
     internal static class OtherEncodings
@@ -17,6 +19,16 @@
             }
 
             return Iso88591.GetBytes(s);
+        }
+
+        public static string BytesAsLatin1String(IReadOnlyList<byte> bytes)
+        {
+            if (bytes is byte[] arr)
+            {
+                return BytesAsLatin1String(arr);
+            }
+
+            return BytesAsLatin1String(bytes.ToArray());
         }
 
         public static string BytesAsLatin1String(byte[] bytes)

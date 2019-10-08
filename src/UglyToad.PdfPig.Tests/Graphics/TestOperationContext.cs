@@ -77,5 +77,17 @@
         public void SetNamedGraphicsState(NameToken stateName)
         {
         }
+
+        public void BeginInlineImage()
+        {
+        }
+
+        public void SetInlineImageProperties(IReadOnlyDictionary<NameToken, IToken> properties)
+        {
+        }
+
+        public void EndInlineImage(IReadOnlyList<byte> bytes)
+        {
+        }
     }
 }

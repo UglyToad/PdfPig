@@ -30,8 +30,23 @@
 
                 if (token is InlineImageDataToken inlineImageData)
                 {
-                    graphicsStateOperations.Add(BeginInlineImageData.Value);
-                    graphicsStateOperations.Add(new EndInlineImage(precedingTokens, inlineImageData.Data));
+                    var dictionary = new Dictionary<NameToken, IToken>();
+
+                    for (var i = 0; i < precedingTokens.Count - 1; i++)
+                    {
+                        var t = precedingTokens[i];
+                        if (!(t is NameToken n))
+                        {
+                            continue;
+                        }
+
+                        i++;
+
+                        dictionary[n] = precedingTokens[i];
+                    }
+
+                    graphicsStateOperations.Add(new BeginInlineImageData(dictionary));
+                    graphicsStateOperations.Add(new EndInlineImage(inlineImageData.Data));
                     precedingTokens.Clear();
                 }
                 else if (token is OperatorToken op)

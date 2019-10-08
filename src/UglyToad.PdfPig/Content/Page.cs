@@ -8,7 +8,6 @@
     using Tokens;
     using Util;
     using Util.JetBrains.Annotations;
-    using XObjects;
     using Geometry;
 
     /// <summary>
@@ -60,7 +59,7 @@
         public decimal Height { get; }
 
         /// <summary>
-        /// The size of the page according to the standard page sizes or Custom if no matching standard size found.
+        /// The size of the page according to the standard page sizes or <see cref="PageSize.Custom"/> if no matching standard size found.
         /// </summary>
         public PageSize Size { get; }
 
@@ -68,7 +67,7 @@
         /// The parsed graphics state operations in the content stream for this page. 
         /// </summary>
         public IReadOnlyList<IGraphicsStateOperation> Operations => Content.GraphicsStateOperations;
-
+        
         /// <summary>
         /// Access to members whose future locations within the API will change without warning.
         /// </summary>
@@ -132,6 +131,11 @@
         }
 
         /// <summary>
+        /// Gets any images on the page.
+        /// </summary>
+        public IEnumerable<IPdfImage> GetImages() => Content.GetImages();
+
+        /// <summary>
         /// Provides access to useful members which will change in future releases.
         /// </summary>
         public class Experimental
@@ -148,16 +152,6 @@
             {
                 this.page = page;
                 this.annotationProvider = annotationProvider;
-            }
-
-            /// <summary>
-            /// Retrieve any images referenced in this page's content.
-            /// These are returned as <see cref="XObjectImage"/>s which are 
-            /// raw data from the PDF's content rather than images.
-            /// </summary>
-            public IEnumerable<XObjectImage> GetRawImages()
-            {
-                return page.Content.GetImages();
             }
 
             /// <summary>
