@@ -70,7 +70,6 @@
         {
             var log = container.Get<ILog>();
             var filterProvider = container.Get<IFilterProvider>();
-            var catalogFactory = new CatalogFactory();
             var cMapCache = new CMapCache(new CMapParser());
 
             CrossReferenceTable crossReferenceTable = null;
@@ -104,7 +103,9 @@
             var compactFontFormatParser = new CompactFontFormatParser(new CompactFontFormatIndividualFontParser(compactFontFormatIndexReader, new CompactFontFormatTopLevelDictionaryReader(), 
                         new CompactFontFormatPrivateDictionaryReader()), compactFontFormatIndexReader);
             
-            var rootDictionary = ParseTrailer(crossReferenceTable, isLenientParsing, pdfScanner, out var encryptionDictionary);
+            var (rootReference, rootDictionary) = ParseTrailer(crossReferenceTable, isLenientParsing, 
+                pdfScanner, 
+                out var encryptionDictionary);
 
             var encryptionHandler = encryptionDictionary != null ? (IEncryptionHandler)new EncryptionHandler(encryptionDictionary, crossReferenceTable.Trailer, password ?? string.Empty)
                 : NoOpEncryptionHandler.Instance;
@@ -124,14 +125,13 @@
             
             var resourceContainer = new ResourceStore(pdfScanner, fontFactory);
             
+            var information = DocumentInformationFactory.Create(pdfScanner, crossReferenceTable.Trailer);
+
+            var catalog = CatalogFactory.Create(rootReference, rootDictionary, pdfScanner, isLenientParsing);
+
             var pageFactory = new PageFactory(pdfScanner, resourceContainer, filterProvider, 
                 new PageContentParser(new ReflectionGraphicsStateOperationFactory()), 
                 log);
-            var informationFactory = new DocumentInformationFactory();
-
-            var information = informationFactory.Create(pdfScanner, crossReferenceTable.Trailer);
-
-            var catalog = catalogFactory.Create(pdfScanner, rootDictionary);
 
             var caching = new ParsingCachingProviders(bruteForceSearcher, resourceContainer);
 
@@ -144,7 +144,7 @@
                 acroFormFactory);
         }
 
-        private static DictionaryToken ParseTrailer(CrossReferenceTable crossReferenceTable, bool isLenientParsing, IPdfTokenScanner pdfTokenScanner,
+        private static (IndirectReference, DictionaryToken) ParseTrailer(CrossReferenceTable crossReferenceTable, bool isLenientParsing, IPdfTokenScanner pdfTokenScanner,
             out EncryptionDictionary encryptionDictionary)
         {
             encryptionDictionary = null;
@@ -157,8 +157,6 @@
                 }
 
                 encryptionDictionary = EncryptionDictionaryFactory.Read(encryptionDictionaryToken, pdfTokenScanner);
-
-                //throw new NotSupportedException("Cannot currently parse a document using encryption: " + crossReferenceTable.Trailer.EncryptionToken);
             }
             
             var rootDictionary = DirectObjectFinder.Get<DictionaryToken>(crossReferenceTable.Trailer.Root, pdfTokenScanner);
@@ -168,7 +166,7 @@
                 rootDictionary = rootDictionary.With(NameToken.Type, NameToken.Catalog);
             }
 
-            return rootDictionary;
+            return (crossReferenceTable.Trailer.Root, rootDictionary);
         }
     }
 }

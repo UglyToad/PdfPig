@@ -39,12 +39,19 @@
 
             var expected = new List<string>
             {
+                "UglyToad.PdfPig.AcroForms.Fields.AcroButtonFieldFlags",
+                "UglyToad.PdfPig.AcroForms.Fields.AcroCheckboxField",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroChoiceFieldFlags",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroChoiceOption",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroComboBoxField",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroFieldBase",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroFieldCommonInformation",
+                "UglyToad.PdfPig.AcroForms.Fields.AcroFieldType",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroListBoxField",
+                "UglyToad.PdfPig.AcroForms.Fields.AcroNonTerminalField",
+                "UglyToad.PdfPig.AcroForms.Fields.AcroPushButtonField",
+                "UglyToad.PdfPig.AcroForms.Fields.AcroRadioButtonsField",
+                "UglyToad.PdfPig.AcroForms.Fields.AcroSignatureField",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroTextField",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroTextFieldFlags",
                 "UglyToad.PdfPig.Annotations.Annotation",
@@ -59,6 +66,7 @@
                 "UglyToad.PdfPig.Content.Page",
                 "UglyToad.PdfPig.Content.PageRotationDegrees",
                 "UglyToad.PdfPig.Content.PageSize",
+                "UglyToad.PdfPig.Content.PageTreeNode",
                 "UglyToad.PdfPig.Content.Word",
                 "UglyToad.PdfPig.Content.TextLine",
                 "UglyToad.PdfPig.Content.TextBlock",

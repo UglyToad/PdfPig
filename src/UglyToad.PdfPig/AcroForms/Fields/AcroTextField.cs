@@ -47,7 +47,7 @@
         /// <param name="maxLength">The maximum length.</param>
         public AcroTextField(DictionaryToken dictionary, string fieldType, AcroTextFieldFlags fieldFlags,
             AcroFieldCommonInformation information, string value, int? maxLength) : 
-            base(dictionary, fieldType, (uint)fieldFlags, information)
+            base(dictionary, fieldType, (uint)fieldFlags, AcroFieldType.Text, information)
         {
             Flags = fieldFlags;
             Value = value;
@@ -59,7 +59,7 @@
         /// <inheritdoc />
         public override string ToString()
         {
-            return Value ?? string.Empty;
+            return $"{FieldType}: {Value ?? string.Empty}";
         }
     }
 }
