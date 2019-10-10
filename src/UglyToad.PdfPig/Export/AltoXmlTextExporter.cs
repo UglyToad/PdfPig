@@ -56,7 +56,6 @@ namespace UglyToad.PdfPig.Export
         /// </summary>
         /// <param name="document"></param>
         /// <param name="includePaths">Draw <see cref="PdfPath"/>s present in the page.</param>
-        /// <returns></returns>
         public string Get(PdfDocument document, bool includePaths = false)
         {
             AltoDocument alto = CreateAltoDocument("unknown");
@@ -76,7 +75,6 @@ namespace UglyToad.PdfPig.Export
         /// Get the Alto (XML) string of the page layout. Excludes <see cref="PdfPath"/>s.
         /// </summary>
         /// <param name="page"></param>
-        /// <returns></returns>
         public string Get(Page page)
         {
             return Get(page, false); 
@@ -87,7 +85,6 @@ namespace UglyToad.PdfPig.Export
         /// </summary>
         /// <param name="page"></param>
         /// <param name="includePaths">Draw <see cref="PdfPath"/>s present in the page.</param>
-        /// <returns></returns>
         public string Get(Page page, bool includePaths)
         {
             AltoDocument alto = CreateAltoDocument("unknown");
@@ -102,7 +99,6 @@ namespace UglyToad.PdfPig.Export
         /// Create an empty <see cref="AltoDocument"/>.
         /// </summary>
         /// <param name="fileName"></param>
-        /// <returns></returns>
         private AltoDocument CreateAltoDocument(string fileName)
         {
             return new AltoDocument()
@@ -113,17 +109,9 @@ namespace UglyToad.PdfPig.Export
                 },
                 Description = GetAltoDescription(fileName),
                 SchemaVersion = "4",
-                //Styles = new AltoStyles() { },
-                //Tags = new AltoTags() { }
             };
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="page"></param>
-        /// <param name="includePaths">Draw <see cref="PdfPath"/>s present in the page.</param>
-        /// <returns></returns>
         private AltoDocument.AltoPage ToAltoPage(Page page, bool includePaths)
         {
             pageCount = page.Number;
@@ -159,7 +147,7 @@ namespace UglyToad.PdfPig.Export
                     Illustrations = null,                               // TBD
                     ProcessingRefs = null,                              // TBD
                     StyleRefs = null,                                   // TBD
-                    Id = "P" + pageCount + "_PS" + pageSpaceCount.ToString("#00000") //P1_PS00001
+                    Id = "P" + pageCount + "_PS" + pageSpaceCount.ToString("#00000")
                 },
                 Id = "P" + pageCount
             };
@@ -188,12 +176,6 @@ namespace UglyToad.PdfPig.Export
             return altoPage;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="pdfPath"></param>
-        /// <param name="height"></param>
-        /// <returns></returns>
         private AltoDocument.AltoGraphicalElement ToAltoGraphicalElement(PdfPath pdfPath, decimal height)
         {
             graphicalElementCount++;
@@ -208,12 +190,10 @@ namespace UglyToad.PdfPig.Export
                     Height = (float)Math.Round(rectangle.Value.Height * scale),
                     Width = (float)Math.Round(rectangle.Value.Width * scale),
                     Rotation = 0,
-                    //Cs = false,
                     StyleRefs = null,
                     TagRefs = null,
                     title = null,
                     type = null,
-                    //IdNext = "NA", // for reading order
                     Id = "P" + pageCount + "_GE" + graphicalElementCount.ToString("#00000")
                 };
             }
@@ -233,17 +213,10 @@ namespace UglyToad.PdfPig.Export
                 Width = (float)Math.Round(rectangle.Width * scale),
                 FileId = "",
                 Rotation = 0,
-                //IdNext = "NA", // for reading order
                 Id = "P" + pageCount + "_I" + illustrationCount.ToString("#00000")
             };
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="textBlock"></param>
-        /// <param name="height"></param>
-        /// <returns></returns>
         private AltoDocument.AltoTextBlock ToAltoTextBlock(TextBlock textBlock, decimal height)
         {
             textBlockCount++;
@@ -254,24 +227,16 @@ namespace UglyToad.PdfPig.Export
                 HPos = (float)Math.Round(textBlock.BoundingBox.Left * scale),
                 Height = (float)Math.Round(textBlock.BoundingBox.Height * scale),
                 Width = (float)Math.Round(textBlock.BoundingBox.Width * scale),
-                Rotation = 0,  // check textBlock.TextDirection
+                Rotation = 0,
                 TextLines = textBlock.TextLines.Select(l => ToAltoTextLine(l, height)).ToArray(),
-                //Cs = false,
                 StyleRefs = null,
                 TagRefs = null,
                 title = null,
                 type = null,
-                //IdNext = "NA", // for reading order
                 Id = "P" + pageCount + "_TB" + textBlockCount.ToString("#00000")
             };
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="textLine"></param>
-        /// <param name="height"></param>
-        /// <returns></returns>
         private AltoDocument.AltoTextBlockTextLine ToAltoTextLine(TextLine textLine, decimal height)
         {
             textLineCount++;
@@ -283,23 +248,15 @@ namespace UglyToad.PdfPig.Export
                 HPos = (float)Math.Round(textLine.BoundingBox.Left * scale),
                 Height = (float)Math.Round(textLine.BoundingBox.Height * scale),
                 Width = (float)Math.Round(textLine.BoundingBox.Width * scale),
-                BaseLine = float.NaN, // TBD
-                //Hyp = new AltoTextBlockTextLineHyp() { }, // TBD
+                BaseLine = float.NaN,
                 Strings = strings,
                 Lang = null,
-                //Sp = new AltoSP[0], // TBD
                 StyleRefs = null,
                 TagRefs = null,
                 Id = "P" + pageCount + "_TL" + textLineCount.ToString("#00000")
             };
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="word"></param>
-        /// <param name="height"></param>
-        /// <returns></returns>
         private AltoDocument.AltoString ToAltoString(Word word, decimal height)
         {
             stringCount++;
@@ -313,24 +270,15 @@ namespace UglyToad.PdfPig.Export
                 Glyph = glyphs,
                 Cc = string.Join("", glyphs.Select(g => 9f * (1f - g.Gc))), // from 0->1 to 9->0
                 Content = word.Text,
-                //Cs = false,
                 Lang = null,
-                //Style = AltoFontStyles.Bold,
                 StyleRefs = null,
                 SubsContent = null,
-                //SubsType = AltoSubsType.Abbreviation,
                 TagRefs = null,
                 Wc = float.NaN,
                 Id = "P" + pageCount + "_ST" + stringCount.ToString("#00000")
             };
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="letter"></param>
-        /// <param name="height"></param>
-        /// <returns></returns>
         private AltoDocument.AltoGlyph ToAltoGlyph(Letter letter, decimal height)
         {
             glyphCount++;
@@ -346,17 +294,12 @@ namespace UglyToad.PdfPig.Export
             };
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="fileName"></param>
-        /// <returns></returns>
         private AltoDocument.AltoDescription GetAltoDescription(string fileName)
         {
             var processing = new AltoDocument.AltoDescriptionProcessing()
             {
                 ProcessingAgency = null,
-                ProcessingCategory = AltoDocument.AltoProcessingCategory.Other, // TBD
+                ProcessingCategory = AltoDocument.AltoProcessingCategory.Other,
                 ProcessingDateTime = DateTime.UtcNow.ToString(),
                 ProcessingSoftware = new AltoDocument.AltoProcessingSoftware()
                 {
@@ -384,7 +327,7 @@ namespace UglyToad.PdfPig.Export
 
             return new AltoDocument.AltoDescription()
             {
-                MeasurementUnit = AltoDocument.AltoMeasurementUnit.Pixel, // need to check that
+                MeasurementUnit = AltoDocument.AltoMeasurementUnit.Pixel,
                 Processings = new[] { processing },
                 SourceImageInformation = new AltoDocument.AltoSourceImageInformation()
                 {
@@ -400,18 +343,16 @@ namespace UglyToad.PdfPig.Export
             XmlSerializer serializer = new XmlSerializer(typeof(AltoDocument));
             var settings = new XmlWriterSettings()
             {
-                //Encoding = new System.Text.UTF8Encoding(true),
+                Encoding = System.Text.Encoding.UTF8,
                 Indent = true,
                 IndentChars = indentChar,
-                OmitXmlDeclaration = true // hack to manually handle utf-8
             };
 
-            using (var stringWriter = new System.IO.StringWriter())
-            using (var xmlWriter = XmlWriter.Create(stringWriter, settings))
+            using (var memoryStream = new System.IO.MemoryStream())
+            using (var xmlWriter = XmlWriter.Create(memoryStream, settings))
             {
-                stringWriter.WriteLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"); // hack to manually handle utf-8
                 serializer.Serialize(xmlWriter, altoDocument);
-                return stringWriter.ToString();
+                return System.Text.Encoding.UTF8.GetString(memoryStream.ToArray());
             }
         }
 

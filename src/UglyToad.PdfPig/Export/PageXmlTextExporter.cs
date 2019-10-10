@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Xml;
 using System.Xml.Serialization;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.DocumentLayoutAnalysis;
@@ -60,7 +61,6 @@ namespace UglyToad.PdfPig.Export
         /// Get the PAGE-XML (XML) string of the pages layout. Excludes <see cref="PdfPath"/>s.
         /// </summary>
         /// <param name="page"></param>
-        /// <returns></returns>
         public string Get(Page page)
         {
             return Get(page, false);
@@ -90,12 +90,6 @@ namespace UglyToad.PdfPig.Export
             return Serialize(pageXmlDocument);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="point"></param>
-        /// <param name="height"></param>
-        /// <returns></returns>
         private string PointToString(PdfPoint point, decimal height)
         {
             decimal x = Math.Round(point.X * scale);
@@ -103,39 +97,20 @@ namespace UglyToad.PdfPig.Export
             return (x > 0 ? x : 0).ToString("0") + "," + (y > 0 ? y : 0).ToString("0");
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="points"></param>
-        /// <param name="height"></param>
-        /// <returns></returns>
         private string ToPoints(IEnumerable<PdfPoint> points, decimal height)
         {
             return string.Join(" ", points.Select(p => PointToString(p, height)));
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="pdfRectangle"></param>
-        /// <param name="height"></param>
-        /// <returns></returns>
         private string ToPoints(PdfRectangle pdfRectangle, decimal height)
         {
             return ToPoints(new[] { pdfRectangle.BottomLeft, pdfRectangle.TopLeft, pdfRectangle.TopRight, pdfRectangle.BottomRight }, height);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="pdfRectangle"></param>
-        /// <param name="height"></param>
-        /// <returns></returns>
         private PageXmlDocument.PageXmlCoords ToCoords(PdfRectangle pdfRectangle, decimal height)
         {
             return new PageXmlDocument.PageXmlCoords()
             {
-                //Conf = 1,
                 Points = ToPoints(pdfRectangle, height)
             };
         }
@@ -152,38 +127,17 @@ namespace UglyToad.PdfPig.Export
             int blue = 65536 * (int)Math.Round(255f * (float)rgb.b);
             int sum = red + green + blue;
 
-            // as per below, red and blue order might be inverted...
-            //var colorWin = System.Drawing.Color.FromArgb(sum);
-
+            // as per below, red and blue order might be inverted... var colorWin = System.Drawing.Color.FromArgb(sum);
             return sum.ToString();
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="page"></param>
-        /// <param name="includePaths">Draw <see cref="PdfPath"/>s present in the page.</param>
         private PageXmlDocument.PageXmlPage ToPageXmlPage(Page page, bool includePaths)
         {
             var pageXmlPage = new PageXmlDocument.PageXmlPage()
             {
-                //Border = new PageXmlBorder()
-                //{
-                //    Coords = new PageXmlCoords()
-                //    {
-                //        Points = page.
-                //    }
-                //},
                 ImageFilename = "unknown",
                 ImageHeight = (int)Math.Round(page.Height * scale),
                 ImageWidth = (int)Math.Round(page.Width * scale),
-                //PrintSpace = new PageXmlPrintSpace()
-                //{
-                //    Coords = new PageXmlCoords()
-                //    {
-
-                //    }
-                //}
             };
 
             var regions = new List<PageXmlDocument.PageXmlRegion>();
@@ -240,12 +194,6 @@ namespace UglyToad.PdfPig.Export
             };
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="textBlock"></param>
-        /// <param name="height"></param>
-        /// <returns></returns>
         private PageXmlDocument.PageXmlTextRegion ToPageXmlTextRegion(TextBlock textBlock, decimal height)
         {
             regionCount++;
@@ -258,33 +206,19 @@ namespace UglyToad.PdfPig.Export
             };
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="textLine"></param>
-        /// <param name="height"></param>
-        /// <returns></returns>
         private PageXmlDocument.PageXmlTextLine ToPageXmlTextLine(TextLine textLine, decimal height)
         {
             lineCount++;
             return new PageXmlDocument.PageXmlTextLine()
             {
                 Coords = ToCoords(textLine.BoundingBox, height),
-                //Baseline = new PageXmlBaseline() { },
                 Production = PageXmlDocument.PageXmlProductionSimpleType.Printed,
-                //ReadingDirection = PageXmlReadingDirectionSimpleType.LeftToRight,
                 Words = textLine.Words.Select(w => ToPageXmlWord(w, height)).ToArray(),
                 TextEquivs = new[] { new PageXmlDocument.PageXmlTextEquiv() { Unicode = textLine.Text } },
                 Id = "l" + lineCount
             };
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="word"></param>
-        /// <param name="height"></param>
-        /// <returns></returns>
         private PageXmlDocument.PageXmlWord ToPageXmlWord(Word word, decimal height)
         {
             wordCount++;
@@ -297,12 +231,6 @@ namespace UglyToad.PdfPig.Export
             };
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="letter"></param>
-        /// <param name="height"></param>
-        /// <returns></returns>
         private PageXmlDocument.PageXmlGlyph ToPageXmlGlyph(Letter letter, decimal height)
         {
             glyphCount++;
@@ -326,7 +254,7 @@ namespace UglyToad.PdfPig.Export
         {
             XmlSerializer serializer = new XmlSerializer(typeof(PageXmlDocument));
 
-            using (var reader = System.Xml.XmlReader.Create(xmlPath))
+            using (var reader = XmlReader.Create(xmlPath))
             {
                 return (PageXmlDocument)serializer.Deserialize(reader);
             }
@@ -335,20 +263,18 @@ namespace UglyToad.PdfPig.Export
         private string Serialize(PageXmlDocument pageXmlDocument)
         {
             XmlSerializer serializer = new XmlSerializer(typeof(PageXmlDocument));
-            var settings = new System.Xml.XmlWriterSettings()
+            var settings = new XmlWriterSettings()
             {
-                //Encoding = new System.Text.UTF8Encoding(true),
+                Encoding = System.Text.Encoding.UTF8,
                 Indent = true,
                 IndentChars = indentChar,
-                OmitXmlDeclaration = true // hack to manually handle utf-8
             };
 
-            using (var stringWriter = new System.IO.StringWriter())
-            using (var xmlWriter = System.Xml.XmlWriter.Create(stringWriter, settings))
+            using (var memoryStream = new System.IO.MemoryStream())
+            using (var xmlWriter = XmlWriter.Create(memoryStream, settings))
             {
-                stringWriter.WriteLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"); // hack to manually handle utf-8
                 serializer.Serialize(xmlWriter, pageXmlDocument);
-                return stringWriter.ToString();
+                return System.Text.Encoding.UTF8.GetString(memoryStream.ToArray());
             }
         }
     }

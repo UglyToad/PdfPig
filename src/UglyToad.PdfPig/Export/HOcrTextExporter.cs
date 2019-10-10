@@ -47,7 +47,7 @@ namespace UglyToad.PdfPig.Export
         }
 
         /// <summary>
-        /// Get the hORC (HTML) string of the page layout.
+        /// Get the hOCR (HTML) string of the page layout.
         /// </summary>
         /// <param name="document">The document.</param>
         /// <param name="includePaths">Draw <see cref="PdfPath"/>s present in the page.</param>
@@ -70,17 +70,16 @@ namespace UglyToad.PdfPig.Export
         }
 
         /// <summary>
-        /// Get the hORC (HTML) string of the page layout. Excludes <see cref="PdfPath"/>s.
+        /// Get the hOCR (HTML) string of the page layout. Excludes <see cref="PdfPath"/>s.
         /// </summary>
         /// <param name="page">The page.</param>
-        /// <returns></returns>
         public string Get(Page page)
         {
             return Get(page, false);
         }
 
         /// <summary>
-        /// Get the hORC (HTML) string of the page layout.
+        /// Get the hOCR (HTML) string of the page layout.
         /// </summary>
         /// <param name="page">The page.</param>
         /// <param name="imageName">The image name, if any.</param>
@@ -117,7 +116,6 @@ namespace UglyToad.PdfPig.Export
         /// Get indent string from level.
         /// </summary>
         /// <param name="level">The indent level.</param>
-        /// <returns></returns>
         private string GetIndent(int level)
         {
             string indent = "";
@@ -129,7 +127,7 @@ namespace UglyToad.PdfPig.Export
         }
 
         /// <summary>
-        /// Get the hORC string for the page.
+        /// Get the hOCR string for the page.
         /// <para>http://kba.cloud/hocr-spec/1.2/#elementdef-ocr_page</para>
         /// </summary>
         /// <param name="page"></param>
@@ -174,14 +172,13 @@ namespace UglyToad.PdfPig.Export
         }
 
         /// <summary>
-        /// Get the hORC string for the path.
+        /// Get the hOCR string for the path.
         /// <para>http://kba.cloud/hocr-spec/1.2/#elementdef-ocr_linedrawing</para>
         /// </summary>
         /// <param name="path"></param>
         /// <param name="pageHeight"></param>
         /// <param name="subPaths"></param>
         /// <param name="level">The indent level.</param>
-        /// <returns></returns>
         private string GetCode(PdfPath path, decimal pageHeight, bool subPaths, int level)
         {
             if (path == null) return string.Empty;
@@ -232,7 +229,7 @@ namespace UglyToad.PdfPig.Export
         }
 
         /// <summary>
-        /// Get the hORC string for the area.
+        /// Get the hOCR string for the area.
         /// <para>http://kba.cloud/hocr-spec/1.2/#elementdef-ocr_carea</para>
         /// </summary>
         /// <param name="block">The text area.</param>
@@ -252,13 +249,12 @@ namespace UglyToad.PdfPig.Export
         }
 
         /// <summary>
-        /// Get the hORC string for the paragraph.
+        /// Get the hOCR string for the paragraph.
         /// <para>See http://kba.cloud/hocr-spec/1.2/#elementdef-ocr_par</para>
         /// </summary>
         /// <param name="block">The paragraph.</param>
         /// <param name="pageHeight"></param>
         /// <param name="level">The indent level.</param>
-        /// <returns></returns>
         private string GetCodeParagraph(TextBlock block, decimal pageHeight, int level)
         {
             paraCount++;
@@ -275,7 +271,7 @@ namespace UglyToad.PdfPig.Export
         }
 
         /// <summary>
-        /// Get the hORC string for the text line.
+        /// Get the hOCR string for the text line.
         /// <para>See http://kba.cloud/hocr-spec/1.2/#elementdef-ocr_line</para>
         /// </summary>
         /// <param name="line"></param>
@@ -303,7 +299,7 @@ namespace UglyToad.PdfPig.Export
         }
 
         /// <summary>
-        /// Get the hORC string for the word.
+        /// Get the hOCR string for the word.
         /// <para>See http://kba.cloud/hocr-spec/1.2/#elementdef-ocrx_word</para>
         /// </summary>
         /// <param name="word"></param>
@@ -334,7 +330,7 @@ namespace UglyToad.PdfPig.Export
         }
 
         /// <summary>
-        /// Get the hORC string for the bounding box.
+        /// Get the hOCR string for the bounding box.
         /// <para>See http://kba.cloud/hocr-spec/1.2/#propdef-bbox</para>
         /// </summary>
         /// <param name="rectangle"></param>
