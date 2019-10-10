@@ -39,19 +39,20 @@
             using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
                 var form = document.GetForm();
-                Assert.Equal(16, form.Fields.Count);
+                Assert.Equal(18, form.Fields.Count);
             }
         }
 
-        [Fact]
-        public void GetsEmptyFormFields()
-        {
-            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
-            {
-                var form = document.GetForm();
-                var annots = document.GetPage(1).ExperimentalAccess.GetAnnotations().ToList();
-                Assert.Equal(16, form.Fields.Count);
-            }
-        }
+        //[Fact]
+        //public void GetFormFieldsByPage()
+        //{
+        //    using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
+        //    {
+        //        var form = document.GetForm();
+        //        var fields = form.GetFieldsForPage(1).ToList();
+        //        var page = document.GetPage(1).ExperimentalAccess.GetAnnotations().ToList();
+        //        Assert.Equal(16, fields.Count);
+        //    }
+        //}
     }
 }

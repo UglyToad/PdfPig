@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using Geometry;
     using Tokens;
     using Util.JetBrains.Annotations;
 
@@ -56,12 +57,16 @@
         /// <param name="selectedOptionIndices">The indices of the selected options where there are multiple with the same name.</param>
         /// <param name="topIndex">The first visible option index.</param>
         /// <param name="selectedOptions">The names of the selected options.</param>
+        /// <param name="pageNumber">The number of the page this field appears on.</param>
+        /// <param name="bounds">The location of this field on the page.</param>
         public AcroListBoxField(DictionaryToken dictionary, string fieldType, AcroChoiceFieldFlags fieldFlags,
             AcroFieldCommonInformation information, IReadOnlyList<AcroChoiceOption> options,
             IReadOnlyList<string> selectedOptions, 
             IReadOnlyList<int> selectedOptionIndices,
-            int? topIndex) : 
-            base(dictionary, fieldType, (uint)fieldFlags, AcroFieldType.ListBox, information)
+            int? topIndex,
+            int? pageNumber,
+            PdfRectangle? bounds) : 
+            base(dictionary, fieldType, (uint)fieldFlags, AcroFieldType.ListBox, information, pageNumber, bounds)
         {
             Flags = fieldFlags;
             Options = options ?? throw new ArgumentNullException(nameof(options));

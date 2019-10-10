@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.AcroForms.Fields
 {
+    using Geometry;
     using Tokens;
 
     /// <inheritdoc />
@@ -29,8 +30,11 @@
         /// </summary>
         public AcroCheckboxField(DictionaryToken dictionary, string fieldType, AcroButtonFieldFlags fieldFlags,
             AcroFieldCommonInformation information, NameToken currentValue,
-            bool isChecked) :
-            base(dictionary, fieldType, (uint)fieldFlags, AcroFieldType.Checkbox, information)
+            bool isChecked,
+            int? pageNumber,
+            PdfRectangle? bounds) :
+            base(dictionary, fieldType, (uint)fieldFlags, AcroFieldType.Checkbox, information,
+                pageNumber, bounds)
         {
             Flags = fieldFlags;
             CurrentValue = currentValue;

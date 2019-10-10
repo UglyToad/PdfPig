@@ -78,5 +78,18 @@
 
             return node;
         }
+
+        internal PageTreeNode GetPageByReference(IndirectReference reference)
+        {
+            foreach (var page in pagesByNumber)
+            {
+                if (page.Value.Reference.Equals(reference))
+                {
+                    return page.Value;
+                }
+            }
+
+            return null;
+        }
     }
 }
