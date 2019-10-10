@@ -7,6 +7,7 @@
     using Exceptions;
     using Fields;
     using Filters;
+    using Geometry;
     using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
@@ -38,7 +39,7 @@
             {
                 return null;
             }
-
+            
             var signatureFlags = (SignatureFlags)0;
             if (acroDictionary.TryGetOptionalTokenDirect(NameToken.SigFlags, tokenScanner, out NumericToken signatureToken))
             {
@@ -91,7 +92,7 @@
 
                 var fieldDictionary = DirectObjectFinder.Get<DictionaryToken>(fieldToken, tokenScanner);
 
-                var field = GetAcroField(fieldDictionary);
+                var field = GetAcroField(fieldDictionary, catalog);
 
                 fields[fieldReferenceToken.Data] = field;
             }
@@ -99,7 +100,7 @@
             return new AcroForm(acroDictionary, signatureFlags, needAppearances, fields);
         }
 
-        private AcroFieldBase GetAcroField(DictionaryToken fieldDictionary)
+        private AcroFieldBase GetAcroField(DictionaryToken fieldDictionary, Catalog catalog)
         {
             fieldDictionary.TryGet(NameToken.Ft, out NameToken fieldType);
             fieldDictionary.TryGet(NameToken.Ff, out NumericToken fieldFlagsToken);
@@ -134,6 +135,17 @@
             fieldDictionary.TryGet(NameToken.Parent, out IndirectReferenceToken parentReferenceToken);
             var information = new AcroFieldCommonInformation(parentReferenceToken?.Data, partialFieldName, alternateFieldName, mappingName);
 
+            int? pageNumber = null;
+            if (fieldDictionary.TryGet(NameToken.P, tokenScanner, out IndirectReferenceToken pageReference))
+            {
+                pageNumber = catalog.GetPageByReference(pageReference.Data)?.PageNumber;
+            }
+
+            PdfRectangle? bounds = null;
+            if (fieldDictionary.TryGet(NameToken.Rect, tokenScanner, out ArrayToken rectArray) && rectArray.Length == 4)
+            {
+                bounds = rectArray.ToRectangle();
+            }
 
             var fieldFlags = (uint) (fieldFlagsToken?.Long ?? 0);
 
@@ -143,7 +155,7 @@
                 var children = new List<AcroFieldBase>();
                 foreach (var kid in kids)
                 {
-                    var kidField = GetAcroField(kid);
+                    var kidField = GetAcroField(kid, catalog);
                     children.Add(kidField);
                 }
 
@@ -155,12 +167,16 @@
 
                 if (buttonFlags.HasFlag(AcroButtonFieldFlags.Radio))
                 {
-                    var field = new AcroRadioButtonsField(fieldDictionary, fieldType, buttonFlags, information);
+                    var field = new AcroRadioButtonsField(fieldDictionary, fieldType, buttonFlags, information, 
+                        pageNumber, 
+                        bounds);
                     result = field;
                 }
                 else if (buttonFlags.HasFlag(AcroButtonFieldFlags.PushButton))
                 {
-                    var field = new AcroPushButtonField(fieldDictionary, fieldType, buttonFlags, information);
+                    var field = new AcroPushButtonField(fieldDictionary, fieldType, buttonFlags, information,
+                        pageNumber,
+                        bounds);
                     result = field;
                 }
                 else
@@ -175,25 +191,30 @@
                         isChecked = !string.Equals(valueToken.Data, NameToken.Off, StringComparison.OrdinalIgnoreCase);
                     }
 
-                    var field = new AcroCheckboxField(fieldDictionary, fieldType, buttonFlags, 
-                        information, 
+                    var field = new AcroCheckboxField(fieldDictionary, fieldType, buttonFlags, information, 
                         valueToken,
-                        isChecked);
+                        isChecked,
+                        pageNumber,
+                        bounds);
 
                     result = field;
                 }
             }
             else if (fieldType == NameToken.Tx)
             {
-                result = GetTextField(fieldDictionary, fieldType, fieldFlags, information);
+                result = GetTextField(fieldDictionary, fieldType, fieldFlags, information, pageNumber, bounds);
             }
             else if (fieldType == NameToken.Ch)
             {
-                result = GetChoiceField(fieldDictionary, fieldType, fieldFlags, information);
+                result = GetChoiceField(fieldDictionary, fieldType, fieldFlags, information, 
+                    pageNumber,
+                    bounds);
             }
             else if (fieldType == NameToken.Sig)
             {
-                var field = new AcroSignatureField(fieldDictionary, fieldType, fieldFlags, information);
+                var field = new AcroSignatureField(fieldDictionary, fieldType, fieldFlags, information,
+                    pageNumber,
+                    bounds);
                 result = field;
             }
             else
@@ -204,7 +225,10 @@
             return result;
         }
 
-        private AcroFieldBase GetTextField(DictionaryToken fieldDictionary, NameToken fieldType, uint fieldFlags, AcroFieldCommonInformation information)
+        private AcroFieldBase GetTextField(DictionaryToken fieldDictionary, NameToken fieldType, uint fieldFlags, 
+            AcroFieldCommonInformation information, 
+            int? pageNumber,
+            PdfRectangle? bounds)
         {
             var textFlags = (AcroTextFieldFlags)fieldFlags;
 
@@ -231,12 +255,20 @@
                 maxLength = maxLenToken.Int;
             }
 
-            var field = new AcroTextField(fieldDictionary, fieldType, textFlags, information, textValue, maxLength);
+            var field = new AcroTextField(fieldDictionary, fieldType, textFlags, information, 
+                textValue, 
+                maxLength,
+                pageNumber,
+                bounds);
 
             return field;
         }
 
-        private AcroFieldBase GetChoiceField(DictionaryToken fieldDictionary, NameToken fieldType, uint fieldFlags, AcroFieldCommonInformation information)
+        private AcroFieldBase GetChoiceField(DictionaryToken fieldDictionary, NameToken fieldType,
+            uint fieldFlags, 
+            AcroFieldCommonInformation information,
+            int? pageNumber,
+            PdfRectangle? bounds)
         {
             var selectedOptions = EmptyArray<string>.Instance;
             if (fieldDictionary.TryGet(NameToken.V, out var valueToken))
@@ -348,7 +380,12 @@
             
             if (choiceFlags.HasFlag(AcroChoiceFieldFlags.Combo))
             {
-                var field = new AcroComboBoxField(fieldDictionary, fieldType, choiceFlags, information, options, selectedOptions, selectedIndices);
+                var field = new AcroComboBoxField(fieldDictionary, fieldType, choiceFlags, information,
+                    options,
+                    selectedOptions, 
+                    selectedIndices,
+                    pageNumber,
+                    bounds);
                 return field;
             }
 
@@ -358,7 +395,13 @@
                 topIndex = topIndexToken.Int;
             }
 
-            return new AcroListBoxField(fieldDictionary, fieldType, choiceFlags, information, options, selectedOptions, selectedIndices, topIndex);
+            return new AcroListBoxField(fieldDictionary, fieldType, choiceFlags, information, 
+                options,
+                selectedOptions, 
+                selectedIndices,
+                topIndex,
+                pageNumber,
+                bounds);
         }
 
         private static bool IsChoiceSelected(IReadOnlyList<string> selectedOptionNames, IReadOnlyList<int> selectedOptionIndices, int index, string name)

@@ -48,6 +48,25 @@
             Fields = fields ?? throw new ArgumentNullException(nameof(fields));
         }
 
+        /// <summary>
+        /// Get the set of fields which appear on the given page number.
+        /// </summary>
+        public IEnumerable<AcroFieldBase> GetFieldsForPage(int pageNumber)
+        {
+            if (pageNumber <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(pageNumber), $"Page number starts at 1, instead got {pageNumber}.");
+            }
+
+            foreach (var field in Fields)
+            {
+                if (field.Value.PageNumber == pageNumber)
+                {
+                    yield return field.Value;
+                }
+            }
+        }
+
         /// <inheritdoc />
         public override string ToString()
         {

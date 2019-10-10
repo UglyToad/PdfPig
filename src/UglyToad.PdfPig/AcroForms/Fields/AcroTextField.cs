@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.AcroForms.Fields
 {
+    using Geometry;
     using Tokens;
 
     /// <inheritdoc />
@@ -45,9 +46,15 @@
         /// <param name="information">Additional information for this field.</param>
         /// <param name="value">The text value.</param>
         /// <param name="maxLength">The maximum length.</param>
+        /// <param name="pageNumber">The number of the page this field appears on.</param>
+        /// <param name="bounds">The location of this field on the page.</param>
         public AcroTextField(DictionaryToken dictionary, string fieldType, AcroTextFieldFlags fieldFlags,
-            AcroFieldCommonInformation information, string value, int? maxLength) : 
-            base(dictionary, fieldType, (uint)fieldFlags, AcroFieldType.Text, information)
+            AcroFieldCommonInformation information, 
+            string value,
+            int? maxLength,
+            int? pageNumber,
+            PdfRectangle? bounds) : 
+            base(dictionary, fieldType, (uint)fieldFlags, AcroFieldType.Text, information, pageNumber, bounds)
         {
             Flags = fieldFlags;
             Value = value;

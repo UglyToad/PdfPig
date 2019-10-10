@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.AcroForms.Fields
 {
+    using Geometry;
     using Tokens;
 
     /// <inheritdoc />
@@ -18,8 +19,10 @@
         /// Create a new <see cref="AcroRadioButtonsField"/>.
         /// </summary>
         public AcroRadioButtonsField(DictionaryToken dictionary, string fieldType, AcroButtonFieldFlags fieldFlags, 
-            AcroFieldCommonInformation information) : 
-            base(dictionary, fieldType, (uint)fieldFlags, AcroFieldType.RadioButton, information)
+            AcroFieldCommonInformation information,
+            int? pageNumber,
+            PdfRectangle? bounds) : 
+            base(dictionary, fieldType, (uint)fieldFlags, AcroFieldType.RadioButton, information, pageNumber, bounds)
         {
             Flags = fieldFlags;
         }

@@ -24,6 +24,11 @@
         public int Length { get; }
 
         /// <summary>
+        /// Indexer into <see cref="Data"/> for convenience.
+        /// </summary>
+        public IToken this[int i] => Data[i];
+
+        /// <summary>
         /// Create a new <see cref="ArrayToken"/>.
         /// </summary>
         /// <param name="data">The tokens contained by this array.</param>

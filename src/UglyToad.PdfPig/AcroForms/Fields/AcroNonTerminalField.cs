@@ -21,7 +21,8 @@
         /// </summary>
         internal AcroNonTerminalField(DictionaryToken dictionary, string fieldType, uint fieldFlags, AcroFieldCommonInformation information,
             IReadOnlyList<AcroFieldBase> children) : 
-            base(dictionary, fieldType, fieldFlags, AcroFieldType.NonTerminal, information)
+            base(dictionary, fieldType, fieldFlags, AcroFieldType.NonTerminal, information,
+                null, null)
         {
             Children = children ?? throw new ArgumentNullException(nameof(children));
         }
