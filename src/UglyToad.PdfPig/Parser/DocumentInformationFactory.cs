@@ -6,9 +6,15 @@
     using Tokenization.Scanner;
     using Tokens;
 
-    internal class DocumentInformationFactory
+    /// <summary>
+    /// Parse the dictionary from a PDF file trailer.
+    /// </summary>
+    internal static class DocumentInformationFactory
     {
-        public DocumentInformation Create(IPdfTokenScanner pdfTokenScanner, TrailerDictionary trailer)
+        /// <summary>
+        /// Convert the file trailer dictionary into a <see cref="DocumentInformation"/> instance.
+        /// </summary>
+        public static DocumentInformation Create(IPdfTokenScanner pdfTokenScanner, TrailerDictionary trailer)
         {
             if (!trailer.Info.HasValue)
             {

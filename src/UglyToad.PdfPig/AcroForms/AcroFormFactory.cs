@@ -147,7 +147,7 @@
                     children.Add(kidField);
                 }
 
-                result = new NonTerminalAcroField(fieldDictionary, "Non-Terminal Field", fieldFlags, information, children);
+                result = new AcroNonTerminalField(fieldDictionary, "Non-Terminal Field", fieldFlags, information, children);
             }
             else if (fieldType == NameToken.Btn)
             {
@@ -165,12 +165,21 @@
                 }
                 else
                 {
+                    var isChecked = false;
                     if (!fieldDictionary.TryGetOptionalTokenDirect(NameToken.V, tokenScanner, out NameToken valueToken))
                     {
                         valueToken = NameToken.Off;
                     }
+                    else
+                    {
+                        isChecked = !string.Equals(valueToken.Data, NameToken.Off, StringComparison.OrdinalIgnoreCase);
+                    }
 
-                    var field = new AcroCheckboxField(fieldDictionary, fieldType, buttonFlags, information, valueToken);
+                    var field = new AcroCheckboxField(fieldDictionary, fieldType, buttonFlags, 
+                        information, 
+                        valueToken,
+                        isChecked);
+
                     result = field;
                 }
             }

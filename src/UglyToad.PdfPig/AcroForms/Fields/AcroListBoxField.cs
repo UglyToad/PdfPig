@@ -44,6 +44,7 @@
         /// </summary>
         public bool SupportsMultiSelect => Flags.Equals(AcroChoiceFieldFlags.MultiSelect);
 
+        /// <inheritdoc />
         /// <summary>
         /// Create a new <see cref="AcroListBoxField"/>.
         /// </summary>
@@ -60,7 +61,7 @@
             IReadOnlyList<string> selectedOptions, 
             IReadOnlyList<int> selectedOptionIndices,
             int? topIndex) : 
-            base(dictionary, fieldType, (uint)fieldFlags, information)
+            base(dictionary, fieldType, (uint)fieldFlags, AcroFieldType.ListBox, information)
         {
             Flags = fieldFlags;
             Options = options ?? throw new ArgumentNullException(nameof(options));

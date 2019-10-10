@@ -16,10 +16,15 @@
         public DictionaryToken Dictionary { get; }
 
         /// <summary>
-        /// The <see cref="string"/> representing the type of this field.
+        /// The <see cref="string"/> representing the type of this field in PDF format.
         /// </summary>
         [NotNull]
-        public string FieldType { get; }
+        public string RawFieldType { get; }
+
+        /// <summary>
+        /// The actual <see cref="AcroFieldType"/> represented by this field.
+        /// </summary>
+        public AcroFieldType FieldType { get; }
 
         /// <summary>
         /// Specifies various characteristics of the field.
@@ -36,15 +41,26 @@
         /// Create a new <see cref="AcroFieldBase"/>.
         /// </summary>
         /// <param name="dictionary">The dictionary for this field.</param>
-        /// <param name="fieldType">The type of this field.</param>
+        /// <param name="rawFieldType">The PDF string type of this field.</param>
         /// <param name="fieldFlags">The flags specifying behaviour for this field.</param>
+        /// <param name="fieldType">The type of this field.</param>
         /// <param name="information">Additional information for this field.</param>
-        protected AcroFieldBase(DictionaryToken dictionary, string fieldType, uint fieldFlags, AcroFieldCommonInformation information)
+        protected AcroFieldBase(DictionaryToken dictionary, string rawFieldType,
+            uint fieldFlags, 
+            AcroFieldType fieldType,
+            AcroFieldCommonInformation information)
         {
             Dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
-            FieldType = fieldType ?? throw new ArgumentNullException(nameof(fieldType));
+            RawFieldType = rawFieldType ?? throw new ArgumentNullException(nameof(rawFieldType));
             FieldFlags = fieldFlags;
+            FieldType = fieldType;
             Information = information ?? new AcroFieldCommonInformation(null, null, null, null);
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"{FieldType}";
         }
     }
 }

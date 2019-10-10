@@ -6,7 +6,7 @@
     /// Flags specifying various characteristics of a button type field in an <see cref="AcroFieldBase"/>.
     /// </summary>
     [Flags]
-    internal enum AcroButtonFieldFlags : uint
+    public enum AcroButtonFieldFlags : uint
     {
         /// <summary>
         /// The user may not change the value of the field.

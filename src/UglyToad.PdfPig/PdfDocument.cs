@@ -98,7 +98,7 @@
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             Information = information ?? throw new ArgumentNullException(nameof(information));
-            pages = new Pages(log, catalog, pageFactory, isLenientParsing, pdfScanner);
+            pages = new Pages(catalog, pageFactory, isLenientParsing, pdfScanner);
             Structure = new Structure(catalog, crossReferenceTable, pdfScanner);
             documentForm = new Lazy<AcroForm>(() => acroFormFactory.GetAcroForm(catalog));
         }

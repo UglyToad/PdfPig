@@ -9,8 +9,12 @@
     using Tokens;
     using Util;
 
+    /// <inheritdoc />
     /// <summary>
-    /// 
+    /// The Flate filter is based on the public-domain zlib/deflate compression method, a variable-length Lempel-Ziv 
+    /// adaptive compression method cascaded with adaptive Huffman coding. 
+    /// It is fully defined in Internet RFCs 1950, ZLIB Compressed Data Format Specification, and
+    /// 1951, DEFLATE Compressed Data Format Specification
     /// </summary>
     /// <remarks>
     /// See section 3.3.3 of the spec (version 1.7) for details on the FlateDecode filter.
@@ -34,6 +38,10 @@
             this.log = log;
         }
 
+        /// <inheritdoc />
+        public bool IsSupported { get; } = true;
+
+        /// <inheritdoc />
         public byte[] Decode(IReadOnlyList<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
             if (input == null)

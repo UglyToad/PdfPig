@@ -212,9 +212,9 @@ namespace UglyToad.PdfPig.Geometry
         }
 
         /// <summary>
-        /// The rectangle completely containing the path.
+        /// Gets a <see cref="PdfRectangle"/> which entirely contains the geometry of the defined path.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>For paths which don't define any geometry this returns <see langword="null"/>.</returns>
         public PdfRectangle? GetBoundingRectangle()
         {
             if (commands.Count == 0)

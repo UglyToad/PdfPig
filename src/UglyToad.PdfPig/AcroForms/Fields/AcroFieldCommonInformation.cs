@@ -47,7 +47,35 @@
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"Parent: {Parent}. Partial: {PartialName}. Alternate: {AlternateName}. Mapping: {MappingName}.";
+            string AppendIfNotNull(string val, string label, string result)
+            {
+                if (val == null)
+                {
+                    return result;
+                }
+
+                if (result.Length > 0)
+                {
+                    result += " ";
+                }
+
+                result += $"{label}: {val}.";
+
+                return result;
+            }
+
+            var s = string.Empty;
+            
+            if (Parent != null)
+            {
+                s += $"Parent: {Parent}.";
+            }
+
+            s = AppendIfNotNull(PartialName, "Partial Name", s);
+            s = AppendIfNotNull(AlternateName, "Alternate Name", s);
+            s = AppendIfNotNull(MappingName, "Mapping Name", s);
+
+            return s;
         }
     }
 }
