@@ -171,49 +171,6 @@
             {
                 return letter.PointSize;
             }
-
-            /// <summary>
-            /// Get the hOCR (html) string of the page layout.
-            /// <para>This is considered experimental because it needs more testing.</para>
-            /// </summary>
-            /// <param name="wordExtractor">The word extractor to use to generate words.</param>
-            /// <param name="pageSegmenter">The page segmenter to use.</param>
-            /// <param name="indent">Indent character to use.</param>
-            /// <param name="drawPaths">Draw <see cref="PdfPath"/>s present in the page.</param>
-            /// <param name="useHocrjs">Will add a reference to the 'hocrjs' script just before the closing 'body' tag, adding the interface to a plain hOCR file.<para>See https://github.com/kba/hocrjs for more information.</para></param>
-            public string GetHOCR(IWordExtractor wordExtractor, DocumentLayoutAnalysis.IPageSegmenter pageSegmenter, string indent = "\t", bool drawPaths = false, bool useHocrjs = false)
-            {
-                var hocr = new Export.HOcrTextExporter(wordExtractor, pageSegmenter, 2, indent);
-                return hocr.Get(page, drawPaths, useHocrjs: useHocrjs);
-            }
-
-            /// <summary>
-            /// Get the Alto (xml) string of the page layout.
-            /// <para>This is considered experimental because it needs more testing.</para>
-            /// </summary>
-            /// <param name="wordExtractor">The word extractor to use to generate words.</param>
-            /// <param name="pageSegmenter">The page segmenter to use.</param>
-            /// <param name="indent">Indent character to use.</param>
-            /// <param name="drawPaths">Draw <see cref="PdfPath"/>s present in the page.</param>
-            public string GetAltoXml(IWordExtractor wordExtractor, DocumentLayoutAnalysis.IPageSegmenter pageSegmenter, string indent = "\t", bool drawPaths = false)
-            {
-                var alto = new Export.AltoXmlTextExporter(wordExtractor, pageSegmenter, 2, indent);
-                return alto.Get(page, drawPaths);
-            }
-
-            /// <summary>
-            /// Get the PageXml (xml) string of the page layout.
-            /// <para>This is considered experimental because it needs more testing.</para>
-            /// </summary>
-            /// <param name="wordExtractor">The word extractor to use to generate words.</param>
-            /// <param name="pageSegmenter">The page segmenter to use.</param>
-            /// <param name="indent">Indent character to use.</param>
-            /// <param name="drawPaths">Draw <see cref="PdfPath"/>s present in the page.</param>
-            public string GetPageXml(IWordExtractor wordExtractor, DocumentLayoutAnalysis.IPageSegmenter pageSegmenter, string indent = "\t", bool drawPaths = false)
-            {
-                var pageXml = new Export.PageXmlTextExporter(wordExtractor, pageSegmenter, 2, indent);
-                return pageXml.Get(page, drawPaths);
-            }
         }
     }
 }

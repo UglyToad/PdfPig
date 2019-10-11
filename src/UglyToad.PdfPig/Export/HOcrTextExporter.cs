@@ -11,7 +11,7 @@ namespace UglyToad.PdfPig.Export
     /// hOCR v1.2 (HTML) text exporter.
     /// <para>See http://kba.cloud/hocr-spec/1.2/ </para>
     /// </summary>
-    internal class HOcrTextExporter : ITextExporter
+    public class HOcrTextExporter : ITextExporter
     {
         private const string xmlHeader = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"\n\t\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n";
         private const string hocrjs = "<script src='https://unpkg.com/hocrjs'></script>\n";
