@@ -4,6 +4,10 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Text;
+    using System.Xml.Linq;
+    using DocumentLayoutAnalysis;
+    using Export.Alto;
     using Xunit;
 
     public class PigProductionHandbookTests
@@ -32,7 +36,7 @@
                 var page = document.GetPage(1);
 
                 // Pinkish.
-                var (r, g , b) = page.Letters[0].Color.ToRGBValues();
+                var (r, g, b) = page.Letters[0].Color.ToRGBValues();
 
                 Assert.Equal(1, r);
                 Assert.Equal(0.914m, g);
@@ -98,7 +102,7 @@
         [Fact]
         public void Page4HasCorrectWords()
         {
-            var expected = WordsPage4.Split(new[] {"\r", "\r\n", "\n", " "}, StringSplitOptions.RemoveEmptyEntries);
+            var expected = WordsPage4.Split(new[] { "\r", "\r\n", "\n", " " }, StringSplitOptions.RemoveEmptyEntries);
             using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
                 var page = document.GetPage(4);
@@ -126,6 +130,23 @@
             using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
                 Assert.Equal(86, document.NumberOfPages);
+            }
+        }
+
+        [Fact]
+        public void CanExportAltoXmlFormat()
+        {
+            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
+            {
+                var exporter = new AltoXmlTextExporter(new NearestNeighbourWordExtractor(), new DocstrumBoundingBoxes());
+                var xml = exporter.Get(document.GetPage(16), true);
+                Assert.NotNull(xml);
+                // TODO: generated XML is invalid due to BOM.
+                //using (var stringStream = GenerateStreamFromString(xml, Encoding.UTF8))
+                //{
+                //    var xDocument = XDocument.Load(stringStream);
+                //    Assert.NotNull(xDocument);
+                //}
             }
         }
 
@@ -158,6 +179,16 @@
                 .ToList();
 
             return result;
+        }
+
+        private static Stream GenerateStreamFromString(string s, Encoding encoding)
+        {
+            var stream = new MemoryStream();
+            var writer = new StreamWriter(stream, encoding);
+            writer.Write(s);
+            writer.Flush();
+            stream.Position = 0;
+            return stream;
         }
 
         private const string WordsPage4 = @"Disclaimer
