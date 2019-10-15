@@ -5,6 +5,7 @@
     using System.IO;
     using System.Linq;
     using System.Text;
+    using System.Xml;
     using System.Xml.Linq;
     using DocumentLayoutAnalysis;
     using Export.Alto;
@@ -139,14 +140,32 @@
             using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
                 var exporter = new AltoXmlTextExporter(new NearestNeighbourWordExtractor(), new DocstrumBoundingBoxes());
+                var xml = exporter.Get(document.GetPage(4), true);
+                Assert.NotNull(xml);
+                using (var xmlStream = new MemoryStream(Encoding.UTF8.GetBytes(xml)))
+                using (var xmlReader = new XmlTextReader(xmlStream))
+                {
+                    var xDocument = XDocument.Load(xmlReader);
+                    Assert.NotNull(xDocument);
+                }
+            }
+        }
+
+        [Fact]
+        public void CanExportAltoXmlFormatPage16()
+        {
+            // Page 16 contains an unprintable string and a single line of text which causes problems for Docstrum.
+            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
+            {
+                var exporter = new AltoXmlTextExporter(new NearestNeighbourWordExtractor(), new DocstrumBoundingBoxes());
                 var xml = exporter.Get(document.GetPage(16), true);
                 Assert.NotNull(xml);
-                // TODO: generated XML is invalid due to BOM.
-                //using (var stringStream = GenerateStreamFromString(xml, Encoding.UTF8))
-                //{
-                //    var xDocument = XDocument.Load(stringStream);
-                //    Assert.NotNull(xDocument);
-                //}
+                using (var xmlStream = new MemoryStream(Encoding.UTF8.GetBytes(xml)))
+                using (var xmlReader = new XmlTextReader(xmlStream))
+                {
+                    var xDocument = XDocument.Load(xmlReader);
+                    Assert.NotNull(xDocument);
+                }
             }
         }
 
@@ -179,16 +198,6 @@
                 .ToList();
 
             return result;
-        }
-
-        private static Stream GenerateStreamFromString(string s, Encoding encoding)
-        {
-            var stream = new MemoryStream();
-            var writer = new StreamWriter(stream, encoding);
-            writer.Write(s);
-            writer.Flush();
-            stream.Position = 0;
-            return stream;
         }
 
         private const string WordsPage4 = @"Disclaimer
