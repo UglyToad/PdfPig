@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Linq;
     using Colors;
     using Content;
     using Core;
@@ -13,6 +14,7 @@
     using IO;
     using Logging;
     using Operations;
+    using Parser;
     using PdfPig.Core;
     using Tokenization.Scanner;
     using Tokens;
@@ -41,6 +43,7 @@
         private readonly PageRotationDegrees rotation;
         private readonly bool isLenientParsing;
         private readonly IPdfTokenScanner pdfScanner;
+        private readonly IPageContentParser pageContentParser;
         private readonly IFilterProvider filterProvider;
         private readonly ILog log;
 
@@ -69,7 +72,6 @@
 
         private readonly Dictionary<XObjectType, List<XObjectContentRecord>> xObjects = new Dictionary<XObjectType, List<XObjectContentRecord>>
         {
-            {XObjectType.Form, new List<XObjectContentRecord>()},
             {XObjectType.Image, new List<XObjectContentRecord>()},
             {XObjectType.PostScript, new List<XObjectContentRecord>()}
         };
@@ -77,6 +79,7 @@
         public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation,
             bool isLenientParsing,
             IPdfTokenScanner pdfScanner,
+            IPageContentParser pageContentParser,
             IFilterProvider filterProvider,
             ILog log)
         {
@@ -85,6 +88,7 @@
             this.rotation = rotation;
             this.isLenientParsing = isLenientParsing;
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
+            this.pageContentParser = pageContentParser ?? throw new ArgumentNullException(nameof(pageContentParser));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.log = log;
             graphicsStack.Push(new CurrentGraphicsState());
@@ -300,12 +304,58 @@
             }
             else if (subType.Equals(NameToken.Form))
             {
-                xObjects[XObjectType.Form].Add(new XObjectContentRecord(XObjectType.Form, xObjectStream, matrix, state.RenderingIntent));
+                ProcessFormXObject(xObjectStream);
             }
             else
             {
                 throw new InvalidOperationException($"XObject encountered with unexpected SubType {subType}. {xObjectStream.StreamDictionary}.");
             }
+        }
+
+        private void ProcessFormXObject(StreamToken formStream)
+        {
+            /*
+             * When a form XObject is invoked the following should happen:
+             *
+             * 1. Save the current graphics state, as if by invoking the q operator.
+             * 2. Concatenate the matrix from the form dictionary's Matrix entry with the current transformation matrix.
+             * 3. Clip according to the form dictionary's BBox entry.
+             * 4. Paint the graphics objects specified in the form's content stream.
+             * 5. Restore the saved graphics state, as if by invoking the Q operator.
+             */
+
+            if (formStream.StreamDictionary.TryGet<DictionaryToken>(NameToken.Resources, pdfScanner, out var formResources))
+            {
+                resourceStore.LoadResourceDictionary(formResources, isLenientParsing);
+            }
+
+            // 1. Save current state.
+            PushState();
+
+            var startState = GetCurrentState();
+
+            var formMatrix = TransformationMatrix.Identity;
+            if (formStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Matrix, pdfScanner, out var formMatrixToken))
+            {
+                formMatrix = TransformationMatrix.FromArray(formMatrixToken.Data.OfType<NumericToken>().Select(x => x.Data).ToArray());
+            }
+            
+            // 2. Update current transformation matrix.
+            var resultingTransformationMatrix = startState.CurrentTransformationMatrix.Multiply(formMatrix);
+
+            startState.CurrentTransformationMatrix = resultingTransformationMatrix;
+
+            var contentStream = formStream.Decode(filterProvider);
+
+            var operations = pageContentParser.Parse(new ByteArrayInputBytes(contentStream));
+
+            // 3. We don't respect clipping currently.
+
+            // 4. Paint the objects.
+            ProcessOperations(operations);
+
+            // 5. Restore saved state.
+            PopState();
         }
 
         public void BeginSubpath()
