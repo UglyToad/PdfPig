@@ -48,15 +48,15 @@
             Assert.Equal(2048, font.TableRegister.HeaderTable.UnitsPerEm);
 
             Assert.Equal(2008, font.TableRegister.HeaderTable.Created.Year);
-            Assert.Equal(10, font.TableRegister.HeaderTable.Created.Month);
-            Assert.Equal(13, font.TableRegister.HeaderTable.Created.Day);
+            Assert.Equal(09, font.TableRegister.HeaderTable.Created.Month);
+            Assert.Equal(12, font.TableRegister.HeaderTable.Created.Day);
             Assert.Equal(12, font.TableRegister.HeaderTable.Created.Hour);
             Assert.Equal(29, font.TableRegister.HeaderTable.Created.Minute);
             Assert.Equal(34, font.TableRegister.HeaderTable.Created.Second);
 
             Assert.Equal(2011, font.TableRegister.HeaderTable.Modified.Year);
-            Assert.Equal(12, font.TableRegister.HeaderTable.Modified.Month);
-            Assert.Equal(31, font.TableRegister.HeaderTable.Modified.Day);
+            Assert.Equal(11, font.TableRegister.HeaderTable.Modified.Month);
+            Assert.Equal(30, font.TableRegister.HeaderTable.Modified.Day);
             Assert.Equal(5, font.TableRegister.HeaderTable.Modified.Hour);
             Assert.Equal(13, font.TableRegister.HeaderTable.Modified.Minute);
             Assert.Equal(10, font.TableRegister.HeaderTable.Modified.Second);
@@ -158,6 +158,20 @@
             var name = font.Name;
 
             Assert.Equal("Andada Regular", name);
+
+            Assert.Equal(1.001999m, font.TableRegister.HeaderTable.Revision);
+
+            Assert.Equal(11, font.TableRegister.HeaderTable.Flags);
+
+            Assert.Equal(1000, font.TableRegister.HeaderTable.UnitsPerEm);
+
+            Assert.Equal(2011, font.TableRegister.HeaderTable.Created.Year);
+            Assert.Equal(9, font.TableRegister.HeaderTable.Created.Month);
+            Assert.Equal(30, font.TableRegister.HeaderTable.Created.Day);
+
+            Assert.Equal(2017, font.TableRegister.HeaderTable.Modified.Year);
+            Assert.Equal(5, font.TableRegister.HeaderTable.Modified.Month);
+            Assert.Equal(4, font.TableRegister.HeaderTable.Modified.Day);
         }
 
         [Fact]

@@ -2,6 +2,7 @@
 {
     using System;
     using Geometry;
+    using PdfPig.Exceptions;
 
     /// <summary>
     /// The 'head' table contains global information about the font. 
@@ -99,8 +100,26 @@
                 throw new InvalidOperationException($"The units per em for this TrueType font was incorrect, value should be between 16 and 16384 but found {unitsPerEm} istead.");
             }
 
-            var created = data.ReadInternationalDate();
-            var modified = data.ReadInternationalDate();
+            DateTime created;
+            try
+            {
+                created = data.ReadInternationalDate();
+            }
+            catch (PdfDocumentFormatException)
+            {
+                created = DateTime.MinValue;
+            }
+
+            DateTime modified;
+            try
+            {
+                modified = data.ReadInternationalDate();
+            }
+            catch (PdfDocumentFormatException)
+            {
+                modified = DateTime.MinValue;
+            }
+
             var xMin = data.ReadSignedShort();
             var yMin = data.ReadSignedShort();
             var xMax = data.ReadSignedShort();

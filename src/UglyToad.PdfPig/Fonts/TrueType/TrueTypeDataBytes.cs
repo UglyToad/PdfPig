@@ -4,6 +4,7 @@
     using System.IO;
     using System.Text;
     using IO;
+    using PdfPig.Exceptions;
 
     internal class TrueTypeDataBytes
     {
@@ -99,41 +100,33 @@
 
         public long ReadLong()
         {
-            ReadBuffered(internalBuffer, 8);
-
-            var result = FromBytes(internalBuffer, 0, 8);
-
+            var upper = (long)ReadSignedInt();
+            var lower = ReadSignedInt();
+            var result = (upper << 32) + (lower & 0xFFFFFFFF);
             return result;
         }
 
         public DateTime ReadInternationalDate()
         {
-            // TODO: this returns the wrong value, investigate...
-            long secondsSince1904 = ReadLong();
+            var secondsSince1904 = ReadLong();
 
             var date = new DateTime(1904, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-            var result = date.AddSeconds(secondsSince1904);
-            result = result.AddMonths(1);
-            result = result.AddDays(1);
+            try
+            {
+                var result = date.AddSeconds(secondsSince1904);
 
-            return result;
+                return result;
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                throw new PdfDocumentFormatException($"Invalid date offset ({secondsSince1904} seconds) encountered in TrueType header table.");
+            }
         }
 
         public void Seek(long position)
         {
             inputBytes.Seek(position);
-        }
-
-        private long FromBytes(byte[] buffer, int startIndex, int bytesToConvert)
-        {
-            long ret = 0;
-            for (int i = 0; i < bytesToConvert; i++)
-            {
-                ret = unchecked((ret << 8) | buffer[startIndex + i]);
-            }
-
-            return ret;
         }
 
         public int ReadSignedByte()
