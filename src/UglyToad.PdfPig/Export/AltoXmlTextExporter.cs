@@ -1,10 +1,11 @@
-﻿namespace UglyToad.PdfPig.Export.Alto
+﻿namespace UglyToad.PdfPig.Export
 {
     using System;
     using System.Globalization;
     using System.Linq;
     using System.Xml;
     using System.Xml.Serialization;
+    using Alto;
     using Content;
     using DocumentLayoutAnalysis;
     using Geometry;

@@ -8,7 +8,7 @@
     using System.Xml;
     using System.Xml.Linq;
     using DocumentLayoutAnalysis;
-    using Export.Alto;
+    using Export;
     using Xunit;
 
     public class PigProductionHandbookTests
