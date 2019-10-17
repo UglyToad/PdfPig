@@ -128,10 +128,12 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 
                 for (var c = 0; c < blocks.Count; c++)
                 {
-                    if (b == c) continue;
-                    if (blocks[c] == null) continue;
+                    if (b == c || blocks[c] == null)
+                    {
+                        continue;
+                    }
 
-                    if (AreRectangleOverlapping(blocks[b].BoundingBox, blocks[c].BoundingBox))
+                    if (blocks[b].BoundingBox.IntersectsWith(blocks[c].BoundingBox))
                     {
                         // Merge
                         // 1. Merge all words
@@ -150,13 +152,6 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             }
 
             return blocks.Where(b => b != null).ToList();
-        }
-
-        private static bool AreRectangleOverlapping(PdfRectangle rectangle1, PdfRectangle rectangle2)
-        {
-            if (rectangle1.Left > rectangle2.Right || rectangle2.Left > rectangle1.Right) return false;
-            if (rectangle1.Top < rectangle2.Bottom || rectangle2.Top < rectangle1.Bottom) return false;
-            return true;
         }
 
         /// <summary>
@@ -225,8 +220,10 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                 pivot => true,
                 (pivot, candidate) =>
                 {
-                    var angleWL = Distances.Angle(pivot.BoundingBox.BottomRight, candidate.BoundingBox.BottomLeft); // compare bottom right with bottom left for angle
-                    return (angleWL >= withinLine.Lower && angleWL <= withinLine.Upper);
+                    // Compare bottom right with bottom left for angle
+                    var withinLineAngle = Distances.Angle(pivot.BoundingBox.BottomRight, candidate.BoundingBox.BottomLeft); 
+
+                    return (withinLineAngle >= withinLine.Lower && withinLineAngle <= withinLine.Upper);
                 }).ToList();
 
             Func<IEnumerable<Word>, IReadOnlyList<Word>> orderFunc = l => l.OrderBy(x => x.BoundingBox.Left).ToList();
@@ -243,7 +240,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                 orderFunc = l => l.OrderBy(x => x.BoundingBox.Bottom).ToList();
             }
 
-            for (int a = 0; a < groupedIndexes.Count(); a++)
+            for (var a = 0; a < groupedIndexes.Count; a++)
             {
                 yield return new TextLine(orderFunc(groupedIndexes[a].Select(i => words[i])));
             }
