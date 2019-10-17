@@ -181,21 +181,31 @@
                     wordSpacing += GetCurrentState().FontState.WordSpacing;
                 }
 
+                var textMatrix = TextMatrices.TextMatrix;
+
                 if (font.IsVertical)
                 {
-                    throw new NotImplementedException("Vertical fonts are currently unsupported, please submit a pull request or issue with an example file.");
+                    if (!(font is IVerticalWritingSupported verticalFont))
+                    {
+                        throw new InvalidOperationException($"Font {font.Name} was in vertical writing mode but did not implement {nameof(IVerticalWritingSupported)}.");
+                    }
+
+                    var positionVector = verticalFont.GetPositionVector(code);
+
+                    textMatrix = textMatrix.Translate(positionVector.X, positionVector.Y);
                 }
 
                 var boundingBox = font.GetBoundingBox(code);
 
                 var transformedGlyphBounds = rotation.Rotate(transformationMatrix)
-                    .Transform(TextMatrices.TextMatrix
-                    .Transform(renderingMatrix
-                    .Transform(boundingBox.GlyphBounds)));
+                    .Transform(textMatrix
+                        .Transform(renderingMatrix
+                            .Transform(boundingBox.GlyphBounds)));
 
                 var transformedPdfBounds = rotation.Rotate(transformationMatrix)
-                    .Transform(TextMatrices.TextMatrix
-                        .Transform(renderingMatrix.Transform(new PdfRectangle(0, 0, boundingBox.Width, 0))));
+                    .Transform(textMatrix
+                        .Transform(renderingMatrix
+                            .Transform(new PdfRectangle(0, 0, boundingBox.Width, 0))));
 
                 // If the text rendering mode calls for filling, the current nonstroking color in the graphics state is used; 
                 // if it calls for stroking, the current stroking color is used.
@@ -218,8 +228,10 @@
                 decimal tx, ty;
                 if (font.IsVertical)
                 {
+                    var verticalFont = (IVerticalWritingSupported) font;
+                    var displacement = verticalFont.GetDisplacementVector(code);
                     tx = 0;
-                    ty = boundingBox.GlyphBounds.Height * fontSize + characterSpacing + wordSpacing;
+                    ty = (displacement.Y * fontSize) + characterSpacing + wordSpacing;
                 }
                 else
                 {

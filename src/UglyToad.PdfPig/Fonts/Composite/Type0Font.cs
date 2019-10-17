@@ -12,7 +12,7 @@
     /// <summary>
     /// Defines glyphs using a CIDFont
     /// </summary>
-    internal class Type0Font : IFont
+    internal class Type0Font : IFont, IVerticalWritingSupported
     {
         public NameToken Name => BaseFont;
 
@@ -96,6 +96,20 @@
         public TransformationMatrix GetFontMatrix()
         {
             return CidFont.FontMatrix;
+        }
+
+        public PdfVector GetPositionVector(int characterCode)
+        {
+            var characterIdentifier = CMap.ConvertToCid(characterCode);
+
+            return CidFont.GetPositionVector(characterIdentifier).Scale(-1 / 1000m);
+        }
+
+        public PdfVector GetDisplacementVector(int characterCode)
+        {
+            var characterIdentifier = CMap.ConvertToCid(characterCode);
+
+            return CidFont.GetDisplacementVector(characterIdentifier).Scale(1 / 1000m);
         }
     }
 }

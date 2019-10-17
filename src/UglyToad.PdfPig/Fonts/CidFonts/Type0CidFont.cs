@@ -14,20 +14,30 @@
     internal class Type0CidFont : ICidFont
     {
         private readonly ICidFontProgram fontProgram;
+        private readonly VerticalWritingMetrics verticalWritingMetrics;
+
         public NameToken Type { get; }
+
         public NameToken SubType { get; }
+
         public NameToken BaseFont { get; }
+
         public CharacterIdentifierSystemInfo SystemInfo { get; }
+
         public TransformationMatrix FontMatrix { get; }
+
         public CidFontType CidFontType => CidFontType.Type0;
+
         public FontDescriptor Descriptor { get; }
+
         public IReadOnlyDictionary<int, decimal> Widths { get; }
 
         public Type0CidFont(ICidFontProgram fontProgram, NameToken type, NameToken subType, NameToken baseFont,
             CharacterIdentifierSystemInfo systemInfo,
-            FontDescriptor descriptor, IReadOnlyDictionary<int, decimal> widths)
+            FontDescriptor descriptor, VerticalWritingMetrics verticalWritingMetrics, IReadOnlyDictionary<int, decimal> widths)
         {
             this.fontProgram = fontProgram;
+            this.verticalWritingMetrics = verticalWritingMetrics;
             Type = type;
             SubType = subType;
             BaseFont = baseFont;
@@ -56,7 +66,12 @@
             }
 
             // TODO: correct values
-            return 250;
+            if (Descriptor == null)
+            {
+                return 250;
+            }
+
+            return Descriptor.MissingWidth;
         }
 
         public PdfRectangle GetBoundingBox(int characterIdentifier)
@@ -78,6 +93,18 @@
             }
 
             return new PdfRectangle(0, 0, 250, 0);
+        }
+
+        public PdfVector GetPositionVector(int characterIdentifier)
+        {
+            var width = GetWidthFromFont(characterIdentifier);
+
+            return verticalWritingMetrics.GetPositionVector(characterIdentifier, width);
+        }
+
+        public PdfVector GetDisplacementVector(int characterIdentifier)
+        {
+            return verticalWritingMetrics.GetDisplacementVector(characterIdentifier);
         }
     }
 }

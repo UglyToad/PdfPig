@@ -62,7 +62,7 @@
             var subType = dictionary.GetNameOrDefault(NameToken.Subtype);
             if (NameToken.CidFontType0.Equals(subType))
             {
-                return new Type0CidFont(fontProgram, type, subType, baseFont, systemInfo, descriptor, widths);
+                return new Type0CidFont(fontProgram, type, subType, baseFont, systemInfo, descriptor, verticalWritingMetrics, widths);
             }
 
             if (NameToken.CidFontType2.Equals(subType))
@@ -160,18 +160,18 @@
                 return widths;
             }
 
-            int size = widthArray.Data.Count;
-            int counter = 0;
+            var size = widthArray.Data.Count;
+            var counter = 0;
             while (counter < size)
             {
                 var firstCode = (NumericToken)widthArray.Data[counter++];
                 var next = widthArray.Data[counter++];
                 if (DirectObjectFinder.TryGet(next, pdfScanner, out ArrayToken array))
                 {
-                    int startRange = firstCode.Int;
-                    int arraySize = array.Data.Count;
+                    var startRange = firstCode.Int;
+                    var arraySize = array.Data.Count;
 
-                    for (int i = 0; i < arraySize; i++)
+                    for (var i = 0; i < arraySize; i++)
                     {
                         var width = (NumericToken)array.Data[i];
                         widths[startRange + i] = width.Data;
@@ -181,8 +181,8 @@
                 {
                     var secondCode = (NumericToken)next;
                     var rangeWidth = (NumericToken)widthArray.Data[counter++];
-                    int startRange = firstCode.Int;
-                    int endRange = secondCode.Int;
+                    var startRange = firstCode.Int;
+                    var endRange = secondCode.Int;
                     var width = rangeWidth.Data;
                     for (var i = startRange; i <= endRange; i++)
                     {
@@ -199,10 +199,11 @@
             var verticalDisplacements = new Dictionary<int, decimal>();
             var positionVectors = new Dictionary<int, PdfVector>();
 
+            // The default position vector and displacement vector are specified by the DW2 entry.
             VerticalVectorComponents dw2;
             if (!dict.TryGet(NameToken.Dw2, out var dw2Token) || !(dw2Token is ArrayToken arrayVerticalComponents))
             {
-                dw2 = new VerticalVectorComponents(880, -1000);
+                dw2 = VerticalVectorComponents.Default;
             }
             else
             {
@@ -222,9 +223,10 @@
 
                     if (next is ArrayToken array)
                     {
-                        for (int j = 0; j < array.Data.Count; j++)
+                        for (var j = 0; j < array.Data.Count; j++)
                         {
-                            int cid = c.Int + j;
+                            var cid = c.Int + j;
+                            // ReSharper disable InconsistentNaming
                             var w1y = (NumericToken)array.Data[j];
                             var v1x = (NumericToken)array.Data[++j];
                             var v1y = (NumericToken)array.Data[++j];
@@ -236,11 +238,12 @@
                     }
                     else
                     {
-                        int first = c.Int;
-                        int last = ((NumericToken)next).Int;
+                        var first = c.Int;
+                        var last = ((NumericToken)next).Int;
                         var w1y = (NumericToken)w2.Data[++i];
                         var v1x = (NumericToken)w2.Data[++i];
                         var v1y = (NumericToken)w2.Data[++i];
+                        // ReSharper restore InconsistentNaming
 
                         for (var cid = first; cid <= last; cid++)
                         {

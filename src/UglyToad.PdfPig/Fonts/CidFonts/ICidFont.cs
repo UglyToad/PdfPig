@@ -45,5 +45,9 @@
         decimal GetWidthFromFont(int characterIdentifier);
 
         PdfRectangle GetBoundingBox(int characterIdentifier);
+
+        PdfVector GetPositionVector(int characterIdentifier);
+
+        PdfVector GetDisplacementVector(int characterIdentifier);
     }
 }

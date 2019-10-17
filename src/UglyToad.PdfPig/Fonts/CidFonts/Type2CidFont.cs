@@ -18,11 +18,17 @@
         private readonly CharacterIdentifierToGlyphIndexMap cidToGid;
 
         public NameToken Type { get; }
+
         public NameToken SubType { get; }
+
         public NameToken BaseFont { get; }
+
         public CharacterIdentifierSystemInfo SystemInfo { get; }
+
         public TransformationMatrix FontMatrix { get; }
+
         public CidFontType CidFontType => CidFontType.Type2;
+
         public FontDescriptor Descriptor { get; }
 
         public Type2CidFont(NameToken type, NameToken subType, NameToken baseFont, CharacterIdentifierSystemInfo systemInfo,
@@ -84,6 +90,18 @@
             }
 
             return Descriptor.BoundingBox;
+        }
+
+        public PdfVector GetPositionVector(int characterIdentifier)
+        {
+            var width = GetWidthFromFont(characterIdentifier);
+
+            return verticalWritingMetrics.GetPositionVector(characterIdentifier, width);
+        }
+
+        public PdfVector GetDisplacementVector(int characterIdentifier)
+        {
+            return verticalWritingMetrics.GetDisplacementVector(characterIdentifier);
         }
     }
 }
