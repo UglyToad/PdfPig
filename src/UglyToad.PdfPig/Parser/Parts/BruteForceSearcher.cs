@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Globalization;
     using System.Text;
+    using Exceptions;
     using IO;
     using Util.JetBrains.Annotations;
 
@@ -31,6 +32,8 @@
                 return objectLocations;
             }
 
+            var loopProtection = 0;
+
             var lastEndOfFile = GetLastEndOfFileMarker();
 
             var results = new Dictionary<IndirectReference, long>();
@@ -46,6 +49,13 @@
             bool endobjFound = false;
             do
             {
+                if (loopProtection > 1_000_000)
+                {
+                    throw new PdfDocumentFormatException("Failed to brute-force search the file due to an infinite loop.");
+                }
+
+                loopProtection++;
+
                 if (inObject)
                 {
                     if (bytes.CurrentByte == 'e')
@@ -125,7 +135,10 @@
 
                 if (!ReadHelper.IsWhitespace(bytes.CurrentByte))
                 {
-                    continue;
+                    if (bytes.CurrentByte != (byte)'j' && bytes.CurrentByte != (byte)'m')
+                    {
+                        continue;
+                    }
                 }
 
                 var obj = long.Parse(objectNumberBytes.ToString(), CultureInfo.InvariantCulture);
@@ -139,6 +152,7 @@
                 currentOffset++;
 
                 bytes.Seek(currentOffset);
+                loopProtection = 0;
             } while (currentOffset < lastEndOfFile && !bytes.IsAtEnd());
 
             if ((lastEndOfFile < long.MaxValue || endobjFound) && lastObjOffset > 0)
