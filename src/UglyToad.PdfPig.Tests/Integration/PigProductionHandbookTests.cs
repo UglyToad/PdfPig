@@ -4,6 +4,11 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Text;
+    using System.Xml;
+    using System.Xml.Linq;
+    using DocumentLayoutAnalysis;
+    using Export;
     using Xunit;
 
     public class PigProductionHandbookTests
@@ -32,7 +37,7 @@
                 var page = document.GetPage(1);
 
                 // Pinkish.
-                var (r, g , b) = page.Letters[0].Color.ToRGBValues();
+                var (r, g, b) = page.Letters[0].Color.ToRGBValues();
 
                 Assert.Equal(1, r);
                 Assert.Equal(0.914m, g);
@@ -98,7 +103,7 @@
         [Fact]
         public void Page4HasCorrectWords()
         {
-            var expected = WordsPage4.Split(new[] {"\r", "\r\n", "\n", " "}, StringSplitOptions.RemoveEmptyEntries);
+            var expected = WordsPage4.Split(new[] { "\r", "\r\n", "\n", " " }, StringSplitOptions.RemoveEmptyEntries);
             using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
                 var page = document.GetPage(4);
@@ -126,6 +131,41 @@
             using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
                 Assert.Equal(86, document.NumberOfPages);
+            }
+        }
+
+        [Fact]
+        public void CanExportAltoXmlFormat()
+        {
+            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
+            {
+                var exporter = new AltoXmlTextExporter(new NearestNeighbourWordExtractor(), new DocstrumBoundingBoxes());
+                var xml = exporter.Get(document.GetPage(4), true);
+                Assert.NotNull(xml);
+                using (var xmlStream = new MemoryStream(Encoding.UTF8.GetBytes(xml)))
+                using (var xmlReader = new XmlTextReader(xmlStream))
+                {
+                    var xDocument = XDocument.Load(xmlReader);
+                    Assert.NotNull(xDocument);
+                }
+            }
+        }
+
+        [Fact]
+        public void CanExportAltoXmlFormatPage16()
+        {
+            // Page 16 contains an unprintable string and a single line of text which causes problems for Docstrum.
+            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
+            {
+                var exporter = new AltoXmlTextExporter(new NearestNeighbourWordExtractor(), new DocstrumBoundingBoxes());
+                var xml = exporter.Get(document.GetPage(16), true);
+                Assert.NotNull(xml);
+                using (var xmlStream = new MemoryStream(Encoding.UTF8.GetBytes(xml)))
+                using (var xmlReader = new XmlTextReader(xmlStream))
+                {
+                    var xDocument = XDocument.Load(xmlReader);
+                    Assert.NotNull(xDocument);
+                }
             }
         }
 

@@ -126,6 +126,25 @@
             BottomRight = bottomRight;
         }
 
+
+        /// <summary>
+        /// Whether two rectangles overlap.
+        /// </summary>
+        public bool IntersectsWith(PdfRectangle rectangle)
+        {
+            if (Left > rectangle.Right || rectangle.Left > Right)
+            {
+                return false;
+            }
+
+            if (Top < rectangle.Bottom || rectangle.Top < Bottom)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         /// <summary>
         /// To string override.
         /// </summary>
