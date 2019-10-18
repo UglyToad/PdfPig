@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Simple
 {
     using System;
+    using System.Collections.Generic;
     using Cmap;
     using Composite;
     using Core;
@@ -17,6 +18,9 @@
             TransformationMatrix.FromValues(1m / 1000m, 0, 0, 1m / 1000m, 0, 0);
 
         private readonly FontDescriptor descriptor;
+
+        private readonly Dictionary<int, CharacterBoundingBox> boundingBoxCache
+            = new Dictionary<int, CharacterBoundingBox>();
 
         [CanBeNull]
         private readonly Encoding encoding;
@@ -97,6 +101,11 @@
 
         public CharacterBoundingBox GetBoundingBox(int characterCode)
         {
+            if (boundingBoxCache.TryGetValue(characterCode, out var cached))
+            {
+                return cached;
+            }
+
             var fontMatrix = GetFontMatrix();
 
             var boundingBox = GetBoundingBoxInGlyphSpace(characterCode, out var fromFont);
@@ -141,7 +150,11 @@
                 width = DefaultTransformation.Transform(new PdfVector(width, 0)).X;
             }
 
-            return new CharacterBoundingBox(boundingBox, width);
+            var result = new CharacterBoundingBox(boundingBox, width);
+
+            boundingBoxCache[characterCode] = result;
+
+            return result;
         }
 
         public TransformationMatrix GetFontMatrix()

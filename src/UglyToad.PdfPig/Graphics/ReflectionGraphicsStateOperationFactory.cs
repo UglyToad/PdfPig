@@ -6,7 +6,13 @@ namespace UglyToad.PdfPig.Graphics
     using System.Reflection;
     using Exceptions;
     using Operations;
+    using Operations.ClippingPaths;
+    using Operations.Compatibility;
+    using Operations.General;
     using Operations.MarkedContent;
+    using Operations.PathConstruction;
+    using Operations.SpecialGraphicsState;
+    using Operations.TextObjects;
     using Operations.TextShowing;
     using Operations.TextState;
     using Tokens;
@@ -41,10 +47,220 @@ namespace UglyToad.PdfPig.Graphics
             operations = result;
         }
 
+        private static decimal[] TokensToDecimalArray(IReadOnlyList<IToken> tokens, bool exceptLast = false)
+        {
+            var result = new List<decimal>();
+
+            for (var i = 0; i < tokens.Count - (exceptLast ? 1 : 0); i++)
+            {
+                var operand = tokens[i];
+
+                if (operand is ArrayToken arr)
+                {
+                    for (var j = 0; j < arr.Length; j++)
+                    {
+                        var innerOperand = arr[j];
+
+                        if (!(innerOperand is NumericToken innerNumeric))
+                        {
+                            return result.ToArray();
+                        }
+
+                        result.Add(innerNumeric.Data);
+                    }
+                }
+
+                if (!(operand is NumericToken numeric))
+                {
+                    return result.ToArray();
+                }
+
+                result.Add(numeric.Data);
+            }
+
+            return result.ToArray();
+        }
+
+        private static int OperandToInt(IToken token)
+        {
+            if (!(token is NumericToken numeric))
+            {
+                throw new InvalidOperationException($"Invalid operand token encountered when expecting numeric: {token}.");
+            }
+
+            return numeric.Int;
+        }
+
+        private static decimal OperandToDecimal(IToken token)
+        {
+            if (!(token is NumericToken numeric))
+            {
+                throw new InvalidOperationException($"Invalid operand token encountered when expecting numeric: {token}.");
+            }
+
+            return numeric.Data;
+        }
+
         public IGraphicsStateOperation Create(OperatorToken op, IReadOnlyList<IToken> operands)
         {
             switch (op.Data)
             {
+                case ModifyClippingByEvenOddIntersect.Symbol:
+                    return ModifyClippingByEvenOddIntersect.Value;
+                case ModifyClippingByNonZeroWindingIntersect.Symbol:
+                    return ModifyClippingByNonZeroWindingIntersect.Value;
+                case BeginCompatibilitySection.Symbol:
+                    return BeginCompatibilitySection.Value;
+                case EndCompatibilitySection.Symbol:
+                    return EndCompatibilitySection.Value;
+                case SetColorRenderingIntent.Symbol:
+                    return new SetColorRenderingIntent((NameToken)operands[0]);
+                case SetFlatnessTolerance.Symbol:
+                    return new SetFlatnessTolerance(OperandToDecimal(operands[0]));
+                case SetLineCap.Symbol:
+                    return new SetLineCap(OperandToInt(operands[0]));
+                case SetLineDashPattern.Symbol:
+                    return new SetLineDashPattern(TokensToDecimalArray(operands, true), OperandToInt(operands[operands.Count - 1]));
+                case SetLineJoin.Symbol:
+                    return new SetLineJoin(OperandToInt(operands[0]));
+                case SetLineWidth.Symbol:
+                    return new SetLineWidth(OperandToDecimal(operands[0]));
+                case SetMiterLimit.Symbol:
+                    return new SetMiterLimit(OperandToDecimal(operands[0]));
+                case AppendDualControlPointBezierCurve.Symbol:
+                    return new AppendDualControlPointBezierCurve(OperandToDecimal(operands[0]),
+                        OperandToDecimal(operands[1]),
+                        OperandToDecimal(operands[2]),
+                        OperandToDecimal(operands[3]),
+                        OperandToDecimal(operands[4]),
+                        OperandToDecimal(operands[5]));
+                case AppendEndControlPointBezierCurve.Symbol:
+                    return new AppendEndControlPointBezierCurve(OperandToDecimal(operands[0]),
+                        OperandToDecimal(operands[1]),
+                        OperandToDecimal(operands[2]),
+                        OperandToDecimal(operands[3]));
+                case AppendRectangle.Symbol:
+                    return new AppendRectangle(OperandToDecimal(operands[0]), 
+                        OperandToDecimal(operands[1]),
+                        OperandToDecimal(operands[2]),
+                        OperandToDecimal(operands[3]));
+                case AppendStartControlPointBezierCurve.Symbol:
+                    return new AppendStartControlPointBezierCurve(OperandToDecimal(operands[0]),
+                        OperandToDecimal(operands[1]),
+                        OperandToDecimal(operands[2]),
+                        OperandToDecimal(operands[3]));
+                case AppendStraightLineSegment.Symbol:
+                    return new AppendStraightLineSegment(OperandToDecimal(operands[0]),
+                        OperandToDecimal(operands[1]));
+                case BeginNewSubpath.Symbol:
+                    return new BeginNewSubpath(OperandToDecimal(operands[0]),
+                        OperandToDecimal(operands[1]));
+                case CloseSubpath.Symbol:
+                    return CloseSubpath.Value;
+                case ModifyCurrentTransformationMatrix.Symbol:
+                    return new ModifyCurrentTransformationMatrix(TokensToDecimalArray(operands));
+                case Pop.Symbol:
+                    return Pop.Value;
+                case Push.Symbol:
+                    return Push.Value;
+                case SetGraphicsStateParametersFromDictionary.Symbol:
+                    return new SetGraphicsStateParametersFromDictionary((NameToken)operands[0]);
+                case BeginText.Symbol:
+                    return BeginText.Value;
+                case EndText.Symbol:
+                    return EndText.Value;
+                case SetCharacterSpacing.Symbol:
+                    return new SetCharacterSpacing(OperandToDecimal(operands[0]));
+                case SetFontAndSize.Symbol:
+                    return new SetFontAndSize((NameToken)operands[0], OperandToDecimal(operands[1]));
+                case SetHorizontalScaling.Symbol:
+                    return new SetHorizontalScaling(OperandToDecimal(operands[0]));
+                case SetTextLeading.Symbol:
+                    return new SetTextLeading(OperandToDecimal(operands[0]));
+                case SetTextRenderingMode.Symbol:
+                    return new SetTextRenderingMode(OperandToInt(operands[0]));
+                case SetTextRise.Symbol:
+                    return new SetTextRise(OperandToDecimal(operands[0]));
+                case SetWordSpacing.Symbol:
+                    return new SetWordSpacing(OperandToDecimal(operands[0]));
+                case CloseAndStrokePath.Symbol:
+                    return CloseAndStrokePath.Value;
+                case CloseFillPathEvenOddRuleAndStroke.Symbol:
+                    return CloseFillPathEvenOddRuleAndStroke.Value;
+                case CloseFillPathNonZeroWindingAndStroke.Symbol:
+                    return CloseFillPathNonZeroWindingAndStroke.Value;
+                case EndPath.Symbol:
+                    return EndPath.Value;
+                case FillPathEvenOddRule.Symbol:
+                    return FillPathEvenOddRule.Value;
+                case FillPathEvenOddRuleAndStroke.Symbol:
+                    return FillPathEvenOddRuleAndStroke.Value;
+                case FillPathNonZeroWinding.Symbol:
+                    return FillPathNonZeroWinding.Value;
+                case FillPathNonZeroWindingAndStroke.Symbol:
+                    return FillPathNonZeroWindingAndStroke.Value;
+                case FillPathNonZeroWindingCompatibility.Symbol:
+                    return FillPathNonZeroWindingCompatibility.Value;
+                case InvokeNamedXObject.Symbol:
+                    return new InvokeNamedXObject((NameToken)operands[0]);
+                case PaintShading.Symbol:
+                    return new PaintShading((NameToken)operands[0]);
+                case SetNonStrokeColor.Symbol:
+                    return new SetNonStrokeColor(TokensToDecimalArray(operands));
+                case SetNonStrokeColorAdvanced.Symbol:
+                    if (operands[operands.Count - 1] is NameToken scnLowerPatternName)
+                    {
+                        return new SetNonStrokeColorAdvanced(operands.Take(operands.Count - 1).Select(x => ((NumericToken)x).Data).ToList(), scnLowerPatternName);
+                    }
+                    else if (operands.All(x => x is NumericToken))
+                    {
+                        return new SetNonStrokeColorAdvanced(operands.Select(x => ((NumericToken)x).Data).ToList());
+                    }
+
+                    var errorMessageScnLower = string.Join(", ", operands.Select(x => x.ToString()));
+                    throw new PdfDocumentFormatException($"Attempted to set a non-stroke color space (scn) with invalid arguments: [{errorMessageScnLower}]");
+                case SetNonStrokeColorDeviceCmyk.Symbol:
+                    return new SetNonStrokeColorDeviceCmyk(OperandToDecimal(operands[0]),
+                        OperandToDecimal(operands[1]),
+                        OperandToDecimal(operands[2]),
+                        OperandToDecimal(operands[3]));
+                case SetNonStrokeColorDeviceGray.Symbol:
+                    return new SetNonStrokeColorDeviceGray(OperandToDecimal(operands[0]));
+                case SetNonStrokeColorDeviceRgb.Symbol:
+                    return new SetNonStrokeColorDeviceRgb(OperandToDecimal(operands[0]),
+                        OperandToDecimal(operands[1]),
+                        OperandToDecimal(operands[2]));
+                case SetNonStrokeColorSpace.Symbol:
+                    return new SetNonStrokeColorSpace((NameToken)operands[0]);
+                case SetStrokeColor.Symbol:
+                    return new SetStrokeColor(TokensToDecimalArray(operands));
+                case SetStrokeColorAdvanced.Symbol:
+                    if (operands[operands.Count - 1] is NameToken scnPatternName)
+                    {
+                        return new SetStrokeColorAdvanced(operands.Take(operands.Count - 1).Select(x => ((NumericToken)x).Data).ToList(), scnPatternName);
+                    }
+                    else if (operands.All(x => x is NumericToken))
+                    {
+                        return new SetStrokeColorAdvanced(operands.Select(x => ((NumericToken)x).Data).ToList());
+                    }
+
+                    var errorMessageScn = string.Join(", ", operands.Select(x => x.ToString()));
+                    throw new PdfDocumentFormatException($"Attempted to set a stroke color space (SCN) with invalid arguments: [{errorMessageScn}]");
+                case SetStrokeColorDeviceCmyk.Symbol:
+                    return new SetStrokeColorDeviceCmyk(OperandToDecimal(operands[0]),
+                        OperandToDecimal(operands[1]),
+                        OperandToDecimal(operands[2]),
+                        OperandToDecimal(operands[3]));
+                case SetStrokeColorDeviceGray.Symbol:
+                    return new SetStrokeColorDeviceGray(OperandToDecimal(operands[0]));
+                case SetStrokeColorDeviceRgb.Symbol:
+                    return new SetStrokeColorDeviceRgb(OperandToDecimal(operands[0]),
+                        OperandToDecimal(operands[1]),
+                        OperandToDecimal(operands[2]));
+                case SetStrokeColorSpace.Symbol:
+                    return new SetStrokeColorSpace((NameToken)operands[0]);
+                case StrokePath.Symbol:
+                    return StrokePath.Value;
                 case ShowText.Symbol:
                     if (operands.Count != 1)
                     {
@@ -77,14 +293,6 @@ namespace UglyToad.PdfPig.Graphics
                     var array = operands.ToArray();
 
                     return new ShowTextsWithPositioning(array);
-                case SetFontAndSize.Symbol:
-                    if (operands.Count == 2 && operands[0] is NameToken name && operands[1] is NumericToken size)
-                    {
-                        return new SetFontAndSize(name, size.Data);
-                    }
-
-                    var information = string.Join(", ", operands.Select(x => x.ToString()));
-                    throw new PdfDocumentFormatException($"Attempted to set font with wrong number of parameters: [{information}]");
                 case DesignateMarkedContentPointWithProperties.Symbol:
                     var dpName = (NameToken)operands[0];
                     if (operands[1] is DictionaryToken contentPointDictionary)
@@ -111,31 +319,7 @@ namespace UglyToad.PdfPig.Graphics
 
                     var errorMessageBdc = string.Join(", ", operands.Select(x => x.ToString()));
                     throw new PdfDocumentFormatException($"Attempted to set a marked-content sequence with invalid parameters: [{errorMessageBdc}]");
-                case SetStrokeColorAdvanced.Symbol:
-                    if (operands[operands.Count - 1] is NameToken scnPatternName)
-                    {
-                        return new SetStrokeColorAdvanced(operands.Take(operands.Count - 1).Select(x => ((NumericToken)x).Data).ToList(), scnPatternName);
-                    }
-                    else if(operands.All(x => x is NumericToken))
-                    {
-                        return new SetStrokeColorAdvanced(operands.Select(x => ((NumericToken)x).Data).ToList());
-                    }
-
-                    var errorMessageScn = string.Join(", ", operands.Select(x => x.ToString()));
-                    throw new PdfDocumentFormatException($"Attempted to set a stroke color space (SCN) with invalid arguments: [{errorMessageScn}]");
-                case SetNonStrokeColorAdvanced.Symbol:
-                    if (operands[operands.Count - 1] is NameToken scnLowerPatternName)
-                    {
-                        return new SetNonStrokeColorAdvanced(operands.Take(operands.Count - 1).Select(x => ((NumericToken)x).Data).ToList(), scnLowerPatternName);
-                    }
-                    else if (operands.All(x => x is NumericToken))
-                    {
-                        return new SetNonStrokeColorAdvanced(operands.Select(x => ((NumericToken)x).Data).ToList());
-                    }
-
-                    var errorMessageScnLower = string.Join(", ", operands.Select(x => x.ToString()));
-                    throw new PdfDocumentFormatException($"Attempted to set a non-stroke color space (scn) with invalid arguments: [{errorMessageScnLower}]");
-            }
+                }
 
             if (!operations.TryGetValue(op.Data, out Type operationType))
             {
