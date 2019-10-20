@@ -66,7 +66,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool StyleSpecified { get; private set; }
+            public bool StyleSpecified { get; set; }
 
             /// <remarks/>
             [XmlAttribute("SUBS_TYPE")]
@@ -82,7 +82,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool SubsTypeSpecified { get; private set; }
+            public bool SubsTypeSpecified { get; set; }
 
             /// <summary>
             /// Content of the substitution.
@@ -104,7 +104,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool WcSpecified { get; private set; }
+            public bool WcSpecified { get; set; }
 
             /// <summary>
             /// Confidence level of each character in that string. A list of numbers,
@@ -130,7 +130,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool CorrectionStatusSpecified { get; private set; }
+            public bool CorrectionStatusSpecified { get; set; }
 
             /// <summary>
             /// Attribute to record language of the string. The language should be recorded at the highest level possible.

@@ -17,17 +17,23 @@
             /// <remarks/>
             // ReSharper disable once InconsistentNaming
             OK,
+
             /// <remarks/>
             Missing,
+
             /// <remarks/>
             [XmlEnum("Missing in original")]
             MissingInOriginal,
+
             /// <remarks/>
             Damaged,
+
             /// <remarks/>
             Retained,
+
             /// <remarks/>
             Target,
+
             /// <remarks/>
             [XmlEnum("As in original")]
             AsInOriginal,

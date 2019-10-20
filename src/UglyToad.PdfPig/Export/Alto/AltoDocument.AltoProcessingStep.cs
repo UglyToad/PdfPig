@@ -35,7 +35,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool ProcessingCategorySpecified { get; private set; }
+            public bool ProcessingCategorySpecified { get; set; }
 
             /// <summary>
             /// Date or DateTime the image was processed.

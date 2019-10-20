@@ -17,12 +17,15 @@
             /// <remarks/>
             [XmlEnum("onLoad")]
             OnLoad,
+
             /// <remarks/>
             [XmlEnum("onRequest")]
             OnRequest,
+
             /// <remarks/>
             [XmlEnum("other")]
             Other,
+
             /// <remarks/>
             [XmlEnum("none")]
             None,

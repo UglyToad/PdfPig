@@ -28,7 +28,5 @@
             [XmlElement("postProcessingStep")]
             public AltoProcessingStep[] PostProcessingStep { get; set; }
         }
-
-
     }
 }

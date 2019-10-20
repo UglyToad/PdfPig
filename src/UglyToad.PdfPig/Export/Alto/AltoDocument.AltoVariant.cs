@@ -50,7 +50,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool VcSpecified { get; private set; }
+            public bool VcSpecified { get; set; }
         }
     }
 }

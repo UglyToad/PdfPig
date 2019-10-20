@@ -61,7 +61,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool RotationSpecified { get; private set; }
+            public bool RotationSpecified { get; set; }
 
             /// <summary>
             /// The next block in reading sequence on the page.
@@ -86,7 +86,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool CorrectionStatusSpecified { get; private set; }
+            public bool CorrectionStatusSpecified { get; set; }
 
             /// <remarks/>
             [XmlAttribute("type", Form = XmlSchemaForm.Qualified, Namespace = "http://www.w3.org/1999/xlink")]
@@ -122,7 +122,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool ShowSpecified { get; private set; }
+            public bool ShowSpecified { get; set; }
 
             /// <remarks/>
             [XmlAttribute("actuate", Form = XmlSchemaForm.Qualified, Namespace = "http://www.w3.org/1999/xlink")]
@@ -138,7 +138,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool ActuateSpecified { get; private set; }
+            public bool ActuateSpecified { get; set; }
         }
     }
 }

@@ -66,7 +66,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool BaseLineSpecified { get; private set; }
+            public bool BaseLineSpecified { get; set; }
 
             /// <remarks/>
             [XmlAttribute("LANG", DataType = "language")]
@@ -89,7 +89,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool CorrectionStatusSpecified { get; private set; }
+            public bool CorrectionStatusSpecified { get; set; }
 
             /// <remarks/>
             public override string ToString()

@@ -78,7 +78,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool GcSpecified { get; private set; }
+            public bool GcSpecified { get; set; }
 
             /// <remarks/>
             public override string ToString()
