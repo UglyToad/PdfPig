@@ -17,15 +17,19 @@
             /// <remarks/>
             [XmlEnum("new")]
             New,
+
             /// <remarks/>
             [XmlEnum("replace")]
             Replace,
+
             /// <remarks/>
             [XmlEnum("embed")]
             Embed,
+
             /// <remarks/>
             [XmlEnum("other")]
             Other,
+
             /// <remarks/>
             [XmlEnum("none")]
             None

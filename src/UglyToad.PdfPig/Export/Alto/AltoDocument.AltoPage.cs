@@ -82,7 +82,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool HeightSpecified { get; private set; }
+            public bool HeightSpecified { get; set; }
 
             /// <remarks/>
             [XmlAttribute("WIDTH")]
@@ -98,7 +98,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool WidthSpecified { get; private set; }
+            public bool WidthSpecified { get; set; }
 
             /// <summary>
             /// The number of the page within the document.
@@ -126,7 +126,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool QualitySpecified { get; private set; }
+            public bool QualitySpecified { get; set; }
 
             /// <remarks/>
             [XmlAttribute("QUALITY_DETAIL")]
@@ -146,7 +146,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool PositionSpecified { get; private set; }
+            public bool PositionSpecified { get; set; }
 
             /// <summary>
             /// A link to the processing description that has been used for this page.
@@ -170,7 +170,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool AccuracySpecified { get; private set; }
+            public bool AccuracySpecified { get; set; }
 
             /// <summary>
             /// 
@@ -188,7 +188,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool PcSpecified { get; private set; }
+            public bool PcSpecified { get; set; }
         }
     }
 }

@@ -51,7 +51,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool RotationSpecified { get; private set; }
+            public bool RotationSpecified { get; set; }
         }
     }
 }

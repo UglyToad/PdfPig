@@ -38,7 +38,7 @@
             /// Whether to include <see cref="Height"/> in the output.
             /// </summary>
             [XmlIgnore]
-            public bool HeightSpecified { get; private set; }
+            public bool HeightSpecified { get; set; }
 
             /// <summary>
             /// Width.
@@ -58,7 +58,7 @@
             /// Whether to include <see cref="Width"/> in the output.
             /// </summary>
             [XmlIgnore]
-            public bool WidthSpecified { get; private set; }
+            public bool WidthSpecified { get; set; }
 
             /// <summary>
             /// Horizontal position.
@@ -78,7 +78,7 @@
             /// Whether to include <see cref="HorizontalPosition"/> in the output.
             /// </summary>
             [XmlIgnore]
-            public bool HorizontalPositionSpecified { get; private set; }
+            public bool HorizontalPositionSpecified { get; set; }
 
             /// <summary>
             /// Vertical position.
@@ -98,9 +98,7 @@
             /// Whether to include <see cref="VerticalPosition"/> in the output.
             /// </summary>
             [XmlIgnore]
-            public bool VerticalPositionSpecified { get; private set; }
+            public bool VerticalPositionSpecified { get; set; }
         }
-
-
     }
 }

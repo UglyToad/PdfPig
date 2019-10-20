@@ -44,7 +44,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool FontTypeSpecified { get; private set; }
+            public bool FontTypeSpecified { get; set; }
 
             /// <remarks/>
             [XmlAttribute("FONTWIDTH")]
@@ -60,7 +60,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool FontWidthSpecified { get; private set; }
+            public bool FontWidthSpecified { get; set; }
 
             /// <summary>
             /// The font size, in points (1/72 of an inch).
@@ -90,7 +90,7 @@
 
             /// <remarks/>
             [XmlIgnore]
-            public bool FontStyleSpecified { get; private set; }
+            public bool FontStyleSpecified { get; set; }
         }
     }
 }
