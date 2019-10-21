@@ -5,8 +5,15 @@
     using System.Linq;
     using Content;
 
-    internal class DefaultWordExtractor : IWordExtractor
+    /// <summary>
+    /// Default Word Extractor.
+    /// </summary>
+    public class DefaultWordExtractor : IWordExtractor
     {
+        /// <summary>
+        /// Gets the words.
+        /// </summary>
+        /// <param name="letters">The letters in the page.</param>
         public IEnumerable<Word> GetWords(IReadOnlyList<Letter> letters)
         {
             var lettersOrder = letters.OrderByDescending(x => x.Location.Y)
@@ -99,6 +106,9 @@
             return new Word(letters.ToList());
         }
 
+        /// <summary>
+        /// Create an instance of Default Word Extractor, <see cref="DefaultWordExtractor"/>.
+        /// </summary>
         public static IWordExtractor Instance { get; } = new DefaultWordExtractor();
 
         private DefaultWordExtractor()
