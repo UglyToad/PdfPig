@@ -215,6 +215,7 @@
                 "UglyToad.PdfPig.Tokens.StreamToken",
                 "UglyToad.PdfPig.Tokens.StringToken",
                 "UglyToad.PdfPig.Util.IWordExtractor",
+                "UglyToad.PdfPig.Util.DefaultWordExtractor",
                 "UglyToad.PdfPig.Writer.PdfDocumentBuilder",
                 "UglyToad.PdfPig.Writer.PdfPageBuilder",
                 "UglyToad.PdfPig.Writer.TokenWriter",

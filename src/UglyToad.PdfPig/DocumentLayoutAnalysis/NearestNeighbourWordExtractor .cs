@@ -26,34 +26,39 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         {
             List<Word> wordsH = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Horizontal),
-                l => l.GlyphRectangle.Width, Distances.Manhattan)
+                (l1, l2) => Math.Max((double)(l1.GlyphRectangle.Width), (double)(l2.GlyphRectangle.Width)) * 0.2, 
+                Distances.Manhattan)
                 .OrderByDescending(x => x.BoundingBox.Bottom)
                 .ThenBy(x => x.BoundingBox.Left).ToList();
 
             List<Word> words180 = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Rotate180),
-                l => l.GlyphRectangle.Width, Distances.Manhattan)
+                (l1, l2) => Math.Max((double)(l1.GlyphRectangle.Width), (double)(l2.GlyphRectangle.Width)) * 0.2,
+                Distances.Manhattan)
                 .OrderBy(x => x.BoundingBox.Top)
                 .ThenByDescending(x => x.BoundingBox.Right).ToList();
             wordsH.AddRange(words180);
 
             List<Word> words90 = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Rotate90),
-                l => l.GlyphRectangle.Height, Distances.Manhattan)
+                (l1, l2) => Math.Max((double)(l1.GlyphRectangle.Height), (double)(l2.GlyphRectangle.Height)) * 0.2,
+                Distances.Manhattan)
                 .OrderByDescending(x => x.BoundingBox.Left)
                 .ThenBy(x => x.BoundingBox.Top).ToList();
             wordsH.AddRange(words90);
 
             List<Word> words270 = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Rotate270),
-                l => l.GlyphRectangle.Height, Distances.Manhattan)
+                (l1, l2) => Math.Max((double)(l1.GlyphRectangle.Height), (double)(l2.GlyphRectangle.Height)) * 0.2,
+                Distances.Manhattan)
                 .OrderBy(x => x.BoundingBox.Right)
                 .ThenByDescending(x => x.BoundingBox.Bottom).ToList();
             wordsH.AddRange(words270);
 
             List<Word> wordsU = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Unknown),
-                l => l.GlyphRectangle.Width, Distances.Manhattan)
+                (l1, l2) => Math.Max((double)(l1.GlyphRectangle.Width), (double)(l2.GlyphRectangle.Width)) * 0.2,
+                Distances.Manhattan)
                 .OrderByDescending(x => x.BoundingBox.Bottom)
                 .ThenBy(x => x.BoundingBox.Left).ToList();
             wordsH.AddRange(wordsU);
@@ -66,12 +71,12 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// </summary>
         /// <param name="pageLetters">The letters in the page, they must have
         /// the same text directions.</param>
-        /// <param name="metric">The letter's metric to use in the minimum distance
-        /// between 2 letters, e.g. GlyphRectangle.Width or GlyphRectangle.Height.</param>
+        /// <param name="maxDistanceFunction">The function that determines the maximum distance between two Letters,
+        /// e.g. Max(GlyphRectangle.Width) x 20%.</param>
         /// <param name="distMeasure">The distance measure between two start and end base line points,
         /// e.g. the Manhattan distance.</param>
         private List<Word> GetWords(IEnumerable<Letter> pageLetters,
-            Func<Letter, decimal> metric, Func<PdfPoint, PdfPoint, double> distMeasure)
+            Func<Letter, Letter, double> maxDistanceFunction, Func<PdfPoint, PdfPoint, double> distMeasure)
         {
             if (pageLetters == null || pageLetters.Count() == 0) return new List<Word>();
             TextDirection textDirection = pageLetters.ElementAt(0).TextDirection;
@@ -98,8 +103,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             Letter[] letters = pageLetters.ToArray();
 
             var groupedIndexes = ClusteringAlgorithms.SimpleTransitiveClosure(letters,
-                distMeasure,
-                (l1, l2) => Math.Max((double)metric(l1), (double)metric(l2)) * 0.60,
+                distMeasure, maxDistanceFunction,
                 l => l.EndBaseLine, l => l.StartBaseLine,
                 l => !string.IsNullOrWhiteSpace(l.Value),
                 (l1, l2) => string.Equals(l1.FontName, l2.FontName, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(l2.Value)).ToList();
