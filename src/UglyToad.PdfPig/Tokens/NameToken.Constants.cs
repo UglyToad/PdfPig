@@ -217,6 +217,13 @@
         public static readonly NameToken Filter = new NameToken("Filter");
         public static readonly NameToken First = new NameToken("First");
         public static readonly NameToken FirstChar = new NameToken("FirstChar");
+        public static readonly NameToken Fit = new NameToken("Fit");
+        public static readonly NameToken FitB = new NameToken("FitB");
+        public static readonly NameToken FitBH = new NameToken("FitBH");
+        public static readonly NameToken FitBV = new NameToken("FitBV");
+        public static readonly NameToken FitH = new NameToken("FitH");
+        public static readonly NameToken FitR = new NameToken("FitR");
+        public static readonly NameToken FitV = new NameToken("FitV");
         public static readonly NameToken FitWindow = new NameToken("FitWindow");
         public static readonly NameToken Fl = new NameToken("FL");
         public static readonly NameToken Flags = new NameToken("Flags");
@@ -244,6 +251,8 @@
         // G
         public static readonly NameToken G = new NameToken("G");
         public static readonly NameToken Gamma = new NameToken("Gamma");
+        public static readonly NameToken GoTo = new NameToken("GoTo");
+        public static readonly NameToken GoToR = new NameToken("GoToR");
         public static readonly NameToken Group = new NameToken("Group");
         public static readonly NameToken GtsPdfa1 = new NameToken("GTS_PDFA1");
         // H
@@ -559,6 +568,7 @@
         public static readonly NameToken Xref = new NameToken("XRef");
         public static readonly NameToken XrefStm = new NameToken("XRefStm");
         public static readonly NameToken XStep = new NameToken("XStep");
+        public static readonly NameToken XYZ = new NameToken("XYZ");
         // Y
         public static readonly NameToken YStep = new NameToken("YStep");
         public static readonly NameToken Yes = new NameToken("Yes");
