@@ -1,5 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
+    using System.Collections.Generic;
+    using Tokens;
+
     /// <summary>
     /// Contains the values inherited from the Page Tree for this page.
     /// </summary>
@@ -13,5 +16,7 @@
         public MediaBox MediaBox { get; set; }
 
         public int Rotation { get; set; }
+
+        public Queue<DictionaryToken> ParentResources { get; } = new Queue<DictionaryToken>();
     }
 }

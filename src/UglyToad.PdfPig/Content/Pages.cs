@@ -45,12 +45,15 @@
             }
 
             var pageTreeMembers = new PageTreeMembers();
-
+            
             while (pageStack.Count > 0)
             {
                 currentNode = pageStack.Pop();
 
-                pageFactory.LoadResources(currentNode.NodeDictionary, isLenientParsing);
+                if (currentNode.NodeDictionary.TryGet(NameToken.Resources, pdfScanner, out DictionaryToken resourcesDictionary))
+                {
+                    pageTreeMembers.ParentResources.Enqueue(resourcesDictionary);
+                }
                 
                 if (currentNode.NodeDictionary.TryGet(NameToken.MediaBox, pdfScanner, out ArrayToken mediaBox))
                 {

@@ -7,6 +7,7 @@
     using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
+    using Util;
 
     internal class ResourceStore : IResourceStore
     {
@@ -14,7 +15,7 @@
         private readonly IFontFactory fontFactory;
 
         private readonly Dictionary<IndirectReference, IFont> loadedFonts = new Dictionary<IndirectReference, IFont>();
-        private readonly Dictionary<NameToken, IndirectReference> currentResourceState = new Dictionary<NameToken, IndirectReference>();
+        private readonly StackDictionary<NameToken, IndirectReference> currentResourceState = new StackDictionary<NameToken, IndirectReference>();
 
         private readonly Dictionary<NameToken, DictionaryToken> extendedGraphicsStates = new Dictionary<NameToken, DictionaryToken>();
 
@@ -28,6 +29,8 @@
 
         public void LoadResourceDictionary(DictionaryToken resourceDictionary, bool isLenientParsing)
         {
+            currentResourceState.Push();
+
             if (resourceDictionary.TryGet(NameToken.Font, out var fontBase))
             {
                 var fontDictionary = DirectObjectFinder.Get<DictionaryToken>(fontBase, scanner);
@@ -93,6 +96,11 @@
                     }
                 }
             }
+        }
+
+        public void UnloadResourceDictionary()
+        {
+            currentResourceState.Pop();
         }
 
         private void LoadFontDictionary(DictionaryToken fontDictionary, bool isLenientParsing)

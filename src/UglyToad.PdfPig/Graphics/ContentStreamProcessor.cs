@@ -336,7 +336,8 @@
              * 5. Restore the saved graphics state, as if by invoking the Q operator.
              */
 
-            if (formStream.StreamDictionary.TryGet<DictionaryToken>(NameToken.Resources, pdfScanner, out var formResources))
+            var hasResources = formStream.StreamDictionary.TryGet<DictionaryToken>(NameToken.Resources, pdfScanner, out var formResources);
+            if (hasResources)
             {
                 resourceStore.LoadResourceDictionary(formResources, isLenientParsing);
             }
@@ -368,6 +369,11 @@
 
             // 5. Restore saved state.
             PopState();
+
+            if (hasResources)
+            {
+                resourceStore.UnloadResourceDictionary();
+            }
         }
 
         public void BeginSubpath()
