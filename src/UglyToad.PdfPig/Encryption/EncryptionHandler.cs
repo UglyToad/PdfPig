@@ -392,7 +392,9 @@
                                 continue;
                             }
 
-                            if (keyValuePair.Value is StringToken || keyValuePair.Value is ArrayToken || keyValuePair.Value is DictionaryToken)
+                            if (keyValuePair.Value is StringToken || keyValuePair.Value is ArrayToken 
+                                                                  || keyValuePair.Value is DictionaryToken
+                                                                  || keyValuePair.Value is HexToken)
                             {
                                 var inner = DecryptInternal(reference, keyValuePair.Value);
                                 dictionary = dictionary.With(keyValuePair.Key, inner);

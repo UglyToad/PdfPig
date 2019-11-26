@@ -7,6 +7,12 @@
     {
         void LoadResourceDictionary(DictionaryToken resourceDictionary, bool isLenientParsing);
 
+        /// <summary>
+        /// Remove any named resources and associated state for the last resource dictionary loaded.
+        /// Does not affect the cached resources, just the labels associated with them.
+        /// </summary>
+        void UnloadResourceDictionary();
+
         IFont GetFont(NameToken name);
 
         StreamToken GetXObject(NameToken name);

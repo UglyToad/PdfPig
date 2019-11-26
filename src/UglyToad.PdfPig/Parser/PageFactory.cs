@@ -57,10 +57,24 @@
 
             MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers, isLenientParsing);
             CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox, isLenientParsing);
+
+            var stackDepth = 0;
+
+            while (pageTreeMembers.ParentResources.Count > 0)
+            {
+                var resource = pageTreeMembers.ParentResources.Dequeue();
+
+                resourceStore.LoadResourceDictionary(resource, isLenientParsing);
+                stackDepth++;
+            }
+
+            if (dictionary.TryGet(NameToken.Resources, pdfScanner, out DictionaryToken resources))
+            {
+                resourceStore.LoadResourceDictionary(resources, isLenientParsing);
+                stackDepth++;
+            }
             
             UserSpaceUnit userSpaceUnit = GetUserSpaceUnits(dictionary);
-
-            LoadResources(dictionary, isLenientParsing);
 
             PageContent content = default(PageContent);
 
@@ -113,6 +127,11 @@
             }
 
             var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, new AnnotationProvider(pdfScanner, dictionary, isLenientParsing));
+
+            for (var i = 0; i < stackDepth; i++)
+            {
+                resourceStore.UnloadResourceDictionary();
+            }
 
             return page;
         }
@@ -200,18 +219,6 @@
             }
 
             return mediaBox;
-        }
-
-        public void LoadResources(DictionaryToken dictionary, bool isLenientParsing)
-        {
-            if (!dictionary.TryGet(NameToken.Resources, out var token))
-            {
-                return;
-            }
-
-            var resources = DirectObjectFinder.Get<DictionaryToken>(token, pdfScanner);
-
-            resourceStore.LoadResourceDictionary(resources, isLenientParsing);
         }
     }
 }
