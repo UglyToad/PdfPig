@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using Fields;
     using Tokens;
     using Util.JetBrains.Annotations;
@@ -39,7 +40,7 @@
         /// <summary>
         /// Create a new <see cref="AcroForm"/>.
         /// </summary>
-        public AcroForm(DictionaryToken dictionary, SignatureFlags signatureFlags, bool needAppearances, 
+        public AcroForm(DictionaryToken dictionary, SignatureFlags signatureFlags, bool needAppearances,
             IReadOnlyDictionary<IndirectReference, AcroFieldBase> fields)
         {
             Dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
@@ -61,6 +62,11 @@
             foreach (var field in Fields)
             {
                 if (field.Value.PageNumber == pageNumber)
+                {
+                    yield return field.Value;
+                }
+                else if (field.Value is AcroNonTerminalField parent
+                && parent.Children.Any(x => x.PageNumber == pageNumber))
                 {
                     yield return field.Value;
                 }
