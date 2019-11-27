@@ -112,7 +112,9 @@
         private AcroFieldBase GetAcroField(DictionaryToken fieldDictionary, Catalog catalog,
             IReadOnlyList<DictionaryToken> parentDictionaries)
         {
-            fieldDictionary = CreateInheritedDictionary(fieldDictionary, parentDictionaries);
+            var (combinedFieldDictionary, inheritsValue) = CreateInheritedDictionary(fieldDictionary, parentDictionaries);
+
+            fieldDictionary = combinedFieldDictionary;
 
             fieldDictionary.TryGet(NameToken.Ft, tokenScanner, out NameToken fieldType);
             fieldDictionary.TryGet(NameToken.Ff, tokenScanner, out NumericToken fieldFlagsToken);
@@ -194,9 +196,13 @@
                     }
                     else
                     {
+                        var (isChecked, valueToken) = GetCheckedState(fieldDictionary, inheritsValue);
+
                         var field = new AcroRadioButtonField(fieldDictionary, fieldType, buttonFlags, information,
                             pageNumber,
-                            bounds);
+                            bounds,
+                            valueToken,
+                            isChecked);
                         
                         result = field;
                     }
@@ -210,16 +216,6 @@
                 }
                 else
                 {
-                    var isChecked = false;
-                    if (!fieldDictionary.TryGetOptionalTokenDirect(NameToken.V, tokenScanner, out NameToken valueToken))
-                    {
-                        valueToken = NameToken.Off;
-                    }
-                    else
-                    {
-                        isChecked = !string.Equals(valueToken.Data, NameToken.Off, StringComparison.OrdinalIgnoreCase);
-                    }
-
                     if (children.Count > 0)
                     {
                         result = new AcroCheckboxesField(fieldDictionary, fieldType, buttonFlags, information,
@@ -227,6 +223,7 @@
                     }
                     else
                     {
+                        var (isChecked, valueToken) = GetCheckedState(fieldDictionary, inheritsValue);
                         var field = new AcroCheckboxField(fieldDictionary, fieldType, buttonFlags, information,
                             valueToken,
                             isChecked,
@@ -440,13 +437,38 @@
                 pageNumber,
                 bounds);
         }
+
+        private (bool isChecked, NameToken stateName) GetCheckedState(DictionaryToken fieldDictionary, bool inheritsValue)
+        {
+            var isChecked = false;
+            if (!fieldDictionary.TryGetOptionalTokenDirect(NameToken.V, tokenScanner, out NameToken valueToken))
+            {
+                valueToken = NameToken.Off;
+            }
+            else if (inheritsValue && fieldDictionary.TryGet(NameToken.As, tokenScanner, out NameToken appearanceStateName))
+            {
+                // The parent field's V entry holds a name object corresponding to the 
+                // appearance state of whichever child field is currently in the on state.
+                isChecked = appearanceStateName.Equals(valueToken);
+                valueToken = appearanceStateName;
+            }
+            else
+            {
+                isChecked = !string.Equals(valueToken.Data, NameToken.Off, StringComparison.OrdinalIgnoreCase);
+            }
+
+            return (isChecked, valueToken);
+        }
         
-        private static DictionaryToken CreateInheritedDictionary(DictionaryToken fieldDictionary, IReadOnlyList<DictionaryToken> parents)
+        private static (DictionaryToken dictionary, bool inheritsValue) CreateInheritedDictionary(DictionaryToken fieldDictionary, 
+            IReadOnlyList<DictionaryToken> parents)
         {
             if (parents.Count == 0)
             {
-                return fieldDictionary;
+                return (fieldDictionary, false);
             }
+
+            var inheritsValue = false;
 
             var inheritedDictionary = new Dictionary<NameToken, IToken>();
             foreach (var parent in parents)
@@ -457,16 +479,26 @@
                     if (InheritableFields.Contains(key))
                     {
                         inheritedDictionary[key] = kvp.Value;
+
+                        if (NameToken.V.Equals(key))
+                        {
+                            inheritsValue = true;
+                        }
                     }
                 }
             }
 
             foreach (var kvp in fieldDictionary.Data)
             {
-                inheritedDictionary[NameToken.Create(kvp.Key)] = kvp.Value;
+                var key = NameToken.Create(kvp.Key);
+                inheritedDictionary[key] = kvp.Value;
+                if (NameToken.V.Equals(key))
+                {
+                    inheritsValue = false;
+                }
             }
 
-            return new DictionaryToken(inheritedDictionary);
+            return (new DictionaryToken(inheritedDictionary), inheritsValue);
         }
 
         private static bool IsChoiceSelected(IReadOnlyList<string> selectedOptionNames, IReadOnlyList<int> selectedOptionIndices, int index, string name)

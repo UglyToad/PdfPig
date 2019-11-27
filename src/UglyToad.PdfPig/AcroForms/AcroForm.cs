@@ -16,6 +16,8 @@
     /// </remarks>
     internal class AcroForm
     {
+        private readonly IReadOnlyDictionary<IndirectReference, AcroFieldBase> fieldsWithReferences;
+
         /// <summary>
         /// The raw PDF dictionary which is the root form object.
         /// </summary>
@@ -33,20 +35,21 @@
         public bool NeedAppearances { get; }
 
         /// <summary>
-        /// All root fields in this form with their corresponding references.
+        /// All root fields in this form.
         /// </summary>
-        public IReadOnlyDictionary<IndirectReference, AcroFieldBase> Fields { get; }
+        public IReadOnlyList<AcroFieldBase> Fields { get; }
 
         /// <summary>
         /// Create a new <see cref="AcroForm"/>.
         /// </summary>
         public AcroForm(DictionaryToken dictionary, SignatureFlags signatureFlags, bool needAppearances,
-            IReadOnlyDictionary<IndirectReference, AcroFieldBase> fields)
+            IReadOnlyDictionary<IndirectReference, AcroFieldBase> fieldsWithReferences)
         {
             Dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
             SignatureFlags = signatureFlags;
             NeedAppearances = needAppearances;
-            Fields = fields ?? throw new ArgumentNullException(nameof(fields));
+            this.fieldsWithReferences = fieldsWithReferences ?? throw new ArgumentNullException(nameof(fieldsWithReferences));
+            Fields = fieldsWithReferences.Values.ToList();
         }
 
         /// <summary>
@@ -61,14 +64,14 @@
 
             foreach (var field in Fields)
             {
-                if (field.Value.PageNumber == pageNumber)
+                if (field.PageNumber == pageNumber)
                 {
-                    yield return field.Value;
+                    yield return field;
                 }
-                else if (field.Value is AcroNonTerminalField parent
+                else if (field is AcroNonTerminalField parent
                 && parent.Children.Any(x => x.PageNumber == pageNumber))
                 {
-                    yield return field.Value;
+                    yield return field;
                 }
             }
         }
