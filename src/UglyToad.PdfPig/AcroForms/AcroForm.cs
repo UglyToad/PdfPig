@@ -14,7 +14,7 @@
     /// <remarks>
     /// The name AcroForm distinguishes this from the other form type called form XObjects which act as templates for repeated sections of content.
     /// </remarks>
-    internal class AcroForm
+    public class AcroForm
     {
         private readonly IReadOnlyDictionary<IndirectReference, AcroFieldBase> fieldsWithReferences;
 
@@ -42,7 +42,7 @@
         /// <summary>
         /// Create a new <see cref="AcroForm"/>.
         /// </summary>
-        public AcroForm(DictionaryToken dictionary, SignatureFlags signatureFlags, bool needAppearances,
+        internal AcroForm(DictionaryToken dictionary, SignatureFlags signatureFlags, bool needAppearances,
             IReadOnlyDictionary<IndirectReference, AcroFieldBase> fieldsWithReferences)
         {
             Dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));

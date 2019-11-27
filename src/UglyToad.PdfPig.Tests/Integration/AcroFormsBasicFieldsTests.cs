@@ -17,7 +17,7 @@
         {
             using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
-                var form = document.GetForm();
+                document.TryGetForm(out var form);
                 Assert.NotNull(form);
             }
         }
@@ -29,7 +29,7 @@
 
             document.Dispose();
 
-            Action action = () => document.GetForm();
+            Action action = () => document.TryGetForm(out _);
 
             Assert.Throws<ObjectDisposedException>(action);
         }
@@ -39,7 +39,7 @@
         {
             using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
-                var form = document.GetForm();
+                document.TryGetForm(out var form);
                 Assert.Equal(18, form.Fields.Count);
             }
         }
@@ -49,7 +49,7 @@
         {
             using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
-                var form = document.GetForm();
+                document.TryGetForm(out var form);
                 var fields = form.GetFieldsForPage(1).ToList();
                 Assert.Equal(18, fields.Count);
             }
@@ -60,7 +60,7 @@
         {
             using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
-                var form = document.GetForm();
+                document.TryGetForm(out var form);
                 var radioButtons = form.Fields.OfType<AcroRadioButtonsField>().ToList();
 
                 Assert.Equal(2, radioButtons.Count);
