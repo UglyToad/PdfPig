@@ -14,6 +14,7 @@
     using Parser;
     using Tokenization.Scanner;
     using Tokens;
+    using UglyToad.PdfPig.Outline;
     using Util.JetBrains.Annotations;
 
     /// <inheritdoc />
@@ -195,6 +196,23 @@
             metadata = new XmpMetadata(xmpStreamToken, filterProvider);
 
             return true;
+        }
+
+        /// <summary>
+        /// Gets the bookmarks if this document contains some.
+        /// </summary>
+        /// <remarks>This will throw a <see cref="ObjectDisposedException"/> if called on a disposed <see cref="PdfDocument"/>.</remarks>
+        public bool TryGetBookmarks(out Bookmarks bookmarks)
+        {
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException("Cannot access the bookmarks after the document is disposed.");
+            }
+
+            var bookmarksProvider = new BookmarksProvider(this.log, this.Structure);
+            bookmarks = bookmarksProvider.GetBookmarks();
+            if (bookmarks != null) return true;
+            return false;
         }
 
         /// <summary>

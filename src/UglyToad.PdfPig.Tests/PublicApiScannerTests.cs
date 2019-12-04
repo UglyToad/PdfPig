@@ -200,6 +200,8 @@
                 "UglyToad.PdfPig.IndirectReference",
                 "UglyToad.PdfPig.IO.IInputBytes",
                 "UglyToad.PdfPig.Logging.ILog",
+                "UglyToad.PdfPig.Outline.Bookmarks",
+                "UglyToad.PdfPig.Outline.BookmarkNode",
                 "UglyToad.PdfPig.ParsingOptions",
                 "UglyToad.PdfPig.PdfDocument",
                 "UglyToad.PdfPig.Structure",
