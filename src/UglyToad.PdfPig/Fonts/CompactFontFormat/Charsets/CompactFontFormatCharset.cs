@@ -49,5 +49,18 @@
 
             return 0;
         }
+
+        public int GetGlyphIdByName(string characterName)
+        {
+            foreach (var keyValuePair in GlyphIdToStringIdAndName)
+            {
+                if (string.Equals(keyValuePair.Value.name, characterName, StringComparison.Ordinal))
+                {
+                    return keyValuePair.Key;
+                }
+            }
+
+            return 0;
+        }
     }
 }

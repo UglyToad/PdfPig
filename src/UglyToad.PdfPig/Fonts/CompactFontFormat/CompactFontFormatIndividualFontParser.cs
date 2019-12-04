@@ -322,7 +322,12 @@
 
         public int GetFontDictionaryIndex(int glyphId)
         {
-            throw new NotImplementedException();
+            if (glyphId < FontDictionaries.Count && glyphId >= 0)
+            {
+                return FontDictionaries[glyphId];
+            }
+
+            return 0;
         }
     }
 
@@ -343,7 +348,30 @@
 
         public int GetFontDictionaryIndex(int glyphId)
         {
-            throw new NotImplementedException();
+            for (var i = 0; i < Ranges.Count; ++i)
+            {
+                if (Ranges[i].First <= glyphId)
+                {
+                    if (i + 1 < Ranges.Count)
+                    {
+                        if (Ranges[i + 1].First > glyphId)
+                        {
+                            return Ranges[i].FontDictionary;
+                        }
+                    }
+                    else
+                    {
+                        if (Sentinel > glyphId)
+                        {
+                            return Ranges[i].FontDictionary;
+                        }
+
+                        return -1;
+                    }
+                }
+            }
+
+            return 0;
         }
 
         internal struct Range3

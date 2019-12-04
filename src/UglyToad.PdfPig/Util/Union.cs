@@ -8,6 +8,8 @@ namespace UglyToad.PdfPig.Util
     {
         public abstract void Match(Action<A> first, Action<B> second);
 
+        public abstract TResult Match<TResult>(Func<A, TResult> first, Func<B, TResult> second);
+
         private Union() { }
 
         public static Case1 One(A item)
@@ -35,6 +37,12 @@ namespace UglyToad.PdfPig.Util
                 first(Item);
             }
 
+            [DebuggerStepThrough]
+            public override TResult Match<TResult>(Func<A, TResult> first, Func<B, TResult> second)
+            {
+                return first(Item);
+            }
+
             public override string ToString()
             {
                 return Item?.ToString() ?? string.Empty;
@@ -54,6 +62,12 @@ namespace UglyToad.PdfPig.Util
             public override void Match(Action<A> first, Action<B> second)
             {
                 second(Item);
+            }
+
+            [DebuggerStepThrough]
+            public override TResult Match<TResult>(Func<A, TResult> first, Func<B, TResult> second)
+            {
+                return second(Item);
             }
 
             public override string ToString()

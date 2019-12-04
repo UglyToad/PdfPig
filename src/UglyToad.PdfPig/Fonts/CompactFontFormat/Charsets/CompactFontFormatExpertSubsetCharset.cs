@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CompactFontFormat.Charsets
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
 
@@ -101,7 +102,7 @@
 
         public static CompactFontFormatExpertSubsetCharset Value { get; } = new CompactFontFormatExpertSubsetCharset();
 
-        private readonly IReadOnlyDictionary<int, KeyValuePair<int, string>> characterIdToStringIdAndName;
+        private readonly IReadOnlyDictionary<int, KeyValuePair<int, string>> glyphIdToStringIdAndName;
 
         public bool IsCidCharset { get; } = false;
 
@@ -114,22 +115,35 @@
                 furtherMap[i++] = pair;
             }
 
-            characterIdToStringIdAndName = furtherMap;
+            glyphIdToStringIdAndName = furtherMap;
         }
 
         public string GetNameByGlyphId(int glyphId)
         {
-            return characterIdToStringIdAndName[glyphId].Value;
+            return glyphIdToStringIdAndName[glyphId].Value;
         }
 
         public string GetNameByStringId(int stringId)
         {
-            return characterIdToStringIdAndName.Single(x => x.Value.Key == stringId).Value.Value;
+            return glyphIdToStringIdAndName.Single(x => x.Value.Key == stringId).Value.Value;
         }
 
         public int GetStringIdByGlyphId(int glyphId)
         {
-            return characterIdToStringIdAndName[glyphId].Key;
+            return glyphIdToStringIdAndName[glyphId].Key;
+        }
+
+        public int GetGlyphIdByName(string characterName)
+        {
+            foreach (var keyValuePair in glyphIdToStringIdAndName)
+            {
+                if (string.Equals(keyValuePair.Value.Value, characterName, StringComparison.Ordinal))
+                {
+                    return keyValuePair.Key;
+                }
+            }
+
+            return 0;
         }
     }
 }

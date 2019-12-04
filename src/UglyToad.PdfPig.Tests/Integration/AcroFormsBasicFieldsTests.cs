@@ -13,7 +13,7 @@
         }
 
         [Fact]
-        public void GetFormNotNull()
+        public void TryGetFormNotNull()
         {
             using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
@@ -23,7 +23,7 @@
         }
 
         [Fact]
-        public void GetFormDisposedThrows()
+        public void TryGetFormDisposedThrows()
         {
             var document = PdfDocument.Open(GetFilename());
 
@@ -35,7 +35,7 @@
         }
 
         [Fact]
-        public void GetsAllFormFields()
+        public void TryGetGetsAllFormFields()
         {
             using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
@@ -45,7 +45,7 @@
         }
 
         [Fact]
-        public void GetFormFieldsByPage()
+        public void TryGetFormFieldsByPage()
         {
             using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
@@ -56,7 +56,7 @@
         }
 
         [Fact]
-        public void GetsRadioButtonState()
+        public void TryGetGetsRadioButtonState()
         {
             using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {

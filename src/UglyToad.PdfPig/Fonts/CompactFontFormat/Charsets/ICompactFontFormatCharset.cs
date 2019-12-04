@@ -9,5 +9,7 @@
         string GetNameByStringId(int stringId);
 
         int GetStringIdByGlyphId(int glyphId);
+
+        int GetGlyphIdByName(string characterName);
     }
 }

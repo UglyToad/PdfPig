@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CompactFontFormat.Charsets
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
 
@@ -243,35 +244,48 @@
 
         public static CompactFontFormatIsoAdobeCharset Value { get; } = new CompactFontFormatIsoAdobeCharset();
 
-        private readonly IReadOnlyDictionary<int, KeyValuePair<int, string>> characterIdToStringIdAndName;
+        private readonly IReadOnlyDictionary<int, KeyValuePair<int, string>> glyphIdToStringIdAndName;
 
         public bool IsCidCharset { get; } = false;
 
         private CompactFontFormatIsoAdobeCharset()
         {
-            var furtherMap = new Dictionary<int, KeyValuePair<int, string>>();
-            var i = 0;
+            var gidToStringIdAndNameMap = new Dictionary<int, KeyValuePair<int, string>>();
+            var gid = 0;
             foreach (var pair in StringIdToName)
             {
-                furtherMap[i++] = pair;
+                gidToStringIdAndNameMap[gid++] = pair;
             }
 
-            characterIdToStringIdAndName = furtherMap;
+            glyphIdToStringIdAndName = gidToStringIdAndNameMap;
         }
 
         public string GetNameByGlyphId(int glyphId)
         {
-            return characterIdToStringIdAndName[glyphId].Value;
+            return glyphIdToStringIdAndName[glyphId].Value;
         }
 
         public string GetNameByStringId(int stringId)
         {
-            return characterIdToStringIdAndName.Single(x => x.Value.Key == stringId).Value.Value;
+            return glyphIdToStringIdAndName.Single(x => x.Value.Key == stringId).Value.Value;
         }
 
         public int GetStringIdByGlyphId(int glyphId)
         {
-            return characterIdToStringIdAndName[glyphId].Key;
+            return glyphIdToStringIdAndName[glyphId].Key;
+        }
+
+        public int GetGlyphIdByName(string characterName)
+        {
+            foreach (var keyValuePair in glyphIdToStringIdAndName)
+            {
+                if (string.Equals(keyValuePair.Value.Value, characterName, StringComparison.Ordinal))
+                {
+                    return keyValuePair.Key;
+                }
+            }
+
+            return 0;
         }
     }
 }
