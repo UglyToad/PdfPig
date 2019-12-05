@@ -5,7 +5,6 @@
     using Exceptions;
     using Logging;
     using Parser.Parts;
-    using System;
     using System.Collections.Generic;
     using Tokenization.Scanner;
     using Tokens;
@@ -91,16 +90,15 @@
 
             BookmarkNode bookmark;
 
-            if (nodeDictionary.TryGet(NameToken.Dest, pdfScanner, out ArrayToken destArray))
+            if (nodeDictionary.TryGet(NameToken.Dest, pdfScanner, out ArrayToken destArray)
+                && TryGetExplicitDestination(destArray, catalog, log, out var destination))
             {
-                var destination = GetExplicitDestination(destArray, catalog, isLenientParsing, log);
-
                 bookmark = new DocumentBookmarkNode(title, level, destination, children);
             }
             else if (nodeDictionary.TryGet(NameToken.Dest, pdfScanner, out IDataToken<string> destStringToken))
             {
                 // 12.3.2.3 Named Destinations
-                if (namedDestinations.TryGetValue(destStringToken.Data, out var destination))
+                if (namedDestinations.TryGetValue(destStringToken.Data, out destination))
                 {
                     bookmark = new DocumentBookmarkNode(title, level, destination, children);
                 }
@@ -114,8 +112,7 @@
                 }
             }
             else if (nodeDictionary.TryGet(NameToken.A, pdfScanner, out DictionaryToken actionDictionary)
-            && TryGetAction(actionDictionary, catalog, pdfScanner, isLenientParsing, namedDestinations,
-                         log, out var actionResult))
+                && TryGetAction(actionDictionary, catalog, pdfScanner, namedDestinations, log, out var actionResult))
             {
                 if (actionResult.isExternal)
                 {
@@ -186,13 +183,9 @@
                 {
                     var value = kvp.Value;
 
-                    if (TryReadExplicitDestination(value, catalog, pdfScanner, isLenientParsing, log, out var destination))
+                    if (TryReadExplicitDestination(value, catalog, pdfScanner, log, out var destination))
                     {
                         result[kvp.Key] = destination;
-                    }
-                    else if (!isLenientParsing)
-                    {
-                        throw new PdfDocumentFormatException($"Failed to find explicit destination for value '{value}' in: {dests}.");
                     }
                 }
             }
@@ -222,23 +215,14 @@
                 {
                     if (!(nodeNames[i] is IDataToken<string> key))
                     {
-                        if (isLenientParsing)
-                        {
-                            continue;
-                        }
-
-                        throw new PdfDocumentFormatException($"Invalid key '{nodeNames[i]}' in names tree for explicit destinations: {nameTreeNodeDictionary}.");
+                        continue;
                     }
 
                     var value = nodeNames[i + 1];
 
-                    if (TryReadExplicitDestination(value, catalog, pdfScanner, isLenientParsing, log, out var destination))
+                    if (TryReadExplicitDestination(value, catalog, pdfScanner, log, out var destination))
                     {
                         explicitDestinations[key.Data] = destination;
-                    }
-                    else if (!isLenientParsing)
-                    {
-                        throw new PdfDocumentFormatException($"Failed to find explicit destination for value '{value}' in: {nameTreeNodeDictionary}.");
                     }
                 }
             }
@@ -260,42 +244,41 @@
         }
 
         private static bool TryReadExplicitDestination(IToken value, Catalog catalog, IPdfTokenScanner pdfScanner,
-            bool isLenientParsing, ILog log, out ExplicitDestination destination)
+            ILog log, out ExplicitDestination destination)
         {
-            if (DirectObjectFinder.TryGet(value, pdfScanner, out ArrayToken valueArray))
+            destination = null;
+
+            if (DirectObjectFinder.TryGet(value, pdfScanner, out ArrayToken valueArray)
+            && TryGetExplicitDestination(valueArray, catalog, log, out destination))
             {
-                destination = GetExplicitDestination(valueArray, catalog, isLenientParsing, log);
                 return true;
             }
 
             if (DirectObjectFinder.TryGet(value, pdfScanner, out DictionaryToken valueDictionary)
-                     && valueDictionary.TryGet(NameToken.D, pdfScanner, out valueArray))
+                && valueDictionary.TryGet(NameToken.D, pdfScanner, out valueArray)
+                && TryGetExplicitDestination(valueArray, catalog, log, out destination))
             {
-                destination = GetExplicitDestination(valueArray, catalog, isLenientParsing, log);
                 return true;
             }
 
-            destination = null;
             return false;
         }
 
-        private static ExplicitDestination GetExplicitDestination(ArrayToken explicitDestinationArray, Catalog catalog,
-            bool isLenientParsing,
-            ILog log)
+        private static bool TryGetExplicitDestination(ArrayToken explicitDestinationArray, Catalog catalog,
+            ILog log,
+            out ExplicitDestination destination)
         {
-            if (explicitDestinationArray == null)
+            destination = null;
+
+            if (explicitDestinationArray == null || explicitDestinationArray.Length == 0)
             {
-                throw new ArgumentNullException(nameof(explicitDestinationArray));
+                return false;
             }
 
-            if (explicitDestinationArray.Length == 0)
-            {
-                throw new ArgumentException("Invalid (empty) array for an explicit destination.", nameof(explicitDestinationArray));
-            }
-
-            var pageNumber = 1;
+            int pageNumber;
 
             var pageToken = explicitDestinationArray[0];
+
             if (pageToken is IndirectReferenceToken pageIndirectReferenceToken)
             {
                 pageNumber = catalog.GetPageByReference(pageIndirectReferenceToken.Data).PageNumber ?? 1;
@@ -306,27 +289,23 @@
             }
             else
             {
-                var errorMessage = $"{nameof(GetExplicitDestination)} No page number given in 'Dest': '{explicitDestinationArray}'.";
-                if (!isLenientParsing)
-                {
-                    throw new PdfDocumentFormatException(errorMessage);
-                }
+                var errorMessage = $"{nameof(TryGetExplicitDestination)} No page number given in 'Dest': '{explicitDestinationArray}'.";
 
                 log.Error(errorMessage);
+
+                return false;
             }
 
             var destTypeToken = explicitDestinationArray[1] as NameToken;
             if (destTypeToken == null)
             {
                 var errorMessage = $"Missing name token as second argument to explicit destination: {explicitDestinationArray}.";
-                if (!isLenientParsing)
-                {
-                    throw new PdfDocumentFormatException(errorMessage);
-                }
 
                 log.Error(errorMessage);
 
-                return new ExplicitDestination(pageNumber, ExplicitDestinationType.FitPage, ExplicitDestinationCoordinates.Empty);
+                destination = new ExplicitDestination(pageNumber, ExplicitDestinationType.FitPage, ExplicitDestinationCoordinates.Empty);
+
+                return true;
             }
 
             if (destTypeToken.Equals(NameToken.XYZ))
@@ -335,31 +314,39 @@
                 var left = explicitDestinationArray[2] as NumericToken;
                 var top = explicitDestinationArray[3] as NumericToken;
 
-                return new ExplicitDestination(pageNumber, ExplicitDestinationType.XyzCoordinates,
+                destination = new ExplicitDestination(pageNumber, ExplicitDestinationType.XyzCoordinates,
                     new ExplicitDestinationCoordinates(left?.Data, top?.Data));
+
+                return true;
             }
 
             if (destTypeToken.Equals(NameToken.Fit))
             {
                 // [page /Fit]
-                return new ExplicitDestination(pageNumber, ExplicitDestinationType.FitPage,
+                destination = new ExplicitDestination(pageNumber, ExplicitDestinationType.FitPage,
                     ExplicitDestinationCoordinates.Empty);
+
+                return true;
             }
 
             if (destTypeToken.Equals(NameToken.FitH))
             {
                 // [page /FitH top]
                 var top = explicitDestinationArray[2] as NumericToken;
-                return new ExplicitDestination(pageNumber, ExplicitDestinationType.FitHorizontally,
+                destination = new ExplicitDestination(pageNumber, ExplicitDestinationType.FitHorizontally,
                     new ExplicitDestinationCoordinates(null, top?.Data));
+
+                return true;
             }
 
             if (destTypeToken.Equals(NameToken.FitV))
             {
                 // [page /FitV left]
                 var left = explicitDestinationArray[2] as NumericToken;
-                return new ExplicitDestination(pageNumber, ExplicitDestinationType.FitVertically,
+                destination = new ExplicitDestination(pageNumber, ExplicitDestinationType.FitVertically,
                     new ExplicitDestinationCoordinates(left?.Data));
+
+                return true;
             }
 
             if (destTypeToken.Equals(NameToken.FitR))
@@ -370,37 +357,44 @@
                 var right = explicitDestinationArray[4] as NumericToken;
                 var top = explicitDestinationArray[5] as NumericToken;
 
-                return new ExplicitDestination(pageNumber, ExplicitDestinationType.FitRectangle,
+                destination = new ExplicitDestination(pageNumber, ExplicitDestinationType.FitRectangle,
                     new ExplicitDestinationCoordinates(left?.Data, top?.Data, right?.Data, bottom?.Data));
+
+                return true;
             }
 
             if (destTypeToken.Equals(NameToken.FitB))
             {
                 // [page /FitB]
-                return new ExplicitDestination(pageNumber, ExplicitDestinationType.FitBoundingBox,
+                destination = new ExplicitDestination(pageNumber, ExplicitDestinationType.FitBoundingBox,
                     ExplicitDestinationCoordinates.Empty);
+
+                return true;
             }
 
             if (destTypeToken.Equals(NameToken.FitBH))
             {
                 // [page /FitBH top]
-                return new ExplicitDestination(pageNumber, ExplicitDestinationType.FitBoundingBoxHorizontally,
+                destination = new ExplicitDestination(pageNumber, ExplicitDestinationType.FitBoundingBoxHorizontally,
                     new ExplicitDestinationCoordinates(null, (explicitDestinationArray[2] as NumericToken)?.Data));
+
+                return true;
             }
 
             if (destTypeToken.Equals(NameToken.FitBV))
             {
                 // [page /FitBV left]
-                return new ExplicitDestination(pageNumber, ExplicitDestinationType.FitBoundingBoxVertically,
+                destination = new ExplicitDestination(pageNumber, ExplicitDestinationType.FitBoundingBoxVertically,
                     new ExplicitDestinationCoordinates((explicitDestinationArray[2] as NumericToken)?.Data));
+
+                return true;
             }
 
-            throw new PdfDocumentFormatException($"Unknown explicit destination type: {destTypeToken}.");
+            return false;
         }
         #endregion
 
         private static bool TryGetAction(DictionaryToken actionDictionary, Catalog catalog, IPdfTokenScanner pdfScanner,
-            bool isLenientParsing,
             IReadOnlyDictionary<string, ExplicitDestination> namedDestinations,
             ILog log,
             out (bool isExternal, string externalFileName, ExplicitDestination destination) result)
@@ -414,16 +408,16 @@
 
             if (actionType.Equals(NameToken.GoTo))
             {
-                if (actionDictionary.TryGet(NameToken.D, pdfScanner, out ArrayToken destinationArray))
+                if (actionDictionary.TryGet(NameToken.D, pdfScanner, out ArrayToken destinationArray)
+                && TryGetExplicitDestination(destinationArray, catalog, log, out var destination))
                 {
-                    var destination = GetExplicitDestination(destinationArray, catalog, isLenientParsing, log);
-
                     result = (false, null, destination);
 
                     return true;
                 }
-                else if (actionDictionary.TryGet(NameToken.D, pdfScanner, out IDataToken<string> destinationName)
-                         && namedDestinations.TryGetValue(destinationName.Data, out var destination))
+
+                if (actionDictionary.TryGet(NameToken.D, pdfScanner, out IDataToken<string> destinationName)
+                         && namedDestinations.TryGetValue(destinationName.Data, out destination))
                 {
                     result = (false, null, destination);
 
