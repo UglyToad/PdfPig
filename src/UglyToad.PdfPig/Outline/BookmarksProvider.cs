@@ -281,7 +281,14 @@
 
             if (pageToken is IndirectReferenceToken pageIndirectReferenceToken)
             {
-                pageNumber = catalog.GetPageByReference(pageIndirectReferenceToken.Data).PageNumber ?? 1;
+                var page = catalog.GetPageByReference(pageIndirectReferenceToken.Data);
+
+                if (page?.PageNumber == null)
+                {
+                    return false;
+                }
+
+                pageNumber = page.PageNumber.Value;
             }
             else if (pageToken is NumericToken pageNumericToken)
             {
