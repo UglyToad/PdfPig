@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
+    using System.Linq;
     using Xunit;
 
     public class PigReproductionPowerpointTests
@@ -48,6 +49,8 @@
             {
                 var foundBookmarks = document.TryGetBookmarks(out var bookmarks);
                 Assert.True(foundBookmarks);
+                Assert.Equal(35, bookmarks.Roots.Count);
+                Assert.Equal(35, bookmarks.GetNodes().Count());
             }
         }
     }

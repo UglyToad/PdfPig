@@ -1,121 +1,15 @@
-﻿using System;
-using UglyToad.PdfPig.Geometry;
-using UglyToad.PdfPig.Logging;
-using UglyToad.PdfPig.Tokens;
-
-namespace UglyToad.PdfPig.Outline
+﻿namespace UglyToad.PdfPig.Outline
 {
-    using System.Collections.Generic;
     using Content;
+    using Destinations;
     using Exceptions;
+    using Logging;
     using Parser.Parts;
+    using System;
+    using System.Collections.Generic;
     using Tokenization.Scanner;
+    using Tokens;
     using Util;
-
-    internal class ExplicitDestination
-    {
-        public int? PageNumber { get; }
-
-        public ExplicitDestinationType Type { get; }
-
-        public ExplicitDestinationCoordinates Coordinates { get; }
-
-        public ExplicitDestination(int? pageNumber,
-            ExplicitDestinationType type,
-            ExplicitDestinationCoordinates coordinates)
-        {
-            PageNumber = pageNumber;
-            Type = type;
-            Coordinates = coordinates;
-        }
-    }
-
-    /// <summary>
-    /// The display type for opening an <see cref="ExplicitDestination"/>.
-    /// </summary>
-    internal enum ExplicitDestinationType
-    {
-        /// <summary>
-        /// Display the page with the given top left coordinates and 
-        /// zoom level.
-        /// </summary>
-        XyzCoordinates = 0,
-        /// <summary>
-        /// Fit the entire page within the window.
-        /// </summary>
-        FitPage = 1,
-        /// <summary>
-        /// Fit the entire page width within the window.
-        /// </summary>
-        FitHorizontally = 2,
-        /// <summary>
-        /// Fit the entire page height within the window.
-        /// </summary>
-        FitVertically = 3,
-        /// <summary>
-        /// Fit the rectangle specified by the <see cref="ExplicitDestinationCoordinates"/>
-        /// within the window.
-        /// </summary>
-        FitRectangle = 4,
-        /// <summary>
-        /// Fit the page's bounding box within the window.
-        /// </summary>
-        FitBoundingBox = 5,
-        /// <summary>
-        /// Fit the page's bounding box width within the window.
-        /// </summary>
-        FitBoundingBoxHorizontally = 6,
-        /// <summary>
-        /// Fit the page's bounding box height within the window.
-        /// </summary>
-        FitBoundingBoxVertically = 7
-    }
-
-    /// <summary>
-    /// The coordinates of the region to display for a <see cref="ExplicitDestination"/>.
-    /// </summary>
-    internal class ExplicitDestinationCoordinates
-    {
-        public static ExplicitDestinationCoordinates Empty { get; } = new ExplicitDestinationCoordinates(null, null, null, null);
-        /// <summary>
-        /// The left side of the region to display.
-        /// </summary>
-        public decimal? Left { get; }
-
-        /// <summary>
-        /// The top edge of the region to display.
-        /// </summary>
-        public decimal? Top { get; }
-
-        /// <summary>
-        /// The right side of the region to display
-        /// </summary>
-        public decimal? Right { get; }
-
-        /// <summary>
-        /// The bottom edge of the region to display.
-        /// </summary>
-        public decimal? Bottom { get; }
-
-        public ExplicitDestinationCoordinates(decimal? left)
-        {
-            Left = left;
-        }
-
-        public ExplicitDestinationCoordinates(decimal? left, decimal? top)
-        {
-            Left = left;
-            Top = top;
-        }
-
-        public ExplicitDestinationCoordinates(decimal? left, decimal? top, decimal? right, decimal? bottom)
-        {
-            Left = left;
-            Top = top;
-            Right = right;
-            Bottom = bottom;
-        }
-    }
 
     internal class BookmarksProvider
     {
@@ -169,9 +63,113 @@ namespace UglyToad.PdfPig.Outline
                 next = DirectObjectFinder.Get<DictionaryToken>(nextReference, pdfScanner);
             }
 
-            return null;
+            return new Bookmarks(roots);
         }
 
+        /// <summary>
+        /// Extract bookmarks recursively.
+        /// </summary>
+        private void ReadBookmarksRecursively(DictionaryToken nodeDictionary, int level, bool readSiblings, HashSet<IndirectReference> seen,
+            IReadOnlyDictionary<string, ExplicitDestination> namedDestinations,
+            Catalog catalog,
+            List<BookmarkNode> list)
+        {
+            // 12.3 Document-Level Navigation
+
+            // 12.3.3 Document Outline - Title
+            // (Required) The text that shall be displayed on the screen for this item.
+            if (!nodeDictionary.TryGetOptionalStringDirect(NameToken.Title, pdfScanner, out var title))
+            {
+                throw new PdfDocumentFormatException($"Invalid title for outline (bookmark) node: {nodeDictionary}.");
+            }
+
+            var children = new List<BookmarkNode>();
+            if (nodeDictionary.TryGet(NameToken.First, pdfScanner, out DictionaryToken firstChild))
+            {
+                ReadBookmarksRecursively(firstChild, level + 1, true, seen, namedDestinations, catalog, children);
+            }
+
+            BookmarkNode bookmark;
+
+            if (nodeDictionary.TryGet(NameToken.Dest, pdfScanner, out ArrayToken destArray))
+            {
+                var destination = GetExplicitDestination(destArray, catalog, isLenientParsing, log);
+
+                bookmark = new DocumentBookmarkNode(title, level, destination, children);
+            }
+            else if (nodeDictionary.TryGet(NameToken.Dest, pdfScanner, out IDataToken<string> destStringToken))
+            {
+                // 12.3.2.3 Named Destinations
+                if (namedDestinations.TryGetValue(destStringToken.Data, out var destination))
+                {
+                    bookmark = new DocumentBookmarkNode(title, level, destination, children);
+                }
+                else if (!isLenientParsing)
+                {
+                    throw new PdfDocumentFormatException($"Invalid destination name for bookmark node: {destStringToken.Data}.");
+                }
+                else
+                {
+                    return;
+                }
+            }
+            else if (nodeDictionary.TryGet(NameToken.A, pdfScanner, out DictionaryToken actionDictionary)
+            && TryGetAction(actionDictionary, catalog, pdfScanner, isLenientParsing, namedDestinations,
+                         log, out var actionResult))
+            {
+                if (actionResult.isExternal)
+                {
+                    bookmark = new ExternalBookmarkNode(title, level, actionResult.externalFileName, children);
+                }
+                else if (actionResult.destination != null)
+                {
+                    bookmark = new DocumentBookmarkNode(title, level, actionResult.destination, children);
+                }
+                else if (!isLenientParsing)
+                {
+                    throw new PdfDocumentFormatException($"Invalid action for bookmark node: {actionDictionary}.");
+                }
+                else
+                {
+                    return;
+                }
+            }
+            else
+            {
+                log.Error($"No /Dest(ination) or /A(ction) entry found for bookmark node: {nodeDictionary}.");
+
+                return;
+            }
+
+            list.Add(bookmark);
+
+            if (!readSiblings)
+            {
+                return;
+            }
+
+            // Walk all siblings if this was the first child.
+            var current = nodeDictionary;
+            while (true)
+            {
+                if (!current.TryGet(NameToken.Next, out IndirectReferenceToken nextReference)
+                    || !seen.Add(nextReference.Data))
+                {
+                    break;
+                }
+
+                current = DirectObjectFinder.Get<DictionaryToken>(nextReference, pdfScanner);
+
+                if (current == null)
+                {
+                    break;
+                }
+
+                ReadBookmarksRecursively(current, level, false, seen, namedDestinations, catalog, list);
+            }
+        }
+
+        #region Named Destinations
         private static IReadOnlyDictionary<string, ExplicitDestination> ReadNamedDestinations(Catalog catalog, IPdfTokenScanner pdfScanner,
             bool isLenientParsing, ILog log)
         {
@@ -222,9 +220,7 @@ namespace UglyToad.PdfPig.Outline
             {
                 for (var i = 0; i < nodeNames.Length; i += 2)
                 {
-                    var key = nodeNames[i] as IDataToken<string>;
-
-                    if (key == null)
+                    if (!(nodeNames[i] is IDataToken<string> key))
                     {
                         if (isLenientParsing)
                         {
@@ -283,106 +279,6 @@ namespace UglyToad.PdfPig.Outline
             return false;
         }
 
-        /// <summary>
-        /// Extract bookmarks recursively.
-        /// </summary>
-        private void ReadBookmarksRecursively(DictionaryToken nodeDictionary, int level, bool readSiblings, HashSet<IndirectReference> seen, 
-            IReadOnlyDictionary<string, ExplicitDestination> namedDestinations,
-            Catalog catalog,
-            List<BookmarkNode> list)
-        {
-            // 12.3 Document-Level Navigation
-
-            // 12.3.3 Document Outline - Title
-            // (Required) The text that shall be displayed on the screen for this item.
-            if (!nodeDictionary.TryGetOptionalStringDirect(NameToken.Title, pdfScanner, out var title))
-            {
-                throw new PdfDocumentFormatException($"Invalid title for outline (bookmark) node: {nodeDictionary}.");
-            }
-
-            if (nodeDictionary.TryGet(NameToken.Dest, pdfScanner, out ArrayToken destArray))
-            {
-                var desti = GetExplicitDestination(destArray, catalog, isLenientParsing, log);
-            }
-            else if (nodeDictionary.TryGet(NameToken.Dest, pdfScanner, out IDataToken<string> destStringToken))
-            {
-                // 12.3.2.3 Named Destinations
-                if (namedDestinations.TryGetValue(destStringToken.Data, out var destination))
-                {
-                    
-                }
-                else if (!isLenientParsing)
-                {
-                    throw new PdfDocumentFormatException($"Invalid destination name for bookmark node: {destStringToken.Data}.");
-                }
-            }
-
-            var children = new List<BookmarkNode>();
-            if (nodeDictionary.TryGet(NameToken.First, pdfScanner, out DictionaryToken firstChild))
-            {
-                ReadBookmarksRecursively(firstChild, level + 1, true, seen, namedDestinations, catalog, children);
-            }
-
-                list.Add(new BookmarkNode(title, PdfPoint.Origin, new PdfRectangle(), level, 1, string.Empty, false, children));
-
-            if (!readSiblings)
-            {
-                return;
-            }
-
-            // Walk all siblings if this was the first child.
-            var current = nodeDictionary;
-            while (true)
-            {
-                if (!current.TryGet(NameToken.Next, out IndirectReferenceToken nextReference)
-                    || !seen.Add(nextReference.Data))
-                {
-                    break;
-                }
-
-                current = DirectObjectFinder.Get<DictionaryToken>(nextReference, pdfScanner);
-
-                if (current == null)
-                {
-                    break;
-                }
-
-                ReadBookmarksRecursively(current, level, false, seen, namedDestinations, catalog, list);
-            }
-
-            //// 12.3.2 Destinations
-            //if (nodeDictionary.TryGet(NameToken.Dest, out ArrayToken destToken))
-            //{
-            //    // 12.3.2.2 Explicit Destinations
-            //    GetDestination(destToken, newNode);
-            //}
-            //else if (dictionary.TryGet(NameToken.Dest, out IDataToken<string> destStringToken))
-            //{
-            //    // 12.3.2.3 Named Destinations
-            //    GetNamedDestination(destStringToken, ref newNode);
-            //}
-            //else if (dictionary.TryGet(NameToken.A, out IToken actionToken))
-            //{
-            //    // 12.6 Actions
-            //    GetActions(actionToken, ref newNode);
-            //}
-            //else
-            //{
-            //    log.Error("BookmarksProvider.RecursiveBookmark(): No 'Dest' or 'Action' token found.");
-            //}
-        }
-
-
-        private static int ParsePageNumber(string goToStr)
-        {
-            if (int.TryParse(System.Text.RegularExpressions.Regex.Match(goToStr, "[0-9]+").Value, out int number))
-            {
-                return number + 1;
-            }
-            return 0;
-        }
-
-        //#region Destinations
         private static ExplicitDestination GetExplicitDestination(ArrayToken explicitDestinationArray, Catalog catalog,
             bool isLenientParsing,
             ILog log)
@@ -397,7 +293,7 @@ namespace UglyToad.PdfPig.Outline
                 throw new ArgumentException("Invalid (empty) array for an explicit destination.", nameof(explicitDestinationArray));
             }
 
-            var pageNumber = default(int?);
+            var pageNumber = 1;
 
             var pageToken = explicitDestinationArray[0];
             if (pageToken is IndirectReferenceToken pageIndirectReferenceToken)
@@ -501,249 +397,52 @@ namespace UglyToad.PdfPig.Outline
 
             throw new PdfDocumentFormatException($"Unknown explicit destination type: {destTypeToken}.");
         }
+        #endregion
 
-        //private void GetNamedDestination(IDataToken<string> destStringToken, ref BookmarkNode currentNode)
-        //{
-        //    if (destStringToken == null)
-        //    {
-        //        throw new ArgumentNullException(nameof(destStringToken), "BookmarksProvider.GetNamedDestination()");
-        //    }
+        private static bool TryGetAction(DictionaryToken actionDictionary, Catalog catalog, IPdfTokenScanner pdfScanner,
+            bool isLenientParsing,
+            IReadOnlyDictionary<string, ExplicitDestination> namedDestinations,
+            ILog log,
+            out (bool isExternal, string externalFileName, ExplicitDestination destination) result)
+        {
+            result = (false, null, null);
 
-        //    // 12.3.2.3 Named Destinations
-        //    if (structure.Catalog.CatalogDictionary.TryGet(NameToken.Dests, out IndirectReferenceToken destsToken11))
-        //    {
-        //        // In PDF 1.1, the correspondence between name objects and destinations shall be defined by the 
-        //        // Dests entry in the document catalogue (see 7.7.2, “Document Catalog”). The value of this entry 
-        //        // shall be a dictionary in which each key is a destination name and the corresponding value is 
-        //        // either an array defining the destination, using the syntax shown in Table 151, or a dictionary
-        //        // with a D entry whose value is such an array.
-        //        throw new NotImplementedException("BookmarksProvider.GetNamedDestination(): PDF 1.1.");
-        //    }
-        //    else if (structure.Catalog.CatalogDictionary.TryGet(NameToken.Names, out IndirectReferenceToken namesToken))
-        //    {
-        //        // In PDF 1.2 and later, the correspondence between strings and destinations may alternatively be
-        //        // defined by the Dests entry in the document’s name dictionary (see 7.7.4, “Name Dictionary”). 
-        //        // The value of this entry shall be a name tree (7.9.6, “Name Trees”) mapping name strings to 
-        //        // destinations. (The keys in the name tree may be treated as text strings for display purposes.) 
-        //        // The destination value associated with a key in the name tree may be either an array or a 
-        //        // dictionary, as described in the preceding paragraph.
-        //        var namesDictionary = structure.GetObject(namesToken.Data).Data as DictionaryToken;
-        //        if (namesDictionary == null)
-        //        {
-        //            throw new ArgumentNullException(nameof(namesDictionary), "BookmarksProvider.GetNamedDestination()");
-        //        }
+            if (!actionDictionary.TryGet(NameToken.S, pdfScanner, out NameToken actionType))
+            {
+                throw new PdfDocumentFormatException($"No action type (/S) specified for action: {actionDictionary}.");
+            }
 
-        //        if (namesDictionary.TryGet(NameToken.Dests, out IndirectReferenceToken destsToken))
-        //        {
-        //            var destsDictionary = structure.GetObject(destsToken.Data).Data as DictionaryToken;
-        //            if (destsDictionary == null)
-        //            {
-        //                throw new ArgumentNullException(nameof(destsDictionary), "BookmarksProvider.GetNamedDestination()");
-        //            }
+            if (actionType.Equals(NameToken.GoTo))
+            {
+                if (actionDictionary.TryGet(NameToken.D, pdfScanner, out ArrayToken destinationArray))
+                {
+                    var destination = GetExplicitDestination(destinationArray, catalog, isLenientParsing, log);
 
-        //            IToken found = FindInNameTree(destStringToken, destsDictionary);
-        //            if (found != null)
-        //            {
-        //                ArrayToken destToken = null;
-        //                if (found is IndirectReferenceToken indirect)
-        //                {
-        //                    var pageObject = structure.GetObject(indirect.Data);
-        //                    if (pageObject.Data is DictionaryToken dictionaryToken)
-        //                    {
-        //                        if (!dictionaryToken.TryGet(NameToken.D, out destToken))
-        //                        {
-        //                            throw new ArgumentException("BookmarksProvider.GetNamedDestination(): Cannot find token 'D'.");
-        //                        }
-        //                    }
-        //                    else if (pageObject.Data is ArrayToken arrayToken)
-        //                    {
-        //                        destToken = arrayToken;
-        //                    }
-        //                    else
-        //                    {
-        //                        throw new NotImplementedException("BookmarksProvider.GetNamedDestination(): Token type '" + pageObject.Data + "'.");
-        //                    }
-        //                }
-        //                else if (found is ArrayToken arrayToken)
-        //                {
-        //                    destToken = arrayToken;
-        //                }
-        //                else if (found is DictionaryToken)
-        //                {
-        //                    throw new NotImplementedException("BookmarksProvider.GetNamedDestination(): Token type 'DictionaryToken'.");
-        //                }
-        //                else
-        //                {
-        //                    throw new NotImplementedException("BookmarksProvider.GetNamedDestination(): Token type '" + found.GetType() + "'.");
-        //                }
+                    result = (false, null, destination);
 
-        //                var pageNumber = structure.Catalog.GetPageByReference(((IndirectReferenceToken)destToken[0]).Data).PageNumber;
-        //                if (pageNumber.HasValue)
-        //                {
-        //                    currentNode.PageNumber = pageNumber.Value;
-        //                }
-        //                GetDestination(destToken, currentNode);
-        //            }
-        //        }
-        //    }
-        //}
+                    return true;
+                }
+                else if (actionDictionary.TryGet(NameToken.D, pdfScanner, out IDataToken<string> destinationName)
+                         && namedDestinations.TryGetValue(destinationName.Data, out var destination))
+                {
+                    result = (false, null, destination);
 
-        //private IToken FindInNameTree<T>(T find, DictionaryToken dictionaryToken) where T : IDataToken<string>
-        //{
-        //    // 7.9.6 Name Trees
-        //    // Intermediate node
-        //    if (dictionaryToken.TryGet(NameToken.Kids, out ArrayToken kidsToken))
-        //    {
-        //        foreach (var kid in kidsToken.Data)
-        //        {
-        //            var dictionary = structure.GetObject(((IndirectReferenceToken)kid).Data).Data as DictionaryToken;
-        //            if (dictionary != null && dictionary.TryGet(NameToken.Limits, out ArrayToken limits))
-        //            {
-        //                // (Intermediate and leaf nodes only; required) Shall be an array of two strings,
-        //                // that shall specify the (lexically) least and greatest keys included in the
-        //                // Names array of a leaf node or in the Names arrays of any leaf nodes that are
-        //                // descendants of an intermediate node.
-        //                var least = limits[0] as IDataToken<string>;
-        //                var greatest = limits[1] as IDataToken<string>;
+                    return true;
+                }
+            }
+            else if (actionType.Equals(NameToken.GoToR))
+            {
+                if (actionDictionary.TryGetOptionalStringDirect(NameToken.F, pdfScanner, out var filename))
+                {
+                    result = (true, filename, null);
+                    return true;
+                }
 
-        //                if (IsStringBetween(find.Data, least.Data, greatest.Data))
-        //                {
-        //                    var indRef = FindInNameTree(find, dictionary);
-        //                    if (indRef != null)
-        //                    {
-        //                        return indRef;
-        //                    }
-        //                    else
-        //                    {
-        //                        throw new ArgumentException("BookmarksProvider.FindNamedDestination(): Did no find the key '" + find.Data + "' in Name Tree.");
-        //                    }
-        //                }
-        //            }
-        //        }
-        //    }
-        //    else
-        //    {
-        //        // Leaf node
-        //        if (dictionaryToken.TryGet(NameToken.Names, out ArrayToken names))
-        //        {
-        //            // Names
-        //            // Shall be an array of the form [key_1, value_1, key_2, value_2, …, key_n, value_n]
-        //            // where each key_i shall be a string and the corresponding value_i shall be the object 
-        //            // associated with that key. The keys shall be sorted in lexical order, as described below.
-        //            for (int i = 0; i < names.Length; i += 2)
-        //            {
-        //                if (names[i] is IDataToken<string> n && n.Data.Equals(find.Data))
-        //                {
-        //                    return names[i + 1];
-        //                }
-        //            }
-        //        }
-        //        else
-        //        {
-        //            throw new ArgumentNullException("BookmarksProvider.FindNamedDestination(): Could not find ArrayToken 'Names' in dictionary.");
-        //        }
-        //    }
-        //    throw new ArgumentException("BookmarksProvider.FindNamedDestination(): Did no find the key '" + find.Data + "' in Name Tree.");
-        //}
+                result = (true, string.Empty, null);
+                return true;
+            }
 
-        //private bool IsStringBetween(string str, string least, string greatest)
-        //{
-        //    return (string.Compare(str, least, StringComparison.Ordinal) >= 0 &&
-        //            string.Compare(str, greatest, StringComparison.Ordinal) <= 0);
-        //}
-        //#endregion
-
-        //#region Actions
-        //private void GetActions(IToken actionToken, ref BookmarkNode currentNode)
-        //{
-        //    if (actionToken is DictionaryToken dictionaryToken)
-        //    {
-        //        if (dictionaryToken.TryGet(NameToken.S, out NameToken sToken))
-        //        {
-        //            if (sToken.Equals(NameToken.GoTo)) // 12.6.4.2, Go-To Actions
-        //            {
-        //                if (dictionaryToken.TryGet(NameToken.D, out IToken goToToken))
-        //                {
-        //                    HandleGoToAction(goToToken, ref currentNode);
-        //                }
-        //                else
-        //                {
-        //                    throw new ArgumentException("BookmarksProvider.GetActions(): Could not find token 'D' in 'GoTo'.");
-        //                }
-        //            }
-        //            else if (sToken.Equals(NameToken.GoToR)) // 12.6.4.3, Remote Go-To Actions
-        //            {
-        //                if (dictionaryToken.TryGet(NameToken.D, out IToken goToRToken))
-        //                {
-        //                    if (dictionaryToken.TryGet(NameToken.F, out IToken remoteFileToken))
-        //                    {
-        //                        currentNode.ExternalLink = GetString(NameToken.F, remoteFileToken);
-        //                    }
-        //                    HandleGoToRAction(goToRToken, ref currentNode);
-        //                }
-        //                else
-        //                {
-        //                    throw new ArgumentException("BookmarksProvider.GetActions(): Could not find token 'D' in 'GoToR'.");
-        //                }
-        //            }
-        //            else
-        //            {
-        //                currentNode.IsExternal = true;
-        //                log.Debug("BookmarksProvider.GetActions(): Ignoring unknown token '" + sToken.Data + "'.");
-        //            }
-        //        }
-        //        else
-        //        {
-        //            throw new ArgumentException("BookmarksProvider.GetActions(): Could not find token 'S' in 'Action'.");
-        //        }
-        //    }
-        //    else if (actionToken is IndirectReferenceToken indirectReferenceToken)
-        //    {
-        //        var tempToken = structure.GetObject(indirectReferenceToken.Data).Data;
-        //        if (tempToken is DictionaryToken dictionaryAction)
-        //        {
-        //            GetActions(dictionaryAction, ref currentNode);
-        //        }
-        //        else
-        //        {
-        //            throw new NotImplementedException("BookmarksProvider.GetActions(): " + nameof(tempToken) + " of type " + tempToken.GetType() + ".");
-        //        }
-        //    }
-        //    else
-        //    {
-        //        throw new NotImplementedException("BookmarksProvider.GetActions(): " + nameof(actionToken) + " of type " + actionToken.GetType() + ".");
-        //    }
-        //}
-
-        //private void HandleGoToRAction(IToken goToRToken, ref BookmarkNode currentNode)
-        //{
-        //    currentNode.IsExternal = true;
-        //    HandleGoToAction(goToRToken, ref currentNode);
-        //}
-
-        //private void HandleGoToAction(IToken goToToken, ref BookmarkNode currentNode)
-        //{
-        //    if (goToToken is ArrayToken arrayToken)
-        //    {
-        //        GetDestination(arrayToken, currentNode);
-        //    }
-        //    else if (goToToken is IDataToken<string> stringToken)
-        //    {
-        //        GetNamedDestination(stringToken, ref currentNode);
-        //        if (currentNode.PageNumber == 0)
-        //        {
-        //            currentNode.PageNumber = ParsePageNumber(stringToken.Data);
-        //        }
-        //    }
-        //    else if (goToToken is IndirectReferenceToken indirectReferenceToken)
-        //    {
-        //        HandleGoToAction(structure.GetObject(indirectReferenceToken.Data).Data, ref currentNode);
-        //    }
-        //    else
-        //    {
-        //        throw new NotImplementedException("BookmarksProvider.HandleGoToAction(): " + nameof(goToToken) + " of type " + goToToken.GetType());
-        //    }
-        //}
-        //#endregion
+            return false;
+        }
     }
 }

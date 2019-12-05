@@ -7,34 +7,39 @@ namespace UglyToad.PdfPig.Outline
     /// </summary>
     public class Bookmarks
     {
-        internal Bookmarks(IReadOnlyList<BookmarkNode> tree)
-        {
-            Tree = tree;
-        }
-
         /// <summary>
-        /// The bookmarks' node tree.
+        /// The roots of the bookmarks' node tree.
         /// </summary>
-        public IReadOnlyList<BookmarkNode> Tree { get; }
+        public IReadOnlyList<BookmarkNode> Roots { get; }
 
-        /// <summary>
-        /// Get all nodes as a list.
-        /// </summary>
-        public IReadOnlyList<BookmarkNode> GetNodes()
+        internal Bookmarks(IReadOnlyList<BookmarkNode> roots)
         {
-            List<BookmarkNode> nodes = new List<BookmarkNode>();
-            GetNodes(Tree, nodes);
-            return nodes;
+            Roots = roots;
         }
-
-        private static void GetNodes(IReadOnlyList<BookmarkNode> roots, List<BookmarkNode> nodes)
+        
+        /// <summary>
+        /// Get all nodes.
+        /// </summary>
+        public IEnumerable<BookmarkNode> GetNodes()
         {
-            foreach (var node in roots)
+            foreach (var root in Roots)
             {
-                nodes.Add(node);
-                if (node.Children.Count > 0)
+                foreach (var child in GetNodes(root))
                 {
-                    GetNodes(node.Children, nodes);
+                    yield return child;
+                }
+            }
+        }
+
+        private static IEnumerable<BookmarkNode> GetNodes(BookmarkNode node)
+        {
+            yield return node;
+
+            foreach (var child in node.Children)
+            {
+                foreach (var childNode in GetNodes(child))
+                {
+                    yield return childNode;
                 }
             }
         }
