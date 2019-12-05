@@ -14,7 +14,7 @@
     using Parser;
     using Tokenization.Scanner;
     using Tokens;
-    using UglyToad.PdfPig.Outline;
+    using Outline;
     using Util.JetBrains.Annotations;
 
     /// <inheritdoc />
@@ -45,6 +45,7 @@
         private readonly IPdfTokenScanner pdfScanner;
 
         private readonly IFilterProvider filterProvider;
+        private readonly BookmarksProvider bookmarksProvider;
 
         [NotNull]
         private readonly Pages pages;
@@ -88,7 +89,8 @@
             EncryptionDictionary encryptionDictionary,
             IPdfTokenScanner pdfScanner,
             IFilterProvider filterProvider,
-            AcroFormFactory acroFormFactory)
+            AcroFormFactory acroFormFactory,
+            BookmarksProvider bookmarksProvider)
         {
             this.log = log;
             this.inputBytes = inputBytes;
@@ -98,6 +100,7 @@
             this.encryptionDictionary = encryptionDictionary;
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
+            this.bookmarksProvider = bookmarksProvider ?? throw new ArgumentNullException(nameof(bookmarksProvider));
             Information = information ?? throw new ArgumentNullException(nameof(information));
             pages = new Pages(catalog, pageFactory, isLenientParsing, pdfScanner);
             Structure = new Structure(catalog, crossReferenceTable, pdfScanner);
@@ -209,8 +212,7 @@
                 throw new ObjectDisposedException("Cannot access the bookmarks after the document is disposed.");
             }
 
-            var bookmarksProvider = new BookmarksProvider(this.log, this.Structure);
-            bookmarks = bookmarksProvider.GetBookmarks();
+            bookmarks = bookmarksProvider.GetBookmarks(Structure.Catalog);
             if (bookmarks != null) return true;
             return false;
         }

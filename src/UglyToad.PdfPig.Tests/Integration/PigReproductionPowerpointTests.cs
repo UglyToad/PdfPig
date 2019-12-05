@@ -40,5 +40,15 @@
                 }
             }
         }
+
+        [Fact]
+        public void CanGetBookmarks()
+        {
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                var foundBookmarks = document.TryGetBookmarks(out var bookmarks);
+                Assert.True(foundBookmarks);
+            }
+        }
     }
 }

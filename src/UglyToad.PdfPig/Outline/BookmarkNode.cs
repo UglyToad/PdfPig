@@ -3,6 +3,8 @@ using UglyToad.PdfPig.Geometry;
 
 namespace UglyToad.PdfPig.Outline
 {
+    using System;
+
     /// <summary>
     /// A node in the <see cref="Bookmarks"/> of a PDF document.
     /// </summary>
@@ -11,55 +13,60 @@ namespace UglyToad.PdfPig.Outline
         /// <summary>
         /// The text displayed for this node.
         /// </summary>
-        public string Title { get; internal set; }
+        public string Title { get; }
 
         /// <summary>
         /// The bookmark's coordinates in the pdf page.
         /// </summary>
-        public PdfPoint TopLeft { get; internal set; }
+        public PdfPoint TopLeft { get; }
 
         /// <summary>
         /// The bookmark's bounding box in the pdf page.
         /// </summary>
-        public PdfRectangle BoundingBox { get; internal set; }
+        public PdfRectangle BoundingBox { get; }
 
         /// <summary>
         /// The node's hierarchical level.
         /// </summary>
-        public int Level { get; internal set; }
+        public int Level { get; }
 
         /// <summary>
-        /// The page's number where the bookmark is located.
+        /// The page number where the bookmark is located.
         /// </summary>
-        public int PageNumber { get; internal set; }
+        public int PageNumber { get; }
 
         /// <summary>
         /// The link to an external source.
         /// </summary>
-        public string ExternalLink { get; internal set; }
+        public string ExternalLink { get; }
 
         /// <summary>
         /// True if bookmark refers to an external source.
         /// </summary>
-        public bool IsExternal { get; internal set; }
+        public bool IsExternal { get; }
 
         /// <summary>
         /// The bookmark's sub-bookmark.
         /// </summary>
-        public List<BookmarkNode> Children { get; internal set; }
+        public IReadOnlyList<BookmarkNode> Children { get; }
 
-        /// <summary>
-        /// Create a new instance of BookmarkNode.
-        /// </summary>
-        public BookmarkNode()
+        /// <inheritdoc />
+        public BookmarkNode(string title, PdfPoint topLeft, PdfRectangle boundingBox, int level, int pageNumber, 
+            string externalLink, 
+            bool isExternal,
+            IReadOnlyList<BookmarkNode> children)
         {
-            Title = string.Empty;
-            Children = new List<BookmarkNode>();
+            Title = title;
+            TopLeft = topLeft;
+            BoundingBox = boundingBox;
+            Level = level;
+            PageNumber = pageNumber;
+            ExternalLink = externalLink;
+            IsExternal = isExternal;
+            Children = children ?? throw new ArgumentNullException(nameof(children));
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
+        /// <inheritdoc />
         public override string ToString()
         {
             return "page #" + PageNumber + ", " + Level + ", " + Title;

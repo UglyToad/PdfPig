@@ -21,6 +21,7 @@
     using Graphics;
     using IO;
     using Logging;
+    using Outline;
     using Parts;
     using Parts.CrossReference;
     using Tokenization.Scanner;
@@ -136,12 +137,14 @@
             var caching = new ParsingCachingProviders(bruteForceSearcher, resourceContainer);
 
             var acroFormFactory = new AcroFormFactory(pdfScanner, filterProvider);
+            var bookmarksProvider = new BookmarksProvider(log, pdfScanner, isLenientParsing);
             
             return new PdfDocument(log, inputBytes, version, crossReferenceTable, isLenientParsing, caching, pageFactory, catalog, information,
                 encryptionDictionary,
                 pdfScanner,
                 filterProvider,
-                acroFormFactory);
+                acroFormFactory,
+                bookmarksProvider);
         }
 
         private static (IndirectReference, DictionaryToken) ParseTrailer(CrossReferenceTable crossReferenceTable, bool isLenientParsing, IPdfTokenScanner pdfTokenScanner,
