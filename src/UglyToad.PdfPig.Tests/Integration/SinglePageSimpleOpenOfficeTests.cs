@@ -17,7 +17,7 @@
         {
             var file = GetFilename();
 
-            using (var document = PdfDocument.Open(File.ReadAllBytes(file)))
+            using (var document = PdfDocument.Open(File.ReadAllBytes(file), ParsingOptions.LenientParsingOff))
             {
                 Assert.Equal(1, document.NumberOfPages);
             }
@@ -26,7 +26,7 @@
         [Fact]
         public void HasCorrectPageSize()
         {
-            using (var document = PdfDocument.Open(GetFilename()))
+            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
                 var page = document.GetPage(1);
 
@@ -37,7 +37,7 @@
         [Fact]
         public void HasCorrectLetterBoundingBoxes()
         {
-            using (var document = PdfDocument.Open(GetFilename()))
+            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
                 var page = document.GetPage(1);
 
@@ -72,13 +72,22 @@
         [Fact]
         public void GetsCorrectPageTextIgnoringHiddenCharacters()
         {
-            using (var document = PdfDocument.Open(GetFilename()))
+            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
                 var page = document.GetPage(1);
 
                 var text = string.Join(string.Empty, page.Letters.Select(x => x.Value));
 
                 Assert.Equal("I am a simple pdf.", text);
+            }
+        }
+
+        [Fact]
+        public void TryGetBookmarksFalse()
+        {
+            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
+            {
+                Assert.False(document.TryGetBookmarks(out _));
             }
         }
     }
