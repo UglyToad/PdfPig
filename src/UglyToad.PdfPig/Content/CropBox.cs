@@ -1,20 +1,30 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using System;
     using Geometry;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
-    /// Defines the visible region, contents expanding beyond the crop box should be clipped.
+    /// Defines the visible region of a page, contents expanding beyond the crop box should be clipped.
     /// </summary>
-    internal class CropBox
+    public class CropBox
     {
-        [NotNull]
+        /// <summary>
+        /// Defines the clipping of the content when the page is displayed or printed. The page's contents are to be clipped (cropped) to this rectangle
+        /// and then imposed on the output medium.
+        /// </summary>
         public PdfRectangle Bounds { get; }
 
-        public CropBox(PdfRectangle? bounds)
+        /// <summary>
+        /// Create a new <see cref="CropBox"/>.
+        /// </summary>
+        public CropBox(PdfRectangle bounds)
         {
-            Bounds = bounds ?? throw new ArgumentNullException(nameof(bounds));
+            Bounds = bounds;
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return Bounds.ToString();
         }
     }
 }

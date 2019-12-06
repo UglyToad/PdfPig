@@ -27,9 +27,12 @@
         /// </summary>
         public int Number { get; }
 
-        internal MediaBox MediaBox { get; }
+        /// <summary>
+        /// Defines the visible region of the page, content outside the <see cref="CropBox"/> is clipped/cropped.
+        /// </summary>
+        public CropBox CropBox { get; }
 
-        internal CropBox CropBox { get; }
+        internal MediaBox MediaBox { get; }
 
         internal PageContent Content { get; }
 

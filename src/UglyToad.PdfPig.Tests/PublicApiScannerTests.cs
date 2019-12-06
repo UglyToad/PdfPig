@@ -63,6 +63,7 @@
                 "UglyToad.PdfPig.Annotations.AnnotationFlags",
                 "UglyToad.PdfPig.Annotations.AnnotationType",
                 "UglyToad.PdfPig.Content.Catalog",
+                "UglyToad.PdfPig.Content.CropBox",
                 "UglyToad.PdfPig.Content.DocumentInformation",
                 "UglyToad.PdfPig.Content.InlineImage",
                 "UglyToad.PdfPig.Content.IPdfImage",

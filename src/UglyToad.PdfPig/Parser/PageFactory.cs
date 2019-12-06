@@ -138,7 +138,6 @@
 
         private PageContent GetContent(IReadOnlyList<byte> contentBytes, CropBox cropBox, UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation, bool isLenientParsing)
         {
-            var txt = OtherEncodings.BytesAsLatin1String(contentBytes);
             var operations = pageContentParser.Parse(new ByteArrayInputBytes(contentBytes));
 
             var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit, rotation, isLenientParsing, pdfScanner, 
