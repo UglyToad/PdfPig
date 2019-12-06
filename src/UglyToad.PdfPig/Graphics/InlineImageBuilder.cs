@@ -42,17 +42,17 @@
                     return true;
                 }
 
-                if (!resourceStore.TryGetNamedColorSpace(name, out var colorSpaceNamedToken) || !(colorSpaceNamedToken is NameToken newName))
+                if (!resourceStore.TryGetNamedColorSpace(name, out var colorSpaceNamedToken))
                 {
                     return false;
                 }
 
-                if (newName.TryMapToColorSpace(out colorSpaceResult))
+                if (colorSpaceNamedToken.Name.TryMapToColorSpace(out colorSpaceResult))
                 {
                     return true;
                 }
 
-                if (TryExtendedColorSpaceNameMapping(newName, out colorSpaceResult))
+                if (TryExtendedColorSpaceNameMapping(colorSpaceNamedToken.Name, out colorSpaceResult))
                 {
                     return true;
                 }

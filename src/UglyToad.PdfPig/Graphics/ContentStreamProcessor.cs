@@ -92,7 +92,7 @@
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.log = log;
             graphicsStack.Push(new CurrentGraphicsState());
-            ColorSpaceContext = new ColorSpaceContext(GetCurrentState);
+            ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore);
         }
 
         public PageContent Process(IReadOnlyList<IGraphicsStateOperation> operations)

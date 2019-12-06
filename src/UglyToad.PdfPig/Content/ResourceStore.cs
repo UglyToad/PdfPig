@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using Exceptions;
     using Fonts;
+    using Graphics.Colors;
     using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
@@ -19,7 +20,7 @@
 
         private readonly Dictionary<NameToken, DictionaryToken> extendedGraphicsStates = new Dictionary<NameToken, DictionaryToken>();
 
-        private readonly Dictionary<NameToken, NameToken> colorSpaceNames = new Dictionary<NameToken, NameToken>();
+        private readonly Dictionary<NameToken, ResourceColorSpace> namedColorSpaces = new Dictionary<NameToken, ResourceColorSpace>();
 
         public ResourceStore(IPdfTokenScanner scanner, IFontFactory fontFactory)
         {
@@ -72,7 +73,7 @@
 
                     if (DirectObjectFinder.TryGet(nameColorSpacePair.Value, scanner, out NameToken colorSpaceName))
                     {
-                        colorSpaceNames[name] = colorSpaceName;
+                        namedColorSpaces[name] = new ResourceColorSpace(colorSpaceName);
                     }
                     else if (DirectObjectFinder.TryGet(nameColorSpacePair.Value, scanner, out ArrayToken colorSpaceArray))
                     {
@@ -88,7 +89,7 @@
                             throw new PdfDocumentFormatException($"Invalid ColorSpace array encountered in page resource dictionary: {colorSpaceArray}.");
                         }
 
-                        colorSpaceNames[name] = arrayNamedColorSpace;
+                        namedColorSpaces[name] = new ResourceColorSpace(arrayNamedColorSpace, colorSpaceArray);
                     }
                     else
                     {
@@ -158,16 +159,16 @@
             return font;
         }
 
-        public bool TryGetNamedColorSpace(NameToken name, out IToken namedToken)
+        public bool TryGetNamedColorSpace(NameToken name, out ResourceColorSpace namedToken)
         {
-            namedToken = null;
+            namedToken = default(ResourceColorSpace);
 
             if (name == null)
             {
                 throw new ArgumentNullException(nameof(name));
             }
 
-            if (!colorSpaceNames.TryGetValue(name, out var colorSpaceName))
+            if (!namedColorSpaces.TryGetValue(name, out var colorSpaceName))
             {
                 return false;
             }

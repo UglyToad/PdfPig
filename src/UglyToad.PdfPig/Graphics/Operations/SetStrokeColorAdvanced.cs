@@ -54,7 +54,8 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            if (operationContext.ColorSpaceContext.CurrentStrokingColorSpace.GetFamily() != ColorSpaceFamily.Device)
+            if (operationContext.ColorSpaceContext.CurrentStrokingColorSpace.GetFamily() != ColorSpaceFamily.Device
+                || operationContext.ColorSpaceContext.AdvancedStrokingColorSpace != null)
             {
                 return;
             }

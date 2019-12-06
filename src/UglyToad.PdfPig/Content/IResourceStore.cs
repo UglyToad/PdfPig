@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
     using Fonts;
+    using Graphics.Colors;
     using Tokens;
 
     internal interface IResourceStore
@@ -21,6 +22,6 @@
 
         IFont GetFontDirectly(IndirectReferenceToken fontReferenceToken, bool isLenientParsing);
 
-        bool TryGetNamedColorSpace(NameToken name, out IToken namedColorSpace);
+        bool TryGetNamedColorSpace(NameToken name, out ResourceColorSpace namedColorSpace);
     }
 }

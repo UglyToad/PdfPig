@@ -8,10 +8,10 @@ namespace UglyToad.PdfPig.Export
     public interface ITextExporter
     {
         /// <summary>
-        /// Get the text representation.
+        /// Get the text representation of a page in a desired format.
         /// </summary>
-        /// <param name="page"></param>
-        /// <returns></returns>
+        /// <param name="page">The page to convert to the format.</param>
+        /// <returns>The <see langword="string"/> containing the page contents represented in a compatible format.</returns>
         string Get(Page page);
     }
 }

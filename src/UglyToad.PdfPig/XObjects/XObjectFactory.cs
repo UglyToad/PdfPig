@@ -122,12 +122,12 @@
                 return true;
             }
 
-            if (!resourceStore.TryGetNamedColorSpace(name, out var colorSpaceNamedToken) || !(colorSpaceNamedToken is NameToken newName))
+            if (!resourceStore.TryGetNamedColorSpace(name, out var colorSpaceNamedToken))
             {
                 return false;
             }
 
-            return newName.TryMapToColorSpace(out colorSpaceResult);
+            return colorSpaceNamedToken.Name.TryMapToColorSpace(out colorSpaceResult);
         }
     }
 }
