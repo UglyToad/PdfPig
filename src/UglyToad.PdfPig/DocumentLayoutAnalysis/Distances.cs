@@ -91,7 +91,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="distanceMeasure">The distance measure to use.</param>
         /// <param name="distance">The distance between reference point, and its nearest neighbour.</param>
         /// <returns></returns>
-        public static int FindIndexNearest<T>(this T element, IReadOnlyList<T> candidates,
+        internal static int FindIndexNearest<T>(this T element, IReadOnlyList<T> candidates,
             Func<T, PdfPoint> candidatesPoint, Func<T, PdfPoint> pivotPoint,
             Func<PdfPoint, PdfPoint, double> distanceMeasure, out double distance)
         {
@@ -133,7 +133,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="pivotLine"></param>
         /// <param name="distanceMeasure">The distance measure between two lines to use.</param>
         /// <param name="distance">The distance between reference line, and its nearest neighbour.</param>
-        public static int FindIndexNearest<T>(this T element, IReadOnlyList<T> candidates,
+        internal static int FindIndexNearest<T>(this T element, IReadOnlyList<T> candidates,
             Func<T, PdfLine> candidatesLine, Func<T, PdfLine> pivotLine,
             Func<PdfLine, PdfLine, double> distanceMeasure, out double distance)
         {
