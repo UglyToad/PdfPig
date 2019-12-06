@@ -102,7 +102,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 
             Letter[] letters = pageLetters.ToArray();
 
-            var groupedIndexes = ClusteringAlgorithms.SimpleTransitiveClosure(letters,
+            var groupedIndexes = ClusteringAlgorithms.ClusterNearestNeighbours(letters,
                 distMeasure, maxDistanceFunction,
                 l => l.EndBaseLine, l => l.StartBaseLine,
                 l => !string.IsNullOrWhiteSpace(l.Value),

@@ -126,6 +126,10 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                     continue;
                 }
 
+                // Merge all lines (words)
+                blocks[b] = new TextBlock(GetLines(blocks[b].TextLines.SelectMany(l => l.Words).ToList(),
+                    double.MaxValue, withinLine).ToList());
+
                 for (var c = 0; c < blocks.Count; c++)
                 {
                     if (b == c || blocks[c] == null)
@@ -142,8 +146,9 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 
                         // 2. Rebuild lines, using max distance = +Inf as we know all words will be in the
                         // same block. Filtering will still be done based on angle.
-                        var mergedLines = GetLines(mergedWords, double.MaxValue, withinLine);
-                        blocks[b] = new TextBlock(mergedLines.ToList());
+                        // Merge all lines (words) sharing same bottom (baseline)
+                        var mergedLines = GetLines(mergedWords, double.MaxValue, withinLine).ToList();
+                        blocks[b] = new TextBlock(mergedLines.OrderByDescending(l => l.BoundingBox.Bottom).ToList());
 
                         // Remove
                         blocks[c] = null;
@@ -191,7 +196,8 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                 return null;
             }
 
-            var closestWordIndex = pointR.FindIndexNearest(wordsWithinAngleBoundDistancePoints, Distances.Euclidean, out _);
+            var closestWordIndex = pointR.FindIndexNearest(wordsWithinAngleBoundDistancePoints, p => p,
+                p => p, Distances.Euclidean, out _);
 
             if (closestWordIndex < 0 || closestWordIndex >= wordsWithinAngleBoundDistancePoints.Count)
             {
@@ -206,15 +212,8 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// </summary>
         private static IEnumerable<TextLine> GetLines(List<Word> words, double maxDist, AngleBounds withinLine)
         {
-            /***************************************************************************************************
-             * /!\ WARNING: Given how FindIndexNearest() works, if 'maxDist' > 'word Width', the algo might not 
-             * work as the FindIndexNearest() function might pair the pivot with itself (the pivot's right point 
-             * (distance = width) is closer than other words' left point).
-             * -> Solution would be to find more than one nearest neighbours. Use KDTree?
-             ***************************************************************************************************/
-
             TextDirection textDirection = words[0].TextDirection;
-            var groupedIndexes = ClusteringAlgorithms.SimpleTransitiveClosure(words, Distances.Euclidean,
+            var groupedIndexes = ClusteringAlgorithms.ClusterNearestNeighbours(words, Distances.Euclidean,
                 (pivot, candidate) => maxDist,
                 pivot => pivot.BoundingBox.BottomRight, candidate => candidate.BoundingBox.BottomLeft,
                 pivot => true,
@@ -257,11 +256,6 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
              *  If they are overlapping, we compute the middle point (new X coordinate) of the overlapping area.
              *  We finally compute the Euclidean distance between these two middle points.
              *  If the two lines are not overlapping, the distance is set to the max distance.
-             * 
-             * /!\ WARNING: Given how FindIndexNearest() works, if 'maxDist' > 'line Height', the algo won't 
-             * work as the FindIndexNearest() function will always pair the pivot with itself (the pivot's top
-             * point (distance = height) is closer than other lines' top point).
-             * -> Solution would be to find more than one nearest neighbours. Use KDTree?
              **************************************************************************************************/
 
             Func<PdfLine, PdfLine, double> euclidianOverlappingMiddleDistance = (l1, l2) =>
@@ -276,7 +270,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             new PdfPoint(left + d / 2, l2.Point1.Y));
             };
 
-            var groupedIndexes = ClusteringAlgorithms.SimpleTransitiveClosure(lines,
+            var groupedIndexes = ClusteringAlgorithms.ClusterNearestNeighbours(lines,
                 euclidianOverlappingMiddleDistance,
                 (pivot, candidate) => maxDist,
                 pivot => new PdfLine(pivot.BoundingBox.BottomLeft, pivot.BoundingBox.BottomRight),
