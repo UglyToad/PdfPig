@@ -47,6 +47,11 @@
         /// <param name="rotation">Rotation in degrees clockwise.</param>
         public PageRotationDegrees(int rotation)
         {
+            while (rotation >= 360)
+            {
+                rotation -= 360;
+            }
+
             if (rotation != 0 && rotation != 90 && rotation != 180 && rotation != 270)
             {
                 throw new ArgumentOutOfRangeException(nameof(rotation), $"Rotation must be 0, 90, 180 or 270. Got: {rotation}.");
