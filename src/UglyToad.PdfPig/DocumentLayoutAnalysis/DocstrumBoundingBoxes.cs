@@ -207,9 +207,6 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             return finalDistanceMeasure(pointR, wordsWithinAngleBoundDistancePoints[closestWordIndex]);
         }
 
-        /// <summary>
-        /// Build lines via transitive closure.
-        /// </summary>
         private static IEnumerable<TextLine> GetLines(List<Word> words, double maxDist, AngleBounds withinLine)
         {
             TextDirection textDirection = words[0].TextDirection;
@@ -245,9 +242,6 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             }
         }
 
-        /// <summary>
-        /// Build blocks via transitive closure.
-        /// </summary>
         private static IEnumerable<TextBlock> GetLinesGroups(TextLine[] lines, double maxDist)
         {
             /**************************************************************************************************

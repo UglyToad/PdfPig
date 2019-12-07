@@ -12,8 +12,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
     internal class ClusteringAlgorithms
     {
         /// <summary>
-        /// Algorithm to group elements via transitive closure, using nearest neighbours and maximum distance.
-        /// https://en.wikipedia.org/wiki/Transitive_closure
+        /// Algorithm to group elements using nearest neighbours.
         /// </summary>
         /// <typeparam name="T">Letter, Word, TextLine, etc.</typeparam>
         /// <param name="elements">List of elements to group.</param>
@@ -76,8 +75,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         }
 
         /// <summary>
-        /// Algorithm to group elements via transitive closure, using nearest neighbours and maximum distance.
-        /// https://en.wikipedia.org/wiki/Transitive_closure
+        /// Algorithm to group elements using nearest neighbours.
         /// </summary>
         /// <typeparam name="T">Letter, Word, TextLine, etc.</typeparam>
         /// <param name="elements">Array of elements to group.</param>
@@ -140,8 +138,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         }
 
         /// <summary>
-        /// Algorithm to group elements via transitive closure, using nearest neighbours and maximum distance.
-        /// https://en.wikipedia.org/wiki/Transitive_closure
+        /// Algorithm to group elements using nearest neighbours.
         /// </summary>
         /// <typeparam name="T">Letter, Word, TextLine, etc.</typeparam>
         /// <param name="elements">Array of elements to group.</param>
