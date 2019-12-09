@@ -56,7 +56,9 @@
 
                 var metrics = Standard14.GetAdobeFontMetrics(standard14Name.Data);
 
-                return new Type1Standard14Font(metrics);
+                var overrideEncoding = encodingReader.Read(dictionary, isLenientParsing);
+
+                return new Type1Standard14Font(metrics, overrideEncoding);
             }
 
             var firstCharacter = FontDictionaryAccessHelper.GetFirstCharacter(dictionary);
