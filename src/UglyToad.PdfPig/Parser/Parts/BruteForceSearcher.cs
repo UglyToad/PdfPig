@@ -68,6 +68,7 @@
                             {
                                 inObject = false;
                                 endobjFound = true;
+                                loopProtection = 0;
 
                                 for (int i = 0; i < "endobj".Length; i++)
                                 {
@@ -131,14 +132,6 @@
                     objectNumberBytes.Insert(0, (char)bytes.CurrentByte);
                     offset--;
                     bytes.Seek(offset);
-                }
-
-                if (!ReadHelper.IsWhitespace(bytes.CurrentByte))
-                {
-                    if (bytes.CurrentByte != (byte)'j' && bytes.CurrentByte != (byte)'m')
-                    {
-                        continue;
-                    }
                 }
 
                 var obj = long.Parse(objectNumberBytes.ToString(), CultureInfo.InvariantCulture);
