@@ -12,8 +12,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
     internal class ClusteringAlgorithms
     {
         /// <summary>
-        /// Algorithm to group elements via transitive closure, using nearest neighbours and maximum distance.
-        /// https://en.wikipedia.org/wiki/Transitive_closure
+        /// Algorithm to group elements using nearest neighbours.
         /// </summary>
         /// <typeparam name="T">Letter, Word, TextLine, etc.</typeparam>
         /// <param name="elements">List of elements to group.</param>
@@ -23,7 +22,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="candidatesPoint">The candidates' point to use for pairing, e.g. BottomLeft, TopLeft.</param>
         /// <param name="filterPivot">Filter to apply to the pivot point. If false, point will not be paired at all, e.g. is white space.</param>
         /// <param name="filterFinal">Filter to apply to both the pivot and the paired point. If false, point will not be paired at all, e.g. pivot and paired point have same font.</param>
-        internal static IEnumerable<HashSet<int>> SimpleTransitiveClosure<T>(List<T> elements,
+        internal static IEnumerable<HashSet<int>> ClusterNearestNeighbours<T>(List<T> elements,
             Func<PdfPoint, PdfPoint, double> distMeasure,
             Func<T, T, double> maxDistanceFunction,
             Func<T, PdfPoint> pivotPoint, Func<T, PdfPoint> candidatesPoint,
@@ -41,7 +40,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
              *  that if indexes[i] = j then indexes[j] != i.
              *  
              * 2. Group indexes
-             *  Group indexes if share neighbours in common - Transitive closure
+             *  Group indexes if share neighbours in common - Depth-first search
              *  e.g. if we have indexes[i] = j, indexes[j] = k, indexes[m] = n and indexes[n] = -1
              *  (i,j,k) will form a group and (m,n) will form another group.
              *************************************************************************************/
@@ -56,12 +55,15 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 
                 if (filterPivot(pivot))
                 {
-                    int index = pivotPoint(pivot).FindIndexNearest(candidatesPoints, distMeasure, out double dist);
-                    var paired = elements[index];
+                    int index = pivot.FindIndexNearest(elements, candidatesPoint, pivotPoint, distMeasure, out double dist);
 
-                    if (filterFinal(pivot, paired) && dist < maxDistanceFunction(pivot, paired))
+                    if (index != -1)
                     {
-                        indexes[e] = index;
+                        var paired = elements[index];
+                        if (filterFinal(pivot, paired) && dist < maxDistanceFunction(pivot, paired))
+                        {
+                            indexes[e] = index;
+                        }
                     }
                 }
             });
@@ -73,8 +75,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         }
 
         /// <summary>
-        /// Algorithm to group elements via transitive closure, using nearest neighbours and maximum distance.
-        /// https://en.wikipedia.org/wiki/Transitive_closure
+        /// Algorithm to group elements using nearest neighbours.
         /// </summary>
         /// <typeparam name="T">Letter, Word, TextLine, etc.</typeparam>
         /// <param name="elements">Array of elements to group.</param>
@@ -84,7 +85,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="candidatesPoint">The candidates' point to use for pairing, e.g. BottomLeft, TopLeft.</param>
         /// <param name="filterPivot">Filter to apply to the pivot point. If false, point will not be paired at all, e.g. is white space.</param>
         /// <param name="filterFinal">Filter to apply to both the pivot and the paired point. If false, point will not be paired at all, e.g. pivot and paired point have same font.</param>
-        internal static IEnumerable<HashSet<int>> SimpleTransitiveClosure<T>(T[] elements,
+        internal static IEnumerable<HashSet<int>> ClusterNearestNeighbours<T>(T[] elements,
             Func<PdfPoint, PdfPoint, double> distMeasure,
             Func<T, T, double> maxDistanceFunction,
             Func<T, PdfPoint> pivotPoint, Func<T, PdfPoint> candidatesPoint,
@@ -102,7 +103,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
              *  that if indexes[i] = j then indexes[j] != i.
              *  
              * 2. Group indexes
-             *  Group indexes if share neighbours in common - Transitive closure
+             *  Group indexes if share neighbours in common - Depth-first search
              *  e.g. if we have indexes[i] = j, indexes[j] = k, indexes[m] = n and indexes[n] = -1
              *  (i,j,k) will form a group and (m,n) will form another group.
              *************************************************************************************/
@@ -117,12 +118,15 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 
                 if (filterPivot(pivot))
                 {
-                    int index = pivotPoint(pivot).FindIndexNearest(candidatesPoints, distMeasure, out double dist);
-                    var paired = elements[index];
+                    int index = pivot.FindIndexNearest(elements, candidatesPoint, pivotPoint, distMeasure, out double dist);
 
-                    if (filterFinal(pivot, paired) && dist < maxDistanceFunction(pivot, paired))
+                    if (index != -1)
                     {
-                        indexes[e] = index;
+                        var paired = elements[index];
+                        if (filterFinal(pivot, paired) && dist < maxDistanceFunction(pivot, paired))
+                        {
+                            indexes[e] = index;
+                        }
                     }
                 }
             });
@@ -134,8 +138,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         }
 
         /// <summary>
-        /// Algorithm to group elements via transitive closure, using nearest neighbours and maximum distance.
-        /// https://en.wikipedia.org/wiki/Transitive_closure
+        /// Algorithm to group elements using nearest neighbours.
         /// </summary>
         /// <typeparam name="T">Letter, Word, TextLine, etc.</typeparam>
         /// <param name="elements">Array of elements to group.</param>
@@ -145,7 +148,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="candidatesLine">The candidates' line to use for pairing.</param>
         /// <param name="filterPivot">Filter to apply to the pivot point. If false, point will not be paired at all, e.g. is white space.</param>
         /// <param name="filterFinal">Filter to apply to both the pivot and the paired point. If false, point will not be paired at all, e.g. pivot and paired point have same font.</param>
-        internal static IEnumerable<HashSet<int>> SimpleTransitiveClosure<T>(T[] elements,
+        internal static IEnumerable<HashSet<int>> ClusterNearestNeighbours<T>(T[] elements,
             Func<PdfLine, PdfLine, double> distMeasure,
             Func<T, T, double> maxDistanceFunction,
             Func<T, PdfLine> pivotLine, Func<T, PdfLine> candidatesLine,
@@ -163,7 +166,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
              *  that if indexes[i] = j then indexes[j] != i.
              *  
              * 2. Group indexes
-             *  Group indexes if share neighbours in common - Transitive closure
+             *  Group indexes if share neighbours in common - Depth-first search
              *  e.g. if we have indexes[i] = j, indexes[j] = k, indexes[m] = n and indexes[n] = -1
              *  (i,j,k) will form a group and (m,n) will form another group.
              *************************************************************************************/
@@ -178,12 +181,15 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 
                 if (filterPivot(pivot))
                 {
-                    int index = pivotLine(pivot).FindIndexNearest(candidatesLines, distMeasure, out double dist);
-                    var paired = elements[index];
+                    int index = pivot.FindIndexNearest(elements, candidatesLine, pivotLine, distMeasure, out double dist);
 
-                    if (filterFinal(pivot, paired) && dist < maxDistanceFunction(pivot, paired))
+                    if (index != -1)
                     {
-                        indexes[e] = index;
+                        var paired = elements[index];
+                        if (filterFinal(pivot, paired) && dist < maxDistanceFunction(pivot, paired))
+                        {
+                            indexes[e] = index;
+                        }
                     }
                 }
             });
@@ -195,104 +201,98 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         }
 
         /// <summary>
-        /// Group elements via transitive closure. Each element has only one connected neighbour.
-        /// https://en.wikipedia.org/wiki/Transitive_closure
+        /// Group elements using Depth-first search.
+        /// <para>https://en.wikipedia.org/wiki/Depth-first_search</para>
         /// </summary>
-        /// <param name="indexes">Array of paired elements index.</param>
-        /// <returns></returns>
-        private static List<HashSet<int>> GroupIndexes(int[] indexes)
+        /// <param name="edges">The graph. edges[i] = j indicates that there is an edge between i and j.</param>
+        /// <returns>A List of HashSets containing containing the grouped indexes.</returns>
+        internal static List<HashSet<int>> GroupIndexes(int[] edges)
         {
-            int[][] adjacency = new int[indexes.Length][];
-            for (int i = 0; i < indexes.Length; i++)
+            int[][] adjacency = new int[edges.Length][];
+            for (int i = 0; i < edges.Length; i++)
             {
                 HashSet<int> matches = new HashSet<int>();
-                for (int j = 0; j < indexes.Length; ++j)
+                if (edges[i] != -1) matches.Add(edges[i]);
+                for (int j = 0; j < edges.Length; j++)
                 {
-                    if (indexes[j] == i) matches.Add(j);
+                    if (edges[j] == i) matches.Add(j);
                 }
                 adjacency[i] = matches.ToArray();
             }
 
             List<HashSet<int>> groupedIndexes = new List<HashSet<int>>();
-            bool[] isDone = new bool[indexes.Length];
+            bool[] isDone = new bool[edges.Length];
 
-            for (int p = 0; p < indexes.Length; p++)
+            for (int p = 0; p < edges.Length; p++)
             {
                 if (isDone[p]) continue;
+                groupedIndexes.Add(DfsIterative(p, adjacency, ref isDone));
+            }
+            return groupedIndexes;
+        }
 
-                LinkedList<int[]> L = new LinkedList<int[]>();
-                HashSet<int> grouped = new HashSet<int>();
-                L.AddLast(new[] { p, indexes[p] });
-
-                while (L.Any())
+        /// <summary>
+        /// Group elements using Depth-first search.
+        /// <para>https://en.wikipedia.org/wiki/Depth-first_search</para>
+        /// </summary>
+        /// <param name="edges">The graph. edges[i] = [j, k, l, ...] indicates that there is an edge between i and each element j, k, l, ...</param>
+        /// <returns>A List of HashSets containing containing the grouped indexes.</returns>
+        internal static List<HashSet<int>> GroupIndexes(int[][] edges)
+        {
+            int[][] adjacency = new int[edges.Length][];
+            for (int i = 0; i < edges.Length; i++)
+            {
+                HashSet<int> matches = new HashSet<int>();
+                for (int j = 0; j < edges[i].Length; j++)
                 {
-                    var current = L.First.Value;
-                    L.RemoveFirst();
-                    var current0 = current[0];
-                    var current1 = current[1];
+                    if (edges[i][j] != -1) matches.Add(edges[i][j]);
+                }
 
-                    if (current0 != -1 && !isDone[current0])
+                for (int j = 0; j < edges.Length; j++)
+                {
+                    for (int k = 0; k < edges[j].Length; k++)
                     {
-                        var adjs = adjacency[current0];
-                        foreach (var k in adjs)
-                        {
-                            if (isDone[k]) continue;
-                            L.AddLast(new[] { k, current0 });
-                        }
-
-                        int current0P = indexes[current0];
-                        if (current0P != -1)
-                        {
-                            var adjsP = adjacency[current0P];
-                            foreach (var k in adjsP)
-                            {
-                                if (isDone[k]) continue;
-                                L.AddLast(new[] { k, current0P });
-                                isDone[k] = true;
-                                grouped.Add(k);
-                            }
-                        }
-                        else
-                        {
-                            L.AddLast(new[] { current0, current0P });
-                            isDone[current0] = true;
-                            grouped.Add(current0);
-                        }
-                    }
-
-                    if (current1 != -1 && !isDone[current1])
-                    {
-                        var adjs = adjacency[current1];
-                        foreach (var k in adjs)
-                        {
-                            if (isDone[k]) continue;
-                            L.AddLast(new[] { k, current1 });
-                        }
-
-                        int current1P = indexes[current1];
-                        if (current1P != -1)
-                        {
-                            var adjsP = adjacency[current1P];
-                            foreach (var k in adjsP)
-                            {
-                                if (isDone[k]) continue;
-                                L.AddLast(new[] { k, current1P });
-                                isDone[k] = true;
-                                grouped.Add(k);
-                            }
-                        }
-                        else
-                        {
-                            L.AddLast(new[] { current1, current1P });
-                            isDone[current1] = true;
-                            grouped.Add(current1);
-                        }
+                        if (edges[j][k] == i) matches.Add(j);
                     }
                 }
-                groupedIndexes.Add(grouped);
+                adjacency[i] = matches.ToArray();
             }
 
+            List<HashSet<int>> groupedIndexes = new List<HashSet<int>>();
+            bool[] isDone = new bool[edges.Length];
+
+            for (int p = 0; p < edges.Length; p++)
+            {
+                if (isDone[p]) continue;
+                groupedIndexes.Add(DfsIterative(p, adjacency, ref isDone));
+            }
             return groupedIndexes;
+        }
+
+        /// <summary>
+        /// Depth-first search
+        /// <para>https://en.wikipedia.org/wiki/Depth-first_search</para>
+        /// </summary>
+        private static HashSet<int> DfsIterative(int c, int[][] adj, ref bool[] isDone)
+        {
+            HashSet<int> group = new HashSet<int>();
+            Stack<int> S = new Stack<int>();
+            S.Push(c);
+
+            while (S.Any())
+            {
+                var v = S.Pop();
+                if (!isDone[v])
+                {
+                    group.Add(v);
+                    isDone[v] = true;
+                    foreach (var w in adj[v])
+                    {
+                        S.Push(w);
+                    }
+                }
+            }
+            return group;
         }
     }
 }
