@@ -17,12 +17,11 @@ The simplest usage at this stage is to open a document, reading the words from e
 
     using (PdfDocument document = PdfDocument.Open(@"C:\Documents\document.pdf"))
     {
-        for (var i = 0; i < document.NumberOfPages; i++)
+        foreach (Page page in document.GetPages())
         {
-            // This starts at 1 rather than 0.
-            var page = document.GetPage(i + 1);
+            string pageText = page.Text;
 
-            foreach (var word in page.GetWords())
+            foreach (Word word in page.GetWords())
             {
                 Console.WriteLine(word.Text);
             }
@@ -69,6 +68,7 @@ The ```PdfDocument``` class provides access to the contents of a document loaded
     {
         int pageCount = document.NumberOfPages;
 
+        // Page number starts from 1, not 0.
         Page page = document.GetPage(1);
 
         decimal widthInPoints = page.Width;
@@ -79,7 +79,9 @@ The ```PdfDocument``` class provides access to the contents of a document loaded
     
 ```PdfDocument``` should only be used in a ```using``` statement since it implements ```IDisposable``` (unless the consumer disposes of it elsewhere).
 
-Documents which are encrypted using the RC4 algorithm can be opened with PdfPig (AES is unsupported at the moment). To provide an owner or user password provide the optional `ParsingOptions` when calling `Open` with the `Password` property defined.
+Encrypted documents can be opened by PdfPig. To provide an owner or user password provide the optional `ParsingOptions` when calling `Open` with the `Password` property defined. For example:
+
+    using (PdfDocument document = PdfDocument.Open(@"C:\my-file.pdf",  new ParsingOptions { Password = "password here" }))
 
 Since this is alpha software the consumer should wrap all access in a ```try catch``` block since it is extremely likely to throw exceptions. As a fallback you can try running PDFBox using [IKVM](https://www.ikvm.net/) or using [PDFsharp](http://www.pdfsharp.net) or by a native library wrapper using [docnet](https://github.com/GowenGit/docnet).
 
@@ -213,13 +215,31 @@ These letters contain:
 
 Letter position is measured in PDF coordinates where the origin is the lower left corner of the page. Therefore a higher Y value means closer to the top of the page.
 
-### Annotations ###
+### Annotations (0.0.5) ###
 
-New in v0.0.5 - Early support for retrieving annotations on each page is provided using the method:
+Early support for retrieving annotations on each page is provided using the method:
 
     page.ExperimentalAccess.GetAnnotations()
 
 This call is not cached and the document must not have been disposed prior to use. The annotations API may change in future.
+
+### Bookmarks (0.0.10) ###
+
+The bookmarks (outlines) of a document may be retrieved at the document level:
+
+    bool hasBookmarks = document.TryGetBookmarks(out Bookmarks bookmarks);
+
+This will return `false` if the document does not define any bookmarks.
+
+### Forms (0.0.10) ###
+
+Form fields for interactive forms (AcroForms) can be retrieved using:
+
+    bool hasForm = document.TryGetForm(out AcroForm form);
+
+This will return `false` if the document does not contain a form.
+
+The fields can be accessed using the `AcroForm`'s `Fields` property. Since the form is defined at the document level this will return fields from all pages in the document. Fields are of the types defined by the enum `AcroFieldType`, for example `PushButton`, `Checkbox`, `Text`, etc.
 
 ## Issues ##
 
