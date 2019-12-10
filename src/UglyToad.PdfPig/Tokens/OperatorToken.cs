@@ -4,6 +4,7 @@
 
     internal class OperatorToken : IDataToken<string>
     {
+        private static readonly object Lock = new object();
         private static readonly Dictionary<string, string> PooledNames = new Dictionary<string, string>();
 
         public static readonly OperatorToken R = new OperatorToken("R");
@@ -24,10 +25,15 @@
 
         private OperatorToken(string data)
         {
-            if (!PooledNames.TryGetValue(data, out var stored))
+            string stored;
+
+            lock (Lock)
             {
-                stored = data;
-                PooledNames[data] = stored;
+                if (!PooledNames.TryGetValue(data, out stored))
+                {
+                    stored = data;
+                    PooledNames[data] = stored;
+                }
             }
 
             Data = stored;
