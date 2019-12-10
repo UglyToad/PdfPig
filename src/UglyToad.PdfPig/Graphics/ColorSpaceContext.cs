@@ -68,6 +68,7 @@
                 {
                     AdvancedStrokingColorSpace = namedColorSpace.Name;
                     CurrentStrokingColorSpace = colorspaceActual;
+                    DefaultColorSpace(colorspaceActual);
                 }
                 else
                 {
@@ -120,10 +121,11 @@
                 if (namedColorSpace.Name == NameToken.Separation && namedColorSpace.Data is ArrayToken separationArray
                                                                  && separationArray.Length == 4
                                                                  && separationArray[2] is NameToken alternativeColorSpaceName
-                                                                 && alternativeColorSpaceName.TryMapToColorSpace(out var colorSpaceActual))
+                                                                 && alternativeColorSpaceName.TryMapToColorSpace(out colorspaceActual))
                 {
                     AdvancedNonStrokingColorSpace = namedColorSpace.Name;
-                    CurrentNonStrokingColorSpace = colorSpaceActual;
+                    CurrentNonStrokingColorSpace = colorspaceActual;
+                    DefaultColorSpace(colorspaceActual);
                 }
                 else
                 {
