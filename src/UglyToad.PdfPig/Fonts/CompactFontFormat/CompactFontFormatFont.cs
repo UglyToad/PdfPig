@@ -31,16 +31,34 @@
 
         public PdfRectangle? GetCharacterBoundingBox(string characterName)
         {
-            if (characterName == ".notdef")
-            {
-                return new PdfRectangle(0, 0, 0, 0);
-            }
+            var defaultWidthX = GetDefaultWidthX(characterName);
+            var nominalWidthX = GetNominalWidthX(characterName);
 
-            var result = default(PdfRectangle?);
-            CharStrings.Match(x => throw new NotImplementedException("Type 1 CharStrings in a CFF font are currently unsupported."),
-                x => { result = x.Generate(characterName).Path.GetBoundingRectangle(); });
+            var result = CharStrings.Match(x => throw new NotImplementedException("Type 1 CharStrings in a CFF font are currently unsupported."),
+                x =>
+                {
+                    var glyph = x.Generate(characterName, defaultWidthX, nominalWidthX);
+                    var rectangle = glyph.Path.GetBoundingRectangle();
+                    if (rectangle.HasValue)
+                    {
+                        return rectangle;
+                    }
+
+                    var defaultBoundingBox = TopDictionary.FontBoundingBox;
+                    return new PdfRectangle(0, 0, glyph.Width.GetValueOrDefault(), defaultBoundingBox.Height);
+                });
 
             return result;
+        }
+
+        protected virtual decimal GetDefaultWidthX(string characterName)
+        {
+            return PrivateDictionary.DefaultWidthX;
+        }
+
+        protected virtual decimal GetNominalWidthX(string characterName)
+        {
+            return PrivateDictionary.NominalWidthX;
         }
     }
 
@@ -63,6 +81,43 @@
             PrivateDictionaries = privateDictionaries;
             LocalSubroutines = localSubroutines;
             FdSelect = fdSelect;
+        }
+
+        protected override decimal GetDefaultWidthX(string characterName)
+        {
+            if (!TryGetPrivateDictionaryForCharacter(characterName, out var dictionary))
+            {
+                return 1000;
+            }
+
+            return dictionary.DefaultWidthX;
+        }
+
+        protected override decimal GetNominalWidthX(string characterName)
+        {
+            if (!TryGetPrivateDictionaryForCharacter(characterName, out var dictionary))
+            {
+                return 0;
+            }
+
+            return dictionary.NominalWidthX;
+        }
+
+        private bool TryGetPrivateDictionaryForCharacter(string characterName, out CompactFontFormatPrivateDictionary dictionary)
+        {
+            dictionary = null;
+
+            var glyphId = Charset.GetGlyphIdByName(characterName);
+
+            var fd = FdSelect.GetFontDictionaryIndex(glyphId);
+            if (fd == -1)
+            {
+                return false;
+            }
+
+            dictionary = PrivateDictionaries[fd];
+
+            return true;
         }
     }
 }

@@ -1,13 +1,13 @@
 ﻿namespace UglyToad.PdfPig.AcroForms.Fields
 {
-    using Geometry;
+    using System.Collections.Generic;
     using Tokens;
 
     /// <inheritdoc />
     /// <summary>
     /// A set of radio buttons.
     /// </summary>
-    public class AcroRadioButtonsField : AcroFieldBase
+    public class AcroRadioButtonsField : AcroNonTerminalField
     {
         /// <summary>
         /// The <see cref="AcroButtonFieldFlags"/> which define the behaviour of this button type.
@@ -20,9 +20,8 @@
         /// </summary>
         public AcroRadioButtonsField(DictionaryToken dictionary, string fieldType, AcroButtonFieldFlags fieldFlags, 
             AcroFieldCommonInformation information,
-            int? pageNumber,
-            PdfRectangle? bounds) : 
-            base(dictionary, fieldType, (uint)fieldFlags, AcroFieldType.RadioButton, information, pageNumber, bounds)
+            IReadOnlyList<AcroFieldBase> children) : 
+            base(dictionary, fieldType, (uint)fieldFlags, information, AcroFieldType.RadioButtons, children)
         {
             Flags = fieldFlags;
         }

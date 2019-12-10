@@ -14,6 +14,7 @@
     using Parser;
     using Tokenization.Scanner;
     using Tokens;
+    using UglyToad.PdfPig.Outline;
     using Util.JetBrains.Annotations;
 
     /// <inheritdoc />
@@ -198,18 +199,37 @@
         }
 
         /// <summary>
+        /// Gets the bookmarks if this document contains some.
+        /// </summary>
+        /// <remarks>This will throw a <see cref="ObjectDisposedException"/> if called on a disposed <see cref="PdfDocument"/>.</remarks>
+        public bool TryGetBookmarks(out Bookmarks bookmarks)
+        {
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException("Cannot access the bookmarks after the document is disposed.");
+            }
+
+            var bookmarksProvider = new BookmarksProvider(this.log, this.Structure);
+            bookmarks = bookmarksProvider.GetBookmarks();
+            if (bookmarks != null) return true;
+            return false;
+        }
+
+        /// <summary>
         /// Gets the form if this document contains one.
         /// </summary>
         /// <remarks>This will throw a <see cref="ObjectDisposedException"/> if called on a disposed <see cref="PdfDocument"/>.</remarks>
         /// <returns>An <see cref="AcroForm"/> from the document or <see langword="null"/> if not present.</returns>
-        internal AcroForm GetForm()
+        public bool TryGetForm(out AcroForm form)
         {
             if (isDisposed)
             {
                 throw new ObjectDisposedException("Cannot access the form after the document is disposed.");
             }
 
-            return documentForm.Value;
+            form = documentForm.Value;
+
+            return form != null;
         }
         
         /// <inheritdoc />

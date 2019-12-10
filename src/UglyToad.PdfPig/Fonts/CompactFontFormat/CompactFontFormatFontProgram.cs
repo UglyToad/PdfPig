@@ -62,7 +62,12 @@
 
         public bool TryGetBoundingBox(int characterIdentifier, out PdfRectangle boundingBox)
         {
-            boundingBox = new PdfRectangle(0, 0, 250, 0);
+            var font = GetFont();
+
+            var characterName = GetCharacterName(characterIdentifier);
+
+            boundingBox = font.GetCharacterBoundingBox(characterName) ?? new PdfRectangle(0, 0, 500, 0);
+
             return true;
         }
 

@@ -39,8 +39,11 @@
 
             var expected = new List<string>
             {
+                "UglyToad.PdfPig.AcroForms.AcroForm",
+                "UglyToad.PdfPig.AcroForms.SignatureFlags",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroButtonFieldFlags",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroCheckboxField",
+                "UglyToad.PdfPig.AcroForms.Fields.AcroCheckboxesField",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroChoiceFieldFlags",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroChoiceOption",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroComboBoxField",
@@ -50,6 +53,7 @@
                 "UglyToad.PdfPig.AcroForms.Fields.AcroListBoxField",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroNonTerminalField",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroPushButtonField",
+                "UglyToad.PdfPig.AcroForms.Fields.AcroRadioButtonField",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroRadioButtonsField",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroSignatureField",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroTextField",
@@ -196,6 +200,8 @@
                 "UglyToad.PdfPig.IndirectReference",
                 "UglyToad.PdfPig.IO.IInputBytes",
                 "UglyToad.PdfPig.Logging.ILog",
+                "UglyToad.PdfPig.Outline.Bookmarks",
+                "UglyToad.PdfPig.Outline.BookmarkNode",
                 "UglyToad.PdfPig.ParsingOptions",
                 "UglyToad.PdfPig.PdfDocument",
                 "UglyToad.PdfPig.Structure",

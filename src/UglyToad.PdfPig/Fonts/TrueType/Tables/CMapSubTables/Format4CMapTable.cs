@@ -35,8 +35,11 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
             Segments = segments ?? throw new ArgumentNullException(nameof(segments));
             GlyphIds = glyphIds ?? throw new ArgumentNullException(nameof(glyphIds));
 
-            FirstCharacterCode = Segments[0].StartCode;
-            LastCharacterCode = Segments[Segments.Count - 2].EndCode;
+            if (Segments.Count > 0)
+            {
+                FirstCharacterCode = Segments[0].StartCode;
+                LastCharacterCode = Segments[Segments.Count - 1].EndCode;
+            }
         }
 
         public int CharacterCodeToGlyphIndex(int characterCode)

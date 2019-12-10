@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Simple
 {
-    using System;
     using System.Collections.Generic;
     using Cmap;
     using CompactFontFormat;
@@ -165,11 +164,10 @@
                 return new PdfRectangle(0, 0, widths[characterCode - firstChar], 0);
             }
 
-            var rect = default(PdfRectangle?);
-            fontProgram.Match(x =>
+            var rect = fontProgram.Match(x =>
                 {
                     var name = encoding.GetName(characterCode);
-                    rect = x.GetCharacterBoundingBox(name);
+                    return x.GetCharacterBoundingBox(name);
                 },
                 x =>
                 {
@@ -182,7 +180,8 @@
                     {
                         characterName = x.GetCharacterName(characterCode);
                     }
-                    rect = x.GetCharacterBoundingBox(characterName);
+
+                    return x.GetCharacterBoundingBox(characterName);
                 });
 
             if (!rect.HasValue)

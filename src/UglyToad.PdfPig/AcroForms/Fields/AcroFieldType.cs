@@ -10,11 +10,19 @@
         /// </summary>
         PushButton,
         /// <summary>
+        /// A set of checkboxes.
+        /// </summary>
+        Checkboxes,
+        /// <summary>
         /// A checkbox which toggles between on and off states.
         /// </summary>
         Checkbox,
         /// <summary>
         /// A set of radio buttons.
+        /// </summary>
+        RadioButtons,
+        /// <summary>
+        /// A single radio button, as part of a set or on its own.
         /// </summary>
         RadioButton,
         /// <summary>
@@ -34,8 +42,8 @@
         /// </summary>
         Signature,
         /// <summary>
-        /// A field which acts as a container for other fields.
+        /// The field type wasn't specified.
         /// </summary>
-        NonTerminal
+        Unknown
     }
 }

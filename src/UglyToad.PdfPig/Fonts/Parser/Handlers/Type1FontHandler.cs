@@ -97,13 +97,14 @@
                 }
             }
 
-            Encoding fromFont = null;
-            font?.Match(x => fromFont = x.Encoding != null ? new BuiltInEncoding(x.Encoding) : default(Encoding), x =>
+            Encoding fromFont = font?.Match(x => x.Encoding != null ? new BuiltInEncoding(x.Encoding) : default(Encoding), x =>
             {
                 if (x.Fonts != null && x.Fonts.Count > 0)
                 {
-                    fromFont = x.Fonts.First().Value.Encoding;
+                    return x.Fonts.First().Value.Encoding;
                 }
+
+                return default(Encoding);
             });
 
             Encoding encoding = encodingReader.Read(dictionary, isLenientParsing, descriptor, fromFont);

@@ -30,5 +30,10 @@
         {
             throw new NotSupportedException("Cid Charsets do not support named glyphs.");
         }
+
+        public int GetGlyphIdByName(string characterName)
+        {
+            return 0;
+        }
     }
 }

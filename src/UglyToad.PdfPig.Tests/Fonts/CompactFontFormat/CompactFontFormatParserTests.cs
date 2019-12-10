@@ -100,13 +100,12 @@
 
             var font = fontSet.Fonts["MinionPro-It"];
 
-            var charStrings = default(Type2CharStrings);
-            font.CharStrings.Match(x => throw new InvalidOperationException("The charstrings in MinionPro are Type 2."),
-                x => charStrings = x);
+            var charStrings = font.CharStrings.Match(x => throw new InvalidOperationException("The charstrings in MinionPro are Type 2."),
+                x => x);
 
             foreach (var charString in charStrings.CharStrings)
             {
-                var path = charStrings.Generate(charString.Key);
+                var path = charStrings.Generate(charString.Key, 1000, 0);
 
                 Assert.NotNull(path);
             }

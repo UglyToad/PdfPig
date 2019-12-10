@@ -6,7 +6,7 @@
     /// Specifies document level characteristics for any signature fields in the document's <see cref="AcroForm"/>.
     /// </summary>
     [Flags]
-    internal enum SignatureFlags
+    public enum SignatureFlags
     {
         /// <summary>
         /// The document contains at least one signature field.

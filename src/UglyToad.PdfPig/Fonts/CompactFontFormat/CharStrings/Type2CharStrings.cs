@@ -47,8 +47,10 @@
         /// Evaluate the CharString for the character with a given name returning the path constructed for the glyph.
         /// </summary>
         /// <param name="name">The name of the character to retrieve the CharString for.</param>
+        /// <param name="defaultWidthX">The default width for the glyph from the font's private dictionary.</param>
+        /// <param name="nominalWidthX">The nominal width which individual glyph widths are encoded as the difference from.</param>
         /// <returns>A <see cref="PdfPath"/> for the glyph.</returns>
-        public Type2Glyph Generate(string name)
+        public Type2Glyph Generate(string name, decimal defaultWidthX, decimal nominalWidthX)
         {
             Type2Glyph glyph;
             lock (locker)
@@ -65,7 +67,7 @@
 
                 try
                 {
-                    glyph = Run(sequence);
+                    glyph = Run(sequence, defaultWidthX, nominalWidthX);
 
                     glyphs[name] = glyph;
                 }
@@ -78,68 +80,81 @@
             return glyph;
         }
 
-        private static Type2Glyph Run(CommandSequence sequence)
+        private static Type2Glyph Run(CommandSequence sequence, decimal defaultWidthX, decimal nominalWidthX)
         {
             var context = new Type2BuildCharContext();
-
+            
             var hasRunStackClearingCommand = false;
-            foreach (var command in sequence.Commands)
+            for (var i = 0; i < sequence.Commands.Count; i++)
             {
+                var command = sequence.Commands[i];
+
+                var isOnlyCommand = sequence.Commands.Count == 1;
+
                 command.Match(x => context.Stack.Push(x),
-                   x =>
-                   {
-                       if (!hasRunStackClearingCommand)
-                       {
-                           /*
+                    x =>
+                    {
+                        if (!hasRunStackClearingCommand)
+                        {
+                            /*
                             * The first stack-clearing operator, which must be one of hstem, hstemhm, vstem, vstemhm, cntrmask, hintmask, hmoveto, vmoveto,
                             * rmoveto, or endchar, takes an additional argument — the width (as described earlier), which may be expressed as zero or one numeric argument.
                             */
-                           hasRunStackClearingCommand = true;
-                           switch (x.Name)
-                           {
-                               case "hstem":
-                               case "hstemhm":
-                               case "vstemhm":
-                               case "vstem":
-                                   {
-                                       var oddArgCount = context.Stack.Length % 2 != 0;
-                                       if (oddArgCount)
-                                       {
-                                           context.Width = context.Stack.PopBottom();
-                                       }
-                                       break;
-                                   }
-                               case "hmoveto":
-                               case "vmoveto":
-                                   SetWidthFromArgumentsIfPresent(context, 1);
-                                   break;
-                               case "rmoveto":
-                                   SetWidthFromArgumentsIfPresent(context, 2);
-                                   break;
-                               case "cntrmask":
-                               case "hintmask":
-                               case "endchar:":
-                                   SetWidthFromArgumentsIfPresent(context, 0);
-                                   break;
-                               default:
-                                   hasRunStackClearingCommand = false;
-                                   break;
+                            hasRunStackClearingCommand = true;
+                            switch (x.Name)
+                            {
+                                case "hstem":
+                                case "hstemhm":
+                                case "vstemhm":
+                                case "vstem":
+                                {
+                                    var oddArgCount = context.Stack.Length % 2 != 0;
+                                    if (oddArgCount)
+                                    {
+                                        context.Width = nominalWidthX + context.Stack.PopBottom();
+                                    }
 
-                           }
+                                    break;
+                                }
+                                case "hmoveto":
+                                case "vmoveto":
+                                    SetWidthFromArgumentsIfPresent(context, nominalWidthX, 1);
+                                    break;
+                                case "rmoveto":
+                                    SetWidthFromArgumentsIfPresent(context, nominalWidthX, 2);
+                                    break;
+                                case "cntrmask":
+                                case "hintmask":
+                                    SetWidthFromArgumentsIfPresent(context, nominalWidthX, 0);
+                                    break;
+                                case "endchar":
+                                    if (isOnlyCommand)
+                                    {
+                                        context.Width = defaultWidthX;
+                                    }
+                                    else
+                                    {
+                                        SetWidthFromArgumentsIfPresent(context, nominalWidthX, 0);
+                                    }
+                                    break;
+                                default:
+                                    hasRunStackClearingCommand = false;
+                                    break;
+                            }
+                        }
 
-                       }
-                       x.Run(context);
-                   });
+                        x.Run(context);
+                    });
             }
 
             return new Type2Glyph(context.Path, context.Width);
         }
 
-        private static void SetWidthFromArgumentsIfPresent(Type2BuildCharContext context, int expectedArgumentLength)
+        private static void SetWidthFromArgumentsIfPresent(Type2BuildCharContext context, decimal nomimalWidthX, int expectedArgumentLength)
         {
             if (context.Stack.Length > expectedArgumentLength)
             {
-                context.Width = context.Stack.PopBottom();
+                context.Width = nomimalWidthX + context.Stack.PopBottom();
             }
         }
 
@@ -177,30 +192,15 @@
         /// <summary>
         /// The width of the glyph as a difference from the nominal width X for the font. Optional.
         /// </summary>
-        public decimal? WidthDifferenceFromNominal { get; }
+        public decimal? Width { get; }
 
         /// <summary>
         /// Create a new <see cref="Type2Glyph"/>.
         /// </summary>
-        public Type2Glyph(PdfPath path, decimal? widthDifferenceFromNominal)
+        public Type2Glyph(PdfPath path, decimal? width)
         {
             Path = path ?? throw new ArgumentNullException(nameof(path));
-            WidthDifferenceFromNominal = widthDifferenceFromNominal;
-        }
-
-        public decimal GetWidth(CompactFontFormatPrivateDictionary privateDictionary)
-        {
-            if (privateDictionary == null)
-            {
-                throw new ArgumentNullException(nameof(privateDictionary));
-            }
-
-            if (!WidthDifferenceFromNominal.HasValue)
-            {
-                return Path.GetBoundingRectangle().GetValueOrDefault().Width;
-            }
-
-            return privateDictionary.NominalWidthX + WidthDifferenceFromNominal.Value;
+            Width = width;
         }
     }
 }

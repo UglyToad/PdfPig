@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using Encodings;
     using Exceptions;
     using Geometry;
     using IO;
@@ -254,7 +255,8 @@
 
                 if (key.Data.Equals(NameToken.Encoding))
                 {
-                    dictionary[key] = ReadEncoding(scanner);
+                    var encoding = ReadEncoding(scanner);
+                    dictionary[key] = (IToken)encoding.encoding ?? encoding.name;
                     continue;
                 }
 
@@ -296,19 +298,25 @@
             return new DictionaryToken(dictionary);
         }
 
-        private static ArrayToken ReadEncoding(ISeekableTokenScanner scanner)
+        private static (ArrayToken encoding, NameToken name) ReadEncoding(ISeekableTokenScanner scanner)
         {
             var result = new List<IToken>();
 
             // Treat encoding differently, it's what we came here for!
             if (!scanner.TryReadToken(out NumericToken _))
             {
-                return new ArrayToken(result);
+                // The tokens following /Encoding may be StandardEncoding def.
+                if (scanner.CurrentToken is OperatorToken encodingName
+                    && encodingName.Data.Equals(NameToken.StandardEncoding))
+                {
+                    return (null, NameToken.StandardEncoding);
+                }
+                return (new ArrayToken(result), null);
             }
 
             if (!scanner.TryReadToken(out OperatorToken arrayOperatorToken) || arrayOperatorToken.Data != "array")
             {
-                return new ArrayToken(result);
+                return (new ArrayToken(result), null);
             }
 
             while (scanner.MoveNext() && (!(scanner.CurrentToken is OperatorToken forOperator) || forOperator.Data != "for"))
@@ -318,7 +326,7 @@
 
             if (scanner.CurrentToken != OperatorToken.For)
             {
-                return new ArrayToken(result);
+                return (new ArrayToken(result), null);
             }
 
             while (scanner.MoveNext() && scanner.CurrentToken != OperatorToken.Def && scanner.CurrentToken != OperatorToken.Readonly)
@@ -347,26 +355,34 @@
                 // skip
             }
 
-            return new ArrayToken(result);
+            return (new ArrayToken(result), null);
         }
 
-        private static Dictionary<int, string> GetEncoding(IReadOnlyList<DictionaryToken> dictionaries)
+        private static IReadOnlyDictionary<int, string> GetEncoding(IReadOnlyList<DictionaryToken> dictionaries)
         {
             var result = new Dictionary<int, string>();
 
             foreach (var dictionary in dictionaries)
             {
-                if (dictionary.TryGet(NameToken.Encoding, out var token) && token is ArrayToken encodingArray)
+                if (dictionary.TryGet(NameToken.Encoding, out var token))
                 {
-                    for (var i = 0; i < encodingArray.Data.Count; i += 2)
+                    if (token is ArrayToken encodingArray)
                     {
-                        var code = (NumericToken)encodingArray.Data[i];
-                        var name = (NameToken)encodingArray.Data[i + 1];
+                        for (var i = 0; i < encodingArray.Data.Count; i += 2)
+                        {
+                            var code = (NumericToken) encodingArray.Data[i];
+                            var name = (NameToken) encodingArray.Data[i + 1];
 
-                        result[code.Int] = name.Data;
+                            result[code.Int] = name.Data;
+                        }
+
+                        return result;
                     }
 
-                    return result;
+                    if (token is NameToken encodingName && encodingName.Equals(NameToken.StandardEncoding))
+                    {
+                        return StandardEncoding.Instance.CodeToNameMap;
+                    }
                 }
             }
 
