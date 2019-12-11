@@ -103,6 +103,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                 //Create new leaf with non-whitespace words.
                 leaf = new XYLeaf(words);
             }
+
             if (leaf.CountWords() <= 1 || leaf.BoundingBox.Width <= minimumWidth)
             {
                 // we stop cutting if 
@@ -211,7 +212,6 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                 // - only one word remains
                 return leaf;
             }
-
 
             // determine dominantFontWidth and dominantFontHeight
             decimal domFontWidth = dominantFontWidthFunc(words.SelectMany(x => x.Letters)
