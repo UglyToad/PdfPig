@@ -70,11 +70,18 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             XYLeaf root = new XYLeaf(pageWords); // Create a root node.
             XYNode node = VerticalCut(root, minimumWidth, dominantFontWidthFunc, dominantFontHeightFunc);
 
-            var leafs = node.GetLeafs();
-
-            if (leafs.Count > 0)
+            if (node.IsLeaf)
             {
-                return leafs.Select(l => new TextBlock(l.GetLines())).ToList();
+                return new List<TextBlock>{ new TextBlock((node as XYLeaf).GetLines())};
+            }
+            else
+            {
+                var leafs = node.GetLeafs();
+
+                if (leafs.Count > 0)
+                {
+                    return leafs.Select(l => new TextBlock(l.GetLines())).ToList();
+                }
             }
 
             return new List<TextBlock>();
@@ -84,6 +91,19 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             Func<IEnumerable<decimal>, decimal> dominantFontWidthFunc,
             Func<IEnumerable<decimal>, decimal> dominantFontHeightFunc, int level = 0)
         {
+            // order words left to right
+            var words = leaf.Words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).OrderBy(w => w.BoundingBox.Left).ToArray();
+
+            if(!words.Any())
+            {
+                return new XYNode(null);
+            }
+            else
+            {
+                //Create new leaf with non-whitespace words.
+                leaf = new XYLeaf(words);
+            }
+
             if (leaf.CountWords() <= 1 || leaf.BoundingBox.Width <= minimumWidth)
             {
                 // we stop cutting if 
@@ -91,9 +111,6 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                 // - width is too small
                 return leaf;
             }
-
-            // order words left to right
-            var words = leaf.Words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).OrderBy(w => w.BoundingBox.Left).ToArray();
 
             // determine dominantFontWidth and dominantFontHeight
             decimal domFontWidth = dominantFontWidthFunc(words.SelectMany(x => x.Letters)
@@ -177,14 +194,24 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             Func<IEnumerable<decimal>, decimal> dominantFontWidthFunc,
             Func<IEnumerable<decimal>, decimal> dominantFontHeightFunc, int level = 0)
         {
+            var words = leaf.Words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).OrderBy(w => w.BoundingBox.Bottom).ToArray(); // order bottom to top
+
+            if (!words.Any())
+            {
+                return new XYNode(null);
+            }
+            else
+            {
+                //Create new leaf with non-whitespace words.
+                leaf = new XYLeaf(words);
+            }
+
             if (leaf.CountWords() <= 1)
             {
                 // we stop cutting if 
                 // - only one word remains
                 return leaf;
             }
-
-            var words = leaf.Words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).OrderBy(w => w.BoundingBox.Bottom).ToArray(); // order bottom to top
 
             // determine dominantFontWidth and dominantFontHeight
             decimal domFontWidth = dominantFontWidthFunc(words.SelectMany(x => x.Letters)
