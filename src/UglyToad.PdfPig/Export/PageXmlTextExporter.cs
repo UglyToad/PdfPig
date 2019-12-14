@@ -9502,75 +9502,111 @@ namespace UglyToad.PdfPig.Export
             public enum PageXmlTextSimpleType
             {
 
-                /// <remarks/>
+                /// <summary>
+                /// Paragraph
+                /// </summary>
                 [XmlEnumAttribute("paragraph")]
                 Paragraph,
 
-                /// <remarks/>
+                /// <summary>
+                /// Heading
+                /// </summary>
                 [XmlEnumAttribute("heading")]
                 Heading,
 
-                /// <remarks/>
+                /// <summary>
+                /// Caption
+                /// </summary>
                 [XmlEnumAttribute("caption")]
                 Caption,
 
-                /// <remarks/>
+                /// <summary>
+                /// Header
+                /// </summary>
                 [XmlEnumAttribute("header")]
                 Header,
 
-                /// <remarks/>
+                /// <summary>
+                /// Footer
+                /// </summary>
                 [XmlEnumAttribute("footer")]
                 Footer,
 
-                /// <remarks/>
+                /// <summary>
+                /// Page number
+                /// </summary>
                 [XmlEnumAttribute("page-number")]
                 PageNumber,
 
-                /// <remarks/>
+                /// <summary>
+                /// Drop Capital, a letter a the beginning of a word that is bigger than the usual character size. Usually to start a chapter.
+                /// </summary>
                 [XmlEnumAttribute("drop-capital")]
                 DropCapital,
 
-                /// <remarks/>
+                /// <summary>
+                /// Credit
+                /// </summary>
                 [XmlEnumAttribute("credit")]
                 Credit,
 
-                /// <remarks/>
+                /// <summary>
+                /// Floating
+                /// </summary>
                 [XmlEnumAttribute("floating")]
                 Floating,
 
-                /// <remarks/>
+                /// <summary>
+                /// Signature mark
+                /// </summary>
                 [XmlEnumAttribute("signature-mark")]
                 SignatureMark,
 
-                /// <remarks/>
+                /// <summary>
+                /// Catch word
+                /// </summary>
                 [XmlEnumAttribute("catch-word")]
                 CatchWord,
 
-                /// <remarks/>
+                /// <summary>
+                /// Marginalia
+                /// </summary>
                 [XmlEnumAttribute("marginalia")]
                 Marginalia,
 
-                /// <remarks/>
+                /// <summary>
+                /// Foot note
+                /// </summary>
                 [XmlEnumAttribute("footnote")]
                 FootNote,
 
-                /// <remarks/>
+                /// <summary>
+                /// Foot note - continued
+                /// </summary>
                 [XmlEnumAttribute("footnote-continued")]
                 FootNoteContinued,
 
-                /// <remarks/>
+                /// <summary>
+                /// End note
+                /// </summary>
                 [XmlEnumAttribute("endnote")]
                 EndNote,
 
-                /// <remarks/>
+                /// <summary>
+                /// Table of content
+                /// </summary>
                 [XmlEnumAttribute("TOC-entry")]
                 TocEntry,
 
-                /// <remarks/>
+                /// <summary>
+                /// List
+                /// </summary>
                 [XmlEnumAttribute("list-label")]
                 LisLabel,
 
-                /// <remarks/>
+                /// <summary>
+                /// Other
+                /// </summary>
                 [XmlEnumAttribute("other")]
                 Other,
             }

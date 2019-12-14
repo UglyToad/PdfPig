@@ -77,6 +77,17 @@
             return new PdfPoint(X, Y + dy);
         }
 
+        /// <summary>
+        /// Creates a new <see cref="PdfPoint"/> which is the current point moved in the x and y directions relative to its current position by a value.
+        /// </summary>
+        /// <param name="dx">The distance to move the point in the x direction relative to its current location.</param>
+        /// <param name="dy">The distance to move the point in the y direction relative to its current location.</param>
+        /// <returns>A new point shifted on the y axis by the given delta value.</returns>
+        public PdfPoint MoveXY(decimal dx, decimal dy)
+        {
+            return new PdfPoint(X + dx, Y + dy);
+        }
+
         internal PdfVector ToVector()
         {
             return new PdfVector(X, Y);
