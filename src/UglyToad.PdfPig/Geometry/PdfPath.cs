@@ -18,6 +18,11 @@ namespace UglyToad.PdfPig.Geometry
         /// </summary>
         public IReadOnlyList<IPathCommand> Commands => commands;
 
+        /// <summary>
+        /// True if the <see cref="PdfPath"/> was originaly draw as a rectangle.
+        /// </summary>
+        public bool IsDrawnAsRectangle { get; internal set; }
+
         private PdfPoint? currentPosition;
 
         private double shoeLaceSum;
@@ -118,8 +123,8 @@ namespace UglyToad.PdfPig.Geometry
         /// <summary>
         /// Simplify this <see cref="PdfPath"/> by converting everything to <see cref="PdfLine"/>s.
         /// </summary>
-        /// <returns></returns>
-        internal PdfPath Simplify()
+        /// <param name="n">Number of lines required (minimum is 1).</param>
+        internal PdfPath Simplify(int n = 4)
         {
             PdfPath simplifiedPath = new PdfPath();
             var startPoint = GetStartPoint(Commands.First());
@@ -133,7 +138,7 @@ namespace UglyToad.PdfPig.Geometry
                 }
                 else if (command is BezierCurve curve)
                 {
-                    foreach (var lineB in curve.ToLines(4))
+                    foreach (var lineB in curve.ToLines(n))
                     {
                         simplifiedPath.LineTo(lineB.To.X, lineB.To.Y);
                     }
@@ -351,6 +356,26 @@ namespace UglyToad.PdfPig.Geometry
             {
                 builder.Append("Z ");
             }
+
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="obj"></param>
+            /// <returns></returns>
+            public override bool Equals(object obj)
+            {
+                return (obj is Close);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public override int GetHashCode()
+            {
+                return base.GetHashCode();
+            }
         }
 
         /// <summary>
@@ -384,6 +409,22 @@ namespace UglyToad.PdfPig.Geometry
             public void WriteSvg(StringBuilder builder)
             {
                 builder.Append("M ").Append(Location.X).Append(' ').Append(Location.Y).Append(' ');
+            }
+
+            /// <inheritdoc />
+            public override bool Equals(object obj)
+            {
+                if (obj is Move move)
+                {
+                    return this.Location.Equals(move.Location);
+                }
+                return false;
+            }
+
+            /// <inheritdoc />
+            public override int GetHashCode()
+            {
+                return (this.Location).GetHashCode();
             }
         }
 
@@ -421,6 +462,22 @@ namespace UglyToad.PdfPig.Geometry
             public void WriteSvg(StringBuilder builder)
             {
                 builder.AppendFormat("L {0} {1} ", To.X, To.Y);
+            }
+
+            /// <inheritdoc />
+            public override bool Equals(object obj)
+            {
+                if (obj is Line line)
+                {
+                    return this.From.Equals(line.From) && this.To.Equals(line.To);
+                }
+                return false;
+            }
+
+            /// <inheritdoc />
+            public override int GetHashCode()
+            {
+                return (this.From, this.To).GetHashCode();
             }
         }
 
@@ -592,7 +649,7 @@ namespace UglyToad.PdfPig.Geometry
                 return true;
             }
 
-            private static double ValueWithT(double p1, double p2, double p3, double p4, double t)
+            internal static double ValueWithT(double p1, double p2, double p3, double p4, double t)
             {
                 // P = (1−t)^3*P_1 + 3(1−t)^2*t*P_2 + 3(1−t)*t^2*P_3 + t^3*P_4
                 var oneMinusT = 1 - t;
@@ -629,6 +686,25 @@ namespace UglyToad.PdfPig.Geometry
                 }
                 return lines;
             }
+
+            /// <inheritdoc />
+            public override bool Equals(object obj)
+            {
+                if (obj is BezierCurve curve)
+                {
+                    return this.StartPoint.Equals(curve.StartPoint) &&
+                           this.FirstControlPoint.Equals(curve.FirstControlPoint) &&
+                           this.SecondControlPoint.Equals(curve.SecondControlPoint) &&
+                           this.EndPoint.Equals(curve.EndPoint);
+                }
+                return false;
+            }
+
+            /// <inheritdoc />
+            public override int GetHashCode()
+            {
+                return (this.StartPoint, this.FirstControlPoint, this.SecondControlPoint, this.EndPoint).GetHashCode();
+            }
         }
 
         internal void Rectangle(decimal x, decimal y, decimal width, decimal height)
@@ -638,6 +714,38 @@ namespace UglyToad.PdfPig.Geometry
             LineTo(x + width, y + height);
             LineTo(x, y + height);
             LineTo(x, y);
+            IsDrawnAsRectangle = true;
+        }
+
+        /// <summary>
+        /// Compares two <see cref="PdfPath"/>s for equality. Paths will only be considered equal if the commands which construct the paths are in the same order.
+        /// </summary>
+        public override bool Equals(object obj)
+        {
+            if (obj is PdfPath path)
+            {
+                if (this.Commands.Count != path.Commands.Count) return false;
+
+                for (int i = 0; i < this.Commands.Count; i++)
+                {
+                    if (!this.Commands[i].Equals(path.Commands[i])) return false;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Get the hash code. Paths will only have the same hash code if the commands which construct the paths are in the same order.
+        /// </summary>
+        public override int GetHashCode()
+        {
+            var hash = this.Commands.Count + 1;
+            for (int i = 0; i < this.Commands.Count; i++)
+            {
+                hash = hash * (i + 1) * 17 + this.Commands[i].GetHashCode();
+            }
+            return hash;
         }
     }
 }
