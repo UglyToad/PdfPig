@@ -50,6 +50,7 @@
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
         private IFont activeExtendedGraphicsStateFont;
         private InlineImageBuilder inlineImageBuilder;
+        private bool currentPathAdded;
 
         /// <summary>
         /// A counter to track individual calls to <see cref="ShowText"/> operations used to determine if letters are likely to be
@@ -215,20 +216,22 @@
                     ? currentState.CurrentNonStrokingColor
                     : currentState.CurrentStrokingColor;
 
-                ShowGlyph(font, transformedGlyphBounds,
+                var letter = new Letter(unicode, transformedGlyphBounds,
                     transformedPdfBounds.BottomLeft,
                     transformedPdfBounds.BottomRight,
                     transformedPdfBounds.Width,
-                    unicode,
                     fontSize,
+                    font.Name.Data,
                     color,
                     pointSize,
                     textSequence);
 
+                letters.Add(letter);
+
                 decimal tx, ty;
                 if (font.IsVertical)
                 {
-                    var verticalFont = (IVerticalWritingSupported) font;
+                    var verticalFont = (IVerticalWritingSupported)font;
                     var displacement = verticalFont.GetDisplacementVector(code);
                     tx = 0;
                     ty = (displacement.Y * fontSize) + characterSpacing + wordSpacing;
@@ -352,7 +355,7 @@
             {
                 formMatrix = TransformationMatrix.FromArray(formMatrixToken.Data.OfType<NumericToken>().Select(x => x.Data).ToArray());
             }
-            
+
             // 2. Update current transformation matrix.
             var resultingTransformationMatrix = startState.CurrentTransformationMatrix.Multiply(formMatrix);
 
@@ -378,12 +381,13 @@
 
         public void BeginSubpath()
         {
-            if (CurrentPath != null && CurrentPath.Commands.Count > 0 && !paths.Contains(CurrentPath))
+            if (CurrentPath != null && CurrentPath.Commands.Count > 0 && !currentPathAdded)
             {
                 paths.Add(CurrentPath);
             }
 
             CurrentPath = new PdfPath();
+            currentPathAdded = false;
         }
 
         public void StrokePath(bool close)
@@ -395,6 +399,7 @@
             else
             {
                 paths.Add(CurrentPath);
+                currentPathAdded = true;
             }
         }
 
@@ -407,6 +412,7 @@
             else
             {
                 paths.Add(CurrentPath);
+                currentPathAdded = true;
             }
         }
 
@@ -415,6 +421,7 @@
             CurrentPath.ClosePath();
             paths.Add(CurrentPath);
             CurrentPath = null;
+            currentPathAdded = false;
         }
 
         public void SetNamedGraphicsState(NameToken stateName)
@@ -500,29 +507,6 @@
             var newMatrix = matrix.Multiply(TextMatrices.TextMatrix);
 
             TextMatrices.TextMatrix = newMatrix;
-        }
-
-        private void ShowGlyph(IFont font, PdfRectangle glyphRectangle,
-            PdfPoint startBaseLine,
-            PdfPoint endBaseLine,
-            decimal width,
-            string unicode,
-            decimal fontSize,
-            IColor color,
-            decimal pointSize,
-            int textSequence)
-        {
-            var letter = new Letter(unicode, glyphRectangle,
-                startBaseLine,
-                endBaseLine,
-                width,
-                fontSize,
-                font.Name.Data,
-                color,
-                pointSize,
-                textSequence);
-
-            letters.Add(letter);
         }
     }
 }
