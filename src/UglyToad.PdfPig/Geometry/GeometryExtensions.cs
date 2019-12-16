@@ -13,10 +13,20 @@ namespace UglyToad.PdfPig.Geometry
         #region PdfRectangle
         /// <summary>
         /// Whether the rectangle contains the point.
-        /// <para>Return false if the point belongs to the border.</para>
         /// </summary>
-        public static bool Contains(this PdfRectangle rectangle, PdfPoint point)
+        /// <param name="rectangle">The rectangle that should contain the point.</param>
+        /// <param name="point">The point that should be contained within the rectangle.</param>
+        /// <param name="includeBorder">If set to false, will return false if the point belongs to the border.</param>
+        public static bool Contains(this PdfRectangle rectangle, PdfPoint point, bool includeBorder = false)
         {
+            if (includeBorder)
+            {
+                return point.X >= rectangle.Left &&
+                          point.X <= rectangle.Right &&
+                          point.Y >= rectangle.Bottom &&
+                          point.Y <= rectangle.Top;
+            }
+
             return point.X > rectangle.Left &&
                    point.X < rectangle.Right &&
                    point.Y > rectangle.Bottom &&

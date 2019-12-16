@@ -83,7 +83,7 @@
         /// <param name="dx">The distance to move the point in the x direction relative to its current location.</param>
         /// <param name="dy">The distance to move the point in the y direction relative to its current location.</param>
         /// <returns>A new point shifted on the y axis by the given delta value.</returns>
-        public PdfPoint MoveXY(decimal dx, decimal dy)
+        public PdfPoint Translate(decimal dx, decimal dy)
         {
             return new PdfPoint(X + dx, Y + dy);
         }

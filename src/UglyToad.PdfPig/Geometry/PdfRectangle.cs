@@ -132,9 +132,9 @@
         /// <param name="dx">The distance to move the rectangle in the x direction relative to its current location.</param>
         /// <param name="dy">The distance to move the rectangle in the y direction relative to its current location.</param>
         /// <returns>A new rectangle shifted on the y axis by the given delta value.</returns>
-        public PdfRectangle MoveXY(decimal dx, decimal dy)
+        public PdfRectangle Translate(decimal dx, decimal dy)
         {
-            return new PdfRectangle(this.BottomLeft.MoveXY(dx, dy), this.TopRight.MoveXY(dx, dy));
+            return new PdfRectangle(this.BottomLeft.Translate(dx, dy), this.TopRight.Translate(dx, dy));
         }
 
         /// <summary>

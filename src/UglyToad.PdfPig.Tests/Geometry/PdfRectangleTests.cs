@@ -53,5 +53,14 @@ namespace UglyToad.PdfPig.Tests.Geometry
             PdfRectangle rectangle4 = new PdfRectangle(5, 7, 10, 25);
             Assert.False(rectangle1.IntersectsWith(rectangle4)); // special case where they share one border
         }
+
+        public void Contains()
+        {
+            PdfRectangle rectangle = new PdfRectangle(10, 10, 20, 20);
+            Assert.True(rectangle.Contains(new PdfPoint(15, 15)));
+            Assert.False(rectangle.Contains(new PdfPoint(10, 15)));
+            Assert.True(rectangle.Contains(new PdfPoint(10, 15), true));
+            Assert.False(rectangle.Contains(new PdfPoint(100, 100), true));
+        }
     }
 }

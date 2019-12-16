@@ -21,7 +21,7 @@ namespace UglyToad.PdfPig.Geometry
         /// <summary>
         /// True if the <see cref="PdfPath"/> was originaly draw as a rectangle.
         /// </summary>
-        internal bool IsDrawnAsRectangle { get; set; }
+        public bool IsDrawnAsRectangle { get; internal set; }
 
         private PdfPoint? currentPosition;
 
@@ -718,7 +718,7 @@ namespace UglyToad.PdfPig.Geometry
         }
 
         /// <summary>
-        /// Order matters
+        /// Compares two <see cref="PdfPath"/>s for equality. Paths will only be considered equal if the commands which construct the paths are in the same order.
         /// </summary>
         public override bool Equals(object obj)
         {
@@ -736,14 +736,14 @@ namespace UglyToad.PdfPig.Geometry
         }
 
         /// <summary>
-        /// Order matters
+        /// Get the hash code. Paths will only have the same hash code if the commands which construct the paths are in the same order.
         /// </summary>
         public override int GetHashCode()
         {
             var hash = this.Commands.Count + 1;
             for (int i = 0; i < this.Commands.Count; i++)
             {
-                hash = hash * (i + 1) + this.Commands[i].GetHashCode();
+                hash = hash * (i + 1) * 17 + this.Commands[i].GetHashCode();
             }
             return hash;
         }
