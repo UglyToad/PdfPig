@@ -103,6 +103,7 @@
                 "UglyToad.PdfPig.Fonts.FontDescriptorFlags",
                 "UglyToad.PdfPig.Fonts.FontStretch",
                 "UglyToad.PdfPig.Fonts.Standard14Font",
+                "UglyToad.PdfPig.Geometry.GeometryExtensions",
                 "UglyToad.PdfPig.Geometry.PdfPath",
                 "UglyToad.PdfPig.Geometry.PdfPoint",
                 "UglyToad.PdfPig.Geometry.PdfLine",

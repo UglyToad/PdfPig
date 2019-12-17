@@ -126,23 +126,15 @@
             BottomRight = bottomRight;
         }
 
-
         /// <summary>
-        /// Whether two rectangles overlap.
+        /// Creates a new <see cref="PdfRectangle"/> which is the current rectangle moved in the x and y directions relative to its current position by a value.
         /// </summary>
-        public bool IntersectsWith(PdfRectangle rectangle)
+        /// <param name="dx">The distance to move the rectangle in the x direction relative to its current location.</param>
+        /// <param name="dy">The distance to move the rectangle in the y direction relative to its current location.</param>
+        /// <returns>A new rectangle shifted on the y axis by the given delta value.</returns>
+        public PdfRectangle Translate(decimal dx, decimal dy)
         {
-            if (Left > rectangle.Right || rectangle.Left > Right)
-            {
-                return false;
-            }
-
-            if (Top < rectangle.Bottom || rectangle.Top < Bottom)
-            {
-                return false;
-            }
-
-            return true;
+            return new PdfRectangle(this.BottomLeft.Translate(dx, dy), this.TopRight.Translate(dx, dy));
         }
 
         /// <summary>

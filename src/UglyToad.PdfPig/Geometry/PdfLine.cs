@@ -1,4 +1,6 @@
-﻿namespace UglyToad.PdfPig.Geometry
+﻿using System;
+
+namespace UglyToad.PdfPig.Geometry
 {
     /// <summary>
     /// A line in a PDF file. 
@@ -51,6 +53,18 @@
         {
             Point1 = point1;
             Point2 = point2;
+        }
+
+        /// <summary>
+        /// The rectangle completely containing the <see cref="PdfLine"/>.
+        /// </summary>
+        public PdfRectangle GetBoundingRectangle()
+        {
+            return new PdfRectangle(
+                Math.Min(this.Point1.X, this.Point2.X),
+                Math.Min(this.Point1.Y, this.Point2.Y),
+                Math.Max(this.Point1.X, this.Point2.X),
+                Math.Max(this.Point1.Y, this.Point2.Y));
         }
 
         /// <summary>
