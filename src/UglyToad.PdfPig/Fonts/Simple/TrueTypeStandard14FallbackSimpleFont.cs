@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Simple
 {
     using System;
+    using System.Collections.Generic;
     using Core;
     using Encodings;
     using IO;
@@ -18,16 +19,19 @@
         private readonly FontMetrics fontMetrics;
         private readonly Encoding encoding;
         private readonly TrueTypeFontProgram font;
+        private readonly MetricOverrides overrides;
 
         public NameToken Name { get; }
 
         public bool IsVertical { get; } = false;
 
-        public TrueTypeStandard14FallbackSimpleFont(NameToken name, FontMetrics fontMetrics, Encoding encoding, TrueTypeFontProgram font)
+        public TrueTypeStandard14FallbackSimpleFont(NameToken name, FontMetrics fontMetrics, Encoding encoding, TrueTypeFontProgram font,
+            MetricOverrides overrides)
         {
             this.fontMetrics = fontMetrics;
             this.encoding = encoding ?? throw new ArgumentNullException(nameof(encoding));
             this.font = font;
+            this.overrides = overrides;
             Name = name;
         }
 
@@ -61,18 +65,39 @@
 
         public CharacterBoundingBox GetBoundingBox(int characterCode)
         {
+            var width = 0m;
+
             var fontMatrix = GetFontMatrix();
+
             if (font != null && font.TryGetBoundingBox(characterCode, out var bounds))
             {
                 bounds = fontMatrix.Transform(bounds);
-                return new CharacterBoundingBox(bounds, bounds.Width);
+
+                if (overrides?.TryGetWidth(characterCode, out width) != true)
+                {
+                    width = bounds.Width;
+                }
+                else
+                {
+                    width = DefaultTransformation.TransformX(width);
+                }
+
+                return new CharacterBoundingBox(bounds, width);
             }
 
             var name = encoding.GetName(characterCode);
             var metrics = fontMetrics.CharacterMetrics[name];
 
+            if (overrides?.TryGetWidth(characterCode, out width) != true)
+            {
+                width = fontMatrix.TransformX(metrics.WidthX);
+            }
+            else
+            {
+                width = DefaultTransformation.TransformX(width);
+            }
+
             bounds = fontMatrix.Transform(metrics.BoundingBox);
-            var width = fontMatrix.TransformX(metrics.WidthX);
 
             return new CharacterBoundingBox(bounds, width);
         }
@@ -87,6 +112,44 @@
             }
 
             return DefaultTransformation;
+        }
+
+        public class MetricOverrides
+        {
+            public int? FirstCharacterCode { get; }
+
+            public IReadOnlyList<decimal> Widths { get; }
+
+            public bool HasOverriddenMetrics { get; }
+
+            public MetricOverrides(int? firstCharacterCode, IReadOnlyList<decimal> widths)
+            {
+                FirstCharacterCode = firstCharacterCode;
+                Widths = widths;
+                HasOverriddenMetrics = FirstCharacterCode.HasValue && Widths != null
+                    && Widths.Count > 0;
+            }
+
+            public bool TryGetWidth(int characterCode, out decimal width)
+            {
+                width = 0;
+
+                if (!HasOverriddenMetrics || !FirstCharacterCode.HasValue)
+                {
+                    return false;
+                }
+
+                var index = characterCode - FirstCharacterCode.Value;
+
+                if (index < 0 || index >= Widths.Count)
+                {
+                    return false;
+                }
+
+                width = Widths[index];
+
+                return true;
+            }
         }
     }
 }

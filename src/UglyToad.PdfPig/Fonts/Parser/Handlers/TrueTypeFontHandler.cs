@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using SystemFonts;
     using Cmap;
     using Encodings;
@@ -48,7 +49,9 @@
 
         public IFont Generate(DictionaryToken dictionary, bool isLenientParsing)
         {
-            if (!dictionary.TryGetOptionalTokenDirect(NameToken.FirstChar, pdfScanner, out NumericToken firstCharacterToken))
+            if (!dictionary.TryGetOptionalTokenDirect(NameToken.FirstChar, pdfScanner, out NumericToken firstCharacterToken)
+                || !dictionary.TryGet<IToken>(NameToken.FontDescriptor, pdfScanner, out _)
+                || !dictionary.TryGet(NameToken.Widths, out IToken _))
             {
                 if (!dictionary.TryGetOptionalTokenDirect(NameToken.BaseFont, pdfScanner, out NameToken baseFont))
                 {
@@ -72,7 +75,22 @@
                     thisEncoding = new AdobeFontMetricsEncoding(standard14Font);
                 }
 
-                return new TrueTypeStandard14FallbackSimpleFont(baseFont, standard14Font, thisEncoding, fileSystemFont);
+                int? firstChar = null;
+                decimal[] widthsOverride = null;
+
+                if (dictionary.TryGet(NameToken.FirstChar, pdfScanner, out firstCharacterToken))
+                {
+                    firstChar = firstCharacterToken.Int;
+                }
+
+                if (dictionary.TryGet(NameToken.Widths, pdfScanner, out ArrayToken widthsArray))
+                {
+                    widthsOverride = widthsArray.Data.OfType<NumericToken>()
+                        .Select(x => x.Data).ToArray();
+                }
+
+                return new TrueTypeStandard14FallbackSimpleFont(baseFont, standard14Font, thisEncoding, fileSystemFont,
+                    new TrueTypeStandard14FallbackSimpleFont.MetricOverrides(firstChar, widthsOverride));
             }
 
             var firstCharacter = firstCharacterToken.Int;
