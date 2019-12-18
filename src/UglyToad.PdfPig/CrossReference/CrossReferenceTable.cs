@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using CrossReference;
     using Util.JetBrains.Annotations;
 
     /// <summary>

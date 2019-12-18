@@ -42,9 +42,27 @@
         {
             this.encryptionDictionary = encryptionDictionary;
 
-            var documentIdBytes = trailerDictionary.Identifier != null && trailerDictionary.Identifier.Count == 2 ?
-                OtherEncodings.StringAsLatin1Bytes(trailerDictionary.Identifier[0])
-                : EmptyArray<byte>.Instance;
+            byte[] documentIdBytes;
+
+            if (trailerDictionary.Identifier != null && trailerDictionary.Identifier.Count == 2)
+            {
+                var token = trailerDictionary.Identifier[0];
+
+                switch (token)
+                {
+                    case HexToken hex:
+                        documentIdBytes = hex.Bytes.ToArray();
+                        break;
+                    default:
+                        documentIdBytes = OtherEncodings.StringAsLatin1Bytes(token.Data);
+                        break;
+                }
+              
+            }
+            else
+            {
+                documentIdBytes = EmptyArray<byte>.Instance;
+            }
 
             password = password ?? string.Empty;
 
