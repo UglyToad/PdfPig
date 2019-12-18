@@ -65,6 +65,7 @@
                 "UglyToad.PdfPig.Content.Catalog",
                 "UglyToad.PdfPig.Content.CropBox",
                 "UglyToad.PdfPig.Content.DocumentInformation",
+                "UglyToad.PdfPig.Content.Hyperlink",
                 "UglyToad.PdfPig.Content.InlineImage",
                 "UglyToad.PdfPig.Content.IPdfImage",
                 "UglyToad.PdfPig.Content.Letter",

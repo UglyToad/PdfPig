@@ -101,7 +101,7 @@
         {
             if (obj is PdfPoint point)
             {
-                return point.X == this.X && point.Y == this.Y;
+                return point.X == X && point.Y == Y;
             }
             return false;
         }
@@ -114,9 +114,7 @@
             return (X, Y).GetHashCode();
         }
 
-        /// <summary>
-        /// Get a string representation of this point.
-        /// </summary>
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"(x:{X}, y:{Y})";

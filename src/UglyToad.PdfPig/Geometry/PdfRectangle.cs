@@ -134,12 +134,10 @@
         /// <returns>A new rectangle shifted on the y axis by the given delta value.</returns>
         public PdfRectangle Translate(decimal dx, decimal dy)
         {
-            return new PdfRectangle(this.BottomLeft.Translate(dx, dy), this.TopRight.Translate(dx, dy));
+            return new PdfRectangle(BottomLeft.Translate(dx, dy), TopRight.Translate(dx, dy));
         }
 
-        /// <summary>
-        /// To string override.
-        /// </summary>
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"[{TopLeft}, {Width}, {Height}]";

@@ -9,12 +9,15 @@
     using Util;
     using Util.JetBrains.Annotations;
     using Geometry;
+    using Tokenization.Scanner;
 
     /// <summary>
     /// Contains the content and provides access to methods of a single page in the <see cref="PdfDocument"/>.
     /// </summary>
     public class Page
     {
+        private readonly AnnotationProvider annotationProvider;
+        private readonly IPdfTokenScanner pdfScanner;
         private readonly Lazy<string> textLazy;
 
         /// <summary>
@@ -78,13 +81,14 @@
         public Experimental ExperimentalAccess { get; }
 
         internal Page(int number, DictionaryToken dictionary, MediaBox mediaBox, CropBox cropBox, PageRotationDegrees rotation, PageContent content,
-            AnnotationProvider annotationProvider)
+            AnnotationProvider annotationProvider,
+            IPdfTokenScanner pdfScanner)
         {
             if (number <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(number), "Page number cannot be 0 or negative.");
             }
-
+            
             Dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
 
             Number = number;
@@ -99,6 +103,8 @@
 
             Size = mediaBox.Bounds.GetPageSize();
             ExperimentalAccess = new Experimental(this, annotationProvider);
+            this.annotationProvider = annotationProvider;
+            this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
         }
 
         private static string GetText(PageContent content)
@@ -131,6 +137,15 @@
         public IEnumerable<Word> GetWords(IWordExtractor wordExtractor)
         {
             return (wordExtractor ?? DefaultWordExtractor.Instance).GetWords(Letters);
+        }
+
+        /// <summary>
+        /// Get the hyperlinks which link to external resources on the page.
+        /// These are based on the annotations on the page with a type of '/Link'.
+        /// </summary>
+        public IReadOnlyList<Hyperlink> GetHyperlinks()
+        {
+            return HyperlinkFactory.GetHyperlinks(this, pdfScanner, annotationProvider);
         }
 
         /// <summary>

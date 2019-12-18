@@ -126,7 +126,9 @@
                 content = GetContent(bytes, cropBox, userSpaceUnit, rotation, isLenientParsing);
             }
 
-            var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, new AnnotationProvider(pdfScanner, dictionary, isLenientParsing));
+            var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, 
+                new AnnotationProvider(pdfScanner, dictionary, isLenientParsing),
+                pdfScanner);
 
             for (var i = 0; i < stackDepth; i++)
             {
