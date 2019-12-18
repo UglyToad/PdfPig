@@ -16,7 +16,14 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <summary>
         /// Create an instance of Nearest Neighbour Word Extractor, <see cref="NearestNeighbourWordExtractor"/>.
         /// </summary>
-        public static IWordExtractor Instance { get; } = new NearestNeighbourWordExtractor();
+        public static NearestNeighbourWordExtractor Instance { get; } = new NearestNeighbourWordExtractor();
+
+        /// <summary>
+        /// Gets or sets the maximum number of concurrent tasks enabled. Default value is -1.
+        /// <para>A positive property value limits the number of concurrent operations to the set value. 
+        /// If it is -1, there is no limit on the number of concurrently running operations.</para>
+        /// </summary>
+        public int MaxDegreeOfParallelism { get; set; } = -1;
 
         /// <summary>
         /// Gets the words.
@@ -27,14 +34,14 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             List<Word> wordsH = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Horizontal),
                 (l1, l2) => Math.Max((double)(l1.GlyphRectangle.Width), (double)(l2.GlyphRectangle.Width)) * 0.2, 
-                Distances.Manhattan)
+                Distances.Manhattan, MaxDegreeOfParallelism)
                 .OrderByDescending(x => x.BoundingBox.Bottom)
                 .ThenBy(x => x.BoundingBox.Left).ToList();
 
             List<Word> words180 = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Rotate180),
                 (l1, l2) => Math.Max((double)(l1.GlyphRectangle.Width), (double)(l2.GlyphRectangle.Width)) * 0.2,
-                Distances.Manhattan)
+                Distances.Manhattan, MaxDegreeOfParallelism)
                 .OrderBy(x => x.BoundingBox.Top)
                 .ThenByDescending(x => x.BoundingBox.Right).ToList();
             wordsH.AddRange(words180);
@@ -42,7 +49,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             List<Word> words90 = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Rotate90),
                 (l1, l2) => Math.Max((double)(l1.GlyphRectangle.Height), (double)(l2.GlyphRectangle.Height)) * 0.2,
-                Distances.Manhattan)
+                Distances.Manhattan, MaxDegreeOfParallelism)
                 .OrderByDescending(x => x.BoundingBox.Left)
                 .ThenBy(x => x.BoundingBox.Top).ToList();
             wordsH.AddRange(words90);
@@ -50,7 +57,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             List<Word> words270 = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Rotate270),
                 (l1, l2) => Math.Max((double)(l1.GlyphRectangle.Height), (double)(l2.GlyphRectangle.Height)) * 0.2,
-                Distances.Manhattan)
+                Distances.Manhattan, MaxDegreeOfParallelism)
                 .OrderBy(x => x.BoundingBox.Right)
                 .ThenByDescending(x => x.BoundingBox.Bottom).ToList();
             wordsH.AddRange(words270);
@@ -58,7 +65,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             List<Word> wordsU = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Unknown),
                 (l1, l2) => Math.Max((double)(l1.GlyphRectangle.Width), (double)(l2.GlyphRectangle.Width)) * 0.2,
-                Distances.Manhattan)
+                Distances.Manhattan, MaxDegreeOfParallelism)
                 .OrderByDescending(x => x.BoundingBox.Bottom)
                 .ThenBy(x => x.BoundingBox.Left).ToList();
             wordsH.AddRange(wordsU);
@@ -75,15 +82,19 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// e.g. Max(GlyphRectangle.Width) x 20%.</param>
         /// <param name="distMeasure">The distance measure between two start and end base line points,
         /// e.g. the Manhattan distance.</param>
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
+        /// <para>A positive property value limits the number of concurrent operations to the set value. 
+        /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
         private List<Word> GetWords(IEnumerable<Letter> pageLetters,
-            Func<Letter, Letter, double> maxDistanceFunction, Func<PdfPoint, PdfPoint, double> distMeasure)
+            Func<Letter, Letter, double> maxDistanceFunction, Func<PdfPoint, PdfPoint, double> distMeasure, 
+            int maxDegreeOfParallelism)
         {
             if (pageLetters == null || pageLetters.Count() == 0) return new List<Word>();
             TextDirection textDirection = pageLetters.ElementAt(0).TextDirection;
 
             if (pageLetters.Any(x => textDirection != x.TextDirection))
             {
-                throw new ArgumentException("NNWordExtractor.GetWords(): Mixed Text Direction.");
+                throw new ArgumentException("NearestNeighbourWordExtractor.GetWords(): Mixed Text Direction.");
             }
 
             Func<IEnumerable<Letter>, IReadOnlyList<Letter>> orderFunc = l => l.OrderBy(x => x.GlyphRectangle.Left).ToList();
@@ -106,7 +117,8 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                 distMeasure, maxDistanceFunction,
                 l => l.EndBaseLine, l => l.StartBaseLine,
                 l => !string.IsNullOrWhiteSpace(l.Value),
-                (l1, l2) => string.Equals(l1.FontName, l2.FontName, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(l2.Value)).ToList();
+                (l1, l2) => string.Equals(l1.FontName, l2.FontName, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(l2.Value),
+                maxDegreeOfParallelism).ToList();
 
             List<Word> words = new List<Word>();
             for (int a = 0; a < groupedIndexes.Count(); a++)

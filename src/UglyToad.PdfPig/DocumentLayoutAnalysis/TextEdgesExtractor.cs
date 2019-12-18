@@ -29,7 +29,11 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// </summary>
         /// <param name="pageWords">The words in the page.</param>
         /// <param name="minimumElements">The minimum number of elements to define a text edge.</param>
-        public static IReadOnlyDictionary<EdgeType, List<PdfLine>> GetEdges(IEnumerable<Word> pageWords, int minimumElements = 4)
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
+        /// <para>A positive property value limits the number of concurrent operations to the set value. 
+        /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
+        public static IReadOnlyDictionary<EdgeType, List<PdfLine>> GetEdges(IEnumerable<Word> pageWords, int minimumElements = 4, 
+            int maxDegreeOfParallelism = -1)
         {
             if (minimumElements < 0)
             {
@@ -40,7 +44,9 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 
             ConcurrentDictionary<EdgeType, List<PdfLine>> dictionary = new ConcurrentDictionary<EdgeType, List<PdfLine>>();
 
-            Parallel.ForEach(edgesFuncs, f =>
+            ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
+
+            Parallel.ForEach(edgesFuncs, parallelOptions, f =>
             {
                 dictionary.TryAdd(f.Item1, GetVerticalEdges(cleanWords, f.Item2, minimumElements));
             });

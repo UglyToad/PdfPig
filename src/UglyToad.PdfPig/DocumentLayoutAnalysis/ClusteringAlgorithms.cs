@@ -22,11 +22,15 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="candidatesPoint">The candidates' point to use for pairing, e.g. BottomLeft, TopLeft.</param>
         /// <param name="filterPivot">Filter to apply to the pivot point. If false, point will not be paired at all, e.g. is white space.</param>
         /// <param name="filterFinal">Filter to apply to both the pivot and the paired point. If false, point will not be paired at all, e.g. pivot and paired point have same font.</param>
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
+        /// <para>A positive property value limits the number of concurrent operations to the set value. 
+        /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
         internal static IEnumerable<HashSet<int>> ClusterNearestNeighbours<T>(List<T> elements,
             Func<PdfPoint, PdfPoint, double> distMeasure,
             Func<T, T, double> maxDistanceFunction,
             Func<T, PdfPoint> pivotPoint, Func<T, PdfPoint> candidatesPoint,
-            Func<T, bool> filterPivot, Func<T, T, bool> filterFinal)
+            Func<T, bool> filterPivot, Func<T, T, bool> filterFinal,
+            int maxDegreeOfParallelism)
         {
             /*************************************************************************************
              * Algorithm steps
@@ -48,8 +52,10 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             int[] indexes = Enumerable.Repeat((int)-1, elements.Count).ToArray();
             var candidatesPoints = elements.Select(candidatesPoint).ToList();
 
+            ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
+
             // 1. Find nearest neighbours indexes
-            Parallel.For(0, elements.Count, e =>
+            Parallel.For(0, elements.Count, parallelOptions, e =>
             {
                 var pivot = elements[e];
 
@@ -85,11 +91,15 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="candidatesPoint">The candidates' point to use for pairing, e.g. BottomLeft, TopLeft.</param>
         /// <param name="filterPivot">Filter to apply to the pivot point. If false, point will not be paired at all, e.g. is white space.</param>
         /// <param name="filterFinal">Filter to apply to both the pivot and the paired point. If false, point will not be paired at all, e.g. pivot and paired point have same font.</param>
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
+        /// <para>A positive property value limits the number of concurrent operations to the set value. 
+        /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
         internal static IEnumerable<HashSet<int>> ClusterNearestNeighbours<T>(T[] elements,
             Func<PdfPoint, PdfPoint, double> distMeasure,
             Func<T, T, double> maxDistanceFunction,
             Func<T, PdfPoint> pivotPoint, Func<T, PdfPoint> candidatesPoint,
-            Func<T, bool> filterPivot, Func<T, T, bool> filterFinal)
+            Func<T, bool> filterPivot, Func<T, T, bool> filterFinal,
+            int maxDegreeOfParallelism)
         {
             /*************************************************************************************
              * Algorithm steps
@@ -111,8 +121,10 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             int[] indexes = Enumerable.Repeat((int)-1, elements.Length).ToArray();
             var candidatesPoints = elements.Select(candidatesPoint).ToList();
 
+            ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
+
             // 1. Find nearest neighbours indexes
-            Parallel.For(0, elements.Length, e =>
+            Parallel.For(0, elements.Length, parallelOptions, e =>
             {
                 var pivot = elements[e];
 
@@ -148,11 +160,15 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="candidatesLine">The candidates' line to use for pairing.</param>
         /// <param name="filterPivot">Filter to apply to the pivot point. If false, point will not be paired at all, e.g. is white space.</param>
         /// <param name="filterFinal">Filter to apply to both the pivot and the paired point. If false, point will not be paired at all, e.g. pivot and paired point have same font.</param>
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
+        /// <para>A positive property value limits the number of concurrent operations to the set value. 
+        /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
         internal static IEnumerable<HashSet<int>> ClusterNearestNeighbours<T>(T[] elements,
             Func<PdfLine, PdfLine, double> distMeasure,
             Func<T, T, double> maxDistanceFunction,
             Func<T, PdfLine> pivotLine, Func<T, PdfLine> candidatesLine,
-            Func<T, bool> filterPivot, Func<T, T, bool> filterFinal)
+            Func<T, bool> filterPivot, Func<T, T, bool> filterFinal,
+            int maxDegreeOfParallelism)
         {
             /*************************************************************************************
              * Algorithm steps
@@ -174,8 +190,10 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             int[] indexes = Enumerable.Repeat((int)-1, elements.Length).ToArray();
             var candidatesLines = elements.Select(x => candidatesLine(x)).ToList();
 
+            ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
+
             // 1. Find nearest neighbours indexes
-            Parallel.For(0, elements.Length, e =>
+            Parallel.For(0, elements.Length, parallelOptions, e =>
             {
                 var pivot = elements[e];
 
