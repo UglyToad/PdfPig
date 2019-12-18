@@ -49,6 +49,10 @@
             bool endobjFound = false;
             do
             {
+                if (loopProtection >= 700_000)
+                {
+                    
+                }
                 if (loopProtection > 1_000_000)
                 {
                     throw new PdfDocumentFormatException("Failed to brute-force search the file due to an infinite loop.");
@@ -92,6 +96,7 @@
                     {
                         bytes.MoveNext();
                         currentOffset++;
+                        loopProtection = 0;
                     }
 
                     continue;

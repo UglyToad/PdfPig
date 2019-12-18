@@ -210,7 +210,7 @@
         {
             // The ID operator should be followed by a single white-space character, and the next character is interpreted
             // as the first byte of image data. 
-            if (inputBytes.CurrentByte != ' ')
+            if (!ReadHelper.IsWhitespace(inputBytes.CurrentByte))
             {
                 throw new PdfDocumentFormatException($"No whitespace character following the image data (ID) operator. Position: {inputBytes.CurrentOffset}.");
             }
