@@ -238,12 +238,14 @@
 
                     if (read == buffer.Length)
                     {
+                        var containsWhitespace = false;
                         for (var i = 0; i < buffer.Length; i++)
                         {
                             var b = buffer[i];
 
                             if (ReadHelper.IsWhitespace(b))
                             {
+                                containsWhitespace = true;
                                 continue;
                             }
 
@@ -259,6 +261,11 @@
                                 break;
                             }
                         }
+
+                        if (!containsWhitespace)
+                        {
+                            isEnd = false;
+                        }
                     }
 
                     inputBytes.Seek(currentOffset);
@@ -267,10 +274,6 @@
                     {
                         imageData.RemoveAt(imageData.Count - 1);
                         return imageData;
-                    }
-                    else
-                    {
-                        
                     }
                 }
 
