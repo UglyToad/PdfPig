@@ -217,14 +217,61 @@
 
             var startsAt = inputBytes.CurrentOffset - 2;
 
+            const byte lastPlainText = 127;
+            const byte space = 32;
+            
+
             var imageData = new List<byte>();
             byte prevByte = 0;
             while (inputBytes.MoveNext())
             {
                 if (inputBytes.CurrentByte == 'I' && prevByte == 'E')
                 {
-                    imageData.RemoveAt(imageData.Count - 1);
-                    return imageData;
+                    // Check for EI appearing in binary data.
+                    var buffer = new byte[6];
+
+                    var currentOffset = inputBytes.CurrentOffset;
+
+                    var read = inputBytes.Read(buffer);
+
+                    var isEnd = true;
+
+                    if (read == buffer.Length)
+                    {
+                        for (var i = 0; i < buffer.Length; i++)
+                        {
+                            var b = buffer[i];
+
+                            if (ReadHelper.IsWhitespace(b))
+                            {
+                                continue;
+                            }
+
+                            if (b > lastPlainText)
+                            {
+                                isEnd = false;
+                                break;
+                            }
+
+                            if (b < space && b != '\r' && b != '\n' && b != '\t')
+                            {
+                                isEnd = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    inputBytes.Seek(currentOffset);
+
+                    if (isEnd)
+                    {
+                        imageData.RemoveAt(imageData.Count - 1);
+                        return imageData;
+                    }
+                    else
+                    {
+                        
+                    }
                 }
 
                 imageData.Add(inputBytes.CurrentByte);
