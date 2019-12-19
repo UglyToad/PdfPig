@@ -15,6 +15,7 @@
         private readonly ICidFontProgram fontProgram;
         private readonly VerticalWritingMetrics verticalWritingMetrics;
         private readonly IReadOnlyDictionary<int, decimal> widths;
+        private readonly decimal? defaultWidth;
         private readonly CharacterIdentifierToGlyphIndexMap cidToGid;
 
         public NameToken Type { get; }
@@ -35,6 +36,7 @@
             FontDescriptor descriptor, ICidFontProgram fontProgram,
             VerticalWritingMetrics verticalWritingMetrics,
             IReadOnlyDictionary<int, decimal> widths, 
+            decimal? defaultWidth,
             CharacterIdentifierToGlyphIndexMap cidToGid)
         {
             Type = type;
@@ -45,6 +47,7 @@
             this.fontProgram = fontProgram;
             this.verticalWritingMetrics = verticalWritingMetrics;
             this.widths = widths;
+            this.defaultWidth = defaultWidth;
             this.cidToGid = cidToGid;
 
             // TODO: This should maybe take units per em into account?
@@ -74,7 +77,12 @@
                 return width;
             }
 
-            return Descriptor.MissingWidth;
+            if (defaultWidth.HasValue)
+            {
+                return defaultWidth.Value;
+            }
+
+            return Descriptor?.MissingWidth ?? 1000m;
         }
 
         public PdfRectangle GetBoundingBox(int characterIdentifier)

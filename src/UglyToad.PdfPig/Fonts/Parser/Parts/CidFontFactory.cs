@@ -45,6 +45,13 @@
             }
 
             var widths = ReadWidths(dictionary);
+
+            var defaultWidth = default(decimal?);
+            if (dictionary.TryGet(NameToken.Dw, pdfScanner, out NumericToken defaultWidthToken))
+            {
+                defaultWidth = defaultWidthToken.Data;
+            }
+
             var verticalWritingMetrics = ReadVerticalDisplacements(dictionary);
 
             FontDescriptor descriptor = null;
@@ -62,14 +69,14 @@
             var subType = dictionary.GetNameOrDefault(NameToken.Subtype);
             if (NameToken.CidFontType0.Equals(subType))
             {
-                return new Type0CidFont(fontProgram, type, subType, baseFont, systemInfo, descriptor, verticalWritingMetrics, widths);
+                return new Type0CidFont(fontProgram, type, subType, baseFont, systemInfo, descriptor, verticalWritingMetrics, widths, defaultWidth);
             }
 
             if (NameToken.CidFontType2.Equals(subType))
             {
                 var cidToGid = GetCharacterIdentifierToGlyphIndexMap(dictionary, isLenientParsing);
 
-                return new Type2CidFont(type, subType, baseFont, systemInfo, descriptor, fontProgram, verticalWritingMetrics, widths, cidToGid);
+                return new Type2CidFont(type, subType, baseFont, systemInfo, descriptor, fontProgram, verticalWritingMetrics, widths, defaultWidth, cidToGid);
             }
 
             return null;

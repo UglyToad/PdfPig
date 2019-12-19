@@ -15,6 +15,7 @@
     {
         private readonly ICidFontProgram fontProgram;
         private readonly VerticalWritingMetrics verticalWritingMetrics;
+        private readonly decimal? defaultWidth;
 
         public NameToken Type { get; }
 
@@ -34,10 +35,14 @@
 
         public Type0CidFont(ICidFontProgram fontProgram, NameToken type, NameToken subType, NameToken baseFont,
             CharacterIdentifierSystemInfo systemInfo,
-            FontDescriptor descriptor, VerticalWritingMetrics verticalWritingMetrics, IReadOnlyDictionary<int, decimal> widths)
+            FontDescriptor descriptor, 
+            VerticalWritingMetrics verticalWritingMetrics, 
+            IReadOnlyDictionary<int, decimal> widths,
+            decimal? defaultWidth)
         {
             this.fontProgram = fontProgram;
             this.verticalWritingMetrics = verticalWritingMetrics;
+            this.defaultWidth = defaultWidth;
             Type = type;
             SubType = subType;
             BaseFont = baseFont;
@@ -60,15 +65,19 @@
                 throw new ArgumentException($"The provided character code was negative: {cid}.");
             }
 
-            if (cid < Widths.Count)
+            if (Widths.TryGetValue(cid, out var width))
             {
-                return Widths[cid];
+                return width;
             }
 
-            // TODO: correct values
+            if (defaultWidth.HasValue)
+            {
+                return defaultWidth.Value;
+            }
+            
             if (Descriptor == null)
             {
-                return 250;
+                return 1000;
             }
 
             return Descriptor.MissingWidth;
@@ -81,18 +90,23 @@
             {
                 throw new ArgumentException($"The provided character identifier was negative: {characterIdentifier}.");
             }
-
-            if (characterIdentifier < Widths.Count)
-            {
-                return new PdfRectangle(0, 0, Widths[characterIdentifier], 0);
-            }
             
             if (fontProgram.TryGetBoundingBox(characterIdentifier, out var boundingBox))
             {
                 return boundingBox;
             }
 
-            return new PdfRectangle(0, 0, 250, 0);
+            if (Widths.TryGetValue(characterIdentifier, out var width))
+            {
+                return new PdfRectangle(0, 0, width, 0);
+            }
+
+            if (defaultWidth.HasValue)
+            {
+                return new PdfRectangle(0, 0, defaultWidth.Value, 0);
+            }
+
+            return new PdfRectangle(0, 0, 1000, 0);
         }
 
         public PdfVector GetPositionVector(int characterIdentifier)
