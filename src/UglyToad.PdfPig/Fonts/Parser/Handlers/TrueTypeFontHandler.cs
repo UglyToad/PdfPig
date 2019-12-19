@@ -24,14 +24,12 @@
         private readonly ILog log;
         private readonly IPdfTokenScanner pdfScanner;
         private readonly IFilterProvider filterProvider;
-        private readonly CMapCache cMapCache;
         private readonly FontDescriptorFactory fontDescriptorFactory;
         private readonly TrueTypeFontParser trueTypeFontParser;
         private readonly IEncodingReader encodingReader;
         private readonly ISystemFontFinder systemFontFinder;
 
         public TrueTypeFontHandler(ILog log, IPdfTokenScanner pdfScanner, IFilterProvider filterProvider,
-            CMapCache cMapCache,
             FontDescriptorFactory fontDescriptorFactory,
             TrueTypeFontParser trueTypeFontParser,
             IEncodingReader encodingReader,
@@ -39,7 +37,6 @@
         {
             this.log = log;
             this.filterProvider = filterProvider;
-            this.cMapCache = cMapCache;
             this.fontDescriptorFactory = fontDescriptorFactory;
             this.trueTypeFontParser = trueTypeFontParser;
             this.encodingReader = encodingReader;
@@ -113,7 +110,7 @@
 
                 if (decodedUnicodeCMap != null)
                 {
-                    toUnicodeCMap = cMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap), isLenientParsing);
+                    toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap), isLenientParsing);
                 }
             }
 

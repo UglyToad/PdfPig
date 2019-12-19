@@ -683,22 +683,16 @@
         };
 
         public static Type2CharStrings Parse([NotNull] IReadOnlyList<IReadOnlyList<byte>> charStringBytes,
-            [NotNull] CompactFontFormatIndex localSubroutines,
-            [NotNull] CompactFontFormatIndex globalSubroutines, ICompactFontFormatCharset charset)
+            CompactFontFormatSubroutinesSelector subroutinesSelector, ICompactFontFormatCharset charset)
         {
             if (charStringBytes == null)
             {
                 throw new ArgumentNullException(nameof(charStringBytes));
             }
 
-            if (localSubroutines == null)
+            if (subroutinesSelector == null)
             {
-                throw new ArgumentNullException(nameof(localSubroutines));
-            }
-
-            if (globalSubroutines == null)
-            {
-                throw new ArgumentNullException(nameof(globalSubroutines));
+                throw new ArgumentNullException(nameof(subroutinesSelector));
             }
             
             var charStrings = new Dictionary<string, Type2CharStrings.CommandSequence>();
@@ -706,11 +700,12 @@
             {
                 var charString = charStringBytes[i];
                 var name = charset.GetNameByGlyphId(i);
+                var (globalSubroutines, localSubroutines) = subroutinesSelector.GetSubroutines(i);
                 var sequence = ParseSingle(charString.ToList(), localSubroutines, globalSubroutines);
                 charStrings[name] = new Type2CharStrings.CommandSequence(sequence);
             }
 
-            return new Type2CharStrings(charStrings, localSubroutines, globalSubroutines);
+            return new Type2CharStrings(charStrings);
         }
 
         private static IReadOnlyList<Union<decimal, LazyType2Command>> ParseSingle(List<byte> bytes,

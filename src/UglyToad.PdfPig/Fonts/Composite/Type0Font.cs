@@ -14,6 +14,10 @@
     /// </summary>
     internal class Type0Font : IFont, IVerticalWritingSupported
     {
+        private readonly CMap ucs2CMap;
+        // ReSharper disable once NotAccessedField.Local
+        private readonly bool isChineseJapaneseOrKorean;
+
         public NameToken Name => BaseFont;
 
         [NotNull]
@@ -30,8 +34,13 @@
 
         public bool IsVertical => CMap.WritingMode == WritingMode.Vertical;
 
-        public Type0Font(NameToken baseFont, ICidFont cidFont, CMap cmap, CMap toUnicodeCMap)
+        public Type0Font(NameToken baseFont, ICidFont cidFont, CMap cmap, CMap toUnicodeCMap,
+            CMap ucs2CMap,
+            bool isChineseJapaneseOrKorean)
         {
+            this.ucs2CMap = ucs2CMap;
+            this.isChineseJapaneseOrKorean = isChineseJapaneseOrKorean;
+
             BaseFont = baseFont ?? throw new ArgumentNullException(nameof(baseFont));
             CidFont = cidFont ?? throw new ArgumentNullException(nameof(cidFont));
             CMap = cmap ?? throw new ArgumentNullException(nameof(cmap));
@@ -55,6 +64,11 @@
 
             if (!ToUnicode.CanMapToUnicode)
             {
+                if (ucs2CMap != null && ucs2CMap.TryConvertToUnicode(characterCode, out value))
+                {
+                    return value != null;
+                }
+
                 return false;
             }
 

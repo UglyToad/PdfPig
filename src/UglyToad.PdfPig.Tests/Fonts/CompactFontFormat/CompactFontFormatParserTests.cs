@@ -4,15 +4,13 @@
     using System.IO;
     using System.Linq;
     using PdfPig.Fonts.CompactFontFormat;
-    using PdfPig.Fonts.CompactFontFormat.CharStrings;
     using PdfPig.Fonts.CompactFontFormat.Dictionaries;
     using Xunit;
 
     public class CompactFontFormatParserTests
     {
-        private readonly CompactFontFormatParser parser = new CompactFontFormatParser(new CompactFontFormatIndividualFontParser(
-                new CompactFontFormatIndexReader(), new CompactFontFormatTopLevelDictionaryReader(), new CompactFontFormatPrivateDictionaryReader()), 
-            new CompactFontFormatIndexReader());
+        private readonly CompactFontFormatParser parser = new CompactFontFormatParser(
+            new CompactFontFormatIndividualFontParser(new CompactFontFormatTopLevelDictionaryReader(), new CompactFontFormatPrivateDictionaryReader()));
 
         [Fact]
         public void CanReadMinionPro()

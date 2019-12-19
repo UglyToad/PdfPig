@@ -71,7 +71,6 @@
         {
             var log = container.Get<ILog>();
             var filterProvider = container.Get<IFilterProvider>();
-            var cMapCache = new CMapCache(new CMapParser());
 
             CrossReferenceTable crossReferenceTable = null;
 
@@ -100,9 +99,8 @@
             
             var trueTypeFontParser = new TrueTypeFontParser();
             var fontDescriptorFactory = new FontDescriptorFactory();
-            var compactFontFormatIndexReader = new CompactFontFormatIndexReader();
-            var compactFontFormatParser = new CompactFontFormatParser(new CompactFontFormatIndividualFontParser(compactFontFormatIndexReader, new CompactFontFormatTopLevelDictionaryReader(), 
-                        new CompactFontFormatPrivateDictionaryReader()), compactFontFormatIndexReader);
+            var compactFontFormatParser = new CompactFontFormatParser(new CompactFontFormatIndividualFontParser(new CompactFontFormatTopLevelDictionaryReader(), 
+                        new CompactFontFormatPrivateDictionaryReader()));
             
             var (rootReference, rootDictionary) = ParseTrailer(crossReferenceTable, isLenientParsing, 
                 pdfScanner, 
@@ -117,12 +115,11 @@
             var encodingReader = new EncodingReader(pdfScanner);
 
             var fontFactory = new FontFactory(log, new Type0FontHandler(cidFontFactory,
-                cMapCache, 
                 filterProvider, pdfScanner),
-                new TrueTypeFontHandler(log, pdfScanner, filterProvider, cMapCache, fontDescriptorFactory, trueTypeFontParser, encodingReader, new SystemFontFinder(new TrueTypeFontParser())),
-                new Type1FontHandler(pdfScanner, cMapCache, filterProvider, fontDescriptorFactory, encodingReader, 
+                new TrueTypeFontHandler(log, pdfScanner, filterProvider, fontDescriptorFactory, trueTypeFontParser, encodingReader, new SystemFontFinder(new TrueTypeFontParser())),
+                new Type1FontHandler(pdfScanner, filterProvider, fontDescriptorFactory, encodingReader, 
                     new Type1FontParser(new Type1EncryptedPortionParser()), compactFontFormatParser),
-                new Type3FontHandler(pdfScanner, cMapCache, filterProvider, encodingReader));
+                new Type3FontHandler(pdfScanner, filterProvider, encodingReader));
             
             var resourceContainer = new ResourceStore(pdfScanner, fontFactory);
             

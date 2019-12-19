@@ -18,6 +18,9 @@
         private static readonly Lazy<GlyphList> LazyAdobeGlyphList = new Lazy<GlyphList>(() => GlyphListFactory.Get("glyphlist"));
         public static GlyphList AdobeGlyphList => LazyAdobeGlyphList.Value;
 
+        private static readonly Lazy<GlyphList> LazyAdditionalGlyphList = new Lazy<GlyphList>(() => GlyphListFactory.Get("additional"));
+        public static GlyphList AdditionalGlyphList => LazyAdditionalGlyphList.Value;
+
         private static readonly Lazy<GlyphList> LazyZapfDingbatsGlyphList = new Lazy<GlyphList>(() => GlyphListFactory.Get("zapfdingbats"));
         public static GlyphList ZapfDingbats => LazyZapfDingbatsGlyphList.Value;
 

@@ -11,12 +11,10 @@
         private const string TagTtfonly = "\u0000\u0001\u0000\u0000";
 
         private readonly CompactFontFormatIndividualFontParser individualFontParser;
-        private readonly CompactFontFormatIndexReader indexReader;
 
-        public CompactFontFormatParser(CompactFontFormatIndividualFontParser individualFontParser, CompactFontFormatIndexReader indexReader)
+        public CompactFontFormatParser(CompactFontFormatIndividualFontParser individualFontParser)
         {
             this.individualFontParser = individualFontParser;
-            this.indexReader = indexReader;
         }
 
         public CompactFontFormatFontProgram Parse(CompactFontFormatData data)
@@ -41,11 +39,11 @@
 
             var fontNames = ReadStringIndex(data);
 
-            var topLevelDictionaryIndex = indexReader.ReadDictionaryData(data);
+            var topLevelDictionaryIndex = CompactFontFormatIndexReader.ReadDictionaryData(data);
 
             var stringIndex = ReadStringIndex(data);
 
-            var globalSubroutineIndex = indexReader.ReadDictionaryData(data);
+            var globalSubroutineIndex = CompactFontFormatIndexReader.ReadDictionaryData(data);
 
             var fonts = new Dictionary<string, CompactFontFormatFont>();
 
@@ -79,9 +77,9 @@
         /// <summary>
         /// Reads indexed string data.
         /// </summary>
-        private string[] ReadStringIndex(CompactFontFormatData data)
+        private static string[] ReadStringIndex(CompactFontFormatData data)
         {
-            var index = indexReader.ReadIndex(data);
+            var index = CompactFontFormatIndexReader.ReadIndex(data);
 
             if (index.Length == 0)
             {

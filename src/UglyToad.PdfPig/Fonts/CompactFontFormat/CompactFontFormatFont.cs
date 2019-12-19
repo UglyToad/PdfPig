@@ -66,7 +66,6 @@
     {
         public IReadOnlyList<CompactFontFormatTopLevelDictionary> FontDictionaries { get; }
         public IReadOnlyList<CompactFontFormatPrivateDictionary> PrivateDictionaries { get; }
-        public IReadOnlyList<CompactFontFormatIndex> LocalSubroutines { get; }
         public ICompactFontFormatFdSelect FdSelect { get; }
 
         public CompactFontFormatCidFont(CompactFontFormatTopLevelDictionary topDictionary, CompactFontFormatPrivateDictionary privateDictionary, 
@@ -74,12 +73,10 @@
             Union<Type1CharStrings, Type2CharStrings> charStrings,
             IReadOnlyList<CompactFontFormatTopLevelDictionary> fontDictionaries,
             IReadOnlyList<CompactFontFormatPrivateDictionary> privateDictionaries,
-            IReadOnlyList<CompactFontFormatIndex> localSubroutines,
             ICompactFontFormatFdSelect fdSelect) : base(topDictionary, privateDictionary, charset, charStrings, null)
         {
             FontDictionaries = fontDictionaries;
             PrivateDictionaries = privateDictionaries;
-            LocalSubroutines = localSubroutines;
             FdSelect = fdSelect;
         }
 

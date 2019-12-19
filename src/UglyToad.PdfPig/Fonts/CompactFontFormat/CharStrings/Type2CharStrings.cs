@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Dictionaries;
     using Geometry;
     using Util;
     using Util.JetBrains.Annotations;
@@ -23,24 +22,10 @@
         /// </summary>
         public IReadOnlyDictionary<string, CommandSequence> CharStrings { get; }
 
-        /// <summary>
-        /// The indexed bytes for the local subroutines in this font.
-        /// </summary>
-        [NotNull]
-        public CompactFontFormatIndex LocalSubroutines { get; }
 
-        /// <summary>
-        /// The indexed bytes for the global subroutines in this font set.
-        /// </summary>
-        [NotNull]
-        public CompactFontFormatIndex GlobalSubroutines { get; }
-
-        public Type2CharStrings(IReadOnlyDictionary<string, CommandSequence> charStrings, CompactFontFormatIndex localSubroutines,
-            CompactFontFormatIndex globalSubroutines)
+        public Type2CharStrings(IReadOnlyDictionary<string, CommandSequence> charStrings)
         {
             CharStrings = charStrings ?? throw new ArgumentNullException(nameof(charStrings));
-            LocalSubroutines = localSubroutines ?? throw new ArgumentNullException(nameof(localSubroutines));
-            GlobalSubroutines = globalSubroutines ?? throw new ArgumentNullException(nameof(globalSubroutines));
         }
 
         /// <summary>

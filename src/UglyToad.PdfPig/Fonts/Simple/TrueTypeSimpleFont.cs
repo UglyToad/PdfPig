@@ -71,9 +71,9 @@
             // Behaviour specified by the Extraction of Text Content section of the specification.
 
             // If the font contains a ToUnicode CMap use that.
-            if (ToUnicode.CanMapToUnicode)
+            if (ToUnicode.CanMapToUnicode && ToUnicode.TryGet(characterCode, out value))
             {
-                return ToUnicode.TryGet(characterCode, out value);
+                return true;
             }
 
             if (encoding == null)
@@ -86,17 +86,18 @@
             //  Map the character code to a character name.
             var encodedCharacterName = encoding.GetName(characterCode);
 
-            // Look up the character name in the Adobe Glyph List.
+            // Look up the character name in the Adobe Glyph List or additional Glyph List.
             try
             {
-                value = GlyphList.AdobeGlyphList.NameToUnicode(encodedCharacterName);
+                value = GlyphList.AdobeGlyphList.NameToUnicode(encodedCharacterName)
+                    ?? GlyphList.AdditionalGlyphList.NameToUnicode(encodedCharacterName);
             }
             catch
             {
                 return false;
             }
 
-            return true;
+            return value != null;
         }
 
         public CharacterBoundingBox GetBoundingBox(int characterCode)

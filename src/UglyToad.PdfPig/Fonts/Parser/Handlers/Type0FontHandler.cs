@@ -16,15 +16,13 @@
     internal class Type0FontHandler : IFontHandler
     {
         private readonly CidFontFactory cidFontFactory;
-        private readonly CMapCache cMapCache;
         private readonly IFilterProvider filterProvider;
         private readonly IPdfTokenScanner scanner;
 
-        public Type0FontHandler(CidFontFactory cidFontFactory, CMapCache cMapCache, IFilterProvider filterProvider,
+        public Type0FontHandler(CidFontFactory cidFontFactory, IFilterProvider filterProvider,
             IPdfTokenScanner scanner)
         {
             this.cidFontFactory = cidFontFactory;
-            this.cMapCache = cMapCache;
             this.filterProvider = filterProvider;
             this.scanner = scanner;
         }
@@ -59,7 +57,7 @@
                 throw new InvalidFontFormatException("No descendant font dictionary was declared for this Type 0 font. This dictionary should contain the CIDFont for the Type 0 font. " + dictionary);
             }
 
-            var ucs2CMap = GetUcs2CMap(dictionary, isCMapPredefined, false);
+            var (ucs2CMap, isChineseJapaneseOrKorean) = GetUcs2CMap(dictionary, isCMapPredefined, cidFont);
 
             CMap toUnicodeCMap = null;
             if (dictionary.ContainsKey(NameToken.ToUnicode))
@@ -72,11 +70,11 @@
 
                 if (decodedUnicodeCMap != null)
                 {
-                    toUnicodeCMap = cMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap), isLenientParsing);
+                    toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap), isLenientParsing);
                 }
             }
 
-            var font = new Type0Font(baseFont, cidFont, cMap, toUnicodeCMap);
+            var font = new Type0Font(baseFont, cidFont, cMap, toUnicodeCMap, ucs2CMap, isChineseJapaneseOrKorean);
 
             return font;
         }
@@ -139,7 +137,7 @@
             {
                 if (value is NameToken encodingName)
                 {
-                    var cmap = cMapCache.Get(encodingName.Data);
+                    var cmap = CMapCache.Get(encodingName.Data);
 
                     result = cmap ?? throw new InvalidOperationException("Missing CMap for " + encodingName.Data);
 
@@ -149,7 +147,7 @@
                 {
                     var decoded = stream.Decode(filterProvider);
 
-                    var cmap = cMapCache.Parse(new ByteArrayInputBytes(decoded), false);
+                    var cmap = CMapCache.Parse(new ByteArrayInputBytes(decoded), false);
 
                     result = cmap ?? throw new InvalidOperationException("Could not read CMap for " + dictionary);
                 }
@@ -162,11 +160,11 @@
             return result;
         }
 
-        private static CMap GetUcs2CMap(DictionaryToken dictionary, bool isCMapPredefined, bool usesDescendantAdobeFont)
+        private static (CMap, bool isChineseJapaneseOrKorean) GetUcs2CMap(DictionaryToken dictionary, bool isCMapPredefined, ICidFont cidFont)
         {
             if (!isCMapPredefined)
             {
-                return null;
+                return (null, false);
             }
 
             /*
@@ -178,17 +176,43 @@
 
             if (encodingName == null)
             {
-                return null;
+                return (null, false);
             }
+
+            var isChineseJapaneseOrKorean = false;
+
+            if (cidFont != null && string.Equals(cidFont.SystemInfo.Registry, "Adobe", StringComparison.OrdinalIgnoreCase))
+            {
+                isChineseJapaneseOrKorean = string.Equals(cidFont.SystemInfo.Ordering, "GB1", StringComparison.OrdinalIgnoreCase)
+                                                || string.Equals(cidFont.SystemInfo.Ordering, "CNS1", StringComparison.OrdinalIgnoreCase)
+                                                || string.Equals(cidFont.SystemInfo.Ordering, "Japan1", StringComparison.OrdinalIgnoreCase)
+                                                || string.Equals(cidFont.SystemInfo.Ordering, "Korea1", StringComparison.OrdinalIgnoreCase);
+            }
+
 
             var isPredefinedIdentityMap = encodingName.Equals(NameToken.IdentityH) || encodingName.Equals(NameToken.IdentityV);
 
-            if (isPredefinedIdentityMap && !usesDescendantAdobeFont)
+            if (isPredefinedIdentityMap && !isChineseJapaneseOrKorean)
             {
-                return null;
+                return (null, false);
             }
 
-            throw new NotSupportedException("Support for UCS2 CMaps are not implemented yet. Please raise an issue.");
+            if (!isChineseJapaneseOrKorean)
+            {
+                return (null, false);
+            }
+
+            var fullCmapName = cidFont.SystemInfo.ToString();
+            var nonUnicodeCMap = CMapCache.Get(fullCmapName);
+
+            if (nonUnicodeCMap == null)
+            {
+                return (null, true);
+            }
+
+            var unicodeCMapName = $"{nonUnicodeCMap.Info.Registry}-{nonUnicodeCMap.Info.Ordering}-UCS2";
+
+            return (CMapCache.Get(unicodeCMapName), true);
         }
     }
 }

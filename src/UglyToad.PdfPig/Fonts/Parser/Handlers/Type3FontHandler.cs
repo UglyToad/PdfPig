@@ -15,15 +15,13 @@
 
     internal class Type3FontHandler : IFontHandler
     {
-        private readonly CMapCache cMapCache;
         private readonly IFilterProvider filterProvider;
         private readonly IEncodingReader encodingReader;
         private readonly IPdfTokenScanner scanner;
 
-        public Type3FontHandler(IPdfTokenScanner scanner, CMapCache cMapCache, IFilterProvider filterProvider,
+        public Type3FontHandler(IPdfTokenScanner scanner, IFilterProvider filterProvider,
             IEncodingReader encodingReader)
         {
-            this.cMapCache = cMapCache;
             this.filterProvider = filterProvider;
             this.encodingReader = encodingReader;
             this.scanner = scanner;
@@ -50,7 +48,7 @@
 
                 if (decodedUnicodeCMap != null)
                 {
-                    toUnicodeCMap = cMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap), isLenientParsing);
+                    toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap), isLenientParsing);
                 }
             }
             

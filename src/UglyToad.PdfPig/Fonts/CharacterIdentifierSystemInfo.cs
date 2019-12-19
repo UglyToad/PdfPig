@@ -31,7 +31,7 @@
 
         public override string ToString()
         {
-            return $"{Registry} | {Ordering} | {Supplement}";
+            return $"{Registry}-{Ordering}-{Supplement}";
         }
     }
 }

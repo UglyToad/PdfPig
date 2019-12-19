@@ -13,15 +13,12 @@
 
     internal class CompactFontFormatIndividualFontParser
     {
-        private readonly CompactFontFormatIndexReader indexReader;
         private readonly CompactFontFormatTopLevelDictionaryReader topLevelDictionaryReader;
         private readonly CompactFontFormatPrivateDictionaryReader privateDictionaryReader;
 
-        public CompactFontFormatIndividualFontParser(CompactFontFormatIndexReader indexReader,
-            CompactFontFormatTopLevelDictionaryReader topLevelDictionaryReader,
+        public CompactFontFormatIndividualFontParser(CompactFontFormatTopLevelDictionaryReader topLevelDictionaryReader,
             CompactFontFormatPrivateDictionaryReader privateDictionaryReader)
         {
-            this.indexReader = indexReader;
             this.topLevelDictionaryReader = topLevelDictionaryReader;
             this.privateDictionaryReader = privateDictionaryReader;
         }
@@ -53,12 +50,12 @@
             {
                 data.Seek(privateDictionary.LocalSubroutineOffset.Value + topDictionary.PrivateDictionaryLocation.Value.Offset);
 
-                localSubroutines = indexReader.ReadDictionaryData(data);
+                localSubroutines = CompactFontFormatIndexReader.ReadDictionaryData(data);
             }
 
             data.Seek(topDictionary.CharStringsOffset);
 
-            var charStringIndex = indexReader.ReadDictionaryData(data);
+            var charStringIndex = CompactFontFormatIndexReader.ReadDictionaryData(data);
 
             ICompactFontFormatCharset charset;
             if (topDictionary.CharSetOffset >= 0)
@@ -93,24 +90,14 @@
                     charset = CompactFontFormatIsoAdobeCharset.Value;
                 }
             }
-
-            data.Seek(topDictionary.CharStringsOffset);
-
-            Type2CharStrings charStrings;
-            switch (topDictionary.CharStringType)
-            {
-                case CompactFontFormatCharStringType.Type1:
-                    throw new NotImplementedException("Type 1 CharStrings are not currently supported in CFF font.");
-                case CompactFontFormatCharStringType.Type2:
-                    charStrings = Type2CharStringParser.Parse(charStringIndex, localSubroutines, globalSubroutineIndex, charset);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException($"Unexpected CharString type in CFF font: {topDictionary.CharStringType}.");
-            }
-
+            
             if (topDictionary.IsCidFont)
             {
-                return ReadCidFont(data, topDictionary, charStringIndex.Count, stringIndex, privateDictionary, charset, Union<Type1CharStrings, Type2CharStrings>.Two(charStrings));
+                return ReadCidFont(data, topDictionary, charStringIndex.Count, stringIndex, privateDictionary,
+                    charset,
+                    globalSubroutineIndex,
+                    localSubroutines,
+                    charStringIndex);
             }
 
             var encoding = topDictionary.EncodingOffset;
@@ -132,6 +119,10 @@
                     fontEncoding = CompactFontFormatEncodingReader.ReadEncoding(data, charset, stringIndex);
                 }
             }
+
+            var subroutineSelector = new CompactFontFormatSubroutinesSelector(globalSubroutineIndex, localSubroutines);
+
+            var charStrings = ReadCharStrings(data, topDictionary, charStringIndex, subroutineSelector, charset);
 
             return new CompactFontFormatFont(topDictionary, privateDictionary, charset, Union<Type1CharStrings, Type2CharStrings>.Two(charStrings), fontEncoding);
         }
@@ -204,22 +195,43 @@
             return "SID" + index;
         }
 
+        private static Type2CharStrings ReadCharStrings(CompactFontFormatData data, CompactFontFormatTopLevelDictionary topDictionary,
+            CompactFontFormatIndex charStringIndex,
+            CompactFontFormatSubroutinesSelector subroutinesSelector,
+            ICompactFontFormatCharset charset)
+        {
+            data.Seek(topDictionary.CharStringsOffset);
+
+            switch (topDictionary.CharStringType)
+            {
+                case CompactFontFormatCharStringType.Type1:
+                    throw new NotImplementedException("Type 1 CharStrings are not currently supported in CFF font.");
+                case CompactFontFormatCharStringType.Type2:
+                    return Type2CharStringParser.Parse(charStringIndex, subroutinesSelector, charset);
+                default:
+                    throw new ArgumentOutOfRangeException($"Unexpected CharString type in CFF font: {topDictionary.CharStringType}.");
+            }
+        }
+
         private CompactFontFormatCidFont ReadCidFont(CompactFontFormatData data, CompactFontFormatTopLevelDictionary topLevelDictionary,
             int numberOfGlyphs,
             IReadOnlyList<string> stringIndex,
             CompactFontFormatPrivateDictionary privateDictionary,
             ICompactFontFormatCharset charset,
-            Union<Type1CharStrings, Type2CharStrings> charstrings)
+            CompactFontFormatIndex globalSubroutines,
+            CompactFontFormatIndex localSubroutinesTop,
+            CompactFontFormatIndex charStringIndex)
         {
             var offset = topLevelDictionary.CidFontOperators.FontDictionaryArray;
 
             data.Seek(offset);
 
-            var fontDict = indexReader.ReadDictionaryData(data);
+            var fontDict = CompactFontFormatIndexReader.ReadDictionaryData(data);
 
             var privateDictionaries = new List<CompactFontFormatPrivateDictionary>();
             var fontDictionaries = new List<CompactFontFormatTopLevelDictionary>();
             var fontLocalSubroutines = new List<CompactFontFormatIndex>();
+            
             foreach (var index in fontDict)
             {
                 var topLevelDictionaryCid = topLevelDictionaryReader.Read(new CompactFontFormatData(index), stringIndex);
@@ -238,8 +250,12 @@
                 if (privateDictionaryCid.LocalSubroutineOffset.HasValue && privateDictionaryCid.LocalSubroutineOffset.Value > 0)
                 {
                     data.Seek(topLevelDictionaryCid.PrivateDictionaryLocation.Value.Offset + privateDictionaryCid.LocalSubroutineOffset.Value);
-                    var localSubroutines = indexReader.ReadDictionaryData(data);
+                    var localSubroutines = CompactFontFormatIndexReader.ReadDictionaryData(data);
                     fontLocalSubroutines.Add(localSubroutines);
+                }
+                else
+                {
+                    fontLocalSubroutines.Add(null);
                 }
 
                 fontDictionaries.Add(topLevelDictionaryCid);
@@ -267,8 +283,15 @@
                     throw new InvalidFontFormatException($"Invalid Font Dictionary Select format: {format}.");
             }
 
-            return new CompactFontFormatCidFont(topLevelDictionary, privateDictionary, charset, charstrings,
-                fontDictionaries, privateDictionaries, fontLocalSubroutines, fdSelect);
+            var subroutineSelector = new CompactFontFormatSubroutinesSelector(globalSubroutines, localSubroutinesTop,
+                fdSelect, fontLocalSubroutines);
+
+            var charStrings = ReadCharStrings(data, topLevelDictionary, charStringIndex, subroutineSelector, charset);
+
+            var union = Union<Type1CharStrings, Type2CharStrings>.Two(charStrings);
+
+            return new CompactFontFormatCidFont(topLevelDictionary, privateDictionary, charset,  union,
+                fontDictionaries, privateDictionaries, fdSelect);
         }
 
         private static CompactFontFormat0FdSelect ReadFormat0FdSelect(CompactFontFormatData data, int numberOfGlyphs,

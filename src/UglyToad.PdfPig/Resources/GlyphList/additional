@@ -108,6 +108,7 @@ logicalanddisplay;2227
 logicalandtext;2227
 logicalordisplay;2228
 logicalortext;2228
+nonmarkingreturn;000D
 parenleftBig;0028
 parenleftbig;0028
 parenleftBigg;0028

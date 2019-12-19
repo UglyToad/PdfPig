@@ -2,7 +2,7 @@
 {
     using System.Collections.Generic;
 
-    internal static class CmapUtils
+    internal static class CMapUtils
     {
         public static int ToInt(this IReadOnlyList<byte> data, int length)
         {

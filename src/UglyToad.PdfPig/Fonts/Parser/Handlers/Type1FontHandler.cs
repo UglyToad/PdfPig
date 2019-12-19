@@ -19,21 +19,19 @@
     internal class Type1FontHandler : IFontHandler
     {
         private readonly IPdfTokenScanner pdfScanner;
-        private readonly CMapCache cMapCache;
         private readonly IFilterProvider filterProvider;
         private readonly FontDescriptorFactory fontDescriptorFactory;
         private readonly IEncodingReader encodingReader;
         private readonly Type1FontParser type1FontParser;
         private readonly CompactFontFormatParser compactFontFormatParser;
 
-        public Type1FontHandler(IPdfTokenScanner pdfScanner, CMapCache cMapCache, IFilterProvider filterProvider, 
+        public Type1FontHandler(IPdfTokenScanner pdfScanner, IFilterProvider filterProvider, 
             FontDescriptorFactory fontDescriptorFactory, 
             IEncodingReader encodingReader,
             Type1FontParser type1FontParser,
             CompactFontFormatParser compactFontFormatParser)
         {
             this.pdfScanner = pdfScanner;
-            this.cMapCache = cMapCache;
             this.filterProvider = filterProvider;
             this.fontDescriptorFactory = fontDescriptorFactory;
             this.encodingReader = encodingReader;
@@ -95,7 +93,7 @@
 
                 if (decodedUnicodeCMap != null)
                 {
-                    toUnicodeCMap = cMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap), isLenientParsing);
+                    toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap), isLenientParsing);
                 }
             }
 
