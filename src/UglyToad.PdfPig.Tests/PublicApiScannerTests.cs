@@ -91,6 +91,7 @@
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.RecursiveXYCut",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.TextEdgesExtractor",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.EdgeType",
+                "UglyToad.PdfPig.DocumentLayoutAnalysis.WhitespaceCoverExtractor",
                 "UglyToad.PdfPig.Exceptions.PdfDocumentEncryptedException",
                 "UglyToad.PdfPig.Exceptions.PdfDocumentFormatException",
                 "UglyToad.PdfPig.Export.AltoXmlTextExporter",
