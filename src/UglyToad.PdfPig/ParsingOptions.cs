@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig
 {
+    using System.Collections.Generic;
     using Logging;
 
     /// <summary>
@@ -31,8 +32,14 @@
         }
 
         /// <summary>
-        /// The password to use to open the document if it is encrypted.
+        /// The password to use to open the document if it is encrypted. If you need to supply multiple passwords to test against
+        /// you can use <see cref="Passwords"/>. The value of <see cref="Password"/> will be included in the list to test against.
         /// </summary>
         public string Password { get; set; } = string.Empty;
+
+        /// <summary>
+        /// All passwords to try when opening this document, will include any values set for <see cref="Password"/>.
+        /// </summary>
+        public List<string> Passwords { get; set; } = new List<string>();
     }
 }

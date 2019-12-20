@@ -1,7 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Parser
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using AcroForms;
     using Content;
     using CrossReference;
@@ -62,12 +64,29 @@
             
             var tokenScanner = new CoreTokenScanner(inputBytes);
 
-            var document = OpenDocument(inputBytes, tokenScanner, container, isLenientParsing, options?.Password);
+            var passwords = new List<string>();
+
+            if (options?.Password != null)
+            {
+                passwords.Add(options.Password);
+            }
+
+            if (options?.Passwords != null)
+            {
+                passwords.AddRange(options.Passwords.Where(x => x != null));
+            }
+
+            if (!passwords.Contains(string.Empty))
+            {
+                passwords.Add(string.Empty);
+            }
+
+            var document = OpenDocument(inputBytes, tokenScanner, container, isLenientParsing, passwords);
 
             return document;
         }
 
-        private static PdfDocument OpenDocument(IInputBytes inputBytes, ISeekableTokenScanner scanner, IContainer container, bool isLenientParsing, string password)
+        private static PdfDocument OpenDocument(IInputBytes inputBytes, ISeekableTokenScanner scanner, IContainer container, bool isLenientParsing, IReadOnlyList<string> passwords)
         {
             var log = container.Get<ILog>();
             var filterProvider = container.Get<IFilterProvider>();
@@ -106,7 +125,8 @@
                 pdfScanner, 
                 out var encryptionDictionary);
 
-            var encryptionHandler = encryptionDictionary != null ? (IEncryptionHandler)new EncryptionHandler(encryptionDictionary, crossReferenceTable.Trailer, password ?? string.Empty)
+            var encryptionHandler = encryptionDictionary != null ?
+                (IEncryptionHandler)new EncryptionHandler(encryptionDictionary, crossReferenceTable.Trailer, passwords)
                 : NoOpEncryptionHandler.Instance;
 
             pdfScanner.UpdateEncryptionHandler(encryptionHandler);
