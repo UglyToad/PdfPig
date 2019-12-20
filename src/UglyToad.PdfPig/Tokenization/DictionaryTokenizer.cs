@@ -48,6 +48,11 @@
 
             while (coreScanner.MoveNext())
             {
+                if (coreScanner.CurrentToken is CommentToken)
+                {
+                    continue;
+                }
+
                 tokens.Add(coreScanner.CurrentToken);
             }
 

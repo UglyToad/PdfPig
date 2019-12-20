@@ -26,6 +26,11 @@
             while (!CurrentByteEndsCurrentArray(inputBytes, previousToken) && scanner.MoveNext())
             {
                 previousToken = scanner.CurrentToken;
+
+                if (scanner.CurrentToken is CommentToken)
+                {
+                    continue;
+                }
                 
                 contents.Add(scanner.CurrentToken);
             }

@@ -229,14 +229,22 @@
                 return false;
             }
 
+            // While the specification demands a \n we have seen files with \r only in the wild.
+            var hadWhiteSpace = false;
             if (inputBytes.CurrentByte == '\r')
             {
+                hadWhiteSpace = true;
                 inputBytes.MoveNext();
             }
 
             if (inputBytes.CurrentByte != '\n')
             {
-                return false;
+                if (!hadWhiteSpace)
+                {
+                    return false;
+                }
+
+                inputBytes.Seek(inputBytes.CurrentOffset - 1);
             }
 
             // Store where we started reading the first byte of data.
