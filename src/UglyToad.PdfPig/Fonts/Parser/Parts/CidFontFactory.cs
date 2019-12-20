@@ -131,18 +131,15 @@
                             throw new PdfDocumentFormatException($"The font file stream did not contain a subtype entry: {str.StreamDictionary}.");
                         }
 
-                        if (subtypeName == NameToken.CidFontType0C)
+                        if (subtypeName == NameToken.CidFontType0C
+                            || subtypeName == NameToken.Type1C)
                         {
                             var bytes = str.Decode(filterProvider);
                             var font = compactFontFormatParser.Parse(new CompactFontFormatData(bytes));
                             return font;
                         }
 
-                        if (subtypeName == NameToken.Type1C)
-                        {
-
-                        }
-                        else if (subtypeName == NameToken.OpenType)
+                        if (subtypeName == NameToken.OpenType)
                         {
 
                         }
@@ -151,7 +148,7 @@
                             throw new PdfDocumentFormatException($"Unexpected subtype for CID font: {subtypeName}.");
                         }
 
-                        throw new NotSupportedException("Cannot read CID font from subtype.");
+                        throw new NotSupportedException($"Cannot read CID font from subtype: {subtypeName}.");
                     }
                 default:
                     throw new NotSupportedException("Currently only TrueType fonts are supported.");
