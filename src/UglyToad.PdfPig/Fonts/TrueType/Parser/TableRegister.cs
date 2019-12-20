@@ -18,7 +18,6 @@
         /// <summary>
         /// This table contains the data that defines the appearance of the glyphs in the font.
         /// </summary>
-        [NotNull]
         public GlyphDataTable GlyphTable { get; }
 
         /// <summary>
@@ -36,7 +35,6 @@
         /// <summary>
         /// This table stores the offsets to the locations of the glyphs (relative to the glyph table).
         /// </summary>
-        [NotNull]
         public IndexToLocationTable IndexToLocationTable { get; }
 
         /// <summary>
@@ -73,10 +71,10 @@
             }
 
             HeaderTable = builder.HeaderTable ?? throw new ArgumentException("The builder did not contain the header table");
-            GlyphTable = builder.GlyphDataTable ?? throw new ArgumentException("The builder did not contain the glyph data table.");
+            GlyphTable = builder.GlyphDataTable;
             HorizontalHeaderTable = builder.HorizontalHeaderTable ?? throw new ArgumentException("The builder did not contain the horizontal header table.");
             HorizontalMetricsTable = builder.HorizontalMetricsTable;
-            IndexToLocationTable = builder.IndexToLocationTable ?? throw new ArgumentException("The builder did not contain the index to location table.");
+            IndexToLocationTable = builder.IndexToLocationTable;
             MaximumProfileTable = builder.MaximumProfileTable ?? throw new ArgumentException("The builder did not contain the maximum profile table.");
             NameTable = builder.NameTable;
             PostScriptTable = builder.PostScriptTable;

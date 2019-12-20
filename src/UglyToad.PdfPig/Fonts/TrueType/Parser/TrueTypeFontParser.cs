@@ -20,7 +20,7 @@
             int rangeShift = data.ReadUnsignedShort();
             // ReSharper restore UnusedVariable
 
-            var tables = new Dictionary<string, TrueTypeHeaderTable>();
+            var tables = new Dictionary<string, TrueTypeHeaderTable>(StringComparer.OrdinalIgnoreCase);
 
             for (var i = 0; i < numberOfTables; i++)
             {
@@ -46,7 +46,7 @@
             var length = data.ReadUnsignedInt();
 
             // skip tables with zero length (except glyf)
-            if (length == 0 && !string.Equals(tag, TrueTypeHeaderTable.Glyf))
+            if (length == 0 && !string.Equals(tag, TrueTypeHeaderTable.Glyf, StringComparison.OrdinalIgnoreCase))
             {
                 return null;
             }

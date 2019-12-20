@@ -68,7 +68,8 @@
         {
             boundingBox = default(PdfRectangle);
 
-            if (!TryGetGlyphIndex(characterIdentifier, characterCodeToGlyphId, out var index))
+            if (!TryGetGlyphIndex(characterIdentifier, characterCodeToGlyphId, out var index)
+                || TableRegister.GlyphTable == null)
             {
                 return false;
             }
@@ -112,6 +113,13 @@
 
         private bool TryGetBoundingAdvancedWidthByIndex(int index, out decimal width)
         {
+            width = 0;
+
+            if (TableRegister.HorizontalMetricsTable == null)
+            {
+                return false;
+            }
+
             width = TableRegister.HorizontalMetricsTable.GetAdvanceWidth(index);
 
             return true;
