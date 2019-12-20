@@ -5,6 +5,7 @@
     using CidFonts;
     using Geometry;
     using Parser;
+    using Tables.CMapSubTables;
     using Util.JetBrains.Annotations;
 
     internal class TrueTypeFontProgram : ICidFontProgram
@@ -19,19 +20,55 @@
         [CanBeNull]
         public string Name => TableRegister.NameTable?.FontName;
 
+        public ICMapSubTable WindowsUnicodeCMap { get; }
+
+        public ICMapSubTable MacRomanCMap { get; }
+
+        public ICMapSubTable WindowsSymbolCMap { get; }
+
         public TrueTypeFontProgram(decimal version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tableHeaders, TableRegister tableRegister)
         {
             Version = version;
             TableHeaders = tableHeaders;
             TableRegister = tableRegister ?? throw new ArgumentNullException(nameof(tableRegister));
+
+            if (TableRegister.CMapTable != null)
+            {
+                const int encodingSymbol = 0;
+                const int encodingUnicode = 1;
+                const int encodingMacRoman = 0;
+
+                foreach (var subTable in TableRegister.CMapTable.SubTables)
+                {
+                    if (WindowsSymbolCMap == null
+                        && subTable.PlatformId == TrueTypeCMapPlatform.Windows
+                        && subTable.EncodingId == encodingSymbol)
+                    {
+                        WindowsSymbolCMap = subTable;
+                    }
+                    else if (WindowsUnicodeCMap == null
+                             && subTable.PlatformId == TrueTypeCMapPlatform.Windows
+                             && subTable.EncodingId == encodingUnicode)
+                    {
+                        WindowsUnicodeCMap = subTable;
+                    }
+                    else if (MacRomanCMap == null
+                             && subTable.PlatformId == TrueTypeCMapPlatform.Macintosh
+                             && subTable.EncodingId == encodingMacRoman)
+                    {
+                        MacRomanCMap = subTable;
+                    }
+                }
+            }
+
         }
 
         public bool TryGetBoundingBox(int characterIdentifier, out PdfRectangle boundingBox) => TryGetBoundingBox(characterIdentifier, null, out boundingBox);
-        public bool TryGetBoundingBox(int characterIdentifier, Func<int, int> characterIdentifierToGlyphIndex, out PdfRectangle boundingBox)
+        public bool TryGetBoundingBox(int characterIdentifier, Func<int, int?> characterCodeToGlyphId, out PdfRectangle boundingBox)
         {
             boundingBox = default(PdfRectangle);
 
-            if (!TryGetGlyphIndex(characterIdentifier, characterIdentifierToGlyphIndex, out var index))
+            if (!TryGetGlyphIndex(characterIdentifier, characterCodeToGlyphId, out var index))
             {
                 return false;
             }
@@ -51,16 +88,16 @@
             {
                 boundingBox = glyph.Bounds;
             }
-            
+
             return true;
         }
 
         public bool TryGetBoundingAdvancedWidth(int characterIdentifier, out decimal width) => TryGetBoundingAdvancedWidth(characterIdentifier, null, out width);
-        public bool TryGetBoundingAdvancedWidth(int characterIdentifier, Func<int, int> characterIdentifierToGlyphIndex, out decimal width)
+        public bool TryGetBoundingAdvancedWidth(int characterIdentifier, Func<int, int?> characterCodeToGlyphId, out decimal width)
         {
             width = 0m;
 
-            if (!TryGetGlyphIndex(characterIdentifier, characterIdentifierToGlyphIndex, out var index))
+            if (!TryGetGlyphIndex(characterIdentifier, characterCodeToGlyphId, out var index))
             {
                 return false;
             }
@@ -80,23 +117,24 @@
             return true;
         }
 
-        private bool TryGetGlyphIndex(int characterIdentifier, Func<int, int> characterIdentifierToGlyphIndex, out int glyphIndex)
+        private bool TryGetGlyphIndex(int characterIdentifier, Func<int, int?> characterCodeToGlyphId, out int glyphId)
         {
-            glyphIndex = 0;
+            glyphId = 0;
 
-            if (characterIdentifierToGlyphIndex != null)
-                {
-                    glyphIndex = characterIdentifierToGlyphIndex(characterIdentifier);
+            var externalGlyphId = characterCodeToGlyphId?.Invoke(characterIdentifier);
 
-                    return true;
-                }
+            if (externalGlyphId != null)
+            {
+                glyphId = externalGlyphId.Value;
+                return true;
+            }
 
             if (TableRegister.CMapTable == null)
             {
                 return false;
             }
 
-            return TableRegister.CMapTable.TryGetGlyphIndex(characterIdentifier, out glyphIndex);
+            return TableRegister.CMapTable.TryGetGlyphIndex(characterIdentifier, out glyphId);
         }
     }
 }

@@ -22,11 +22,11 @@
         private readonly Dictionary<int, CharacterBoundingBox> boundingBoxCache
             = new Dictionary<int, CharacterBoundingBox>();
 
-        [CanBeNull]
-        private readonly Encoding encoding;
+        private readonly Dictionary<int, string> unicodeValuesCache = new Dictionary<int, string>();
 
-        [CanBeNull]
-        private readonly TrueTypeFontProgram fontProgram;
+        [CanBeNull] private readonly Encoding encoding;
+
+        [CanBeNull] private readonly TrueTypeFontProgram fontProgram;
 
         private readonly int firstCharacter;
 
@@ -68,11 +68,18 @@
         {
             value = null;
 
+            if (unicodeValuesCache.TryGetValue(characterCode, out value))
+            {
+                return true;
+            }
+
             // Behaviour specified by the Extraction of Text Content section of the specification.
 
             // If the font contains a ToUnicode CMap use that.
             if (ToUnicode.CanMapToUnicode && ToUnicode.TryGet(characterCode, out value))
             {
+                unicodeValuesCache[characterCode] = value;
+
                 return true;
             }
 
@@ -90,11 +97,16 @@
             try
             {
                 value = GlyphList.AdobeGlyphList.NameToUnicode(encodedCharacterName)
-                    ?? GlyphList.AdditionalGlyphList.NameToUnicode(encodedCharacterName);
+                        ?? GlyphList.AdditionalGlyphList.NameToUnicode(encodedCharacterName);
             }
             catch
             {
                 return false;
+            }
+
+            if (value != null)
+            {
+                unicodeValuesCache[characterCode] = value;
             }
 
             return value != null;
@@ -179,7 +191,7 @@
                 return descriptor.BoundingBox;
             }
 
-            if (fontProgram.TryGetBoundingBox(characterCode, out var bounds))
+            if (fontProgram.TryGetBoundingBox(characterCode, CharacterCodeToGlyphId, out var bounds))
             {
                 return bounds;
             }
@@ -192,6 +204,103 @@
             fromFont = false;
 
             return new PdfRectangle(0, 0, GetWidth(characterCode), 0);
+        }
+
+        private int? CharacterCodeToGlyphId(int characterCode)
+        {
+            bool HasFlag(FontDescriptorFlags value, FontDescriptorFlags target)
+            {
+                return (value & target) == target;
+            }
+
+            if (descriptor == null || !unicodeValuesCache.TryGetValue(characterCode, out var unicode)
+                                   || fontProgram.TableRegister.CMapTable == null
+                                   || encoding == null
+                                   || !encoding.CodeToNameMap.TryGetValue(characterCode, out var name)
+                                   || name == null)
+            {
+                return null;
+            }
+
+            if (string.Equals(name, ".notdef", StringComparison.OrdinalIgnoreCase))
+            {
+                return 0;
+            }
+
+            var glyphId = 0;
+
+            if (HasFlag(descriptor.Flags, FontDescriptorFlags.Symbolic) && fontProgram.WindowsSymbolCMap != null)
+            {
+                const int startRangeF000 = 0xF000;
+                const int startRangeF100 = 0xF100;
+                const int startRangeF200 = 0xF200;
+
+                // (3, 0) - (Windows, Symbol)
+                glyphId = fontProgram.WindowsSymbolCMap.CharacterCodeToGlyphIndex(characterCode);
+
+                if (glyphId == 0 && characterCode >= 0 && characterCode <= 0xFF)
+                {
+                    // CMap may use one of the following code ranges, so that we have to add the high byte to get the mapped value.
+
+                    // F000 - F0FF
+                    glyphId = fontProgram.WindowsSymbolCMap.CharacterCodeToGlyphIndex(characterCode + startRangeF000);
+
+                    if (glyphId == 0)
+                    {
+                        // F100 - F1FF
+                        glyphId = fontProgram.WindowsSymbolCMap.CharacterCodeToGlyphIndex(characterCode + startRangeF100);
+                    }
+
+                    if (glyphId == 0)
+                    {
+                        // F200 - F2FF
+                        glyphId = fontProgram.WindowsSymbolCMap.CharacterCodeToGlyphIndex(characterCode + startRangeF200);
+                    }
+                }
+
+                // Handle fonts incorrectly set to symbolic.
+                if (glyphId == 0 && fontProgram.WindowsUnicodeCMap != null && !string.IsNullOrEmpty(unicode))
+                {
+                    glyphId = fontProgram.WindowsUnicodeCMap.CharacterCodeToGlyphIndex(unicode[0]);
+                }
+            }
+            else
+            {
+                // (3, 1) - (Windows, Unicode)
+                if (fontProgram.WindowsUnicodeCMap != null && !string.IsNullOrEmpty(unicode))
+                {
+                    glyphId = fontProgram.WindowsUnicodeCMap.CharacterCodeToGlyphIndex(unicode[0]);
+                }
+
+                if (glyphId == 0
+                    && fontProgram.MacRomanCMap != null
+                    && MacOsRomanEncoding.Instance.NameToCodeMap.TryGetValue(name, out var macCode))
+                {
+                    // (1, 0) - (Macintosh, Roman)
+
+                    glyphId = fontProgram.MacRomanCMap.CharacterCodeToGlyphIndex(macCode);
+                }
+
+                if (glyphId == 0 && fontProgram.TableRegister.PostScriptTable != null)
+                {
+                    for (var i = 0; i < fontProgram.TableRegister.PostScriptTable.GlyphNames.Length; i++)
+                    {
+                        var glyphName = fontProgram.TableRegister.PostScriptTable.GlyphNames[i];
+
+                        if (string.Equals(glyphName, name, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return i;
+                        }
+                    }
+                }
+            }
+
+            if (glyphId != 0)
+            {
+                return glyphId;
+            }
+
+            return null;
         }
 
         private decimal GetWidth(int characterCode)

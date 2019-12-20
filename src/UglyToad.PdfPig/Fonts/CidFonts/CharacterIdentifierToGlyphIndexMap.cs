@@ -33,7 +33,7 @@
             }
         }
 
-        public int GetGlyphIndex(int characterIdentifier)
+        public int? GetGlyphIndex(int characterIdentifier)
         {
             if (isIdentity)
             {
