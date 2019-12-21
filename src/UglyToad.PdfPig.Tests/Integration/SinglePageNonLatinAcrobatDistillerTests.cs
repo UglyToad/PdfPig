@@ -79,7 +79,7 @@
                         continue;
                     }
 
-                    var comparer = new DecimalComparer(3m);
+                    var comparer = new DoubleComparer(3);
 
                     Assert.Equal(theirLetter, myLetter);
 
@@ -95,7 +95,7 @@
         [Fact]
         public void LetterPositionsAreCorrectXfinium()
         {
-            var comparer = new DecimalComparer(1);
+            var comparer = new DoubleComparer(1);
 
             using (var document = PdfDocument.Open(GetFilename()))
             {

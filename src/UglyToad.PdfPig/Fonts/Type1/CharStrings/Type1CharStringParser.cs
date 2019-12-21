@@ -69,9 +69,9 @@
             return new Type1CharStrings(charStringResults, charStringIndexToName, subroutineResults);
         }
 
-        private static IReadOnlyList<Union<decimal, LazyType1Command>> ParseSingle(IReadOnlyList<byte> charStringBytes)
+        private static IReadOnlyList<Union<double, LazyType1Command>> ParseSingle(IReadOnlyList<byte> charStringBytes)
         {
-            var interpreted = new List<Union<decimal, LazyType1Command>>();
+            var interpreted = new List<Union<double, LazyType1Command>>();
 
             for (var i = 0; i < charStringBytes.Count; i++)
             {
@@ -87,13 +87,13 @@
                         continue;
                     }
 
-                    interpreted.Add(new Union<decimal, LazyType1Command>.Case2(command));
+                    interpreted.Add(new Union<double, LazyType1Command>.Case2(command));
                 }
                 else
                 {
                     var val = InterpretNumber(b, charStringBytes, ref i);
 
-                    interpreted.Add(new Union<decimal, LazyType1Command>.Case1(val));
+                    interpreted.Add(new Union<double, LazyType1Command>.Case1(val));
                 }
             }
 

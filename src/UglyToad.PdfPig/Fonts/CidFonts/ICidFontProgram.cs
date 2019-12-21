@@ -12,9 +12,9 @@
 
         bool TryGetBoundingBox(int characterIdentifier, Func<int, int?> characterCodeToGlyphId, out PdfRectangle boundingBox);
 
-        bool TryGetBoundingAdvancedWidth(int characterIdentifier, Func<int, int?> characterCodeToGlyphId, out decimal width);
+        bool TryGetBoundingAdvancedWidth(int characterIdentifier, Func<int, int?> characterCodeToGlyphId, out double width);
 
-        bool TryGetBoundingAdvancedWidth(int characterIdentifier, out decimal width);
+        bool TryGetBoundingAdvancedWidth(int characterIdentifier, out double width);
 
         int GetFontMatrixMultiplier();
     }

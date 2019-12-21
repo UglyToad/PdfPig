@@ -36,7 +36,7 @@
         /// <summary>
         /// The width occupied by the character within the PDF content.
         /// </summary>
-        public decimal Width { get; }
+        public double Width { get; }
 
         /// <summary>
         /// Position of the bounding box for the glyph, this is the box surrounding the visible glyph as it appears on the page.
@@ -48,7 +48,7 @@
         /// <summary>
         /// Size as defined in the PDF file. This is not equivalent to font size in points but is relative to other font sizes on the page.
         /// </summary>
-        public decimal FontSize { get; }
+        public double FontSize { get; }
 
         /// <summary>
         /// The name of the font.
@@ -63,7 +63,7 @@
         /// <summary>
         /// The size of the font in points. This is not ready for public consumption as the calculation is incorrect.
         /// </summary>
-        internal decimal PointSize { get; }
+        internal double PointSize { get; }
 
         /// <summary>
         /// Sequence number of the ShowText operation that printed this letter.
@@ -76,11 +76,11 @@
         internal Letter(string value, PdfRectangle glyphRectangle, 
             PdfPoint startBaseLine, 
             PdfPoint endBaseLine,
-            decimal width, 
-            decimal fontSize,
+            double width,
+            double fontSize,
             string fontName, 
             IColor color,
-            decimal pointSize,
+            double pointSize,
             int textSequence)
         {
             Value = value;
@@ -98,7 +98,7 @@
 
         private TextDirection GetTextDirection()
         {
-            if (System.Math.Abs(StartBaseLine.Y - EndBaseLine.Y) < 10e-5m)
+            if (System.Math.Abs(StartBaseLine.Y - EndBaseLine.Y) < 10e-5)
             {
                 if (StartBaseLine.X > EndBaseLine.X)
                 {
@@ -108,7 +108,7 @@
                 return TextDirection.Horizontal;
             }
 
-            if (System.Math.Abs(StartBaseLine.X - EndBaseLine.X) < 10e-5m)
+            if (System.Math.Abs(StartBaseLine.X - EndBaseLine.X) < 10e-5)
             {
                 if (StartBaseLine.Y > EndBaseLine.Y)
                 {

@@ -116,14 +116,14 @@
         {
             var characterIdentifier = CMap.ConvertToCid(characterCode);
 
-            return CidFont.GetPositionVector(characterIdentifier).Scale(-1 / 1000m);
+            return CidFont.GetPositionVector(characterIdentifier).Scale(-1 / 1000.0);
         }
 
         public PdfVector GetDisplacementVector(int characterCode)
         {
             var characterIdentifier = CMap.ConvertToCid(characterCode);
 
-            return CidFont.GetDisplacementVector(characterIdentifier).Scale(1 / 1000m);
+            return CidFont.GetDisplacementVector(characterIdentifier).Scale(1 / 1000.0);
         }
     }
 }

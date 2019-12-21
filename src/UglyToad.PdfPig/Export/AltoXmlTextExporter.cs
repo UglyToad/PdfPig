@@ -21,7 +21,7 @@
         private readonly IPageSegmenter pageSegmenter;
         private readonly IWordExtractor wordExtractor;
 
-        private readonly decimal scale;
+        private readonly double scale;
         private readonly string indentChar;
 
         private int pageCount;
@@ -41,7 +41,7 @@
         /// <param name="pageSegmenter">Segmenter used to split page into blocks.</param>
         /// <param name="scale">Scale multiplier to apply to output document, defaults to 1.</param>
         /// <param name="indent">Character to use for indentation, defaults to tab.</param>
-        public AltoXmlTextExporter(IWordExtractor wordExtractor, IPageSegmenter pageSegmenter, decimal scale = 1.0m, string indent = "\t")
+        public AltoXmlTextExporter(IWordExtractor wordExtractor, IPageSegmenter pageSegmenter, double scale = 1, string indent = "\t")
         {
             this.wordExtractor = wordExtractor ?? throw new ArgumentNullException(nameof(wordExtractor));
             this.pageSegmenter = pageSegmenter ?? throw new ArgumentNullException(nameof(pageSegmenter));
@@ -125,7 +125,7 @@
                 Processing = null,
                 ProcessingRefs = null,
                 StyleRefs = null,
-                PrintSpace = new AltoDocument.AltoPageSpace()
+                PrintSpace = new AltoDocument.AltoPageSpace
                 {
                     Height = (float)Math.Round(page.Height * scale),    // TBD
                     Width = (float)Math.Round(page.Width * scale),      // TBD
@@ -158,7 +158,7 @@
             return altoPage;
         }
 
-        private AltoDocument.AltoGraphicalElement ToAltoGraphicalElement(PdfPath pdfPath, decimal height)
+        private AltoDocument.AltoGraphicalElement ToAltoGraphicalElement(PdfPath pdfPath, double height)
         {
             graphicalElementCount++;
 
@@ -182,7 +182,7 @@
             return null;
         }
 
-        private AltoDocument.AltoIllustration ToAltoIllustration(IPdfImage pdfImage, decimal height)
+        private AltoDocument.AltoIllustration ToAltoIllustration(IPdfImage pdfImage, double height)
         {
             illustrationCount++;
             var rectangle = pdfImage.Bounds;
@@ -199,7 +199,7 @@
             };
         }
 
-        private AltoDocument.AltoTextBlock ToAltoTextBlock(TextBlock textBlock, decimal height)
+        private AltoDocument.AltoTextBlock ToAltoTextBlock(TextBlock textBlock, double height)
         {
             textBlockCount++;
 
@@ -219,7 +219,7 @@
             };
         }
 
-        private AltoDocument.AltoTextBlockTextLine ToAltoTextLine(TextLine textLine, decimal height)
+        private AltoDocument.AltoTextBlockTextLine ToAltoTextLine(TextLine textLine, double height)
         {
             textLineCount++;
             var strings = textLine.Words
@@ -240,7 +240,7 @@
                 Id = "P" + pageCount + "_TL" + textLineCount.ToString("#00000")
             };
         }
-        private AltoDocument.AltoString ToAltoString(Word word, decimal height)
+        private AltoDocument.AltoString ToAltoString(Word word, double height)
         {
             stringCount++;
             var glyphs = word.Letters.Select(l => ToAltoGlyph(l, height)).ToArray();
@@ -263,7 +263,7 @@
             };
         }
 
-        private AltoDocument.AltoGlyph ToAltoGlyph(Letter letter, decimal height)
+        private AltoDocument.AltoGlyph ToAltoGlyph(Letter letter, double height)
         {
             glyphCount++;
             return new AltoDocument.AltoGlyph

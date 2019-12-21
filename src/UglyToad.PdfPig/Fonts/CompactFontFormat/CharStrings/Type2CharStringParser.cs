@@ -32,7 +32,7 @@
             { 1,  new LazyType2Command("hstem", ctx =>
                 {
                     var numberOfEdgeHints = ctx.Stack.Length / 2;
-                    var hints = new (decimal, decimal)[numberOfEdgeHints];
+                    var hints = new (double, double)[numberOfEdgeHints];
 
                     var firstStartY = ctx.Stack.PopBottom();
                     var endY = firstStartY + ctx.Stack.PopBottom();
@@ -59,7 +59,7 @@
                 3,  new LazyType2Command("vstem", ctx =>
                 {
                     var numberOfEdgeHints = ctx.Stack.Length / 2;
-                    var hints = new (decimal, decimal)[numberOfEdgeHints];
+                    var hints = new (double, double)[numberOfEdgeHints];
 
                     var firstStartX = ctx.Stack.PopBottom();
                     var endX = firstStartX + ctx.Stack.PopBottom();
@@ -201,7 +201,7 @@
                 {
                     // Same as vstem except the charstring contains hintmask
                     var numberOfEdgeHints = ctx.Stack.Length / 2;
-                    var hints = new (decimal, decimal)[numberOfEdgeHints];
+                    var hints = new (double, double)[numberOfEdgeHints];
 
                     var firstStartY = ctx.Stack.PopBottom();
                     var endY = firstStartY + ctx.Stack.PopBottom();
@@ -268,7 +268,7 @@
                 {
                     // Same as vstem except the charstring contains hintmask
                     var numberOfEdgeHints = ctx.Stack.Length / 2;
-                    var hints = new (decimal, decimal)[numberOfEdgeHints];
+                    var hints = new (double, double)[numberOfEdgeHints];
 
                     var firstStartX = ctx.Stack.PopBottom();
                     var endX = firstStartX + ctx.Stack.PopBottom();
@@ -334,7 +334,7 @@
                     var numberOfCurves = ctx.Stack.Length / 4;
                     for (var i = 0; i < numberOfCurves; i++)
                     {
-                        var dx1 = 0m;
+                        var dx1 = 0.0;
                         if (i == 0 && hasDeltaXFirstCurve)
                         {
                             dx1 = ctx.Stack.PopBottom();
@@ -410,7 +410,7 @@
                                 var dx2 = ctx.Stack.PopBottom();
                                 var dy2 = ctx.Stack.PopBottom();
                                 var dy3 = ctx.Stack.PopBottom();
-                                var dx3 = 0m;
+                                var dx3 = 0.0;
 
                                 if (i == numberOfCurves - 1 && remainder == 1)
                                 {
@@ -451,7 +451,7 @@
                                 var dx2 = ctx.Stack.PopBottom();
                                 var dy2 = ctx.Stack.PopBottom();
                                 var dx3 = ctx.Stack.PopBottom();
-                                var dy3 = 0m;
+                                var dy3 = 0.0;
 
                                 if (i == numberOfCurves - 1 && remainder == 5)
                                 {
@@ -497,7 +497,7 @@
                                 var dx2 = ctx.Stack.PopBottom();
                                 var dy2 = ctx.Stack.PopBottom();
                                 var dx3 = ctx.Stack.PopBottom();
-                                var dy3 = 0m;
+                                var dy3 = 0.0;
 
                                 if (i == numberOfCurves - 1 && remainder == 1)
                                 {
@@ -538,7 +538,7 @@
                                 var dx2 = ctx.Stack.PopBottom();
                                 var dy2 = ctx.Stack.PopBottom();
                                 var dy3 = ctx.Stack.PopBottom();
-                                var dx3 = 0m;
+                                var dx3 = 0.0;
 
                                 if (i == numberOfCurves - 1 && remainder == 5)
                                 {
@@ -588,9 +588,9 @@
             { 21,  new LazyType2Command("get", ctx => ctx.Stack.Push(ctx.GetFromTransientArray((int)ctx.Stack.PopTop())))},
             { 22,  new LazyType2Command("ifelse", x => { })},
             // TODO: Random, do we want to support this?
-            { 23,  new LazyType2Command("random", ctx => ctx.Stack.Push(0.5m))},
+            { 23,  new LazyType2Command("random", ctx => ctx.Stack.Push(0.5))},
             { 24,  new LazyType2Command("mul", ctx => ctx.Stack.Push(ctx.Stack.PopTop() * ctx.Stack.PopTop()))},
-            { 26,  new LazyType2Command("sqrt", ctx => ctx.Stack.Push((decimal)Math.Sqrt((double)ctx.Stack.PopTop())))},
+            { 26,  new LazyType2Command("sqrt", ctx => ctx.Stack.Push(Math.Sqrt(ctx.Stack.PopTop())))},
             {
                 27,  new LazyType2Command("dup", ctx =>
                 {
@@ -708,11 +708,11 @@
             return new Type2CharStrings(charStrings);
         }
 
-        private static IReadOnlyList<Union<decimal, LazyType2Command>> ParseSingle(List<byte> bytes,
+        private static IReadOnlyList<Union<double, LazyType2Command>> ParseSingle(List<byte> bytes,
             CompactFontFormatIndex localSubroutines,
             CompactFontFormatIndex globalSubroutines)
         {
-            var instructions = new List<Union<decimal, LazyType2Command>>();
+            var instructions = new List<Union<double, LazyType2Command>>();
             for (var i = 0; i < bytes.Count; i++)
             {
                 var b = bytes[i];
@@ -721,13 +721,13 @@
                     var command = GetCommand(b, bytes, instructions, localSubroutines, globalSubroutines, ref i);
                     if (command != null)
                     {
-                        instructions.Add(Union<decimal, LazyType2Command>.Two(command));
+                        instructions.Add(Union<double, LazyType2Command>.Two(command));
                     }
                 }
                 else
                 {
                     var number = InterpretNumber(b, bytes, ref i);
-                    instructions.Add(Union<decimal, LazyType2Command>.One(number));
+                    instructions.Add(Union<double, LazyType2Command>.One(number));
                 }
             }
 
@@ -738,7 +738,7 @@
         /// The Type 2 interpretation of a number with an initial byte value of 255 differs from how it is interpreted in the Type 1 format
         /// and 28 has a special meaning.
         /// </summary>
-        private static decimal InterpretNumber(byte b, IReadOnlyList<byte> bytes, ref int i)
+        private static double InterpretNumber(byte b, IReadOnlyList<byte> bytes, ref int i)
         {
             if (b == 28)
             {
@@ -771,11 +771,11 @@
             var lead = bytes[++i] << 8 | bytes[++i];
             var fractionalPart = bytes[++i] << 8 | bytes[++i];
 
-            return lead + (fractionalPart / 65535m);
+            return lead + (fractionalPart / 65535.0);
         }
 
         private static LazyType2Command GetCommand(byte b, List<byte> bytes,
-            List<Union<decimal, LazyType2Command>> precedingCommands,
+            List<Union<double, LazyType2Command>> precedingCommands,
             CompactFontFormatIndex localSubroutines,
             CompactFontFormatIndex globalSubroutines, ref int i)
         {
@@ -832,7 +832,7 @@
             return new LazyType2Command($"unknown: {b}", x => { });
         }
 
-        private static int CalculatePrecedingHintBytes(IReadOnlyList<Union<decimal, LazyType2Command>> precedingCommands)
+        private static int CalculatePrecedingHintBytes(IReadOnlyList<Union<double, LazyType2Command>> precedingCommands)
         {
             int SafeStemCount(int counts)
             {

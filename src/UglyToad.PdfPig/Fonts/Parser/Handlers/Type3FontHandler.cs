@@ -65,9 +65,9 @@
 
             var matrixArray = DirectObjectFinder.Get<ArrayToken>(matrixObject, scanner);
             
-            return TransformationMatrix.FromValues(matrixArray.GetNumeric(0).Data, matrixArray.GetNumeric(1).Data,
-                matrixArray.GetNumeric(2).Data, matrixArray.GetNumeric(3).Data, matrixArray.GetNumeric(4).Data,
-                matrixArray.GetNumeric(5).Data);
+            return TransformationMatrix.FromValues(matrixArray.GetNumeric(0).Double, matrixArray.GetNumeric(1).Double,
+                matrixArray.GetNumeric(2).Double, matrixArray.GetNumeric(3).Double, matrixArray.GetNumeric(4).Double,
+                matrixArray.GetNumeric(5).Double);
         }
         
         private static PdfRectangle GetBoundingBox(DictionaryToken dictionary)
@@ -79,8 +79,8 @@
 
             if (bboxObject is ArrayToken bboxArray)
             {
-                return new PdfRectangle(bboxArray.GetNumeric(0).Data, bboxArray.GetNumeric(1).Data,
-                    bboxArray.GetNumeric(2).Data, bboxArray.GetNumeric(3).Data);
+                return new PdfRectangle(bboxArray.GetNumeric(0).Double, bboxArray.GetNumeric(1).Double,
+                    bboxArray.GetNumeric(2).Double, bboxArray.GetNumeric(3).Double);
             }
 
             return new PdfRectangle(0, 0, 0, 0);

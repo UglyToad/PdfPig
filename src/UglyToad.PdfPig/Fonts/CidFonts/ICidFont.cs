@@ -40,9 +40,9 @@
 
         FontDescriptor Descriptor { get; }
 
-        decimal GetWidthFromDictionary(int cid);
+        double GetWidthFromDictionary(int cid);
 
-        decimal GetWidthFromFont(int characterIdentifier);
+        double GetWidthFromFont(int characterIdentifier);
 
         PdfRectangle GetBoundingBox(int characterIdentifier);
 

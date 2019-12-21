@@ -24,7 +24,7 @@
 
         private readonly int lastChar;
 
-        private readonly decimal[] widths;
+        private readonly double[] widths;
 
         private readonly FontDescriptor fontDescriptor;
 
@@ -41,7 +41,7 @@
 
         public bool IsVertical { get; } = false;
 
-        public Type1FontSimple(NameToken name, int firstChar, int lastChar, decimal[] widths, FontDescriptor fontDescriptor, Encoding encoding, 
+        public Type1FontSimple(NameToken name, int firstChar, int lastChar, double[] widths, FontDescriptor fontDescriptor, Encoding encoding, 
             CMap toUnicodeCMap,
             Union<Type1FontProgram, CompactFontFormatFontProgram> fontProgram)
         {
@@ -53,7 +53,7 @@
             this.fontProgram = fontProgram;
             this.toUnicodeCMap = new ToUnicodeCMap(toUnicodeCMap);
 
-            var matrix = TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);
+            var matrix = TransformationMatrix.FromValues(0.001, 0, 0, 0.001, 0, 0);
             fontProgram?.Match(x => matrix = x.GetFontTransformationMatrix(), x => { matrix = x.GetFontTransformationMatrix(); });
 
             fontMatrix = matrix;
@@ -135,7 +135,7 @@
             return result;
         }
 
-        private decimal GetWidth(int characterCode, PdfRectangle boundingBox)
+        private double GetWidth(int characterCode, PdfRectangle boundingBox)
         {
             var widthIndex = characterCode - firstChar;
 
@@ -146,7 +146,7 @@
 
             if (fontDescriptor?.MissingWidth != null)
             {
-                return fontDescriptor.MissingWidth;
+                return (double)fontDescriptor.MissingWidth;
             }
 
             return boundingBox.Width;

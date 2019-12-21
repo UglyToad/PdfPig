@@ -20,12 +20,12 @@
         /// <summary>
         /// The X coordinate for this point. (Horizontal axis).
         /// </summary>
-        public decimal X { get; }
+        public double X { get; }
 
         /// <summary>
         /// The Y coordinate of this point. (Vertical axis).
         /// </summary>
-        public decimal Y { get; }
+        public double Y { get; }
 
         /// <summary>
         /// Create a new <see cref="PdfPoint"/> at this position.
@@ -33,8 +33,8 @@
         [DebuggerStepThrough]
         public PdfPoint(decimal x, decimal y)
         {
-            X = x;
-            Y = y;
+            X = (double)x;
+            Y = (double)y;
         }
 
         /// <summary>
@@ -53,8 +53,8 @@
         [DebuggerStepThrough]
         public PdfPoint(double x, double y)
         {
-            X = (decimal)x;
-            Y = (decimal)y;
+            X = x;
+            Y = y;
         }
 
         /// <summary>
@@ -62,7 +62,7 @@
         /// </summary>
         /// <param name="dx">The distance to move the point in the x direction relative to its current location.</param>
         /// <returns>A new point shifted on the x axis by the given delta value.</returns>
-        public PdfPoint MoveX(decimal dx)
+        public PdfPoint MoveX(double dx)
         {
             return new PdfPoint(X + dx, Y);
         }
@@ -72,7 +72,7 @@
         /// </summary>
         /// <param name="dy">The distance to move the point in the y direction relative to its current location.</param>
         /// <returns>A new point shifted on the y axis by the given delta value.</returns>
-        public PdfPoint MoveY(decimal dy)
+        public PdfPoint MoveY(double dy)
         {
             return new PdfPoint(X, Y + dy);
         }
@@ -83,7 +83,7 @@
         /// <param name="dx">The distance to move the point in the x direction relative to its current location.</param>
         /// <param name="dy">The distance to move the point in the y direction relative to its current location.</param>
         /// <returns>A new point shifted on the y axis by the given delta value.</returns>
-        public PdfPoint Translate(decimal dx, decimal dy)
+        public PdfPoint Translate(double dx, double dy)
         {
             return new PdfPoint(X + dx, Y + dy);
         }

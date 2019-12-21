@@ -36,7 +36,7 @@
         {
             var currentState = operationContext.GetCurrentState();
 
-            currentState.FontState.CharacterSpacing = Spacing;
+            currentState.FontState.CharacterSpacing = (double)Spacing;
         }
 
         /// <inheritdoc />

@@ -76,12 +76,12 @@
             throw new NotImplementedException();
         }
 
-        public bool TryGetBoundingAdvancedWidth(int characterIdentifier, Func<int, int?> characterCodeToGlyphId, out decimal width)
+        public bool TryGetBoundingAdvancedWidth(int characterIdentifier, Func<int, int?> characterCodeToGlyphId, out double width)
         {
             throw new NotImplementedException();
         }
 
-        public bool TryGetBoundingAdvancedWidth(int characterIdentifier, out decimal width)
+        public bool TryGetBoundingAdvancedWidth(int characterIdentifier, out double width)
         {
             throw new NotImplementedException();
         }

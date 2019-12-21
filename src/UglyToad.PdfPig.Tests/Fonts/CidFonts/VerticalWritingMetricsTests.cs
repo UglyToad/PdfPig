@@ -30,16 +30,16 @@
             var data = new VerticalWritingMetrics(defaults, null, null);
 
             var position = data.GetPositionVector(9, 120);
-            Assert.Equal(120 / 2m, position.X);
+            Assert.Equal(120 / 2d, position.X);
 
             var displacement = data.GetDisplacementVector(10);
-            Assert.Equal(0m, displacement.X);
+            Assert.Equal(0d, displacement.X);
         }
 
         [Fact]
         public void UsesVectorOverridesWhenPresent()
         {
-            var data = new VerticalWritingMetrics(defaults, new Dictionary<int, decimal> {{7, 120}},
+            var data = new VerticalWritingMetrics(defaults, new Dictionary<int, double> {{7, 120}},
                 new Dictionary<int, PdfVector> {{7, new PdfVector(25, 250)}});
 
             var position = data.GetPositionVector(7, 360);

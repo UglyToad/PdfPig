@@ -127,17 +127,17 @@
             Comments = new List<string>();
         }
 
-        public void SetBoundingBox(decimal x1, decimal y1, decimal x2, decimal y2)
+        public void SetBoundingBox(double x1, double y1, double x2, double y2)
         {
             PdfBoundingBox = new PdfRectangle(x1, y1, x2, y2);
         }
 
-        public void SetCharacterWidth(decimal x, decimal y)
+        public void SetCharacterWidth(double x, double y)
         {
             CharacterWidth = new CharacterWidth(x, y);
         }
 
-        public void SetVVector(decimal x, decimal y)
+        public void SetVVector(double x, double y)
         {
             VVector = new PdfVector(x, y);
         }

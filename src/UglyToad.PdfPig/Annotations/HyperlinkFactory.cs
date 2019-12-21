@@ -40,7 +40,7 @@
                 var bounds = annotation.Rectangle;
 
                 // Build in tolerance for letters close to the link region.
-                var tolerantBounds = new PdfRectangle(bounds.TopLeft.Translate(-0.5m, 0), bounds.BottomRight.Translate(0.5m, 0));
+                var tolerantBounds = new PdfRectangle(bounds.TopLeft.Translate(-0.5, 0), bounds.BottomRight.Translate(0.5, 0));
 
                 var linkLetters = new List<Letter>();
 

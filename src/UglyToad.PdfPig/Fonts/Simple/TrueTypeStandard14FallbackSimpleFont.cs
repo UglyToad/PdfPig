@@ -14,7 +14,7 @@
     internal class TrueTypeStandard14FallbackSimpleFont : IFont
     {
         private static readonly TransformationMatrix DefaultTransformation =
-            TransformationMatrix.FromValues(1m / 1000m, 0, 0, 1m / 1000m, 0, 0);
+            TransformationMatrix.FromValues(1 / 1000.0, 0, 0, 1 / 1000.0, 0, 0);
 
         private readonly FontMetrics fontMetrics;
         private readonly Encoding encoding;
@@ -65,7 +65,7 @@
 
         public CharacterBoundingBox GetBoundingBox(int characterCode)
         {
-            var width = 0m;
+            var width = 0.0;
 
             var fontMatrix = GetFontMatrix();
 
@@ -106,7 +106,7 @@
         {
             if (font?.TableRegister.HeaderTable != null)
             {
-                var scale = (decimal)font.GetFontMatrixMultiplier();
+                var scale = (double)font.GetFontMatrixMultiplier();
 
                 return TransformationMatrix.FromValues(1 / scale, 0, 0, 1 / scale, 0, 0);
             }
@@ -118,11 +118,11 @@
         {
             public int? FirstCharacterCode { get; }
 
-            public IReadOnlyList<decimal> Widths { get; }
+            public IReadOnlyList<double> Widths { get; }
 
             public bool HasOverriddenMetrics { get; }
 
-            public MetricOverrides(int? firstCharacterCode, IReadOnlyList<decimal> widths)
+            public MetricOverrides(int? firstCharacterCode, IReadOnlyList<double> widths)
             {
                 FirstCharacterCode = firstCharacterCode;
                 Widths = widths;
@@ -130,7 +130,7 @@
                     && Widths.Count > 0;
             }
 
-            public bool TryGetWidth(int characterCode, out decimal width)
+            public bool TryGetWidth(int characterCode, out double width)
             {
                 width = 0;
 

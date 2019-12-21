@@ -105,9 +105,9 @@
             /// <summary>
             /// The ordered list of numbers and commands for a Type 1 charstring or subroutine.
             /// </summary>
-            public IReadOnlyList<Union<decimal, LazyType1Command>> Commands { get; }
+            public IReadOnlyList<Union<double, LazyType1Command>> Commands { get; }
 
-            public CommandSequence(IReadOnlyList<Union<decimal, LazyType1Command>> commands)
+            public CommandSequence(IReadOnlyList<Union<double, LazyType1Command>> commands)
             {
                 Commands = commands ?? throw new ArgumentNullException(nameof(commands));
             }

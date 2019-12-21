@@ -23,7 +23,7 @@ namespace UglyToad.PdfPig.Export
         private IPageSegmenter pageSegmenter;
         private IWordExtractor wordExtractor;
 
-        private decimal scale;
+        private double scale;
         private string indentChar;
 
         int lineCount = 0;
@@ -43,8 +43,8 @@ namespace UglyToad.PdfPig.Export
         {
             this.wordExtractor = wordExtractor;
             this.pageSegmenter = pageSegmenter;
-            this.scale = (decimal)scale;
-            this.indentChar = indent;
+            this.scale = scale;
+            indentChar = indent;
         }
 
         /// <summary>
@@ -90,24 +90,24 @@ namespace UglyToad.PdfPig.Export
             return Serialize(pageXmlDocument);
         }
 
-        private string PointToString(PdfPoint point, decimal height)
+        private string PointToString(PdfPoint point, double height)
         {
-            decimal x = Math.Round(point.X * scale);
-            decimal y = Math.Round((height - point.Y) * scale);
+            double x = Math.Round(point.X * scale);
+            double y = Math.Round((height - point.Y) * scale);
             return (x > 0 ? x : 0).ToString("0") + "," + (y > 0 ? y : 0).ToString("0");
         }
 
-        private string ToPoints(IEnumerable<PdfPoint> points, decimal height)
+        private string ToPoints(IEnumerable<PdfPoint> points, double height)
         {
             return string.Join(" ", points.Select(p => PointToString(p, height)));
         }
 
-        private string ToPoints(PdfRectangle pdfRectangle, decimal height)
+        private string ToPoints(PdfRectangle pdfRectangle, double height)
         {
             return ToPoints(new[] { pdfRectangle.BottomLeft, pdfRectangle.TopLeft, pdfRectangle.TopRight, pdfRectangle.BottomRight }, height);
         }
 
-        private PageXmlDocument.PageXmlCoords ToCoords(PdfRectangle pdfRectangle, decimal height)
+        private PageXmlDocument.PageXmlCoords ToCoords(PdfRectangle pdfRectangle, double height)
         {
             return new PageXmlDocument.PageXmlCoords()
             {
@@ -168,7 +168,7 @@ namespace UglyToad.PdfPig.Export
             return pageXmlPage;
         }
 
-        private PageXmlDocument.PageXmlLineDrawingRegion ToPageXmlLineDrawingRegion(PdfPath pdfPath, decimal height)
+        private PageXmlDocument.PageXmlLineDrawingRegion ToPageXmlLineDrawingRegion(PdfPath pdfPath, double height)
         {
             var bbox = pdfPath.GetBoundingRectangle();
             if (bbox.HasValue)
@@ -183,7 +183,7 @@ namespace UglyToad.PdfPig.Export
             return null;
         }
 
-        private PageXmlDocument.PageXmlImageRegion ToPageXmlImageRegion(IPdfImage pdfImage, decimal height)
+        private PageXmlDocument.PageXmlImageRegion ToPageXmlImageRegion(IPdfImage pdfImage, double height)
         {
             regionCount++;
             var bbox = pdfImage.Bounds;
@@ -194,7 +194,7 @@ namespace UglyToad.PdfPig.Export
             };
         }
 
-        private PageXmlDocument.PageXmlTextRegion ToPageXmlTextRegion(TextBlock textBlock, decimal height)
+        private PageXmlDocument.PageXmlTextRegion ToPageXmlTextRegion(TextBlock textBlock, double height)
         {
             regionCount++;
             return new PageXmlDocument.PageXmlTextRegion()
@@ -206,7 +206,7 @@ namespace UglyToad.PdfPig.Export
             };
         }
 
-        private PageXmlDocument.PageXmlTextLine ToPageXmlTextLine(TextLine textLine, decimal height)
+        private PageXmlDocument.PageXmlTextLine ToPageXmlTextLine(TextLine textLine, double height)
         {
             lineCount++;
             return new PageXmlDocument.PageXmlTextLine()
@@ -219,7 +219,7 @@ namespace UglyToad.PdfPig.Export
             };
         }
 
-        private PageXmlDocument.PageXmlWord ToPageXmlWord(Word word, decimal height)
+        private PageXmlDocument.PageXmlWord ToPageXmlWord(Word word, double height)
         {
             wordCount++;
             return new PageXmlDocument.PageXmlWord()
@@ -231,7 +231,7 @@ namespace UglyToad.PdfPig.Export
             };
         }
 
-        private PageXmlDocument.PageXmlGlyph ToPageXmlGlyph(Letter letter, decimal height)
+        private PageXmlDocument.PageXmlGlyph ToPageXmlGlyph(Letter letter, double height)
         {
             glyphCount++;
             return new PageXmlDocument.PageXmlGlyph()
@@ -7839,8 +7839,8 @@ namespace UglyToad.PdfPig.Export
                 /// <summary>
                 /// Examples: "123.456", "+1234.456", "-1234.456", "-.456", "-456"
                 /// </summary>
-                [XmlEnumAttribute("xsd:decimal")]
-                XsdDecimal,
+                [XmlEnumAttribute("xsd:double")]
+                Xsddouble,
 
                 /// <summary>
                 /// Examples: "123.456", "+1234.456", "-1.2344e56", "-.45E-6", "INF", "-INF", "NaN"

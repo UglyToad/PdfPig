@@ -21,7 +21,7 @@
         /// (w0/2, Position)
         /// Where w0 is the width of the given glyph.
         /// </remarks>
-        public decimal Position { get; }
+        public double Position { get; }
         
         /// <summary>
         /// The vertical component of the displacement vector.
@@ -30,12 +30,12 @@
         /// The full displacement vector is:
         /// (0, Displacement)
         /// </remarks>
-        public decimal Displacement { get; }
+        public double Displacement { get; }
 
         /// <summary>
         /// Create a new <see cref="VerticalVectorComponents"/>.
         /// </summary>
-        public VerticalVectorComponents(decimal position, decimal displacement)
+        public VerticalVectorComponents(double position, double displacement)
         {
             Position = position;
             Displacement = displacement;
@@ -44,7 +44,7 @@
         /// <summary>
         /// Get the full position vector for a given glyph.
         /// </summary>
-        public PdfVector GetPositionVector(decimal glyphWidth) => new PdfVector(glyphWidth / 2m, Position);
+        public PdfVector GetPositionVector(double glyphWidth) => new PdfVector(glyphWidth / 2.0, Position);
 
         /// <summary>
         /// Get the full displacement vector.

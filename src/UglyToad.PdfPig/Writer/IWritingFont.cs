@@ -13,7 +13,7 @@
 
         bool TryGetBoundingBox(char character, out PdfRectangle boundingBox);
 
-        bool TryGetAdvanceWidth(char character, out decimal width);
+        bool TryGetAdvanceWidth(char character, out double width);
 
         TransformationMatrix GetFontMatrix();
 

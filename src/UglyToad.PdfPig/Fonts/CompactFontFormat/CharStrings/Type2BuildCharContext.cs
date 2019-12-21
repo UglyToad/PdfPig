@@ -8,7 +8,7 @@
     /// </summary>
     internal class Type2BuildCharContext
     {
-        private readonly Dictionary<int, decimal> transientArray = new Dictionary<int, decimal>();
+        private readonly Dictionary<int, double> transientArray = new Dictionary<int, double>();
 
         /// <summary>
         /// The numbers currently on the Type 2 Build Char stack.
@@ -29,19 +29,19 @@
         ///  If the charstring has a width other than that of defaultWidthX it must be specified as the first
         ///  number in the charstring, and encoded as the difference from nominalWidthX.
         /// </summary>
-        public decimal? Width { get; set; }
+        public double? Width { get; set; }
 
-        public void AddRelativeHorizontalLine(decimal dx)
+        public void AddRelativeHorizontalLine(double dx)
         {
             AddRelativeLine(dx, 0);
         }
 
-        public void AddRelativeVerticalLine(decimal dy)
+        public void AddRelativeVerticalLine(double dy)
         {
             AddRelativeLine(0, dy);
         }
 
-        public void AddRelativeBezierCurve(decimal dx1, decimal dy1, decimal dx2, decimal dy2, decimal dx3, decimal dy3)
+        public void AddRelativeBezierCurve(double dx1, double dy1, double dx2, double dy2, double dx3, double dy3)
         {
             var x1 = CurrentLocation.X + dx1;
             var y1 = CurrentLocation.Y + dy1;
@@ -56,7 +56,7 @@
             CurrentLocation = new PdfPoint(x3, y3);
         }
 
-        public void AddRelativeLine(decimal dx, decimal dy)
+        public void AddRelativeLine(double dx, double dy)
         {
             var dest = new PdfPoint(CurrentLocation.X + dx, CurrentLocation.Y + dy);
 
@@ -64,20 +64,20 @@
             CurrentLocation = dest;
         }
 
-        public void AddVerticalStemHints(IReadOnlyList<(decimal start, decimal end)> hints)
+        public void AddVerticalStemHints(IReadOnlyList<(double start, double end)> hints)
         {
         }
 
-        public void AddHorizontalStemHints(IReadOnlyList<(decimal start, decimal end)> hints)
+        public void AddHorizontalStemHints(IReadOnlyList<(double start, double end)> hints)
         {
         }
 
-        public void AddToTransientArray(decimal value, int location)
+        public void AddToTransientArray(double value, int location)
         {
             transientArray[location] = value;
         }
 
-        public decimal GetFromTransientArray(int location)
+        public double GetFromTransientArray(int location)
         {
             var result = transientArray[location];
             transientArray.Remove(location);

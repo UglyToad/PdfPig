@@ -41,31 +41,31 @@
             {
                 var page = document.GetPage(1);
 
-                var comparer = new DecimalComparer(3m);
+                var comparer = new DoubleComparer(3d);
 
                 Assert.Equal("I", page.Letters[0].Value);
 
-                Assert.Equal(90.1m, page.Letters[0].GlyphRectangle.BottomLeft.X, comparer);
-                Assert.Equal(709.2m, page.Letters[0].GlyphRectangle.BottomLeft.Y, comparer);
+                Assert.Equal(90.1d, page.Letters[0].GlyphRectangle.BottomLeft.X, comparer);
+                Assert.Equal(709.2d, page.Letters[0].GlyphRectangle.BottomLeft.Y, comparer);
 
-                Assert.Equal(94.0m, page.Letters[0].GlyphRectangle.TopRight.X, comparer);
-                Assert.Equal(719.89m, page.Letters[0].GlyphRectangle.TopRight.Y, comparer);
+                Assert.Equal(94.0d, page.Letters[0].GlyphRectangle.TopRight.X, comparer);
+                Assert.Equal(719.89d, page.Letters[0].GlyphRectangle.TopRight.Y, comparer);
 
                 Assert.Equal("a", page.Letters[5].Value);
 
-                Assert.Equal(114.5m, page.Letters[5].GlyphRectangle.BottomLeft.X, comparer);
-                Assert.Equal(709.2m, page.Letters[5].GlyphRectangle.BottomLeft.Y, comparer);
+                Assert.Equal(114.5d, page.Letters[5].GlyphRectangle.BottomLeft.X, comparer);
+                Assert.Equal(709.2d, page.Letters[5].GlyphRectangle.BottomLeft.Y, comparer);
 
-                Assert.Equal(119.82m, page.Letters[5].GlyphRectangle.TopRight.X, comparer);
-                Assert.Equal(714.89m, page.Letters[5].GlyphRectangle.TopRight.Y, comparer);
+                Assert.Equal(119.82d, page.Letters[5].GlyphRectangle.TopRight.X, comparer);
+                Assert.Equal(714.89d, page.Letters[5].GlyphRectangle.TopRight.Y, comparer);
 
                 Assert.Equal("f", page.Letters[16].Value);
 
-                Assert.Equal(169.9m, page.Letters[16].GlyphRectangle.BottomLeft.X, comparer);
-                Assert.Equal(709.2m, page.Letters[16].GlyphRectangle.BottomLeft.Y, comparer);
+                Assert.Equal(169.9d, page.Letters[16].GlyphRectangle.BottomLeft.X, comparer);
+                Assert.Equal(709.2d, page.Letters[16].GlyphRectangle.BottomLeft.Y, comparer);
 
-                Assert.Equal(176.89m, page.Letters[16].GlyphRectangle.TopRight.X, comparer);
-                Assert.Equal(719.89m, page.Letters[16].GlyphRectangle.TopRight.Y, comparer);
+                Assert.Equal(176.89d, page.Letters[16].GlyphRectangle.TopRight.X, comparer);
+                Assert.Equal(719.89d, page.Letters[16].GlyphRectangle.TopRight.Y, comparer);
             }
         }
 

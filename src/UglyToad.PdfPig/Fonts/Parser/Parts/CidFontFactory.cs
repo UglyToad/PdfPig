@@ -46,10 +46,10 @@
 
             var widths = ReadWidths(dictionary);
 
-            var defaultWidth = default(decimal?);
+            var defaultWidth = default(double?);
             if (dictionary.TryGet(NameToken.Dw, pdfScanner, out NumericToken defaultWidthToken))
             {
-                defaultWidth = defaultWidthToken.Data;
+                defaultWidth = defaultWidthToken.Double;
             }
 
             var verticalWritingMetrics = ReadVerticalDisplacements(dictionary);
@@ -155,9 +155,9 @@
             }
         }
 
-        private IReadOnlyDictionary<int, decimal> ReadWidths(DictionaryToken dict)
+        private IReadOnlyDictionary<int, double> ReadWidths(DictionaryToken dict)
         {
-            var widths = new Dictionary<int, decimal>();
+            var widths = new Dictionary<int, double>();
 
             if (!dict.TryGet(NameToken.W, out var widthsItem) || !(widthsItem is ArrayToken widthArray))
             {
@@ -178,7 +178,7 @@
                     for (var i = 0; i < arraySize; i++)
                     {
                         var width = (NumericToken)array.Data[i];
-                        widths[startRange + i] = width.Data;
+                        widths[startRange + i] = width.Double;
                     }
                 }
                 else
@@ -187,7 +187,7 @@
                     var rangeWidth = (NumericToken)widthArray.Data[counter++];
                     var startRange = firstCode.Int;
                     var endRange = secondCode.Int;
-                    var width = rangeWidth.Data;
+                    var width = rangeWidth.Double;
                     for (var i = startRange; i <= endRange; i++)
                     {
                         widths[i] = width;
@@ -200,7 +200,7 @@
 
         private static VerticalWritingMetrics ReadVerticalDisplacements(DictionaryToken dict)
         {
-            var verticalDisplacements = new Dictionary<int, decimal>();
+            var verticalDisplacements = new Dictionary<int, double>();
             var positionVectors = new Dictionary<int, PdfVector>();
 
             // The default position vector and displacement vector are specified by the DW2 entry.
@@ -211,8 +211,8 @@
             }
             else
             {
-                var position = ((NumericToken)arrayVerticalComponents.Data[0]).Data;
-                var displacement = ((NumericToken)arrayVerticalComponents.Data[1]).Data;
+                var position = ((NumericToken)arrayVerticalComponents.Data[0]).Double;
+                var displacement = ((NumericToken)arrayVerticalComponents.Data[1]).Double;
 
                 dw2 = new VerticalVectorComponents(position, displacement);
             }
@@ -235,9 +235,9 @@
                             var v1x = (NumericToken)array.Data[++j];
                             var v1y = (NumericToken)array.Data[++j];
 
-                            verticalDisplacements[cid] = w1y.Data;
+                            verticalDisplacements[cid] = w1y.Double;
 
-                            positionVectors[cid] = new PdfVector(v1x.Data, v1y.Data);
+                            positionVectors[cid] = new PdfVector(v1x.Double, v1y.Double);
                         }
                     }
                     else
@@ -251,9 +251,9 @@
 
                         for (var cid = first; cid <= last; cid++)
                         {
-                            verticalDisplacements[cid] = w1y.Data;
+                            verticalDisplacements[cid] = w1y.Double;
 
-                            positionVectors[cid] = new PdfVector(v1x.Data, v1y.Data);
+                            positionVectors[cid] = new PdfVector(v1x.Double, v1y.Double);
                         }
                     }
                 }

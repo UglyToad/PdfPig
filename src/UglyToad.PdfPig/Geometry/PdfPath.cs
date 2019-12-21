@@ -70,13 +70,12 @@ namespace UglyToad.PdfPig.Geometry
         /// <summary>
         /// Get the <see cref="PdfPath"/>'s centroid point.
         /// </summary>
-        /// <returns></returns>
         public PdfPoint GetCentroid()
         {
-            var filtered = commands.Where(c => c is Line || c is BezierCurve);
-            if (filtered.Count() == 0) return new PdfPoint();
-            var points = filtered.Select(c => GetStartPoint(c)).ToList();
-            points.AddRange(filtered.Select(c => GetEndPoint(c)));
+            var filtered = commands.Where(c => c is Line || c is BezierCurve).ToList();
+            if (filtered.Count == 0) return new PdfPoint();
+            var points = filtered.Select(GetStartPoint).ToList();
+            points.AddRange(filtered.Select(GetEndPoint));
             return new PdfPoint(points.Average(p => p.X), points.Average(p => p.Y));
         }
 
@@ -158,17 +157,17 @@ namespace UglyToad.PdfPig.Geometry
             return simplifiedPath;
         }
 
-        internal void MoveTo(decimal x, decimal y)
+        internal void MoveTo(double x, double y)
         {
             currentPosition = new PdfPoint(x, y);
             commands.Add(new Move(currentPosition.Value));
         }
 
-        internal void LineTo(decimal x, decimal y)
+        internal void LineTo(double x, double y)
         {
             if (currentPosition.HasValue)
             {
-                shoeLaceSum += (double)((x - currentPosition.Value.X) * (y + currentPosition.Value.Y));
+                shoeLaceSum += ((x - currentPosition.Value.X) * (y + currentPosition.Value.Y));
 
                 var to = new PdfPoint(x, y);
                 commands.Add(new Line(currentPosition.Value, to));
@@ -181,15 +180,15 @@ namespace UglyToad.PdfPig.Geometry
             }
         }
 
-        internal void QuadraticCurveTo(decimal x1, decimal y1, decimal x2, decimal y2) { }
+        internal void QuadraticCurveTo(double x1, double y1, double x2, double y2) { }
 
-        internal void BezierCurveTo(decimal x1, decimal y1, decimal x2, decimal y2, decimal x3, decimal y3)
+        internal void BezierCurveTo(double x1, double y1, double x2, double y2, double x3, double y3)
         {
             if (currentPosition.HasValue)
             {
-                shoeLaceSum += (double)((x1 - currentPosition.Value.X) * (y1 + currentPosition.Value.Y));
-                shoeLaceSum += (double)((x2 - x1) * (y2 + y1));
-                shoeLaceSum += (double)((x3 - x2) * (y3 + y2));
+                shoeLaceSum += ((x1 - currentPosition.Value.X) * (y1 + currentPosition.Value.Y));
+                shoeLaceSum += ((x2 - x1) * (y2 + y1));
+                shoeLaceSum += ((x3 - x2) * (y3 + y2));
 
                 var to = new PdfPoint(x3, y3);
                 commands.Add(new BezierCurve(currentPosition.Value, new PdfPoint(x1, y1), new PdfPoint(x2, y2), to));
@@ -210,7 +209,7 @@ namespace UglyToad.PdfPig.Geometry
                 var startPoint = GetStartPoint(commands.First());
                 if (!startPoint.Equals(currentPosition.Value))
                 {
-                    shoeLaceSum += (double)((startPoint.X - currentPosition.Value.X) * (startPoint.Y + currentPosition.Value.Y));
+                    shoeLaceSum += (startPoint.X - currentPosition.Value.X) * (startPoint.Y + currentPosition.Value.Y);
                 }
             }
             commands.Add(new Close());
@@ -227,11 +226,11 @@ namespace UglyToad.PdfPig.Geometry
                 return null;
             }
 
-            var minX = decimal.MaxValue;
-            var maxX = decimal.MinValue;
+            var minX = double.MaxValue;
+            var maxX = double.MinValue;
 
-            var minY = decimal.MaxValue;
-            var maxY = decimal.MinValue;
+            var minY = double.MaxValue;
+            var maxY = double.MinValue;
 
             foreach (var command in commands)
             {
@@ -262,13 +261,15 @@ namespace UglyToad.PdfPig.Geometry
                 }
             }
 
-            if (minX == decimal.MaxValue ||
-                maxX == decimal.MinValue ||
-                minY == decimal.MaxValue ||
-                maxY == decimal.MinValue)
+            // ReSharper disable CompareOfFloatsByEqualityOperator
+            if (minX == double.MaxValue ||
+                maxX == double.MinValue ||
+                minY == double.MaxValue ||
+                maxY == double.MinValue)
             {
                 return null;
             }
+            // ReSharper restore CompareOfFloatsByEqualityOperator
 
             return new PdfRectangle(minX, minY, maxX, maxY);
         }
@@ -357,23 +358,16 @@ namespace UglyToad.PdfPig.Geometry
                 builder.Append("Z ");
             }
 
-
-            /// <summary>
-            /// 
-            /// </summary>
-            /// <param name="obj"></param>
-            /// <returns></returns>
+            /// <inheritdoc />
             public override bool Equals(object obj)
             {
                 return (obj is Close);
             }
 
-            /// <summary>
-            /// 
-            /// </summary>
-            /// <returns></returns>
+            /// <inheritdoc />
             public override int GetHashCode()
             {
+                // ReSharper disable once BaseObjectGetHashCodeCallInGetHashCode
                 return base.GetHashCode();
             }
         }
@@ -416,7 +410,7 @@ namespace UglyToad.PdfPig.Geometry
             {
                 if (obj is Move move)
                 {
-                    return this.Location.Equals(move.Location);
+                    return Location.Equals(move.Location);
                 }
                 return false;
             }
@@ -424,7 +418,7 @@ namespace UglyToad.PdfPig.Geometry
             /// <inheritdoc />
             public override int GetHashCode()
             {
-                return (this.Location).GetHashCode();
+                return (Location).GetHashCode();
             }
         }
 
@@ -469,7 +463,7 @@ namespace UglyToad.PdfPig.Geometry
             {
                 if (obj is Line line)
                 {
-                    return this.From.Equals(line.From) && this.To.Equals(line.To);
+                    return From.Equals(line.From) && To.Equals(line.To);
                 }
                 return false;
             }
@@ -477,7 +471,7 @@ namespace UglyToad.PdfPig.Geometry
             /// <inheritdoc />
             public override int GetHashCode()
             {
-                return (this.From, this.To).GetHashCode();
+                return (From, To).GetHashCode();
             }
         }
 
@@ -525,26 +519,26 @@ namespace UglyToad.PdfPig.Geometry
                 double maxX;
                 if (StartPoint.X <= EndPoint.X)
                 {
-                    minX = (double)StartPoint.X;
-                    maxX = (double)EndPoint.X;
+                    minX = StartPoint.X;
+                    maxX = EndPoint.X;
                 }
                 else
                 {
-                    minX = (double)EndPoint.X;
-                    maxX = (double)StartPoint.X;
+                    minX = EndPoint.X;
+                    maxX = StartPoint.X;
                 }
 
                 double minY;
                 double maxY;
                 if (StartPoint.Y <= EndPoint.Y)
                 {
-                    minY = (double)StartPoint.Y;
-                    maxY = (double)EndPoint.Y;
+                    minY = StartPoint.Y;
+                    maxY = EndPoint.Y;
                 }
                 else
                 {
-                    minY = (double)EndPoint.Y;
-                    maxY = (double)StartPoint.Y;
+                    minY = EndPoint.Y;
+                    maxY = StartPoint.Y;
                 }
 
                 if (TrySolveQuadratic(true, minX, maxX, out var xSolutions))
@@ -559,7 +553,7 @@ namespace UglyToad.PdfPig.Geometry
                     maxY = ySolutions.max;
                 }
 
-                return new PdfRectangle((decimal)minX, (decimal)minY, (decimal)maxX, (decimal)maxY);
+                return new PdfRectangle(minX, minY, maxX, maxY);
             }
 
             /// <inheritdoc />
@@ -587,10 +581,10 @@ namespace UglyToad.PdfPig.Geometry
                 // P' = 3da(1-t)^2 + 6db(1-t)t + 3dct^2
                 // P' = 3da - 3dat - 3dat + 3dat^2 + 6dbt - 6dbt^2 + 3dct^2
                 // P' = (3da - 6db + 3dc)t^2 + (6db - 3da - 3da)t + 3da
-                var p1 = (double)(isX ? StartPoint.X : StartPoint.Y);
-                var p2 = (double)(isX ? FirstControlPoint.X : FirstControlPoint.Y);
-                var p3 = (double)(isX ? SecondControlPoint.X : SecondControlPoint.Y);
-                var p4 = (double)(isX ? EndPoint.X : EndPoint.Y);
+                var p1 = isX ? StartPoint.X : StartPoint.Y;
+                var p2 = isX ? FirstControlPoint.X : FirstControlPoint.Y;
+                var p3 = isX ? SecondControlPoint.X : SecondControlPoint.Y;
+                var p4 = isX ? EndPoint.X : EndPoint.Y;
 
                 var threeda = 3 * (p2 - p1);
                 var sixdb = 6 * (p3 - p2);
@@ -603,7 +597,7 @@ namespace UglyToad.PdfPig.Geometry
                 // P' = at^2 + bt + c
                 // t = (-b (+/-) sqrt(b ^ 2 - 4ac))/2a
 
-                var sqrtable = (b * b) - (4 * a * c);
+                var sqrtable = b * b - 4 * a * c;
 
                 if (sqrtable < 0)
                 {
@@ -678,9 +672,9 @@ namespace UglyToad.PdfPig.Geometry
 
                 for (int p = 1; p <= n; p++)
                 {
-                    double t = (double)p / (double)n;
-                    var currentPoint = new PdfPoint(ValueWithT((double)StartPoint.X, (double)FirstControlPoint.X, (double)SecondControlPoint.X, (double)EndPoint.X, t),
-                                                    ValueWithT((double)StartPoint.Y, (double)FirstControlPoint.Y, (double)SecondControlPoint.Y, (double)EndPoint.Y, t));
+                    double t = p / (double)n;
+                    var currentPoint = new PdfPoint(ValueWithT(StartPoint.X, FirstControlPoint.X, SecondControlPoint.X, EndPoint.X, t),
+                                                    ValueWithT(StartPoint.Y, FirstControlPoint.Y, SecondControlPoint.Y, EndPoint.Y, t));
                     lines.Add(new Line(previousPoint, currentPoint));
                     previousPoint = currentPoint;
                 }
@@ -692,10 +686,10 @@ namespace UglyToad.PdfPig.Geometry
             {
                 if (obj is BezierCurve curve)
                 {
-                    return this.StartPoint.Equals(curve.StartPoint) &&
-                           this.FirstControlPoint.Equals(curve.FirstControlPoint) &&
-                           this.SecondControlPoint.Equals(curve.SecondControlPoint) &&
-                           this.EndPoint.Equals(curve.EndPoint);
+                    return StartPoint.Equals(curve.StartPoint) &&
+                           FirstControlPoint.Equals(curve.FirstControlPoint) &&
+                           SecondControlPoint.Equals(curve.SecondControlPoint) &&
+                           EndPoint.Equals(curve.EndPoint);
                 }
                 return false;
             }
@@ -703,11 +697,11 @@ namespace UglyToad.PdfPig.Geometry
             /// <inheritdoc />
             public override int GetHashCode()
             {
-                return (this.StartPoint, this.FirstControlPoint, this.SecondControlPoint, this.EndPoint).GetHashCode();
+                return (StartPoint, FirstControlPoint, SecondControlPoint, EndPoint).GetHashCode();
             }
         }
 
-        internal void Rectangle(decimal x, decimal y, decimal width, decimal height)
+        internal void Rectangle(double x, double y, double width, double height)
         {
             currentPosition = new PdfPoint(x, y);
             LineTo(x + width, y);
@@ -724,11 +718,11 @@ namespace UglyToad.PdfPig.Geometry
         {
             if (obj is PdfPath path)
             {
-                if (this.Commands.Count != path.Commands.Count) return false;
+                if (Commands.Count != path.Commands.Count) return false;
 
-                for (int i = 0; i < this.Commands.Count; i++)
+                for (int i = 0; i < Commands.Count; i++)
                 {
-                    if (!this.Commands[i].Equals(path.Commands[i])) return false;
+                    if (!Commands[i].Equals(path.Commands[i])) return false;
                 }
                 return true;
             }
@@ -740,10 +734,10 @@ namespace UglyToad.PdfPig.Geometry
         /// </summary>
         public override int GetHashCode()
         {
-            var hash = this.Commands.Count + 1;
-            for (int i = 0; i < this.Commands.Count; i++)
+            var hash = Commands.Count + 1;
+            for (int i = 0; i < Commands.Count; i++)
             {
-                hash = hash * (i + 1) * 17 + this.Commands[i].GetHashCode();
+                hash = hash * (i + 1) * 17 + Commands[i].GetHashCode();
             }
             return hash;
         }

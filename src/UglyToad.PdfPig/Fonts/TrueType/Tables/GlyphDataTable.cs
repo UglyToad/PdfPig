@@ -163,10 +163,10 @@
                     arg2 = data.ReadByte();
                 }
 
-                decimal xscale = 1;
-                decimal scale01 = 0;
-                decimal scale10 = 0;
-                decimal yscale = 1;
+                double xscale = 1;
+                double scale01 = 0;
+                double scale10 = 0;
+                double yscale = 1;
 
                 if (HasFlag(flags, CompositeGlyphFlags.WeHaveAScale))
                 {
@@ -276,9 +276,9 @@
             return xs;
         }
 
-        private static decimal ReadTwoFourteenFormat(TrueTypeDataBytes data)
+        private static double ReadTwoFourteenFormat(TrueTypeDataBytes data)
         {
-            const decimal divisor = 1 << 14;
+            const double divisor = 1 << 14;
 
             return data.ReadSignedShort() / divisor;
         }

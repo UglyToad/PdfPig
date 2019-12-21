@@ -25,8 +25,8 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         {
             return GetWhitespaces(words,
                                   images,
-                                  words.SelectMany(w => w.Letters).Select(x => x.GlyphRectangle.Width).Mode() * 1.25m,
-                                  words.SelectMany(w => w.Letters).Select(x => x.GlyphRectangle.Height).Mode() * 1.25m,
+                                  words.SelectMany(w => w.Letters).Select(x => x.GlyphRectangle.Width).Mode() * 1.25,
+                                  words.SelectMany(w => w.Letters).Select(x => x.GlyphRectangle.Height).Mode() * 1.25,
                                   maxRectangleCount: maxRectangleCount,
                                   maxBoundQueueSize: maxBoundQueueSize);
         }
@@ -44,7 +44,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="maxBoundQueueSize">The maximum size of the queue used in the algorithm.</param>
         /// <returns>The identified whitespace rectangles.</returns>
         public static IReadOnlyList<PdfRectangle> GetWhitespaces(IEnumerable<Word> words, IEnumerable<IPdfImage> images,
-            decimal minWidth, decimal minHeight, int maxRectangleCount = 40, decimal whitespaceFuzziness = 0.15m, int maxBoundQueueSize = 0)
+            double minWidth, double minHeight, int maxRectangleCount = 40, double whitespaceFuzziness = 0.15, int maxBoundQueueSize = 0)
         {
             var bboxes = words.Where(w => w.BoundingBox.Width > 0 && w.BoundingBox.Height > 0)
                 .Select(o => o.BoundingBox).ToList();
@@ -74,7 +74,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="maxBoundQueueSize">The maximum size of the queue used in the algorithm.</param>
         /// <returns>The identified whitespace rectangles.</returns>
         public static IReadOnlyList<PdfRectangle> GetWhitespaces(IEnumerable<PdfRectangle> boundingboxes,
-            decimal minWidth, decimal minHeight, int maxRectangleCount = 40, decimal whitespaceFuzziness = 0.15m, int maxBoundQueueSize = 0)
+            double minWidth, double minHeight, int maxRectangleCount = 40, double whitespaceFuzziness = 0.15, int maxBoundQueueSize = 0)
         {
             if (boundingboxes.Count() == 0) return EmptyArray<PdfRectangle>.Instance;
 
@@ -90,8 +90,8 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         }
 
         private static IReadOnlyList<PdfRectangle> GetMaximalRectangles(PdfRectangle bound,
-            HashSet<PdfRectangle> obstacles, decimal minWidth, decimal minHeight, int maxRectangleCount, 
-            decimal whitespaceFuzziness, int maxBoundQueueSize)
+            HashSet<PdfRectangle> obstacles, double minWidth, double minHeight, int maxRectangleCount,
+            double whitespaceFuzziness, int maxBoundQueueSize)
         {
             QueueEntries queueEntries = new QueueEntries(maxBoundQueueSize);
             queueEntries.Enqueue(new QueueEntry(bound, obstacles, whitespaceFuzziness));
@@ -258,42 +258,41 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 
             public QueueEntries(int maximumBound)
             {
-                this.bound = maximumBound;
+                bound = maximumBound;
             }
 
             public QueueEntry Dequeue()
             {
-                var current = this.Max;
-                this.Remove(current);
+                var current = Max;
+                Remove(current);
                 return current;
             }
 
             public void Enqueue(QueueEntry queueEntry)
             {
-                if (this.bound > 0 && this.Count > this.bound)
+                if (bound > 0 && Count > bound)
                 {
-                    this.Remove(this.Min);
+                    Remove(Min);
                 }
-                this.Add(queueEntry);
+                Add(queueEntry);
             }
         }
 
         private class QueueEntry : IComparable<QueueEntry>
         {
-            public PdfRectangle Bound { get; private set; }
+            private readonly double quality;
+            private readonly double whitespaceFuzziness;
 
-            public decimal Quality { get; private set; }
+            public PdfRectangle Bound { get; }
 
-            public HashSet<PdfRectangle> Obstacles { get; private set; }
-
-            private decimal WhitespaceFuzziness;
-
-            public QueueEntry(PdfRectangle bound, HashSet<PdfRectangle> obstacles, decimal whitespaceFuzziness)
+            public HashSet<PdfRectangle> Obstacles { get; }
+            
+            public QueueEntry(PdfRectangle bound, HashSet<PdfRectangle> obstacles, double whitespaceFuzziness)
             {
-                this.Bound = bound;
-                this.Quality = ScoringFunction(Bound);
-                this.Obstacles = obstacles;
-                this.WhitespaceFuzziness = whitespaceFuzziness;
+                Bound = bound;
+                quality = ScoringFunction(Bound);
+                Obstacles = obstacles;
+                this.whitespaceFuzziness = whitespaceFuzziness;
             }
 
             public PdfRectangle GetPivot()
@@ -314,13 +313,13 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             {
                 if (IsEmptyEnough()) return true;
 
-                decimal sum = 0;
+                double sum = 0;
                 foreach (var obstacle in pageObstacles)
                 {
                     var intersect = Bound.Intersect(obstacle);
                     if (!intersect.HasValue) return false;
 
-                    decimal minimumArea = MinimumOverlappingArea(obstacle, Bound, WhitespaceFuzziness);
+                    double minimumArea = MinimumOverlappingArea(obstacle, Bound, whitespaceFuzziness);
 
                     if (intersect.Value.Area > minimumArea)
                     {
@@ -328,12 +327,12 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                     }
                     sum += intersect.Value.Area;
                 }
-                return sum < Bound.Area * WhitespaceFuzziness;
+                return sum < Bound.Area * whitespaceFuzziness;
             }
 
             public override string ToString()
             {
-                return "Q=" + Quality.ToString("#0.0") + ", O=" + Obstacles.Count + ", " + Bound.ToString();
+                return "Q=" + quality.ToString("#0.0") + ", O=" + Obstacles.Count + ", " + Bound.ToString();
             }
 
             public void AddWhitespace(PdfRectangle rectangle)
@@ -343,18 +342,18 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 
             public int CompareTo(QueueEntry entry)
             {
-                return this.Quality.CompareTo(entry.Quality);
+                return quality.CompareTo(entry.quality);
             }
 
             public override bool Equals(object obj)
             {
                 if (obj is QueueEntry entry)
                 {
-                    if (this.Bound.Left != entry.Bound.Left ||
-                        this.Bound.Right != entry.Bound.Right ||
-                        this.Bound.Top != entry.Bound.Top ||
-                        this.Bound.Bottom != entry.Bound.Bottom ||
-                        this.Obstacles != entry.Obstacles) return false;
+                    if (Bound.Left != entry.Bound.Left ||
+                        Bound.Right != entry.Bound.Right ||
+                        Bound.Top != entry.Bound.Top ||
+                        Bound.Bottom != entry.Bound.Bottom ||
+                        Obstacles != entry.Obstacles) return false;
                     return true;
                 }
                 return false;
@@ -367,7 +366,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                         Obstacles).GetHashCode();
             }
 
-            private static decimal MinimumOverlappingArea(PdfRectangle r1, PdfRectangle r2, decimal whitespaceFuzziness)
+            private static double MinimumOverlappingArea(PdfRectangle r1, PdfRectangle r2, double whitespaceFuzziness)
             {
                 return Math.Min(r1.Area, r2.Area) * whitespaceFuzziness;
             }
@@ -376,16 +375,16 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             /// The scoring function Q(r) which is subsequently used to sort a priority queue.
             /// </summary>
             /// <param name="rectangle"></param>
-            private static decimal ScoringFunction(PdfRectangle rectangle)
+            private static double ScoringFunction(PdfRectangle rectangle)
             {
                 // As can be seen, tall rectangles are preferred. The trick while choosing this Q(r) was
                 // to keep that preference while still allowing wide rectangles to be chosen. After having
                 // experimented with quite a few variations, this simple function was considered a good
                 // solution.
-                return rectangle.Area * (rectangle.Height / 4m);
+                return rectangle.Area * (rectangle.Height / 4.0);
             }
 
-            private static decimal OverlappingArea(PdfRectangle rectangle1, PdfRectangle rectangle2)
+            private static double OverlappingArea(PdfRectangle rectangle1, PdfRectangle rectangle2)
             {
                 var intersect = rectangle1.Intersect(rectangle2);
                 if (intersect.HasValue)

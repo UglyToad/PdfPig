@@ -7,19 +7,19 @@
 
     public class AssertablePositionData
     {
-        public decimal X { get; set; }
+        public double X { get; set; }
 
-        public decimal Y { get; set; }
+        public double Y { get; set; }
 
-        public decimal Width { get; set; }
+        public double Width { get; set; }
 
         public string Text { get; set; }
 
-        public decimal FontSize { get; set; }
+        public double FontSize { get; set; }
 
         public string FontName { get; set; }
 
-        public decimal Height { get; set; }
+        public double Height { get; set; }
 
         public static AssertablePositionData Parse(string line)
         {
@@ -30,15 +30,15 @@
                 throw new ArgumentException($"Expected 6 parts to the line, instead got {parts.Length}");
             }
 
-            var height = parts.Length < 7 ? 0 : decimal.Parse(parts[6], CultureInfo.InvariantCulture);
+            var height = parts.Length < 7 ? 0 : double.Parse(parts[6], CultureInfo.InvariantCulture);
 
             return new AssertablePositionData
             {
-                X = decimal.Parse(parts[0], CultureInfo.InvariantCulture),
-                Y = decimal.Parse(parts[1], CultureInfo.InvariantCulture),
-                Width = decimal.Parse(parts[2], CultureInfo.InvariantCulture),
+                X = double.Parse(parts[0], CultureInfo.InvariantCulture),
+                Y = double.Parse(parts[1], CultureInfo.InvariantCulture),
+                Width = double.Parse(parts[2], CultureInfo.InvariantCulture),
                 Text = parts[3],
-                FontSize = decimal.Parse(parts[4], CultureInfo.InvariantCulture),
+                FontSize = double.Parse(parts[4], CultureInfo.InvariantCulture),
                 FontName = parts[5],
                 Height = height
             };

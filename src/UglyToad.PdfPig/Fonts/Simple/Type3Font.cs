@@ -16,7 +16,7 @@
         private readonly Encoding encoding;
         private readonly int firstChar;
         private readonly int lastChar;
-        private readonly decimal[] widths;
+        private readonly double[] widths;
         private readonly ToUnicodeCMap toUnicodeCMap;
 
         /// <summary>
@@ -27,7 +27,7 @@
         public bool IsVertical { get; } = false;
 
         public Type3Font(NameToken name, PdfRectangle boundingBox, TransformationMatrix fontMatrix,
-            Encoding encoding, int firstChar, int lastChar, decimal[] widths,
+            Encoding encoding, int firstChar, int lastChar, double[] widths,
             CMap toUnicodeCMap)
         {
             Name = name;

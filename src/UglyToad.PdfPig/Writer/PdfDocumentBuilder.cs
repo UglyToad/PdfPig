@@ -309,10 +309,10 @@
         {
             return new ArrayToken(new[]
             {
-                new NumericToken(rectangle.BottomLeft.X),
-                new NumericToken(rectangle.BottomLeft.Y),
-                new NumericToken(rectangle.TopRight.X),
-                new NumericToken(rectangle.TopRight.Y)
+                new NumericToken((decimal)rectangle.BottomLeft.X),
+                new NumericToken((decimal)rectangle.BottomLeft.Y),
+                new NumericToken((decimal)rectangle.TopRight.X),
+                new NumericToken((decimal)rectangle.TopRight.Y)
             });
         }
 

@@ -37,7 +37,7 @@
             return true;
         }
 
-        public bool TryGetAdvanceWidth(char character, out decimal width)
+        public bool TryGetAdvanceWidth(char character, out double width)
         {
             width = 0;
             if (!TryGetBoundingBox(character, out var bbox))
@@ -52,7 +52,7 @@
 
         public TransformationMatrix GetFontMatrix()
         {
-            return TransformationMatrix.FromValues(1/1000m, 0, 0, 1/1000m, 0, 0);
+            return TransformationMatrix.FromValues(1/1000.0, 0, 0, 1/1000.0, 0, 0);
         }
 
         public ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context)

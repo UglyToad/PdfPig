@@ -24,7 +24,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <summary>
         /// The number of words in the leaf.
         /// </summary>
-        public override int CountWords() => Words == null ? 0 : Words.Count;
+        public override int CountWords() => Words?.Count ?? 0;
 
         /// <summary>
         /// Returns null as a leaf doesn't have leafs.
@@ -60,14 +60,14 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         {
             if (words == null)
             {
-                throw new ArgumentException("XYLeaf(): The words contained in the leaf cannot be null.", "words");
+                throw new ArgumentException("XYLeaf(): The words contained in the leaf cannot be null.", nameof(words));
             }
 
-            decimal left = words.Min(b => b.BoundingBox.Left);
-            decimal right = words.Max(b => b.BoundingBox.Right);
+            double left = words.Min(b => b.BoundingBox.Left);
+            double right = words.Max(b => b.BoundingBox.Right);
 
-            decimal bottom = words.Min(b => b.BoundingBox.Bottom);
-            decimal top = words.Max(b => b.BoundingBox.Top);
+            double bottom = words.Min(b => b.BoundingBox.Bottom);
+            double top = words.Max(b => b.BoundingBox.Top);
 
             BoundingBox = new PdfRectangle(left, bottom, right, top);
             Words = words.ToArray();
