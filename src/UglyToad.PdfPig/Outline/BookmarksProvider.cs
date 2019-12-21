@@ -198,49 +198,18 @@
                  * The keys in the name tree may be treated as text strings for display purposes.
                  * The destination value associated with a key in the name tree may be either an array or a dictionary. 
                  */
-                ExtractNameTree(dests, catalog, pdfScanner, isLenientParsing, log, result);
+                NameTreeParser.FlattenNameTree(dests, pdfScanner, isLenientParsing, value =>
+                {
+                    if (TryReadExplicitDestination(value, catalog, pdfScanner, log, out var destination))
+                    {
+                        return destination;
+                    }
+
+                    return null;
+                }, result);
             }
 
             return result;
-        }
-
-        private static void ExtractNameTree(DictionaryToken nameTreeNodeDictionary, Catalog catalog, IPdfTokenScanner pdfScanner,
-            bool isLenientParsing,
-            ILog log,
-            Dictionary<string, ExplicitDestination> explicitDestinations)
-        {
-            if (nameTreeNodeDictionary.TryGet(NameToken.Names, pdfScanner, out ArrayToken nodeNames))
-            {
-                for (var i = 0; i < nodeNames.Length; i += 2)
-                {
-                    if (!(nodeNames[i] is IDataToken<string> key))
-                    {
-                        continue;
-                    }
-
-                    var value = nodeNames[i + 1];
-
-                    if (TryReadExplicitDestination(value, catalog, pdfScanner, log, out var destination))
-                    {
-                        explicitDestinations[key.Data] = destination;
-                    }
-                }
-            }
-
-            if (nameTreeNodeDictionary.TryGet(NameToken.Kids, pdfScanner, out ArrayToken kids))
-            {
-                foreach (var kid in kids.Data)
-                {
-                    if (DirectObjectFinder.TryGet(kid, pdfScanner, out DictionaryToken kidDictionary))
-                    {
-                        ExtractNameTree(kidDictionary, catalog, pdfScanner, isLenientParsing, log, explicitDestinations);
-                    }
-                    else if (!isLenientParsing)
-                    {
-                        throw new PdfDocumentFormatException($"Invalid kids entry in PDF name tree: {kid} in {kids}.");
-                    }
-                }
-            }
         }
 
         private static bool TryReadExplicitDestination(IToken value, Catalog catalog, IPdfTokenScanner pdfScanner,

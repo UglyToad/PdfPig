@@ -63,6 +63,11 @@
         public Structure Structure { get; }
 
         /// <summary>
+        /// Access to rare or advanced features of the PDF specification.
+        /// </summary>
+        public AdvancedPdfDocumentAccess Advanced { get; }
+
+        /// <summary>
         /// The version number of the PDF specification which this file conforms to, for example 1.4.
         /// </summary>
         public decimal Version => version.Version;
@@ -104,6 +109,7 @@
             Information = information ?? throw new ArgumentNullException(nameof(information));
             pages = new Pages(catalog, pageFactory, isLenientParsing, pdfScanner);
             Structure = new Structure(catalog, crossReferenceTable, pdfScanner);
+            Advanced = new AdvancedPdfDocumentAccess(pdfScanner, filterProvider, catalog, isLenientParsing);
             documentForm = new Lazy<AcroForm>(() => acroFormFactory.GetAcroForm(catalog));
         }
 
@@ -242,6 +248,7 @@
         {
             try
             {
+                Advanced.Dispose();
                 pdfScanner.Dispose();
                 inputBytes.Dispose();
             }
