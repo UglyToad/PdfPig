@@ -62,7 +62,7 @@
 
             var state = context.GetCurrentState();
 
-            Assert.Equal(69.42m, state.FontState.FontSize);
+            Assert.Equal(69.42, state.FontState.FontSize);
             Assert.Equal(Font1Name, state.FontState.FontName);
         }
     }

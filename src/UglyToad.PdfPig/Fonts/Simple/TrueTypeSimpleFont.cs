@@ -15,7 +15,7 @@
     internal class TrueTypeSimpleFont : IFont
     {
         private static readonly TransformationMatrix DefaultTransformation =
-            TransformationMatrix.FromValues(1m / 1000m, 0, 0, 1m / 1000m, 0, 0);
+            TransformationMatrix.FromValues(1 / 1000.0, 0, 0, 1 / 1000.0, 0, 0);
 
         private readonly FontDescriptor descriptor;
 
@@ -30,7 +30,7 @@
 
         private readonly int firstCharacter;
 
-        private readonly decimal[] widths;
+        private readonly double[] widths;
 
         public NameToken Name { get; }
 
@@ -45,7 +45,7 @@
             [CanBeNull] Encoding encoding,
             [CanBeNull] TrueTypeFontProgram fontProgram,
             int firstCharacter,
-            decimal[] widths)
+            double[] widths)
         {
             this.descriptor = descriptor;
             this.encoding = encoding;
@@ -134,7 +134,7 @@
                 boundingBox = DefaultTransformation.Transform(boundingBox);
             }
 
-            decimal width;
+            double width;
 
             var index = characterCode - firstCharacter;
             if (widths != null && index >= 0 && index < widths.Length)
@@ -172,14 +172,14 @@
 
         public TransformationMatrix GetFontMatrix()
         {
-            var scale = 1000m;
+            var scale = 1000.0;
 
             if (fontProgram?.TableRegister.HeaderTable != null)
             {
                 scale = fontProgram.GetFontMatrixMultiplier();
             }
 
-            return TransformationMatrix.FromValues(1m / scale, 0, 0, 1m / scale, 0, 0);
+            return TransformationMatrix.FromValues(1 / scale, 0, 0, 1 / scale, 0, 0);
         }
 
         private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode, out bool fromFont)
@@ -303,13 +303,13 @@
             return null;
         }
 
-        private decimal GetWidth(int characterCode)
+        private double GetWidth(int characterCode)
         {
             var index = characterCode - firstCharacter;
 
             if (index < 0 || index >= widths.Length)
             {
-                return descriptor.MissingWidth;
+                return (double)descriptor.MissingWidth;
             }
 
             return widths[index];

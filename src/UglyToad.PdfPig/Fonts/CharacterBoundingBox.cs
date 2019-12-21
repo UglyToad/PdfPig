@@ -6,9 +6,9 @@
     {
         public PdfRectangle GlyphBounds { get; }
 
-        public decimal Width { get; }
+        public double Width { get; }
 
-        public CharacterBoundingBox(PdfRectangle glyphBounds, decimal width)
+        public CharacterBoundingBox(PdfRectangle glyphBounds, double width)
         {
             GlyphBounds = glyphBounds;
             Width = width;

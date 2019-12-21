@@ -20,7 +20,7 @@
         /// Overrides displacement vector y components for glyphs specified by CID code.
         /// </summary>
         [NotNull]
-        public IReadOnlyDictionary<int, decimal> IndividualVerticalWritingDisplacements { get; }
+        public IReadOnlyDictionary<int, double> IndividualVerticalWritingDisplacements { get; }
 
         /// <summary>
         /// Overrides position vector (x and y) components for glyphs specified by CID code.
@@ -32,12 +32,12 @@
         /// Create new <see cref="VerticalWritingMetrics"/>.
         /// </summary>
         public VerticalWritingMetrics(VerticalVectorComponents defaultVerticalWritingMetrics, 
-            [CanBeNull] IReadOnlyDictionary<int, decimal> individualVerticalWritingDisplacements, 
+            [CanBeNull] IReadOnlyDictionary<int, double> individualVerticalWritingDisplacements, 
             [CanBeNull] IReadOnlyDictionary<int, PdfVector> individualVerticalWritingPositions)
         {
             DefaultVerticalWritingMetrics = defaultVerticalWritingMetrics;
             IndividualVerticalWritingDisplacements = individualVerticalWritingDisplacements
-                                                     ?? new Dictionary<int, decimal>(0);
+                                                     ?? new Dictionary<int, double>(0);
             IndividualVerticalWritingPositions = individualVerticalWritingPositions
                                                  ?? new Dictionary<int, PdfVector>(0);
         }
@@ -45,7 +45,7 @@
         /// <summary>
         /// Get the position vector used to convert horizontal glyph origin to vertical origin.
         /// </summary>
-        public PdfVector GetPositionVector(int characterIdentifier, decimal glyphWidth)
+        public PdfVector GetPositionVector(int characterIdentifier, double glyphWidth)
         {
             if (IndividualVerticalWritingPositions.TryGetValue(characterIdentifier, out var vector))
             {

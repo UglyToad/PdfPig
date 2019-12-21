@@ -15,7 +15,7 @@
     {
         private readonly ICidFontProgram fontProgram;
         private readonly VerticalWritingMetrics verticalWritingMetrics;
-        private readonly decimal? defaultWidth;
+        private readonly double? defaultWidth;
 
         public NameToken Type { get; }
 
@@ -31,14 +31,14 @@
 
         public FontDescriptor Descriptor { get; }
 
-        public IReadOnlyDictionary<int, decimal> Widths { get; }
+        public IReadOnlyDictionary<int, double> Widths { get; }
 
         public Type0CidFont(ICidFontProgram fontProgram, NameToken type, NameToken subType, NameToken baseFont,
             CharacterIdentifierSystemInfo systemInfo,
             FontDescriptor descriptor, 
             VerticalWritingMetrics verticalWritingMetrics, 
-            IReadOnlyDictionary<int, decimal> widths,
-            decimal? defaultWidth)
+            IReadOnlyDictionary<int, double> widths,
+            double? defaultWidth)
         {
             this.fontProgram = fontProgram;
             this.verticalWritingMetrics = verticalWritingMetrics;
@@ -47,18 +47,18 @@
             SubType = subType;
             BaseFont = baseFont;
             SystemInfo = systemInfo;
-            var scale = 1 / (decimal)(fontProgram?.GetFontMatrixMultiplier() ?? 1000);
+            var scale = 1 / (double)(fontProgram?.GetFontMatrixMultiplier() ?? 1000);
             FontMatrix = TransformationMatrix.FromValues(scale, 0, 0, scale, 0, 0);
             Descriptor = descriptor;
             Widths = widths;
         }
 
-        public decimal GetWidthFromFont(int characterCode)
+        public double GetWidthFromFont(int characterCode)
         {
             return GetWidthFromDictionary(characterCode);
         }
 
-        public decimal GetWidthFromDictionary(int cid)
+        public double GetWidthFromDictionary(int cid)
         {
             if (cid < 0)
             {
@@ -80,7 +80,7 @@
                 return 1000;
             }
 
-            return Descriptor.MissingWidth;
+            return (double)Descriptor.MissingWidth;
         }
 
         public PdfRectangle GetBoundingBox(int characterIdentifier)

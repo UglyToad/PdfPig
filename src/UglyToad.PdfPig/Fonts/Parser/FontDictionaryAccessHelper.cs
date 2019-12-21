@@ -28,7 +28,7 @@
             return number.Int;
         }
 
-        public static decimal[] GetWidths(IPdfTokenScanner pdfScanner, DictionaryToken dictionary, bool isLenientParsing)
+        public static double[] GetWidths(IPdfTokenScanner pdfScanner, DictionaryToken dictionary, bool isLenientParsing)
         {
             if (!dictionary.TryGet(NameToken.Widths, out var token))
             {
@@ -37,7 +37,7 @@
 
             var widthArray = DirectObjectFinder.Get<ArrayToken>(token, pdfScanner);
 
-            var result = new decimal[widthArray.Data.Count];
+            var result = new double[widthArray.Data.Count];
             for (int i = 0; i < widthArray.Data.Count; i++)
             {
                 var arrayToken = widthArray.Data[i];
@@ -47,7 +47,7 @@
                     throw new InvalidFontFormatException($"Token which was not a number found in the widths array: {arrayToken}.");
                 }
 
-                result[i] = number.Data;
+                result[i] = number.Double;
             }
 
             return result;

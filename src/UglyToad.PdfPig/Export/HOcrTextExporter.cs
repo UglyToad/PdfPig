@@ -13,37 +13,33 @@ namespace UglyToad.PdfPig.Export
     /// </summary>
     public class HOcrTextExporter : ITextExporter
     {
-        private const string xmlHeader = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"\n\t\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n";
-        private const string hocrjs = "<script src='https://unpkg.com/hocrjs'></script>\n";
+        private const string XmlHeader = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"\n\t\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n";
+        private const string Hocrjs = "<script src='https://unpkg.com/hocrjs'></script>\n";
 
-        private IPageSegmenter pageSegmenter;
-        private IWordExtractor wordExtractor;
+        private readonly IPageSegmenter pageSegmenter;
+        private readonly IWordExtractor wordExtractor;
 
-        private decimal scale;
-        private string indentChar;
+        private readonly double scale;
+        private readonly string indentChar;
 
-        private int pageCount = 0;
-        private int areaCount = 0;
-        private int lineCount = 0;
-        private int wordCount = 0;
-        private int pathCount = 0;
-        private int paraCount = 0;
-        private int imageCount = 0;
+        private int pageCount;
+        private int areaCount;
+        private int lineCount;
+        private int wordCount;
+        private int pathCount;
+        private int paraCount;
+        private int imageCount;
 
         /// <summary>
         /// hOCR v1.2 (HTML)
         /// <para>See http://kba.cloud/hocr-spec/1.2/ </para>
         /// </summary>
-        /// <param name="wordExtractor"></param>
-        /// <param name="pageSegmenter"></param>
-        /// <param name="scale"></param>
-        /// <param name="indent">Indent character.</param>
         public HOcrTextExporter(IWordExtractor wordExtractor, IPageSegmenter pageSegmenter, double scale = 1.0, string indent = "\t")
         {
             this.wordExtractor = wordExtractor;
             this.pageSegmenter = pageSegmenter;
-            this.scale = (decimal)scale;
-            this.indentChar = indent;
+            this.scale = scale;
+            indentChar = indent;
         }
 
         /// <summary>
@@ -63,9 +59,9 @@ namespace UglyToad.PdfPig.Export
                 hocr += GetCode(page, includePaths) + "\n";
             }
 
-            if (useHocrjs) hocr += indentChar + indentChar + hocrjs;
+            if (useHocrjs) hocr += indentChar + indentChar + Hocrjs;
             hocr += indentChar + "</body>";
-            hocr = xmlHeader + AddHtmlHeader(hocr);
+            hocr = XmlHeader + AddHtmlHeader(hocr);
             return hocr;
         }
 
@@ -91,9 +87,9 @@ namespace UglyToad.PdfPig.Export
 
             hocr += GetCode(page, includePaths, imageName) + "\n";
 
-            if (useHocrjs) hocr += indentChar + indentChar + hocrjs;
+            if (useHocrjs) hocr += indentChar + indentChar + Hocrjs;
             hocr += indentChar + "</body>";
-            hocr = xmlHeader + AddHtmlHeader(hocr);
+            hocr = XmlHeader + AddHtmlHeader(hocr);
             return hocr;
         }
 
@@ -179,7 +175,7 @@ namespace UglyToad.PdfPig.Export
         /// <param name="pageHeight"></param>
         /// <param name="subPaths"></param>
         /// <param name="level">The indent level.</param>
-        private string GetCode(PdfPath path, decimal pageHeight, bool subPaths, int level)
+        private string GetCode(PdfPath path, double pageHeight, bool subPaths, int level)
         {
             if (path == null) return string.Empty;
 
@@ -220,7 +216,7 @@ namespace UglyToad.PdfPig.Export
             return hocr;
         }
 
-        private string GetCode(IPdfImage pdfImage, decimal pageHeight, int level)
+        private string GetCode(IPdfImage pdfImage, double pageHeight, int level)
         {
             imageCount++;
             var bbox = pdfImage.Bounds;
@@ -235,7 +231,7 @@ namespace UglyToad.PdfPig.Export
         /// <param name="block">The text area.</param>
         /// <param name="pageHeight"></param>
         /// <param name="level">The indent level.</param>
-        private string GetCodeArea(TextBlock block, decimal pageHeight, int level)
+        private string GetCodeArea(TextBlock block, double pageHeight, int level)
         {
             areaCount++;
 
@@ -255,7 +251,7 @@ namespace UglyToad.PdfPig.Export
         /// <param name="block">The paragraph.</param>
         /// <param name="pageHeight"></param>
         /// <param name="level">The indent level.</param>
-        private string GetCodeParagraph(TextBlock block, decimal pageHeight, int level)
+        private string GetCodeParagraph(TextBlock block, double pageHeight, int level)
         {
             paraCount++;
             string hocr = "\n" + GetIndent(level) + @"<p class='ocr_par' id='par_" + pageCount + "_"
@@ -277,7 +273,7 @@ namespace UglyToad.PdfPig.Export
         /// <param name="line"></param>
         /// <param name="pageHeight"></param>
         /// <param name="level">The indent level.</param>
-        private string GetCode(TextLine line, decimal pageHeight, int level)
+        private string GetCode(TextLine line, double pageHeight, int level)
         {
             lineCount++;
             double angle = 0;
@@ -305,7 +301,7 @@ namespace UglyToad.PdfPig.Export
         /// <param name="word"></param>
         /// <param name="pageHeight"></param>
         /// <param name="level">The indent level.</param>
-        private string GetCode(Word word, decimal pageHeight, int level)
+        private string GetCode(Word word, double pageHeight, int level)
         {
             wordCount++;
             string hocr = GetIndent(level) +
@@ -335,7 +331,7 @@ namespace UglyToad.PdfPig.Export
         /// </summary>
         /// <param name="rectangle"></param>
         /// <param name="pageHeight"></param>
-        private string GetCode(PdfRectangle rectangle, decimal pageHeight)
+        private string GetCode(PdfRectangle rectangle, double pageHeight)
         {
             // the values are with reference to the the top-left 
             // corner of the document image and measured in pixels

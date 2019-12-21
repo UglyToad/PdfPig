@@ -18,10 +18,15 @@
         public string Operator => Symbol;
 
         /// <summary>
-        /// The end point of the line.
+        /// The x coordinate of the end point of the line.
         /// </summary>
-        public PdfPoint End { get; }
+        public decimal X { get; }
 
+        /// <summary>
+        /// The y coordinate of the end point of the line.
+        /// </summary>
+        public decimal Y { get; }
+        
         /// <summary>
         /// Create a new <see cref="AppendStraightLineSegment"/>.
         /// </summary>
@@ -29,13 +34,14 @@
         /// <param name="y">The y coordinate of the line's end point.</param>
         public AppendStraightLineSegment(decimal x, decimal y)
         {
-            End = new PdfPoint(x, y);
+            X = x;
+            Y = y;
         }
 
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var endPoint = operationContext.CurrentTransformationMatrix.Transform(new PdfPoint(End.X, End.Y));
+            var endPoint = operationContext.CurrentTransformationMatrix.Transform(new PdfPoint(X, Y));
             operationContext.CurrentPath.LineTo(endPoint.X, endPoint.Y);
             operationContext.CurrentPosition = endPoint;
         }
@@ -43,9 +49,9 @@
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            stream.WriteDecimal(End.X);
+            stream.WriteDecimal(X);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(End.Y);
+            stream.WriteDecimal(Y);
             stream.WriteWhiteSpace();
             stream.WriteText(Symbol);
             stream.WriteWhiteSpace();
@@ -54,7 +60,7 @@
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"{End.X} {End.Y} {Symbol}";
+            return $"{X} {Y} {Symbol}";
         }
     }
 }

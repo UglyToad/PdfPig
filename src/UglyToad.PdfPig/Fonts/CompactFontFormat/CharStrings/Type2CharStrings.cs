@@ -35,7 +35,7 @@
         /// <param name="defaultWidthX">The default width for the glyph from the font's private dictionary.</param>
         /// <param name="nominalWidthX">The nominal width which individual glyph widths are encoded as the difference from.</param>
         /// <returns>A <see cref="PdfPath"/> for the glyph.</returns>
-        public Type2Glyph Generate(string name, decimal defaultWidthX, decimal nominalWidthX)
+        public Type2Glyph Generate(string name, double defaultWidthX, double nominalWidthX)
         {
             Type2Glyph glyph;
             lock (locker)
@@ -65,7 +65,7 @@
             return glyph;
         }
 
-        private static Type2Glyph Run(CommandSequence sequence, decimal defaultWidthX, decimal nominalWidthX)
+        private static Type2Glyph Run(CommandSequence sequence, double defaultWidthX, double nominalWidthX)
         {
             var context = new Type2BuildCharContext();
             
@@ -135,7 +135,7 @@
             return new Type2Glyph(context.Path, context.Width);
         }
 
-        private static void SetWidthFromArgumentsIfPresent(Type2BuildCharContext context, decimal nomimalWidthX, int expectedArgumentLength)
+        private static void SetWidthFromArgumentsIfPresent(Type2BuildCharContext context, double nomimalWidthX, int expectedArgumentLength)
         {
             if (context.Stack.Length > expectedArgumentLength)
             {
@@ -148,9 +148,9 @@
             /// <summary>
             /// The ordered list of numbers and commands for a Type 2 charstring or subroutine.
             /// </summary>
-            public IReadOnlyList<Union<decimal, LazyType2Command>> Commands { get; }
+            public IReadOnlyList<Union<double, LazyType2Command>> Commands { get; }
 
-            public CommandSequence(IReadOnlyList<Union<decimal, LazyType2Command>> commands)
+            public CommandSequence(IReadOnlyList<Union<double, LazyType2Command>> commands)
             {
                 Commands = commands ?? throw new ArgumentNullException(nameof(commands));
             }
@@ -177,12 +177,12 @@
         /// <summary>
         /// The width of the glyph as a difference from the nominal width X for the font. Optional.
         /// </summary>
-        public decimal? Width { get; }
+        public double? Width { get; }
 
         /// <summary>
         /// Create a new <see cref="Type2Glyph"/>.
         /// </summary>
-        public Type2Glyph(PdfPath path, decimal? width)
+        public Type2Glyph(PdfPath path, double? width)
         {
             Path = path ?? throw new ArgumentNullException(nameof(path));
             Width = width;

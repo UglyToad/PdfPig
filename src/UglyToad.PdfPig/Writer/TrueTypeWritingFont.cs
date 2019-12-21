@@ -35,7 +35,7 @@
             return font.TryGetBoundingBox(character, out boundingBox);
         }
 
-        public bool TryGetAdvanceWidth(char character, out decimal width)
+        public bool TryGetAdvanceWidth(char character, out double width)
         {
             return font.TryGetBoundingAdvancedWidth(character, out width);
         }
@@ -43,7 +43,7 @@
         public TransformationMatrix GetFontMatrix()
         {
             var unitsPerEm = font.GetFontMatrixMultiplier();
-            return TransformationMatrix.FromValues(1m/unitsPerEm, 0, 0, 1m/unitsPerEm, 0, 0);
+            return TransformationMatrix.FromValues(1.0/unitsPerEm, 0, 0, 1.0/unitsPerEm, 0, 0);
         }
 
         public ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context)
@@ -95,7 +95,7 @@
                 descriptorDictionary[NameToken.Xheight] = new NumericToken(twoPlus.XHeight);
             }
 
-            descriptorDictionary[NameToken.StemV] = new NumericToken(bbox.Width * scaling * 0.13m);
+            descriptorDictionary[NameToken.StemV] = new NumericToken(((decimal)bbox.Width) * scaling * 0.13m);
 
             var metrics = charCodeToGlyphId.GetMetrics(scaling);
 
@@ -137,10 +137,10 @@
         {
             return new ArrayToken(new[]
             {
-                new NumericToken(boundingBox.Left * scaling),
-                new NumericToken(boundingBox.Bottom * scaling),
-                new NumericToken(boundingBox.Right * scaling),
-                new NumericToken(boundingBox.Top * scaling)
+                new NumericToken((decimal)boundingBox.Left * scaling),
+                new NumericToken((decimal)boundingBox.Bottom * scaling),
+                new NumericToken((decimal)boundingBox.Right * scaling),
+                new NumericToken((decimal)boundingBox.Top * scaling)
             });
         }
 
@@ -184,7 +184,7 @@
                         width = font.TableRegister.HorizontalMetricsTable.AdvancedWidths[0];
                     }
 
-                    widths[pair.Key - firstCharacter] = new NumericToken(width * scaling);
+                    widths[pair.Key - firstCharacter] = new NumericToken((decimal)width * scaling);
                 }
 
                 return new FontDictionaryMetrics

@@ -73,7 +73,7 @@
                 }
 
                 int? firstChar = null;
-                decimal[] widthsOverride = null;
+                double[] widthsOverride = null;
 
                 if (dictionary.TryGet(NameToken.FirstChar, pdfScanner, out firstCharacterToken))
                 {
@@ -83,7 +83,7 @@
                 if (dictionary.TryGet(NameToken.Widths, pdfScanner, out ArrayToken widthsArray))
                 {
                     widthsOverride = widthsArray.Data.OfType<NumericToken>()
-                        .Select(x => x.Data).ToArray();
+                        .Select(x => x.Double).ToArray();
                 }
 
                 return new TrueTypeStandard14FallbackSimpleFont(baseFont, standard14Font, thisEncoding, fileSystemFont,

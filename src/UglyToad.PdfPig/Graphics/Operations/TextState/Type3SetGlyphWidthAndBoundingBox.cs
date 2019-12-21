@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextState
 {
     using System.IO;
-    using Geometry;
 
     /// <inheritdoc />
     /// <summary>
@@ -29,10 +28,25 @@
         public decimal VerticalDisplacement { get; }
 
         /// <summary>
-        /// The glyph bounding box.
+        /// The lower left x coordinate of the glyph bounding box.
         /// </summary>
-        public PdfRectangle BoundingBox { get; }
+        public decimal LowerLeftX { get; }
 
+        /// <summary>
+        /// The lower left y coordinate of the glyph bounding box.
+        /// </summary>
+        public decimal LowerLeftY { get; }
+
+        /// <summary>
+        /// The upper right x coordinate of the glyph bounding box.
+        /// </summary>
+        public decimal UpperRightX { get; }
+
+        /// <summary>
+        /// The upper right y coordinate of the glyph bounding box.
+        /// </summary>
+        public decimal UpperRightY { get; }
+        
         /// <summary>
         /// Create a new <see cref="Type3SetGlyphWidthAndBoundingBox"/>.
         /// </summary>
@@ -50,7 +64,10 @@
         {
             HorizontalDisplacement = horizontalDisplacement;
             VerticalDisplacement = verticalDisplacement;
-            BoundingBox = new PdfRectangle(new PdfPoint(lowerLeftX, lowerLeftY), new PdfPoint(upperRightX, upperRightY));
+            LowerLeftX = lowerLeftX;
+            LowerLeftY = lowerLeftY;
+            UpperRightX = upperRightX;
+            UpperRightY = upperRightY;
         }
 
         /// <inheritdoc />
@@ -65,19 +82,19 @@
             stream.WriteWhiteSpace();
             stream.WriteDecimal(VerticalDisplacement);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(BoundingBox.Left);
+            stream.WriteDecimal(LowerLeftX);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(BoundingBox.Bottom);
+            stream.WriteDecimal(LowerLeftY);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(BoundingBox.Right);
+            stream.WriteDecimal(UpperRightX);
             stream.WriteWhiteSpace();
-            stream.WriteNumberText(BoundingBox.Top, Symbol);
+            stream.WriteNumberText(UpperRightY, Symbol);
         }
 
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"{HorizontalDisplacement} {VerticalDisplacement} {BoundingBox.Left} {BoundingBox.Bottom} {BoundingBox.Right} {BoundingBox.Top} {Symbol}";
+            return $"{HorizontalDisplacement} {VerticalDisplacement} {LowerLeftX} {LowerLeftY} {UpperRightX} {UpperRightY} {Symbol}";
         }
     }
 }

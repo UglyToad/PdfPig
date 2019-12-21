@@ -11,13 +11,13 @@
         private readonly Func<string, PdfPath> characterByNameFactory;
         public IReadOnlyDictionary<int, Type1CharStrings.CommandSequence> Subroutines { get; }
 
-        public decimal WidthX { get; set; }
+        public double WidthX { get; set; }
 
-        public decimal WidthY { get; set; }
+        public double WidthY { get; set; }
 
-        public decimal LeftSideBearingX { get; set; }
+        public double LeftSideBearingX { get; set; }
 
-        public decimal LeftSideBearingY { get; set; }
+        public double LeftSideBearingY { get; set; }
 
         public bool IsFlexing { get; set; }
 

@@ -57,12 +57,12 @@
         /// <summary>
         /// Gets the width of the page in points.
         /// </summary>
-        public decimal Width { get; }
+        public double Width { get; }
 
         /// <summary>
         /// Gets the height of the page in points.
         /// </summary>
-        public decimal Height { get; }
+        public double Height { get; }
 
         /// <summary>
         /// The size of the page according to the standard page sizes or <see cref="PageSize.Custom"/> if no matching standard size found.
@@ -185,7 +185,7 @@
             /// Gets the calculated letter size in points.
             /// This is considered experimental because the calculated value is incorrect for some documents at present.
             /// </summary>
-            public decimal GetPointSize(Letter letter)
+            public double GetPointSize(Letter letter)
             {
                 return letter.PointSize;
             }

@@ -202,8 +202,8 @@
             {
                 var match = regex.Match(lines[i]);
 
-                var width = decimal.Parse(match.Groups["width"].Value, CultureInfo.InvariantCulture);
-                var height = decimal.Parse(match.Groups["height"].Value, CultureInfo.InvariantCulture);
+                var width = double.Parse(match.Groups["width"].Value, CultureInfo.InvariantCulture);
+                var height = double.Parse(match.Groups["height"].Value, CultureInfo.InvariantCulture);
                 var points = int.Parse(match.Groups["points"].Value, CultureInfo.InvariantCulture);
 
                 var glyph = font.TableRegister.GlyphTable.Glyphs[i];

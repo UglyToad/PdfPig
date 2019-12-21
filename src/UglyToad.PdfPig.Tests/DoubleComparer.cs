@@ -3,21 +3,21 @@ using System.Collections.Generic;
 
 namespace UglyToad.PdfPig.Tests
 {
-    internal class DecimalComparer : IEqualityComparer<decimal>
+    internal class DoubleComparer : IEqualityComparer<double>
     {
-        private readonly decimal precision;
+        private readonly double precision;
 
-        public DecimalComparer(decimal precision)
+        public DoubleComparer(double precision)
         {
             this.precision = precision;
         }
 
-        public bool Equals(decimal x, decimal y)
+        public bool Equals(double x, double y)
         {
             return Math.Abs(x - y) < precision;
         }
 
-        public int GetHashCode(decimal obj)
+        public int GetHashCode(double obj)
         {
             return obj.GetHashCode();
         }

@@ -18,10 +18,15 @@
         public string Operator => Symbol;
 
         /// <summary>
-        /// The point to begin the new subpath at.
+        /// The x coordinate for the subpath to begin at.
         /// </summary>
-        public PdfPoint Point { get; }
+        public decimal X { get; }
 
+        /// <summary>
+        /// The y coordinate for the subpath to begin at.
+        /// </summary>
+        public decimal Y { get; }
+        
         /// <summary>
         /// Create a new <see cref="BeginNewSubpath"/>.
         /// </summary>
@@ -29,14 +34,16 @@
         /// <param name="y">The y coordinate.</param>
         public BeginNewSubpath(decimal x, decimal y)
         {
-            Point = new PdfPoint(x, y);
+            X = x;
+            Y = y;
         }
 
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
+            var point = new PdfPoint(X, Y);
             operationContext.BeginSubpath();
-            var pointTransform = operationContext.CurrentTransformationMatrix.Transform(Point);
+            var pointTransform = operationContext.CurrentTransformationMatrix.Transform(point);
             operationContext.CurrentPosition = pointTransform;
             operationContext.CurrentPath.MoveTo(pointTransform.X, pointTransform.Y);
         }
@@ -44,9 +51,9 @@
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            stream.WriteDecimal(Point.X);
+            stream.WriteDecimal(X);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(Point.Y);
+            stream.WriteDecimal(Y);
             stream.WriteWhiteSpace();
             stream.WriteText(Symbol);
             stream.WriteNewLine();
@@ -55,7 +62,7 @@
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"{Point.X} {Point.Y} {Symbol}";
+            return $"{X} {Y} {Symbol}";
         }
     }
 }

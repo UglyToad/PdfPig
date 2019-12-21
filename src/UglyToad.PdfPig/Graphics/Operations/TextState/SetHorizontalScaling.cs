@@ -32,7 +32,7 @@
         {
             var currentState = operationContext.GetCurrentState();
 
-            currentState.FontState.HorizontalScaling = Scale;
+            currentState.FontState.HorizontalScaling = (double)Scale;
         }
 
         /// <inheritdoc />

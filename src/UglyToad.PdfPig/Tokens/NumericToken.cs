@@ -34,6 +34,11 @@
         public long Long { get; }
 
         /// <summary>
+        /// The value of this number as a <see langword="double"/>.
+        /// </summary>
+        public double Double => (double) Data;
+
+        /// <summary>
         /// Create a <see cref="NumericToken"/>.
         /// </summary>
         /// <param name="value">The number to represent.</param>

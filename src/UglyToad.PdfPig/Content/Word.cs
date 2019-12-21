@@ -55,10 +55,10 @@
 
             var builder = new StringBuilder();
 
-            var minX = decimal.MaxValue;
-            var minY = decimal.MaxValue;
-            var maxX = decimal.MinValue;
-            var maxY = decimal.MinValue;
+            var minX = double.MaxValue;
+            var minY = double.MaxValue;
+            var maxX = double.MinValue;
+            var maxY = double.MinValue;
 
             for (var i = 0; i < letters.Count; i++)
             {

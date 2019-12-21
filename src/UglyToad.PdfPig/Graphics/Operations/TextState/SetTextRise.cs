@@ -35,7 +35,7 @@
         {
             var currentState = operationContext.GetCurrentState();
 
-            currentState.FontState.Rise = Rise;
+            currentState.FontState.Rise = (double)Rise;
         }
 
         /// <inheritdoc />

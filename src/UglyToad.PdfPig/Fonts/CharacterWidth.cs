@@ -6,11 +6,11 @@
     /// </summary>
     internal class CharacterWidth
     {
-        public decimal X { get; }
+        public double X { get; }
 
-        public decimal Y { get; }
+        public double Y { get; }
 
-        public CharacterWidth(decimal x, decimal y)
+        public CharacterWidth(double x, double y)
         {
             X = x;
             Y = y;

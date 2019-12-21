@@ -2,6 +2,7 @@
 {
     using System;
     using System.Diagnostics.Contracts;
+    using System.Linq;
     using Geometry;
 
     /// <summary>
@@ -19,43 +20,43 @@
         /// <summary>
         /// Create a new <see cref="TransformationMatrix"/> with the X and Y translation values set.
         /// </summary>
-        public static TransformationMatrix GetTranslationMatrix(decimal x, decimal y) => new TransformationMatrix(1, 0, 0,
+        public static TransformationMatrix GetTranslationMatrix(double x, double y) => new TransformationMatrix(1, 0, 0,
             0, 1, 0,
             x, y, 1);
 
-        private readonly decimal row1;
-        private readonly decimal row2;
-        private readonly decimal row3;
+        private readonly double row1;
+        private readonly double row2;
+        private readonly double row3;
 
         /// <summary>
         /// The value at (0, 0) - The scale for the X dimension.
         /// </summary>
-        public readonly decimal A;
+        public readonly double A;
         /// <summary>
         /// The value at (0, 1).
         /// </summary>
-        public readonly decimal B;
+        public readonly double B;
         /// <summary>
         /// The value at (1, 0).
         /// </summary>
-        public readonly decimal C;
+        public readonly double C;
         /// <summary>
         /// The value at (1, 1) - The scale for the Y dimension.
         /// </summary>
-        public readonly decimal D;
+        public readonly double D;
         /// <summary>
         /// The value at (2, 0) - translation in X.
         /// </summary>
-        public readonly decimal E;
+        public readonly double E;
         /// <summary>
         /// The value at (2, 1) - translation in Y.
         /// </summary>
-        public readonly decimal F;
+        public readonly double F;
         
         /// <summary>
         /// Get the value at the specific row and column.
         /// </summary>
-        public decimal this[int row, int col]
+        public double this[int row, int col]
         {
             get
             {
@@ -142,14 +143,14 @@
         /// Create a new <see cref="TransformationMatrix"/>.
         /// </summary>
         /// <param name="value">The 9 values of the matrix.</param>
-        public TransformationMatrix(decimal[] value) : this(value[0], value[1], value[2], value[3], value[4], value[5], value[6], value[7], value[8])
+        public TransformationMatrix(double[] value) : this(value[0], value[1], value[2], value[3], value[4], value[5], value[6], value[7], value[8])
         {
         }
 
         /// <summary>
         /// Create a new <see cref="TransformationMatrix"/>.
         /// </summary>
-        public TransformationMatrix(decimal a, decimal b, decimal r1, decimal c, decimal d, decimal r2, decimal e, decimal f, decimal r3)
+        public TransformationMatrix(double a, double b, double r1, double c, double d, double r2, double e, double f, double r3)
         {
             A = a;
             B = b;
@@ -182,7 +183,7 @@
         /// <param name="x">The X coordinate.</param>
         /// <returns>The transformed X coordinate.</returns>
         [Pure]
-        internal decimal TransformX(decimal x)
+        internal double TransformX(double x)
         {
             var xt = A * x + C * 0 + E;
 
@@ -220,7 +221,7 @@
         }
 
         [Pure]
-        internal TransformationMatrix Translate(decimal x, decimal y)
+        internal TransformationMatrix Translate(double x, double y)
         {
             var a = A;
             var b = B;
@@ -242,13 +243,13 @@
         /// <summary>
         /// Create a new <see cref="TransformationMatrix"/> from the 6 values provided in the default PDF order.
         /// </summary>
-        public static TransformationMatrix FromValues(decimal a, decimal b, decimal c, decimal d, decimal e, decimal f)
+        public static TransformationMatrix FromValues(double a, double b, double c, double d, double e, double f)
             => new TransformationMatrix(a, b, 0, c, d, 0, e, f, 1);
 
         /// <summary>
         /// Create a new <see cref="TransformationMatrix"/> from the 4 values provided in the default PDF order.
         /// </summary>
-        public static TransformationMatrix FromValues(decimal a, decimal b, decimal c, decimal d)
+        public static TransformationMatrix FromValues(double a, double b, double c, double d)
             => new TransformationMatrix(a, b, 0, c, d, 0, 0, 0, 1);
 
         /// <summary>
@@ -257,6 +258,14 @@
         /// <param name="values">Either all 9 values of the matrix, 6 values in the default PDF order or the 4 values of the top left square.</param>
         /// <returns></returns>
         public static TransformationMatrix FromArray(decimal[] values)
+            => FromArray(values.Select(x => (double) x).ToArray());
+
+        /// <summary>
+        /// Create a new <see cref="TransformationMatrix"/> from the values.
+        /// </summary>
+        /// <param name="values">Either all 9 values of the matrix, 6 values in the default PDF order or the 4 values of the top left square.</param>
+        /// <returns></returns>
+        public static TransformationMatrix FromArray(double[] values)
         {
             if (values.Length == 9)
             {
@@ -311,7 +320,7 @@
         /// <param name="scalar">The value to multiply.</param>
         /// <returns>A new matrix which is multiplied by the scalar value.</returns>
         [Pure]
-        public TransformationMatrix Multiply(decimal scalar)
+        public TransformationMatrix Multiply(double scalar)
         {
             return new TransformationMatrix(A * scalar, B * scalar, row1 * scalar,
                 C * scalar, D * scalar, row2 * scalar,
@@ -321,8 +330,8 @@
         /// <summary>
         /// Get the X scaling component of the current matrix.
         /// </summary>
-        /// <returns></returns>
-        internal decimal GetScalingFactorX()
+        /// <returns>The scaling factor for the x dimension in this matrix.</returns>
+        internal double GetScalingFactorX()
         {
             var xScale = A;
 
@@ -343,9 +352,9 @@
              * sqrt(x2) =
              * abs(x)
              */
-            if (!(B == 0m && C == 0m))
+            if (!(B == 0 && C == 0))
             {
-                xScale = (decimal)Math.Sqrt((double)(A * A + B * B));
+                xScale = Math.Sqrt(A * A + B * B);
             }
 
             return xScale;

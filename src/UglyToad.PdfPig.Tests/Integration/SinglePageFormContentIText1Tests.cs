@@ -63,7 +63,7 @@
                 {
                     var stripped = x.Trim();
                     var parts = stripped.Split('|');
-                    return (index: int.Parse(parts[0]), letter: parts[1], x: decimal.Parse(parts[2]), y: decimal.Parse(parts[3]));
+                    return (index: int.Parse(parts[0]), letter: parts[1], x: double.Parse(parts[2]), y: double.Parse(parts[3]));
                 }).ToArray();
 
             using (var document = PdfDocument.Open(GetFilename()))
@@ -75,8 +75,8 @@
                     var letter = page.Letters[expected.index];
 
                     Assert.Equal(expected.letter, letter.Value);
-                    Assert.Equal(expected.x, decimal.Round(letter.Location.X, 2));
-                    Assert.Equal(expected.y, decimal.Round(letter.Location.Y, 2));
+                    Assert.Equal(expected.x, Math.Round(letter.Location.X, 2));
+                    Assert.Equal(expected.y, Math.Round(letter.Location.Y, 2));
                 }
             }
         }

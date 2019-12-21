@@ -35,7 +35,7 @@
         {
             var currentState = operationContext.GetCurrentState();
 
-            currentState.FontState.Leading = Leading;
+            currentState.FontState.Leading = (double)Leading;
         }
 
         /// <inheritdoc />

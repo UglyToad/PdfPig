@@ -38,48 +38,48 @@
         /// <summary>
         /// Width of the rectangle.
         /// </summary>
-        public decimal Width => Right - Left;
+        public double Width => Right - Left;
 
         /// <summary>
         /// Height of the rectangle.
         /// </summary>
-        public decimal Height => Top - Bottom;
+        public double Height => Top - Bottom;
 
         /// <summary>
         /// Area of the rectangle.
         /// </summary>
-        public decimal Area => Width * Height;
+        public double Area => Width * Height;
 
         /// <summary>
         /// Left.
         /// </summary>
-        public decimal Left => TopLeft.X;
+        public double Left => TopLeft.X;
 
         /// <summary>
         /// Top.
         /// </summary>
-        public decimal Top => TopLeft.Y;
+        public double Top => TopLeft.Y;
 
         /// <summary>
         /// Right.
         /// </summary>
-        public decimal Right => BottomRight.X;
+        public double Right => BottomRight.X;
 
         /// <summary>
         /// Bottom.
         /// </summary>
-        public decimal Bottom => BottomRight.Y;
+        public double Bottom => BottomRight.Y;
 
         internal PdfRectangle(PdfPoint point1, PdfPoint point2) : this(point1.X, point1.Y, point2.X, point2.Y) { }
-        internal PdfRectangle(short x1, short y1, short x2, short y2) : this((decimal)x1, y1, x2, y2) { }
+        internal PdfRectangle(short x1, short y1, short x2, short y2) : this((double)x1, y1, x2, y2) { }
 
         /// <summary>
         /// Create a new <see cref="PdfRectangle"/>.
         /// </summary>
-        public PdfRectangle(decimal x1, decimal y1, decimal x2, decimal y2)
+        public PdfRectangle(double x1, double y1, double x2, double y2)
         {
-            decimal bottom;
-            decimal top;
+            double bottom;
+            double top;
 
             if (y1 <= y2)
             {
@@ -92,8 +92,8 @@
                 top = y1;
             }
 
-            decimal left;
-            decimal right;
+            double left;
+            double right;
             if (x1 <= x2)
             {
                 left = x1;
@@ -132,7 +132,7 @@
         /// <param name="dx">The distance to move the rectangle in the x direction relative to its current location.</param>
         /// <param name="dy">The distance to move the rectangle in the y direction relative to its current location.</param>
         /// <returns>A new rectangle shifted on the y axis by the given delta value.</returns>
-        public PdfRectangle Translate(decimal dx, decimal dy)
+        public PdfRectangle Translate(double dx, double dy)
         {
             return new PdfRectangle(BottomLeft.Translate(dx, dy), TopRight.Translate(dx, dy));
         }

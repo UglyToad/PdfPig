@@ -213,8 +213,8 @@
                 return new PdfRectangle();
             }
 
-            return new PdfRectangle(operands[0].Decimal, operands[1].Decimal,
-                operands[2].Decimal, operands[3].Decimal);
+            return new PdfRectangle((double)operands[0].Decimal, (double)operands[1].Decimal,
+                (double)operands[2].Decimal, (double)operands[3].Decimal);
         }
 
         protected static decimal[] ToArray(List<Operand> operands)

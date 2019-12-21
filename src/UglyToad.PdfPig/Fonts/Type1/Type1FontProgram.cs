@@ -80,15 +80,15 @@
         {
             if (FontMatrix == null || FontMatrix.Data.Count != 6)
             {
-                return TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);
+                return TransformationMatrix.FromValues(0.001, 0, 0, 0.001, 0, 0);
             }
 
-            var a = ((NumericToken) FontMatrix.Data[0]).Data;
-            var b = ((NumericToken) FontMatrix.Data[1]).Data;
-            var c = ((NumericToken) FontMatrix.Data[2]).Data;
-            var d = ((NumericToken) FontMatrix.Data[3]).Data;
-            var e = ((NumericToken) FontMatrix.Data[4]).Data;
-            var f = ((NumericToken) FontMatrix.Data[5]).Data;
+            var a = ((NumericToken) FontMatrix.Data[0]).Double;
+            var b = ((NumericToken) FontMatrix.Data[1]).Double;
+            var c = ((NumericToken) FontMatrix.Data[2]).Double;
+            var d = ((NumericToken) FontMatrix.Data[3]).Double;
+            var e = ((NumericToken) FontMatrix.Data[4]).Double;
+            var f = ((NumericToken) FontMatrix.Data[5]).Double;
 
             return TransformationMatrix.FromValues(a, b, c, d, e, f);
         }

@@ -17,11 +17,11 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <summary>
         /// Functions used to define left, middle and right edges.
         /// </summary>
-        private static readonly Tuple<EdgeType, Func<PdfRectangle, decimal>>[] edgesFuncs = new Tuple<EdgeType, Func<PdfRectangle, decimal>>[]
+        private static readonly Tuple<EdgeType, Func<PdfRectangle, double>>[] edgesFuncs = new Tuple<EdgeType, Func<PdfRectangle, double>>[]
         {
-            Tuple.Create<EdgeType, Func<PdfRectangle, decimal>>(EdgeType.Left,   x => Math.Round(x.Left, 0)),                // use BoundingBox's left coordinate
-            Tuple.Create<EdgeType, Func<PdfRectangle, decimal>>(EdgeType.Mid, x => Math.Round(x.Left + x.Width / 2, 0)),     // use BoundingBox's mid coordinate
-            Tuple.Create<EdgeType, Func<PdfRectangle, decimal>>(EdgeType.Right,  x => Math.Round(x.Right, 0))                // use BoundingBox's right coordinate
+            Tuple.Create<EdgeType, Func<PdfRectangle, double>>(EdgeType.Left,   x => Math.Round(x.Left, 0)),                // use BoundingBox's left coordinate
+            Tuple.Create<EdgeType, Func<PdfRectangle, double>>(EdgeType.Mid, x => Math.Round(x.Left + x.Width / 2, 0)),     // use BoundingBox's mid coordinate
+            Tuple.Create<EdgeType, Func<PdfRectangle, double>>(EdgeType.Right,  x => Math.Round(x.Right, 0))                // use BoundingBox's right coordinate
         };
 
         /// <summary>
@@ -53,11 +53,11 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             return dictionary.ToDictionary(x => x.Key, x => x.Value);
         }
 
-        private static List<PdfLine> GetVerticalEdges(IEnumerable<Word> pageWords, Func<PdfRectangle, decimal> func, int minimumElements)
+        private static List<PdfLine> GetVerticalEdges(IEnumerable<Word> pageWords, Func<PdfRectangle, double> func, int minimumElements)
         {
-            Dictionary<decimal, List<Word>> edges = pageWords.GroupBy(x => func(x.BoundingBox))
+            Dictionary<double, List<Word>> edges = pageWords.GroupBy(x => func(x.BoundingBox))
                 .Where(x => x.Count() >= minimumElements).ToDictionary(gdc => gdc.Key, gdc => gdc.ToList());
-            Dictionary<decimal, List<List<Word>>> cleanEdges = new Dictionary<decimal, List<List<Word>>>();
+            Dictionary<double, List<List<Word>>> cleanEdges = new Dictionary<double, List<List<Word>>>();
 
             foreach (var edge in edges)
             {

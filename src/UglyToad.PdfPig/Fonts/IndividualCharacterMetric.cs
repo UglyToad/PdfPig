@@ -7,14 +7,14 @@
     {
         public int CharacterCode { get; set; }
 
-        public decimal WidthX { get; set; }
-        public decimal WidthY { get; set; }
+        public double WidthX { get; set; }
+        public double WidthY { get; set; }
 
-        public decimal WidthXDirection0 { get; set; }
-        public decimal WidthYDirection0 { get; set; }
+        public double WidthXDirection0 { get; set; }
+        public double WidthYDirection0 { get; set; }
 
-        public decimal WidthXDirection1 { get; set; }
-        public decimal WidthYDirection1 { get; set; }
+        public double WidthXDirection1 { get; set; }
+        public double WidthYDirection1 { get; set; }
 
         public string Name { get; set; }
 

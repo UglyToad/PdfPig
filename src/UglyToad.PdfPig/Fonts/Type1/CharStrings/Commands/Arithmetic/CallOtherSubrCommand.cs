@@ -32,7 +32,7 @@
             
             // What it should do
             var numberOfArguments = (int)context.Stack.PopTop();
-            var otherSubroutineArguments = new List<decimal>(numberOfArguments);
+            var otherSubroutineArguments = new List<double>(numberOfArguments);
             for (int j = 0; j < numberOfArguments; j++)
             {
                 otherSubroutineArguments.Add(context.Stack.PopTop());

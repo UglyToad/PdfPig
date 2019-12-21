@@ -183,7 +183,7 @@ namespace UglyToad.PdfPig.Tests.Integration
                     Assert.Equal(datum.Y, transformed, 2);
 
                     // Until we get width from glyphs we're a bit out.
-                    Assert.True(Math.Abs(datum.Width - letter.Width) < 0.03m);
+                    Assert.True(Math.Abs(datum.Width - letter.Width) < 0.03);
 
                     index++;
                 }

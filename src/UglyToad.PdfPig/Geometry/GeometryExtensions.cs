@@ -265,12 +265,12 @@ namespace UglyToad.PdfPig.Geometry
         /// </summary>
         /// <param name="bezierCurve">The original bezier curve.</param>
         /// <param name="tau">The t value were to split the curve, usually between 0 and 1, but not necessary.</param>
-        private static (BezierCurve, BezierCurve) Split(this BezierCurve bezierCurve, decimal tau)
+        private static (BezierCurve, BezierCurve) Split(this BezierCurve bezierCurve, double tau)
         {
             // De Casteljau Algorithm
             PdfPoint[][] points = new PdfPoint[4][];
 
-            points[0] = new PdfPoint[]
+            points[0] = new []
             {
                 bezierCurve.StartPoint,
                 bezierCurve.FirstControlPoint,
@@ -302,21 +302,21 @@ namespace UglyToad.PdfPig.Geometry
         public static PdfPoint[] Intersect(this BezierCurve bezierCurve, PdfLine line)
         {
             var ts = FindIntersectionT(bezierCurve, line);
-            if (ts.Count() == 0) return null;
+            if (!ts.Any()) return null;
 
             List<PdfPoint> points = new List<PdfPoint>();
             foreach (var t in ts)
             {
                 PdfPoint point = new PdfPoint(
-                    BezierCurve.ValueWithT((double)bezierCurve.StartPoint.X,
-                                           (double)bezierCurve.FirstControlPoint.X,
-                                           (double)bezierCurve.SecondControlPoint.X,
-                                           (double)bezierCurve.EndPoint.X,
+                    BezierCurve.ValueWithT(bezierCurve.StartPoint.X,
+                                           bezierCurve.FirstControlPoint.X,
+                                           bezierCurve.SecondControlPoint.X,
+                                           bezierCurve.EndPoint.X,
                                            t),
-                    BezierCurve.ValueWithT((double)bezierCurve.StartPoint.Y,
-                                           (double)bezierCurve.FirstControlPoint.Y,
-                                           (double)bezierCurve.SecondControlPoint.Y,
-                                           (double)bezierCurve.EndPoint.Y,
+                    BezierCurve.ValueWithT(bezierCurve.StartPoint.Y,
+                                           bezierCurve.FirstControlPoint.Y,
+                                           bezierCurve.SecondControlPoint.Y,
+                                           bezierCurve.EndPoint.Y,
                                            t));
                 points.Add(point);
             }

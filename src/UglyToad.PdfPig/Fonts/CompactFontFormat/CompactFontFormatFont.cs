@@ -37,7 +37,7 @@
             var result = CharStrings.Match(x => throw new NotImplementedException("Type 1 CharStrings in a CFF font are currently unsupported."),
                 x =>
                 {
-                    var glyph = x.Generate(characterName, defaultWidthX, nominalWidthX);
+                    var glyph = x.Generate(characterName, (double)defaultWidthX, (double)nominalWidthX);
                     var rectangle = glyph.Path.GetBoundingRectangle();
                     if (rectangle.HasValue)
                     {

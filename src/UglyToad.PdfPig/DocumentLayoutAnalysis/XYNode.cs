@@ -44,10 +44,10 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             if (children != null && children.Count() != 0)
             {
                 Children = children.ToArray();
-                decimal left = children.Min(b => b.BoundingBox.Left);
-                decimal right = children.Max(b => b.BoundingBox.Right);
-                decimal bottom = children.Min(b => b.BoundingBox.Bottom);
-                decimal top = children.Max(b => b.BoundingBox.Top);
+                double left = children.Min(b => b.BoundingBox.Left);
+                double right = children.Max(b => b.BoundingBox.Right);
+                double bottom = children.Min(b => b.BoundingBox.Bottom);
+                double top = children.Max(b => b.BoundingBox.Top);
                 BoundingBox = new PdfRectangle(left, bottom, right, top);
             }
             else

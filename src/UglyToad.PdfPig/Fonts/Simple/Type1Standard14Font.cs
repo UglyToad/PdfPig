@@ -18,7 +18,7 @@
         public NameToken Name { get; }
         public bool IsVertical { get; }
 
-        private readonly TransformationMatrix fontMatrix = TransformationMatrix.FromValues(0.001m, 0, 0, 0.001m, 0, 0);
+        private readonly TransformationMatrix fontMatrix = TransformationMatrix.FromValues(0.001, 0, 0, 0.001, 0, 0);
 
         public Type1Standard14Font(FontMetrics standardFontMetrics, Encoding overrideEncoding = null)
         {

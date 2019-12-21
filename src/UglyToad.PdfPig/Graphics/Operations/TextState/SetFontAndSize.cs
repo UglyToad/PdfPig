@@ -49,7 +49,7 @@
         {
             var currentState = operationContext.GetCurrentState();
 
-            currentState.FontState.FontSize = Size;
+            currentState.FontState.FontSize = (double)Size;
             currentState.FontState.FontName = Font;
         }
 
