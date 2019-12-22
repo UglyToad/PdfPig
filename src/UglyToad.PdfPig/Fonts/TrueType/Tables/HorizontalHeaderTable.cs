@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Tables
 {
-    using System;
-
     /// <summary>
     /// The 'hhea' table contains information needed to layout fonts whose characters are written horizontally, that is, either left to right or right to left. 
     /// This table contains information that is general to the font as a whole.
@@ -25,12 +23,12 @@
         /// <summary>
         /// Distance from baseline to highest ascender.
         /// </summary>
-        public short Ascender { get; }
+        public short Ascent { get; }
 
         /// <summary>
         /// Distance from baseline to lower descender.
         /// </summary>
-        public short Descender { get; }
+        public short Descent { get; }
 
         /// <summary>
         /// The typographic line gap.
@@ -40,7 +38,7 @@
         /// <summary>
         /// The maximum advance width value as given by the Horizontal Metrics table.
         /// </summary>
-        public int AdvanceWidthMaximum { get; }
+        public ushort AdvanceWidthMaximum { get; }
 
         /// <summary>
         /// The minimum left side bearing as given by the Horizontal Metrics table.
@@ -80,15 +78,20 @@
         /// <summary>
         /// Number of horizontal metrics in the Horizontal Metrics table.
         /// </summary>
-        public int NumberOfHeaderMetrics { get; }
+        public ushort NumberOfHeaderMetrics { get; }
 
-        public HorizontalHeaderTable(TrueTypeHeaderTable directoryTable, int majorVersion, int minorVersion, short ascender, short descender, short lineGap, int advanceWidthMaximum, short minimumLeftSideBearing, short minimumRightSideBearing, short xMaxExtent, short caretSlopeRise, short caretSlopeRun, short caretOffset, short metricDataFormat, int numberOfHeaderMetrics)
+        public HorizontalHeaderTable(TrueTypeHeaderTable directoryTable, int majorVersion, int minorVersion, short ascent, short descent, 
+            short lineGap, ushort advanceWidthMaximum, 
+            short minimumLeftSideBearing, short minimumRightSideBearing,
+            short xMaxExtent, short caretSlopeRise, 
+            short caretSlopeRun, short caretOffset, 
+            short metricDataFormat, ushort numberOfHeaderMetrics)
         {
             DirectoryTable = directoryTable;
             MajorVersion = majorVersion;
             MinorVersion = minorVersion;
-            Ascender = ascender;
-            Descender = descender;
+            Ascent = ascent;
+            Descent = descent;
             LineGap = lineGap;
             AdvanceWidthMaximum = advanceWidthMaximum;
             MinimumLeftSideBearing = minimumLeftSideBearing;

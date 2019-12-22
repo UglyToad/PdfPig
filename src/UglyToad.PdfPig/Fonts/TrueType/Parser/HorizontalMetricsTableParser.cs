@@ -12,33 +12,36 @@
             data.Seek(header.Offset);
             var bytesRead = 0;
 
-            // The number of entries in the left side bearing field per entry is number of glyphs - number of metrics
-            var additionalLeftSideBearingLength = glyphCount - metricCount;
 
-            var advancedWidths = new int[metricCount];
+            var horizontalMetrics = new HorizontalMetricsTable.HorizontalMetric[metricCount];
 
-            // For bearings over the metric count, the width is the same as the last width in advanced widths.
-            var leftSideBearings = new short[glyphCount];
 
             for (var i = 0; i < metricCount; i++)
             {
-                advancedWidths[i] = data.ReadUnsignedShort();
-                leftSideBearings[i] = data.ReadSignedShort();
+                var width = data.ReadUnsignedShort();
+                var lsb = data.ReadSignedShort();
+
+                horizontalMetrics[i] = new HorizontalMetricsTable.HorizontalMetric(width, lsb);
+
                 bytesRead += 4;
             }
+            
+            // The number of entries in the left side bearing field per entry is number of glyphs - number of metrics
+            // For bearings over the metric count, the width is the same as the last width in advanced widths.
+            var additionalLeftSideBearings = new short[glyphCount - metricCount];
 
-            for (var i = 0; i < additionalLeftSideBearingLength; i++)
+            for (var i = 0; i < additionalLeftSideBearings.Length; i++)
             {
                 if (bytesRead >= header.Length)
                 {
                     break;
                 }
 
-                leftSideBearings[metricCount + i] = data.ReadSignedShort();
+                additionalLeftSideBearings[i] = data.ReadSignedShort();
                 bytesRead += 2;
             }
 
-            return new HorizontalMetricsTable(header, advancedWidths, leftSideBearings, metricCount);
+            return new HorizontalMetricsTable(header, horizontalMetrics, additionalLeftSideBearings);
         }
     }
 }

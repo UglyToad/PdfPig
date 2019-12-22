@@ -10,14 +10,14 @@
     {
         public TrueTypeFontProgram Parse(TrueTypeDataBytes data)
         {
-            var version = (decimal)data.Read32Fixed();
+            var version = data.Read32Fixed();
             int numberOfTables = data.ReadUnsignedShort();
 
             // Read these data points to move to the correct data location.
             // ReSharper disable UnusedVariable
-            int searchRange = data.ReadUnsignedShort();
-            int entrySelector = data.ReadUnsignedShort();
-            int rangeShift = data.ReadUnsignedShort();
+            var searchRange = data.ReadUnsignedShort();
+            var entrySelector = data.ReadUnsignedShort();
+            var rangeShift = data.ReadUnsignedShort();
             // ReSharper restore UnusedVariable
 
             var tables = new Dictionary<string, TrueTypeHeaderTable>(StringComparer.OrdinalIgnoreCase);
@@ -54,7 +54,7 @@
             return new TrueTypeHeaderTable(tag, checksum, offset, length);
         }
 
-        private static TrueTypeFontProgram ParseTables(decimal version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tables, TrueTypeDataBytes data)
+        private static TrueTypeFontProgram ParseTables(float version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tables, TrueTypeDataBytes data)
         {
             var isPostScript = tables.ContainsKey(TrueTypeHeaderTable.Cff);
 

@@ -14,17 +14,17 @@
         
         public TrueTypeHeaderTable DirectoryTable { get; }
 
-        public decimal Version { get; }
+        public float Version { get; }
 
-        public decimal Revision { get; }
+        public float Revision { get; }
 
         public long CheckSumAdjustment { get; }
 
         public long MagicNumber { get; }
 
-        public int Flags { get; }
+        public ushort Flags { get; }
 
-        public int UnitsPerEm { get; }
+        public ushort UnitsPerEm { get; }
 
         public DateTime Created { get; }
 
@@ -37,7 +37,7 @@
         /// <summary>
         /// Smallest readable size in pixels.
         /// </summary>
-        public int LowestRecommendedPpem { get; }
+        public ushort LowestRecommendedPpem { get; }
 
         public FontDirection FontDirectionHint { get; }
 
@@ -51,13 +51,13 @@
         /// </summary>
         public short GlyphDataFormat { get; }
 
-        public HeaderTable(TrueTypeHeaderTable directoryTable, decimal version, decimal revision, long checkSumAdjustment, 
-            long magicNumber, int flags, int unitsPerEm, 
+        public HeaderTable(TrueTypeHeaderTable directoryTable, float version, float revision, long checkSumAdjustment, 
+            long magicNumber, ushort flags, ushort unitsPerEm, 
             DateTime created, DateTime modified, 
             short xMin, short yMin, 
             short xMax, short yMax, 
-            int macStyle, 
-            int lowestRecommendedPpem, 
+            ushort macStyle, 
+            ushort lowestRecommendedPpem, 
             short fontDirectionHint, 
             short indexToLocFormat, 
             short glyphDataFormat)
@@ -130,7 +130,7 @@
             var indexToLocFormat = data.ReadSignedShort();
             var glyphDataFormat = data.ReadSignedShort();
 
-            return new HeaderTable(table, (decimal)version, (decimal)fontRevision, checkSumAdjustment,
+            return new HeaderTable(table, version, fontRevision, checkSumAdjustment,
                 magicNumber, flags, unitsPerEm, created, modified,
                 xMin, yMin, xMax, yMax, macStyle, lowestRecPpem,
                 fontDirectionHint, indexToLocFormat, glyphDataFormat);
