@@ -7,6 +7,7 @@
 
     internal class ByteArrayInputBytes : IInputBytes
     {
+        private readonly int upperBound;
         private readonly byte[] bytes;
 
         [DebuggerStepThrough]
@@ -26,6 +27,8 @@
                 this.bytes = bytes.ToArray();
             }
 
+            upperBound = this.bytes.Length - 1;
+
             currentOffset = -1;
         }
 
@@ -34,20 +37,21 @@
         {
             this.bytes = bytes ?? throw new ArgumentNullException(nameof(bytes));
             currentOffset = -1;
+            upperBound = bytes.Length - 1;
         }
 
-        private long currentOffset;
+        private int currentOffset;
         public long CurrentOffset => currentOffset + 1;
 
         public bool MoveNext()
         {
-            if (currentOffset == bytes.Length - 1)
+            if (currentOffset == upperBound)
             {
                 return false;
             }
 
             currentOffset++;
-            CurrentByte = bytes[(int)currentOffset];
+            CurrentByte = bytes[currentOffset];
             return true;
         }
 
@@ -57,23 +61,23 @@
 
         public byte? Peek()
         {
-            if (currentOffset == bytes.Length - 1)
+            if (currentOffset == upperBound)
             {
                 return null;
             }
 
-            return bytes[(int)currentOffset + 1];
+            return bytes[currentOffset + 1];
         }
 
         public bool IsAtEnd()
         {
-            return currentOffset == bytes.Length - 1;
+            return currentOffset == upperBound;
         }
 
         public void Seek(long position)
         {
             currentOffset = (int)position - 1;
-            CurrentByte = currentOffset < 0 ? (byte)0 : bytes[(int)currentOffset];
+            CurrentByte = currentOffset < 0 ? (byte)0 : bytes[currentOffset];
         }
 
         public int Read(byte[] buffer, int? length = null)
@@ -100,8 +104,8 @@
             }
 
             var viableLength = (bytes.Length - currentOffset - 1);
-            var readLength = (int)(viableLength < bytesToRead ? viableLength : bytesToRead);
-            var startFrom = (int)currentOffset + 1;
+            var readLength = viableLength < bytesToRead ? viableLength : bytesToRead;
+            var startFrom = currentOffset + 1;
 
             Array.Copy(bytes, startFrom, buffer, 0, readLength);
             

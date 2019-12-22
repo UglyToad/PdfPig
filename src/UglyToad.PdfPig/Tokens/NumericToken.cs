@@ -1,8 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tokens
 {
-    using System;
     using System.Globalization;
 
+    /// <inheritdoc />
     /// <summary>
     /// PDF supports integer and real numbers. Integer objects represent mathematical integers within a certain interval centered at 0. 
     /// Real objects  approximate mathematical real numbers, but with limited range and precision.
@@ -16,22 +16,17 @@
         /// <summary>
         /// Whether the number represented has a non-zero decimal part.
         /// </summary>
-        public bool HasDecimalPlaces { get; }
+        public bool HasDecimalPlaces => decimal.Floor(Data) != Data;
 
         /// <summary>
         /// The value of this number as an <see langword="int"/>.
         /// </summary>
-        public int Int { get; }
-
-        /// <summary>
-        /// Whether the number overflows an integer.
-        /// </summary>
-        public bool IsBiggerThanInt { get; }
-
+        public int Int => (int) Data;
+        
         /// <summary>
         /// The value of this number as a <see langword="long"/>.
         /// </summary>
-        public long Long { get; }
+        public long Long => (long) Data;
 
         /// <summary>
         /// The value of this number as a <see langword="double"/>.
@@ -45,17 +40,6 @@
         public NumericToken(decimal value)
         {
             Data = value;
-            HasDecimalPlaces = decimal.Floor(value) != value;
-            Long = (long) value;
-
-            try
-            {
-                Int = (int) value;
-            }
-            catch (OverflowException)
-            {
-                IsBiggerThanInt = true;
-            }
         }
 
         /// <inheritdoc />

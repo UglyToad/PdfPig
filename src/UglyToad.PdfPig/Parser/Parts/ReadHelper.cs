@@ -110,10 +110,9 @@
         /// <remarks>
         /// These values are specified in table 1 (page 12) of ISO 32000-1:2008.
         /// </remarks>
-        public static bool IsWhitespace(int c)
+        public static bool IsWhitespace(byte c)
         {
-            return c == 0 || c == 9 || c == 12 || c == AsciiLineFeed
-                   || c == AsciiCarriageReturn || c == ' ';
+            return c == 0 || c == 32 || c == AsciiLineFeed || c == AsciiCarriageReturn || c == 9 || c == 12;
         }
 
         public static bool IsEndOfLine(char c) => IsEndOfLine((byte) c);
