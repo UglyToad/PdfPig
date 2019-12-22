@@ -11,13 +11,13 @@
     {
         private static readonly HexTokenizer HexTokenizer = new HexTokenizer();
         private static readonly StringTokenizer StringTokenizer = new StringTokenizer();
-        private static readonly NumericTokenizer NumericTokenizer = new NumericTokenizer();
         private static readonly NameTokenizer NameTokenizer = new NameTokenizer();
         private static readonly PlainTokenizer PlainTokenizer = new PlainTokenizer();
         private static readonly ArrayTokenizer ArrayTokenizer = new ArrayTokenizer();
         private static readonly DictionaryTokenizer DictionaryTokenizer = new DictionaryTokenizer();
         private static readonly CommentTokenizer CommentTokenizer = new CommentTokenizer();
 
+        private readonly NumericTokenizer numericTokenizer = new NumericTokenizer();
         private readonly ScannerScope scope;
         private readonly IInputBytes inputBytes;
         private readonly List<(byte firstByte, ITokenizer tokenizer)> customTokenizers = new List<(byte, ITokenizer)>();
@@ -83,7 +83,7 @@
 
                 if (tokenizer == null)
                 {
-                    if (IsEmpty(currentByte) || ReadHelper.IsWhitespace(currentByte))
+                    if (ReadHelper.IsWhitespace(currentByte))
                     {
                         isSkippingSymbol = false;
                         continue;
@@ -143,7 +143,7 @@
                         case '-':
                         case '+':
                         case '.':
-                            tokenizer = NumericTokenizer;
+                            tokenizer = numericTokenizer;
                             break;
                         default:
                             tokenizer = PlainTokenizer;
@@ -283,11 +283,6 @@
             }
 
             throw new PdfDocumentFormatException($"No end of inline image data (EI) was found for image data at position {startsAt}.");
-        }
-
-        private static bool IsEmpty(byte b)
-        {
-            return b == ' ' || b == '\r' || b == '\n' || b == 0;
         }
     }
 }

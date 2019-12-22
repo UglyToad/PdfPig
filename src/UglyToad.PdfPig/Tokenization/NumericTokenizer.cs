@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tokenization
 {
     using System;
+    using System.Collections.Generic;
     using System.Globalization;
     using System.Text;
     using IO;
@@ -8,15 +9,20 @@
 
     internal class NumericTokenizer : ITokenizer
     {
-        public bool ReadsNextByte { get; } = true;
+        private const byte Zero = 48;
+        private const byte Nine = 57;
 
+        private readonly Dictionary<string, NumericToken> cachedTokens = new Dictionary<string, NumericToken>();
+
+        public bool ReadsNextByte { get; } = true;
+        
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
         {
             token = null;
 
             StringBuilder characters;
 
-            if ((currentByte >= '0' && currentByte <= '9') || currentByte == '-' || currentByte == '+' || currentByte == '.')
+            if ((currentByte >= Zero && currentByte <= Nine) || currentByte == '-' || currentByte == '+' || currentByte == '.')
             {
                 characters = new StringBuilder();
                 characters.Append((char)currentByte);
@@ -29,16 +35,15 @@
             while (inputBytes.MoveNext())
             {
                 var b = inputBytes.CurrentByte;
-                var c = (char) b;
 
-                if (char.IsDigit(c) ||
-                    c == '-' ||
-                    c == '+' ||
-                    c == '.' ||
-                    c == 'E' ||
-                    c == 'e')
+                if ((b >= Zero && b <= Nine) ||
+                    b == '-' ||
+                    b == '+' ||
+                    b == '.' ||
+                    b == 'E' ||
+                    b == 'e')
                 {
-                    characters.Append(c);
+                    characters.Append((char)b);
                 }
                 else
                 {
@@ -56,7 +61,38 @@
                 }
                 else
                 {
-                    value = decimal.Parse(characters.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture);
+                    var str = characters.ToString();
+
+                    switch (str)
+                    {
+                        case "0":
+                            token = NumericToken.Zero;
+                            return true;
+                        case "1":
+                            token = NumericToken.One;
+                            return true;
+                        case "2":
+                            token = NumericToken.Two;
+                            return true;
+                        case "3":
+                            token = NumericToken.Three;
+                            return true;
+                        case "8":
+                            token = NumericToken.Eight;
+                            return true;
+                        default:
+                            {
+                                if (!cachedTokens.TryGetValue(str, out var result))
+                                {
+                                    value = decimal.Parse(str, NumberStyles.Any, CultureInfo.InvariantCulture);
+                                    result = new NumericToken(value);
+                                    cachedTokens[str] = result;
+                                }
+
+                                token = result;
+                                return true;
+                            }
+                    }
                 }
             }
             catch (FormatException)

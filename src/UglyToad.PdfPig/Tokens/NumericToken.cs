@@ -10,6 +10,12 @@
     /// </summary>
     public class NumericToken : IDataToken<decimal>
     {
+        internal static readonly NumericToken Zero = new NumericToken(0);
+        internal static readonly NumericToken One = new NumericToken(1);
+        internal static readonly NumericToken Two = new NumericToken(2);
+        internal static readonly NumericToken Three = new NumericToken(3);
+        internal static readonly NumericToken Eight = new NumericToken(8);
+
         /// <inheritdoc />
         public decimal Data { get; }
 
@@ -21,17 +27,17 @@
         /// <summary>
         /// The value of this number as an <see langword="int"/>.
         /// </summary>
-        public int Int => (int) Data;
-        
+        public int Int => (int)Data;
+
         /// <summary>
         /// The value of this number as a <see langword="long"/>.
         /// </summary>
-        public long Long => (long) Data;
+        public long Long => (long)Data;
 
         /// <summary>
         /// The value of this number as a <see langword="double"/>.
         /// </summary>
-        public double Double => (double) Data;
+        public double Double => (double)Data;
 
         /// <summary>
         /// Create a <see cref="NumericToken"/>.
@@ -40,6 +46,12 @@
         public NumericToken(decimal value)
         {
             Data = value;
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return Data.GetHashCode();
         }
 
         /// <inheritdoc />
