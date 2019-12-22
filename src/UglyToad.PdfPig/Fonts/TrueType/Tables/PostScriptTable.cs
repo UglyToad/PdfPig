@@ -179,7 +179,7 @@
 
                 for (var i = 0; i < namesLength; i++)
                 {
-                    var numberOfCharacters = data.ReadUnsignedByte();
+                    var numberOfCharacters = data.ReadByte();
                     nameArray[i] = data.ReadString(numberOfCharacters, Encoding.UTF8);
                 }
             }

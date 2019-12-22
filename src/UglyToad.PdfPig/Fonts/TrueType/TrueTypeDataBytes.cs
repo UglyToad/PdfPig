@@ -38,15 +38,7 @@
 
             return (ushort)((internalBuffer[0] << 8) + (internalBuffer[1] << 0));
         }
-
-        public int ReadUnsignedByte()
-        {
-            ReadBuffered(internalBuffer, 1);
-
-            // TODO: the cast from int -> byte -> int here suggest we are treating data incorrectly.
-            return internalBuffer[0];
-        }
-
+        
         private void ReadBuffered(byte[] buffer, int length)
         {
             var numberRead = 0;

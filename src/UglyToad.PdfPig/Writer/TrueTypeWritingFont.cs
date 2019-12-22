@@ -76,8 +76,8 @@
                 { NameToken.Flags, new NumericToken((int)FontDescriptorFlags.Symbolic) },
                 { NameToken.FontBbox, GetBoundingBox(bbox, scaling) },
                 { NameToken.ItalicAngle, new NumericToken(postscript.ItalicAngle) },
-                { NameToken.Ascent, new NumericToken(hhead.Ascender * scaling) },
-                { NameToken.Descent, new NumericToken(hhead.Descender * scaling) },
+                { NameToken.Ascent, new NumericToken(hhead.Ascent * scaling) },
+                { NameToken.Descent, new NumericToken(hhead.Descent * scaling) },
                 { NameToken.CapHeight, new NumericToken(90) },
                 { NameToken.StemV, new NumericToken(90) },
                 { NameToken.FontFile2, new IndirectReferenceToken(fileRef.Number) }
@@ -181,7 +181,7 @@
 
                     if (!font.TryGetBoundingAdvancedWidth(characterCode, out var width))
                     {
-                        width = font.TableRegister.HorizontalMetricsTable.AdvancedWidths[0];
+                        width = font.TableRegister.HorizontalMetricsTable.HorizontalMetrics[0].AdvanceWidth;
                     }
 
                     widths[pair.Key - firstCharacter] = new NumericToken((decimal)width * scaling);

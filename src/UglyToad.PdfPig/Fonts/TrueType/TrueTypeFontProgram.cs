@@ -10,7 +10,7 @@
 
     internal class TrueTypeFontProgram : ICidFontProgram
     {
-        public decimal Version { get; }
+        public float Version { get; }
 
         public IReadOnlyDictionary<string, TrueTypeHeaderTable> TableHeaders { get; }
 
@@ -26,7 +26,7 @@
 
         public ICMapSubTable WindowsSymbolCMap { get; }
 
-        public TrueTypeFontProgram(decimal version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tableHeaders, TableRegister tableRegister)
+        public TrueTypeFontProgram(float version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tableHeaders, TableRegister tableRegister)
         {
             Version = version;
             TableHeaders = tableHeaders;

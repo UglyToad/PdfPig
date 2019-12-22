@@ -1,4 +1,5 @@
-﻿namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
+﻿// ReSharper disable CompareOfFloatsByEqualityOperator
+namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
 {
     using System;
     using System.Globalization;
@@ -159,7 +160,7 @@
 
             Assert.Equal("Andada Regular", name);
 
-            Assert.Equal(1.001999m, font.TableRegister.HeaderTable.Revision);
+            Assert.Equal(1.001999, font.TableRegister.HeaderTable.Revision, new DoubleComparer(5));
 
             Assert.Equal(11, font.TableRegister.HeaderTable.Flags);
 
@@ -182,6 +183,8 @@
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
             var font = parser.Parse(input);
+
+            Assert.NotNull(font);
         }
 
         [Fact]
