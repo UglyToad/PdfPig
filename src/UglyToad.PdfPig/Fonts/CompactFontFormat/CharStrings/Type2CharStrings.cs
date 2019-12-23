@@ -2,9 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using Geometry;
-    using Util;
     using Util.JetBrains.Annotations;
 
     /// <summary>
@@ -70,28 +68,33 @@
             var context = new Type2BuildCharContext();
             
             var hasRunStackClearingCommand = false;
-            for (var i = 0; i < sequence.Commands.Count; i++)
+            for (var i = -1; i < sequence.Values.Count; i++)
             {
-                var command = sequence.Commands[i];
+                if (i >= 0)
+                {
+                    var value = sequence.Values[i];
+                    context.Stack.Push(value);
+                }
 
-                var isOnlyCommand = sequence.Commands.Count == 1;
+                foreach (var command in sequence.GetCommandsAt(i + 1))
+                {
+                    var x = Type2CharStringParser.GetCommand(command);
 
-                command.Match(x => context.Stack.Push(x),
-                    x =>
+                    var isOnlyCommand = sequence.Values.Count + sequence.CommandIdentifiers.Count == 1;
+
+                    if (!hasRunStackClearingCommand)
                     {
-                        if (!hasRunStackClearingCommand)
+                        /*
+                        * The first stack-clearing operator, which must be one of hstem, hstemhm, vstem, vstemhm, cntrmask, hintmask, hmoveto, vmoveto,
+                        * rmoveto, or endchar, takes an additional argument — the width (as described earlier), which may be expressed as zero or one numeric argument.
+                        */
+                        hasRunStackClearingCommand = true;
+                        switch (x.Name)
                         {
-                            /*
-                            * The first stack-clearing operator, which must be one of hstem, hstemhm, vstem, vstemhm, cntrmask, hintmask, hmoveto, vmoveto,
-                            * rmoveto, or endchar, takes an additional argument — the width (as described earlier), which may be expressed as zero or one numeric argument.
-                            */
-                            hasRunStackClearingCommand = true;
-                            switch (x.Name)
-                            {
-                                case "hstem":
-                                case "hstemhm":
-                                case "vstemhm":
-                                case "vstem":
+                            case "hstem":
+                            case "hstemhm":
+                            case "vstemhm":
+                            case "vstem":
                                 {
                                     var oddArgCount = context.Stack.Length % 2 != 0;
                                     if (oddArgCount)
@@ -101,35 +104,35 @@
 
                                     break;
                                 }
-                                case "hmoveto":
-                                case "vmoveto":
-                                    SetWidthFromArgumentsIfPresent(context, nominalWidthX, 1);
-                                    break;
-                                case "rmoveto":
-                                    SetWidthFromArgumentsIfPresent(context, nominalWidthX, 2);
-                                    break;
-                                case "cntrmask":
-                                case "hintmask":
+                            case "hmoveto":
+                            case "vmoveto":
+                                SetWidthFromArgumentsIfPresent(context, nominalWidthX, 1);
+                                break;
+                            case "rmoveto":
+                                SetWidthFromArgumentsIfPresent(context, nominalWidthX, 2);
+                                break;
+                            case "cntrmask":
+                            case "hintmask":
+                                SetWidthFromArgumentsIfPresent(context, nominalWidthX, 0);
+                                break;
+                            case "endchar":
+                                if (isOnlyCommand)
+                                {
+                                    context.Width = defaultWidthX;
+                                }
+                                else
+                                {
                                     SetWidthFromArgumentsIfPresent(context, nominalWidthX, 0);
-                                    break;
-                                case "endchar":
-                                    if (isOnlyCommand)
-                                    {
-                                        context.Width = defaultWidthX;
-                                    }
-                                    else
-                                    {
-                                        SetWidthFromArgumentsIfPresent(context, nominalWidthX, 0);
-                                    }
-                                    break;
-                                default:
-                                    hasRunStackClearingCommand = false;
-                                    break;
-                            }
+                                }
+                                break;
+                            default:
+                                hasRunStackClearingCommand = false;
+                                break;
                         }
+                    }
 
-                        x.Run(context);
-                    });
+                    x.Run(context);
+                }
             }
 
             return new Type2Glyph(context.Path, context.Width);
@@ -145,19 +148,49 @@
 
         public class CommandSequence
         {
+            public IReadOnlyList<float> Values { get; }
+            public IReadOnlyList<CommandIdentifier> CommandIdentifiers { get; }
+
             /// <summary>
             /// The ordered list of numbers and commands for a Type 2 charstring or subroutine.
             /// </summary>
-            public IReadOnlyList<Union<double, LazyType2Command>> Commands { get; }
 
-            public CommandSequence(IReadOnlyList<Union<double, LazyType2Command>> commands)
+            public CommandSequence(IReadOnlyList<float> values, IReadOnlyList<CommandIdentifier> commandIdentifiers)
             {
-                Commands = commands ?? throw new ArgumentNullException(nameof(commands));
+                Values = values;
+                CommandIdentifiers = commandIdentifiers;
+            }
+
+            public IEnumerable<CommandIdentifier> GetCommandsAt(int index)
+            {
+                foreach (var identifier in CommandIdentifiers)
+                {
+                    if (identifier.CommandIndex == index)
+                    {
+                        yield return identifier;
+                    }
+                }
             }
 
             public override string ToString()
             {
-                return string.Join(", ", Commands.Select(x => x.ToString()));
+                return string.Empty;
+            }
+
+            public struct CommandIdentifier
+            {
+                public int CommandIndex { get; }
+
+                public bool IsMultiByteCommand { get; }
+
+                public byte CommandId { get; }
+
+                public CommandIdentifier(int commandIndex, bool isMultiByteCommand, byte commandId)
+                {
+                    CommandIndex = commandIndex;
+                    IsMultiByteCommand = isMultiByteCommand;
+                    CommandId = commandId;
+                }
             }
         }
     }
