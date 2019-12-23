@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Text;
     using Geometry;
     using Util.JetBrains.Annotations;
 
@@ -76,9 +77,9 @@
                     context.Stack.Push(value);
                 }
 
-                foreach (var command in sequence.GetCommandsAt(i + 1))
+                foreach (var commandIdentifier in sequence.GetCommandsAt(i + 1))
                 {
-                    var x = Type2CharStringParser.GetCommand(command);
+                    var command = Type2CharStringParser.GetCommand(commandIdentifier);
 
                     var isOnlyCommand = sequence.Values.Count + sequence.CommandIdentifiers.Count == 1;
 
@@ -89,7 +90,7 @@
                         * rmoveto, or endchar, takes an additional argument — the width (as described earlier), which may be expressed as zero or one numeric argument.
                         */
                         hasRunStackClearingCommand = true;
-                        switch (x.Name)
+                        switch (command.Name)
                         {
                             case "hstem":
                             case "hstemhm":
@@ -131,7 +132,7 @@
                         }
                     }
 
-                    x.Run(context);
+                    command.Run(context);
                 }
             }
 
@@ -172,9 +173,25 @@
                 }
             }
 
+            /// <inheritdoc />
             public override string ToString()
             {
-                return string.Empty;
+                var stringBuilder = new StringBuilder();
+                for (var i = -1; i < Values.Count; i++)
+                {
+                    if (i >= 0)
+                    {
+                        var value = Values[i];
+                        stringBuilder.AppendLine(value.ToString("N"));
+                    }
+
+                    foreach (var identifier in GetCommandsAt(i + 1))
+                    {
+                        stringBuilder.AppendLine(Type2CharStringParser.GetCommand(identifier).Name);
+                    }
+                }
+
+                return stringBuilder.ToString();
             }
 
             public struct CommandIdentifier
