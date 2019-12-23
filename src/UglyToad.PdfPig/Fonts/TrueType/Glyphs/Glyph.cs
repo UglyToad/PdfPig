@@ -107,11 +107,11 @@
             {
                 var point = Points[i];
 
-                var scaled = matrix.ScaleAndRotate(point.Point);
+                var scaled = matrix.ScaleAndRotate(new PdfPoint(point.X, point.Y));
 
                 scaled = matrix.Translate(scaled);
 
-                newPoints[i] = new GlyphPoint(scaled, point.IsOnCurve);
+                newPoints[i] = new GlyphPoint((short)scaled.X, (short)scaled.Y, point.IsOnCurve);
             }
 
             return new Glyph(IsSimple, Instructions, EndPointsOfContours, newPoints, Bounds);
