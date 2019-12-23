@@ -1,11 +1,11 @@
-﻿namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
+﻿// ReSharper disable CompareOfFloatsByEqualityOperator
+namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using Charsets;
     using Geometry;
-    using Util;
     using Util.JetBrains.Annotations;
 
     /// <summary>
@@ -19,15 +19,15 @@
     /// </remarks>
     internal class Type2CharStringParser
     {
-        private static readonly HashSet<string> HintingCommandNames = new HashSet<string>
+        private static readonly HashSet<byte> HintingCommandBytes = new HashSet<byte>
         {
-            "hstem",
-            "vstem",
-            "hstemhm",
-            "vstemhm"
+            1,
+            3,
+            18,
+            23
         };
 
-        private static readonly IReadOnlyDictionary<int, LazyType2Command> SingleByteCommandStore = new Dictionary<int, LazyType2Command>
+        private static readonly IReadOnlyDictionary<byte, LazyType2Command> SingleByteCommandStore = new Dictionary<byte, LazyType2Command>
         {
             { 1,  new LazyType2Command("hstem", ctx =>
                 {
@@ -556,10 +556,11 @@
 
                     ctx.Stack.Clear();
                 })
-            }
+            },
+            { 255, new LazyType2Command("unknown", x => {}) }
         };
 
-        private static readonly IReadOnlyDictionary<int, LazyType2Command> TwoByteCommandStore = new Dictionary<int, LazyType2Command>
+        private static readonly IReadOnlyDictionary<byte, LazyType2Command> TwoByteCommandStore = new Dictionary<byte, LazyType2Command>
         {
             { 3,  new LazyType2Command("and", ctx => ctx.Stack.Push(ctx.Stack.PopTop() != 0 && ctx.Stack.PopTop() != 0 ? 1 : 0))},
             { 4,  new LazyType2Command("or", ctx =>
@@ -682,6 +683,16 @@
             })},
         };
 
+        public static LazyType2Command GetCommand(Type2CharStrings.CommandSequence.CommandIdentifier identifier)
+        {
+            if (identifier.IsMultiByteCommand)
+            {
+                return TwoByteCommandStore[identifier.CommandId];
+            }
+
+            return SingleByteCommandStore[identifier.CommandId];
+        }
+
         public static Type2CharStrings Parse([NotNull] IReadOnlyList<IReadOnlyList<byte>> charStringBytes,
             CompactFontFormatSubroutinesSelector subroutinesSelector, ICompactFontFormatCharset charset)
         {
@@ -694,7 +705,7 @@
             {
                 throw new ArgumentNullException(nameof(subroutinesSelector));
             }
-            
+
             var charStrings = new Dictionary<string, Type2CharStrings.CommandSequence>();
             for (var i = 0; i < charStringBytes.Count; i++)
             {
@@ -702,43 +713,51 @@
                 var name = charset.GetNameByGlyphId(i);
                 var (globalSubroutines, localSubroutines) = subroutinesSelector.GetSubroutines(i);
                 var sequence = ParseSingle(charString.ToList(), localSubroutines, globalSubroutines);
-                charStrings[name] = new Type2CharStrings.CommandSequence(sequence);
+                charStrings[name] = sequence;
             }
 
             return new Type2CharStrings(charStrings);
         }
 
-        private static IReadOnlyList<Union<double, LazyType2Command>> ParseSingle(List<byte> bytes,
+        private static Type2CharStrings.CommandSequence ParseSingle(List<byte> bytes,
             CompactFontFormatIndex localSubroutines,
             CompactFontFormatIndex globalSubroutines)
         {
-            var instructions = new List<Union<double, LazyType2Command>>();
+            var values = new List<float>();
+            var commandIdentifiers = new List<Type2CharStrings.CommandSequence.CommandIdentifier>();
+
             for (var i = 0; i < bytes.Count; i++)
             {
                 var b = bytes[i];
                 if (b <= 31 && b != 28)
                 {
-                    var command = GetCommand(b, bytes, instructions, localSubroutines, globalSubroutines, ref i);
+                    var command = GetCommand(b, bytes,
+                        values,
+                        commandIdentifiers,
+                        localSubroutines,
+                        globalSubroutines,
+                        ref i);
+
                     if (command != null)
                     {
-                        instructions.Add(Union<double, LazyType2Command>.Two(command));
+                        commandIdentifiers.Add(command.Value);
                     }
                 }
                 else
                 {
                     var number = InterpretNumber(b, bytes, ref i);
-                    instructions.Add(Union<double, LazyType2Command>.One(number));
+                    values.Add(number);
                 }
             }
 
-            return instructions;
+            return new Type2CharStrings.CommandSequence(values, commandIdentifiers);
         }
 
         /// <summary>
         /// The Type 2 interpretation of a number with an initial byte value of 255 differs from how it is interpreted in the Type 1 format
         /// and 28 has a special meaning.
         /// </summary>
-        private static double InterpretNumber(byte b, IReadOnlyList<byte> bytes, ref int i)
+        private static float InterpretNumber(byte b, IReadOnlyList<byte> bytes, ref int i)
         {
             if (b == 28)
             {
@@ -771,32 +790,33 @@
             var lead = bytes[++i] << 8 | bytes[++i];
             var fractionalPart = bytes[++i] << 8 | bytes[++i];
 
-            return lead + (fractionalPart / 65535.0);
+            return lead + (fractionalPart / 65535.0f);
         }
 
-        private static LazyType2Command GetCommand(byte b, List<byte> bytes,
-            List<Union<double, LazyType2Command>> precedingCommands,
+        private static Type2CharStrings.CommandSequence.CommandIdentifier? GetCommand(byte b, List<byte> bytes,
+            List<float> precedingValues,
+            List<Type2CharStrings.CommandSequence.CommandIdentifier> precedingCommands,
             CompactFontFormatIndex localSubroutines,
             CompactFontFormatIndex globalSubroutines, ref int i)
         {
+            const byte returnCommand = 11;
+
             if (b == 12)
             {
                 var b2 = bytes[++i];
-                if (TwoByteCommandStore.TryGetValue(b2, out var commandTwoByte))
+                if (TwoByteCommandStore.ContainsKey(b2))
                 {
-                    return commandTwoByte;
+                    return new Type2CharStrings.CommandSequence.CommandIdentifier(precedingValues.Count, true, b2);
                 }
 
-                return new LazyType2Command($"unknown: {b} {b2}", x => { });
+                return new Type2CharStrings.CommandSequence.CommandIdentifier(precedingValues.Count, false, 255);
             }
 
             // Invoke a subroutine, substitute the subroutine bytes into this sequence.
             if (b == 10 || b == 29)
             {
                 var isLocal = b == 10;
-                int precedingNumber = 0;
-                precedingCommands[precedingCommands.Count - 1].Match(x => precedingNumber = (int)x, 
-                    _ => throw new InvalidOperationException("A subroutine call must be preceded by a number, not a command."));
+                int precedingNumber = (int)precedingValues[precedingValues.Count - 1];
 
                 var bias = Type2BuildCharContext.CountToBias(isLocal ? localSubroutines.Count : globalSubroutines.Count);
                 var index = precedingNumber + bias;
@@ -805,34 +825,35 @@
                 bytes.InsertRange(i - 1, subroutineBytes);
 
                 // Remove the subroutine index
-                precedingCommands.RemoveAt(precedingCommands.Count - 1);
+                precedingValues.RemoveAt(precedingValues.Count - 1);
                 i -= 2;
                 return null;
             }
 
-            if  (b == 19 || b == 20)
+            if (b == 19 || b == 20)
             {
                 // hintmask and cntrmask
-                var minimumFullBytes = CalculatePrecedingHintBytes(precedingCommands);
+                var minimumFullBytes = CalculatePrecedingHintBytes(precedingValues, precedingCommands);
                 // Skip the following hintmask or cntrmask data bytes
                 i += minimumFullBytes;
             }
 
-            if (SingleByteCommandStore.TryGetValue(b, out var command))
+            if (SingleByteCommandStore.ContainsKey(b))
             {
                 // Ignore return
-                if (command.Name == "return")
+                if (b == returnCommand)
                 {
                     return null;
                 }
 
-                return command;
+                return new Type2CharStrings.CommandSequence.CommandIdentifier(precedingValues.Count, false, b);
             }
 
-            return new LazyType2Command($"unknown: {b}", x => { });
+            return new Type2CharStrings.CommandSequence.CommandIdentifier(precedingValues.Count, false, 255);
         }
 
-        private static int CalculatePrecedingHintBytes(IReadOnlyList<Union<double, LazyType2Command>> precedingCommands)
+        private static int CalculatePrecedingHintBytes(IReadOnlyList<float> precedingValues,
+            IReadOnlyList<Type2CharStrings.CommandSequence.CommandIdentifier> precedingCommands)
         {
             int SafeStemCount(int counts)
             {
@@ -845,6 +866,9 @@
                 return (counts - 1) / 2;
             }
 
+            const byte hintmaskByte = 19;
+            const byte cntrmaskByte = 20;
+
             /*
              * The hintmask operator is followed by one or more data bytes that specify the stem hints which are to be active for the
              * subsequent path construction. The number of data bytes must be exactly the number needed to represent the number of
@@ -854,32 +878,38 @@
             var stemCount = 0;
             var precedingNumbers = 0;
             var hasEncounteredInitialHintMask = false;
-            for (var j = 0; j < precedingCommands.Count; j++)
+
+            for (var i = -1; i < precedingValues.Count; i++)
             {
-                var item = precedingCommands[j];
-                item.Match(x =>
+                if (i >= 0)
+                {
+                    precedingNumbers++;
+                }
+
+                foreach (var identifier in precedingCommands.Where(x => x.CommandIndex == i + 1))
+                {
+                    if (!identifier.IsMultiByteCommand
+                        && (identifier.CommandId == hintmaskByte || identifier.CommandId == cntrmaskByte)
+                        && !hasEncounteredInitialHintMask)
                     {
-                        precedingNumbers++;
-                    },
-                    x =>
+                        hasEncounteredInitialHintMask = true;
+                        stemCount += SafeStemCount(precedingNumbers);
+                    }
+                    else if (!identifier.IsMultiByteCommand && !HintingCommandBytes.Contains(identifier.CommandId))
                     {
-                        // The numbers preceding the first hintmask following hinting can act as vertical hints.
-                        if ((x.Name == "hintmask" || x.Name == "cntrmask") && !hasEncounteredInitialHintMask)
-                        {
-                            hasEncounteredInitialHintMask = true;
-                            stemCount += SafeStemCount(precedingNumbers);
-                            return;
-                        }
-                        
-                        if (!HintingCommandNames.Contains(x.Name))
-                        {
-                            precedingNumbers = 0;
-                            return;
-                        }
-                        
+                        precedingNumbers = 0;
+                    }
+                    else
+                    {
                         stemCount += SafeStemCount(precedingNumbers);
                         precedingNumbers = 0;
-                    });
+                    }
+
+                    if (hasEncounteredInitialHintMask)
+                    {
+                        break;
+                    }
+                }
 
                 if (hasEncounteredInitialHintMask)
                 {
