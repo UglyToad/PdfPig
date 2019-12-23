@@ -1,23 +1,23 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Glyphs
 {
-    using Geometry;
-
     internal struct GlyphPoint
     {
-        public PdfPoint Point { get; }
+        public short X { get; }
+
+        public short Y { get; }
 
         public bool IsOnCurve { get; }
 
-        public GlyphPoint(decimal x, decimal y, bool isOnCurve) : this(new PdfPoint(x, y), isOnCurve) { }
-        public GlyphPoint(PdfPoint point, bool isOnCurve)
+        public GlyphPoint(short x, short y, bool isOnCurve) 
         {
-            Point = point;
+            X = x;
+            Y = y;
             IsOnCurve = isOnCurve;
         }
 
         public override string ToString()
         {
-            return $"{Point} | {IsOnCurve}";
+            return $"({X}, {Y}) | {IsOnCurve}";
         }
     }
 }
