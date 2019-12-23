@@ -19,17 +19,24 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
     /// </remarks>
     internal class Type2CharStringParser
     {
+        private const byte HstemByte = 1;
+        private const byte VstemByte = 3;
+        private const byte HstemhmByte = 18;
+        private const byte HintmaskByte = 19;
+        private const byte CntrmaskByte = 20;
+        private const byte VstemhmByte = 23;
+
         private static readonly HashSet<byte> HintingCommandBytes = new HashSet<byte>
         {
-            1,
-            3,
-            18,
-            23
+            HstemByte,
+            VstemByte,
+            HstemhmByte,
+            VstemhmByte
         };
 
         private static readonly IReadOnlyDictionary<byte, LazyType2Command> SingleByteCommandStore = new Dictionary<byte, LazyType2Command>
         {
-            { 1,  new LazyType2Command("hstem", ctx =>
+            { HstemByte,  new LazyType2Command("hstem", ctx =>
                 {
                     var numberOfEdgeHints = ctx.Stack.Length / 2;
                     var hints = new (double, double)[numberOfEdgeHints];
@@ -56,7 +63,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 })
             },
             {
-                3,  new LazyType2Command("vstem", ctx =>
+                VstemByte,  new LazyType2Command("vstem", ctx =>
                 {
                     var numberOfEdgeHints = ctx.Stack.Length / 2;
                     var hints = new (double, double)[numberOfEdgeHints];
@@ -197,7 +204,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                     ctx.Stack.Clear();
                 })
             },
-            { 18,  new LazyType2Command("hstemhm", ctx =>
+            { HstemhmByte,  new LazyType2Command("hstemhm", ctx =>
                 {
                     // Same as vstem except the charstring contains hintmask
                     var numberOfEdgeHints = ctx.Stack.Length / 2;
@@ -225,14 +232,14 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 })
             },
             {
-                19,  new LazyType2Command("hintmask", ctx =>
+                HintmaskByte,  new LazyType2Command("hintmask", ctx =>
                 {
                     // TODO: record this mask somewhere
                     ctx.Stack.Clear();
                 })
             },
             {
-                20,  new LazyType2Command("cntrmask", ctx =>
+                CntrmaskByte,  new LazyType2Command("cntrmask", ctx =>
                 {
                     // TODO: record this mask somewhere
                     ctx.Stack.Clear();
@@ -264,7 +271,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                     ctx.Stack.Clear();
                 })
             },
-            { 23,  new LazyType2Command("vstemhm", ctx =>
+            { VstemhmByte,  new LazyType2Command("vstemhm", ctx =>
                 {
                     // Same as vstem except the charstring contains hintmask
                     var numberOfEdgeHints = ctx.Stack.Length / 2;
@@ -865,10 +872,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
 
                 return (counts - 1) / 2;
             }
-
-            const byte hintmaskByte = 19;
-            const byte cntrmaskByte = 20;
-
+            
             /*
              * The hintmask operator is followed by one or more data bytes that specify the stem hints which are to be active for the
              * subsequent path construction. The number of data bytes must be exactly the number needed to represent the number of
@@ -889,7 +893,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 foreach (var identifier in precedingCommands.Where(x => x.CommandIndex == i + 1))
                 {
                     if (!identifier.IsMultiByteCommand
-                        && (identifier.CommandId == hintmaskByte || identifier.CommandId == cntrmaskByte)
+                        && (identifier.CommandId == HintmaskByte || identifier.CommandId == CntrmaskByte)
                         && !hasEncounteredInitialHintMask)
                     {
                         hasEncounteredInitialHintMask = true;
