@@ -462,7 +462,7 @@
                     return false;
                 }
             }
-            
+
             inputBytes.Seek(startDataOffset);
 
             data = new byte[(int)length.Value];
@@ -535,6 +535,18 @@
                 // We can only find it if we know where it is.
                 if (objectLocationProvider.TryGetOffset(lengthReference.Data, out var offset))
                 {
+                    if (offset < 0)
+                    {
+                        var result = GetObjectFromStream(lengthReference.Data, offset);
+
+                        if (!(result.Data is NumericToken streamLengthToken))
+                        {
+                            throw new PdfDocumentFormatException($"Could not locate the length object with offset {offset} which should have been in a stream." +
+                                                                 $" Found: {result.Data}.");
+                        }
+
+                        return streamLengthToken.Long;
+                    }
                     // Move to the length object and read it.
                     Seek(offset);
 
