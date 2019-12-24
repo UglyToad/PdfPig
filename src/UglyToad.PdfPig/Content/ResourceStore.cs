@@ -22,6 +22,8 @@
 
         private readonly Dictionary<NameToken, ResourceColorSpace> namedColorSpaces = new Dictionary<NameToken, ResourceColorSpace>();
 
+        private (NameToken name, IFont font) lastLoadedFont;
+
         public ResourceStore(IPdfTokenScanner scanner, IFontFactory fontFactory)
         {
             this.scanner = scanner;
@@ -30,6 +32,8 @@
 
         public void LoadResourceDictionary(DictionaryToken resourceDictionary, bool isLenientParsing)
         {
+            lastLoadedFont = (null, null);
+
             currentResourceState.Push();
 
             if (resourceDictionary.TryGet(NameToken.Font, out var fontBase))
@@ -101,11 +105,14 @@
 
         public void UnloadResourceDictionary()
         {
+            lastLoadedFont = (null, null);
             currentResourceState.Pop();
         }
 
         private void LoadFontDictionary(DictionaryToken fontDictionary, bool isLenientParsing)
         {
+            lastLoadedFont = (null, null);
+
             foreach (var pair in fontDictionary.Data)
             {
                 if (!(pair.Value is IndirectReferenceToken objectKey))
@@ -140,15 +147,24 @@
 
         public IFont GetFont(NameToken name)
         {
+            if (lastLoadedFont.name == name)
+            {
+                return lastLoadedFont.font;
+            }
+
             var reference = currentResourceState[name];
 
             loadedFonts.TryGetValue(reference, out var font);
+
+            lastLoadedFont = (name, font);
 
             return font;
         }
 
         public IFont GetFontDirectly(IndirectReferenceToken fontReferenceToken, bool isLenientParsing)
         {
+            lastLoadedFont = (null, null);
+
             if (!DirectObjectFinder.TryGet(fontReferenceToken, scanner, out DictionaryToken fontDictionaryToken))
             {
                 throw new PdfDocumentFormatException($"The requested font reference token {fontReferenceToken} wasn't a font.");
