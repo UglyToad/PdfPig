@@ -14,7 +14,15 @@
         internal static readonly NumericToken One = new NumericToken(1);
         internal static readonly NumericToken Two = new NumericToken(2);
         internal static readonly NumericToken Three = new NumericToken(3);
+        internal static readonly NumericToken Four = new NumericToken(4);
+        internal static readonly NumericToken Five = new NumericToken(5);
+        internal static readonly NumericToken Six = new NumericToken(6);
+        internal static readonly NumericToken Seven = new NumericToken(7);
         internal static readonly NumericToken Eight = new NumericToken(8);
+        internal static readonly NumericToken Nine = new NumericToken(9);
+        internal static readonly NumericToken Ten = new NumericToken(10);
+        internal static readonly NumericToken OneHundred = new NumericToken(100);
+        internal static readonly NumericToken OneThousand = new NumericToken(1000);
 
         /// <inheritdoc />
         public decimal Data { get; }

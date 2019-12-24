@@ -9,15 +9,15 @@
 
     internal class CoreTokenScanner : ISeekableTokenScanner
     {
-        private static readonly HexTokenizer HexTokenizer = new HexTokenizer();
-        private static readonly StringTokenizer StringTokenizer = new StringTokenizer();
-        private static readonly NameTokenizer NameTokenizer = new NameTokenizer();
-        private static readonly PlainTokenizer PlainTokenizer = new PlainTokenizer();
         private static readonly ArrayTokenizer ArrayTokenizer = new ArrayTokenizer();
-        private static readonly DictionaryTokenizer DictionaryTokenizer = new DictionaryTokenizer();
         private static readonly CommentTokenizer CommentTokenizer = new CommentTokenizer();
+        private static readonly DictionaryTokenizer DictionaryTokenizer = new DictionaryTokenizer();
+        private static readonly HexTokenizer HexTokenizer = new HexTokenizer();
+        private static readonly NameTokenizer NameTokenizer = new NameTokenizer();
+        private static readonly NumericTokenizer NumericTokenizer = new NumericTokenizer();
+        private static readonly PlainTokenizer PlainTokenizer = new PlainTokenizer();
+        private static readonly StringTokenizer StringTokenizer = new StringTokenizer();
 
-        private readonly NumericTokenizer numericTokenizer = new NumericTokenizer();
         private readonly ScannerScope scope;
         private readonly IInputBytes inputBytes;
         private readonly List<(byte firstByte, ITokenizer tokenizer)> customTokenizers = new List<(byte, ITokenizer)>();
@@ -143,7 +143,7 @@
                         case '-':
                         case '+':
                         case '.':
-                            tokenizer = numericTokenizer;
+                            tokenizer = NumericTokenizer;
                             break;
                         default:
                             tokenizer = PlainTokenizer;
