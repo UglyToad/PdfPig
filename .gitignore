@@ -243,3 +243,4 @@ _Pvt_Extensions
 
 /src/CodeCoverage/OpenCover.4.6.519
 /src/test-results.xml
+/tools/benchmark

@@ -9,10 +9,12 @@ namespace UglyToad.PdfPig.Graphics
     using Operations.ClippingPaths;
     using Operations.Compatibility;
     using Operations.General;
+    using Operations.InlineImages;
     using Operations.MarkedContent;
     using Operations.PathConstruction;
     using Operations.SpecialGraphicsState;
     using Operations.TextObjects;
+    using Operations.TextPositioning;
     using Operations.TextShowing;
     using Operations.TextState;
     using Tokens;
@@ -140,7 +142,7 @@ namespace UglyToad.PdfPig.Graphics
                         OperandToDecimal(operands[2]),
                         OperandToDecimal(operands[3]));
                 case AppendRectangle.Symbol:
-                    return new AppendRectangle(OperandToDecimal(operands[0]), 
+                    return new AppendRectangle(OperandToDecimal(operands[0]),
                         OperandToDecimal(operands[1]),
                         OperandToDecimal(operands[2]),
                         OperandToDecimal(operands[3]));
@@ -189,6 +191,40 @@ namespace UglyToad.PdfPig.Graphics
                     return CloseFillPathEvenOddRuleAndStroke.Value;
                 case CloseFillPathNonZeroWindingAndStroke.Symbol:
                     return CloseFillPathNonZeroWindingAndStroke.Value;
+                case BeginInlineImage.Symbol:
+                    return BeginInlineImage.Value;
+                case BeginMarkedContent.Symbol:
+                    return new BeginMarkedContent((NameToken)operands[0]);
+                case BeginMarkedContentWithProperties.Symbol:
+                    var bdcName = (NameToken)operands[0];
+                    if (operands[1] is DictionaryToken contentSequenceDictionary)
+                    {
+                        return new BeginMarkedContentWithProperties(bdcName, contentSequenceDictionary);
+                    }
+                    else if (operands[1] is NameToken contentSequenceName)
+                    {
+                        return new BeginMarkedContentWithProperties(bdcName, contentSequenceName);
+                    }
+
+                    var errorMessageBdc = string.Join(", ", operands.Select(x => x.ToString()));
+                    throw new PdfDocumentFormatException($"Attempted to set a marked-content sequence with invalid parameters: [{errorMessageBdc}]");
+                case DesignateMarkedContentPoint.Symbol:
+                    return new DesignateMarkedContentPoint((NameToken)operands[0]);
+                case DesignateMarkedContentPointWithProperties.Symbol:
+                    var dpName = (NameToken)operands[0];
+                    if (operands[1] is DictionaryToken contentPointDictionary)
+                    {
+                        return new DesignateMarkedContentPointWithProperties(dpName, contentPointDictionary);
+                    }
+                    else if (operands[1] is NameToken contentPointName)
+                    {
+                        return new DesignateMarkedContentPointWithProperties(dpName, contentPointName);
+                    }
+
+                    var errorMessageDp = string.Join(", ", operands.Select(x => x.ToString()));
+                    throw new PdfDocumentFormatException($"Attempted to set a marked-content point with invalid parameters: [{errorMessageDp}]");
+                case EndMarkedContent.Symbol:
+                    return EndMarkedContent.Value;
                 case EndPath.Symbol:
                     return EndPath.Value;
                 case FillPathEvenOddRule.Symbol:
@@ -203,6 +239,30 @@ namespace UglyToad.PdfPig.Graphics
                     return FillPathNonZeroWindingCompatibility.Value;
                 case InvokeNamedXObject.Symbol:
                     return new InvokeNamedXObject((NameToken)operands[0]);
+                case MoveToNextLine.Symbol:
+                    return MoveToNextLine.Value;
+                case MoveToNextLineShowText.Symbol:
+                    if (operands.Count != 1)
+                    {
+                        throw new InvalidOperationException($"Attempted to create a move to next line and show text operation with {operands.Count} operands.");
+                    }
+
+                    if (operands[0] is StringToken snl)
+                    {
+                        return new MoveToNextLineShowText(snl.Data);
+                    }
+                    else if (operands[0] is HexToken hnl)
+                    {
+                        return new MoveToNextLineShowText(hnl.Bytes.ToArray());
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Tried to create a move to next line and show text operation with operand type: {operands[0]?.GetType().Name ?? "null"}");
+                    }
+                case MoveToNextLineWithOffset.Symbol:
+                    return new MoveToNextLineWithOffset(OperandToDecimal(operands[0]), OperandToDecimal(operands[1]));
+                case MoveToNextLineWithOffsetSetLeading.Symbol:
+                    return new MoveToNextLineWithOffsetSetLeading(OperandToDecimal(operands[0]), OperandToDecimal(operands[1]));
                 case PaintShading.Symbol:
                     return new PaintShading((NameToken)operands[0]);
                 case SetNonStrokeColor.Symbol:
@@ -259,6 +319,8 @@ namespace UglyToad.PdfPig.Graphics
                         OperandToDecimal(operands[2]));
                 case SetStrokeColorSpace.Symbol:
                     return new SetStrokeColorSpace((NameToken)operands[0]);
+                case SetTextMatrix.Symbol:
+                    return new SetTextMatrix(TokensToDecimalArray(operands));
                 case StrokePath.Symbol:
                     return StrokePath.Value;
                 case ShowText.Symbol:
@@ -293,33 +355,7 @@ namespace UglyToad.PdfPig.Graphics
                     var array = operands.ToArray();
 
                     return new ShowTextsWithPositioning(array);
-                case DesignateMarkedContentPointWithProperties.Symbol:
-                    var dpName = (NameToken)operands[0];
-                    if (operands[1] is DictionaryToken contentPointDictionary)
-                    {
-                        return new DesignateMarkedContentPointWithProperties(dpName, contentPointDictionary);
-                    }
-                    else if (operands[1] is NameToken contentPointName)
-                    {
-                        return new DesignateMarkedContentPointWithProperties(dpName, contentPointName);
-                    }
-
-                    var errorMessageDp = string.Join(", ", operands.Select(x => x.ToString()));
-                    throw new PdfDocumentFormatException($"Attempted to set a marked-content point with invalid parameters: [{errorMessageDp}]");
-                case BeginMarkedContentWithProperties.Symbol:
-                    var bdcName = (NameToken) operands[0];
-                    if (operands[1] is DictionaryToken contentSequenceDictionary)
-                    {
-                        return new BeginMarkedContentWithProperties(bdcName, contentSequenceDictionary);
-                    }
-                    else if (operands[1] is NameToken contentSequenceName)
-                    {
-                        return new BeginMarkedContentWithProperties(bdcName, contentSequenceName);
-                    }
-
-                    var errorMessageBdc = string.Join(", ", operands.Select(x => x.ToString()));
-                    throw new PdfDocumentFormatException($"Attempted to set a marked-content sequence with invalid parameters: [{errorMessageBdc}]");
-                }
+            }
 
             if (!operations.TryGetValue(op.Data, out Type operationType))
             {
