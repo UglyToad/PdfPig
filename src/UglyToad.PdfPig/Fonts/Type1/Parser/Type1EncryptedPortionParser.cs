@@ -156,18 +156,6 @@
                         {
                             var procedureTokens = ReadProcedure(tokenizer);
 
-                            if (!isLenientParsing)
-                            {
-                                var valid = procedureTokens.Count == 2 && procedureTokens[0].AsInt() == 16
-                                                                       && procedureTokens[1].AsInt() == 16;
-
-                                if (!valid)
-                                {
-                                    var valueMessage = $"{{ {string.Join(", ", procedureTokens.Select(x => x.ToString()))} }}";
-                                    throw new InvalidOperationException($"Type 1 font MinFeature should be {{16,16}} but got: {valueMessage}.");
-                                }
-                            }
-
                             builder.MinFeature = new MinFeature(procedureTokens[0].AsInt(), procedureTokens[1].AsInt());
 
                             ReadTillDef(tokenizer);
