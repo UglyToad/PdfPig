@@ -246,19 +246,25 @@
 
         private static short[] ReadCoordinates(TrueTypeDataBytes data, int pointCount, SimpleGlyphFlags[] flags, SimpleGlyphFlags isByte, SimpleGlyphFlags signOrSame)
         {
+            bool HasFlag(SimpleGlyphFlags value, SimpleGlyphFlags target)
+            {
+                return (value & target) == target;
+            }
+
             var xs = new short[pointCount];
             var x = 0;
             for (var i = 0; i < pointCount; i++)
             {
+                var flag = flags[i];
                 int dx;
-                if (flags[i].HasFlag(isByte))
+                if (HasFlag(flag, isByte))
                 {
                     var b = data.ReadByte();
-                    dx = flags[i].HasFlag(signOrSame) ? b : -b;
+                    dx = HasFlag(flag, signOrSame) ? b : -b;
                 }
                 else
                 {
-                    if (flags[i].HasFlag(signOrSame))
+                    if (HasFlag(flag, signOrSame))
                     {
                         dx = 0;
                     }
@@ -294,7 +300,7 @@
             /// </summary>
             public long Position { get; }
             
-            public PdfRectangle Bounds { get; set; }
+            public PdfRectangle Bounds { get; }
             
             public TemporaryCompositeLocation(long position, PdfRectangle bounds, short contourCount)
             {
