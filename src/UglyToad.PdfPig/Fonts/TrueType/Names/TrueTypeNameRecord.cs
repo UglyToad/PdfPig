@@ -4,26 +4,24 @@
     {
         public TrueTypePlatformIdentifier PlatformId { get; }
 
-        public int PlatformEncodingId { get; }
+        public ushort PlatformEncodingId { get; }
 
-        public int LanguageId { get; }
+        public ushort LanguageId { get; }
 
-        public int NameId { get; }
-
-        public int Length { get; }
-
-        public int Offset { get; }
-
+        public ushort NameId { get; }
+        
         public string Value { get; }
 
-        public TrueTypeNameRecord(TrueTypePlatformIdentifier platformId, int platformEncodingId, int languageId, int nameId, int length, int offset, string value)
+        public TrueTypeNameRecord(TrueTypePlatformIdentifier platformId, 
+            ushort platformEncodingId,
+            ushort languageId, 
+            ushort nameId,
+            string value)
         {
             PlatformId = platformId;
             PlatformEncodingId = platformEncodingId;
             LanguageId = languageId;
             NameId = nameId;
-            Length = length;
-            Offset = offset;
             Value = value;
         }
 

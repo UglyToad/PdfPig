@@ -41,16 +41,10 @@
         
         private void ReadBuffered(byte[] buffer, int length)
         {
-            var numberRead = 0;
-            while (numberRead < length)
+            var read = inputBytes.Read(buffer, length);
+            if (read < length)
             {
-                if (!inputBytes.MoveNext())
-                {
-                    throw new EndOfStreamException($"Could not read a buffer of {length} bytes.");
-                }
-
-                buffer[numberRead] = inputBytes.CurrentByte;
-                numberRead++;
+                throw new EndOfStreamException($"Could not read a buffer of {length} bytes.");
             }
         }
 

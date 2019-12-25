@@ -111,17 +111,20 @@
         {
             public TrueTypePlatformIdentifier PlatformId { get; }
 
-            public int PlatformEncodingId { get; }
+            public ushort PlatformEncodingId { get; }
 
-            private int LanguageId { get; }
+            private ushort LanguageId { get; }
 
-            private int NameId { get; }
+            private ushort NameId { get; }
 
-            public int Length { get; }
+            public ushort Length { get; }
 
-            public int Offset { get; }
+            public ushort Offset { get; }
 
-            private NameRecordBuilder(int platformId, int platformEncodingId, int languageId, int nameId, int length, int offset)
+            private NameRecordBuilder(ushort platformId, ushort platformEncodingId, ushort languageId,
+                ushort nameId,
+                ushort length,
+                ushort offset)
             {
                 PlatformId = (TrueTypePlatformIdentifier)platformId;
                 PlatformEncodingId = platformEncodingId;
@@ -134,7 +137,7 @@
             public TrueTypeNameRecord ToNameRecord(string s)
             {
                 return new TrueTypeNameRecord(PlatformId, PlatformEncodingId,
-                    LanguageId, NameId, Length, Offset, s);
+                    LanguageId, NameId, s);
             }
 
             public static NameRecordBuilder Read(TrueTypeDataBytes data)
