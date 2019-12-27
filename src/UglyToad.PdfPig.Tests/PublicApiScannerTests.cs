@@ -101,6 +101,7 @@
                 "UglyToad.PdfPig.Export.ITextExporter",
                 "UglyToad.PdfPig.Export.PageXmlTextExporter",
                 "UglyToad.PdfPig.Export.Alto.AltoDocument",
+                "UglyToad.PdfPig.Export.PAGE.PageXmlDocument",
                 "UglyToad.PdfPig.Fonts.DescriptorFontFile",
                 "UglyToad.PdfPig.Fonts.Exceptions.InvalidFontFormatException",
                 "UglyToad.PdfPig.Fonts.FontDescriptor",
