@@ -200,6 +200,7 @@ namespace UglyToad.PdfPig.Export
             return new PageXmlDocument.PageXmlTextRegion()
             {
                 Coords = ToCoords(textBlock.BoundingBox, height),
+                Type = PageXmlDocument.PageXmlTextSimpleType.Paragraph,
                 TextLines = textBlock.TextLines.Select(l => ToPageXmlTextLine(l, height)).ToArray(),
                 TextEquivs = new[] { new PageXmlDocument.PageXmlTextEquiv() { Unicode = textBlock.Text } },
                 Id = "r" + regionCount
