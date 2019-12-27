@@ -24,6 +24,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="array">The array of decimal.</param>
         public static double Mode(this IEnumerable<double> array)
         {
+            if (array == null || array.Count() == 0) return double.NaN;
             return array.GroupBy(v => v).OrderByDescending(g => g.Count()).First().Key;
         }
     }
