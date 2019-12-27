@@ -117,7 +117,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                 distMeasure, maxDistanceFunction,
                 l => l.EndBaseLine, l => l.StartBaseLine,
                 l => !string.IsNullOrWhiteSpace(l.Value),
-                (l1, l2) => string.Equals(l1.FontName, l2.FontName, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(l2.Value),
+                (l1, l2) => !string.IsNullOrWhiteSpace(l2.Value),
                 maxDegreeOfParallelism).ToList();
 
             List<Word> words = new List<Word>();
