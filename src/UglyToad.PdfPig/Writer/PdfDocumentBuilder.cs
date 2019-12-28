@@ -6,11 +6,12 @@
     using System.Linq;
     using Content;
     using Fonts;
-    using Fonts.TrueType;
-    using Fonts.TrueType.Parser;
+    using PdfPig.Fonts.TrueType;
+    using PdfPig.Fonts.TrueType.Parser;
     using Geometry;
     using Graphics.Operations;
     using IO;
+    using PdfPig.Fonts;
     using Tokens;
     using Util;
     using Util.JetBrains.Annotations;

@@ -32,7 +32,7 @@
         /// Font uses a (sub)set of the Adobe standard Latin set.
         /// </summary>
         /// <remarks>Cannot be set at the same time as <see cref="Symbolic"/>.</remarks>
-        Nonsymbolic = 1 << 5,
+        NonSymbolic = 1 << 5,
         /// <summary>
         /// Font is italic.
         /// </summary>

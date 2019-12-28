@@ -99,6 +99,7 @@
         public static readonly NameToken CidFontType0 = new NameToken("CIDFontType0");
         public static readonly NameToken CidFontType0C = new NameToken("CIDFontType0C");
         public static readonly NameToken CidFontType2 = new NameToken("CIDFontType2");
+        public static readonly NameToken CidInit = new NameToken("CIDInit");
         public static readonly NameToken CidToGidMap = new NameToken("CIDToGIDMap");
         public static readonly NameToken CidSet = new NameToken("CIDSet");
         public static readonly NameToken CidSystemInfo = new NameToken("CIDSystemInfo");
@@ -108,6 +109,7 @@
         public static readonly NameToken ClrFf = new NameToken("ClrFf");
         public static readonly NameToken Cmap = new NameToken("CMap");
         public static readonly NameToken Cmapname = new NameToken("CMapName");
+        public static readonly NameToken CmapType = new NameToken("CMapType");
         public static readonly NameToken Cmyk = new NameToken("CMYK");
         public static readonly NameToken Co = new NameToken("CO");
         public static readonly NameToken ColorBurn = new NameToken("ColorBurn");

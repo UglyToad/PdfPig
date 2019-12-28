@@ -1,13 +1,13 @@
-﻿namespace UglyToad.PdfPig.Writer
+﻿namespace UglyToad.PdfPig.Writer.Fonts
 {
     using System;
     using System.Collections.Generic;
     using System.IO;
     using Core;
-    using Fonts;
-    using Fonts.Encodings;
     using Geometry;
     using Tokens;
+    using UglyToad.PdfPig.Fonts;
+    using UglyToad.PdfPig.Fonts.Encodings;
 
     internal class Standard14WritingFont : IWritingFont
     {

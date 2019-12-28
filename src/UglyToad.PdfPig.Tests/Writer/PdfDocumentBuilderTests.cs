@@ -272,7 +272,7 @@
             }
         }
         
-
+        [Fact]
         public void CanWriteSinglePageWithCzechCharacters()
         {
             var builder = new PdfDocumentBuilder();
