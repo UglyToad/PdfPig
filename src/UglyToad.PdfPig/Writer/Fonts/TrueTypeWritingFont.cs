@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Writer
+﻿namespace UglyToad.PdfPig.Writer.Fonts
 {
     using System;
     using System.Collections.Generic;
@@ -6,19 +6,22 @@
     using System.Linq;
     using Core;
     using Filters;
-    using Fonts;
-    using Fonts.Encodings;
-    using Fonts.Exceptions;
-    using Fonts.TrueType;
-    using Fonts.TrueType.Tables;
     using Geometry;
     using Logging;
     using Tokens;
+    using UglyToad.PdfPig.Fonts;
+    using UglyToad.PdfPig.Fonts.Exceptions;
+    using UglyToad.PdfPig.Fonts.TrueType;
+    using UglyToad.PdfPig.Fonts.TrueType.Tables;
 
     internal class TrueTypeWritingFont : IWritingFont
     {
         private readonly TrueTypeFontProgram font;
         private readonly IReadOnlyList<byte> fontFileBytes;
+
+        private readonly object mappingLock = new object();
+        private readonly Dictionary<char, byte> characterMapping = new Dictionary<char, byte>();
+        private int characterMappingCounter = 1;
 
         public bool HasWidths { get; } = true;
 
@@ -48,7 +51,10 @@
 
         public ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context)
         {
-            var bytes = CompressBytes();
+            // TODO: unfortunately we need to subset the font in order to support custom encoding.
+            // A symbolic font (one which contains characters not in the standard latin set) -
+            // should contain a MacRoman (1, 0) or Windows Symbolic (3,0) cmap subtable which maps character codes to glyph id.
+            var bytes = CompressBytes(fontFileBytes);
             var embeddedFile = new StreamToken(new DictionaryToken(new Dictionary<NameToken, IToken>
             {
                 { NameToken.Length, new NumericToken(bytes.Length) },
@@ -59,9 +65,7 @@
             var fileRef = context.WriteObject(outputStream, embeddedFile);
 
             var baseFont = NameToken.Create(font.TableRegister.NameTable.GetPostscriptName());
-
-            var charCodeToGlyphId = new CharacterCodeToGlyphIdMapper(font);
-
+            
             var postscript = font.TableRegister.PostScriptTable;
             var hhead = font.TableRegister.HorizontalHeaderTable;
 
@@ -97,11 +101,31 @@
 
             descriptorDictionary[NameToken.StemV] = new NumericToken(((decimal)bbox.Width) * scaling * 0.13m);
 
-            var metrics = charCodeToGlyphId.GetMetrics(scaling);
+            var lastCharacter = 0;
+            var widths = new List<NumericToken> { NumericToken.Zero };
+            foreach (var kvp in characterMapping)
+            {
+                if (kvp.Value > lastCharacter)
+                {
+                    lastCharacter = kvp.Value;
+                }
 
-            var widthsRef = context.WriteObject(outputStream, metrics.Widths);
+                var glyphId = font.WindowsUnicodeCMap.CharacterCodeToGlyphIndex(kvp.Key);
+                var width = font.TableRegister.HorizontalMetricsTable.GetAdvanceWidth(glyphId) * scaling;
 
+                widths.Add(new NumericToken(width));
+            }
+            
             var descriptor = context.WriteObject(outputStream, new DictionaryToken(descriptorDictionary));
+
+            var toUnicodeCMap = ToUnicodeCMapBuilder.ConvertToCMapStream(characterMapping);
+            var compressedToUnicodeCMap = CompressBytes(toUnicodeCMap);
+            var toUnicode = context.WriteObject(outputStream, new StreamToken(new DictionaryToken(new Dictionary<NameToken, IToken>()
+            {
+                {NameToken.Length, new NumericToken(compressedToUnicodeCMap.Length)},
+                {NameToken.Length1, new NumericToken(toUnicodeCMap.Count)},
+                {NameToken.Filter, new ArrayToken(new[] {NameToken.FlateDecode})}
+            }), compressedToUnicodeCMap));
             
             var dictionary = new Dictionary<NameToken, IToken>
             {
@@ -109,10 +133,10 @@
                 { NameToken.Subtype, NameToken.TrueType },
                 { NameToken.BaseFont, baseFont },
                 { NameToken.FontDescriptor, new IndirectReferenceToken(descriptor.Number) },
-                { NameToken.FirstChar, metrics.FirstChar },
-                { NameToken.LastChar, metrics.LastChar },
-                { NameToken.Widths, new IndirectReferenceToken(widthsRef.Number) },
-                { NameToken.Encoding, NameToken.WinAnsiEncoding }
+                { NameToken.FirstChar, new NumericToken(0) },
+                { NameToken.LastChar, new NumericToken(lastCharacter) },
+                { NameToken.Widths, new ArrayToken(widths) },
+                {NameToken.ToUnicode, new IndirectReferenceToken(toUnicode.Number) }
             };
 
             var token = new DictionaryToken(dictionary);
@@ -124,17 +148,38 @@
 
         public byte GetValueForCharacter(char character)
         {
-            return (byte) character;
+            lock (mappingLock)
+            {
+                if (characterMapping.TryGetValue(character, out var result))
+                {
+                    return result;
+                }
+
+                if (characterMappingCounter > byte.MaxValue)
+                {
+                    throw new NotSupportedException("Cannot support more than 255 separate characters in a simple TrueType font, please" +
+                                                    " submit an issue since we will need to add support for composite fonts with multi-byte" +
+                                                    " character identifiers.");
+                }
+
+                var value = (byte) characterMappingCounter++;
+
+                characterMapping[character] = value;
+
+                result = value;
+
+                return result;
+            }
         }
 
-        private byte[] CompressBytes()
+        private static byte[] CompressBytes(IReadOnlyList<byte> bytes)
         {
-            using (var memoryStream = new MemoryStream(fontFileBytes.ToArray()))
+            using (var memoryStream = new MemoryStream(bytes.ToArray()))
             {
                 var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>());
                 var flater = new FlateFilter(new DecodeParameterResolver(new NoOpLog()), new PngPredictor(), new NoOpLog());
-                var bytes = flater.Encode(memoryStream, parameters, 0);
-                return bytes;
+                var result = flater.Encode(memoryStream, parameters, 0);
+                return result;
             }
         }
 
@@ -147,91 +192,6 @@
                 new NumericToken((decimal)boundingBox.Right * scaling),
                 new NumericToken((decimal)boundingBox.Top * scaling)
             });
-        }
-
-        private class CharacterCodeToGlyphIdMapper
-        {
-            private readonly TrueTypeFontProgram font;
-
-            public CharacterCodeToGlyphIdMapper(TrueTypeFontProgram font)
-            {
-                this.font = font ?? throw new ArgumentNullException(nameof(font));
-            }
-
-            public FontDictionaryMetrics GetMetrics(decimal scaling)
-            {
-                // TODO: differences array
-                var encoding = WinAnsiEncoding.Instance;
-                var firstCharacter = encoding.CodeToNameMap.Keys.Min();
-                var lastCharacter = encoding.CodeToNameMap.Keys.Max();
-
-                var glyphList = GlyphList.AdobeGlyphList;
-
-                var length = lastCharacter - firstCharacter + 1;
-                var widths = Enumerable.Range(0, length).Select(x => new NumericToken(0)).ToList();
-
-                foreach (var pair in encoding.CodeToNameMap)
-                {
-                    var unicode = glyphList.NameToUnicode(pair.Value);
-                    if (unicode == null)
-                    {
-                        continue;
-                    }
-
-                    var characterCode = (int) unicode[0];
-                    if (characterCode < firstCharacter || characterCode > lastCharacter)
-                    {
-                        continue;
-                    }
-
-                    if (!font.TryGetBoundingAdvancedWidth(characterCode, out var width))
-                    {
-                        width = font.TableRegister.HorizontalMetricsTable.HorizontalMetrics[0].AdvanceWidth;
-                    }
-
-                    widths[pair.Key - firstCharacter] = new NumericToken((decimal)width * scaling);
-                }
-
-                return new FontDictionaryMetrics
-                {
-                    FirstChar = new NumericToken(firstCharacter),
-                    LastChar = new NumericToken(lastCharacter),
-                    Widths = new ArrayToken(widths)
-                };
-            }
-
-            private Encoding ReadFontEncoding()
-            {
-                var codeToName = new Dictionary<int, string>();
-                var postscript = font.TableRegister.PostScriptTable;
-                for (var i = 0; i <= 256; i++)
-                {
-                    if (!font.TableRegister.CMapTable.TryGetGlyphIndex(i, out var glyphIndex))
-                    {
-                        continue;
-                    }
-
-                    var name = postscript.GlyphNames[glyphIndex];
-
-                    if (GlyphList.AdobeGlyphList.NameToUnicode(name) == null)
-                    {
-                        continue;
-                    }
-
-                    codeToName[i] = name;
-                }
-
-                return new BuiltInEncoding(codeToName);
-            }
-        }
-
-        private class FontDictionaryMetrics
-        {
-            public ArrayToken Widths { get; set; }
-
-            public NumericToken FirstChar { get; set; }
-
-            public NumericToken LastChar { get; set; }
         }
     }
 }

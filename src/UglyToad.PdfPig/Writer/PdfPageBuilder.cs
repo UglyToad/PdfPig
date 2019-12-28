@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using Content;
     using Core;
+    using Fonts;
     using Geometry;
     using Graphics.Colors;
     using Graphics.Operations;
@@ -14,8 +15,6 @@
     using Graphics.Operations.TextPositioning;
     using Graphics.Operations.TextShowing;
     using Graphics.Operations.TextState;
-    using Tokens;
-    using Util;
 
     /// <summary>
     /// A builder used to add construct a page in a PDF document.

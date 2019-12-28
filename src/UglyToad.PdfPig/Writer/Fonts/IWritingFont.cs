@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Writer
+﻿namespace UglyToad.PdfPig.Writer.Fonts
 {
     using System.IO;
     using Core;
