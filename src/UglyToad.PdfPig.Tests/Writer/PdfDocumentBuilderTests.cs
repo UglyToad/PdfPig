@@ -71,7 +71,7 @@
             PdfPageBuilder page = builder.AddPage(PageSize.A4);
 
             PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
-
+            
             page.AddText("Hello World!", 12, new PdfPoint(25, 520), font);
 
             var b = builder.Build();
@@ -269,6 +269,31 @@
                 var page2Out = document.GetPage(2);
 
                 Assert.StartsWith("The very hungry caterpillar", page2Out.Text);
+            }
+        }
+        
+
+        public void CanWriteSinglePageWithCzechCharacters()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page = builder.AddPage(PageSize.A4);
+
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts", "TrueType");
+            var file = Path.Combine(path, "Roboto-Regular.ttf");
+
+            var font = builder.AddTrueTypeFont(File.ReadAllBytes(file));
+
+            page.AddText("Hello: řó", 9,
+                new PdfPoint(30, page.PageSize.Height - 50), font);
+
+            var bytes = builder.Build();
+            WriteFile(nameof(CanWriteSinglePageWithCzechCharacters), bytes);
+
+            using (var document = PdfDocument.Open(bytes))
+            {
+                var page1 = document.GetPage(1);
+
+                Assert.Equal("Hello: řó", page1.Text);
             }
         }
 

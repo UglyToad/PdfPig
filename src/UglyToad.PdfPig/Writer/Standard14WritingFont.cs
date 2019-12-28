@@ -72,6 +72,25 @@
 
             return result;
         }
+
+        public byte GetValueForCharacter(char character)
+        {
+            var name = GlyphList.AdobeGlyphList.UnicodeCodePointToName(character);
+
+            if (name == null || !MacRomanEncoding.Instance.NameToCodeMap.TryGetValue(name, out var code))
+            {
+                var nameError = name ?? "NULL";
+                throw new NotSupportedException($"No mapping for character '{character}' exists in the Standard14 font. Glyph name: '{nameError}'.");
+            }
+
+            if (code > byte.MaxValue)
+            {
+                throw new NotSupportedException($"Value of code for character '{character}' exceeded the range of a byte. Glyph name: '{name}'.");
+            }
+
+            var result = (byte) code;
+            return result;
+        }
     }
 
     internal class BuilderContext

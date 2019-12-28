@@ -122,6 +122,11 @@
             return result;
         }
 
+        public byte GetValueForCharacter(char character)
+        {
+            return (byte) character;
+        }
+
         private byte[] CompressBytes()
         {
             using (var memoryStream = new MemoryStream(fontFileBytes.ToArray()))

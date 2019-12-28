@@ -18,5 +18,7 @@
         TransformationMatrix GetFontMatrix();
 
         ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context);
+
+        byte GetValueForCharacter(char character);
     }
 }

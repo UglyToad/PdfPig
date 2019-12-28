@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Encodings
 {
-    using System;
     using System.Collections.Generic;
     using Tokens;
 
@@ -13,7 +12,7 @@
 
         public IReadOnlyDictionary<int, string> CodeToNameMap => CodeToName;
 
-        protected readonly Dictionary<string, int> NameToCode = new Dictionary<string, int>(250, StringComparer.OrdinalIgnoreCase);
+        protected readonly Dictionary<string, int> NameToCode = new Dictionary<string, int>(250);
 
         public IReadOnlyDictionary<string, int> NameToCodeMap => NameToCode;
 

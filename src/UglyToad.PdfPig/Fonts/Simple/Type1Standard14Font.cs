@@ -1,4 +1,5 @@
-﻿namespace UglyToad.PdfPig.Fonts.Simple
+﻿// ReSharper disable CompareOfFloatsByEqualityOperator
+namespace UglyToad.PdfPig.Fonts.Simple
 {
     using System;
     using Core;

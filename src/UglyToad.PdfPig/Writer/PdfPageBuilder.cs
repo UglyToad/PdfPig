@@ -14,6 +14,8 @@
     using Graphics.Operations.TextPositioning;
     using Graphics.Operations.TextShowing;
     using Graphics.Operations.TextState;
+    using Tokens;
+    using Util;
 
     /// <summary>
     /// A builder used to add construct a page in a PDF document.
@@ -227,7 +229,12 @@
             operations.Add(BeginText.Value);
             operations.Add(new SetFontAndSize(font.Name, fontSize));
             operations.Add(new MoveToNextLineWithOffset((decimal)position.X, (decimal)position.Y));
-            operations.Add(new ShowText(text));
+            foreach (var letter in text)
+            {
+                var b = fontProgram.GetValueForCharacter(letter);
+                operations.Add(new ShowText(new [] { b }));
+            }
+
             operations.Add(EndText.Value);
 
             return letters;
