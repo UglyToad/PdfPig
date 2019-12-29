@@ -51,7 +51,7 @@
                 return null;
             }
 
-            return new TrueTypeHeaderTable(tag, checksum, offset, length);
+            return new TrueTypeHeaderTable(tag, (uint)checksum, (uint)offset, (uint)length);
         }
 
         private static TrueTypeFontProgram ParseTables(float version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tables, TrueTypeDataBytes data)

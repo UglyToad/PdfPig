@@ -7,21 +7,22 @@
     using Core;
     using Filters;
     using Geometry;
+    using IO;
     using Logging;
     using Tokens;
-    using UglyToad.PdfPig.Fonts;
-    using UglyToad.PdfPig.Fonts.Exceptions;
-    using UglyToad.PdfPig.Fonts.TrueType;
-    using UglyToad.PdfPig.Fonts.TrueType.Tables;
+    using PdfPig.Fonts;
+    using PdfPig.Fonts.Exceptions;
+    using PdfPig.Fonts.TrueType;
+    using PdfPig.Fonts.TrueType.Tables;
 
     internal class TrueTypeWritingFont : IWritingFont
     {
         private readonly TrueTypeFontProgram font;
         private readonly IReadOnlyList<byte> fontFileBytes;
 
-        private readonly object mappingLock = new object();
+        //private readonly object mappingLock = new object();
         private readonly Dictionary<char, byte> characterMapping = new Dictionary<char, byte>();
-        private int characterMappingCounter = 1;
+        //private int characterMappingCounter = 1;
 
         public bool HasWidths { get; } = true;
 
@@ -51,14 +52,16 @@
 
         public ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context)
         {
+            var b = TrueTypeEncodingReplacer.ReplaceCMapTables(new ByteArrayInputBytes(fontFileBytes), characterMapping);
+
             // TODO: unfortunately we need to subset the font in order to support custom encoding.
             // A symbolic font (one which contains characters not in the standard latin set) -
             // should contain a MacRoman (1, 0) or Windows Symbolic (3,0) cmap subtable which maps character codes to glyph id.
-            var bytes = CompressBytes(fontFileBytes);
+            var bytes = CompressBytes(b);
             var embeddedFile = new StreamToken(new DictionaryToken(new Dictionary<NameToken, IToken>
             {
                 { NameToken.Length, new NumericToken(bytes.Length) },
-                { NameToken.Length1, new NumericToken(fontFileBytes.Count) },
+                { NameToken.Length1, new NumericToken(b.Length) },
                 { NameToken.Filter, new ArrayToken(new []{ NameToken.FlateDecode }) }
             }), bytes);
 
@@ -148,28 +151,29 @@
 
         public byte GetValueForCharacter(char character)
         {
-            lock (mappingLock)
-            {
-                if (characterMapping.TryGetValue(character, out var result))
-                {
-                    return result;
-                }
+            return (byte) character;
+            //lock (mappingLock)
+            //{
+            //    if (characterMapping.TryGetValue(character, out var result))
+            //    {
+            //        return result;
+            //    }
 
-                if (characterMappingCounter > byte.MaxValue)
-                {
-                    throw new NotSupportedException("Cannot support more than 255 separate characters in a simple TrueType font, please" +
-                                                    " submit an issue since we will need to add support for composite fonts with multi-byte" +
-                                                    " character identifiers.");
-                }
+            //    if (characterMappingCounter > byte.MaxValue)
+            //    {
+            //        throw new NotSupportedException("Cannot support more than 255 separate characters in a simple TrueType font, please" +
+            //                                        " submit an issue since we will need to add support for composite fonts with multi-byte" +
+            //                                        " character identifiers.");
+            //    }
 
-                var value = (byte) characterMappingCounter++;
+            //    var value = (byte) characterMappingCounter++;
 
-                characterMapping[character] = value;
+            //    characterMapping[character] = value;
 
-                result = value;
+            //    result = value;
 
-                return result;
-            }
+            //    return result;
+            //}
         }
 
         private static byte[] CompressBytes(IReadOnlyList<byte> bytes)

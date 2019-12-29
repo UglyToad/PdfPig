@@ -170,19 +170,19 @@
         /// <summary>
         /// The checksum for the table.
         /// </summary>
-        public long CheckSum { get; }
+        public uint CheckSum { get; }
 
         /// <summary>
         /// Offset of the table from the beginning of the file.
         /// </summary>
-        public long Offset { get; }
+        public uint Offset { get; }
 
         /// <summary>
         /// The length of the table.
         /// </summary>
-        public long Length { get; }
+        public uint Length { get; }
 
-        public TrueTypeHeaderTable(string tag, long checkSum, long offset, long length)
+        public TrueTypeHeaderTable(string tag, uint checkSum, uint offset, uint length)
         {
             Tag = tag ?? throw new ArgumentNullException(nameof(tag));
             CheckSum = checkSum;
