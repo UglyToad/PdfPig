@@ -336,15 +336,15 @@ namespace UglyToad.PdfPig.Geometry
             foreach (var t in ts)
             {
                 PdfPoint point = new PdfPoint(
-                    BezierCurve.ValueWithT((double)bezierCurve.StartPoint.X,
-                                           (double)bezierCurve.FirstControlPoint.X,
-                                           (double)bezierCurve.SecondControlPoint.X,
-                                           (double)bezierCurve.EndPoint.X,
+                    BezierCurve.ValueWithT(bezierCurve.StartPoint.X,
+                                           bezierCurve.FirstControlPoint.X,
+                                           bezierCurve.SecondControlPoint.X,
+                                           bezierCurve.EndPoint.X,
                                            t),
-                    BezierCurve.ValueWithT((double)bezierCurve.StartPoint.Y,
-                                           (double)bezierCurve.FirstControlPoint.Y,
-                                           (double)bezierCurve.SecondControlPoint.Y,
-                                           (double)bezierCurve.EndPoint.Y,
+                    BezierCurve.ValueWithT(bezierCurve.StartPoint.Y,
+                                           bezierCurve.FirstControlPoint.Y,
+                                           bezierCurve.SecondControlPoint.Y,
+                                           bezierCurve.EndPoint.Y,
                                            t)
                                            );
                 points.Add(point);
@@ -368,10 +368,10 @@ namespace UglyToad.PdfPig.Geometry
                 return null;
             }
 
-            double x1 = (double)line.Point1.X;
-            double y1 = (double)line.Point1.Y;
-            double x2 = (double)line.Point2.X;
-            double y2 = (double)line.Point2.Y;
+            double x1 = line.Point1.X;
+            double y1 = line.Point1.Y;
+            double x2 = line.Point2.X;
+            double y2 = line.Point2.Y;
             return FindIntersectionT(bezierCurve, x1, y1, x2, y2);
         }
 
@@ -392,10 +392,10 @@ namespace UglyToad.PdfPig.Geometry
                 return null;
             }
 
-            double x1 = (double)line.From.X;
-            double y1 = (double)line.From.Y;
-            double x2 = (double)line.To.X;
-            double y2 = (double)line.To.Y;
+            double x1 = line.From.X;
+            double y1 = line.From.Y;
+            double x2 = line.To.X;
+            double y2 = line.To.Y;
             return FindIntersectionT(bezierCurve, x1, y1, x2, y2);
         }
 
@@ -405,10 +405,10 @@ namespace UglyToad.PdfPig.Geometry
             double B = (x1 - x2);
             double C = x1 * (y1 - y2) + y1 * (x2 - x1);
 
-            double alpha = (double)bezierCurve.StartPoint.X * A + (double)bezierCurve.StartPoint.Y * B;
-            double beta = 3.0 * ((double)bezierCurve.FirstControlPoint.X * A + (double)bezierCurve.FirstControlPoint.Y * B);
-            double gamma = 3.0 * ((double)bezierCurve.SecondControlPoint.X * A + (double)bezierCurve.SecondControlPoint.Y * B);
-            double delta = (double)bezierCurve.EndPoint.X * A + (double)bezierCurve.EndPoint.Y * B;
+            double alpha = bezierCurve.StartPoint.X * A + bezierCurve.StartPoint.Y * B;
+            double beta = 3.0 * (bezierCurve.FirstControlPoint.X * A + bezierCurve.FirstControlPoint.Y * B);
+            double gamma = 3.0 * (bezierCurve.SecondControlPoint.X * A + bezierCurve.SecondControlPoint.Y * B);
+            double delta = bezierCurve.EndPoint.X * A + bezierCurve.EndPoint.Y * B;
 
             double a = (-alpha + beta - gamma + delta);
             double b = (3 * alpha - 2 * beta + gamma);
@@ -427,13 +427,13 @@ namespace UglyToad.PdfPig.Geometry
         {
             if ((point1.X - point2.X) != 0) // vertical line special case
             {
-                var slope = (double)((point2.Y - point1.Y) / (point2.X - point1.X));
-                var intercept = (double)point2.Y - slope * (double)point2.X;
+                var slope = (point2.Y - point1.Y) / (point2.X - point1.X);
+                var intercept = point2.Y - slope * point2.X;
                 return (slope, intercept);
             }
             else
             {
-                return (double.NaN, (double)point1.X);
+                return (double.NaN, point1.X);
             }
         }
 

@@ -17,8 +17,8 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="point2">The second point.</param>
         public static double Euclidean(PdfPoint point1, PdfPoint point2)
         {
-            double dx = (double)(point1.X - point2.X);
-            double dy = (double)(point1.Y - point2.Y);
+            double dx = point1.X - point2.X;
+            double dy = point1.Y - point2.Y;
             return Math.Sqrt(dx * dx + dy * dy);
         }
 
@@ -31,8 +31,8 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="wY">The weight of the Y coordinates. Default is 1.</param>
         public static double WeightedEuclidean(PdfPoint point1, PdfPoint point2, double wX = 1.0, double wY = 1.0)
         {
-            double dx = (double)(point1.X - point2.X);
-            double dy = (double)(point1.Y - point2.Y);
+            double dx = point1.X - point2.X;
+            double dy = point1.Y - point2.Y;
             return Math.Sqrt(wX * dx * dx + wY * dy * dy);
         }
 
@@ -44,7 +44,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="point2">The second point.</param>
         public static double Manhattan(PdfPoint point1, PdfPoint point2)
         {
-            return (double)(Math.Abs(point1.X - point2.X) + Math.Abs(point1.Y - point2.Y));
+            return Math.Abs(point1.X - point2.X) + Math.Abs(point1.Y - point2.Y);
         }
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <returns></returns>
         public static double Angle(PdfPoint point1, PdfPoint point2)
         {
-            return Math.Atan2((float)(point2.Y - point1.Y), (float)(point2.X - point1.X)) * 180.0 / Math.PI;
+            return Math.Atan2(point2.Y - point1.Y, point2.X - point1.X) * 180.0 / Math.PI;
         }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <returns></returns>
         public static double Vertical(PdfPoint point1, PdfPoint point2)
         {
-            return Math.Abs((double)(point2.Y - point1.Y));
+            return Math.Abs(point2.Y - point1.Y);
         }
 
         /// <summary>
@@ -77,7 +77,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <returns></returns>
         public static double Horizontal(PdfPoint point1, PdfPoint point2)
         {
-            return Math.Abs((double)(point2.X - point1.X));
+            return Math.Abs(point2.X - point1.X);
         }
 
         /// <summary>
