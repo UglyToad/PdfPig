@@ -33,14 +33,14 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         {
             List<Word> wordsH = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Horizontal),
-                (l1, l2) => Math.Max((double)(l1.GlyphRectangle.Width), (double)(l2.GlyphRectangle.Width)) * 0.2, 
+                (l1, l2) => Math.Max(l1.GlyphRectangle.Width, l2.GlyphRectangle.Width) * 0.2, 
                 Distances.Manhattan, MaxDegreeOfParallelism)
                 .OrderByDescending(x => x.BoundingBox.Bottom)
                 .ThenBy(x => x.BoundingBox.Left).ToList();
 
             List<Word> words180 = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Rotate180),
-                (l1, l2) => Math.Max((double)(l1.GlyphRectangle.Width), (double)(l2.GlyphRectangle.Width)) * 0.2,
+                (l1, l2) => Math.Max(l1.GlyphRectangle.Width, l2.GlyphRectangle.Width) * 0.2,
                 Distances.Manhattan, MaxDegreeOfParallelism)
                 .OrderBy(x => x.BoundingBox.Top)
                 .ThenByDescending(x => x.BoundingBox.Right).ToList();
@@ -48,7 +48,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 
             List<Word> words90 = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Rotate90),
-                (l1, l2) => Math.Max((double)(l1.GlyphRectangle.Height), (double)(l2.GlyphRectangle.Height)) * 0.2,
+                (l1, l2) => Math.Max(l1.GlyphRectangle.Height, l2.GlyphRectangle.Height) * 0.2,
                 Distances.Manhattan, MaxDegreeOfParallelism)
                 .OrderByDescending(x => x.BoundingBox.Left)
                 .ThenBy(x => x.BoundingBox.Top).ToList();
@@ -56,7 +56,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 
             List<Word> words270 = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Rotate270),
-                (l1, l2) => Math.Max((double)(l1.GlyphRectangle.Height), (double)(l2.GlyphRectangle.Height)) * 0.2,
+                (l1, l2) => Math.Max(l1.GlyphRectangle.Height, l2.GlyphRectangle.Height) * 0.2,
                 Distances.Manhattan, MaxDegreeOfParallelism)
                 .OrderBy(x => x.BoundingBox.Right)
                 .ThenByDescending(x => x.BoundingBox.Bottom).ToList();
@@ -64,7 +64,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 
             List<Word> wordsU = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Unknown),
-                (l1, l2) => Math.Max((double)(l1.GlyphRectangle.Width), (double)(l2.GlyphRectangle.Width)) * 0.2,
+                (l1, l2) => Math.Max(l1.GlyphRectangle.Width, l2.GlyphRectangle.Width) * 0.2,
                 Distances.Manhattan, MaxDegreeOfParallelism)
                 .OrderByDescending(x => x.BoundingBox.Bottom)
                 .ThenBy(x => x.BoundingBox.Left).ToList();

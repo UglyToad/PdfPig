@@ -249,16 +249,6 @@ namespace UglyToad.PdfPig.Export
             };
         }
 
-        private static PageXmlDocument Deserialize(string xmlPath)
-        {
-            XmlSerializer serializer = new XmlSerializer(typeof(PageXmlDocument));
-
-            using (var reader = XmlReader.Create(xmlPath))
-            {
-                return (PageXmlDocument)serializer.Deserialize(reader);
-            }
-        }
-
         private string Serialize(PageXmlDocument pageXmlDocument)
         {
             XmlSerializer serializer = new XmlSerializer(typeof(PageXmlDocument));
@@ -274,6 +264,19 @@ namespace UglyToad.PdfPig.Export
             {
                 serializer.Serialize(xmlWriter, pageXmlDocument);
                 return System.Text.Encoding.UTF8.GetString(memoryStream.ToArray());
+            }
+        }
+
+        /// <summary>
+        /// Deserialize an <see cref="PageXmlDocument"/> from a given PAGE format XML document.
+        /// </summary>
+        public static PageXmlDocument Deserialize(string xmlPath)
+        {
+            XmlSerializer serializer = new XmlSerializer(typeof(PageXmlDocument));
+
+            using (var reader = XmlReader.Create(xmlPath))
+            {
+                return (PageXmlDocument)serializer.Deserialize(reader);
             }
         }
     }

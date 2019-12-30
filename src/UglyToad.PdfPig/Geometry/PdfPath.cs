@@ -186,9 +186,9 @@ namespace UglyToad.PdfPig.Geometry
         {
             if (currentPosition.HasValue)
             {
-                shoeLaceSum += ((x1 - currentPosition.Value.X) * (y1 + currentPosition.Value.Y));
-                shoeLaceSum += ((x2 - x1) * (y2 + y1));
-                shoeLaceSum += ((x3 - x2) * (y3 + y2));
+                shoeLaceSum += (x1 - currentPosition.Value.X) * (y1 + currentPosition.Value.Y);
+                shoeLaceSum += (x2 - x1) * (y2 + y1);
+                shoeLaceSum += (x3 - x2) * (y3 + y2);
 
                 var to = new PdfPoint(x3, y3);
                 commands.Add(new BezierCurve(currentPosition.Value, new PdfPoint(x1, y1), new PdfPoint(x2, y2), to));
@@ -562,7 +562,6 @@ namespace UglyToad.PdfPig.Geometry
                 builder.AppendFormat("C {0} {1}, {2} {3}, {4} {5} ", FirstControlPoint.X, FirstControlPoint.Y, SecondControlPoint.X, SecondControlPoint.Y,
                     EndPoint.X, EndPoint.Y);
             }
-
 
             private bool TrySolveQuadratic(bool isX, double currentMin, double currentMax, out (double min, double max) solutions)
             {

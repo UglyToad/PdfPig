@@ -49,7 +49,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
              *  (i,j,k) will form a group and (m,n) will form another group.
              *************************************************************************************/
 
-            int[] indexes = Enumerable.Repeat((int)-1, elements.Count).ToArray();
+            int[] indexes = Enumerable.Repeat(-1, elements.Count).ToArray();
             var candidatesPoints = elements.Select(candidatesPoint).ToList();
 
             ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
@@ -118,7 +118,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
              *  (i,j,k) will form a group and (m,n) will form another group.
              *************************************************************************************/
 
-            int[] indexes = Enumerable.Repeat((int)-1, elements.Length).ToArray();
+            int[] indexes = Enumerable.Repeat(-1, elements.Length).ToArray();
             var candidatesPoints = elements.Select(candidatesPoint).ToList();
 
             ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
@@ -187,7 +187,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
              *  (i,j,k) will form a group and (m,n) will form another group.
              *************************************************************************************/
 
-            int[] indexes = Enumerable.Repeat((int)-1, elements.Length).ToArray();
+            int[] indexes = Enumerable.Repeat(-1, elements.Length).ToArray();
             var candidatesLines = elements.Select(x => candidatesLine(x)).ToList();
 
             ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
