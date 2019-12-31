@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Tables
 {
     using System.Collections.Generic;
+    using System.IO;
+    using Util;
 
     /// <summary>
     /// Version 4 was defined in OpenType 1.5. Version 4 has the same fields as in version 2 and version 3. 
@@ -8,7 +10,6 @@
     /// </summary>
     internal class Os2Version2To4OpenTypeTable : Os2Version1Table
     {
-
         /// <summary>
         /// This metric specifies the distance between the baseline and the approximate height of non-ascending lowercase letters.
         /// </summary>
@@ -87,6 +88,16 @@
             DefaultCharacter = defaultCharacter;
             BreakCharacter = breakCharacter;
             MaximumContext = maximumContext;
+        }
+
+        public override void Write(Stream stream)
+        {
+            base.Write(stream);
+            stream.WriteShort(XHeight);
+            stream.WriteShort(CapHeight);
+            stream.WriteUShort(DefaultCharacter);
+            stream.WriteUShort(BreakCharacter);
+            stream.WriteUShort(MaximumContext);
         }
     }
 }

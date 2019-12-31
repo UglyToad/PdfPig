@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Writer
 {
-    using System;
     using System.IO;
     using System.Linq;
     using Content;
@@ -8,6 +7,7 @@
     using PdfPig.Geometry;
     using PdfPig.Util;
     using PdfPig.Writer;
+    using Tests.Fonts.TrueType;
     using Xunit;
 
     public class PdfDocumentBuilderTests
@@ -102,10 +102,9 @@
             page.DrawRectangle(new PdfPoint(30, 200), 250, 100, 0.5m);
             page.DrawRectangle(new PdfPoint(30, 100), 250, 100, 0.5m);
 
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts", "TrueType");
-            var file = Path.Combine(path, "Andada-Regular.ttf");
+            var file = TrueTypeTestHelper.GetFileBytes("Andada-Regular.ttf");
 
-            var font = builder.AddTrueTypeFont(File.ReadAllBytes(file));
+            var font = builder.AddTrueTypeFont(file);
 
             var letters = page.AddText("Hello World!", 12, new PdfPoint(30, 50), font);
 
@@ -220,10 +219,9 @@
             var builder = new PdfDocumentBuilder();
             var page = builder.AddPage(PageSize.A4);
             
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts", "TrueType");
-            var file = Path.Combine(path, "Roboto-Regular.ttf");
+            var file = TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf");
 
-            var font = builder.AddTrueTypeFont(File.ReadAllBytes(file));
+            var font = builder.AddTrueTypeFont(file);
 
             page.AddText("é (lower case, upper case É).", 9, 
                 new PdfPoint(30, page.PageSize.Height - 50), font);
@@ -245,11 +243,8 @@
             var builder = new PdfDocumentBuilder();
             var page1 = builder.AddPage(PageSize.A4);
             var page2 = builder.AddPage(PageSize.A4);
-
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts", "TrueType");
-            var file = Path.Combine(path, "Roboto-Regular.ttf");
-
-            var font = builder.AddTrueTypeFont(File.ReadAllBytes(file));
+            
+            var font = builder.AddTrueTypeFont(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf"));
 
             var topLine = new PdfPoint(30, page1.PageSize.Height - 60);
             var letters = page1.AddText("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor", 9, topLine, font);
@@ -283,11 +278,8 @@
         {
             var builder = new PdfDocumentBuilder();
             var page = builder.AddPage(PageSize.A4);
-
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts", "TrueType");
-            var file = Path.Combine(path, "Roboto-Regular.ttf");
-
-            var font = builder.AddTrueTypeFont(File.ReadAllBytes(file));
+            
+            var font = builder.AddTrueTypeFont(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf"));
 
             page.AddText("Hello: řó", 9,
                 new PdfPoint(30, page.PageSize.Height - 50), font);

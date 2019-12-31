@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Tables
 {
     using System.Collections.Generic;
+    using System.IO;
+    using Util;
 
     /// <summary>
     /// Version 1 was defined in TrueType revision 1.66. Version 1 has two additional fields beyond those in version 0. 
@@ -50,6 +52,13 @@
         {
             CodePage1 = codePage1;
             CodePage2 = codePage2;
+        }
+
+        public override void Write(Stream stream)
+        {
+            base.Write(stream);
+            stream.WriteUInt(CodePage1);
+            stream.WriteUInt(CodePage2);
         }
     }
 }
