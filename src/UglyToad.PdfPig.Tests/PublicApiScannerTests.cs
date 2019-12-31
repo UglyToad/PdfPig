@@ -86,6 +86,7 @@
                 "UglyToad.PdfPig.CrossReference.TrailerDictionary",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.Distances",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.DocstrumBoundingBoxes",
+                "UglyToad.PdfPig.DocumentLayoutAnalysis.DecorationTextBlockClassifier",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.DefaultPageSegmenter",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.IPageSegmenter",
                 "UglyToad.PdfPig.DocumentLayoutAnalysis.MathExtensions",
