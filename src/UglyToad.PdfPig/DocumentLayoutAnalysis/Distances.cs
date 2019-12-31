@@ -81,6 +81,50 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         }
 
         /// <summary>
+        /// Get the minimum edit distance between two strings.
+        /// </summary>
+        /// <param name="string1">The first string.</param>
+        /// <param name="string2">The second string.</param>
+        /// <returns></returns>
+        public static int MinimumEditDistance(string string1, string string2)
+        {
+            int[,] d = new int[string1.Length + 1, string2.Length + 1];
+
+            for (int i = 1; i <= string1.Length; i++)
+            {
+                d[i, 0] = i;
+            }
+
+            for (int j = 1; j <= string2.Length; j++)
+            {
+                d[0, j] = j;
+            }
+
+            for (int j = 1; j <= string2.Length; j++)
+            {
+                for (int i = 1; i <= string1.Length; i++)
+                {
+                    d[i, j] = Math.Min(Math.Min(
+                        d[i - 1, j] + 1,
+                        d[i, j - 1] + 1),
+                        d[i - 1, j - 1] + (string1[i - 1] == string2[j - 1] ? 0 : 1)); // substitution, set cost to 1
+                }
+            }
+            return d[string1.Length, string2.Length];
+        }
+
+        /// <summary>
+        /// Get the minimum edit distance between two strings.
+        /// <para>Returned values are between 0 and 1 included. A value of 0 means that the two strings are indentical.</para>
+        /// </summary>
+        /// <param name="string1">The first string.</param>
+        /// <param name="string2">The second string.</param>
+        public static double MinimumEditDistanceNormalised(string string1, string string2)
+        {
+            return MinimumEditDistance(string1, string2) / (double)Math.Max(string1.Length, string2.Length);
+        }
+
+        /// <summary>
         /// Find the index of the nearest point, excluding itself.
         /// </summary>
         /// <typeparam name="T"></typeparam>
