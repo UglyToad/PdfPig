@@ -128,17 +128,20 @@
                 Assert.Equal("H", h.Value);
                 Assert.Equal("Andada-Regular", h.FontName);
 
+                var comparer = new DoubleComparer(0.01);
+                var pointComparer = new PointComparer(comparer);
+
                 for (int i = 0; i < page1.Letters.Count; i++)
                 {
                     var readerLetter = page1.Letters[i];
                     var writerLetter = letters[i];
 
                     Assert.Equal(readerLetter.Value, writerLetter.Value);
-                    Assert.Equal(readerLetter.Location, writerLetter.Location);
-                    Assert.Equal(readerLetter.FontSize, writerLetter.FontSize);
-                    Assert.Equal(readerLetter.GlyphRectangle.Width, writerLetter.GlyphRectangle.Width);
-                    Assert.Equal(readerLetter.GlyphRectangle.Height, writerLetter.GlyphRectangle.Height);
-                    Assert.Equal(readerLetter.GlyphRectangle.BottomLeft, writerLetter.GlyphRectangle.BottomLeft);
+                    Assert.Equal(readerLetter.Location, writerLetter.Location, pointComparer);
+                    Assert.Equal(readerLetter.FontSize, writerLetter.FontSize, comparer);
+                    Assert.Equal(readerLetter.GlyphRectangle.Width, writerLetter.GlyphRectangle.Width, comparer);
+                    Assert.Equal(readerLetter.GlyphRectangle.Height, writerLetter.GlyphRectangle.Height, comparer);
+                    Assert.Equal(readerLetter.GlyphRectangle.BottomLeft, writerLetter.GlyphRectangle.BottomLeft, pointComparer);
                 }
             }
         }
@@ -193,17 +196,20 @@
                 Assert.Equal("H", h.Value);
                 Assert.Equal("BaskOldFace", h.FontName);
 
+                var comparer = new DoubleComparer(0.01);
+                var pointComparer = new PointComparer(comparer);
+
                 for (int i = 0; i < letters.Count; i++)
                 {
                     var readerLetter = page1.Letters[i];
                     var writerLetter = letters[i];
 
                     Assert.Equal(readerLetter.Value, writerLetter.Value);
-                    Assert.Equal(readerLetter.Location, writerLetter.Location);
-                    Assert.Equal(readerLetter.FontSize, writerLetter.FontSize);
-                    Assert.Equal(readerLetter.GlyphRectangle.Width, writerLetter.GlyphRectangle.Width);
-                    Assert.Equal(readerLetter.GlyphRectangle.Height, writerLetter.GlyphRectangle.Height);
-                    Assert.Equal(readerLetter.GlyphRectangle.BottomLeft, writerLetter.GlyphRectangle.BottomLeft);
+                    Assert.Equal(readerLetter.Location, writerLetter.Location, pointComparer);
+                    Assert.Equal(readerLetter.FontSize, writerLetter.FontSize, comparer);
+                    Assert.Equal(readerLetter.GlyphRectangle.Width, writerLetter.GlyphRectangle.Width, comparer);
+                    Assert.Equal(readerLetter.GlyphRectangle.Height, writerLetter.GlyphRectangle.Height, comparer);
+                    Assert.Equal(readerLetter.GlyphRectangle.BottomLeft, writerLetter.GlyphRectangle.BottomLeft, pointComparer);
                 }
             }
         }
