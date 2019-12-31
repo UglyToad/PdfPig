@@ -8,6 +8,9 @@
     using IO;
     using PdfPig.Fonts.TrueType;
     using PdfPig.Fonts.TrueType.Parser;
+    using PdfPig.Fonts.TrueType.Tables;
+    using PdfPig.Fonts.TrueType.Tables.CMapSubTables;
+    using Util;
 
     internal static class TrueTypeCMapReplacer
     {
@@ -35,7 +38,7 @@
 
             var inputTableHeaders = new Dictionary<string, InputHeader>(StringComparer.OrdinalIgnoreCase);
             var outputTableHeaders = new Dictionary<string, TrueTypeHeaderTable>(StringComparer.OrdinalIgnoreCase);
-            
+
             var fileChecksumOffset = SizeOfTag;
 
             byte[] result;
@@ -138,12 +141,12 @@
                                                             $"did not match header length {inputLength} for table {inputHeader.Key}.");
                     }
 
-                    WriteUInt(stream, outputHeader.Offset);
+                    stream.WriteUInt(outputHeader.Offset);
 
                     if (isCmap)
                     {
                         // Also overwrite length.
-                        WriteUInt(stream, outputHeader.Length);
+                        stream.WriteUInt(outputHeader.Length);
                     }
                 }
 
@@ -154,14 +157,14 @@
             }
 
             var inputBytes = new ByteArrayInputBytes(result);
-            
+
             // Overwrite checksum values per table.
             foreach (var inputHeader in inputTableHeaders)
             {
                 var outputHeader = outputTableHeaders[inputHeader.Key];
 
                 var headerOffset = inputHeader.Value.OffsetInInput;
-                
+
                 var newChecksum = TrueTypeChecksumCalculator.Calculate(inputBytes, outputHeader);
 
                 // Overwrite the checksum value.
@@ -178,7 +181,7 @@
 
             // Store the result in checksum adjustment.
             WriteUInt(result, checksumAdjustmentLocation, checksumAdjustment);
-            
+
             var canParse = new TrueTypeFontParser().Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(result)));
 
             return result;
@@ -195,30 +198,6 @@
                    + ((long)buffer[location + 1] << 16)
                    + (buffer[location + 2] << 8)
                    + (buffer[location + 3] << 0));
-        }
-
-        private static void WriteUInt(Stream stream, uint value)
-        {
-            var buffer = new[]
-            {
-                (byte) (value >> 24),
-                (byte) (value >> 16),
-                (byte) (value >> 8),
-                (byte) value
-            };
-
-            stream.Write(buffer, 0, 4);
-        }
-
-        private static void WriteUShort(Stream stream, ushort value)
-        {
-            var buffer = new[]
-            {
-                (byte) (value >> 8),
-                (byte) value
-            };
-
-            stream.Write(buffer, 0, 2);
         }
 
         private static void WriteUInt(byte[] array, uint offset, uint value)
@@ -273,42 +252,23 @@
         {
             // We generate a format 6 sub-table.
             const ushort cmapVersion = 0;
-            const ushort numberOfSubtables = 1;
-            const ushort platformId = 3;
             const ushort encodingId = 0;
-            const ushort format = 6;
-            const ushort languageId = 0;
 
             var glyphIndices = MapNewEncodingToGlyphIndexArray(font, newEncoding);
-
-            using (var memoryStream = new MemoryStream())
+            
+            var cmapTable = new CMapTable(cmapVersion, new TrueTypeHeaderTable(CMapTag, 0, 0, 0), new[]
             {
-                // Write cmap table header.
-                WriteUShort(memoryStream, cmapVersion);
-                WriteUShort(memoryStream, numberOfSubtables);
+                new TrimmedTableMappingCMapTable(TrueTypeCMapPlatform.Windows, encodingId, 0, glyphIndices.Length, glyphIndices),
+                new TrimmedTableMappingCMapTable(TrueTypeCMapPlatform.Macintosh, encodingId, 0, glyphIndices.Length, glyphIndices)
+            });
 
-                // Write sub-table index.
-                WriteUShort(memoryStream, platformId);
-                WriteUShort(memoryStream, encodingId);
-                WriteUInt(memoryStream, (uint)(memoryStream.Position + SizeOfInt));
-
-                // Write format 6 sub-table.
-                WriteUShort(memoryStream, format);
-                var length = (ushort)((5 * SizeOfShort) + (SizeOfShort * glyphIndices.Length));
-                WriteUShort(memoryStream, length);
-                WriteUShort(memoryStream, languageId);
-                WriteUShort(memoryStream, 0);
-                WriteUShort(memoryStream, (ushort)glyphIndices.Length);
-
-                for (var j = 0; j < glyphIndices.Length; j++)
-                {
-                    WriteUShort(memoryStream, glyphIndices[j]);
-                }
-
-                return memoryStream.ToArray();
+            using (var stream = new MemoryStream())
+            {
+                cmapTable.Write(stream);
+                return stream.ToArray();
             }
         }
-        
+
         private static ushort[] MapNewEncodingToGlyphIndexArray(TrueTypeFontProgram font, IReadOnlyDictionary<char, byte> newEncoding)
         {
             var mappingTable = font.WindowsUnicodeCMap ?? font.WindowsSymbolCMap;

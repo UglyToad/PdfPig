@@ -1,11 +1,15 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Tables
 {
     using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using IO;
+    using Util;
 
     /// <summary>
     /// The most basic format of the OS/2 table, excluding the fields not included in the Apple version of the specification.
     /// </summary>
-    internal class Os2Table : ITable
+    internal class Os2Table : ITable, IWriteable
     {
         public string Tag => TrueTypeHeaderTable.Os2;
 
@@ -97,7 +101,7 @@
         /// The PANOSE definition of 10 bytes defines various information about the
         /// font enabling matching fonts based on requirements. The meaning of each
         /// byte in the PANOSE definition depends on the preceding bytes. The first byte
-        /// is the family type, Lating, Latin Hand Written, etc.
+        /// is the family type, Latin, Latin Hand Written, etc.
         /// </summary>
         public IReadOnlyList<byte> Panose { get; }
 
@@ -173,6 +177,47 @@
             FontSelectionFlags = fontSelectionFlags;
             FirstCharacterIndex = firstCharacterIndex;
             LastCharacterIndex = lastCharacterIndex;
+        }
+
+        public virtual void Write(Stream stream)
+        {
+            stream.WriteUShort(Version);
+            stream.WriteShort(XAverageCharacterWidth);
+            stream.WriteUShort(WeightClass);
+            stream.WriteUShort(WidthClass);
+
+            stream.WriteShort(TypeFlags);
+
+            stream.WriteShort(YSubscriptXSize);
+            stream.WriteShort(YSubscriptYSize);
+            stream.WriteShort(YSubscriptXOffset);
+            stream.WriteShort(YSubscriptYOffset);
+
+            stream.WriteShort(YSuperscriptXSize);
+            stream.WriteShort(YSuperscriptYSize);
+            stream.WriteShort(YSuperscriptXOffset);
+            stream.WriteShort(YSuperscriptYOffset);
+
+            stream.WriteShort(YStrikeoutSize);
+            stream.WriteShort(YStrikeoutPosition);
+
+            stream.WriteShort(FamilyClass);
+
+            stream.Write(Panose.ToArray(), 0, Panose.Count);
+
+            for (var i = 0; i < UnicodeRanges.Count; i++)
+            {
+                stream.WriteUInt(UnicodeRanges[i]);
+            }
+
+            for (var i = 0; i < VendorId.Length; i++)
+            {
+                stream.WriteByte((byte)VendorId[i]);
+            }
+
+            stream.WriteUShort(FontSelectionFlags);
+            stream.WriteUShort(FirstCharacterIndex);
+            stream.WriteUShort(LastCharacterIndex);
         }
     }
 }

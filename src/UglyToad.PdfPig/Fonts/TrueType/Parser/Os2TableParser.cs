@@ -31,11 +31,13 @@
             var ulCharRange2 = (uint)data.ReadUnsignedInt();
             var ulCharRange3 = (uint)data.ReadUnsignedInt();
             var ulCharRange4 = (uint)data.ReadUnsignedInt();
-            var vendorId = data.ReadByteArray(4);
+            var vendorIdBytes = data.ReadByteArray(4);
             var selectionFlags = data.ReadUnsignedShort();
             var firstCharacterIndex = data.ReadUnsignedShort();
             var lastCharacterIndex = data.ReadUnsignedShort();
             var unicodeCharRange = new[] {ulCharRange1, ulCharRange2, ulCharRange3, ulCharRange4};
+
+            var vendorId = Encoding.ASCII.GetString(vendorIdBytes);
 
             /*
              * Documentation for OS/2 version 0 in Apple’s TrueType Reference Manual stops at the usLastCharIndex field
@@ -59,7 +61,7 @@
                     familyClass,
                     panose,
                     unicodeCharRange,
-                    Encoding.Unicode.GetString(vendorId),
+                    vendorId,
                     selectionFlags,
                     firstCharacterIndex,
                     lastCharacterIndex);
@@ -87,7 +89,7 @@
                     familyClass,
                     panose,
                     unicodeCharRange,
-                    Encoding.Unicode.GetString(vendorId),
+                    vendorId,
                     selectionFlags,
                     firstCharacterIndex,
                     lastCharacterIndex,
@@ -116,7 +118,7 @@
                     familyClass,
                     panose,
                     unicodeCharRange,
-                    Encoding.Unicode.GetString(vendorId),
+                    vendorId,
                     selectionFlags,
                     firstCharacterIndex,
                     lastCharacterIndex,
@@ -151,7 +153,7 @@
                     familyClass,
                     panose,
                     unicodeCharRange,
-                    Encoding.Unicode.GetString(vendorId),
+                    vendorId,
                     selectionFlags,
                     firstCharacterIndex,
                     lastCharacterIndex,
@@ -186,7 +188,7 @@
                 familyClass,
                 panose,
                 unicodeCharRange,
-                Encoding.Unicode.GetString(vendorId),
+                vendorId,
                 selectionFlags,
                 firstCharacterIndex,
                 lastCharacterIndex,

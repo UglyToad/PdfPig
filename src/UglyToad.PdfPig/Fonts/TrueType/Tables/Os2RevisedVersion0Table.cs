@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Tables
 {
     using System.Collections.Generic;
+    using System.IO;
+    using Util;
 
     /// <summary>
     /// Version 0 was defined in TrueType revision 1.5 and includes fields not in the Apple specification.
@@ -67,6 +69,16 @@
             TypographicLineGap = typographicLineGap;
             WindowsAscent = windowsAscent;
             WindowsDescent = windowsDescent;
+        }
+
+        public override void Write(Stream stream)
+        {
+            base.Write(stream);
+            stream.WriteShort(TypographicAscender);
+            stream.WriteShort(TypographicDescender);
+            stream.WriteShort(TypographicLineGap);
+            stream.WriteUShort(WindowsAscent);
+            stream.WriteUShort(WindowsDescent);
         }
     }
 }

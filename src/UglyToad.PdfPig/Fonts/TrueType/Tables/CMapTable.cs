@@ -1,9 +1,13 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Tables
 {
+    using System;
     using System.Collections.Generic;
+    using System.IO;
     using CMapSubTables;
+    using IO;
+    using Util;
 
-    internal class CMapTable : ITable
+    internal class CMapTable : ITable, IWriteable
     {
         public IReadOnlyList<ICMapSubTable> SubTables { get; }
 
@@ -73,6 +77,54 @@
             }
 
             return false;
+        }
+
+        public void Write(Stream stream)
+        {
+            // Write cmap index.
+            stream.WriteUShort(Version);
+            stream.WriteUShort(SubTables.Count);
+
+            // Write cmap encoding subtable, an index of all subtables and store the offsets to correct once written.
+            var subTableIndexOffsetPositions = new long[SubTables.Count];
+            for (var i = 0; i < SubTables.Count; i++)
+            {
+                var subTable = SubTables[i];
+
+                stream.WriteUShort((ushort)subTable.PlatformId);
+                stream.WriteUShort(subTable.EncodingId);
+
+                subTableIndexOffsetPositions[i] = stream.Position;
+                stream.WriteUInt(0);
+            }
+
+            // Write the full tables and store their actual offsets.
+            var subTableActualPositions = new long[SubTables.Count];
+            for (var i = 0; i < SubTables.Count; i++)
+            {
+                var subTable = SubTables[i];
+
+                if (!(subTable is IWriteable writeableSubTable))
+                {
+                    throw new InvalidOperationException($"Cannot write subtable of type: {subTable.GetType().Name}.");
+                }
+
+                subTableActualPositions[i] = stream.Position;
+
+                writeableSubTable.Write(stream);
+            }
+
+            // Return to the index to fix the offset values.
+            var endAt = stream.Position;
+
+            for (var i = 0; i < subTableIndexOffsetPositions.Length; i++)
+            {
+                var actual = subTableActualPositions[i];
+                stream.Seek(subTableIndexOffsetPositions[i], SeekOrigin.Begin);
+                stream.WriteUInt(actual);
+            }
+
+            stream.Seek(endAt, SeekOrigin.Begin);
         }
     }
 }

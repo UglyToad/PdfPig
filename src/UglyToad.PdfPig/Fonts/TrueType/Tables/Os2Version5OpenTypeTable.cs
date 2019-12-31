@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Tables
 {
     using System.Collections.Generic;
+    using System.IO;
+    using Util;
 
     /// <summary>
     /// Version 5 was defined in OpenType 1.7. 
@@ -70,6 +72,13 @@
         {
             LowerOpticalPointSize = lowerOpticalPointSize;
             UpperOpticalPointSize = upperOpticalPointSize;
+        }
+
+        public override void Write(Stream stream)
+        {
+            base.Write(stream);
+            stream.WriteUShort(LowerOpticalPointSize);
+            stream.WriteUShort(UpperOpticalPointSize);
         }
     }
 }

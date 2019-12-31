@@ -3,7 +3,6 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
 {
     using System;
     using System.Globalization;
-    using System.IO;
     using System.Text;
     using System.Text.RegularExpressions;
     using PdfPig.Fonts.TrueType;
@@ -14,23 +13,12 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
 
     public class TrueTypeFontParserTests
     {
-        private static byte[] GetFileBytes(string name)
-        {
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts", "TrueType");
-
-            name = name.EndsWith(".ttf") || name.EndsWith(".txt") ? name : name + ".ttf";
-
-            var file = Path.Combine(path, name);
-
-            return File.ReadAllBytes(file);
-        }
-
         private readonly TrueTypeFontParser parser = new TrueTypeFontParser();
 
         [Fact]
         public void ParseRegularRoboto()
         {
-            var bytes = GetFileBytes("Roboto-Regular");
+            var bytes = TrueTypeTestHelper.GetFileBytes("Roboto-Regular");
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
@@ -104,7 +92,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
                 "prep 158516 77 251381919"
             };
 
-            var bytes = GetFileBytes("Roboto-Regular");
+            var bytes = TrueTypeTestHelper.GetFileBytes("Roboto-Regular");
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
@@ -136,7 +124,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
         [Fact]
         public void ParseSimpleGoogleDocssGautmi()
         {
-            var bytes = GetFileBytes("google-simple-doc");
+            var bytes = TrueTypeTestHelper.GetFileBytes("google-simple-doc");
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
@@ -148,7 +136,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
         [Fact]
         public void ParseAndadaRegular()
         {
-            var bytes = GetFileBytes("Andada-Regular");
+            var bytes = TrueTypeTestHelper.GetFileBytes("Andada-Regular");
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
@@ -178,7 +166,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
         [Fact]
         public void ParsePMingLiU()
         {
-            var bytes = GetFileBytes("PMingLiU");
+            var bytes = TrueTypeTestHelper.GetFileBytes("PMingLiU");
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
@@ -192,13 +180,13 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
         {
             var regex = new Regex(@"\?: Width (?<width>\d+), Height: (?<height>\d+), Points: (?<points>\d+)");
 
-            var bytes = GetFileBytes("Roboto-Regular");
+            var bytes = TrueTypeTestHelper.GetFileBytes("Roboto-Regular");
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
             var font = parser.Parse(input);
 
-            var robotoGlyphs = Encoding.ASCII.GetString(GetFileBytes("Roboto-Regular.GlyphData.txt"));
+            var robotoGlyphs = Encoding.ASCII.GetString(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.GlyphData.txt"));
             var lines = robotoGlyphs.Split(new[] {"\r\n", "\r", "\n"}, StringSplitOptions.RemoveEmptyEntries);
 
             for (var i = 0; i < lines.Length; i++)

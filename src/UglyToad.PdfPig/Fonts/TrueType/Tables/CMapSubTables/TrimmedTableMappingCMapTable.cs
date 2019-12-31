@@ -2,13 +2,18 @@
 namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
 {
     using System;
+    using System.IO;
+    using IO;
+    using Util;
 
-    /// <inheritdoc />
     /// <summary>
     /// A format 6 CMap sub-table which uses 2 bytes to map a contiguous range of character codes to glyph indices.
     /// </summary>
-    internal class TrimmedTableMappingCMapTable : ICMapSubTable
+    internal class TrimmedTableMappingCMapTable : ICMapSubTable, IWriteable
     {
+        private const ushort Format = 6;
+        private const ushort DefaultLanguageId = 0;
+
         private readonly int entryCount;
         private readonly ushort[] glyphIndices;
 
@@ -68,6 +73,23 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
             var glyphIndices = data.ReadUnsignedShortArray(entryCount);
 
             return new TrimmedTableMappingCMapTable(platformId, encodingId, firstCode, entryCount, glyphIndices);
+        }
+
+        public void Write(Stream stream)
+        {
+            stream.WriteUShort(Format);
+
+            var length = (ushort)((5 * sizeof(short)) + (sizeof(short) * glyphIndices.Length));
+
+            stream.WriteUShort(length);
+            stream.WriteUShort(DefaultLanguageId);
+            stream.WriteUShort(FirstCharacterCode);
+            stream.WriteUShort(glyphIndices.Length);
+
+            for (var j = 0; j < glyphIndices.Length; j++)
+            {
+                stream.WriteUShort(glyphIndices[j]);
+            }
         }
     }
 }

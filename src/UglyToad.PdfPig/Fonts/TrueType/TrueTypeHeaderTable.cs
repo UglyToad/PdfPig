@@ -1,12 +1,15 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType
 {
     using System;
+    using System.IO;
+    using IO;
+    using Util;
     using Util.JetBrains.Annotations;
 
     /// <summary>
     /// A table directory entry from the TrueType font file.
     /// </summary>
-    internal struct TrueTypeHeaderTable
+    internal struct TrueTypeHeaderTable : IWriteable
     {
         #region RequiredTableTags
         /// <summary>
@@ -190,9 +193,29 @@
             Length = length;
         }
 
+        /// <summary>
+        /// Gets an empty header table with the non-tag values set to zero.
+        /// </summary>
+        public static TrueTypeHeaderTable GetEmptyHeaderTable(string tag)
+        {
+            return new TrueTypeHeaderTable(tag, 0, 0, 0);
+        }
+
         public override string ToString()
         {
             return $"{Tag} {Offset} {Length} {CheckSum}";
+        }
+
+        public void Write(Stream stream)
+        {
+            for (var i = 0; i < Tag.Length; i++)
+            {
+                stream.WriteByte((byte)Tag[i]);
+            }
+
+            stream.WriteUInt(CheckSum);
+            stream.WriteUInt(Offset);
+            stream.WriteUInt(Length);
         }
     }
 }
