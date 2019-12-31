@@ -20,9 +20,9 @@
         private readonly TrueTypeFontProgram font;
         private readonly IReadOnlyList<byte> fontFileBytes;
 
-        //private readonly object mappingLock = new object();
+        private readonly object mappingLock = new object();
         private readonly Dictionary<char, byte> characterMapping = new Dictionary<char, byte>();
-        //private int characterMappingCounter = 1;
+        private int characterMappingCounter = 1;
 
         public bool HasWidths { get; } = true;
 
@@ -47,14 +47,13 @@
         public TransformationMatrix GetFontMatrix()
         {
             var unitsPerEm = font.GetFontMatrixMultiplier();
-            return TransformationMatrix.FromValues(1.0/unitsPerEm, 0, 0, 1.0/unitsPerEm, 0, 0);
+            return TransformationMatrix.FromValues(1.0 / unitsPerEm, 0, 0, 1.0 / unitsPerEm, 0, 0);
         }
 
         public ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context)
         {
-            var b = TrueTypeEncodingReplacer.ReplaceCMapTables(new ByteArrayInputBytes(fontFileBytes), characterMapping);
+            var b = TrueTypeCMapReplacer.ReplaceCMapTables(font, new ByteArrayInputBytes(fontFileBytes), characterMapping);
 
-            // TODO: unfortunately we need to subset the font in order to support custom encoding.
             // A symbolic font (one which contains characters not in the standard latin set) -
             // should contain a MacRoman (1, 0) or Windows Symbolic (3,0) cmap subtable which maps character codes to glyph id.
             var bytes = CompressBytes(b);
@@ -68,7 +67,7 @@
             var fileRef = context.WriteObject(outputStream, embeddedFile);
 
             var baseFont = NameToken.Create(font.TableRegister.NameTable.GetPostscriptName());
-            
+
             var postscript = font.TableRegister.PostScriptTable;
             var hhead = font.TableRegister.HorizontalHeaderTable;
 
@@ -95,7 +94,7 @@
             {
                 throw new InvalidFontFormatException("Embedding TrueType font requires OS/2 table.");
             }
-            
+
             if (os2 is Os2Version2To4OpenTypeTable twoPlus)
             {
                 descriptorDictionary[NameToken.CapHeight] = new NumericToken(twoPlus.CapHeight);
@@ -114,11 +113,11 @@
                 }
 
                 var glyphId = font.WindowsUnicodeCMap.CharacterCodeToGlyphIndex(kvp.Key);
-                var width = font.TableRegister.HorizontalMetricsTable.GetAdvanceWidth(glyphId) * scaling;
+                var width = decimal.Round(font.TableRegister.HorizontalMetricsTable.GetAdvanceWidth(glyphId) * scaling, 2);
 
                 widths.Add(new NumericToken(width));
             }
-            
+
             var descriptor = context.WriteObject(outputStream, new DictionaryToken(descriptorDictionary));
 
             var toUnicodeCMap = ToUnicodeCMapBuilder.ConvertToCMapStream(characterMapping);
@@ -129,7 +128,7 @@
                 {NameToken.Length1, new NumericToken(toUnicodeCMap.Count)},
                 {NameToken.Filter, new ArrayToken(new[] {NameToken.FlateDecode})}
             }), compressedToUnicodeCMap));
-            
+
             var dictionary = new Dictionary<NameToken, IToken>
             {
                 { NameToken.Type, NameToken.Font },
@@ -151,29 +150,28 @@
 
         public byte GetValueForCharacter(char character)
         {
-            return (byte) character;
-            //lock (mappingLock)
-            //{
-            //    if (characterMapping.TryGetValue(character, out var result))
-            //    {
-            //        return result;
-            //    }
+            lock (mappingLock)
+            {
+                if (characterMapping.TryGetValue(character, out var result))
+                {
+                    return result;
+                }
 
-            //    if (characterMappingCounter > byte.MaxValue)
-            //    {
-            //        throw new NotSupportedException("Cannot support more than 255 separate characters in a simple TrueType font, please" +
-            //                                        " submit an issue since we will need to add support for composite fonts with multi-byte" +
-            //                                        " character identifiers.");
-            //    }
+                if (characterMappingCounter > byte.MaxValue)
+                {
+                    throw new NotSupportedException("Cannot support more than 255 separate characters in a simple TrueType font, please" +
+                                                    " submit an issue since we will need to add support for composite fonts with multi-byte" +
+                                                    " character identifiers.");
+                }
 
-            //    var value = (byte) characterMappingCounter++;
+                var value = (byte)characterMappingCounter++;
 
-            //    characterMapping[character] = value;
+                characterMapping[character] = value;
 
-            //    result = value;
+                result = value;
 
-            //    return result;
-            //}
+                return result;
+            }
         }
 
         private static byte[] CompressBytes(IReadOnlyList<byte> bytes)

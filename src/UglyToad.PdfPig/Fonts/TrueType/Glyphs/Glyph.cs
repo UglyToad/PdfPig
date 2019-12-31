@@ -18,7 +18,7 @@
         /// <summary>
         /// An array of the last points of each contour.
         /// </summary>
-        public int[] EndPointsOfContours { get; }
+        public ushort[] EndPointsOfContours { get; }
 
         public GlyphPoint[] Points { get; }
 
@@ -26,7 +26,7 @@
 
         public bool IsEmpty => Points.Length == 0;
 
-        public Glyph(bool isSimple, byte[] instructions, int[] endPointsOfContours, GlyphPoint[] points,
+        public Glyph(bool isSimple, byte[] instructions, ushort[] endPointsOfContours, GlyphPoint[] points,
             PdfRectangle bounds)
         {
             IsSimple = isSimple;
@@ -38,7 +38,7 @@
 
         public static IGlyphDescription Empty(PdfRectangle bounds)
         {
-            return new Glyph(true, new byte[0], new int[0], new GlyphPoint[0], bounds);
+            return new Glyph(true, new byte[0], new ushort[0], new GlyphPoint[0], bounds);
         }
 
         public IGlyphDescription DeepClone()
@@ -46,7 +46,7 @@
             var clonedInstructions = new byte[Instructions.Length];
             Array.Copy(Instructions, clonedInstructions, Instructions.Length);
 
-            var clonedEndPoints = new int[EndPointsOfContours.Length];
+            var clonedEndPoints = new ushort[EndPointsOfContours.Length];
             Array.Copy(EndPointsOfContours, clonedEndPoints, EndPointsOfContours.Length);
 
             var clonedPoints = new GlyphPoint[Points.Length];
@@ -59,7 +59,7 @@
         {
             var newPoints = MergePoints(glyph);
             var newEndpoints = MergeContourEndPoints(glyph);
-            
+
             return new Glyph(false, Instructions, newEndpoints, newPoints, Bounds);
         }
 
@@ -80,11 +80,11 @@
             return newPoints;
         }
 
-        private int[] MergeContourEndPoints(IGlyphDescription glyph)
+        private ushort[] MergeContourEndPoints(IGlyphDescription glyph)
         {
             var destinationLastEndPoint = EndPointsOfContours[EndPointsOfContours.Length - 1] + 1;
 
-            var endPoints = new int[EndPointsOfContours.Length + glyph.EndPointsOfContours.Length];
+            var endPoints = new ushort[EndPointsOfContours.Length + glyph.EndPointsOfContours.Length];
 
             for (var i = 0; i < EndPointsOfContours.Length; i++)
             {
@@ -93,7 +93,7 @@
 
             for (var i = 0; i < glyph.EndPointsOfContours.Length; i++)
             {
-                endPoints[i + EndPointsOfContours.Length] = glyph.EndPointsOfContours[i] + destinationLastEndPoint;
+                endPoints[i + EndPointsOfContours.Length] = (ushort)(glyph.EndPointsOfContours[i] + destinationLastEndPoint);
             }
 
             return endPoints;

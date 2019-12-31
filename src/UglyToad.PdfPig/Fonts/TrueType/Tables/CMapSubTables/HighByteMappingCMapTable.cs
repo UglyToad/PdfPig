@@ -14,13 +14,9 @@
 
         public TrueTypeCMapPlatform PlatformId { get; }
 
-        public int EncodingId { get; }
-
-        public int FirstCharacterCode { get; }
-
-        public int LastCharacterCode { get; }
-
-        private HighByteMappingCMapTable(TrueTypeCMapPlatform platformId, int encodingId, IReadOnlyDictionary<int, int> characterCodesToGlyphIndices)
+        public ushort EncodingId { get; }
+        
+        private HighByteMappingCMapTable(TrueTypeCMapPlatform platformId, ushort encodingId, IReadOnlyDictionary<int, int> characterCodesToGlyphIndices)
         {
             this.characterCodesToGlyphIndices = characterCodesToGlyphIndices ?? throw new ArgumentNullException(nameof(characterCodesToGlyphIndices));
             PlatformId = platformId;
@@ -37,7 +33,7 @@
             return index;
         }
 
-        public static HighByteMappingCMapTable Load(TrueTypeDataBytes data, int numberOfGlyphs, TrueTypeCMapPlatform platformId, int encodingId)
+        public static HighByteMappingCMapTable Load(TrueTypeDataBytes data, int numberOfGlyphs, TrueTypeCMapPlatform platformId, ushort encodingId)
         {
             // ReSharper disable UnusedVariable
             var length = data.ReadUnsignedShort();

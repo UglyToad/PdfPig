@@ -91,11 +91,11 @@
         {
             public TrueTypeCMapPlatform PlatformId { get; }
 
-            public int EncodingId { get; }
+            public ushort EncodingId { get; }
 
             public long Offset { get; }
 
-            public SubTableHeaderEntry(TrueTypeCMapPlatform platformId, int encodingId, long offset)
+            public SubTableHeaderEntry(TrueTypeCMapPlatform platformId, ushort encodingId, long offset)
             {
                 PlatformId = platformId;
                 EncodingId = encodingId;
