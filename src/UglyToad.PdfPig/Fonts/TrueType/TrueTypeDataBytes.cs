@@ -124,9 +124,9 @@
             return signedByte < 127 ? signedByte : signedByte - 256;
         }
 
-        public int[] ReadUnsignedShortArray(int length)
+        public ushort[] ReadUnsignedShortArray(int length)
         {
-            var result = new int[length];
+            var result = new ushort[length];
 
             for (int i = 0; i < length; i++)
             {

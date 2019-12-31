@@ -10,7 +10,7 @@
 
         byte[] Instructions { get; }
 
-        int[] EndPointsOfContours { get; }
+        ushort[] EndPointsOfContours { get; }
 
         GlyphPoint[] Points { get; }
 

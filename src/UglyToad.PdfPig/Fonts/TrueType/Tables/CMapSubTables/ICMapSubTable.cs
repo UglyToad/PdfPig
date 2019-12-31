@@ -13,14 +13,10 @@
         TrueTypeCMapPlatform PlatformId { get; }
 
         /// <summary>
-        /// Platform specific encoding indentifier.
+        /// Platform specific encoding indentifier. Interpretation depends on the value of the <see cref="PlatformId"/>.
         /// </summary>
-        int EncodingId { get; }
-
-        int FirstCharacterCode { get; }
-
-        int LastCharacterCode { get; }
-
+        ushort EncodingId { get; }
+        
         /// <summary>
         /// Maps from a character code to the array index of the glyph in the font data.
         /// </summary>
@@ -32,7 +28,7 @@
     /// <summary>
     /// The platform identifier for a CMap table.
     /// </summary>
-    internal enum TrueTypeCMapPlatform
+    internal enum TrueTypeCMapPlatform : ushort
     {
         /// <summary>
         /// Unicode.

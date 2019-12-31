@@ -2,38 +2,37 @@
 {
     /// <inheritdoc />
     /// <summary>
-    /// The format 0 sub-total where character codes and glyph indices are restricted to a single bytes.
+    /// The format 0 sub-table where character codes and glyph indices are restricted to a single bytes.
     /// </summary>
     internal class ByteEncodingCMapTable : ICMapSubTable
     {
+        private const int SizeOfShort = 2;
         private const int GlyphMappingLength = 256;
+
         private readonly byte[] glyphMapping;
 
         public TrueTypeCMapPlatform PlatformId { get; }
 
-        public int EncodingId { get; }
+        public ushort EncodingId { get; }
 
-        public int FirstCharacterCode { get; }
+        public ushort LanguageId { get; }
 
-        public int LastCharacterCode { get; }
-
-        private ByteEncodingCMapTable(TrueTypeCMapPlatform platformId, int encodingId, byte[] glyphMapping)
+        private ByteEncodingCMapTable(TrueTypeCMapPlatform platformId, ushort encodingId, ushort languageId, byte[] glyphMapping)
         {
             this.glyphMapping = glyphMapping;
             PlatformId = platformId;
             EncodingId = encodingId;
+            LanguageId = languageId;
         }
 
-        public static ByteEncodingCMapTable Load(TrueTypeDataBytes data, TrueTypeCMapPlatform platformId, int encodingId)
+        public static ByteEncodingCMapTable Load(TrueTypeDataBytes data, TrueTypeCMapPlatform platformId, ushort encodingId)
         {
-            // ReSharper disable UnusedVariable
             var length = data.ReadUnsignedShort();
-            var version = data.ReadUnsignedShort();
-            // ReSharper restore UnusedVariable
+            var language = data.ReadUnsignedShort();
 
-            var glyphMapping = data.ReadByteArray(GlyphMappingLength);
+            var glyphMapping = data.ReadByteArray(length - (SizeOfShort * 3));
 
-            return new ByteEncodingCMapTable(platformId, encodingId, glyphMapping);
+            return new ByteEncodingCMapTable(platformId, encodingId, language, glyphMapping);
         }
 
         public int CharacterCodeToGlyphIndex(int characterCode)

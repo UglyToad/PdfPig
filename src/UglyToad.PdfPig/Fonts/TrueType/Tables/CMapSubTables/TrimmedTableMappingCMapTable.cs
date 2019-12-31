@@ -10,10 +10,13 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
     internal class TrimmedTableMappingCMapTable : ICMapSubTable
     {
         private readonly int entryCount;
-        private readonly int[] glyphIndices;
+        private readonly ushort[] glyphIndices;
 
+        /// <inheritdoc />
         public TrueTypeCMapPlatform PlatformId { get; }
-        public int EncodingId { get; }
+
+        /// <inheritdoc />
+        public ushort EncodingId { get; }
 
         public int FirstCharacterCode { get; }
 
@@ -22,7 +25,7 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
         /// <summary>
         /// Create a new <see cref="TrimmedTableMappingCMapTable"/>.
         /// </summary>
-        public TrimmedTableMappingCMapTable(TrueTypeCMapPlatform platformId, int encodingId, int firstCharacterCode, int entryCount, int[] glyphIndices)
+        public TrimmedTableMappingCMapTable(TrueTypeCMapPlatform platformId, ushort encodingId, int firstCharacterCode, int entryCount, ushort[] glyphIndices)
         {
             FirstCharacterCode = firstCharacterCode;
             this.entryCount = entryCount;
@@ -51,7 +54,7 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
             return glyphIndices[offset];
         }
 
-        public static TrimmedTableMappingCMapTable Load(TrueTypeDataBytes data, TrueTypeCMapPlatform platformId, int encodingId)
+        public static TrimmedTableMappingCMapTable Load(TrueTypeDataBytes data, TrueTypeCMapPlatform platformId, ushort encodingId)
         {
             var length = data.ReadUnsignedShort();
             var language = data.ReadUnsignedShort();
