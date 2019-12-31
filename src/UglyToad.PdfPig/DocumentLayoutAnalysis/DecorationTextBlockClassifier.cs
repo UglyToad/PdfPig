@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Geometry;
@@ -18,7 +19,10 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
     /// </summary>
     public static class DecorationTextBlockClassifier
     {
-        private static System.Text.RegularExpressions.Regex numbersPattern = new System.Text.RegularExpressions.Regex(@"\d"); // TODO: add roman numbers pattern
+        /// <summary>
+        /// 
+        /// </summary>
+        public static Regex numbersPattern = new Regex(@"(\d+)|(\b([MDCLXVI]+)\b)", RegexOptions.IgnoreCase);
         private static string replacementChar = "@";
 
         /// <summary>
