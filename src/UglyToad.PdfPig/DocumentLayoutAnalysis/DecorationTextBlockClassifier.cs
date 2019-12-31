@@ -19,10 +19,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
     /// </summary>
     public static class DecorationTextBlockClassifier
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        public static Regex numbersPattern = new Regex(@"(\d+)|(\b([MDCLXVI]+)\b)", RegexOptions.IgnoreCase);
+        private static Regex numbersPattern = new Regex(@"(\d+)|(\b([MDCLXVI]+)\b)", RegexOptions.IgnoreCase);
         private static string replacementChar = "@";
 
         /// <summary>
