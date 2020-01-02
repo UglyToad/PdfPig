@@ -13,6 +13,52 @@
         {
             var data = new TrueTypeDataBytes(fontBytes);
 
+            var existingGlyphs = GetGlyphRecordsInFont(font, data);
+            
+            var newGlyphRecords = new GlyphRecord[mapping.Length];
+            var newGlyphTableLength = 0;
+
+            for (var i = 0; i < mapping.Length; i++)
+            {
+                var map = mapping[i];
+                var record = existingGlyphs[map.OldIndex];
+
+                newGlyphRecords[i] = record;
+                newGlyphTableLength += record.DataLength;
+            }
+
+            var newIndexToLoca = new uint[newGlyphRecords.Length + 1];
+
+            var outputIndex = 0u;
+            var output = new byte[newGlyphTableLength];
+            for (var i = 0; i < newGlyphRecords.Length; i++)
+            {
+                var newRecord = newGlyphRecords[i];
+                if (newRecord.Type == GlyphType.Composite)
+                {
+                    throw new NotSupportedException("TODO");
+                }
+
+                newIndexToLoca[i] = outputIndex;
+                if (newRecord.Type == GlyphType.Empty)
+                {
+                    continue;
+                }
+
+                data.Seek(newRecord.Offset);
+                for (var j = 0; j < newRecord.DataLength; j++)
+                {
+                    output[outputIndex++] = data.ReadByte();
+                }
+            }
+
+            newIndexToLoca[newIndexToLoca.Length - 1] = (uint)output.Length;
+            
+            return new NewGlyphTable(output, newIndexToLoca);
+        }
+
+        private static GlyphRecord[] GetGlyphRecordsInFont(TrueTypeFontProgram font, TrueTypeDataBytes data)
+        {
             var indexToLocationTable = font.TableRegister.IndexToLocationTable;
 
             var numGlyphs = indexToLocationTable.GlyphOffsets.Length - 1;
@@ -62,46 +108,7 @@
                 }
             }
 
-            var newGlyphRecords = new GlyphRecord[mapping.Length];
-            var newGlyphTableLength = 0;
-
-            for (var i = 0; i < mapping.Length; i++)
-            {
-                var map = mapping[i];
-                var record = glyphRecords[map.OldIndex];
-
-                newGlyphRecords[i] = record;
-                newGlyphTableLength += record.DataLength;
-            }
-
-            var newIndexToLoca = new uint[newGlyphRecords.Length + 1];
-
-            var outputIndex = 0u;
-            var output = new byte[newGlyphTableLength];
-            for (var i = 0; i < newGlyphRecords.Length; i++)
-            {
-                var newRecord = newGlyphRecords[i];
-                if (newRecord.Type == GlyphType.Composite)
-                {
-                    throw new NotSupportedException("TODO");
-                }
-
-                newIndexToLoca[i] = outputIndex;
-                if (newRecord.Type == GlyphType.Empty)
-                {
-                    continue;
-                }
-
-                data.Seek(newRecord.Offset);
-                for (var j = 0; j < newRecord.DataLength; j++)
-                {
-                    output[outputIndex++] = data.ReadByte();
-                }
-            }
-
-            newIndexToLoca[newIndexToLoca.Length - 1] = (uint)output.Length;
-            
-            return new NewGlyphTable(output, newIndexToLoca);
+            return glyphRecords;
         }
 
         private static void ReadSimpleGlyph(TrueTypeDataBytes data, int numberOfContours)

@@ -7,6 +7,7 @@
     using Core;
     using Filters;
     using Geometry;
+    using IO;
     using Logging;
     using Tokens;
     using PdfPig.Fonts;
