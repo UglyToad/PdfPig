@@ -96,7 +96,6 @@
 
             var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfScanner, fontDescriptorFactory, dictionary, isLenientParsing);
 
-            // TODO: use the parsed font fully.
             var font = ParseTrueTypeFont(descriptor);
 
             var name = FontDictionaryAccessHelper.GetName(pdfScanner, dictionary, descriptor, isLenientParsing);

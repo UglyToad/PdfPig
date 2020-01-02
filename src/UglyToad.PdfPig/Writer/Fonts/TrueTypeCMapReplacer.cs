@@ -42,9 +42,10 @@
             var fileChecksumOffset = SizeOfTag;
 
             byte[] result;
-
+            
             using (var stream = new MemoryStream())
             {
+
                 // Write the file header details and read the number of tables out.
                 CopyThroughBufferPreserveData(stream, buffer, fontBytes, SizeOfFraction + (SizeOfShort * 4));
 
@@ -85,7 +86,7 @@
                         CopyThroughBufferDiscardData(stream, buffer, fontBytes, gapFromPrevious);
                     }
 
-                    if (inputHeader.Value.IsTable(CMapTag))
+                    if (inputHeader.Value.IsTable(CMapTag) || inputHeader.Value.IsTable(TrueTypeHeaderTable.Os2))
                     {
                         // Skip the CMap table for now, move it to the end in the output so we can resize it dynamically.
                         inputOffset = location.Offset + location.Length;
@@ -110,6 +111,8 @@
 
                     inputOffset = fontBytes.CurrentOffset;
                 }
+
+                inputTableHeaders.Remove("OS/2");
 
                 // Create a new cmap table here.
                 var table = GenerateWindowsSymbolTable(fontProgram, newEncoding);
@@ -156,6 +159,19 @@
                 result = stream.ToArray();
             }
 
+            // num tables
+            result[4] = 0;
+            result[5] = 16;
+            // search range
+            result[6] = 1;
+            result[7] = 0;
+            // entry selector
+            result[8] = 0;
+            result[9] = 4;
+            // range shift
+            result[10] = 0;
+            result[11] = 0;
+
             var inputBytes = new ByteArrayInputBytes(result);
 
             // Overwrite checksum values per table.
@@ -182,7 +198,10 @@
             // Store the result in checksum adjustment.
             WriteUInt(result, checksumAdjustmentLocation, checksumAdjustment);
 
+            // TODO: take andada regular with no modifications but removing the os/2 table and validate.
             var canParse = new TrueTypeFontParser().Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(result)));
+
+            File.WriteAllBytes(@"C:\temp\no-os2-2.ttf", result);
 
             return result;
         }
@@ -245,6 +264,11 @@
                 throw new InvalidOperationException($"Failed to read {size} bytes starting at offset {input.CurrentOffset - read}.");
             }
 
+            if (buffer[0] == 'O' && buffer[1] == 'S')
+            {
+                return;
+            }
+
             destination.Write(buffer, 0, read);
         }
 
@@ -258,8 +282,8 @@
             
             var cmapTable = new CMapTable(cmapVersion, new TrueTypeHeaderTable(CMapTag, 0, 0, 0), new[]
             {
-                new TrimmedTableMappingCMapTable(TrueTypeCMapPlatform.Windows, encodingId, 0, glyphIndices.Length, glyphIndices),
-                new TrimmedTableMappingCMapTable(TrueTypeCMapPlatform.Macintosh, encodingId, 0, glyphIndices.Length, glyphIndices)
+                new TrimmedTableMappingCMapTable(TrueTypeCMapPlatform.Macintosh, encodingId, 0, glyphIndices.Length, glyphIndices),
+                new TrimmedTableMappingCMapTable(TrueTypeCMapPlatform.Windows, encodingId, 0, glyphIndices.Length, glyphIndices)
             });
 
             using (var stream = new MemoryStream())

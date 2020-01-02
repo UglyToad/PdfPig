@@ -1,11 +1,16 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
 {
-    /// <inheritdoc />
+    using System.IO;
+    using IO;
+    using Util;
+
     /// <summary>
     /// The format 0 sub-table where character codes and glyph indices are restricted to a single bytes.
     /// </summary>
-    internal class ByteEncodingCMapTable : ICMapSubTable
+    internal class ByteEncodingCMapTable : ICMapSubTable, IWriteable
     {
+        private const ushort Format = 0;
+        private const ushort DefaultLanguageId = 0;
         private const int SizeOfShort = 2;
         private const int GlyphMappingLength = 256;
 
@@ -17,7 +22,7 @@
 
         public ushort LanguageId { get; }
 
-        private ByteEncodingCMapTable(TrueTypeCMapPlatform platformId, ushort encodingId, ushort languageId, byte[] glyphMapping)
+        public ByteEncodingCMapTable(TrueTypeCMapPlatform platformId, ushort encodingId, ushort languageId, byte[] glyphMapping)
         {
             this.glyphMapping = glyphMapping;
             PlatformId = platformId;
@@ -43,6 +48,18 @@
             }
 
             return glyphMapping[characterCode];
+        }
+
+        public void Write(Stream stream)
+        {
+            stream.WriteUShort(Format);
+            stream.WriteUShort(GlyphMappingLength + (SizeOfShort * 3));
+            stream.WriteUShort(DefaultLanguageId);
+            
+            for (var i = 0; i < glyphMapping.Length; i++)
+            {
+                stream.WriteByte(glyphMapping[i]);
+            }
         }
     }
 }

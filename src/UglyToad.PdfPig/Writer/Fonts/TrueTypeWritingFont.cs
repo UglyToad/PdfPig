@@ -7,7 +7,6 @@
     using Core;
     using Filters;
     using Geometry;
-    using IO;
     using Logging;
     using Tokens;
     using PdfPig.Fonts;
@@ -52,7 +51,7 @@
 
         public ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context)
         {
-            var b = TrueTypeCMapReplacer.ReplaceCMapTables(font, new ByteArrayInputBytes(fontFileBytes), characterMapping);
+            var b = TrueTypeSubsetter.Subset(fontFileBytes.ToArray(), new TrueTypeSubsetEncoding(characterMapping.Keys.ToList()));
 
             // A symbolic font (one which contains characters not in the standard latin set) -
             // should contain a MacRoman (1, 0) or Windows Symbolic (3,0) cmap subtable which maps character codes to glyph id.
