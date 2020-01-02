@@ -100,11 +100,11 @@
 
             var flags = ReadFlags(data, pointCount);
 
-            var xCoordinates = ReadCoordinates(data, pointCount, flags, SimpleGlyphFlags.XShortVector,
-                SimpleGlyphFlags.XSignOrSame);
+            var xCoordinates = ReadCoordinates(data, pointCount, flags, SimpleGlyphFlags.XSingleByte,
+                SimpleGlyphFlags.ThisXIsTheSame);
 
-            var yCoordinates = ReadCoordinates(data, pointCount, flags, SimpleGlyphFlags.YShortVector,
-                SimpleGlyphFlags.YSignOrSame);
+            var yCoordinates = ReadCoordinates(data, pointCount, flags, SimpleGlyphFlags.YSingleByte,
+                SimpleGlyphFlags.ThisYIsTheSame);
 
             var points = new GlyphPoint[xCoordinates.Length];
             for (var i = xCoordinates.Length - 1; i >= 0; i--)

@@ -81,6 +81,7 @@
 
         public void Write(Stream stream)
         {
+            var startPosition = stream.Position;
             // Write cmap index.
             stream.WriteUShort(Version);
             stream.WriteUShort(SubTables.Count);
@@ -109,7 +110,7 @@
                     throw new InvalidOperationException($"Cannot write subtable of type: {subTable.GetType().Name}.");
                 }
 
-                subTableActualPositions[i] = stream.Position;
+                subTableActualPositions[i] = stream.Position - startPosition;
 
                 writeableSubTable.Write(stream);
             }

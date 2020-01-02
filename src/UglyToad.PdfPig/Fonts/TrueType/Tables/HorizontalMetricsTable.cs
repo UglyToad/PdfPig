@@ -1,11 +1,14 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Tables
 {
     using System.Collections.Generic;
+    using System.IO;
+    using IO;
+    using Util;
 
     /// <summary>
     /// The 'hmtx' table contains metric information for the horizontal layout each of the glyphs in the font.
     /// </summary>
-    internal class HorizontalMetricsTable : ITable
+    internal class HorizontalMetricsTable : ITable, IWriteable
     {
         public string Tag => TrueTypeHeaderTable.Hmtx;
 
@@ -39,6 +42,22 @@
 
             // Monospaced fonts may not have a width for every glyph, the last metric is for subsequent glyphs.
             return HorizontalMetrics[HorizontalMetrics.Count - 1].AdvanceWidth;
+        }
+
+        public void Write(Stream stream)
+        {
+            for (var i = 0; i < HorizontalMetrics.Count; i++)
+            {
+                var metric = HorizontalMetrics[i];
+                stream.WriteUShort(metric.AdvanceWidth);
+                stream.WriteShort(metric.LeftSideBearing);
+            }
+
+            for (var i = 0; i < AdditionalLeftSideBearings.Count; i++)
+            {
+                var lsb = AdditionalLeftSideBearings[i];
+                stream.WriteShort(lsb);
+            }
         }
 
         /// <summary>

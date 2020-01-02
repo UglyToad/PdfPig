@@ -11,6 +11,8 @@
         private readonly byte[] internalBuffer = new byte[16];
         private readonly IInputBytes inputBytes;
 
+        public TrueTypeDataBytes(byte[] bytes) : this(new ByteArrayInputBytes(bytes)) { }
+
         public TrueTypeDataBytes(IInputBytes inputBytes)
         {
             this.inputBytes = inputBytes;
