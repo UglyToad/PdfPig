@@ -130,9 +130,14 @@
                     }
                     else if (entry.Tag == TrueTypeHeaderTable.Maxp)
                     {
+                        if (newGlyphTable == null)
+                        {
+                            throw new InvalidOperationException();
+                        }
+
                         // Update number of glyphs.
                         var maxpBytes = GetRawInputTableBytes(fontBytes, entry);
-                        WriteUShort(maxpBytes, 4, (ushort)indexMapping.Length);
+                        WriteUShort(maxpBytes, 4, (ushort)(newGlyphTable.GlyphOffsets.Length - 1));
                         stream.Write(maxpBytes, 0, maxpBytes.Length);
                     }
                     else
