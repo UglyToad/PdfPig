@@ -40,6 +40,28 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             IWordExtractor wordExtractor, IPageSegmenter pageSegmenter,
             double similarityThreshold = 0.25, int n = 5, int maxDegreeOfParallelism = -1)
         {
+            return Get(pages, wordExtractor, pageSegmenter, Distances.MinimumEditDistanceNormalised, similarityThreshold, n, maxDegreeOfParallelism);
+        }
+
+        /// <summary>
+        /// Get blocks that are labelled as decoration for each page in the document, using a content and a geometric similarity measure.
+        /// <para>Decoration blocks are blocks that contains information such as author names, publication titles, page numbers, etc.
+        /// They are printed repeatedly at the border of each page, usually placed inside headers or footers, but sometimes also at the 
+        /// left or right edge of the page.</para>
+        /// </summary>
+        /// <param name="pages">The <see cref="Page"/>s in the document. All of them are needed for the algorithm to work.</param>
+        /// <param name="wordExtractor"></param>
+        /// <param name="pageSegmenter"></param>
+        /// <param name="minimumEditDistanceNormalised">Minimum edit distance normalised. A value of 0 means both strings are exactly equal.</param>
+        /// <param name="similarityThreshold">Minimum similarity score to decide wether a block is labelled as decoration or not.</param>
+        /// <param name="n">Number of blocks in a page to be considered when looking for decoration blocks.</param>
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
+        /// <para>A positive property value limits the number of concurrent operations to the set value. 
+        /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
+        public static IReadOnlyList<IReadOnlyList<TextBlock>> Get(IReadOnlyList<Page> pages,
+            IWordExtractor wordExtractor, IPageSegmenter pageSegmenter, Func<string, string, double> minimumEditDistanceNormalised,
+            double similarityThreshold = 0.25, int n = 5, int maxDegreeOfParallelism = -1)
+        {
             if (pages.Count < 2)
             {
                 throw new ArgumentException("The algorithm cannot be used with a document of less than 2 pages.", nameof(pages));
@@ -60,6 +82,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             });
 
             return Get(pagesBlocks.OrderBy(x => x.Key).Select(x => x.Value).ToList(),
+                minimumEditDistanceNormalised,
                 similarityThreshold,
                 n,
                 maxDegreeOfParallelism);
@@ -79,6 +102,25 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
         public static IReadOnlyList<IReadOnlyList<TextBlock>> Get(IReadOnlyList<IReadOnlyList<TextBlock>> pagesTextBlocks,
             double similarityThreshold = 0.25, int n = 5, int maxDegreeOfParallelism = -1)
+        {
+            return Get(pagesTextBlocks, Distances.MinimumEditDistanceNormalised, similarityThreshold, n, maxDegreeOfParallelism);
+        }
+
+        /// <summary>
+        /// Get blocks that are labelled as decoration for each page in the document, using a content and a geometric similarity measure.
+        /// <para>Decoration blocks are blocks that contains information such as author names, publication titles, page numbers, etc.
+        /// They are printed repeatedly at the border of each page, usually placed inside headers or footers, but sometimes also at the 
+        /// left or right edge of the page.</para>
+        /// </summary>
+        /// <param name="pagesTextBlocks">The <see cref="TextBlock"/>s of every pages in the document. All of them are needed for the algorithm to work.</param>
+        /// <param name="minimumEditDistanceNormalised">Minimum edit distance normalised. A value of 0 means both strings are exactly equal.</param>
+        /// <param name="similarityThreshold">Minimum similarity score to decide wether a block is labelled as decoration or not.</param>
+        /// <param name="n">Number of blocks in a page to be considered when looking for decoration blocks.</param>
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
+        /// <para>A positive property value limits the number of concurrent operations to the set value. 
+        /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
+        public static IReadOnlyList<IReadOnlyList<TextBlock>> Get(IReadOnlyList<IReadOnlyList<TextBlock>> pagesTextBlocks,
+            Func<string, string, double> minimumEditDistanceNormalised, double similarityThreshold = 0.25, int n = 5, int maxDegreeOfParallelism = -1)
         {
             if (pagesTextBlocks.Count < 2)
             {
@@ -119,7 +161,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                 for (int i = 0; i < nCurrent; i++)
                 {
                     var current = currentPage[i];
-                    var score = Score(current, previousPage, nextPage, similarityThreshold, n);
+                    var score = Score(current, previousPage, nextPage, minimumEditDistanceNormalised, similarityThreshold, n);
                     if (score >= similarityThreshold)
                     {
                         if (!pageDecorations[p].Contains(current)) pageDecorations[p].Add(current);
@@ -134,7 +176,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                 for (int i = 0; i < nCurrent; i++)
                 {
                     var current = currentPage[i];
-                    var score = Score(current, previousPage, nextPage, similarityThreshold, n);
+                    var score = Score(current, previousPage, nextPage, minimumEditDistanceNormalised, similarityThreshold, n);
                     if (score >= similarityThreshold)
                     {
                         if (!pageDecorations[p].Contains(current)) pageDecorations[p].Add(current);
@@ -149,7 +191,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                 for (int i = 0; i < nCurrent; i++)
                 {
                     var current = currentPage[i];
-                    var score = Score(current, previousPage, nextPage, similarityThreshold, n);
+                    var score = Score(current, previousPage, nextPage, minimumEditDistanceNormalised, similarityThreshold, n);
                     if (score >= similarityThreshold)
                     {
                         if (!pageDecorations[p].Contains(current)) pageDecorations[p].Add(current);
@@ -164,7 +206,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                 for (int i = 0; i < nCurrent; i++)
                 {
                     var current = currentPage[i];
-                    var score = Score(current, previousPage, nextPage, similarityThreshold, n);
+                    var score = Score(current, previousPage, nextPage, minimumEditDistanceNormalised, similarityThreshold, n);
                     if (score >= similarityThreshold)
                     {
                         if (!pageDecorations[p].Contains(current)) pageDecorations[p].Add(current);
@@ -180,9 +222,9 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// distance between the two content strings, where digits are replaced with “@” chars.
         /// A content similarity of 1 is reached when both strings are exactly equal.
         /// </summary>
-        private static double ContentSimilarity(TextBlock b1, TextBlock b2)
+        private static double ContentSimilarity(TextBlock b1, TextBlock b2, Func<string, string, double> minimumEditDistanceNormalised)
         {
-            double similarity = 1.0 - Distances.MinimumEditDistanceNormalised(
+            double similarity = 1.0 - minimumEditDistanceNormalised(
                 numbersPattern.Replace(b1.Text, replacementChar),
                 numbersPattern.Replace(b2.Text, replacementChar));
 
@@ -208,25 +250,25 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// This similarity score is a value in the range [0,1] and given 
         /// by the product between the content and the geometric similarity.
         /// </summary>
-        private static double Similarity(TextBlock b1, TextBlock b2)
+        private static double Similarity(TextBlock b1, TextBlock b2, Func<string, string, double> minimumEditDistanceNormalised)
         {
-            return ContentSimilarity(b1, b2) * GeomSimilarity(b1, b2);
+            return ContentSimilarity(b1, b2, minimumEditDistanceNormalised) * GeomSimilarity(b1, b2);
         }
 
-        private static double ScoreI(TextBlock current, TextBlock previous, TextBlock next)
+        private static double ScoreI(TextBlock current, TextBlock previous, TextBlock next, Func<string, string, double> minimumEditDistanceNormalised)
         {
-            return 0.5 * (Similarity(current, next) + Similarity(current, previous));
+            return 0.5 * (Similarity(current, next, minimumEditDistanceNormalised) + Similarity(current, previous, minimumEditDistanceNormalised));
         }
 
         private static double Score(TextBlock current, IReadOnlyList<TextBlock> previous, IReadOnlyList<TextBlock> next,
-            double threshold, int n)
+            Func<string, string, double> minimumEditDistanceNormalised, double threshold, int n)
         {
             n = Math.Min(n, Math.Min(previous.Count, next.Count));
             double score = 0;
 
             for (int i = 0; i < n; i++)
             {
-                var s = ScoreI(current, previous[i], next[i]);
+                var s = ScoreI(current, previous[i], next[i], minimumEditDistanceNormalised);
                 if (s > score) score = s;
                 if (score >= threshold) return score;
             }

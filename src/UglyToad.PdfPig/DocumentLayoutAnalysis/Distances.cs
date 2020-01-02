@@ -88,16 +88,16 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <returns></returns>
         public static int MinimumEditDistance(string string1, string string2)
         {
-            int[,] d = new int[string1.Length + 1, string2.Length + 1];
+            ushort[,] d = new ushort[string1.Length + 1, string2.Length + 1];
 
             for (int i = 1; i <= string1.Length; i++)
             {
-                d[i, 0] = i;
+                d[i, 0] = (ushort)i;
             }
 
             for (int j = 1; j <= string2.Length; j++)
             {
-                d[0, j] = j;
+                d[0, j] = (ushort)j;
             }
 
             for (int j = 1; j <= string2.Length; j++)
@@ -105,9 +105,9 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                 for (int i = 1; i <= string1.Length; i++)
                 {
                     d[i, j] = Math.Min(Math.Min(
-                        d[i - 1, j] + 1,
-                        d[i, j - 1] + 1),
-                        d[i - 1, j - 1] + (string1[i - 1] == string2[j - 1] ? 0 : 1)); // substitution, set cost to 1
+                        (ushort)(d[i - 1, j] + 1),
+                        (ushort)(d[i, j - 1] + 1)),
+                        (ushort)(d[i - 1, j - 1] + (string1[i - 1] == string2[j - 1] ? 0 : 1))); // substitution, set cost to 1
                 }
             }
             return d[string1.Length, string2.Length];
@@ -123,7 +123,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         {
             return MinimumEditDistance(string1, string2) / (double)Math.Max(string1.Length, string2.Length);
         }
-
+        
         /// <summary>
         /// Find the index of the nearest point, excluding itself.
         /// </summary>
