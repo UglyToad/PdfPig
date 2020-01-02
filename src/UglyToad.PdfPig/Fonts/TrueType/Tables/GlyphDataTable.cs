@@ -29,7 +29,7 @@
         public static GlyphDataTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, TableRegister.Builder tableRegister)
         {
             data.Seek(table.Offset);
-
+            
             var indexToLocationTable = tableRegister.IndexToLocationTable;
 
             var offsets = indexToLocationTable.GlyphOffsets;
