@@ -1,18 +1,51 @@
-﻿namespace UglyToad.PdfPig.Writer.Fonts
+﻿namespace UglyToad.PdfPig.Writer.Fonts.Subsetting
 {
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using PdfPig.Fonts.Exceptions;
     using PdfPig.Fonts.TrueType;
     using PdfPig.Fonts.TrueType.Glyphs;
+    using PdfPig.Fonts.TrueType.Tables;
     using Util;
     using IndexMap = TrueTypeSubsetter.OldToNewGlyphIndex;
 
+    /// <summary>
+    /// Produces a glyph table which contains a subset of the glyphs in the input font.
+    /// </summary>
     internal static class TrueTypeGlyphTableSubsetter
     {
-        public static NewGlyphTable SubsetGlyphTable(TrueTypeFontProgram font, byte[] fontBytes, IndexMap[] mapping)
+        /// <summary>
+        /// Creates a new glyph table from the input font which contains only the glyphs required by the input mapping.
+        /// </summary>
+        /// <param name="font">The font used to create this subset.</param>
+        /// <param name="fontBytes">The raw bytes of the input font.</param>
+        /// <param name="mapping">The mapping of old glyph indices to new glyph indices.</param>
+        /// <returns>A new glyph table and associated information for use in creating a valid TrueType font file.</returns>
+        public static TrueTypeSubsetGlyphTable SubsetGlyphTable(TrueTypeFontProgram font, byte[] fontBytes, IndexMap[] mapping)
         {
+            if (font == null)
+            {
+                throw new ArgumentNullException(nameof(font));
+            }
+
+            if (fontBytes == null)
+            {
+                throw new ArgumentNullException(nameof(fontBytes));
+            }
+
+            if (mapping == null)
+            {
+                throw new ArgumentNullException(nameof(mapping));
+            }
+
             var data = new TrueTypeDataBytes(fontBytes);
+            var advanceWidthTable = font.TableRegister.HorizontalMetricsTable;
+
+            if (advanceWidthTable == null)
+            {
+                throw new InvalidFontFormatException($"Font: {font} did not contain a horizontal metrics table, cannot subset.");
+            }
 
             var existingGlyphs = GetGlyphRecordsInFont(font, data);
 
@@ -30,6 +63,7 @@
             }
 
             var glyphLocations = new List<uint>();
+            var advanceWidths = new List<HorizontalMetricsTable.HorizontalMetric>();
 
             var compositeIndicesToReplace = new List<(uint offset, ushort newIndex)>();
 
@@ -56,13 +90,13 @@
                             {
                                 // Else we need to copy the dependency glyph from the original.
                                 var actualDependencyRecord = existingGlyphs[dependency.Index];
-                                
+
                                 // We need to add it to the set of glyphs to copy.
                                 newDependencyIndex = glyphsToCopy.Count;
                                 glyphsToCopy.Add(actualDependencyRecord);
                                 glyphsToCopyOriginalIndex.Add((int)dependency.Index);
                             }
-                            
+
                             var withinGlyphDataIndexOffset = dependency.OffsetOfIndexWithinData - newRecord.Offset;
 
                             compositeIndicesToReplace.Add(((uint)withinGlyphDataIndexOffset, (ushort)newDependencyIndex));
@@ -71,6 +105,9 @@
 
                     // Record the glyph location.
                     glyphLocations.Add((uint)stream.Position);
+
+                    var advanceWidth = advanceWidthTable.HorizontalMetrics[glyphsToCopyOriginalIndex[i]];
+                    advanceWidths.Add(advanceWidth);
 
                     if (newRecord.Type == GlyphType.Empty)
                     {
@@ -83,14 +120,21 @@
                     var glyphBytes = data.ReadByteArray(newRecord.DataLength);
 
                     // Update any indices referenced by composite glyphs to match the new index of the dependency.
-                    foreach (var toReplace in compositeIndicesToReplace)
+                    foreach (var (offset, newIndex) in compositeIndicesToReplace)
                     {
-                        glyphBytes[toReplace.offset] = (byte)(toReplace.newIndex >> 8);
-                        glyphBytes[toReplace.offset + 1] = (byte)toReplace.newIndex;
+                        glyphBytes[offset] = (byte)(newIndex >> 8);
+                        glyphBytes[offset + 1] = (byte)newIndex;
                     }
+                    
+                    stream.Write(glyphBytes, 0, glyphBytes.Length);
 
                     // Each glyph description must start at a 4 byte boundary.
-                    stream.Write(glyphBytes, 0, glyphBytes.Length);
+                    var remainder = glyphBytes.Length % 4;
+                    var bytesToPad = remainder == 0 ? 0 : 4 - remainder;
+                    for (var j = 0; j < bytesToPad; j++)
+                    {
+                        stream.WriteByte(0);
+                    }
                 }
 
                 var output = stream.ToArray();
@@ -98,7 +142,7 @@
                 glyphLocations.Add((uint)output.Length);
                 var offsets = glyphLocations.ToArray();
 
-                return new NewGlyphTable(output, offsets);
+                return new TrueTypeSubsetGlyphTable(output, offsets, advanceWidths.ToArray());
             }
         }
 
@@ -120,7 +164,7 @@
 
                 if (indexToLocationTable.GlyphOffsets[i + 1] <= indexToLocationTable.GlyphOffsets[i])
                 {
-                    glyphRecords[i] = new GlyphRecord(i, glyphOffset);
+                    glyphRecords[i] = new GlyphRecord(glyphOffset);
                     continue;
                 }
 
@@ -143,13 +187,13 @@
                 if (type == GlyphType.Simple)
                 {
                     ReadSimpleGlyph(data, numberOfContours);
-                    glyphRecords[i] = new GlyphRecord(i, glyphOffset, type, (int)(data.Position - glyphOffset));
+                    glyphRecords[i] = new GlyphRecord(glyphOffset, type, (int)(data.Position - glyphOffset));
                 }
                 else
                 {
                     var glyphIndices = ReadCompositeGlyph(data);
 
-                    glyphRecords[i] = new GlyphRecord(i, glyphOffset, type, (int)(data.Position - glyphOffset), glyphIndices);
+                    glyphRecords[i] = new GlyphRecord(glyphOffset, type, (int)(data.Position - glyphOffset), glyphIndices);
                 }
             }
 
@@ -221,9 +265,11 @@
                 }
             }
 
+            // ReSharper disable UnusedVariable
             var xCoordinates = ReadCoordinates(perPointFlags, data, SimpleGlyphFlags.XSingleByte, SimpleGlyphFlags.ThisXIsTheSame);
 
             var yCoordinates = ReadCoordinates(perPointFlags, data, SimpleGlyphFlags.YSingleByte, SimpleGlyphFlags.ThisYIsTheSame);
+            // ReSharper restore UnusedVariable
         }
 
         private static short[] ReadCoordinates(SimpleGlyphFlags[] flags, TrueTypeDataBytes data,
@@ -329,8 +375,6 @@
 
         private class GlyphRecord
         {
-            public int Index { get; }
-
             public int Offset { get; }
 
             public GlyphType Type { get; }
@@ -342,19 +386,17 @@
             /// </summary>
             public IReadOnlyList<CompositeGlyphIndexReference> DependencyIndices { get; }
 
-            public GlyphRecord(int index, int offset, GlyphType type, int dataLength,
+            public GlyphRecord(int offset, GlyphType type, int dataLength,
                 IReadOnlyList<CompositeGlyphIndexReference> dependentIndices = null)
             {
-                Index = index;
                 Offset = offset;
                 Type = type;
                 DataLength = dataLength;
                 DependencyIndices = dependentIndices ?? EmptyArray<CompositeGlyphIndexReference>.Instance;
             }
 
-            public GlyphRecord(int index, int offset)
+            public GlyphRecord(int offset)
             {
-                Index = index;
                 Offset = offset;
                 Type = GlyphType.Empty;
                 DataLength = 0;
@@ -369,6 +411,9 @@
             Composite
         }
 
+        /// <summary>
+        /// Marks a glyph index referenced by a composite glyph.
+        /// </summary>
         private struct CompositeGlyphIndexReference
         {
             /// <summary>
@@ -385,19 +430,6 @@
             {
                 Index = index;
                 OffsetOfIndexWithinData = offsetOfIndexWithinData;
-            }
-        }
-
-        public class NewGlyphTable
-        {
-            public byte[] Bytes { get; }
-
-            public uint[] GlyphOffsets { get; }
-
-            public NewGlyphTable(byte[] bytes, uint[] glyphOffsets)
-            {
-                Bytes = bytes ?? throw new ArgumentNullException(nameof(bytes));
-                GlyphOffsets = glyphOffsets ?? throw new ArgumentNullException(nameof(glyphOffsets));
             }
         }
     }
