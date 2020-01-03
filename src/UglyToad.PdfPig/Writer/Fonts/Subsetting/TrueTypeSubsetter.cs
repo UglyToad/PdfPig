@@ -1,10 +1,11 @@
-﻿namespace UglyToad.PdfPig.Writer.Fonts
+﻿namespace UglyToad.PdfPig.Writer.Fonts.Subsetting
 {
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using IO;
+    using PdfPig.Fonts.Exceptions;
     using PdfPig.Fonts.TrueType;
     using PdfPig.Fonts.TrueType.Parser;
     using PdfPig.Fonts.TrueType.Tables;
@@ -12,7 +13,9 @@
     using Util;
 
     internal static class TrueTypeSubsetter
-    { 
+    {
+        private const ushort IndexToLocLong = 1;
+
         /*
          * The PDF specification requires the following 10 tables:
          * glyf
@@ -25,6 +28,7 @@
          * fpgm
          * prep
          * cmap
+         * But not all fonts include 'cvt ' and 'fpgm'.
          */
         private static readonly IReadOnlyList<string> RequiredTags = new[]
         {
@@ -73,12 +77,20 @@
                 for (var i = 0; i < RequiredTags.Count; i++)
                 {
                     var tag = RequiredTags[i];
-                    var entry = new DirectoryEntry(tag, stream.Position, font.TableHeaders[tag]);
+
+                    if (!font.TableHeaders.TryGetValue(tag, out var inputHeader))
+                    {
+                        throw new InvalidFontFormatException($"Font does not contain table required for subsetting: {tag}.");
+                    }
+
+                    var entry = new DirectoryEntry(tag, stream.Position, inputHeader);
                     entry.DummyHeader.Write(stream);
                     directoryEntries[i] = entry;
                 }
 
-                TrueTypeGlyphTableSubsetter.NewGlyphTable newGlyphTable = null;
+                // Generate the glyph subset.
+                TrueTypeSubsetGlyphTable trueTypeSubsetGlyphTable = TrueTypeGlyphTableSubsetter.SubsetGlyphTable(font, fontBytes, indexMapping);
+
                 // Write the actual tables.
                 for (var i = 0; i < directoryEntries.Length; i++)
                 {
@@ -95,49 +107,40 @@
                     }
                     else if (entry.Tag == TrueTypeHeaderTable.Glyf)
                     {
-                        newGlyphTable = TrueTypeGlyphTableSubsetter.SubsetGlyphTable(font, fontBytes, indexMapping);
-                        stream.Write(newGlyphTable.Bytes, 0, newGlyphTable.Bytes.Length);
+                        stream.Write(trueTypeSubsetGlyphTable.Bytes, 0, trueTypeSubsetGlyphTable.Bytes.Length);
                     }
                     else if (entry.Tag == TrueTypeHeaderTable.Hmtx)
                     {
-                        var hmtx = GetHorizontalMetricsTable(font, entry, indexMapping);
+                        var hmtx = GetHorizontalMetricsTable(entry, trueTypeSubsetGlyphTable);
                         hmtx.Write(stream);
                     }
                     else if (entry.Tag == TrueTypeHeaderTable.Loca)
                     {
-                        if (newGlyphTable == null)
-                        {
-                            throw new InvalidOperationException();
-                        }
-
                         var table = new IndexToLocationTable(entry.DummyHeader, IndexToLocationTable.EntryFormat.Long,
-                            newGlyphTable.GlyphOffsets.Select(x => (long)x).ToArray());
+                            trueTypeSubsetGlyphTable.GlyphOffsets.Select(x => (long)x).ToArray());
                         table.Write(stream);
                     }
                     else if (entry.Tag == TrueTypeHeaderTable.Head)
                     {
                         // Update indexToLoc format.
                         var headBytes = GetRawInputTableBytes(fontBytes, entry);
-                        WriteUShort(headBytes, headBytes.Length - 4, 1);
+                        WriteUShort(headBytes, headBytes.Length - 4, IndexToLocLong);
                         stream.Write(headBytes, 0, headBytes.Length);
+
+                        // TODO: zero out checksum adjustment bytes.
                     }
                     else if (entry.Tag == TrueTypeHeaderTable.Hhea)
                     {
                         // Update number of h metrics.
                         var hheaBytes = GetRawInputTableBytes(fontBytes, entry);
-                        WriteUShort(hheaBytes, hheaBytes.Length - 2, (ushort)indexMapping.Length);
+                        WriteUShort(hheaBytes, hheaBytes.Length - 2, (ushort)trueTypeSubsetGlyphTable.HorizontalMetrics.Length);
                         stream.Write(hheaBytes, 0, hheaBytes.Length);
                     }
                     else if (entry.Tag == TrueTypeHeaderTable.Maxp)
                     {
-                        if (newGlyphTable == null)
-                        {
-                            throw new InvalidOperationException();
-                        }
-
                         // Update number of glyphs.
                         var maxpBytes = GetRawInputTableBytes(fontBytes, entry);
-                        WriteUShort(maxpBytes, 4, (ushort)(newGlyphTable.GlyphOffsets.Length - 1));
+                        WriteUShort(maxpBytes, 4, trueTypeSubsetGlyphTable.GlyphCount);
                         stream.Write(maxpBytes, 0, maxpBytes.Length);
                     }
                     else
@@ -182,7 +185,7 @@
 
             result[0] = new OldToNewGlyphIndex(0, 0, '\0');
 
-            var previousCMap = font.MacRomanCMap ?? font.WindowsUnicodeCMap ?? font.WindowsSymbolCMap;
+            var previousCMap = font.WindowsUnicodeCMap ?? font.WindowsSymbolCMap ?? font.MacRomanCMap;
 
             if (previousCMap == null)
             {
@@ -223,21 +226,9 @@
             return cmap;
         }
 
-        private static HorizontalMetricsTable GetHorizontalMetricsTable(TrueTypeFontProgram font, DirectoryEntry entry, OldToNewGlyphIndex[] encoding)
+        private static HorizontalMetricsTable GetHorizontalMetricsTable(DirectoryEntry entry, TrueTypeSubsetGlyphTable glyphTable)
         {
-            var current = font.TableRegister.HorizontalMetricsTable;
-
-            var newMetrics = new HorizontalMetricsTable.HorizontalMetric[encoding.Length];
-
-            for (var i = 0; i < encoding.Length; i++)
-            {
-                var mapping = encoding[i];
-                // TODO: might be an additional lsb only.
-                var value = current.HorizontalMetrics[mapping.OldIndex];
-                newMetrics[i] = value;
-            }
-
-            return new HorizontalMetricsTable(entry.DummyHeader, newMetrics, EmptyArray<short>.Instance);
+            return new HorizontalMetricsTable(entry.DummyHeader, glyphTable.HorizontalMetrics, EmptyArray<short>.Instance);
         }
 
         private static byte[] GetRawInputTableBytes(byte[] font, DirectoryEntry entry)
@@ -295,16 +286,6 @@
             {
                 return $"{Represents}: From {OldIndex} To {NewIndex}.";
             }
-        }
-    }
-
-    internal class TrueTypeSubsetEncoding
-    {
-        public IReadOnlyList<char> Characters { get; }
-
-        public TrueTypeSubsetEncoding(IReadOnlyList<char> characters)
-        {
-            Characters = characters;
         }
     }
 }

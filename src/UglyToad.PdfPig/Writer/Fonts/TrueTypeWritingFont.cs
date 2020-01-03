@@ -7,13 +7,13 @@
     using Core;
     using Filters;
     using Geometry;
-    using IO;
     using Logging;
     using Tokens;
     using PdfPig.Fonts;
     using PdfPig.Fonts.Exceptions;
     using PdfPig.Fonts.TrueType;
     using PdfPig.Fonts.TrueType.Tables;
+    using Subsetting;
 
     internal class TrueTypeWritingFont : IWritingFont
     {
