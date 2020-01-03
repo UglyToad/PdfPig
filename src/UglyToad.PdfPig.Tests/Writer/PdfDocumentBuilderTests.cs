@@ -146,6 +146,35 @@
         }
 
         [Fact]
+        public void CanWriteRobotoAccentedCharacters()
+        {
+            var builder = new PdfDocumentBuilder();
+
+            builder.DocumentInformation.Title = "Hello Roboto!";
+
+            var page = builder.AddPage(PageSize.A4);
+            
+            var font = builder.AddTrueTypeFont(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf"));
+
+            page.AddText("eé", 12, new PdfPoint(30, 520), font);
+
+            Assert.NotEmpty(page.Operations);
+
+            var b = builder.Build();
+
+            WriteFile(nameof(CanWriteRobotoAccentedCharacters), b);
+
+            Assert.NotEmpty(b);
+
+            using (var document = PdfDocument.Open(b))
+            {
+                var page1 = document.GetPage(1);
+
+                Assert.Equal("eé", page1.Text);
+            }
+        }
+
+        [Fact]
         public void WindowsOnlyCanWriteSinglePageAccentedCharactersSystemFont()
         {
             var builder = new PdfDocumentBuilder();
