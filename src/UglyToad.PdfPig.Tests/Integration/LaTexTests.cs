@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using PdfPig.Util;
+    using PdfPig.Core;
     using Xunit;
 
     public class LaTexTests

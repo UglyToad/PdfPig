@@ -3,15 +3,13 @@
     using System;
     using System.IO;
     using System.Linq;
+    using PdfPig.Core;
     using PdfPig.Fonts.TrueType;
     using PdfPig.Fonts.TrueType.Parser;
-    using PdfPig.IO;
     using Xunit;
 
     public class TrueTypeChecksumCalculatorTests
     {
-        private readonly TrueTypeFontParser parser = new TrueTypeFontParser();
-
         [Fact]
         public void CalculatedChecksumsMatchRoboto()
         {
@@ -67,7 +65,7 @@
         {
             var inputBytes = new ByteArrayInputBytes(bytes);
 
-            var font = parser.Parse(new TrueTypeDataBytes(inputBytes));
+            var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(inputBytes));
 
             inputBytes = new ByteArrayInputBytes(bytes);
 

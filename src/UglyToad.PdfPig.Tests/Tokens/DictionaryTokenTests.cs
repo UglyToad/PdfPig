@@ -3,7 +3,7 @@ namespace UglyToad.PdfPig.Tests.Tokens
 {
     using System;
     using System.Collections.Generic;
-    using Exceptions;
+    using PdfPig.Core;
     using PdfPig.Tokens;
     using Xunit;
 

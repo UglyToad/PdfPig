@@ -98,6 +98,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\UglyToad.PdfPig.Core\UglyToad.PdfPig.Core.csproj" />
+    <ProjectReference Include="..\UglyToad.PdfPig.Fonts\UglyToad.PdfPig.Fonts.csproj" />
     <ProjectReference Include="..\UglyToad.PdfPig\UglyToad.PdfPig.csproj" />
   </ItemGroup>
 

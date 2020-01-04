@@ -4,8 +4,8 @@
     using System.IO;
     using System.Linq;
     using System.Text;
-    using PdfPig.Fonts.Type1.Parser;
-    using PdfPig.IO;
+    using PdfFonts.Type1.Parser;
+    using PdfPig.Core;
     using Xunit;
 
     public class Type1FontParserTests

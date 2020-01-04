@@ -2,8 +2,7 @@
 {
     using System.IO;
     using System.Linq;
-    using PdfPig.IO;
-    using PdfPig.Util;
+    using PdfPig.Core;
     using Xunit;
 
     public class InputBytesTests

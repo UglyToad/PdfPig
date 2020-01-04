@@ -2,9 +2,8 @@
 namespace UglyToad.PdfPig.Tests.Parser.Parts
 {
     using System;
-    using PdfPig.IO;
+    using PdfPig.Core;
     using PdfPig.Parser.Parts;
-    using PdfPig.Util;
     using Xunit;
 
     public class BruteForceSearcherTests

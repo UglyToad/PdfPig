@@ -2,7 +2,7 @@
 {
     using System;
     using System.IO;
-    using PdfPig.Fonts.Encodings;
+    using PdfFonts.Encodings;
     using Xunit;
 
     public class GlyphListFactoryTests

@@ -3,8 +3,8 @@
     using System;
     using System.IO;
     using System.Linq;
-    using PdfPig.Fonts.CompactFontFormat;
-    using PdfPig.Fonts.CompactFontFormat.Dictionaries;
+    using PdfFonts.CompactFontFormat;
+    using PdfFonts.CompactFontFormat.Dictionaries;
     using Xunit;
 
     public class CompactFontFormatParserTests

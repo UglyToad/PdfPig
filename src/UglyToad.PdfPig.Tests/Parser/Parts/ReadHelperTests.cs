@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Parser.Parts
 {
-    using PdfPig.Parser.Parts;
+    using PdfPig.Core;
     using Xunit;
 
     public class ReadHelperTests

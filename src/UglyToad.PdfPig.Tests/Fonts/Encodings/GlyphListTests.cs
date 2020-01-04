@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts.Encodings
 {
     using System.Collections.Generic;
-    using PdfPig.Fonts.Encodings;
+    using PdfFonts.Encodings;
     using Xunit;
 
     public class GlyphListTests

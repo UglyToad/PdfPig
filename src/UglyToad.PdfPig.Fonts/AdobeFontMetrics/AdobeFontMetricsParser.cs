@@ -6,7 +6,10 @@
     using Core;
     using Fonts;
 
-    internal static class AdobeFontMetricsParser
+    /// <summary>
+    /// Parses files in the Adobe Font Metrics (AFM) format.
+    /// </summary>
+    public static class AdobeFontMetricsParser
     {
         /// <summary>
         /// This is a comment in a AFM file.
@@ -313,12 +316,18 @@
         /// </summary>
         public const string KernPairKpx = "KPX";
 
+        /// <summary>
+        /// This is a kern pair.
+        /// </summary>
         public const string KernPairKpy = "KPY";
 
         private static readonly char[] IndividualCharmetricsSplit = {';'};
 
         private static readonly char[] CharmetricsKeySplit = {' '};
         
+        /// <summary>
+        /// Parse the font metrics from the input bytes.
+        /// </summary>
         public static AdobeFontMetrics Parse(IInputBytes bytes, bool useReducedDataSet)
         {
             var stringBuilder = new StringBuilder();

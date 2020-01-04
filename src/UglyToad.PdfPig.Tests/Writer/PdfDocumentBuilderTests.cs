@@ -3,9 +3,8 @@
     using System.IO;
     using System.Linq;
     using Content;
-    using PdfPig.Fonts;
-    using PdfPig.Geometry;
-    using PdfPig.Util;
+    using PdfPig.Core;
+    using PdfPig.Fonts.Standard14Fonts;
     using PdfPig.Writer;
     using Tests.Fonts.TrueType;
     using Xunit;

@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts.TrueType
 {
+    using PdfPig.Core;
     using PdfPig.Fonts.TrueType;
-    using PdfPig.IO;
     using Xunit;
 
     public class TrueTypeDataBytesTests

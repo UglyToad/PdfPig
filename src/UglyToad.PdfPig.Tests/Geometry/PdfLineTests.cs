@@ -1,9 +1,10 @@
-﻿using System;
-using UglyToad.PdfPig.Geometry;
-using Xunit;
-
-namespace UglyToad.PdfPig.Tests.Geometry
+﻿namespace UglyToad.PdfPig.Tests.Geometry
 {
+    using System;
+    using PdfPig.Core;
+    using PdfPig.Geometry;
+    using Xunit;
+
     public class PdfLineTests
     {
         [Fact]

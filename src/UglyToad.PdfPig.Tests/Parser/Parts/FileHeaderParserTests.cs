@@ -1,8 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.Parser.Parts
 {
     using System;
-    using Exceptions;
     using Logging;
+    using PdfPig.Core;
     using PdfPig.Parser.FileStructure;
     using Xunit;
 

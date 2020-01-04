@@ -211,6 +211,10 @@
         public enum HeaderMacStyle : ushort
         {
             /// <summary>
+            /// No flags set.
+            /// </summary>
+            None = 0,
+            /// <summary>
             /// Bold.
             /// </summary>
             Bold = 1 << 0,
