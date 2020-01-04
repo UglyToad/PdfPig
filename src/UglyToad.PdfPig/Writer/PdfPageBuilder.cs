@@ -228,10 +228,22 @@
             operations.Add(BeginText.Value);
             operations.Add(new SetFontAndSize(font.Name, fontSize));
             operations.Add(new MoveToNextLineWithOffset((decimal)position.X, (decimal)position.Y));
+            var bytesPerShow = new List<byte>();
             foreach (var letter in text)
             {
+                if (char.IsWhiteSpace(letter))
+                {
+                    operations.Add(new ShowText(bytesPerShow.ToArray()));
+                    bytesPerShow.Clear();
+                }
+
                 var b = fontProgram.GetValueForCharacter(letter);
-                operations.Add(new ShowText(new [] { b }));
+                bytesPerShow.Add(b);
+            }
+
+            if (bytesPerShow.Count > 0)
+            {
+                operations.Add(new ShowText(bytesPerShow.ToArray()));
             }
 
             operations.Add(EndText.Value);
@@ -294,7 +306,7 @@
         private static decimal RgbToDecimal(byte value)
         {
             var res = Math.Max(0, value / (decimal)byte.MaxValue);
-            res = Math.Min(1, res);
+            res = Math.Round(Math.Min(1, res), 4);
 
             return res;
         }

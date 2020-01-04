@@ -5,9 +5,7 @@
     using System.IO;
     using System.Linq;
     using Core;
-    using Filters;
     using Geometry;
-    using Logging;
     using Tokens;
     using PdfPig.Fonts;
     using PdfPig.Fonts.Exceptions;
@@ -52,17 +50,10 @@
 
         public ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context)
         {
-            var b = TrueTypeSubsetter.Subset(fontFileBytes.ToArray(), new TrueTypeSubsetEncoding(characterMapping.Keys.ToList()));
+            var newEncoding = new TrueTypeSubsetEncoding(characterMapping.Keys.ToList());
+            var subsetBytes = TrueTypeSubsetter.Subset(fontFileBytes.ToArray(), newEncoding);
 
-            // A symbolic font (one which contains characters not in the standard latin set) -
-            // should contain a MacRoman (1, 0) or Windows Symbolic (3,0) cmap subtable which maps character codes to glyph id.
-            var bytes = CompressBytes(b);
-            var embeddedFile = new StreamToken(new DictionaryToken(new Dictionary<NameToken, IToken>
-            {
-                { NameToken.Length, new NumericToken(bytes.Length) },
-                { NameToken.Length1, new NumericToken(b.Length) },
-                { NameToken.Filter, new ArrayToken(new []{ NameToken.FlateDecode }) }
-            }), bytes);
+            var embeddedFile = DataCompresser.CompressToStream(subsetBytes);
 
             var fileRef = context.WriteObject(outputStream, embeddedFile);
 
@@ -82,8 +73,8 @@
                 { NameToken.Flags, new NumericToken((int)FontDescriptorFlags.Symbolic) },
                 { NameToken.FontBbox, GetBoundingBox(bbox, scaling) },
                 { NameToken.ItalicAngle, new NumericToken(postscript.ItalicAngle) },
-                { NameToken.Ascent, new NumericToken(hhead.Ascent * scaling) },
-                { NameToken.Descent, new NumericToken(hhead.Descent * scaling) },
+                { NameToken.Ascent, new NumericToken(Math.Round(hhead.Ascent * scaling, 2)) },
+                { NameToken.Descent, new NumericToken(Math.Round(hhead.Descent * scaling, 2)) },
                 { NameToken.CapHeight, new NumericToken(90) },
                 { NameToken.StemV, new NumericToken(90) },
                 { NameToken.FontFile2, new IndirectReferenceToken(fileRef.Number) }
@@ -121,13 +112,8 @@
             var descriptor = context.WriteObject(outputStream, new DictionaryToken(descriptorDictionary));
 
             var toUnicodeCMap = ToUnicodeCMapBuilder.ConvertToCMapStream(characterMapping);
-            var compressedToUnicodeCMap = CompressBytes(toUnicodeCMap);
-            var toUnicode = context.WriteObject(outputStream, new StreamToken(new DictionaryToken(new Dictionary<NameToken, IToken>()
-            {
-                {NameToken.Length, new NumericToken(compressedToUnicodeCMap.Length)},
-                {NameToken.Length1, new NumericToken(toUnicodeCMap.Count)},
-                {NameToken.Filter, new ArrayToken(new[] {NameToken.FlateDecode})}
-            }), compressedToUnicodeCMap));
+            var toUnicodeStream = DataCompresser.CompressToStream(toUnicodeCMap);
+            var toUnicode = context.WriteObject(outputStream, toUnicodeStream);
 
             var dictionary = new Dictionary<NameToken, IToken>
             {
@@ -174,25 +160,14 @@
             }
         }
 
-        private static byte[] CompressBytes(IReadOnlyList<byte> bytes)
-        {
-            using (var memoryStream = new MemoryStream(bytes.ToArray()))
-            {
-                var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>());
-                var flater = new FlateFilter(new DecodeParameterResolver(new NoOpLog()), new PngPredictor(), new NoOpLog());
-                var result = flater.Encode(memoryStream, parameters, 0);
-                return result;
-            }
-        }
-
         private static ArrayToken GetBoundingBox(PdfRectangle boundingBox, decimal scaling)
         {
             return new ArrayToken(new[]
             {
-                new NumericToken((decimal)boundingBox.Left * scaling),
-                new NumericToken((decimal)boundingBox.Bottom * scaling),
-                new NumericToken((decimal)boundingBox.Right * scaling),
-                new NumericToken((decimal)boundingBox.Top * scaling)
+                new NumericToken(Math.Round((decimal)boundingBox.Left * scaling, 2)),
+                new NumericToken(Math.Round((decimal)boundingBox.Bottom * scaling, 2)),
+                new NumericToken(Math.Round((decimal)boundingBox.Right * scaling, 2)),
+                new NumericToken(Math.Round((decimal)boundingBox.Top * scaling, 2))
             });
         }
     }

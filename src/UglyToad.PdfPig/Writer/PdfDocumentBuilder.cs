@@ -295,13 +295,8 @@
 
                 var bytes = memoryStream.ToArray();
 
-                var streamDictionary = new Dictionary<NameToken, IToken>
-                {
-                    { NameToken.Length, new NumericToken(bytes.Length) }
-                };
-
-                var stream = new StreamToken(new DictionaryToken(streamDictionary), bytes);
-
+                var stream = DataCompresser.CompressToStream(bytes);
+                
                 return stream;
             }
         }
