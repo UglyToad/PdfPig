@@ -11,7 +11,7 @@
     /// The 'glyf' table contains the data that defines the appearance of the glyphs in the font. 
     /// This includes specification of the points that describe the contours that make up a glyph outline and the instructions that grid-fit that glyph.
     /// </summary>
-    internal class GlyphDataTable : ITable
+    internal class GlyphDataTable : ITrueTypeTable
     {
         public string Tag => TrueTypeHeaderTable.Glyf;
 
@@ -34,7 +34,7 @@
 
             var offsets = indexToLocationTable.GlyphOffsets;
 
-            var entryCount = offsets.Length;
+            var entryCount = offsets.Count;
 
             var glyphCount = entryCount - 1;
 

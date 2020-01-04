@@ -4,7 +4,7 @@
     /// The 'hhea' table contains information needed to layout fonts whose characters are written horizontally, that is, either left to right or right to left. 
     /// This table contains information that is general to the font as a whole.
     /// </summary>
-    internal class HorizontalHeaderTable : ITable
+    internal class HorizontalHeaderTable : ITrueTypeTable
     {
         public string Tag => TrueTypeHeaderTable.Hhea;
 

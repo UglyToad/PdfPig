@@ -4,7 +4,7 @@
     using Names;
     using Util.JetBrains.Annotations;
 
-    internal class NameTable : ITable
+    internal class NameTable : ITrueTypeTable
     {
         public string Tag => TrueTypeHeaderTable.Name;
 

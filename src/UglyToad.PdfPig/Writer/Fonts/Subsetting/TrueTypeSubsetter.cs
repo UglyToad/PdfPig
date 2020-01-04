@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.Linq;
     using IO;
     using PdfPig.Fonts.Exceptions;
     using PdfPig.Fonts.TrueType;
@@ -117,7 +116,7 @@
                     else if (entry.Tag == TrueTypeHeaderTable.Loca)
                     {
                         var table = new IndexToLocationTable(entry.DummyHeader, IndexToLocationTable.EntryFormat.Long,
-                            trueTypeSubsetGlyphTable.GlyphOffsets.Select(x => (long)x).ToArray());
+                            trueTypeSubsetGlyphTable.GlyphOffsets);
                         table.Write(stream);
                     }
                     else if (entry.Tag == TrueTypeHeaderTable.Head)

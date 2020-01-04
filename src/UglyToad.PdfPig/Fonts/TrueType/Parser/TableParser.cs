@@ -11,7 +11,7 @@
         private static readonly NameTableParser NameTableParser = new NameTableParser();
         private static readonly Os2TableParser Os2TableParser = new Os2TableParser();
 
-        public static T Parse<T>(TrueTypeHeaderTable table, TrueTypeDataBytes data, TableRegister.Builder register) where T : ITable
+        public static T Parse<T>(TrueTypeHeaderTable table, TrueTypeDataBytes data, TableRegister.Builder register) where T : ITrueTypeTable
         {
             if (typeof(T) == typeof(CMapTable))
             {

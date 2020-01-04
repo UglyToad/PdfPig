@@ -6,10 +6,12 @@
     using Util;
     using Util.JetBrains.Annotations;
 
+    /// <inheritdoc cref="IWriteable" />
     /// <summary>
-    /// A table directory entry from the TrueType font file.
+    /// A table directory entry from the TrueType font file. Indicates the position of the corresponding table
+    /// data in the TrueType font.
     /// </summary>
-    internal struct TrueTypeHeaderTable : IWriteable
+    public struct TrueTypeHeaderTable : IWriteable
     {
         #region RequiredTableTags
         /// <summary>
@@ -160,7 +162,11 @@
         #endregion
 
         #region PostScriptTableTags
-
+        /// <summary>
+        /// Compact font format table. The corresponding table contains a Compact Font Format font representation 
+        /// (also known as a PostScript Type 1, or CIDFont).
+        /// </summary>
+        /// <remarks>Optional</remarks>
         public const string Cff = "cff ";
         #endregion
 
@@ -176,18 +182,31 @@
         public uint CheckSum { get; }
 
         /// <summary>
-        /// Offset of the table from the beginning of the file.
+        /// Offset of the table data from the beginning of the file in bytes.
         /// </summary>
         public uint Offset { get; }
 
         /// <summary>
-        /// The length of the table.
+        /// The length of the table data in bytes.
         /// </summary>
         public uint Length { get; }
 
+        /// <summary>
+        /// Create a new <see cref="TrueTypeHeaderTable"/>.
+        /// </summary>
         public TrueTypeHeaderTable(string tag, uint checkSum, uint offset, uint length)
         {
-            Tag = tag ?? throw new ArgumentNullException(nameof(tag));
+            if (tag == null)
+            {
+                throw new ArgumentNullException(nameof(tag));
+            }
+
+            if (tag.Length != 4)
+            {
+                throw new ArgumentException($"A TrueType table tag must be a uint32, 4 bytes long, instead got: {tag}.", nameof(tag));
+            }
+
+            Tag = tag;
             CheckSum = checkSum;
             Offset = offset;
             Length = length;
@@ -201,11 +220,7 @@
             return new TrueTypeHeaderTable(tag, 0, 0, 0);
         }
 
-        public override string ToString()
-        {
-            return $"{Tag} {Offset} {Length} {CheckSum}";
-        }
-
+        /// <inheritdoc />
         public void Write(Stream stream)
         {
             for (var i = 0; i < Tag.Length; i++)
@@ -216,6 +231,12 @@
             stream.WriteUInt(CheckSum);
             stream.WriteUInt(Offset);
             stream.WriteUInt(Length);
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"{Tag} - Offset: {Offset} Length: {Length} Checksum: {CheckSum}";
         }
     }
 }

@@ -9,7 +9,7 @@
     /// <summary>
     /// The most basic format of the OS/2 table, excluding the fields not included in the Apple version of the specification.
     /// </summary>
-    internal class Os2Table : ITable, IWriteable
+    internal class Os2Table : ITrueTypeTable, IWriteable
     {
         public string Tag => TrueTypeHeaderTable.Os2;
 

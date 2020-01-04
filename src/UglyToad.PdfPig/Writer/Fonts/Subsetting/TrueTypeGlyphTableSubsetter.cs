@@ -150,7 +150,7 @@
         {
             var indexToLocationTable = font.TableRegister.IndexToLocationTable;
 
-            var numGlyphs = indexToLocationTable.GlyphOffsets.Length - 1;
+            var numGlyphs = indexToLocationTable.GlyphOffsets.Count - 1;
 
             var glyphDirectory = font.TableRegister.GlyphTable.DirectoryTable;
 
