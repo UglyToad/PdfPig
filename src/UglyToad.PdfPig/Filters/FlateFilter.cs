@@ -27,6 +27,9 @@
         private const int DefaultBitsPerComponent = 8;
         private const int DefaultColumns = 1;
 
+        private const byte Deflate32KbWindow = 120;
+        private const byte ChecksumBits = 1;
+
         private readonly IDecodeParameterResolver decodeParameterResolver;
         private readonly IPngPredictor pngPredictor;
         private readonly ILog log;
@@ -106,17 +109,45 @@
 
         public byte[] Encode(Stream input, DictionaryToken streamDictionary, int index)
         {
-            var resx = new List<byte>{ 120, 156 };
-            using (var output = new MemoryStream())
-            using (var flater = new DeflateStream(output, CompressionMode.Compress, true))
-            {
-                input.CopyTo(flater);
-                flater.Close();
+            const int headerLength = 2;
+            const int checksumLength = 4;
 
-                resx.AddRange(output.ToArray());
+            byte[] data;
+            using (var temp = new MemoryStream())
+            {
+                input.CopyTo(temp);
+                data = temp.ToArray();
             }
 
-            return resx.ToArray();
+            using (var compressStream = new MemoryStream())
+            using (var compressor = new DeflateStream(compressStream, CompressionLevel.Fastest))
+            {
+                compressor.Write(data, 0, data.Length);
+                compressor.Close();
+
+                var compressed = compressStream.ToArray();
+
+                var result = new byte[headerLength + compressed.Length + checksumLength];
+
+                // Write the ZLib header.
+                result[0] = Deflate32KbWindow;
+                result[1] = ChecksumBits;
+
+                // Write the compressed data.
+                Array.Copy(compressed, 0, result, headerLength, compressed.Length);
+
+                // Write Checksum of raw data.
+                var checksum = Adler32Checksum.Calculate(data);
+
+                var offset = headerLength + compressed.Length;
+
+                result[offset++] = (byte)(checksum >> 24);
+                result[offset++] = (byte)(checksum >> 16);
+                result[offset++] = (byte)(checksum >> 8);
+                result[offset] = (byte)(checksum >> 0);
+
+                return result;
+            }
         }
     }
 }
