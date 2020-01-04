@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Type1.CharStrings.Commands.PathConstruction
 {
-    using Geometry;
+    using Core;
 
     /// <summary>
     /// Relative move to command. starts a new subpath of the current path in the same manner as moveto.

@@ -6,23 +6,43 @@
     using CMapSubTables;
     using Core;
 
-    internal class CMapTable : ITrueTypeTable, IWriteable
+    /// <inheritdoc cref="ITrueTypeTable"/>.
+    /// <summary>
+    /// The cmap table maps character codes to glyph indices.
+    /// The choice of encoding for a particular font is dependent on the conventions used by the intended platform.
+    /// The cmap table can contain multiple encoding tables for use on different platforms, one for each supported encoding scheme.
+    /// </summary>
+    public class CMapTable : ITrueTypeTable, IWriteable
     {
-        public IReadOnlyList<ICMapSubTable> SubTables { get; }
-
+        /// <inheritdoc />
         public string Tag => TrueTypeHeaderTable.Cmap;
 
-        public int Version { get; }
-
+        /// <inheritdoc />
         public TrueTypeHeaderTable DirectoryTable { get; }
 
-        public CMapTable(int version, TrueTypeHeaderTable directoryTable, IReadOnlyList<ICMapSubTable> subTables)
+        /// <summary>
+        /// Version number (0).
+        /// </summary>
+        public ushort Version { get; }
+
+        /// <summary>
+        /// The sub-tables, one for each supported encoding scheme and platform.
+        /// </summary>
+        public IReadOnlyList<ICMapSubTable> SubTables { get; }
+
+        /// <summary>
+        /// Create a new <see cref="CMapTable"/>.
+        /// </summary>
+        public CMapTable(ushort version, TrueTypeHeaderTable directoryTable, IReadOnlyList<ICMapSubTable> subTables)
         {
             SubTables = subTables;
             Version = version;
             DirectoryTable = directoryTable;
         }
 
+        /// <summary>
+        /// Get the glyph index for the corresponding character code.
+        /// </summary>
         public bool TryGetGlyphIndex(int characterCode, out int glyphIndex)
         {
             glyphIndex = 0;
@@ -78,6 +98,7 @@
             return false;
         }
 
+        /// <inheritdoc />
         public void Write(Stream stream)
         {
             var startPosition = stream.Position;

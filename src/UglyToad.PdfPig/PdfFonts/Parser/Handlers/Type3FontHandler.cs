@@ -3,10 +3,8 @@
     using Cmap;
     using Core;
     using Encodings;
-    using Exceptions;
     using Filters;
-    using Geometry;
-    using IO;
+    using Fonts;
     using PdfPig.Parser.Parts;
     using Simple;
     using Tokenization.Scanner;

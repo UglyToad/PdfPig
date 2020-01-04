@@ -1,13 +1,16 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Tables
 {
+    /// <inheritdoc />
     /// <summary>
     /// The 'hhea' table contains information needed to layout fonts whose characters are written horizontally, that is, either left to right or right to left. 
     /// This table contains information that is general to the font as a whole.
     /// </summary>
-    internal class HorizontalHeaderTable : ITrueTypeTable
+    public class HorizontalHeaderTable : ITrueTypeTable
     {
+        /// <inheritdoc />
         public string Tag => TrueTypeHeaderTable.Hhea;
 
+        /// <inheritdoc />
         public TrueTypeHeaderTable DirectoryTable { get; }
 
         /// <summary>
@@ -80,6 +83,9 @@
         /// </summary>
         public ushort NumberOfHeaderMetrics { get; }
 
+        /// <summary>
+        /// Create a new <see cref="HorizontalHeaderTable"/>.
+        /// </summary>
         public HorizontalHeaderTable(TrueTypeHeaderTable directoryTable, int majorVersion, int minorVersion, short ascent, short descent, 
             short lineGap, ushort advanceWidthMaximum, 
             short minimumLeftSideBearing, short minimumRightSideBearing,

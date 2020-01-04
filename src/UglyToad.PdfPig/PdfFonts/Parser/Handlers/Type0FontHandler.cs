@@ -4,9 +4,9 @@
     using CidFonts;
     using Cmap;
     using Composite;
-    using Exceptions;
+    using Core;
     using Filters;
-    using IO;
+    using Fonts;
     using Parts;
     using PdfPig.Parser.Parts;
     using Tokenization.Scanner;

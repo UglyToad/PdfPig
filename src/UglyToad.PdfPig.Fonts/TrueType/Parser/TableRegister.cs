@@ -6,7 +6,7 @@
     /// <summary>
     /// The set of tables in a TrueType font interpreted by the library.
     /// </summary>
-    internal class TableRegister
+    public class TableRegister
     {
         /// <summary>
         /// This table contains global information about the font. 
@@ -16,7 +16,7 @@
         /// <summary>
         /// This table contains the data that defines the appearance of the glyphs in the font.
         /// </summary>
-        public GlyphDataTable GlyphTable { get; }
+        internal GlyphDataTable GlyphTable { get; }
 
         /// <summary>
         /// This table contains information needed to layout fonts whose characters are written horizontally.
@@ -36,10 +36,17 @@
         /// <summary>
         /// This table establishes the memory requirements for the font.
         /// </summary>
-        public BasicMaximumProfileTable MaximumProfileTable { get; }
+        internal BasicMaximumProfileTable MaximumProfileTable { get; }
 
+        /// <summary>
+        /// This table defines strings used by the font.
+        /// </summary>
         public NameTable NameTable { get; }
 
+        /// <summary>
+        /// This table contains information needed to use a TrueType font on a PostScript printer. 
+        /// It contains the PostScript names for all of the glyphs in the font
+        /// </summary>
         public PostScriptTable PostScriptTable { get; }
 
         /// <summary>
@@ -49,15 +56,18 @@
         /// </summary>
         public CMapTable CMapTable { get; }
 
-        public KerningTable KerningTable { get; }
+        internal KerningTable KerningTable { get; }
 
+        /// <summary>
+        /// This table consists of a set of metrics that are required by Windows.
+        /// </summary>
         public Os2Table Os2Table { get; }
 
         /// <summary>
         /// Create a new <see cref="TableRegister"/>.
         /// </summary>
         /// <param name="builder">The builder with necessary tables set.</param>
-        public TableRegister(Builder builder)
+        internal TableRegister(Builder builder)
         {
             if (builder == null)
             {

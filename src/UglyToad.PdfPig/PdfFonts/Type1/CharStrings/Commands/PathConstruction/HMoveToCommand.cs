@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Type1.CharStrings.Commands.PathConstruction
 {
-    using Geometry;
+    using Core;
 
     /// <summary>
     /// Relative move to for horizontal dimension only.

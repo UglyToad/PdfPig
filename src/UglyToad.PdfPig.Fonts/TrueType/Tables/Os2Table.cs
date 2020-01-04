@@ -5,13 +5,16 @@
     using System.Linq;
     using Core;
 
+    /// <inheritdoc cref="ITrueTypeTable"/>.
     /// <summary>
     /// The most basic format of the OS/2 table, excluding the fields not included in the Apple version of the specification.
     /// </summary>
-    internal class Os2Table : ITrueTypeTable, IWriteable
+    public class Os2Table : ITrueTypeTable, IWriteable
     {
+        /// <inheritdoc />
         public string Tag => TrueTypeHeaderTable.Os2;
 
+        /// <inheritdoc />
         public TrueTypeHeaderTable DirectoryTable { get; }
 
         /// <summary>
@@ -178,6 +181,7 @@
             LastCharacterIndex = lastCharacterIndex;
         }
 
+        /// <inheritdoc />
         public virtual void Write(Stream stream)
         {
             stream.WriteUShort(Version);

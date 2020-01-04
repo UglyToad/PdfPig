@@ -5,32 +5,30 @@
     using CidFonts;
     using CompactFontFormat;
     using Core;
-    using Exceptions;
     using Filters;
     using Fonts;
     using Fonts.TrueType;
+    using Fonts.TrueType.Parser;
     using Geometry;
     using PdfPig.Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
+    using TrueType;
     using Util;
 
     internal class CidFontFactory
     {
         private readonly FontDescriptorFactory descriptorFactory;
-        private readonly TrueTypeFontParser trueTypeFontParser;
         private readonly CompactFontFormatParser compactFontFormatParser;
         private readonly IFilterProvider filterProvider;
         private readonly IPdfTokenScanner pdfScanner;
 
-        public CidFontFactory(IPdfTokenScanner pdfScanner, FontDescriptorFactory descriptorFactory, 
-            TrueTypeFontParser trueTypeFontParser,
+        public CidFontFactory(IPdfTokenScanner pdfScanner, FontDescriptorFactory descriptorFactory,
             CompactFontFormatParser compactFontFormatParser,
             IFilterProvider filterProvider)
         {
             this.pdfScanner = pdfScanner;
             this.descriptorFactory = descriptorFactory;
-            this.trueTypeFontParser = trueTypeFontParser;
             this.compactFontFormatParser = compactFontFormatParser;
             this.filterProvider = filterProvider;
         }
@@ -117,7 +115,8 @@
             {
                 case DescriptorFontFile.FontFileType.TrueType:
                     var input = new TrueTypeDataBytes(new ByteArrayInputBytes(fontFile));
-                    return trueTypeFontParser.Parse(input);
+                    var ttf = TrueTypeFontParser.Parse(input);
+                    return new PdfCidTrueTypeFont(ttf);
                 case DescriptorFontFile.FontFileType.FromSubtype:
                     {
                         if (!DirectObjectFinder.TryGet(descriptor.FontFile.ObjectKey, pdfScanner, out StreamToken str))

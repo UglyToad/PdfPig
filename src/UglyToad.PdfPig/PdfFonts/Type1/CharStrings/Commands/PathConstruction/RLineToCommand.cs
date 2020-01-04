@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Type1.CharStrings.Commands.PathConstruction
 {
-    using Geometry;
+    using Core;
 
     /// <summary>
     /// Relative line-to command. Creates a line moving a distance relative to the current point.

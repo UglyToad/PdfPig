@@ -8,7 +8,7 @@
     /// Version 4 was defined in OpenType 1.5. Version 4 has the same fields as in version 2 and version 3. 
     /// Although new fields were not added beyond those in version 2 and 3, the specification of certain fields was revised. 
     /// </summary>
-    internal class Os2Version2To4OpenTypeTable : Os2Version1Table
+    public class Os2Version2To4OpenTypeTable : Os2Version1Table
     {
         /// <summary>
         /// This metric specifies the distance between the baseline and the approximate height of non-ascending lowercase letters.
@@ -90,6 +90,7 @@
             MaximumContext = maximumContext;
         }
 
+        /// <inheritdoc />
         public override void Write(Stream stream)
         {
             base.Write(stream);

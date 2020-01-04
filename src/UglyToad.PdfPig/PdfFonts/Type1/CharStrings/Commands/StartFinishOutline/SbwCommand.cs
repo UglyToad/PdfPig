@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Type1.CharStrings.Commands.StartFinishOutline
 {
-    using Geometry;
+    using Core;
 
     /// <summary>
     /// Sets left sidebearing and the character width vector.

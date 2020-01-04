@@ -4,8 +4,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
     using System;
     using Core;
     using Encodings;
-    using Geometry;
-    using IO;
+    using Fonts.AdobeFontMetrics;
     using Tokens;
 
     /// <summary>
@@ -13,7 +12,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
     /// </summary>
     internal class Type1Standard14Font: IFont
     {
-        private readonly FontMetrics standardFontMetrics;
+        private readonly AdobeFontMetrics standardFontMetrics;
         private readonly Encoding encoding;
 
         public NameToken Name { get; }
@@ -21,7 +20,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
 
         private readonly TransformationMatrix fontMatrix = TransformationMatrix.FromValues(0.001, 0, 0, 0.001, 0, 0);
 
-        public Type1Standard14Font(FontMetrics standardFontMetrics, Encoding overrideEncoding = null)
+        public Type1Standard14Font(AdobeFontMetrics standardFontMetrics, Encoding overrideEncoding = null)
         {
             this.standardFontMetrics = standardFontMetrics ?? throw new ArgumentNullException(nameof(standardFontMetrics));
             encoding = overrideEncoding ?? new AdobeFontMetricsEncoding(standardFontMetrics);
@@ -65,18 +64,21 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
             {
                 return new PdfRectangle(0, 0, 250, 0);
             }
+
+            var x = metrics.Width.X;
+            var y = metrics.Width.Y;
             
-            if (metrics.WidthX == 0 && metrics.BoundingBox.Width > 0)
+            if (metrics.Width.X == 0 && metrics.BoundingBox.Width > 0)
             {
-                metrics.WidthX = metrics.BoundingBox.Width;
+                x = metrics.BoundingBox.Width;
             }
 
-            if (metrics.WidthY == 0 && metrics.BoundingBox.Height > 0)
+            if (metrics.Width.Y == 0 && metrics.BoundingBox.Height > 0)
             {
-                metrics.WidthY = metrics.BoundingBox.Height;
+                y = metrics.BoundingBox.Height;
             }
             
-            return new PdfRectangle(0, 0, metrics.WidthX, metrics.WidthY);
+            return new PdfRectangle(0, 0, x, y);
         }
 
         public TransformationMatrix GetFontMatrix()

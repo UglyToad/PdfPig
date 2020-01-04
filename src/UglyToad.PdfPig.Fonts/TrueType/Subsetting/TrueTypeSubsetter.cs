@@ -9,7 +9,10 @@
     using Tables.CMapSubTables;
     using TrueType;
 
-    internal static class TrueTypeSubsetter
+    /// <summary>
+    /// Generate a subset of a TrueType font file containing only the required glyphs.
+    /// </summary>
+    public static class TrueTypeSubsetter
     {
         private const ushort IndexToLocLong = 1;
 
@@ -51,9 +54,10 @@
         };
 
         private static readonly byte[] PaddingBytes = {0, 0, 0, 0};
-
-        private static readonly TrueTypeFontParser Parser = new TrueTypeFontParser();
-
+        
+        /// <summary>
+        /// Generate a subset of the input font containing only the data required for the glyphs specified in the encoding.
+        /// </summary>
         public static byte[] Subset(byte[] fontBytes, TrueTypeSubsetEncoding newEncoding)
         {
             if (fontBytes == null)
@@ -66,7 +70,7 @@
                 throw new ArgumentNullException(nameof(newEncoding));
             }
 
-            var font = Parser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontBytes)));
+            var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(fontBytes));
 
             var indexMapping = GetIndexMapping(font, newEncoding);
 
@@ -298,14 +302,29 @@
             }
         }
 
+        /// <summary>
+        /// Mapping from a glyph index in the old file to the new (subset) glyph index.
+        /// </summary>
         public struct OldToNewGlyphIndex
         {
+            /// <summary>
+            /// Glyph index in the old input file.
+            /// </summary>
             public ushort OldIndex { get; }
 
+            /// <summary>
+            /// Glyph index in the new subset file.
+            /// </summary>
             public byte NewIndex { get; }
 
+            /// <summary>
+            /// The character represented by this mapping.
+            /// </summary>
             public char Represents { get; }
 
+            /// <summary>
+            /// Create a new <see cref="OldToNewGlyphIndex"/>.
+            /// </summary>
             public OldToNewGlyphIndex(ushort oldIndex, ushort newIndex, char represents)
             {
                 OldIndex = oldIndex;
@@ -313,6 +332,7 @@
                 Represents = represents;
             }
 
+            /// <inheritdoc />
             public override string ToString()
             {
                 return $"{Represents}: From {OldIndex} To {NewIndex}.";

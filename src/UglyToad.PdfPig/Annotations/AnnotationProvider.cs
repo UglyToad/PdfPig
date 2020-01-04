@@ -3,7 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Exceptions;
+    using Core;
     using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;

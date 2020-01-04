@@ -4,9 +4,15 @@
     using System.Collections.Generic;
     using Tables;
 
-    internal class TrueTypeFontParser
+    /// <summary>
+    /// Parses TrueType fonts.
+    /// </summary>
+    public static class TrueTypeFontParser
     {
-        public TrueTypeFont Parse(TrueTypeDataBytes data)
+        /// <summary>
+        /// Parse the font from the input data.
+        /// </summary>
+        public static TrueTypeFont Parse(TrueTypeDataBytes data)
         {
             var version = data.Read32Fixed();
             int numberOfTables = data.ReadUnsignedShort();
@@ -122,7 +128,7 @@
             return new TrueTypeFont(version, tables, builder.Build());
         }
 
-        public NameTable GetNameTable(TrueTypeDataBytes data)
+        internal static NameTable GetNameTable(TrueTypeDataBytes data)
         {
             if (data == null)
             {

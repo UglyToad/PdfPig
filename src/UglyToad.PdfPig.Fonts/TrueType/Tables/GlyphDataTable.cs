@@ -6,14 +6,17 @@
     using Glyphs;
     using Parser;
 
+    /// <inheritdoc />
     /// <summary>
     /// The 'glyf' table contains the data that defines the appearance of the glyphs in the font. 
     /// This includes specification of the points that describe the contours that make up a glyph outline and the instructions that grid-fit that glyph.
     /// </summary>
     internal class GlyphDataTable : ITrueTypeTable
     {
+        /// <inheritdoc />
         public string Tag => TrueTypeHeaderTable.Glyf;
 
+        /// <inheritdoc />
         public TrueTypeHeaderTable DirectoryTable { get; }
 
         public IReadOnlyList<IGlyphDescription> Glyphs { get; }

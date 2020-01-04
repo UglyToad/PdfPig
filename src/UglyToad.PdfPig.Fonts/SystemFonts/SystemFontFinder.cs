@@ -10,7 +10,8 @@
     using TrueType;
     using TrueType.Parser;
 
-    internal class SystemFontFinder : ISystemFontFinder
+    /// <inheritdoc />
+    public class SystemFontFinder : ISystemFontFinder
     {
         private static readonly IReadOnlyDictionary<string, string[]> NameSubstitutes;
 
@@ -67,16 +68,16 @@
             NameSubstitutes = dict;
         }
 
-        private readonly TrueTypeFontParser trueTypeFontParser;
         private readonly Lazy<IReadOnlyList<SystemFontRecord>> availableFonts;
 
         private readonly Dictionary<string, string> nameToFileNameMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> readFiles = new HashSet<string>();
 
-        public SystemFontFinder(TrueTypeFontParser trueTypeFontParser)
+        /// <summary>
+        /// Create a new <see cref="SystemFontFinder"/>.
+        /// </summary>
+        public SystemFontFinder()
         {
-            this.trueTypeFontParser = trueTypeFontParser;
-
             ISystemFontLister lister;
 #if NETSTANDARD2_0
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -102,6 +103,7 @@
             availableFonts = new Lazy<IReadOnlyList<SystemFontRecord>>(() => lister.GetAllFonts().ToList());
         }
 
+        /// <inheritdoc />
         public TrueTypeFont GetTrueTypeFont(string name)
         {
             var result = GetTrueTypeFontNamed(name);
@@ -227,7 +229,7 @@
 
             if (readNameFirst)
             {
-                var name = trueTypeFontParser.GetNameTable(data);
+                var name = TrueTypeFontParser.GetNameTable(data);
 
                 if (name == null)
                 {
@@ -245,7 +247,7 @@
             }
 
             data.Seek(0);
-            font = trueTypeFontParser.Parse(data);
+            font = TrueTypeFontParser.Parse(data);
             var psName = font.TableRegister.NameTable?.GetPostscriptName() ?? font.Name;
 
             lock (CacheLock)

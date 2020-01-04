@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using PdfPig.Geometry;
+    using PdfPig.Core;
 
     internal class PointComparer : IEqualityComparer<PdfPoint>
     {

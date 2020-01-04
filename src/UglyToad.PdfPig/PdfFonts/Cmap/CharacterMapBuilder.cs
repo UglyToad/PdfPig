@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
-    using Util;
+    using Core;
 
     /// <summary>
     /// A mutable class used when parsing and generating a <see cref="CMap"/>.

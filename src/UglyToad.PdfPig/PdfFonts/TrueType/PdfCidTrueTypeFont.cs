@@ -5,11 +5,11 @@
     using Core;
     using Fonts.TrueType;
 
-    internal class TrueTypeFontProgram : ICidFontProgram
+    internal class PdfCidTrueTypeFont : ICidFontProgram
     {
         private readonly TrueTypeFont font;
         
-        public TrueTypeFontProgram(TrueTypeFont font)
+        public PdfCidTrueTypeFont(TrueTypeFont font)
         {
             this.font = font ?? throw new ArgumentNullException(nameof(font));
         }

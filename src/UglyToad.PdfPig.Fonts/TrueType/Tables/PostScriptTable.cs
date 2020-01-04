@@ -1,16 +1,20 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Tables
 {
     using System;
+    using System.Collections.Generic;
     using System.Text;
 
+    /// <inheritdoc />
     /// <summary>
     /// This table contains information for TrueType fonts on PostScript printers.
     /// This includes data for the FontInfo dictionary and the PostScript glyph names.
     /// </summary>
-    internal class PostScriptTable : ITrueTypeTable
+    public class PostScriptTable : ITrueTypeTable
     {
+        /// <inheritdoc />
         public string Tag => TrueTypeHeaderTable.Post;
 
+        /// <inheritdoc />
         public TrueTypeHeaderTable DirectoryTable { get; }
 
         /// <summary>
@@ -19,12 +23,12 @@
         /// Format 2.5 is a space optimised subset of the standard Mac glyph set.<br/>
         /// Format 3 enables a special font type which provides no PostScript information.<br/>
         /// </summary>
-        public decimal FormatType { get; }
+        public float Format { get; }
 
         /// <summary>
         /// Angle in counter-clockwise degrees from vertical. 0 for upright text, negative for right-leaning text.
         /// </summary>
-        public decimal ItalicAngle { get; }
+        public float ItalicAngle { get; }
 
         /// <summary>
         /// Suggested values for the underline position with negative values below the baseline.
@@ -40,34 +44,49 @@
         /// 0 if the font is proportionally spaced, non-zero for monospace or other
         /// non-proportional spacing.
         /// </summary>
-        public long IsFixedPitch { get; }
+        public uint IsFixedPitch { get; }
 
         /// <summary>
         /// Minimum memory usage when the TrueType font is downloaded.
         /// </summary>
-        public long MinimumMemoryType42 { get; }
+        public uint MinimumMemoryType42 { get; }
 
         /// <summary>
         /// Maximum memory usage when the TrueType font is downloaded.
         /// </summary>
-        public long MaximumMemoryType42 { get; }
+        public uint MaximumMemoryType42 { get; }
 
         /// <summary>
         /// Minimum memory usage when the TrueType font is downloaded as a Type 1 font.
         /// </summary>
-        public long MinimumMemoryType1 { get; }
+        public uint MinimumMemoryType1 { get; }
 
         /// <summary>
         /// Maximum memory usage when the TrueType font is downloaded as a Type 1 font.
         /// </summary>
-        public long MaximumMemoryType1 { get; }
+        public uint MaximumMemoryType1 { get; }
 
-        public string[] GlyphNames { get; }
+        /// <summary>
+        /// PostScript names of the glyphs.
+        /// </summary>
+        public IReadOnlyList<string> GlyphNames { get; }
 
-        public PostScriptTable(TrueTypeHeaderTable directoryTable, decimal formatType, decimal italicAngle, short underlinePosition, short underlineThickness, long isFixedPitch, long minimumMemoryType42, long maximumMemoryType42, long minimumMemoryType1, long maximumMemoryType1, string[] glyphNames)
+        /// <summary>
+        /// Create a new <see cref="PostScriptTable"/>.
+        /// </summary>
+        public PostScriptTable(TrueTypeHeaderTable directoryTable, float format,
+            float italicAngle, 
+            short underlinePosition,
+            short underlineThickness,
+            uint isFixedPitch,
+            uint minimumMemoryType42,
+            uint maximumMemoryType42,
+            uint minimumMemoryType1,
+            uint maximumMemoryType1, 
+            string[] glyphNames)
         {
             DirectoryTable = directoryTable;
-            FormatType = formatType;
+            Format = format;
             ItalicAngle = italicAngle;
             UnderlinePosition = underlinePosition;
             UnderlineThickness = underlineThickness;
@@ -79,7 +98,7 @@
             GlyphNames = glyphNames ?? throw new ArgumentNullException(nameof(glyphNames));
         }
 
-        public static PostScriptTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, BasicMaximumProfileTable maximumProfileTable)
+        internal static PostScriptTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, BasicMaximumProfileTable maximumProfileTable)
         {
             data.Seek(table.Offset);
             var formatType = data.Read32Fixed();
@@ -94,7 +113,7 @@
 
             var glyphNames = GetGlyphNamesByFormat(data, maximumProfileTable, formatType);
 
-            return new PostScriptTable(table, (decimal)formatType, (decimal)italicAngle,
+            return new PostScriptTable(table, formatType, italicAngle,
                 underlinePosition, underlineThickness, isFixedPitch,
                 minMemType42, maxMemType42, mimMemType1,
                 maxMemType1, glyphNames);

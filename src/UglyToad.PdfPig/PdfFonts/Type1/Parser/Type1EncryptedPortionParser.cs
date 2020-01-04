@@ -2,10 +2,8 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using CharStrings;
-    using IO;
-    using PdfPig.Parser.Parts;
+    using Core;
     using Tokens;
 
     internal class Type1EncryptedPortionParser

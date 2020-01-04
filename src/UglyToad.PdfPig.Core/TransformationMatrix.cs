@@ -182,7 +182,7 @@
         /// <param name="x">The X coordinate.</param>
         /// <returns>The transformed X coordinate.</returns>
         [Pure]
-        internal double TransformX(double x)
+        public double TransformX(double x)
         {
             var xt = A * x + C * 0 + E;
 
@@ -205,8 +205,11 @@
             );
         }
 
+        /// <summary>
+        /// Generate a <see cref="TransformationMatrix"/> translated by the specified amount.
+        /// </summary>
         [Pure]
-        internal TransformationMatrix Translate(double x, double y)
+        public TransformationMatrix Translate(double x, double y)
         {
             var a = A;
             var b = B;

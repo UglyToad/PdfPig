@@ -7,6 +7,7 @@
     using Encodings;
     using Filters;
     using Fonts;
+    using Fonts.Standard14Fonts;
     using Parts;
     using PdfPig.Parser.Parts;
     using Simple;
@@ -14,7 +15,6 @@
     using Tokens;
     using Type1;
     using Type1.Parser;
-    using Fonts;
 
     internal class Type1FontHandler : IFontHandler
     {

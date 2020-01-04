@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Type1.CharStrings.Commands.StartFinishOutline
 {
-    using Geometry;
+    using Core;
 
     /// <summary>
     /// The name hsbw stands for horizontal sidebearing and width; 

@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using Exceptions;
+    using Core;
     using Graphics.Colors;
     using Parser.Parts;
     using PdfFonts;

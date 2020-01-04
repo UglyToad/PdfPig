@@ -4,9 +4,9 @@
     using System.Collections.Generic;
     using Core;
     using Encodings;
-    using IO;
+    using Fonts.AdobeFontMetrics;
+    using Fonts.TrueType;
     using Tokens;
-    using TrueType;
 
     /// <summary>
     /// Some TrueType fonts use both the Standard 14 descriptor and the TrueType font from disk.
@@ -16,16 +16,16 @@
         private static readonly TransformationMatrix DefaultTransformation =
             TransformationMatrix.FromValues(1 / 1000.0, 0, 0, 1 / 1000.0, 0, 0);
 
-        private readonly FontMetrics fontMetrics;
+        private readonly AdobeFontMetrics fontMetrics;
         private readonly Encoding encoding;
-        private readonly TrueTypeFontProgram font;
+        private readonly TrueTypeFont font;
         private readonly MetricOverrides overrides;
 
         public NameToken Name { get; }
 
         public bool IsVertical { get; } = false;
 
-        public TrueTypeStandard14FallbackSimpleFont(NameToken name, FontMetrics fontMetrics, Encoding encoding, TrueTypeFontProgram font,
+        public TrueTypeStandard14FallbackSimpleFont(NameToken name, AdobeFontMetrics fontMetrics, Encoding encoding, TrueTypeFont font,
             MetricOverrides overrides)
         {
             this.fontMetrics = fontMetrics;
@@ -90,7 +90,7 @@
 
             if (overrides?.TryGetWidth(characterCode, out width) != true)
             {
-                width = fontMatrix.TransformX(metrics.WidthX);
+                width = fontMatrix.TransformX(metrics.Width.X);
             }
             else
             {
@@ -106,7 +106,7 @@
         {
             if (font?.TableRegister.HeaderTable != null)
             {
-                var scale = (double)font.GetFontMatrixMultiplier();
+                var scale = (double)font.GetUnitsPerEm();
 
                 return TransformationMatrix.FromValues(1 / scale, 0, 0, 1 / scale, 0, 0);
             }

@@ -4,9 +4,7 @@
     using Composite;
     using Core;
     using Encodings;
-    using Exceptions;
-    using Geometry;
-    using IO;
+    using Fonts;
     using Tokens;
 
     internal class Type3Font : IFont
@@ -69,7 +67,7 @@
 
             characterBoundingBox = fontMatrix.Transform(characterBoundingBox);
 
-            var width = fontMatrix.Transform(new PdfVector(widths[characterCode - firstChar], 0)).X;
+            var width = fontMatrix.Transform(new PdfPoint(widths[characterCode - firstChar], 0)).X;
 
             return new CharacterBoundingBox(characterBoundingBox, width);
         }

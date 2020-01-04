@@ -24,7 +24,7 @@
         /// <summary>
         /// The actual table data parsed for this TrueType font.
         /// </summary>
-        internal TableRegister TableRegister { get; }
+        public TableRegister TableRegister { get; }
 
         /// <summary>
         /// The name of the font according to the font's name table.

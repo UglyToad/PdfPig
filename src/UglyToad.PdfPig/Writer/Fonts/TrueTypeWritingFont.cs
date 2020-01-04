@@ -9,6 +9,8 @@
     using Tokens;
     using PdfPig.Fonts;
     using PdfPig.Fonts.TrueType;
+    using PdfPig.Fonts.TrueType.Subsetting;
+    using PdfPig.Fonts.TrueType.Tables;
 
     internal class TrueTypeWritingFont : IWritingFont
     {
@@ -69,7 +71,7 @@
                 // TODO: get flags TrueTypeEmbedder.java
                 { NameToken.Flags, new NumericToken((int)FontDescriptorFlags.Symbolic) },
                 { NameToken.FontBbox, GetBoundingBox(bbox, scaling) },
-                { NameToken.ItalicAngle, new NumericToken(postscript.ItalicAngle) },
+                { NameToken.ItalicAngle, new NumericToken((decimal)postscript.ItalicAngle) },
                 { NameToken.Ascent, new NumericToken(Math.Round(hhead.Ascent * scaling, 2)) },
                 { NameToken.Descent, new NumericToken(Math.Round(hhead.Descent * scaling, 2)) },
                 { NameToken.CapHeight, new NumericToken(90) },

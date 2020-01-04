@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Type1.CharStrings.Commands.PathConstruction
 {
-    using Geometry;
+    using Core;
 
     /// <summary>
     /// Relative rcurveto. Whereas the arguments to the rcurveto operator in the PostScript language are all relative to the current

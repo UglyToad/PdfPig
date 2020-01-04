@@ -4,19 +4,19 @@
     using System.Collections.Generic;
     using System.IO;
     using Core;
-    using PdfFonts;
     using PdfFonts.Encodings;
+    using PdfPig.Fonts.AdobeFontMetrics;
     using Tokens;
 
     internal class Standard14WritingFont : IWritingFont
     {
-        private readonly FontMetrics metrics;
+        private readonly AdobeFontMetrics metrics;
 
         public bool HasWidths { get; } = false;
 
         public string Name => metrics.FontName;
 
-        public Standard14WritingFont(FontMetrics metrics)
+        public Standard14WritingFont(AdobeFontMetrics metrics)
         {
             this.metrics = metrics;
         }
@@ -31,7 +31,7 @@
             }
 
             boundingBox = new PdfRectangle(characterMetric.BoundingBox.Left, characterMetric.BoundingBox.Bottom,
-                characterMetric.BoundingBox.Left + characterMetric.WidthX, characterMetric.BoundingBox.Top);
+                characterMetric.BoundingBox.Left + characterMetric.Width.X, characterMetric.BoundingBox.Top);
 
             return true;
         }

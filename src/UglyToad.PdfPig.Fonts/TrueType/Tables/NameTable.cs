@@ -4,20 +4,41 @@
     using System.Collections.Generic;
     using Names;
 
-    internal class NameTable : ITrueTypeTable
+    /// <inheritdoc />
+    /// <summary>
+    /// A name table allows multilingual strings to be associated with the TrueType font.
+    /// </summary>
+    public class NameTable : ITrueTypeTable
     {
+        /// <inheritdoc />
         public string Tag => TrueTypeHeaderTable.Name;
 
+        /// <inheritdoc />
         public TrueTypeHeaderTable DirectoryTable { get; }
 
+        /// <summary>
+        /// Font name.
+        /// </summary>
         public string FontName { get; }
 
+        /// <summary>
+        /// Font family name.
+        /// </summary>
         public string FontFamilyName { get; }
-
+        
+        /// <summary>
+        /// Font sub-family name.
+        /// </summary>
         public string FontSubFamilyName { get; }
 
+        /// <summary>
+        /// The name records contained in this name table.
+        /// </summary>
         public IReadOnlyList<TrueTypeNameRecord> NameRecords { get; }
 
+        /// <summary>
+        /// Creaye a new <see cref="NameTable"/>.
+        /// </summary>
         public NameTable(TrueTypeHeaderTable directoryTable, 
             string fontName,
             string fontFamilyName, 

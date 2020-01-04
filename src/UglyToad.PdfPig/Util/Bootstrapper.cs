@@ -30,13 +30,11 @@
             var filterProvider = new MemoryFilterProvider(new DecodeParameterResolver(logger), new PngPredictor(), logger);
             
             var cmapParser = new CMapParser();
-            var afmParser = new AdobeFontMetricsParser();
             
             var container = new Container();
             container.Register(trailerParser);
             container.Register(filterProvider);
             container.Register(cmapParser);
-            container.Register(afmParser);
             container.Register(logger);
 
             return container;

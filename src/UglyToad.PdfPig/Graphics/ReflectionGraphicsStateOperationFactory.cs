@@ -4,7 +4,6 @@ namespace UglyToad.PdfPig.Graphics
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
-    using Exceptions;
     using Operations;
     using Operations.ClippingPaths;
     using Operations.Compatibility;
@@ -17,6 +16,7 @@ namespace UglyToad.PdfPig.Graphics
     using Operations.TextPositioning;
     using Operations.TextShowing;
     using Operations.TextState;
+    using PdfPig.Core;
     using Tokens;
 
     internal class ReflectionGraphicsStateOperationFactory : IGraphicsStateOperationFactory

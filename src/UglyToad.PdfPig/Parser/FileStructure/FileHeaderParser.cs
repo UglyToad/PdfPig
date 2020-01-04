@@ -2,7 +2,7 @@
 {
     using System;
     using Content;
-    using Exceptions;
+    using Core;
     using Logging;
     using Tokenization.Scanner;
     using Tokens;

@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Parser.Parts
 {
-    using Exceptions;
+    using Core;
     using Tokenization.Scanner;
     using Tokens;
 

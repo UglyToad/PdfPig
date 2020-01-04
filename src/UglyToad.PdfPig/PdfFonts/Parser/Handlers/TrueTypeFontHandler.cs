@@ -3,20 +3,21 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using SystemFonts;
     using Cmap;
+    using Core;
     using Encodings;
-    using Exceptions;
     using Filters;
-    using IO;
+    using Fonts;
+    using Fonts.Standard14Fonts;
+    using Fonts.SystemFonts;
+    using Fonts.TrueType;
+    using Fonts.TrueType.Parser;
     using Logging;
     using Parts;
     using PdfPig.Parser.Parts;
     using Simple;
     using Tokenization.Scanner;
     using Tokens;
-    using TrueType;
-    using TrueType.Parser;
     using Util;
 
     internal class TrueTypeFontHandler : IFontHandler
@@ -25,20 +26,17 @@
         private readonly IPdfTokenScanner pdfScanner;
         private readonly IFilterProvider filterProvider;
         private readonly FontDescriptorFactory fontDescriptorFactory;
-        private readonly TrueTypeFontParser trueTypeFontParser;
         private readonly IEncodingReader encodingReader;
         private readonly ISystemFontFinder systemFontFinder;
 
         public TrueTypeFontHandler(ILog log, IPdfTokenScanner pdfScanner, IFilterProvider filterProvider,
             FontDescriptorFactory fontDescriptorFactory,
-            TrueTypeFontParser trueTypeFontParser,
             IEncodingReader encodingReader,
             ISystemFontFinder systemFontFinder)
         {
             this.log = log;
             this.filterProvider = filterProvider;
             this.fontDescriptorFactory = fontDescriptorFactory;
-            this.trueTypeFontParser = trueTypeFontParser;
             this.encodingReader = encodingReader;
             this.systemFontFinder = systemFontFinder;
             this.pdfScanner = pdfScanner;
@@ -127,7 +125,7 @@
                     if (font.TableRegister.CMapTable.TryGetGlyphIndex(i, out var index))
                     {
                         string glyphName;
-                        if (index >= 0 && index < postscript.GlyphNames.Length)
+                        if (index >= 0 && index < postscript.GlyphNames.Count)
                         {
                             glyphName = postscript.GlyphNames[index];
                         }
@@ -146,13 +144,14 @@
             return new TrueTypeSimpleFont(name, descriptor, toUnicodeCMap, encoding, font, firstCharacter, widths);
         }
 
-        private TrueTypeFontProgram ParseTrueTypeFont(FontDescriptor descriptor)
+        private TrueTypeFont ParseTrueTypeFont(FontDescriptor descriptor)
         {
             if (descriptor.FontFile == null)
             {
                 try
                 {
-                    return systemFontFinder.GetTrueTypeFont(descriptor.FontName.Data);
+                    var ttf = systemFontFinder.GetTrueTypeFont(descriptor.FontName.Data);
+                    return ttf;
                 }
                 catch (Exception ex)
                 {
@@ -175,7 +174,7 @@
             
                 var fontFile = fontFileStream.Decode(filterProvider);
 
-                var font = trueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFile)));
+                var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFile)));
 
                 return font;
             }

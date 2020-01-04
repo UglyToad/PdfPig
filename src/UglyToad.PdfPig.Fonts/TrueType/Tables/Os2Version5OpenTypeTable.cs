@@ -8,7 +8,7 @@
     /// Version 5 was defined in OpenType 1.7. 
     /// Version 5 has two additional fields beyond those in versions 2 - 4.
     /// </summary>
-    internal class Os2Version5OpenTypeTable : Os2Version2To4OpenTypeTable
+    public class Os2Version5OpenTypeTable : Os2Version2To4OpenTypeTable
     {
         /// <summary>
         /// This value is the lower value of the size range for which this font has been designed. 
@@ -74,6 +74,7 @@
             UpperOpticalPointSize = upperOpticalPointSize;
         }
 
+        /// <inheritdoc />
         public override void Write(Stream stream)
         {
             base.Write(stream);

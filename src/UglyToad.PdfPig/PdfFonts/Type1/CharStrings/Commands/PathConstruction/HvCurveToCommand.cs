@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Type1.CharStrings.Commands.PathConstruction
 {
-    using Geometry;
+    using Core;
 
     /// <summary>
     /// Horizontal vertical curve to command. Draws a Bézier curve when the first Bézier tangent is horizontal and the second Bézier tangent is vertical.

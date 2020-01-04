@@ -7,18 +7,36 @@
     /// <summary>
     /// Version 0 was defined in TrueType revision 1.5 and includes fields not in the Apple specification.
     /// </summary>
-    internal class Os2RevisedVersion0Table : Os2Table
+    public class Os2RevisedVersion0Table : Os2Table
     {
+        /// <summary>
+        /// Typographic ascender.
+        /// </summary>
         public short TypographicAscender { get; }
 
+        /// <summary>
+        /// Typographic descender.
+        /// </summary>
         public short TypographicDescender { get; }
 
+        /// <summary>
+        /// Typographic line gap.
+        /// </summary>
         public short TypographicLineGap { get; }
 
+        /// <summary>
+        /// The Windows ascender metric. This should be used to specify the height above the baseline for a clipping region. 
+        /// </summary>
         public ushort WindowsAscent { get; }
 
+        /// <summary>
+        /// The Windows descender metric. This should be used to specify the vertical extent below the baseline for a clipping region. 
+        /// </summary>
         public ushort WindowsDescent { get; }
 
+        /// <summary>
+        /// Create a new <see cref="Os2RevisedVersion0Table"/>.
+        /// </summary>
         public Os2RevisedVersion0Table(TrueTypeHeaderTable directoryTable, ushort version, short xAverageCharacterWidth, ushort weightClass,
             ushort widthClass,
             ushort typeFlags,
@@ -71,6 +89,7 @@
             WindowsDescent = windowsDescent;
         }
 
+        /// <inheritdoc />
         public override void Write(Stream stream)
         {
             base.Write(stream);

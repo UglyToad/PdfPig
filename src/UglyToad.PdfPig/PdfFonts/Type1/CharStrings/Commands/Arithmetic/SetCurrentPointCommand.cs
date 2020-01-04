@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Type1.CharStrings.Commands.Arithmetic
 {
-    using Geometry;
+    using Core;
 
     /// <summary>
     /// Sets the current point to (x, y) in absolute character space coordinates without performing a charstring moveto command.

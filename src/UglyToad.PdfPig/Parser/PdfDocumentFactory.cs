@@ -9,9 +9,9 @@
     using Core;
     using CrossReference;
     using Encryption;
-    using Exceptions;
     using FileStructure;
     using Filters;
+    using Fonts.SystemFonts;
     using Graphics;
     using Logging;
     using Outline;
@@ -23,7 +23,6 @@
     using PdfFonts.Parser;
     using PdfFonts.Parser.Handlers;
     using PdfFonts.Parser.Parts;
-    using PdfFonts.SystemFonts;
     using PdfFonts.Type1.Parser;
     using Tokenization.Scanner;
     using Tokens;
@@ -115,7 +114,6 @@
             
             crossReferenceTable = crossReferenceParser.Parse(inputBytes, isLenientParsing, crossReferenceOffset, pdfScanner, scanner);
             
-            var trueTypeFontParser = new TrueTypeFontParser();
             var fontDescriptorFactory = new FontDescriptorFactory();
             var compactFontFormatParser = new CompactFontFormatParser(new CompactFontFormatIndividualFontParser(new CompactFontFormatTopLevelDictionaryReader(), 
                         new CompactFontFormatPrivateDictionaryReader()));
@@ -130,12 +128,12 @@
 
             pdfScanner.UpdateEncryptionHandler(encryptionHandler);
 
-            var cidFontFactory = new CidFontFactory(pdfScanner, fontDescriptorFactory, trueTypeFontParser, compactFontFormatParser, filterProvider);
+            var cidFontFactory = new CidFontFactory(pdfScanner, fontDescriptorFactory, compactFontFormatParser, filterProvider);
             var encodingReader = new EncodingReader(pdfScanner);
 
             var fontFactory = new FontFactory(log, new Type0FontHandler(cidFontFactory,
                 filterProvider, pdfScanner),
-                new TrueTypeFontHandler(log, pdfScanner, filterProvider, fontDescriptorFactory, trueTypeFontParser, encodingReader, new SystemFontFinder(new TrueTypeFontParser())),
+                new TrueTypeFontHandler(log, pdfScanner, filterProvider, fontDescriptorFactory, encodingReader, new SystemFontFinder()),
                 new Type1FontHandler(pdfScanner, filterProvider, fontDescriptorFactory, encodingReader, 
                     new Type1FontParser(new Type1EncryptedPortionParser()), compactFontFormatParser),
                 new Type3FontHandler(pdfScanner, filterProvider, encodingReader));

@@ -2,7 +2,7 @@
 {
     using System;
     using System.IO;
-    using Util;
+    using PdfPig.Core;
 
     internal static class OperationWriteHelper
     {
