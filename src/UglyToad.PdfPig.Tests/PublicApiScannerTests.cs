@@ -236,6 +236,7 @@
                 "UglyToad.PdfPig.Tokens.ObjectToken",
                 "UglyToad.PdfPig.Tokens.StreamToken",
                 "UglyToad.PdfPig.Tokens.StringToken",
+                "UglyToad.PdfPig.Util.Adler32Checksum",
                 "UglyToad.PdfPig.Util.IWordExtractor",
                 "UglyToad.PdfPig.Util.DefaultWordExtractor",
                 "UglyToad.PdfPig.Writer.PdfDocumentBuilder",
