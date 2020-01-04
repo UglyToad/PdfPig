@@ -7,7 +7,7 @@
     /// This table contains information for TrueType fonts on PostScript printers.
     /// This includes data for the FontInfo dictionary and the PostScript glyph names.
     /// </summary>
-    internal class PostScriptTable : ITable
+    internal class PostScriptTable : ITrueTypeTable
     {
         public string Tag => TrueTypeHeaderTable.Post;
 

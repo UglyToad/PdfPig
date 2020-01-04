@@ -147,11 +147,11 @@
             return result;
         }
 
-        public void ReadUnsignedIntArray(long[] offsets, int length)
+        public void ReadUnsignedIntArray(uint[] offsets, int length)
         {
-            for (int i = 0; i < length; i++)
+            for (var i = 0; i < length; i++)
             {
-                offsets[i] = ReadUnsignedInt();
+                offsets[i] = (uint)ReadUnsignedInt();
             }
         }
 

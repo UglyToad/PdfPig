@@ -7,7 +7,7 @@
     using IO;
     using Util;
 
-    internal class CMapTable : ITable, IWriteable
+    internal class CMapTable : ITrueTypeTable, IWriteable
     {
         public IReadOnlyList<ICMapSubTable> SubTables { get; }
 

@@ -8,7 +8,7 @@
     /// The 'head' table contains global information about the font. 
     /// It contains things like as the font version number, the creation and modification dates, revision number and basic typographic data that applies to the font as a whole.
     /// </summary>
-    internal class HeaderTable : ITable
+    internal class HeaderTable : ITrueTypeTable
     {
         public string Tag => TrueTypeHeaderTable.Head;
         

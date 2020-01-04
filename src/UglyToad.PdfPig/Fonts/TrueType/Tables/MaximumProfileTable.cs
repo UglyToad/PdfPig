@@ -5,7 +5,7 @@
     /// <summary>
     /// This table establishes the memory requirements for the font.
     /// </summary>
-    internal class BasicMaximumProfileTable : ITable
+    internal class BasicMaximumProfileTable : ITrueTypeTable
     {
         public string Tag => TrueTypeHeaderTable.Maxp;
 

@@ -2,7 +2,7 @@
 {
     using Tables;
 
-    internal interface ITrueTypeTableParser<out T> where T : ITable
+    internal interface ITrueTypeTableParser<out T> where T : ITrueTypeTable
     {
         T Parse(TrueTypeHeaderTable header, TrueTypeDataBytes data, TableRegister.Builder register);
     }

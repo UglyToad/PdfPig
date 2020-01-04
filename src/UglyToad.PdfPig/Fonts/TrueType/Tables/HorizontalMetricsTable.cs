@@ -8,7 +8,7 @@
     /// <summary>
     /// The 'hmtx' table contains metric information for the horizontal layout each of the glyphs in the font.
     /// </summary>
-    internal class HorizontalMetricsTable : ITable, IWriteable
+    internal class HorizontalMetricsTable : ITrueTypeTable, IWriteable
     {
         public string Tag => TrueTypeHeaderTable.Hmtx;
 
