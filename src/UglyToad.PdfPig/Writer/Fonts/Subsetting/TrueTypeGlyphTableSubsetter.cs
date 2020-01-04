@@ -193,6 +193,10 @@
                 {
                     var glyphIndices = ReadCompositeGlyph(data);
 
+                    // Skip hinting instructions but include them in the output.
+                    var next = indexToLocationTable.GlyphOffsets[i + 1];
+                    data.Seek(glyphDirectory.Offset + next - 1);
+
                     glyphRecords[i] = new GlyphRecord(glyphOffset, type, (int)(data.Position - glyphOffset), glyphIndices);
                 }
             }
@@ -369,6 +373,8 @@
                     data.ReadSignedShort();
                 }
             } while (HasFlag(flags, CompositeGlyphFlags.MoreComponents));
+
+            // TODO: Read hinting instructions (PDFBox GlyfCompositeDescript.java line 76).
 
             return glyphIndices;
         }

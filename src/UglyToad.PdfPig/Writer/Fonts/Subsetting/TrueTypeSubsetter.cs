@@ -174,7 +174,6 @@
 
                 // TODO: whole font checksum.
                 var result = stream.ToArray();
-                var canparse = Parser.Parse(new TrueTypeDataBytes(result));
                 return result;
             }
         }
