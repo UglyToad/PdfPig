@@ -16,35 +16,45 @@
         private const ushort IndexToLocLong = 1;
 
         /*
-         * The PDF specification requires the following 10 tables:
+         * The PDF specification requires the following 9 tables:
+         * cmap
          * glyf
          * head
          * hhea
          * hmtx
          * loca
          * maxp
-         * cvt
-         * fpgm
-         * prep
-         * cmap
-         * But not all fonts include 'cvt ' and 'fpgm'.
+         * name
+         * post
+         * But not all fonts include for PDF need 'name' and 'post' tables.
          */
         private static readonly IReadOnlyList<string> RequiredTags = new[]
         {
             TrueTypeHeaderTable.Cmap,
-            // TrueTypeHeaderTable.Cvt,
-            // TrueTypeHeaderTable.Fpgm,
             TrueTypeHeaderTable.Glyf,
             TrueTypeHeaderTable.Head,
             TrueTypeHeaderTable.Hhea,
             TrueTypeHeaderTable.Hmtx,
             TrueTypeHeaderTable.Loca,
-            TrueTypeHeaderTable.Maxp,
-            TrueTypeHeaderTable.Prep
+            TrueTypeHeaderTable.Maxp
         };
 
-        private static readonly TrueTypeFontParser Parser
-            = new TrueTypeFontParser();
+        /// <summary>
+        /// The tags for tables which are optional or required but can be skipped for PDF. 
+        /// This should also include hdmx, kern and OS/2 tables.
+        /// </summary>
+        private static readonly IReadOnlyList<string> OptionalTags = new[]
+        {
+            TrueTypeHeaderTable.Cvt,
+            TrueTypeHeaderTable.Fpgm,
+            TrueTypeHeaderTable.Prep,
+            TrueTypeHeaderTable.Name,
+            // TrueTypeHeaderTable.Post
+        };
+
+        private static readonly byte[] PaddingBytes = {0, 0, 0, 0};
+
+        private static readonly TrueTypeFontParser Parser = new TrueTypeFontParser();
 
         public static byte[] Subset(byte[] fontBytes, TrueTypeSubsetEncoding newEncoding)
         {
@@ -62,29 +72,48 @@
 
             var indexMapping = GetIndexMapping(font, newEncoding);
 
-            var directoryEntries = new DirectoryEntry[RequiredTags.Count];
-
             using (var stream = new MemoryStream())
             {
-                var offsetSubtable = new TrueTypeOffsetSubtable((byte)RequiredTags.Count);
-                offsetSubtable.Write(stream);
+                var copiedTableTags = new SortedSet<string>(StringComparer.Ordinal);
 
-                // The table directory follows the offset subtable.
-
-                // Entries in the table directory must be sorted in ascending order by tag (case sensitive).
-                // Each table in the font file must have its own table directory entry.
                 for (var i = 0; i < RequiredTags.Count; i++)
                 {
                     var tag = RequiredTags[i];
 
-                    if (!font.TableHeaders.TryGetValue(tag, out var inputHeader))
+                    if (!font.TableHeaders.ContainsKey(tag))
                     {
                         throw new InvalidFontFormatException($"Font does not contain table required for subsetting: {tag}.");
                     }
 
-                    var entry = new DirectoryEntry(tag, stream.Position, inputHeader);
+                    copiedTableTags.Add(tag);
+                }
+
+                for (var i = 0; i < OptionalTags.Count; i++)
+                {
+                    var tag = OptionalTags[i];
+
+                    if (!font.TableHeaders.ContainsKey(tag))
+                    {
+                        continue;
+                    }
+
+                    copiedTableTags.Add(tag);
+                }
+
+                var offsetSubtable = new TrueTypeOffsetSubtable((byte)copiedTableTags.Count);
+                offsetSubtable.Write(stream);
+
+                // The table directory follows the offset subtable.
+                var directoryEntries = new DirectoryEntry[copiedTableTags.Count];
+
+                // Entries in the table directory must be sorted in ascending order by tag (case sensitive).
+                // Each table in the font file must have its own table directory entry.
+                var index = 0;
+                foreach (var tag in copiedTableTags)
+                {
+                    var entry = new DirectoryEntry(tag, stream.Position, font.TableHeaders[tag]);
                     entry.DummyHeader.Write(stream);
-                    directoryEntries[i] = entry;
+                    directoryEntries[index++] = entry;
                 }
 
                 // Generate the glyph subset.
@@ -94,9 +123,7 @@
                 for (var i = 0; i < directoryEntries.Length; i++)
                 {
                     var entry = directoryEntries[i];
-
-                    // TODO: place on a % 4 boundary offset.
-
+                    
                     entry.OutputTableOffset = stream.Position;
 
                     if (entry.Tag == TrueTypeHeaderTable.Cmap)
@@ -150,6 +177,14 @@
                     }
 
                     entry.Length = (uint)(stream.Position - entry.OutputTableOffset);
+
+                    // Tables must start on 4 byte boundaries.
+                    var remainder = stream.Position % 4;
+                    if (remainder > 0)
+                    {
+                        var toAppend = 4 - remainder;
+                        stream.Write(PaddingBytes, 0, (int)toAppend);
+                    }
                 }
 
                 using (var inputBytes = new StreamInputBytes(stream, false))
@@ -216,7 +251,7 @@
                 }
             }
 
-            var cmap = new CMapTable(font.TableRegister.CMapTable.Version, entry.DummyHeader, new []
+            var cmap = new CMapTable(font.TableRegister.CMapTable.Version, entry.DummyHeader, new[]
             {
                 new ByteEncodingCMapTable(TrueTypeCMapPlatform.Macintosh, 0, 0, data)
             });
