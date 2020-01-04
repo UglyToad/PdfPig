@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using UglyToad.PdfPig.Content;
-using UglyToad.PdfPig.Geometry;
-
-namespace UglyToad.PdfPig.DocumentLayoutAnalysis
+﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
+    using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Content;
+    using Core;
+    using Geometry;
+
     /// <summary>
     /// Text edges extractor. Text edges are where words have either their BoundingBox's left, right or mid coordinates aligned on the same vertical line.
     /// <para>Useful to detect text columns, tables, justified text, lists, etc.</para>
@@ -32,7 +33,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
         /// <para>A positive property value limits the number of concurrent operations to the set value. 
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
-        public static IReadOnlyDictionary<EdgeType, List<PdfLine>> GetEdges(IEnumerable<Word> pageWords, int minimumElements = 4, 
+        public static IReadOnlyDictionary<EdgeType, List<PdfLine>> GetEdges(IEnumerable<Word> pageWords, int minimumElements = 4,
             int maxDegreeOfParallelism = -1)
         {
             if (minimumElements < 0)
@@ -65,7 +66,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
                 cleanEdges.Add(edge.Key, new List<List<Word>>());
 
                 var cuttings = pageWords.Except(edge.Value) // remove selected words
-                    // words that cut the vertical line
+                                                            // words that cut the vertical line
                     .Where(x => x.BoundingBox.Left < edge.Key && x.BoundingBox.Right > edge.Key)
                     // and that are within the boundaries of the edge
                     .Where(k => k.BoundingBox.Bottom > edge.Value.Min(z => z.BoundingBox.Bottom)

@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using UglyToad.PdfPig.Content;
-using UglyToad.PdfPig.Util;
-
-namespace UglyToad.PdfPig.DocumentLayoutAnalysis
+﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
+    using System.Collections.Generic;
+    using System.Linq;
+    using Content;
+    using Core;
+
     /// <summary>
     /// Default Page Segmenter. All words are included in one block.
     /// </summary>

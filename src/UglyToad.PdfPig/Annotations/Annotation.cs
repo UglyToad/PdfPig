@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Annotations
 {
     using System;
-    using Geometry;
+    using Core;
     using Tokens;
     using Util.JetBrains.Annotations;
 

@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using UglyToad.PdfPig.Content;
-using UglyToad.PdfPig.Geometry;
-using UglyToad.PdfPig.Util;
-
-namespace UglyToad.PdfPig.DocumentLayoutAnalysis
+﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using Core;
+    using Content;
+    using Geometry;
+
     /// <summary>
     /// A top-down algorithm that finds a cover of the background whitespace of a document in terms of maximal empty rectangles.
     /// <para>See Section 3.2 of 'High precision text extraction from PDF documents' by Øyvind Raddum Berg and Section 2 of 'Two geometric algorithms for layout analysis' by Thomas M. Breuel.</para>
@@ -286,7 +286,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             public PdfRectangle Bound { get; }
 
             public HashSet<PdfRectangle> Obstacles { get; }
-            
+
             public QueueEntry(PdfRectangle bound, HashSet<PdfRectangle> obstacles, double whitespaceFuzziness)
             {
                 Bound = bound;

@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tokenization
 {
     using System.Collections.Generic;
-    using IO;
+    using Core;
     using Scanner;
     using Tokens;
 

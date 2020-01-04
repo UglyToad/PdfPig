@@ -5,15 +5,12 @@
     using System.IO;
     using System.Linq;
     using Content;
+    using Core;
     using Fonts;
     using PdfPig.Fonts.TrueType;
-    using PdfPig.Fonts.TrueType.Parser;
-    using Geometry;
     using Graphics.Operations;
-    using IO;
-    using PdfPig.Fonts;
+    using PdfFonts;
     using Tokens;
-    using Util;
     using Util.JetBrains.Annotations;
 
     /// <summary>

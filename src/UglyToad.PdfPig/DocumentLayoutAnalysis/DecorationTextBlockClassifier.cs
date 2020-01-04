@@ -1,15 +1,15 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using UglyToad.PdfPig.Content;
-using UglyToad.PdfPig.Geometry;
-using UglyToad.PdfPig.Util;
-
-namespace UglyToad.PdfPig.DocumentLayoutAnalysis
+﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
+    using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text.RegularExpressions;
+    using System.Threading.Tasks;
+    using Content;
+    using Geometry;
+    using Util;
+
     /// <summary>
     /// Algorithm that retrieve blocks that are labelled as decoration (e.g. headers, footers) for each page in the document, using a content and a geometric similarity measure.
     /// <para>Decoration blocks are blocks that contains information such as author names, publication titles, page numbers, etc.
@@ -19,7 +19,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
     /// </summary>
     public static class DecorationTextBlockClassifier
     {
-        private static Regex numbersPattern = new Regex(@"(\d+)|(\b([MDCLXVI]+)\b)", RegexOptions.IgnoreCase);
+        private static readonly Regex NumbersPattern = new Regex(@"(\d+)|(\b([MDCLXVI]+)\b)", RegexOptions.IgnoreCase);
         private static string replacementChar = "@";
 
         /// <summary>
@@ -225,8 +225,8 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         private static double ContentSimilarity(TextBlock b1, TextBlock b2, Func<string, string, double> minimumEditDistanceNormalised)
         {
             double similarity = 1.0 - minimumEditDistanceNormalised(
-                numbersPattern.Replace(b1.Text, replacementChar),
-                numbersPattern.Replace(b2.Text, replacementChar));
+                NumbersPattern.Replace(b1.Text, replacementChar),
+                NumbersPattern.Replace(b2.Text, replacementChar));
 
             return similarity;
         }

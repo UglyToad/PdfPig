@@ -2,8 +2,8 @@
 {
     using System;
     using System.Collections.Generic;
+    using Core;
     using Exceptions;
-    using IO;
     using Parser.Parts;
     using Tokens;
 

@@ -1,9 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Util
 {
     using Filters;
-    using Fonts.Parser;
     using Logging;
     using Parser.FileStructure;
+    using PdfFonts.Parser;
 
     internal static class Bootstrapper
     {

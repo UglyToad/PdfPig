@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using UglyToad.PdfPig.Content;
-using UglyToad.PdfPig.Util;
-
-namespace UglyToad.PdfPig.DocumentLayoutAnalysis
+﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using Content;
+    using Core;
+
     /// <summary>
     /// The recursive X-Y cut is a top-down page segmentation technique that decomposes a document 
     /// recursively into a set of rectangular blocks. This implementation leverages bounding boxes.
@@ -72,7 +72,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 
             if (node.IsLeaf)
             {
-                return new List<TextBlock>{ new TextBlock((node as XYLeaf).GetLines())};
+                return new List<TextBlock> { new TextBlock((node as XYLeaf).GetLines()) };
             }
             else
             {
@@ -94,7 +94,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
             // order words left to right
             var words = leaf.Words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).OrderBy(w => w.BoundingBox.Left).ToArray();
 
-            if(!words.Any())
+            if (!words.Any())
             {
                 return new XYNode(null);
             }

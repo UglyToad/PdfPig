@@ -5,6 +5,8 @@ using static UglyToad.PdfPig.Geometry.PdfPath;
 
 namespace UglyToad.PdfPig.Geometry
 {
+    using Core;
+
     /// <summary>
     /// Extension class to Geometry.
     /// </summary>

@@ -1,7 +1,8 @@
-﻿using System;
-
-namespace UglyToad.PdfPig.Geometry
+﻿namespace UglyToad.PdfPig.Geometry
 {
+    using System;
+    using Core;
+
     internal struct PdfVector
     {
         public double X { get; }

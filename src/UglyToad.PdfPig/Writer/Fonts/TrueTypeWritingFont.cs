@@ -5,17 +5,14 @@
     using System.IO;
     using System.Linq;
     using Core;
-    using Geometry;
+    using PdfFonts;
     using Tokens;
     using PdfPig.Fonts;
-    using PdfPig.Fonts.Exceptions;
     using PdfPig.Fonts.TrueType;
-    using PdfPig.Fonts.TrueType.Tables;
-    using Subsetting;
 
     internal class TrueTypeWritingFont : IWritingFont
     {
-        private readonly TrueTypeFontProgram font;
+        private readonly TrueTypeFont font;
         private readonly IReadOnlyList<byte> fontFileBytes;
 
         private readonly object mappingLock = new object();
@@ -26,7 +23,7 @@
 
         public string Name => font.Name;
 
-        public TrueTypeWritingFont(TrueTypeFontProgram font, IReadOnlyList<byte> fontFileBytes)
+        public TrueTypeWritingFont(TrueTypeFont font, IReadOnlyList<byte> fontFileBytes)
         {
             this.font = font;
             this.fontFileBytes = fontFileBytes;
@@ -39,12 +36,12 @@
 
         public bool TryGetAdvanceWidth(char character, out double width)
         {
-            return font.TryGetBoundingAdvancedWidth(character, out width);
+            return font.TryGetAdvanceWidth(character, out width);
         }
 
         public TransformationMatrix GetFontMatrix()
         {
-            var unitsPerEm = font.GetFontMatrixMultiplier();
+            var unitsPerEm = font.GetUnitsPerEm();
             return TransformationMatrix.FromValues(1.0 / unitsPerEm, 0, 0, 1.0 / unitsPerEm, 0, 0);
         }
 

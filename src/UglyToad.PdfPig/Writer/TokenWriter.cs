@@ -4,9 +4,9 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using Core;
     using Graphics.Operations;
     using Tokens;
-    using Util;
 
     /// <summary>
     /// Writes any type of <see cref="IToken"/> to the corresponding PDF document format output.

@@ -4,9 +4,9 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Xml.Linq;
+    using Core;
     using Filters;
     using Tokens;
-    using Util;
     using Util.JetBrains.Annotations;
 
     /// <summary>

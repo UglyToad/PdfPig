@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using UglyToad.PdfPig.Content;
-using UglyToad.PdfPig.Geometry;
-using UglyToad.PdfPig.Util;
-
-namespace UglyToad.PdfPig.DocumentLayoutAnalysis
+﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using Content;
+    using Core;
+    using Util;
+
     /// <summary>
     /// Nearest Neighbour Word Extractor, using the <see cref="Distances.Manhattan"/> distance.
     /// This implementation leverages bounding boxes.
@@ -33,7 +33,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         {
             List<Word> wordsH = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Horizontal),
-                (l1, l2) => Math.Max(l1.GlyphRectangle.Width, l2.GlyphRectangle.Width) * 0.2, 
+                (l1, l2) => Math.Max(l1.GlyphRectangle.Width, l2.GlyphRectangle.Width) * 0.2,
                 Distances.Manhattan, MaxDegreeOfParallelism)
                 .OrderByDescending(x => x.BoundingBox.Bottom)
                 .ThenBy(x => x.BoundingBox.Left).ToList();
@@ -86,7 +86,7 @@ namespace UglyToad.PdfPig.DocumentLayoutAnalysis
         /// <para>A positive property value limits the number of concurrent operations to the set value. 
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
         private List<Word> GetWords(IEnumerable<Letter> pageLetters,
-            Func<Letter, Letter, double> maxDistanceFunction, Func<PdfPoint, PdfPoint, double> distMeasure, 
+            Func<Letter, Letter, double> maxDistanceFunction, Func<PdfPoint, PdfPoint, double> distMeasure,
             int maxDegreeOfParallelism)
         {
             if (pageLetters == null || pageLetters.Count() == 0) return new List<Word>();

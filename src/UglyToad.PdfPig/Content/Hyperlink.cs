@@ -3,7 +3,7 @@
     using System;
     using System.Collections.Generic;
     using Annotations;
-    using Geometry;
+    using Core;
 
     /// <summary>
     /// Full details for a link annotation which references an external resource.

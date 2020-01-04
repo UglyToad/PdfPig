@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Util
 {
     using System;
+    using Core;
     using Exceptions;
     using Geometry;
     using JetBrains.Annotations;

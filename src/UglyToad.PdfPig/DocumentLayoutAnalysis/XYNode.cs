@@ -1,10 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using UglyToad.PdfPig.Geometry;
-using UglyToad.PdfPig.Util;
-
-namespace UglyToad.PdfPig.DocumentLayoutAnalysis
+﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
+    using System.Collections.Generic;
+    using System.Linq;
+    using Core;
+
     /// <summary>
     /// A Node used in the <see cref="RecursiveXYCut"/> algorithm.
     /// </summary>

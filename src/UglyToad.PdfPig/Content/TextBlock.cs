@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using UglyToad.PdfPig.Geometry;
-
-namespace UglyToad.PdfPig.Content
+﻿namespace UglyToad.PdfPig.Content
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using Core;
+
     /// <summary>
     /// A block of text.
     /// </summary>

@@ -1,33 +1,34 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Xml;
-using System.Xml.Serialization;
-using UglyToad.PdfPig.Content;
-using UglyToad.PdfPig.DocumentLayoutAnalysis;
-using UglyToad.PdfPig.Export.PAGE;
-using UglyToad.PdfPig.Geometry;
-using UglyToad.PdfPig.Graphics.Colors;
-using UglyToad.PdfPig.Util;
-
-namespace UglyToad.PdfPig.Export
+﻿namespace UglyToad.PdfPig.Export
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Xml;
+    using System.Xml.Serialization;
+    using Content;
+    using Core;
+    using DocumentLayoutAnalysis;
+    using PAGE;
+    using Geometry;
+    using Graphics.Colors;
+    using Util;
+
     /// <summary>
     /// PAGE-XML 2019-07-15 (XML) text exporter.
     /// <para>See https://github.com/PRImA-Research-Lab/PAGE-XML </para>
     /// </summary>
     public class PageXmlTextExporter : ITextExporter
     {
-        private IPageSegmenter pageSegmenter;
-        private IWordExtractor wordExtractor;
+        private readonly IPageSegmenter pageSegmenter;
+        private readonly IWordExtractor wordExtractor;
 
-        private double scale;
-        private string indentChar;
+        private readonly double scale;
+        private readonly string indentChar;
 
-        int lineCount = 0;
-        int wordCount = 0;
-        int glyphCount = 0;
-        int regionCount = 0;
+        private int lineCount;
+        private int wordCount;
+        private int glyphCount;
+        private int regionCount;
 
         /// <summary>
         /// PAGE-XML 2019-07-15 (XML) text exporter.
@@ -140,15 +141,15 @@ namespace UglyToad.PdfPig.Export
 
             var regions = new List<PageXmlDocument.PageXmlRegion>();
 
-            var words = page.GetWords(wordExtractor);
-            if (words.Count() > 0)
+            var words = page.GetWords(wordExtractor).ToList();
+            if (words.Count > 0)
             {
                 var blocks = pageSegmenter.GetBlocks(words);
                 regions.AddRange(blocks.Select(b => ToPageXmlTextRegion(b, page.Height)));
             }
 
-            var images = page.GetImages();
-            if (images.Count() > 0)
+            var images = page.GetImages().ToList();
+            if (images.Count > 0)
             {
                 regions.AddRange(images.Select(i => ToPageXmlImageRegion(i, page.Height)));
             }

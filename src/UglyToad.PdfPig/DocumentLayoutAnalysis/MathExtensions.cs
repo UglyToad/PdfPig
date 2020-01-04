@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-namespace UglyToad.PdfPig.DocumentLayoutAnalysis
+﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
+    using System.Collections.Generic;
+    using System.Linq;
+
     /// <summary>
     /// Useful math extensions.
     /// </summary>

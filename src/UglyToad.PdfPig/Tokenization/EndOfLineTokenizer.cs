@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tokenization
 {
-    using IO;
+    using Core;
     using Tokens;
 
     internal class EndOfLineTokenizer : ITokenizer

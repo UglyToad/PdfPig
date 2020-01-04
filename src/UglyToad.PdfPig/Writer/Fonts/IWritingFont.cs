@@ -2,7 +2,6 @@
 {
     using System.IO;
     using Core;
-    using Geometry;
     using Tokens;
 
     internal interface IWritingFont

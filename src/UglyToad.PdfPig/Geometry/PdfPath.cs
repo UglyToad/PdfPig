@@ -1,10 +1,10 @@
-﻿// ReSharper disable ArrangeRedundantParentheses
-namespace UglyToad.PdfPig.Geometry
+﻿namespace UglyToad.PdfPig.Geometry
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
+    using Core;
 
     /// <summary>
     /// A path in a PDF document, used by glyphs and page content. Can contain multiple sub-paths.
@@ -85,18 +85,18 @@ namespace UglyToad.PdfPig.Geometry
             {
                 return line.From;
             }
-            else if (command is BezierCurve curve)
+
+            if (command is BezierCurve curve)
             {
                 return curve.StartPoint;
             }
-            else if (command is Move move)
+
+            if (command is Move move)
             {
                 return move.Location;
             }
-            else
-            {
-                throw new ArgumentException();
-            }
+
+            throw new ArgumentException();
         }
 
         internal static PdfPoint GetEndPoint(IPathCommand command)
@@ -105,18 +105,18 @@ namespace UglyToad.PdfPig.Geometry
             {
                 return line.To;
             }
-            else if (command is BezierCurve curve)
+
+            if (command is BezierCurve curve)
             {
                 return curve.EndPoint;
             }
-            else if (command is Move move)
+
+            if (command is Move move)
             {
                 return move.Location;
             }
-            else
-            {
-                throw new ArgumentException();
-            }
+
+            throw new ArgumentException();
         }
 
         /// <summary>

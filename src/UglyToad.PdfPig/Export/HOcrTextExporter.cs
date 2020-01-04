@@ -1,12 +1,13 @@
-﻿using System;
-using System.Linq;
-using UglyToad.PdfPig.Content;
-using UglyToad.PdfPig.DocumentLayoutAnalysis;
-using UglyToad.PdfPig.Geometry;
-using UglyToad.PdfPig.Util;
-
-namespace UglyToad.PdfPig.Export
+﻿namespace UglyToad.PdfPig.Export
 {
+    using System;
+    using System.Linq;
+    using Content;
+    using Core;
+    using DocumentLayoutAnalysis;
+    using Geometry;
+    using Util;
+
     /// <summary>
     /// hOCR v1.2 (HTML) text exporter.
     /// <para>See http://kba.cloud/hocr-spec/1.2/ </para>

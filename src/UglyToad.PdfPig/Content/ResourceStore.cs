@@ -3,9 +3,9 @@
     using System;
     using System.Collections.Generic;
     using Exceptions;
-    using Fonts;
     using Graphics.Colors;
     using Parser.Parts;
+    using PdfFonts;
     using Tokenization.Scanner;
     using Tokens;
     using Util;

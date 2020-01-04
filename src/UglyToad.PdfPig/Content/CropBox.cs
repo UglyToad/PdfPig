@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using Geometry;
+    using Core;
 
     /// <summary>
     /// Defines the visible region of a page, contents expanding beyond the crop box should be clipped.

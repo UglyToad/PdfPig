@@ -5,10 +5,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Geometry;
-using UglyToad.PdfPig.Util;
 
 namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
+    using Core;
+
     /// <inheritdoc />
     /// <summary>
     /// The Document Spectrum (Docstrum) algorithm is a bottom-up page segmentation technique based on nearest-neighbourhood 

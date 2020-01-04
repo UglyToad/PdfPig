@@ -1,7 +1,7 @@
-﻿using UglyToad.PdfPig.Content;
-
-namespace UglyToad.PdfPig.Export
+﻿namespace UglyToad.PdfPig.Export
 {
+    using Content;
+
     /// <summary>
     /// Exports the page's text into the desired format.
     /// </summary>

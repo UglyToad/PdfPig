@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.Globalization;
     using System.Text;
-    using IO;
+    using Core;
     using Tokens;
 
     internal class Type1ArrayTokenizer : ITokenizer

@@ -4,10 +4,9 @@
     using System.Collections.Generic;
     using System.IO;
     using Core;
-    using Geometry;
+    using PdfFonts;
+    using PdfFonts.Encodings;
     using Tokens;
-    using UglyToad.PdfPig.Fonts;
-    using UglyToad.PdfPig.Fonts.Encodings;
 
     internal class Standard14WritingFont : IWritingFont
     {

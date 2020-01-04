@@ -8,11 +8,9 @@
     using Core;
     using Exceptions;
     using Filters;
-    using Geometry;
     using PdfPig.Core;
     using Tokenization.Scanner;
     using Tokens;
-    using Util;
 
     internal class InlineImageBuilder
     {

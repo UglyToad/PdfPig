@@ -1,7 +1,8 @@
-﻿using System;
-
-namespace UglyToad.PdfPig.Geometry
+﻿namespace UglyToad.PdfPig.Geometry
 {
+    using System;
+    using Core;
+
     /// <summary>
     /// A line in a PDF file. 
     /// </summary>
@@ -61,10 +62,10 @@ namespace UglyToad.PdfPig.Geometry
         public PdfRectangle GetBoundingRectangle()
         {
             return new PdfRectangle(
-                Math.Min(this.Point1.X, this.Point2.X),
-                Math.Min(this.Point1.Y, this.Point2.Y),
-                Math.Max(this.Point1.X, this.Point2.X),
-                Math.Max(this.Point1.Y, this.Point2.Y));
+                Math.Min(Point1.X, Point2.X),
+                Math.Min(Point1.Y, Point2.Y),
+                Math.Max(Point1.X, Point2.X),
+                Math.Max(Point1.Y, Point2.Y));
         }
 
         /// <summary>
@@ -76,7 +77,7 @@ namespace UglyToad.PdfPig.Geometry
         {
             if (obj is PdfLine line)
             {
-                return line.Point1.Equals(this.Point1) && line.Point2.Equals(this.Point2);
+                return line.Point1.Equals(Point1) && line.Point2.Equals(Point2);
             }
             return false;
         }

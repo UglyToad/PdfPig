@@ -2,6 +2,7 @@
 {
     using System;
     using System.Linq;
+    using Core;
     using Tokenization.Scanner;
     using Tokens;
     using Util;

@@ -3,7 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Text;
-    using IO;
+    using Core;
     using Parser.Parts;
     using Tokens;
 

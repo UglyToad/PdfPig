@@ -15,6 +15,7 @@
     using Logging;
     using Operations;
     using Parser;
+    using PdfFonts;
     using PdfPig.Core;
     using Tokenization.Scanner;
     using Tokens;

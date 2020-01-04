@@ -5,11 +5,11 @@
     using System.IO;
     using AcroForms;
     using Content;
+    using Core;
     using CrossReference;
     using Encryption;
     using Exceptions;
     using Filters;
-    using IO;
     using Logging;
     using Parser;
     using Tokenization.Scanner;
