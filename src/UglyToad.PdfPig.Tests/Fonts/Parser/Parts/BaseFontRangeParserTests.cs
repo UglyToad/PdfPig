@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts.Parser.Parts
 {
-    using PdfPig.Fonts.Cmap;
-    using PdfPig.Fonts.Parser.Parts;
+    using PdfFonts.Cmap;
+    using PdfFonts.Parser.Parts;
     using PdfPig.Tokens;
     using Xunit;
 

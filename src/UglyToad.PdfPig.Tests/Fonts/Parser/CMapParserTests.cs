@@ -3,8 +3,8 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
-    using PdfPig.Fonts.Parser;
-    using PdfPig.IO;
+    using PdfFonts.Parser;
+    using PdfPig.Core;
     using Xunit;
 
     public class CMapParserTests

@@ -3,7 +3,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using CrossReference;
-    using Exceptions;
+    using Core;
     using Parts.CrossReference;
     using Tokenization;
     using Tokenization.Scanner;

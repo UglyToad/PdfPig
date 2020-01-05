@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.AcroForms.Fields
 {
+    using Core;
     using Util.JetBrains.Annotations;
 
     /// <summary>

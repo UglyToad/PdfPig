@@ -4,11 +4,11 @@
     using System.Collections.Generic;
     using System.Text;
     using Annotations;
+    using Core;
     using Graphics.Operations;
     using Tokens;
     using Util;
     using Util.JetBrains.Annotations;
-    using Geometry;
     using Tokenization.Scanner;
 
     /// <summary>

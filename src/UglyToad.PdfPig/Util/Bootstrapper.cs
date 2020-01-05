@@ -1,9 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Util
 {
     using Filters;
-    using Fonts.Parser;
     using Logging;
     using Parser.FileStructure;
+    using PdfFonts.Parser;
 
     internal static class Bootstrapper
     {
@@ -30,13 +30,11 @@
             var filterProvider = new MemoryFilterProvider(new DecodeParameterResolver(logger), new PngPredictor(), logger);
             
             var cmapParser = new CMapParser();
-            var afmParser = new AdobeFontMetricsParser();
             
             var container = new Container();
             container.Register(trailerParser);
             container.Register(filterProvider);
             container.Register(cmapParser);
-            container.Register(afmParser);
             container.Register(logger);
 
             return container;

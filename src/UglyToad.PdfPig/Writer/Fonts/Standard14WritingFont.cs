@@ -4,20 +4,20 @@
     using System.Collections.Generic;
     using System.IO;
     using Core;
-    using Geometry;
+    using PdfPig.Fonts;
+    using PdfPig.Fonts.AdobeFontMetrics;
+    using PdfPig.Fonts.Encodings;
     using Tokens;
-    using UglyToad.PdfPig.Fonts;
-    using UglyToad.PdfPig.Fonts.Encodings;
 
     internal class Standard14WritingFont : IWritingFont
     {
-        private readonly FontMetrics metrics;
+        private readonly AdobeFontMetrics metrics;
 
         public bool HasWidths { get; } = false;
 
         public string Name => metrics.FontName;
 
-        public Standard14WritingFont(FontMetrics metrics)
+        public Standard14WritingFont(AdobeFontMetrics metrics)
         {
             this.metrics = metrics;
         }
@@ -32,7 +32,7 @@
             }
 
             boundingBox = new PdfRectangle(characterMetric.BoundingBox.Left, characterMetric.BoundingBox.Bottom,
-                characterMetric.BoundingBox.Left + characterMetric.WidthX, characterMetric.BoundingBox.Top);
+                characterMetric.BoundingBox.Left + characterMetric.Width.X, characterMetric.BoundingBox.Top);
 
             return true;
         }

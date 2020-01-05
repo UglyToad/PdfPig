@@ -2,7 +2,7 @@
 {
     using System;
     using System.Linq;
-    using PdfPig.Fonts.Cmap;
+    using PdfFonts.Cmap;
     using PdfPig.Tokens;
     using Xunit;
 

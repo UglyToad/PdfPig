@@ -3,6 +3,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using Content;
+    using Core;
     using Geometry;
     using Tokenization.Scanner;
     using Tokens;

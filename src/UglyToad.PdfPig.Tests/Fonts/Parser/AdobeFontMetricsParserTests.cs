@@ -2,8 +2,8 @@
 {
     using System;
     using System.IO;
-    using PdfPig.Fonts.Parser;
-    using PdfPig.IO;
+    using PdfPig.Core;
+    using PdfPig.Fonts.AdobeFontMetrics;
     using Xunit;
 
     public class AdobeFontMetricsParserTests
@@ -72,15 +72,13 @@ C 36 ; WX 600 ; N dollar ; B 105 -126 496 662 ;
 C 37 ; WX 600 ; N percent ; B 81 -15 518 622 ;
 
 EndCharMetrics";
-
-        private readonly AdobeFontMetricsParser parser = new AdobeFontMetricsParser();
-
+        
         [Fact]
         public void CanParseAfmFile()
         {
             var input = StringBytesTestConverter.Convert(CourierAfmSnippet, false);
 
-            var metrics = parser.Parse(input.Bytes, false);
+            var metrics = AdobeFontMetricsParser.Parse(input.Bytes, false);
 
             Assert.NotNull(metrics);
         }
@@ -88,11 +86,11 @@ EndCharMetrics";
         [Fact]
         public void CanParseHelveticaAfmFile()
         {
-            var helvetica = GetResourceBytes("UglyToad.PdfPig.Resources.AdobeFontMetrics.Helvetica.afm");
+            var helvetica = GetResourceBytes("UglyToad.PdfPig.Fonts.Resources.AdobeFontMetrics.Helvetica.afm");
 
             var input = new ByteArrayInputBytes(helvetica);
 
-            var metrics = parser.Parse(input, false);
+            var metrics = AdobeFontMetricsParser.Parse(input, false);
 
             Assert.NotNull(metrics);
         }

@@ -1,8 +1,9 @@
-﻿using UglyToad.PdfPig.Geometry;
-using Xunit;
-
-namespace UglyToad.PdfPig.Tests.Geometry
+﻿namespace UglyToad.PdfPig.Tests.Geometry
 {
+    using PdfPig.Geometry;
+    using PdfPig.Core;
+    using Xunit;
+
     public class PdfRectangleTests
     {
         public void Area()

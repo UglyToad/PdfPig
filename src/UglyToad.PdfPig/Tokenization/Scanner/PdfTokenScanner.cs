@@ -6,10 +6,10 @@
     using System.Globalization;
     using System.IO;
     using System.Text.RegularExpressions;
+    using Core;
     using Encryption;
     using Exceptions;
     using Filters;
-    using IO;
     using Parser.Parts;
     using Tokens;
 

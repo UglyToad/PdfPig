@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
     using PdfPig.Tokens;
     using Xunit;
 

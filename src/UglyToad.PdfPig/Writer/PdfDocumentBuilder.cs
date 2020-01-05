@@ -5,15 +5,13 @@
     using System.IO;
     using System.Linq;
     using Content;
+    using Core;
     using Fonts;
     using PdfPig.Fonts.TrueType;
-    using PdfPig.Fonts.TrueType.Parser;
-    using Geometry;
     using Graphics.Operations;
-    using IO;
-    using PdfPig.Fonts;
+    using PdfPig.Fonts.Standard14Fonts;
+    using PdfPig.Fonts.TrueType.Parser;
     using Tokens;
-    using Util;
     using Util.JetBrains.Annotations;
 
     /// <summary>
@@ -21,8 +19,6 @@
     /// </summary>
     public class PdfDocumentBuilder
     {
-        private static readonly TrueTypeFontParser Parser = new TrueTypeFontParser();
-
         private readonly Dictionary<int, PdfPageBuilder> pages = new Dictionary<int, PdfPageBuilder>();
         private readonly Dictionary<Guid, FontStored> fonts = new Dictionary<Guid, FontStored>();
 
@@ -70,7 +66,7 @@
                     return false;
                 }
 
-                var font = Parser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFileBytes)));
+                var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFileBytes)));
 
                 if (font.TableRegister.CMapTable == null)
                 {
@@ -108,7 +104,7 @@
         {
             try
             {
-                var font = Parser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFileBytes)));
+                var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFileBytes)));
                 var id = Guid.NewGuid();
                 var i = fonts.Count;
                 var added = new AddedFont(id, NameToken.Create($"F{i}"));

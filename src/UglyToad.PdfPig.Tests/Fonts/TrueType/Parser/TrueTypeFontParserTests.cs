@@ -5,16 +5,14 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
     using System.Globalization;
     using System.Text;
     using System.Text.RegularExpressions;
+    using PdfPig.Core;
     using PdfPig.Fonts.TrueType;
     using PdfPig.Fonts.TrueType.Parser;
     using PdfPig.Fonts.TrueType.Tables;
-    using PdfPig.IO;
     using Xunit;
 
     public class TrueTypeFontParserTests
     {
-        private readonly TrueTypeFontParser parser = new TrueTypeFontParser();
-
         [Fact]
         public void ParseRegularRoboto()
         {
@@ -22,15 +20,15 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
-            var font = parser.Parse(input);
+            var font = TrueTypeFontParser.Parse(input);
 
             Assert.Equal(1, font.Version);
 
             Assert.Equal(1, font.TableRegister.HeaderTable.Version);
             Assert.Equal(1, font.TableRegister.HeaderTable.Revision);
 
-            Assert.Equal(1142661421, font.TableRegister.HeaderTable.CheckSumAdjustment);
-            Assert.Equal(1594834165, font.TableRegister.HeaderTable.MagicNumber);
+            Assert.Equal(1142661421u, font.TableRegister.HeaderTable.CheckSumAdjustment);
+            Assert.Equal(1594834165u, font.TableRegister.HeaderTable.MagicNumber);
 
             Assert.Equal(9, font.TableRegister.HeaderTable.Flags);
 
@@ -61,7 +59,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
 
             Assert.Equal(HeaderTable.FontDirection.StronglyLeftToRightWithNeutrals, font.TableRegister.HeaderTable.FontDirectionHint);
 
-            Assert.Equal(0, font.TableRegister.HeaderTable.IndexToLocFormat);
+            Assert.Equal(IndexToLocationTable.EntryFormat.Short, font.TableRegister.HeaderTable.IndexToLocFormat);
             Assert.Equal(0, font.TableRegister.HeaderTable.GlyphDataFormat);
         }
 
@@ -96,7 +94,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
-            var font = parser.Parse(input);
+            var font = TrueTypeFontParser.Parse(input);
 
             foreach (var s in data)
             {
@@ -128,9 +126,9 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
-            var font = parser.Parse(input);
+            var font = TrueTypeFontParser.Parse(input);
 
-            Assert.NotNull(font.TableRegister.GlyphTable);
+            Assert.NotNull(font.TableRegister.HeaderTable);
         }
 
         [Fact]
@@ -140,9 +138,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
-            var font = parser.Parse(input);
-
-            Assert.NotNull(font.TableRegister.GlyphTable);
+            var font = TrueTypeFontParser.Parse(input);
 
             var name = font.Name;
 
@@ -170,7 +166,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
-            var font = parser.Parse(input);
+            var font = TrueTypeFontParser.Parse(input);
 
             Assert.NotNull(font);
         }
@@ -184,7 +180,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
-            var font = parser.Parse(input);
+            var font = TrueTypeFontParser.Parse(input);
 
             var robotoGlyphs = Encoding.ASCII.GetString(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.GlyphData.txt"));
             var lines = robotoGlyphs.Split(new[] {"\r\n", "\r", "\n"}, StringSplitOptions.RemoveEmptyEntries);

@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using Exceptions;
+    using Core;
     using Tokenization.Scanner;
     using Tokens;
 

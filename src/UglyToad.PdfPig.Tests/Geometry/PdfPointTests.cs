@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Geometry
 {
-    using PdfPig.Geometry;
+    using PdfPig.Core;
     using Xunit;
 
     public class PdfPointTests

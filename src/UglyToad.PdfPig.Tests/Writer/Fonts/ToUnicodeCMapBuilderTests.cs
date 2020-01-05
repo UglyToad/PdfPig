@@ -1,9 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.Writer.Fonts
 {
     using System.Collections.Generic;
-    using PdfPig.Fonts.Parser;
-    using PdfPig.IO;
-    using PdfPig.Util;
+    using PdfFonts.Parser;
+    using PdfPig.Core;
     using PdfPig.Writer.Fonts;
     using Xunit;
 

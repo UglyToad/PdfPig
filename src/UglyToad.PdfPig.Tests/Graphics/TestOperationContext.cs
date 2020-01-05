@@ -2,12 +2,10 @@
 {
     using System.Collections.Generic;
     using Content;
-    using PdfPig.Geometry;
+    using PdfFonts;
     using PdfPig.Graphics;
-    using PdfPig.IO;
     using PdfPig.Tokens;
     using PdfPig.Core;
-    using PdfPig.Fonts;
     using Tokens;
 
     internal class TestOperationContext : IOperationContext

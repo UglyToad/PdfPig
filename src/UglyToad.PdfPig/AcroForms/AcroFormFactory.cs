@@ -4,10 +4,10 @@
     using System.Collections.Generic;
     using System.Linq;
     using Content;
+    using Core;
     using Exceptions;
     using Fields;
     using Filters;
-    using Geometry;
     using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;

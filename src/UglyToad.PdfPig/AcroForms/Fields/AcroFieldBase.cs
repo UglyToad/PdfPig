@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.AcroForms.Fields
 {
     using System;
-    using Geometry;
+    using Core;
     using Tokens;
     using Util.JetBrains.Annotations;
 

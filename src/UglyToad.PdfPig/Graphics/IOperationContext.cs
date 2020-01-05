@@ -2,7 +2,6 @@
 {
     using System.Collections.Generic;
     using Geometry;
-    using IO;
     using Tokens;
     using PdfPig.Core;
     using Util.JetBrains.Annotations;

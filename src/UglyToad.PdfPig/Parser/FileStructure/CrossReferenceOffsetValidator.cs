@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Parser.FileStructure
 {
-    using IO;
+    using Core;
     using Tokenization.Scanner;
 
     internal class CrossReferenceOffsetValidator

@@ -6,26 +6,21 @@
     using System.Linq;
     using AcroForms;
     using Content;
+    using Core;
     using CrossReference;
     using Encryption;
-    using Exceptions;
     using FileStructure;
     using Filters;
-    using Fonts;
-    using Fonts.CompactFontFormat;
-    using Fonts.CompactFontFormat.Dictionaries;
-    using Fonts.Parser;
-    using Fonts.Parser.Handlers;
-    using Fonts.Parser.Parts;
     using Fonts.SystemFonts;
-    using Fonts.TrueType.Parser;
-    using Fonts.Type1.Parser;
     using Graphics;
-    using IO;
     using Logging;
     using Outline;
     using Parts;
     using Parts.CrossReference;
+    using PdfFonts;
+    using PdfFonts.Parser;
+    using PdfFonts.Parser.Handlers;
+    using PdfFonts.Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
     using Util;
@@ -116,10 +111,7 @@
             
             crossReferenceTable = crossReferenceParser.Parse(inputBytes, isLenientParsing, crossReferenceOffset, pdfScanner, scanner);
             
-            var trueTypeFontParser = new TrueTypeFontParser();
             var fontDescriptorFactory = new FontDescriptorFactory();
-            var compactFontFormatParser = new CompactFontFormatParser(new CompactFontFormatIndividualFontParser(new CompactFontFormatTopLevelDictionaryReader(), 
-                        new CompactFontFormatPrivateDictionaryReader()));
             
             var (rootReference, rootDictionary) = ParseTrailer(crossReferenceTable, isLenientParsing, 
                 pdfScanner, 
@@ -131,14 +123,13 @@
 
             pdfScanner.UpdateEncryptionHandler(encryptionHandler);
 
-            var cidFontFactory = new CidFontFactory(pdfScanner, fontDescriptorFactory, trueTypeFontParser, compactFontFormatParser, filterProvider);
+            var cidFontFactory = new CidFontFactory(pdfScanner, fontDescriptorFactory, filterProvider);
             var encodingReader = new EncodingReader(pdfScanner);
 
             var fontFactory = new FontFactory(log, new Type0FontHandler(cidFontFactory,
                 filterProvider, pdfScanner),
-                new TrueTypeFontHandler(log, pdfScanner, filterProvider, fontDescriptorFactory, trueTypeFontParser, encodingReader, new SystemFontFinder(new TrueTypeFontParser())),
-                new Type1FontHandler(pdfScanner, filterProvider, fontDescriptorFactory, encodingReader, 
-                    new Type1FontParser(new Type1EncryptedPortionParser()), compactFontFormatParser),
+                new TrueTypeFontHandler(log, pdfScanner, filterProvider, fontDescriptorFactory, encodingReader, new SystemFontFinder()),
+                new Type1FontHandler(pdfScanner, filterProvider, fontDescriptorFactory, encodingReader),
                 new Type3FontHandler(pdfScanner, filterProvider, encodingReader));
             
             var resourceContainer = new ResourceStore(pdfScanner, fontFactory);

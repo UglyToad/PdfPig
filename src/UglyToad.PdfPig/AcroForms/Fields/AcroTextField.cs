@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.AcroForms.Fields
 {
-    using Geometry;
+    using Core;
     using Tokens;
 
     /// <inheritdoc />

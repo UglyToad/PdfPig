@@ -1,10 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using static UglyToad.PdfPig.Geometry.PdfPath;
-
-namespace UglyToad.PdfPig.Geometry
+﻿namespace UglyToad.PdfPig.Geometry
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using Core;
+
     /// <summary>
     /// Extension class to Geometry.
     /// </summary>
@@ -163,7 +164,7 @@ namespace UglyToad.PdfPig.Geometry
         /// <summary>
         /// Whether the line segment contains the point.
         /// </summary>
-        public static bool Contains(this Line line, PdfPoint point)
+        public static bool Contains(this PdfPath.Line line, PdfPoint point)
         {
             if (line.To.X == line.From.X)
             {
@@ -192,7 +193,7 @@ namespace UglyToad.PdfPig.Geometry
         /// <summary>
         /// Whether two lines intersect.
         /// </summary>
-        public static bool IntersectsWith(this Line line, Line other)
+        public static bool IntersectsWith(this PdfPath.Line line, PdfPath.Line other)
         {
             return Intersect(line, other) != null;
         }
@@ -200,7 +201,7 @@ namespace UglyToad.PdfPig.Geometry
         /// <summary>
         /// Get the <see cref="PdfPoint"/> that is the intersection of two lines.
         /// </summary>
-        public static PdfPoint? Intersect(this Line line, Line other)
+        public static PdfPoint? Intersect(this PdfPath.Line line, PdfPath.Line other)
         {
             // if the bounding boxes do not intersect, the lines cannot intersect
             var thisLineBbox = line.GetBoundingRectangle();
@@ -251,7 +252,7 @@ namespace UglyToad.PdfPig.Geometry
         /// <summary>
         /// Checks if both lines are parallel.
         /// </summary>
-        public static bool ParallelTo(this Line line, Line other)
+        public static bool ParallelTo(this PdfPath.Line line, PdfPath.Line other)
         {
             var val1 = (line.To.Y - line.From.Y) * (other.To.X - other.From.X);
             var val2 = (other.To.Y - other.From.Y) * (line.To.X - line.From.X);
@@ -265,12 +266,12 @@ namespace UglyToad.PdfPig.Geometry
         /// </summary>
         /// <param name="bezierCurve">The original bezier curve.</param>
         /// <param name="tau">The t value were to split the curve, usually between 0 and 1, but not necessary.</param>
-        private static (BezierCurve, BezierCurve) Split(this BezierCurve bezierCurve, double tau)
+        private static (PdfPath.BezierCurve, PdfPath.BezierCurve) Split(this PdfPath.BezierCurve bezierCurve, double tau)
         {
             // De Casteljau Algorithm
             PdfPoint[][] points = new PdfPoint[4][];
 
-            points[0] = new []
+            points[0] = new[]
             {
                 bezierCurve.StartPoint,
                 bezierCurve.FirstControlPoint,
@@ -291,15 +292,15 @@ namespace UglyToad.PdfPig.Geometry
                 }
             }
 
-            return (new BezierCurve(points[0][0], points[1][0], points[2][0], points[3][0]),
-                    new BezierCurve(points[3][0], points[2][1], points[1][2], points[0][3]));
+            return (new PdfPath.BezierCurve(points[0][0], points[1][0], points[2][0], points[3][0]),
+                    new PdfPath.BezierCurve(points[3][0], points[2][1], points[1][2], points[0][3]));
         }
 
         /// <summary>
         /// Get the <see cref="PdfPoint"/>s that are the intersections of the line and the curve.
         /// </summary>
         /// <returns></returns>
-        public static PdfPoint[] Intersect(this BezierCurve bezierCurve, PdfLine line)
+        public static PdfPoint[] Intersect(this PdfPath.BezierCurve bezierCurve, PdfLine line)
         {
             var ts = FindIntersectionT(bezierCurve, line);
             if (!ts.Any()) return null;
@@ -308,12 +309,12 @@ namespace UglyToad.PdfPig.Geometry
             foreach (var t in ts)
             {
                 PdfPoint point = new PdfPoint(
-                    BezierCurve.ValueWithT(bezierCurve.StartPoint.X,
+                    PdfPath.BezierCurve.ValueWithT(bezierCurve.StartPoint.X,
                                            bezierCurve.FirstControlPoint.X,
                                            bezierCurve.SecondControlPoint.X,
                                            bezierCurve.EndPoint.X,
                                            t),
-                    BezierCurve.ValueWithT(bezierCurve.StartPoint.Y,
+                    PdfPath.BezierCurve.ValueWithT(bezierCurve.StartPoint.Y,
                                            bezierCurve.FirstControlPoint.Y,
                                            bezierCurve.SecondControlPoint.Y,
                                            bezierCurve.EndPoint.Y,
@@ -327,7 +328,7 @@ namespace UglyToad.PdfPig.Geometry
         /// Get the <see cref="PdfPoint"/>s that are the intersections of the line and the curve.
         /// </summary>
         /// <returns></returns>
-        public static PdfPoint[] Intersect(this BezierCurve bezierCurve, Line line)
+        public static PdfPoint[] Intersect(this PdfPath.BezierCurve bezierCurve, PdfPath.Line line)
         {
             var ts = FindIntersectionT(bezierCurve, line);
             if (ts.Count() == 0) return null;
@@ -336,12 +337,12 @@ namespace UglyToad.PdfPig.Geometry
             foreach (var t in ts)
             {
                 PdfPoint point = new PdfPoint(
-                    BezierCurve.ValueWithT(bezierCurve.StartPoint.X,
+                    PdfPath.BezierCurve.ValueWithT(bezierCurve.StartPoint.X,
                                            bezierCurve.FirstControlPoint.X,
                                            bezierCurve.SecondControlPoint.X,
                                            bezierCurve.EndPoint.X,
                                            t),
-                    BezierCurve.ValueWithT(bezierCurve.StartPoint.Y,
+                    PdfPath.BezierCurve.ValueWithT(bezierCurve.StartPoint.Y,
                                            bezierCurve.FirstControlPoint.Y,
                                            bezierCurve.SecondControlPoint.Y,
                                            bezierCurve.EndPoint.Y,
@@ -355,8 +356,8 @@ namespace UglyToad.PdfPig.Geometry
         /// <summary>
         /// Get the t values that are the intersections of the line and the curve.
         /// </summary>
-        /// <returns>List of t values where the <see cref="BezierCurve"/> and the <see cref="PdfLine"/> intersect.</returns>
-        public static double[] FindIntersectionT(this BezierCurve bezierCurve, PdfLine line)
+        /// <returns>List of t values where the <see cref="PdfPath.BezierCurve"/> and the <see cref="PdfLine"/> intersect.</returns>
+        public static double[] FindIntersectionT(this PdfPath.BezierCurve bezierCurve, PdfLine line)
         {
             // if the bounding boxes do not intersect, they cannot intersect
             var bezierBbox = bezierCurve.GetBoundingRectangle();
@@ -378,8 +379,8 @@ namespace UglyToad.PdfPig.Geometry
         /// <summary>
         /// Get the t values that are the intersections of the line and the curve.
         /// </summary>
-        /// <returns>List of t values where the <see cref="BezierCurve"/> and the <see cref="Line"/> intersect.</returns>
-        public static double[] FindIntersectionT(this BezierCurve bezierCurve, Line line)
+        /// <returns>List of t values where the <see cref="PdfPath.BezierCurve"/> and the <see cref="PdfPath.Line"/> intersect.</returns>
+        public static double[] FindIntersectionT(this PdfPath.BezierCurve bezierCurve, PdfPath.Line line)
         {
             // if the bounding boxes do not intersect, they cannot intersect
             var bezierBbox = bezierCurve.GetBoundingRectangle();
@@ -399,7 +400,7 @@ namespace UglyToad.PdfPig.Geometry
             return FindIntersectionT(bezierCurve, x1, y1, x2, y2);
         }
 
-        private static double[] FindIntersectionT(BezierCurve bezierCurve, double x1, double y1, double x2, double y2)
+        private static double[] FindIntersectionT(PdfPath.BezierCurve bezierCurve, double x1, double y1, double x2, double y2)
         {
             double A = (y2 - y1);
             double B = (x1 - x2);
@@ -512,7 +513,57 @@ namespace UglyToad.PdfPig.Geometry
                 x3 = vietTrigonometricSolution(p, q, 2) - bOver3a;
             }
 
-            return new double[] { x1, x2, x3 };
+            return new[] {x1, x2, x3};
+        }
+
+        internal static string ToSvg(this PdfPath p)
+        {
+            var builder = new StringBuilder();
+            foreach (var pathCommand in p.Commands)
+            {
+                pathCommand.WriteSvg(builder);
+            }
+
+            if (builder.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            if (builder[builder.Length - 1] == ' ')
+            {
+                builder.Remove(builder.Length - 1, 1);
+            }
+
+            return builder.ToString();
+        }
+
+        internal static string ToFullSvg(this PdfPath p)
+        {
+            string BboxToRect(PdfRectangle box, string stroke)
+            {
+                var overallBbox = $"<rect x='{box.Left}' y='{box.Bottom}' width='{box.Width}' height='{box.Height}' stroke-width='2' fill='none' stroke='{stroke}'></rect>";
+                return overallBbox;
+            }
+
+            var glyph = p.ToSvg();
+            var bbox = p.GetBoundingRectangle();
+            var bboxes = new List<PdfRectangle>();
+
+            foreach (var command in p.Commands)
+            {
+                var segBbox = command.GetBoundingRectangle();
+                if (segBbox.HasValue)
+                {
+                    bboxes.Add(segBbox.Value);
+                }
+            }
+
+            var path = $"<path d='{glyph}' stroke='cyan' stroke-width='3'></path>";
+            var bboxRect = bbox.HasValue ? BboxToRect(bbox.Value, "yellow") : string.Empty;
+            var others = string.Join(" ", bboxes.Select(x => BboxToRect(x, "gray")));
+            var result = $"<svg width='500' height='500'><g transform=\"scale(0.2, -0.2) translate(100, -700)\">{path} {bboxRect} {others}</g></svg>";
+
+            return result;
         }
     }
 }

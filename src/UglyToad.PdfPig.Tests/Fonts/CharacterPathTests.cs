@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts
 {
     using System.Text;
-    using PdfPig.Fonts;
+    using PdfPig.Core;
     using PdfPig.Geometry;
     using Xunit;
 

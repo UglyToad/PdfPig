@@ -4,15 +4,13 @@
     using System.Collections.Generic;
     using System.Linq;
     using Content;
-    using Exceptions;
+    using Core;
     using Filters;
-    using Geometry;
     using Graphics;
     using Graphics.Colors;
     using Graphics.Core;
     using Tokenization.Scanner;
     using Tokens;
-    using Util;
 
     internal static class XObjectFactory
     {

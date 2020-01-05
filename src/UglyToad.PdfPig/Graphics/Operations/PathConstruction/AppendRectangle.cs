@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.PathConstruction
 {
     using System.IO;
-    using Geometry;
+    using PdfPig.Core;
 
     /// <inheritdoc />
     /// <remarks>

@@ -1,9 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests
 {
     using System.Text;
-    using PdfPig.IO;
+    using PdfPig.Core;
     using PdfPig.Tokenization.Scanner;
-    using PdfPig.Util;
 
     internal static class StringBytesTestConverter
     {

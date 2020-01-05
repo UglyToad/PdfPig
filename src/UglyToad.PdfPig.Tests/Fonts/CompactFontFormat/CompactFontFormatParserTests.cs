@@ -4,20 +4,16 @@
     using System.IO;
     using System.Linq;
     using PdfPig.Fonts.CompactFontFormat;
-    using PdfPig.Fonts.CompactFontFormat.Dictionaries;
     using Xunit;
 
     public class CompactFontFormatParserTests
     {
-        private readonly CompactFontFormatParser parser = new CompactFontFormatParser(
-            new CompactFontFormatIndividualFontParser(new CompactFontFormatTopLevelDictionaryReader(), new CompactFontFormatPrivateDictionaryReader()));
-
         [Fact]
         public void CanReadMinionPro()
         {
             var fileBytes = GetFileBytes("MinionPro.bin");
 
-            var font = parser.Parse(new CompactFontFormatData(fileBytes));
+            var font = CompactFontFormatParser.Parse(new CompactFontFormatData(fileBytes));
 
             Assert.Equal(1, font.Header.MajorVersion);
             Assert.Equal(1, font.Fonts.Count);
@@ -29,7 +25,7 @@
         {
             var fileBytes = GetFileBytes("MinionPro.bin");
 
-            var font = parser.Parse(new CompactFontFormatData(fileBytes));
+            var font = CompactFontFormatParser.Parse(new CompactFontFormatData(fileBytes));
 
             // Calls a global subroutine
             var box = font.GetCharacterBoundingBox("percent");
@@ -42,7 +38,7 @@
         {
             var fileBytes = GetFileBytes("MinionPro.bin");
 
-            var font = parser.Parse(new CompactFontFormatData(fileBytes));
+            var font = CompactFontFormatParser.Parse(new CompactFontFormatData(fileBytes));
 
             // Calls a local subroutine
             var box = font.GetCharacterBoundingBox("numbersign");
@@ -55,7 +51,7 @@
         {
             var fileBytes = GetFileBytes("MinionPro.bin");
 
-            var font = parser.Parse(new CompactFontFormatData(fileBytes));
+            var font = CompactFontFormatParser.Parse(new CompactFontFormatData(fileBytes));
 
             // Calls a local subroutine which adds to the hints
             var box = font.GetCharacterBoundingBox("perthousand");
@@ -68,7 +64,7 @@
         {
             var fileBytes = GetFileBytes("MinionPro.bin");
 
-            var font = parser.Parse(new CompactFontFormatData(fileBytes));
+            var font = CompactFontFormatParser.Parse(new CompactFontFormatData(fileBytes));
 
             // Calls a global subroutine which adds to the hints
             var box = font.GetCharacterBoundingBox("Atildesmall");
@@ -81,7 +77,7 @@
         {
             var fileBytes = GetFileBytes("MinionPro.bin");
 
-            var font = parser.Parse(new CompactFontFormatData(fileBytes));
+            var font = CompactFontFormatParser.Parse(new CompactFontFormatData(fileBytes));
 
             // Calls hugely nested subroutines
             var box = font.GetCharacterBoundingBox("uniF687");
@@ -94,7 +90,7 @@
         {
             var fileBytes = GetFileBytes("MinionPro.bin");
 
-            var fontSet = parser.Parse(new CompactFontFormatData(fileBytes));
+            var fontSet = CompactFontFormatParser.Parse(new CompactFontFormatData(fileBytes));
 
             var font = fontSet.Fonts["MinionPro-It"];
 

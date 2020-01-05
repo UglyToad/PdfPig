@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.PathConstruction
 {
     using System.IO;
-    using Geometry;
+    using PdfPig.Core;
 
     /// <inheritdoc />
     /// <summary>
@@ -10,7 +10,6 @@
     /// </summary>
     public class AppendEndControlPointBezierCurve : IGraphicsStateOperation
     {
-
         /// <summary>
         /// The symbol for this operation in a stream.
         /// </summary>

@@ -2,8 +2,8 @@
 
 namespace UglyToad.PdfPig.Tests.Encryption
 {
+    using PdfPig.Core;
     using PdfPig.Encryption;
-    using PdfPig.Util;
 
     public class AesEncryptionHelperTests
     {

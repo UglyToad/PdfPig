@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
     using System.Collections.Generic;
-    using Geometry;
+    using Core;
     using Graphics.Colors;
     using Graphics.Core;
     using XObjects;
