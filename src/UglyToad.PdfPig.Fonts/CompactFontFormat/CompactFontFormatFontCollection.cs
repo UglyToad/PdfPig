@@ -52,5 +52,20 @@
         {
             return Fonts.First().Value.GetCharacterBoundingBox(characterName);
         }
+
+        /// <summary>
+        /// Get the name for the character with the given character code from the font.
+        /// </summary>
+        public string GetCharacterName(int characterCode)
+        {
+            var font = Fonts.First().Value;
+
+            if (font.Encoding != null)
+            {
+                return font.Encoding.GetName(characterCode);
+            }
+
+            return ".notdef";
+        }
     }
 }

@@ -178,7 +178,7 @@
                     }
                     else
                     {
-                        characterName = first.Encoding.GetName(characterCode);
+                        characterName = x.GetCharacterName(characterCode);
                     }
 
                     return first.GetCharacterBoundingBox(characterName);
