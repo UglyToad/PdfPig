@@ -12,9 +12,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UglyToad.PdfPig.Fonts", "UglyToad.PdfPig.Fonts\UglyToad.PdfPig.Fonts.csproj", "{BBC8F94C-6E94-43FF-AB2E-47FF3C2B999F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.Fonts", "UglyToad.PdfPig.Fonts\UglyToad.PdfPig.Fonts.csproj", "{BBC8F94C-6E94-43FF-AB2E-47FF3C2B999F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UglyToad.PdfPig.Core", "UglyToad.PdfPig.Core\UglyToad.PdfPig.Core.csproj", "{A7E1DD9F-92B7-4061-9BA5-6E06C06175F9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.Core", "UglyToad.PdfPig.Core\UglyToad.PdfPig.Core.csproj", "{A7E1DD9F-92B7-4061-9BA5-6E06C06175F9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UglyToad.PdfPig.DocumentLayoutAnalysis", "UglyToad.PdfPig.DocumentLayoutAnalysis\UglyToad.PdfPig.DocumentLayoutAnalysis.csproj", "{60126BCA-6C52-48A9-A0A6-51796C8B0BE7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,6 +40,10 @@ Global
 		{A7E1DD9F-92B7-4061-9BA5-6E06C06175F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7E1DD9F-92B7-4061-9BA5-6E06C06175F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7E1DD9F-92B7-4061-9BA5-6E06C06175F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60126BCA-6C52-48A9-A0A6-51796C8B0BE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60126BCA-6C52-48A9-A0A6-51796C8B0BE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60126BCA-6C52-48A9-A0A6-51796C8B0BE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60126BCA-6C52-48A9-A0A6-51796C8B0BE7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

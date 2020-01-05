@@ -13,7 +13,6 @@
     using PdfPig.Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
-    using TrueType;
     using Util;
 
     internal class CidFontFactory

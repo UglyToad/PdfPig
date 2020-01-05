@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using CharStrings;
     using Core;
-    using Geometry;
     using Tokens;
     using Util.JetBrains.Annotations;
 

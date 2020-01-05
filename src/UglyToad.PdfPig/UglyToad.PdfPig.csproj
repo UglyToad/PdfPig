@@ -53,5 +53,9 @@
     <ProjectReference Include="..\UglyToad.PdfPig.Core\UglyToad.PdfPig.Core.csproj" />
     <ProjectReference Include="..\UglyToad.PdfPig.Fonts\UglyToad.PdfPig.Fonts.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="PdfFonts\TrueType\" />
+  </ItemGroup>
   
 </Project>
