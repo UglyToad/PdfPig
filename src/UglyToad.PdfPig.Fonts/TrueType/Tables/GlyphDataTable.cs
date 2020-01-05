@@ -13,35 +13,69 @@
     /// </summary>
     internal class GlyphDataTable : ITrueTypeTable
     {
+        private readonly IReadOnlyList<uint> glyphOffsets;
+        private readonly PdfRectangle maxGlyphBounds;
+        private readonly TrueTypeDataBytes tableBytes;
+
         /// <inheritdoc />
         public string Tag => TrueTypeHeaderTable.Glyf;
 
         /// <inheritdoc />
         public TrueTypeHeaderTable DirectoryTable { get; }
 
-        public IReadOnlyList<IGlyphDescription> Glyphs { get; }
+        private readonly Lazy<IReadOnlyList<IGlyphDescription>> glyphs;
+        public IReadOnlyList<IGlyphDescription> Glyphs => glyphs.Value;
 
-        public GlyphDataTable(TrueTypeHeaderTable directoryTable, IReadOnlyList<IGlyphDescription> glyphs)
+        public GlyphDataTable(TrueTypeHeaderTable directoryTable, IReadOnlyList<uint> glyphOffsets, 
+            PdfRectangle maxGlyphBounds, 
+            TrueTypeDataBytes tableBytes)
         {
+            this.glyphOffsets = glyphOffsets;
+            this.maxGlyphBounds = maxGlyphBounds;
+            this.tableBytes = tableBytes;
             DirectoryTable = directoryTable;
-            Glyphs = glyphs ?? throw new ArgumentNullException(nameof(glyphs));
+            if (tableBytes == null)
+            {
+                throw new ArgumentNullException(nameof(tableBytes));
+            }
+
+            if (glyphOffsets == null)
+            {
+                throw new ArgumentNullException(nameof(glyphOffsets));
+            }
+
+            if (tableBytes.Length != directoryTable.Length)
+            {
+                throw new ArgumentException($"glyf table data should match length of directory entry. Expected: {directoryTable.Length}. Actual: {tableBytes.Length}.");
+            }
+
+            glyphs = new Lazy<IReadOnlyList<IGlyphDescription>>(ReadGlyphs);
         }
 
         public static GlyphDataTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, TableRegister.Builder tableRegister)
         {
             data.Seek(table.Offset);
-            
-            var indexToLocationTable = tableRegister.IndexToLocationTable;
 
-            var offsets = indexToLocationTable.GlyphOffsets;
+            var bytes = data.ReadByteArray((int)table.Length);
+
+            return new GlyphDataTable(table, tableRegister.IndexToLocationTable.GlyphOffsets, 
+                tableRegister.HeaderTable.Bounds,
+                new TrueTypeDataBytes(bytes));
+        }
+
+        private IReadOnlyList<IGlyphDescription> ReadGlyphs()
+        {
+            var data = tableBytes;
+
+            var offsets = glyphOffsets;
 
             var entryCount = offsets.Count;
 
             var glyphCount = entryCount - 1;
 
-            var glyphs = new IGlyphDescription[glyphCount];
+            var result = new IGlyphDescription[glyphCount];
 
-            var emptyGlyph = Glyph.Empty(tableRegister.HeaderTable.Bounds);
+            var emptyGlyph = Glyph.Empty(maxGlyphBounds);
 
             var compositeLocations = new Dictionary<int, TemporaryCompositeLocation>();
 
@@ -50,11 +84,11 @@
                 if (offsets[i] == offsets[i + 1])
                 {
                     // empty glyph
-                    glyphs[i] = emptyGlyph;
+                    result[i] = emptyGlyph;
                     continue;
                 }
 
-                data.Seek(offsets[i] + table.Offset);
+                data.Seek(offsets[i]);
 
                 var contourCount = data.ReadSignedShort();
 
@@ -62,27 +96,27 @@
                 var minY = data.ReadSignedShort();
                 var maxX = data.ReadSignedShort();
                 var maxY = data.ReadSignedShort();
-                
+
                 var bounds = new PdfRectangle(minX, minY, maxX, maxY);
-                
+
                 // If the number of contours is greater than or equal zero it's a simple glyph.
                 if (contourCount >= 0)
                 {
-                    glyphs[i] = ReadSimpleGlyph(data, contourCount, bounds);
+                    result[i] = ReadSimpleGlyph(data, contourCount, bounds);
                 }
                 else
                 {
-                    compositeLocations.Add(i , new TemporaryCompositeLocation(data.Position, bounds, contourCount));
+                    compositeLocations.Add(i, new TemporaryCompositeLocation(data.Position, bounds, contourCount));
                 }
             }
 
             // Build composite glyphs by combining simple and other composite glyphs.
             foreach (var compositeLocation in compositeLocations)
             {
-                glyphs[compositeLocation.Key] = ReadCompositeGlyph(data, compositeLocation.Value, compositeLocations, glyphs, emptyGlyph);
+                result[compositeLocation.Key] = ReadCompositeGlyph(data, compositeLocation.Value, compositeLocations, result, emptyGlyph);
             }
-            
-            return new GlyphDataTable(table, glyphs);
+
+            return result;
         }
 
         private static Glyph ReadSimpleGlyph(TrueTypeDataBytes data, short contourCount, PdfRectangle bounds)

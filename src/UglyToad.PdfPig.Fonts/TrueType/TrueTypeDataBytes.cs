@@ -32,6 +32,11 @@
         public long Position => inputBytes.CurrentOffset;
 
         /// <summary>
+        /// The length of the data in bytes.
+        /// </summary>
+        public long Length => inputBytes.Length;
+
+        /// <summary>
         /// Read a 32-fixed floating point value.
         /// </summary>
         public float Read32Fixed()
