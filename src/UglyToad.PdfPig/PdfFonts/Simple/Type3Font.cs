@@ -3,8 +3,8 @@
     using Cmap;
     using Composite;
     using Core;
-    using Encodings;
     using Fonts;
+    using Fonts.Encodings;
     using Tokens;
 
     internal class Type3Font : IFont

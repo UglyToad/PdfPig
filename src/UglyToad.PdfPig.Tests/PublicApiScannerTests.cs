@@ -87,7 +87,6 @@
                 "UglyToad.PdfPig.PdfFonts.FontDescriptorFlags",
                 "UglyToad.PdfPig.PdfFonts.FontStretch",
                 "UglyToad.PdfPig.Geometry.GeometryExtensions",
-                "UglyToad.PdfPig.Geometry.PdfPath",
                 "UglyToad.PdfPig.Graphics.Colors.CMYKColor",
                 "UglyToad.PdfPig.Graphics.Colors.ColorSpace",
                 "UglyToad.PdfPig.Graphics.Colors.ColorSpaceExtensions",

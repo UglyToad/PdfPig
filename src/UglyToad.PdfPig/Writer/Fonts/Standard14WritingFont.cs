@@ -4,8 +4,9 @@
     using System.Collections.Generic;
     using System.IO;
     using Core;
-    using PdfFonts.Encodings;
+    using PdfPig.Fonts;
     using PdfPig.Fonts.AdobeFontMetrics;
+    using PdfPig.Fonts.Encodings;
     using Tokens;
 
     internal class Standard14WritingFont : IWritingFont

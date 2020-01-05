@@ -5,9 +5,10 @@
     using System.Linq;
     using Cmap;
     using Core;
-    using Encodings;
     using Filters;
     using Fonts;
+    using Fonts.AdobeFontMetrics;
+    using Fonts.Encodings;
     using Fonts.Standard14Fonts;
     using Fonts.SystemFonts;
     using Fonts.TrueType;

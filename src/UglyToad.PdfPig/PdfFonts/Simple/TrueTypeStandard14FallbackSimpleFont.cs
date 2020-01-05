@@ -3,8 +3,9 @@
     using System;
     using System.Collections.Generic;
     using Core;
-    using Encodings;
+    using Fonts;
     using Fonts.AdobeFontMetrics;
+    using Fonts.Encodings;
     using Fonts.TrueType;
     using Tokens;
 

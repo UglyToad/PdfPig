@@ -5,7 +5,8 @@
     using Cmap;
     using Composite;
     using Core;
-    using Encodings;
+    using Fonts;
+    using Fonts.Encodings;
     using Fonts.TrueType;
     using Tokens;
     using Util.JetBrains.Annotations;

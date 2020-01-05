@@ -1,16 +1,15 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Simple
 {
     using System.Collections.Generic;
+    using System.Linq;
     using Cmap;
-    using CompactFontFormat;
     using Composite;
     using Core;
-    using Encodings;
-    using Geometry;
-    using IO;
+    using Fonts;
+    using Fonts.CompactFontFormat;
+    using Fonts.Encodings;
+    using Fonts.Type1;
     using Tokens;
-    using Type1;
-    using Util;
     using Util.JetBrains.Annotations;
 
     /// <summary>
@@ -31,7 +30,7 @@
         private readonly Encoding encoding;
 
         [CanBeNull]
-        private readonly Union<Type1FontProgram, CompactFontFormatFontProgram> fontProgram;
+        private readonly Union<Type1Font, CompactFontFormatFontCollection> fontProgram;
 
         private readonly ToUnicodeCMap toUnicodeCMap;
 
@@ -43,7 +42,7 @@
 
         public Type1FontSimple(NameToken name, int firstChar, int lastChar, double[] widths, FontDescriptor fontDescriptor, Encoding encoding, 
             CMap toUnicodeCMap,
-            Union<Type1FontProgram, CompactFontFormatFontProgram> fontProgram)
+            Union<Type1Font, CompactFontFormatFontCollection> fontProgram)
         {
             this.firstChar = firstChar;
             this.lastChar = lastChar;
@@ -54,7 +53,7 @@
             this.toUnicodeCMap = new ToUnicodeCMap(toUnicodeCMap);
 
             var matrix = TransformationMatrix.FromValues(0.001, 0, 0, 0.001, 0, 0);
-            fontProgram?.Match(x => matrix = x.GetFontTransformationMatrix(), x => { matrix = x.GetFontTransformationMatrix(); });
+            fontProgram?.Match(x => matrix = x.FontMatrix, x => { matrix = x.GetFirstTransformationMatrix(); });
 
             fontMatrix = matrix;
 
@@ -171,6 +170,7 @@
                 },
                 x =>
                 {
+                    var first = x.Fonts.First().Value;
                     string characterName;
                     if (encoding != null)
                     {
@@ -178,10 +178,10 @@
                     }
                     else
                     {
-                        characterName = x.GetCharacterName(characterCode);
+                        characterName = first.Encoding.GetName(characterCode);
                     }
 
-                    return x.GetCharacterBoundingBox(characterName);
+                    return first.GetCharacterBoundingBox(characterName);
                 });
 
             if (!rect.HasValue)

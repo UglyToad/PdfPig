@@ -2,9 +2,9 @@
 {
     using Cmap;
     using Core;
-    using Encodings;
     using Filters;
     using Fonts;
+    using Fonts.Encodings;
     using PdfPig.Parser.Parts;
     using Simple;
     using Tokenization.Scanner;

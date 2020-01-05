@@ -3,7 +3,6 @@
     using System.Collections.Generic;
     using Content;
     using PdfFonts;
-    using PdfPig.Geometry;
     using PdfPig.Graphics;
     using PdfPig.Tokens;
     using PdfPig.Core;

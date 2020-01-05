@@ -55,9 +55,5 @@
     <ProjectReference Include="..\UglyToad.PdfPig.Tokenization\UglyToad.PdfPig.Tokenization.csproj" />
     <ProjectReference Include="..\UglyToad.PdfPig.Tokens\UglyToad.PdfPig.Tokens.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="PdfFonts\TrueType\" />
-  </ItemGroup>
   
 </Project>

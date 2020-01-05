@@ -1,8 +1,8 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Parser
 {
     using System.Collections.Generic;
-    using Encodings;
     using Fonts;
+    using Fonts.Encodings;
     using PdfPig.Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;

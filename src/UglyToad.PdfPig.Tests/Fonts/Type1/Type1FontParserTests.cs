@@ -4,20 +4,19 @@
     using System.IO;
     using System.Linq;
     using System.Text;
-    using PdfFonts.Type1.Parser;
     using PdfPig.Core;
+    using PdfPig.Fonts.Type1.Parser;
+    using PdfPig.Geometry;
     using Xunit;
 
     public class Type1FontParserTests
     {
-        private readonly Type1FontParser parser = new Type1FontParser(new Type1EncryptedPortionParser());
-
         [Fact]
         public void CanReadHexEncryptedPortion()
         {
             var bytes = GetFileBytes("AdobeUtopia.pfa");
 
-            parser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
+            Type1FontParser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
         }
 
         [Fact]
@@ -26,7 +25,7 @@
             // TODO: support reading in these pfb files
             var bytes = GetFileBytes("Raleway-Black.pfb");
 
-            parser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
+            Type1FontParser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
         }
 
         [Fact]
@@ -34,7 +33,7 @@
         {
             var bytes = GetFileBytes("CMBX10.pfa");
 
-            parser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
+            Type1FontParser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
         }
 
         [Fact]
@@ -42,7 +41,7 @@
         {
             var bytes = GetFileBytes("CMCSC10");
 
-            parser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
+            Type1FontParser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
         }
 
         [Fact]
@@ -50,7 +49,7 @@
         {
             var bytes = GetFileBytes("CMBX12");
 
-            parser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
+            Type1FontParser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
         }
 
         [Fact]
@@ -58,7 +57,7 @@
         {
             var bytes = GetFileBytes("CMBX10");
 
-            var result = parser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
+            var result = Type1FontParser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
 
             var builder = new StringBuilder("<!DOCTYPE html><html><head></head><body>");
             foreach (var charString in result.CharStrings.CharStrings)
@@ -77,7 +76,7 @@
         {
             var bytes = GetFileBytes("CMR10");
 
-            parser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
+            Type1FontParser.Parse(new ByteArrayInputBytes(bytes), 0, 0);
         }
 
         private static byte[] GetFileBytes(string name)

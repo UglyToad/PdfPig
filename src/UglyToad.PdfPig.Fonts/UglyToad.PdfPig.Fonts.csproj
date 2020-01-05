@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <None Remove="Resources\AdobeFontMetrics\*" />
+    <None Remove="Resources\GlyphList\*" />
   </ItemGroup>
 
   <ItemGroup>
@@ -23,6 +24,10 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\AdobeFontMetrics\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\GlyphList\*" />
   </ItemGroup>
   
   <ItemGroup>

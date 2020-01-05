@@ -3,8 +3,9 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
 {
     using System;
     using Core;
-    using Encodings;
+    using Fonts;
     using Fonts.AdobeFontMetrics;
+    using Fonts.Encodings;
     using Tokens;
 
     /// <summary>

@@ -3,10 +3,10 @@
     using System;
     using System.Collections.Generic;
     using CidFonts;
-    using CompactFontFormat;
     using Core;
     using Filters;
     using Fonts;
+    using Fonts.CompactFontFormat;
     using Fonts.TrueType;
     using Fonts.TrueType.Parser;
     using Geometry;
@@ -18,17 +18,14 @@
     internal class CidFontFactory
     {
         private readonly FontDescriptorFactory descriptorFactory;
-        private readonly CompactFontFormatParser compactFontFormatParser;
         private readonly IFilterProvider filterProvider;
         private readonly IPdfTokenScanner pdfScanner;
 
         public CidFontFactory(IPdfTokenScanner pdfScanner, FontDescriptorFactory descriptorFactory,
-            CompactFontFormatParser compactFontFormatParser,
             IFilterProvider filterProvider)
         {
             this.pdfScanner = pdfScanner;
             this.descriptorFactory = descriptorFactory;
-            this.compactFontFormatParser = compactFontFormatParser;
             this.filterProvider = filterProvider;
         }
 
@@ -132,8 +129,8 @@
                             || subtypeName == NameToken.Type1C)
                         {
                             var bytes = str.Decode(filterProvider);
-                            var font = compactFontFormatParser.Parse(new CompactFontFormatData(bytes));
-                            return font;
+                            var font = CompactFontFormatParser.Parse(new CompactFontFormatData(bytes));
+                            return new PdfCidCompactFontFormatFont(font);
                         }
 
                         if (subtypeName == NameToken.OpenType)

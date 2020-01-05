@@ -7,6 +7,7 @@
     using System.Xml.Serialization;
     using Alto;
     using Content;
+    using Core;
     using DocumentLayoutAnalysis;
     using Geometry;
     using Util;

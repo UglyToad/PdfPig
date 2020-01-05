@@ -2,19 +2,19 @@
 {
     using System.Linq;
     using Cmap;
-    using CompactFontFormat;
     using Core;
-    using Encodings;
     using Filters;
     using Fonts;
+    using Fonts.CompactFontFormat;
+    using Fonts.Encodings;
     using Fonts.Standard14Fonts;
+    using Fonts.Type1;
+    using Fonts.Type1.Parser;
     using Parts;
     using PdfPig.Parser.Parts;
     using Simple;
     using Tokenization.Scanner;
     using Tokens;
-    using Type1;
-    using Type1.Parser;
 
     internal class Type1FontHandler : IFontHandler
     {
@@ -22,21 +22,15 @@
         private readonly IFilterProvider filterProvider;
         private readonly FontDescriptorFactory fontDescriptorFactory;
         private readonly IEncodingReader encodingReader;
-        private readonly Type1FontParser type1FontParser;
-        private readonly CompactFontFormatParser compactFontFormatParser;
 
         public Type1FontHandler(IPdfTokenScanner pdfScanner, IFilterProvider filterProvider, 
             FontDescriptorFactory fontDescriptorFactory, 
-            IEncodingReader encodingReader,
-            Type1FontParser type1FontParser,
-            CompactFontFormatParser compactFontFormatParser)
+            IEncodingReader encodingReader)
         {
             this.pdfScanner = pdfScanner;
             this.filterProvider = filterProvider;
             this.fontDescriptorFactory = fontDescriptorFactory;
             this.encodingReader = encodingReader;
-            this.type1FontParser = type1FontParser;
-            this.compactFontFormatParser = compactFontFormatParser;
         }
 
         public IFont Generate(DictionaryToken dictionary, bool isLenientParsing)
@@ -117,7 +111,7 @@
             return new Type1FontSimple(name, firstCharacter, lastCharacter, widths, descriptor, encoding, toUnicodeCMap, font);
         }
 
-        private Union<Type1FontProgram, CompactFontFormatFontProgram> ParseFontProgram(FontDescriptor descriptor, bool isLenientParsing)
+        private Union<Type1Font, CompactFontFormatFontCollection> ParseFontProgram(FontDescriptor descriptor, bool isLenientParsing)
         {
             if (descriptor?.FontFile == null)
             {
@@ -142,16 +136,16 @@
                 if (stream.StreamDictionary.TryGet(NameToken.Subtype, out NameToken subTypeName)
                 && NameToken.Type1C.Equals(subTypeName))
                 {
-                    var cffFont = compactFontFormatParser.Parse(new CompactFontFormatData(bytes));
-                    return Union<Type1FontProgram, CompactFontFormatFontProgram>.Two(cffFont);
+                    var cffFont = CompactFontFormatParser.Parse(new CompactFontFormatData(bytes));
+                    return Union<Type1Font, CompactFontFormatFontCollection>.Two(cffFont);
                 }
                 
                 var length1 = stream.StreamDictionary.Get<NumericToken>(NameToken.Length1, pdfScanner);
                 var length2 = stream.StreamDictionary.Get<NumericToken>(NameToken.Length2, pdfScanner);
                 
-                var font = type1FontParser.Parse(new ByteArrayInputBytes(bytes), length1.Int, length2.Int);
+                var font = Type1FontParser.Parse(new ByteArrayInputBytes(bytes), length1.Int, length2.Int);
 
-                return Union<Type1FontProgram, CompactFontFormatFontProgram>.One(font);
+                return Union<Type1Font, CompactFontFormatFontCollection>.One(font);
             }
             catch
             {
