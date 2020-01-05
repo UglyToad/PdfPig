@@ -1,10 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Tokens
 {
-    using CrossReference;
+    using Core;
 
     /// <summary>
-    /// A reference to an indirect object (see <see cref="ObjectToken"/>). This object may be located by using the
-    /// <see cref="CrossReferenceTable"/>.
+    /// A reference to an indirect object (see <see cref="ObjectToken"/>).
     /// </summary>
     public class IndirectReferenceToken : IDataToken<IndirectReference>
     {

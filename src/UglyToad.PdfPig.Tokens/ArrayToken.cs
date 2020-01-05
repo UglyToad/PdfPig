@@ -3,7 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Text;
-    using Util.JetBrains.Annotations;
+    using Core;
 
     /// <summary>
     /// An array object is a one-dimensional collection of objects arranged sequentially.
@@ -15,7 +15,6 @@
         /// <summary>
         /// The tokens contained in this array.
         /// </summary>
-        [NotNull]
         public IReadOnlyList<IToken> Data { get; }
 
         /// <summary>
@@ -32,7 +31,7 @@
         /// Create a new <see cref="ArrayToken"/>.
         /// </summary>
         /// <param name="data">The tokens contained by this array.</param>
-        public ArrayToken([NotNull] IReadOnlyList<IToken> data)
+        public ArrayToken(IReadOnlyList<IToken> data)
         {
             if (data == null)
             {

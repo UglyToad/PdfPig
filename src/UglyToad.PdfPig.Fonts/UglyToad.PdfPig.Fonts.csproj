@@ -27,6 +27,7 @@
   
   <ItemGroup>
     <ProjectReference Include="..\UglyToad.PdfPig.Core\UglyToad.PdfPig.Core.csproj" />
+    <ProjectReference Include="..\UglyToad.PdfPig.Tokens\UglyToad.PdfPig.Tokens.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)'=='net45' OR '$(TargetFramework)'=='net451' OR '$(TargetFramework)'=='net452' OR '$(TargetFramework)'=='net46' OR '$(TargetFramework)'=='net461' OR '$(TargetFramework)'=='net462' OR '$(TargetFramework)'=='net47'">

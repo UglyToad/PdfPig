@@ -2,6 +2,7 @@
 {
     using System;
     using Content;
+    using Core;
     using CrossReference;
     using Tokenization.Scanner;
     using Tokens;

@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Encryption
 {
+    using Core;
     using Tokens;
 
     internal class NoOpEncryptionHandler : IEncryptionHandler

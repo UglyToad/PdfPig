@@ -3,10 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Core;
-    using Parser.Parts;
-    using Tokenization.Scanner;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// A dictionary object is an associative table containing pairs of objects, known as the dictionary's entries. 
@@ -17,14 +13,13 @@
         /// <summary>
         /// The key value pairs in this dictionary.
         /// </summary>
-        [NotNull]
         public IReadOnlyDictionary<string, IToken> Data { get; }
 
         /// <summary>
         /// Create a new <see cref="DictionaryToken"/>.
         /// </summary>
         /// <param name="data">The data this dictionary will contain.</param>
-        public DictionaryToken([NotNull]IReadOnlyDictionary<NameToken, IToken> data)
+        public DictionaryToken(IReadOnlyDictionary<NameToken, IToken> data)
         {
             if (data == null)
             {
@@ -46,21 +41,6 @@
             Data = data;
         }
 
-        internal T Get<T>(NameToken name, IPdfTokenScanner scanner) where T : IToken
-        {
-            if (!TryGet(name, out var token) || !(token is T typedToken))
-            {
-                if (!(token is IndirectReferenceToken indirectReference))
-                {
-                    throw new PdfDocumentFormatException($"Dictionary does not contain token with name {name} of type {typeof(T).Name}.");
-                }
-
-                typedToken = DirectObjectFinder.Get<T>(indirectReference, scanner);
-            }
-
-            return typedToken;
-        }
-
         /// <summary>
         /// Try and get the entry with a given name.
         /// </summary>
@@ -75,26 +55,6 @@
             }
 
             return Data.TryGetValue(name.Data, out token);
-        }
-
-        /// <summary>
-        /// Try and get the entry with a given name and type or look-up the object if it's an indirect reference.
-        /// </summary>
-        internal bool TryGet<T>(NameToken name, IPdfTokenScanner tokenScanner, out T token) where T : IToken
-        {
-            token = default(T);
-            if (!TryGet(name, out var t) || !(t is T typedToken))
-            {
-                if (t is IndirectReferenceToken reference)
-                {
-                    return DirectObjectFinder.TryGet(reference, tokenScanner, out token);
-                }
-
-                return false;
-            }
-
-            token = typedToken;
-            return true;
         }
 
         /// <summary>

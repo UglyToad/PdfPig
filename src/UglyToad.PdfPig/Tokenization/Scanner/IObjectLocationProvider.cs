@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using Core;
     using CrossReference;
     using Parser.Parts;
     using Tokens;

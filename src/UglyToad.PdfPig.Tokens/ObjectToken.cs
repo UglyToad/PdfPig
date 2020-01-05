@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tokens
 {
     using System;
-    using Util.JetBrains.Annotations;
+    using Core;
 
     /// <summary>
     /// Any object in a PDF file may be labeled as an indirect object. This gives the object a unique object identifier by which other objects can refer to it.
@@ -22,7 +22,6 @@
         /// <summary>
         /// The inner data of the object.
         /// </summary>
-        [NotNull]
         public IToken Data { get; }
 
         /// <summary>

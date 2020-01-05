@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig
+﻿namespace UglyToad.PdfPig.Core
 {
     using System.Diagnostics;
 

@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using Core;
     using Util.JetBrains.Annotations;
 
     /// <summary>

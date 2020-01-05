@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tokens
 {
     using System;
-    using Util.JetBrains.Annotations;
 
     /// <inheritdoc />
     /// <summary>
@@ -15,7 +14,6 @@
         /// <summary>
         /// The string representation of the name.
         /// </summary>
-        [NotNull]
         public string Data { get; }
         
         private NameToken(string text)
@@ -31,7 +29,7 @@
         /// </summary>
         /// <param name="name">The string representation of the name for the token to create.</param>
         /// <returns>The created or existing token.</returns>
-        public static NameToken Create([NotNull] string name)
+        public static NameToken Create(string name)
         {
             if (name == null)
             {

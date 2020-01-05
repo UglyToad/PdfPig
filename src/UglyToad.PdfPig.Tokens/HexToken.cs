@@ -4,7 +4,6 @@ namespace UglyToad.PdfPig.Tokens
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// A token containing string data where the string is encoded as hexadecimal.
@@ -41,20 +40,18 @@ namespace UglyToad.PdfPig.Tokens
         /// <summary>
         /// The string contained in the hex data.
         /// </summary>
-        [NotNull]
         public string Data { get; }
 
         /// <summary>
         /// The bytes of the hex data.
         /// </summary>
-        [NotNull]
         public IReadOnlyList<byte> Bytes { get; }
 
         /// <summary>
         /// Create a new <see cref="HexToken"/> from the provided hex characters.
         /// </summary>
         /// <param name="characters">A set of hex characters 0-9, A - F, a - f representing a string.</param>
-        public HexToken([NotNull] IReadOnlyList<char> characters)
+        public HexToken(IReadOnlyList<char> characters)
         {
             if (characters == null)
             {
@@ -122,7 +119,7 @@ namespace UglyToad.PdfPig.Tokens
         /// </summary>
         /// <param name="token">The token containing the data to convert.</param>
         /// <returns>The integer corresponding to the bytes.</returns>
-        public static int ConvertHexBytesToInt([NotNull] HexToken token)
+        public static int ConvertHexBytesToInt(HexToken token)
         {
             if (token == null)
             {
