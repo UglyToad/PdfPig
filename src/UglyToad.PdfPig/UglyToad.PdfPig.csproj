@@ -21,6 +21,7 @@
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <LangVersion>latest</LangVersion>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
@@ -50,10 +51,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\UglyToad.PdfPig.Core\UglyToad.PdfPig.Core.csproj" />
-    <ProjectReference Include="..\UglyToad.PdfPig.Fonts\UglyToad.PdfPig.Fonts.csproj" />
-    <ProjectReference Include="..\UglyToad.PdfPig.Tokenization\UglyToad.PdfPig.Tokenization.csproj" />
-    <ProjectReference Include="..\UglyToad.PdfPig.Tokens\UglyToad.PdfPig.Tokens.csproj" />
+    <ProjectReference Include="..\UglyToad.PdfPig.Core\UglyToad.PdfPig.Core.csproj" PrivateAssets="all"/>
+    <ProjectReference Include="..\UglyToad.PdfPig.Fonts\UglyToad.PdfPig.Fonts.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\UglyToad.PdfPig.Tokenization\UglyToad.PdfPig.Tokenization.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\UglyToad.PdfPig.Tokens\UglyToad.PdfPig.Tokens.csproj" PrivateAssets="all" />
   </ItemGroup>
+
+  <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
+    <ItemGroup>
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
+    </ItemGroup>
+  </Target>
   
 </Project>
