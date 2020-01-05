@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
     using System.Linq;
+    using Annotations;
     using Xunit;
 
     public class CatGeneticsTests
@@ -31,6 +32,13 @@
                 var annotations = page.ExperimentalAccess.GetAnnotations().ToList();
 
                 Assert.NotEmpty(annotations);
+
+                var highlights = annotations.Where(x => x.Type == AnnotationType.Highlight);
+
+                foreach (var highlight in highlights)
+                {
+                    Assert.NotEmpty(highlight.QuadPoints);
+                }
             }
         }
     }
