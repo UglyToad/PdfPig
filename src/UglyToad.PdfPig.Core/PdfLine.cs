@@ -1,7 +1,6 @@
-﻿namespace UglyToad.PdfPig.Geometry
+﻿namespace UglyToad.PdfPig.Core
 {
     using System;
-    using Core;
 
     /// <summary>
     /// A line in a PDF file. 
