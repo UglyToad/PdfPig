@@ -2,9 +2,7 @@
 {
     using System.Text;
     using Core;
-    using Parser.Parts;
     using Tokens;
-    using Util;
 
     internal class StringTokenizer : ITokenizer
     {

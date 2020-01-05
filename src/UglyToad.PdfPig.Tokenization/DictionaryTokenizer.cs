@@ -1,12 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Tokenization
 {
     using System.Collections.Generic;
-    using Exceptions;
     using Core;
-    using Parser.Parts;
     using Scanner;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     internal class DictionaryTokenizer : ITokenizer
     {
@@ -111,7 +108,6 @@
             return result;
         }
 
-        [CanBeNull]
         private static IToken PeekNext(IReadOnlyList<IToken> tokens, int currentIndex)
         {
             if (tokens.Count - 1 < currentIndex + 1)

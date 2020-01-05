@@ -2,7 +2,6 @@
 {
     using System.Text;
     using Core;
-    using Parser.Parts;
     using Tokens;
 
     internal class PlainTokenizer : ITokenizer

@@ -3,11 +3,12 @@
     using System;
     using System.Collections.Generic;
     using Core;
-    using Exceptions;
-    using Parser.Parts;
     using Tokens;
 
-    internal class CoreTokenScanner : ISeekableTokenScanner
+    /// <summary>
+    /// The default <see cref="ITokenScanner"/> for reading PostScript/PDF style data.
+    /// </summary>
+    public class CoreTokenScanner : ISeekableTokenScanner
     {
         private static readonly ArrayTokenizer ArrayTokenizer = new ArrayTokenizer();
         private static readonly CommentTokenizer CommentTokenizer = new CommentTokenizer();
@@ -22,10 +23,30 @@
         private readonly IInputBytes inputBytes;
         private readonly List<(byte firstByte, ITokenizer tokenizer)> customTokenizers = new List<(byte, ITokenizer)>();
         
-        internal long CurrentTokenStart { get; private set; }
+        /// <summary>
+        /// The offset in the input data at which the <see cref="CurrentToken"/> starts.
+        /// </summary>
+        public long CurrentTokenStart { get; private set; }
 
+        /// <inheritdoc />
         public IToken CurrentToken { get; private set; }
 
+        /// <inheritdoc />
+        public long CurrentPosition => inputBytes.CurrentOffset;
+        
+        private bool hasBytePreRead;
+        private bool isInInlineImage;
+
+        /// <summary>
+        /// Create a new <see cref="CoreTokenScanner"/> from the input.
+        /// </summary>
+        public CoreTokenScanner(IInputBytes inputBytes, ScannerScope scope = ScannerScope.None)
+        {
+            this.scope = scope;
+            this.inputBytes = inputBytes ?? throw new ArgumentNullException(nameof(inputBytes));
+        }
+
+        /// <inheritdoc />
         public bool TryReadToken<T>(out T token) where T : class, IToken
         {
             token = default(T);
@@ -44,22 +65,13 @@
             return false;
         }
 
+        /// <inheritdoc />
         public void Seek(long position)
         {
             inputBytes.Seek(position);
         }
 
-        public long CurrentPosition => inputBytes.CurrentOffset;
-        
-        private bool hasBytePreRead;
-        private bool isInInlineImage;
-
-        internal CoreTokenScanner(IInputBytes inputBytes, ScannerScope scope = ScannerScope.None)
-        {
-            this.scope = scope;
-            this.inputBytes = inputBytes ?? throw new ArgumentNullException(nameof(inputBytes));
-        }
-
+        /// <inheritdoc />
         public bool MoveNext()
         {
             var endAngleBracesRead = 0;
@@ -191,6 +203,7 @@
             return false;
         }
 
+        /// <inheritdoc />
         public void RegisterCustomTokenizer(byte firstByte, ITokenizer tokenizer)
         {
             if (tokenizer == null)
@@ -201,6 +214,7 @@
             customTokenizers.Add((firstByte, tokenizer));
         }
 
+        /// <inheritdoc />
         public void DeregisterCustomTokenizer(ITokenizer tokenizer)
         {
             customTokenizers.RemoveAll(x => ReferenceEquals(x.tokenizer, tokenizer));

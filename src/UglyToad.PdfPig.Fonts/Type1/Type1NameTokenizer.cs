@@ -1,14 +1,17 @@
-﻿namespace UglyToad.PdfPig.Tokenization
+﻿namespace UglyToad.PdfPig.Fonts.Type1
 {
     using System.Text;
     using Core;
-    using Parser.Parts;
     using Tokens;
+    using Tokenization;
 
-    internal class Type1NameTokenizer : ITokenizer
+    /// <inheritdoc />
+    public class Type1NameTokenizer : ITokenizer
     {
+        /// <inheritdoc />
         public bool ReadsNextByte { get; } = true;
 
+        /// <inheritdoc />
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
         {
             token = null;

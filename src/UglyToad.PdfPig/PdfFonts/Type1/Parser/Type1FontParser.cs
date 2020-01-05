@@ -5,6 +5,7 @@
     using Core;
     using Encodings;
     using Fonts;
+    using Fonts.Type1;
     using Tokenization;
     using Tokenization.Scanner;
     using Tokens;

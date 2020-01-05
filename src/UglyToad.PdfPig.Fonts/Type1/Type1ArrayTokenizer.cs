@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Tokenization
+﻿namespace UglyToad.PdfPig.Fonts.Type1
 {
     using System;
     using System.Collections.Generic;
@@ -6,11 +6,15 @@
     using System.Text;
     using Core;
     using Tokens;
+    using Tokenization;
 
-    internal class Type1ArrayTokenizer : ITokenizer
+    /// <inheritdoc />
+    public class Type1ArrayTokenizer : ITokenizer
     {
+        /// <inheritdoc />
         public bool ReadsNextByte { get; } = false;
 
+        /// <inheritdoc />
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
         {
             token = null;

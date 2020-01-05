@@ -20,6 +20,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.DocumentLay
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UglyToad.PdfPig.Tokens", "UglyToad.PdfPig.Tokens\UglyToad.PdfPig.Tokens.csproj", "{D840FF69-4250-4B05-9829-5ABEC43EC82C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UglyToad.PdfPig.Tokenization", "UglyToad.PdfPig.Tokenization\UglyToad.PdfPig.Tokenization.csproj", "{FD005C50-CD2C-497E-8F7E-6D791091E9B0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -50,6 +52,10 @@ Global
 		{D840FF69-4250-4B05-9829-5ABEC43EC82C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D840FF69-4250-4B05-9829-5ABEC43EC82C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D840FF69-4250-4B05-9829-5ABEC43EC82C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD005C50-CD2C-497E-8F7E-6D791091E9B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD005C50-CD2C-497E-8F7E-6D791091E9B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD005C50-CD2C-497E-8F7E-6D791091E9B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD005C50-CD2C-497E-8F7E-6D791091E9B0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

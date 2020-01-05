@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Encodings
 {
-    using Util;
+    using Core;
 
     /// <summary>
     /// Similar to the <see cref="MacRomanEncoding"/> with 15 additional entries.

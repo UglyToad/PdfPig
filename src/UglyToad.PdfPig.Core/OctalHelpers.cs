@@ -1,9 +1,15 @@
-﻿namespace UglyToad.PdfPig.Util
+﻿namespace UglyToad.PdfPig.Core
 {
     using System;
 
-    internal static class OctalHelpers
+    /// <summary>
+    /// Interprets numbers in octal format.
+    /// </summary>
+    public static class OctalHelpers
     {
+        /// <summary>
+        /// Read a short.
+        /// </summary>
         public static short CharacterToShort(this char c)
         {
             switch (c)
@@ -33,10 +39,11 @@
             }
         }
 
+        /// <summary>
+        /// Read an integer from octal digits.
+        /// </summary>
         public static int FromOctalDigits(short[] octal)
         {
-
-
             int sum = 0;
             for (int i = octal.Length - 1; i >= 0; i--)
             {
@@ -47,6 +54,9 @@
             return sum;
         }
 
+        /// <summary>
+        /// Interpret an int as octal.
+        /// </summary>
         public static int FromOctalInt(int input)
         {
             var str = input.ToString();

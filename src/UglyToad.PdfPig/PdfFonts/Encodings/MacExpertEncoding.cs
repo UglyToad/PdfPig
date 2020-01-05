@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Encodings
 {
-    using Util;
+    using Core;
 
     internal class MacExpertEncoding : Encoding
     {

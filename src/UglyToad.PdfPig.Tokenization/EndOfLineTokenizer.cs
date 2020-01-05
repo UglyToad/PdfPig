@@ -3,10 +3,15 @@
     using Core;
     using Tokens;
 
-    internal class EndOfLineTokenizer : ITokenizer
+    /// <summary>
+    /// Read an <see cref="EndOfLineToken"/>.
+    /// </summary>
+    public class EndOfLineTokenizer : ITokenizer
     {
+        /// <inheritdoc />
         public bool ReadsNextByte { get; } = false;
 
+        /// <inheritdoc />
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
         {
             token = null;

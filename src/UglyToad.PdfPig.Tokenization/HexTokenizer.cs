@@ -2,7 +2,6 @@
 {
     using System.Collections.Generic;
     using Core;
-    using Parser.Parts;
     using Tokens;
 
     internal class HexTokenizer : ITokenizer

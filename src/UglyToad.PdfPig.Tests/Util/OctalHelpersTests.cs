@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Util
 {
-    using PdfPig.Util;
+    using PdfPig.Core;
     using Xunit;
 
     public class OctalHelpersTests

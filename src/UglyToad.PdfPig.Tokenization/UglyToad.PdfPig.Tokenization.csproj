@@ -6,28 +6,13 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
-    <DocumentationFile>obj\Debug\netstandard2.0\UglyToad.PdfPig.Fonts.xml</DocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
+    <DocumentationFile>obj\Debug\netstandard2.0\UglyToad.PdfPig.Core.xml</DocumentationFile>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="Resources\AdobeFontMetrics\*" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="Resources\AdobeFontMetrics\MustRead.html">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\AdobeFontMetrics\*" />
-  </ItemGroup>
   
   <ItemGroup>
     <ProjectReference Include="..\UglyToad.PdfPig.Core\UglyToad.PdfPig.Core.csproj" />
-    <ProjectReference Include="..\UglyToad.PdfPig.Tokenization\UglyToad.PdfPig.Tokenization.csproj" />
     <ProjectReference Include="..\UglyToad.PdfPig.Tokens\UglyToad.PdfPig.Tokens.csproj" />
   </ItemGroup>
 
