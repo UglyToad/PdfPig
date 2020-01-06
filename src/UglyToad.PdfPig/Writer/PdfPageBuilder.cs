@@ -5,7 +5,6 @@
     using Content;
     using Core;
     using Fonts;
-    using Geometry;
     using Graphics.Colors;
     using Graphics.Operations;
     using Graphics.Operations.General;
