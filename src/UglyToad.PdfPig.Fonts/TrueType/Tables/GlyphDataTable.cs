@@ -25,7 +25,7 @@
 
         private readonly Lazy<IReadOnlyList<IGlyphDescription>> glyphs;
         public IReadOnlyList<IGlyphDescription> Glyphs => glyphs.Value;
-
+        
         public GlyphDataTable(TrueTypeHeaderTable directoryTable, IReadOnlyList<uint> glyphOffsets, 
             PdfRectangle maxGlyphBounds, 
             TrueTypeDataBytes tableBytes)
@@ -50,6 +50,39 @@
             }
 
             glyphs = new Lazy<IReadOnlyList<IGlyphDescription>>(ReadGlyphs);
+        }
+
+        public bool TryGetGlyphBounds(int glyphIndex, out PdfRectangle bounds)
+        {
+            bounds = default(PdfRectangle);
+
+            if (glyphIndex < 0 || glyphIndex >= glyphOffsets.Count - 1)
+            {
+                return false;
+            }
+
+            var offset = glyphOffsets[glyphIndex];
+            var nextOffset = glyphOffsets[glyphIndex + 1];
+
+            if (nextOffset <= offset)
+            {
+                bounds = new PdfRectangle(0, 0, 0, 0);
+                return true;
+            }
+            
+            tableBytes.Seek(offset);
+
+            // ReSharper disable once UnusedVariable
+            var contourCount = tableBytes.ReadSignedShort();
+
+            var minX = tableBytes.ReadSignedShort();
+            var minY = tableBytes.ReadSignedShort();
+            var maxX = tableBytes.ReadSignedShort();
+            var maxY = tableBytes.ReadSignedShort();
+
+            bounds = new PdfRectangle(minX, minY, maxX, maxY);
+
+            return true;
         }
 
         public static GlyphDataTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, TableRegister.Builder tableRegister)
@@ -81,7 +114,7 @@
 
             for (var i = 0; i < glyphCount; i++)
             {
-                if (offsets[i] == offsets[i + 1])
+                if (offsets[i + 1] <= offsets[i])
                 {
                     // empty glyph
                     result[i] = emptyGlyph;

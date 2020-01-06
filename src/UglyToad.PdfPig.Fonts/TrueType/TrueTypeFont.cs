@@ -112,21 +112,15 @@
             {
                 return false;
             }
-
-            var glyph = TableRegister.GlyphTable.Glyphs[index];
-
-            if (glyph?.Bounds == null)
+            
+            if (!TableRegister.GlyphTable.TryGetGlyphBounds(index, out boundingBox))
             {
                 return false;
             }
 
-            if (glyph.IsEmpty && TryGetBoundingAdvancedWidthByIndex(index, out var advanceWidth))
+            if (boundingBox.Width.Equals(0) && TryGetBoundingAdvancedWidthByIndex(index, out var advanceWidth))
             {
                 boundingBox = new PdfRectangle(0, 0, advanceWidth, 0);
-            }
-            else
-            {
-                boundingBox = glyph.Bounds;
             }
 
             return true;
