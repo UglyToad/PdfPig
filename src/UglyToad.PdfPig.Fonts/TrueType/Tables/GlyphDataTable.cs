@@ -121,6 +121,13 @@
 
         private static Glyph ReadSimpleGlyph(TrueTypeDataBytes data, short contourCount, PdfRectangle bounds)
         {
+            if (contourCount == 0)
+            {
+                return new Glyph(true, EmptyArray<byte>.Instance, EmptyArray<ushort>.Instance,
+                    EmptyArray<GlyphPoint>.Instance, 
+                    new PdfRectangle(0, 0, 0, 0));
+            }
+
             var endPointsOfContours = data.ReadUnsignedShortArray(contourCount);
 
             var instructionLength = data.ReadUnsignedShort();
