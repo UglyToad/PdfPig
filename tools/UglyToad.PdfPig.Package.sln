@@ -1,0 +1,61 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.960
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.Package", "UglyToad.PdfPig.Package\UglyToad.PdfPig.Package.csproj", "{898D5682-E6A6-46D5-9308-F81FBA6183F1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig", "..\src\UglyToad.PdfPig\UglyToad.PdfPig.csproj", "{1106B3A7-1917-4404-A171-6A3639E43CD6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.Core", "..\src\UglyToad.PdfPig.Core\UglyToad.PdfPig.Core.csproj", "{540D35E6-47F5-49CE-8556-4003F96587D3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.DocumentLayoutAnalysis", "..\src\UglyToad.PdfPig.DocumentLayoutAnalysis\UglyToad.PdfPig.DocumentLayoutAnalysis.csproj", "{9A3D199E-8266-4431-8D4E-899E31A969DF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.Fonts", "..\src\UglyToad.PdfPig.Fonts\UglyToad.PdfPig.Fonts.csproj", "{2DB347FB-FF7E-42CB-8572-02601A151E5A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.Tokenization", "..\src\UglyToad.PdfPig.Tokenization\UglyToad.PdfPig.Tokenization.csproj", "{0F405CF2-6BD3-43A2-A3D8-AD40E1CE3F9B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.Tokens", "..\src\UglyToad.PdfPig.Tokens\UglyToad.PdfPig.Tokens.csproj", "{E2D1B151-3786-4972-B4E1-9A8448FE14AC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{898D5682-E6A6-46D5-9308-F81FBA6183F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{898D5682-E6A6-46D5-9308-F81FBA6183F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{898D5682-E6A6-46D5-9308-F81FBA6183F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{898D5682-E6A6-46D5-9308-F81FBA6183F1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1106B3A7-1917-4404-A171-6A3639E43CD6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1106B3A7-1917-4404-A171-6A3639E43CD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1106B3A7-1917-4404-A171-6A3639E43CD6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1106B3A7-1917-4404-A171-6A3639E43CD6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{540D35E6-47F5-49CE-8556-4003F96587D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{540D35E6-47F5-49CE-8556-4003F96587D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{540D35E6-47F5-49CE-8556-4003F96587D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{540D35E6-47F5-49CE-8556-4003F96587D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A3D199E-8266-4431-8D4E-899E31A969DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A3D199E-8266-4431-8D4E-899E31A969DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A3D199E-8266-4431-8D4E-899E31A969DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A3D199E-8266-4431-8D4E-899E31A969DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DB347FB-FF7E-42CB-8572-02601A151E5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DB347FB-FF7E-42CB-8572-02601A151E5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DB347FB-FF7E-42CB-8572-02601A151E5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DB347FB-FF7E-42CB-8572-02601A151E5A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F405CF2-6BD3-43A2-A3D8-AD40E1CE3F9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F405CF2-6BD3-43A2-A3D8-AD40E1CE3F9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F405CF2-6BD3-43A2-A3D8-AD40E1CE3F9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F405CF2-6BD3-43A2-A3D8-AD40E1CE3F9B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E2D1B151-3786-4972-B4E1-9A8448FE14AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E2D1B151-3786-4972-B4E1-9A8448FE14AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E2D1B151-3786-4972-B4E1-9A8448FE14AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E2D1B151-3786-4972-B4E1-9A8448FE14AC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A5A9395E-7924-4E86-BBA4-5395EC541815}
+	EndGlobalSection
+EndGlobal
