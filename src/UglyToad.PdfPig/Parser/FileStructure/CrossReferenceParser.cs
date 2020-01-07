@@ -52,6 +52,11 @@
             {
                 log.Debug($"Reading cross reference table or stream at {previousCrossReferenceLocation}.");
 
+                if (previousCrossReferenceLocation >= bytes.Length)
+                {
+                    break;
+                }
+
                 // seek to xref table
                 tokenScanner.Seek(previousCrossReferenceLocation);
 

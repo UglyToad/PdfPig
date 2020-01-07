@@ -84,9 +84,16 @@
                 return false;
             }
 
-            var descriptor = DirectObjectFinder.Get<DictionaryToken>(baseValue, pdfScanner);
+            try
+            {
+                var descriptor = DirectObjectFinder.Get<DictionaryToken>(baseValue, pdfScanner);
 
-            descriptorDictionary = descriptor;
+                descriptorDictionary = descriptor;
+            }
+            catch
+            {
+                return false;
+            }
 
             return true;
         }
