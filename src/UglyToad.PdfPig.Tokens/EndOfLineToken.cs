@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tokens
 {
     /// <summary>
-    /// Represents an End Of Line marker found in Adobe Type 1 font files. This is not used by the main PDF tokenizer.
+    /// Represents an End Of Line marker found in Adobe Type 1 font files and the cross-reference table.
     /// </summary>
     public class EndOfLineToken : IToken
     {

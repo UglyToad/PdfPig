@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using Core;
-    using Exceptions;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -20,12 +19,12 @@
      * %%EOF
      */
 
-    internal class FileTrailerParser
+    internal static class FileTrailerParser
     {
         /// <summary>
-        /// Acrobat viewers require the EOF to be in the last 1024 bytes instead of at the end.
+        /// The %%EOF may be further back in the file.
         /// </summary>
-        private const int EndOfFileSearchRange = 1024;
+        private const int EndOfFileSearchRange = 2048;
 
         private static readonly byte[] StartXRefBytes =
         {
@@ -40,7 +39,7 @@
             (byte) 'f'
         };
         
-        public long GetFirstCrossReferenceOffset(IInputBytes bytes, ISeekableTokenScanner scanner, bool isLenientParsing)
+        public static long GetFirstCrossReferenceOffset(IInputBytes bytes, ISeekableTokenScanner scanner, bool isLenientParsing)
         {
             if (bytes == null)
             {

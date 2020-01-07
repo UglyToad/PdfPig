@@ -69,8 +69,14 @@
 
         private static IReadOnlyList<(int, string)> ProcessDifferences(ArrayToken differenceArray)
         {
-            var activeCode = differenceArray.GetNumeric(0).Int;
             var differences = new List<(int, string)>();
+
+            if (differenceArray.Length == 0)
+            {
+                return differences;
+            }
+
+            var activeCode = differenceArray.GetNumeric(0).Int;
 
             for (int i = 1; i < differenceArray.Data.Count; i++)
             {

@@ -23,7 +23,6 @@
     using PdfFonts.Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
-    using Util;
 
     internal static class PdfDocumentFactory
     {
@@ -53,8 +52,6 @@
 
         private static PdfDocument Open(IInputBytes inputBytes, ParsingOptions options = null)
         {
-            var container = Bootstrapper.GenerateContainer(options?.Logger);
-
             var isLenientParsing = options?.UseLenientParsing ?? true;
             
             var tokenScanner = new CoreTokenScanner(inputBytes);
@@ -76,15 +73,14 @@
                 passwords.Add(string.Empty);
             }
 
-            var document = OpenDocument(inputBytes, tokenScanner, container, isLenientParsing, passwords);
+            var document = OpenDocument(inputBytes, tokenScanner, options?.Logger ?? new NoOpLog(), isLenientParsing, passwords);
 
             return document;
         }
 
-        private static PdfDocument OpenDocument(IInputBytes inputBytes, ISeekableTokenScanner scanner, IContainer container, bool isLenientParsing, IReadOnlyList<string> passwords)
+        private static PdfDocument OpenDocument(IInputBytes inputBytes, ISeekableTokenScanner scanner, ILog log, bool isLenientParsing, IReadOnlyList<string> passwords)
         {
-            var log = container.Get<ILog>();
-            var filterProvider = container.Get<IFilterProvider>();
+            var filterProvider = new MemoryFilterProvider(new DecodeParameterResolver(log), new PngPredictor(), log);
 
             CrossReferenceTable crossReferenceTable = null;
 
@@ -102,7 +98,7 @@
             
             var version = FileHeaderParser.Parse(scanner, isLenientParsing, log);
             
-            var crossReferenceOffset = container.Get<FileTrailerParser>().GetFirstCrossReferenceOffset(inputBytes, scanner, isLenientParsing);
+            var crossReferenceOffset = FileTrailerParser.GetFirstCrossReferenceOffset(inputBytes, scanner, isLenientParsing);
             
             // TODO: make this use the scanner.
             var validator = new CrossReferenceOffsetValidator(xrefValidator);
