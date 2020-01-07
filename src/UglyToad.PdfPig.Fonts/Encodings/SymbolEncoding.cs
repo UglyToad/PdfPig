@@ -1,6 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Encodings
 {
-    internal class SymbolEncoding : Encoding
+    /// <summary>
+    /// Symbol encoding.
+    /// </summary>
+    public class SymbolEncoding : Encoding
     {
         private static readonly (int, string)[] EncodingTable = {
             (0101, "Alpha"),
@@ -194,8 +197,12 @@
             (0172, "zeta")
         };
 
+        /// <summary>
+        /// Single instance of this encoding.
+        /// </summary>
         public static SymbolEncoding Instance { get; } = new SymbolEncoding();
 
+        /// <inheritdoc />
         public override string EncodingName => "SymbolEncoding";
 
         private SymbolEncoding()

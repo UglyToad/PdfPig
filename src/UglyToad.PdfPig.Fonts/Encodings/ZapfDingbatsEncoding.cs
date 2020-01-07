@@ -1,6 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Encodings
 {
-    internal class ZapfDingbatsEncoding : Encoding
+    /// <summary>
+    /// Zapf Dingbats encoding.
+    /// </summary>
+    public class ZapfDingbatsEncoding : Encoding
     {
         private static readonly (int, string)[] EncodingTable = {
             (040, "space"),
@@ -193,8 +196,12 @@
             (0376, "a191")
         };
 
+        /// <summary>
+        /// Single instance of this encoding.
+        /// </summary>
         public static ZapfDingbatsEncoding Instance { get; } = new ZapfDingbatsEncoding();
 
+        /// <inheritdoc />
         public override string EncodingName => "ZapfDingbatsEncoding";
 
         private ZapfDingbatsEncoding()

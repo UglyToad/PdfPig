@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Parser
 {
+    using System;
     using System.Collections.Generic;
     using Fonts;
     using Fonts.Encodings;
@@ -27,11 +28,29 @@
 
             if (baseEncodingObject is NameToken name)
             {
-                return GetNamedEncoding(descriptor, name);
+                if (TryGetNamedEncoding(descriptor, name, out var namedEncoding))
+                {
+                    return namedEncoding;
+                }
+
+                if (fontDictionary.TryGet(NameToken.BaseFont, pdfScanner, out NameToken baseFontName))
+                {
+                    if (string.Equals(baseFontName.Data, "ZapfDingbats", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return ZapfDingbatsEncoding.Instance;
+                    }
+
+                    if (string.Equals(baseFontName.Data, "Symbol", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return SymbolEncoding.Instance;
+                    }
+
+                    return WinAnsiEncoding.Instance;
+                }
             }
 
             DictionaryToken encodingDictionary = DirectObjectFinder.Get<DictionaryToken>(baseEncodingObject, pdfScanner);
-           
+
             var encoding = ReadEncodingDictionary(encodingDictionary, fontEncoding);
 
             return encoding;
@@ -100,9 +119,9 @@
             return differences;
         }
 
-        private static Encoding GetNamedEncoding(FontDescriptor descriptor, NameToken encodingName)
+        private static bool TryGetNamedEncoding(FontDescriptor descriptor, NameToken encodingName, out Encoding encoding)
         {
-            Encoding encoding;
+            encoding = null;
             // Symbolic fonts default to standard encoding.
             if (descriptor?.Flags.HasFlag(FontDescriptorFlags.Symbolic) == true)
             {
@@ -111,11 +130,10 @@
 
             if (!Encoding.TryGetNamedEncoding(encodingName, out encoding))
             {
-                // TODO: PDFBox would not throw here.
-                throw new InvalidFontFormatException($"Unrecognised encoding name: {encodingName}");
+                return false;
             }
 
-            return encoding;
+            return true;
         }
     }
 }

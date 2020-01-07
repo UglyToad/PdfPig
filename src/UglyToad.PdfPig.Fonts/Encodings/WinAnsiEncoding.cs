@@ -2,7 +2,10 @@
 {
     using Core;
 
-    internal class WinAnsiEncoding : Encoding
+    /// <summary>
+    /// Windows ANSI encoding.
+    /// </summary>
+    public class WinAnsiEncoding : Encoding
     {
         /// <summary>
         /// The encoding table is taken from the Appendix of the specification.
@@ -231,8 +234,12 @@
             (0255, "hyphen")
         };
 
+        /// <summary>
+        /// Single instance of this encoding.
+        /// </summary>
         public static WinAnsiEncoding Instance { get; } = new WinAnsiEncoding();
 
+        /// <inheritdoc />
         public override string EncodingName => "WinAnsiEncoding";
 
         private WinAnsiEncoding()
