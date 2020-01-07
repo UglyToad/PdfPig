@@ -90,6 +90,16 @@
                 throw new ArgumentNullException();
             }
 
+            if (cache.TryGetValue(objectToken.Number, out var existing))
+            {
+                var crossReference = crossReferenceTable();
+                if (crossReference != null && crossReference.ObjectOffsets.TryGetValue(objectToken.Number, out var expected)
+                    && existing.Position == expected)
+                {
+                    return;
+                }
+            }
+
             cache[objectToken.Number] = objectToken;
         }
     }
