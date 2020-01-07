@@ -2,17 +2,21 @@
 {
     using System;
     using System.IO;
-    using Util;
+    using PdfPig.Core;
 
     internal static class OperationWriteHelper
     {
         private static readonly byte WhiteSpace = OtherEncodings.StringAsLatin1Bytes(" ")[0];
         private static readonly byte NewLine = OtherEncodings.StringAsLatin1Bytes("\n")[0];
 
-        public static void WriteText(this Stream stream, string text)
+        public static void WriteText(this Stream stream, string text, bool appendWhitespace = false)
         {
             var bytes = OtherEncodings.StringAsLatin1Bytes(text);
             stream.Write(bytes, 0, bytes.Length);
+            if (appendWhitespace)
+            {
+                stream.WriteWhiteSpace();
+            }
         }
 
         public static void WriteHex(this Stream stream, byte[] bytes)

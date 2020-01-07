@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
+    using System.Linq;
     using Xunit;
 
     public class FarmerMacTests
@@ -15,6 +16,17 @@
             using (var document = PdfDocument.Open(GetFilename()))
             {
                 Assert.Equal(5, document.NumberOfPages);
+            }
+        }
+
+        [Fact]
+        public void GetPagesWorks()
+        {
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                var pageCount = document.GetPages().Count();
+
+                Assert.Equal(5, pageCount);
             }
         }
 

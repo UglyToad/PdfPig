@@ -6,28 +6,20 @@
     using System.Globalization;
     using System.IO;
     using System.Text.RegularExpressions;
+    using Core;
     using Encryption;
     using Exceptions;
     using Filters;
-    using IO;
     using Parser.Parts;
     using Tokens;
 
-    /// <summary>
-    /// Tokenizes objects from bytes in a PDF file.
-    /// </summary>
-    internal interface IPdfTokenScanner : ISeekableTokenScanner
-    {
-        /// <summary>
-        /// Tokenize the object with a given object number.
-        /// </summary>
-        /// <param name="reference">The object number for the object to tokenize.</param>
-        /// <returns>The tokenized object.</returns>
-        ObjectToken Get(IndirectReference reference);
-    }
-
     internal class PdfTokenScanner : IPdfTokenScanner
     {
+        private static readonly byte[] EndstreamBytes =
+        {
+            (byte)'e', (byte)'n', (byte)'d', (byte)'s', (byte)'t', (byte)'r', (byte)'e', (byte)'a', (byte)'m'
+        };
+
         private static readonly Regex EndsWithNumberRegex = new Regex(@"(?<=^[^\s\d]+)\d+$");
 
         private readonly IInputBytes inputBytes;
@@ -36,6 +28,7 @@
         private readonly CoreTokenScanner coreTokenScanner;
 
         private IEncryptionHandler encryptionHandler;
+        private bool isDisposed;
 
         /// <summary>
         /// Stores tokens encountered between obj - endobj markers for each <see cref="MoveNext"/> call.
@@ -70,6 +63,11 @@
 
         public bool MoveNext()
         {
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(PdfTokenScanner));
+            }
+
             // Read until we find object-number generation obj, e.g. "69 420 obj".
             int tokensRead = 0;
             while (coreTokenScanner.MoveNext() && !Equals(coreTokenScanner.CurrentToken, OperatorToken.StartObject))
@@ -231,14 +229,22 @@
                 return false;
             }
 
+            // While the specification demands a \n we have seen files with \r only in the wild.
+            var hadWhiteSpace = false;
             if (inputBytes.CurrentByte == '\r')
             {
+                hadWhiteSpace = true;
                 inputBytes.MoveNext();
             }
 
             if (inputBytes.CurrentByte != '\n')
             {
-                return false;
+                if (!hadWhiteSpace)
+                {
+                    return false;
+                }
+
+                inputBytes.Seek(inputBytes.CurrentOffset - 1);
             }
 
             // Store where we started reading the first byte of data.
@@ -255,6 +261,12 @@
             const string commonPart = "end";
             const string streamPart = "stream";
             const string objPart = "obj";
+
+            if (TryReadUsingLength(inputBytes, length, startDataOffset, out var streamData))
+            {
+                stream = new StreamToken(streamDictionaryToken, streamData);
+                return true;
+            }
 
             // Track any 'endobj' or 'endstream' operators we see.
             var observedEndLocations = new List<PossibleStreamEndLocation>();
@@ -404,6 +416,82 @@
             return true;
         }
 
+        private static bool TryReadUsingLength(IInputBytes inputBytes, long? length, long startDataOffset, out byte[] data)
+        {
+            data = null;
+
+            if (!length.HasValue || length.Value + startDataOffset >= inputBytes.Length)
+            {
+                return false;
+            }
+
+            var readBuffer = new byte[EndstreamBytes.Length];
+
+            var newlineCount = 0;
+
+            inputBytes.Seek(length.Value + startDataOffset);
+
+            var next = inputBytes.Peek();
+
+            if (next.HasValue && ReadHelper.IsEndOfLine(next.Value))
+            {
+                newlineCount++;
+                inputBytes.MoveNext();
+
+                next = inputBytes.Peek();
+
+                if (next.HasValue && ReadHelper.IsEndOfLine(next.Value))
+                {
+                    newlineCount++;
+                    inputBytes.MoveNext();
+                }
+            }
+
+            var readLength = inputBytes.Read(readBuffer);
+
+            if (readLength != readBuffer.Length)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < EndstreamBytes.Length; i++)
+            {
+                if (readBuffer[i] != EndstreamBytes[i])
+                {
+                    inputBytes.Seek(startDataOffset);
+                    return false;
+                }
+            }
+
+            inputBytes.Seek(startDataOffset);
+
+            data = new byte[(int)length.Value];
+
+            var countRead = inputBytes.Read(data);
+
+            if (countRead != data.Length)
+            {
+                throw new InvalidOperationException($"Reading using the stream length failed to read as many bytes as the stream specified. Wanted {length.Value}, got {countRead} at {startDataOffset + 1}.");
+            }
+
+            inputBytes.Read(readBuffer);
+            // Skip for the line break before 'endstream'.
+            for (var i = 0; i < newlineCount; i++)
+            {
+                var read = inputBytes.MoveNext();
+                if (!read)
+                {
+                    inputBytes.Seek(startDataOffset);
+                    return false;
+                }
+            }
+
+            // 1 skip to move past the 'm' in 'endstream'
+            inputBytes.MoveNext();
+
+            return true;
+        }
+
         private DictionaryToken GetStreamDictionary()
         {
             DictionaryToken streamDictionaryToken;
@@ -447,6 +535,18 @@
                 // We can only find it if we know where it is.
                 if (objectLocationProvider.TryGetOffset(lengthReference.Data, out var offset))
                 {
+                    if (offset < 0)
+                    {
+                        var result = GetObjectFromStream(lengthReference.Data, offset);
+
+                        if (!(result.Data is NumericToken streamLengthToken))
+                        {
+                            throw new PdfDocumentFormatException($"Could not locate the length object with offset {offset} which should have been in a stream." +
+                                                                 $" Found: {result.Data}.");
+                        }
+
+                        return streamLengthToken.Long;
+                    }
                     // Move to the length object and read it.
                     Seek(offset);
 
@@ -489,26 +589,51 @@
 
         public bool TryReadToken<T>(out T token) where T : class, IToken
         {
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(PdfTokenScanner));
+            }
+
             return coreTokenScanner.TryReadToken(out token);
         }
 
         public void Seek(long position)
         {
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(PdfTokenScanner));
+            }
+
             coreTokenScanner.Seek(position);
         }
 
         public void RegisterCustomTokenizer(byte firstByte, ITokenizer tokenizer)
         {
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(PdfTokenScanner));
+            }
+
             coreTokenScanner.RegisterCustomTokenizer(firstByte, tokenizer);
         }
 
         public void DeregisterCustomTokenizer(ITokenizer tokenizer)
         {
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(PdfTokenScanner));
+            }
+
             coreTokenScanner.DeregisterCustomTokenizer(tokenizer);
         }
 
         public ObjectToken Get(IndirectReference reference)
         {
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(PdfTokenScanner));
+            }
+
             if (objectLocationProvider.TryGetCached(reference, out var objectToken))
             {
                 return objectToken;
@@ -629,6 +754,12 @@
             }
 
             return results;
+        }
+
+        public void Dispose()
+        {
+            inputBytes?.Dispose();
+            isDisposed = true;
         }
     }
 }

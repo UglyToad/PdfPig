@@ -1,18 +1,18 @@
 ﻿namespace UglyToad.PdfPig.Tests.Parser.Parts
 {
     using System;
-    using Exceptions;
+    using Logging;
+    using PdfPig.Core;
     using PdfPig.Parser.FileStructure;
     using Xunit;
 
     public class FileHeaderParserTests
     {
-        private readonly FileHeaderParser parser = new FileHeaderParser(new TestingLog());
-
+        private readonly ILog log = new NoOpLog();
         [Fact]
         public void NullScannerThrows()
         {
-            Action action = () => parser.Parse(null, false);
+            Action action = () => FileHeaderParser.Parse(null, false, log);
 
             Assert.Throws<ArgumentNullException>(action);
         }
@@ -30,7 +30,7 @@
 
             var scanner = StringBytesTestConverter.Scanner(input);
 
-            var result = parser.Parse(scanner, false);
+            var result = FileHeaderParser.Parse(scanner, false, log);
 
             Assert.Equal(format, result.VersionString);
         }
@@ -44,7 +44,7 @@
 
             var scanner = StringBytesTestConverter.Scanner(input);
 
-            var result = parser.Parse(scanner, false);
+            var result = FileHeaderParser.Parse(scanner, false, log);
 
             Assert.Equal(1.2m, result.Version);
         }
@@ -54,7 +54,7 @@
         {
             var scanner = StringBytesTestConverter.Scanner(string.Empty);
             
-            Action action = () => parser.Parse(scanner, false);
+            Action action = () => FileHeaderParser.Parse(scanner, false, log);
 
             Assert.Throws<PdfDocumentFormatException>(action);
         }
@@ -65,7 +65,7 @@
             var scanner = StringBytesTestConverter.Scanner(@"one    
     %PDF-1.2");
 
-            Action action = () => parser.Parse(scanner, false);
+            Action action = () => FileHeaderParser.Parse(scanner, false, log);
 
             Assert.Throws<PdfDocumentFormatException>(action);
         }
@@ -76,7 +76,7 @@
             var scanner = StringBytesTestConverter.Scanner(@"one    
     %PDF-1.7");
 
-            var result = parser.Parse(scanner, true);
+            var result = FileHeaderParser.Parse(scanner, true, log);
 
             Assert.Equal(1.7m, result.Version);
         }
@@ -87,7 +87,7 @@
             var scanner = StringBytesTestConverter.Scanner(@"one two
 three %PDF-1.6");
 
-            Action action = () => parser.Parse(scanner, true);
+            Action action = () => FileHeaderParser.Parse(scanner, true, log);
 
             Assert.Throws<PdfDocumentFormatException>(action);
         }
@@ -97,7 +97,7 @@ three %PDF-1.6");
         {
             var scanner = StringBytesTestConverter.Scanner(@"one two");
 
-            Action action = () => parser.Parse(scanner, true);
+            Action action = () => FileHeaderParser.Parse(scanner, true, log);
 
             Assert.Throws<PdfDocumentFormatException>(action);
         }
@@ -107,7 +107,7 @@ three %PDF-1.6");
         {
             var scanner = StringBytesTestConverter.Scanner("%Pdeef-1.69");
 
-            Action action = () => parser.Parse(scanner, false);
+            Action action = () => FileHeaderParser.Parse(scanner, false, log);
 
             Assert.Throws<PdfDocumentFormatException>(action);
         }
@@ -117,7 +117,7 @@ three %PDF-1.6");
         {
             var scanner = StringBytesTestConverter.Scanner("%Pdeef-1.69");
 
-            var result = parser.Parse(scanner, true);
+            var result = FileHeaderParser.Parse(scanner, true, log);
 
             Assert.Equal(1.4m, result.Version);
         }
@@ -127,7 +127,7 @@ three %PDF-1.6");
         {
             var scanner = StringBytesTestConverter.Scanner(@"%FDF-1.6");
 
-            parser.Parse(scanner, false);
+            FileHeaderParser.Parse(scanner, false, log);
 
             Assert.Equal(0, scanner.CurrentPosition);
         }

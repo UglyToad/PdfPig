@@ -2,23 +2,35 @@
 {
     using System;
     using System.Collections.Generic;
+    using Content;
+    using Core;
+    using Graphics.Colors;
+    using Graphics.Core;
     using Tokens;
     using Util.JetBrains.Annotations;
 
+    /// <inheritdoc />
     /// <summary>
-    /// The raw stream from a PDF document representing an image XObject.
+    /// A PostScript image XObject.
     /// </summary>
-    public class XObjectImage
+    public class XObjectImage : IPdfImage
     {
-        /// <summary>
-        /// The width of the image in samples.
-        /// </summary>
-        public int Width { get; }
+        private readonly Lazy<IReadOnlyList<byte>> bytes;
 
-        /// <summary>
-        /// The height of the image in samples.
-        /// </summary>
-        public int Height { get; }
+        /// <inheritdoc />
+        public PdfRectangle Bounds { get; }
+
+        /// <inheritdoc />
+        public int WidthInSamples { get; }
+
+        /// <inheritdoc />
+        public int HeightInSamples { get; }
+
+        /// <inheritdoc />
+        public ColorSpace? ColorSpace { get; }
+
+        /// <inheritdoc />
+        public int BitsPerComponent { get; }
 
         /// <summary>
         /// The JPX filter encodes data using the JPEG2000 compression method.
@@ -27,10 +39,20 @@
         /// </summary>
         public bool IsJpxEncoded { get; }
 
-        /// <summary>
-        /// Whether this image should be treated as an image maske.
-        /// </summary>
+        /// <inheritdoc />
+        public RenderingIntent RenderingIntent { get; }
+
+        /// <inheritdoc />
         public bool IsImageMask { get; }
+
+        /// <inheritdoc />
+        public IReadOnlyList<decimal> Decode { get; }
+
+        /// <inheritdoc />
+        public bool Interpolate { get; }
+
+        /// <inheritdoc />
+        public bool IsInlineImage { get; } = false;
 
         /// <summary>
         /// The full dictionary for this Image XObject.
@@ -38,30 +60,46 @@
         [NotNull]
         public DictionaryToken ImageDictionary { get; }
 
-        /// <summary>
-        /// The encoded bytes of this image, must be decoded via any
-        /// filters defined in the <see cref="ImageDictionary"/> prior to consumption.
-        /// </summary>
-        [NotNull]
-        public IReadOnlyList<byte> Bytes { get; }
+        /// <inheritdoc />
+        public IReadOnlyList<byte> RawBytes { get; }
 
+        /// <inheritdoc />
+        [NotNull]
+        public IReadOnlyList<byte> Bytes => bytes.Value;
+        
         /// <summary>
         /// Creates a new <see cref="XObjectImage"/>.
         /// </summary>
-        internal XObjectImage(int width, int height, bool isJpxEncoded, bool isImageMask, DictionaryToken imageDictionary, IReadOnlyList<byte> bytes)
+        internal XObjectImage(PdfRectangle bounds, int widthInSamples, int heightInSamples, int bitsPerComponent,
+            ColorSpace? colorSpace,
+            bool isJpxEncoded,
+            bool isImageMask,
+            RenderingIntent renderingIntent,
+            bool interpolate,
+            IReadOnlyList<decimal> decode,
+            DictionaryToken imageDictionary,
+            IReadOnlyList<byte> rawBytes, 
+            Lazy<IReadOnlyList<byte>> bytes)
         {
-            Width = width;
-            Height = height;
+            Bounds = bounds;
+            WidthInSamples = widthInSamples;
+            HeightInSamples = heightInSamples;
+            BitsPerComponent = bitsPerComponent;
+            ColorSpace = colorSpace;
             IsJpxEncoded = isJpxEncoded;
             IsImageMask = isImageMask;
+            RenderingIntent = renderingIntent;
+            Interpolate = interpolate;
+            Decode = decode;
             ImageDictionary = imageDictionary ?? throw new ArgumentNullException(nameof(imageDictionary));
-            Bytes = bytes ?? throw new ArgumentNullException(nameof(bytes));
+            RawBytes = rawBytes;
+            this.bytes = bytes ?? throw new ArgumentNullException(nameof(bytes));
         }
 
         /// <inheritdoc />
         public override string ToString()
         {
-            return ImageDictionary.ToString();
+            return $"XObject Image (w {Bounds.Width}, h {Bounds.Height}): {ImageDictionary}";
         }
     }
 }

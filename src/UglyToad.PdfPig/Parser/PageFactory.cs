@@ -4,17 +4,15 @@
     using System.Collections.Generic;
     using Annotations;
     using Content;
-    using Exceptions;
+    using Core;
     using Filters;
     using Geometry;
     using Graphics;
-    using IO;
     using Logging;
     using Parts;
     using Tokenization.Scanner;
     using Tokens;
     using Util;
-    using XObjects;
 
     internal class PageFactory : IPageFactory
     {
@@ -22,18 +20,15 @@
         private readonly IResourceStore resourceStore;
         private readonly IFilterProvider filterProvider;
         private readonly IPageContentParser pageContentParser;
-        private readonly XObjectFactory xObjectFactory;
         private readonly ILog log;
 
         public PageFactory(IPdfTokenScanner pdfScanner, IResourceStore resourceStore, IFilterProvider filterProvider,
             IPageContentParser pageContentParser,
-            XObjectFactory xObjectFactory,
             ILog log)
         {
             this.resourceStore = resourceStore;
             this.filterProvider = filterProvider;
             this.pageContentParser = pageContentParser;
-            this.xObjectFactory = xObjectFactory;
             this.log = log;
             this.pdfScanner = pdfScanner;
         }
@@ -61,10 +56,24 @@
 
             MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers, isLenientParsing);
             CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox, isLenientParsing);
+
+            var stackDepth = 0;
+
+            while (pageTreeMembers.ParentResources.Count > 0)
+            {
+                var resource = pageTreeMembers.ParentResources.Dequeue();
+
+                resourceStore.LoadResourceDictionary(resource, isLenientParsing);
+                stackDepth++;
+            }
+
+            if (dictionary.TryGet(NameToken.Resources, pdfScanner, out DictionaryToken resources))
+            {
+                resourceStore.LoadResourceDictionary(resources, isLenientParsing);
+                stackDepth++;
+            }
             
             UserSpaceUnit userSpaceUnit = GetUserSpaceUnits(dictionary);
-
-            LoadResources(dictionary, isLenientParsing);
 
             PageContent content = default(PageContent);
 
@@ -116,7 +125,14 @@
                 content = GetContent(bytes, cropBox, userSpaceUnit, rotation, isLenientParsing);
             }
 
-            var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, new AnnotationProvider(pdfScanner, dictionary, isLenientParsing));
+            var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, 
+                new AnnotationProvider(pdfScanner, dictionary, isLenientParsing),
+                pdfScanner);
+
+            for (var i = 0; i < stackDepth; i++)
+            {
+                resourceStore.UnloadResourceDictionary();
+            }
 
             return page;
         }
@@ -125,7 +141,10 @@
         {
             var operations = pageContentParser.Parse(new ByteArrayInputBytes(contentBytes));
 
-            var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit, rotation, isLenientParsing, pdfScanner, xObjectFactory, log);
+            var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit, rotation, isLenientParsing, pdfScanner, 
+                pageContentParser,
+                filterProvider, 
+                log);
 
             return context.Process(operations);
         }
@@ -201,18 +220,6 @@
             }
 
             return mediaBox;
-        }
-
-        public void LoadResources(DictionaryToken dictionary, bool isLenientParsing)
-        {
-            if (!dictionary.TryGet(NameToken.Resources, out var token))
-            {
-                return;
-            }
-
-            var resources = DirectObjectFinder.Get<DictionaryToken>(token, pdfScanner);
-
-            resourceStore.LoadResourceDictionary(resources, isLenientParsing);
         }
     }
 }

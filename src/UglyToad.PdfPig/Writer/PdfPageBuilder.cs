@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using Content;
     using Core;
-    using Geometry;
+    using Fonts;
     using Graphics.Colors;
     using Graphics.Operations;
     using Graphics.Operations.General;
@@ -24,7 +24,7 @@
         private readonly List<IGraphicsStateOperation> operations = new List<IGraphicsStateOperation>();
 
         //a sequence number of ShowText operation to determine whether letters belong to same operation or not (letters that belong to different operations have less changes to belong to same word)
-        private static int textSequence = 0;
+        private int textSequence;
 
         internal IReadOnlyList<IGraphicsStateOperation> Operations => operations;
 
@@ -63,8 +63,8 @@
                 operations.Add(new SetLineWidth(lineWidth));
             }
 
-            operations.Add(new BeginNewSubpath(from.X, from.Y));
-            operations.Add(new AppendStraightLineSegment(to.X, to.Y));
+            operations.Add(new BeginNewSubpath((decimal)from.X, (decimal)from.Y));
+            operations.Add(new AppendStraightLineSegment((decimal)to.X, (decimal)to.Y));
             operations.Add(StrokePath.Value);
 
             if (lineWidth != 1)
@@ -87,7 +87,7 @@
                 operations.Add(new SetLineWidth(lineWidth));
             }
 
-            operations.Add(new AppendRectangle(position.X, position.Y, width, height));
+            operations.Add(new AppendRectangle((decimal)position.X, (decimal)position.Y, width, height));
             operations.Add(StrokePath.Value);
 
             if (lineWidth != 1)
@@ -226,23 +226,40 @@
 
             operations.Add(BeginText.Value);
             operations.Add(new SetFontAndSize(font.Name, fontSize));
-            operations.Add(new MoveToNextLineWithOffset(position.X, position.Y));
-            operations.Add(new ShowText(text));
+            operations.Add(new MoveToNextLineWithOffset((decimal)position.X, (decimal)position.Y));
+            var bytesPerShow = new List<byte>();
+            foreach (var letter in text)
+            {
+                if (char.IsWhiteSpace(letter))
+                {
+                    operations.Add(new ShowText(bytesPerShow.ToArray()));
+                    bytesPerShow.Clear();
+                }
+
+                var b = fontProgram.GetValueForCharacter(letter);
+                bytesPerShow.Add(b);
+            }
+
+            if (bytesPerShow.Count > 0)
+            {
+                operations.Add(new ShowText(bytesPerShow.ToArray()));
+            }
+
             operations.Add(EndText.Value);
 
             return letters;
         }
 
-        private static List<Letter> DrawLetters(string text, IWritingFont font, TransformationMatrix fontMatrix, decimal fontSize, TransformationMatrix textMatrix)
+        private List<Letter> DrawLetters(string text, IWritingFont font, TransformationMatrix fontMatrix, decimal fontSize, TransformationMatrix textMatrix)
         {
             var horizontalScaling = 1;
             var rise = 0;
             var letters = new List<Letter>();
 
             var renderingMatrix =
-                TransformationMatrix.FromValues(fontSize * horizontalScaling, 0, 0, fontSize, 0, rise);
+                TransformationMatrix.FromValues((double)fontSize * horizontalScaling, 0, 0, (double)fontSize, 0, rise);
 
-            var width = 0m;
+            var width = 0.0;
 
             textSequence++;
 
@@ -265,9 +282,9 @@
 
                 var documentSpace = textMatrix.Transform(renderingMatrix.Transform(fontMatrix.Transform(rect)));
 
-                var letter = new Letter(c.ToString(), documentSpace, advanceRect.BottomLeft, advanceRect.BottomRight, width, fontSize, font.Name,
-                    GrayColor.Black, 
-                    fontSize,
+                var letter = new Letter(c.ToString(), documentSpace, advanceRect.BottomLeft, advanceRect.BottomRight, width, (double)fontSize, font.Name,
+                    GrayColor.Black,
+                    (double)fontSize,
                     textSequence);
 
                 letters.Add(letter);
@@ -288,7 +305,7 @@
         private static decimal RgbToDecimal(byte value)
         {
             var res = Math.Max(0, value / (decimal)byte.MaxValue);
-            res = Math.Min(1, res);
+            res = Math.Round(Math.Min(1, res), 4);
 
             return res;
         }

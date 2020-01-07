@@ -6,6 +6,7 @@
     using System.Linq;
     using System.Security.Cryptography;
     using System.Text;
+    using Core;
     using CrossReference;
     using Exceptions;
     using Tokens;
@@ -38,15 +39,41 @@
 
         private readonly bool useAes;
 
-        public EncryptionHandler(EncryptionDictionary encryptionDictionary, TrailerDictionary trailerDictionary, string password)
+        public EncryptionHandler(EncryptionDictionary encryptionDictionary, TrailerDictionary trailerDictionary, IReadOnlyList<string> passwords)
         {
             this.encryptionDictionary = encryptionDictionary;
 
-            var documentIdBytes = trailerDictionary.Identifier != null && trailerDictionary.Identifier.Count == 2 ?
-                OtherEncodings.StringAsLatin1Bytes(trailerDictionary.Identifier[0])
-                : EmptyArray<byte>.Instance;
+            passwords = passwords ?? new[] { string.Empty };
 
-            password = password ?? string.Empty;
+            if (!passwords.Contains(string.Empty))
+            {
+                passwords = new List<string>(passwords)
+                {
+                    string.Empty
+                };
+            }
+
+            byte[] documentIdBytes;
+
+            if (trailerDictionary.Identifier != null && trailerDictionary.Identifier.Count == 2)
+            {
+                var token = trailerDictionary.Identifier[0];
+
+                switch (token)
+                {
+                    case HexToken hex:
+                        documentIdBytes = hex.Bytes.ToArray();
+                        break;
+                    default:
+                        documentIdBytes = OtherEncodings.StringAsLatin1Bytes(token.Data);
+                        break;
+                }
+
+            }
+            else
+            {
+                documentIdBytes = EmptyArray<byte>.Instance;
+            }
 
             if (encryptionDictionary == null)
             {
@@ -77,40 +104,55 @@
                 charset = Encoding.UTF8;
             }
 
-            var passwordBytes = charset.GetBytes(password);
-
-            byte[] decryptionPasswordBytes;
-
             var length = encryptionDictionary.EncryptionAlgorithmCode == EncryptionAlgorithmCode.Rc4OrAes40BitKey
                 ? 5
                 : encryptionDictionary.KeyLength.GetValueOrDefault() / 8;
 
-            var isUserPassword = false;
-            if (IsOwnerPassword(passwordBytes, encryptionDictionary, length, documentIdBytes, out var userPassBytes))
+            var foundPassword = false;
+
+            foreach (var password in passwords)
             {
-                if (encryptionDictionary.Revision == 5 || encryptionDictionary.Revision == 6)
+                var passwordBytes = charset.GetBytes(password);
+
+                var isUserPassword = false;
+                byte[] decryptionPasswordBytes;
+
+                if (IsOwnerPassword(passwordBytes, encryptionDictionary, length, documentIdBytes, out var userPassBytes))
+                {
+                    if (encryptionDictionary.Revision == 5 || encryptionDictionary.Revision == 6)
+                    {
+                        decryptionPasswordBytes = passwordBytes;
+                    }
+                    else
+                    {
+                        decryptionPasswordBytes = userPassBytes;
+                    }
+                }
+                else if (IsUserPassword(passwordBytes, encryptionDictionary, length, documentIdBytes))
                 {
                     decryptionPasswordBytes = passwordBytes;
+                    isUserPassword = true;
                 }
                 else
                 {
-                    decryptionPasswordBytes = userPassBytes;
+                    continue;
                 }
-            }
-            else if (IsUserPassword(passwordBytes, encryptionDictionary, length, documentIdBytes))
-            {
-                decryptionPasswordBytes = passwordBytes;
-                isUserPassword = true;
-            }
-            else
-            {
-                throw new PdfDocumentEncryptedException("The document was encrypted and the provided password was neither the user or owner password.", encryptionDictionary);
+
+                encryptionKey = CalculateEncryptionKey(decryptionPasswordBytes, encryptionDictionary,
+                    length,
+                    documentIdBytes,
+                    isUserPassword);
+
+                foundPassword = true;
+
+                break;
             }
 
-            encryptionKey = CalculateEncryptionKey(decryptionPasswordBytes, encryptionDictionary,
-                length,
-                documentIdBytes,
-                isUserPassword);
+            if (!foundPassword)
+            {
+                throw new PdfDocumentEncryptedException("The document was encrypted and none of the provided passwords were the user or owner password.",
+                    encryptionDictionary);
+            }
         }
 
         private static bool IsUserPassword(byte[] passwordBytes, EncryptionDictionary encryptionDictionary, int length, byte[] documentIdBytes)
@@ -392,7 +434,9 @@
                                 continue;
                             }
 
-                            if (keyValuePair.Value is StringToken || keyValuePair.Value is ArrayToken || keyValuePair.Value is DictionaryToken)
+                            if (keyValuePair.Value is StringToken || keyValuePair.Value is ArrayToken
+                                                                  || keyValuePair.Value is DictionaryToken
+                                                                  || keyValuePair.Value is HexToken)
                             {
                                 var inner = DecryptInternal(reference, keyValuePair.Value);
                                 dictionary = dictionary.With(keyValuePair.Key, inner);

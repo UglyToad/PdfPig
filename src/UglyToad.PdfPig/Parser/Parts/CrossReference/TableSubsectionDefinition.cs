@@ -2,7 +2,7 @@
 {
     using System;
     using System.Globalization;
-    using IO;
+    using Core;
     using Logging;
 
     /// <summary>

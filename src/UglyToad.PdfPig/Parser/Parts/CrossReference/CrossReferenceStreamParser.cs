@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Parser.Parts.CrossReference
 {
     using System.Collections.Generic;
-    using Exceptions;
+    using Core;
     using Filters;
     using PdfPig.CrossReference;
     using Tokens;
@@ -92,13 +92,13 @@
                     break;
                 case 1:
                     // Non object stream entries.
-                    int offset = 0;
-                    for (int i = 0; i < fieldSizes.Field2Size; i++)
+                    var offset = 0;
+                    for (var i = 0; i < fieldSizes.Field2Size; i++)
                     {
                         offset += (lineBuffer[i + fieldSizes.Field1Size] & 0x00ff) << ((fieldSizes.Field2Size - i - 1) * 8);
                     }
-                    int genNum = 0;
-                    for (int i = 0; i < fieldSizes.Field3Size; i++)
+                    var genNum = 0;
+                    for (var i = 0; i < fieldSizes.Field3Size; i++)
                     {
                         genNum += (lineBuffer[i + fieldSizes.Field1Size + fieldSizes.Field2Size] & 0x00ff) << ((fieldSizes.Field3Size - i - 1) * 8);
                     }
@@ -122,8 +122,8 @@
                      * table but add object stream number with minus sign in order to
                      * distinguish from file offsets
                      */
-                    int objstmObjNr = 0;
-                    for (int i = 0; i < fieldSizes.Field2Size; i++)
+                    var objstmObjNr = 0;
+                    for (var i = 0; i < fieldSizes.Field2Size; i++)
                     {
                         objstmObjNr += (lineBuffer[i + fieldSizes.Field1Size] & 0x00ff) << ((fieldSizes.Field2Size - i - 1) * 8);
                     }
@@ -134,32 +134,37 @@
             }
         }
 
-        private static List<long> GetObjectNumbers(DictionaryToken dictionary)
+        private static IEnumerable<long> GetObjectNumbers(DictionaryToken dictionary)
         {
+            //  The number one greater than the highest object number used in this section or in any section for which this is an update.
             if (!dictionary.TryGet(NameToken.Size, out var sizeToken) || !(sizeToken is NumericToken sizeNumeric))
             {
                 throw new PdfDocumentFormatException($"The stream dictionary must contain a numeric size value: {dictionary}.");
             }
-
-            var indexArray = new[] { 0, sizeNumeric.Int };
+            
+            var objNums = new List<long>();
 
             if (dictionary.TryGet(NameToken.Index, out var indexToken) && indexToken is ArrayToken indexArrayToken)
             {
-                indexArray = new[]
+                // An array containing a pair of integers for each subsection in this section. 
+                // Pair[0] is the first object number in the subsection; Pair[1] is the number of entries in the subsection.
+                for (var i = 0; i < indexArrayToken.Length; i += 2)
                 {
-                    indexArrayToken.GetNumeric(0).Int,
-                    indexArrayToken.GetNumeric(1).Int
-                };
+                    var firstObjectNumber = indexArrayToken.GetNumeric(i).Int;
+                    var size = indexArrayToken.GetNumeric(i + 1).Int;
+
+                    for (var j = 0; j < size; j++)
+                    {
+                        objNums.Add(firstObjectNumber + j);
+                    }
+                }
             }
-
-            List<long> objNums = new List<long>();
-            
-            var firstObjectNumber = indexArray[0];
-            var size = indexArray[1];
-
-            for (var i = 0; i < size; i++)
+            else
             {
-                objNums.Add(firstObjectNumber + i);
+                for (var i = 0; i < sizeNumeric.Int; i++)
+                {
+                    objNums.Add(i);
+                }
             }
 
             return objNums;

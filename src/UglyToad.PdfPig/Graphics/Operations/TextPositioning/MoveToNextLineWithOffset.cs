@@ -49,7 +49,7 @@
         {
             var currentTextLineMatrix = operationContext.TextMatrices.TextLineMatrix;
             
-            var matrix = TransformationMatrix.FromValues(1, 0, 0, 1, Tx, Ty);
+            var matrix = TransformationMatrix.FromValues(1, 0, 0, 1, (double)Tx, (double)Ty);
 
             var transformed = matrix.Multiply(currentTextLineMatrix);
 

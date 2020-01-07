@@ -1,30 +1,31 @@
-﻿using System;
-
-namespace UglyToad.PdfPig.Geometry
+﻿namespace UglyToad.PdfPig.Geometry
 {
+    using System;
+    using Core;
+
     internal struct PdfVector
     {
-        public decimal X { get; }
+        public double X { get; }
 
-        public decimal Y { get; }
+        public double Y { get; }
 
-        public PdfVector(decimal x, decimal y)
+        public PdfVector(double x, double y)
         {
             X = x;
             Y = y;
         }
 
-        public PdfVector Scale(decimal scale)
+        public PdfVector Scale(double scale)
         {
             return new PdfVector(X * scale, Y * scale);
         }
 
-        public decimal GetMagnitude()
+        public double GetMagnitude()
         {
-            var doubleX = (double)X;
-            var doubleY = (double)Y;
+            var doubleX = X;
+            var doubleY = Y;
 
-            return (decimal)Math.Sqrt(doubleX * doubleX + doubleY * doubleY);
+            return Math.Sqrt(doubleX * doubleX + doubleY * doubleY);
         }
 
         public PdfVector Subtract(PdfVector vector)

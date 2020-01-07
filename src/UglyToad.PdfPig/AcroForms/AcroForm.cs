@@ -2,6 +2,8 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
+    using Core;
     using Fields;
     using Tokens;
     using Util.JetBrains.Annotations;
@@ -13,8 +15,10 @@
     /// <remarks>
     /// The name AcroForm distinguishes this from the other form type called form XObjects which act as templates for repeated sections of content.
     /// </remarks>
-    internal class AcroForm
+    public class AcroForm
     {
+        private readonly IReadOnlyDictionary<IndirectReference, AcroFieldBase> fieldsWithReferences;
+
         /// <summary>
         /// The raw PDF dictionary which is the root form object.
         /// </summary>
@@ -32,20 +36,45 @@
         public bool NeedAppearances { get; }
 
         /// <summary>
-        /// All root fields in this form with their corresponding references.
+        /// All root fields in this form.
         /// </summary>
-        public IReadOnlyDictionary<IndirectReference, AcroFieldBase> Fields { get; }
+        public IReadOnlyList<AcroFieldBase> Fields { get; }
 
         /// <summary>
         /// Create a new <see cref="AcroForm"/>.
         /// </summary>
-        public AcroForm(DictionaryToken dictionary, SignatureFlags signatureFlags, bool needAppearances, 
-            IReadOnlyDictionary<IndirectReference, AcroFieldBase> fields)
+        internal AcroForm(DictionaryToken dictionary, SignatureFlags signatureFlags, bool needAppearances,
+            IReadOnlyDictionary<IndirectReference, AcroFieldBase> fieldsWithReferences)
         {
             Dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
             SignatureFlags = signatureFlags;
             NeedAppearances = needAppearances;
-            Fields = fields ?? throw new ArgumentNullException(nameof(fields));
+            this.fieldsWithReferences = fieldsWithReferences ?? throw new ArgumentNullException(nameof(fieldsWithReferences));
+            Fields = fieldsWithReferences.Values.ToList();
+        }
+
+        /// <summary>
+        /// Get the set of fields which appear on the given page number.
+        /// </summary>
+        public IEnumerable<AcroFieldBase> GetFieldsForPage(int pageNumber)
+        {
+            if (pageNumber <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(pageNumber), $"Page number starts at 1, instead got {pageNumber}.");
+            }
+
+            foreach (var field in Fields)
+            {
+                if (field.PageNumber == pageNumber)
+                {
+                    yield return field;
+                }
+                else if (field is AcroNonTerminalField parent
+                && parent.Children.Any(x => x.PageNumber == pageNumber))
+                {
+                    yield return field;
+                }
+            }
         }
 
         /// <inheritdoc />

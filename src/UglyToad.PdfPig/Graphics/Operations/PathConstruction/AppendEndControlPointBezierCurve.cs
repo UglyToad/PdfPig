@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.PathConstruction
 {
     using System.IO;
-    using Geometry;
+    using PdfPig.Core;
 
     /// <inheritdoc />
     /// <summary>
@@ -19,15 +19,25 @@
         public string Operator => Symbol;
 
         /// <summary>
-        /// The first control point.
+        /// The x coordinate of the first control point.
         /// </summary>
-        public PdfPoint ControlPoint1 { get; }
+        public decimal X1 { get; }
 
         /// <summary>
-        /// The end point and second control point.
+        /// The y coordinate of the first control point.
         /// </summary>
-        public PdfPoint End { get; }
+        public decimal Y1 { get; }
 
+        /// <summary>
+        /// The x coordinate of the end point.
+        /// </summary>
+        public decimal X3 { get; }
+
+        /// <summary>
+        /// The y coordinate of the end point.
+        /// </summary>
+        public decimal Y3 { get; }
+        
         /// <summary>
         /// Create a new <see cref="AppendEndControlPointBezierCurve"/>.
         /// </summary>
@@ -37,15 +47,19 @@
         /// <param name="y3">Control point 2/End y coordinate.</param>
         public AppendEndControlPointBezierCurve(decimal x1, decimal y1, decimal x3, decimal y3)
         {
-            ControlPoint1 = new PdfPoint(x1, y1);
-            End = new PdfPoint(x3, y3);
+            X1 = x1;
+            Y1 = y1;
+            X3 = x3;
+            Y3 = y3;
         }
-
+        
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var controlPoint1Transform = operationContext.CurrentTransformationMatrix.Transform(ControlPoint1);
-            var endTransform = operationContext.CurrentTransformationMatrix.Transform(End);
+            var controlPoint1 = new PdfPoint(X1, Y1);
+            var end = new PdfPoint(X3, Y3);
+            var controlPoint1Transform = operationContext.CurrentTransformationMatrix.Transform(controlPoint1);
+            var endTransform = operationContext.CurrentTransformationMatrix.Transform(end);
             operationContext.CurrentPath.BezierCurveTo(controlPoint1Transform.X, controlPoint1Transform.Y,
                 endTransform.X,
                 endTransform.Y,
@@ -57,13 +71,13 @@
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            stream.WriteDecimal(ControlPoint1.X);
+            stream.WriteDecimal(X1);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(ControlPoint1.Y);
+            stream.WriteDecimal(Y1);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(End.X);
+            stream.WriteDecimal(X3);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(End.Y);
+            stream.WriteDecimal(Y3);
             stream.WriteWhiteSpace();
             stream.WriteText(Symbol);
             stream.WriteNewLine();
@@ -72,7 +86,7 @@
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"{ControlPoint1.X} {ControlPoint1.Y} {End.X} {End.Y} {Symbol}";
+            return $"{X1} {Y1} {X3} {Y3} {Symbol}";
         }
     }
 }

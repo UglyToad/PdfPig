@@ -2,9 +2,9 @@
 {
     using System;
     using System.Collections.Generic;
+    using Core;
     using CrossReference;
     using Exceptions;
-    using IO;
     using Logging;
     using Parts.CrossReference;
     using Tokenization.Scanner;

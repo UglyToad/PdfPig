@@ -9,8 +9,12 @@
     using Tokens;
     using Util;
 
+    /// <inheritdoc />
     /// <summary>
-    /// 
+    /// The Flate filter is based on the public-domain zlib/deflate compression method, a variable-length Lempel-Ziv 
+    /// adaptive compression method cascaded with adaptive Huffman coding. 
+    /// It is fully defined in Internet RFCs 1950, ZLIB Compressed Data Format Specification, and
+    /// 1951, DEFLATE Compressed Data Format Specification
     /// </summary>
     /// <remarks>
     /// See section 3.3.3 of the spec (version 1.7) for details on the FlateDecode filter.
@@ -23,6 +27,9 @@
         private const int DefaultBitsPerComponent = 8;
         private const int DefaultColumns = 1;
 
+        private const byte Deflate32KbWindow = 120;
+        private const byte ChecksumBits = 1;
+
         private readonly IDecodeParameterResolver decodeParameterResolver;
         private readonly IPngPredictor pngPredictor;
         private readonly ILog log;
@@ -34,6 +41,10 @@
             this.log = log;
         }
 
+        /// <inheritdoc />
+        public bool IsSupported { get; } = true;
+
+        /// <inheritdoc />
         public byte[] Decode(IReadOnlyList<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
             if (input == null)
@@ -76,6 +87,7 @@
             try
             {
                 using (var memoryStream = new MemoryStream(input))
+                using (var output = new MemoryStream())
                 {
                     // The first 2 bytes are the header which DeflateStream does not support.
                     memoryStream.ReadByte();
@@ -83,23 +95,8 @@
 
                     using (var deflate = new DeflateStream(memoryStream, CompressionMode.Decompress))
                     {
-                        var bytes = new List<byte>();
-
-                        var x = deflate.ReadByte();
-                        while (x != -1)
-                        {
-                            bytes.Add((byte)x);
-                            x = deflate.ReadByte();
-                        }
-
-                        var result = new byte[bytes.Count];
-
-                        for (var i = 0; i < bytes.Count; i++)
-                        {
-                            result[i] = bytes[i];
-                        }
-
-                        return result;
+                        deflate.CopyTo(output);
+                        return output.ToArray();
                     }
                 }
             }
@@ -112,17 +109,45 @@
 
         public byte[] Encode(Stream input, DictionaryToken streamDictionary, int index)
         {
-            var resx = new List<byte>{ 120, 156 };
-            using (var output = new MemoryStream())
-            using (var flater = new DeflateStream(output, CompressionMode.Compress, true))
-            {
-                input.CopyTo(flater);
-                flater.Close();
+            const int headerLength = 2;
+            const int checksumLength = 4;
 
-                resx.AddRange(output.ToArray());
+            byte[] data;
+            using (var temp = new MemoryStream())
+            {
+                input.CopyTo(temp);
+                data = temp.ToArray();
             }
 
-            return resx.ToArray();
+            using (var compressStream = new MemoryStream())
+            using (var compressor = new DeflateStream(compressStream, CompressionLevel.Fastest))
+            {
+                compressor.Write(data, 0, data.Length);
+                compressor.Close();
+
+                var compressed = compressStream.ToArray();
+
+                var result = new byte[headerLength + compressed.Length + checksumLength];
+
+                // Write the ZLib header.
+                result[0] = Deflate32KbWindow;
+                result[1] = ChecksumBits;
+
+                // Write the compressed data.
+                Array.Copy(compressed, 0, result, headerLength, compressed.Length);
+
+                // Write Checksum of raw data.
+                var checksum = Adler32Checksum.Calculate(data);
+
+                var offset = headerLength + compressed.Length;
+
+                result[offset++] = (byte)(checksum >> 24);
+                result[offset++] = (byte)(checksum >> 16);
+                result[offset++] = (byte)(checksum >> 8);
+                result[offset] = (byte)(checksum >> 0);
+
+                return result;
+            }
         }
     }
 }

@@ -3,14 +3,14 @@ namespace UglyToad.PdfPig.Tests.Tokens
 {
     using System;
     using System.Collections.Generic;
+    using PdfPig.Core;
     using PdfPig.Tokenization;
     using PdfPig.Tokenization.Scanner;
     using PdfPig.Tokens;
 
     internal class TestPdfTokenScanner : IPdfTokenScanner
     {
-        public Dictionary<IndirectReference, ObjectToken> Objects { get; }
-         = new Dictionary<IndirectReference, ObjectToken>();
+        public Dictionary<IndirectReference, ObjectToken> Objects { get; } = new Dictionary<IndirectReference, ObjectToken>();
         public bool MoveNext()
         {
             throw new NotImplementedException();
@@ -41,6 +41,10 @@ namespace UglyToad.PdfPig.Tests.Tokens
         public ObjectToken Get(IndirectReference reference)
         {
             return Objects[reference];
+        }
+
+        public void Dispose()
+        {
         }
     }
 }

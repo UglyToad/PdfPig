@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Parser.Parts
 {
     using System;
-    using Exceptions;
+    using PdfPig.Core;
     using PdfPig.Parser.Parts;
     using PdfPig.Tokens;
     using Tokens;

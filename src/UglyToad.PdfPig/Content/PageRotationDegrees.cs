@@ -9,6 +9,10 @@
     /// </summary>
     public struct PageRotationDegrees : IEquatable<PageRotationDegrees>
     {
+        private static readonly TransformationMatrix Rotate90 = TransformationMatrix.FromValues(0, -1, 1, 0);
+        private static readonly TransformationMatrix Rotate180 = TransformationMatrix.FromValues(-1, 0, 0, -1);
+        private static readonly TransformationMatrix Rotate270 = TransformationMatrix.FromValues(0, 1, -1, 0);
+
         /// <summary>
         /// The rotation of the page in degrees clockwise.
         /// </summary>
@@ -43,6 +47,11 @@
         /// <param name="rotation">Rotation in degrees clockwise.</param>
         public PageRotationDegrees(int rotation)
         {
+            while (rotation >= 360)
+            {
+                rotation -= 360;
+            }
+
             if (rotation != 0 && rotation != 90 && rotation != 180 && rotation != 270)
             {
                 throw new ArgumentOutOfRangeException(nameof(rotation), $"Rotation must be 0, 90, 180 or 270. Got: {rotation}.");
@@ -54,26 +63,19 @@
         [Pure]
         internal TransformationMatrix Rotate(TransformationMatrix matrix)
         {
-            TransformationMatrix thisMatrix;
             switch (Value)
             {
                 case 0:
-                    thisMatrix = TransformationMatrix.FromArray(new[]{ 1m, 0, 0, 1 });
-                    break;
+                    return matrix;
                 case 90:
-                    thisMatrix = TransformationMatrix.FromArray(new[] {0m, -1, 1, 0});
-                    break;
+                    return Rotate90.Multiply(matrix);
                 case 180:
-                    thisMatrix = TransformationMatrix.FromArray(new[] {-1m, 0, 0, -1});
-                    break;
+                    return Rotate180.Multiply(matrix);
                 case 270:
-                    thisMatrix = TransformationMatrix.FromArray(new[] {0m, 1, -1, 0});
-                    break;
+                    return Rotate270.Multiply(matrix);
                 default:
                     throw new InvalidOperationException($"Invalid value for rotation: {Value}.");
             }
-
-            return thisMatrix.Multiply(matrix);
         }
 
         /// <inheritdoc />

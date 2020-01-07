@@ -2,7 +2,7 @@
 namespace UglyToad.PdfPig.Tests.Fonts.Cmap
 {
     using System;
-    using PdfPig.Fonts.Cmap;
+    using PdfFonts.Cmap;
     using Xunit;
 
     public class CidRangeTests

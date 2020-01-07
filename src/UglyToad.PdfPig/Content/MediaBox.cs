@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
     using System;
-    using Geometry;
+    using Core;
 
     /// <summary>
     /// The boundary of the physical medium to display or print on.
@@ -14,22 +14,22 @@
         ///<summary>
         /// User space units per inch.
         /// </summary>
-        private const decimal PointsPerInch = 72;
+        private const double PointsPerInch = 72;
 
         /// <summary>
         /// User space units per millimeter.
         /// </summary>
-        private const decimal PointsPerMm = 1 / (10 * 2.54m) * PointsPerInch;
+        private const double PointsPerMm = 1 / (10 * 2.54) * PointsPerInch;
 
         /// <summary>
         /// A <see cref="MediaBox"/> the size of U.S. Letter, 8.5" x 11" Paper.
         /// </summary>
-        public static readonly MediaBox Letter = new MediaBox(new PdfRectangle(0, 0, 8.5m * PointsPerInch, 11m * PointsPerInch));
+        public static readonly MediaBox Letter = new MediaBox(new PdfRectangle(0, 0, 8.5 * PointsPerInch, 11 * PointsPerInch));
 
         /// <summary>
         /// A <see cref="MediaBox"/> the size of U.S. Legal, 8.5" x 14" Paper.
         /// </summary>
-        public static readonly MediaBox Legal = new MediaBox(new PdfRectangle(0, 0, 8.5m * PointsPerInch, 14m * PointsPerInch));
+        public static readonly MediaBox Legal = new MediaBox(new PdfRectangle(0, 0, 8.5 * PointsPerInch, 14 * PointsPerInch));
 
         /// <summary>
         /// A <see cref="MediaBox"/> the size of A0 Paper.

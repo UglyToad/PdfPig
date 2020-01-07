@@ -6,9 +6,15 @@
     using Tokenization.Scanner;
     using Tokens;
 
-    internal class DocumentInformationFactory
+    /// <summary>
+    /// Parse the dictionary from a PDF file trailer.
+    /// </summary>
+    internal static class DocumentInformationFactory
     {
-        public DocumentInformation Create(IPdfTokenScanner pdfTokenScanner, TrailerDictionary trailer)
+        /// <summary>
+        /// Convert the file trailer dictionary into a <see cref="DocumentInformation"/> instance.
+        /// </summary>
+        public static DocumentInformation Create(IPdfTokenScanner pdfTokenScanner, TrailerDictionary trailer)
         {
             if (!trailer.Info.HasValue)
             {
@@ -23,9 +29,11 @@
             var keywords = GetEntryOrDefault(infoParsed, NameToken.Keywords);
             var creator = GetEntryOrDefault(infoParsed, NameToken.Creator);
             var producer = GetEntryOrDefault(infoParsed, NameToken.Producer);
+            var creationDate = GetEntryOrDefault(infoParsed, NameToken.CreationDate);
+            var modifiedDate = GetEntryOrDefault(infoParsed, NameToken.ModDate);
 
             return new DocumentInformation(infoParsed, title, author, subject,
-                keywords, creator, producer);
+                keywords, creator, producer, creationDate, modifiedDate);
         }
 
         private static string GetEntryOrDefault(DictionaryToken infoDictionary, NameToken key)

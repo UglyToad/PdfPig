@@ -1,6 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.InlineImages
 {
+    using System;
+    using System.Collections.Generic;
     using System.IO;
+    using Tokens;
 
     /// <inheritdoc />
     /// <summary>
@@ -12,22 +15,27 @@
         /// The symbol for this operation in a stream.
         /// </summary>
         public const string Symbol = "ID";
-
-        /// <summary>
-        /// The instance of the <see cref="BeginInlineImageData"/> operation.
-        /// </summary>
-        public static readonly BeginInlineImageData Value = new BeginInlineImageData();
-
+        
         /// <inheritdoc />
         public string Operator => Symbol;
 
-        private BeginInlineImageData()
+        /// <summary>
+        /// The key-value pairs which specify attributes of the following image.
+        /// </summary>
+        public IReadOnlyDictionary<NameToken, IToken> Dictionary { get; }
+
+        /// <summary>
+        /// Create a new <see cref="BeginInlineImageData"/>.
+        /// </summary>
+        public BeginInlineImageData(IReadOnlyDictionary<NameToken, IToken> dictionary)
         {
+            Dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
         }
 
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
+            operationContext.SetInlineImageProperties(Dictionary);
         }
 
         /// <inheritdoc />

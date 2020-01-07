@@ -4,11 +4,6 @@
 
     internal static class InternalStringExtensions
     {
-        public static string ReplaceLimited(this string value, string old, string newValue, int count)
-        {
-            throw new NotImplementedException();
-        }
-
         public static bool StartsWithOffset(this string value, string start, int offset)
         {
             if (offset < 0)

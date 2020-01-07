@@ -4,11 +4,10 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
+    using PdfPig.Core;
     using PdfPig.Encryption;
-    using PdfPig.IO;
     using PdfPig.Tokenization.Scanner;
     using PdfPig.Tokens;
-    using PdfPig.Util;
     using Xunit;
 
     public class PdfTokenScannerTests

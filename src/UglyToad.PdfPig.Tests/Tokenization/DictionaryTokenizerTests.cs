@@ -3,6 +3,7 @@ namespace UglyToad.PdfPig.Tests.Tokenization
 {
     using System;
     using System.Collections.Generic;
+    using PdfPig.Core;
     using PdfPig.Tokenization;
     using PdfPig.Tokens;
     using Xunit;

@@ -16,10 +16,7 @@
         [Fact]
         public void CanReadContent()
         {
-            using (var document = PdfDocument.Open(GetFilename(), new ParsingOptions
-            {
-                UseLenientParsing = false
-            }))
+            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
                 var page = document.GetPage(1);
 
@@ -30,15 +27,12 @@
         [Fact]
         public void LettersHaveCorrectColors()
         {
-            using (var document = PdfDocument.Open(GetFilename(), new ParsingOptions
-            {
-                UseLenientParsing = false
-            }))
+            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
                 var page = document.GetPage(1);
 
                 // Pinkish.
-                var (r, g , b) = page.Letters[0].Color.ToRGBValues();
+                var (r, g, b) = page.Letters[0].Color.ToRGBValues();
 
                 Assert.Equal(1, r);
                 Assert.Equal(0.914m, g);
@@ -91,7 +85,7 @@
                 "Nations"
             };
 
-            using (var document = PdfDocument.Open(GetFilename()))
+            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
                 var page = document.GetPage(1);
 
@@ -104,8 +98,8 @@
         [Fact]
         public void Page4HasCorrectWords()
         {
-            var expected = WordsPage4.Split(new[] {"\r", "\r\n", "\n", " "}, StringSplitOptions.RemoveEmptyEntries);
-            using (var document = PdfDocument.Open(GetFilename()))
+            var expected = WordsPage4.Split(new[] { "\r", "\r\n", "\n", " " }, StringSplitOptions.RemoveEmptyEntries);
+            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
                 var page = document.GetPage(4);
 
@@ -118,10 +112,7 @@
         [Fact]
         public void CanReadPage9()
         {
-            using (var document = PdfDocument.Open(GetFilename(), new ParsingOptions
-            {
-                UseLenientParsing = false
-            }))
+            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
                 var page = document.GetPage(9);
 
@@ -132,7 +123,7 @@
         [Fact]
         public void HasCorrectNumberOfPages()
         {
-            using (var document = PdfDocument.Open(GetFilename()))
+            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
                 Assert.Equal(86, document.NumberOfPages);
             }
@@ -141,7 +132,7 @@
         [Fact]
         public void LettersHaveCorrectPosition()
         {
-            using (var document = PdfDocument.Open(GetFilename()))
+            using (var document = PdfDocument.Open(GetFilename(), ParsingOptions.LenientParsingOff))
             {
                 var page = document.GetPage(1);
                 var letters = page.Letters;

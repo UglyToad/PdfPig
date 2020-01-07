@@ -2,7 +2,7 @@
 {
     using System;
     using System.Linq;
-    using Exceptions;
+    using PdfPig.Core;
     using PdfPig.CrossReference;
     using PdfPig.Parser.FileStructure;
     using PdfPig.Tokenization.Scanner;

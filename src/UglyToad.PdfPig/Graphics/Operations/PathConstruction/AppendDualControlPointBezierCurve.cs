@@ -1,8 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.PathConstruction
 {
     using System.IO;
-    using Geometry;
-    
+    using PdfPig.Core;
+
     /// <inheritdoc />
     /// <summary>
     /// Append a cubic Bezier curve to the current path. 
@@ -19,19 +19,34 @@
         public string Operator => Symbol;
 
         /// <summary>
-        /// The first control point.
+        /// First control point x.
         /// </summary>
-        public PdfPoint ControlPoint1 { get; }
+        public decimal X1 { get; }
 
         /// <summary>
-        /// The second control point.
+        /// First control point y.
         /// </summary>
-        public PdfPoint ControlPoint2 { get; }
+        public decimal Y1 { get; }
 
         /// <summary>
-        /// The end point.
+        /// Second control point x.
         /// </summary>
-        public PdfPoint End { get; }
+        public decimal X2 { get; }
+
+        /// <summary>
+        /// Second control point y.
+        /// </summary>
+        public decimal Y2 { get; }
+
+        /// <summary>
+        /// End point x.
+        /// </summary>
+        public decimal X3 { get; }
+
+        /// <summary>
+        /// End point y.
+        /// </summary>
+        public decimal Y3 { get; }
 
         /// <summary>
         /// Create a new <see cref="AppendDualControlPointBezierCurve"/>.
@@ -44,17 +59,25 @@
         /// <param name="y3">End point y coordinate.</param>
         public AppendDualControlPointBezierCurve(decimal x1, decimal y1, decimal x2, decimal y2, decimal x3, decimal y3)
         {
-            ControlPoint1 = new PdfPoint(x1, y1);
-            ControlPoint2 = new PdfPoint(x2, y2);
-            End = new PdfPoint(x3, y3);
+            X1 = x1;
+            Y1 = y1;
+            X2 = x2;
+            Y2 = y2;
+            X3 = x3;
+            Y3 = y3;
+
         }
 
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var controlPoint1Transform = operationContext.CurrentTransformationMatrix.Transform(ControlPoint1);
-            var controlPoint2Transform = operationContext.CurrentTransformationMatrix.Transform(ControlPoint2);
-            var endTransform = operationContext.CurrentTransformationMatrix.Transform(End);
+            var controlPoint1 = new PdfPoint(X1, Y1);
+            var controlPoint2 = new PdfPoint(X2, Y2);
+            var end = new PdfPoint(X3, Y3);
+
+            var controlPoint1Transform = operationContext.CurrentTransformationMatrix.Transform(controlPoint1);
+            var controlPoint2Transform = operationContext.CurrentTransformationMatrix.Transform(controlPoint2);
+            var endTransform = operationContext.CurrentTransformationMatrix.Transform(end);
             operationContext.CurrentPath.BezierCurveTo(controlPoint1Transform.X, controlPoint1Transform.Y,
                 controlPoint2Transform.X, controlPoint2Transform.Y,
                 endTransform.X, endTransform.Y);
@@ -64,17 +87,17 @@
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            stream.WriteDecimal(ControlPoint1.X);
+            stream.WriteDecimal(X1);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(ControlPoint1.Y);
+            stream.WriteDecimal(Y1);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(ControlPoint2.X);
+            stream.WriteDecimal(X2);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(ControlPoint2.Y);
+            stream.WriteDecimal(Y2);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(End.X);
+            stream.WriteDecimal(X3);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(End.Y);
+            stream.WriteDecimal(Y3);
             stream.WriteWhiteSpace();
             stream.WriteText(Symbol);
             stream.WriteNewLine();
@@ -83,7 +106,7 @@
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"{ControlPoint1.X} {ControlPoint1.Y} {ControlPoint2.X} {ControlPoint2.Y} {End.X} {End.Y} {Symbol}";
+            return $"{X1} {Y1} {X2} {Y2} {X3} {Y3} {Symbol}";
         }
     }
 }

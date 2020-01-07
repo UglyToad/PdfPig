@@ -5,6 +5,11 @@
     using Tokens;
     using Util;
 
+    /// <inheritdoc />
+    /// <summary>
+    /// The LZW (Lempel-Ziv-Welch) filter is a variable-length, adaptive compression method
+    /// that has been adopted as one of the standard compression methods in the Tag Image File Format (TIFF) standard. 
+    /// </summary>
     internal class LzwFilter : IFilter
     {
         private const int DefaultColors = 1;
@@ -27,6 +32,10 @@
             this.pngPredictor = pngPredictor ?? throw new ArgumentNullException(nameof(pngPredictor));
         }
 
+        /// <inheritdoc />
+        public bool IsSupported { get; } = true;
+
+        /// <inheritdoc />
         public byte[] Decode(IReadOnlyList<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
             var parameters = decodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);

@@ -4,7 +4,8 @@
     using System.Collections.Generic;
     using System.Globalization;
     using System.Text;
-    using IO;
+    using Core;
+    using Exceptions;
     using Util.JetBrains.Annotations;
 
     /// <summary>
@@ -31,6 +32,8 @@
                 return objectLocations;
             }
 
+            var loopProtection = 0;
+
             var lastEndOfFile = GetLastEndOfFileMarker();
 
             var results = new Dictionary<IndirectReference, long>();
@@ -46,6 +49,17 @@
             bool endobjFound = false;
             do
             {
+                if (loopProtection >= 700_000)
+                {
+                    
+                }
+                if (loopProtection > 1_000_000)
+                {
+                    throw new PdfDocumentFormatException("Failed to brute-force search the file due to an infinite loop.");
+                }
+
+                loopProtection++;
+
                 if (inObject)
                 {
                     if (bytes.CurrentByte == 'e')
@@ -58,6 +72,7 @@
                             {
                                 inObject = false;
                                 endobjFound = true;
+                                loopProtection = 0;
 
                                 for (int i = 0; i < "endobj".Length; i++)
                                 {
@@ -81,6 +96,7 @@
                     {
                         bytes.MoveNext();
                         currentOffset++;
+                        loopProtection = 0;
                     }
 
                     continue;
@@ -123,11 +139,6 @@
                     bytes.Seek(offset);
                 }
 
-                if (!ReadHelper.IsWhitespace(bytes.CurrentByte))
-                {
-                    continue;
-                }
-
                 var obj = long.Parse(objectNumberBytes.ToString(), CultureInfo.InvariantCulture);
                 var generation = int.Parse(generationBytes.ToString(), CultureInfo.InvariantCulture);
 
@@ -139,6 +150,7 @@
                 currentOffset++;
 
                 bytes.Seek(currentOffset);
+                loopProtection = 0;
             } while (currentOffset < lastEndOfFile && !bytes.IsAtEnd());
 
             if ((lastEndOfFile < long.MaxValue || endobjFound) && lastObjOffset > 0)

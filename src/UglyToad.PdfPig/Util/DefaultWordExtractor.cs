@@ -5,8 +5,15 @@
     using System.Linq;
     using Content;
 
-    internal class DefaultWordExtractor : IWordExtractor
+    /// <summary>
+    /// Default Word Extractor.
+    /// </summary>
+    public class DefaultWordExtractor : IWordExtractor
     {
+        /// <summary>
+        /// Gets the words.
+        /// </summary>
+        /// <param name="letters">The letters in the page.</param>
         public IEnumerable<Word> GetWords(IReadOnlyList<Letter> letters)
         {
             var lettersOrder = letters.OrderByDescending(x => x.Location.Y)
@@ -14,8 +21,8 @@
 
             var lettersSoFar = new List<Letter>(10);
 
-            var y = default(decimal?);
-            var lastX = default(decimal?);
+            var y = default(double?);
+            var lastX = default(double?);
             var lastLetter = default(Letter);
             foreach (var letter in lettersOrder)
             {
@@ -41,7 +48,7 @@
                     continue;
                 }
 
-                if (letter.Location.Y > y.Value + 0.5m)
+                if (letter.Location.Y > y.Value + 0.5)
                 {
                     if (lettersSoFar.Count > 0)
                     {
@@ -63,10 +70,10 @@
 
                 var gap = letter.Location.X - (lastLetter.Location.X + lastLetter.Width);
                 var nextToLeft = letter.Location.X < lastX.Value - 1;
-                var nextBigSpace = gap > Math.Max(lastLetter.GlyphRectangle.Height, letter.GlyphRectangle.Height) * 0.39m;
+                var nextBigSpace = gap > Math.Max(lastLetter.GlyphRectangle.Height, letter.GlyphRectangle.Height) * 0.39;
                 var nextIsWhiteSpace = string.IsNullOrWhiteSpace(letter.Value);
-                var nextFontDiffers = !string.Equals(letter.FontName, lastLetter.FontName, StringComparison.OrdinalIgnoreCase) && gap > letter.Width * 0.1m;
-                var nextFontSizeDiffers = Math.Abs(letter.FontSize - lastLetter.FontSize) > 0.1m;
+                var nextFontDiffers = !string.Equals(letter.FontName, lastLetter.FontName, StringComparison.OrdinalIgnoreCase) && gap > letter.Width * 0.1;
+                var nextFontSizeDiffers = Math.Abs(letter.FontSize - lastLetter.FontSize) > 0.1;
                 var nextTextDirectionDiffers = letter.TextDirection != lastLetter.TextDirection;
 
                 if (nextToLeft || nextBigSpace || nextIsWhiteSpace || nextFontDiffers || nextFontSizeDiffers || nextTextDirectionDiffers)
@@ -99,6 +106,9 @@
             return new Word(letters.ToList());
         }
 
+        /// <summary>
+        /// Create an instance of Default Word Extractor, <see cref="DefaultWordExtractor"/>.
+        /// </summary>
         public static IWordExtractor Instance { get; } = new DefaultWordExtractor();
 
         private DefaultWordExtractor()

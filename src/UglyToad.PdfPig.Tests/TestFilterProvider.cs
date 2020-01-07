@@ -11,6 +11,11 @@
             return new List<IFilter>();
         }
 
+        public IReadOnlyList<IFilter> GetNamedFilters(IReadOnlyList<NameToken> names)
+        {
+            return new List<IFilter>();
+        }
+
         public IReadOnlyList<IFilter> GetAllFilters()
         {
             return new List<IFilter>();

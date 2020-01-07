@@ -1,10 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Parser.FileStructure
 {
     using System;
-    using System.Globalization;
-    using System.Text.RegularExpressions;
     using Content;
-    using Exceptions;
+    using Core;
     using Logging;
     using Tokenization.Scanner;
     using Tokens;
@@ -27,19 +25,10 @@
     /// This parser allows versions up to 1.9.
     /// For versions equal or greater to PDF 1.4, the optional Version entry in the document’s catalog dictionary should be used instead of the header version.
     /// </remarks>
-    internal class FileHeaderParser
+    internal static class FileHeaderParser
     {
-        private static readonly Regex VersionRegex = new Regex(@"[FP]DF-(?<version>1.\d)", RegexOptions.IgnoreCase);
-
-        private readonly ILog log;
-
-        public FileHeaderParser(ILog log)
-        {
-            this.log = log;
-        }
-
         [NotNull]
-        public HeaderVersion Parse([NotNull]ISeekableTokenScanner scanner, bool isLenientParsing)
+        public static HeaderVersion Parse([NotNull]ISeekableTokenScanner scanner, bool isLenientParsing, ILog log)
         {
             if (scanner == null)
             {
@@ -72,19 +61,17 @@
 
                 attempts++;
             }
-            
-            var match = VersionRegex.Match(comment.Data);
 
-            if (!match.Success || !decimal.TryParse(match.Groups["version"].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var version))
+            if (comment.Data.IndexOf("PDF-1.", StringComparison.OrdinalIgnoreCase) != 0 && comment.Data.IndexOf("FDF-1.", StringComparison.OrdinalIgnoreCase) != 0)
             {
-                if (isLenientParsing)
-                {
-                    log.Warn($"Did not find a version header of the correct format, defaulting to 1.4 since lenient. Header was: {comment.Data}.");
+                return HandleMissingVersion(comment, isLenientParsing, log);
+            }
 
-                    return new HeaderVersion(1.4m, "PDF-1.4");
-                }
+            const int toDecimalStartLength = 4;
 
-                throw new PdfDocumentFormatException($"The comment which should have provided the version was in the wrong format: {comment.Data}.");
+            if (!decimal.TryParse(comment.Data.Substring(toDecimalStartLength), out var version))
+            {
+                return HandleMissingVersion(comment, isLenientParsing, log);
             }
 
             scanner.Seek(0);
@@ -92,6 +79,18 @@
             var result = new HeaderVersion(version, comment.Data);
 
             return result;
+        }
+
+        private static HeaderVersion HandleMissingVersion(CommentToken comment, bool isLenientParsing, ILog log)
+        {
+            if (isLenientParsing)
+            {
+                log.Warn($"Did not find a version header of the correct format, defaulting to 1.4 since lenient. Header was: {comment.Data}.");
+
+                return new HeaderVersion(1.4m, "PDF-1.4");
+            }
+
+            throw new PdfDocumentFormatException($"The comment which should have provided the version was in the wrong format: {comment.Data}.");
         }
     }
 }

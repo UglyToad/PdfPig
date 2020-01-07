@@ -2,7 +2,7 @@
 {
     using System.Collections.Generic;
     using System.Linq;
-    using Geometry;
+    using Core;
 
     /// <summary>
     /// The corresponding named size of the <see cref="Page"/>.
@@ -135,11 +135,11 @@
 
         private struct WidthHeight
         {
-            public decimal Width { get; }
+            public double Width { get; }
 
-            public decimal Height { get; }
+            public double Height { get; }
 
-            public WidthHeight(decimal width, decimal height)
+            public WidthHeight(double width, double height)
             {
                 Width = width;
                 Height = height;

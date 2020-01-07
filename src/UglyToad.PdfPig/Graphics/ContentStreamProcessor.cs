@@ -3,14 +3,19 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Linq;
     using Colors;
     using Content;
     using Core;
+    using Exceptions;
+    using Filters;
     using Fonts;
     using Geometry;
     using IO;
     using Logging;
     using Operations;
+    using Parser;
+    using PdfFonts;
     using PdfPig.Core;
     using Tokenization.Scanner;
     using Tokens;
@@ -19,31 +24,49 @@
 
     internal class ContentStreamProcessor : IOperationContext
     {
+        /// <summary>
+        /// Stores each letter as it is encountered in the content stream.
+        /// </summary>
+        private readonly List<Letter> letters = new List<Letter>();
+
+        /// <summary>
+        /// Stores each path as it is encountered in the content stream.
+        /// </summary>
         private readonly List<PdfPath> paths = new List<PdfPath>();
+
+        /// <summary>
+        /// Stores a link to each image (either inline or XObject) as it is encountered in the content stream.
+        /// </summary>
+        private readonly List<Union<XObjectContentRecord, InlineImage>> images = new List<Union<XObjectContentRecord, InlineImage>>();
+
         private readonly IResourceStore resourceStore;
         private readonly UserSpaceUnit userSpaceUnit;
         private readonly PageRotationDegrees rotation;
         private readonly bool isLenientParsing;
         private readonly IPdfTokenScanner pdfScanner;
-        private readonly XObjectFactory xObjectFactory;
+        private readonly IPageContentParser pageContentParser;
+        private readonly IFilterProvider filterProvider;
         private readonly ILog log;
 
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
-        private IFont activeExtendedGraphicsStateFont = null;
+        private IFont activeExtendedGraphicsStateFont;
+        private InlineImageBuilder inlineImageBuilder;
+        private bool currentPathAdded;
 
-        //a sequence number of ShowText operation to determine whether letters belong to same operation or not (letters that belong to different operations have less changes to belong to same word)
-        private int textSequence = 0;
+        /// <summary>
+        /// A counter to track individual calls to <see cref="ShowText"/> operations used to determine if letters are likely to be
+        /// in the same word/group. This exposes internal grouping of letters used by the PDF creator which may correspond to the
+        /// intended grouping of letters into words.
+        /// </summary>
+        private int textSequence;
 
         public TextMatrices TextMatrices { get; } = new TextMatrices();
 
-        public TransformationMatrix CurrentTransformationMatrix
-        {
-            get { return GetCurrentState().CurrentTransformationMatrix; }
-        }
+        public TransformationMatrix CurrentTransformationMatrix => GetCurrentState().CurrentTransformationMatrix;
 
         public PdfPath CurrentPath { get; private set; }
 
-        public IColorSpaceContext ColorSpaceContext { get; } 
+        public IColorSpaceContext ColorSpaceContext { get; }
 
         public PdfPoint CurrentPosition { get; set; }
 
@@ -51,35 +74,36 @@
 
         private readonly Dictionary<XObjectType, List<XObjectContentRecord>> xObjects = new Dictionary<XObjectType, List<XObjectContentRecord>>
         {
-            {XObjectType.Form, new List<XObjectContentRecord>()},
             {XObjectType.Image, new List<XObjectContentRecord>()},
             {XObjectType.PostScript, new List<XObjectContentRecord>()}
         };
 
-        public List<Letter> Letters = new List<Letter>();
-        public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation, bool isLenientParsing,
+        public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation,
+            bool isLenientParsing,
             IPdfTokenScanner pdfScanner,
-            XObjectFactory xObjectFactory,
+            IPageContentParser pageContentParser,
+            IFilterProvider filterProvider,
             ILog log)
         {
             this.resourceStore = resourceStore;
             this.userSpaceUnit = userSpaceUnit;
             this.rotation = rotation;
             this.isLenientParsing = isLenientParsing;
-            this.pdfScanner = pdfScanner;
-            this.xObjectFactory = xObjectFactory;
+            this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
+            this.pageContentParser = pageContentParser ?? throw new ArgumentNullException(nameof(pageContentParser));
+            this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.log = log;
             graphicsStack.Push(new CurrentGraphicsState());
-            ColorSpaceContext = new ColorSpaceContext(GetCurrentState);
+            ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore);
         }
 
         public PageContent Process(IReadOnlyList<IGraphicsStateOperation> operations)
         {
-            var currentState = CloneAllStates();
+            CloneAllStates();
 
             ProcessOperations(operations);
 
-            return new PageContent(operations, Letters, paths, xObjects, pdfScanner, xObjectFactory, isLenientParsing);
+            return new PageContent(operations, letters, paths, images, pdfScanner, filterProvider, resourceStore, isLenientParsing);
         }
 
         private void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
@@ -127,7 +151,7 @@
             }
 
             var fontSize = currentState.FontState.FontSize;
-            var horizontalScaling = currentState.FontState.HorizontalScaling / 100m;
+            var horizontalScaling = currentState.FontState.HorizontalScaling / 100.0;
             var characterSpacing = currentState.FontState.CharacterSpacing;
             var rise = currentState.FontState.Rise;
 
@@ -138,7 +162,7 @@
 
             // TODO: this does not seem correct, produces the correct result for now but we need to revisit.
             // see: https://stackoverflow.com/questions/48010235/pdf-specification-get-font-size-in-points
-            var pointSize = decimal.Round(rotation.Rotate(transformationMatrix).Multiply(TextMatrices.TextMatrix).Multiply(fontSize).A, 2);
+            var pointSize = Math.Round(rotation.Rotate(transformationMatrix).Multiply(TextMatrices.TextMatrix).Multiply(fontSize).A, 2);
 
             while (bytes.MoveNext())
             {
@@ -153,27 +177,37 @@
                     unicode = new string((char)code, 1);
                 }
 
-                var wordSpacing = 0m;
+                var wordSpacing = 0.0;
                 if (code == ' ' && codeLength == 1)
                 {
                     wordSpacing += GetCurrentState().FontState.WordSpacing;
                 }
 
+                var textMatrix = TextMatrices.TextMatrix;
+
                 if (font.IsVertical)
                 {
-                    throw new NotImplementedException("Vertical fonts are currently unsupported, please submit a pull request or issue with an example file.");
+                    if (!(font is IVerticalWritingSupported verticalFont))
+                    {
+                        throw new InvalidOperationException($"Font {font.Name} was in vertical writing mode but did not implement {nameof(IVerticalWritingSupported)}.");
+                    }
+
+                    var positionVector = verticalFont.GetPositionVector(code);
+
+                    textMatrix = textMatrix.Translate(positionVector.X, positionVector.Y);
                 }
 
                 var boundingBox = font.GetBoundingBox(code);
 
                 var transformedGlyphBounds = rotation.Rotate(transformationMatrix)
-                    .Transform(TextMatrices.TextMatrix
-                    .Transform(renderingMatrix
-                    .Transform(boundingBox.GlyphBounds)));
+                    .Transform(textMatrix
+                        .Transform(renderingMatrix
+                            .Transform(boundingBox.GlyphBounds)));
 
                 var transformedPdfBounds = rotation.Rotate(transformationMatrix)
-                    .Transform(TextMatrices.TextMatrix
-                        .Transform(renderingMatrix.Transform(new PdfRectangle(0, 0, boundingBox.Width, 0))));
+                    .Transform(textMatrix
+                        .Transform(renderingMatrix
+                            .Transform(new PdfRectangle(0, 0, boundingBox.Width, 0))));
 
                 // If the text rendering mode calls for filling, the current nonstroking color in the graphics state is used; 
                 // if it calls for stroking, the current stroking color is used.
@@ -183,21 +217,25 @@
                     ? currentState.CurrentNonStrokingColor
                     : currentState.CurrentStrokingColor;
 
-                ShowGlyph(font, transformedGlyphBounds, 
-                    transformedPdfBounds.BottomLeft, 
-                    transformedPdfBounds.BottomRight, 
+                var letter = new Letter(unicode, transformedGlyphBounds,
+                    transformedPdfBounds.BottomLeft,
+                    transformedPdfBounds.BottomRight,
                     transformedPdfBounds.Width,
-                    unicode, 
                     fontSize,
+                    font.Name.Data,
                     color,
                     pointSize,
                     textSequence);
 
-                decimal tx, ty;
+                letters.Add(letter);
+
+                double tx, ty;
                 if (font.IsVertical)
                 {
+                    var verticalFont = (IVerticalWritingSupported)font;
+                    var displacement = verticalFont.GetDisplacementVector(code);
                     tx = 0;
-                    ty = boundingBox.GlyphBounds.Height * fontSize + characterSpacing + wordSpacing;
+                    ty = (displacement.Y * fontSize) + characterSpacing + wordSpacing;
                 }
                 else
                 {
@@ -205,9 +243,7 @@
                     ty = 0;
                 }
 
-                var translate = TransformationMatrix.GetTranslationMatrix(tx, ty);
-
-                TextMatrices.TextMatrix = translate.Multiply(TextMatrices.TextMatrix);
+                TextMatrices.TextMatrix = TextMatrices.TextMatrix.Translate(tx, ty);
             }
         }
 
@@ -220,7 +256,7 @@
             var textState = currentState.FontState;
 
             var fontSize = textState.FontSize;
-            var horizontalScaling = textState.HorizontalScaling / 100m;
+            var horizontalScaling = textState.HorizontalScaling / 100.0;
             var font = resourceStore.GetFont(textState.FontName);
 
             var isVertical = font.IsVertical;
@@ -229,9 +265,9 @@
             {
                 if (token is NumericToken number)
                 {
-                    var positionAdjustment = number.Data;
+                    var positionAdjustment = (double)number.Data;
 
-                    decimal tx, ty;
+                    double tx, ty;
                     if (isVertical)
                     {
                         tx = 0;
@@ -267,7 +303,7 @@
             var xObjectStream = resourceStore.GetXObject(xObjectName);
 
             // For now we will determine the type and store the object with the graphics state information preceding it.
-            // Then consumers of the page can request the object/s to be retrieved by type.
+            // Then consumers of the page can request the object(s) to be retrieved by type.
             var subType = (NameToken)xObjectStream.StreamDictionary.Data[NameToken.Subtype.Data];
 
             var state = GetCurrentState();
@@ -276,15 +312,15 @@
 
             if (subType.Equals(NameToken.Ps))
             {
-                xObjects[XObjectType.PostScript].Add(new XObjectContentRecord(XObjectType.PostScript, xObjectStream, matrix));
+                xObjects[XObjectType.PostScript].Add(new XObjectContentRecord(XObjectType.PostScript, xObjectStream, matrix, state.RenderingIntent));
             }
             else if (subType.Equals(NameToken.Image))
             {
-                xObjects[XObjectType.Image].Add(new XObjectContentRecord(XObjectType.Image, xObjectStream, matrix));
+                images.Add(Union<XObjectContentRecord, InlineImage>.One(new XObjectContentRecord(XObjectType.Image, xObjectStream, matrix, state.RenderingIntent)));
             }
             else if (subType.Equals(NameToken.Form))
             {
-                xObjects[XObjectType.Form].Add(new XObjectContentRecord(XObjectType.Form, xObjectStream, matrix));
+                ProcessFormXObject(xObjectStream);
             }
             else
             {
@@ -292,9 +328,67 @@
             }
         }
 
+        private void ProcessFormXObject(StreamToken formStream)
+        {
+            /*
+             * When a form XObject is invoked the following should happen:
+             *
+             * 1. Save the current graphics state, as if by invoking the q operator.
+             * 2. Concatenate the matrix from the form dictionary's Matrix entry with the current transformation matrix.
+             * 3. Clip according to the form dictionary's BBox entry.
+             * 4. Paint the graphics objects specified in the form's content stream.
+             * 5. Restore the saved graphics state, as if by invoking the Q operator.
+             */
+
+            var hasResources = formStream.StreamDictionary.TryGet<DictionaryToken>(NameToken.Resources, pdfScanner, out var formResources);
+            if (hasResources)
+            {
+                resourceStore.LoadResourceDictionary(formResources, isLenientParsing);
+            }
+
+            // 1. Save current state.
+            PushState();
+
+            var startState = GetCurrentState();
+
+            var formMatrix = TransformationMatrix.Identity;
+            if (formStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Matrix, pdfScanner, out var formMatrixToken))
+            {
+                formMatrix = TransformationMatrix.FromArray(formMatrixToken.Data.OfType<NumericToken>().Select(x => (double)x.Data).ToArray());
+            }
+
+            // 2. Update current transformation matrix.
+            var resultingTransformationMatrix = startState.CurrentTransformationMatrix.Multiply(formMatrix);
+
+            startState.CurrentTransformationMatrix = resultingTransformationMatrix;
+
+            var contentStream = formStream.Decode(filterProvider);
+
+            var operations = pageContentParser.Parse(new ByteArrayInputBytes(contentStream));
+
+            // 3. We don't respect clipping currently.
+
+            // 4. Paint the objects.
+            ProcessOperations(operations);
+
+            // 5. Restore saved state.
+            PopState();
+
+            if (hasResources)
+            {
+                resourceStore.UnloadResourceDictionary();
+            }
+        }
+
         public void BeginSubpath()
         {
+            if (CurrentPath != null && CurrentPath.Commands.Count > 0 && !currentPathAdded)
+            {
+                paths.Add(CurrentPath);
+            }
+
             CurrentPath = new PdfPath();
+            currentPathAdded = false;
         }
 
         public void StrokePath(bool close)
@@ -303,7 +397,11 @@
             {
                 ClosePath();
             }
-            paths.Add(CurrentPath);
+            else
+            {
+                paths.Add(CurrentPath);
+                currentPathAdded = true;
+            }
         }
 
         public void FillPath(bool close)
@@ -312,13 +410,19 @@
             {
                 ClosePath();
             }
-            paths.Add(CurrentPath);
+            else
+            {
+                paths.Add(CurrentPath);
+                currentPathAdded = true;
+            }
         }
 
         public void ClosePath()
         {
             CurrentPath.ClosePath();
+            paths.Add(CurrentPath);
             CurrentPath = null;
+            currentPathAdded = false;
         }
 
         public void SetNamedGraphicsState(NameToken stateName)
@@ -346,41 +450,64 @@
                 && fontArray.Data[0] is IndirectReferenceToken fontReference && fontArray.Data[1] is NumericToken sizeToken)
             {
                 currentGraphicsState.FontState.FromExtendedGraphicsState = true;
-                currentGraphicsState.FontState.FontSize = sizeToken.Data;
+                currentGraphicsState.FontState.FontSize = (double)sizeToken.Data;
                 activeExtendedGraphicsStateFont = resourceStore.GetFontDirectly(fontReference, isLenientParsing);
             }
         }
 
-        private void AdjustTextMatrix(decimal tx, decimal ty)
+        public void BeginInlineImage()
+        {
+            if (inlineImageBuilder != null && !isLenientParsing)
+            {
+                throw new PdfDocumentFormatException("Begin inline image (BI) command encountered while another inline image was active.");
+            }
+
+            inlineImageBuilder = new InlineImageBuilder();
+        }
+
+        public void SetInlineImageProperties(IReadOnlyDictionary<NameToken, IToken> properties)
+        {
+            if (inlineImageBuilder == null)
+            {
+                if (isLenientParsing)
+                {
+                    return;
+                }
+
+                throw new PdfDocumentFormatException("Begin inline image data (ID) command encountered without a corresponding begin inline image (BI) command.");
+            }
+
+            inlineImageBuilder.Properties = properties;
+        }
+
+        public void EndInlineImage(IReadOnlyList<byte> bytes)
+        {
+            if (inlineImageBuilder == null)
+            {
+                if (isLenientParsing)
+                {
+                    return;
+                }
+
+                throw new PdfDocumentFormatException("End inline image (EI) command encountered without a corresponding begin inline image (BI) command.");
+            }
+
+            inlineImageBuilder.Bytes = bytes;
+
+            var image = inlineImageBuilder.CreateInlineImage(CurrentTransformationMatrix, filterProvider, pdfScanner, GetCurrentState().RenderingIntent, resourceStore);
+
+            images.Add(Union<XObjectContentRecord, InlineImage>.Two(image));
+
+            inlineImageBuilder = null;
+        }
+
+        private void AdjustTextMatrix(double tx, double ty)
         {
             var matrix = TransformationMatrix.GetTranslationMatrix(tx, ty);
 
             var newMatrix = matrix.Multiply(TextMatrices.TextMatrix);
 
             TextMatrices.TextMatrix = newMatrix;
-        }
-
-        private void ShowGlyph(IFont font, PdfRectangle glyphRectangle,
-            PdfPoint startBaseLine, 
-            PdfPoint endBaseLine, 
-            decimal width, 
-            string unicode,
-            decimal fontSize,
-            IColor color,
-            decimal pointSize,
-            int textSequence)
-        {
-            var letter = new Letter(unicode, glyphRectangle, 
-                startBaseLine, 
-                endBaseLine,
-                width, 
-                fontSize, 
-                font.Name.Data,
-                color,
-                pointSize,
-                textSequence);
-
-            Letters.Add(letter);
         }
     }
 }

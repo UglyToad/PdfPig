@@ -3,7 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Exceptions;
+    using Core;
     using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
@@ -59,10 +59,10 @@
                 var name = GetNamedString(NameToken.Nm, annotationDictionary);
                 var modifiedDate = GetNamedString(NameToken.M, annotationDictionary);
 
-                var flags = (AnnotationFlags) 0;
+                var flags = (AnnotationFlags)0;
                 if (annotationDictionary.TryGet(NameToken.F, out var flagsToken) && DirectObjectFinder.TryGet(flagsToken, tokenScanner, out NumericToken flagsNumericToken))
                 {
-                    flags = (AnnotationFlags) flagsNumericToken.Int;
+                    flags = (AnnotationFlags)flagsNumericToken.Int;
                 }
 
                 var border = AnnotationBorder.Default;
@@ -82,7 +82,36 @@
                     border = new AnnotationBorder(horizontal, vertical, width, dashes);
                 }
 
-                yield return new Annotation(annotationDictionary, annotationType, rectangle, contents, name, modifiedDate, flags, border);
+                var quadPointRectangles = new List<QuadPointsQuadrilateral>();
+                if (annotationDictionary.TryGet(NameToken.Quadpoints, tokenScanner, out ArrayToken quadPointsArray))
+                {
+                    var values = new List<decimal>();
+                    for (var i = 0; i < quadPointsArray.Length; i++)
+                    {
+                        if (!(quadPointsArray[i] is NumericToken value))
+                        {
+                            continue;
+                        }
+
+                        values.Add(value.Data);
+
+                        if (values.Count == 8)
+                        {
+                            quadPointRectangles.Add(new QuadPointsQuadrilateral(new[]
+                            {
+                                new PdfPoint(values[0], values[1]), 
+                                new PdfPoint(values[2], values[3]), 
+                                new PdfPoint(values[4], values[5]), 
+                                new PdfPoint(values[6], values[7]) 
+                            }));
+
+                            values.Clear();
+                        }
+                    }
+                }
+
+                yield return new Annotation(annotationDictionary, annotationType, rectangle, contents, name, modifiedDate, flags, border,
+                    quadPointRectangles);
             }
         }
 

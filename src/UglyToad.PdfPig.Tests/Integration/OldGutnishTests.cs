@@ -41,7 +41,7 @@
             {
                 var page = document.GetPage(1);
 
-                var images = page.ExperimentalAccess.GetRawImages().ToList();
+                var images = page.GetImages().ToList();
                 Assert.Single(images);
             }
         }

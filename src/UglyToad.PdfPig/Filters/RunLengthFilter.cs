@@ -4,10 +4,19 @@
     using System.IO;
     using Tokens;
 
+    /// <inheritdoc />
+    /// <summary>
+    /// The Run Length filterencodes data in a simple byte-oriented format based on run length.
+    /// The encoded data is a sequence of runs, where each run consists of a length byte followed by 1 to 128 bytes of data.
+    /// </summary>
     internal class RunLengthFilter : IFilter
     {
         private const byte EndOfDataLength = 128;
 
+        /// <inheritdoc />
+        public bool IsSupported { get; } = true;
+
+        /// <inheritdoc />
         public byte[] Decode(IReadOnlyList<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
             using (var memoryStream = new MemoryStream())

@@ -24,7 +24,7 @@ namespace UglyToad.PdfPig.Graphics
         /// In horizontal writing mode a positive value will expand the distance between letters/glyphs.
         /// Default value 0.
         /// </remarks>
-        public decimal CharacterSpacing { get; set; } = 0;
+        public double CharacterSpacing { get; set; } = 0;
 
         /// <summary>
         /// As for <see cref="CharacterSpacing"/> but applies only for the space character (32).
@@ -32,18 +32,18 @@ namespace UglyToad.PdfPig.Graphics
         /// <remarks>
         /// Default value 0.
         /// </remarks>
-        public decimal WordSpacing { get; set; } = 0;
+        public double WordSpacing { get; set; } = 0;
 
         /// <summary>
         /// Adjusts the width of glyphs/letters by stretching (or compressing) them horizontally.
         /// Value is a percentage of the normal width.
         /// </summary>
-        public decimal HorizontalScaling { get; set; } = 100;
+        public double HorizontalScaling { get; set; } = 100;
 
         /// <summary>
         /// The vertical distance in unscaled text space units between the baselines of lines of text.
         /// </summary>
-        public decimal Leading { get; set; }
+        public double Leading { get; set; }
 
         /// <summary>
         /// The name of the currently active font.
@@ -53,7 +53,7 @@ namespace UglyToad.PdfPig.Graphics
         /// <summary>
         /// The current font size.
         /// </summary>
-        public decimal FontSize { get; set; }
+        public double FontSize { get; set; }
 
         /// <summary>
         /// The <see cref="TextRenderingMode"/> for glyph outlines.
@@ -71,7 +71,7 @@ namespace UglyToad.PdfPig.Graphics
         /// <remarks>
         /// Always applies to the vertical coordinate irrespective or writing mode.
         /// </remarks>
-        public decimal Rise { get; set; }
+        public double Rise { get; set; }
 
         /// <summary>
         /// Are all glyphs in a text object treated as a single elementary object for the purpose of the transparent imaging model?

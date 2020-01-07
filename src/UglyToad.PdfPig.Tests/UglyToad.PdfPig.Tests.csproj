@@ -29,6 +29,9 @@
     <Content Include="Integration\Documents\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Integration\SpecificTestDocuments\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -73,16 +76,14 @@
     <Content Include="Fonts\Type1\CMBX12.pfa" />
     <Content Include="Fonts\Type1\CMCSC10.pfa" />
     <Content Include="Fonts\Type1\Raleway-Black.pfb" />
-    <Content Include="Integration\SpecificTestDocuments\invalid-xref-loop.pdf" />
-    <Content Include="Integration\SpecificTestDocuments\custom-properties.pdf" />
     <Content Include="Parser\SimpleGoogleDocPageContent.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Codecov" Version="1.5.0" />
-    <PackageReference Include="coverlet.msbuild" Version="2.6.3">
+    <PackageReference Include="Codecov" Version="1.9.0" />
+    <PackageReference Include="coverlet.msbuild" Version="2.7.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
@@ -97,6 +98,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\UglyToad.PdfPig.Core\UglyToad.PdfPig.Core.csproj" />
+    <ProjectReference Include="..\UglyToad.PdfPig.Fonts\UglyToad.PdfPig.Fonts.csproj" />
+    <ProjectReference Include="..\UglyToad.PdfPig.Tokenization\UglyToad.PdfPig.Tokenization.csproj" />
+    <ProjectReference Include="..\UglyToad.PdfPig.Tokens\UglyToad.PdfPig.Tokens.csproj" />
     <ProjectReference Include="..\UglyToad.PdfPig\UglyToad.PdfPig.csproj" />
   </ItemGroup>
 

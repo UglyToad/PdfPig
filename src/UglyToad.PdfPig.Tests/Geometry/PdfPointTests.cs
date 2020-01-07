@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Geometry
 {
-    using PdfPig.Geometry;
+    using PdfPig.Core;
     using Xunit;
 
     public class PdfPointTests
@@ -28,8 +28,8 @@
         {
             var origin = new PdfPoint(0.534436, 0.32552);
 
-            Assert.Equal(0.534436m, origin.X);
-            Assert.Equal(0.32552m, origin.Y);
+            Assert.Equal(0.534436, origin.X);
+            Assert.Equal(0.32552, origin.Y);
         }
     }
 }

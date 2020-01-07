@@ -81,14 +81,14 @@
                 {
                     var page = document.GetPage(i + 1);
 
-                    var images = page.ExperimentalAccess.GetRawImages();
+                    var images = page.GetImages();
 
                     Assert.NotNull(images);
 
                     foreach (var image in images)
                     {
-                        Assert.True(image.Width > 0, $"Image had width of zero on page {i + 1}.");
-                        Assert.True(image.Height > 0, $"Image had height of zero on page {i + 1}.");
+                        Assert.True(image.WidthInSamples > 0, $"Image had width of zero on page {i + 1}.");
+                        Assert.True(image.HeightInSamples > 0, $"Image had height of zero on page {i + 1}.");
                     }
                 }
             }

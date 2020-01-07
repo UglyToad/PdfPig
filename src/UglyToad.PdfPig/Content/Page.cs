@@ -2,20 +2,24 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
+    using System.Text;
     using Annotations;
+    using Core;
     using Graphics.Operations;
     using Tokens;
     using Util;
     using Util.JetBrains.Annotations;
-    using XObjects;
-    using Geometry;
+    using Tokenization.Scanner;
 
     /// <summary>
     /// Contains the content and provides access to methods of a single page in the <see cref="PdfDocument"/>.
     /// </summary>
     public class Page
     {
+        private readonly AnnotationProvider annotationProvider;
+        private readonly IPdfTokenScanner pdfScanner;
+        private readonly Lazy<string> textLazy;
+
         /// <summary>
         /// The raw PDF dictionary token for this page in the document.
         /// </summary>
@@ -26,9 +30,12 @@
         /// </summary>
         public int Number { get; }
 
-        internal MediaBox MediaBox { get; }
+        /// <summary>
+        /// Defines the visible region of the page, content outside the <see cref="CropBox"/> is clipped/cropped.
+        /// </summary>
+        public CropBox CropBox { get; }
 
-        internal CropBox CropBox { get; }
+        internal MediaBox MediaBox { get; }
 
         internal PageContent Content { get; }
 
@@ -41,24 +48,24 @@
         /// The set of <see cref="Letter"/>s drawn by the PDF content.
         /// </summary>
         public IReadOnlyList<Letter> Letters => Content?.Letters ?? new Letter[0];
-        
+
         /// <summary>
         /// The full text of all characters on the page in the order they are presented in the PDF content.
         /// </summary>
-        public string Text { get; }
+        public string Text => textLazy.Value;
 
         /// <summary>
         /// Gets the width of the page in points.
         /// </summary>
-        public decimal Width { get; }
+        public double Width { get; }
 
         /// <summary>
         /// Gets the height of the page in points.
         /// </summary>
-        public decimal Height { get; }
+        public double Height { get; }
 
         /// <summary>
-        /// The size of the page according to the standard page sizes or Custom if no matching standard size found.
+        /// The size of the page according to the standard page sizes or <see cref="PageSize.Custom"/> if no matching standard size found.
         /// </summary>
         public PageSize Size { get; }
 
@@ -66,7 +73,7 @@
         /// The parsed graphics state operations in the content stream for this page. 
         /// </summary>
         public IReadOnlyList<IGraphicsStateOperation> Operations => Content.GraphicsStateOperations;
-
+        
         /// <summary>
         /// Access to members whose future locations within the API will change without warning.
         /// </summary>
@@ -74,13 +81,14 @@
         public Experimental ExperimentalAccess { get; }
 
         internal Page(int number, DictionaryToken dictionary, MediaBox mediaBox, CropBox cropBox, PageRotationDegrees rotation, PageContent content,
-            AnnotationProvider annotationProvider)
+            AnnotationProvider annotationProvider,
+            IPdfTokenScanner pdfScanner)
         {
             if (number <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(number), "Page number cannot be 0 or negative.");
             }
-
+            
             Dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
 
             Number = number;
@@ -88,13 +96,15 @@
             CropBox = cropBox;
             Rotation = rotation;
             Content = content;
-            Text = GetText(content);
+            textLazy = new Lazy<string>(() => GetText(Content));
 
             Width = mediaBox.Bounds.Width;
             Height = mediaBox.Bounds.Height;
 
             Size = mediaBox.Bounds.GetPageSize();
             ExperimentalAccess = new Experimental(this, annotationProvider);
+            this.annotationProvider = annotationProvider;
+            this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
         }
 
         private static string GetText(PageContent content)
@@ -104,7 +114,13 @@
                 return string.Empty;
             }
 
-            return string.Join(string.Empty, content.Letters.Select(x => x.Value));
+            var builder = new StringBuilder();
+            for (var i = 0; i < content.Letters.Count; i++)
+            {
+                builder.Append(content.Letters[i].Value);
+            }
+
+            return builder.ToString();
         }
 
         /// <summary>
@@ -122,6 +138,20 @@
         {
             return (wordExtractor ?? DefaultWordExtractor.Instance).GetWords(Letters);
         }
+
+        /// <summary>
+        /// Get the hyperlinks which link to external resources on the page.
+        /// These are based on the annotations on the page with a type of '/Link'.
+        /// </summary>
+        public IReadOnlyList<Hyperlink> GetHyperlinks()
+        {
+            return HyperlinkFactory.GetHyperlinks(this, pdfScanner, annotationProvider);
+        }
+
+        /// <summary>
+        /// Gets any images on the page.
+        /// </summary>
+        public IEnumerable<IPdfImage> GetImages() => Content.GetImages();
 
         /// <summary>
         /// Provides access to useful members which will change in future releases.
@@ -143,16 +173,6 @@
             }
 
             /// <summary>
-            /// Retrieve any images referenced in this page's content.
-            /// These are returned as <see cref="XObjectImage"/>s which are 
-            /// raw data from the PDF's content rather than images.
-            /// </summary>
-            public IEnumerable<XObjectImage> GetRawImages()
-            {
-                return page.Content.GetImages();
-            }
-
-            /// <summary>
             /// Get the annotation objects from the page.
             /// </summary>
             /// <returns>The lazily evaluated set of annotations on this page.</returns>
@@ -165,7 +185,7 @@
             /// Gets the calculated letter size in points.
             /// This is considered experimental because the calculated value is incorrect for some documents at present.
             /// </summary>
-            public decimal GetPointSize(Letter letter)
+            public double GetPointSize(Letter letter)
             {
                 return letter.PointSize;
             }

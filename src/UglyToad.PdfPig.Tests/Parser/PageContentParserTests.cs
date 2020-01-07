@@ -3,6 +3,7 @@
     using System;
     using System.IO;
     using System.Text.RegularExpressions;
+    using PdfPig.Core;
     using PdfPig.Graphics;
     using PdfPig.Graphics.Core;
     using PdfPig.Graphics.Operations.General;
@@ -13,7 +14,6 @@
     using PdfPig.Graphics.Operations.TextState;
     using PdfPig.Parser;
     using PdfPig.Tokens;
-    using PdfPig.Util;
     using Xunit;
 
     public class PageContentParserTests

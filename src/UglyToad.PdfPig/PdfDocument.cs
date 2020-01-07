@@ -1,18 +1,20 @@
 ﻿namespace UglyToad.PdfPig
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using AcroForms;
     using Content;
+    using Core;
     using CrossReference;
     using Encryption;
     using Exceptions;
     using Filters;
-    using IO;
     using Logging;
     using Parser;
     using Tokenization.Scanner;
     using Tokens;
+    using Outline;
     using Util.JetBrains.Annotations;
 
     /// <inheritdoc />
@@ -43,6 +45,7 @@
         private readonly IPdfTokenScanner pdfScanner;
 
         private readonly IFilterProvider filterProvider;
+        private readonly BookmarksProvider bookmarksProvider;
 
         [NotNull]
         private readonly Pages pages;
@@ -58,6 +61,11 @@
         /// </summary>
         [NotNull]
         public Structure Structure { get; }
+
+        /// <summary>
+        /// Access to rare or advanced features of the PDF specification.
+        /// </summary>
+        public AdvancedPdfDocumentAccess Advanced { get; }
 
         /// <summary>
         /// The version number of the PDF specification which this file conforms to, for example 1.4.
@@ -86,7 +94,8 @@
             EncryptionDictionary encryptionDictionary,
             IPdfTokenScanner pdfScanner,
             IFilterProvider filterProvider,
-            AcroFormFactory acroFormFactory)
+            AcroFormFactory acroFormFactory,
+            BookmarksProvider bookmarksProvider)
         {
             this.log = log;
             this.inputBytes = inputBytes;
@@ -96,9 +105,11 @@
             this.encryptionDictionary = encryptionDictionary;
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
+            this.bookmarksProvider = bookmarksProvider ?? throw new ArgumentNullException(nameof(bookmarksProvider));
             Information = information ?? throw new ArgumentNullException(nameof(information));
-            pages = new Pages(log, catalog, pageFactory, isLenientParsing, pdfScanner);
+            pages = new Pages(catalog, pageFactory, isLenientParsing, pdfScanner);
             Structure = new Structure(catalog, crossReferenceTable, pdfScanner);
+            Advanced = new AdvancedPdfDocumentAccess(pdfScanner, filterProvider, catalog, isLenientParsing);
             documentForm = new Lazy<AcroForm>(() => acroFormFactory.GetAcroForm(catalog));
         }
 
@@ -160,6 +171,17 @@
         }
 
         /// <summary>
+        /// Gets all pages in this document in order.
+        /// </summary>
+        public IEnumerable<Page> GetPages()
+        {
+            for (var i = 0; i < NumberOfPages; i++)
+            {
+                yield return GetPage(i + 1);
+            }
+        }
+
+        /// <summary>
         /// Get the document level metadata if present.
         /// The metadata is XML in the (Extensible Metadata Platform) XMP format.
         /// </summary>
@@ -186,18 +208,36 @@
         }
 
         /// <summary>
+        /// Gets the bookmarks if this document contains some.
+        /// </summary>
+        /// <remarks>This will throw a <see cref="ObjectDisposedException"/> if called on a disposed <see cref="PdfDocument"/>.</remarks>
+        public bool TryGetBookmarks(out Bookmarks bookmarks)
+        {
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException("Cannot access the bookmarks after the document is disposed.");
+            }
+
+            bookmarks = bookmarksProvider.GetBookmarks(Structure.Catalog);
+            if (bookmarks != null) return true;
+            return false;
+        }
+
+        /// <summary>
         /// Gets the form if this document contains one.
         /// </summary>
         /// <remarks>This will throw a <see cref="ObjectDisposedException"/> if called on a disposed <see cref="PdfDocument"/>.</remarks>
         /// <returns>An <see cref="AcroForm"/> from the document or <see langword="null"/> if not present.</returns>
-        internal AcroForm GetForm()
+        public bool TryGetForm(out AcroForm form)
         {
             if (isDisposed)
             {
                 throw new ObjectDisposedException("Cannot access the form after the document is disposed.");
             }
 
-            return documentForm.Value;
+            form = documentForm.Value;
+
+            return form != null;
         }
         
         /// <inheritdoc />
@@ -208,6 +248,8 @@
         {
             try
             {
+                Advanced.Dispose();
+                pdfScanner.Dispose();
                 inputBytes.Dispose();
             }
             catch (Exception ex)

@@ -1,62 +1,49 @@
-﻿namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
+﻿// ReSharper disable CompareOfFloatsByEqualityOperator
+namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
 {
     using System;
     using System.Globalization;
-    using System.IO;
     using System.Text;
     using System.Text.RegularExpressions;
+    using PdfPig.Core;
     using PdfPig.Fonts.TrueType;
     using PdfPig.Fonts.TrueType.Parser;
     using PdfPig.Fonts.TrueType.Tables;
-    using PdfPig.IO;
     using Xunit;
 
     public class TrueTypeFontParserTests
     {
-        private static byte[] GetFileBytes(string name)
-        {
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts", "TrueType");
-
-            name = name.EndsWith(".ttf") || name.EndsWith(".txt") ? name : name + ".ttf";
-
-            var file = Path.Combine(path, name);
-
-            return File.ReadAllBytes(file);
-        }
-
-        private readonly TrueTypeFontParser parser = new TrueTypeFontParser();
-
         [Fact]
         public void ParseRegularRoboto()
         {
-            var bytes = GetFileBytes("Roboto-Regular");
+            var bytes = TrueTypeTestHelper.GetFileBytes("Roboto-Regular");
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
-            var font = parser.Parse(input);
+            var font = TrueTypeFontParser.Parse(input);
 
             Assert.Equal(1, font.Version);
 
             Assert.Equal(1, font.TableRegister.HeaderTable.Version);
             Assert.Equal(1, font.TableRegister.HeaderTable.Revision);
 
-            Assert.Equal(1142661421, font.TableRegister.HeaderTable.CheckSumAdjustment);
-            Assert.Equal(1594834165, font.TableRegister.HeaderTable.MagicNumber);
+            Assert.Equal(1142661421u, font.TableRegister.HeaderTable.CheckSumAdjustment);
+            Assert.Equal(1594834165u, font.TableRegister.HeaderTable.MagicNumber);
 
             Assert.Equal(9, font.TableRegister.HeaderTable.Flags);
 
             Assert.Equal(2048, font.TableRegister.HeaderTable.UnitsPerEm);
 
             Assert.Equal(2008, font.TableRegister.HeaderTable.Created.Year);
-            Assert.Equal(10, font.TableRegister.HeaderTable.Created.Month);
-            Assert.Equal(13, font.TableRegister.HeaderTable.Created.Day);
+            Assert.Equal(09, font.TableRegister.HeaderTable.Created.Month);
+            Assert.Equal(12, font.TableRegister.HeaderTable.Created.Day);
             Assert.Equal(12, font.TableRegister.HeaderTable.Created.Hour);
             Assert.Equal(29, font.TableRegister.HeaderTable.Created.Minute);
             Assert.Equal(34, font.TableRegister.HeaderTable.Created.Second);
 
             Assert.Equal(2011, font.TableRegister.HeaderTable.Modified.Year);
-            Assert.Equal(12, font.TableRegister.HeaderTable.Modified.Month);
-            Assert.Equal(31, font.TableRegister.HeaderTable.Modified.Day);
+            Assert.Equal(11, font.TableRegister.HeaderTable.Modified.Month);
+            Assert.Equal(30, font.TableRegister.HeaderTable.Modified.Day);
             Assert.Equal(5, font.TableRegister.HeaderTable.Modified.Hour);
             Assert.Equal(13, font.TableRegister.HeaderTable.Modified.Minute);
             Assert.Equal(10, font.TableRegister.HeaderTable.Modified.Second);
@@ -72,7 +59,7 @@
 
             Assert.Equal(HeaderTable.FontDirection.StronglyLeftToRightWithNeutrals, font.TableRegister.HeaderTable.FontDirectionHint);
 
-            Assert.Equal(0, font.TableRegister.HeaderTable.IndexToLocFormat);
+            Assert.Equal(IndexToLocationTable.EntryFormat.Short, font.TableRegister.HeaderTable.IndexToLocFormat);
             Assert.Equal(0, font.TableRegister.HeaderTable.GlyphDataFormat);
         }
 
@@ -103,11 +90,11 @@
                 "prep 158516 77 251381919"
             };
 
-            var bytes = GetFileBytes("Roboto-Regular");
+            var bytes = TrueTypeTestHelper.GetFileBytes("Roboto-Regular");
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
-            var font = parser.Parse(input);
+            var font = TrueTypeFontParser.Parse(input);
 
             foreach (var s in data)
             {
@@ -135,39 +122,53 @@
         [Fact]
         public void ParseSimpleGoogleDocssGautmi()
         {
-            var bytes = GetFileBytes("google-simple-doc");
+            var bytes = TrueTypeTestHelper.GetFileBytes("google-simple-doc");
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
-            var font = parser.Parse(input);
+            var font = TrueTypeFontParser.Parse(input);
 
-            Assert.NotNull(font.TableRegister.GlyphTable);
+            Assert.NotNull(font.TableRegister.HeaderTable);
         }
 
         [Fact]
         public void ParseAndadaRegular()
         {
-            var bytes = GetFileBytes("Andada-Regular");
+            var bytes = TrueTypeTestHelper.GetFileBytes("Andada-Regular");
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
-            var font = parser.Parse(input);
-
-            Assert.NotNull(font.TableRegister.GlyphTable);
+            var font = TrueTypeFontParser.Parse(input);
 
             var name = font.Name;
 
             Assert.Equal("Andada Regular", name);
+
+            Assert.Equal(1.001999, font.TableRegister.HeaderTable.Revision, new DoubleComparer(5));
+
+            Assert.Equal(11, font.TableRegister.HeaderTable.Flags);
+
+            Assert.Equal(1000, font.TableRegister.HeaderTable.UnitsPerEm);
+
+            Assert.Equal(2011, font.TableRegister.HeaderTable.Created.Year);
+            Assert.Equal(9, font.TableRegister.HeaderTable.Created.Month);
+            Assert.Equal(30, font.TableRegister.HeaderTable.Created.Day);
+
+            Assert.Equal(2017, font.TableRegister.HeaderTable.Modified.Year);
+            Assert.Equal(5, font.TableRegister.HeaderTable.Modified.Month);
+            Assert.Equal(4, font.TableRegister.HeaderTable.Modified.Day);
         }
 
         [Fact]
         public void ParsePMingLiU()
         {
-            var bytes = GetFileBytes("PMingLiU");
+            var bytes = TrueTypeTestHelper.GetFileBytes("PMingLiU");
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
-            var font = parser.Parse(input);
+            var font = TrueTypeFontParser.Parse(input);
+
+            Assert.NotNull(font);
         }
 
         [Fact]
@@ -175,21 +176,21 @@
         {
             var regex = new Regex(@"\?: Width (?<width>\d+), Height: (?<height>\d+), Points: (?<points>\d+)");
 
-            var bytes = GetFileBytes("Roboto-Regular");
+            var bytes = TrueTypeTestHelper.GetFileBytes("Roboto-Regular");
 
             var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
 
-            var font = parser.Parse(input);
+            var font = TrueTypeFontParser.Parse(input);
 
-            var robotoGlyphs = Encoding.ASCII.GetString(GetFileBytes("Roboto-Regular.GlyphData.txt"));
+            var robotoGlyphs = Encoding.ASCII.GetString(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.GlyphData.txt"));
             var lines = robotoGlyphs.Split(new[] {"\r\n", "\r", "\n"}, StringSplitOptions.RemoveEmptyEntries);
 
             for (var i = 0; i < lines.Length; i++)
             {
                 var match = regex.Match(lines[i]);
 
-                var width = decimal.Parse(match.Groups["width"].Value, CultureInfo.InvariantCulture);
-                var height = decimal.Parse(match.Groups["height"].Value, CultureInfo.InvariantCulture);
+                var width = double.Parse(match.Groups["width"].Value, CultureInfo.InvariantCulture);
+                var height = double.Parse(match.Groups["height"].Value, CultureInfo.InvariantCulture);
                 var points = int.Parse(match.Groups["points"].Value, CultureInfo.InvariantCulture);
 
                 var glyph = font.TableRegister.GlyphTable.Glyphs[i];

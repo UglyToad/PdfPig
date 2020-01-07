@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.PathConstruction
 {
     using System.IO;
-    using Geometry;
+    using PdfPig.Core;
 
     /// <inheritdoc />
     /// <remarks>
@@ -18,9 +18,14 @@
         public string Operator => Symbol;
 
         /// <summary>
-        /// The lower left corner.
+        /// The x coordinate of the lower left corner.
         /// </summary>
-        public PdfPoint LowerLeft { get; }
+        public decimal LowerLeftX { get; }
+
+        /// <summary>
+        /// The y coordinate of the lower left corner.
+        /// </summary>
+        public decimal LowerLeftY { get; }
 
         /// <summary>
         /// The width of the rectangle.
@@ -41,7 +46,8 @@
         /// <param name="height">The height of the rectangle.</param>
         public AppendRectangle(decimal x, decimal y, decimal width, decimal height)
         {
-            LowerLeft = new PdfPoint(x, y);
+            LowerLeftX = x;
+            LowerLeftY = y;
 
             Width = width;
             Height = height;
@@ -50,17 +56,18 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
+            var lowerLeft = new PdfPoint(LowerLeftX, LowerLeftY);
             operationContext.BeginSubpath();
-            var lowerLeftTransform = operationContext.CurrentTransformationMatrix.Transform(LowerLeft);
-            operationContext.CurrentPath.Rectangle(lowerLeftTransform.X, lowerLeftTransform.Y, Width, Height);
+            var lowerLeftTransform = operationContext.CurrentTransformationMatrix.Transform(lowerLeft);
+            operationContext.CurrentPath.Rectangle(lowerLeftTransform.X, lowerLeftTransform.Y, (double)Width, (double)Height);
         }
 
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            stream.WriteDecimal(LowerLeft.X);
+            stream.WriteDecimal(LowerLeftX);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(LowerLeft.Y);
+            stream.WriteDecimal(LowerLeftY);
             stream.WriteWhiteSpace();
             stream.WriteDecimal(Width);
             stream.WriteWhiteSpace();
@@ -73,7 +80,7 @@
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"{LowerLeft.X} {LowerLeft.Y} {Width} {Height} {Symbol}";
+            return $"{LowerLeftX} {LowerLeftY} {Width} {Height} {Symbol}";
         }
     }
 }

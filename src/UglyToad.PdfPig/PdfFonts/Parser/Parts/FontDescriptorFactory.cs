@@ -1,0 +1,184 @@
+﻿namespace UglyToad.PdfPig.PdfFonts.Parser.Parts
+{
+    using System;
+    using Core;
+    using PdfPig.Parser.Parts;
+    using Tokenization.Scanner;
+    using Tokens;
+    using Util;
+    using Util.JetBrains.Annotations;
+
+    internal class FontDescriptorFactory
+    {
+        public FontDescriptor Generate(DictionaryToken dictionary, IPdfTokenScanner pdfScanner, bool isLenientParsing)
+        {
+            if (dictionary == null)
+            {
+                throw new ArgumentNullException(nameof(dictionary));
+            }
+
+            var name = GetFontName(dictionary, pdfScanner, isLenientParsing);
+            var family = GetFontFamily(dictionary);
+            var stretch = GetFontStretch(dictionary);
+            var flags = GetFlags(dictionary, isLenientParsing);
+            var bounding = GetBoundingBox(dictionary);
+            var charSet = GetCharSet(dictionary);
+            var fontFile = GetFontFile(dictionary);
+
+            return new FontDescriptor.Builder(name, flags)
+            {
+                 FontFamily = family,
+                 Stretch = stretch,
+                 FontWeight = GetDecimalOrDefault(dictionary, NameToken.FontWeight),
+                 BoundingBox = bounding,
+                 ItalicAngle = GetDecimalOrDefault(dictionary, NameToken.ItalicAngle),
+                 Ascent = GetDecimalOrDefault(dictionary, NameToken.Ascent),
+                 Descent = GetDecimalOrDefault(dictionary, NameToken.Descent),
+                 Leading = GetDecimalOrDefault(dictionary, NameToken.Leading),
+                 CapHeight = Math.Abs(GetDecimalOrDefault(dictionary, NameToken.CapHeight)),
+                 XHeight = Math.Abs(GetDecimalOrDefault(dictionary, NameToken.Xheight)),
+                 StemVertical = GetDecimalOrDefault(dictionary, NameToken.StemV),
+                 StemHorizontal = GetDecimalOrDefault(dictionary, NameToken.StemH),
+                 AverageWidth = GetDecimalOrDefault(dictionary, NameToken.AvgWidth),
+                 MaxWidth = GetDecimalOrDefault(dictionary, NameToken.MaxWidth),
+                 MissingWidth = GetDecimalOrDefault(dictionary, NameToken.MissingWidth),
+                 FontFile = fontFile,
+                 CharSet = charSet
+            }.Build();
+        }
+
+        private static decimal GetDecimalOrDefault(DictionaryToken dictionary, NameToken name)
+        {
+            if (!dictionary.TryGet(name, out var token) || !(token is NumericToken number))
+            {
+                return 0;
+            }
+
+            return number.Data;
+        }
+
+        private static NameToken GetFontName(DictionaryToken dictionary, IPdfTokenScanner scanner, bool isLenientParsing)
+        {
+            if (!dictionary.TryGet(NameToken.FontName, out var name) || !(name is NameToken nameToken))
+            {
+                if (name is IndirectReferenceToken nameReference)
+                {
+                    var indirectName = DirectObjectFinder.Get<NameToken>(nameReference, scanner);
+                    return indirectName;
+                }
+
+                if (isLenientParsing)
+                {
+                    nameToken = NameToken.Create(string.Empty);
+                }
+                else
+                {
+                    throw new InvalidOperationException("Could not parse the font descriptor, could not retrieve the font name. " + dictionary);
+                }
+            }
+
+            return nameToken;
+        }
+
+        private static string GetFontFamily(DictionaryToken dictionary)
+        {
+            if (dictionary.TryGet(NameToken.FontFamily, out var value) && value is StringToken fontFamily)
+            {
+                return fontFamily.Data;
+            }
+
+            return string.Empty;
+        }
+
+        private static FontStretch GetFontStretch(DictionaryToken dictionary)
+        {
+            if (!dictionary.TryGet(NameToken.FontStretch, out var stretch) || !(stretch is NameToken stretchName))
+            {
+                return FontStretch.Normal;
+            }
+
+            return stretchName.ConvertToFontStretch();
+        }
+
+        private static FontDescriptorFlags GetFlags(DictionaryToken dictionary, bool isLenientParsing)
+        {
+            var flags = dictionary.GetIntOrDefault(NameToken.Flags, -1);
+
+            if (flags == -1)
+            {
+                if (isLenientParsing)
+                {
+                    flags = 0;
+                }
+                else
+                {
+                    throw new InvalidOperationException("Font flags were not set correctly for the font descriptor: " + dictionary);
+                }
+            }
+
+            return (FontDescriptorFlags) flags;
+        }
+
+        private static PdfRectangle GetBoundingBox(DictionaryToken dictionary)
+        {
+            if (!dictionary.TryGet(NameToken.FontBbox, out var box) || !(box is ArrayToken boxArray))
+            {
+                return new PdfRectangle(0, 0, 0, 0);
+            }
+
+            if (boxArray.Data.Count != 4)
+            {
+                return new PdfRectangle(0, 0, 0, 0);
+            }
+
+            return boxArray.ToRectangle();
+        }
+
+        private static string GetCharSet(DictionaryToken dictionary)
+        {
+            if (!dictionary.TryGet(NameToken.CharSet, out var set) || !(set is NameToken setName))
+            {
+                return null;
+            }
+
+            return setName.Data;
+        }
+
+        [CanBeNull]
+        private static DescriptorFontFile GetFontFile(DictionaryToken dictionary)
+        {
+            if (dictionary.TryGet(NameToken.FontFile, out var value))
+            {
+                if (!(value is IndirectReferenceToken obj))
+                {
+                    throw new NotSupportedException("We currently expect the FontFile to be an object reference.");
+                }
+
+                return new DescriptorFontFile(obj, DescriptorFontFile.FontFileType.Type1);
+            }
+
+            if (dictionary.TryGet(NameToken.FontFile2, out value))
+            {
+                if (!(value is IndirectReferenceToken obj))
+                {
+                    throw new NotSupportedException("We currently expect the FontFile2 to be an object reference.");
+                }
+
+                return new DescriptorFontFile(obj, DescriptorFontFile.FontFileType.TrueType);
+            }
+
+            if (dictionary.TryGet(NameToken.FontFile3, out value))
+            {
+                if (!(value is IndirectReferenceToken obj))
+                {
+                    throw new NotSupportedException("We currently expect the FontFile3 to be an object reference.");
+                }
+
+                return new DescriptorFontFile(obj, DescriptorFontFile.FontFileType.FromSubtype);
+            }
+
+            return null;
+        }
+    }
+}
+

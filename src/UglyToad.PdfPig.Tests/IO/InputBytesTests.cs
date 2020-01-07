@@ -1,8 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.IO
 {
     using System.IO;
-    using PdfPig.IO;
-    using PdfPig.Util;
+    using System.Linq;
+    using PdfPig.Core;
     using Xunit;
 
     public class InputBytesTests
@@ -72,5 +72,158 @@
                 Assert.False(array.IsAtEnd());
             }
         }
+
+        [Fact]
+        public void ReadFromBeginningIsCorrect()
+        {
+            var bytes = StringToBytes("endstream and then <</go[]>>");
+
+            var buffer = new byte["endstream".Length];
+
+            var result = bytes.Read(buffer);
+
+            Assert.Equal(buffer.Length, result);
+            Assert.Equal("endstream", OtherEncodings.BytesAsLatin1String(buffer));
+
+            Assert.Equal((byte)'m', bytes.CurrentByte);
+            Assert.True(bytes.MoveNext());
+            Assert.True(bytes.MoveNext());
+            Assert.Equal((byte)'a', bytes.CurrentByte);
+        }
+
+        [Fact]
+        public void ReadMatchesMoveBehaviour()
+        {
+            var bytesRead = StringToBytes("cows in the south");
+            var bytesMove = StringToBytes("cows in the north");
+
+            const int readLength = 3;
+
+            var buffer = new byte[readLength];
+
+            var readResult = bytesRead.Read(buffer);
+
+            for (var i = 0; i < readLength; i++)
+            {
+                bytesMove.MoveNext();
+            }
+
+            Assert.Equal(readLength, readResult);
+
+            Assert.Equal(bytesRead.CurrentOffset, bytesMove.CurrentOffset);
+            Assert.Equal(bytesRead.CurrentByte, bytesMove.CurrentByte);
+            Assert.Equal(bytesRead.MoveNext(), bytesMove.MoveNext());
+            Assert.Equal(bytesRead.CurrentOffset, bytesMove.CurrentOffset);
+            Assert.Equal(bytesRead.CurrentByte, bytesMove.CurrentByte);
+        }
+
+        [Fact]
+        public void ReadFromMiddleIsCorrect()
+        {
+            var bytes = StringToBytes("aa stream <<>>");
+
+            Assert.True(bytes.MoveNext());
+            Assert.True(bytes.MoveNext());
+            Assert.True(bytes.MoveNext());
+
+            Assert.Equal((byte)' ', bytes.CurrentByte);
+
+            var buffer = new byte["stream".Length];
+
+            var result = bytes.Read(buffer);
+
+            Assert.Equal(buffer.Length, result);
+            Assert.Equal("stream", OtherEncodings.BytesAsLatin1String(buffer));
+
+            Assert.Equal((byte)'m', bytes.CurrentByte);
+            Assert.True(bytes.MoveNext());
+            Assert.True(bytes.MoveNext());
+            Assert.Equal((byte)'<', bytes.CurrentByte);
+        }
+
+        [Fact]
+        public void ReadPastEndIsCorrect()
+        {
+            var bytes = StringToBytes("stream");
+
+            Assert.True(bytes.MoveNext());
+            Assert.True(bytes.MoveNext());
+
+            var buffer = new byte["stream".Length];
+
+            var result = bytes.Read(buffer);
+
+            Assert.Equal(buffer.Length - 2, result);
+            Assert.Equal("ream", OtherEncodings.BytesAsLatin1String(buffer.Take(buffer.Length - 2).ToArray()));
+
+            Assert.Equal((byte)'m', bytes.CurrentByte);
+            Assert.True(bytes.IsAtEnd());
+            Assert.False(bytes.MoveNext());
+        }
+
+        [Fact]
+        public void ReadFromStreamBeginningIsCorrect()
+        {
+            var stream = StringToStream("endstream and then <</go[]>>");
+
+            var buffer = new byte["endstream".Length];
+
+            var result = stream.Read(buffer);
+
+            Assert.Equal(buffer.Length, result);
+            Assert.Equal("endstream", OtherEncodings.BytesAsLatin1String(buffer));
+
+            Assert.Equal((byte)'m', stream.CurrentByte);
+            Assert.True(stream.MoveNext());
+            Assert.True(stream.MoveNext());
+            Assert.Equal((byte)'a', stream.CurrentByte);
+        }
+
+        [Fact]
+        public void ReadFromStreamMiddleIsCorrect()
+        {
+            var stream = StringToStream("aa stream <<>>");
+
+            Assert.True(stream.MoveNext());
+            Assert.True(stream.MoveNext());
+            Assert.True(stream.MoveNext());
+
+            Assert.Equal((byte)' ', stream.CurrentByte);
+
+            var buffer = new byte["stream".Length];
+
+            var result = stream.Read(buffer);
+
+            Assert.Equal(buffer.Length, result);
+            Assert.Equal("stream", OtherEncodings.BytesAsLatin1String(buffer));
+
+            Assert.Equal((byte)'m', stream.CurrentByte);
+            Assert.True(stream.MoveNext());
+            Assert.True(stream.MoveNext());
+            Assert.Equal((byte)'<', stream.CurrentByte);
+        }
+
+        [Fact]
+        public void ReadPastStreamEndIsCorrect()
+        {
+            var stream = StringToStream("stream");
+
+            Assert.True(stream.MoveNext());
+            Assert.True(stream.MoveNext());
+
+            var buffer = new byte["stream".Length];
+
+            var result = stream.Read(buffer);
+
+            Assert.Equal(buffer.Length - 2, result);
+            Assert.Equal("ream", OtherEncodings.BytesAsLatin1String(buffer.Take(buffer.Length - 2).ToArray()));
+
+            Assert.Equal((byte)'m', stream.CurrentByte);
+            Assert.True(stream.IsAtEnd());
+            Assert.False(stream.MoveNext());
+        }
+
+        private static ByteArrayInputBytes StringToBytes(string str) => new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(str));
+        private static StreamInputBytes StringToStream(string str) => new StreamInputBytes(new MemoryStream(OtherEncodings.StringAsLatin1Bytes(str)));
     }
 }

@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using Core;
     using Exceptions;
     using Tokens;
     using Util;
@@ -39,9 +40,9 @@
         public IndirectReference? Info { get; }
 
         /// <summary>
-        /// A list containing two-byte strings which act as file identifiers.
+        /// A list containing two-byte string tokens which act as file identifiers.
         /// </summary>
-        public IReadOnlyList<string> Identifier { get; }
+        public IReadOnlyList<IDataToken<string>> Identifier { get; }
 
         /// <summary>
         /// The document's encryption dictionary.
@@ -77,17 +78,17 @@
 
             if (dictionary.TryGet(NameToken.Id, out ArrayToken arr))
             {
-                var ids = new List<string>(arr.Data.Count);
+                var ids = new List<IDataToken<string>>(arr.Data.Count);
 
                 foreach (var token in arr.Data)
                 {
                     if (token is StringToken str)
                     {
-                        ids.Add(str.Data);
+                        ids.Add(str);
                     }
                     else if (token is HexToken hex)
                     {
-                        ids.Add(hex.Data);
+                        ids.Add(hex);
                     }
                 }
 
@@ -95,7 +96,7 @@
             }
             else
             {
-                Identifier = EmptyArray<string>.Instance;
+                Identifier = EmptyArray<IDataToken<string>>.Instance;
             }
 
             if (dictionary.TryGet(NameToken.Encrypt, out var encryptionToken))

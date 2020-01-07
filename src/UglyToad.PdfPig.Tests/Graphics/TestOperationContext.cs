@@ -1,11 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Tests.Graphics
 {
     using System.Collections.Generic;
-    using PdfPig.Geometry;
+    using Content;
+    using PdfFonts;
     using PdfPig.Graphics;
-    using PdfPig.IO;
     using PdfPig.Tokens;
     using PdfPig.Core;
+    using Tokens;
 
     internal class TestOperationContext : IOperationContext
     {
@@ -29,7 +30,7 @@
         {
             StateStack.Push(new CurrentGraphicsState());
             CurrentPath = new PdfPath();
-            ColorSpaceContext = new ColorSpaceContext(GetCurrentState);
+            ColorSpaceContext = new ColorSpaceContext(GetCurrentState, new ResourceStore(new TestPdfTokenScanner(), new TestFontFactory()));
         }
 
         public CurrentGraphicsState GetCurrentState()
@@ -76,6 +77,26 @@
 
         public void SetNamedGraphicsState(NameToken stateName)
         {
+        }
+
+        public void BeginInlineImage()
+        {
+        }
+
+        public void SetInlineImageProperties(IReadOnlyDictionary<NameToken, IToken> properties)
+        {
+        }
+
+        public void EndInlineImage(IReadOnlyList<byte> bytes)
+        {
+        }
+
+        private class TestFontFactory : IFontFactory
+        {
+            public IFont Get(DictionaryToken dictionary, bool isLenientParsing)
+            {
+                return null;
+            }
         }
     }
 }

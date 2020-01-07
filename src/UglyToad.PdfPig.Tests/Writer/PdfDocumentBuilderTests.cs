@@ -1,13 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Tests.Writer
 {
-    using System;
     using System.IO;
     using System.Linq;
     using Content;
-    using PdfPig.Fonts;
-    using PdfPig.Geometry;
-    using PdfPig.Util;
+    using PdfPig.Core;
+    using PdfPig.Fonts.Standard14Fonts;
     using PdfPig.Writer;
+    using Tests.Fonts.TrueType;
     using Xunit;
 
     public class PdfDocumentBuilderTests
@@ -71,7 +70,7 @@
             PdfPageBuilder page = builder.AddPage(PageSize.A4);
 
             PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
-
+            
             page.AddText("Hello World!", 12, new PdfPoint(25, 520), font);
 
             var b = builder.Build();
@@ -102,10 +101,9 @@
             page.DrawRectangle(new PdfPoint(30, 200), 250, 100, 0.5m);
             page.DrawRectangle(new PdfPoint(30, 100), 250, 100, 0.5m);
 
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts", "TrueType");
-            var file = Path.Combine(path, "Andada-Regular.ttf");
+            var file = TrueTypeTestHelper.GetFileBytes("Andada-Regular.ttf");
 
-            var font = builder.AddTrueTypeFont(File.ReadAllBytes(file));
+            var font = builder.AddTrueTypeFont(file);
 
             var letters = page.AddText("Hello World!", 12, new PdfPoint(30, 50), font);
 
@@ -128,18 +126,96 @@
                 Assert.Equal("H", h.Value);
                 Assert.Equal("Andada-Regular", h.FontName);
 
+                var comparer = new DoubleComparer(0.01);
+                var pointComparer = new PointComparer(comparer);
+
                 for (int i = 0; i < page1.Letters.Count; i++)
                 {
                     var readerLetter = page1.Letters[i];
                     var writerLetter = letters[i];
 
                     Assert.Equal(readerLetter.Value, writerLetter.Value);
-                    Assert.Equal(readerLetter.Location, writerLetter.Location);
-                    Assert.Equal(readerLetter.FontSize, writerLetter.FontSize);
-                    Assert.Equal(readerLetter.GlyphRectangle.Width, writerLetter.GlyphRectangle.Width);
-                    Assert.Equal(readerLetter.GlyphRectangle.Height, writerLetter.GlyphRectangle.Height);
-                    Assert.Equal(readerLetter.GlyphRectangle.BottomLeft, writerLetter.GlyphRectangle.BottomLeft);
+                    Assert.Equal(readerLetter.Location, writerLetter.Location, pointComparer);
+                    Assert.Equal(readerLetter.FontSize, writerLetter.FontSize, comparer);
+                    Assert.Equal(readerLetter.GlyphRectangle.Width, writerLetter.GlyphRectangle.Width, comparer);
+                    Assert.Equal(readerLetter.GlyphRectangle.Height, writerLetter.GlyphRectangle.Height, comparer);
+                    Assert.Equal(readerLetter.GlyphRectangle.BottomLeft, writerLetter.GlyphRectangle.BottomLeft, pointComparer);
                 }
+            }
+        }
+
+        [Fact]
+        public void CanWriteRobotoAccentedCharacters()
+        {
+            var builder = new PdfDocumentBuilder();
+
+            builder.DocumentInformation.Title = "Hello Roboto!";
+
+            var page = builder.AddPage(PageSize.A4);
+            
+            var font = builder.AddTrueTypeFont(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf"));
+
+            page.AddText("eé", 12, new PdfPoint(30, 520), font);
+
+            Assert.NotEmpty(page.Operations);
+
+            var b = builder.Build();
+
+            WriteFile(nameof(CanWriteRobotoAccentedCharacters), b);
+
+            Assert.NotEmpty(b);
+
+            using (var document = PdfDocument.Open(b))
+            {
+                var page1 = document.GetPage(1);
+
+                Assert.Equal("eé", page1.Text);
+            }
+        }
+
+        [Fact]
+        public void WindowsOnlyCanWriteSinglePageAccentedCharactersSystemFont()
+        {
+            var builder = new PdfDocumentBuilder();
+
+            builder.DocumentInformation.Title = "Hello Windows!";
+
+            var page = builder.AddPage(PageSize.A4);
+
+            var file = @"C:\Windows\Fonts\Calibri.ttf";
+
+            if (!File.Exists(file))
+            {
+                return;
+            }
+
+            byte[] bytes;
+            try
+            {
+                bytes = File.ReadAllBytes(file);
+            }
+            catch
+            {
+                return;
+            }
+
+            var font = builder.AddTrueTypeFont(bytes);
+
+            page.AddText("eé", 12, new PdfPoint(30, 520), font);
+
+            Assert.NotEmpty(page.Operations);
+
+            var b = builder.Build();
+
+            WriteFile(nameof(WindowsOnlyCanWriteSinglePageAccentedCharactersSystemFont), b);
+
+            Assert.NotEmpty(b);
+
+            using (var document = PdfDocument.Open(b))
+            {
+                var page1 = document.GetPage(1);
+
+                Assert.Equal("eé", page1.Text);
             }
         }
 
@@ -193,17 +269,20 @@
                 Assert.Equal("H", h.Value);
                 Assert.Equal("BaskOldFace", h.FontName);
 
+                var comparer = new DoubleComparer(0.01);
+                var pointComparer = new PointComparer(comparer);
+
                 for (int i = 0; i < letters.Count; i++)
                 {
                     var readerLetter = page1.Letters[i];
                     var writerLetter = letters[i];
 
                     Assert.Equal(readerLetter.Value, writerLetter.Value);
-                    Assert.Equal(readerLetter.Location, writerLetter.Location);
-                    Assert.Equal(readerLetter.FontSize, writerLetter.FontSize);
-                    Assert.Equal(readerLetter.GlyphRectangle.Width, writerLetter.GlyphRectangle.Width);
-                    Assert.Equal(readerLetter.GlyphRectangle.Height, writerLetter.GlyphRectangle.Height);
-                    Assert.Equal(readerLetter.GlyphRectangle.BottomLeft, writerLetter.GlyphRectangle.BottomLeft);
+                    Assert.Equal(readerLetter.Location, writerLetter.Location, pointComparer);
+                    Assert.Equal(readerLetter.FontSize, writerLetter.FontSize, comparer);
+                    Assert.Equal(readerLetter.GlyphRectangle.Width, writerLetter.GlyphRectangle.Width, comparer);
+                    Assert.Equal(readerLetter.GlyphRectangle.Height, writerLetter.GlyphRectangle.Height, comparer);
+                    Assert.Equal(readerLetter.GlyphRectangle.BottomLeft, writerLetter.GlyphRectangle.BottomLeft, pointComparer);
                 }
             }
         }
@@ -214,10 +293,9 @@
             var builder = new PdfDocumentBuilder();
             var page = builder.AddPage(PageSize.A4);
             
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts", "TrueType");
-            var file = Path.Combine(path, "Roboto-Regular.ttf");
+            var file = TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf");
 
-            var font = builder.AddTrueTypeFont(File.ReadAllBytes(file));
+            var font = builder.AddTrueTypeFont(file);
 
             page.AddText("é (lower case, upper case É).", 9, 
                 new PdfPoint(30, page.PageSize.Height - 50), font);
@@ -239,21 +317,18 @@
             var builder = new PdfDocumentBuilder();
             var page1 = builder.AddPage(PageSize.A4);
             var page2 = builder.AddPage(PageSize.A4);
-
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fonts", "TrueType");
-            var file = Path.Combine(path, "Roboto-Regular.ttf");
-
-            var font = builder.AddTrueTypeFont(File.ReadAllBytes(file));
+            
+            var font = builder.AddTrueTypeFont(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf"));
 
             var topLine = new PdfPoint(30, page1.PageSize.Height - 60);
             var letters = page1.AddText("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor", 9, topLine, font);
             page1.AddText("incididunt ut labore et dolore magna aliqua.", 9, new PdfPoint(30, topLine.Y - letters.Max(x => x.GlyphRectangle.Height) - 5), font);
 
             var page2Letters = page2.AddText("The very hungry caterpillar ate all the apples in the garden.", 12, topLine, font);
-            var left = page2Letters[0].GlyphRectangle.Left;
-            var bottom = page2Letters.Min(x => x.GlyphRectangle.Bottom);
-            var right = page2Letters[page2Letters.Count - 1].GlyphRectangle.Right;
-            var top = page2Letters.Max(x => x.GlyphRectangle.Top);
+            var left = (decimal)page2Letters[0].GlyphRectangle.Left;
+            var bottom = (decimal)page2Letters.Min(x => x.GlyphRectangle.Bottom);
+            var right = (decimal)page2Letters[page2Letters.Count - 1].GlyphRectangle.Right;
+            var top = (decimal)page2Letters.Max(x => x.GlyphRectangle.Top);
             page2.SetStrokeColor(10, 250, 69);
             page2.DrawRectangle(new PdfPoint(left, bottom), right - left, top - bottom);
 
@@ -269,6 +344,28 @@
                 var page2Out = document.GetPage(2);
 
                 Assert.StartsWith("The very hungry caterpillar", page2Out.Text);
+            }
+        }
+        
+        [Fact]
+        public void CanWriteSinglePageWithCzechCharacters()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page = builder.AddPage(PageSize.A4);
+            
+            var font = builder.AddTrueTypeFont(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf"));
+
+            page.AddText("Hello: řó", 9,
+                new PdfPoint(30, page.PageSize.Height - 50), font);
+
+            var bytes = builder.Build();
+            WriteFile(nameof(CanWriteSinglePageWithCzechCharacters), bytes);
+
+            using (var document = PdfDocument.Open(bytes))
+            {
+                var page1 = document.GetPage(1);
+
+                Assert.Equal("Hello: řó", page1.Text);
             }
         }
 

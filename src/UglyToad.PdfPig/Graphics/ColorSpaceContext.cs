@@ -2,74 +2,139 @@
 {
     using System;
     using Colors;
+    using Content;
     using Tokens;
 
     internal class ColorSpaceContext : IColorSpaceContext
     {
         private readonly Func<CurrentGraphicsState> currentStateFunc;
+        private readonly IResourceStore resourceStore;
 
         public ColorSpace CurrentStrokingColorSpace { get; private set; } = ColorSpace.DeviceGray;
 
         public ColorSpace CurrentNonStrokingColorSpace { get; private set; } = ColorSpace.DeviceGray;
-       
-        public ColorSpaceContext(Func<CurrentGraphicsState> currentStateFunc)
+
+        public NameToken AdvancedStrokingColorSpace { get; private set; }
+
+        public NameToken AdvancedNonStrokingColorSpace { get; private set; }
+
+        public ColorSpaceContext(Func<CurrentGraphicsState> currentStateFunc, IResourceStore resourceStore)
         {
             this.currentStateFunc = currentStateFunc ?? throw new ArgumentNullException(nameof(currentStateFunc));
+            this.resourceStore = resourceStore ?? throw new ArgumentNullException(nameof(resourceStore));
         }
 
         public void SetStrokingColorspace(NameToken colorspace)
         {
+            void DefaultColorSpace(ColorSpace? colorSpaceActual = null)
+            {
+                if (colorSpaceActual.HasValue)
+                {
+                    switch (colorSpaceActual)
+                    {
+                        case ColorSpace.DeviceGray:
+                            currentStateFunc().CurrentStrokingColor = GrayColor.Black;
+                            break;
+                        case ColorSpace.DeviceRGB:
+                            currentStateFunc().CurrentStrokingColor = RGBColor.Black;
+                            break;
+                        case ColorSpace.DeviceCMYK:
+                            currentStateFunc().CurrentStrokingColor = CMYKColor.Black;
+                            break;
+                        default:
+                            currentStateFunc().CurrentStrokingColor = GrayColor.Black;
+                            break;
+                    }
+                }
+                else
+                {
+                    CurrentStrokingColorSpace = ColorSpace.DeviceGray;
+                    currentStateFunc().CurrentStrokingColor = GrayColor.Black;
+                }
+            }
+
+            AdvancedStrokingColorSpace = null;
+
             if (colorspace.TryMapToColorSpace(out var colorspaceActual))
             {
                 CurrentStrokingColorSpace = colorspaceActual;
-                switch (colorspaceActual)
+            }
+            else if (resourceStore.TryGetNamedColorSpace(colorspace, out var namedColorSpace))
+            {
+                if (namedColorSpace.Name == NameToken.Separation && namedColorSpace.Data is ArrayToken separationArray
+                                                                 && separationArray.Length == 4
+                                                                 && separationArray[2] is NameToken alternativeColorSpaceName
+                                                                 && alternativeColorSpaceName.TryMapToColorSpace(out colorspaceActual))
                 {
-                    case ColorSpace.DeviceGray:
-                        currentStateFunc().CurrentStrokingColor = GrayColor.Black;
-                        break;
-                    case ColorSpace.DeviceRGB:
-                        currentStateFunc().CurrentStrokingColor = RGBColor.Black;
-                        break;
-                    case ColorSpace.DeviceCMYK:
-                        currentStateFunc().CurrentStrokingColor = CMYKColor.Black;
-                        break;
-                    default:
-                        currentStateFunc().CurrentStrokingColor = GrayColor.Black;
-                        break;
+                    AdvancedStrokingColorSpace = namedColorSpace.Name;
+                    CurrentStrokingColorSpace = colorspaceActual;
+                    DefaultColorSpace(colorspaceActual);
+                }
+                else
+                {
+                    DefaultColorSpace();
                 }
             }
             else
             {
-                CurrentStrokingColorSpace = ColorSpace.DeviceGray;
-                currentStateFunc().CurrentStrokingColor = GrayColor.Black;
+                DefaultColorSpace();
             }
         }
 
         public void SetNonStrokingColorspace(NameToken colorspace)
         {
+            void DefaultColorSpace(ColorSpace? colorSpaceActual = null)
+            {
+                if (colorSpaceActual.HasValue)
+                {
+                    switch (colorSpaceActual)
+                    {
+                        case ColorSpace.DeviceGray:
+                            currentStateFunc().CurrentNonStrokingColor = GrayColor.Black;
+                            break;
+                        case ColorSpace.DeviceRGB:
+                            currentStateFunc().CurrentNonStrokingColor = RGBColor.Black;
+                            break;
+                        case ColorSpace.DeviceCMYK:
+                            currentStateFunc().CurrentNonStrokingColor = CMYKColor.Black;
+                            break;
+                        default:
+                            currentStateFunc().CurrentNonStrokingColor = GrayColor.Black;
+                            break;
+                    }
+                }
+                else
+                {
+                    CurrentNonStrokingColorSpace = ColorSpace.DeviceGray;
+                    currentStateFunc().CurrentNonStrokingColor = GrayColor.Black;
+                }
+            }
+
+            AdvancedNonStrokingColorSpace = null;
+
             if (colorspace.TryMapToColorSpace(out var colorspaceActual))
             {
                 CurrentNonStrokingColorSpace = colorspaceActual;
-                switch (colorspaceActual)
+            }
+            else if (resourceStore.TryGetNamedColorSpace(colorspace, out var namedColorSpace))
+            {
+                if (namedColorSpace.Name == NameToken.Separation && namedColorSpace.Data is ArrayToken separationArray
+                                                                 && separationArray.Length == 4
+                                                                 && separationArray[2] is NameToken alternativeColorSpaceName
+                                                                 && alternativeColorSpaceName.TryMapToColorSpace(out colorspaceActual))
                 {
-                    case ColorSpace.DeviceGray:
-                        currentStateFunc().CurrentNonStrokingColor = GrayColor.Black;
-                        break;
-                    case ColorSpace.DeviceRGB:
-                        currentStateFunc().CurrentNonStrokingColor = RGBColor.Black;
-                        break;
-                    case ColorSpace.DeviceCMYK:
-                        currentStateFunc().CurrentNonStrokingColor = CMYKColor.Black;
-                        break;
-                    default:
-                        currentStateFunc().CurrentNonStrokingColor = GrayColor.Black;
-                        break;
+                    AdvancedNonStrokingColorSpace = namedColorSpace.Name;
+                    CurrentNonStrokingColorSpace = colorspaceActual;
+                    DefaultColorSpace(colorspaceActual);
+                }
+                else
+                {
+                    DefaultColorSpace();
                 }
             }
             else
             {
-                CurrentNonStrokingColorSpace = ColorSpace.DeviceGray;
-                currentStateFunc().CurrentNonStrokingColor = GrayColor.Black;
+                DefaultColorSpace();
             }
         }
 

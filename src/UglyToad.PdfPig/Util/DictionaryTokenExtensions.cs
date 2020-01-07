@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Util
 {
     using System;
+    using Core;
     using Exceptions;
     using Geometry;
     using JetBrains.Annotations;
@@ -136,10 +137,10 @@
                 throw new PdfDocumentFormatException($"Cannot convert array to rectangle, expected 4 values instead got: {array}.");
             }
 
-            return new PdfRectangle(array.GetNumeric(0).Data,
-                array.GetNumeric(1).Data,
-                array.GetNumeric(2).Data,
-                array.GetNumeric(3).Data);
+            return new PdfRectangle(array.GetNumeric(0).Double,
+                array.GetNumeric(1).Double,
+                array.GetNumeric(2).Double,
+                array.GetNumeric(3).Double);
         }
 
         public static PdfRectangle ToIntRectangle(this ArrayToken array)

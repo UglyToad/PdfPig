@@ -5,11 +5,26 @@
 [![Build Status](https://dev.azure.com/pdfpig/pdfpig/_apis/build/status/UglyToad.PdfPig?branchName=master)](https://dev.azure.com/pdfpig/pdfpig/_build/latest?definitionId=1&branchName=master)
 [![codecov](https://codecov.io/gh/UglyToad/PdfPig/branch/master/graph/badge.svg)](https://codecov.io/gh/UglyToad/PdfPig)
 [![Gitter](https://badges.gitter.im/pdfpig/community.svg)](https://gitter.im/pdfpig/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![nuget](https://img.shields.io/nuget/dt/PdfPig)](https://www.nuget.org/packages/PdfPig/)
 
 This project allows users to read and extract text and other content from PDF files. In addition the library can be used to create simple PDF documents
 containing text and geometrical shapes.
 
 This project aims to port [PDFBox](https://github.com/apache/pdfbox) to C#.
+
+**Migrating to 0.1.x from 0.0.x?** Use this guide: [migration to 0.1.x](https://github.com/UglyToad/PdfPig/wiki/Migration-0.0.X-to-0.1.0).
+
+## Installation ##
+
+The package is available via the releases tab or from Nuget:
+
+https://www.nuget.org/packages/PdfPig/
+
+Or from the package manager console:
+
+    > Install-Package PdfPig
+
+While the version is below 1.0.0 minor versions will change the public API without warning (SemVer will not be followed until 1.0.0 is reached).
 
 ## Get Started ##
 
@@ -17,19 +32,18 @@ The simplest usage at this stage is to open a document, reading the words from e
 
     using (PdfDocument document = PdfDocument.Open(@"C:\Documents\document.pdf"))
     {
-        for (var i = 0; i < document.NumberOfPages; i++)
+        foreach (Page page in document.GetPages())
         {
-            // This starts at 1 rather than 0.
-            var page = document.GetPage(i + 1);
+            string pageText = page.Text;
 
-            foreach (var word in page.GetWords())
+            foreach (Word word in page.GetWords())
             {
                 Console.WriteLine(word.Text);
             }
         }
     }
 
-New in v0.0.5 - To create documents use the class ```PdfDocumentBuilder```. Though they are deprecated within the PDF specification the Standard 14 fonts provide a quick way to get started:
+To create documents use the class ```PdfDocumentBuilder```. The Standard 14 fonts provide a quick way to get started:
 
     PdfDocumentBuilder builder = new PdfDocumentBuilder();
 
@@ -44,19 +58,7 @@ New in v0.0.5 - To create documents use the class ```PdfDocumentBuilder```. Thou
 
     File.WriteAllBytes(@"C:\git\newPdf.pdf", documentBytes);
 
-Each font must be registered with the PdfDocumentBuilder prior to use enable pages to share the font resources. Currently only Standard 14 fonts and TrueType fonts (.ttf) are supported.
-
-## Installation ##
-
-The package is available via the releases tab or from Nuget:
-
-https://www.nuget.org/packages/PdfPig/
-
-Or from the package manager console:
-
-    > Install-Package PdfPig
-
-While the version is below 1.0.0 minor versions will change the public API without warning (SemVer will not be followed until 1.0.0 is reached).
+Each font must be registered with the PdfDocumentBuilder prior to use enable pages to share the font resources. Only Standard 14 fonts and TrueType fonts (.ttf) are supported.
 
 ## Usage ##
 
@@ -69,6 +71,7 @@ The ```PdfDocument``` class provides access to the contents of a document loaded
     {
         int pageCount = document.NumberOfPages;
 
+        // Page number starts from 1, not 0.
         Page page = document.GetPage(1);
 
         decimal widthInPoints = page.Width;
@@ -79,17 +82,26 @@ The ```PdfDocument``` class provides access to the contents of a document loaded
     
 ```PdfDocument``` should only be used in a ```using``` statement since it implements ```IDisposable``` (unless the consumer disposes of it elsewhere).
 
-Documents which are encrypted using the RC4 algorithm can be opened with PdfPig (AES is unsupported at the moment). To provide an owner or user password provide the optional `ParsingOptions` when calling `Open` with the `Password` property defined.
+Encrypted documents can be opened by PdfPig. To provide an owner or user password provide the optional `ParsingOptions` when calling `Open` with the `Password` property defined. For example:
 
-Since this is alpha software the consumer should wrap all access in a ```try catch``` block since it is extremely likely to throw exceptions. As a fallback you can try running PDFBox using [IKVM](https://www.ikvm.net/) or using [PDFsharp](http://www.pdfsharp.net) or by a native library wrapper using [docnet](https://github.com/GowenGit/docnet).
+    using (PdfDocument document = PdfDocument.Open(@"C:\my-file.pdf",  new ParsingOptions { Password = "password here" }))
+
+You can also provide a list of passwords to try:
+
+    using (PdfDocument document = PdfDocument.Open(@"C:\file.pdf", new ParsingOptions 
+    { 
+        Passwords = new List<string> { "One", "Two" } 
+    }))
 
 The document contains the version of the PDF specification it complies with, accessed by ```document.Version```:
 
     decimal version = document.Version;
 
-### Document Creation ###
+### Document Creation (0.0.5) ###
 
-New in v0.0.5 - The ```PdfDocumentBuilder``` creates a new document with no pages or content. First, for text content, a font must be registered with the builder. Currently this supports Standard 14 fonts provided by Adobe by default and TrueType format fonts.
+The ```PdfDocumentBuilder``` creates a new document with no pages or content. 
+
+For text content, a font must be registered with the builder. This library supports Standard 14 fonts provided by Adobe by default and TrueType format fonts.
 
 To add a Standard 14 font use:
 
@@ -152,9 +164,9 @@ The ```PdfDocument``` provides access to the document metadata as ```DocumentInf
     string title = document.Information.Title;
     // etc...
 
-### Document Structure ###
+### Document Structure (0.0.3) ###
 
-New in 0.0.3 the document now has a Structure member:
+The document now has a Structure member:
 
     UglyToad.PdfPig.Structure structure = document.Structure;
 
@@ -213,13 +225,50 @@ These letters contain:
 
 Letter position is measured in PDF coordinates where the origin is the lower left corner of the page. Therefore a higher Y value means closer to the top of the page.
 
-### Annotations ###
+### Annotations (0.0.5) ###
 
-New in v0.0.5 - Early support for retrieving annotations on each page is provided using the method:
+Early support for retrieving annotations on each page is provided using the method:
 
     page.ExperimentalAccess.GetAnnotations()
 
 This call is not cached and the document must not have been disposed prior to use. The annotations API may change in future.
+
+### Bookmarks (0.0.10) ###
+
+The bookmarks (outlines) of a document may be retrieved at the document level:
+
+    bool hasBookmarks = document.TryGetBookmarks(out Bookmarks bookmarks);
+
+This will return `false` if the document does not define any bookmarks.
+
+### Forms (0.0.10) ###
+
+Form fields for interactive forms (AcroForms) can be retrieved using:
+
+    bool hasForm = document.TryGetForm(out AcroForm form);
+
+This will return `false` if the document does not contain a form.
+
+The fields can be accessed using the `AcroForm`'s `Fields` property. Since the form is defined at the document level this will return fields from all pages in the document. Fields are of the types defined by the enum `AcroFieldType`, for example `PushButton`, `Checkbox`, `Text`, etc.
+
+### Hyperlinks (0.1.0) ###
+
+A page has a method to extract hyperlinks (annotations of link type):
+
+    IReadOnlyList<UglyToad.PdfPig.Content.Hyperlink> hyperlinks = page.GetHyperlinks();
+
+### TrueType (0.1.0) ###
+
+The classes used to work with TrueType fonts in the PDF file are now available for public consumption. Given an input file:
+
+    using UglyToad.PdfPig.Fonts.TrueType;
+    using UglyToad.PdfPig.Fonts.TrueType.Parser;
+
+    byte[] fontBytes = System.IO.File.ReadAllBytes(@"C:\font.ttf");
+    TrueTypeDataBytes input = new TrueTypeDataBytes(fontBytes);
+    TrueTypeFont font = TrueTypeFontParser.Parse(input);
+
+The parsed font can then be inspected.
 
 ## Issues ##
 
