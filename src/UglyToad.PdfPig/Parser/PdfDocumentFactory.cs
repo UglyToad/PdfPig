@@ -122,10 +122,13 @@
             var cidFontFactory = new CidFontFactory(pdfScanner, fontDescriptorFactory, filterProvider);
             var encodingReader = new EncodingReader(pdfScanner);
 
+            var type1Handler = new Type1FontHandler(pdfScanner, filterProvider, fontDescriptorFactory, encodingReader);
+
             var fontFactory = new FontFactory(log, new Type0FontHandler(cidFontFactory,
                 filterProvider, pdfScanner),
-                new TrueTypeFontHandler(log, pdfScanner, filterProvider, fontDescriptorFactory, encodingReader, new SystemFontFinder()),
-                new Type1FontHandler(pdfScanner, filterProvider, fontDescriptorFactory, encodingReader),
+                new TrueTypeFontHandler(log, pdfScanner, filterProvider, fontDescriptorFactory, encodingReader, new SystemFontFinder(),
+                    type1Handler),
+                type1Handler,
                 new Type3FontHandler(pdfScanner, filterProvider, encodingReader));
             
             var resourceContainer = new ResourceStore(pdfScanner, fontFactory);
