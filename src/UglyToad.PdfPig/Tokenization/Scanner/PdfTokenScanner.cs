@@ -671,7 +671,7 @@
 
             while (MoveNext())
             {
-                objectLocationProvider.Cache((ObjectToken)CurrentToken);
+                objectLocationProvider.Cache((ObjectToken)CurrentToken, true);
             }
 
             if (!objectLocationProvider.TryGetCached(reference, out objectToken))

@@ -25,7 +25,7 @@
             return false;
         }
 
-        public void Cache(ObjectToken objectToken)
+        public void Cache(ObjectToken objectToken, bool force = false)
         {
         }
     }

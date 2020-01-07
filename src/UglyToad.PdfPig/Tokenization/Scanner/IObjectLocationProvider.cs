@@ -15,7 +15,7 @@
 
         bool TryGetCached(IndirectReference reference, out ObjectToken objectToken);
 
-        void Cache(ObjectToken objectToken);
+        void Cache(ObjectToken objectToken, bool force = false);
     }
 
     internal class ObjectLocationProvider : IObjectLocationProvider
@@ -83,21 +83,19 @@
             return cache.TryGetValue(reference, out objectToken);
         }
 
-        public void Cache(ObjectToken objectToken)
+        public void Cache(ObjectToken objectToken, bool force = false)
         {
             if (objectToken == null)
             {
                 throw new ArgumentNullException();
             }
 
-            if (cache.TryGetValue(objectToken.Number, out var existing))
+            // Don't cache incorrect locations.
+            var crossReference = crossReferenceTable();
+            if (!force && crossReference != null && crossReference.ObjectOffsets.TryGetValue(objectToken.Number, out var expected)
+                && objectToken.Position != expected)
             {
-                var crossReference = crossReferenceTable();
-                if (crossReference != null && crossReference.ObjectOffsets.TryGetValue(objectToken.Number, out var expected)
-                    && existing.Position == expected)
-                {
-                    return;
-                }
+                return;
             }
 
             cache[objectToken.Number] = objectToken;
