@@ -36,9 +36,9 @@
         /// </summary>
         private readonly List<IToken> readTokens = new List<IToken>();
 
-        // Store the previous 2 tokens and their positions so we can backtrack to find object numbers and stream dictionaries.
-        private readonly long[] previousTokenPositions = new long[2];
-        private readonly IToken[] previousTokens = new IToken[2];
+        // Store the previous 3 tokens and their positions so we can backtrack to find object numbers and stream dictionaries.
+        private readonly long[] previousTokenPositions = new long[3];
+        private readonly IToken[] previousTokens = new IToken[3];
 
         public IToken CurrentToken { get; private set; }
 
@@ -82,8 +82,11 @@
                 previousTokens[0] = previousTokens[1];
                 previousTokenPositions[0] = previousTokenPositions[1];
 
-                previousTokens[1] = coreTokenScanner.CurrentToken;
-                previousTokenPositions[1] = coreTokenScanner.CurrentTokenStart;
+                previousTokens[1] = previousTokens[2];
+                previousTokenPositions[1] = previousTokenPositions[2];
+
+                previousTokens[2] = coreTokenScanner.CurrentToken;
+                previousTokenPositions[2] = coreTokenScanner.CurrentTokenStart;
             }
 
             // We only read partial tokens.
@@ -92,21 +95,21 @@
                 return false;
             }
 
-            var startPosition = previousTokenPositions[0];
-            var objectNumber = previousTokens[0] as NumericToken;
-            var generation = previousTokens[1] as NumericToken;
+            var startPosition = previousTokenPositions[1];
+            var objectNumber = previousTokens[1] as NumericToken;
+            var generation = previousTokens[2] as NumericToken;
 
             if (objectNumber == null || generation == null)
             {
                 // Handle case where the scanner correctly reads most of an object token but includes too much of the first token
                 // specifically %%EOF1 0 obj where scanning starts from 'F'.
-                if (generation != null && previousTokens[0] is OperatorToken op)
+                if (generation != null && previousTokens[1] is OperatorToken op)
                 {
                     var match = EndsWithNumberRegex.Match(op.Data);
 
                     if (match.Success && int.TryParse(match.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var number))
                     {
-                        startPosition = previousTokenPositions[0] + match.Index;
+                        startPosition = previousTokenPositions[1] + match.Index;
                         objectNumber = new NumericToken(number);
                     }
                     else
@@ -120,6 +123,7 @@
                 }
             }
 
+            var readStream = false;
             // Read all tokens between obj and endobj.
             while (coreTokenScanner.MoveNext() && !Equals(coreTokenScanner.CurrentToken, OperatorToken.EndObject))
             {
@@ -130,6 +134,13 @@
 
                 if (ReferenceEquals(coreTokenScanner.CurrentToken, OperatorToken.StartObject))
                 {
+                    if (readStream && readTokens[0] is StreamToken streamRead)
+                    {
+                        readTokens.Clear();
+                        readTokens.Add(streamRead);
+                        coreTokenScanner.Seek(previousTokenPositions[0]);
+                        break;
+                    }
                     // This should never happen.
                     Debug.Assert(false, "Encountered a start object 'obj' operator before the end of the previous object.");
                     return false;
@@ -153,6 +164,7 @@
                         {
                             readTokens.Clear();
                             readTokens.Add(stream);
+                            readStream = true;
                         }
                     }
                     finally
@@ -168,11 +180,14 @@
                 previousTokens[0] = previousTokens[1];
                 previousTokenPositions[0] = previousTokenPositions[1];
 
-                previousTokens[1] = coreTokenScanner.CurrentToken;
-                previousTokenPositions[1] = coreTokenScanner.CurrentPosition;
+                previousTokens[1] = previousTokens[2];
+                previousTokenPositions[1] = previousTokenPositions[2];
+
+                previousTokens[2] = coreTokenScanner.CurrentToken;
+                previousTokenPositions[2] = coreTokenScanner.CurrentTokenStart;
             }
 
-            if (!ReferenceEquals(coreTokenScanner.CurrentToken, OperatorToken.EndObject))
+            if (!readStream && !ReferenceEquals(coreTokenScanner.CurrentToken, OperatorToken.EndObject))
             {
                 readTokens.Clear();
                 return false;
@@ -495,18 +510,18 @@
         private DictionaryToken GetStreamDictionary()
         {
             DictionaryToken streamDictionaryToken;
-            if (previousTokens[1] is DictionaryToken firstDictionary)
+            if (previousTokens[2] is DictionaryToken firstDictionary)
             {
                 streamDictionaryToken = firstDictionary;
             }
-            else if (previousTokens[0] is DictionaryToken secondDictionary)
+            else if (previousTokens[1] is DictionaryToken secondDictionary)
             {
                 streamDictionaryToken = secondDictionary;
             }
             else
             {
                 throw new PdfDocumentFormatException("No dictionary token was found prior to the 'stream' operator. Previous tokens were:" +
-                                                     $" {previousTokens[1]} and {previousTokens[0]}.");
+                                                     $" {previousTokens[2]} and {previousTokens[1]}.");
             }
 
             return streamDictionaryToken;
