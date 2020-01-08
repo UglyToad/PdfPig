@@ -24,6 +24,14 @@
 
     internal class ContentStreamProcessor : IOperationContext
     {
+        private readonly Stack<PdfMarkedContent> queuedMarkedContents = new Stack<PdfMarkedContent>();
+        private int currentMarkedContentId;
+
+        /// <summary>
+        /// Stores each marked content as it is encountered in the content stream.
+        /// </summary>
+        private readonly List<PdfMarkedContent> markedContents = new List<PdfMarkedContent>();
+
         /// <summary>
         /// Stores each letter as it is encountered in the content stream.
         /// </summary>
@@ -103,7 +111,7 @@
 
             ProcessOperations(operations);
 
-            return new PageContent(operations, letters, paths, images, pdfScanner, filterProvider, resourceStore, isLenientParsing);
+            return new PageContent(operations, letters, paths, images, markedContents, pdfScanner, filterProvider, resourceStore, isLenientParsing);
         }
 
         private void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
@@ -227,6 +235,11 @@
                     pointSize,
                     textSequence);
 
+                if (queuedMarkedContents.Any())
+                {
+                    queuedMarkedContents.Peek().Add(letter);
+                }
+
                 letters.Add(letter);
 
                 double tx, ty;
@@ -312,11 +325,21 @@
 
             if (subType.Equals(NameToken.Ps))
             {
-                xObjects[XObjectType.PostScript].Add(new XObjectContentRecord(XObjectType.PostScript, xObjectStream, matrix, state.RenderingIntent));
+                var contentRecord = new XObjectContentRecord(XObjectType.PostScript, xObjectStream, matrix, state.RenderingIntent);
+                if (queuedMarkedContents.Any())
+                {
+                    queuedMarkedContents.Peek().Add(contentRecord);
+                }
+                xObjects[XObjectType.PostScript].Add(contentRecord);
             }
             else if (subType.Equals(NameToken.Image))
             {
-                images.Add(Union<XObjectContentRecord, InlineImage>.One(new XObjectContentRecord(XObjectType.Image, xObjectStream, matrix, state.RenderingIntent)));
+                var contentRecord = new XObjectContentRecord(XObjectType.Image, xObjectStream, matrix, state.RenderingIntent);
+                if (queuedMarkedContents.Any())
+                {
+                    queuedMarkedContents.Peek().Add(contentRecord);
+                }
+                images.Add(Union<XObjectContentRecord, InlineImage>.One(contentRecord));
             }
             else if (subType.Equals(NameToken.Form))
             {
@@ -384,6 +407,10 @@
         {
             if (CurrentPath != null && CurrentPath.Commands.Count > 0 && !currentPathAdded)
             {
+                if (queuedMarkedContents.Any())
+                {
+                    queuedMarkedContents.Peek().Add(CurrentPath);
+                }
                 paths.Add(CurrentPath);
             }
 
@@ -399,6 +426,10 @@
             }
             else
             {
+                if (queuedMarkedContents.Any())
+                {
+                    queuedMarkedContents.Peek().Add(CurrentPath);
+                }
                 paths.Add(CurrentPath);
                 currentPathAdded = true;
             }
@@ -412,6 +443,10 @@
             }
             else
             {
+                if (queuedMarkedContents.Any())
+                {
+                    queuedMarkedContents.Peek().Add(CurrentPath);
+                }
                 paths.Add(CurrentPath);
                 currentPathAdded = true;
             }
@@ -420,6 +455,10 @@
         public void ClosePath()
         {
             CurrentPath.ClosePath();
+            if (queuedMarkedContents.Any())
+            {
+                queuedMarkedContents.Peek().Add(CurrentPath);
+            }
             paths.Add(CurrentPath);
             CurrentPath = null;
             currentPathAdded = false;
@@ -496,9 +535,52 @@
 
             var image = inlineImageBuilder.CreateInlineImage(CurrentTransformationMatrix, filterProvider, pdfScanner, GetCurrentState().RenderingIntent, resourceStore);
 
+            if (queuedMarkedContents.Any())
+            {
+                queuedMarkedContents.Peek().Add(image);
+            }
+
             images.Add(Union<XObjectContentRecord, InlineImage>.Two(image));
 
             inlineImageBuilder = null;
+        }
+
+        public void BeginMarkedContent(NameToken name, NameToken propertyDictionaryName, DictionaryToken properties)
+        {
+            if (!queuedMarkedContents.Any()) currentMarkedContentId++; // top parent id only
+
+            var markedContent = PdfMarkedContent.Create(currentMarkedContentId, name, properties);
+
+            if (propertyDictionaryName != null)
+            {
+                log.Error("BeginMarkedContent(): propertyDictionaryName not null to implement, name="
+                    + name.Data + ", propertyDictionaryName=" + propertyDictionaryName);
+                markedContent = PdfMarkedContent.Create(currentMarkedContentId, propertyDictionaryName, properties);
+            }
+
+            if (queuedMarkedContents.Any())
+            {
+                var currentMarkedContent = queuedMarkedContents.Peek();
+                if (currentMarkedContent != null)
+                {
+                    currentMarkedContent.Add(markedContent);
+                }
+            }
+
+            queuedMarkedContents.Push(markedContent);
+        }
+
+        public void EndMarkedContent()
+        {
+            if (queuedMarkedContents.Any())
+            {
+                var mc = queuedMarkedContents.Pop();
+
+                if (!queuedMarkedContents.Any())
+                {
+                    markedContents.Add(mc);
+                }
+            }
         }
 
         private void AdjustTextMatrix(double tx, double ty)

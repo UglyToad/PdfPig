@@ -1,9 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
-    using System.Collections.Generic;
-    using Geometry;
-    using Tokens;
     using PdfPig.Core;
+    using System.Collections.Generic;
+    using Tokens;
     using Util.JetBrains.Annotations;
 
     /// <summary>
@@ -97,6 +96,16 @@
         /// Close the current path.
         /// </summary>
         void ClosePath();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        void BeginMarkedContent(NameToken name, NameToken propertyDictionaryName, DictionaryToken Properties);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        void EndMarkedContent();
 
         /// <summary>
         /// Update the graphics state to apply the state from the named ExtGState dictionary.

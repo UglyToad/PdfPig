@@ -35,6 +35,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
+            operationContext.BeginMarkedContent(Name, null, null);
         }
 
         /// <inheritdoc />

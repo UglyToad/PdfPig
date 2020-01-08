@@ -154,6 +154,12 @@
         public IEnumerable<IPdfImage> GetImages() => Content.GetImages();
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public IReadOnlyList<PdfMarkedContent> GetMarkedContents() => Content.GetMarkedContents();
+
+        /// <summary>
         /// Provides access to useful members which will change in future releases.
         /// </summary>
         public class Experimental

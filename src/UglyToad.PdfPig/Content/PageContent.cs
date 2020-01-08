@@ -20,6 +20,7 @@
     internal class PageContent
     {
         private readonly IReadOnlyList<Union<XObjectContentRecord, InlineImage>> images;
+        private readonly IReadOnlyList<PdfMarkedContent> markedContents;
         private readonly IPdfTokenScanner pdfScanner;
         private readonly IFilterProvider filterProvider;
         private readonly IResourceStore resourceStore;
@@ -34,6 +35,7 @@
         internal PageContent(IReadOnlyList<IGraphicsStateOperation> graphicsStateOperations, IReadOnlyList<Letter> letters,
             IReadOnlyList<PdfPath> paths,
             IReadOnlyList<Union<XObjectContentRecord, InlineImage>> images,
+            IReadOnlyList<PdfMarkedContent> markedContents,
             IPdfTokenScanner pdfScanner,
             IFilterProvider filterProvider,
             IResourceStore resourceStore,
@@ -43,6 +45,7 @@
             Letters = letters;
             Paths = paths;
             this.images = images;
+            this.markedContents = markedContents;
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.resourceStore = resourceStore ?? throw new ArgumentNullException(nameof(resourceStore));
@@ -61,5 +64,7 @@
                 yield return result;
             }
         }
+
+        public IReadOnlyList<PdfMarkedContent> GetMarkedContents() => markedContents;
     }
 }

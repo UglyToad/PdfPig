@@ -91,6 +91,16 @@
         {
         }
 
+        public void BeginMarkedContent(NameToken name, NameToken propertyDictionaryName, DictionaryToken properties)
+        {
+
+        }
+
+        public void EndMarkedContent()
+        {
+
+        }
+
         private class TestFontFactory : IFontFactory
         {
             public IFont Get(DictionaryToken dictionary, bool isLenientParsing)
