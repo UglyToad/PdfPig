@@ -6,7 +6,6 @@
     using Colors;
     using Content;
     using Core;
-    using Exceptions;
     using Filters;
     using PdfPig.Core;
     using Tokenization.Scanner;

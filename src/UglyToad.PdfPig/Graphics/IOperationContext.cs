@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
     using System.Collections.Generic;
-    using Geometry;
     using Tokens;
     using PdfPig.Core;
     using Util.JetBrains.Annotations;

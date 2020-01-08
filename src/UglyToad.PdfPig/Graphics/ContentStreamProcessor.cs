@@ -4,14 +4,10 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
-    using Colors;
     using Content;
     using Core;
-    using Exceptions;
     using Filters;
-    using Fonts;
     using Geometry;
-    using IO;
     using Logging;
     using Operations;
     using Parser;
@@ -19,7 +15,6 @@
     using PdfPig.Core;
     using Tokenization.Scanner;
     using Tokens;
-    using Util;
     using XObjects;
 
     internal class ContentStreamProcessor : IOperationContext
@@ -52,6 +47,7 @@
         private IFont activeExtendedGraphicsStateFont;
         private InlineImageBuilder inlineImageBuilder;
         private bool currentPathAdded;
+        private int pageNumber;
 
         /// <summary>
         /// A counter to track individual calls to <see cref="ShowText"/> operations used to determine if letters are likely to be
@@ -97,8 +93,9 @@
             ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore);
         }
 
-        public PageContent Process(IReadOnlyList<IGraphicsStateOperation> operations)
+        public PageContent Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations)
         {
+            pageNumber = pageNumberCurrent;
             CloneAllStates();
 
             ProcessOperations(operations);
@@ -364,7 +361,7 @@
 
             var contentStream = formStream.Decode(filterProvider);
 
-            var operations = pageContentParser.Parse(new ByteArrayInputBytes(contentStream));
+            var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentStream));
 
             // 3. We don't respect clipping currently.
 

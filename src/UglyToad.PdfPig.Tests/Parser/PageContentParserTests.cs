@@ -27,7 +27,7 @@
             var content = File.ReadAllText(path);
             var input = StringBytesTestConverter.Convert(content, false);
 
-            var result = parser.Parse(input.Bytes);
+            var result = parser.Parse(1, input.Bytes);
 
             Assert.NotEmpty(result);
         }
@@ -39,7 +39,7 @@
             var content = File.ReadAllText(path);
             var input = StringBytesTestConverter.Convert(content, false);
 
-            var result = parser.Parse(input.Bytes);
+            var result = parser.Parse(1, input.Bytes);
 
             var replacementRegex = new Regex(@"\s(\.\d+)\b");
 
@@ -72,7 +72,7 @@
 ET";
             var input = StringBytesTestConverter.Convert(s, false);
 
-            var result = parser.Parse(input.Bytes);
+            var result = parser.Parse(1, input.Bytes);
 
             using (var stream = new MemoryStream())
             {
@@ -102,7 +102,7 @@ ET";
 ET";
             var input = StringBytesTestConverter.Convert(s, false);
 
-            var result = parser.Parse(input.Bytes);
+            var result = parser.Parse(1, input.Bytes);
 
             Assert.Equal(7, result.Count);
 
@@ -138,7 +138,7 @@ ET";
 
             var input = StringBytesTestConverter.Convert(s, false);
 
-            var result = parser.Parse(input.Bytes);
+            var result = parser.Parse(1, input.Bytes);
 
             Assert.Equal(4, result.Count);
 
@@ -163,7 +163,7 @@ cm BT 0.0001 Tc 19 0 0 19 0 0 Tm /Tc1 1 Tf (   \(sleep 1; printf ""QUIT\\r\\n""\
 
             var input = StringBytesTestConverter.Convert(s, false);
 
-            var result = parser.Parse(input.Bytes);
+            var result = parser.Parse(1, input.Bytes);
 
             Assert.Equal(9, result.Count);
 
