@@ -43,6 +43,12 @@ The simplest usage at this stage is to open a document, reading the words from e
         }
     }
 
+An example of the output of this is shown below:
+
+![Image shows three words 'Write something in' in 2 sections, the top section is the normal PDF output, the bottom section is the same text with 3 word bounding boxes in pink and letter bounding boxes in blue-green](https://raw.githubusercontent.com/UglyToad/Pdf/master/documentation/Letters/example-text-extraction.png)
+
+Where for the PDF text ("Write something in") shown at the top the 3 words (in pink) are detected and each word contains the individual letters with glyph bounding boxes.
+
 To create documents use the class ```PdfDocumentBuilder```. The Standard 14 fonts provide a quick way to get started:
 
     PdfDocumentBuilder builder = new PdfDocumentBuilder();
