@@ -77,6 +77,7 @@
                 "UglyToad.PdfPig.Content.PageSize",
                 "UglyToad.PdfPig.Content.PageTreeNode",
                 "UglyToad.PdfPig.Content.PdfMarkedContent",
+                "UglyToad.PdfPig.Content.ArtifactType",
                 "UglyToad.PdfPig.Content.PdfArtifactMarkedContent",
                 "UglyToad.PdfPig.Content.Word",
                 "UglyToad.PdfPig.Content.TextDirection",
