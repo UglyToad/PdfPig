@@ -276,6 +276,18 @@ The classes used to work with TrueType fonts in the PDF file are now available f
 
 The parsed font can then be inspected.
 
+### Embedded Files (0.1.0) ###
+
+PDF files may contain other files entirely embedded inside them for document annotations. The list of embedded files and their byte content may be accessed:
+
+    if (document.Advanced.TryGetEmbeddedFiles(out IReadOnlyList<EmbeddedFile> files)
+        && files.Count > 0)
+    {
+        var firstFile = files[0];
+        string name = firstFile.Name;
+        IReadOnlyList<byte> bytes = firstFile.Bytes;
+    }
+
 ## Issues ##
 
 At this stage the software is in Alpha. In order to proceed to Beta and production we need to see a wide variety of document types.
