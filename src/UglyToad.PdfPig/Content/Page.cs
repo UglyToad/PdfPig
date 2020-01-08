@@ -154,7 +154,7 @@
         public IEnumerable<IPdfImage> GetImages() => Content.GetImages();
 
         /// <summary>
-        /// 
+        /// Gets any marked content on the page.
         /// </summary>
         /// <returns></returns>
         public IReadOnlyList<PdfMarkedContent> GetMarkedContents() => Content.GetMarkedContents();
