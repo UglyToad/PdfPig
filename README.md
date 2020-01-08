@@ -58,11 +58,16 @@ To create documents use the class ```PdfDocumentBuilder```. The Standard 14 font
     // Fonts must be registered with the document builder prior to use to prevent duplication.
     PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
 
-    page.AddText("Hello World!", 12, new PdfPoint(25, 520), font);
+    page.AddText("Hello World!", 12, new PdfPoint(25, 700), font);
 
     byte[] documentBytes = builder.Build();
 
     File.WriteAllBytes(@"C:\git\newPdf.pdf", documentBytes);
+
+The output is a 1 page PDF document with the text "Hello World!" in Helvetica near the top of the page:
+
+![Image shows a PDF document in Google Chrome's PDF viewer. The text "Hello World!" is visible](https://raw.githubusercontent.com/UglyToad/Pdf/master/documentation/builder-output.png)
+
 
 Each font must be registered with the PdfDocumentBuilder prior to use enable pages to share the font resources. Only Standard 14 fonts and TrueType fonts (.ttf) are supported.
 
@@ -290,8 +295,6 @@ PDF files may contain other files entirely embedded inside them for document ann
 
 ## Issues ##
 
-At this stage the software is in Alpha. In order to proceed to Beta and production we need to see a wide variety of document types.
-
 Please do file an issue if you encounter a bug.
 
 However in order for us to assist you, you **must** provide the file which causes your issue. Please host this in a publically available place.
@@ -299,8 +302,6 @@ However in order for us to assist you, you **must** provide the file which cause
 ## Status ##
 
 *Why is class or property X internal?* Internal properties and classes are not stable enough for the end user yet. If you want to access them feel free to use reflection but be aware they may change or disappear between versions.
-
-Most testing has taken place with Latin character sets. Due to the more complex way the PDF specification handles CJK (Chinese, Japanese and Korean) character sets these will probably not be handled correctly for now. Please raise an issue (or preferably a pull request) if you have problems trying to read these documents.
 
 ## Credit ##
 
