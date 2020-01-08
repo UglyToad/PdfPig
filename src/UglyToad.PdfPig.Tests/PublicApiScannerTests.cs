@@ -76,6 +76,8 @@
                 "UglyToad.PdfPig.Content.PageRotationDegrees",
                 "UglyToad.PdfPig.Content.PageSize",
                 "UglyToad.PdfPig.Content.PageTreeNode",
+                "UglyToad.PdfPig.Content.PdfMarkedContent",
+                "UglyToad.PdfPig.Content.PdfArtifactMarkedContent",
                 "UglyToad.PdfPig.Content.Word",
                 "UglyToad.PdfPig.Content.TextDirection",
                 "UglyToad.PdfPig.Content.XmpMetadata",
