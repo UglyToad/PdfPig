@@ -20,7 +20,7 @@
     internal class PageContent
     {
         private readonly IReadOnlyList<Union<XObjectContentRecord, InlineImage>> images;
-        private readonly IReadOnlyList<PdfMarkedContent> markedContents;
+        private readonly IReadOnlyList<MarkedContentElement> markedContents;
         private readonly IPdfTokenScanner pdfScanner;
         private readonly IFilterProvider filterProvider;
         private readonly IResourceStore resourceStore;
@@ -35,7 +35,7 @@
         internal PageContent(IReadOnlyList<IGraphicsStateOperation> graphicsStateOperations, IReadOnlyList<Letter> letters,
             IReadOnlyList<PdfPath> paths,
             IReadOnlyList<Union<XObjectContentRecord, InlineImage>> images,
-            IReadOnlyList<PdfMarkedContent> markedContents,
+            IReadOnlyList<MarkedContentElement> markedContents,
             IPdfTokenScanner pdfScanner,
             IFilterProvider filterProvider,
             IResourceStore resourceStore,
@@ -65,6 +65,6 @@
             }
         }
 
-        public IReadOnlyList<PdfMarkedContent> GetMarkedContents() => markedContents;
+        public IReadOnlyList<MarkedContentElement> GetMarkedContents() => markedContents;
     }
 }

@@ -156,8 +156,7 @@
         /// <summary>
         /// Gets any marked content on the page.
         /// </summary>
-        /// <returns></returns>
-        public IReadOnlyList<PdfMarkedContent> GetMarkedContents() => Content.GetMarkedContents();
+        public IReadOnlyList<MarkedContentElement> GetMarkedContents() => Content.GetMarkedContents();
 
         /// <summary>
         /// Provides access to useful members which will change in future releases.

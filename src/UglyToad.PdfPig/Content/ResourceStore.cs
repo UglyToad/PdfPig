@@ -22,6 +22,8 @@
 
         private readonly Dictionary<NameToken, ResourceColorSpace> namedColorSpaces = new Dictionary<NameToken, ResourceColorSpace>();
 
+        private readonly Dictionary<NameToken, DictionaryToken> markedContentProperties = new Dictionary<NameToken, DictionaryToken>();
+
         private (NameToken name, IFont font) lastLoadedFont;
 
         public ResourceStore(IPdfTokenScanner scanner, IFontFactory fontFactory)
@@ -99,6 +101,21 @@
                     {
                         throw new PdfDocumentFormatException($"Invalid ColorSpace token encountered in page resource dictionary: {nameColorSpacePair.Value}.");
                     }
+                }
+            }
+
+            if (resourceDictionary.TryGet(NameToken.Properties, scanner, out DictionaryToken markedContentPropertiesList))
+            {
+                foreach (var pair in markedContentPropertiesList.Data)
+                {
+                    var key = NameToken.Create(pair.Key);
+
+                    if (!DirectObjectFinder.TryGet(pair.Value, scanner, out DictionaryToken namedProperties))
+                    {
+                        continue;
+                    }
+
+                    markedContentProperties[key] = namedProperties;
                 }
             }
         }
@@ -206,6 +223,11 @@
         public DictionaryToken GetExtendedGraphicsStateDictionary(NameToken name)
         {
             return extendedGraphicsStates[name];
+        }
+
+        public DictionaryToken GetMarkedContentPropertiesDictionary(NameToken name)
+        {
+            return markedContentProperties.TryGetValue(name, out var result) ? result : null;
         }
     }
 }

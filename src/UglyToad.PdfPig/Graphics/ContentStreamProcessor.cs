@@ -4,14 +4,10 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
-    using Colors;
     using Content;
     using Core;
-    using Exceptions;
     using Filters;
-    using Fonts;
     using Geometry;
-    using IO;
     using Logging;
     using Operations;
     using Parser;
@@ -19,19 +15,10 @@
     using PdfPig.Core;
     using Tokenization.Scanner;
     using Tokens;
-    using Util;
     using XObjects;
 
     internal class ContentStreamProcessor : IOperationContext
     {
-        private readonly Stack<PdfMarkedContent> queuedMarkedContents = new Stack<PdfMarkedContent>();
-        private int currentMarkedContentId;
-
-        /// <summary>
-        /// Stores each marked content as it is encountered in the content stream.
-        /// </summary>
-        private readonly List<PdfMarkedContent> markedContents = new List<PdfMarkedContent>();
-
         /// <summary>
         /// Stores each letter as it is encountered in the content stream.
         /// </summary>
@@ -47,6 +34,11 @@
         /// </summary>
         private readonly List<Union<XObjectContentRecord, InlineImage>> images = new List<Union<XObjectContentRecord, InlineImage>>();
 
+        /// <summary>
+        /// Stores each marked content as it is encountered in the content stream.
+        /// </summary>
+        private readonly List<MarkedContentElement> markedContents = new List<MarkedContentElement>();
+
         private readonly IResourceStore resourceStore;
         private readonly UserSpaceUnit userSpaceUnit;
         private readonly PageRotationDegrees rotation;
@@ -55,12 +47,13 @@
         private readonly IPageContentParser pageContentParser;
         private readonly IFilterProvider filterProvider;
         private readonly ILog log;
+        private readonly MarkedContentStack markedContentStack = new MarkedContentStack();
 
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
         private IFont activeExtendedGraphicsStateFont;
         private InlineImageBuilder inlineImageBuilder;
         private bool currentPathAdded;
-
+        
         /// <summary>
         /// A counter to track individual calls to <see cref="ShowText"/> operations used to determine if letters are likely to be
         /// in the same word/group. This exposes internal grouping of letters used by the PDF creator which may correspond to the
@@ -235,12 +228,9 @@
                     pointSize,
                     textSequence);
 
-                if (queuedMarkedContents.Any())
-                {
-                    queuedMarkedContents.Peek().Add(letter);
-                }
-
                 letters.Add(letter);
+
+                markedContentStack.AddLetter(letter);
 
                 double tx, ty;
                 if (font.IsVertical)
@@ -326,20 +316,18 @@
             if (subType.Equals(NameToken.Ps))
             {
                 var contentRecord = new XObjectContentRecord(XObjectType.PostScript, xObjectStream, matrix, state.RenderingIntent);
-                if (queuedMarkedContents.Any())
-                {
-                    queuedMarkedContents.Peek().Add(contentRecord);
-                }
+
                 xObjects[XObjectType.PostScript].Add(contentRecord);
+
+                markedContentStack.AddXObject(contentRecord);
             }
             else if (subType.Equals(NameToken.Image))
             {
                 var contentRecord = new XObjectContentRecord(XObjectType.Image, xObjectStream, matrix, state.RenderingIntent);
-                if (queuedMarkedContents.Any())
-                {
-                    queuedMarkedContents.Peek().Add(contentRecord);
-                }
+
                 images.Add(Union<XObjectContentRecord, InlineImage>.One(contentRecord));
+
+                markedContentStack.AddXObject(contentRecord);
             }
             else if (subType.Equals(NameToken.Form))
             {
@@ -407,11 +395,8 @@
         {
             if (CurrentPath != null && CurrentPath.Commands.Count > 0 && !currentPathAdded)
             {
-                if (queuedMarkedContents.Any())
-                {
-                    queuedMarkedContents.Peek().Add(CurrentPath);
-                }
                 paths.Add(CurrentPath);
+                markedContentStack.AddPath(CurrentPath);
             }
 
             CurrentPath = new PdfPath();
@@ -426,11 +411,8 @@
             }
             else
             {
-                if (queuedMarkedContents.Any())
-                {
-                    queuedMarkedContents.Peek().Add(CurrentPath);
-                }
                 paths.Add(CurrentPath);
+                markedContentStack.AddPath(CurrentPath);
                 currentPathAdded = true;
             }
         }
@@ -443,11 +425,8 @@
             }
             else
             {
-                if (queuedMarkedContents.Any())
-                {
-                    queuedMarkedContents.Peek().Add(CurrentPath);
-                }
                 paths.Add(CurrentPath);
+                markedContentStack.AddPath(CurrentPath);
                 currentPathAdded = true;
             }
         }
@@ -455,11 +434,8 @@
         public void ClosePath()
         {
             CurrentPath.ClosePath();
-            if (queuedMarkedContents.Any())
-            {
-                queuedMarkedContents.Peek().Add(CurrentPath);
-            }
             paths.Add(CurrentPath);
+            markedContentStack.AddPath(CurrentPath);
             CurrentPath = null;
             currentPathAdded = false;
         }
@@ -535,51 +511,30 @@
 
             var image = inlineImageBuilder.CreateInlineImage(CurrentTransformationMatrix, filterProvider, pdfScanner, GetCurrentState().RenderingIntent, resourceStore);
 
-            if (queuedMarkedContents.Any())
-            {
-                queuedMarkedContents.Peek().Add(image);
-            }
-
             images.Add(Union<XObjectContentRecord, InlineImage>.Two(image));
+
+            markedContentStack.AddImage(image);
 
             inlineImageBuilder = null;
         }
 
         public void BeginMarkedContent(NameToken name, NameToken propertyDictionaryName, DictionaryToken properties)
         {
-            if (!queuedMarkedContents.Any()) currentMarkedContentId++; // top parent id only
-
-            var markedContent = PdfMarkedContent.Create(currentMarkedContentId, name, properties);
-
             if (propertyDictionaryName != null)
             {
-                log.Error("BeginMarkedContent(): propertyDictionaryName not null to implement, name="
-                    + name.Data + ", propertyDictionaryName=" + propertyDictionaryName);
-                markedContent = PdfMarkedContent.Create(currentMarkedContentId, propertyDictionaryName, properties);
+                var actual = resourceStore.GetMarkedContentPropertiesDictionary(propertyDictionaryName);
+
+                properties = actual ?? properties;
             }
 
-            if (queuedMarkedContents.Any())
-            {
-                var currentMarkedContent = queuedMarkedContents.Peek();
-                if (currentMarkedContent != null)
-                {
-                    currentMarkedContent.Add(markedContent);
-                }
-            }
-
-            queuedMarkedContents.Push(markedContent);
+            markedContentStack.Push(name, properties);
         }
 
         public void EndMarkedContent()
         {
-            if (queuedMarkedContents.Any())
+            if (markedContentStack.CanPop)
             {
-                var mc = queuedMarkedContents.Pop();
-
-                if (!queuedMarkedContents.Any())
-                {
-                    markedContents.Add(mc);
-                }
+                markedContents.Add(markedContentStack.Pop(pdfScanner));
             }
         }
 

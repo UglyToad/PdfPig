@@ -65,6 +65,7 @@
         public static readonly NameToken BleedBox = new NameToken("BleedBox");
         public static readonly NameToken Bm = new NameToken("BM");
         public static readonly NameToken Border = new NameToken("Border");
+        public static readonly NameToken Bottom = new NameToken("Bottom");
         public static readonly NameToken Bounds = new NameToken("Bounds");
         public static readonly NameToken Bpc = new NameToken("BPC");
         public static readonly NameToken Bs = new NameToken("BS");
@@ -307,6 +308,7 @@
         public static readonly NameToken Lc = new NameToken("LC");
         public static readonly NameToken Le = new NameToken("LE");
         public static readonly NameToken Leading = new NameToken("Leading");
+        public static readonly NameToken Left = new NameToken("Left");
         public static readonly NameToken LegalAttestation = new NameToken("LegalAttestation");
         public static readonly NameToken Length = new NameToken("Length");
         public static readonly NameToken Length1 = new NameToken("Length1");
@@ -448,6 +450,7 @@
         public static readonly NameToken Resources = new NameToken("Resources");
         public static readonly NameToken Rgb = new NameToken("RGB");
         public static readonly NameToken Ri = new NameToken("RI");
+        public static readonly NameToken Right = new NameToken("Right");
         public static readonly NameToken RoleMap = new NameToken("RoleMap");
         public static readonly NameToken Root = new NameToken("Root");
         public static readonly NameToken Rotate = new NameToken("Rotate");
@@ -513,6 +516,7 @@
         public static readonly NameToken Title = new NameToken("Title");
         public static readonly NameToken Tk = new NameToken("TK");
         public static readonly NameToken Tm = new NameToken("TM");
+        public static readonly NameToken Top = new NameToken("Top");
         public static readonly NameToken ToUnicode = new NameToken("ToUnicode");
         public static readonly NameToken Tr = new NameToken("TR");
         public static readonly NameToken Tr2 = new NameToken("TR2");
