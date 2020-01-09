@@ -69,7 +69,7 @@
                     var bottom = arrayToken[3] as NumericToken;
                     var right = arrayToken[4] as NumericToken;
                     var top = arrayToken[5] as NumericToken;
-                    return new PdfRectangle((double)left.Data, (double)bottom.Data, (double)right.Data, (double)top.Data);
+                    return new PdfRectangle(left.Double, bottom.Double, right.Double, top.Double);
                 }
                 return null;
             }
@@ -120,40 +120,40 @@
             }
             return false;
         }
-    }
-
-    /// <summary>
-    /// If present, shall be one of the names Pagination, Layout, Page, or (PDF 1.7) Background.
-    /// </summary>
-    public enum ArtifactType
-    {
-        /// <summary>
-        /// Unknown artifact type.
-        /// </summary>
-        Unknown,
 
         /// <summary>
-        /// Ancillary page features such as running heads and folios (page numbers).
+        /// If present, shall be one of the names Pagination, Layout, Page, or (PDF 1.7) Background.
         /// </summary>
-        Pagination,
+        public enum ArtifactType
+        {
+            /// <summary>
+            /// Unknown artifact type.
+            /// </summary>
+            Unknown,
 
-        /// <summary>
-        /// Purely cosmetic typographical or design elements such as footnote rules or background screens.
-        /// </summary>
-        Layout,
+            /// <summary>
+            /// Ancillary page features such as running heads and folios (page numbers).
+            /// </summary>
+            Pagination,
 
-        /// <summary>
-        /// Production aids extraneous to the document itself, such as cut marks and colour bars.
-        /// </summary>
-        Page,
+            /// <summary>
+            /// Purely cosmetic typographical or design elements such as footnote rules or background screens.
+            /// </summary>
+            Layout,
 
-        /// <summary>
-        /// (PDF 1.7) Images, patterns or coloured blocks that either run the entire length and/or 
-        /// width of the page or the entire dimensions of a structural element. Background artifacts 
-        /// typically serve as a background for content shown either on top of or placed adjacent to 
-        /// that background.
-        /// <para>A background artifact can further be classified as visual content that serves to enhance the user experience, that lies under the actual content, and that is not required except to retain visual fidelity.</para>
-        /// </summary>
-        Background
+            /// <summary>
+            /// Production aids extraneous to the document itself, such as cut marks and colour bars.
+            /// </summary>
+            Page,
+
+            /// <summary>
+            /// (PDF 1.7) Images, patterns or coloured blocks that either run the entire length and/or 
+            /// width of the page or the entire dimensions of a structural element. Background artifacts 
+            /// typically serve as a background for content shown either on top of or placed adjacent to 
+            /// that background.
+            /// <para>A background artifact can further be classified as visual content that serves to enhance the user experience, that lies under the actual content, and that is not required except to retain visual fidelity.</para>
+            /// </summary>
+            Background
+        }
     }
 }
