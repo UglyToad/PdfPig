@@ -43,6 +43,12 @@ The simplest usage at this stage is to open a document, reading the words from e
         }
     }
 
+An example of the output of this is shown below:
+
+![Image shows three words 'Write something in' in 2 sections, the top section is the normal PDF output, the bottom section is the same text with 3 word bounding boxes in pink and letter bounding boxes in blue-green](https://raw.githubusercontent.com/UglyToad/Pdf/master/documentation/Letters/example-text-extraction.png)
+
+Where for the PDF text ("Write something in") shown at the top the 3 words (in pink) are detected and each word contains the individual letters with glyph bounding boxes.
+
 To create documents use the class ```PdfDocumentBuilder```. The Standard 14 fonts provide a quick way to get started:
 
     PdfDocumentBuilder builder = new PdfDocumentBuilder();
@@ -52,11 +58,16 @@ To create documents use the class ```PdfDocumentBuilder```. The Standard 14 font
     // Fonts must be registered with the document builder prior to use to prevent duplication.
     PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
 
-    page.AddText("Hello World!", 12, new PdfPoint(25, 520), font);
+    page.AddText("Hello World!", 12, new PdfPoint(25, 700), font);
 
     byte[] documentBytes = builder.Build();
 
     File.WriteAllBytes(@"C:\git\newPdf.pdf", documentBytes);
+
+The output is a 1 page PDF document with the text "Hello World!" in Helvetica near the top of the page:
+
+![Image shows a PDF document in Google Chrome's PDF viewer. The text "Hello World!" is visible](https://raw.githubusercontent.com/UglyToad/Pdf/master/documentation/builder-output.png)
+
 
 Each font must be registered with the PdfDocumentBuilder prior to use enable pages to share the font resources. Only Standard 14 fonts and TrueType fonts (.ttf) are supported.
 
@@ -270,9 +281,19 @@ The classes used to work with TrueType fonts in the PDF file are now available f
 
 The parsed font can then be inspected.
 
-## Issues ##
+### Embedded Files (0.1.0) ###
 
-At this stage the software is in Alpha. In order to proceed to Beta and production we need to see a wide variety of document types.
+PDF files may contain other files entirely embedded inside them for document annotations. The list of embedded files and their byte content may be accessed:
+
+    if (document.Advanced.TryGetEmbeddedFiles(out IReadOnlyList<EmbeddedFile> files)
+        && files.Count > 0)
+    {
+        var firstFile = files[0];
+        string name = firstFile.Name;
+        IReadOnlyList<byte> bytes = firstFile.Bytes;
+    }
+
+## Issues ##
 
 Please do file an issue if you encounter a bug.
 
@@ -281,8 +302,6 @@ However in order for us to assist you, you **must** provide the file which cause
 ## Status ##
 
 *Why is class or property X internal?* Internal properties and classes are not stable enough for the end user yet. If you want to access them feel free to use reflection but be aware they may change or disappear between versions.
-
-Most testing has taken place with Latin character sets. Due to the more complex way the PDF specification handles CJK (Chinese, Japanese and Korean) character sets these will probably not be handled correctly for now. Please raise an issue (or preferably a pull request) if you have problems trying to read these documents.
 
 ## Credit ##
 

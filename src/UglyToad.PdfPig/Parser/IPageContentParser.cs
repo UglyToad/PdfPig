@@ -6,6 +6,6 @@
 
     internal interface IPageContentParser
     {
-        IReadOnlyList<IGraphicsStateOperation> Parse(IInputBytes inputBytes);
+        IReadOnlyList<IGraphicsStateOperation> Parse(int pageNumber, IInputBytes inputBytes);
     }
 }

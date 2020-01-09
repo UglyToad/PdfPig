@@ -902,6 +902,10 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                     {
                         precedingNumbers = 0;
                     }
+                    else if (identifier.IsMultiByteCommand && identifier.CommandId > 35)
+                    {
+                        precedingNumbers = 0;
+                    }
                     else
                     {
                         stemCount += SafeStemCount(precedingNumbers);

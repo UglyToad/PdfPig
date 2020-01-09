@@ -54,8 +54,8 @@
                 rotation = new PageRotationDegrees(rotateToken.Int);
             }
 
-            MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers, isLenientParsing);
-            CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox, isLenientParsing);
+            MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers);
+            CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox);
 
             var stackDepth = 0;
 
@@ -109,7 +109,7 @@
                     }
                 }
                 
-                content = GetContent(bytes, cropBox, userSpaceUnit, rotation, isLenientParsing);
+                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, isLenientParsing);
             }
             else
             {
@@ -122,7 +122,7 @@
 
                 var bytes = contentStream.Decode(filterProvider);
 
-                content = GetContent(bytes, cropBox, userSpaceUnit, rotation, isLenientParsing);
+                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, isLenientParsing);
             }
 
             var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, 
@@ -137,16 +137,18 @@
             return page;
         }
 
-        private PageContent GetContent(IReadOnlyList<byte> contentBytes, CropBox cropBox, UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation, bool isLenientParsing)
+        private PageContent GetContent(int pageNumber, IReadOnlyList<byte> contentBytes, CropBox cropBox, UserSpaceUnit userSpaceUnit,
+            PageRotationDegrees rotation,
+            bool isLenientParsing)
         {
-            var operations = pageContentParser.Parse(new ByteArrayInputBytes(contentBytes));
+            var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentBytes));
 
             var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit, rotation, isLenientParsing, pdfScanner, 
                 pageContentParser,
                 filterProvider, 
                 log);
 
-            return context.Process(operations);
+            return context.Process(pageNumber, operations);
         }
 
         private static UserSpaceUnit GetUserSpaceUnits(DictionaryToken dictionary)
@@ -160,15 +162,15 @@
             return spaceUnits;
         }
 
-        private CropBox GetCropBox(DictionaryToken dictionary, PageTreeMembers pageTreeMembers, MediaBox mediaBox, bool isLenientParsing)
+        private CropBox GetCropBox(DictionaryToken dictionary, PageTreeMembers pageTreeMembers, MediaBox mediaBox)
         {
             CropBox cropBox;
             if (dictionary.TryGet(NameToken.CropBox, out var cropBoxObject) &&
                 DirectObjectFinder.TryGet(cropBoxObject, pdfScanner, out ArrayToken cropBoxArray))
             {
-                if (cropBoxArray.Length != 4 && isLenientParsing)
+                if (cropBoxArray.Length != 4)
                 {
-                    log.Error($"The CropBox was the wrong length in the dictionary: {dictionary}. Array was: {cropBoxArray}.");
+                    log.Error($"The CropBox was the wrong length in the dictionary: {dictionary}. Array was: {cropBoxArray}. Using MediaBox.");
                     
                     cropBox = new CropBox(mediaBox.Bounds);
 
@@ -185,17 +187,17 @@
             return cropBox;
         }
 
-        private MediaBox GetMediaBox(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers, bool isLenientParsing)
+        private MediaBox GetMediaBox(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers)
         {
             MediaBox mediaBox;
             if (dictionary.TryGet(NameToken.MediaBox, out var mediaboxObject) 
                 && DirectObjectFinder.TryGet(mediaboxObject, pdfScanner, out ArrayToken mediaboxArray))
             {
-                if (mediaboxArray.Length != 4 && isLenientParsing)
+                if (mediaboxArray.Length != 4)
                 {
-                    log.Error($"The MediaBox was the wrong length in the dictionary: {dictionary}. Array was: {mediaboxArray}.");
+                    log.Error($"The MediaBox was the wrong length in the dictionary: {dictionary}. Array was: {mediaboxArray}. Defaulting to US Letter.");
 
-                    mediaBox = MediaBox.A4;
+                    mediaBox = MediaBox.Letter;
 
                     return mediaBox;
                 }
@@ -208,14 +210,10 @@
 
                 if (mediaBox == null)
                 {
-                    if (isLenientParsing)
-                    {
-                        mediaBox = MediaBox.A4;
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("No mediabox was present for page: " + number);
-                    }
+                    log.Error($"The MediaBox was the wrong missing for page {number}. Using US Letter.");
+
+                    // PDFBox defaults to US Letter.
+                    mediaBox = MediaBox.Letter;
                 }
             }
 

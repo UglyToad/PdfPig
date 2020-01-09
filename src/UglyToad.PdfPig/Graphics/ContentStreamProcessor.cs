@@ -53,7 +53,8 @@
         private IFont activeExtendedGraphicsStateFont;
         private InlineImageBuilder inlineImageBuilder;
         private bool currentPathAdded;
-        
+        private int pageNumber;
+
         /// <summary>
         /// A counter to track individual calls to <see cref="ShowText"/> operations used to determine if letters are likely to be
         /// in the same word/group. This exposes internal grouping of letters used by the PDF creator which may correspond to the
@@ -98,8 +99,9 @@
             ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore);
         }
 
-        public PageContent Process(IReadOnlyList<IGraphicsStateOperation> operations)
+        public PageContent Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations)
         {
+            pageNumber = pageNumberCurrent;
             CloneAllStates();
 
             ProcessOperations(operations);
@@ -375,7 +377,7 @@
 
             var contentStream = formStream.Decode(filterProvider);
 
-            var operations = pageContentParser.Parse(new ByteArrayInputBytes(contentStream));
+            var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentStream));
 
             // 3. We don't respect clipping currently.
 
