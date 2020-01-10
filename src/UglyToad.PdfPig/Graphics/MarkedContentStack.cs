@@ -3,19 +3,21 @@
     using System;
     using System.Collections.Generic;
     using Content;
+    using Filters;
     using PdfPig.Core;
     using Tokenization.Scanner;
     using Tokens;
+    using XObjects;
 
     /// <summary>
     /// Handles building <see cref="MarkedContentElement"/>s.
     /// </summary>
     internal class MarkedContentStack
     {
-        private readonly Stack<MarkedContentElementBuilder> builderStack = new Stack<MarkedContentElementBuilder>();
+        private readonly Stack<MarkedContentElementActiveBuilder> builderStack = new Stack<MarkedContentElementActiveBuilder>();
 
         private int number;
-        private MarkedContentElementBuilder top;
+        private MarkedContentElementActiveBuilder top;
 
         public bool CanPop => top != null;
 
@@ -26,7 +28,7 @@
                 number++;
             }
             
-            top = new MarkedContentElementBuilder(number, name, properties);
+            top = new MarkedContentElementActiveBuilder(number, name, properties);
             builderStack.Push(top);
         }
 
@@ -64,25 +66,31 @@
             top?.AddImage(image);
         }
 
-        public void AddXObject(XObjectContentRecord xObject)
+        public void AddXObject(XObjectContentRecord xObject,
+            IPdfTokenScanner scanner,
+            IFilterProvider filterProvider,
+            IResourceStore resourceStore)
         {
-            top?.AddXObject(xObject);
+            if (top != null && xObject.Type == XObjectType.Image)
+            {
+                var image = XObjectFactory.ReadImage(xObject, scanner, filterProvider, resourceStore);
+                top?.AddImage(image);
+            }
         }
         
-        private class MarkedContentElementBuilder
+        private class MarkedContentElementActiveBuilder
         {
             private readonly int number;
             private readonly NameToken name;
             private readonly DictionaryToken properties;
 
             private readonly List<Letter> letters = new List<Letter>();
-            private readonly List<IPdfImage> images = new List<IPdfImage>();
             private readonly List<PdfPath> paths = new List<PdfPath>();
-            private readonly List<XObjectContentRecord> xobjects = new List<XObjectContentRecord>();
+            private readonly List<IPdfImage> images = new List<IPdfImage>();
 
             public List<MarkedContentElement> Children { get; } = new List<MarkedContentElement>();
 
-            public MarkedContentElementBuilder(int number, NameToken name, DictionaryToken properties)
+            public MarkedContentElementActiveBuilder(int number, NameToken name, DictionaryToken properties)
             {
                 this.number = number;
                 this.name = name;
@@ -102,11 +110,6 @@
             public void AddPath(PdfPath path)
             {
                 paths.Add(path);
-            }
-
-            public void AddXObject(XObjectContentRecord xobjext)
-            {
-                xobjects.Add(xobjext);
             }
 
             public MarkedContentElement Build(IPdfTokenScanner pdfScanner)
@@ -133,6 +136,7 @@
                         Children,
                         letters,
                         paths,
+                        images,
                         number);
                 }
 
@@ -185,6 +189,7 @@
                     Children,
                     letters,
                     paths,
+                    images,
                     number);
             }
 

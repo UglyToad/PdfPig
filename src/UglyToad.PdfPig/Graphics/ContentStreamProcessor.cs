@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
+    using Colors;
     using Content;
     using Core;
     using Filters;
@@ -106,7 +107,7 @@
 
             ProcessOperations(operations);
 
-            return new PageContent(operations, letters, paths, images, markedContents, pdfScanner, filterProvider, resourceStore, isLenientParsing);
+            return new PageContent(operations, letters, paths, images, markedContents, pdfScanner, filterProvider, resourceStore);
         }
 
         private void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
@@ -317,19 +318,19 @@
 
             if (subType.Equals(NameToken.Ps))
             {
-                var contentRecord = new XObjectContentRecord(XObjectType.PostScript, xObjectStream, matrix, state.RenderingIntent);
+                var contentRecord = new XObjectContentRecord(XObjectType.PostScript, xObjectStream, matrix, state.RenderingIntent,
+                    state.CurrentStrokingColor?.ColorSpace ?? ColorSpace.DeviceRGB);
 
                 xObjects[XObjectType.PostScript].Add(contentRecord);
-
-                markedContentStack.AddXObject(contentRecord);
             }
             else if (subType.Equals(NameToken.Image))
             {
-                var contentRecord = new XObjectContentRecord(XObjectType.Image, xObjectStream, matrix, state.RenderingIntent);
+                var contentRecord = new XObjectContentRecord(XObjectType.Image, xObjectStream, matrix, state.RenderingIntent,
+                    state.CurrentStrokingColor?.ColorSpace ?? ColorSpace.DeviceRGB);
 
                 images.Add(Union<XObjectContentRecord, InlineImage>.One(contentRecord));
 
-                markedContentStack.AddXObject(contentRecord);
+                markedContentStack.AddXObject(contentRecord, pdfScanner, filterProvider, resourceStore);
             }
             else if (subType.Equals(NameToken.Form))
             {

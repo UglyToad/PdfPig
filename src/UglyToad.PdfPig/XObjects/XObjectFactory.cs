@@ -16,8 +16,7 @@
     {
         public static XObjectImage ReadImage(XObjectContentRecord xObject, IPdfTokenScanner pdfScanner,
             IFilterProvider filterProvider,
-            IResourceStore resourceStore,
-            bool isLenientParsing)
+            IResourceStore resourceStore)
         {
             if (xObject == null)
             {
@@ -87,25 +86,19 @@
                 {
                     colorSpace = colorSpaceResult;
                 }
-                else if (dictionary.TryGet(NameToken.ColorSpace, pdfScanner, out ArrayToken colorSpaceArrayToken))
+                else if (dictionary.TryGet(NameToken.ColorSpace, pdfScanner, out ArrayToken colorSpaceArrayToken)
+                && colorSpaceArrayToken.Length > 0)
                 {
-                    if (colorSpaceArrayToken.Length == 0)
-                    {
-                        throw new PdfDocumentFormatException($"Empty ColorSpace array defined for image XObject: {dictionary}.");
-                    }
-
                     var first = colorSpaceArrayToken.Data[0];
 
-                    if (!(first is NameToken firstColorSpaceName) || !TryMapColorSpace(firstColorSpaceName, resourceStore, out colorSpaceResult))
+                    if ((first is NameToken firstColorSpaceName) && TryMapColorSpace(firstColorSpaceName, resourceStore, out colorSpaceResult))
                     {
-                        throw new PdfDocumentFormatException($"Invalid ColorSpace array defined for image XObject: {colorSpaceArrayToken}.");
+                        colorSpace = colorSpaceResult;
                     }
-
-                    colorSpace = colorSpaceResult;
                 }
                 else if (!isJpxDecode)
                 {
-                    throw new PdfDocumentFormatException($"No ColorSpace defined for image XObject: {dictionary}.");
+                    colorSpace = xObject.DefaultColorSpace;
                 }
             }
 

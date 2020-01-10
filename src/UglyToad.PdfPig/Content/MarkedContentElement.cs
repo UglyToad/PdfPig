@@ -53,6 +53,11 @@
         public IReadOnlyList<PdfPath> Paths { get; }
 
         /// <summary>
+        /// Images contained in this marked content.
+        /// </summary>
+        public IReadOnlyList<IPdfImage> Images { get; }
+
+        /// <summary>
         /// The natural language specification.
         /// </summary>
         public string Language { get; }
@@ -81,7 +86,8 @@
             IReadOnlyList<MarkedContentElement> children,
             IReadOnlyList<Letter> letters,
             IReadOnlyList<PdfPath> paths,
-            int index)
+            IReadOnlyList<IPdfImage> images,
+                int index)
         {
             MarkedContentIdentifier = markedContentIdentifier;
             Tag = tag;
@@ -95,6 +101,7 @@
             Children = children ?? throw new ArgumentNullException(nameof(children));
             Letters = letters ?? throw new ArgumentNullException(nameof(letters));
             Paths = paths ?? throw new ArgumentNullException(nameof(paths));
+            Images = images ?? throw new ArgumentNullException(nameof(images));
 
             Index = index;
         }

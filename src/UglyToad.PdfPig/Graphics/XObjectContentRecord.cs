@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
     using System;
+    using Colors;
     using Core;
     using PdfPig.Core;
     using Tokens;
@@ -18,13 +19,17 @@
 
         public RenderingIntent DefaultRenderingIntent { get; }
 
+        public ColorSpace DefaultColorSpace { get; }
+
         public XObjectContentRecord(XObjectType type, StreamToken stream, TransformationMatrix appliedTransformation,
-            RenderingIntent defaultRenderingIntent)
+            RenderingIntent defaultRenderingIntent,
+            ColorSpace defaultColorSpace)
         {
             Type = type;
             Stream = stream ?? throw new ArgumentNullException(nameof(stream));
             AppliedTransformation = appliedTransformation;
             DefaultRenderingIntent = defaultRenderingIntent;
+            DefaultColorSpace = defaultColorSpace;
         }
     }
 }

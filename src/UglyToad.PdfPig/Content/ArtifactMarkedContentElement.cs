@@ -74,6 +74,7 @@
             IReadOnlyList<MarkedContentElement> children,
             IReadOnlyList<Letter> letters,
             IReadOnlyList<PdfPath> paths,
+            IReadOnlyList<IPdfImage> images,
             int index) 
             : base(markedContentIdentifier, tag, properties, language,
                 actualText,
@@ -83,6 +84,7 @@
                 children,
                 letters,
                 paths,
+                images,
                 index)
         {
             Type = artifactType;
