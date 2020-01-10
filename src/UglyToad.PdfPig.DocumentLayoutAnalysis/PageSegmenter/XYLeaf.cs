@@ -1,10 +1,10 @@
-﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
+﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter
 {
+    using Content;
+    using Core;
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Content;
-    using Core;
 
     /// <summary>
     /// A Leaf node used in the <see cref="RecursiveXYCut"/> algorithm, i.e. a block.

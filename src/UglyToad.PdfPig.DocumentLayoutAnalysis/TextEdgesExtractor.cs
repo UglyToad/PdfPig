@@ -1,13 +1,12 @@
 ﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
+    using Content;
+    using Core;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
-    using Content;
-    using Core;
-    using Geometry;
 
     /// <summary>
     /// Text edges extractor. Text edges are where words have either their BoundingBox's left, right or mid coordinates aligned on the same vertical line.

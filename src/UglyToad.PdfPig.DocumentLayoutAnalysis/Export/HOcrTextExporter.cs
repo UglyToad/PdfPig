@@ -1,11 +1,11 @@
 ﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis.Export
 {
-    using System;
-    using System.Linq;
     using Content;
     using Core;
     using DocumentLayoutAnalysis;
-    using Geometry;
+    using System;
+    using System.Linq;
+    using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
     using Util;
 
     /// <summary>

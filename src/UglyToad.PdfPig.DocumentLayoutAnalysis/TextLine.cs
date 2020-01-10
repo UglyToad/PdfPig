@@ -1,10 +1,10 @@
 ﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
+    using Content;
+    using Core;
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Content;
-    using Core;
 
     /// <summary>
     /// A line of text.
