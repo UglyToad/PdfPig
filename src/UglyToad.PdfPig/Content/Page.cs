@@ -154,6 +154,11 @@
         public IEnumerable<IPdfImage> GetImages() => Content.GetImages();
 
         /// <summary>
+        /// Gets any marked content on the page.
+        /// </summary>
+        public IReadOnlyList<MarkedContentElement> GetMarkedContents() => Content.GetMarkedContents();
+
+        /// <summary>
         /// Provides access to useful members which will change in future releases.
         /// </summary>
         public class Experimental

@@ -63,6 +63,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
+            operationContext.BeginMarkedContent(Name, PropertyDictionaryName, Properties);
         }
 
         /// <inheritdoc />

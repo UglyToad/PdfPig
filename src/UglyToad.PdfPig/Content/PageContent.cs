@@ -8,7 +8,6 @@
     using Graphics.Operations;
     using Tokenization.Scanner;
     using XObjects;
-    using Geometry;
 
     /// <summary>
     /// Wraps content parsed from a page content stream for access.
@@ -20,10 +19,10 @@
     internal class PageContent
     {
         private readonly IReadOnlyList<Union<XObjectContentRecord, InlineImage>> images;
+        private readonly IReadOnlyList<MarkedContentElement> markedContents;
         private readonly IPdfTokenScanner pdfScanner;
         private readonly IFilterProvider filterProvider;
         private readonly IResourceStore resourceStore;
-        private readonly bool isLenientParsing;
 
         internal IReadOnlyList<IGraphicsStateOperation> GraphicsStateOperations { get; }
 
@@ -34,32 +33,32 @@
         internal PageContent(IReadOnlyList<IGraphicsStateOperation> graphicsStateOperations, IReadOnlyList<Letter> letters,
             IReadOnlyList<PdfPath> paths,
             IReadOnlyList<Union<XObjectContentRecord, InlineImage>> images,
+            IReadOnlyList<MarkedContentElement> markedContents,
             IPdfTokenScanner pdfScanner,
             IFilterProvider filterProvider,
-            IResourceStore resourceStore,
-            bool isLenientParsing)
+            IResourceStore resourceStore)
         {
             GraphicsStateOperations = graphicsStateOperations;
             Letters = letters;
             Paths = paths;
             this.images = images;
+            this.markedContents = markedContents;
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.resourceStore = resourceStore ?? throw new ArgumentNullException(nameof(resourceStore));
-            this.isLenientParsing = isLenientParsing;
         }
 
         public IEnumerable<IPdfImage> GetImages()
         {
             foreach (var image in images)
             {
-
-                IPdfImage result = null;
-                image.Match(x => { result = XObjectFactory.ReadImage(x, pdfScanner, filterProvider, resourceStore, isLenientParsing); },
-                    x => { result = x; });
+                var result = image.Match<IPdfImage>(x => XObjectFactory.ReadImage(x, pdfScanner, filterProvider, resourceStore),
+                    x => x);
 
                 yield return result;
             }
         }
+
+        public IReadOnlyList<MarkedContentElement> GetMarkedContents() => markedContents;
     }
 }

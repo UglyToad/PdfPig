@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
+    using Colors;
     using Content;
     using Core;
     using Filters;
@@ -34,6 +35,11 @@
         /// </summary>
         private readonly List<Union<XObjectContentRecord, InlineImage>> images = new List<Union<XObjectContentRecord, InlineImage>>();
 
+        /// <summary>
+        /// Stores each marked content as it is encountered in the content stream.
+        /// </summary>
+        private readonly List<MarkedContentElement> markedContents = new List<MarkedContentElement>();
+
         private readonly IResourceStore resourceStore;
         private readonly UserSpaceUnit userSpaceUnit;
         private readonly PageRotationDegrees rotation;
@@ -42,6 +48,7 @@
         private readonly IPageContentParser pageContentParser;
         private readonly IFilterProvider filterProvider;
         private readonly ILog log;
+        private readonly MarkedContentStack markedContentStack = new MarkedContentStack();
 
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
         private IFont activeExtendedGraphicsStateFont;
@@ -100,7 +107,7 @@
 
             ProcessOperations(operations);
 
-            return new PageContent(operations, letters, paths, images, pdfScanner, filterProvider, resourceStore, isLenientParsing);
+            return new PageContent(operations, letters, paths, images, markedContents, pdfScanner, filterProvider, resourceStore);
         }
 
         private void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
@@ -231,6 +238,8 @@
 
                 letters.Add(letter);
 
+                markedContentStack.AddLetter(letter);
+
                 double tx, ty;
                 if (font.IsVertical)
                 {
@@ -314,11 +323,19 @@
 
             if (subType.Equals(NameToken.Ps))
             {
-                xObjects[XObjectType.PostScript].Add(new XObjectContentRecord(XObjectType.PostScript, xObjectStream, matrix, state.RenderingIntent));
+                var contentRecord = new XObjectContentRecord(XObjectType.PostScript, xObjectStream, matrix, state.RenderingIntent,
+                    state.CurrentStrokingColor?.ColorSpace ?? ColorSpace.DeviceRGB);
+
+                xObjects[XObjectType.PostScript].Add(contentRecord);
             }
             else if (subType.Equals(NameToken.Image))
             {
-                images.Add(Union<XObjectContentRecord, InlineImage>.One(new XObjectContentRecord(XObjectType.Image, xObjectStream, matrix, state.RenderingIntent)));
+                var contentRecord = new XObjectContentRecord(XObjectType.Image, xObjectStream, matrix, state.RenderingIntent,
+                    state.CurrentStrokingColor?.ColorSpace ?? ColorSpace.DeviceRGB);
+
+                images.Add(Union<XObjectContentRecord, InlineImage>.One(contentRecord));
+
+                markedContentStack.AddXObject(contentRecord, pdfScanner, filterProvider, resourceStore);
             }
             else if (subType.Equals(NameToken.Form))
             {
@@ -387,6 +404,7 @@
             if (CurrentPath != null && CurrentPath.Commands.Count > 0 && !currentPathAdded)
             {
                 paths.Add(CurrentPath);
+                markedContentStack.AddPath(CurrentPath);
             }
 
             CurrentPath = new PdfPath();
@@ -402,6 +420,7 @@
             else
             {
                 paths.Add(CurrentPath);
+                markedContentStack.AddPath(CurrentPath);
                 currentPathAdded = true;
             }
         }
@@ -415,6 +434,7 @@
             else
             {
                 paths.Add(CurrentPath);
+                markedContentStack.AddPath(CurrentPath);
                 currentPathAdded = true;
             }
         }
@@ -423,6 +443,7 @@
         {
             CurrentPath.ClosePath();
             paths.Add(CurrentPath);
+            markedContentStack.AddPath(CurrentPath);
             CurrentPath = null;
             currentPathAdded = false;
         }
@@ -500,7 +521,29 @@
 
             images.Add(Union<XObjectContentRecord, InlineImage>.Two(image));
 
+            markedContentStack.AddImage(image);
+
             inlineImageBuilder = null;
+        }
+
+        public void BeginMarkedContent(NameToken name, NameToken propertyDictionaryName, DictionaryToken properties)
+        {
+            if (propertyDictionaryName != null)
+            {
+                var actual = resourceStore.GetMarkedContentPropertiesDictionary(propertyDictionaryName);
+
+                properties = actual ?? properties;
+            }
+
+            markedContentStack.Push(name, properties);
+        }
+
+        public void EndMarkedContent()
+        {
+            if (markedContentStack.CanPop)
+            {
+                markedContents.Add(markedContentStack.Pop(pdfScanner));
+            }
         }
 
         private void AdjustTextMatrix(double tx, double ty)

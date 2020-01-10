@@ -23,5 +23,7 @@
         IFont GetFontDirectly(IndirectReferenceToken fontReferenceToken, bool isLenientParsing);
 
         bool TryGetNamedColorSpace(NameToken name, out ResourceColorSpace namedColorSpace);
+
+        DictionaryToken GetMarkedContentPropertiesDictionary(NameToken name);
     }
 }
