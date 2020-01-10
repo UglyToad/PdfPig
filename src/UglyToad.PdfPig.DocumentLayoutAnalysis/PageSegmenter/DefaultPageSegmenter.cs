@@ -1,9 +1,9 @@
-﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
+﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter
 {
-    using System.Collections.Generic;
-    using System.Linq;
     using Content;
     using Core;
+    using System.Collections.Generic;
+    using System.Linq;
 
     /// <summary>
     /// Default Page Segmenter. All words are included in one block.

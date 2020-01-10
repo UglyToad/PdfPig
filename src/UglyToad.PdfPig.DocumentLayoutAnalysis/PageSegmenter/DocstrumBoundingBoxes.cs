@@ -1,13 +1,13 @@
-﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
+﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter
 {
+    using Content;
+    using Core;
+    using Geometry;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
-    using Geometry;
-    using Content;
-    using Core;
 
     /// <inheritdoc />
     /// <summary>

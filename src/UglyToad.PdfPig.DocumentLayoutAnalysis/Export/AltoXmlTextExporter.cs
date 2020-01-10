@@ -1,15 +1,15 @@
 ﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis.Export
 {
+    using Alto;
+    using Content;
+    using Core;
+    using DocumentLayoutAnalysis;
     using System;
     using System.Globalization;
     using System.Linq;
     using System.Xml;
     using System.Xml.Serialization;
-    using Alto;
-    using Content;
-    using Core;
-    using DocumentLayoutAnalysis;
-    using Geometry;
+    using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
     using Util;
 
     /// <inheritdoc />

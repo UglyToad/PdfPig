@@ -1,13 +1,14 @@
 ﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
+    using Content;
+    using Geometry;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
-    using Content;
-    using Geometry;
+    using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
     using Util;
 
     /// <summary>
@@ -15,7 +16,7 @@
     /// <para>Decoration blocks are blocks that contains information such as author names, publication titles, page numbers, etc.
     /// They are printed repeatedly at the border of each page, usually placed inside headers or footers, but sometimes also at the 
     /// left or right edge of the page.</para>
-    /// <para>See section 5.1 of 'Unsupervised document structure analysis of digital scientific articles' by S. Klampfl, M. Granitzer, K. Jack, R. Kern.</para>
+    /// <para>See section 4.1 of 'Unsupervised document structure analysis of digital scientific articles' by S. Klampfl, M. Granitzer, K. Jack, R. Kern.</para>
     /// </summary>
     public static class DecorationTextBlockClassifier
     {

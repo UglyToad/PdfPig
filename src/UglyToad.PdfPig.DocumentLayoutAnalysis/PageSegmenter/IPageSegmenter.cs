@@ -1,7 +1,7 @@
-﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
+﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter
 {
-    using System.Collections.Generic;
     using Content;
+    using System.Collections.Generic;
 
     /// <summary>
     /// Page segmentation divides a page into areas, each consisting of a layout structure (blocks, lines, etc.).

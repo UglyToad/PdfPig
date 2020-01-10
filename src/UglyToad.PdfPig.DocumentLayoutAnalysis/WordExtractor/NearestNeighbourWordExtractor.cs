@@ -1,10 +1,10 @@
-﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
+﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor
 {
+    using Content;
+    using Core;
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Content;
-    using Core;
     using Util;
 
     /// <summary>

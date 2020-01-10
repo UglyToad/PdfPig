@@ -1,10 +1,10 @@
 ﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
+    using Content;
+    using Core;
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Content;
-    using Core;
 
     /// <summary>
     /// A block of text.
@@ -32,6 +32,11 @@
         public IReadOnlyList<TextLine> TextLines { get; }
 
         /// <summary>
+        /// The reading order index. Starts at 0. A value of -1 means the block is not ordered.
+        /// </summary>
+        public int ReadingOrder { get; private set; }
+
+        /// <summary>
         /// Create a new <see cref="TextBlock"/>.
         /// </summary>
         /// <param name="lines"></param>
@@ -47,6 +52,8 @@
                 throw new ArgumentException("Empty lines provided.", nameof(lines));
             }
 
+            ReadingOrder = -1;
+
             TextLines = lines;
 
             Text = string.Join(" ", lines.Select(x => x.Text));
@@ -58,6 +65,15 @@
             BoundingBox = new PdfRectangle(minX, minY, maxX, maxY);
 
             TextDirection = lines[0].TextDirection;
+        }
+
+        internal void SetReadingOrder(int readingOrder)
+        {
+            if (readingOrder < -1)
+            {
+                throw new ArgumentException("The reading order should be more or equal to -1. A value of -1 means the block is not ordered.", nameof(readingOrder));
+            }
+            this.ReadingOrder = readingOrder;
         }
 
         /// <inheritdoc />

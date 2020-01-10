@@ -1,10 +1,9 @@
 ﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
+    using Core;
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Core;
-    using Geometry;
 
     /// <summary>
     /// Contains helpful tools for distance measures.

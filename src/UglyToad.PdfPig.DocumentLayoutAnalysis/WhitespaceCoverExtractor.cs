@@ -1,11 +1,11 @@
 ﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using Content;
     using Core;
     using Geometry;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
 
     /// <summary>
     /// A top-down algorithm that finds a cover of the background whitespace of a document in terms of maximal empty rectangles.
