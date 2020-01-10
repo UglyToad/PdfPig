@@ -161,6 +161,11 @@
             // see: https://stackoverflow.com/questions/48010235/pdf-specification-get-font-size-in-points
             var pointSize = Math.Round(rotation.Rotate(transformationMatrix).Multiply(TextMatrices.TextMatrix).Multiply(fontSize).A, 2);
 
+            if (pointSize < 0)
+            {
+                pointSize *= -1;
+            }
+
             while (bytes.MoveNext())
             {
                 var code = font.ReadCharacterCode(bytes, out int codeLength);
