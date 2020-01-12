@@ -11,6 +11,7 @@
     using System.Xml;
     using System.Xml.Serialization;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
+    using UglyToad.PdfPig.DocumentLayoutAnalysis.ReadingOrderDetector;
     using Util;
 
     /// <summary>
@@ -21,6 +22,7 @@
     {
         private readonly IPageSegmenter pageSegmenter;
         private readonly IWordExtractor wordExtractor;
+        private readonly IReadingOrderDetector readingOrderDetector;
 
         private readonly double scale;
         private readonly string indentChar;
@@ -29,6 +31,9 @@
         private int wordCount;
         private int glyphCount;
         private int regionCount;
+        private int groupOrderCount;
+
+        private List<PageXmlDocument.PageXmlRegionRefIndexed> orderedRegions;
 
         /// <summary>
         /// PAGE-XML 2019-07-15 (XML) text exporter.
@@ -36,14 +41,16 @@
         /// </summary>
         /// <param name="wordExtractor"></param>
         /// <param name="pageSegmenter"></param>
+		/// <param name="readingOrderDetector"></param>
         /// <param name="scale"></param>
         /// <param name="indent">Indent character.</param>
-        public PageXmlTextExporter(IWordExtractor wordExtractor, IPageSegmenter pageSegmenter, double scale = 1.0, string indent = "\t")
+        public PageXmlTextExporter(IWordExtractor wordExtractor, IPageSegmenter pageSegmenter, IReadingOrderDetector readingOrderDetector = null, double scale = 1.0, string indent = "\t")
         {
             this.wordExtractor = wordExtractor;
             this.pageSegmenter = pageSegmenter;
+            this.readingOrderDetector = readingOrderDetector;
             this.scale = scale;
-            indentChar = indent;
+            this.indentChar = indent;
         }
 
         /// <summary>
@@ -72,6 +79,13 @@
         /// <param name="includePaths">Draw <see cref="PdfPath"/>s present in the page.</param>
         public string Get(Page page, bool includePaths)
         {
+            lineCount = 0;
+            wordCount = 0;
+            glyphCount = 0;
+            regionCount = 0;
+            groupOrderCount = 0;
+            orderedRegions = new List<PageXmlDocument.PageXmlRegionRefIndexed>();
+
             PageXmlDocument pageXmlDocument = new PageXmlDocument()
             {
                 Metadata = new PageXmlDocument.PageXmlMetadata()
@@ -145,7 +159,25 @@
             if (words.Count > 0)
             {
                 var blocks = pageSegmenter.GetBlocks(words);
+
+                if (readingOrderDetector != null)
+                {
+                    blocks = readingOrderDetector.Get(blocks).ToList();
+                }
+
                 regions.AddRange(blocks.Select(b => ToPageXmlTextRegion(b, page.Height)));
+
+                if (orderedRegions.Any())
+                {
+                    pageXmlPage.ReadingOrder = new PageXmlDocument.PageXmlReadingOrder()
+                    {
+                        Item = new PageXmlDocument.PageXmlOrderedGroup()
+                        {
+                            Items = orderedRegions.ToArray(),
+                            Id = "g" + groupOrderCount++
+                        }
+                    };
+                }
             }
 
             var images = page.GetImages().ToList();
@@ -196,13 +228,24 @@
         private PageXmlDocument.PageXmlTextRegion ToPageXmlTextRegion(TextBlock textBlock, double height)
         {
             regionCount++;
+            string regionId = "r" + regionCount;
+
+            if (readingOrderDetector != null && textBlock.ReadingOrder > -1)
+            {
+                orderedRegions.Add(new PageXmlDocument.PageXmlRegionRefIndexed()
+                {
+                    RegionRef = regionId,
+                    Index = textBlock.ReadingOrder
+                });
+            }
+
             return new PageXmlDocument.PageXmlTextRegion()
             {
                 Coords = ToCoords(textBlock.BoundingBox, height),
                 Type = PageXmlDocument.PageXmlTextSimpleType.Paragraph,
                 TextLines = textBlock.TextLines.Select(l => ToPageXmlTextLine(l, height)).ToArray(),
                 TextEquivs = new[] { new PageXmlDocument.PageXmlTextEquiv() { Unicode = textBlock.Text } },
-                Id = "r" + regionCount
+                Id = regionId
             };
         }
 
