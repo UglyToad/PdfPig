@@ -177,7 +177,7 @@
                     return cropBox;
                 }
 
-                cropBox = new CropBox(cropBoxArray.ToIntRectangle());
+                cropBox = new CropBox(cropBoxArray.ToIntRectangle(pdfScanner));
             }
             else
             {
@@ -202,7 +202,7 @@
                     return mediaBox;
                 }
 
-                mediaBox = new MediaBox(mediaboxArray.ToIntRectangle());
+                mediaBox = new MediaBox(mediaboxArray.ToIntRectangle(pdfScanner));
             }
             else
             {

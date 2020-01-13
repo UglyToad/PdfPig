@@ -57,7 +57,7 @@
                 
                 if (currentNode.NodeDictionary.TryGet(NameToken.MediaBox, pdfScanner, out ArrayToken mediaBox))
                 {
-                    pageTreeMembers.MediaBox = new MediaBox(mediaBox.ToRectangle());
+                    pageTreeMembers.MediaBox = new MediaBox(mediaBox.ToRectangle(pdfScanner));
                 }
 
                 if (currentNode.NodeDictionary.TryGet(NameToken.Rotate, pdfScanner, out NumericToken rotateToken))

@@ -159,7 +159,7 @@
             PdfRectangle? bounds = null;
             if (fieldDictionary.TryGet(NameToken.Rect, tokenScanner, out ArrayToken rectArray) && rectArray.Length == 4)
             {
-                bounds = rectArray.ToRectangle();
+                bounds = rectArray.ToRectangle(tokenScanner);
             }
 
             var newParentDictionaries = new List<DictionaryToken>(parentDictionaries) {fieldDictionary};

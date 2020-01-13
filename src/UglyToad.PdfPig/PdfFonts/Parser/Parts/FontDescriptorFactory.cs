@@ -21,7 +21,7 @@
             var family = GetFontFamily(dictionary);
             var stretch = GetFontStretch(dictionary);
             var flags = GetFlags(dictionary, isLenientParsing);
-            var bounding = GetBoundingBox(dictionary);
+            var bounding = GetBoundingBox(dictionary, pdfScanner);
             var charSet = GetCharSet(dictionary);
             var fontFile = GetFontFile(dictionary);
 
@@ -119,7 +119,7 @@
             return (FontDescriptorFlags) flags;
         }
 
-        private static PdfRectangle GetBoundingBox(DictionaryToken dictionary)
+        private static PdfRectangle GetBoundingBox(DictionaryToken dictionary, IPdfTokenScanner pdfScanner)
         {
             if (!dictionary.TryGet(NameToken.FontBbox, out var box) || !(box is ArrayToken boxArray))
             {
@@ -131,7 +131,7 @@
                 return new PdfRectangle(0, 0, 0, 0);
             }
 
-            return boxArray.ToRectangle();
+            return boxArray.ToRectangle(pdfScanner);
         }
 
         private static string GetCharSet(DictionaryToken dictionary)

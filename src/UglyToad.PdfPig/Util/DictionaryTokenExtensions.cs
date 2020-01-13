@@ -2,8 +2,6 @@
 {
     using System;
     using Core;
-    using Exceptions;
-    using Geometry;
     using JetBrains.Annotations;
     using Parser.Parts;
     using Tokenization.Scanner;
@@ -125,7 +123,7 @@
             throw new PdfDocumentFormatException($"The array did not contain a number at index {index}. Array was: {array}.");
         }
 
-        public static PdfRectangle ToRectangle(this ArrayToken array)
+        public static PdfRectangle ToRectangle(this ArrayToken array, IPdfTokenScanner tokenScanner)
         {
             if (array == null)
             {
@@ -137,13 +135,13 @@
                 throw new PdfDocumentFormatException($"Cannot convert array to rectangle, expected 4 values instead got: {array}.");
             }
 
-            return new PdfRectangle(array.GetNumeric(0).Double,
-                array.GetNumeric(1).Double,
-                array.GetNumeric(2).Double,
-                array.GetNumeric(3).Double);
+            return new PdfRectangle(DirectObjectFinder.Get<NumericToken>(array[0], tokenScanner).Double,
+                DirectObjectFinder.Get<NumericToken>(array[1], tokenScanner).Double,
+                DirectObjectFinder.Get<NumericToken>(array[2], tokenScanner).Double,
+                DirectObjectFinder.Get<NumericToken>(array[3], tokenScanner).Double);
         }
 
-        public static PdfRectangle ToIntRectangle(this ArrayToken array)
+        public static PdfRectangle ToIntRectangle(this ArrayToken array, IPdfTokenScanner tokenScanner)
         {
             if (array == null)
             {
@@ -155,10 +153,10 @@
                 throw new PdfDocumentFormatException($"Cannot convert array to rectangle, expected 4 values instead got: {array}.");
             }
 
-            return new PdfRectangle(array.GetNumeric(0).Int,
-                array.GetNumeric(1).Int,
-                array.GetNumeric(2).Int,
-                array.GetNumeric(3).Int);
+            return new PdfRectangle(DirectObjectFinder.Get<NumericToken>(array[0], tokenScanner).Int,
+                DirectObjectFinder.Get<NumericToken>(array[1], tokenScanner).Int,
+                DirectObjectFinder.Get<NumericToken>(array[2], tokenScanner).Int,
+                DirectObjectFinder.Get<NumericToken>(array[3], tokenScanner).Int);
         }
     }
 }

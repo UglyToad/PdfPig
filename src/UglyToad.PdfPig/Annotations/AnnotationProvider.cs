@@ -53,7 +53,7 @@
                 var type = annotationDictionary.Get<NameToken>(NameToken.Subtype, tokenScanner);
 
                 var annotationType = type.ToAnnotationType();
-                var rectangle = annotationDictionary.Get<ArrayToken>(NameToken.Rect, tokenScanner).ToRectangle();
+                var rectangle = annotationDictionary.Get<ArrayToken>(NameToken.Rect, tokenScanner).ToRectangle(tokenScanner);
 
                 var contents = GetNamedString(NameToken.Contents, annotationDictionary);
                 var name = GetNamedString(NameToken.Nm, annotationDictionary);
