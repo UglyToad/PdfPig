@@ -67,7 +67,11 @@
             TextDirection = lines[0].TextDirection;
         }
 
-        internal void SetReadingOrder(int readingOrder)
+        /// <summary>
+        /// Sets the <see cref="TextBlock"/>'s reading order.
+        /// </summary>
+        /// <param name="readingOrder"></param>
+        public void SetReadingOrder(int readingOrder)
         {
             if (readingOrder < -1)
             {
