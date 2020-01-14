@@ -64,13 +64,22 @@
             {
                 var toUnicodeValue = dictionary.Data[NameToken.ToUnicode];
 
-                var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeValue, scanner);
-
-                var decodedUnicodeCMap = toUnicode?.Decode(filterProvider);
-
-                if (decodedUnicodeCMap != null)
+                if (DirectObjectFinder.TryGet<StreamToken>(toUnicodeValue, scanner, out var toUnicodeStream))
                 {
-                    toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap), isLenientParsing);
+                    var decodedUnicodeCMap = toUnicodeStream?.Decode(filterProvider);
+
+                    if (decodedUnicodeCMap != null)
+                    {
+                        toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap), isLenientParsing);
+                    }
+                }
+                else if (DirectObjectFinder.TryGet<NameToken>(toUnicodeValue, scanner, out var toUnicodeName))
+                {
+                    toUnicodeCMap = CMapCache.Get(toUnicodeName.Data);
+                }
+                else
+                {
+                    throw new PdfDocumentFormatException($"Invalid type of toUnicode CMap encountered. Got: {toUnicodeValue}.");
                 }
             }
 
