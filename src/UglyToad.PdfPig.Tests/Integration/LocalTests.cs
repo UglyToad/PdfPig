@@ -13,7 +13,7 @@
         //[Fact]
         //public void Tests()
         //{
-        //    var files = Directory.GetFiles(@"C:\temp\pdfs");
+        //    var files = Directory.GetFiles(@"C:\temp\pdfs", "*.pdf");
 
         //    foreach (var file in files)
         //    {
