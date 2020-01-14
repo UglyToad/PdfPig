@@ -90,6 +90,11 @@
             {
                 throw new ArgumentException($"The provided character identifier was negative: {characterIdentifier}.");
             }
+
+            if (fontProgram == null)
+            {
+                return Descriptor?.BoundingBox ?? new PdfRectangle(0, 0, 1000, 0);
+            }
             
             if (fontProgram.TryGetBoundingBox(characterIdentifier, out var boundingBox))
             {
