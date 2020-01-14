@@ -148,6 +148,10 @@
                     width = boundingBoxPreTransform;
                 }
             }
+            else if (widths?.Length > 0)
+            {
+                width = widths[0];
+            }
             else
             {
                 throw new InvalidOperationException($"Could not retrieve width for character code: {characterCode} in font {Name}.");
