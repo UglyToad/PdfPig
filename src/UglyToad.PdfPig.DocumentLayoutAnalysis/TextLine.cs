@@ -51,10 +51,12 @@
 
             Text = string.Join(" ", words.Where(s => !string.IsNullOrWhiteSpace(s.Text)).Select(x => x.Text));
 
-            var minX = words.Min(x => x.BoundingBox.Left);
-            var minY = words.Min(x => x.BoundingBox.Bottom);
-            var maxX = words.Max(x => x.BoundingBox.Right);
-            var maxY = words.Max(x => x.BoundingBox.Top);
+            var normalisedBoundingBoxes = words.Select(x => NormaliseRectangle(x.BoundingBox)).ToList();
+            var minX = normalisedBoundingBoxes.Min(x => x.Left);
+            var minY = normalisedBoundingBoxes.Min(x => x.Bottom);
+            var maxX = normalisedBoundingBoxes.Max(x => x.Right);
+            var maxY = normalisedBoundingBoxes.Max(x => x.Top);
+
             BoundingBox = new PdfRectangle(minX, minY, maxX, maxY);
 
             if (words.All(x => x.TextDirection == words[0].TextDirection))
@@ -65,6 +67,14 @@
             {
                 TextDirection = TextDirection.Unknown;
             }
+        }
+
+        private PdfRectangle NormaliseRectangle(PdfRectangle rectangle)
+        {
+            return new PdfRectangle(Math.Min(rectangle.Left, rectangle.Right),
+                                    Math.Min(rectangle.Bottom, rectangle.Top),
+                                    Math.Max(rectangle.Left, rectangle.Right),
+                                    Math.Max(rectangle.Bottom, rectangle.Top));
         }
 
         /// <inheritdoc />

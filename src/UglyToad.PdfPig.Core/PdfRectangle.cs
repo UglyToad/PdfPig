@@ -73,51 +73,31 @@
         /// <summary>
         /// Create a new <see cref="PdfRectangle"/>.
         /// </summary>
-        public PdfRectangle(PdfPoint point1, PdfPoint point2) : this(point1.X, point1.Y, point2.X, point2.Y) { }
+        /// <param name="bottomLeft">Bottom left point of the rectangle.</param>
+        /// <param name="topRight">Top right point of the rectangle.</param>
+        public PdfRectangle(PdfPoint bottomLeft, PdfPoint topRight) :
+            this(bottomLeft.X, bottomLeft.Y, topRight.X, topRight.Y)
+        { }
 
         /// <summary>
         /// Create a new <see cref="PdfRectangle"/>.
         /// </summary>
+        /// <param name="x1">Bottom left point's x coordinate of the rectangle.</param>
+        /// <param name="y1">Bottom left point's y coordinate of the rectangle.</param>
+        /// <param name="x2">Top right point's x coordinate of the rectangle.</param>
+        /// <param name="y2">Top right point's y coordinate of the rectangle.</param>
         public PdfRectangle(short x1, short y1, short x2, short y2) : this((double)x1, y1, x2, y2) { }
 
         /// <summary>
         /// Create a new <see cref="PdfRectangle"/>.
         /// </summary>
-        public PdfRectangle(double x1, double y1, double x2, double y2)
-        {
-            double bottom;
-            double top;
-
-            if (y1 <= y2)
-            {
-                bottom = y1;
-                top = y2;
-            }
-            else
-            {
-                bottom = y2;
-                top = y1;
-            }
-
-            double left;
-            double right;
-            if (x1 <= x2)
-            {
-                left = x1;
-                right = x2;
-            }
-            else
-            {
-                left = x2;
-                right = x1;
-            }
-
-            TopLeft = new PdfPoint(left, top);
-            TopRight = new PdfPoint(right, top);
-
-            BottomLeft = new PdfPoint(left, bottom);
-            BottomRight = new PdfPoint(right, bottom);
-        }
+        /// <param name="x1">Bottom left point's x coordinate of the rectangle.</param>
+        /// <param name="y1">Bottom left point's y coordinate of the rectangle.</param>
+        /// <param name="x2">Top right point's x coordinate of the rectangle.</param>
+        /// <param name="y2">Top right point's y coordinate of the rectangle.</param>
+        public PdfRectangle(double x1, double y1, double x2, double y2) :
+            this(new PdfPoint(x1, y2), new PdfPoint(x2, y2), new PdfPoint(x1, y1), new PdfPoint(x2, y1))
+        { }
 
         /// <summary>
         /// Create a new <see cref="PdfRectangle"/>.

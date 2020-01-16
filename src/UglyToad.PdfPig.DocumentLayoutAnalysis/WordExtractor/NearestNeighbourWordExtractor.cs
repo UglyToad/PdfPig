@@ -38,9 +38,17 @@
                 .OrderByDescending(x => x.BoundingBox.Bottom)
                 .ThenBy(x => x.BoundingBox.Left).ToList();
 
+            List<Word> words270 = GetWords(
+                letters.Where(l => l.TextDirection == TextDirection.Rotate270),
+                (l1, l2) => Math.Max(l1.GlyphRectangle.Width, l2.GlyphRectangle.Width) * 0.2,
+                Distances.Manhattan, MaxDegreeOfParallelism)
+                .OrderBy(x => x.BoundingBox.Right)
+                .ThenByDescending(x => x.BoundingBox.Bottom).ToList();
+            wordsH.AddRange(words270);
+
             List<Word> words180 = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Rotate180),
-                (l1, l2) => Math.Max(l1.GlyphRectangle.Width, l2.GlyphRectangle.Width) * 0.2,
+                (l1, l2) => Math.Max(Math.Abs(l1.GlyphRectangle.Width), Math.Abs(l2.GlyphRectangle.Width)) * 0.2,
                 Distances.Manhattan, MaxDegreeOfParallelism)
                 .OrderBy(x => x.BoundingBox.Top)
                 .ThenByDescending(x => x.BoundingBox.Right).ToList();
@@ -48,19 +56,11 @@
 
             List<Word> words90 = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Rotate90),
-                (l1, l2) => Math.Max(l1.GlyphRectangle.Height, l2.GlyphRectangle.Height) * 0.2,
+                (l1, l2) => Math.Max(Math.Abs(l1.GlyphRectangle.Width), Math.Abs(l2.GlyphRectangle.Width)) * 0.2,
                 Distances.Manhattan, MaxDegreeOfParallelism)
                 .OrderByDescending(x => x.BoundingBox.Left)
                 .ThenBy(x => x.BoundingBox.Top).ToList();
             wordsH.AddRange(words90);
-
-            List<Word> words270 = GetWords(
-                letters.Where(l => l.TextDirection == TextDirection.Rotate270),
-                (l1, l2) => Math.Max(l1.GlyphRectangle.Height, l2.GlyphRectangle.Height) * 0.2,
-                Distances.Manhattan, MaxDegreeOfParallelism)
-                .OrderBy(x => x.BoundingBox.Right)
-                .ThenByDescending(x => x.BoundingBox.Bottom).ToList();
-            wordsH.AddRange(words270);
 
             List<Word> wordsU = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Unknown),
@@ -85,7 +85,7 @@
         /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
         /// <para>A positive property value limits the number of concurrent operations to the set value. 
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
-        private List<Word> GetWords(IEnumerable<Letter> pageLetters,
+        public List<Word> GetWords(IEnumerable<Letter> pageLetters,
             Func<Letter, Letter, double> maxDistanceFunction, Func<PdfPoint, PdfPoint, double> distMeasure,
             int maxDegreeOfParallelism)
         {
@@ -97,6 +97,7 @@
                 throw new ArgumentException("NearestNeighbourWordExtractor.GetWords(): Mixed Text Direction.");
             }
 
+            // TO DO: orderFunc should also take in account the edge relationships found by 'ClusterNearestNeighbours'
             Func<IEnumerable<Letter>, IReadOnlyList<Letter>> orderFunc = l => l.OrderBy(x => x.GlyphRectangle.Left).ToList();
             if (textDirection == TextDirection.Rotate180)
             {
