@@ -1,10 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
+    using Core;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
-    using Core;
 
     /// <summary>
     /// A word.
@@ -60,7 +60,7 @@
                 tempTextDirection = TextDirection.Unknown;
             }
 
-            (string, PdfRectangle) data;
+            Tuple<string, PdfRectangle> data;
 
             switch (tempTextDirection)
             {
@@ -82,7 +82,7 @@
 
                 case TextDirection.Unknown:
                 default:
-                    data = GetBoundingBoxH(letters);
+                    data = GetBoundingBoxUnknown(letters);
                     break;
             }
 
@@ -94,7 +94,7 @@
         }
 
         #region Bounding box
-        private (string, PdfRectangle) GetBoundingBoxH(IReadOnlyList<Letter> letters)
+        private Tuple<string, PdfRectangle> GetBoundingBoxH(IReadOnlyList<Letter> letters)
         {
             var builder = new StringBuilder();
 
@@ -130,10 +130,10 @@
                 }
             }
 
-            return (builder.ToString(), new PdfRectangle(minX, minY, maxX, maxY));
+            return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(minX, minY, maxX, maxY));
         }
 
-        private (string, PdfRectangle) GetBoundingBox180(IReadOnlyList<Letter> letters)
+        private Tuple<string, PdfRectangle> GetBoundingBox180(IReadOnlyList<Letter> letters)
         {
             var builder = new StringBuilder();
 
@@ -169,10 +169,10 @@
                 }
             }
 
-            return (builder.ToString(), new PdfRectangle(maxX, maxY, minX, minY));
+            return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(maxX, maxY, minX, minY));
         }
 
-        private (string, PdfRectangle) GetBoundingBox90(IReadOnlyList<Letter> letters)
+        private Tuple<string, PdfRectangle> GetBoundingBox90(IReadOnlyList<Letter> letters)
         {
             var builder = new StringBuilder();
 
@@ -208,13 +208,13 @@
                 }
             }
 
-            return (builder.ToString(), new PdfRectangle(new PdfPoint(maxX, maxY),
+            return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(new PdfPoint(maxX, maxY),
                                                          new PdfPoint(maxX, minY),
                                                          new PdfPoint(minX, maxY),
                                                          new PdfPoint(minX, minY)));
         }
 
-        private (string, PdfRectangle) GetBoundingBox270(IReadOnlyList<Letter> letters)
+        private Tuple<string, PdfRectangle> GetBoundingBox270(IReadOnlyList<Letter> letters)
         {
             var builder = new StringBuilder();
 
@@ -250,10 +250,49 @@
                 }
             }
 
-            return (builder.ToString(), new PdfRectangle(new PdfPoint(minX, minY),
+            return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(new PdfPoint(minX, minY),
                                                          new PdfPoint(minX, maxY),
                                                          new PdfPoint(maxX, minY),
                                                          new PdfPoint(maxX, maxY)));
+        }
+
+        private Tuple<string, PdfRectangle> GetBoundingBoxUnknown(IReadOnlyList<Letter> letters)
+        {
+            var builder = new StringBuilder();
+            for (var i = 0; i < letters.Count; i++)
+            {
+                builder.Append(letters[i].Value);
+            }
+
+            var minX = letters.Min(l => Min(l.GlyphRectangle.BottomLeft.X,
+                                            l.GlyphRectangle.BottomRight.X,
+                                            l.GlyphRectangle.TopLeft.X,
+                                            l.GlyphRectangle.TopRight.X));
+            var maxX = letters.Max(l => Max(l.GlyphRectangle.BottomLeft.X,
+                                            l.GlyphRectangle.BottomRight.X,
+                                            l.GlyphRectangle.TopLeft.X,
+                                            l.GlyphRectangle.TopRight.X));
+
+            var minY = letters.Min(l => Min(l.GlyphRectangle.BottomLeft.Y,
+                                            l.GlyphRectangle.BottomRight.Y,
+                                            l.GlyphRectangle.TopLeft.Y,
+                                            l.GlyphRectangle.TopRight.Y));
+            var maxY = letters.Max(l => Max(l.GlyphRectangle.BottomLeft.Y,
+                                            l.GlyphRectangle.BottomRight.Y,
+                                            l.GlyphRectangle.TopLeft.Y,
+                                            l.GlyphRectangle.TopRight.Y));
+
+            return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(minX, minY, maxX, maxY));
+        }
+
+        private double Min(double d1, double d2, double d3, double d4)
+        {
+            return Math.Min(d1, Math.Min(d2, Math.Min(d3, d4)));
+        }
+
+        private double Max(double d1, double d2, double d3, double d4)
+        {
+            return Math.Max(d1, Math.Max(d2, Math.Max(d3, d4)));
         }
         #endregion
 
