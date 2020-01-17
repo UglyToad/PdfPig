@@ -196,7 +196,7 @@
                     minY = letter.EndBaseLine.Y;
                 }
 
-                var right = letter.StartBaseLine.X - letter.GlyphRectangle.Width;
+                var right = letter.StartBaseLine.X + letter.GlyphRectangle.Height;
                 if (right > maxX)
                 {
                     maxX = right;
@@ -238,7 +238,7 @@
                     minY = letter.StartBaseLine.Y;
                 }
 
-                var right = letter.StartBaseLine.X - letter.GlyphRectangle.Width;
+                var right = letter.StartBaseLine.X - letter.GlyphRectangle.Height;
                 if (right < minX)
                 {
                     minX = right;
