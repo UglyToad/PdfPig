@@ -64,7 +64,7 @@
 
             List<Word> wordsU = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Other),
-                (l1, l2) => Math.Max(Math.Abs(l1.GlyphRectangle.Width), Math.Abs(l2.GlyphRectangle.Width)) * 0.2,
+                (l1, l2) => Math.Max(Math.Abs(l1.GlyphRectangle.Width), Math.Abs(l2.GlyphRectangle.Width)) * 0.5,
                 Distances.Euclidean, MaxDegreeOfParallelism)
                 .OrderByDescending(x => x.BoundingBox.Bottom)
                 .ThenBy(x => x.BoundingBox.Left).ToList();
