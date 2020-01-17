@@ -118,7 +118,7 @@
                 return TextDirection.Rotate270;
             }
 
-            return TextDirection.Unknown;
+            return TextDirection.Other;
         }
 
         /// <summary>

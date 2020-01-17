@@ -6,9 +6,9 @@
     public enum TextDirection
     {
         /// <summary>
-        /// Text direction not known.
+        /// Other text direction.
         /// </summary>
-        Unknown,
+        Other,
 
         /// <summary>
         /// Usual text direction (Left to Right).
