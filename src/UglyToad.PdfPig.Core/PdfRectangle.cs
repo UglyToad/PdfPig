@@ -120,15 +120,26 @@ namespace UglyToad.PdfPig.Core
 
             double bx = Math.Max(BottomRight.X - TopLeft.X, BottomLeft.X - TopRight.X);
             double by = Math.Max(TopRight.Y - BottomLeft.Y, TopLeft.Y - BottomRight.Y);
-            double t = Math.Atan2(BottomRight.Y - BottomLeft.Y, BottomRight.X - BottomLeft.X);
+            double t = 0;
+
+            if (!BottomRight.Equals(BottomLeft))
+            {
+                t = Math.Atan2(BottomRight.Y - BottomLeft.Y, BottomRight.X - BottomLeft.X);
+            }
+            else
+            {
+                // handle the case where both bottom points are identical
+                t = Math.Atan2(TopLeft.Y - BottomLeft.Y, TopLeft.X - BottomLeft.X) - Math.PI / 2.0;
+            }
+
             double cosT = Math.Cos(t);
             double sinT = Math.Sin(t);
-            double cosSqSinSqInv = 1 / (cosT * cosT - sinT * sinT);
+            double cosSqSinSqInv = 1.0 / (cosT * cosT - sinT * sinT);
 
             Rotation = Math.Round(t * 180.0 / Math.PI, 5);
-            Width = Math.Round(cosSqSinSqInv * (bx * cosT - by * sinT), 5);
-            Height = Math.Round(cosSqSinSqInv * (-bx * sinT + by * cosT), 5);
-            Area = Width * Height;
+            Width = Math.Round(cosSqSinSqInv * (bx * cosT - by * sinT), 7);
+            Height = Math.Round(cosSqSinSqInv * (-bx * sinT + by * cosT), 7);
+            Area = Math.Round(Width * Height, 7);
         }
 
         /// <summary>
