@@ -57,7 +57,7 @@
             var tempTextDirection = letters[0].TextDirection;
             if (letters.Any(l => l.TextDirection != tempTextDirection))
             {
-                tempTextDirection = TextDirection.Unknown;
+                tempTextDirection = TextDirection.Other;
             }
 
             Tuple<string, PdfRectangle> data;
@@ -80,9 +80,9 @@
                     data = GetBoundingBox270(letters);
                     break;
 
-                case TextDirection.Unknown:
+                case TextDirection.Other:
                 default:
-                    data = GetBoundingBoxUnknown(letters);
+                    data = GetBoundingBoxOther(letters);
                     break;
             }
 
@@ -256,7 +256,7 @@
                                                          new PdfPoint(maxX, maxY)));
         }
 
-        private Tuple<string, PdfRectangle> GetBoundingBoxUnknown(IReadOnlyList<Letter> letters)
+        private Tuple<string, PdfRectangle> GetBoundingBoxOther(IReadOnlyList<Letter> letters)
         {
             var builder = new StringBuilder();
             for (var i = 0; i < letters.Count; i++)

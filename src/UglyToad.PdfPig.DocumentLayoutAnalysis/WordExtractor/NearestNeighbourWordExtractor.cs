@@ -63,9 +63,9 @@
             wordsH.AddRange(words90);
 
             List<Word> wordsU = GetWords(
-                letters.Where(l => l.TextDirection == TextDirection.Unknown),
-                (l1, l2) => Math.Max(l1.GlyphRectangle.Width, l2.GlyphRectangle.Width) * 0.2,
-                Distances.Manhattan, MaxDegreeOfParallelism)
+                letters.Where(l => l.TextDirection == TextDirection.Other),
+                (l1, l2) => Math.Max(Math.Abs(l1.GlyphRectangle.Width), Math.Abs(l2.GlyphRectangle.Width)) * 0.2,
+                Distances.Euclidean, MaxDegreeOfParallelism)
                 .OrderByDescending(x => x.BoundingBox.Bottom)
                 .ThenBy(x => x.BoundingBox.Left).ToList();
             wordsH.AddRange(wordsU);

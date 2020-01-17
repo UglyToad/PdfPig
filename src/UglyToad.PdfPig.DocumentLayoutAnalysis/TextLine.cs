@@ -65,7 +65,7 @@
             }
             else
             {
-                TextDirection = TextDirection.Unknown;
+                TextDirection = TextDirection.Other;
             }
         }
 
