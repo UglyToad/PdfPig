@@ -55,7 +55,7 @@ namespace UglyToad.PdfPig.Core
         /// <summary>
         /// Area of the rectangle.
         /// </summary>
-        public double Area => Width * Height;
+        public double Area { get; }
 
         /// <summary>
         /// Left.
@@ -128,6 +128,7 @@ namespace UglyToad.PdfPig.Core
             Rotation = Math.Round(t * 180.0 / Math.PI, 5);
             Width = Math.Round(cosSqSinSqInv * (bx * cosT - by * sinT), 5);
             Height = Math.Round(cosSqSinSqInv * (-bx * sinT + by * cosT), 5);
+            Area = Width * Height;
         }
 
         /// <summary>
