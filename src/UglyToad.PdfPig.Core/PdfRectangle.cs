@@ -1,4 +1,6 @@
-﻿namespace UglyToad.PdfPig.Core
+﻿using System;
+
+namespace UglyToad.PdfPig.Core
 {
     /// <summary>
     /// A rectangle in a PDF file. 
@@ -38,12 +40,17 @@
         /// <summary>
         /// Width of the rectangle.
         /// </summary>
-        public double Width => Right - Left;
+        public double Width { get; }
 
         /// <summary>
         /// Height of the rectangle.
         /// </summary>
-        public double Height => Top - Bottom;
+        public double Height { get; }
+
+        /// <summary>
+        /// Rotation angle of the rectangle. Counterclockwise, in degrees.
+        /// </summary>
+        public double Rotation { get; }
 
         /// <summary>
         /// Area of the rectangle.
@@ -86,7 +93,8 @@
         /// <param name="y1">Bottom left point's y coordinate of the rectangle.</param>
         /// <param name="x2">Top right point's x coordinate of the rectangle.</param>
         /// <param name="y2">Top right point's y coordinate of the rectangle.</param>
-        public PdfRectangle(short x1, short y1, short x2, short y2) : this((double)x1, y1, x2, y2) { }
+        public PdfRectangle(short x1, short y1, short x2, short y2) :
+            this((double)x1, y1, x2, y2) { }
 
         /// <summary>
         /// Create a new <see cref="PdfRectangle"/>.
@@ -109,6 +117,17 @@
 
             BottomLeft = bottomLeft;
             BottomRight = bottomRight;
+
+            double bx = Math.Max(BottomRight.X - TopLeft.X, BottomLeft.X - TopRight.X);
+            double by = Math.Max(TopRight.Y - BottomLeft.Y, TopLeft.Y - BottomRight.Y);
+            double t = Math.Atan2(BottomRight.Y - BottomLeft.Y, BottomRight.X - BottomLeft.X);
+            double cosT = Math.Cos(t);
+            double sinT = Math.Sin(t);
+            double cosSqSinSqInv = 1 / (cosT * cosT - sinT * sinT);
+
+            Rotation = Math.Round(t * 180.0 / Math.PI, 5);
+            Width = Math.Round(cosSqSinSqInv * (bx * cosT - by * sinT), 5);
+            Height = Math.Round(cosSqSinSqInv * (-bx * sinT + by * cosT), 5);
         }
 
         /// <summary>
