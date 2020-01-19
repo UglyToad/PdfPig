@@ -292,26 +292,33 @@
         /// Depth-first search
         /// <para>https://en.wikipedia.org/wiki/Depth-first_search</para>
         /// </summary>
-        private static HashSet<int> DfsIterative(int c, int[][] adj, ref bool[] isDone)
+        private static HashSet<int> DfsIterative(int s, int[][] adj, ref bool[] isDone)
         {
             HashSet<int> group = new HashSet<int>();
             Stack<int> S = new Stack<int>();
-            S.Push(c);
+            S.Push(s);
 
             while (S.Any())
             {
-                var v = S.Pop();
-                if (!isDone[v])
+                var u = S.Pop();
+                if (!isDone[u])
                 {
-                    group.Add(v);
-                    isDone[v] = true;
-                    foreach (var w in adj[v])
+                    group.Add(u);
+                    isDone[u] = true;
+                    foreach (var v in adj[u])
                     {
-                        S.Push(w);
+                        S.Push(v);
                     }
                 }
             }
             return group;
+        }
+
+        public class DfsEdge : Tuple<int, int>
+        {
+            public DfsEdge(int item1, int item2) : base(item1, item2)
+            {
+            }
         }
     }
 }

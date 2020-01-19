@@ -97,21 +97,6 @@
                 throw new ArgumentException("NearestNeighbourWordExtractor.GetWords(): Mixed Text Direction.");
             }
 
-            // TO DO: orderFunc should also take in account the edge relationships found by 'ClusterNearestNeighbours'
-            Func<IEnumerable<Letter>, IReadOnlyList<Letter>> orderFunc = l => l.OrderBy(x => x.GlyphRectangle.Left).ToList();
-            if (textDirection == TextDirection.Rotate180)
-            {
-                orderFunc = l => l.OrderByDescending(x => x.GlyphRectangle.Right).ToList();
-            }
-            else if (textDirection == TextDirection.Rotate90)
-            {
-                orderFunc = l => l.OrderByDescending(x => x.GlyphRectangle.Top).ToList();
-            }
-            else if (textDirection == TextDirection.Rotate270)
-            {
-                orderFunc = l => l.OrderBy(x => x.GlyphRectangle.Bottom).ToList();
-            }
-
             Letter[] letters = pageLetters.ToArray();
 
             var groupedIndexes = ClusteringAlgorithms.ClusterNearestNeighbours(letters,
@@ -124,7 +109,7 @@
             List<Word> words = new List<Word>();
             for (int a = 0; a < groupedIndexes.Count(); a++)
             {
-                words.Add(new Word(orderFunc(groupedIndexes[a].Select(i => letters[i]))));
+                words.Add(new Word(groupedIndexes[a].Select(i => letters[i]).ToList()));
             }
 
             return words;
