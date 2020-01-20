@@ -35,7 +35,7 @@ namespace UglyToad.PdfPig.Core
         /// <summary>
         /// Centroid point of the rectangle.
         /// </summary>
-        public PdfPoint Centroid => new PdfPoint(Left + (Right - Left) / 2, Bottom + (Top - Bottom) / 2);
+        public PdfPoint Centroid { get; }
 
         /// <summary>
         /// Width of the rectangle.
@@ -120,8 +120,8 @@ namespace UglyToad.PdfPig.Core
 
             double bx = Math.Max(BottomRight.X - TopLeft.X, BottomLeft.X - TopRight.X);
             double by = Math.Max(TopRight.Y - BottomLeft.Y, TopLeft.Y - BottomRight.Y);
-            double t = 0;
 
+            double t;
             if (!BottomRight.Equals(BottomLeft))
             {
                 t = Math.Atan2(BottomRight.Y - BottomLeft.Y, BottomRight.X - BottomLeft.X);
@@ -140,6 +140,10 @@ namespace UglyToad.PdfPig.Core
             Width = Math.Round(cosSqSinSqInv * (bx * cosT - by * sinT), 7);
             Height = Math.Round(cosSqSinSqInv * (-bx * sinT + by * cosT), 7);
             Area = Math.Round(Width * Height, 7);
+
+            double Cx = Math.Min(BottomRight.X, Math.Min(TopLeft.X, Math.Min(BottomLeft.X, TopRight.X))) + (Width * cosT + Height * sinT) / 2.0;
+            double Cy = Math.Min(BottomRight.Y, Math.Min(TopLeft.Y, Math.Min(BottomLeft.Y, TopRight.Y))) + (Height * cosT + Width * sinT) / 2.0;
+            Centroid = new PdfPoint(Cx, Cy);
         }
 
         /// <summary>
@@ -150,7 +154,8 @@ namespace UglyToad.PdfPig.Core
         /// <returns>A new rectangle shifted on the y axis by the given delta value.</returns>
         public PdfRectangle Translate(double dx, double dy)
         {
-            return new PdfRectangle(BottomLeft.Translate(dx, dy), TopRight.Translate(dx, dy));
+            return new PdfRectangle(TopLeft.Translate(dx, dy), TopRight.Translate(dx, dy), 
+                                    BottomLeft.Translate(dx, dy), BottomRight.Translate(dx, dy));
         }
 
         /// <inheritdoc />
