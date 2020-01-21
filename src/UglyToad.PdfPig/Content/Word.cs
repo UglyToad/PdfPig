@@ -390,16 +390,6 @@
                     new PdfPoint(minX, maxY), new PdfPoint(minX, minY)));
             }
         }
-
-        private double Min(double d1, double d2, double d3, double d4)
-        {
-            return Math.Min(d1, Math.Min(d2, Math.Min(d3, d4)));
-        }
-
-        private double Max(double d1, double d2, double d3, double d4)
-        {
-            return Math.Max(d1, Math.Max(d2, Math.Max(d3, d4)));
-        }
         #endregion
 
         /// <inheritdoc />
