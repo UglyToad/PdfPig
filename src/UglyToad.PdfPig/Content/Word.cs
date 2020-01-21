@@ -361,9 +361,11 @@
                 }
             }
 
+            var firstLetter = letters[0];
+            var lastLetter = letters[letters.Count - 1];
             var rotation = Math.Atan2(
-                letters[letters.Count - 1].EndBaseLine.Y - letters[0].StartBaseLine.Y,
-                letters[letters.Count - 1].EndBaseLine.X - letters[0].StartBaseLine.X);
+                lastLetter.EndBaseLine.Y - firstLetter.StartBaseLine.Y,
+                lastLetter.EndBaseLine.X - firstLetter.StartBaseLine.X);
 
             if (rotation >= -0.785398 && rotation < 0.785398)
             {
