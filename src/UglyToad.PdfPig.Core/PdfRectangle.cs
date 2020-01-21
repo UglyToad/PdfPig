@@ -118,8 +118,8 @@ namespace UglyToad.PdfPig.Core
             BottomLeft = bottomLeft;
             BottomRight = bottomRight;
 
-            double bx = Math.Max(BottomRight.X - TopLeft.X, BottomLeft.X - TopRight.X);
-            double by = Math.Max(TopRight.Y - BottomLeft.Y, TopLeft.Y - BottomRight.Y);
+            double bx = Math.Max(Math.Abs(BottomRight.X - TopLeft.X), Math.Abs(BottomLeft.X - TopRight.X));
+            double by = Math.Max(Math.Abs(TopRight.Y - BottomLeft.Y), Math.Abs(TopLeft.Y - BottomRight.Y));
 
             double t;
             if (!BottomRight.Equals(BottomLeft))
@@ -129,21 +129,21 @@ namespace UglyToad.PdfPig.Core
             else
             {
                 // handle the case where both bottom points are identical
-                t = Math.Atan2(TopLeft.Y - BottomLeft.Y, TopLeft.X - BottomLeft.X) - Math.PI / 2.0;
+                t = Math.Atan2(TopLeft.Y - BottomLeft.Y, TopLeft.X - BottomLeft.X) - 1.5707963267949; // PI / 2
             }
 
             double cosT = Math.Cos(t);
             double sinT = Math.Sin(t);
             double cosSqSinSqInv = 1.0 / (cosT * cosT - sinT * sinT);
 
-            Rotation = Math.Round(t * 180.0 / Math.PI, 5);
+            Rotation = Math.Round(t * 57.2957795130823, 5); // 180 / PI
             Width = Math.Round(cosSqSinSqInv * (bx * cosT - by * sinT), 7);
             Height = Math.Round(cosSqSinSqInv * (-bx * sinT + by * cosT), 7);
             Area = Math.Round(Width * Height, 7);
 
             double Cx = Math.Min(BottomRight.X, Math.Min(TopLeft.X, Math.Min(BottomLeft.X, TopRight.X))) + (Width * cosT + Height * sinT) / 2.0;
             double Cy = Math.Min(BottomRight.Y, Math.Min(TopLeft.Y, Math.Min(BottomLeft.Y, TopRight.Y))) + (Height * cosT + Width * sinT) / 2.0;
-            Centroid = new PdfPoint(Cx, Cy);
+            Centroid = new PdfPoint(Math.Round(Cx, 7), Math.Round(Cy, 7));
         }
 
         /// <summary>

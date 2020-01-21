@@ -3,7 +3,6 @@
     using Core;
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Text;
 
     /// <summary>
@@ -55,9 +54,16 @@
             Letters = letters;
 
             var tempTextDirection = letters[0].TextDirection;
-            if (letters.Any(l => l.TextDirection != tempTextDirection))
+            if (tempTextDirection != TextDirection.Other)
             {
-                tempTextDirection = TextDirection.Other;
+                foreach (var letter in letters)
+                {
+                    if (letter.TextDirection != tempTextDirection)
+                    {
+                        tempTextDirection = TextDirection.Other;
+                        break;
+                    }
+                }
             }
 
             Tuple<string, PdfRectangle> data;
@@ -196,7 +202,7 @@
                     minY = letter.EndBaseLine.Y;
                 }
 
-                var right = letter.StartBaseLine.X + letter.GlyphRectangle.Height;
+                var right = letter.StartBaseLine.X - letter.GlyphRectangle.Height;
                 if (right > maxX)
                 {
                     maxX = right;
@@ -259,30 +265,130 @@
         private Tuple<string, PdfRectangle> GetBoundingBoxOther(IReadOnlyList<Letter> letters)
         {
             var builder = new StringBuilder();
+
+            var minX = double.MaxValue;
+            var maxX = double.MinValue;
+            var minY = double.MaxValue;
+            var maxY = double.MinValue;
+
             for (var i = 0; i < letters.Count; i++)
             {
-                builder.Append(letters[i].Value);
+                var letter = letters[i];
+                builder.Append(letter.Value);
+
+                // maxX
+                if (letter.GlyphRectangle.BottomLeft.X > maxX)
+                {
+                    maxX = letter.GlyphRectangle.BottomLeft.X;
+                }
+
+                if (letter.GlyphRectangle.BottomRight.X > maxX)
+                {
+                    maxX = letter.GlyphRectangle.BottomRight.X;
+                }
+
+                if (letter.GlyphRectangle.TopLeft.X > maxX)
+                {
+                    maxX = letter.GlyphRectangle.TopLeft.X;
+                }
+
+                if (letter.GlyphRectangle.TopRight.X > maxX)
+                {
+                    maxX = letter.GlyphRectangle.TopRight.X;
+                }
+
+                // minX
+                if (letter.GlyphRectangle.BottomLeft.X < minX)
+                {
+                    minX = letter.GlyphRectangle.BottomLeft.X;
+                }
+
+                if (letter.GlyphRectangle.BottomRight.X < minX)
+                {
+                    minX = letter.GlyphRectangle.BottomRight.X;
+                }
+
+                if (letter.GlyphRectangle.TopLeft.X < minX)
+                {
+                    minX = letter.GlyphRectangle.TopLeft.X;
+                }
+
+                if (letter.GlyphRectangle.TopRight.X < minX)
+                {
+                    minX = letter.GlyphRectangle.TopRight.X;
+                }
+
+                // maxY
+                if (letter.GlyphRectangle.BottomLeft.Y > maxY)
+                {
+                    maxY = letter.GlyphRectangle.BottomLeft.Y;
+                }
+
+                if (letter.GlyphRectangle.BottomRight.Y > maxY)
+                {
+                    maxY = letter.GlyphRectangle.BottomRight.Y;
+                }
+
+                if (letter.GlyphRectangle.TopLeft.Y > maxY)
+                {
+                    maxY = letter.GlyphRectangle.TopLeft.Y;
+                }
+
+                if (letter.GlyphRectangle.TopRight.Y > maxY)
+                {
+                    maxY = letter.GlyphRectangle.TopRight.Y;
+                }
+
+                // minY
+                if (letter.GlyphRectangle.BottomLeft.Y < minY)
+                {
+                    minY = letter.GlyphRectangle.BottomLeft.Y;
+                }
+
+                if (letter.GlyphRectangle.BottomRight.Y < minY)
+                {
+                    minY = letter.GlyphRectangle.BottomRight.Y;
+                }
+
+                if (letter.GlyphRectangle.TopLeft.Y < minY)
+                {
+                    minY = letter.GlyphRectangle.TopLeft.Y;
+                }
+
+                if (letter.GlyphRectangle.TopRight.Y < minY)
+                {
+                    minY = letter.GlyphRectangle.TopRight.Y;
+                }
             }
 
-            var minX = letters.Min(l => Min(l.GlyphRectangle.BottomLeft.X,
-                                            l.GlyphRectangle.BottomRight.X,
-                                            l.GlyphRectangle.TopLeft.X,
-                                            l.GlyphRectangle.TopRight.X));
-            var maxX = letters.Max(l => Max(l.GlyphRectangle.BottomLeft.X,
-                                            l.GlyphRectangle.BottomRight.X,
-                                            l.GlyphRectangle.TopLeft.X,
-                                            l.GlyphRectangle.TopRight.X));
+            var rotation = Math.Atan2(
+                letters[letters.Count - 1].EndBaseLine.Y - letters[0].StartBaseLine.Y,
+                letters[letters.Count - 1].EndBaseLine.X - letters[0].StartBaseLine.X);
 
-            var minY = letters.Min(l => Min(l.GlyphRectangle.BottomLeft.Y,
-                                            l.GlyphRectangle.BottomRight.Y,
-                                            l.GlyphRectangle.TopLeft.Y,
-                                            l.GlyphRectangle.TopRight.Y));
-            var maxY = letters.Max(l => Max(l.GlyphRectangle.BottomLeft.Y,
-                                            l.GlyphRectangle.BottomRight.Y,
-                                            l.GlyphRectangle.TopLeft.Y,
-                                            l.GlyphRectangle.TopRight.Y));
-
-            return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(minX, minY, maxX, maxY));
+            if (rotation >= -0.785398 && rotation < 0.785398)
+            {
+                // top border on top
+                return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(minX, minY, maxX, maxY));
+            }
+            else if (rotation >= 0.785398 && rotation < 2.356194)
+            {
+                // top border on the left
+                return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(
+                    new PdfPoint(minX, minY), new PdfPoint(minX, maxY),
+                    new PdfPoint(maxX, minY), new PdfPoint(maxX, maxY)));
+            }
+            else if (rotation >= 2.356194 && rotation < 3.926991)
+            {
+                // top border on the bottom
+                return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(minX, maxY, maxX, minY));
+            }
+            else
+            {
+                // top border on the right
+                return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(
+                    new PdfPoint(maxX, maxY), new PdfPoint(maxX, minY),
+                    new PdfPoint(minX, maxY), new PdfPoint(minX, minY)));
+            }
         }
 
         private double Min(double d1, double d2, double d3, double d4)
