@@ -3,7 +3,9 @@
     using Core;
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Text;
+    using UglyToad.PdfPig.Geometry;
 
     /// <summary>
     /// A word.
@@ -266,99 +268,19 @@
         {
             var builder = new StringBuilder();
 
-            var minX = double.MaxValue;
-            var maxX = double.MinValue;
-            var minY = double.MaxValue;
-            var maxY = double.MinValue;
+            var points = letters.SelectMany(r => new[]
+            {
+                r.StartBaseLine,
+                r.EndBaseLine,
+                r.GlyphRectangle.TopLeft,
+                r.GlyphRectangle.TopRight
+            }).Distinct();
+            var convexHull = GeometryExtensions.GrahamScan(points).ToList();
+            var minimalBoundingRectangle = GeometryExtensions.ParametricPerpendicularProjection(convexHull);
 
             for (var i = 0; i < letters.Count; i++)
             {
-                var letter = letters[i];
-                builder.Append(letter.Value);
-
-                // maxX
-                if (letter.GlyphRectangle.BottomLeft.X > maxX)
-                {
-                    maxX = letter.GlyphRectangle.BottomLeft.X;
-                }
-
-                if (letter.GlyphRectangle.BottomRight.X > maxX)
-                {
-                    maxX = letter.GlyphRectangle.BottomRight.X;
-                }
-
-                if (letter.GlyphRectangle.TopLeft.X > maxX)
-                {
-                    maxX = letter.GlyphRectangle.TopLeft.X;
-                }
-
-                if (letter.GlyphRectangle.TopRight.X > maxX)
-                {
-                    maxX = letter.GlyphRectangle.TopRight.X;
-                }
-
-                // minX
-                if (letter.GlyphRectangle.BottomLeft.X < minX)
-                {
-                    minX = letter.GlyphRectangle.BottomLeft.X;
-                }
-
-                if (letter.GlyphRectangle.BottomRight.X < minX)
-                {
-                    minX = letter.GlyphRectangle.BottomRight.X;
-                }
-
-                if (letter.GlyphRectangle.TopLeft.X < minX)
-                {
-                    minX = letter.GlyphRectangle.TopLeft.X;
-                }
-
-                if (letter.GlyphRectangle.TopRight.X < minX)
-                {
-                    minX = letter.GlyphRectangle.TopRight.X;
-                }
-
-                // maxY
-                if (letter.GlyphRectangle.BottomLeft.Y > maxY)
-                {
-                    maxY = letter.GlyphRectangle.BottomLeft.Y;
-                }
-
-                if (letter.GlyphRectangle.BottomRight.Y > maxY)
-                {
-                    maxY = letter.GlyphRectangle.BottomRight.Y;
-                }
-
-                if (letter.GlyphRectangle.TopLeft.Y > maxY)
-                {
-                    maxY = letter.GlyphRectangle.TopLeft.Y;
-                }
-
-                if (letter.GlyphRectangle.TopRight.Y > maxY)
-                {
-                    maxY = letter.GlyphRectangle.TopRight.Y;
-                }
-
-                // minY
-                if (letter.GlyphRectangle.BottomLeft.Y < minY)
-                {
-                    minY = letter.GlyphRectangle.BottomLeft.Y;
-                }
-
-                if (letter.GlyphRectangle.BottomRight.Y < minY)
-                {
-                    minY = letter.GlyphRectangle.BottomRight.Y;
-                }
-
-                if (letter.GlyphRectangle.TopLeft.Y < minY)
-                {
-                    minY = letter.GlyphRectangle.TopLeft.Y;
-                }
-
-                if (letter.GlyphRectangle.TopRight.Y < minY)
-                {
-                    minY = letter.GlyphRectangle.TopRight.Y;
-                }
+                builder.Append(letters[i].Value);
             }
 
             var firstLetter = letters[0];
@@ -370,26 +292,30 @@
             if (rotation >= -0.785398 && rotation < 0.785398)
             {
                 // top border on top
-                return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(minX, minY, maxX, maxY));
+                //return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(minX, minY, maxX, maxY));
+                return new Tuple<string, PdfRectangle>(builder.ToString(), minimalBoundingRectangle);
             }
             else if (rotation >= 0.785398 && rotation < 2.356194)
             {
                 // top border on the left
-                return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(
-                    new PdfPoint(minX, minY), new PdfPoint(minX, maxY),
-                    new PdfPoint(maxX, minY), new PdfPoint(maxX, maxY)));
+                //return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(
+                //    new PdfPoint(minX, minY), new PdfPoint(minX, maxY),
+                //    new PdfPoint(maxX, minY), new PdfPoint(maxX, maxY)));
+                return new Tuple<string, PdfRectangle>(builder.ToString(), minimalBoundingRectangle);
             }
             else if (rotation >= 2.356194 && rotation < 3.926991)
             {
                 // top border on the bottom
-                return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(minX, maxY, maxX, minY));
+                //return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(minX, maxY, maxX, minY));
+                return new Tuple<string, PdfRectangle>(builder.ToString(), minimalBoundingRectangle);
             }
             else
             {
                 // top border on the right
-                return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(
-                    new PdfPoint(maxX, maxY), new PdfPoint(maxX, minY),
-                    new PdfPoint(minX, maxY), new PdfPoint(minX, minY)));
+                //return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(
+                //    new PdfPoint(maxX, maxY), new PdfPoint(maxX, minY),
+                //    new PdfPoint(minX, maxY), new PdfPoint(minX, minY)));
+                return new Tuple<string, PdfRectangle>(builder.ToString(), minimalBoundingRectangle);
             }
         }
         #endregion

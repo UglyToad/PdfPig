@@ -71,10 +71,10 @@
 
         private PdfRectangle NormaliseRectangle(PdfRectangle rectangle)
         {
-            return new PdfRectangle(Math.Min(rectangle.Left, rectangle.Right),
-                                    Math.Min(rectangle.Bottom, rectangle.Top),
-                                    Math.Max(rectangle.Left, rectangle.Right),
-                                    Math.Max(rectangle.Bottom, rectangle.Top));
+            return new PdfRectangle(Math.Min(Math.Min(Math.Min(rectangle.TopLeft.X, rectangle.TopRight.X), rectangle.BottomLeft.X), rectangle.BottomRight.X),
+                                    Math.Min(Math.Min(Math.Min(rectangle.TopLeft.Y, rectangle.TopRight.Y), rectangle.BottomLeft.Y), rectangle.BottomRight.Y),
+                                    Math.Max(Math.Max(Math.Max(rectangle.TopLeft.X, rectangle.TopRight.X), rectangle.BottomLeft.X), rectangle.BottomRight.X),
+                                    Math.Max(Math.Max(Math.Max(rectangle.TopLeft.Y, rectangle.TopRight.Y), rectangle.BottomLeft.Y), rectangle.BottomRight.Y));
         }
 
         /// <inheritdoc />

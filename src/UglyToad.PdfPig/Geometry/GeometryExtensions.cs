@@ -1,16 +1,215 @@
 ﻿namespace UglyToad.PdfPig.Geometry
 {
+    using Core;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
-    using Core;
 
     /// <summary>
     /// Extension class to Geometry.
     /// </summary>
     public static class GeometryExtensions
     {
+        #region PdfPoint
+        /// <summary>
+        /// Get the dot product of both points.
+        /// </summary>
+        /// <param name="point1">The first point.</param>
+        /// <param name="point2">The second point.</param>
+        public static double DotProduct(this PdfPoint point1, PdfPoint point2)
+        {
+            return point1.X * point2.X + point1.Y * point2.Y;
+        }
+
+        /// <summary>
+        /// Get a point with the summed coordinates of both points.
+        /// </summary>
+        /// <param name="point1">The first point.</param>
+        /// <param name="point2">The second point.</param>
+        public static PdfPoint Add(this PdfPoint point1, PdfPoint point2)
+        {
+            return new PdfPoint(point1.X + point2.X, point1.Y + point2.Y);
+        }
+
+        /// <summary>
+        /// Get a point with the substracted coordinates of both points.
+        /// </summary>
+        /// <param name="point1">The first point.</param>
+        /// <param name="point2">The second point.</param>
+        public static PdfPoint Subtract(this PdfPoint point1, PdfPoint point2)
+        {
+            return new PdfPoint(point1.X - point2.X, point1.Y - point2.Y);
+        }
+
+        /// <summary>
+        /// Algorithm to find a minimal bounding rectangle (MBR) such that the MBR corresponds to a rectangle 
+        /// with smallest possible area completely enclosing the polygon.
+        /// <para>From A Fast Algorithm for Generating a Minimal Bounding Rectangle by Lennert D. Den Boer.</para>
+        /// </summary>
+        internal static PdfRectangle ParametricPerpendicularProjection(IReadOnlyList<PdfPoint> polygon)
+        {
+            // The vertices of P are assumed to be in strict cyclic sequential order,
+            // either clockwise or counter-clockwise relative to the origin P0. Polygon P is assumed to be 
+            // both simple and convex, and to contain no duplicate (coincident) vertices.
+            polygon = polygon.Distinct().OrderBy(p => p.X).ThenBy(p => p.Y).ToList();
+            var P0 = polygon[0];
+            polygon = polygon.OrderBy(p => p, new PdfPointComparer(P0)).ToList();
+
+            PdfPoint[] MBR = new PdfPoint[0];
+            
+            double Amin = double.MaxValue;
+            double tmin = 1;
+            double tmax = 0;
+            double smax = 0;
+            int j = 1;
+            int k = 0;
+            int l = -1;
+
+            PdfPoint Q = new PdfPoint();
+            PdfPoint R0 = new PdfPoint();
+            PdfPoint R1 = new PdfPoint();
+
+            int nv = polygon.Count;
+            PdfPoint u = new PdfPoint();
+
+            while (true)
+            {
+                var Pk = polygon[k];
+                
+                PdfPoint v = polygon[j].Subtract(Pk);
+                double r = 1.0 / v.DotProduct(v);
+
+                for (j = 0; j < nv; j++)
+                {
+                    if (j == k) continue;
+                    PdfPoint Pj = polygon[j];
+                    u = Pj.Subtract(Pk);
+                    double t = u.DotProduct(v) * r;
+                    PdfPoint Pt = new PdfPoint(t * v.X + Pk.X, t * v.Y + Pk.Y);
+                    u = Pt.Subtract(Pj);
+                    double s = u.DotProduct(u);
+
+                    if (t < tmin)
+                    {
+                        tmin = t;
+                        R0 = Pt;
+                    }
+
+                    if (t > tmax)
+                    {
+                        tmax = t;
+                        R1 = Pt;
+                    }
+
+                    if (s > smax)
+                    {
+                        smax = s;
+                        Q = Pt;
+                        l = j;
+                    }
+                }
+
+                PdfPoint PlMinusQ = polygon[l].Subtract(Q);
+                PdfPoint R2 = R1.Add(PlMinusQ);
+                PdfPoint R3 = R0.Add(PlMinusQ);
+                u = R1.Subtract(R0);
+                double A = u.DotProduct(u) * smax;
+
+                if (A < Amin)
+                {
+                    Amin = A;
+                    MBR = new[] { R0, R1, R2, R3 };
+                }
+
+                k++;
+                j = k;
+
+                if (j == nv) j = 0;
+
+                if (k == nv) break;
+            }
+
+            return new PdfRectangle(MBR[2], MBR[3], MBR[1], MBR[0]);
+        }
+
+        private class PdfPointComparer : IComparer<PdfPoint>
+        {
+            PdfPoint P0;
+
+            public PdfPointComparer(PdfPoint referencePoint)
+            {
+                P0 = referencePoint;
+            }
+
+            public int Compare(PdfPoint a, PdfPoint b)
+            {
+                var det = Math.Round((a.X - P0.X) * (b.Y - P0.Y) - (b.X - P0.X) * (a.Y - P0.Y), 6);
+                if (det == 0) return 0;
+                return Math.Sign(det);
+            }
+        }
+
+        /// <summary>
+        /// Algorithm to find the convex hull of the set of points with time complexity O(n log n).
+        /// </summary>
+        internal static IEnumerable<PdfPoint> GrahamScan(IEnumerable<PdfPoint> points)
+        {
+            if (points.Count() < 3) return points;
+
+            Func<PdfPoint, PdfPoint, PdfPoint, double> ccw = (PdfPoint p1, PdfPoint p2, PdfPoint p3) =>
+            {
+                return Math.Round((p2.X - p1.X) * (p3.Y - p1.Y) - (p2.Y - p1.Y) * (p3.X - p1.X), 6);
+            };
+
+            Func<PdfPoint, PdfPoint, double> polarAngle = (PdfPoint point1, PdfPoint point2) =>
+            {
+                return Math.Atan2(point2.Y - point1.Y, point2.X - point1.X) % Math.PI;
+            };
+
+            Stack<PdfPoint> stack = new Stack<PdfPoint>();
+            var sortedPoints = points.OrderBy(p => p.Y).ThenBy(p => p.X).ToList();
+            var P0 = sortedPoints[0];
+            var groups = sortedPoints.Skip(1).GroupBy(p => polarAngle(P0, p)).OrderBy(g => g.Key);
+
+            sortedPoints = new List<PdfPoint>();
+            foreach (var group in groups)
+            {
+                if (group.Count() == 1)
+                {
+                    sortedPoints.Add(group.First());
+                }
+                else
+                {
+                    // if more than one point has the same angle, 
+                    // remove all but the one that is farthest from P0
+                    sortedPoints.Add(group.OrderByDescending(p =>
+                    {
+                        double dx = p.X - P0.X;
+                        double dy = p.Y - P0.Y;
+                        return dx * dx + dy * dy;
+                    }).First());
+                }
+            }
+
+            stack.Push(P0);
+            stack.Push(sortedPoints[0]);
+            stack.Push(sortedPoints[1]);
+
+            for (int i = 2; i < sortedPoints.Count; i++)
+            {
+                var point = sortedPoints[i];
+                while (ccw(stack.ElementAt(1), stack.Peek(), point) < 0)
+                {
+                    stack.Pop();
+                }
+                stack.Push(point);
+            }
+
+            return stack;
+        }
+        #endregion
+
         #region PdfRectangle
         /// <summary>
         /// Whether the rectangle contains the point.
