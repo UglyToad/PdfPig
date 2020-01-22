@@ -52,10 +52,9 @@
         /// </summary>
         /// <param name="point1">The first point.</param>
         /// <param name="point2">The second point.</param>
-        /// <returns></returns>
         public static double Angle(PdfPoint point1, PdfPoint point2)
         {
-            return Math.Atan2(point2.Y - point1.Y, point2.X - point1.X) * 180.0 / Math.PI;
+            return Math.Atan2(point2.Y - point1.Y, point2.X - point1.X) * 57.29577951;
         }
 
         /// <summary>
@@ -63,7 +62,6 @@
         /// </summary>
         /// <param name="point1">The first point.</param>
         /// <param name="point2">The second point.</param>
-        /// <returns></returns>
         public static double Vertical(PdfPoint point1, PdfPoint point2)
         {
             return Math.Abs(point2.Y - point1.Y);
@@ -74,7 +72,6 @@
         /// </summary>
         /// <param name="point1">The first point.</param>
         /// <param name="point2">The second point.</param>
-        /// <returns></returns>
         public static double Horizontal(PdfPoint point1, PdfPoint point2)
         {
             return Math.Abs(point2.X - point1.X);
@@ -85,7 +82,6 @@
         /// </summary>
         /// <param name="string1">The first string.</param>
         /// <param name="string2">The second string.</param>
-        /// <returns></returns>
         public static int MinimumEditDistance(string string1, string string2)
         {
             ushort[,] d = new ushort[string1.Length + 1, string2.Length + 1];
@@ -134,7 +130,6 @@
         /// <param name="pivotPoint"></param>
         /// <param name="distanceMeasure">The distance measure to use.</param>
         /// <param name="distance">The distance between reference point, and its nearest neighbour.</param>
-        /// <returns></returns>
         internal static int FindIndexNearest<T>(this T element, IReadOnlyList<T> candidates,
             Func<T, PdfPoint> candidatesPoint, Func<T, PdfPoint> pivotPoint,
             Func<PdfPoint, PdfPoint, double> distanceMeasure, out double distance)

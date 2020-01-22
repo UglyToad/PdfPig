@@ -1,7 +1,7 @@
-﻿using System;
-
-namespace UglyToad.PdfPig.Core
+﻿namespace UglyToad.PdfPig.Core
 {
+    using System;
+
     /// <summary>
     /// A rectangle in a PDF file. 
     /// </summary>
