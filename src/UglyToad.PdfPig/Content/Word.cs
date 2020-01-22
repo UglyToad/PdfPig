@@ -145,8 +145,8 @@
         {
             var builder = new StringBuilder();
 
-            var maxX = double.MinValue;
             var minX = double.MaxValue;
+            var maxX = double.MinValue;
             var maxY = double.MinValue;
             var minY = double.MaxValue;
 
@@ -226,8 +226,8 @@
         {
             var builder = new StringBuilder();
 
-            var maxX = double.MinValue;
             var minX = double.MaxValue;
+            var maxX = double.MinValue;
             var minY = double.MaxValue;
             var maxY = double.MinValue;
 
@@ -266,8 +266,6 @@
 
         private Tuple<string, PdfRectangle> GetBoundingBoxOther(IReadOnlyList<Letter> letters)
         {
-            var builder = new StringBuilder();
-
             var points = letters.SelectMany(r => new[]
             {
                 r.StartBaseLine,
@@ -278,6 +276,7 @@
             var convexHull = GeometryExtensions.GrahamScan(points).ToList();
             var minimalBoundingRectangle = GeometryExtensions.ParametricPerpendicularProjection(convexHull);
 
+            var builder = new StringBuilder();
             for (var i = 0; i < letters.Count; i++)
             {
                 builder.Append(letters[i].Value);

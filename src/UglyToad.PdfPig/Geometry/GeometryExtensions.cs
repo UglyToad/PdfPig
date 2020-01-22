@@ -45,17 +45,15 @@
         /// <summary>
         /// Algorithm to find a minimal bounding rectangle (MBR) such that the MBR corresponds to a rectangle 
         /// with smallest possible area completely enclosing the polygon.
-        /// <para>From A Fast Algorithm for Generating a Minimal Bounding Rectangle by Lennert D. Den Boer.</para>
+        /// <para>From 'A Fast Algorithm for Generating a Minimal Bounding Rectangle' by Lennert D. Den Boer.</para>
         /// </summary>
+        /// <param name="polygon">
+        /// Polygon P is assumed to be both simple and convex, and to contain no duplicate (coincident) vertices.
+        /// The vertices of P are assumed to be in strict cyclic sequential order, either clockwise or 
+        /// counter-clockwise relative to the origin P0. 
+        /// </param>
         internal static PdfRectangle ParametricPerpendicularProjection(IReadOnlyList<PdfPoint> polygon)
         {
-            // The vertices of P are assumed to be in strict cyclic sequential order,
-            // either clockwise or counter-clockwise relative to the origin P0. Polygon P is assumed to be 
-            // both simple and convex, and to contain no duplicate (coincident) vertices.
-            polygon = polygon.Distinct().OrderBy(p => p.X).ThenBy(p => p.Y).ToList();
-            var P0 = polygon[0];
-            polygon = polygon.OrderBy(p => p, new PdfPointComparer(P0)).ToList();
-
             PdfPoint[] MBR = new PdfPoint[0];
             
             double Amin = double.MaxValue;
@@ -69,10 +67,10 @@
             PdfPoint Q = new PdfPoint();
             PdfPoint R0 = new PdfPoint();
             PdfPoint R1 = new PdfPoint();
-
-            int nv = polygon.Count;
             PdfPoint u = new PdfPoint();
 
+            int nv = polygon.Count;
+            
             while (true)
             {
                 var Pk = polygon[k];
@@ -131,23 +129,6 @@
             }
 
             return new PdfRectangle(MBR[2], MBR[3], MBR[1], MBR[0]);
-        }
-
-        private class PdfPointComparer : IComparer<PdfPoint>
-        {
-            PdfPoint P0;
-
-            public PdfPointComparer(PdfPoint referencePoint)
-            {
-                P0 = referencePoint;
-            }
-
-            public int Compare(PdfPoint a, PdfPoint b)
-            {
-                var det = Math.Round((a.X - P0.X) * (b.Y - P0.Y) - (b.X - P0.X) * (a.Y - P0.Y), 6);
-                if (det == 0) return 0;
-                return Math.Sign(det);
-            }
         }
 
         /// <summary>
