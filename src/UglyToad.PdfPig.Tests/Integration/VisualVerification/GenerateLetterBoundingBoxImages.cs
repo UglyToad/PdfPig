@@ -3,6 +3,7 @@
     using System;
     using System.Drawing;
     using System.IO;
+    using PdfPig.Core;
     using Xunit;
 
     public class GenerateLetterBoundingBoxImages
@@ -104,21 +105,19 @@
                 var page = document.GetPage(1);
 
                 var violetPen = new Pen(Color.BlueViolet, 1);
-                var greenPen = new Pen(Color.GreenYellow, 1);
+                var greenPen = new Pen(Color.Crimson, 1);
 
                 using (var bitmap = new Bitmap(image))
                 using (var graphics = Graphics.FromImage(bitmap))
                 {
                     foreach (var word in page.GetWords())
                     {
-                        graphics.DrawRectangle(greenPen, new Rectangle((int)word.BoundingBox.Left,
-                            imageHeight - (int)word.BoundingBox.Top, (int)word.BoundingBox.Width, (int)word.BoundingBox.Height));
+                        DrawRectangle(word.BoundingBox, graphics, greenPen, imageHeight);
                     }
 
                     foreach (var letter in page.Letters)
                     {
-                        graphics.DrawRectangle(violetPen, new Rectangle((int)letter.GlyphRectangle.Left,
-                            imageHeight - (int)(letter.GlyphRectangle.Bottom + letter.GlyphRectangle.Height), (int)Math.Max(1, letter.GlyphRectangle.Width), (int)letter.GlyphRectangle.Height));
+                        DrawRectangle(letter.GlyphRectangle, graphics, violetPen, imageHeight);
                     }
 
                     var imageName = $"{file}.jpg";
@@ -133,6 +132,25 @@
                     bitmap.Save(savePath);
                 }
             }
+        }
+
+        private static void DrawRectangle(PdfRectangle rectangle, Graphics graphics, Pen pen,
+            int imageHeight)
+        {
+            int GetY(PdfPoint p)
+            {
+                return imageHeight - (int) p.Y;
+            }
+
+            Point GetPoint(PdfPoint p)
+            {
+                return new Point((int)p.X, GetY(p));
+            }
+
+            graphics.DrawLine(pen, GetPoint(rectangle.BottomLeft), GetPoint(rectangle.BottomRight));
+            graphics.DrawLine(pen, GetPoint(rectangle.BottomRight), GetPoint(rectangle.TopRight));
+            graphics.DrawLine(pen, GetPoint(rectangle.TopRight), GetPoint(rectangle.TopLeft));
+            graphics.DrawLine(pen, GetPoint(rectangle.TopLeft), GetPoint(rectangle.BottomLeft));
         }
 
         private static Image GetCorrespondingImage(string filename)
