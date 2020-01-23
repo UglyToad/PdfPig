@@ -280,54 +280,48 @@
                 r.GlyphRectangle.TopRight
             }).Distinct();
             var convexHull = GeometryExtensions.GrahamScan(points).ToList();
+
+            // Candidates bounding boxes
             var mbr = GeometryExtensions.ParametricPerpendicularProjection(convexHull);
-            var mbrPoints = new[] { mbr.TopLeft, mbr.TopRight, mbr.BottomLeft, mbr.BottomRight };
+            var mbr1 = new PdfRectangle(mbr.BottomLeft, mbr.TopLeft, mbr.BottomRight, mbr.TopRight);
+            var mbr2 = new PdfRectangle(mbr.TopRight, mbr.BottomRight, mbr.TopLeft, mbr.BottomLeft);
+            var mbr3 = new PdfRectangle(mbr.BottomRight, mbr.BottomLeft, mbr.TopRight, mbr.TopLeft);
 
             // Find the orientation of the minimum bounding box, using the baseline angle.
-            // This method needs improvment as the baseline angle and the bbox angle can 
-            // belong to different quadrants of the unit circle.
             var firstLetter = letters[0];
             var lastLetter = letters[letters.Count - 1];
-            var rotation = Math.Atan2(
+            var baseLineAngle = Math.Atan2(
                 lastLetter.EndBaseLine.Y - firstLetter.StartBaseLine.Y,
                 lastLetter.EndBaseLine.X - firstLetter.StartBaseLine.X);
 
-            if (rotation >= -Math.PI && rotation <= -1.570796) // (-180 to -90deg)
+            var bbox = mbr;
+            var deltaAngle = Math.Abs(baseLineAngle - Math.Atan2(mbr.BottomRight.Y - mbr.BottomLeft.Y,
+                                                                 mbr.BottomRight.X - mbr.BottomLeft.X));
+
+            double deltaAngle1 = Math.Abs(baseLineAngle - Math.Atan2(mbr1.BottomRight.Y - mbr1.BottomLeft.Y, 
+                                                                     mbr1.BottomRight.X - mbr1.BottomLeft.X));
+            if (deltaAngle1 < deltaAngle)
             {
-                var br = mbrPoints.OrderBy(p => p.X).ThenByDescending(p => p.Y).First();
-                var bl = mbrPoints.OrderByDescending(p => p.Y).ThenByDescending(p => p.X).First();
-                var tl = mbrPoints.OrderByDescending(p => p.Y).ThenBy(p => p.X).First();
-                var tr = mbrPoints.OrderBy(p => p.X).ThenBy(p => p.Y).First();
-                return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(tl, tr, bl, br));
+                deltaAngle = deltaAngle1;
+                bbox = mbr1;
             }
-            else if (rotation > -1.570796 && rotation <= 0.0) // (-90deg to 0)
+
+            double deltaAngle2 = Math.Abs(baseLineAngle - Math.Atan2(mbr2.BottomRight.Y - mbr2.BottomLeft.Y, 
+                                                                     mbr2.BottomRight.X - mbr2.BottomLeft.X));
+            if (deltaAngle2 < deltaAngle)
             {
-                var bl = mbrPoints.OrderBy(p => p.X).ThenBy(p => p.Y).First();
-                var tl = mbrPoints.OrderByDescending(p => p.Y).ThenBy(p => p.X).First();
-                var tr = mbrPoints.OrderByDescending(p => p.X).ThenByDescending(p => p.Y).First();
-                var br = mbrPoints.OrderBy(p => p.Y).ThenByDescending(p => p.X).First();
-                return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(tl, tr, bl, br));
+                deltaAngle = deltaAngle2;
+                bbox = mbr2;
             }
-            else if (rotation > 0.0 && rotation <= 1.570796) // (0 to 90deg)
+
+            double deltaAngle3 = Math.Abs(baseLineAngle - Math.Atan2(mbr3.BottomRight.Y - mbr3.BottomLeft.Y, 
+                                                                     mbr3.BottomRight.X - mbr3.BottomLeft.X));
+            if (deltaAngle3 < deltaAngle)
             {
-                var tl = mbrPoints.OrderBy(p => p.X).ThenByDescending(p => p.Y).First();
-                var bl = mbrPoints.OrderBy(p => p.Y).ThenBy(p => p.X).First();
-                var br = mbrPoints.OrderByDescending(p => p.X).ThenBy(p => p.Y).First();
-                var tr = mbrPoints.OrderByDescending(p => p.Y).ThenByDescending(p => p.X).First();
-                return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(tl, tr, bl, br));
+                bbox = mbr3;
             }
-            else if (rotation > 1.570796 && rotation <= Math.PI) // (90 to 180deg)
-            {
-                var tr = mbrPoints.OrderBy(p => p.X).ThenBy(p => p.Y).First();
-                var bl = mbrPoints.OrderByDescending(p => p.X).ThenByDescending(p => p.Y).First();
-                var br = mbrPoints.OrderByDescending(p => p.Y).ThenBy(p => p.X).First();
-                var tl = mbrPoints.OrderBy(p => p.X).ThenByDescending(p => p.Y).First();
-                return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(tl, tr, bl, br));
-            }
-            else
-            {
-                throw new ArgumentOutOfRangeException(nameof(rotation), "Word orientation not handled.");
-            }
+
+            return new Tuple<string, PdfRectangle>(builder.ToString(), bbox);
         }
         #endregion
 
