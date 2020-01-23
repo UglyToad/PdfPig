@@ -22,6 +22,51 @@
         public static TransformationMatrix GetTranslationMatrix(double x, double y) => new TransformationMatrix(1, 0, 0,
             0, 1, 0,
             x, y, 1);
+        
+        /// <summary>
+        /// Create a new <see cref="TransformationMatrix"/> with the X and Y scaling values set.
+        /// </summary>
+        public static TransformationMatrix GetScaleMatrix(double scaleX, double scaleY) => new TransformationMatrix(scaleX, 0, 0,
+            0, scaleY, 0,
+            0, 0, 1);
+
+        /// <summary>
+        /// Create a new <see cref="TransformationMatrix"/> with the X and Y scaling values set.
+        /// </summary>
+        public static TransformationMatrix GetRotationMatrix(double degreesCounterclockwise)
+        {
+            double cos;
+            double sin;
+
+            switch (degreesCounterclockwise)
+            {
+                case 0:
+                case 360:
+                    cos = 1;
+                    sin = 0;
+                    break;
+                case 90:
+                    cos = 0;
+                    sin = 1;
+                    break;
+                case 180:
+                    cos = -1;
+                    sin = 0;
+                    break;
+                case 270:
+                    cos = 0;
+                    sin = -1;
+                    break;
+                default:
+                    cos = Math.Cos(degreesCounterclockwise * (Math.PI / 180));
+                    sin = Math.Sin(degreesCounterclockwise * (Math.PI / 180));
+                    break;
+            }
+
+            return new TransformationMatrix(cos, sin, 0,
+                -sin, cos, 0,
+                0, 0, 1);
+        }
 
         private readonly double row1;
         private readonly double row2;
