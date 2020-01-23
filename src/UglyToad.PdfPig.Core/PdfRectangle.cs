@@ -136,14 +136,14 @@
             double sinT = Math.Sin(t);
             double cosSqSinSqInv = 1.0 / (cosT * cosT - sinT * sinT);
 
-            Rotation = Math.Round(t * 57.2957795130823, 5); // 180 / PI
-            Width = Math.Round(cosSqSinSqInv * (bx * cosT - by * sinT), 7);
-            Height = Math.Round(cosSqSinSqInv * (-bx * sinT + by * cosT), 7);
-            Area = Math.Round(Width * Height, 7);
+            Rotation = t * 57.2957795130823; // 180 / PI
+            Width = cosSqSinSqInv * (bx * cosT - by * sinT);
+            Height = cosSqSinSqInv * (-bx * sinT + by * cosT);
+            Area = Width * Height;
 
             double Cx = Math.Min(BottomRight.X, Math.Min(TopLeft.X, Math.Min(BottomLeft.X, TopRight.X))) + (Width * cosT + Height * sinT) / 2.0;
             double Cy = Math.Min(BottomRight.Y, Math.Min(TopLeft.Y, Math.Min(BottomLeft.Y, TopRight.Y))) + (Height * cosT + Width * sinT) / 2.0;
-            Centroid = new PdfPoint(Math.Round(Cx, 7), Math.Round(Cy, 7));
+            Centroid = new PdfPoint(Cx, Cy);
         }
 
         /// <summary>
