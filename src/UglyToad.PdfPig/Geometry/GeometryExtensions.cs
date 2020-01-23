@@ -54,6 +54,28 @@
         /// </param>
         internal static PdfRectangle ParametricPerpendicularProjection(IReadOnlyList<PdfPoint> polygon)
         {
+            if (polygon == null || polygon.Count == 0)
+            {
+                throw new ArgumentException("ParametricPerpendicularProjection(): polygon cannot be null and must contain at least one point.");
+            }
+
+            if (polygon.Count < 4)
+            {
+                if (polygon.Count == 1)
+                {
+                    return new PdfRectangle(polygon[0], polygon[0]);
+                }
+                else if (polygon.Count == 2)
+                {
+                    return new PdfRectangle(polygon[0], polygon[1]);
+                }
+                else
+                {
+                    PdfPoint p3 = polygon[0].Add(polygon[1].Subtract(polygon[2]));
+                    return new PdfRectangle(p3, polygon[1], polygon[0], polygon[2]);
+                }
+            }
+
             PdfPoint[] MBR = new PdfPoint[0];
             
             double Amin = double.MaxValue;
@@ -136,6 +158,11 @@
         /// </summary>
         internal static IEnumerable<PdfPoint> GrahamScan(IEnumerable<PdfPoint> points)
         {
+            if (points == null || points.Count() == 0)
+            {
+                throw new ArgumentException("GrahamScan(): points cannot be null and must contain at least one point.");
+            }
+
             if (points.Count() < 3) return points;
 
             Func<PdfPoint, PdfPoint, PdfPoint, double> ccw = (PdfPoint p1, PdfPoint p2, PdfPoint p3) =>
@@ -171,6 +198,11 @@
                         return dx * dx + dy * dy;
                     }).First());
                 }
+            }
+
+            if (sortedPoints.Count < 2)
+            {
+                return new[] { P0, sortedPoints[0] };
             }
 
             stack.Push(P0);
