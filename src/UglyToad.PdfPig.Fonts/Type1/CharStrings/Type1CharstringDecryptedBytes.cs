@@ -25,7 +25,7 @@
         {
             Bytes = bytes ?? throw new ArgumentNullException(nameof(bytes));
             Index = index;
-            Name = name;
+            Name = name ?? index.ToString();
             Source = SourceType.Charstring;
         }
 
