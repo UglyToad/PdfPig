@@ -22,6 +22,15 @@
             }
 
             var decrypted = Decrypt(bytes, EexecEncryptionKey, EexecRandomBytes);
+
+            if (decrypted.Count == 0)
+            {
+                var defaultPrivateDictionary = new Type1PrivateDictionary(new Type1PrivateDictionary.Builder());
+                var defaultCharstrings = new Type1CharStrings(new Dictionary<string, Type1CharStrings.CommandSequence>(),
+                    new Dictionary<int, string>(),
+                    new Dictionary<int, Type1CharStrings.CommandSequence>());
+                return (defaultPrivateDictionary, defaultCharstrings);
+            }
             
             var tokenizer = new Type1Tokenizer(new ByteArrayInputBytes(decrypted));
 
