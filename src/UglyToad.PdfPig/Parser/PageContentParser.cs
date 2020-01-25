@@ -7,6 +7,7 @@
     using Graphics;
     using Graphics.Operations;
     using Graphics.Operations.InlineImages;
+    using Logging;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -19,7 +20,8 @@
             this.operationFactory = operationFactory;
         }
 
-        public IReadOnlyList<IGraphicsStateOperation> Parse(int pageNumber, IInputBytes inputBytes)
+        public IReadOnlyList<IGraphicsStateOperation> Parse(int pageNumber, IInputBytes inputBytes,
+            ILog log)
         {
             var scanner = new CoreTokenScanner(inputBytes);
 
@@ -75,6 +77,8 @@
                         // Work out how much data we missed between the false EI operator and the actual one.
                         var actualEndImageOffset = scanner.CurrentPosition - 3;
 
+                        log.Warn($"End inline image (EI) encountered after previous EI, attempting recovery at {actualEndImageOffset}.");
+
                         var gap = (int)(actualEndImageOffset - lastEndImageOffset);
 
                         var from = inputBytes.CurrentOffset;
@@ -101,11 +105,51 @@
                     }
                     else
                     {
-                        var operation = operationFactory.Create(op, precedingTokens);
+                        IGraphicsStateOperation operation;
+                        try
+                        {
+                            operation = operationFactory.Create(op, precedingTokens);
+                        }
+                        catch (Exception ex)
+                        {
+                            var lastWasEndImage = graphicsStateOperations.Count > 0
+                                                  && graphicsStateOperations[graphicsStateOperations.Count - 1] is EndInlineImage;
+
+                            // End images can cause weird state if the "EI" appears inside the inline data stream.
+                            if (lastWasEndImage)
+                            {
+                                log.Error($"Failed reading an operation at offset {inputBytes.CurrentOffset} for page {pageNumber}.", ex);
+                                operation = null;
+                            }
+                            else
+                            {
+                                throw;
+                            }
+                        }
 
                         if (operation != null)
                         {
                             graphicsStateOperations.Add(operation);
+                        }
+                        else if (graphicsStateOperations.Count > 0)
+                        {
+                            var lastToken = graphicsStateOperations[graphicsStateOperations.Count - 1];
+
+                            if (lastToken is EndInlineImage prevEndInlineImage && lastEndImageOffset.HasValue)
+                            {
+                                log.Warn($"Operator {op.Data} was not understood following end of inline image data at {lastEndImageOffset}, " +
+                                         "attempting recovery.");
+
+                                var nextByteSet = scanner.RecoverFromIncorrectEndImage(lastEndImageOffset.Value);
+                                graphicsStateOperations.RemoveAt(graphicsStateOperations.Count - 1);
+                                var newEndInlineImage = new EndInlineImage(prevEndInlineImage.ImageData.Concat(nextByteSet).ToList());
+                                graphicsStateOperations.Add(newEndInlineImage);
+                                lastEndImageOffset = scanner.CurrentPosition - 2;
+                            }
+                            else
+                            {
+                                log.Warn($"Operator which was not understood encountered. Values was {op.Data}. Ignoring.");
+                            }
                         }
                     }
 

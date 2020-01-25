@@ -383,7 +383,7 @@
 
             var contentStream = formStream.Decode(filterProvider);
 
-            var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentStream));
+            var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentStream), log);
 
             // 3. We don't respect clipping currently.
 

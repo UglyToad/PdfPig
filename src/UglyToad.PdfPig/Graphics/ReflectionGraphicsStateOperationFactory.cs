@@ -385,6 +385,11 @@ namespace UglyToad.PdfPig.Graphics
 
             foreach (var parameter in parameters)
             {
+                if (offset >= operands.Count)
+                {
+                    throw new InvalidOperationException($"Fewer operands {operands.Count} found than required ({offset + 1}) for operator: {op.Data}.");
+                }
+
                 if (parameter.ParameterType == typeof(decimal))
                 {
                     if (operands[offset] is NumericToken numeric)

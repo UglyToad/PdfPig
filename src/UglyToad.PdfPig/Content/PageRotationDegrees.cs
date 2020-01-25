@@ -47,6 +47,11 @@
         /// <param name="rotation">Rotation in degrees clockwise.</param>
         public PageRotationDegrees(int rotation)
         {
+            if (rotation < 0)
+            {
+                rotation = 360 + rotation;
+            }
+
             while (rotation >= 360)
             {
                 rotation -= 360;

@@ -3,9 +3,11 @@
     using System.Collections.Generic;
     using Core;
     using Graphics.Operations;
+    using Logging;
 
     internal interface IPageContentParser
     {
-        IReadOnlyList<IGraphicsStateOperation> Parse(int pageNumber, IInputBytes inputBytes);
+        IReadOnlyList<IGraphicsStateOperation> Parse(int pageNumber, IInputBytes inputBytes,
+            ILog log);
     }
 }

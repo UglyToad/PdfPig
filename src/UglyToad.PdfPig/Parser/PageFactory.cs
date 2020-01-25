@@ -141,7 +141,8 @@
             PageRotationDegrees rotation,
             bool isLenientParsing)
         {
-            var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentBytes));
+            var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentBytes),
+                log);
 
             var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit, rotation, isLenientParsing, pdfScanner, 
                 pageContentParser,

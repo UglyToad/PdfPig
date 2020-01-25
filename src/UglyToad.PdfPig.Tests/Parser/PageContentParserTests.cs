@@ -3,6 +3,7 @@
     using System;
     using System.IO;
     using System.Text.RegularExpressions;
+    using Logging;
     using PdfPig.Core;
     using PdfPig.Graphics;
     using PdfPig.Graphics.Core;
@@ -19,6 +20,7 @@
     public class PageContentParserTests
     {
         private readonly PageContentParser parser = new PageContentParser(new ReflectionGraphicsStateOperationFactory());
+        private readonly ILog log = new NoOpLog();
 
         [Fact]
         public void CorrectlyExtractsOperations()
@@ -27,7 +29,7 @@
             var content = File.ReadAllText(path);
             var input = StringBytesTestConverter.Convert(content, false);
 
-            var result = parser.Parse(1, input.Bytes);
+            var result = parser.Parse(1, input.Bytes, log);
 
             Assert.NotEmpty(result);
         }
@@ -39,7 +41,7 @@
             var content = File.ReadAllText(path);
             var input = StringBytesTestConverter.Convert(content, false);
 
-            var result = parser.Parse(1, input.Bytes);
+            var result = parser.Parse(1, input.Bytes, log);
 
             var replacementRegex = new Regex(@"\s(\.\d+)\b");
 
@@ -72,7 +74,7 @@
 ET";
             var input = StringBytesTestConverter.Convert(s, false);
 
-            var result = parser.Parse(1, input.Bytes);
+            var result = parser.Parse(1, input.Bytes, log);
 
             using (var stream = new MemoryStream())
             {
@@ -102,7 +104,7 @@ ET";
 ET";
             var input = StringBytesTestConverter.Convert(s, false);
 
-            var result = parser.Parse(1, input.Bytes);
+            var result = parser.Parse(1, input.Bytes, log);
 
             Assert.Equal(7, result.Count);
 
@@ -138,7 +140,7 @@ ET";
 
             var input = StringBytesTestConverter.Convert(s, false);
 
-            var result = parser.Parse(1, input.Bytes);
+            var result = parser.Parse(1, input.Bytes, log);
 
             Assert.Equal(4, result.Count);
 
@@ -163,7 +165,7 @@ cm BT 0.0001 Tc 19 0 0 19 0 0 Tm /Tc1 1 Tf (   \(sleep 1; printf ""QUIT\\r\\n""\
 
             var input = StringBytesTestConverter.Convert(s, false);
 
-            var result = parser.Parse(1, input.Bytes);
+            var result = parser.Parse(1, input.Bytes, log);
 
             Assert.Equal(9, result.Count);
 

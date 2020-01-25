@@ -220,6 +220,46 @@
             customTokenizers.RemoveAll(x => ReferenceEquals(x.tokenizer, tokenizer));
         }
 
+        /// <summary>
+        /// Handles the situation where "EI" was encountered in the inline image data but was
+        /// not the end of the image.
+        /// </summary>
+        /// <param name="lastEndImageOffset">The offset of the "E" of the "EI" marker which was incorrectly read.</param>
+        /// <returns>The set of bytes from the incorrect "EI" to the correct "EI" including the incorrect "EI".</returns>
+        public IReadOnlyList<byte> RecoverFromIncorrectEndImage(long lastEndImageOffset)
+        {
+            var data = new List<byte>();
+
+            inputBytes.Seek(lastEndImageOffset);
+            
+            if (!inputBytes.MoveNext() || inputBytes.CurrentByte != 'E')
+            {
+                var message = $"Failed to recover the image data stream for an inline image at offset {lastEndImageOffset}. " +
+                              $"Expected to read byte 'E' instead got {inputBytes.CurrentByte}.";
+
+                throw new PdfDocumentFormatException(message);
+            }
+
+            data.Add(inputBytes.CurrentByte);
+
+            if (!inputBytes.MoveNext() || inputBytes.CurrentByte != 'I')
+            {
+                var message = $"Failed to recover the image data stream for an inline image at offset {lastEndImageOffset}. " +
+                              $"Expected to read second byte 'I' following 'E' instead got {inputBytes.CurrentByte}.";
+
+                throw new PdfDocumentFormatException(message);
+            }
+
+            data.Add(inputBytes.CurrentByte);
+
+            data.AddRange(ReadUntilEndImage(lastEndImageOffset));
+
+            // Skip beyond the 'I' in the "EI" token we just read so the scanner is in a valid position.
+            inputBytes.MoveNext();
+
+            return data;
+        }
+
         private IReadOnlyList<byte> ReadInlineImageData()
         {
             // The ID operator should be followed by a single white-space character, and the next character is interpreted
@@ -231,9 +271,14 @@
 
             var startsAt = inputBytes.CurrentOffset - 2;
 
+            return ReadUntilEndImage(startsAt);
+        }
+
+        private List<byte> ReadUntilEndImage(long startsAt)
+        {
             const byte lastPlainText = 127;
             const byte space = 32;
-            
+
 
             var imageData = new List<byte>();
             byte prevByte = 0;
