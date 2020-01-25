@@ -60,14 +60,14 @@
         }
 
         [Fact]
-        public void HeaderPrecededByJunkNonLenientThrows()
+        public void HeaderPrecededByJunkNonLenientDoesNotThrow()
         {
             var scanner = StringBytesTestConverter.Scanner(@"one    
     %PDF-1.2");
 
-            Action action = () => FileHeaderParser.Parse(scanner, false, log);
+            var result = FileHeaderParser.Parse(scanner, false, log);
 
-            Assert.Throws<PdfDocumentFormatException>(action);
+            Assert.Equal(1.2m, result.Version);
         }
 
         [Fact]
@@ -82,14 +82,14 @@
         }
 
         [Fact]
-        public void HeaderPrecededByTooMuchJunkThrows()
+        public void HeaderPrecededByJunkDoesNotThrow()
         {
             var scanner = StringBytesTestConverter.Scanner(@"one two
 three %PDF-1.6");
 
-            Action action = () => FileHeaderParser.Parse(scanner, true, log);
+            var result = FileHeaderParser.Parse(scanner, true, log);
 
-            Assert.Throws<PdfDocumentFormatException>(action);
+            Assert.Equal(1.6m, result.Version);
         }
 
         [Fact]

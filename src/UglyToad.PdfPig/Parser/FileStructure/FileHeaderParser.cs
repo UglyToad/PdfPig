@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Parser.FileStructure
 {
     using System;
+    using System.Globalization;
     using Content;
     using Core;
     using Logging;
@@ -43,11 +44,11 @@
 
             var comment = scanner.CurrentToken as CommentToken;
 
-            var junkSkip = isLenientParsing ? 2 : 0;
+            const int junkTokensTolerance = 25;
             var attempts = 0;
             while (comment == null)
             {
-                if (attempts == junkSkip)
+                if (attempts == junkTokensTolerance)
                 {
                     throw new PdfDocumentFormatException("Could not find the version header comment at the start of the document.");
                 }
@@ -69,7 +70,10 @@
 
             const int toDecimalStartLength = 4;
 
-            if (!decimal.TryParse(comment.Data.Substring(toDecimalStartLength), out var version))
+            if (!decimal.TryParse(comment.Data.Substring(toDecimalStartLength), 
+                NumberStyles.Number,
+                CultureInfo.InvariantCulture,
+                out var version))
             {
                 return HandleMissingVersion(comment, isLenientParsing, log);
             }
