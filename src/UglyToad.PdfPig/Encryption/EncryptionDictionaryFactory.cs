@@ -43,7 +43,7 @@
             {
                 if (ownerToken is StringToken ownerString)
                 {
-                    ownerBytes = OtherEncodings.StringAsLatin1Bytes(ownerString.Data);
+                    ownerBytes = ownerString.GetBytes();
                 }
                 else if (ownerToken is HexToken ownerHex)
                 {
@@ -56,7 +56,7 @@
             {
                 if (userToken is StringToken userString)
                 {
-                    userBytes = OtherEncodings.StringAsLatin1Bytes(userString.Data);
+                    userBytes = userString.GetBytes();
                 }
                 else if (userToken is HexToken userHex)
                 {

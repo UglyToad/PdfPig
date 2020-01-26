@@ -144,6 +144,7 @@
                 }
             }
 
+            StringToken.Encoding encodedWith;
             string tokenStr;
             if (builder.Length >= 2)
             {
@@ -152,24 +153,32 @@
                     var rawBytes = OtherEncodings.StringAsLatin1Bytes(builder.ToString());
 
                     tokenStr = Encoding.BigEndianUnicode.GetString(rawBytes).Substring(1);
+
+                    encodedWith = StringToken.Encoding.Utf16BE;
                 }
                 else if (builder[0] == 0xFF && builder[1] == 0xFE)
                 {
                     var rawBytes = OtherEncodings.StringAsLatin1Bytes(builder.ToString());
 
                     tokenStr = Encoding.Unicode.GetString(rawBytes).Substring(1);
+
+                    encodedWith = StringToken.Encoding.Utf16;
                 }
                 else
                 {
                     tokenStr = builder.ToString();
+
+                    encodedWith = StringToken.Encoding.Iso88591;
                 }
             }
             else
             {
                 tokenStr = builder.ToString();
+
+                encodedWith = StringToken.Encoding.Iso88591;
             }
 
-            token = new StringToken(tokenStr);
+            token = new StringToken(tokenStr, encodedWith);
 
             return true;
         }
