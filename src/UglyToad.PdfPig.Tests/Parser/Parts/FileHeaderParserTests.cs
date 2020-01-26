@@ -33,6 +33,7 @@
             var result = FileHeaderParser.Parse(scanner, false, log);
 
             Assert.Equal(format, result.VersionString);
+            Assert.Equal(0, result.OffsetInFile);
         }
 
         [Fact]
@@ -47,6 +48,7 @@
             var result = FileHeaderParser.Parse(scanner, false, log);
 
             Assert.Equal(1.2m, result.Version);
+            Assert.Equal(9, result.OffsetInFile);
         }
 
         [Fact]
@@ -68,6 +70,7 @@
             var result = FileHeaderParser.Parse(scanner, false, log);
 
             Assert.Equal(1.2m, result.Version);
+            Assert.Equal(13, result.OffsetInFile);
         }
 
         [Fact]
@@ -79,6 +82,7 @@
             var result = FileHeaderParser.Parse(scanner, true, log);
 
             Assert.Equal(1.7m, result.Version);
+            Assert.Equal(13, result.OffsetInFile);
         }
 
         [Fact]
@@ -90,6 +94,7 @@ three %PDF-1.6");
             var result = FileHeaderParser.Parse(scanner, true, log);
 
             Assert.Equal(1.6m, result.Version);
+            Assert.Equal(15, result.OffsetInFile);
         }
 
         [Fact]
@@ -127,9 +132,10 @@ three %PDF-1.6");
         {
             var scanner = StringBytesTestConverter.Scanner(@"%FDF-1.6");
 
-            FileHeaderParser.Parse(scanner, false, log);
+            var result = FileHeaderParser.Parse(scanner, false, log);
 
             Assert.Equal(0, scanner.CurrentPosition);
+            Assert.Equal(0, result.OffsetInFile);
         }
     }
 }

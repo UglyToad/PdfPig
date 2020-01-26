@@ -28,6 +28,8 @@ namespace UglyToad.PdfPig.Tests.Tokens
         }
 
         public long CurrentPosition { get; set; }
+        public long Length { get; } = 10;
+
         public void RegisterCustomTokenizer(byte firstByte, ITokenizer tokenizer)
         {
             throw new NotImplementedException();

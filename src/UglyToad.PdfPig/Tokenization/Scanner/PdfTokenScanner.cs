@@ -46,6 +46,8 @@
 
         public long CurrentPosition => coreTokenScanner.CurrentPosition;
 
+        public long Length => coreTokenScanner.Length;
+
         public PdfTokenScanner(IInputBytes inputBytes, IObjectLocationProvider objectLocationProvider, IFilterProvider filterProvider,
             IEncryptionHandler encryptionHandler)
         {

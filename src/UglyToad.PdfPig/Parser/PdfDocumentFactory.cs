@@ -98,14 +98,19 @@
             
             var version = FileHeaderParser.Parse(scanner, isLenientParsing, log);
             
-            var crossReferenceOffset = FileTrailerParser.GetFirstCrossReferenceOffset(inputBytes, scanner, isLenientParsing);
+            var crossReferenceOffset = FileTrailerParser.GetFirstCrossReferenceOffset(inputBytes, scanner,
+                isLenientParsing) + version.OffsetInFile;
             
             // TODO: make this use the scanner.
             var validator = new CrossReferenceOffsetValidator(xrefValidator);
 
             crossReferenceOffset = validator.Validate(crossReferenceOffset, scanner, inputBytes, isLenientParsing);
             
-            crossReferenceTable = crossReferenceParser.Parse(inputBytes, isLenientParsing, crossReferenceOffset, pdfScanner, scanner);
+            crossReferenceTable = crossReferenceParser.Parse(inputBytes, isLenientParsing, 
+                crossReferenceOffset,
+                version.OffsetInFile,
+                pdfScanner, 
+                scanner);
             
             var fontDescriptorFactory = new FontDescriptorFactory();
             

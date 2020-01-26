@@ -30,7 +30,10 @@
             this.xrefCosChecker = xrefCosChecker;
         }
         
-        public CrossReferenceTable Parse(IInputBytes bytes, bool isLenientParsing, long crossReferenceLocation, IPdfTokenScanner pdfScanner, ISeekableTokenScanner tokenScanner)
+        public CrossReferenceTable Parse(IInputBytes bytes, bool isLenientParsing, long crossReferenceLocation,
+            long offsetCorrection,
+            IPdfTokenScanner pdfScanner, 
+            ISeekableTokenScanner tokenScanner)
         {
             long fixedOffset = offsetValidator.CheckXRefOffset(crossReferenceLocation, tokenScanner, bytes, isLenientParsing);
             if (fixedOffset > -1)
@@ -70,7 +73,14 @@
                     CrossReferenceTablePart tablePart = crossReferenceTableParser.Parse(tokenScanner,
                         previousCrossReferenceLocation, isLenientParsing);
 
-                    previousCrossReferenceLocation = tablePart.GetPreviousOffset();
+                    var nextOffset = tablePart.GetPreviousOffset();
+
+                    if (nextOffset >= 0)
+                    {
+                        nextOffset += offsetCorrection;
+                    }
+
+                    previousCrossReferenceLocation = nextOffset;
 
                     DictionaryToken tableDictionary = tablePart.Dictionary;
 
@@ -150,6 +160,12 @@
                     table.Add(tablePart);
 
                     previousCrossReferenceLocation = tablePart.Previous;
+
+                    if (previousCrossReferenceLocation >= 0)
+                    {
+                        previousCrossReferenceLocation += offsetCorrection;
+                    }
+
                     if (previousCrossReferenceLocation > 0)
                     {
                         // check the xref table reference

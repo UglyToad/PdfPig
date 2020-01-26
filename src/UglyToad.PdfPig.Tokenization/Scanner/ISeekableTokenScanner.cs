@@ -17,6 +17,11 @@
         long CurrentPosition { get; }
 
         /// <summary>
+        /// The length of the data represented by this scanner.
+        /// </summary>
+        long Length { get; }
+
+        /// <summary>
         /// Add support for a custom type of tokenizer.
         /// </summary>
         void RegisterCustomTokenizer(byte firstByte, ITokenizer tokenizer);

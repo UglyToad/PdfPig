@@ -33,7 +33,10 @@
 
         /// <inheritdoc />
         public long CurrentPosition => inputBytes.CurrentOffset;
-        
+
+        /// <inheritdoc />
+        public long Length => inputBytes.Length;
+
         private bool hasBytePreRead;
         private bool isInInlineImage;
 

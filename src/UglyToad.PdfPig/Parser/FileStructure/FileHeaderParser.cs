@@ -78,9 +78,14 @@
                 return HandleMissingVersion(comment, isLenientParsing, log);
             }
 
+            var atEnd = scanner.CurrentPosition == scanner.Length;
+            var rewind = atEnd ? 1 : 2;
+
+            var commentOffset = scanner.CurrentPosition - comment.Data.Length - rewind;
+
             scanner.Seek(0);
 
-            var result = new HeaderVersion(version, comment.Data);
+            var result = new HeaderVersion(version, comment.Data, commentOffset);
 
             return result;
         }
@@ -91,7 +96,7 @@
             {
                 log.Warn($"Did not find a version header of the correct format, defaulting to 1.4 since lenient. Header was: {comment.Data}.");
 
-                return new HeaderVersion(1.4m, "PDF-1.4");
+                return new HeaderVersion(1.4m, "PDF-1.4", 0);
             }
 
             throw new PdfDocumentFormatException($"The comment which should have provided the version was in the wrong format: {comment.Data}.");
