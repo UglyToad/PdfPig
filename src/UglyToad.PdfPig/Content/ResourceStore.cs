@@ -16,6 +16,7 @@
         private readonly IFontFactory fontFactory;
 
         private readonly Dictionary<IndirectReference, IFont> loadedFonts = new Dictionary<IndirectReference, IFont>();
+        private readonly Dictionary<NameToken, IFont> loadedDirectFonts = new Dictionary<NameToken, IFont>();
         private readonly StackDictionary<NameToken, IndirectReference> currentResourceState = new StackDictionary<NameToken, IndirectReference>();
 
         private readonly Dictionary<NameToken, DictionaryToken> extendedGraphicsStates = new Dictionary<NameToken, DictionaryToken>();
@@ -132,7 +133,31 @@
 
             foreach (var pair in fontDictionary.Data)
             {
-                if (!(pair.Value is IndirectReferenceToken objectKey))
+                if (pair.Value is IndirectReferenceToken objectKey)
+                {
+                    var reference = objectKey.Data;
+
+                    currentResourceState[NameToken.Create(pair.Key)] = reference;
+
+                    if (loadedFonts.ContainsKey(reference))
+                    {
+                        continue;
+                    }
+
+                    var fontObject = DirectObjectFinder.Get<DictionaryToken>(objectKey, scanner);
+
+                    if (fontObject == null)
+                    {
+                        throw new InvalidOperationException($"Could not retrieve the font with name: {pair.Key} which should have been object {objectKey}");
+                    }
+
+                    loadedFonts[reference] = fontFactory.Get(fontObject, isLenientParsing);
+                }
+                else if (pair.Value is DictionaryToken fd)
+                {
+                    loadedDirectFonts[NameToken.Create(pair.Key)] = fontFactory.Get(fd, isLenientParsing);
+                }
+                else
                 {
                     if (isLenientParsing)
                     {
@@ -141,24 +166,6 @@
 
                     throw new InvalidOperationException($"The font with name {pair.Key} did not link to an object key. Value was: {pair.Value}.");
                 }
-
-                var reference = objectKey.Data;
-
-                currentResourceState[NameToken.Create(pair.Key)] = reference;
-
-                if (loadedFonts.ContainsKey(reference))
-                {
-                    continue;
-                }
-
-                var fontObject = DirectObjectFinder.Get<DictionaryToken>(objectKey, scanner);
-
-                if (fontObject == null)
-                {
-                    throw new InvalidOperationException($"Could not retrieve the font with name: {pair.Key} which should have been object {objectKey}");
-                }
-
-                loadedFonts[reference] = fontFactory.Get(fontObject, isLenientParsing);
             }
         }
 
@@ -169,9 +176,15 @@
                 return lastLoadedFont.font;
             }
 
-            var reference = currentResourceState[name];
-
-            loadedFonts.TryGetValue(reference, out var font);
+            IFont font;
+            if (currentResourceState.TryGetValue(name, out var reference))
+            {
+                loadedFonts.TryGetValue(reference, out font);
+            }
+            else if (!loadedDirectFonts.TryGetValue(name, out font))
+            {
+                return null;
+            }
 
             lastLoadedFont = (name, font);
 
