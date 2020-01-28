@@ -7,6 +7,7 @@
     public class PdfRectangleTests
     {
         private static readonly DoubleComparer DoubleComparer = new DoubleComparer(3);
+        private static readonly DoubleComparer PreciseDoubleComparer = new DoubleComparer(6);
         private static readonly PointComparer PointComparer = new PointComparer(DoubleComparer);
         private static readonly PdfRectangle UnitRectangle = new PdfRectangle(new PdfPoint(0, 0), new PdfPoint(1, 1));
 
@@ -134,8 +135,9 @@
             Assert.Equal(new PdfPoint(-1, 0), rotated.TopLeft);
             Assert.Equal(new PdfPoint(-1, 1), rotated.TopRight);
 
-            Assert.Equal(1, rotated.Width);
-            Assert.Equal(-1, rotated.Height);
+            Assert.Equal(1, rotated.Width, PreciseDoubleComparer);
+            Assert.Equal(-1, rotated.Height, PreciseDoubleComparer);
+            Assert.Equal(90, rotated.Rotation, PreciseDoubleComparer);
         }
 
         [Fact]
@@ -150,8 +152,9 @@
             Assert.Equal(new PdfPoint(0, -1), rotated.TopLeft);
             Assert.Equal(new PdfPoint(-1, -1), rotated.TopRight);
 
-            Assert.Equal(-1, rotated.Width);
-            Assert.Equal(-1, rotated.Height);
+            Assert.Equal(-1, rotated.Width, PreciseDoubleComparer);
+            Assert.Equal(-1, rotated.Height, PreciseDoubleComparer);
+            Assert.Equal(180, rotated.Rotation, PreciseDoubleComparer);
         }
     }
 }

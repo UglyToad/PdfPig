@@ -58,24 +58,24 @@
         public double Area { get; }
 
         /// <summary>
-        /// Left.
+        /// Left. This value is only valid if the rectangle is not rotated, check <see cref="Rotation"/>.
         /// </summary>
-        public double Left => TopLeft.X;
+        public double Left => TopLeft.X < TopRight.X ? TopLeft.X : TopRight.X;
 
         /// <summary>
-        /// Top.
+        /// Top. This value is only valid if the rectangle is not rotated, check <see cref="Rotation"/>.
         /// </summary>
-        public double Top => TopLeft.Y;
+        public double Top => TopLeft.Y > BottomLeft.Y ? TopLeft.Y : BottomLeft.Y;
 
         /// <summary>
-        /// Right.
+        /// Right. This value is only valid if the rectangle is not rotated, check <see cref="Rotation"/>.
         /// </summary>
-        public double Right => BottomRight.X;
+        public double Right => BottomRight.X > BottomLeft.X ? BottomRight.X : BottomLeft.X;
 
         /// <summary>
-        /// Bottom.
+        /// Bottom. This value is only valid if the rectangle is not rotated, check <see cref="Rotation"/>.
         /// </summary>
-        public double Bottom => BottomRight.Y;
+        public double Bottom => BottomRight.Y < TopRight.Y ?  BottomRight.Y : TopRight.Y;
 
         /// <summary>
         /// Create a new <see cref="PdfRectangle"/>.
@@ -136,7 +136,7 @@
             double sinT = Math.Sin(t);
             double cosSqSinSqInv = 1.0 / (cosT * cosT - sinT * sinT);
 
-            Rotation = t * 57.2957795130823; // 180 / PI
+            Rotation = t * 180 / Math.PI;
             Width = cosSqSinSqInv * (bx * cosT - by * sinT);
             Height = cosSqSinSqInv * (-bx * sinT + by * cosT);
             Area = Width * Height;
