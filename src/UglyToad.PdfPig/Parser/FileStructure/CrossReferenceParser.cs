@@ -112,7 +112,7 @@
                         {
                             try
                             {
-                                streamPart = ParseCrossReferenceStream(streamOffset, pdfScanner);
+                                TryParseCrossReferenceStream(streamOffset, pdfScanner, out streamPart);
                             }
                             catch (InvalidOperationException ex)
                             {
@@ -156,7 +156,18 @@
                     tokenScanner.Seek(previousCrossReferenceLocation);
 
                     // parse xref stream
-                    var tablePart = ParseCrossReferenceStream(previousCrossReferenceLocation, pdfScanner);
+                    if (!TryParseCrossReferenceStream(previousCrossReferenceLocation, pdfScanner, out var tablePart))
+                    {
+                        if (!TryBruteForceXrefTableLocate(bytes, previousCrossReferenceLocation, out var actualOffset))
+                        {
+                            throw new PdfDocumentFormatException();
+                        }
+
+                        previousCrossReferenceLocation = actualOffset;
+                        missedAttempts++;
+                        continue;
+                    }
+
                     table.Add(tablePart);
 
                     previousCrossReferenceLocation = tablePart.Previous;
@@ -211,8 +222,11 @@
             return resolved;
         }
 
-        private CrossReferenceTablePart ParseCrossReferenceStream(long objByteOffset, IPdfTokenScanner pdfScanner)
+        private bool TryParseCrossReferenceStream(long objByteOffset, IPdfTokenScanner pdfScanner,
+            out CrossReferenceTablePart xrefTablePart)
         {
+            xrefTablePart = null;
+
             pdfScanner.Seek(objByteOffset);
 
             pdfScanner.MoveNext();
@@ -221,12 +235,91 @@
 
             if (streamObjectToken == null || !(streamObjectToken.Data is StreamToken objectStream))
             {
-                throw new PdfDocumentFormatException($"When reading a cross reference stream object found a non-stream object: {streamObjectToken?.Data}");
+                log.Error($"When reading a cross reference stream object found a non-stream object: {streamObjectToken?.Data}");
+
+                return false;
             }
             
-            CrossReferenceTablePart xrefTablePart = crossReferenceStreamParser.Parse(objByteOffset, objectStream);
+            xrefTablePart = crossReferenceStreamParser.Parse(objByteOffset, objectStream);
 
-            return xrefTablePart;
+            return true;
+        }
+
+        private bool TryBruteForceXrefTableLocate(IInputBytes bytes, long expectedOffset, 
+            out long actualOffset)
+        {
+            actualOffset = expectedOffset;
+
+            bytes.Seek(expectedOffset - 1);
+            var currentByte = bytes.CurrentByte;
+
+            // Forward:
+            while (bytes.MoveNext())
+            {
+                var previousByte = currentByte;
+                currentByte = bytes.CurrentByte;
+
+                if (currentByte != 'x' || !ReadHelper.IsWhitespace(previousByte))
+                {
+                    continue;
+                }
+
+                if (!ReadHelper.IsString(bytes, "xref"))
+                {
+                    continue;
+                }
+
+                actualOffset = bytes.CurrentOffset;
+                return true;
+            }
+
+            var lastOffset = expectedOffset - 1;
+
+            if (lastOffset < 0)
+            {
+                return false;
+            }
+
+            bytes.Seek(lastOffset);
+
+            var buffer = new byte[5];
+
+            while (bytes.Read(buffer) == buffer.Length)
+            {
+                for (var i = 1; i < buffer.Length; i++)
+                {
+                    var p = buffer[i - 1];
+                    var b = buffer[i];
+
+                    if (b != 'x' || !ReadHelper.IsWhitespace(p))
+                    {
+                        continue;
+                    }
+
+                    var xLocation = lastOffset + i + 1;
+
+                    bytes.Seek(xLocation);
+
+                    if (ReadHelper.IsString(bytes, "xref"))
+                    {
+                        actualOffset = xLocation;
+                        return true;
+                    }
+                }
+
+                lastOffset -= buffer.Length;
+                if (lastOffset < 0)
+                {
+                    break;
+                }
+
+                bytes.Seek(lastOffset);
+            }
+            bytes.Read(buffer);
+
+
+
+            return false;
         }
     }
 }

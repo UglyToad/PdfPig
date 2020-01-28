@@ -70,6 +70,11 @@
         public PageSize Size { get; }
 
         /// <summary>
+        /// The number of images on this page. Use <see cref="GetImages"/> to access the image contents.
+        /// </summary>
+        public int NumberOfImages => Content.NumberOfImages;
+
+        /// <summary>
         /// The parsed graphics state operations in the content stream for this page. 
         /// </summary>
         public IReadOnlyList<IGraphicsStateOperation> Operations => Content.GraphicsStateOperations;

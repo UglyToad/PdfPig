@@ -164,6 +164,7 @@
 
         /// <summary>
         /// Whether the given string is at this position in the input.
+        /// Resets to the current offset once read.
         /// </summary>
         public static bool IsString(IInputBytes bytes, string s)
         {

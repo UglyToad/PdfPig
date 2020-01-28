@@ -30,6 +30,8 @@
 
         public IReadOnlyList<PdfPath> Paths { get; }
 
+        public int NumberOfImages => images.Count;
+
         internal PageContent(IReadOnlyList<IGraphicsStateOperation> graphicsStateOperations, IReadOnlyList<Letter> letters,
             IReadOnlyList<PdfPath> paths,
             IReadOnlyList<Union<XObjectContentRecord, InlineImage>> images,
