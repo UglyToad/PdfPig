@@ -35,27 +35,75 @@
         /// <summary>
         /// Centroid point of the rectangle.
         /// </summary>
-        public PdfPoint Centroid { get; }
+        public PdfPoint Centroid
+        {
+            get
+            {
+                var t = GetT();
 
+                var cosT = Math.Cos(t);
+                var sinT = Math.Sin(t);
+
+                var cx = Math.Min(BottomRight.X, Math.Min(TopLeft.X, Math.Min(BottomLeft.X, TopRight.X)))
+                         + (Width * cosT + Height * sinT) / 2.0;
+                var cy = Math.Min(BottomRight.Y, Math.Min(TopLeft.Y, Math.Min(BottomLeft.Y, TopRight.Y)))
+                         + (Height * cosT + Width * sinT) / 2.0;
+
+                return new PdfPoint(cx, cy);
+            }
+        }
+
+        private double width;
         /// <summary>
         /// Width of the rectangle.
         /// </summary>
-        public double Width { get; }
+        public double Width
+        {
+            get
+            {
+                if (width == double.MinValue)
+                {
+                    GetWidthHeight();
+                }
 
+                return width;
+            }
+        }
+
+        private double height;
         /// <summary>
         /// Height of the rectangle.
         /// </summary>
-        public double Height { get; }
+        public double Height
+        {
+            get
+            {
+                if (height == double.MinValue)
+                {
+                    GetWidthHeight();
+                }
+
+                return height;
+            }
+        }
 
         /// <summary>
         /// Rotation angle of the rectangle. Counterclockwise, in degrees.
         /// </summary>
-        public double Rotation { get; }
+        public double Rotation
+        {
+            get
+            {
+                var rotation = GetT() * 180 / Math.PI;
+
+                return rotation;
+            }
+        }
 
         /// <summary>
         /// Area of the rectangle.
         /// </summary>
-        public double Area { get; }
+        public double Area => Math.Abs(Width * Height);
 
         /// <summary>
         /// Left. This value is only valid if the rectangle is not rotated, check <see cref="Rotation"/>.
@@ -75,7 +123,7 @@
         /// <summary>
         /// Bottom. This value is only valid if the rectangle is not rotated, check <see cref="Rotation"/>.
         /// </summary>
-        public double Bottom => BottomRight.Y < TopRight.Y ?  BottomRight.Y : TopRight.Y;
+        public double Bottom => BottomRight.Y < TopRight.Y ? BottomRight.Y : TopRight.Y;
 
         /// <summary>
         /// Create a new <see cref="PdfRectangle"/>.
@@ -94,7 +142,8 @@
         /// <param name="x2">Top right point's x coordinate of the rectangle.</param>
         /// <param name="y2">Top right point's y coordinate of the rectangle.</param>
         public PdfRectangle(short x1, short y1, short x2, short y2) :
-            this((double)x1, y1, x2, y2) { }
+            this((double)x1, y1, x2, y2)
+        { }
 
         /// <summary>
         /// Create a new <see cref="PdfRectangle"/>.
@@ -118,32 +167,8 @@
             BottomLeft = bottomLeft;
             BottomRight = bottomRight;
 
-            double bx = Math.Max(Math.Abs(BottomRight.X - TopLeft.X), Math.Abs(BottomLeft.X - TopRight.X));
-            double by = Math.Max(Math.Abs(TopRight.Y - BottomLeft.Y), Math.Abs(TopLeft.Y - BottomRight.Y));
-
-            double t;
-            if (!BottomRight.Equals(BottomLeft))
-            {
-                t = Math.Atan2(BottomRight.Y - BottomLeft.Y, BottomRight.X - BottomLeft.X);
-            }
-            else
-            {
-                // handle the case where both bottom points are identical
-                t = Math.Atan2(TopLeft.Y - BottomLeft.Y, TopLeft.X - BottomLeft.X) - 1.5707963267949; // PI / 2
-            }
-
-            double cosT = Math.Cos(t);
-            double sinT = Math.Sin(t);
-            double cosSqSinSqInv = 1.0 / (cosT * cosT - sinT * sinT);
-
-            Rotation = t * 180 / Math.PI;
-            Width = cosSqSinSqInv * (bx * cosT - by * sinT);
-            Height = cosSqSinSqInv * (-bx * sinT + by * cosT);
-            Area = Width * Height;
-
-            double Cx = Math.Min(BottomRight.X, Math.Min(TopLeft.X, Math.Min(BottomLeft.X, TopRight.X))) + (Width * cosT + Height * sinT) / 2.0;
-            double Cy = Math.Min(BottomRight.Y, Math.Min(TopLeft.Y, Math.Min(BottomLeft.Y, TopRight.Y))) + (Height * cosT + Width * sinT) / 2.0;
-            Centroid = new PdfPoint(Cx, Cy);
+            width = double.MinValue;
+            height = double.MinValue;
         }
 
         /// <summary>
@@ -154,8 +179,39 @@
         /// <returns>A new rectangle shifted on the y axis by the given delta value.</returns>
         public PdfRectangle Translate(double dx, double dy)
         {
-            return new PdfRectangle(TopLeft.Translate(dx, dy), TopRight.Translate(dx, dy), 
+            return new PdfRectangle(TopLeft.Translate(dx, dy), TopRight.Translate(dx, dy),
                                     BottomLeft.Translate(dx, dy), BottomRight.Translate(dx, dy));
+        }
+
+        private double GetT()
+        {
+            double t;
+            if (!BottomRight.Equals(BottomLeft))
+            {
+                t = Math.Atan2(BottomRight.Y - BottomLeft.Y, BottomRight.X - BottomLeft.X);
+            }
+            else
+            {
+                // handle the case where both bottom points are identical
+                t = Math.Atan2(TopLeft.Y - BottomLeft.Y, TopLeft.X - BottomLeft.X) - Math.PI / 2;
+            }
+
+            return t;
+        }
+
+        private void GetWidthHeight()
+        {
+            var bx = Math.Max(Math.Abs(BottomRight.X - TopLeft.X), Math.Abs(BottomLeft.X - TopRight.X));
+            var by = Math.Max(Math.Abs(TopRight.Y - BottomLeft.Y), Math.Abs(TopLeft.Y - BottomRight.Y));
+
+            var t = GetT();
+
+            var cosT = Math.Cos(t);
+            var sinT = Math.Sin(t);
+            var cosSqSinSqInv = 1.0 / (cosT * cosT - sinT * sinT);
+
+            width = cosSqSinSqInv * (bx * cosT - by * sinT);
+            height = cosSqSinSqInv * (-bx * sinT + by * cosT);
         }
 
         /// <inheritdoc />
