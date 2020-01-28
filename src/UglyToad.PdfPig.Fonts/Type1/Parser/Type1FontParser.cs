@@ -316,18 +316,42 @@
                 return (new ArrayToken(result), null);
             }
 
+            var stoppedOnDup = false;
+
             while (scanner.MoveNext() && (!(scanner.CurrentToken is OperatorToken forOperator) || forOperator.Data != "for"))
             {
+                if (!(scanner.CurrentToken is OperatorToken operatorToken))
+                {
+                    continue;
+                }
+
+                if (string.Equals(operatorToken.Data, "for", StringComparison.OrdinalIgnoreCase))
+                {
+                    break;
+                }
+
+                if (string.Equals(operatorToken.Data, OperatorToken.Dup.Data, StringComparison.OrdinalIgnoreCase))
+                {
+                    stoppedOnDup = true;
+                    break;
+                }
                 // skip these operators for now, they're probably important...
             }
 
-            if (scanner.CurrentToken != OperatorToken.For)
+            if (scanner.CurrentToken != OperatorToken.For && !stoppedOnDup)
             {
                 return (new ArrayToken(result), null);
             }
 
-            while (scanner.MoveNext() && scanner.CurrentToken != OperatorToken.Def && scanner.CurrentToken != OperatorToken.Readonly)
+            bool IsDefOrReadonly()
             {
+                return scanner.CurrentToken == OperatorToken.Def
+                       || scanner.CurrentToken == OperatorToken.Readonly;
+            }
+
+            while ((stoppedOnDup || scanner.MoveNext()) && !IsDefOrReadonly())
+            {
+                stoppedOnDup = false;
                 if (scanner.CurrentToken != OperatorToken.Dup)
                 {
                     throw new InvalidFontFormatException("Expected the array for encoding to begin with 'dup'.");

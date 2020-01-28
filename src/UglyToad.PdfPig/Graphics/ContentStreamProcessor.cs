@@ -413,6 +413,11 @@
 
         public void StrokePath(bool close)
         {
+            if (CurrentPath == null)
+            {
+                return;
+            }
+
             if (close)
             {
                 ClosePath();
@@ -427,6 +432,11 @@
 
         public void FillPath(bool close)
         {
+            if (CurrentPath == null)
+            {
+                return;
+            }
+
             if (close)
             {
                 ClosePath();
