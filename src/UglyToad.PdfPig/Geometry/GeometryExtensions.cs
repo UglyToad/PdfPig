@@ -167,7 +167,7 @@
         /// </summary>
         /// <param name="points">The points.</param>
         /// <returns></returns>
-        public static PdfRectangle OrientedBoundingBox(IReadOnlyList<PdfPoint> points)
+        internal static PdfRectangle OrientedBoundingBox(IReadOnlyList<PdfPoint> points)
         {
             if (points == null || points.Count < 2)
             {
