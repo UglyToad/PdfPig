@@ -39,7 +39,11 @@
         {
             get
             {
-                (double cosT, double sinT) = GetCosSin();
+                var t = GetT();
+
+                var cosT = Math.Cos(t);
+                var sinT = Math.Sin(t);
+
                 var cx = Math.Min(BottomRight.X, Math.Min(TopLeft.X, Math.Min(BottomLeft.X, TopRight.X)))
                          + (Width * cosT + Height * sinT) / 2.0;
                 var cy = Math.Min(BottomRight.Y, Math.Min(TopLeft.Y, Math.Min(BottomLeft.Y, TopRight.Y)))
@@ -61,6 +65,7 @@
                 {
                     GetWidthHeight();
                 }
+
                 return width;
             }
         }
@@ -77,6 +82,7 @@
                 {
                     GetWidthHeight();
                 }
+
                 return height;
             }
         }
@@ -88,7 +94,9 @@
         {
             get
             {
-                return GetT() * 180 / Math.PI;
+                var rotation = GetT() * 180 / Math.PI;
+
+                return rotation;
             }
         }
 
@@ -161,9 +169,6 @@
 
             width = double.NaN;
             height = double.NaN;
-            t = double.NaN;
-            cosT = double.NaN;
-            sinT = double.NaN;
         }
 
         /// <summary>
@@ -178,21 +183,19 @@
                                     BottomLeft.Translate(dx, dy), BottomRight.Translate(dx, dy));
         }
 
-        private double t;
         private double GetT()
         {
-            if (double.IsNaN(t))
+            double t;
+            if (!BottomRight.Equals(BottomLeft))
             {
-                if (!BottomRight.Equals(BottomLeft))
-                {
-                    t = Math.Atan2(BottomRight.Y - BottomLeft.Y, BottomRight.X - BottomLeft.X);
-                }
-                else
-                {
-                    // handle the case where both bottom points are identical
-                    t = Math.Atan2(TopLeft.Y - BottomLeft.Y, TopLeft.X - BottomLeft.X) - Math.PI / 2;
-                }
+                t = Math.Atan2(BottomRight.Y - BottomLeft.Y, BottomRight.X - BottomLeft.X);
             }
+            else
+            {
+                // handle the case where both bottom points are identical
+                t = Math.Atan2(TopLeft.Y - BottomLeft.Y, TopLeft.X - BottomLeft.X) - Math.PI / 2;
+            }
+
             return t;
         }
 
@@ -201,24 +204,14 @@
             var bx = Math.Max(Math.Abs(BottomRight.X - TopLeft.X), Math.Abs(BottomLeft.X - TopRight.X));
             var by = Math.Max(Math.Abs(TopRight.Y - BottomLeft.Y), Math.Abs(TopLeft.Y - BottomRight.Y));
 
-            (double cosT, double sinT) = GetCosSin();
+            var t = GetT();
+
+            var cosT = Math.Cos(t);
+            var sinT = Math.Sin(t);
             var cosSqSinSqInv = 1.0 / (cosT * cosT - sinT * sinT);
 
             width = cosSqSinSqInv * (bx * cosT - by * sinT);
             height = cosSqSinSqInv * (-bx * sinT + by * cosT);
-        }
-
-        private double cosT;
-        private double sinT;
-        private (double, double) GetCosSin()
-        {
-            if (double.IsNaN(cosT) || double.IsNaN(sinT))
-            {
-                var t = GetT();
-                cosT = Math.Cos(t);
-                sinT = Math.Sin(t);
-            }
-            return (cosT, sinT);
         }
 
         /// <inheritdoc />
