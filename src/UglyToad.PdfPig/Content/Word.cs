@@ -287,8 +287,9 @@
 
             for (int i = 0; i < baseLinePoints.Count; i++)
             {
-                var x_diff = baseLinePoints[i].X - x0;
-                var y_diff = baseLinePoints[i].Y - y0;
+                var point = baseLinePoints[i];
+                var x_diff = point.X - x0;
+                var y_diff = point.Y - y0;
                 sumProduct += x_diff * y_diff;
                 sumDiffSquaredX += x_diff * x_diff;
             }
@@ -303,7 +304,7 @@
             var transformation = new TransformationMatrix(
                 cos, -sin, 0,
                 sin, cos, 0,
-                (1 - cos) * x0 - sin * y0, sin * x0 - (1 - cos) * y0, 1);
+                (1.0 - cos) * x0 - sin * y0, sin * x0 - (1.0 - cos) * y0, 1);
 
             var transformedPoints = letters.SelectMany(r => new[]
             {

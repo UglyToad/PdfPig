@@ -174,25 +174,28 @@
                 throw new ArgumentException("OrientedBoundingBox(): points cannot be null and must contain at least two points.");
             }
 
+            // Fitting a line through the points
+            // to find the orientation (slope)
             double x0 = points.Average(p => p.X);
             double y0 = points.Average(p => p.Y);
-            double sum_prod = 0;
-            double sum_x_diff_squared = 0;
+            double sumProduct = 0;
+            double sumDiffSquaredX = 0;
 
             for (int i = 0; i < points.Count; i++)
             {
-                var x_diff = points[i].X - x0;
-                var y_diff = points[i].Y - y0;
-
-                sum_prod += x_diff * y_diff;
-                sum_x_diff_squared += x_diff * x_diff;
+                var point = points[i];
+                var x_diff = point.X - x0;
+                var y_diff = point.Y - y0;
+                sumProduct += x_diff * y_diff;
+                sumDiffSquaredX += x_diff * x_diff;
             }
 
-            var slope = sum_prod / sum_x_diff_squared;
-            var rad_angle = Math.Atan(slope);
+            var slope = sumProduct / sumDiffSquaredX;
 
-            var cos = Math.Cos(rad_angle);
-            var sin = Math.Sin(rad_angle);
+            // Rotate the points to build the axis-aligned bounding box (AABB)
+            var angleRad = Math.Atan(slope);
+            var cos = Math.Cos(angleRad);
+            var sin = Math.Sin(angleRad);
 
             var transformation = new TransformationMatrix(
                 cos, -sin, 0,
@@ -205,6 +208,7 @@
                                         transformedPoints.Max(p => p.X),
                                         transformedPoints.Max(p => p.Y));
 
+            // Rotate back the AABB to obtain to oriented bounding box (OBB)
             var obb = transformation.Inverse().Transform(aabb);
             return obb;
         }
