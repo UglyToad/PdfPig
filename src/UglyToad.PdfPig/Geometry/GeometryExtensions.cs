@@ -130,6 +130,14 @@
                     }
                 }
 
+                if (l == -1)
+                {
+                    // All points are colinear - rectangle has no area (need more tests)
+                    var bottomLeft = polygon.OrderBy(p => p.X).ThenBy(p => p.Y).First();
+                    var topRight = polygon.OrderByDescending(p => p.Y).OrderByDescending(p => p.X).First();
+                    return new PdfRectangle(bottomLeft, topRight, bottomLeft, topRight);
+                }
+
                 PdfPoint PlMinusQ = polygon[l].Subtract(Q);
                 PdfPoint R2 = R1.Add(PlMinusQ);
                 PdfPoint R3 = R0.Add(PlMinusQ);
@@ -151,6 +159,54 @@
             }
 
             return new PdfRectangle(MBR[2], MBR[3], MBR[1], MBR[0]);
+        }
+
+        /// <summary>
+        /// Algorithm to find the oriented bounding box (OBB) by first fitting a line through the points to get the slope,
+        /// then rotating the points to obtain the axis-aligned bounding box (AABB), and then rotating back the AABB.
+        /// </summary>
+        /// <param name="points">The points.</param>
+        /// <returns></returns>
+        public static PdfRectangle OrientedBoundingBox(IReadOnlyList<PdfPoint> points)
+        {
+            if (points == null || points.Count < 2)
+            {
+                throw new ArgumentException("OrientedBoundingBox(): points cannot be null and must contain at least two points.");
+            }
+
+            double x0 = points.Average(p => p.X);
+            double y0 = points.Average(p => p.Y);
+            double sum_prod = 0;
+            double sum_x_diff_squared = 0;
+
+            for (int i = 0; i < points.Count; i++)
+            {
+                var x_diff = points[i].X - x0;
+                var y_diff = points[i].Y - y0;
+
+                sum_prod += x_diff * y_diff;
+                sum_x_diff_squared += x_diff * x_diff;
+            }
+
+            var slope = sum_prod / sum_x_diff_squared;
+            var rad_angle = Math.Atan(slope);
+
+            var cos = Math.Cos(rad_angle);
+            var sin = Math.Sin(rad_angle);
+
+            var transformation = new TransformationMatrix(
+                cos, -sin, 0,
+                sin, cos, 0,
+                (1.0 - cos) * x0 - sin * y0, sin * x0 - (1.0 - cos) * y0, 1);
+
+            var transformedPoints = points.Select(p => transformation.Transform(p)).ToArray();
+            var aabb = new PdfRectangle(transformedPoints.Min(p => p.X),
+                                        transformedPoints.Min(p => p.Y),
+                                        transformedPoints.Max(p => p.X),
+                                        transformedPoints.Max(p => p.Y));
+
+            var obb = transformation.Inverse().Transform(aabb);
+            return obb;
         }
 
         /// <summary>

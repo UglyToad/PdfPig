@@ -360,6 +360,30 @@
                 E * scalar, F * scalar, row3 * scalar);
         }
 
+                /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public TransformationMatrix Inverse()
+        {
+            var a = (D * row3 - row2 * F);
+            var c = -(C * row3 - row2 * E);
+            var e = (C * F - D * E);
+
+            var b = -(B * row3 - row1 * F);
+            var d = (A * row3 - row1 * E);
+            var f = -(A * F - B * E);
+
+            var r1 = (B * row2 - row1 * D);
+            var r2 = -(A * row2 - row1 * C);
+            var r3 = (A * D - B * C);
+            var det = A * a + B * c + row1 * e;
+
+            return new TransformationMatrix(a, b, r1, 
+                c, d, r2, 
+                e, f, r3).Multiply(1.0 / det);
+        }
+
         /// <summary>
         /// Get the X scaling component of the current matrix.
         /// </summary>
