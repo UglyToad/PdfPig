@@ -272,55 +272,87 @@
                 builder.Append(letters[i].Value);
             }
 
-            var points = letters.SelectMany(r => new[]
+            var baseLinePoints = letters.SelectMany(r => new[]
+            {
+                r.StartBaseLine,
+                r.EndBaseLine,
+            }).ToList();
+
+            // Fitting a line through the base lines points
+            // to find the orientation (slope)
+            double x0 = baseLinePoints.Average(p => p.X);
+            double y0 = baseLinePoints.Average(p => p.Y);
+            double sumProduct = 0;
+            double sumDiffSquaredX = 0;
+
+            for (int i = 0; i < baseLinePoints.Count; i++)
+            {
+                var x_diff = baseLinePoints[i].X - x0;
+                var y_diff = baseLinePoints[i].Y - y0;
+                sumProduct += x_diff * y_diff;
+                sumDiffSquaredX += x_diff * x_diff;
+            }
+
+            var slope = sumProduct / sumDiffSquaredX;
+
+            // Rotate the points to build the axis-aligned bounding box (AABB)
+            var angleRad = Math.Atan(slope);
+            var cos = Math.Cos(angleRad);
+            var sin = Math.Sin(angleRad);
+
+            var transformation = new TransformationMatrix(
+                cos, -sin, 0,
+                sin, cos, 0,
+                (1 - cos) * x0 - sin * y0, sin * x0 - (1 - cos) * y0, 1);
+
+            var transformedPoints = letters.SelectMany(r => new[]
             {
                 r.StartBaseLine,
                 r.EndBaseLine,
                 r.GlyphRectangle.TopLeft,
                 r.GlyphRectangle.TopRight
-            }).Distinct();
-            var convexHull = GeometryExtensions.GrahamScan(points).ToList();
+            }).Distinct().Select(p => transformation.Transform(p));
+            var aabb = new PdfRectangle(transformedPoints.Min(p => p.X),
+                                        transformedPoints.Min(p => p.Y),
+                                        transformedPoints.Max(p => p.X),
+                                        transformedPoints.Max(p => p.Y));
 
+            // Rotate back the AABB to obtain to oriented bounding box (OBB)
             // Candidates bounding boxes
-            var mbr = GeometryExtensions.ParametricPerpendicularProjection(convexHull);
-            var mbr1 = new PdfRectangle(mbr.BottomLeft, mbr.TopLeft, mbr.BottomRight, mbr.TopRight);
-            var mbr2 = new PdfRectangle(mbr.TopRight, mbr.BottomRight, mbr.TopLeft, mbr.BottomLeft);
-            var mbr3 = new PdfRectangle(mbr.BottomRight, mbr.BottomLeft, mbr.TopRight, mbr.TopLeft);
+            var obb = transformation.Inverse().Transform(aabb);
+            var obb1 = new PdfRectangle(obb.BottomLeft, obb.TopLeft, obb.BottomRight, obb.TopRight);
+            var obb2 = new PdfRectangle(obb.TopRight, obb.BottomRight, obb.TopLeft, obb.BottomLeft);
+            var obb3 = new PdfRectangle(obb.BottomRight, obb.BottomLeft, obb.TopRight, obb.TopLeft);
 
-            // Find the orientation of the minimum bounding box, using the baseline angle.
+            // Find the orientation of the OBB, using the baseline angle
             var firstLetter = letters[0];
             var lastLetter = letters[letters.Count - 1];
             var baseLineAngle = Math.Atan2(
                 lastLetter.EndBaseLine.Y - firstLetter.StartBaseLine.Y,
-                lastLetter.EndBaseLine.X - firstLetter.StartBaseLine.X);
+                lastLetter.EndBaseLine.X - firstLetter.StartBaseLine.X) * 180 / Math.PI;
 
-            var bbox = mbr;
-            var deltaAngle = Math.Abs(baseLineAngle - Math.Atan2(mbr.BottomRight.Y - mbr.BottomLeft.Y,
-                                                                 mbr.BottomRight.X - mbr.BottomLeft.X));
+            var bbox = obb;
+            var deltaAngle = Math.Abs(baseLineAngle - angleRad);
 
-            double deltaAngle1 = Math.Abs(baseLineAngle - Math.Atan2(mbr1.BottomRight.Y - mbr1.BottomLeft.Y, 
-                                                                     mbr1.BottomRight.X - mbr1.BottomLeft.X));
+            double deltaAngle1 = Math.Abs(baseLineAngle - obb1.Rotation);
             if (deltaAngle1 < deltaAngle)
             {
                 deltaAngle = deltaAngle1;
-                bbox = mbr1;
+                bbox = obb1;
             }
 
-            double deltaAngle2 = Math.Abs(baseLineAngle - Math.Atan2(mbr2.BottomRight.Y - mbr2.BottomLeft.Y, 
-                                                                     mbr2.BottomRight.X - mbr2.BottomLeft.X));
+            double deltaAngle2 = Math.Abs(baseLineAngle - obb2.Rotation);
             if (deltaAngle2 < deltaAngle)
             {
                 deltaAngle = deltaAngle2;
-                bbox = mbr2;
+                bbox = obb2;
             }
 
-            double deltaAngle3 = Math.Abs(baseLineAngle - Math.Atan2(mbr3.BottomRight.Y - mbr3.BottomLeft.Y, 
-                                                                     mbr3.BottomRight.X - mbr3.BottomLeft.X));
+            double deltaAngle3 = Math.Abs(baseLineAngle - obb3.Rotation);
             if (deltaAngle3 < deltaAngle)
             {
-                bbox = mbr3;
+                bbox = obb3;
             }
-
             return new Tuple<string, PdfRectangle>(builder.ToString(), bbox);
         }
         #endregion
