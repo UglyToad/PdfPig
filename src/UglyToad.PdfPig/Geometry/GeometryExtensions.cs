@@ -166,7 +166,6 @@
         /// then rotating the points to obtain the axis-aligned bounding box (AABB), and then rotating back the AABB.
         /// </summary>
         /// <param name="points">The points.</param>
-        /// <returns></returns>
         internal static PdfRectangle OrientedBoundingBox(IReadOnlyList<PdfPoint> points)
         {
             if (points == null || points.Count < 2)
