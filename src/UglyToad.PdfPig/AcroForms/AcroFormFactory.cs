@@ -82,12 +82,10 @@
             {
                 q = qToken.Int;
             }
-
-            var fieldsToken = acroDictionary.Data[NameToken.Fields.Data];
-
-            if (!DirectObjectFinder.TryGet(fieldsToken, tokenScanner, out ArrayToken fieldsArray))
+            
+            if (!acroDictionary.TryGet(NameToken.Fields, tokenScanner, out ArrayToken fieldsArray))
             {
-                throw new PdfDocumentFormatException($"Could not retrieve the fields array for an AcroForm: {acroDictionary}.");
+                return null;
             }
 
             var fields = new Dictionary<IndirectReference, AcroFieldBase>(fieldsArray.Length);
