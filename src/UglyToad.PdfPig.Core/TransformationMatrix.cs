@@ -360,10 +360,9 @@
                 E * scalar, F * scalar, row3 * scalar);
         }
 
-                /// <summary>
-        /// 
+        /// <summary>
+        /// Get the inverse of the current matrix.
         /// </summary>
-        /// <returns></returns>
         public TransformationMatrix Inverse()
         {
             var a = (D * row3 - row2 * F);
@@ -379,9 +378,9 @@
             var r3 = (A * D - B * C);
             var det = A * a + B * c + row1 * e;
 
-            return new TransformationMatrix(a, b, r1, 
-                c, d, r2, 
-                e, f, r3).Multiply(1.0 / det);
+            return new TransformationMatrix(a / det, b / det, r1 / det,
+                c / det, d / det, r2 / det,
+                e / det, f / det, r3 / det);
         }
 
         /// <summary>
