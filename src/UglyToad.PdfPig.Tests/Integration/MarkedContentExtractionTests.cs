@@ -25,6 +25,21 @@ namespace UglyToad.PdfPig.Tests.Integration
                     Assert.Equal(i, mcs[i].Index);
                 }
             }
+
+            using (var document = PdfDocument.Open(GetPath2()))
+            {
+                var page = document.GetPage(10);
+                var mcs = page.GetMarkedContents();
+
+                Assert.NotEmpty(mcs);
+
+                Assert.Equal(86, mcs.Count);
+
+                for (int i = 0; i < mcs.Count; i++)
+                {
+                    Assert.Equal(i, mcs[i].Index);
+                }
+            }
         }
 
         [Fact]
