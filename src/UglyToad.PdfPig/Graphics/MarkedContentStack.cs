@@ -152,13 +152,27 @@
                 var attributeOwners = GetOptional(NameToken.O, pdfScanner);
 
                 var boundingBox = default(PdfRectangle?);
-                if (properties.TryGet(NameToken.Bbox, pdfScanner, out ArrayToken arrayToken)
-                    && arrayToken.Length == 6)
+                if (properties.TryGet(NameToken.Bbox, pdfScanner, out ArrayToken arrayToken))
                 {
-                    var left = arrayToken[2] as NumericToken;
-                    var bottom = arrayToken[3] as NumericToken;
-                    var right = arrayToken[4] as NumericToken;
-                    var top = arrayToken[5] as NumericToken;
+                    NumericToken left = null;
+                    NumericToken bottom = null;
+                    NumericToken right = null;
+                    NumericToken top = null;
+
+                    if (arrayToken.Length == 4)
+                    {
+                        left = arrayToken[0] as NumericToken;
+                        bottom = arrayToken[1] as NumericToken;
+                        right = arrayToken[2] as NumericToken;
+                        top = arrayToken[3] as NumericToken;
+                    }
+                    else if (arrayToken.Length == 6)
+                    {
+                        left = arrayToken[2] as NumericToken;
+                        bottom = arrayToken[3] as NumericToken;
+                        right = arrayToken[4] as NumericToken;
+                        top = arrayToken[5] as NumericToken;
+                    }
 
                     if (left != null && bottom != null && right != null && top != null)
                     {
