@@ -552,7 +552,8 @@
         {
             if (markedContentStack.CanPop)
             {
-                markedContents.Add(markedContentStack.Pop(pdfScanner));
+                var mc = markedContentStack.Pop(pdfScanner);
+                if (mc != null) markedContents.Add(mc);
             }
         }
 

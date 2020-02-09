@@ -109,7 +109,7 @@
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"Index={Index}, MCID={MarkedContentIdentifier}, Tag={Tag}, Properties={Properties}, Contents={Children.Count}";
+            return $"Id={Index}, MCID={MarkedContentIdentifier}, Tag={Tag}, Properties={Properties}, Children={Children.Count}";
         }
     }
 }

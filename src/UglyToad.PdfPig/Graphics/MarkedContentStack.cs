@@ -16,14 +16,14 @@
     {
         private readonly Stack<MarkedContentElementActiveBuilder> builderStack = new Stack<MarkedContentElementActiveBuilder>();
 
-        private int number;
+        private int number = -1;
         private MarkedContentElementActiveBuilder top;
 
         public bool CanPop => top != null;
 
         public void Push(NameToken name, DictionaryToken properties)
         {
-            if (builderStack.Count > 0)
+            if (builderStack.Count == 0) // only increase index if root
             {
                 number++;
             }
@@ -42,6 +42,7 @@
             {
                 top = builderStack.Peek();
                 top.Children.Add(result);
+                return null; // do not return child
             }
             else
             {
