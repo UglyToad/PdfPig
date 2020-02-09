@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using UglyToad.PdfPig.Content;
+﻿using UglyToad.PdfPig.Content;
 using Xunit;
 
 namespace UglyToad.PdfPig.Tests.Integration
