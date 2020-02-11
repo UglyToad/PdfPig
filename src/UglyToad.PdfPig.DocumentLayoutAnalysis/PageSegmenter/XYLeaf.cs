@@ -64,13 +64,12 @@
                 throw new ArgumentException("XYLeaf(): The words contained in the leaf cannot be null.", nameof(words));
             }
 
-            double left = words.Min(b => b.BoundingBox.Normalise().Left);
-            double right = words.Max(b => b.BoundingBox.Normalise().Right);
+            var normalisedBBs = words.Select(b => b.BoundingBox.Normalise()).ToList();
 
-            double bottom = words.Min(b => b.BoundingBox.Normalise().Bottom);
-            double top = words.Max(b => b.BoundingBox.Normalise().Top);
-
-            BoundingBox = new PdfRectangle(left, bottom, right, top);
+            BoundingBox = new PdfRectangle(normalisedBBs.Min(b => b.Left),
+                                           normalisedBBs.Min(b => b.Bottom),
+                                           normalisedBBs.Max(b => b.Right),
+                                           normalisedBBs.Max(b => b.Top));
             Words = words.ToArray();
         }
     }

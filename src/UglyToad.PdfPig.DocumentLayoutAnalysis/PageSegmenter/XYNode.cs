@@ -43,11 +43,10 @@
             if (children != null && children.Count() != 0)
             {
                 Children = children.ToArray();
-                double left = children.Min(b => b.BoundingBox.Left);
-                double right = children.Max(b => b.BoundingBox.Right);
-                double bottom = children.Min(b => b.BoundingBox.Bottom);
-                double top = children.Max(b => b.BoundingBox.Top);
-                BoundingBox = new PdfRectangle(left, bottom, right, top);
+                BoundingBox = new PdfRectangle(children.Min(b => b.BoundingBox.Left), 
+                                               children.Min(b => b.BoundingBox.Bottom), 
+                                               children.Max(b => b.BoundingBox.Right), 
+                                               children.Max(b => b.BoundingBox.Top));
             }
             else
             {
