@@ -28,9 +28,9 @@
         public override int CountWords() => Words?.Count ?? 0;
 
         /// <summary>
-        /// Returns null as a leaf doesn't have leafs.
+        /// Returns null as a leaf doesn't have leaves.
         /// </summary>
-        public override List<XYLeaf> GetLeafs()
+        public override List<XYLeaf> GetLeaves()
         {
             return null;
         }

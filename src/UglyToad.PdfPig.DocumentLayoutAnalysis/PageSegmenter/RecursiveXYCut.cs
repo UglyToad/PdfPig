@@ -77,11 +77,11 @@
             }
             else
             {
-                var leafs = node.GetLeafs();
+                var leaves = node.GetLeaves();
 
-                if (leafs.Count > 0)
+                if (leaves.Count > 0)
                 {
-                    return leafs.Select(l => new TextBlock(l.GetLines())).ToList();
+                    return leaves.Select(l => new TextBlock(l.GetLines())).ToList();
                 }
             }
 
@@ -176,18 +176,18 @@
                 if (i == wordsCount - 1) projectionProfile.Add(currentProjection);
             }
             
-            var newLeafsEnums = projectionProfile.Select(p => leaf.Words.Where(w =>
+            var newLeavesEnums = projectionProfile.Select(p => leaf.Words.Where(w =>
             {
                 // Get words that are contained in each projection profiles
                 var normalisedBB = w.BoundingBox.Normalise();
                 return normalisedBB.Left >= p.LowerBound && normalisedBB.Right <= p.UpperBound;
             }));
 
-            var newLeafs = newLeafsEnums.Where(e => e.Count() > 0).Select(e => new XYLeaf(e));
-            var newNodes = newLeafs.Select(l => HorizontalCut(l, minimumWidth,
+            var newLeaves = newLeavesEnums.Where(e => e.Count() > 0).Select(e => new XYLeaf(e));
+            var newNodes = newLeaves.Select(l => HorizontalCut(l, minimumWidth,
                 dominantFontWidthFunc, dominantFontHeightFunc, level)).ToList();
 
-            var lost = leaf.Words.Except(newLeafsEnums.SelectMany(x => x)).Where(x => !string.IsNullOrWhiteSpace(x.Text)).ToList();
+            var lost = leaf.Words.Except(newLeavesEnums.SelectMany(x => x)).Where(x => !string.IsNullOrWhiteSpace(x.Text)).ToList();
             if (lost.Count > 0)
             {
                 newNodes.AddRange(lost.Select(w => new XYLeaf(w)));
@@ -277,18 +277,18 @@
                 }
             }
 
-            var newLeafsEnums = projectionProfile.Select(p => leaf.Words.Where(w =>
+            var newLeavesEnums = projectionProfile.Select(p => leaf.Words.Where(w =>
             {
                 // Get words that are contained in each projection profiles
                 var normalisedBB = w.BoundingBox.Normalise();
                 return normalisedBB.Bottom >= p.LowerBound && normalisedBB.Top <= p.UpperBound;
             }));
 
-            var newLeafs = newLeafsEnums.Where(e => e.Count() > 0).Select(e => new XYLeaf(e));
-            var newNodes = newLeafs.Select(l => VerticalCut(l, minimumWidth,
+            var newLeaves = newLeavesEnums.Where(e => e.Count() > 0).Select(e => new XYLeaf(e));
+            var newNodes = newLeaves.Select(l => VerticalCut(l, minimumWidth,
                 dominantFontWidthFunc, dominantFontHeightFunc, level)).ToList();
 
-            var lost = leaf.Words.Except(newLeafsEnums.SelectMany(x => x)).Where(x => !string.IsNullOrWhiteSpace(x.Text)).ToList();
+            var lost = leaf.Words.Except(newLeavesEnums.SelectMany(x => x)).Where(x => !string.IsNullOrWhiteSpace(x.Text)).ToList();
             if (lost.Count > 0)
             {
                 newNodes.AddRange(lost.Select(w => new XYLeaf(w)));
