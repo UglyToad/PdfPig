@@ -1,11 +1,10 @@
 ﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis
 {
+    using Core;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
-    using Geometry;
-    using Core;
 
     /// <summary>
     /// Clustering Algorithms.
@@ -16,7 +15,7 @@
         /// Algorithm to group elements using nearest neighbours.
         /// </summary>
         /// <typeparam name="T">Letter, Word, TextLine, etc.</typeparam>
-        /// <param name="elements">List of elements to group.</param>
+        /// <param name="elements">Elements to group.</param>
         /// <param name="distMeasure">The distance measure between two points.</param>
         /// <param name="maxDistanceFunction">The function that determines the maximum distance between two points in the same cluster.</param>
         /// <param name="pivotPoint">The pivot's point to use for pairing, e.g. BottomLeft, TopLeft.</param>
@@ -26,7 +25,7 @@
         /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
         /// <para>A positive property value limits the number of concurrent operations to the set value. 
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
-        internal static IEnumerable<HashSet<int>> ClusterNearestNeighbours<T>(List<T> elements,
+        internal static IEnumerable<HashSet<int>> ClusterNearestNeighbours<T>(IReadOnlyList<T> elements,
             Func<PdfPoint, PdfPoint, double> distMeasure,
             Func<T, T, double> maxDistanceFunction,
             Func<T, PdfPoint> pivotPoint, Func<T, PdfPoint> candidatesPoint,
@@ -51,7 +50,7 @@
              *************************************************************************************/
 
             int[] indexes = Enumerable.Repeat(-1, elements.Count).ToArray();
-            var candidatesPoints = elements.Select(candidatesPoint).ToList();
+            KdTree<T> kdTree = new KdTree<T>(elements, candidatesPoint);
 
             ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
 
@@ -62,92 +61,17 @@
 
                 if (filterPivot(pivot))
                 {
-                    int index = pivot.FindIndexNearest(elements, candidatesPoint, pivotPoint, distMeasure, out double dist);
+                    var paired = kdTree.FindNearestNeighbours(pivot, pivotPoint, distMeasure, out int index, out double dist);
 
-                    if (index != -1)
+                    if (filterFinal(pivot, paired) && dist < maxDistanceFunction(pivot, paired))
                     {
-                        var paired = elements[index];
-                        if (filterFinal(pivot, paired) && dist < maxDistanceFunction(pivot, paired))
-                        {
-                            indexes[e] = index;
-                        }
+                        indexes[e] = index;
                     }
                 }
             });
 
             // 2. Group indexes
-            var groupedIndexes = GroupIndexes(indexes);
-
-            return groupedIndexes;
-        }
-
-        /// <summary>
-        /// Algorithm to group elements using nearest neighbours.
-        /// </summary>
-        /// <typeparam name="T">Letter, Word, TextLine, etc.</typeparam>
-        /// <param name="elements">Array of elements to group.</param>
-        /// <param name="distMeasure">The distance measure between two points.</param>
-        /// <param name="maxDistanceFunction">The function that determines the maximum distance between two points in the same cluster.</param>
-        /// <param name="pivotPoint">The pivot's point to use for pairing, e.g. BottomLeft, TopLeft.</param>
-        /// <param name="candidatesPoint">The candidates' point to use for pairing, e.g. BottomLeft, TopLeft.</param>
-        /// <param name="filterPivot">Filter to apply to the pivot point. If false, point will not be paired at all, e.g. is white space.</param>
-        /// <param name="filterFinal">Filter to apply to both the pivot and the paired point. If false, point will not be paired at all, e.g. pivot and paired point have same font.</param>
-        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
-        /// <para>A positive property value limits the number of concurrent operations to the set value. 
-        /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
-        internal static IEnumerable<HashSet<int>> ClusterNearestNeighbours<T>(T[] elements,
-            Func<PdfPoint, PdfPoint, double> distMeasure,
-            Func<T, T, double> maxDistanceFunction,
-            Func<T, PdfPoint> pivotPoint, Func<T, PdfPoint> candidatesPoint,
-            Func<T, bool> filterPivot, Func<T, T, bool> filterFinal,
-            int maxDegreeOfParallelism)
-        {
-            /*************************************************************************************
-             * Algorithm steps
-             * 1. Find nearest neighbours indexes (done in parallel)
-             *  Iterate every point (pivot) and put its nearest neighbour's index in an array
-             *  e.g. if nearest neighbour of point i is point j, then indexes[i] = j.
-             *  Only conciders a neighbour if it is within the maximum distance. 
-             *  If not within the maximum distance, index will be set to -1.
-             *  Each element has only one connected neighbour.
-             *  NB: Given the possible asymmetry in the relationship, it is possible 
-             *  that if indexes[i] = j then indexes[j] != i.
-             *  
-             * 2. Group indexes
-             *  Group indexes if share neighbours in common - Depth-first search
-             *  e.g. if we have indexes[i] = j, indexes[j] = k, indexes[m] = n and indexes[n] = -1
-             *  (i,j,k) will form a group and (m,n) will form another group.
-             *************************************************************************************/
-
-            int[] indexes = Enumerable.Repeat(-1, elements.Length).ToArray();
-            var candidatesPoints = elements.Select(candidatesPoint).ToList();
-
-            ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
-
-            // 1. Find nearest neighbours indexes
-            Parallel.For(0, elements.Length, parallelOptions, e =>
-            {
-                var pivot = elements[e];
-
-                if (filterPivot(pivot))
-                {
-                    int index = pivot.FindIndexNearest(elements, candidatesPoint, pivotPoint, distMeasure, out double dist);
-
-                    if (index != -1)
-                    {
-                        var paired = elements[index];
-                        if (filterFinal(pivot, paired) && dist < maxDistanceFunction(pivot, paired))
-                        {
-                            indexes[e] = index;
-                        }
-                    }
-                }
-            });
-
-            // 2. Group indexes
-            var groupedIndexes = GroupIndexes(indexes);
-
-            return groupedIndexes;
+            return GroupIndexes(indexes);
         }
 
         /// <summary>
@@ -189,7 +113,6 @@
              *************************************************************************************/
 
             int[] indexes = Enumerable.Repeat(-1, elements.Length).ToArray();
-            var candidatesLines = elements.Select(x => candidatesLine(x)).ToList();
 
             ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
 
@@ -200,7 +123,7 @@
 
                 if (filterPivot(pivot))
                 {
-                    int index = pivot.FindIndexNearest(elements, candidatesLine, pivotLine, distMeasure, out double dist);
+                    int index = Distances.FindIndexNearest(pivot, elements, candidatesLine, pivotLine, distMeasure, out double dist);
 
                     if (index != -1)
                     {
@@ -214,9 +137,7 @@
             });
 
             // 2. Group indexes
-            var groupedIndexes = GroupIndexes(indexes);
-
-            return groupedIndexes;
+            return GroupIndexes(indexes);
         }
 
         /// <summary>
