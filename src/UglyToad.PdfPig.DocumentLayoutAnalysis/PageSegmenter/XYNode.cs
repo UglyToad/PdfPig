@@ -43,11 +43,10 @@
             if (children != null && children.Count() != 0)
             {
                 Children = children.ToArray();
-                double left = children.Min(b => b.BoundingBox.Left);
-                double right = children.Max(b => b.BoundingBox.Right);
-                double bottom = children.Min(b => b.BoundingBox.Bottom);
-                double top = children.Max(b => b.BoundingBox.Top);
-                BoundingBox = new PdfRectangle(left, bottom, right, top);
+                BoundingBox = new PdfRectangle(children.Min(b => b.BoundingBox.Left), 
+                                               children.Min(b => b.BoundingBox.Bottom), 
+                                               children.Max(b => b.BoundingBox.Right), 
+                                               children.Max(b => b.BoundingBox.Top));
             }
             else
             {
@@ -71,19 +70,19 @@
         }
 
         /// <summary>
-        /// Recursively gets the leafs (last nodes) of this node.
+        /// Recursively gets the leaves (last nodes) of this node.
         /// </summary>
-        public virtual List<XYLeaf> GetLeafs()
+        public virtual List<XYLeaf> GetLeaves()
         {
-            List<XYLeaf> leafs = new List<XYLeaf>();
+            List<XYLeaf> leaves = new List<XYLeaf>();
             if (Children == null || Children.Length == 0)
             {
-                return leafs;
+                return leaves;
             }
 
             int level = 0;
-            RecursiveGetLeafs(Children, ref leafs, level);
-            return leafs;
+            RecursiveGetLeaves(Children, ref leaves, level);
+            return leaves;
         }
 
         private void RecursiveCount(IEnumerable<XYNode> children, ref int count)
@@ -100,32 +99,32 @@
             }
         }
 
-        private void RecursiveGetLeafs(IEnumerable<XYNode> children, ref List<XYLeaf> leafs, int level)
+        private void RecursiveGetLeaves(IEnumerable<XYNode> children, ref List<XYLeaf> leaves, int level)
         {
             if (children.Count() == 0) return;
             bool isVerticalCut = level % 2 == 0;
 
             foreach (XYLeaf node in children.Where(x => x.IsLeaf))
             {
-                leafs.Add(node);
+                leaves.Add(node);
             }
 
             level++;
 
-            IEnumerable<XYNode> notLeafs = children.Where(x => !x.IsLeaf);
+            IEnumerable<XYNode> notLeaves = children.Where(x => !x.IsLeaf);
 
             if (isVerticalCut)
             {
-                notLeafs = notLeafs.OrderBy(x => x.BoundingBox.Left).ToList();
+                notLeaves = notLeaves.OrderBy(x => x.BoundingBox.Left).ToList();
             }
             else
             {
-                notLeafs = notLeafs.OrderByDescending(x => x.BoundingBox.Top).ToList();
+                notLeaves = notLeaves.OrderByDescending(x => x.BoundingBox.Top).ToList();
             }
 
-            foreach (XYNode node in notLeafs)
+            foreach (XYNode node in notLeaves)
             {
-                RecursiveGetLeafs(node.Children, ref leafs, level);
+                RecursiveGetLeaves(node.Children, ref leaves, level);
             }
         }
 

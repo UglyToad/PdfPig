@@ -5,6 +5,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using UglyToad.PdfPig.Geometry;
 
     /// <summary>
     /// A Leaf node used in the <see cref="RecursiveXYCut"/> algorithm, i.e. a block.
@@ -27,9 +28,9 @@
         public override int CountWords() => Words?.Count ?? 0;
 
         /// <summary>
-        /// Returns null as a leaf doesn't have leafs.
+        /// Returns null as a leaf doesn't have leaves.
         /// </summary>
-        public override List<XYLeaf> GetLeafs()
+        public override List<XYLeaf> GetLeaves()
         {
             return null;
         }
@@ -63,13 +64,12 @@
                 throw new ArgumentException("XYLeaf(): The words contained in the leaf cannot be null.", nameof(words));
             }
 
-            double left = words.Min(b => b.BoundingBox.Left);
-            double right = words.Max(b => b.BoundingBox.Right);
+            var normalisedBBs = words.Select(b => b.BoundingBox.Normalise()).ToList();
 
-            double bottom = words.Min(b => b.BoundingBox.Bottom);
-            double top = words.Max(b => b.BoundingBox.Top);
-
-            BoundingBox = new PdfRectangle(left, bottom, right, top);
+            BoundingBox = new PdfRectangle(normalisedBBs.Min(b => b.Left),
+                                           normalisedBBs.Min(b => b.Bottom),
+                                           normalisedBBs.Max(b => b.Right),
+                                           normalisedBBs.Max(b => b.Top));
             Words = words.ToArray();
         }
     }
