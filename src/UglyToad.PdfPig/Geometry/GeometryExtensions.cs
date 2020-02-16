@@ -362,7 +362,7 @@
         }
 
         /// <summary>
-        /// Get the <see cref="PdfRectangle"/> that is the intersection of two rectangles.
+        /// Gets the <see cref="PdfRectangle"/> that is the intersection of two rectangles.
         /// </summary>
         public static PdfRectangle? Intersect(this PdfRectangle rectangle, PdfRectangle other)
         {
@@ -371,6 +371,16 @@
                                     Math.Max(rectangle.BottomLeft.Y, other.BottomLeft.Y),
                                     Math.Min(rectangle.TopRight.X, other.TopRight.X),
                                     Math.Min(rectangle.TopRight.Y, other.TopRight.Y));
+        }
+
+        /// <summary>
+        /// Gets the axis-aligned rectangle that completely containing the original rectangle, with no rotation.
+        /// </summary>
+        /// <param name="rectangle"></param>
+        public static PdfRectangle Normalise(this PdfRectangle rectangle)
+        {
+            var points = new[] { rectangle.BottomLeft, rectangle.BottomRight, rectangle.TopLeft, rectangle.TopRight };
+            return new PdfRectangle(points.Min(p => p.X), points.Min(p => p.Y), points.Max(p => p.X), points.Max(p => p.Y));
         }
         #endregion
 

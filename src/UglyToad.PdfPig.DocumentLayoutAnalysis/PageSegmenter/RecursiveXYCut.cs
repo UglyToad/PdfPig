@@ -5,6 +5,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using UglyToad.PdfPig.Geometry;
 
     /// <summary>
     /// The recursive X-Y cut is a top-down page segmentation technique that decomposes a document 
@@ -76,11 +77,11 @@
             }
             else
             {
-                var leafs = node.GetLeafs();
+                var leaves = node.GetLeaves();
 
-                if (leafs.Count > 0)
+                if (leaves.Count > 0)
                 {
-                    return leafs.Select(l => new TextBlock(l.GetLines())).ToList();
+                    return leaves.Select(l => new TextBlock(l.GetLines())).ToList();
                 }
             }
 
@@ -91,53 +92,53 @@
             Func<IEnumerable<double>, double> dominantFontWidthFunc,
             Func<IEnumerable<double>, double> dominantFontHeightFunc, int level = 0)
         {
-            // order words left to right
-            var words = leaf.Words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).OrderBy(w => w.BoundingBox.Left).ToArray();
+            // Order words left to right
+            var words = leaf.Words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).OrderBy(w => w.BoundingBox.Normalise().Left).ToArray();
 
             if (!words.Any())
             {
                 return new XYNode(null);
             }
-            else
-            {
-                //Create new leaf with non-whitespace words.
-                leaf = new XYLeaf(words);
-            }
 
+            // Create new leaf with non-whitespace words.
+            leaf = new XYLeaf(words);
+            
             if (leaf.CountWords() <= 1 || leaf.BoundingBox.Width <= minimumWidth)
             {
-                // we stop cutting if 
+                // We stop cutting if 
                 // - only one word remains
                 // - width is too small
                 return leaf;
             }
 
-            // determine dominantFontWidth and dominantFontHeight
-            double domFontWidth = dominantFontWidthFunc(words.SelectMany(x => x.Letters)
-                .Select(x => Math.Abs(x.GlyphRectangle.Width)));
-            double domFontHeight = dominantFontHeightFunc(words.SelectMany(x => x.Letters)
-                .Select(x => Math.Abs(x.GlyphRectangle.Height)));
+            // Determine dominant font width
+            double dominantFontWidth = dominantFontWidthFunc(words.SelectMany(x => x.Letters)
+                .Select(x => x.GlyphRectangle.Normalise().Width));
 
-            List<double[]> projectionProfile = new List<double[]>();
-            double[] currentProj = new double[2] { words[0].BoundingBox.Left, words[0].BoundingBox.Right };
+            List<Projection> projectionProfile = new List<Projection>();
+
+            var firstWordBound = words[0].BoundingBox.Normalise();
+            Projection currentProjection = new Projection(firstWordBound.Left, firstWordBound.Right);
             int wordsCount = words.Count();
+
             for (int i = 1; i < wordsCount; i++)
             {
-                if ((words[i].BoundingBox.Left >= currentProj[0] && words[i].BoundingBox.Left <= currentProj[1])
-                    || (words[i].BoundingBox.Right >= currentProj[0] && words[i].BoundingBox.Right <= currentProj[1]))
+                var currentWordBound = words[i].BoundingBox.Normalise();
+
+                if (currentProjection.Contains(currentWordBound.Left) || currentProjection.Contains(currentWordBound.Right))
                 {
-                    // it is overlapping 
-                    if (words[i].BoundingBox.Left >= currentProj[0]
-                        && words[i].BoundingBox.Left <= currentProj[1]
-                        && words[i].BoundingBox.Right > currentProj[1])
+                    // It is overlapping 
+                    if (currentWordBound.Left >= currentProjection.LowerBound
+                        && currentWordBound.Left <= currentProjection.UpperBound
+                        && currentWordBound.Right > currentProjection.UpperBound)
                     {
                         // |____|
                         //    |____|
                         // |_______|    <- updated
-                        currentProj[1] = words[i].BoundingBox.Right;
+                        currentProjection.UpperBound = currentWordBound.Right;
                     }
 
-                    // we ignore the following cases:
+                    // We ignore the following cases:
                     //    |____|
                     // |____|          (not possible because of OrderBy)
                     // 
@@ -149,39 +150,44 @@
                 }
                 else
                 {
-                    // no overlap
-                    if (words[i].BoundingBox.Left - currentProj[1] <= domFontWidth)
+                    // No overlap
+                    if (currentWordBound.Left - currentProjection.UpperBound <= dominantFontWidth)
                     {
-                        // if gap too small -> don't cut
+                        // If gap too small -> don't cut
                         // |____| |____|
-                        currentProj[1] = words[i].BoundingBox.Right;
+                        currentProjection.UpperBound = currentWordBound.Right;
                     }
-                    else if (currentProj[1] - currentProj[0] < minimumWidth)
+                    else if (currentProjection.UpperBound - currentProjection.LowerBound < minimumWidth)
                     {
-                        // still too small
-                        currentProj[1] = words[i].BoundingBox.Right;
+                        // Still too small
+                        currentProjection.UpperBound = currentWordBound.Right;
                     }
                     else
                     {
-                        // if gap big enough -> cut!
+                        // If gap big enough -> cut!
                         // |____|   |   |____|
-                        if (i != wordsCount - 1) // will always add the last one after
+                        if (i != wordsCount - 1) // Will always add the last one after
                         {
-                            projectionProfile.Add(currentProj);
-                            currentProj = new double[2] { words[i].BoundingBox.Left, words[i].BoundingBox.Right };
+                            projectionProfile.Add(currentProjection);
+                            currentProjection = new Projection(currentWordBound.Left, currentWordBound.Right);
                         }
                     }
                 }
-                if (i == wordsCount - 1) projectionProfile.Add(currentProj);
+                if (i == wordsCount - 1) projectionProfile.Add(currentProjection);
             }
+            
+            var newLeavesEnums = projectionProfile.Select(p => leaf.Words.Where(w =>
+            {
+                // Get words that are contained in each projection profiles
+                var normalisedBB = w.BoundingBox.Normalise();
+                return normalisedBB.Left >= p.LowerBound && normalisedBB.Right <= p.UpperBound;
+            }));
 
-            var newLeafsEnums = projectionProfile.Select(p => leaf.Words.Where(w => w.BoundingBox.Left >= p[0] && w.BoundingBox.Right <= p[1]));
-            var newLeafs = newLeafsEnums.Where(e => e.Count() > 0).Select(e => new XYLeaf(e));
-
-            var newNodes = newLeafs.Select(l => HorizontalCut(l, minimumWidth,
+            var newLeaves = newLeavesEnums.Where(e => e.Count() > 0).Select(e => new XYLeaf(e));
+            var newNodes = newLeaves.Select(l => HorizontalCut(l, minimumWidth,
                 dominantFontWidthFunc, dominantFontHeightFunc, level)).ToList();
 
-            var lost = leaf.Words.Except(newLeafsEnums.SelectMany(x => x)).Where(x => !string.IsNullOrWhiteSpace(x.Text)).ToList();
+            var lost = leaf.Words.Except(newLeavesEnums.SelectMany(x => x)).Where(x => !string.IsNullOrWhiteSpace(x.Text)).ToList();
             if (lost.Count > 0)
             {
                 newNodes.AddRange(lost.Select(w => new XYLeaf(w)));
@@ -194,66 +200,69 @@
             Func<IEnumerable<double>, double> dominantFontWidthFunc,
             Func<IEnumerable<double>, double> dominantFontHeightFunc, int level = 0)
         {
-            var words = leaf.Words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).OrderBy(w => w.BoundingBox.Bottom).ToArray(); // order bottom to top
+            // Order words bottom to top
+            var words = leaf.Words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).OrderBy(w => w.BoundingBox.Normalise().Bottom).ToArray();
 
             if (!words.Any())
             {
                 return new XYNode(null);
             }
 
-            //Create new leaf with non-whitespace words.
+            // Create new leaf with non-whitespace words.
             leaf = new XYLeaf(words);
 
             if (leaf.CountWords() <= 1)
             {
-                // we stop cutting if 
+                // We stop cutting if 
                 // - only one word remains
                 return leaf;
             }
 
-            // determine dominantFontWidth and dominantFontHeight
-            double domFontWidth = dominantFontWidthFunc(words.SelectMany(x => x.Letters)
-                .Select(x => Math.Abs(x.GlyphRectangle.Width)));
-            double domFontHeight = dominantFontHeightFunc(words.SelectMany(x => x.Letters)
-                .Select(x => Math.Abs(x.GlyphRectangle.Height)));
+            // Determine dominant font height
+            double dominantFontHeight = dominantFontHeightFunc(words.SelectMany(x => x.Letters)
+                .Select(x => x.GlyphRectangle.Normalise().Height));
 
-            List<double[]> projectionProfile = new List<double[]>();
-            double[] currentProj = new double[2] { words[0].BoundingBox.Bottom, words[0].BoundingBox.Top };
+            List<Projection> projectionProfile = new List<Projection>();
+
+            var firstWordBound = words[0].BoundingBox.Normalise();
+            Projection currentProjection = new Projection(firstWordBound.Bottom, firstWordBound.Top);
             int wordsCount = words.Count();
+
             for (int i = 1; i < wordsCount; i++)
             {
-                if ((words[i].BoundingBox.Bottom >= currentProj[0] && words[i].BoundingBox.Bottom <= currentProj[1])
-                    || (words[i].BoundingBox.Top >= currentProj[0] && words[i].BoundingBox.Top <= currentProj[1]))
+                var currentWordBound = words[i].BoundingBox.Normalise();
+
+                if (currentProjection.Contains(currentWordBound.Bottom) || currentProjection.Contains(currentWordBound.Top))
                 {
-                    // it is overlapping 
-                    if (words[i].BoundingBox.Bottom >= currentProj[0]
-                        && words[i].BoundingBox.Bottom <= currentProj[1]
-                        && words[i].BoundingBox.Top > currentProj[1])
+                    // It is overlapping 
+                    if (currentWordBound.Bottom >= currentProjection.LowerBound
+                        && currentWordBound.Bottom <= currentProjection.UpperBound
+                        && currentWordBound.Top > currentProjection.UpperBound)
                     {
-                        currentProj[1] = words[i].BoundingBox.Top;
+                        currentProjection.UpperBound = currentWordBound.Top;
                     }
                 }
                 else
                 {
-                    // no overlap
-                    if (words[i].BoundingBox.Bottom - currentProj[1] <= domFontHeight)
+                    // No overlap
+                    if (currentWordBound.Bottom - currentProjection.UpperBound <= dominantFontHeight)
                     {
-                        // if gap too small -> don't cut
+                        // If gap too small -> don't cut
                         // |____| |____|
-                        currentProj[1] = words[i].BoundingBox.Top;
+                        currentProjection.UpperBound = currentWordBound.Top;
                     }
                     else
                     {
-                        // if gap big enough -> cut!
+                        // If gap big enough -> cut!
                         // |____|   |   |____|
-                        if (i != wordsCount - 1) // will always add the last one after
+                        if (i != wordsCount - 1) // Will always add the last one after
                         {
-                            projectionProfile.Add(currentProj);
-                            currentProj = new double[2] { words[i].BoundingBox.Bottom, words[i].BoundingBox.Top };
+                            projectionProfile.Add(currentProjection);
+                            currentProjection = new Projection(currentWordBound.Bottom, currentWordBound.Top);
                         }
                     }
                 }
-                if (i == wordsCount - 1) projectionProfile.Add(currentProj);
+                if (i == wordsCount - 1) projectionProfile.Add(currentProjection);
             }
 
             if (projectionProfile.Count == 1)
@@ -268,18 +277,44 @@
                 }
             }
 
-            var newLeafsEnums = projectionProfile.Select(p =>
-                leaf.Words.Where(w => w.BoundingBox.Bottom >= p[0] && w.BoundingBox.Top <= p[1]));
-            var newLeafs = newLeafsEnums.Where(e => e.Count() > 0).Select(e => new XYLeaf(e));
-            var newNodes = newLeafs.Select(l => VerticalCut(l, minimumWidth,
+            var newLeavesEnums = projectionProfile.Select(p => leaf.Words.Where(w =>
+            {
+                // Get words that are contained in each projection profiles
+                var normalisedBB = w.BoundingBox.Normalise();
+                return normalisedBB.Bottom >= p.LowerBound && normalisedBB.Top <= p.UpperBound;
+            }));
+
+            var newLeaves = newLeavesEnums.Where(e => e.Count() > 0).Select(e => new XYLeaf(e));
+            var newNodes = newLeaves.Select(l => VerticalCut(l, minimumWidth,
                 dominantFontWidthFunc, dominantFontHeightFunc, level)).ToList();
 
-            var lost = leaf.Words.Except(newLeafsEnums.SelectMany(x => x)).Where(x => !string.IsNullOrWhiteSpace(x.Text)).ToList();
+            var lost = leaf.Words.Except(newLeavesEnums.SelectMany(x => x)).Where(x => !string.IsNullOrWhiteSpace(x.Text)).ToList();
             if (lost.Count > 0)
             {
                 newNodes.AddRange(lost.Select(w => new XYLeaf(w)));
             }
             return new XYNode(newNodes);
+        }
+
+        private struct Projection
+        {
+            public double UpperBound { get; set; }
+            public double LowerBound { get; set; }
+
+            public Projection(double lowerBound, double upperBound)
+            {
+                UpperBound = upperBound;
+                LowerBound = lowerBound;
+            }
+
+            /// <summary>
+            /// Returns true if the value is greater or equal to the lower bound and smaller or equal to the upper bound.
+            /// </summary>
+            /// <param name="value">The value to test.</param>
+            public bool Contains(double value)
+            {
+                return value >= LowerBound && value <= UpperBound;
+            }
         }
     }
 }
