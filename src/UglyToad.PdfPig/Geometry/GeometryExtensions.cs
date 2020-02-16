@@ -11,6 +11,8 @@
     /// </summary>
     public static class GeometryExtensions
     {
+        private const double epsilon = 1e-5;
+
         #region PdfPoint
         /// <summary>
         /// Get the dot product of both points.
@@ -54,7 +56,7 @@
         /// </param>
         internal static PdfRectangle ParametricPerpendicularProjection(IReadOnlyList<PdfPoint> polygon)
         {
-            if (polygon == null || polygon.Count == 0)
+            if (polygon == null || !polygon.Any())
             {
                 throw new ArgumentException("ParametricPerpendicularProjection(): polygon cannot be null and must contain at least one point.");
             }
@@ -215,9 +217,9 @@
         /// <summary>
         /// Algorithm to find the convex hull of the set of points with time complexity O(n log n).
         /// </summary>
-        internal static IEnumerable<PdfPoint> GrahamScan(IEnumerable<PdfPoint> points)
+        public static IEnumerable<PdfPoint> GrahamScan(IEnumerable<PdfPoint> points)
         {
-            if (points == null || points.Count() == 0)
+            if (points == null || !points.Any())
             {
                 throw new ArgumentException("GrahamScan(): points cannot be null and must contain at least one point.");
             }
@@ -226,6 +228,7 @@
 
             Func<PdfPoint, PdfPoint, PdfPoint, double> ccw = (PdfPoint p1, PdfPoint p2, PdfPoint p3) =>
             {
+                // TO DO, check rounding here
                 return Math.Round((p2.X - p1.X) * (p3.Y - p1.Y) - (p2.Y - p1.Y) * (p3.X - p1.X), 6);
             };
 
@@ -291,18 +294,45 @@
         /// <param name="includeBorder">If set to false, will return false if the point belongs to the border.</param>
         public static bool Contains(this PdfRectangle rectangle, PdfPoint point, bool includeBorder = false)
         {
-            if (includeBorder)
+            if (Math.Abs(rectangle.Rotation) < epsilon)
             {
-                return point.X >= rectangle.Left &&
-                          point.X <= rectangle.Right &&
-                          point.Y >= rectangle.Bottom &&
-                          point.Y <= rectangle.Top;
-            }
+                if (includeBorder)
+                {
+                    return point.X >= rectangle.Left &&
+                              point.X <= rectangle.Right &&
+                              point.Y >= rectangle.Bottom &&
+                              point.Y <= rectangle.Top;
+                }
 
-            return point.X > rectangle.Left &&
-                   point.X < rectangle.Right &&
-                   point.Y > rectangle.Bottom &&
-                   point.Y < rectangle.Top;
+                return point.X > rectangle.Left &&
+                       point.X < rectangle.Right &&
+                       point.Y > rectangle.Bottom &&
+                       point.Y < rectangle.Top;
+            }
+            else
+            {
+                double area(PdfPoint p1, PdfPoint p2, PdfPoint p3)
+                {
+                    return Math.Abs((p2.X * p1.Y - p1.X * p2.Y) + (p3.X * p2.Y - p2.X * p3.Y) + (p1.X * p3.Y - p3.X * p1.Y)) / 2.0;
+                }
+
+                var area1 = area(rectangle.BottomLeft, point, rectangle.TopLeft);
+                var area2 = area(rectangle.TopLeft, point, rectangle.TopRight);
+                var area3 = area(rectangle.TopRight, point, rectangle.BottomRight);
+                var area4 = area(point, rectangle.BottomRight, rectangle.BottomLeft);
+
+                var sum = area1 + area2 + area3 + area4; // sum is always greater or equal to area
+                
+                if (sum > rectangle.Area) return false;
+
+                if (area1 < epsilon || area2 < epsilon || area3 < epsilon || area4 < epsilon)
+                {
+                    // point is on the rectangle
+                    return includeBorder;
+                }
+
+                return true;
+            }
         }
 
         /// <summary>
@@ -311,17 +341,24 @@
         /// </summary>
         public static bool IntersectsWith(this PdfRectangle rectangle, PdfRectangle other)
         {
-            if (rectangle.Left > other.Right || other.Left > rectangle.Right)
+            if (Math.Abs(rectangle.Rotation) < epsilon)
             {
-                return false;
-            }
+                if (rectangle.Left > other.Right || other.Left > rectangle.Right)
+                {
+                    return false;
+                }
 
-            if (rectangle.Top < other.Bottom || other.Top < rectangle.Bottom)
+                if (rectangle.Top < other.Bottom || other.Top < rectangle.Bottom)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            else
             {
-                return false;
+                throw new NotImplementedException();
             }
-
-            return true;
         }
 
         /// <summary>
@@ -343,27 +380,27 @@
         /// </summary>
         public static bool Contains(this PdfLine line, PdfPoint point)
         {
-            if (line.Point2.X == line.Point1.X)
+            if (Math.Abs(line.Point2.X - line.Point1.X) < epsilon)
             {
-                if (point.X == line.Point2.X)
+                if (Math.Abs(point.X - line.Point2.X) < epsilon)
                 {
-                    return Math.Sign(point.Y - line.Point2.Y) != Math.Sign(point.Y - line.Point1.Y);
+                    return Math.Abs(Math.Sign(point.Y - line.Point2.Y) - Math.Sign(point.Y - line.Point1.Y)) > epsilon;
                 }
                 return false;
             }
 
-            if (line.Point2.Y == line.Point1.Y)
+            if (Math.Abs(line.Point2.Y - line.Point1.Y) < epsilon)
             {
-                if (point.Y == line.Point2.Y)
+                if (Math.Abs(point.Y - line.Point2.Y) < epsilon)
                 {
-                    return Math.Sign(point.X - line.Point2.X) != Math.Sign(point.X - line.Point1.X);
+                    return Math.Abs(Math.Sign(point.X - line.Point2.X) - Math.Sign(point.X - line.Point1.X)) > epsilon;
                 }
                 return false;
             }
 
             var tx = (point.X - line.Point1.X) / (line.Point2.X - line.Point1.X);
             var ty = (point.Y - line.Point1.Y) / (line.Point2.Y - line.Point1.Y);
-            if (Math.Round(tx - ty, 5) != 0) return false;
+            if (Math.Abs(tx - ty) > epsilon) return false;
             return (tx >= 0 && tx <= 1);
         }
 
@@ -390,7 +427,7 @@
             var eq2 = GetSlopeIntercept(other.Point1, other.Point2);
 
             if (double.IsNaN(eq1.Slope) && double.IsNaN(eq2.Slope)) return null; // both lines are vertical (hence parallel)
-            if (eq1.Slope == eq2.Slope) return null; // both lines are parallel
+            if (Math.Abs(eq1.Slope - eq2.Slope) < epsilon) return null; // both lines are parallel
 
             var intersection = new PdfPoint();
 
@@ -427,7 +464,7 @@
         {
             var val1 = (line.Point2.Y - line.Point1.Y) * (other.Point2.X - other.Point1.X);
             var val2 = (other.Point2.Y - other.Point1.Y) * (line.Point2.X - line.Point1.X);
-            return Math.Round(val1 - val2, 5) == 0;
+            return Math.Abs(val1 - val2) < epsilon;
         }
         #endregion
 
@@ -437,27 +474,27 @@
         /// </summary>
         public static bool Contains(this PdfPath.Line line, PdfPoint point)
         {
-            if (line.To.X == line.From.X)
+            if (Math.Abs(line.To.X - line.From.X) < epsilon)
             {
-                if (point.X == line.To.X)
+                if (Math.Abs(point.X - line.To.X) < epsilon)
                 {
-                    return Math.Sign(point.Y - line.To.Y) != Math.Sign(point.Y - line.From.Y);
+                    return Math.Abs(Math.Sign(point.Y - line.To.Y) - Math.Sign(point.Y - line.From.Y)) > epsilon;
                 }
                 return false;
             }
 
-            if (line.To.Y == line.From.Y)
+            if (Math.Abs(line.To.Y - line.From.Y) < epsilon)
             {
-                if (point.Y == line.To.Y)
+                if (Math.Abs(point.Y - line.To.Y) < epsilon)
                 {
-                    return Math.Sign(point.X - line.To.X) != Math.Sign(point.X - line.From.X);
+                    return Math.Abs(Math.Sign(point.X - line.To.X) - Math.Sign(point.X - line.From.X)) > epsilon;
                 }
                 return false;
             }
 
             var tx = (point.X - line.From.X) / (line.To.X - line.From.X);
             var ty = (point.Y - line.From.Y) / (line.To.Y - line.From.Y);
-            if (Math.Round(tx - ty, 5) != 0) return false;
+            if (Math.Abs(tx - ty) > epsilon) return false;
             return (tx >= 0 && tx <= 1);
         }
 
@@ -490,7 +527,7 @@
             var eq2 = GetSlopeIntercept(other.From, other.To);
 
             if (double.IsNaN(eq1.Slope) && double.IsNaN(eq2.Slope)) return null; // both lines are vertical (hence parallel)
-            if (eq1.Slope == eq2.Slope) return null; // both lines are parallel
+            if (Math.Abs(eq1.Slope - eq2.Slope) < epsilon) return null; // both lines are parallel
 
             var intersection = new PdfPoint();
 
@@ -527,7 +564,7 @@
         {
             var val1 = (line.To.Y - line.From.Y) * (other.To.X - other.From.X);
             var val2 = (other.To.Y - other.From.Y) * (line.To.X - line.From.X);
-            return Math.Round(val1 - val2, 5) == 0;
+            return Math.Abs(val1 - val2) < epsilon;
         }
         #endregion
 
@@ -602,7 +639,7 @@
         public static PdfPoint[] Intersect(this PdfPath.BezierCurve bezierCurve, PdfPath.Line line)
         {
             var ts = FindIntersectionT(bezierCurve, line);
-            if (ts.Count() == 0) return null;
+            if (!ts.Any()) return null;
 
             List<PdfPoint> points = new List<PdfPoint>();
             foreach (var t in ts)
@@ -697,7 +734,7 @@
 
         private static (double Slope, double Intercept) GetSlopeIntercept(PdfPoint point1, PdfPoint point2)
         {
-            if ((point1.X - point2.X) != 0) // vertical line special case
+            if (Math.Abs(point1.X - point2.X) > epsilon) // vertical line special case
             {
                 var slope = (point2.Y - point1.Y) / (point2.X - point1.X);
                 var intercept = point2.Y - slope * point2.X;
