@@ -13,6 +13,17 @@
     {
         private const double epsilon = 1e-5;
 
+        /// <summary>
+        /// Return true if the points are in counter-clockwise order.
+        /// </summary>
+        /// <param name="point1">The first point.</param>
+        /// <param name="point2">The second point.</param>
+        /// <param name="point3">The third point.</param>
+        private static bool ccw(PdfPoint point1, PdfPoint point2, PdfPoint point3)
+        {
+            return (point2.X - point1.X) * (point3.Y - point1.Y) > (point2.Y - point1.Y) * (point3.X - point1.X);
+        }
+
         #region PdfPoint
         /// <summary>
         /// Get the dot product of both points.
@@ -226,12 +237,6 @@
 
             if (points.Count() < 3) return points;
 
-            Func<PdfPoint, PdfPoint, PdfPoint, double> ccw = (PdfPoint p1, PdfPoint p2, PdfPoint p3) =>
-            {
-                // TO DO, check rounding here
-                return Math.Round((p2.X - p1.X) * (p3.Y - p1.Y) - (p2.Y - p1.Y) * (p3.X - p1.X), 6);
-            };
-
             Func<PdfPoint, PdfPoint, double> polarAngle = (PdfPoint point1, PdfPoint point2) =>
             {
                 return Math.Atan2(point2.Y - point1.Y, point2.X - point1.X) % Math.PI;
@@ -274,7 +279,7 @@
             for (int i = 2; i < sortedPoints.Count; i++)
             {
                 var point = sortedPoints[i];
-                while (ccw(stack.ElementAt(1), stack.Peek(), point) < 0)
+                while (!ccw(stack.ElementAt(1), stack.Peek(), point))
                 {
                     stack.Pop();
                 }
@@ -485,8 +490,8 @@
         /// </summary>
         public static bool IntersectsWith(this PdfLine line, PdfLine other)
         {
-            // to improve
-            return Intersect(line, other) != null;
+            return (ccw(line.Point1, line.Point2, other.Point1) != ccw(line.Point1, line.Point2, other.Point2)) && 
+                   (ccw(other.Point1, other.Point2, line.Point1) != ccw(other.Point1, other.Point2, line.Point2));
         }
 
         /// <summary>
@@ -494,44 +499,29 @@
         /// </summary>
         public static PdfPoint? Intersect(this PdfLine line, PdfLine other)
         {
-            // if the bounding boxes do not intersect, the lines cannot intersect
-            if (!line.GetBoundingRectangle().IntersectsWith(other.GetBoundingRectangle()))
-            {
-                return null;
-            }
+            if (!line.IntersectsWith(other)) return null;
 
             var eq1 = GetSlopeIntercept(line.Point1, line.Point2);
             var eq2 = GetSlopeIntercept(other.Point1, other.Point2);
-
-            if (double.IsNaN(eq1.Slope) && double.IsNaN(eq2.Slope)) return null; // both lines are vertical (hence parallel)
-            if (Math.Abs(eq1.Slope - eq2.Slope) < epsilon) return null; // both lines are parallel
-
-            PdfPoint? intersection = null;
 
             if (double.IsNaN(eq1.Slope))
             {
                 var x = eq1.Intercept;
                 var y = eq2.Slope * x + eq2.Intercept;
-                intersection = new PdfPoint(x, y);
+                return new PdfPoint(x, y);
             }
             else if (double.IsNaN(eq2.Slope))
             {
                 var x = eq2.Intercept;
                 var y = eq1.Slope * x + eq1.Intercept;
-                intersection = new PdfPoint(x, y);
+                return new PdfPoint(x, y);
             }
             else
             {
                 var x = (eq2.Intercept - eq1.Intercept) / (eq1.Slope - eq2.Slope);
                 var y = eq1.Slope * x + eq1.Intercept;
-                intersection = new PdfPoint(x, y);
+                return new PdfPoint(x, y);
             }
-
-            // check if the intersection point belongs to both segments 
-            // (for the moment we only know it belongs to both lines)
-            if (!line.Contains(intersection.Value)) return null;
-            if (!other.Contains(intersection.Value)) return null;
-            return intersection;
         }
 
         /// <summary>
@@ -811,7 +801,7 @@
 
         private static (double Slope, double Intercept) GetSlopeIntercept(PdfPoint point1, PdfPoint point2)
         {
-            if (Math.Abs(point1.X - point2.X) > epsilon) // vertical line special case
+            if (Math.Abs(point1.X - point2.X) > epsilon)
             {
                 var slope = (point2.Y - point1.Y) / (point2.X - point1.X);
                 var intercept = point2.Y - slope * point2.X;
@@ -819,6 +809,7 @@
             }
             else
             {
+                // vertical line special case
                 return (double.NaN, point1.X);
             }
         }
