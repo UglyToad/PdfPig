@@ -319,11 +319,11 @@
                 var area1 = area(rectangle.BottomLeft, point, rectangle.TopLeft);
                 var area2 = area(rectangle.TopLeft, point, rectangle.TopRight);
                 var area3 = area(rectangle.TopRight, point, rectangle.BottomRight);
-                var area4 = area(point, rectangle.BottomRight, rectangle.BottomLeft);
+                var area4 = area(rectangle.BottomRight, point, rectangle.BottomLeft);
 
                 var sum = area1 + area2 + area3 + area4; // sum is always greater or equal to area
-                
-                if (sum > rectangle.Area) return false;
+
+                if (sum - rectangle.Area > epsilon) return false;
 
                 if (area1 < epsilon || area2 < epsilon || area3 < epsilon || area4 < epsilon)
                 {
@@ -341,7 +341,7 @@
         /// </summary>
         public static bool IntersectsWith(this PdfRectangle rectangle, PdfRectangle other)
         {
-            if (Math.Abs(rectangle.Rotation) < epsilon)
+            if (Math.Abs(rectangle.Rotation) < epsilon && Math.Abs(other.Rotation) < epsilon)
             {
                 if (rectangle.Left > other.Right || other.Left > rectangle.Right)
                 {
@@ -357,7 +357,73 @@
             }
             else
             {
-                throw new NotImplementedException();
+                if (!rectangle.Normalise().IntersectsWith(other.Normalise()))
+                {
+                    return false;
+                }
+
+                if (rectangle.Contains(other.BottomLeft)) return true;
+                if (rectangle.Contains(other.TopRight)) return true;
+                if (rectangle.Contains(other.TopLeft)) return true;
+                if (rectangle.Contains(other.BottomRight)) return true;
+
+                if (other.Contains(rectangle.BottomLeft)) return true;
+                if (other.Contains(rectangle.TopRight)) return true;
+                if (other.Contains(rectangle.TopLeft)) return true;
+                if (other.Contains(rectangle.BottomRight)) return true;
+
+                if (new PdfLine(rectangle.BottomLeft, rectangle.BottomRight).
+                    IntersectsWith(new PdfLine(other.BottomLeft, other.BottomRight))) return true;
+
+                if (new PdfLine(rectangle.BottomLeft, rectangle.BottomRight).
+                    IntersectsWith(new PdfLine(other.BottomRight, other.TopRight))) return true;
+
+                if (new PdfLine(rectangle.BottomLeft, rectangle.BottomRight).
+                    IntersectsWith(new PdfLine(other.TopRight, other.TopLeft))) return true;
+
+                if (new PdfLine(rectangle.BottomLeft, rectangle.BottomRight).
+                    IntersectsWith(new PdfLine(other.TopLeft, other.BottomLeft))) return true;
+
+
+                if (new PdfLine(rectangle.BottomRight, rectangle.TopRight).
+                    IntersectsWith(new PdfLine(other.BottomLeft, other.BottomRight))) return true;
+
+                if (new PdfLine(rectangle.BottomRight, rectangle.TopRight).
+                    IntersectsWith(new PdfLine(other.BottomRight, other.TopRight))) return true;
+
+                if (new PdfLine(rectangle.BottomRight, rectangle.TopRight).
+                    IntersectsWith(new PdfLine(other.TopRight, other.TopLeft))) return true;
+
+                if (new PdfLine(rectangle.BottomRight, rectangle.TopRight).
+                    IntersectsWith(new PdfLine(other.TopLeft, other.BottomLeft))) return true;
+
+
+                if (new PdfLine(rectangle.TopRight, rectangle.TopLeft).
+                    IntersectsWith(new PdfLine(other.BottomLeft, other.BottomRight))) return true;
+
+                if (new PdfLine(rectangle.TopRight, rectangle.TopLeft).
+                    IntersectsWith(new PdfLine(other.BottomRight, other.TopRight))) return true;
+
+                if (new PdfLine(rectangle.TopRight, rectangle.TopLeft).
+                    IntersectsWith(new PdfLine(other.TopRight, other.TopLeft))) return true;
+
+                if (new PdfLine(rectangle.TopRight, rectangle.TopLeft).
+                    IntersectsWith(new PdfLine(other.TopLeft, other.BottomLeft))) return true;
+
+
+                if (new PdfLine(rectangle.TopLeft, rectangle.BottomLeft).
+                    IntersectsWith(new PdfLine(other.BottomLeft, other.BottomRight))) return true;
+
+                if (new PdfLine(rectangle.TopLeft, rectangle.BottomLeft).
+                    IntersectsWith(new PdfLine(other.BottomRight, other.TopRight))) return true;
+
+                if (new PdfLine(rectangle.TopLeft, rectangle.BottomLeft).
+                    IntersectsWith(new PdfLine(other.TopRight, other.TopLeft))) return true;
+
+                if (new PdfLine(rectangle.TopLeft, rectangle.BottomLeft).
+                    IntersectsWith(new PdfLine(other.TopLeft, other.BottomLeft))) return true;
+
+                return false;
             }
         }
 
@@ -439,7 +505,7 @@
             if (double.IsNaN(eq1.Slope) && double.IsNaN(eq2.Slope)) return null; // both lines are vertical (hence parallel)
             if (Math.Abs(eq1.Slope - eq2.Slope) < epsilon) return null; // both lines are parallel
 
-            var intersection = new PdfPoint();
+            PdfPoint? intersection = null;
 
             if (double.IsNaN(eq1.Slope))
             {
@@ -462,8 +528,8 @@
 
             // check if the intersection point belongs to both segments 
             // (for the moment we only know it belongs to both lines)
-            if (!line.Contains(intersection)) return null;
-            if (!other.Contains(intersection)) return null;
+            if (!line.Contains(intersection.Value)) return null;
+            if (!other.Contains(intersection.Value)) return null;
             return intersection;
         }
 

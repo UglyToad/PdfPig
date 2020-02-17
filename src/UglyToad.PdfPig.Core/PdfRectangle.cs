@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Core
 {
     using System;
+    using System.Linq;
 
     /// <summary>
     /// A rectangle in a PDF file. 
@@ -39,16 +40,8 @@
         {
             get
             {
-                var t = GetT();
-
-                var cosT = Math.Cos(t);
-                var sinT = Math.Sin(t);
-
-                var cx = Math.Min(BottomRight.X, Math.Min(TopLeft.X, Math.Min(BottomLeft.X, TopRight.X)))
-                         + (Width * cosT + Height * sinT) / 2.0;
-                var cy = Math.Min(BottomRight.Y, Math.Min(TopLeft.Y, Math.Min(BottomLeft.Y, TopRight.Y)))
-                         + (Height * cosT + Width * sinT) / 2.0;
-
+                var cx = (BottomRight.X + TopRight.X + TopLeft.X + BottomLeft.X) / 4.0;
+                var cy = (BottomRight.Y + TopRight.Y + TopLeft.Y + BottomLeft.Y) / 4.0;
                 return new PdfPoint(cx, cy);
             }
         }
@@ -94,9 +87,7 @@
         {
             get
             {
-                var rotation = GetT() * 180 / Math.PI;
-
-                return rotation;
+                return GetT() * 180 / Math.PI;
             }
         }
 
@@ -201,17 +192,9 @@
 
         private void GetWidthHeight()
         {
-            var bx = Math.Max(Math.Abs(BottomRight.X - TopLeft.X), Math.Abs(BottomLeft.X - TopRight.X));
-            var by = Math.Max(Math.Abs(TopRight.Y - BottomLeft.Y), Math.Abs(TopLeft.Y - BottomRight.Y));
-
-            var t = GetT();
-
-            var cosT = Math.Cos(t);
-            var sinT = Math.Sin(t);
-            var cosSqSinSqInv = 1.0 / (cosT * cosT - sinT * sinT);
-
-            width = cosSqSinSqInv * (bx * cosT - by * sinT);
-            height = cosSqSinSqInv * (-bx * sinT + by * cosT);
+            var tm = TransformationMatrix.GetRotationMatrix(Rotation).Inverse();
+            width = tm.Transform(BottomRight).X - tm.Transform(BottomLeft).X;
+            height = tm.Transform(TopLeft).Y - tm.Transform(BottomLeft).Y;
         }
 
         /// <inheritdoc />
