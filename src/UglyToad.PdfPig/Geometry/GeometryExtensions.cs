@@ -647,7 +647,7 @@
         /// </summary>
         /// <param name="bezierCurve">The original bezier curve.</param>
         /// <param name="tau">The t value were to split the curve, usually between 0 and 1, but not necessary.</param>
-        private static (PdfPath.BezierCurve, PdfPath.BezierCurve) Split(this PdfPath.BezierCurve bezierCurve, double tau)
+        public static (PdfPath.BezierCurve, PdfPath.BezierCurve) Split(this PdfPath.BezierCurve bezierCurve, double tau)
         {
             // De Casteljau Algorithm
             PdfPoint[][] points = new PdfPoint[4][];
@@ -684,7 +684,7 @@
         public static PdfPoint[] Intersect(this PdfPath.BezierCurve bezierCurve, PdfLine line)
         {
             var ts = FindIntersectionT(bezierCurve, line);
-            if (!ts.Any()) return null;
+            if (ts == null || !ts.Any()) return null;
 
             List<PdfPoint> points = new List<PdfPoint>();
             foreach (var t in ts)
@@ -712,7 +712,7 @@
         public static PdfPoint[] Intersect(this PdfPath.BezierCurve bezierCurve, PdfPath.Line line)
         {
             var ts = FindIntersectionT(bezierCurve, line);
-            if (!ts.Any()) return null;
+            if (ts == null || !ts.Any()) return null;
 
             List<PdfPoint> points = new List<PdfPoint>();
             foreach (var t in ts)
@@ -799,7 +799,7 @@
 
             var solution = SolveCubicEquation(a, b, c, d);
 
-            return solution.Where(s => !double.IsNaN(s)).Where(s => s >= -double.Epsilon && s <= 1.0).OrderBy(s => s).ToArray();
+            return solution.Where(s => !double.IsNaN(s)).Where(s => s >= -epsilon && s <= 1.0).OrderBy(s => s).ToArray();
         }
         #endregion
 
