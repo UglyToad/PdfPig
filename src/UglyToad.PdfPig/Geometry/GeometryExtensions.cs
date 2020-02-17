@@ -485,6 +485,7 @@
         /// </summary>
         public static bool IntersectsWith(this PdfLine line, PdfLine other)
         {
+            // to improve
             return Intersect(line, other) != null;
         }
 
