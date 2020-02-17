@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Core
 {
     using System;
-    using System.Linq;
 
     /// <summary>
     /// A rectangle in a PDF file. 

@@ -15,7 +15,7 @@
         public void Area()
         {
             PdfRectangle rectangle = new PdfRectangle(10, 10, 20, 20);
-            Assert.Equal(100d, rectangle.Area);
+            Assert.Equal(100, rectangle.Area);
 
             PdfRectangle rectangle1 = new PdfRectangle(149.95376d, 687.13456d, 451.73539d, 1478.4997d);
             Assert.Equal(238819.4618743782d, rectangle1.Area, DoubleComparer);
@@ -217,11 +217,7 @@
             Assert.False(rectangle.Contains(new PdfPoint(10, 10), false));
 
 
-            PdfRectangle rectangle1 = new PdfRectangle(
-                new PdfPoint(-9.065741219039126, 152.06038717005336),
-                new PdfPoint(561.5649100338235, 794.7285258775772),
-                new PdfPoint(337.3202440365057, -155.49875330445175),
-                new PdfPoint(907.9508952893684, 487.16938540307206));
+            PdfRectangle rectangle1 = new PdfRectangle(new PdfPoint(-9.065741219039126, 152.06038717005336), new PdfPoint(561.5649100338235, 794.7285258775772), new PdfPoint(337.3202440365057, -155.49875330445175), new PdfPoint(907.9508952893684, 487.16938540307206));
 
             Assert.False(rectangle1.Contains(new PdfPoint(878.0710297128604, 958.6338401320028)));
             Assert.False(rectangle1.Contains(new PdfPoint(712.1637218020475, 900.3271263983642)));
@@ -252,11 +248,7 @@
             Assert.True(rectangle1.Contains(new PdfPoint(907.9508952893684, 487.16938540307206), true));
 
 
-            PdfRectangle rectangle2 = new PdfRectangle(
-                new PdfPoint(0.3057755364282002, 838.311937987381),
-                new PdfPoint(700.7384584344007, 1011.32036557429),
-                new PdfPoint(205.6195042611102, 7.089737703669428),
-                new PdfPoint(906.0521871590828, 180.09816529057827));
+            PdfRectangle rectangle2 = new PdfRectangle(new PdfPoint(0.3057755364282002, 838.311937987381), new PdfPoint(700.7384584344007, 1011.32036557429), new PdfPoint(205.6195042611102, 7.089737703669428), new PdfPoint(906.0521871590828, 180.09816529057827));
 
             Assert.True(rectangle2.Contains(new PdfPoint(376.4595323878466, 585.092466894829)));
             Assert.False(rectangle2.Contains(new PdfPoint(889.798553549375, 624.5142970059035)));
@@ -287,11 +279,7 @@
             Assert.True(rectangle2.Contains(new PdfPoint(906.0521871590828, 180.09816529057827), true));
 
 
-            PdfRectangle rectangle3 = new PdfRectangle(
-                new PdfPoint(493.4136678771659, 550.5731610863402),
-                new PdfPoint(290.7393736458551, 237.61572595373514),
-                new PdfPoint(306.45151010410984, 671.6516820633589),
-                new PdfPoint(103.77721587279905, 358.6942469307538));
+            PdfRectangle rectangle3 = new PdfRectangle(new PdfPoint(493.4136678771659, 550.5731610863402), new PdfPoint(290.7393736458551, 237.61572595373514), new PdfPoint(306.45151010410984, 671.6516820633589), new PdfPoint(103.77721587279905, 358.6942469307538));
 
             Assert.False(rectangle3.Contains(new PdfPoint(155.11783158265857, 491.7120489589787)));
             Assert.False(rectangle3.Contains(new PdfPoint(449.9104128221276, 625.461645123356)));
@@ -320,6 +308,54 @@
             Assert.True(rectangle3.Contains(new PdfPoint(306.45151010410984, 671.6516820633589), true));
             Assert.False(rectangle3.Contains(new PdfPoint(103.77721587279905, 358.6942469307538), false));
             Assert.True(rectangle3.Contains(new PdfPoint(103.77721587279905, 358.6942469307538), true));
+
+
+            PdfRectangle rectangle4 = new PdfRectangle(new PdfPoint(640.988045066141, 125.5653379379294), new PdfPoint(640.988045066141, 367.79778854671156), new PdfPoint(204.81813807089276, 125.5653379379294), new PdfPoint(204.81813807089276, 367.79778854671156));
+
+            Assert.False(rectangle4.Contains(new PdfPoint(778.1017360060002, 258.11710112182675)));
+            Assert.True(rectangle4.Contains(new PdfPoint(330.46781278490147, 349.1426132444837)));
+            Assert.False(rectangle4.Contains(new PdfPoint(168.6719344494385, 600.7344020728498)));
+            Assert.False(rectangle4.Contains(new PdfPoint(778.1287869775505, 865.1647528141028)));
+            Assert.False(rectangle4.Contains(new PdfPoint(876.1469290255752, 977.6220496848591)));
+            Assert.False(rectangle4.Contains(new PdfPoint(800.9401149116893, 395.4873173955958)));
+            Assert.False(rectangle4.Contains(new PdfPoint(906.3614397158185, 241.70531616419288)));
+            Assert.False(rectangle4.Contains(new PdfPoint(830.8149315200259, 586.9741177384781)));
+            Assert.True(rectangle4.Contains(new PdfPoint(344.0788636255755, 181.97071150147158)));
+            Assert.True(rectangle4.Contains(new PdfPoint(448.88417556372406, 249.18035940106364)));
+            Assert.False(rectangle4.Contains(new PdfPoint(539.0738980024036, 389.2124263604438)));
+            Assert.True(rectangle4.Contains(new PdfPoint(435.2544223448116, 210.8032253465768)));
+            Assert.False(rectangle4.Contains(new PdfPoint(705.5475399465194, 574.8559155688396)));
+            Assert.True(rectangle4.Contains(new PdfPoint(594.1559093581004, 355.69416179006663)));
+            Assert.True(rectangle4.Contains(new PdfPoint(412.82394222471765, 127.0938582360459)));
+            Assert.False(rectangle4.Contains(new PdfPoint(587.1061737052607, 77.6418956945213)));
+            Assert.False(rectangle4.Contains(new PdfPoint(209.16452295361077, 858.1778637009602)));
+            Assert.False(rectangle4.Contains(new PdfPoint(161.2472615486529, 196.57579681357763)));
+            Assert.False(rectangle4.Contains(new PdfPoint(588.1152549305227, 793.9163431203691)));
+            Assert.False(rectangle4.Contains(new PdfPoint(419.08428311983016, 682.940017491896)));
+
+
+            PdfRectangle rectangle5 = new PdfRectangle(new PdfPoint(936.1838457735406, 938.4568236371585), new PdfPoint(469.11519762997943, 938.4568236371585), new PdfPoint(936.1838457735406, 570.546962665707), new PdfPoint(469.11519762997943, 570.546962665707));
+
+            Assert.False(rectangle5.Contains(new PdfPoint(363.6763214828964, 553.90419673017)));
+            Assert.False(rectangle5.Contains(new PdfPoint(269.11022001568995, 907.7211013369512)));
+            Assert.False(rectangle5.Contains(new PdfPoint(545.9247943971187, 467.2045212920185)));
+            Assert.False(rectangle5.Contains(new PdfPoint(957.854368553749, 743.5297047037499)));
+            Assert.False(rectangle5.Contains(new PdfPoint(96.22391424834854, 867.8498123277581)));
+            Assert.False(rectangle5.Contains(new PdfPoint(947.4676645726615, 841.4543556976749)));
+            Assert.False(rectangle5.Contains(new PdfPoint(207.58387888714313, 944.6083173703909)));
+            Assert.False(rectangle5.Contains(new PdfPoint(12.070767054576216, 530.89689237058)));
+            Assert.False(rectangle5.Contains(new PdfPoint(80.97174825482334, 583.3836110476417)));
+            Assert.False(rectangle5.Contains(new PdfPoint(254.72654444548726, 400.535850508089)));
+            Assert.False(rectangle5.Contains(new PdfPoint(383.8062039614576, 215.97802102071296)));
+            Assert.True(rectangle5.Contains(new PdfPoint(558.2282435794427, 861.1564197263626)));
+            Assert.False(rectangle5.Contains(new PdfPoint(468.3442214235617, 124.51907061851975)));
+            Assert.False(rectangle5.Contains(new PdfPoint(306.0817906101611, 491.1373171345088)));
+            Assert.False(rectangle5.Contains(new PdfPoint(0.652571433107263, 790.7203375108246)));
+            Assert.False(rectangle5.Contains(new PdfPoint(133.65649584827932, 120.35392855410065)));
+            Assert.False(rectangle5.Contains(new PdfPoint(145.0509582539651, 278.46839438943783)));
+            Assert.False(rectangle5.Contains(new PdfPoint(993.9850498426819, 233.99784697488047)));
+            Assert.False(rectangle5.Contains(new PdfPoint(115.04632034090689, 345.5836747158564)));
+            Assert.False(rectangle5.Contains(new PdfPoint(439.30650931376914, 336.1235681440722)));
         }
 
         [Fact]
@@ -412,51 +448,30 @@
             var tm0 = TransformationMatrix.GetRotationMatrix(30);
             var rect0R = tm0.Transform(rect0);
 
-            Assert.Equal(104.99636886126835, rect0R.BottomRight.X, 6);
-            Assert.Equal(118.63801452204044, rect0R.BottomRight.Y, 6);
-
-            Assert.Equal(79.72935886126837, rect0R.TopRight.X, 6);
-            Assert.Equal(162.40175959739133, rect0R.TopRight.Y, 6);
-
-            Assert.Equal(36.31110596050322, rect0R.TopLeft.X, 6);
-            Assert.Equal(137.33421959739135, rect0R.TopLeft.Y, 6);
-
-            Assert.Equal(61.57811596050321, rect0R.BottomLeft.X, 6);
-            Assert.Equal(93.57047452204044, rect0R.BottomLeft.Y, 6);
+            Assert.Equal(new PdfPoint(104.99636886126835, 118.63801452204044), rect0R.BottomRight, PointComparer);
+            Assert.Equal(new PdfPoint(79.72935886126837, 162.40175959739133), rect0R.TopRight, PointComparer);
+            Assert.Equal(new PdfPoint(36.31110596050322, 137.33421959739135), rect0R.TopLeft, PointComparer);
+            Assert.Equal(new PdfPoint(61.57811596050321, 93.57047452204044), rect0R.BottomLeft, PointComparer);
             
             // 2
             var rect1 = new PdfRectangle(256.8793214, 72.7342895, 571.548482, 243.721896);
             var tm1 = TransformationMatrix.GetRotationMatrix(-78.14568);
             var rect1R = tm1.Transform(rect1);
 
-            Assert.Equal(188.5928589557637, rect1R.BottomRight.X, 6);
-            Assert.Equal(-544.4177419008914, rect1R.BottomRight.Y, 6);
-
-            Assert.Equal(355.93382538513987, rect1R.TopRight.X, 6);
-            Assert.Equal(-509.2927859424674, rect1R.TopRight.Y, 6);
-
-            Assert.Equal(291.2932316380764, rect1R.TopLeft.X, 6);
-            Assert.Equal(-201.33455131845915, rect1R.TopLeft.Y, 6);
-
-            Assert.Equal(123.95226520870021, rect1R.BottomLeft.X, 6);
-            Assert.Equal(-236.45950727688313, rect1R.BottomLeft.Y, 6);
+            Assert.Equal(new PdfPoint(188.5928589557637, -544.4177419008914), rect1R.BottomRight, PointComparer);
+            Assert.Equal(new PdfPoint(355.93382538513987, -509.2927859424674), rect1R.TopRight, PointComparer);
+            Assert.Equal(new PdfPoint(291.2932316380764, -201.33455131845915), rect1R.TopLeft, PointComparer);
+            Assert.Equal(new PdfPoint(123.95226520870021, -236.45950727688313), rect1R.BottomLeft, PointComparer);
 
             // 3
             var rect2 = new PdfRectangle(78.14, 48.49, -741.115482, -245.18796);
             var tm2 = TransformationMatrix.GetRotationMatrix(178.215);
             var rect2R = tm2.Transform(rect2);
 
-            Assert.Equal(739.2454360229797, rect2R.BottomRight.X, 6);
-            Assert.Equal(-71.55154141796652, rect2R.BottomRight.Y, 6);
-
-            Assert.Equal(748.3932365836752, rect2R.TopRight.X, 6);
-            Assert.Equal(221.98391118471883, rect2R.TopRight.Y, 6);
-
-            Assert.Equal(-70.46470122718794, rect2R.TopLeft.X, 6);
-            Assert.Equal(247.50297212341658, rect2R.TopLeft.Y, 6);
-
-            Assert.Equal(-79.61250178788342, rect2R.BottomLeft.X, 6);
-            Assert.Equal(-46.03248047926875, rect2R.BottomLeft.Y, 6);
+            Assert.Equal(new PdfPoint(739.2454360229797, -71.55154141796652), rect2R.BottomRight, PointComparer);
+            Assert.Equal(new PdfPoint(748.3932365836752, 221.98391118471883), rect2R.TopRight, PointComparer);
+            Assert.Equal(new PdfPoint(-70.46470122718794, 247.50297212341658), rect2R.TopLeft, PointComparer);
+            Assert.Equal(new PdfPoint(-79.61250178788342, -46.03248047926875), rect2R.BottomLeft, PointComparer);
         }
     }
 }

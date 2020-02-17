@@ -29,6 +29,13 @@
         }
 
         [Fact]
+        public void Insersect()
+        {
+            var line0 = new PdfLine(2, 1, 6, 4);
+            Assert.True(line0.IntersectsWith(new PdfLine(2, 4, 6, 1)));
+        }
+
+        [Fact]
         public void Contains()
         {
             var line = new PdfLine(10, 7.5d, 26.3d, 12);
