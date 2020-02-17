@@ -412,6 +412,19 @@
             public PdfPoint To { get; }
 
             /// <summary>
+            /// Length of the line.
+            /// </summary>
+            public double Length
+            {
+                get
+                {
+                    var l = (From.X - To.X) * (From.X - To.X) +
+                        (From.Y - To.Y) * (From.Y - To.Y);
+                    return Math.Sqrt(l);
+                }
+            }
+
+            /// <summary>
             /// Create a new <see cref="Line"/>.
             /// </summary>
             public Line(PdfPoint from, PdfPoint to)

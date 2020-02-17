@@ -461,28 +461,7 @@
         /// </summary>
         public static bool Contains(this PdfLine line, PdfPoint point)
         {
-            if (Math.Abs(line.Point2.X - line.Point1.X) < epsilon)
-            {
-                if (Math.Abs(point.X - line.Point2.X) < epsilon)
-                {
-                    return Math.Abs(Math.Sign(point.Y - line.Point2.Y) - Math.Sign(point.Y - line.Point1.Y)) > epsilon;
-                }
-                return false;
-            }
-
-            if (Math.Abs(line.Point2.Y - line.Point1.Y) < epsilon)
-            {
-                if (Math.Abs(point.Y - line.Point2.Y) < epsilon)
-                {
-                    return Math.Abs(Math.Sign(point.X - line.Point2.X) - Math.Sign(point.X - line.Point1.X)) > epsilon;
-                }
-                return false;
-            }
-
-            var tx = (point.X - line.Point1.X) / (line.Point2.X - line.Point1.X);
-            var ty = (point.Y - line.Point1.Y) / (line.Point2.Y - line.Point1.Y);
-            if (Math.Abs(tx - ty) > epsilon) return false;
-            return (tx >= 0 && tx <= 1);
+            return Contains(line.Point1, line.Point2, point);
         }
 
         /// <summary>
@@ -490,8 +469,15 @@
         /// </summary>
         public static bool IntersectsWith(this PdfLine line, PdfLine other)
         {
-            return (ccw(line.Point1, line.Point2, other.Point1) != ccw(line.Point1, line.Point2, other.Point2)) && 
-                   (ccw(other.Point1, other.Point2, line.Point1) != ccw(other.Point1, other.Point2, line.Point2));
+            return IntersectsWith(line.Point1, line.Point2, other.Point1, other.Point2);
+        }
+
+        /// <summary>
+        /// Whether two lines intersect.
+        /// </summary>
+        public static bool IntersectsWith(this PdfLine line, PdfPath.Line other)
+        {
+            return IntersectsWith(line.Point1, line.Point2, other.From, other.To);
         }
 
         /// <summary>
@@ -500,28 +486,16 @@
         public static PdfPoint? Intersect(this PdfLine line, PdfLine other)
         {
             if (!line.IntersectsWith(other)) return null;
+            return Intersect(line.Point1, line.Point2, other.Point1, other.Point2);
+        }
 
-            var eq1 = GetSlopeIntercept(line.Point1, line.Point2);
-            var eq2 = GetSlopeIntercept(other.Point1, other.Point2);
-
-            if (double.IsNaN(eq1.Slope))
-            {
-                var x = eq1.Intercept;
-                var y = eq2.Slope * x + eq2.Intercept;
-                return new PdfPoint(x, y);
-            }
-            else if (double.IsNaN(eq2.Slope))
-            {
-                var x = eq2.Intercept;
-                var y = eq1.Slope * x + eq1.Intercept;
-                return new PdfPoint(x, y);
-            }
-            else
-            {
-                var x = (eq2.Intercept - eq1.Intercept) / (eq1.Slope - eq2.Slope);
-                var y = eq1.Slope * x + eq1.Intercept;
-                return new PdfPoint(x, y);
-            }
+        /// <summary>
+        /// Get the <see cref="PdfPoint"/> that is the intersection of two lines.
+        /// </summary>
+        public static PdfPoint? Intersect(this PdfLine line, PdfPath.Line other)
+        {
+            if (!line.IntersectsWith(other)) return null;
+            return Intersect(line.Point1, line.Point2, other.From, other.To);
         }
 
         /// <summary>
@@ -529,9 +503,15 @@
         /// </summary>
         public static bool ParallelTo(this PdfLine line, PdfLine other)
         {
-            var val1 = (line.Point2.Y - line.Point1.Y) * (other.Point2.X - other.Point1.X);
-            var val2 = (other.Point2.Y - other.Point1.Y) * (line.Point2.X - line.Point1.X);
-            return Math.Abs(val1 - val2) < epsilon;
+            return ParallelTo(line.Point1, line.Point2, other.Point1, other.Point2);
+        }
+
+        /// <summary>
+        /// Checks if both lines are parallel.
+        /// </summary>
+        public static bool ParallelTo(this PdfLine line, PdfPath.Line other)
+        {
+            return ParallelTo(line.Point1, line.Point2, other.From, other.To);
         }
         #endregion
 
@@ -541,28 +521,7 @@
         /// </summary>
         public static bool Contains(this PdfPath.Line line, PdfPoint point)
         {
-            if (Math.Abs(line.To.X - line.From.X) < epsilon)
-            {
-                if (Math.Abs(point.X - line.To.X) < epsilon)
-                {
-                    return Math.Abs(Math.Sign(point.Y - line.To.Y) - Math.Sign(point.Y - line.From.Y)) > epsilon;
-                }
-                return false;
-            }
-
-            if (Math.Abs(line.To.Y - line.From.Y) < epsilon)
-            {
-                if (Math.Abs(point.Y - line.To.Y) < epsilon)
-                {
-                    return Math.Abs(Math.Sign(point.X - line.To.X) - Math.Sign(point.X - line.From.X)) > epsilon;
-                }
-                return false;
-            }
-
-            var tx = (point.X - line.From.X) / (line.To.X - line.From.X);
-            var ty = (point.Y - line.From.Y) / (line.To.Y - line.From.Y);
-            if (Math.Abs(tx - ty) > epsilon) return false;
-            return (tx >= 0 && tx <= 1);
+            return Contains(line.From, line.To, point);
         }
 
         /// <summary>
@@ -570,7 +529,17 @@
         /// </summary>
         public static bool IntersectsWith(this PdfPath.Line line, PdfPath.Line other)
         {
-            return Intersect(line, other) != null;
+            return (ccw(line.From, line.To, other.From) != ccw(line.From, line.To, other.To)) &&
+                   (ccw(other.From, other.To, line.From) != ccw(other.From, other.To, line.To));
+        }
+
+        /// <summary>
+        /// Whether two lines intersect.
+        /// </summary>
+        public static bool IntersectsWith(this PdfPath.Line line, PdfLine other)
+        {
+            return (ccw(line.From, line.To, other.Point1) != ccw(line.From, line.To, other.Point2)) &&
+                   (ccw(other.Point1, other.Point2, line.From) != ccw(other.Point1, other.Point2, line.To));
         }
 
         /// <summary>
@@ -578,50 +547,17 @@
         /// </summary>
         public static PdfPoint? Intersect(this PdfPath.Line line, PdfPath.Line other)
         {
-            // if the bounding boxes do not intersect, the lines cannot intersect
-            var thisLineBbox = line.GetBoundingRectangle();
-            if (!thisLineBbox.HasValue) return null;
+            if (!line.IntersectsWith(other)) return null;
+            return Intersect(line.From, line.To, other.From, other.To);
+        }
 
-            var lineBbox = other.GetBoundingRectangle();
-            if (!lineBbox.HasValue) return null;
-
-            if (!thisLineBbox.Value.IntersectsWith(lineBbox.Value))
-            {
-                return null;
-            }
-
-            var eq1 = GetSlopeIntercept(line.From, line.To);
-            var eq2 = GetSlopeIntercept(other.From, other.To);
-
-            if (double.IsNaN(eq1.Slope) && double.IsNaN(eq2.Slope)) return null; // both lines are vertical (hence parallel)
-            if (Math.Abs(eq1.Slope - eq2.Slope) < epsilon) return null; // both lines are parallel
-
-            var intersection = new PdfPoint();
-
-            if (double.IsNaN(eq1.Slope))
-            {
-                var x = eq1.Intercept;
-                var y = eq2.Slope * x + eq2.Intercept;
-                intersection = new PdfPoint(x, y);
-            }
-            else if (double.IsNaN(eq2.Slope))
-            {
-                var x = eq2.Intercept;
-                var y = eq1.Slope * x + eq1.Intercept;
-                intersection = new PdfPoint(x, y);
-            }
-            else
-            {
-                var x = (eq2.Intercept - eq1.Intercept) / (eq1.Slope - eq2.Slope);
-                var y = eq1.Slope * x + eq1.Intercept;
-                intersection = new PdfPoint(x, y);
-            }
-
-            // check if the intersection point belongs to both segments 
-            // (for the moment we only know it belongs to both lines)
-            if (!line.Contains(intersection)) return null;
-            if (!other.Contains(intersection)) return null;
-            return intersection;
+        /// <summary>
+        /// Get the <see cref="PdfPoint"/> that is the intersection of two lines.
+        /// </summary>
+        public static PdfPoint? Intersect(this PdfPath.Line line, PdfLine other)
+        {
+            if (!line.IntersectsWith(other)) return null;
+            return Intersect(line.From, line.To, other.Point1, other.Point2);
         }
 
         /// <summary>
@@ -629,9 +565,79 @@
         /// </summary>
         public static bool ParallelTo(this PdfPath.Line line, PdfPath.Line other)
         {
-            var val1 = (line.To.Y - line.From.Y) * (other.To.X - other.From.X);
-            var val2 = (other.To.Y - other.From.Y) * (line.To.X - line.From.X);
-            return Math.Abs(val1 - val2) < epsilon;
+            return ParallelTo(line.From, line.To, other.From, other.To);
+        }
+
+        /// <summary>
+        /// Checks if both lines are parallel.
+        /// </summary>
+        public static bool ParallelTo(this PdfPath.Line line, PdfLine other)
+        {
+            return ParallelTo(line.From, line.To, other.Point1, other.Point2);
+        }
+        #endregion
+
+        #region Generic line
+        private static bool Contains(PdfPoint pl1, PdfPoint pl2, PdfPoint point)
+        {
+            if (Math.Abs(pl2.X - pl1.X) < epsilon)
+            {
+                if (Math.Abs(point.X - pl2.X) < epsilon)
+                {
+                    return Math.Abs(Math.Sign(point.Y - pl2.Y) - Math.Sign(point.Y - pl1.Y)) > epsilon;
+                }
+                return false;
+            }
+
+            if (Math.Abs(pl2.Y - pl1.Y) < epsilon)
+            {
+                if (Math.Abs(point.Y - pl2.Y) < epsilon)
+                {
+                    return Math.Abs(Math.Sign(point.X - pl2.X) - Math.Sign(point.X - pl1.X)) > epsilon;
+                }
+                return false;
+            }
+
+            var tx = (point.X - pl1.X) / (pl2.X - pl1.X);
+            var ty = (point.Y - pl1.Y) / (pl2.Y - pl1.Y);
+            if (Math.Abs(tx - ty) > epsilon) return false;
+            return tx >= 0 && (tx - 1) <= epsilon;
+        }
+
+        public static bool IntersectsWith(PdfPoint p11, PdfPoint p12, PdfPoint p21, PdfPoint p22)//this PdfPath.Line line, PdfPath.Line other)
+        {
+            return (ccw(p11, p12, p21) != ccw(p11, p12, p22)) &&
+                   (ccw(p21, p22, p11) != ccw(p21, p22, p12));
+        }
+
+        private static PdfPoint? Intersect(PdfPoint p11, PdfPoint p12, PdfPoint p21, PdfPoint p22)
+        {
+            var eq1 = GetSlopeIntercept(p11, p12);
+            var eq2 = GetSlopeIntercept(p21, p22);
+
+            if (double.IsNaN(eq1.Slope))
+            {
+                var x = eq1.Intercept;
+                var y = eq2.Slope * x + eq2.Intercept;
+                return new PdfPoint(x, y);
+            }
+            else if (double.IsNaN(eq2.Slope))
+            {
+                var x = eq2.Intercept;
+                var y = eq1.Slope * x + eq1.Intercept;
+                return new PdfPoint(x, y);
+            }
+            else
+            {
+                var x = (eq2.Intercept - eq1.Intercept) / (eq1.Slope - eq2.Slope);
+                var y = eq1.Slope * x + eq1.Intercept;
+                return new PdfPoint(x, y);
+            }
+        }
+
+        private static bool ParallelTo(PdfPoint p11, PdfPoint p12, PdfPoint p21, PdfPoint p22)
+        {
+            return Math.Abs((p12.Y - p11.Y) * (p22.X - p21.X) - (p22.Y - p21.Y) * (p12.X - p11.X)) < epsilon;
         }
         #endregion
 

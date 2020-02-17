@@ -86,7 +86,18 @@
         {
             get
             {
-                return GetT() * 180 / Math.PI;
+                double t;
+                if (!BottomRight.Equals(BottomLeft))
+                {
+                    t = Math.Atan2(BottomRight.Y - BottomLeft.Y, BottomRight.X - BottomLeft.X);
+                }
+                else
+                {
+                    // handle the case where both bottom points are identical
+                    t = Math.Atan2(TopLeft.Y - BottomLeft.Y, TopLeft.X - BottomLeft.X) - Math.PI / 2;
+                }
+
+                return t * 180 / Math.PI;
             }
         }
 
@@ -171,22 +182,6 @@
         {
             return new PdfRectangle(TopLeft.Translate(dx, dy), TopRight.Translate(dx, dy),
                                     BottomLeft.Translate(dx, dy), BottomRight.Translate(dx, dy));
-        }
-
-        private double GetT()
-        {
-            double t;
-            if (!BottomRight.Equals(BottomLeft))
-            {
-                t = Math.Atan2(BottomRight.Y - BottomLeft.Y, BottomRight.X - BottomLeft.X);
-            }
-            else
-            {
-                // handle the case where both bottom points are identical
-                t = Math.Atan2(TopLeft.Y - BottomLeft.Y, TopLeft.X - BottomLeft.X) - Math.PI / 2;
-            }
-
-            return t;
         }
 
         private void GetWidthHeight()

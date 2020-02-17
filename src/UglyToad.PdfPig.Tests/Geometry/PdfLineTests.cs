@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Geometry
 {
-    using System;
     using PdfPig.Core;
     using PdfPig.Geometry;
     using Xunit;
@@ -370,6 +369,8 @@
             Assert.False(line0.Contains(new PdfPoint(965.1109446991279, 329.09245612574057)));
             Assert.False(line0.Contains(new PdfPoint(820.7095483378824, 525.358685774857)));
             Assert.False(line0.Contains(new PdfPoint(990.8069634112412, 663.5926568025885)));
+            Assert.True(line0.Contains(new PdfPoint(438.3865838366066, 609.9902140686454)));
+            Assert.True(line0.Contains(new PdfPoint(944.7309188382663, 876.9348433851213)));
 
             var line1 = new PdfLine(934.3159494382417, 759.5192678221186, 260.0914555582554, 754.853110870852);
             Assert.False(line1.Contains(new PdfPoint(214.39243948924536, 717.9615854355675)));
@@ -377,6 +378,8 @@
             Assert.False(line1.Contains(new PdfPoint(658.3394804169986, 73.36850324595979)));
             Assert.False(line1.Contains(new PdfPoint(166.68617796663375, 846.1564716027135)));
             Assert.False(line1.Contains(new PdfPoint(477.03683917749896, 725.7599348603968)));
+            Assert.True(line1.Contains(new PdfPoint(934.3159494382417, 759.5192678221186)));
+            Assert.True(line1.Contains(new PdfPoint(260.0914555582554, 754.853110870852)));
 
             var line2 = new PdfLine(459.5236361336371, 225.75275035034105, 243.6017422524196, 577.1870942626915);
             Assert.False(line2.Contains(new PdfPoint(138.46035708111393, 612.611020472454)));
@@ -389,6 +392,8 @@
             Assert.False(line2.Contains(new PdfPoint(30.25648083800045, 924.4277127301796)));
             Assert.False(line2.Contains(new PdfPoint(494.504688420875, 372.0094967104417)));
             Assert.True(line2.Contains(new PdfPoint(403.89590870792, 316.2924058701583)));
+            Assert.True(line2.Contains(new PdfPoint(459.5236361336371, 225.75275035034105)));
+            Assert.True(line2.Contains(new PdfPoint(243.6017422524196, 577.1870942626915)));
 
             var line3 = new PdfLine(509.21323774187186, 888.044377235812, 47.37833742875941, 849.8318450594651);
             Assert.False(line3.Contains(new PdfPoint(678.2233054557167, 546.1624886001035)));
@@ -401,6 +406,8 @@
             Assert.True(line3.Contains(new PdfPoint(88.91977913129028, 853.2690120570946)));
             Assert.False(line3.Contains(new PdfPoint(681.4728580543268, 760.6227653385002)));
             Assert.True(line3.Contains(new PdfPoint(490.18925240056944, 886.4703198151103)));
+            Assert.True(line3.Contains(new PdfPoint(509.21323774187186, 888.044377235812)));
+            Assert.True(line3.Contains(new PdfPoint(47.37833742875941, 849.8318450594651)));
 
             var line4 = new PdfLine(405.58207740586516, 672.608614731411, 207.25519576774244, 970.4807982580487);
             Assert.False(line4.Contains(new PdfPoint(392.6618359714601, 96.47934589520469)));
@@ -413,6 +420,8 @@
             Assert.False(line4.Contains(new PdfPoint(172.58499465406223, 1022.5528543693492)));
             Assert.False(line4.Contains(new PdfPoint(936.4162971004565, 620.0608255800965)));
             Assert.True(line4.Contains(new PdfPoint(336.6230951431535, 776.1798626162473)));
+            Assert.True(line4.Contains(new PdfPoint(405.58207740586516, 672.608614731411)));
+            Assert.True(line4.Contains(new PdfPoint(207.25519576774244, 970.4807982580487)));
 
             var line5 = new PdfLine(435.3238347493861, 795.9122229139125, 732.5503121192992, 908.7240131737507);
             Assert.False(line5.Contains(new PdfPoint(547.4436930896966, 559.6385871353319)));
@@ -425,6 +434,8 @@
             Assert.False(line5.Contains(new PdfPoint(109.7704752533478, 672.3490140274272)));
             Assert.False(line5.Contains(new PdfPoint(82.60913058985109, 752.1433892591745)));
             Assert.False(line5.Contains(new PdfPoint(50.992247634205874, 650.0398404144613)));
+            Assert.True(line5.Contains(new PdfPoint(435.3238347493861, 795.9122229139125)));
+            Assert.True(line5.Contains(new PdfPoint(732.5503121192992, 908.7240131737507)));
         }
 
         [Fact]
