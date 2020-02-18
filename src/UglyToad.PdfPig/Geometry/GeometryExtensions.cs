@@ -209,19 +209,23 @@
             var cos = Math.Cos(angleRad);
             var sin = Math.Sin(angleRad);
 
-            var transformation = new TransformationMatrix(
+            var inverseRotation = new TransformationMatrix(
                 cos, -sin, 0,
                 sin, cos, 0,
-                (1.0 - cos) * x0 - sin * y0, sin * x0 - (1.0 - cos) * y0, 1);
+                0, 0, 1);
 
-            var transformedPoints = points.Select(p => transformation.Transform(p)).ToArray();
+            var transformedPoints = points.Select(p => inverseRotation.Transform(p)).ToArray();
             var aabb = new PdfRectangle(transformedPoints.Min(p => p.X),
                                         transformedPoints.Min(p => p.Y),
                                         transformedPoints.Max(p => p.X),
                                         transformedPoints.Max(p => p.Y));
 
             // Rotate back the AABB to obtain to oriented bounding box (OBB)
-            var obb = transformation.Inverse().Transform(aabb);
+            var rotateBack = new TransformationMatrix(
+                cos, sin, 0,
+                -sin, cos, 0,
+                0, 0, 1);
+            var obb = rotateBack.Transform(aabb);
             return obb;
         }
 
@@ -717,7 +721,7 @@
         
         private static PdfPoint[] Intersect(PdfPath.BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
         {
-            var ts = FindIntersectionT(bezierCurve, p1, p2);
+            var ts = IntersectT(bezierCurve, p1, p2);
             if (ts == null || !ts.Any()) return EmptyArray<PdfPoint>.Instance;
 
             List<PdfPoint> points = new List<PdfPoint>();
@@ -743,21 +747,21 @@
         /// Get the t values that are the intersections of the line and the curve.
         /// </summary>
         /// <returns>List of t values where the <see cref="PdfPath.BezierCurve"/> and the <see cref="PdfLine"/> intersect.</returns>
-        public static double[] FindIntersectionT(this PdfPath.BezierCurve bezierCurve, PdfLine line)
+        public static double[] IntersectT(this PdfPath.BezierCurve bezierCurve, PdfLine line)
         {
-            return FindIntersectionT(bezierCurve, line.Point1, line.Point2);
+            return IntersectT(bezierCurve, line.Point1, line.Point2);
         }
 
         /// <summary>
         /// Get the t values that are the intersections of the line and the curve.
         /// </summary>
         /// <returns>List of t values where the <see cref="PdfPath.BezierCurve"/> and the <see cref="PdfPath.Line"/> intersect.</returns>
-        public static double[] FindIntersectionT(this PdfPath.BezierCurve bezierCurve, PdfPath.Line line)
+        public static double[] IntersectT(this PdfPath.BezierCurve bezierCurve, PdfPath.Line line)
         {
-            return FindIntersectionT(bezierCurve, line.From, line.To);
+            return IntersectT(bezierCurve, line.From, line.To);
         }
 
-        private static double[] FindIntersectionT(PdfPath.BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
+        private static double[] IntersectT(PdfPath.BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
         {
             // if the bounding boxes do not intersect, they cannot intersect
             var bezierBbox = bezierCurve.GetBoundingRectangle();
