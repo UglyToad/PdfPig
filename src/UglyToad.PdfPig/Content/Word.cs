@@ -300,11 +300,15 @@
             var angleRad = Math.Atan(slope);
             var cos = Math.Cos(angleRad);
             var sin = Math.Sin(angleRad);
+            var x0sin = x0 * sin;
+            var y0sin = y0 * sin;
+            var x0cos = x0 * cos;
+            var y0cos = y0 * cos;
 
-            var transformation = new TransformationMatrix(
+            var inverseRotation = new TransformationMatrix(
                 cos, -sin, 0,
                 sin, cos, 0,
-                (1.0 - cos) * x0 - sin * y0, sin * x0 - (1.0 - cos) * y0, 1);
+                0, 0, 1);
 
             var transformedPoints = letters.SelectMany(r => new[]
             {
@@ -312,15 +316,20 @@
                 r.EndBaseLine,
                 r.GlyphRectangle.TopLeft,
                 r.GlyphRectangle.TopRight
-            }).Distinct().Select(p => transformation.Transform(p));
+            }).Distinct().Select(p => inverseRotation.Transform(p));
             var aabb = new PdfRectangle(transformedPoints.Min(p => p.X),
                                         transformedPoints.Min(p => p.Y),
                                         transformedPoints.Max(p => p.X),
                                         transformedPoints.Max(p => p.Y));
 
             // Rotate back the AABB to obtain to oriented bounding box (OBB)
+            var rotateBack = new TransformationMatrix(
+                cos, sin, 0,
+                -sin, cos, 0,
+                0, 0, 1);
+
             // Candidates bounding boxes
-            var obb = transformation.Inverse().Transform(aabb);
+            var obb = rotateBack.Transform(aabb);
             var obb1 = new PdfRectangle(obb.BottomLeft, obb.TopLeft, obb.BottomRight, obb.TopRight);
             var obb2 = new PdfRectangle(obb.TopRight, obb.BottomRight, obb.TopLeft, obb.BottomLeft);
             var obb3 = new PdfRectangle(obb.BottomRight, obb.BottomLeft, obb.TopRight, obb.TopLeft);
@@ -333,7 +342,7 @@
                 lastLetter.EndBaseLine.X - firstLetter.StartBaseLine.X) * 180 / Math.PI;
 
             var bbox = obb;
-            var deltaAngle = Math.Abs(baseLineAngle - angleRad);
+            var deltaAngle = Math.Abs(baseLineAngle - angleRad * 180 / Math.PI);
 
             double deltaAngle1 = Math.Abs(baseLineAngle - obb1.Rotation);
             if (deltaAngle1 < deltaAngle)
