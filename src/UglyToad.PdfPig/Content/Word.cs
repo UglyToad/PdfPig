@@ -300,10 +300,6 @@
             var angleRad = Math.Atan(slope);
             var cos = Math.Cos(angleRad);
             var sin = Math.Sin(angleRad);
-            var x0sin = x0 * sin;
-            var y0sin = y0 * sin;
-            var x0cos = x0 * cos;
-            var y0cos = y0 * cos;
 
             var inverseRotation = new TransformationMatrix(
                 cos, -sin, 0,
