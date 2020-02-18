@@ -485,7 +485,6 @@
         /// </summary>
         public static PdfPoint? Intersect(this PdfLine line, PdfLine other)
         {
-            if (!line.IntersectsWith(other)) return null;
             return Intersect(line.Point1, line.Point2, other.Point1, other.Point2);
         }
 
@@ -494,7 +493,6 @@
         /// </summary>
         public static PdfPoint? Intersect(this PdfLine line, PdfPath.Line other)
         {
-            if (!line.IntersectsWith(other)) return null;
             return Intersect(line.Point1, line.Point2, other.From, other.To);
         }
 
@@ -547,7 +545,6 @@
         /// </summary>
         public static PdfPoint? Intersect(this PdfPath.Line line, PdfPath.Line other)
         {
-            if (!line.IntersectsWith(other)) return null;
             return Intersect(line.From, line.To, other.From, other.To);
         }
 
@@ -556,7 +553,6 @@
         /// </summary>
         public static PdfPoint? Intersect(this PdfPath.Line line, PdfLine other)
         {
-            if (!line.IntersectsWith(other)) return null;
             return Intersect(line.From, line.To, other.Point1, other.Point2);
         }
 
@@ -604,7 +600,7 @@
             return tx >= 0 && (tx - 1) <= epsilon;
         }
 
-        public static bool IntersectsWith(PdfPoint p11, PdfPoint p12, PdfPoint p21, PdfPoint p22)//this PdfPath.Line line, PdfPath.Line other)
+        public static bool IntersectsWith(PdfPoint p11, PdfPoint p12, PdfPoint p21, PdfPoint p22)
         {
             return (ccw(p11, p12, p21) != ccw(p11, p12, p22)) &&
                    (ccw(p21, p22, p11) != ccw(p21, p22, p12));
@@ -612,6 +608,8 @@
 
         private static PdfPoint? Intersect(PdfPoint p11, PdfPoint p12, PdfPoint p21, PdfPoint p22)
         {
+            if (!IntersectsWith(p11, p12, p21, p22)) return null;
+
             var eq1 = GetSlopeIntercept(p11, p12);
             var eq2 = GetSlopeIntercept(p21, p22);
 
@@ -659,6 +657,7 @@
                 bezierCurve.SecondControlPoint,
                 bezierCurve.EndPoint
             };
+
             points[1] = new PdfPoint[3];
             points[2] = new PdfPoint[2];
             points[3] = new PdfPoint[1];
@@ -678,13 +677,48 @@
         }
 
         /// <summary>
+        /// Checks if the curve and the line are intersecting.
+        /// <para>Avoid using this method as it is not optimised. Use <see cref="Intersect(PdfPath.BezierCurve, PdfLine)"/> instead.</para>
+        /// </summary>
+        public static bool IntersectsWith(this PdfPath.BezierCurve bezierCurve, PdfLine line)
+        {
+            return IntersectsWith(bezierCurve, line.Point1, line.Point2);
+        }
+
+        /// <summary>
+        /// Checks if the curve and the line are intersecting.
+        /// <para>Avoid using this method as it is not optimised. Use <see cref="Intersect(PdfPath.BezierCurve, PdfPath.Line)"/> instead.</para>
+        /// </summary>
+        public static bool IntersectsWith(this PdfPath.BezierCurve bezierCurve, PdfPath.Line line)
+        {
+            return IntersectsWith(bezierCurve, line.From, line.To);
+        }
+
+        private static bool IntersectsWith(PdfPath.BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
+        {
+            return Intersect(bezierCurve, p1, p2).Length > 0;
+        }
+
+        /// <summary>
         /// Get the <see cref="PdfPoint"/>s that are the intersections of the line and the curve.
         /// </summary>
-        /// <returns></returns>
         public static PdfPoint[] Intersect(this PdfPath.BezierCurve bezierCurve, PdfLine line)
         {
-            var ts = FindIntersectionT(bezierCurve, line);
-            if (ts == null || !ts.Any()) return null;
+            return Intersect(bezierCurve, line.Point1, line.Point2);
+        }
+
+        /// <summary>
+        /// Get the <see cref="PdfPoint"/>s that are the intersections of the line and the curve.
+        /// </summary>
+        public static PdfPoint[] Intersect(this PdfPath.BezierCurve bezierCurve, PdfPath.Line line)
+        {
+            return Intersect(bezierCurve, line.From, line.To);
+        }
+        
+        private static PdfPoint[] Intersect(PdfPath.BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
+        {
+            var ts = FindIntersectionT(bezierCurve, p1, p2);
+            if (ts == null || !ts.Any()) return EmptyArray<PdfPoint>.Instance;
 
             List<PdfPoint> points = new List<PdfPoint>();
             foreach (var t in ts)
@@ -700,36 +734,7 @@
                                            bezierCurve.SecondControlPoint.Y,
                                            bezierCurve.EndPoint.Y,
                                            t));
-                points.Add(point);
-            }
-            return points.ToArray();
-        }
-
-        /// <summary>
-        /// Get the <see cref="PdfPoint"/>s that are the intersections of the line and the curve.
-        /// </summary>
-        /// <returns></returns>
-        public static PdfPoint[] Intersect(this PdfPath.BezierCurve bezierCurve, PdfPath.Line line)
-        {
-            var ts = FindIntersectionT(bezierCurve, line);
-            if (ts == null || !ts.Any()) return null;
-
-            List<PdfPoint> points = new List<PdfPoint>();
-            foreach (var t in ts)
-            {
-                PdfPoint point = new PdfPoint(
-                    PdfPath.BezierCurve.ValueWithT(bezierCurve.StartPoint.X,
-                                           bezierCurve.FirstControlPoint.X,
-                                           bezierCurve.SecondControlPoint.X,
-                                           bezierCurve.EndPoint.X,
-                                           t),
-                    PdfPath.BezierCurve.ValueWithT(bezierCurve.StartPoint.Y,
-                                           bezierCurve.FirstControlPoint.Y,
-                                           bezierCurve.SecondControlPoint.Y,
-                                           bezierCurve.EndPoint.Y,
-                                           t)
-                                           );
-                points.Add(point);
+                if (Contains(p1, p2, point)) points.Add(point);
             }
             return points.ToArray();
         }
@@ -740,21 +745,7 @@
         /// <returns>List of t values where the <see cref="PdfPath.BezierCurve"/> and the <see cref="PdfLine"/> intersect.</returns>
         public static double[] FindIntersectionT(this PdfPath.BezierCurve bezierCurve, PdfLine line)
         {
-            // if the bounding boxes do not intersect, they cannot intersect
-            var bezierBbox = bezierCurve.GetBoundingRectangle();
-            if (!bezierBbox.HasValue) return null;
-            var lineBbox = line.GetBoundingRectangle();
-
-            if (!bezierBbox.Value.IntersectsWith(lineBbox))
-            {
-                return null;
-            }
-
-            double x1 = line.Point1.X;
-            double y1 = line.Point1.Y;
-            double x2 = line.Point2.X;
-            double y2 = line.Point2.Y;
-            return FindIntersectionT(bezierCurve, x1, y1, x2, y2);
+            return FindIntersectionT(bezierCurve, line.Point1, line.Point2);
         }
 
         /// <summary>
@@ -763,29 +754,28 @@
         /// <returns>List of t values where the <see cref="PdfPath.BezierCurve"/> and the <see cref="PdfPath.Line"/> intersect.</returns>
         public static double[] FindIntersectionT(this PdfPath.BezierCurve bezierCurve, PdfPath.Line line)
         {
+            return FindIntersectionT(bezierCurve, line.From, line.To);
+        }
+
+        private static double[] FindIntersectionT(PdfPath.BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
+        {
             // if the bounding boxes do not intersect, they cannot intersect
             var bezierBbox = bezierCurve.GetBoundingRectangle();
             if (!bezierBbox.HasValue) return null;
-            var lineBbox = line.GetBoundingRectangle();
-            if (!lineBbox.HasValue) return null;
 
-            if (!bezierBbox.Value.IntersectsWith(lineBbox.Value))
+            if (bezierBbox.Value.Left > Math.Max(p1.X, p2.X) || Math.Min(p1.X, p2.X) > bezierBbox.Value.Right)
             {
                 return null;
             }
 
-            double x1 = line.From.X;
-            double y1 = line.From.Y;
-            double x2 = line.To.X;
-            double y2 = line.To.Y;
-            return FindIntersectionT(bezierCurve, x1, y1, x2, y2);
-        }
+            if (bezierBbox.Value.Top < Math.Min(p1.Y, p2.Y) || Math.Max(p1.Y, p2.Y) < bezierBbox.Value.Bottom)
+            {
+                return null;
+            }
 
-        private static double[] FindIntersectionT(PdfPath.BezierCurve bezierCurve, double x1, double y1, double x2, double y2)
-        {
-            double A = (y2 - y1);
-            double B = (x1 - x2);
-            double C = x1 * (y1 - y2) + y1 * (x2 - x1);
+            double A = (p2.Y - p1.Y);
+            double B = (p1.X - p2.X);
+            double C = p1.X * (p1.Y - p2.Y) + p1.Y * (p2.X - p1.X);
 
             double alpha = bezierCurve.StartPoint.X * A + bezierCurve.StartPoint.Y * B;
             double beta = 3.0 * (bezierCurve.FirstControlPoint.X * A + bezierCurve.FirstControlPoint.Y * B);
@@ -799,7 +789,7 @@
 
             var solution = SolveCubicEquation(a, b, c, d);
 
-            return solution.Where(s => !double.IsNaN(s)).Where(s => s >= -epsilon && s <= 1.0).OrderBy(s => s).ToArray();
+            return solution.Where(s => !double.IsNaN(s)).Where(s => s >= -epsilon && (s - 1) <= epsilon).OrderBy(s => s).ToArray();
         }
         #endregion
 
@@ -836,7 +826,7 @@
         /// <param name="d">d</param>
         private static double[] SolveCubicEquation(double a, double b, double c, double d)
         {
-            if (Math.Abs(a) <= double.Epsilon)
+            if (Math.Abs(a) <= epsilon)
             {
                 // handle Quadratic equation (a=0)
                 double detQ = c * c - 4 * b * d;
@@ -846,7 +836,7 @@
                     double x0 = (-c - Math.Sqrt(detQ)) / (2.0 * b);
                     return new double[] { x, x0 };
                 }
-                return new double[0]; // no real roots
+                return EmptyArray<double>.Instance; // no real roots
             }
 
             double aSquared = a * a;
@@ -875,7 +865,7 @@
 
                 // Complex roots
                 double complexPart = Math.Sqrt(3) / 2.0 * (S - T); // complex part of complex root
-                if (Math.Abs(complexPart) <= double.Epsilon) // if complex part == 0
+                if (Math.Abs(complexPart) <= epsilon) // if complex part == 0
                 {
                     // complex roots only have real part
                     // the real part is the same for both roots
