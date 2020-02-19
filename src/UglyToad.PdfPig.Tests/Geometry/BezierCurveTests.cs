@@ -11,11 +11,6 @@
         private static readonly DoubleComparer PreciseDoubleComparer = new DoubleComparer(6);
         private static readonly PointComparer PointComparer = new PointComparer(DoubleComparer);
 
-        //public static void Split()
-        //{
-
-        //}
-
         [Fact]
         public static void IntersectLine()
         {
@@ -461,7 +456,11 @@
             Assert.Contains(new PdfPoint(437.64489679831945, 366.67203176073724), intersection8195, PointComparer);
             Assert.Contains(new PdfPoint(402.2532927052592, 368.66065578145003), intersection8195, PointComparer);
             Assert.Empty(bezierCurve8.Intersect(new PdfLine(215.7243893126156, 170.98261058939812, 82.23950334821318, 90.3908237786144)));
-
         }
+
+        //public static void Split()
+        //{
+
+        //}
     }
 }
