@@ -531,8 +531,7 @@
         /// </summary>
         public static bool IntersectsWith(this PdfPath.Line line, PdfPath.Line other)
         {
-            return (ccw(line.From, line.To, other.From) != ccw(line.From, line.To, other.To)) &&
-                   (ccw(other.From, other.To, line.From) != ccw(other.From, other.To, line.To));
+            return IntersectsWith(line.From, line.To, other.From, other.To);
         }
 
         /// <summary>
@@ -540,8 +539,7 @@
         /// </summary>
         public static bool IntersectsWith(this PdfPath.Line line, PdfLine other)
         {
-            return (ccw(line.From, line.To, other.Point1) != ccw(line.From, line.To, other.Point2)) &&
-                   (ccw(other.Point1, other.Point2, line.From) != ccw(other.Point1, other.Point2, line.To));
+            return IntersectsWith(line.From, line.To, other.Point1, other.Point2);
         }
 
         /// <summary>

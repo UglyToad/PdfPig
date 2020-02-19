@@ -418,9 +418,9 @@
             {
                 get
                 {
-                    var l = (From.X - To.X) * (From.X - To.X) +
-                        (From.Y - To.Y) * (From.Y - To.Y);
-                    return Math.Sqrt(l);
+                    var dx = From.X - To.X;
+                    var dy = From.Y - To.Y;
+                    return Math.Sqrt(dx * dx + dy * dy);
                 }
             }
 

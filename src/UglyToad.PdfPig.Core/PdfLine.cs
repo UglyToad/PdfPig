@@ -19,9 +19,9 @@
         {
             get
             {
-                var l = (Point1.X - Point2.X) * (Point1.X - Point2.X) + 
-                    (Point1.Y - Point2.Y) * (Point1.Y - Point2.Y);
-                return Math.Sqrt(l);
+                var dx = Point1.X - Point2.X;
+                var dy = Point1.Y - Point2.Y;
+                return Math.Sqrt(dx * dx + dy * dy);
             }
         }
 
