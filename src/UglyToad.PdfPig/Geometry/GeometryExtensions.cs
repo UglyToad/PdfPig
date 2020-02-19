@@ -381,56 +381,25 @@
                 if (other.Contains(rectangle.TopLeft)) return true;
                 if (other.Contains(rectangle.BottomRight)) return true;
 
-                if (new PdfLine(rectangle.BottomLeft, rectangle.BottomRight).
-                    IntersectsWith(new PdfLine(other.BottomLeft, other.BottomRight))) return true;
+                if (IntersectsWith(rectangle.BottomLeft, rectangle.BottomRight, other.BottomLeft, other.BottomRight)) return true;
+                if (IntersectsWith(rectangle.BottomLeft, rectangle.BottomRight, other.BottomRight, other.TopRight)) return true;
+                if (IntersectsWith(rectangle.BottomLeft, rectangle.BottomRight, other.TopRight, other.TopLeft)) return true;
+                if (IntersectsWith(rectangle.BottomLeft, rectangle.BottomRight,other.TopLeft, other.BottomLeft)) return true;
+                
+                if (IntersectsWith(rectangle.BottomRight, rectangle.TopRight, other.BottomLeft, other.BottomRight)) return true;
+                if (IntersectsWith(rectangle.BottomRight, rectangle.TopRight,other.BottomRight, other.TopRight)) return true;
+                if (IntersectsWith(rectangle.BottomRight, rectangle.TopRight, other.TopRight, other.TopLeft)) return true;
+                if (IntersectsWith(rectangle.BottomRight, rectangle.TopRight, other.TopLeft, other.BottomLeft)) return true;
+                
+                if (IntersectsWith(rectangle.TopRight, rectangle.TopLeft, other.BottomLeft, other.BottomRight)) return true;
+                if (IntersectsWith(rectangle.TopRight, rectangle.TopLeft, other.BottomRight, other.TopRight)) return true;
+                if (IntersectsWith(rectangle.TopRight, rectangle.TopLeft, other.TopRight, other.TopLeft)) return true;
+                if (IntersectsWith(rectangle.TopRight, rectangle.TopLeft, other.TopLeft, other.BottomLeft)) return true;
 
-                if (new PdfLine(rectangle.BottomLeft, rectangle.BottomRight).
-                    IntersectsWith(new PdfLine(other.BottomRight, other.TopRight))) return true;
-
-                if (new PdfLine(rectangle.BottomLeft, rectangle.BottomRight).
-                    IntersectsWith(new PdfLine(other.TopRight, other.TopLeft))) return true;
-
-                if (new PdfLine(rectangle.BottomLeft, rectangle.BottomRight).
-                    IntersectsWith(new PdfLine(other.TopLeft, other.BottomLeft))) return true;
-
-
-                if (new PdfLine(rectangle.BottomRight, rectangle.TopRight).
-                    IntersectsWith(new PdfLine(other.BottomLeft, other.BottomRight))) return true;
-
-                if (new PdfLine(rectangle.BottomRight, rectangle.TopRight).
-                    IntersectsWith(new PdfLine(other.BottomRight, other.TopRight))) return true;
-
-                if (new PdfLine(rectangle.BottomRight, rectangle.TopRight).
-                    IntersectsWith(new PdfLine(other.TopRight, other.TopLeft))) return true;
-
-                if (new PdfLine(rectangle.BottomRight, rectangle.TopRight).
-                    IntersectsWith(new PdfLine(other.TopLeft, other.BottomLeft))) return true;
-
-
-                if (new PdfLine(rectangle.TopRight, rectangle.TopLeft).
-                    IntersectsWith(new PdfLine(other.BottomLeft, other.BottomRight))) return true;
-
-                if (new PdfLine(rectangle.TopRight, rectangle.TopLeft).
-                    IntersectsWith(new PdfLine(other.BottomRight, other.TopRight))) return true;
-
-                if (new PdfLine(rectangle.TopRight, rectangle.TopLeft).
-                    IntersectsWith(new PdfLine(other.TopRight, other.TopLeft))) return true;
-
-                if (new PdfLine(rectangle.TopRight, rectangle.TopLeft).
-                    IntersectsWith(new PdfLine(other.TopLeft, other.BottomLeft))) return true;
-
-
-                if (new PdfLine(rectangle.TopLeft, rectangle.BottomLeft).
-                    IntersectsWith(new PdfLine(other.BottomLeft, other.BottomRight))) return true;
-
-                if (new PdfLine(rectangle.TopLeft, rectangle.BottomLeft).
-                    IntersectsWith(new PdfLine(other.BottomRight, other.TopRight))) return true;
-
-                if (new PdfLine(rectangle.TopLeft, rectangle.BottomLeft).
-                    IntersectsWith(new PdfLine(other.TopRight, other.TopLeft))) return true;
-
-                if (new PdfLine(rectangle.TopLeft, rectangle.BottomLeft).
-                    IntersectsWith(new PdfLine(other.TopLeft, other.BottomLeft))) return true;
+                if (IntersectsWith(rectangle.TopLeft, rectangle.BottomLeft, other.BottomLeft, other.BottomRight)) return true;
+                if (IntersectsWith(rectangle.TopLeft, rectangle.BottomLeft, other.BottomRight, other.TopRight)) return true;
+                if (IntersectsWith(rectangle.TopLeft, rectangle.BottomLeft, other.TopRight, other.TopLeft)) return true;
+                if (IntersectsWith(rectangle.TopLeft, rectangle.BottomLeft, other.TopLeft, other.BottomLeft)) return true;
 
                 return false;
             }
