@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.IO;
     using System.Linq;
     using Core;
@@ -290,7 +291,7 @@
             }
             else
             {
-                var bytes = OtherEncodings.StringAsLatin1Bytes(number.Data.ToString("G"));
+                var bytes = OtherEncodings.StringAsLatin1Bytes(number.Data.ToString("G", CultureInfo.InvariantCulture));
                 outputStream.Write(bytes, 0, bytes.Length);
             }
 
@@ -339,7 +340,7 @@
 
         private static void WriteInt(int value, Stream outputStream)
         {
-            var bytes = OtherEncodings.StringAsLatin1Bytes(value.ToString("G"));
+            var bytes = OtherEncodings.StringAsLatin1Bytes(value.ToString("G", CultureInfo.InvariantCulture));
             outputStream.Write(bytes, 0, bytes.Length);
         }
 
@@ -350,7 +351,7 @@
 
         private static void WriteLong(long value, Stream outputStream)
         {
-            var bytes = OtherEncodings.StringAsLatin1Bytes(value.ToString("G"));
+            var bytes = OtherEncodings.StringAsLatin1Bytes(value.ToString("G", CultureInfo.InvariantCulture));
             outputStream.Write(bytes, 0, bytes.Length);
         }
 
