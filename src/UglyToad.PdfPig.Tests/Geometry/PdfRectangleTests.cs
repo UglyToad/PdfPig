@@ -3,6 +3,7 @@
     using PdfPig.Geometry;
     using PdfPig.Core;
     using Xunit;
+    using System.Collections.Generic;
 
     public class PdfRectangleTests
     {
@@ -41,7 +42,7 @@
         public void Centroid()
         {
             PdfRectangle rectangle = new PdfRectangle(10, 10, 20, 20);
-            Assert.Equal(new PdfPoint(15, 15), rectangle.Centroid);
+            Assert.Equal(new PdfPoint(15, 15), rectangle.Centroid, PointComparer);
 
             PdfRectangle rectangle1 = new PdfRectangle(149.95376d, 687.13456d, 451.73539d, 1478.4997d);
             Assert.Equal(new PdfPoint(300.844575d, 1082.81713d), rectangle1.Centroid,
@@ -428,38 +429,100 @@
             Assert.Equal(180, rotated.Rotation, PreciseDoubleComparer);
         }
 
-        [Fact]
-        public void Rotate()
+        public static IEnumerable<object[]> RotateData => new[]
         {
-            // 1
-            var rect0 = new PdfRectangle(100.11345, 50.24535, 150.24853, 100.77937);
-            var tm0 = TransformationMatrix.GetRotationMatrix(30);
-            var rect0R = tm0.Transform(rect0);
+            new object[]
+            {
+                new double[][]
+                {
+                    new double[] { 100.11345, 50.24535, 150.24853, 100.77937 }, // AABB points
+                    new double[] { 30 } // rotation angle
+                },
+                new PdfPoint[]
+                {
+                    // OBB points
+                    new PdfPoint(104.99636886126835, 118.63801452204044),
+                    new PdfPoint(79.72935886126837, 162.40175959739133),
+                    new PdfPoint(36.31110596050322, 137.33421959739135),
+                    new PdfPoint(61.57811596050321, 93.57047452204044)
+                }
+            },
+            new object[]
+            {
+                new double[][]
+                {
+                    new double[] { 256.8793214, 72.7342895, 571.548482, 243.721896 },
+                    new double[] { -78.14568 }
+                },
+                new PdfPoint[]
+                {
+                    new PdfPoint(188.5928589557637, -544.4177419008914),
+                    new PdfPoint(355.93382538513987, -509.2927859424674),
+                    new PdfPoint(291.2932316380764, -201.33455131845915),
+                    new PdfPoint(123.95226520870021, -236.45950727688313)
+                }
+            },
+            new object[]
+            {
+                new double[][]
+                {
+                    new double[] { 78.14, 48.49, -741.115482, -245.18796 },
+                    new double[] { 178.215 }
+                },
+                new PdfPoint[]
+                {
+                    new PdfPoint(739.2454360229797, -71.55154141796652),
+                    new PdfPoint(748.3932365836752, 221.98391118471883),
+                    new PdfPoint(-70.46470122718794, 247.50297212341658),
+                    new PdfPoint(-79.61250178788342, -46.03248047926875)
+                }
+            },
+            new object[]
+            {
+                new double[][]
+                {
+                    new double[] { 594.9624245956629, 764.989849297414, 184.2241612768326, 272.5808412761548 },
+                    new double[] { 45 }
+                },
+                new PdfPoint[]
+                {
+                    new PdfPoint(-410.66335627982403, 671.1956636743291),
+                    new PdfPoint(-62.47760759065051, 323.00991498515555),
+                    new PdfPoint(227.9582036948802, 613.4457262706862),
+                    new PdfPoint(-120.22754499429334, 961.6314749598598)
+                }
+            },
+            new object[]
+            {
+                new double[][]
+                {
+                    new double[] { 877.5628740259508, 768.3577588617107, 471.16446155789913, 881.5192835958403 },
+                    new double[] { -45 }
+                },
+                new PdfPoint[]
+                {
+                    new PdfPoint(876.4745674901126, 210.14739584671491),
+                    new PdfPoint(956.4918489990248, 290.16467735562713),
+                    new PdfPoint(1243.8589223186318, 2.797604036020175),
+                    new PdfPoint(1163.8416408097196, -77.21967747289204)
+                }
+            }
+        };
 
-            Assert.Equal(new PdfPoint(104.99636886126835, 118.63801452204044), rect0R.BottomRight, PointComparer);
-            Assert.Equal(new PdfPoint(79.72935886126837, 162.40175959739133), rect0R.TopRight, PointComparer);
-            Assert.Equal(new PdfPoint(36.31110596050322, 137.33421959739135), rect0R.TopLeft, PointComparer);
-            Assert.Equal(new PdfPoint(61.57811596050321, 93.57047452204044), rect0R.BottomLeft, PointComparer);
-            
-            // 2
-            var rect1 = new PdfRectangle(256.8793214, 72.7342895, 571.548482, 243.721896);
-            var tm1 = TransformationMatrix.GetRotationMatrix(-78.14568);
-            var rect1R = tm1.Transform(rect1);
+        [Theory]
+        [MemberData(nameof(RotateData))]
+        public void Rotate(double[][] data, PdfPoint[] expected)
+        {
+            var points = data[0];
+            var angle = data[1][0];
 
-            Assert.Equal(new PdfPoint(188.5928589557637, -544.4177419008914), rect1R.BottomRight, PointComparer);
-            Assert.Equal(new PdfPoint(355.93382538513987, -509.2927859424674), rect1R.TopRight, PointComparer);
-            Assert.Equal(new PdfPoint(291.2932316380764, -201.33455131845915), rect1R.TopLeft, PointComparer);
-            Assert.Equal(new PdfPoint(123.95226520870021, -236.45950727688313), rect1R.BottomLeft, PointComparer);
+            var rect = new PdfRectangle(points[0], points[1], points[2], points[3]);
+            var rectR = TransformationMatrix.GetRotationMatrix(angle).Transform(rect);
 
-            // 3
-            var rect2 = new PdfRectangle(78.14, 48.49, -741.115482, -245.18796);
-            var tm2 = TransformationMatrix.GetRotationMatrix(178.215);
-            var rect2R = tm2.Transform(rect2);
-
-            Assert.Equal(new PdfPoint(739.2454360229797, -71.55154141796652), rect2R.BottomRight, PointComparer);
-            Assert.Equal(new PdfPoint(748.3932365836752, 221.98391118471883), rect2R.TopRight, PointComparer);
-            Assert.Equal(new PdfPoint(-70.46470122718794, 247.50297212341658), rect2R.TopLeft, PointComparer);
-            Assert.Equal(new PdfPoint(-79.61250178788342, -46.03248047926875), rect2R.BottomLeft, PointComparer);
+            Assert.Equal(expected[0], rectR.BottomRight, PointComparer);
+            Assert.Equal(expected[1], rectR.TopRight, PointComparer);
+            Assert.Equal(expected[2], rectR.TopLeft, PointComparer);
+            Assert.Equal(expected[3], rectR.BottomLeft, PointComparer);
         }
     }
 }
