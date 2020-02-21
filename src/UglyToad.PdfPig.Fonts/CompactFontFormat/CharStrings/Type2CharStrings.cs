@@ -45,7 +45,10 @@
 
                 if (!CharStrings.TryGetValue(name, out var sequence))
                 {
-                    throw new InvalidOperationException($"No charstring sequence with the name /{name} in this font.");
+                    if (!CharStrings.TryGetValue(".notdef", out sequence))
+                    {
+                        throw new InvalidOperationException($"No charstring sequence with the name /{name} in this font.");
+                    }
                 }
 
                 try
