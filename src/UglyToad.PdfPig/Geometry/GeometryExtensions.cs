@@ -753,8 +753,8 @@
             double gamma = 3.0 * (bezierCurve.SecondControlPoint.X * A + bezierCurve.SecondControlPoint.Y * B);
             double delta = bezierCurve.EndPoint.X * A + bezierCurve.EndPoint.Y * B;
 
-            double a = (-alpha + beta - gamma + delta);
-            double b = (3 * alpha - 2 * beta + gamma);
+            double a = -alpha + beta - gamma + delta;
+            double b = 3 * alpha - 2 * beta + gamma;
             double c = -3 * alpha + beta;
             double d = alpha + C;
 
@@ -765,6 +765,7 @@
         #endregion
 
         private static readonly double oneThird = 0.333333333333333333333;
+        private static readonly double sqrtOfThree = 1.73205080756888;
 
         private static (double Slope, double Intercept) GetSlopeIntercept(PdfPoint point1, PdfPoint point2)
         {
@@ -803,8 +804,10 @@
                 double detQ = c * c - 4 * b * d;
                 if (detQ >= 0)
                 {
-                    double x = (-c + Math.Sqrt(detQ)) / (2.0 * b);
-                    double x0 = (-c - Math.Sqrt(detQ)) / (2.0 * b);
+                    double sqrtDetQ = Math.Sqrt(detQ);
+                    double OneOverTwiceB = 1 / (2.0 * b);
+                    double x = (-c + sqrtDetQ) * OneOverTwiceB;
+                    double x0 = (-c - sqrtDetQ) * OneOverTwiceB;
                     return new double[] { x, x0 };
                 }
                 return EmptyArray<double>.Instance; // no real roots
@@ -835,7 +838,7 @@
                 x1 = SPlusT - bOver3a;           // real root
 
                 // Complex roots
-                double complexPart = Math.Sqrt(3) / 2.0 * (S - T); // complex part of complex root
+                double complexPart = sqrtOfThree / 2.0 * (S - T); // complex part of complex root
                 if (Math.Abs(complexPart) <= epsilon) // if complex part == 0
                 {
                     // complex roots only have real part
