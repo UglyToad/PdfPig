@@ -67,7 +67,7 @@
         /// </param>
         internal static PdfRectangle ParametricPerpendicularProjection(IReadOnlyList<PdfPoint> polygon)
         {
-            if (polygon == null || !polygon.Any())
+            if (polygon == null || polygon.Count == 0)
             {
                 throw new ArgumentException("ParametricPerpendicularProjection(): polygon cannot be null and must contain at least one point.");
             }
@@ -234,7 +234,7 @@
         /// </summary>
         public static IEnumerable<PdfPoint> GrahamScan(IEnumerable<PdfPoint> points)
         {
-            if (points == null || !points.Any())
+            if (points == null || points.Count() == 0)
             {
                 throw new ArgumentException("GrahamScan(): points cannot be null and must contain at least one point.");
             }
@@ -689,7 +689,7 @@
         private static PdfPoint[] Intersect(PdfPath.BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
         {
             var ts = IntersectT(bezierCurve, p1, p2);
-            if (ts == null || !ts.Any()) return EmptyArray<PdfPoint>.Instance;
+            if (ts == null || ts.Count() == 0) return EmptyArray<PdfPoint>.Instance;
 
             List<PdfPoint> points = new List<PdfPoint>();
             foreach (var t in ts)
