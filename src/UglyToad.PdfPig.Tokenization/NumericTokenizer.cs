@@ -96,7 +96,11 @@
                         token = NumericToken.OneThousand;
                         return true;
                     default:
-                        var value = decimal.Parse(str, NumberStyles.Any, CultureInfo.InvariantCulture);
+                        if (!decimal.TryParse(str, NumberStyles.Any, CultureInfo.InvariantCulture, out var value))
+                        {
+                            return false;
+                        }
+
                         token = new NumericToken(value);
                         return true;
                 }
