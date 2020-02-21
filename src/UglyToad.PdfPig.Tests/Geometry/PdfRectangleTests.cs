@@ -12,30 +12,46 @@
         private static readonly PointComparer PointComparer = new PointComparer(DoubleComparer);
         private static readonly PdfRectangle UnitRectangle = new PdfRectangle(new PdfPoint(0, 0), new PdfPoint(1, 1));
 
-        [Fact]
-        public void Area()
+        public static IEnumerable<object[]> AreaData => new[]
         {
-            PdfRectangle rectangle = new PdfRectangle(10, 10, 20, 20);
-            Assert.Equal(100, rectangle.Area);
+            new object[]
+            {
+                new double[] { 10, 10, 20, 20 },
+                new double[] { 100 }
+            },
+            new object[]
+            {
+                new double[] { 149.95376, 687.13456, 451.73539, 1478.4997 },
+                new double[] { 238819.4618743782 }
+            },
+            new object[]
+            {
+                new double[] { 558.1943459048198, 730.6304475255059, 571.3017547365034, 962.7770981990296 },
+                new double[] { 3042.841059283922 }
+            },
+            new object[]
+            {
+                new double[] { 523.0784251391958, 417.882005884581, 248.94510082667455, 897.0802138593754 },
+                new double[] { 131364.1977567333 }
+            },
+        };
 
-            PdfRectangle rectangle1 = new PdfRectangle(149.95376d, 687.13456d, 451.73539d, 1478.4997d);
-            Assert.Equal(238819.4618743782d, rectangle1.Area, DoubleComparer);
 
-            PdfRectangle rectangle2 = new PdfRectangle(558.1943459048198, 730.6304475255059, 571.3017547365034, 962.7770981990296);
-            Assert.Equal(3042.841059283922, rectangle2.Area, DoubleComparer);
-            Assert.Equal(3042.841059283922, TransformationMatrix.GetRotationMatrix(46.63115240869564).Transform(rectangle2).Area, DoubleComparer);
-            Assert.Equal(3042.841059283922, TransformationMatrix.GetRotationMatrix(42).Transform(rectangle2).Area, DoubleComparer);
-            Assert.Equal(3042.841059283922, TransformationMatrix.GetRotationMatrix(194.045).Transform(rectangle2).Area, DoubleComparer);
-            Assert.Equal(3042.841059283922, TransformationMatrix.GetRotationMatrix(-74.4657).Transform(rectangle2).Area, DoubleComparer);
-            Assert.Equal(3042.841059283922, TransformationMatrix.GetRotationMatrix(45).Transform(rectangle2).Area, DoubleComparer);
-
-            PdfRectangle rectangle3 = new PdfRectangle(523.0784251391958, 417.882005884581, 248.94510082667455, 897.0802138593754);
-            Assert.Equal(131364.1977567333, rectangle3.Area, DoubleComparer);
-            Assert.Equal(131364.1977567333, TransformationMatrix.GetRotationMatrix(-84.98758555772564).Transform(rectangle3).Area, DoubleComparer);
-            Assert.Equal(131364.1977567333, TransformationMatrix.GetRotationMatrix(49.789).Transform(rectangle3).Area, DoubleComparer);
-            Assert.Equal(131364.1977567333, TransformationMatrix.GetRotationMatrix(-250.564).Transform(rectangle3).Area, DoubleComparer);
-            Assert.Equal(131364.1977567333, TransformationMatrix.GetRotationMatrix(278.457968).Transform(rectangle3).Area, DoubleComparer);
-            Assert.Equal(131364.1977567333, TransformationMatrix.GetRotationMatrix(45).Transform(rectangle3).Area, DoubleComparer);
+        [Theory]
+        [MemberData(nameof(AreaData))]
+        public void Area(double[] data, double[] expected)
+        {
+            double area = expected[0];
+            PdfRectangle rectangle = new PdfRectangle(data[0], data[1], data[2], data[3]);
+            Assert.Equal(area, rectangle.Area, DoubleComparer);
+            Assert.Equal(area, TransformationMatrix.GetRotationMatrix(72.657952132).Transform(rectangle).Area, DoubleComparer);
+            Assert.Equal(area, TransformationMatrix.GetRotationMatrix(114.182147).Transform(rectangle).Area, DoubleComparer);
+            Assert.Equal(area, TransformationMatrix.GetRotationMatrix(194.045).Transform(rectangle).Area, DoubleComparer);
+            Assert.Equal(area, TransformationMatrix.GetRotationMatrix(-74.4657).Transform(rectangle).Area, DoubleComparer);
+            Assert.Equal(area, TransformationMatrix.GetRotationMatrix(45).Transform(rectangle).Area, DoubleComparer);
+            Assert.Equal(area, TransformationMatrix.GetRotationMatrix(-45).Transform(rectangle).Area, DoubleComparer);
+            Assert.Equal(area, TransformationMatrix.GetRotationMatrix(180).Transform(rectangle).Area, DoubleComparer);
+            Assert.Equal(area, TransformationMatrix.GetRotationMatrix(-180).Transform(rectangle).Area, DoubleComparer);
         }
 
         [Fact]
