@@ -29,6 +29,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
+            operationContext.ModifyClippingIntersect(PdfPig.Core.ClippingRule.NonZeroWinding);
         }
 
         /// <inheritdoc />

@@ -93,12 +93,14 @@
 
         public void BeginMarkedContent(NameToken name, NameToken propertyDictionaryName, DictionaryToken properties)
         {
-
         }
 
         public void EndMarkedContent()
         {
+        }
 
+        public void ModifyClippingIntersect(ClippingRule clippingRule)
+        {
         }
 
         private class TestFontFactory : IFontFactory
