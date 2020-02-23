@@ -141,7 +141,7 @@
             }
         };
 
-        public static IEnumerable<object[]> ContainsData => new[]
+        public static IEnumerable<object[]> ContainsPointData => new[]
         {
             new object[]
             {
@@ -597,6 +597,232 @@
             {
                 new PdfRectangle(new PdfPoint(461.667508963458, 733.7624399217582),new PdfPoint(781.2509306058209, 857.2579423172539),new PdfPoint(523.4024069573737, 574.0039908046879),new PdfPoint(842.9858285997368, 697.4994932001836)),
                 new PdfPoint(878.9271679900206, 714.2861610955317),
+                false
+            }
+        };
+
+        public static IEnumerable<object[]> ContainsRectangleData => new[]
+        {
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(839.1046803732955, 810.757367808191),new PdfPoint(895.4266449123043, 511.57035593138903),new PdfPoint(602.1120254124551, 766.1434929445111),new PdfPoint(658.4339899514637, 466.95648106770903)),
+                new PdfRectangle(new PdfPoint(839.1046803732955, 810.757367808191),new PdfPoint(895.4266449123043, 511.57035593138903),new PdfPoint(602.1120254124551, 766.1434929445111),new PdfPoint(658.4339899514637, 466.95648106770903)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(369.92427264664883, 246.08869240919273),new PdfPoint(811.9614880217224, 257.0837364279697),new PdfPoint(375.3394031464051, 28.382496516114173),new PdfPoint(817.3766185214787, 39.37754053489114)),
+                new PdfRectangle(new PdfPoint(369.92427264664883, 246.08869240919273),new PdfPoint(811.9614880217224, 257.0837364279697),new PdfPoint(375.3394031464051, 28.382496516114173),new PdfPoint(817.3766185214787, 39.37754053489114)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(763.7211043674602, 907.9508951176988),new PdfPoint(627.6855729103308, 775.4472008683426),new PdfPoint(989.9021602319854, 675.7410664455838),new PdfPoint(853.866628774856, 543.2373721962276)),
+                new PdfRectangle(new PdfPoint(763.7211043674602, 907.9508951176988),new PdfPoint(627.6855729103308, 775.4472008683426),new PdfPoint(989.9021602319854, 675.7410664455838),new PdfPoint(853.866628774856, 543.2373721962276)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(787.2830652212485, 909.5937859675068),new PdfPoint(1051.649076209865, 697.0164728885809),new PdfPoint(460.468733614018, 503.16000463150783),new PdfPoint(724.8347446026344, 290.5826915525819)),
+                new PdfRectangle(new PdfPoint(839.1046803732955, 810.757367808191),new PdfPoint(895.4266449123043, 511.57035593138903),new PdfPoint(602.1120254124551, 766.1434929445111),new PdfPoint(658.4339899514637, 466.95648106770903)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(787.2830652212485, 909.5937859675068),new PdfPoint(1051.649076209865, 697.0164728885809),new PdfPoint(460.468733614018, 503.16000463150783),new PdfPoint(724.8347446026344, 290.5826915525819)),
+                new PdfRectangle(new PdfPoint(369.92427264664883, 246.08869240919273),new PdfPoint(811.9614880217224, 257.0837364279697),new PdfPoint(375.3394031464051, 28.382496516114173),new PdfPoint(817.3766185214787, 39.37754053489114)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(787.2830652212485, 909.5937859675068),new PdfPoint(1051.649076209865, 697.0164728885809),new PdfPoint(460.468733614018, 503.16000463150783),new PdfPoint(724.8347446026344, 290.5826915525819)),
+                new PdfRectangle(new PdfPoint(763.7211043674602, 907.9508951176988),new PdfPoint(627.6855729103308, 775.4472008683426),new PdfPoint(989.9021602319854, 675.7410664455838),new PdfPoint(853.866628774856, 543.2373721962276)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(787.2830652212485, 909.5937859675068),new PdfPoint(1051.649076209865, 697.0164728885809),new PdfPoint(460.468733614018, 503.16000463150783),new PdfPoint(724.8347446026344, 290.5826915525819)),
+                new PdfRectangle(new PdfPoint(158.31484478516745, 909.576007295144),new PdfPoint(123.03438413402273, 419.7929422949627),new PdfPoint(429.4717411745032, 890.0438084565685),new PdfPoint(394.1912805233585, 400.2607434563872)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(787.2830652212485, 909.5937859675068),new PdfPoint(1051.649076209865, 697.0164728885809),new PdfPoint(460.468733614018, 503.16000463150783),new PdfPoint(724.8347446026344, 290.5826915525819)),
+                new PdfRectangle(new PdfPoint(436.22126857125795, 916.9378461199556),new PdfPoint(174.2045236299664, 523.2004610446594),new PdfPoint(336.5550218902624, 983.2618136316419),new PdfPoint(74.53827694897086, 589.5244285563457)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(787.2830652212485, 909.5937859675068),new PdfPoint(1051.649076209865, 697.0164728885809),new PdfPoint(460.468733614018, 503.16000463150783),new PdfPoint(724.8347446026344, 290.5826915525819)),
+                new PdfRectangle(new PdfPoint(529.4498442035258, 836.6241444415786),new PdfPoint(116.51478612130325, 550.8610450621246),new PdfPoint(463.8301638486734, 931.4462771014963),new PdfPoint(50.8951057664508, 645.6831777220424)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(787.2830652212485, 909.5937859675068),new PdfPoint(1051.649076209865, 697.0164728885809),new PdfPoint(460.468733614018, 503.16000463150783),new PdfPoint(724.8347446026344, 290.5826915525819)),
+                new PdfRectangle(new PdfPoint(404.6106878480057, 268.94016429833255),new PdfPoint(871.4883160602285, 432.6622946256348),new PdfPoint(344.49181956525456, 440.37792032155244),new PdfPoint(811.3694477774774, 604.1000506488547)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(787.2830652212485, 909.5937859675068),new PdfPoint(1051.649076209865, 697.0164728885809),new PdfPoint(460.468733614018, 503.16000463150783),new PdfPoint(724.8347446026344, 290.5826915525819)),
+                new PdfRectangle(new PdfPoint(44.49589410457207, 163.40101431813866),new PdfPoint(493.20444193887965, 889.8884547476357),new PdfPoint(589.833791913485, -173.42211927958294),new PdfPoint(1038.5423397477925, 553.065321149914)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(787.2830652212485, 909.5937859675068),new PdfPoint(1051.649076209865, 697.0164728885809),new PdfPoint(460.468733614018, 503.16000463150783),new PdfPoint(724.8347446026344, 290.5826915525819)),
+                new PdfRectangle(new PdfPoint(714.4435095316294, 467.95015931630155),new PdfPoint(413.15032203154664, 872.1677560263385),new PdfPoint(755.7756974798385, 498.75808740905507),new PdfPoint(454.4825099797558, 902.975684119092)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(787.2830652212485, 909.5937859675068),new PdfPoint(1051.649076209865, 697.0164728885809),new PdfPoint(460.468733614018, 503.16000463150783),new PdfPoint(724.8347446026344, 290.5826915525819)),
+                new PdfRectangle(new PdfPoint(652.2373583756914, 379.0301504466386),new PdfPoint(776.4569236365121, 420.89771256432414),new PdfPoint(632.338937164153, 438.06805729505027),new PdfPoint(756.5585024249737, 479.93561941273583)),
+                true
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(572.9627332489183, 974.8758596169033),new PdfPoint(10.483364571368327, 678.6610218498724),new PdfPoint(662.9328178802512, 804.0325730861354),new PdfPoint(100.45344920270111, 507.8177353191045)),
+                new PdfRectangle(new PdfPoint(455.6489464687223, 752.925119019483),new PdfPoint(405.734557426197, 827.1696960220337),new PdfPoint(255.4084478259054, 618.304079276965),new PdfPoint(205.49405878338013, 692.5486562795157)),
+                true
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(572.9627332489183, 974.8758596169033),new PdfPoint(10.483364571368327, 678.6610218498724),new PdfPoint(662.9328178802512, 804.0325730861354),new PdfPoint(100.45344920270111, 507.8177353191045)),
+                new PdfRectangle(new PdfPoint(-20.339774483571432, 525.8477549082425),new PdfPoint(300.50252266486063, 703.9275820749795),new PdfPoint(214.49725446834498, 102.74732279753971),new PdfPoint(535.339551616777, 280.8271499642768)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(572.9627332489183, 974.8758596169033),new PdfPoint(10.483364571368327, 678.6610218498724),new PdfPoint(662.9328178802512, 804.0325730861354),new PdfPoint(100.45344920270111, 507.8177353191045)),
+                new PdfRectangle(new PdfPoint(298.0376972233562, 597.4469289423054),new PdfPoint(189.56785288341564, 175.395857096829),new PdfPoint(834.9463589773915, 459.45794407710764),new PdfPoint(726.4765146374509, 37.406872231631155)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(905.6087845218851, 646.7010396530226),new PdfPoint(490.3202373014576, 1067.725146921232),new PdfPoint(437.0773221891502, 184.55232427014914),new PdfPoint(21.78877496872269, 605.5764315383584)),
+                new PdfRectangle(new PdfPoint(787.6271852024784, 649.6839251239702),new PdfPoint(628.4301638321272, 592.041787026625),new PdfPoint(772.6253471362169, 691.116252481362),new PdfPoint(613.4283257658656, 633.4741143840166)),
+                true
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(905.6087845218851, 646.7010396530226),new PdfPoint(490.3202373014576, 1067.725146921232),new PdfPoint(437.0773221891502, 184.55232427014914),new PdfPoint(21.78877496872269, 605.5764315383584)),
+                new PdfRectangle(new PdfPoint(370.1293777048335, 329.2213549390493),new PdfPoint(51.687578384536096, -35.98826327472881),new PdfPoint(493.2279711058647, 221.88645568818617),new PdfPoint(174.78617178556732, -143.32316252559195)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(905.6087845218851, 646.7010396530226),new PdfPoint(490.3202373014576, 1067.725146921232),new PdfPoint(437.0773221891502, 184.55232427014914),new PdfPoint(21.78877496872269, 605.5764315383584)),
+                new PdfRectangle(new PdfPoint(422.3374713118757, 960.8690589319286),new PdfPoint(443.74510911015454, 936.9784565223983),new PdfPoint(276.07922870436926, 829.8115230405238),new PdfPoint(297.4868665026481, 805.9209206309936)),
+                true
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(905.6087845218851, 646.7010396530226),new PdfPoint(490.3202373014576, 1067.725146921232),new PdfPoint(437.0773221891502, 184.55232427014914),new PdfPoint(21.78877496872269, 605.5764315383584)),
+                new PdfRectangle(new PdfPoint(223.18539609387392, 774.655693299439),new PdfPoint(640.6224338840819, 723.7317767378834),new PdfPoint(143.89399187125105, 124.68273097027077),new PdfPoint(561.3310296614591, 73.75881440871512)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(359.0233503669928, 563.5953047499611),new PdfPoint(506.709919167241, 194.29876316327773),new PdfPoint(1091.4420582449245, 856.4992280492622),new PdfPoint(1239.1286270451728, 487.20268646257887)),
+                new PdfRectangle(new PdfPoint(907.2902159074554, 556.4481946858417),new PdfPoint(360.12654776115266, 385.2540698805592),new PdfPoint(892.9060254243084, 602.4223566906765),new PdfPoint(345.74235727800556, 431.22823188539394)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(359.0233503669928, 563.5953047499611),new PdfPoint(506.709919167241, 194.29876316327773),new PdfPoint(1091.4420582449245, 856.4992280492622),new PdfPoint(1239.1286270451728, 487.20268646257887)),
+                new PdfRectangle(new PdfPoint(542.0693812152003, 416.33132381695253),new PdfPoint(543.8355380124348, 368.108122339854),new PdfPoint(438.0823056795748, 412.52283589710754),new PdfPoint(439.84846247680923, 364.299634420009)),
+                true
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(359.0233503669928, 563.5953047499611),new PdfPoint(506.709919167241, 194.29876316327773),new PdfPoint(1091.4420582449245, 856.4992280492622),new PdfPoint(1239.1286270451728, 487.20268646257887)),
+                new PdfRectangle(new PdfPoint(471.5224046742694, 577.0594378769499),new PdfPoint(969.9867566457817, 449.4826546371001),new PdfPoint(409.9649833963749, 336.5440452867836),new PdfPoint(908.4293353678872, 208.96726204693374)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(612.1601956159619, 474.31575903059564),new PdfPoint(559.9230432915692, 854.8055590386881),new PdfPoint(-97.46314694192017, 376.89211551281306),new PdfPoint(-149.70029926631287, 757.3819155209055)),
+                new PdfRectangle(new PdfPoint(-31.318099072923133, 457.84330750036077),new PdfPoint(-58.418152585646226, 535.8315264412157),new PdfPoint(414.2576578033333, 612.6760119691762),new PdfPoint(387.1576042906101, 690.6642309100312)),
+                true
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(612.1601956159619, 474.31575903059564),new PdfPoint(559.9230432915692, 854.8055590386881),new PdfPoint(-97.46314694192017, 376.89211551281306),new PdfPoint(-149.70029926631287, 757.3819155209055)),
+                new PdfRectangle(new PdfPoint(391.5634265541123, 431.4175728138414),new PdfPoint(609.8263066802767, 127.52752778793774),new PdfPoint(1015.6199493379099, 879.6335517634005),new PdfPoint(1233.8828294640743, 575.743506737497)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(612.1601956159619, 474.31575903059564),new PdfPoint(559.9230432915692, 854.8055590386881),new PdfPoint(-97.46314694192017, 376.89211551281306),new PdfPoint(-149.70029926631287, 757.3819155209055)),
+                new PdfRectangle(new PdfPoint(471.6322386742746, 527.5252278061023),new PdfPoint(303.6810993275918, 355.5392530459328),new PdfPoint(105.33806332362872, 885.2260471431568),new PdfPoint(-62.61307602305419, 713.2400723829875)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(612.1601956159619, 474.31575903059564),new PdfPoint(559.9230432915692, 854.8055590386881),new PdfPoint(-97.46314694192017, 376.89211551281306),new PdfPoint(-149.70029926631287, 757.3819155209055)),
+                new PdfRectangle(new PdfPoint(132.91373573893168, 528.7303421120419),new PdfPoint(203.5604627234547, 669.1654571036024),new PdfPoint(495.0700439317585, 346.54543891202),new PdfPoint(565.7167709162816, 486.98055390358047)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(509.8351060955906, -108.08382080227386),new PdfPoint(999.3063197163258, 302.7004484138747),new PdfPoint(246.14571604767286, 206.11605353067398),new PdfPoint(735.616929668408, 616.9003227468226)),
+                new PdfRectangle(new PdfPoint(481.73242416296057, 118.04352619589656),new PdfPoint(652.5145037399169, 97.79823366099453),new PdfPoint(495.42116675916543, 233.51688492080933),new PdfPoint(666.2032463361218, 213.27159238590727)),
+                true
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(509.8351060955906, -108.08382080227386),new PdfPoint(999.3063197163258, 302.7004484138747),new PdfPoint(246.14571604767286, 206.11605353067398),new PdfPoint(735.616929668408, 616.9003227468226)),
+                new PdfRectangle(new PdfPoint(95.63941469885889, 449.54951782694116),new PdfPoint(819.6631431016111, 302.1958749319754),new PdfPoint(149.8348520629902, 715.8393892674846),new PdfPoint(873.8585804657424, 568.4857463725189)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(509.8351060955906, -108.08382080227386),new PdfPoint(999.3063197163258, 302.7004484138747),new PdfPoint(246.14571604767286, 206.11605353067398),new PdfPoint(735.616929668408, 616.9003227468226)),
+                new PdfRectangle(new PdfPoint(239.54605173705193, 527.8808821796056),new PdfPoint(340.6974218271811, 671.0968331592596),new PdfPoint(135.16680558828546, 601.6024452087297),new PdfPoint(236.3181756784146, 744.818396188384)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(805.8752490981071, 431.29076732181863),new PdfPoint(752.978742023579, 225.79468929913097),new PdfPoint(-21.711011367131277, 644.3187866529158),new PdfPoint(-74.60751844165941, 438.82270863022825)),
+                new PdfRectangle(new PdfPoint(128.03331043929256, 980.6552395398046),new PdfPoint(-84.95781685349823, 452.3072021027416),new PdfPoint(909.5045471419946, 665.6234274418424),new PdfPoint(696.5134198492038, 137.27539000477952)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(805.8752490981071, 431.29076732181863),new PdfPoint(752.978742023579, 225.79468929913097),new PdfPoint(-21.711011367131277, 644.3187866529158),new PdfPoint(-74.60751844165941, 438.82270863022825)),
+                new PdfRectangle(new PdfPoint(596.1608150901543, 314.79863769294656),new PdfPoint(75.63388525011317, 457.0086806007713),new PdfPoint(624.9874099963235, 420.3117128417707),new PdfPoint(104.4604801562823, 562.5217557495955)),
+                true
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(805.8752490981071, 431.29076732181863),new PdfPoint(752.978742023579, 225.79468929913097),new PdfPoint(-21.711011367131277, 644.3187866529158),new PdfPoint(-74.60751844165941, 438.82270863022825)),
+                new PdfRectangle(new PdfPoint(428.91248047884187, 762.2972337204317),new PdfPoint(410.59663237805603, 665.5537015011863),new PdfPoint(539.3375096946768, 741.3911533319412),new PdfPoint(521.0216615938909, 644.6476211126959)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(-36.505394349814196, 287.2936359576752),new PdfPoint(218.90973523968216, 134.87730731892998),new PdfPoint(348.6147899743132, 932.6675448111166),new PdfPoint(604.0299195638096, 780.2512161723714)),
+                new PdfRectangle(new PdfPoint(959.1086329905719, 415.9131571214781),new PdfPoint(162.84465179122276, 56.91321425516503),new PdfPoint(863.2847587012342, 628.4510729394412),new PdfPoint(67.02077750188505, 269.4511300731282)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(-36.505394349814196, 287.2936359576752),new PdfPoint(218.90973523968216, 134.87730731892998),new PdfPoint(348.6147899743132, 932.6675448111166),new PdfPoint(604.0299195638096, 780.2512161723714)),
+                new PdfRectangle(new PdfPoint(726.8718058244704, 553.6306484645293),new PdfPoint(439.23819566717094, 1247.4222273863022),new PdfPoint(672.3433940342361, 531.0241418191994),new PdfPoint(384.70978387693657, 1224.8157207409724)),
+                false
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(-36.505394349814196, 287.2936359576752),new PdfPoint(218.90973523968216, 134.87730731892998),new PdfPoint(348.6147899743132, 932.6675448111166),new PdfPoint(604.0299195638096, 780.2512161723714)),
+                new PdfRectangle(new PdfPoint(320.7263053892063, 806.0548844918478),new PdfPoint(174.76170727705238, 599.112878302303),new PdfPoint(507.2714260811541, 674.4770377658259),new PdfPoint(361.3068279690002, 467.5350315762811)),
+                true
+            },
+            new object[]
+            {
+                new PdfRectangle(new PdfPoint(-36.505394349814196, 287.2936359576752),new PdfPoint(218.90973523968216, 134.87730731892998),new PdfPoint(348.6147899743132, 932.6675448111166),new PdfPoint(604.0299195638096, 780.2512161723714)),
+                new PdfRectangle(new PdfPoint(70.31817979709007, 182.21524815561474),new PdfPoint(331.1222537428601, 733.4988521679364),new PdfPoint(625.4316522777149, -80.40067960176899),new PdfPoint(886.2357262234849, 470.88292441055273)),
                 false
             }
         };
@@ -1346,12 +1572,19 @@
         }
 
         [Theory]
-        [MemberData(nameof(ContainsData))]
-        public void Contains(PdfRectangle source, PdfPoint other, bool expected)
+        [MemberData(nameof(ContainsPointData))]
+        public void ContainsPoint(PdfRectangle source, PdfPoint other, bool expected)
         {
             Assert.Equal(expected, source.Contains(other));
         }
-        
+
+        [Theory]
+        [MemberData(nameof(ContainsRectangleData))]
+        public void ContainsRectangle(PdfRectangle source, PdfRectangle other, bool expected)
+        {
+            Assert.Equal(expected, source.Contains(other));
+        }
+
         [Fact]
         public void Translate()
         {

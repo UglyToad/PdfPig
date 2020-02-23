@@ -345,6 +345,22 @@
         }
 
         /// <summary>
+        /// Whether the rectangle contains the rectangle.
+        /// </summary>
+        /// <param name="rectangle">The rectangle that should contain the other rectangle.</param>
+        /// <param name="other">The other rectangle that should be contained within the rectangle.</param>
+        /// <param name="includeBorder">If set to false, will return false if the rectangles share side(s).</param>
+        public static bool Contains(this PdfRectangle rectangle, PdfRectangle other, bool includeBorder = false)
+        {
+            if (!rectangle.Contains(other.BottomLeft, includeBorder)) return false;
+            if (!rectangle.Contains(other.TopRight, includeBorder)) return false;
+            if (!rectangle.Contains(other.BottomRight, includeBorder)) return false;
+            if (!rectangle.Contains(other.TopLeft, includeBorder)) return false;
+
+            return true;
+        }
+
+        /// <summary>
         /// Whether two rectangles overlap.
         /// <para>Returns false if the two rectangles only share a border.</para>
         /// </summary>
