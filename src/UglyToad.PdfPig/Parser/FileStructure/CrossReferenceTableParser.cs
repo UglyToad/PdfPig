@@ -9,12 +9,12 @@
     using Tokenization.Scanner;
     using Tokens;
 
-    internal class CrossReferenceTableParser
+    internal static class CrossReferenceTableParser
     {
         private const string InUseEntry = "n";
         private const string FreeEntry = "f";
         
-        public CrossReferenceTablePart Parse(ISeekableTokenScanner scanner, long offset, bool isLenientParsing)
+        public static CrossReferenceTablePart Parse(ISeekableTokenScanner scanner, long offset, bool isLenientParsing)
         {
             var builder = new CrossReferenceTablePartBuilder
             {

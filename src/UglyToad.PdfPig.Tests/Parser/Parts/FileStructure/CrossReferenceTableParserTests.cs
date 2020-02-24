@@ -10,8 +10,6 @@
 
     public class CrossReferenceTableParserTests
     {
-        private readonly CrossReferenceTableParser parser = new CrossReferenceTableParser();
-
         [Fact]
         public void ParseNewDefaultTable()
         {
@@ -27,7 +25,7 @@
 trailer
 << >>");
 
-            var result = parser.Parse(input, 4, false);
+            var result = CrossReferenceTableParser.Parse(input, 4, false);
 
             Assert.Equal(4, result.ObjectOffsets.Count);
         }
@@ -37,7 +35,7 @@ trailer
         {
             var input = GetReader("12 0 obj <<>> endobj xref");
 
-            Action action = () => parser.Parse(input, 4, false);
+            Action action = () => CrossReferenceTableParser.Parse(input, 4, false);
 
             Assert.Throws<PdfDocumentFormatException>(action);
         }
@@ -48,7 +46,7 @@ trailer
             var input = GetReader(@"xtable
 trailer");
 
-            Action action = () => parser.Parse(input, 0, false);
+            Action action = () => CrossReferenceTableParser.Parse(input, 0, false);
 
             Assert.Throws<PdfDocumentFormatException>(action);
         }
@@ -60,7 +58,7 @@ trailer");
 trailer
 <<>>");
 
-            var result = parser.Parse(input, 0, false);
+            var result = CrossReferenceTableParser.Parse(input, 0, false);
 
             Assert.Empty(result.ObjectOffsets);
         }
@@ -73,7 +71,7 @@ ab 12
 trailer
 <<>>");
 
-            var result = parser.Parse(input, 0, true);
+            var result = CrossReferenceTableParser.Parse(input, 0, true);
 
             Assert.Empty(result.ObjectOffsets);
         }
@@ -86,7 +84,7 @@ ab 12
 trailer
 <<>>");
 
-            Action action = () => parser.Parse(input, 0, false);
+            Action action = () => CrossReferenceTableParser.Parse(input, 0, false);
 
             Assert.Throws<PdfDocumentFormatException>(action);
         }
@@ -100,7 +98,7 @@ trailer
 trailer
 <<>>");
 
-            var result = parser.Parse(input, 0, false);
+            var result = CrossReferenceTableParser.Parse(input, 0, false);
             
             Assert.Empty(result.ObjectOffsets);
             Assert.Equal(0, result.Offset);
@@ -118,7 +116,7 @@ trailer
 trailer
 <<>>");
 
-            var result = parser.Parse(input, 0, false);
+            var result = CrossReferenceTableParser.Parse(input, 0, false);
             
             Assert.Equal(2, result.ObjectOffsets.Count);
 
@@ -143,7 +141,7 @@ trailer
 trailer
 <<>>");
 
-            var result = parser.Parse(input, 0, false);
+            var result = CrossReferenceTableParser.Parse(input, 0, false);
             
             Assert.Equal(2, result.ObjectOffsets.Count);
 
@@ -169,7 +167,7 @@ trailer
 trailer
 <<>>");
 
-            var result = parser.Parse(input, 0, false);
+            var result = CrossReferenceTableParser.Parse(input, 0, false);
             
             Assert.Equal(2, result.ObjectOffsets.Count);
 
@@ -199,7 +197,7 @@ trailer
 trailer
 <<>>");
 
-            var result = parser.Parse(input, 0, false);
+            var result = CrossReferenceTableParser.Parse(input, 0, false);
             
             Assert.Equal(5, result.ObjectOffsets.Count);
 
@@ -236,7 +234,7 @@ trailer
 trailer
 <<>>");
 
-            var result = parser.Parse(input, 0, false);
+            Action action = () => CrossReferenceTableParser.Parse(input, 0, false);
 
             var offset = Assert.Single(result.ObjectOffsets);
             Assert.Equal(10, offset.Value);
@@ -252,7 +250,7 @@ trailer
 trailer
 <<>>");
 
-            Action action = () => parser.Parse(input, 0, false);
+            Action action = () => CrossReferenceTableParser.Parse(input, 0, false);
 
             Assert.Throws<PdfDocumentFormatException>(action);
         }
@@ -267,7 +265,7 @@ trailer
 trailer
 <<>>");
 
-            Action action = () => parser.Parse(input, 0, false);
+            Action action = () => CrossReferenceTableParser.Parse(input, 0, false);
 
             Assert.Throws<PdfDocumentFormatException>(action);
         }
@@ -283,7 +281,7 @@ trailer
 trailer
 <<>>");
 
-            var result = parser.Parse(input, 0, false);
+            var result = CrossReferenceTableParser.Parse(input, 0, false);
             
             Assert.Equal(2, result.ObjectOffsets.Count);
         }

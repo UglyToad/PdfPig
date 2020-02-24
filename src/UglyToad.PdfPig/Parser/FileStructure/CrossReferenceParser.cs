@@ -15,18 +15,15 @@
         private readonly ILog log;
         private readonly XrefOffsetValidator offsetValidator;
         private readonly CrossReferenceStreamParser crossReferenceStreamParser;
-        private readonly CrossReferenceTableParser crossReferenceTableParser;
         private readonly XrefCosOffsetChecker xrefCosChecker;
 
         public CrossReferenceParser(ILog log, XrefOffsetValidator offsetValidator,
             XrefCosOffsetChecker xrefCosChecker,
-            CrossReferenceStreamParser crossReferenceStreamParser,
-            CrossReferenceTableParser crossReferenceTableParser)
+            CrossReferenceStreamParser crossReferenceStreamParser)
         {
             this.log = log;
             this.offsetValidator = offsetValidator;
             this.crossReferenceStreamParser = crossReferenceStreamParser;
-            this.crossReferenceTableParser = crossReferenceTableParser;
             this.xrefCosChecker = xrefCosChecker;
         }
         
@@ -70,7 +67,7 @@
                     missedAttempts = 0;
                     log.Debug("Element was cross reference table.");
 
-                    CrossReferenceTablePart tablePart = crossReferenceTableParser.Parse(tokenScanner,
+                    CrossReferenceTablePart tablePart = CrossReferenceTableParser.Parse(tokenScanner,
                         previousCrossReferenceLocation, isLenientParsing);
 
                     var nextOffset = tablePart.GetPreviousOffset();
