@@ -5,7 +5,6 @@
     using System.Globalization;
     using System.Text;
     using Core;
-    using Exceptions;
     using Util.JetBrains.Annotations;
 
     /// <summary>
@@ -49,10 +48,6 @@
             bool endobjFound = false;
             do
             {
-                if (loopProtection >= 700_000)
-                {
-                    
-                }
                 if (loopProtection > 1_000_000)
                 {
                     throw new PdfDocumentFormatException("Failed to brute-force search the file due to an infinite loop.");
@@ -142,7 +137,7 @@
                 var obj = long.Parse(objectNumberBytes.ToString(), CultureInfo.InvariantCulture);
                 var generation = int.Parse(generationBytes.ToString(), CultureInfo.InvariantCulture);
 
-                results[new IndirectReference(obj, generation)] = bytes.CurrentOffset + 1;
+                results[new IndirectReference(obj, generation)] = bytes.CurrentOffset;
 
                 inObject = true;
                 endobjFound = false;

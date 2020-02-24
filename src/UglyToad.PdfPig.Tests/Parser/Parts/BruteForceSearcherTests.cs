@@ -2,6 +2,8 @@
 namespace UglyToad.PdfPig.Tests.Parser.Parts
 {
     using System;
+    using System.IO;
+    using Integration;
     using PdfPig.Core;
     using PdfPig.Parser.Parts;
     using Xunit;
@@ -56,10 +58,10 @@ startxref
 
             Assert.Equal(locations.Values, new long[]
             {
-                TestData.IndexOf("2 17 obj", StringComparison.OrdinalIgnoreCase) + 1,
-                TestData.IndexOf("3 0 obj", StringComparison.OrdinalIgnoreCase) + 1,
-                TestData.IndexOf("4 0 obj", StringComparison.OrdinalIgnoreCase) + 1,
-                TestData.IndexOf("5 0 obj", StringComparison.OrdinalIgnoreCase) + 1
+                TestData.IndexOf("2 17 obj", StringComparison.OrdinalIgnoreCase),
+                TestData.IndexOf("3 0 obj", StringComparison.OrdinalIgnoreCase),
+                TestData.IndexOf("4 0 obj", StringComparison.OrdinalIgnoreCase),
+                TestData.IndexOf("5 0 obj", StringComparison.OrdinalIgnoreCase)
             });
         }
 
@@ -82,6 +84,73 @@ startxref
             {
                 Assert.Contains(newLocations.Keys, x => x.Equals(keyValuePair.Key));
             }
+        }
+
+        [Fact]
+        public void BruteForceSearcherFileOffsetsCorrect()
+        {
+            using (var fs = File.OpenRead(IntegrationHelpers.GetDocumentPath("Single Page Simple - from inkscape.pdf")))
+            {
+                var bytes = new StreamInputBytes(fs);
+                var searcher = new BruteForceSearcher(bytes);
+
+                var locations = searcher.GetObjectLocations();
+
+                Assert.Equal(13, locations.Count);
+
+                Assert.Equal(6183, locations[new IndirectReference(1, 0)]);
+                Assert.Equal(244, locations[new IndirectReference(2, 0)]);
+                Assert.Equal(15, locations[new IndirectReference(3, 0)]);
+                Assert.Equal(222, locations[new IndirectReference(4, 0)]);
+                Assert.Equal(5766, locations[new IndirectReference(5, 0)]);
+                Assert.Equal(353, locations[new IndirectReference(6, 0)]);
+                Assert.Equal(581, locations[new IndirectReference(7, 0)]);
+                Assert.Equal(5068, locations[new IndirectReference(8, 0)]);
+                Assert.Equal(5091, locations[new IndirectReference(9, 0)]);
+                
+                var s = GetStringAt(bytes, locations[new IndirectReference(3, 0)]);
+                Assert.StartsWith("3 0 obj", s);
+            }
+        }
+
+        [Fact]
+        public void BruteForceSearcherFileOffsetsCorrectOpenOffice()
+        {
+            var bytes = new ByteArrayInputBytes(File.ReadAllBytes(IntegrationHelpers.GetDocumentPath("Single Page Simple - from open office.pdf")));
+
+            var searcher = new BruteForceSearcher(bytes);
+
+            var locations = searcher.GetObjectLocations();
+
+            Assert.Equal(13, locations.Count);
+
+            Assert.Equal(17, locations[new IndirectReference(1, 0)]);
+            Assert.Equal(249, locations[new IndirectReference(2, 0)]);
+            Assert.Equal(14291, locations[new IndirectReference(3, 0)]);
+            Assert.Equal(275, locations[new IndirectReference(4, 0)]);
+            Assert.Equal(382, locations[new IndirectReference(5, 0)]);
+            Assert.Equal(13283, locations[new IndirectReference(6, 0)]);
+            Assert.Equal(13309, locations[new IndirectReference(7, 0)]);
+            Assert.Equal(13556, locations[new IndirectReference(8, 0)]);
+            Assert.Equal(13926, locations[new IndirectReference(9, 0)]);
+            Assert.Equal(14183, locations[new IndirectReference(10, 0)]);
+            Assert.Equal(14224, locations[new IndirectReference(11, 0)]);
+            Assert.Equal(14428, locations[new IndirectReference(12, 0)]);
+            Assert.Equal(14488, locations[new IndirectReference(13, 0)]);
+
+            var s = GetStringAt(bytes, locations[new IndirectReference(12, 0)]);
+            Assert.StartsWith("12 0 obj", s);
+        }
+
+        private static string GetStringAt(IInputBytes bytes, long location)
+        {
+            bytes.Seek(location);
+            var txt = new byte[10];
+            bytes.Read(txt);
+
+            var s = OtherEncodings.BytesAsLatin1String(txt);
+
+            return s;
         }
     }
 }
