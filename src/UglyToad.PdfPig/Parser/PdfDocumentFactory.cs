@@ -94,7 +94,7 @@
             var pdfScanner = new PdfTokenScanner(inputBytes, locationProvider, filterProvider, NoOpEncryptionHandler.Instance);
 
             var crossReferenceStreamParser = new CrossReferenceStreamParser(filterProvider);
-            var crossReferenceParser = new CrossReferenceParser(log, xrefValidator, objectChecker, crossReferenceStreamParser, new CrossReferenceTableParser());
+            var crossReferenceParser = new CrossReferenceParser(log, xrefValidator, objectChecker, crossReferenceStreamParser);
             
             var version = FileHeaderParser.Parse(scanner, isLenientParsing, log);
             
