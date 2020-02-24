@@ -3,12 +3,12 @@
     /// <summary>
     /// Rules for determining which points lie inside/outside a path.
     /// </summary>
-    public enum ClippingRule
+    public enum ClippingRule : byte
     {
         /// <summary>
         /// No rule.
         /// </summary>
-        None,
+        None = 0,
 
         /// <summary>
         /// This even-odd rule determines whether a point is inside a path by drawing a ray from that point in 
@@ -17,7 +17,7 @@
         /// the same results as the nonzero winding number rule for paths with simple shapes, but produces 
         /// different results for more complex shapes.
         /// </summary>
-        EvenOdd,
+        EvenOdd = 1,
 
         /// <summary>
         /// The nonzero winding number rule determines whether a given point is inside a path by conceptually
@@ -27,6 +27,6 @@
         /// to left. After counting all the crossings, if the result is 0, the point is outside the path; 
         /// otherwise, it is inside.
         /// </summary>
-        NonZeroWinding
+        NonZeroWinding = 2
     }
 }

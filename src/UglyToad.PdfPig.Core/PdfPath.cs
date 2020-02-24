@@ -37,20 +37,6 @@
         private double shoeLaceSum;
 
         /// <summary>
-        /// Return true if it is a closed path.
-        /// </summary>
-        /// <returns></returns>
-        public bool IsClosed()
-        {
-            // need to check if filled -> true if filled
-            if (Commands.Any(c => c is Close)) return true;
-            var filtered = Commands.Where(c => c is Line || c is BezierCurve).ToList();
-            if (filtered.Count < 2) return false;
-            if (!GetStartPoint(filtered.First()).Equals(GetEndPoint(filtered.Last()))) return false;
-            return true;
-        }
-
-        /// <summary>
         /// Return true if points are organised in a clockwise order. Works only with closed paths.
         /// </summary>
         /// <returns></returns>
@@ -89,9 +75,8 @@
         }
 
         /// <summary>
-        /// 
+        /// Set the clipping mode for this path.
         /// </summary>
-        /// <param name="clippingRule"></param>
         public void SetClipping(ClippingRule clippingRule)
         {
             IsClipping = true;
@@ -240,9 +225,7 @@
                 MoveTo(x3, y3);
             }
         }
-
-        internal void SetWindingRuleMode(int windingRule) { }
-
+        
         /// <summary>
         /// Close the path.
         /// </summary>
@@ -257,6 +240,19 @@
                 }
             }
             commands.Add(new Close());
+        }
+        
+        /// <summary>
+        /// Determines if the path is currently closed.
+        /// </summary>
+        public bool IsClosed()
+        {
+            // need to check if filled -> true if filled
+            if (Commands.Any(c => c is Close)) return true;
+            var filtered = Commands.Where(c => c is Line || c is BezierCurve).ToList();
+            if (filtered.Count < 2) return false;
+            if (!GetStartPoint(filtered.First()).Equals(GetEndPoint(filtered.Last()))) return false;
+            return true;
         }
 
         /// <summary>
