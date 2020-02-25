@@ -14,8 +14,7 @@
 
             var result = PdfMerger.Merge(one, two);
 
-            // FIX: Enable UseLenianParseOff
-            using (var document = PdfDocument.Open(result/*, ParsingOptions.LenientParsingOff */))
+            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
             {
                 Assert.Equal(2, document.NumberOfPages);
 
