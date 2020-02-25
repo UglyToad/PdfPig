@@ -1,4 +1,4 @@
-namespace UglyToad.PdfPig.Writer
+﻿namespace UglyToad.PdfPig.Writer
 {
     using System;
     using System.Collections.Generic;
@@ -11,7 +11,6 @@ namespace UglyToad.PdfPig.Writer
     using Encryption;
     using Filters;
     using Logging;
-    using Merging;
     using Parser;
     using Parser.FileStructure;
     using Parser.Parts;
@@ -106,9 +105,6 @@ namespace UglyToad.PdfPig.Writer
                     // pdfScanner.UpdateEncryptionHandler(new EncryptionHandler(encryptionDictionary, trailerDictionary, new[] { string.Empty }));
                 }
 
-                var objectsTree = new ObjectsTree(trailerDictionary, pdfScanner.Get(trailerRef),
-                    CatalogFactory.Create(crossReference.Trailer.Root, catalogDictionaryToken, pdfScanner, isLenientParsing));
-
                 var objectsLocation = bruteForceSearcher.GetObjectLocations();
 
                 var root = pdfScanner.Get(trailerDictionary.Root);
@@ -127,7 +123,9 @@ namespace UglyToad.PdfPig.Writer
                     throw new PdfDocumentFormatException("Something whent wrong while reading file");
                 }
 
-                documentBuilder.AppendNewDocument(objectsTree, pdfScanner);
+                var documentCatalog = CatalogFactory.Create(crossReference.Trailer.Root, catalogDictionaryToken, pdfScanner, isLenientParsing);
+
+                documentBuilder.AppendDocument(documentCatalog, pdfScanner);
             }
 
             return documentBuilder.Build();
