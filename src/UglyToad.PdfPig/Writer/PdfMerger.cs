@@ -264,6 +264,13 @@
                 return Context.WriteObject(Memory, new DictionaryToken(pageDictionary));
             }
 
+            /// <summary>
+            /// The purpose of this method is to resolve indirect reference. That mean copy the reference's content to the new document's stream
+            /// and replace the indirect reference with the correct/new one
+            /// </summary>
+            /// <param name="tokenToCopy">Token to inspect for reference</param>
+            /// <param name="tokenScanner">scanner get the content from the original document</param>
+            /// <returns>A copy of the token with all his content copied to the new document's stream</returns>
             private IToken CopyToken(IToken tokenToCopy, IPdfTokenScanner tokenScanner)
             {
                 if (tokenToCopy is DictionaryToken dictionaryToken)
@@ -301,11 +308,14 @@
                 }
                 else if (tokenToCopy is StreamToken streamToken)
                 {
-                    return streamToken;
+                    //Note: Unnecessary
+                    var properties = CopyToken(streamToken.StreamDictionary, tokenScanner) as DictionaryToken;
+                    Debug.Assert(properties != null);
+                    return new StreamToken(properties, new List<byte>(streamToken.Data));
                 }
                 else // Non Complex Token - BooleanToken, NumericToken, NameToken, Etc...
                 {
-                    // TODO: Should we do a deep copy of the token?
+                    // TODO: Should we do a deep copy of this tokens?
                     return tokenToCopy;
                 }
             }
