@@ -204,72 +204,64 @@
                     throw new ObjectDisposedException("Merger disposed already");
                 }
 
-                /*
-                 * I decided that I want to have an /Pages object for each document's pages. That way I avoided resource name conflict
-                 * But I guess that doesn't matter either way? So that part can be eliminated?
-                 */
-                var pageReferences = ConstructPageReferences(newDocument.Catalog.PageTree, tokenScanner);
+                var pagesReference = CopyPagesTree(newDocument.Catalog.PageTree, RootPagesIndirectReference, tokenScanner);
+                DocumentPages.Add(new IndirectReferenceToken(pagesReference.Number));
+            }
+
+            private ObjectToken CopyPagesTree(PageTreeNode treeNode, IndirectReferenceToken treeParentReference, IPdfTokenScanner tokenScanner)
+            {
+                Debug.Assert(!treeNode.IsPage);
+
+                var currentNodeReserved = Context.ReserveNumber();
+                var currentNodeReference = new IndirectReferenceToken(new IndirectReference(currentNodeReserved, 0));
+
+                var pageReferences = new List<IndirectReferenceToken>();
+                foreach (var pageNode in treeNode.Children)
+                {
+                    IndirectReference newEntry;
+                    if (!pageNode.IsPage)
+                        newEntry = CopyPagesTree(pageNode, currentNodeReference, tokenScanner).Number;
+                    else 
+                        newEntry = CopyPageNode(pageNode, currentNodeReference, tokenScanner).Number;
+
+                    pageReferences.Add(new IndirectReferenceToken(newEntry));
+                }
 
                 var pagesDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
                 {
                     { NameToken.Type, NameToken.Pages },
                     { NameToken.Kids, new ArrayToken(pageReferences) },
                     { NameToken.Count, new NumericToken(pageReferences.Count) },
-                    { NameToken.Parent, RootPagesIndirectReference }
+                    { NameToken.Parent, treeParentReference }
                 });
 
-                var pagesRef = Context.WriteObject(Memory, pagesDictionary);
-                DocumentPages.Add(new IndirectReferenceToken(pagesRef.Number));
+                return Context.WriteObject(Memory, pagesDictionary, currentNodeReserved);
             }
 
-            private IReadOnlyList<IndirectReferenceToken> ConstructPageReferences(PageTreeNode treeNode, IPdfTokenScanner tokenScanner)
+            private ObjectToken CopyPageNode(PageTreeNode pageNode, IndirectReferenceToken parentPagesObject, IPdfTokenScanner tokenScanner)
             {
-                var reserved = Context.ReserveNumber();
-                var parentIndirect = new IndirectReferenceToken(new IndirectReference(reserved, 0));
+                Debug.Assert(pageNode.IsPage);
 
-                var pageReferences = new List<IndirectReferenceToken>();
-                foreach (var pageNode in treeNode.Children)
+                var pageDictionary = new Dictionary<NameToken, IToken>
                 {
-                    if (!pageNode.IsPage)
-                    {
-                        var nestedPageReferences = ConstructPageReferences(pageNode, tokenScanner);
-                        var pagesDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
-                        {
-                            { NameToken.Type, NameToken.Pages },
-                            { NameToken.Kids, new ArrayToken(nestedPageReferences) },
-                            { NameToken.Count, new NumericToken(nestedPageReferences.Count) },
-                            { NameToken.Parent, parentIndirect }
-                        });
+                    {NameToken.Parent, parentPagesObject},
+                };
 
-                        var pagesRef = Context.WriteObject(Memory, pagesDictionary);
-                        pageReferences.Add(new IndirectReferenceToken(pagesRef.Number));
+                foreach (var setPair in pageNode.NodeDictionary.Data)
+                {
+                    var name = setPair.Key;
+                    var token = setPair.Value;
+
+                    if (name == NameToken.Parent)
+                    {
+                        // Skip Parent token, since we have to reassign it
                         continue;
                     }
 
-                    var pageDictionary = new Dictionary<NameToken, IToken>
-                    {
-                        {NameToken.Parent, parentIndirect},
-                    };
-
-                    foreach(var setPair in pageNode.NodeDictionary.Data)
-                    {
-                        var name = setPair.Key;
-                        var token = setPair.Value;
-
-                        if (name == NameToken.Parent)
-                        {
-                            // Skip Parent token, since we have to reassign it
-                            continue;
-                        }
-
-                        pageDictionary.Add(NameToken.Create(name), CopyToken(token, tokenScanner));
-                    }
-
-                    var pageRef = Context.WriteObject(Memory, new DictionaryToken(pageDictionary), reserved);
-                    pageReferences.Add(new IndirectReferenceToken(pageRef.Number));
+                    pageDictionary.Add(NameToken.Create(name), CopyToken(token, tokenScanner));
                 }
 
-                return pageReferences;
+                return Context.WriteObject(Memory, new DictionaryToken(pageDictionary));
             }
 
             private IToken CopyToken(IToken tokenToCopy, IPdfTokenScanner tokenScanner)
@@ -299,7 +291,7 @@
                 else if (tokenToCopy is IndirectReferenceToken referenceToken)
                 {
                     var tokenObject = DirectObjectFinder.Get<IToken>(referenceToken.Data, tokenScanner);
-                    
+
                     // Is this even a allowed?
                     Debug.Assert(!(tokenObject is IndirectReferenceToken));
 
@@ -307,7 +299,11 @@
                     var objToken = Context.WriteObject(Memory, newToken);
                     return new IndirectReferenceToken(objToken.Number);
                 }
-                else
+                else if (tokenToCopy is StreamToken streamToken)
+                {
+                    return streamToken;
+                }
+                else // Non Complex Token - BooleanToken, NumericToken, NameToken, Etc...
                 {
                     // TODO: Should we do a deep copy of the token?
                     return tokenToCopy;
