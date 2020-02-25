@@ -13,9 +13,6 @@
         private const string TagOtto = "OTTO";
         private const string TagTtcf = "ttcf";
         private const string TagTtfonly = "\u0000\u0001\u0000\u0000";
-
-        private static readonly CompactFontFormatIndividualFontParser IndividualFontParser = new CompactFontFormatIndividualFontParser(
-            new CompactFontFormatTopLevelDictionaryReader(), new CompactFontFormatPrivateDictionaryReader());
         
         /// <summary>
         /// Read the Compact Font Format font from the input data.
@@ -50,11 +47,13 @@
 
             var fonts = new Dictionary<string, CompactFontFormatFont>();
 
+            var individualFontParser = new CompactFontFormatIndividualFontParser(new CompactFontFormatTopLevelDictionaryReader(), new CompactFontFormatPrivateDictionaryReader());
+
             for (var i = 0; i < fontNames.Length; i++)
             {
                 var fontName = fontNames[i];
 
-                fonts[fontName] = IndividualFontParser.Parse(data, fontName, topLevelDictionaryIndex[i], stringIndex, globalSubroutineIndex);
+                fonts[fontName] = individualFontParser.Parse(data, fontName, topLevelDictionaryIndex[i], stringIndex, globalSubroutineIndex);
             }
 
             return new CompactFontFormatFontCollection(header, fonts);
