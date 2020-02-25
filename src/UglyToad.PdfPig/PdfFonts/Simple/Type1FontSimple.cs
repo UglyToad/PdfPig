@@ -125,9 +125,9 @@
 
             boundingBox = matrix.Transform(boundingBox);
 
-            var width = matrix.TransformX(GetWidth(characterCode, boundingBox));
+            var width = GetWidth(characterCode, boundingBox);
 
-            var result = new CharacterBoundingBox(boundingBox, width);
+            var result = new CharacterBoundingBox(boundingBox, width/1000.0);
 
             cachedBoundingBoxes[characterCode] = result;
 
