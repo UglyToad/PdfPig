@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Writer
+namespace UglyToad.PdfPig.Writer
 {
     using System;
     using System.Collections.Generic;
@@ -66,7 +66,7 @@
 
             const bool isLenientParsing = true;
 
-            using var documentBuilder = new DocumentBuilder();
+            var documentBuilder = new DocumentMerger();
 
             foreach (var file in files)
             {
@@ -161,12 +161,8 @@
             return (crossReferenceTable.Trailer.Root, rootDictionary);
         }
 
-        // Note: I don't think making this a disposable is a good idea.
-        // Also, suggestion for name?
-        private class DocumentBuilder : IDisposable
+        private class DocumentMerger
         {
-            private bool isDisposed = false;
-
             private MemoryStream Memory = new MemoryStream();
 
             private readonly BuilderContext Context = new BuilderContext();
@@ -175,7 +171,7 @@
 
             private IndirectReferenceToken RootPagesIndirectReference;
 
-            public DocumentBuilder()
+            public DocumentMerger()
             {
                 var reserved = Context.ReserveNumber();
                 RootPagesIndirectReference = new IndirectReferenceToken(new IndirectReference(reserved, 0));
@@ -197,14 +193,14 @@
                 Memory.WriteNewLine();
             }
  
-            public void AppendNewDocument(ObjectsTree newDocument, IPdfTokenScanner tokenScanner)
+            public void AppendDocument(Catalog documentCatalog, IPdfTokenScanner tokenScanner)
             {
-                if (isDisposed)
+                if (Memory == null)
                 {
                     throw new ObjectDisposedException("Merger disposed already");
                 }
 
-                var pagesReference = CopyPagesTree(newDocument.Catalog.PageTree, RootPagesIndirectReference, tokenScanner);
+                var pagesReference = CopyPagesTree(documentCatalog.PageTree, RootPagesIndirectReference, tokenScanner);
                 DocumentPages.Add(new IndirectReferenceToken(pagesReference.Number));
             }
 
@@ -322,7 +318,7 @@
 
             public byte[] Build()
             {
-                if (isDisposed)
+                if (Memory == null)
                 {
                     throw new ObjectDisposedException("Merger disposed already");
                 }
@@ -353,9 +349,18 @@
                 
                 var bytes = Memory.ToArray();
 
-                Dispose();
+                Close();
 
                 return bytes;
+            }
+
+            public void Close()
+            {
+                if (Memory == null)
+                    return;
+
+                Memory.Dispose();
+                Memory = null;
             }
 
             // Note: This method is copied from UglyToad.PdfPig.Writer.PdfDocumentBuilder
@@ -367,16 +372,6 @@
                 {
                     stream.WriteNewLine();
                 }
-            }
-
-            public void Dispose()
-            {
-                if (isDisposed)
-                    return;
-
-                Memory.Dispose();
-                Memory = null;
-                isDisposed = true;
             }
         }
 
