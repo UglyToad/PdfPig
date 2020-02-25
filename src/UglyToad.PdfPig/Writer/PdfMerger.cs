@@ -221,15 +221,29 @@
                     pageReferences.Add(new IndirectReferenceToken(newEntry));
                 }
 
-                var pagesDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
+                var contentDictionary = new Dictionary<NameToken, IToken>
                 {
                     { NameToken.Type, NameToken.Pages },
                     { NameToken.Kids, new ArrayToken(pageReferences) },
                     { NameToken.Count, new NumericToken(pageReferences.Count) },
                     { NameToken.Parent, treeParentReference }
-                });
+                };
 
-                return Context.WriteObject(Memory, pagesDictionary, currentNodeReserved);
+                // Copy page tree properties, if there any that doesn't conflict with the new ones
+                foreach(var set in treeNode.NodeDictionary.Data)
+                {
+                    var nameToken = NameToken.Create(set.Key);
+
+                    // We don't want to override any value
+                    if (contentDictionary.ContainsKey(nameToken))
+                        continue;
+
+                    contentDictionary.Add(NameToken.Create(nameToken), CopyToken(set.Value, tokenScanner));
+                }
+
+                var pagesToken = new DictionaryToken(contentDictionary);
+
+                return Context.WriteObject(Memory, pagesToken, currentNodeReserved);
             }
 
             private ObjectToken CopyPageNode(PageTreeNode pageNode, IndirectReferenceToken parentPagesObject, IPdfTokenScanner tokenScanner)
