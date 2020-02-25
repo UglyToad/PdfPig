@@ -769,9 +769,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
             {
                 var num = bytes[++i] << 8 | bytes[++i];
                 // Next 2 bytes are a 16-bit two's complement number.
-                // The twos complement of a number N in a B-bit system is 2^B - N. For 16 bits the result is 2^16 - num.
-                // A shortcut is to invert the bits of the number and add 1.
-                return (short) (~(num) + 1);
+                return (short) (num);
             }
 
             if (b >= 32 && b <= 246)
