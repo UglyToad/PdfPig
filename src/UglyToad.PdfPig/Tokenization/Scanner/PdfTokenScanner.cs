@@ -29,6 +29,7 @@
 
         private IEncryptionHandler encryptionHandler;
         private bool isDisposed;
+        private bool isBruteForcing;
 
         /// <summary>
         /// Stores tokens encountered between obj - endobj markers for each <see cref="MoveNext"/> call.
@@ -153,7 +154,7 @@
                     var streamIdentifier = new IndirectReference(objectNumber.Long, generation.Int);
 
                     // Prevent an infinite loop where a stream's length references the stream or the stream's offset.
-                    var getLengthFromFile = !(callingObject.HasValue && callingObject.Value.Equals(streamIdentifier));
+                    var getLengthFromFile = !isBruteForcing && !(callingObject.HasValue && callingObject.Value.Equals(streamIdentifier));
 
                     var outerCallingObject = callingObject;
 
@@ -673,7 +674,7 @@
 
             if (!MoveNext())
             {
-                throw new PdfDocumentFormatException($"Could not parse the object with reference: {reference}.");
+                return BruteForceFileToFindReference(reference);
             }
 
             var found = (ObjectToken)CurrentToken;
@@ -683,20 +684,34 @@
                 return found;
             }
 
-            // Brute force read the entire file
-            Seek(0);
+            return BruteForceFileToFindReference(reference);
+        }
 
-            while (MoveNext())
+        private ObjectToken BruteForceFileToFindReference(IndirectReference reference)
+        {
+            try
             {
-                objectLocationProvider.Cache((ObjectToken)CurrentToken, true);
-            }
+                // Brute force read the entire file
+                isBruteForcing = true;
 
-            if (!objectLocationProvider.TryGetCached(reference, out objectToken))
+                Seek(0);
+
+                while (MoveNext())
+                {
+                    objectLocationProvider.Cache((ObjectToken)CurrentToken, true);
+                }
+
+                if (!objectLocationProvider.TryGetCached(reference, out var objectToken))
+                {
+                    throw new PdfDocumentFormatException($"Could not locate object with reference: {reference} despite a full document search.");
+                }
+
+                return objectToken;
+            }
+            finally
             {
-                throw new PdfDocumentFormatException($"Could not locate object with reference: {reference} despite a full document search.");
+                isBruteForcing = false;
             }
-
-            return objectToken;
         }
 
         private ObjectToken GetObjectFromStream(IndirectReference reference, long offset)

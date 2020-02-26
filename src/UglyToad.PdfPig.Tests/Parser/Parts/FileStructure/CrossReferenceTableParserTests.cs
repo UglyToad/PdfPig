@@ -227,7 +227,7 @@ trailer
         }
 
         [Fact]
-        public void EntryPointingAtOffsetInTableThrows()
+        public void EntryPointingAtOffsetInTableDoesNotThrow()
         {
             var input = GetReader(@"xref
 0 2
@@ -236,9 +236,10 @@ trailer
 trailer
 <<>>");
 
-            Action action = () => parser.Parse(input, 0, false);
+            var result = parser.Parse(input, 0, false);
 
-            Assert.Throws<PdfDocumentFormatException>(action);
+            var offset = Assert.Single(result.ObjectOffsets);
+            Assert.Equal(10, offset.Value);
         }
 
         [Fact]

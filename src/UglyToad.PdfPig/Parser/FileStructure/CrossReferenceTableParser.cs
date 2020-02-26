@@ -69,7 +69,7 @@
 
                         readingLine = false;
 
-                        count = ProcessTokens(tokens, scanner, builder, isLenientParsing, count, ref definition);
+                        count = ProcessTokens(tokens, builder, isLenientParsing, count, ref definition);
                         
                         tokens.Clear();
 
@@ -94,7 +94,7 @@
 
                 if (tokens.Count > 0)
                 {
-                    ProcessTokens(tokens, scanner, builder, isLenientParsing, count, ref definition);
+                    ProcessTokens(tokens, builder, isLenientParsing, count, ref definition);
                 }
 
                 scanner.DeregisterCustomTokenizer(tokenizer);
@@ -105,7 +105,7 @@
             return builder.Build();
         }
 
-        private static int ProcessTokens(List<IToken> tokens, ISeekableTokenScanner scanner, CrossReferenceTablePartBuilder builder, bool isLenientParsing,
+        private static int ProcessTokens(List<IToken> tokens, CrossReferenceTablePartBuilder builder, bool isLenientParsing,
             int objectCount, ref TableSubsectionDefinition definition)
         {
             string GetErrorMessage()
@@ -161,11 +161,6 @@
 
                 if (tokens[0] is NumericToken offset && tokens[1] is NumericToken generationNumber)
                 {
-                    if (offset.Long >= builder.Offset && offset.Long <= scanner.CurrentPosition)
-                    {
-                        throw new PdfDocumentFormatException($"Object offset {offset} is within its own cross-reference table for object {definition.FirstNumber + objectCount}");
-                    }
-
                     builder.Add(definition.FirstNumber + objectCount, generationNumber.Int, offset.Long);
 
                     return objectCount + 1;
