@@ -87,7 +87,10 @@
             }
 
             var name = encoding.GetName(characterCode);
-            var metrics = fontMetrics.CharacterMetrics[name];
+            if (!fontMetrics.CharacterMetrics.TryGetValue(name, out var metrics))
+            {
+                return new CharacterBoundingBox(new PdfRectangle(), 0);
+            }
 
             if (overrides?.TryGetWidth(characterCode, out width) != true)
             {
