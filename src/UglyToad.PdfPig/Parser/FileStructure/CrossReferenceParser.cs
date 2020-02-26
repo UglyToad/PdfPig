@@ -291,12 +291,14 @@
                     var p = buffer[i - 1];
                     var b = buffer[i];
 
-                    if (b != 'x' || !ReadHelper.IsWhitespace(p))
+                    var couldBeXrefStartWhitespacePrecedes = b == 'x' && ReadHelper.IsWhitespace(p);
+                    var couldBeXrefBufferAligned = p == 'x' && b == 'r';
+                    if (!couldBeXrefBufferAligned && !couldBeXrefStartWhitespacePrecedes)
                     {
                         continue;
                     }
 
-                    var xLocation = lastOffset + i + 1;
+                    var xLocation = lastOffset + i + (couldBeXrefStartWhitespacePrecedes ? 1 : 0);
 
                     bytes.Seek(xLocation);
 
