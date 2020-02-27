@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Text;
+    using Core;
 
     /// <inheritdoc />
     /// <summary>
@@ -159,11 +160,11 @@
             }
             else if (Math.Abs(formatType - 3) < float.Epsilon)
             {
-                glyphNames = new string[0];
+                glyphNames = EmptyArray<string>.Instance;
             }
             else
             {
-                throw new InvalidOperationException($"Format type {formatType} is not supported for the PostScript table.");
+                glyphNames = EmptyArray<string>.Instance;
             }
 
             return glyphNames;
