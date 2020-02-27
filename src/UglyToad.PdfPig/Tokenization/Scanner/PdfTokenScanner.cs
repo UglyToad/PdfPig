@@ -233,6 +233,11 @@
             // Get the expected length from the stream dictionary if present.
             long? length = getLength ? GetStreamLength(streamDictionaryToken) : default(long?);
 
+            if (!getLength && streamDictionaryToken.TryGet(NameToken.Length, out NumericToken inlineLengthToken))
+            {
+                length = inlineLengthToken.Long;
+            }
+
             // Verify again that we start with "stream"
             var hasStartStreamToken = ReadStreamTokenStart(inputBytes, startStreamTokenOffset);
 
