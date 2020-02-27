@@ -141,6 +141,11 @@
 
             for (int i = 1; i < minCodeLength; i++)
             {
+                if (bytes.IsAtEnd())
+                {
+                    break;
+                }
+
                 result[i] = ReadByte(bytes);
             }
 
