@@ -50,7 +50,7 @@
                     descendantFontDictionary = (DictionaryToken) descendantObject;
                 }
 
-                cidFont = ParseDescendant(descendantFontDictionary, isLenientParsing);
+                cidFont = ParseDescendant(descendantFontDictionary);
             }
             else
             {
@@ -70,7 +70,7 @@
 
                     if (decodedUnicodeCMap != null)
                     {
-                        toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap), isLenientParsing);
+                        toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap));
                     }
                 }
                 else if (DirectObjectFinder.TryGet<NameToken>(toUnicodeValue, scanner, out var toUnicodeName))
@@ -124,7 +124,7 @@
             return false;
         }
 
-        private ICidFont ParseDescendant(DictionaryToken dictionary, bool isLenientParsing)
+        private ICidFont ParseDescendant(DictionaryToken dictionary)
         {
             var type = dictionary.GetNameOrDefault(NameToken.Type);
             if (type?.Equals(NameToken.Font) != true)
@@ -132,7 +132,7 @@
                 throw new InvalidFontFormatException($"Expected \'Font\' dictionary but found \'{type}\'");
             }
 
-            var result = cidFontFactory.Generate(dictionary, isLenientParsing);
+            var result = cidFontFactory.Generate(dictionary);
 
             return result;
         }
@@ -156,7 +156,7 @@
                 {
                     var decoded = stream.Decode(filterProvider);
 
-                    var cmap = CMapCache.Parse(new ByteArrayInputBytes(decoded), false);
+                    var cmap = CMapCache.Parse(new ByteArrayInputBytes(decoded));
 
                     result = cmap ?? throw new InvalidOperationException("Could not read CMap for " + dictionary);
                 }

@@ -26,7 +26,7 @@
 
             Assert.NotNull(str);
 
-            var result = new CMapParser().Parse(new ByteArrayInputBytes(cmapStream), false);
+            var result = new CMapParser().Parse(new ByteArrayInputBytes(cmapStream));
 
             Assert.Equal(1, result.CodespaceRanges.Count);
 

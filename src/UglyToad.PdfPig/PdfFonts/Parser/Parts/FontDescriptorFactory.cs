@@ -2,25 +2,24 @@
 {
     using System;
     using Core;
-    using PdfPig.Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
     using Util;
     using Util.JetBrains.Annotations;
 
-    internal class FontDescriptorFactory
+    internal static class FontDescriptorFactory
     {
-        public FontDescriptor Generate(DictionaryToken dictionary, IPdfTokenScanner pdfScanner, bool isLenientParsing)
+        public static FontDescriptor Generate(DictionaryToken dictionary, IPdfTokenScanner pdfScanner)
         {
             if (dictionary == null)
             {
                 throw new ArgumentNullException(nameof(dictionary));
             }
 
-            var name = GetFontName(dictionary, pdfScanner, isLenientParsing);
+            var name = GetFontName(dictionary, pdfScanner);
             var family = GetFontFamily(dictionary);
             var stretch = GetFontStretch(dictionary);
-            var flags = GetFlags(dictionary, isLenientParsing);
+            var flags = GetFlags(dictionary);
             var bounding = GetBoundingBox(dictionary, pdfScanner);
             var charSet = GetCharSet(dictionary);
             var fontFile = GetFontFile(dictionary);
@@ -57,27 +56,14 @@
             return number.Data;
         }
 
-        private static NameToken GetFontName(DictionaryToken dictionary, IPdfTokenScanner scanner, bool isLenientParsing)
+        private static NameToken GetFontName(DictionaryToken dictionary, IPdfTokenScanner scanner)
         {
-            if (!dictionary.TryGet(NameToken.FontName, out var name) || !(name is NameToken nameToken))
+            if (!dictionary.TryGet(NameToken.FontName, scanner, out NameToken name))
             {
-                if (name is IndirectReferenceToken nameReference)
-                {
-                    var indirectName = DirectObjectFinder.Get<NameToken>(nameReference, scanner);
-                    return indirectName;
-                }
-
-                if (isLenientParsing)
-                {
-                    nameToken = NameToken.Create(string.Empty);
-                }
-                else
-                {
-                    throw new InvalidOperationException("Could not parse the font descriptor, could not retrieve the font name. " + dictionary);
-                }
+                name = NameToken.Create(string.Empty);
             }
 
-            return nameToken;
+            return name;
         }
 
         private static string GetFontFamily(DictionaryToken dictionary)
@@ -100,20 +86,13 @@
             return stretchName.ConvertToFontStretch();
         }
 
-        private static FontDescriptorFlags GetFlags(DictionaryToken dictionary, bool isLenientParsing)
+        private static FontDescriptorFlags GetFlags(DictionaryToken dictionary)
         {
             var flags = dictionary.GetIntOrDefault(NameToken.Flags, -1);
 
             if (flags == -1)
             {
-                if (isLenientParsing)
-                {
-                    flags = 0;
-                }
-                else
-                {
-                    throw new InvalidOperationException("Font flags were not set correctly for the font descriptor: " + dictionary);
-                }
+                flags = 0;
             }
 
             return (FontDescriptorFlags) flags;

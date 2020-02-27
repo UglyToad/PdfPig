@@ -10,7 +10,6 @@
     using Fonts.Standard14Fonts;
     using Fonts.Type1;
     using Fonts.Type1.Parser;
-    using Parts;
     using PdfPig.Parser.Parts;
     using Simple;
     using Tokenization.Scanner;
@@ -20,16 +19,13 @@
     {
         private readonly IPdfTokenScanner pdfScanner;
         private readonly IFilterProvider filterProvider;
-        private readonly FontDescriptorFactory fontDescriptorFactory;
         private readonly IEncodingReader encodingReader;
 
         public Type1FontHandler(IPdfTokenScanner pdfScanner, IFilterProvider filterProvider,
-            FontDescriptorFactory fontDescriptorFactory,
             IEncodingReader encodingReader)
         {
             this.pdfScanner = pdfScanner;
             this.filterProvider = filterProvider;
-            this.fontDescriptorFactory = fontDescriptorFactory;
             this.encodingReader = encodingReader;
         }
 
@@ -64,7 +60,7 @@
 
                 lastCharacter = FontDictionaryAccessHelper.GetLastCharacter(dictionary);
 
-                widths = FontDictionaryAccessHelper.GetWidths(pdfScanner, dictionary, isLenientParsing);
+                widths = FontDictionaryAccessHelper.GetWidths(pdfScanner, dictionary);
             }
             else
             {
@@ -86,7 +82,7 @@
                 }
             }
 
-            var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfScanner, fontDescriptorFactory, dictionary, isLenientParsing);
+            var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfScanner, dictionary);
 
             var font = ParseFontProgram(descriptor, isLenientParsing);
 
@@ -101,7 +97,7 @@
 
                 if (decodedUnicodeCMap != null)
                 {
-                    toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap), isLenientParsing);
+                    toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap));
                 }
             }
 

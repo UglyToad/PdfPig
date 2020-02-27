@@ -33,7 +33,7 @@
 
             var firstCharacter = FontDictionaryAccessHelper.GetFirstCharacter(dictionary);
             var lastCharacter = FontDictionaryAccessHelper.GetLastCharacter(dictionary);
-            var widths = FontDictionaryAccessHelper.GetWidths(scanner, dictionary, isLenientParsing);
+            var widths = FontDictionaryAccessHelper.GetWidths(scanner, dictionary);
             
             Encoding encoding = encodingReader.Read(dictionary, isLenientParsing);
 
@@ -46,7 +46,7 @@
 
                 if (decodedUnicodeCMap != null)
                 {
-                    toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap), isLenientParsing);
+                    toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap));
                 }
             }
             

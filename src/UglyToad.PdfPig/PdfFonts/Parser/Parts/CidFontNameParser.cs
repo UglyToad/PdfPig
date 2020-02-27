@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Parser.Parts
 {
-    using System;
     using System.Globalization;
     using Cmap;
     using Tokenization.Scanner;
@@ -8,8 +7,7 @@
 
     internal class CidFontNameParser : ICidFontPartParser<NameToken>
     {
-        public void Parse(NameToken nameToken, ITokenScanner scanner, CharacterMapBuilder builder,
-            bool isLenientParsing)
+        public void Parse(NameToken nameToken, ITokenScanner scanner, CharacterMapBuilder builder)
         {
             switch (nameToken.Data)
             {
@@ -83,54 +81,28 @@
                     {
                         if (scanner.TryReadToken(out DictionaryToken dictionary))
                         {
-                            builder.CharacterIdentifierSystemInfo = GetCharacterIdentifier(dictionary, isLenientParsing);
+                            builder.CharacterIdentifierSystemInfo = GetCharacterIdentifier(dictionary);
                         }
                         break;
                     }
             }
         }
 
-        private static CharacterIdentifierSystemInfo GetCharacterIdentifier(DictionaryToken dictionary, bool isLenientParsing)
+        private static CharacterIdentifierSystemInfo GetCharacterIdentifier(DictionaryToken dictionary)
         {
-            string GetErrorMessage(string missingKey)
-            {
-                return $"No {missingKey} found in the CIDSystemInfo dictionary: " + dictionary;
-            }
-
             if (!dictionary.TryGet(NameToken.Registry, out var registry) || !(registry is StringToken registryString))
             {
-                if (isLenientParsing)
-                {
-                    registryString = new StringToken("Adobe");
-                }
-                else
-                {
-                    throw new InvalidOperationException(GetErrorMessage("registry"));
-                }
+                registryString = new StringToken("Adobe");
             }
 
             if (!dictionary.TryGet(NameToken.Ordering, out var ordering) || !(ordering is StringToken orderingString))
             {
-                if (isLenientParsing)
-                {
-                    orderingString = new StringToken("");
-                }
-                else
-                {
-                    throw new InvalidOperationException(GetErrorMessage("ordering"));
-                }
+                orderingString = new StringToken(string.Empty);
             }
 
             if (!dictionary.TryGet(NameToken.Supplement, out var supplement) || !(supplement is NumericToken supplementNumeric))
             {
-                if (isLenientParsing)
-                {
-                    supplementNumeric = new NumericToken(0);
-                }
-                else
-                {
-                    throw new InvalidOperationException(GetErrorMessage("supplement"));
-                }
+                supplementNumeric = new NumericToken(0);
             }
 
             return new CharacterIdentifierSystemInfo(registryString.Data, orderingString.Data, supplementNumeric.Int);

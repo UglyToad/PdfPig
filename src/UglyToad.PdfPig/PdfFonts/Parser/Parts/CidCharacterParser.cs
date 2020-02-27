@@ -8,7 +8,7 @@
 
     internal class CidCharacterParser : ICidFontPartParser<NumericToken>
     {
-        public void Parse(NumericToken numeric, ITokenScanner scanner, CharacterMapBuilder builder, bool isLenientParsing)
+        public void Parse(NumericToken numeric, ITokenScanner scanner, CharacterMapBuilder builder)
         {
             var results = new List<CidCharacterMapping>();
 

@@ -28,7 +28,7 @@
             return number.Int;
         }
 
-        public static double[] GetWidths(IPdfTokenScanner pdfScanner, DictionaryToken dictionary, bool isLenientParsing)
+        public static double[] GetWidths(IPdfTokenScanner pdfScanner, DictionaryToken dictionary)
         {
             if (!dictionary.TryGet(NameToken.Widths, out var token))
             {
@@ -53,17 +53,14 @@
             return result;
         }
 
-        public static FontDescriptor GetFontDescriptor(IPdfTokenScanner pdfScanner, FontDescriptorFactory fontDescriptorFactory, DictionaryToken dictionary, 
-            bool isLenientParsing)
+        public static FontDescriptor GetFontDescriptor(IPdfTokenScanner pdfScanner, DictionaryToken dictionary)
         {
-            if (!dictionary.TryGet(NameToken.FontDescriptor, out var obj))
+            if (!dictionary.TryGet(NameToken.FontDescriptor, pdfScanner, out DictionaryToken parsed))
             {
                 throw new InvalidFontFormatException($"No font descriptor indirect reference found in the TrueType font: {dictionary}.");
             }
-
-            var parsed = DirectObjectFinder.Get<DictionaryToken>(obj, pdfScanner);
             
-            var descriptor = fontDescriptorFactory.Generate(parsed, pdfScanner, isLenientParsing);
+            var descriptor = FontDescriptorFactory.Generate(parsed, pdfScanner);
 
             return descriptor;
         }

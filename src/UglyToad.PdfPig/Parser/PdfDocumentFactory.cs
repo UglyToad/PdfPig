@@ -112,8 +112,6 @@
                 pdfScanner, 
                 scanner);
             
-            var fontDescriptorFactory = new FontDescriptorFactory();
-            
             var (rootReference, rootDictionary) = ParseTrailer(crossReferenceTable, isLenientParsing, 
                 pdfScanner, 
                 out var encryptionDictionary);
@@ -124,14 +122,14 @@
 
             pdfScanner.UpdateEncryptionHandler(encryptionHandler);
 
-            var cidFontFactory = new CidFontFactory(pdfScanner, fontDescriptorFactory, filterProvider);
+            var cidFontFactory = new CidFontFactory(pdfScanner, filterProvider);
             var encodingReader = new EncodingReader(pdfScanner);
 
-            var type1Handler = new Type1FontHandler(pdfScanner, filterProvider, fontDescriptorFactory, encodingReader);
+            var type1Handler = new Type1FontHandler(pdfScanner, filterProvider, encodingReader);
 
             var fontFactory = new FontFactory(log, new Type0FontHandler(cidFontFactory,
                 filterProvider, pdfScanner),
-                new TrueTypeFontHandler(log, pdfScanner, filterProvider, fontDescriptorFactory, encodingReader, new SystemFontFinder(),
+                new TrueTypeFontHandler(log, pdfScanner, filterProvider, encodingReader, new SystemFontFinder(),
                     type1Handler),
                 type1Handler,
                 new Type3FontHandler(pdfScanner, filterProvider, encodingReader));

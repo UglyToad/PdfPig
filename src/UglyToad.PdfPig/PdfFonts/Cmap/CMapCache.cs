@@ -29,14 +29,14 @@
             }
         }
 
-        public static CMap Parse(IInputBytes bytes, bool isLenientParsing)
+        public static CMap Parse(IInputBytes bytes)
         {
             if (bytes == null)
             {
                 throw new ArgumentNullException(nameof(bytes));
             }
 
-            var result = CMapParser.Parse(bytes, isLenientParsing);
+            var result = CMapParser.Parse(bytes);
 
             return result;
         }

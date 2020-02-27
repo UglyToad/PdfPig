@@ -17,20 +17,17 @@
 
     internal class CidFontFactory
     {
-        private readonly FontDescriptorFactory descriptorFactory;
         private readonly IFilterProvider filterProvider;
         private readonly IPdfTokenScanner pdfScanner;
 
-        public CidFontFactory(IPdfTokenScanner pdfScanner, FontDescriptorFactory descriptorFactory,
-            IFilterProvider filterProvider)
+        public CidFontFactory(IPdfTokenScanner pdfScanner, IFilterProvider filterProvider)
         {
             this.pdfScanner = pdfScanner;
-            this.descriptorFactory = descriptorFactory;
             this.filterProvider = filterProvider;
         }
 
-        public ICidFont Generate(DictionaryToken dictionary, bool isLenientParsing)
-        {
+        public ICidFont Generate(DictionaryToken dictionary)
+        { 
             var type = dictionary.GetNameOrDefault(NameToken.Type);
             if (!NameToken.Font.Equals(type))
             {
@@ -50,7 +47,7 @@
             FontDescriptor descriptor = null;
             if (TryGetFontDescriptor(dictionary, out var descriptorDictionary))
             {
-                descriptor = descriptorFactory.Generate(descriptorDictionary, pdfScanner, isLenientParsing);
+                descriptor = FontDescriptorFactory.Generate(descriptorDictionary, pdfScanner);
             }
 
             var fontProgram = ReadDescriptorFile(descriptor);
@@ -67,7 +64,7 @@
 
             if (NameToken.CidFontType2.Equals(subType))
             {
-                var cidToGid = GetCharacterIdentifierToGlyphIndexMap(dictionary, isLenientParsing);
+                var cidToGid = GetCharacterIdentifierToGlyphIndexMap(dictionary);
 
                 return new Type2CidFont(type, subType, baseFont, systemInfo, descriptor, fontProgram, verticalWritingMetrics, widths, defaultWidth, cidToGid);
             }
@@ -287,20 +284,15 @@
             return new CharacterIdentifierSystemInfo(registry, ordering, supplement);
         }
 
-        private CharacterIdentifierToGlyphIndexMap GetCharacterIdentifierToGlyphIndexMap(DictionaryToken dictionary, bool isLenientParsing)
+        private CharacterIdentifierToGlyphIndexMap GetCharacterIdentifierToGlyphIndexMap(DictionaryToken dictionary)
         {
             if (!dictionary.TryGet(NameToken.CidToGidMap, out var entry))
             {
                 return new CharacterIdentifierToGlyphIndexMap();
             }
 
-            if (entry is NameToken name)
+            if (entry is NameToken)
             {
-                if (!name.Equals(NameToken.Identity) && !isLenientParsing)
-                {
-                    throw new InvalidOperationException($"The CIDToGIDMap in a Type 0 font should have the value /Identity, instead got: {name}.");
-                }
-
                 return new CharacterIdentifierToGlyphIndexMap();
             }
 

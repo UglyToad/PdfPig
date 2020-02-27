@@ -16,7 +16,7 @@
 
             var builder = new CharacterMapBuilder();
 
-            parser.Parse(new NumericToken(1), input, builder, false);
+            parser.Parse(new NumericToken(1), input, builder);
 
             Assert.Equal(2, builder.BaseFontCharacterMap.Count);
 
@@ -31,7 +31,7 @@
 
             var builder = new CharacterMapBuilder();
 
-            parser.Parse(new NumericToken(1), input, builder, false);
+            parser.Parse(new NumericToken(1), input, builder);
 
             Assert.Equal(7, builder.BaseFontCharacterMap.Count);
 
@@ -47,7 +47,7 @@
 
             var builder = new CharacterMapBuilder();
 
-            parser.Parse(new NumericToken(2), input, builder, false);
+            parser.Parse(new NumericToken(2), input, builder);
 
             Assert.Equal(6, builder.BaseFontCharacterMap.Count);
 

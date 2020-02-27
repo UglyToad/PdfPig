@@ -18,7 +18,7 @@
         private static readonly CodespaceRangeParser CodespaceRangeParser = new CodespaceRangeParser();
         private static readonly CidCharacterParser CidCharacterParser = new CidCharacterParser();
 
-        public CMap Parse(IInputBytes inputBytes, bool isLenientParsing)
+        public CMap Parse(IInputBytes inputBytes)
         {
             var scanner = new CoreTokenScanner(inputBytes);
 
@@ -51,7 +51,7 @@
                             {
                                 if (previousToken is NumericToken numeric)
                                 {
-                                    CodespaceRangeParser.Parse(numeric, scanner, builder, isLenientParsing);
+                                    CodespaceRangeParser.Parse(numeric, scanner, builder);
                                 }
                                 else
                                 {
@@ -63,7 +63,7 @@
                             {
                                 if (previousToken is NumericToken numeric)
                                 {
-                                    BaseFontCharacterParser.Parse(numeric, scanner, builder, isLenientParsing);
+                                    BaseFontCharacterParser.Parse(numeric, scanner, builder);
                                 }
                                 else
                                 {
@@ -75,7 +75,7 @@
                             {
                                 if (previousToken is NumericToken numeric)
                                 {
-                                    BaseFontRangeParser.Parse(numeric, scanner, builder, isLenientParsing);
+                                    BaseFontRangeParser.Parse(numeric, scanner, builder);
                                 }
                                 else
                                 {
@@ -87,7 +87,7 @@
                             {
                                 if (previousToken is NumericToken numeric)
                                 {
-                                    CidCharacterParser.Parse(numeric, scanner, builder, isLenientParsing);
+                                    CidCharacterParser.Parse(numeric, scanner, builder);
                                 }
                                 else
                                 {
@@ -99,7 +99,7 @@
                             {
                                 if (previousToken is NumericToken numeric)
                                 {
-                                    CidRangeParser.Parse(numeric, scanner, builder, isLenientParsing);
+                                    CidRangeParser.Parse(numeric, scanner, builder);
                                 }
                                 else
                                 {
@@ -111,7 +111,7 @@
                 }
                 else if (token is NameToken name)
                 {
-                    CidFontNameParser.Parse(name, scanner, builder, isLenientParsing);
+                    CidFontNameParser.Parse(name, scanner, builder);
                 }
 
                 previousToken = token;
@@ -141,7 +141,7 @@
                 bytes = memoryStream.ToArray();
             }
 
-            return Parse(new ByteArrayInputBytes(bytes), true);
+            return Parse(new ByteArrayInputBytes(bytes));
         }
     }
 }

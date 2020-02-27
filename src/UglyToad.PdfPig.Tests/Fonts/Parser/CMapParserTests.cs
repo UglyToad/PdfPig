@@ -48,7 +48,7 @@ end";
         {
             var input = StringBytesTestConverter.Convert(GoogleDocToUnicodeCmap, false);
 
-            var cmap = cMapParser.Parse(input.Bytes, false);
+            var cmap = cMapParser.Parse(input.Bytes);
 
             Assert.Equal("Adobe", cmap.Info.Registry);
             Assert.Equal("UCS", cmap.Info.Ordering);
@@ -63,7 +63,7 @@ end";
         {
             var input = StringBytesTestConverter.Convert(GoogleDocToUnicodeCmap, false);
 
-            var cmap = cMapParser.Parse(input.Bytes, false);
+            var cmap = cMapParser.Parse(input.Bytes);
 
             Assert.Equal(1, cmap.CodespaceRanges.Count);
 
@@ -77,7 +77,7 @@ end";
         {
             var input = StringBytesTestConverter.Convert(GoogleDocToUnicodeCmap, false);
 
-            var cmap = cMapParser.Parse(input.Bytes, false);
+            var cmap = cMapParser.Parse(input.Bytes);
 
             Assert.True(cmap.BaseFontCharacterMap.Count >= 6);
 
@@ -97,7 +97,7 @@ end";
             
             var input = new ByteArrayInputBytes(ReadResourceBytes(resourceName));
 
-            var cmap = cMapParser.Parse(input, false);
+            var cmap = cMapParser.Parse(input);
 
             Assert.NotNull(cmap);
         }
@@ -107,7 +107,7 @@ end";
         {
             var input = new ByteArrayInputBytes(ReadResourceBytes("UglyToad.PdfPig.Resources.CMap.Identity-H"));
 
-            var cmap = cMapParser.Parse(input, false);
+            var cmap = cMapParser.Parse(input);
 
             Assert.Equal(1, cmap.CodespaceRanges.Count);
 

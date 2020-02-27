@@ -8,15 +8,12 @@
     using Filters;
     using Fonts;
     using Fonts.AdobeFontMetrics;
-    using Fonts.CompactFontFormat;
     using Fonts.Encodings;
     using Fonts.Standard14Fonts;
     using Fonts.SystemFonts;
     using Fonts.TrueType;
     using Fonts.TrueType.Parser;
-    using Fonts.Type1;
     using Logging;
-    using Parts;
     using PdfPig.Parser.Parts;
     using Simple;
     using Tokenization.Scanner;
@@ -28,20 +25,17 @@
         private readonly ILog log;
         private readonly IPdfTokenScanner pdfScanner;
         private readonly IFilterProvider filterProvider;
-        private readonly FontDescriptorFactory fontDescriptorFactory;
         private readonly IEncodingReader encodingReader;
         private readonly ISystemFontFinder systemFontFinder;
         private readonly IFontHandler type1FontHandler;
 
         public TrueTypeFontHandler(ILog log, IPdfTokenScanner pdfScanner, IFilterProvider filterProvider,
-            FontDescriptorFactory fontDescriptorFactory,
             IEncodingReader encodingReader,
             ISystemFontFinder systemFontFinder,
             IFontHandler type1FontHandler)
         {
             this.log = log;
             this.filterProvider = filterProvider;
-            this.fontDescriptorFactory = fontDescriptorFactory;
             this.encodingReader = encodingReader;
             this.systemFontFinder = systemFontFinder;
             this.type1FontHandler = type1FontHandler;
@@ -96,9 +90,9 @@
 
             var firstCharacter = firstCharacterToken.Int;
 
-            var widths = FontDictionaryAccessHelper.GetWidths(pdfScanner, dictionary, isLenientParsing);
+            var widths = FontDictionaryAccessHelper.GetWidths(pdfScanner, dictionary);
 
-            var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfScanner, fontDescriptorFactory, dictionary, isLenientParsing);
+            var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfScanner, dictionary);
 
             var font = ParseTrueTypeFont(descriptor, out var actualHandler);
 
@@ -118,7 +112,7 @@
 
                 if (decodedUnicodeCMap != null)
                 {
-                    toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap), isLenientParsing);
+                    toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap));
                 }
             }
 

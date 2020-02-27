@@ -12,6 +12,6 @@
         /// <summary>
         /// Parse the definition for this part of the CID font and write the results to the <see cref="CharacterMapBuilder"/>.
         /// </summary>
-        void Parse(TToken previous, ITokenScanner tokenScanner, CharacterMapBuilder builder, bool isLenientParsing);
+        void Parse(TToken previous, ITokenScanner tokenScanner, CharacterMapBuilder builder);
     }
 }

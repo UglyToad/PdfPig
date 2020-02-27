@@ -8,7 +8,7 @@
 
     internal class CodespaceRangeParser : ICidFontPartParser<NumericToken>
     {
-        public void Parse(NumericToken numeric, ITokenScanner tokenScanner, CharacterMapBuilder builder, bool isLenientParsing)
+        public void Parse(NumericToken numeric, ITokenScanner tokenScanner, CharacterMapBuilder builder)
         {
             /*
              * For example:

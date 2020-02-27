@@ -13,7 +13,7 @@
     /// </summary>
     internal class BaseFontRangeParser : ICidFontPartParser<NumericToken>
     {
-        public void Parse(NumericToken numberOfOperations, ITokenScanner scanner, CharacterMapBuilder builder, bool isLenientParsing)
+        public void Parse(NumericToken numberOfOperations, ITokenScanner scanner, CharacterMapBuilder builder)
         {
             for (var i = 0; i < numberOfOperations.Int; i++)
             {
