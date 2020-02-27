@@ -5,6 +5,7 @@
     using System.Linq;
     using Content;
     using Core;
+    using CrossReference;
     using Exceptions;
     using Fields;
     using Filters;
@@ -30,11 +31,13 @@
 
         private readonly IPdfTokenScanner tokenScanner;
         private readonly IFilterProvider filterProvider;
+        private readonly CrossReferenceTable crossReferenceTable;
 
-        public AcroFormFactory(IPdfTokenScanner tokenScanner, IFilterProvider filterProvider)
+        public AcroFormFactory(IPdfTokenScanner tokenScanner, IFilterProvider filterProvider, CrossReferenceTable crossReferenceTable)
         {
             this.tokenScanner = tokenScanner ?? throw new ArgumentNullException(nameof(tokenScanner));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
+            this.crossReferenceTable = crossReferenceTable ?? throw new ArgumentNullException(nameof(crossReferenceTable));
         }
 
         /// <summary>
@@ -44,9 +47,39 @@
         [CanBeNull]
         public AcroForm GetAcroForm(Catalog catalog)
         {
-            if (!catalog.CatalogDictionary.TryGet(NameToken.AcroForm, out var acroRawToken) || !DirectObjectFinder.TryGet(acroRawToken, tokenScanner, out DictionaryToken acroDictionary))
+            if (!catalog.CatalogDictionary.TryGet(NameToken.AcroForm, out var acroRawToken) )
             {
                 return null;
+            }
+
+            if (!DirectObjectFinder.TryGet(acroRawToken, tokenScanner, out DictionaryToken acroDictionary))
+            {
+                var fieldsRefs = new List<IndirectReferenceToken>();
+
+                // Invalid reference, try constructing the form from a Brute Force scan.
+                foreach (var reference in crossReferenceTable.ObjectOffsets.Keys)
+                {
+                    var referenceToken = new IndirectReferenceToken(reference);
+                    if (!DirectObjectFinder.TryGet(referenceToken, tokenScanner, out DictionaryToken dict))
+                    {
+                        continue;
+                    }
+
+                    if (dict.TryGet(NameToken.Kids, tokenScanner, out ArrayToken _) && dict.TryGet(NameToken.T, tokenScanner, out StringToken _))
+                    {
+                        fieldsRefs.Add(referenceToken);
+                    }
+                }
+
+                if (fieldsRefs.Count == 0)
+                {
+                    return null;
+                }
+
+                acroDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
+                {
+                    { NameToken.Fields, new ArrayToken(fieldsRefs) }
+                });
             }
             
             var signatureFlags = (SignatureFlags)0;

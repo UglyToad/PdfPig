@@ -20,17 +20,24 @@
                 return false;
             }
 
-            var temp = scanner.Get(reference.Data);
-
-            if (temp.Data is T tTemp)
+            try
             {
-                tokenResult = tTemp;
-                return true;
+                var temp = scanner.Get(reference.Data);
+
+                if (temp.Data is T tTemp)
+                {
+                    tokenResult = tTemp;
+                    return true;
+                }
+
+                if (temp.Data is IndirectReferenceToken nestedReferenceToken)
+                {
+                    return TryGet(nestedReferenceToken, scanner, out tokenResult);
+                }
             }
-
-            if (temp.Data is IndirectReferenceToken nestedReferenceToken)
+            catch
             {
-                return TryGet(nestedReferenceToken, scanner, out tokenResult);
+                return false;
             }
 
             return false;

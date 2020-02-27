@@ -148,7 +148,7 @@
 
             var caching = new ParsingCachingProviders(bruteForceSearcher, resourceContainer);
 
-            var acroFormFactory = new AcroFormFactory(pdfScanner, filterProvider);
+            var acroFormFactory = new AcroFormFactory(pdfScanner, filterProvider, crossReferenceTable);
             var bookmarksProvider = new BookmarksProvider(log, pdfScanner, isLenientParsing);
             
             return new PdfDocument(log, inputBytes, version, crossReferenceTable, isLenientParsing, caching, pageFactory, catalog, information,
