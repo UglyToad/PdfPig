@@ -298,17 +298,36 @@ endobj
 9 0 obj
 16
 endobj";
-            var inputBytes = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(s));
 
-            var scanner = new PdfTokenScanner(inputBytes, new TestObjectLocationProvider(), new TestFilterProvider(), NoOpEncryptionHandler.Instance);
+            var scanner = GetScanner(s);
 
             var token = ReadToEnd(scanner)[1];
 
             Assert.Equal(7, token.Number.ObjectNumber);
-
         }
 
-        private PdfTokenScanner GetScanner(string s, TestObjectLocationProvider locationProvider = null)
+        [Fact]
+        public void ReadsStringsWithMissingEndBracket()
+        {
+            const string input = @"5 0 obj<</Kids [4 0 R 12 0 R 17 0 R 20 0 R 25 0 R 28 0 R ]/Count 6/Type /Pages/MediaBox [ 0 0 612 792 ]>>endobj1 0 obj<</Creator (Corel WordPerfect - [D:\Wpdocs\WEBSITE\PROC&POL.WP6 (unmodified)/CreationDate (D:19980224130723)/Title (Proc&Pol.pdf)/Author (J. L. Swezey)/Producer (Acrobat PDFWriter 3.03 for Windows NT)/Keywords (Budapest Treaty; Patent deposits; IDA)/Subject (Patent Collection Procedures and Policies)>>endobj3 0 obj<</Pages 5 0 R/Type /Catalog>>endobj";
+
+            var scanner = GetScanner(input);
+
+            var tokens = ReadToEnd(scanner);
+
+            Assert.Equal(3, tokens.Count);
+
+            var first = tokens[0];
+            Assert.Equal(5, first.Number.ObjectNumber);
+
+            var second = tokens[1];
+            Assert.Equal(1, second.Number.ObjectNumber);
+
+            var third = tokens[2];
+            Assert.Equal(3, third.Number.ObjectNumber);
+        }
+
+        private static PdfTokenScanner GetScanner(string s, TestObjectLocationProvider locationProvider = null)
         {
             var input = StringBytesTestConverter.Convert(s, false);
 

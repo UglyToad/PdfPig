@@ -23,14 +23,14 @@
                 return false;
             }
 
-            int numberOfBrackets = 1;
-            bool isEscapeActive = false;
-            bool isLineBreaking = false;
+            var numberOfBrackets = 1;
+            var isEscapeActive = false;
+            var isLineBreaking = false;
 
-            bool octalModeActive = false;
+            var octalModeActive = false;
 
             short[] octal = { 0, 0, 0 };
-            int octalsRead = 0;
+            var octalsRead = 0;
 
             while (inputBytes.MoveNext())
             {
@@ -85,13 +85,12 @@
                         }
 
                         // TODO: Check for other ends of string where the string is improperly formatted. See commented method
-                        // numberOfBrackets = CheckForEndOfString(inputBytes, numberOfBrackets);
-
+                        numberOfBrackets = CheckForEndOfString(numberOfBrackets, inputBytes);
 
                         break;
                     case '(':
                         isLineBreaking = false;
-                        
+
                         if (!isEscapeActive)
                         {
                             numberOfBrackets++;
@@ -185,7 +184,7 @@
 
         private static void LeftShiftOctal(char nextOctalChar, int octalsRead, short[] octals)
         {
-            for (int i = octalsRead; i > 0; i--)
+            for (var i = octalsRead; i > 0; i--)
             {
                 octals[i] = octals[i - 1];
             }
@@ -239,6 +238,41 @@
                     }
                     break;
             }
+        }
+
+        private static int CheckForEndOfString(int numberOfBrackets, IInputBytes bytes)
+        {
+            const byte lineFeed = 10;
+            const byte carriageReturn = 13;
+
+            var braces = numberOfBrackets;
+            var nextThreeBytes = new byte[3];
+
+            var startAt = bytes.CurrentOffset;
+
+            var amountRead = bytes.Read(nextThreeBytes);
+
+            // Check the next 3 bytes if available
+            // The following cases are valid indicators for the end of the string
+            // 1. Next line contains another COSObject: CR + LF + '/'
+            // 2. COSDictionary ends in the next line: CR + LF + '>'
+            // 3. Next line contains another COSObject: CR + '/'
+            // 4. COSDictionary ends in the next line: CR + '>'
+            if (amountRead == 3 && nextThreeBytes[0] == carriageReturn)
+            {
+                if ((nextThreeBytes[1] == lineFeed && (nextThreeBytes[2] == '/') || nextThreeBytes[2] == '>')
+                    || nextThreeBytes[1] == '/' || nextThreeBytes[1] == '>')
+                {
+                    braces = 0;
+                }
+            }
+
+            if (amountRead > 0)
+            {
+                bytes.Seek(startAt);
+            }
+
+            return braces;
         }
     }
 }
