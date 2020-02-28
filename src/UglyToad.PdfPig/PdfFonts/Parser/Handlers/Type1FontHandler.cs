@@ -29,7 +29,7 @@
             this.encodingReader = encodingReader;
         }
 
-        public IFont Generate(DictionaryToken dictionary, bool isLenientParsing)
+        public IFont Generate(DictionaryToken dictionary)
         {
             var usingStandard14Only = !dictionary.ContainsKey(NameToken.FirstChar) || !dictionary.ContainsKey(NameToken.Widths);
 
@@ -46,7 +46,7 @@
 
                 if (metrics != null)
                 {
-                    var overrideEncoding = encodingReader.Read(dictionary, isLenientParsing);
+                    var overrideEncoding = encodingReader.Read(dictionary);
 
                     return new Type1Standard14Font(metrics, overrideEncoding);
                 }
@@ -76,7 +76,7 @@
                 {
                     var metrics = Standard14.GetAdobeFontMetrics(baseFontName.Data);
 
-                    var overrideEncoding = encodingReader.Read(dictionary, isLenientParsing);
+                    var overrideEncoding = encodingReader.Read(dictionary);
 
                     return new Type1Standard14Font(metrics, overrideEncoding);
                 }
@@ -84,9 +84,9 @@
 
             var descriptor = FontDictionaryAccessHelper.GetFontDescriptor(pdfScanner, dictionary);
 
-            var font = ParseFontProgram(descriptor, isLenientParsing);
+            var font = ParseFontProgram(descriptor);
 
-            var name = FontDictionaryAccessHelper.GetName(pdfScanner, dictionary, descriptor, isLenientParsing);
+            var name = FontDictionaryAccessHelper.GetName(pdfScanner, dictionary, descriptor);
 
             CMap toUnicodeCMap = null;
             if (dictionary.TryGet(NameToken.ToUnicode, out var toUnicodeObj))
@@ -111,7 +111,7 @@
                 return default(Encoding);
             });
 
-            Encoding encoding = encodingReader.Read(dictionary, isLenientParsing, descriptor, fromFont);
+            Encoding encoding = encodingReader.Read(dictionary, descriptor, fromFont);
 
             if (encoding == null)
             {
@@ -121,7 +121,7 @@
             return new Type1FontSimple(name, firstCharacter, lastCharacter, widths, descriptor, encoding, toUnicodeCMap, font);
         }
 
-        private Union<Type1Font, CompactFontFormatFontCollection> ParseFontProgram(FontDescriptor descriptor, bool isLenientParsing)
+        private Union<Type1Font, CompactFontFormatFontCollection> ParseFontProgram(FontDescriptor descriptor)
         {
             if (descriptor?.FontFile == null)
             {
@@ -159,10 +159,7 @@
             }
             catch
             {
-                if (!isLenientParsing)
-                {
-                    throw;
-                }
+                // ignored.
             }
 
             return null;

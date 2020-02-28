@@ -43,9 +43,9 @@
 
             var type = dictionary.GetNameOrDefault(NameToken.Type);
 
-            if (type != null && !type.Equals(NameToken.Page) && !isLenientParsing)
+            if (type != null && !type.Equals(NameToken.Page))
             {
-                throw new InvalidOperationException($"Page {number} had its type specified as {type} rather than 'Page'.");
+                log?.Error($"Page {number} had its type specified as {type} rather than 'Page'.");
             }
 
             var rotation = new PageRotationDegrees(pageTreeMembers.Rotation);
@@ -63,13 +63,13 @@
             {
                 var resource = pageTreeMembers.ParentResources.Dequeue();
 
-                resourceStore.LoadResourceDictionary(resource, isLenientParsing);
+                resourceStore.LoadResourceDictionary(resource);
                 stackDepth++;
             }
 
             if (dictionary.TryGet(NameToken.Resources, pdfScanner, out DictionaryToken resources))
             {
-                resourceStore.LoadResourceDictionary(resources, isLenientParsing);
+                resourceStore.LoadResourceDictionary(resources);
                 stackDepth++;
             }
             

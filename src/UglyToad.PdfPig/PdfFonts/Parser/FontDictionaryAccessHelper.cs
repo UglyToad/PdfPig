@@ -65,7 +65,7 @@
             return descriptor;
         }
         
-        public static NameToken GetName(IPdfTokenScanner pdfScanner, DictionaryToken dictionary, FontDescriptor descriptor, bool isLenientParsing)
+        public static NameToken GetName(IPdfTokenScanner pdfScanner, DictionaryToken dictionary, FontDescriptor descriptor)
         {
             if (dictionary.TryGet(NameToken.BaseFont, out var nameBase))
             {

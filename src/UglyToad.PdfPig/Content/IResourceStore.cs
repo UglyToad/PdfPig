@@ -6,7 +6,7 @@
 
     internal interface IResourceStore
     {
-        void LoadResourceDictionary(DictionaryToken resourceDictionary, bool isLenientParsing);
+        void LoadResourceDictionary(DictionaryToken resourceDictionary);
 
         /// <summary>
         /// Remove any named resources and associated state for the last resource dictionary loaded.
@@ -20,7 +20,7 @@
 
         DictionaryToken GetExtendedGraphicsStateDictionary(NameToken name);
 
-        IFont GetFontDirectly(IndirectReferenceToken fontReferenceToken, bool isLenientParsing);
+        IFont GetFontDirectly(IndirectReferenceToken fontReferenceToken);
 
         bool TryGetNamedColorSpace(NameToken name, out ResourceColorSpace namedColorSpace);
 

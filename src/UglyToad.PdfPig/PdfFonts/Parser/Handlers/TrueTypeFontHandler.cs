@@ -42,7 +42,7 @@
             this.pdfScanner = pdfScanner;
         }
 
-        public IFont Generate(DictionaryToken dictionary, bool isLenientParsing)
+        public IFont Generate(DictionaryToken dictionary)
         {
             if (!dictionary.TryGetOptionalTokenDirect(NameToken.FirstChar, pdfScanner, out NumericToken firstCharacterToken)
                 || !dictionary.TryGet<IToken>(NameToken.FontDescriptor, pdfScanner, out _)
@@ -63,7 +63,7 @@
 
                 var fileSystemFont = systemFontFinder.GetTrueTypeFont(baseFont.Data);
 
-                var thisEncoding = encodingReader.Read(dictionary, isLenientParsing);
+                var thisEncoding = encodingReader.Read(dictionary);
 
                 if (thisEncoding == null)
                 {
@@ -98,10 +98,10 @@
 
             if (font == null && actualHandler != null)
             {
-                return actualHandler.Generate(dictionary, isLenientParsing);
+                return actualHandler.Generate(dictionary);
             }
 
-            var name = FontDictionaryAccessHelper.GetName(pdfScanner, dictionary, descriptor, isLenientParsing);
+            var name = FontDictionaryAccessHelper.GetName(pdfScanner, dictionary, descriptor);
 
             CMap toUnicodeCMap = null;
             if (dictionary.TryGet(NameToken.ToUnicode, out var toUnicodeObj))
@@ -116,7 +116,7 @@
                 }
             }
 
-            Encoding encoding = encodingReader.Read(dictionary, isLenientParsing, descriptor);
+            Encoding encoding = encodingReader.Read(dictionary, descriptor);
             
             if (encoding == null && font?.TableRegister?.CMapTable != null
                                  && font.TableRegister.PostScriptTable?.GlyphNames != null)

@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using Fonts;
     using Logging;
     using Parser.Handlers;
     using Tokens;
@@ -13,7 +12,7 @@
         private readonly ILog log;
         private readonly IReadOnlyDictionary<NameToken, IFontHandler> handlers;
 
-        public FontFactory(ILog log, Type0FontHandler type0FontHandler, TrueTypeFontHandler trueTypeFontHandler, 
+        public FontFactory(ILog log, Type0FontHandler type0FontHandler, TrueTypeFontHandler trueTypeFontHandler,
             Type1FontHandler type1FontHandler, Type3FontHandler type3FontHandler)
         {
             this.log = log;
@@ -27,7 +26,7 @@
             };
         }
 
-        public IFont Get(DictionaryToken dictionary, bool isLenientParsing)
+        public IFont Get(DictionaryToken dictionary)
         {
             var type = dictionary.GetNameOrDefault(NameToken.Type);
 
@@ -35,21 +34,14 @@
             {
                 var message = "The font dictionary did not have type 'Font'. " + dictionary;
 
-                if (isLenientParsing)
-                {
-                    log?.Error(message);
-                }
-                else
-                {
-                    throw new InvalidFontFormatException(message);
-                }
+                log?.Error(message);
             }
 
             var subtype = dictionary.GetNameOrDefault(NameToken.Subtype);
 
             if (handlers.TryGetValue(subtype, out var handler))
             {
-                return handler.Generate(dictionary, isLenientParsing);
+                return handler.Generate(dictionary);
             }
 
             throw new NotImplementedException($"Parsing not implemented for fonts of type: {subtype}, please submit a pull request or an issue.");

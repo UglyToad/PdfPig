@@ -362,7 +362,7 @@
             var hasResources = formStream.StreamDictionary.TryGet<DictionaryToken>(NameToken.Resources, pdfScanner, out var formResources);
             if (hasResources)
             {
-                resourceStore.LoadResourceDictionary(formResources, isLenientParsing);
+                resourceStore.LoadResourceDictionary(formResources);
             }
 
             // 1. Save current state.
@@ -484,7 +484,7 @@
             {
                 currentGraphicsState.FontState.FromExtendedGraphicsState = true;
                 currentGraphicsState.FontState.FontSize = (double)sizeToken.Data;
-                activeExtendedGraphicsStateFont = resourceStore.GetFontDirectly(fontReference, isLenientParsing);
+                activeExtendedGraphicsStateFont = resourceStore.GetFontDirectly(fontReference);
             }
         }
 

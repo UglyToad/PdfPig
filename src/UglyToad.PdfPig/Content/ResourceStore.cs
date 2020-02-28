@@ -33,7 +33,7 @@
             this.fontFactory = fontFactory;
         }
 
-        public void LoadResourceDictionary(DictionaryToken resourceDictionary, bool isLenientParsing)
+        public void LoadResourceDictionary(DictionaryToken resourceDictionary)
         {
             lastLoadedFont = (null, null);
 
@@ -43,7 +43,7 @@
             {
                 var fontDictionary = DirectObjectFinder.Get<DictionaryToken>(fontBase, scanner);
 
-                LoadFontDictionary(fontDictionary, isLenientParsing);
+                LoadFontDictionary(fontDictionary);
             }
 
             if (resourceDictionary.TryGet(NameToken.Xobject, out var xobjectBase))
@@ -127,7 +127,7 @@
             currentResourceState.Pop();
         }
 
-        private void LoadFontDictionary(DictionaryToken fontDictionary, bool isLenientParsing)
+        private void LoadFontDictionary(DictionaryToken fontDictionary)
         {
             lastLoadedFont = (null, null);
 
@@ -151,20 +151,15 @@
                         throw new InvalidOperationException($"Could not retrieve the font with name: {pair.Key} which should have been object {objectKey}");
                     }
 
-                    loadedFonts[reference] = fontFactory.Get(fontObject, isLenientParsing);
+                    loadedFonts[reference] = fontFactory.Get(fontObject);
                 }
                 else if (pair.Value is DictionaryToken fd)
                 {
-                    loadedDirectFonts[NameToken.Create(pair.Key)] = fontFactory.Get(fd, isLenientParsing);
+                    loadedDirectFonts[NameToken.Create(pair.Key)] = fontFactory.Get(fd);
                 }
                 else
                 {
-                    if (isLenientParsing)
-                    {
-                        continue;
-                    }
-
-                    throw new InvalidOperationException($"The font with name {pair.Key} did not link to an object key. Value was: {pair.Value}.");
+                    continue;
                 }
             }
         }
@@ -191,7 +186,7 @@
             return font;
         }
 
-        public IFont GetFontDirectly(IndirectReferenceToken fontReferenceToken, bool isLenientParsing)
+        public IFont GetFontDirectly(IndirectReferenceToken fontReferenceToken)
         {
             lastLoadedFont = (null, null);
 
@@ -200,7 +195,7 @@
                 throw new PdfDocumentFormatException($"The requested font reference token {fontReferenceToken} wasn't a font.");
             }
 
-            var font = fontFactory.Get(fontDictionaryToken, isLenientParsing);
+            var font = fontFactory.Get(fontDictionaryToken);
 
             return font;
         }
