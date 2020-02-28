@@ -13,19 +13,16 @@
     {
         private readonly IPdfTokenScanner tokenScanner;
         private readonly DictionaryToken pageDictionary;
-        private readonly bool isLenientParsing;
 
-        public AnnotationProvider(IPdfTokenScanner tokenScanner, DictionaryToken pageDictionary, bool isLenientParsing)
+        public AnnotationProvider(IPdfTokenScanner tokenScanner, DictionaryToken pageDictionary)
         {
             this.tokenScanner = tokenScanner ?? throw new ArgumentNullException(nameof(tokenScanner));
             this.pageDictionary = pageDictionary ?? throw new ArgumentNullException(nameof(pageDictionary));
-            this.isLenientParsing = isLenientParsing;
         }
 
         public IEnumerable<Annotation> GetAnnotations()
         {
-            if (!pageDictionary.TryGet(NameToken.Annots, out IToken annotationsToken)
-            || !DirectObjectFinder.TryGet(annotationsToken, tokenScanner, out ArrayToken annotationsArray))
+            if (!pageDictionary.TryGet(NameToken.Annots, tokenScanner, out ArrayToken annotationsArray))
             {
                 yield break;
             }
@@ -34,20 +31,7 @@
             {
                 if (!DirectObjectFinder.TryGet(token, tokenScanner, out DictionaryToken annotationDictionary))
                 {
-                    if (isLenientParsing)
-                    {
                         continue;
-                    }
-
-                    throw new PdfDocumentFormatException($"The annotations dictionary contained an annotation which wasn't a dictionary: {token}.");
-                }
-
-                if (!isLenientParsing && annotationDictionary.TryGet(NameToken.Type, out NameToken dictionaryType))
-                {
-                    if (dictionaryType != NameToken.Annot)
-                    {
-                        throw new PdfDocumentFormatException($"The annotations dictionary contained a non-annotation type dictionary: {annotationDictionary}.");
-                    }
                 }
 
                 var type = annotationDictionary.Get<NameToken>(NameToken.Subtype, tokenScanner);

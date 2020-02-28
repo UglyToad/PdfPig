@@ -126,7 +126,7 @@
             }
 
             var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, 
-                new AnnotationProvider(pdfScanner, dictionary, isLenientParsing),
+                new AnnotationProvider(pdfScanner, dictionary),
                 pdfScanner);
 
             for (var i = 0; i < stackDepth; i++)
