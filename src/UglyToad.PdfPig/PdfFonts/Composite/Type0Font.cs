@@ -94,7 +94,7 @@
 
             var width = CidFont.GetWidthFromFont(characterIdentifier);
 
-            var advanceWidth = matrix.Transform(new PdfPoint(width, 0)).X;
+            var advanceWidth = matrix.TransformX(width);
 
             return new CharacterBoundingBox(boundingBox, advanceWidth);
         }

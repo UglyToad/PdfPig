@@ -159,11 +159,11 @@
 
             if (fromFont)
             {
-                width = fontMatrix.Transform(new PdfPoint(width, 0)).X;
+                width = fontMatrix.TransformX(width);
             }
             else
             {
-                width = DefaultTransformation.Transform(new PdfPoint(width, 0)).X;
+                width = DefaultTransformation.TransformX(width);
             }
 
             var result = new CharacterBoundingBox(boundingBox, width);

@@ -67,7 +67,7 @@
 
             characterBoundingBox = fontMatrix.Transform(characterBoundingBox);
 
-            var width = fontMatrix.Transform(new PdfPoint(widths[characterCode - firstChar], 0)).X;
+            var width = fontMatrix.TransformX(widths[characterCode - firstChar]);
 
             return new CharacterBoundingBox(characterBoundingBox, width);
         }
@@ -79,7 +79,7 @@
                 throw new InvalidFontFormatException($"The character code was not contained in the widths array: {characterCode}.");
             }
 
-            return new PdfRectangle(0, 0, widths[characterCode - firstChar], 0); ;
+            return new PdfRectangle(0, 0, widths[characterCode - firstChar], 0);
         }
 
         public TransformationMatrix GetFontMatrix()
