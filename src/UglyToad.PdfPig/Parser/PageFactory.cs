@@ -33,8 +33,7 @@
             this.pdfScanner = pdfScanner;
         }
 
-        public Page Create(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers,
-            bool isLenientParsing)
+        public Page Create(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers)
         {
             if (dictionary == null)
             {

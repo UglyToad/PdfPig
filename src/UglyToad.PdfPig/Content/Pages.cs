@@ -10,17 +10,14 @@
     {
         private readonly Catalog catalog;
         private readonly IPageFactory pageFactory;
-        private readonly bool isLenientParsing;
         private readonly IPdfTokenScanner pdfScanner;
 
         public int Count { get; }
 
-        internal Pages(Catalog catalog, IPageFactory pageFactory, bool isLenientParsing, 
-            IPdfTokenScanner pdfScanner)
+        internal Pages(Catalog catalog, IPageFactory pageFactory, IPdfTokenScanner pdfScanner)
         {
             this.catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             this.pageFactory = pageFactory ?? throw new ArgumentNullException(nameof(pageFactory));
-            this.isLenientParsing = isLenientParsing;
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
 
             Count = catalog.PagesDictionary.GetIntOrDefault(NameToken.Count);
@@ -66,7 +63,7 @@
                 }
             }
             
-            var page = pageFactory.Create(pageNumber, pageNode.NodeDictionary, pageTreeMembers, isLenientParsing);
+            var page = pageFactory.Create(pageNumber, pageNode.NodeDictionary, pageTreeMembers);
             
             return page;
         }

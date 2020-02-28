@@ -17,19 +17,16 @@
         private readonly IPdfTokenScanner pdfScanner;
         private readonly IFilterProvider filterProvider;
         private readonly Catalog catalog;
-        private readonly bool isLenientParsing;
 
         private bool isDisposed;
 
         internal AdvancedPdfDocumentAccess(IPdfTokenScanner pdfScanner,
             IFilterProvider filterProvider,
-            Catalog catalog,
-            bool isLenientParsing)
+            Catalog catalog)
         {
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
-            this.isLenientParsing = isLenientParsing;
         }
 
         /// <summary>
@@ -51,8 +48,7 @@
                 return false;
             }
 
-            var embeddedFileNames = NameTreeParser.FlattenNameTreeToDictionary(embeddedFileNamesDictionary, pdfScanner, isLenientParsing,
-                x => x);
+            var embeddedFileNames = NameTreeParser.FlattenNameTreeToDictionary(embeddedFileNamesDictionary, pdfScanner, x => x);
 
             if (embeddedFileNames.Count == 0)
             {
