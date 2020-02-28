@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Parser.Handlers
 {
-    using System.Linq;
     using Cmap;
     using Core;
     using Filters;
@@ -101,21 +100,25 @@
                 }
             }
 
-            Encoding fromFont = font?.Match(x => x.Encoding != null ? new BuiltInEncoding(x.Encoding) : default(Encoding), x =>
+
+            var fromFont = default(Encoding);
+            if (font != null)
             {
-                if (x.Fonts != null && x.Fonts.Count > 0)
+                if (font.TryGetFirst(out var t1Font))
                 {
-                    return x.Fonts.First().Value.Encoding;
+                    fromFont = t1Font.Encoding != null ? new BuiltInEncoding(t1Font.Encoding) : default(Encoding);
                 }
+                else if (font.TryGetSecond(out var cffFont))
+                {
+                    fromFont = cffFont.FirstFont?.Encoding;
+                }
+            }
 
-                return default(Encoding);
-            });
+            var encoding = encodingReader.Read(dictionary, descriptor, fromFont);
 
-            Encoding encoding = encodingReader.Read(dictionary, descriptor, fromFont);
-
-            if (encoding == null)
+            if (encoding == null && font != null && font.TryGetFirst(out var t1FontReplacment))
             {
-                font?.Match(x => encoding = new BuiltInEncoding(x.Encoding), _ => { });
+                encoding = new BuiltInEncoding(t1FontReplacment.Encoding);
             }
 
             return new Type1FontSimple(name, firstCharacter, lastCharacter, widths, descriptor, encoding, toUnicodeCMap, font);

@@ -48,21 +48,26 @@
             var defaultWidthX = GetDefaultWidthX(characterName);
             var nominalWidthX = GetNominalWidthX(characterName);
 
-            var result = CharStrings.Match(x => throw new NotImplementedException("Type 1 CharStrings in a CFF font are currently unsupported."),
-                x =>
-                {
-                    var glyph = x.Generate(characterName, (double)defaultWidthX, (double)nominalWidthX);
-                    var rectangle = glyph.Path.GetBoundingRectangle();
-                    if (rectangle.HasValue)
-                    {
-                        return rectangle;
-                    }
+            if (CharStrings.TryGetFirst(out var _))
+            {
+                throw new NotImplementedException("Type 1 CharStrings in a CFF font are currently unsupported.");
+            }
 
-                    var defaultBoundingBox = TopDictionary.FontBoundingBox;
-                    return new PdfRectangle(0, 0, glyph.Width.GetValueOrDefault(), defaultBoundingBox.Height);
-                });
+            if (!CharStrings.TryGetSecond(out var type2CharStrings))
+            {
+                return null;
+            }
 
-            return result;
+            var glyph = type2CharStrings.Generate(characterName, (double)defaultWidthX, (double)nominalWidthX);
+            var rectangle = glyph.Path.GetBoundingRectangle();
+            if (rectangle.HasValue)
+            {
+                return rectangle;
+            }
+
+            var defaultBoundingBox = TopDictionary.FontBoundingBox;
+            return new PdfRectangle(0, 0, glyph.Width.GetValueOrDefault(), defaultBoundingBox.Height);
+
         }
 
         /// <summary>
@@ -88,8 +93,8 @@
         public IReadOnlyList<CompactFontFormatPrivateDictionary> PrivateDictionaries { get; }
         public ICompactFontFormatFdSelect FdSelect { get; }
 
-        public CompactFontFormatCidFont(CompactFontFormatTopLevelDictionary topDictionary, CompactFontFormatPrivateDictionary privateDictionary, 
-            ICompactFontFormatCharset charset, 
+        public CompactFontFormatCidFont(CompactFontFormatTopLevelDictionary topDictionary, CompactFontFormatPrivateDictionary privateDictionary,
+            ICompactFontFormatCharset charset,
             Union<Type1CharStrings, Type2CharStrings> charStrings,
             IReadOnlyList<CompactFontFormatTopLevelDictionary> fontDictionaries,
             IReadOnlyList<CompactFontFormatPrivateDictionary> privateDictionaries,

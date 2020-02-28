@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using Core;
 
     /// <summary>
@@ -22,6 +21,11 @@
         public IReadOnlyDictionary<string, CompactFontFormatFont> Fonts { get; }
 
         /// <summary>
+        /// The first font contained in the collection.
+        /// </summary>
+        public CompactFontFormatFont FirstFont { get; }
+
+        /// <summary>
         /// Create a new <see cref="CompactFontFormatFontCollection"/>.
         /// </summary>
         /// <param name="header">The header table for the font.</param>
@@ -30,6 +34,11 @@
         {
             Header = header;
             Fonts = fontSet ?? throw new ArgumentNullException(nameof(fontSet));
+            foreach (var pair in fontSet)
+            {
+                FirstFont = pair.Value;
+                break;
+            }
         }
 
         /// <summary>
@@ -50,7 +59,7 @@
         /// </summary>
         public PdfRectangle? GetCharacterBoundingBox(string characterName)
         {
-            return Fonts.First().Value.GetCharacterBoundingBox(characterName);
+            return FirstFont.GetCharacterBoundingBox(characterName);
         }
 
         /// <summary>
@@ -58,7 +67,7 @@
         /// </summary>
         public string GetCharacterName(int characterCode)
         {
-            var font = Fonts.First().Value;
+            var font = FirstFont;
 
             if (font.Encoding != null)
             {

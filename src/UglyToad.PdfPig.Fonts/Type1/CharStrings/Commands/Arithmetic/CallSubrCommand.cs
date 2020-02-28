@@ -23,8 +23,14 @@
 
             foreach (var command in subroutine.Commands)
             {
-                command.Match(x => context.Stack.Push(x),
-                    x => x.Run(context));
+                if (command.TryGetFirst(out var num))
+                {
+                    context.Stack.Push(num);
+                }
+                else if (command.TryGetSecond(out var lazyCommand))
+                {
+                    lazyCommand.Run(context);
+                }
             }
         }
     }
