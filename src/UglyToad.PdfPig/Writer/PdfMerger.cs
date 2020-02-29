@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Writer
+namespace UglyToad.PdfPig.Writer
 {
     using System;
     using System.Collections.Generic;
@@ -75,52 +75,22 @@
                 var version = FileHeaderParser.Parse(coreScanner, true, Log);
 
                 var bruteForceSearcher = new BruteForceSearcher(inputBytes);
-                var xrefValidator = new XrefOffsetValidator(Log);
-                var objectChecker = new XrefCosOffsetChecker(Log, bruteForceSearcher);
-
-                var crossReferenceParser = new CrossReferenceParser(Log, xrefValidator, objectChecker, new Parser.Parts.CrossReference.CrossReferenceStreamParser(FilterProvider));
-
-                var crossReferenceOffset = FileTrailerParser.GetFirstCrossReferenceOffset(inputBytes, coreScanner, isLenientParsing);
-
-                var objectLocations = bruteForceSearcher.GetObjectLocations();
+                var crossReferenceParser = new CrossReferenceParser(Log, new XrefOffsetValidator(Log), new XrefCosOffsetChecker(Log, bruteForceSearcher), 
+                    new Parser.Parts.CrossReference.CrossReferenceStreamParser(FilterProvider));
 
                 CrossReferenceTable crossReference = null;
 
                 var locationProvider = new ObjectLocationProvider(() => crossReference, bruteForceSearcher);
-                // I'm not using the BruteForceObjectLocationProvider because, the offset that it give are wrong by +2
-                // var locationProvider = new BruteForcedObjectLocationProvider(objectLocations);
 
                 var pdfScanner = new PdfTokenScanner(inputBytes, locationProvider, FilterProvider, NoOpEncryptionHandler.Instance);
 
+                var crossReferenceOffset = FileTrailerParser.GetFirstCrossReferenceOffset(inputBytes, coreScanner, isLenientParsing);
                 crossReference = crossReferenceParser.Parse(inputBytes, isLenientParsing, crossReferenceOffset, version.OffsetInFile, pdfScanner, coreScanner);
 
-                var trailerDictionary = crossReference.Trailer;
-
-                var (trailerRef, catalogDictionaryToken) = ParseCatalog(crossReference, pdfScanner, out var encryptionDictionary);
-
+                var catalogDictionaryToken = ParseCatalog(crossReference, pdfScanner, out var encryptionDictionary);
                 if (encryptionDictionary != null)
                 {
-                    // TODO: Find option of how to pass password for the documents...
                     throw new PdfDocumentEncryptedException("Unable to merge document with password");
-                    // pdfScanner.UpdateEncryptionHandler(new EncryptionHandler(encryptionDictionary, trailerDictionary, new[] { string.Empty }));
-                }
-
-                var objectsLocation = bruteForceSearcher.GetObjectLocations();
-
-                var root = pdfScanner.Get(trailerDictionary.Root);
-
-                var tokens = new List<IToken>();
-
-                pdfScanner.Seek(0);
-                while (pdfScanner.MoveNext())
-                {
-                    tokens.Add(pdfScanner.CurrentToken);
-                }
-
-                if (!(tokens.Count == objectLocations.Count))
-                {
-                    // Do we really need to check this?
-                    throw new PdfDocumentFormatException("Something whent wrong while reading file");
                 }
 
                 var documentCatalog = CatalogFactory.Create(crossReference.Trailer.Root, catalogDictionaryToken, pdfScanner, isLenientParsing);
@@ -132,7 +102,7 @@
         }
 
         // This method is a basically a copy of the method UglyToad.PdfPig.Parser.PdfDocumentFactory.ParseTrailer()
-        private static (IndirectReference, DictionaryToken) ParseCatalog(CrossReferenceTable crossReferenceTable,
+        private static DictionaryToken ParseCatalog(CrossReferenceTable crossReferenceTable,
             IPdfTokenScanner pdfTokenScanner,
             out EncryptionDictionary encryptionDictionary)
         {
@@ -156,7 +126,7 @@
                 rootDictionary = rootDictionary.With(NameToken.Type, NameToken.Catalog);
             }
 
-            return (crossReferenceTable.Trailer.Root, rootDictionary);
+            return rootDictionary;
         }
 
         private class DocumentMerger
@@ -293,7 +263,6 @@
                 {
                     var tokenObject = DirectObjectFinder.Get<IToken>(referenceToken.Data, tokenScanner);
 
-                    // Is this even a allowed?
                     Debug.Assert(!(tokenObject is IndirectReferenceToken));
 
                     var newToken = CopyToken(tokenObject, tokenScanner);
@@ -302,14 +271,12 @@
                 }
                 else if (tokenToCopy is StreamToken streamToken)
                 {
-                    //Note: Unnecessary
                     var properties = CopyToken(streamToken.StreamDictionary, tokenScanner) as DictionaryToken;
                     Debug.Assert(properties != null);
                     return new StreamToken(properties, new List<byte>(streamToken.Data));
                 }
                 else // Non Complex Token - BooleanToken, NumericToken, NameToken, Etc...
                 {
-                    // TODO: Should we do a deep copy of this tokens?
                     return tokenToCopy;
                 }
             }
@@ -370,50 +337,6 @@
                 {
                     stream.WriteNewLine();
                 }
-            }
-        }
-
-        // Currently unused becauase, brute force search give the wrong offset (+2)
-        private class BruteForcedObjectLocationProvider : IObjectLocationProvider
-        {
-            private readonly Dictionary<IndirectReference, long> objectLocations;
-            private readonly Dictionary<IndirectReference, ObjectToken> cache = new Dictionary<IndirectReference, ObjectToken>();
-
-            public BruteForcedObjectLocationProvider(IReadOnlyDictionary<IndirectReference, long> objectLocations)
-            {
-                this.objectLocations = objectLocations.ToDictionary(x => x.Key, x => x.Value);
-            }
-
-            public bool TryGetOffset(IndirectReference reference, out long offset)
-            {
-                var result = objectLocations.TryGetValue(reference, out offset);
-                //offset -= 2;
-                return result;
-            }
-
-            public void UpdateOffset(IndirectReference reference, long offset)
-            {
-                objectLocations[reference] = offset;
-            }
-
-            public bool TryGetCached(IndirectReference reference, out ObjectToken objectToken)
-            {
-                return cache.TryGetValue(reference, out objectToken);
-            }
-
-            public void Cache(ObjectToken objectToken, bool force = false)
-            {
-                if (!TryGetOffset(objectToken.Number, out var offsetExpected) || force)
-                {
-                    cache[objectToken.Number] = objectToken;
-                }
-
-                if (offsetExpected != objectToken.Position)
-                {
-                    return;
-                }
-
-                cache[objectToken.Number] = objectToken;
             }
         }
     }
