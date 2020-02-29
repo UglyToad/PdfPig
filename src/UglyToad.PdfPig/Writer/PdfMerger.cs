@@ -1,10 +1,9 @@
-namespace UglyToad.PdfPig.Writer
+﻿namespace UglyToad.PdfPig.Writer
 {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
-    using System.Linq;
     using Content;
     using Core;
     using CrossReference;
@@ -95,7 +94,7 @@ namespace UglyToad.PdfPig.Writer
 
                 var documentCatalog = CatalogFactory.Create(crossReference.Trailer.Root, catalogDictionaryToken, pdfScanner, isLenientParsing);
 
-                documentBuilder.AppendDocument(documentCatalog, pdfScanner);
+                documentBuilder.AppendDocument(documentCatalog, version.Version, pdfScanner);
             }
 
             return documentBuilder.Build();
@@ -131,6 +130,8 @@ namespace UglyToad.PdfPig.Writer
 
         private class DocumentMerger
         {
+            private const decimal DEFAULT_VERSION = 1.2m;
+
             private MemoryStream Memory = new MemoryStream();
 
             private readonly BuilderContext Context = new BuilderContext();
@@ -139,6 +140,8 @@ namespace UglyToad.PdfPig.Writer
 
             private IndirectReferenceToken RootPagesIndirectReference;
 
+            private decimal CurrentVersion = DEFAULT_VERSION;
+
             public DocumentMerger()
             {
                 var reserved = Context.ReserveNumber();
@@ -146,30 +149,71 @@ namespace UglyToad.PdfPig.Writer
 
                 WriteHeaderToStream();
             }
-
-            private void WriteHeaderToStream()
-            {
-                // Copied from UglyToad.PdfPig.Writer.PdfDocumentBuilder
-                WriteString("%PDF-1.7", Memory);
-
-                // Files with binary data should contain a 2nd comment line followed by 4 bytes with values > 127
-                Memory.WriteText("%");
-                Memory.WriteByte(169);
-                Memory.WriteByte(205);
-                Memory.WriteByte(196);
-                Memory.WriteByte(210);
-                Memory.WriteNewLine();
-            }
  
-            public void AppendDocument(Catalog documentCatalog, IPdfTokenScanner tokenScanner)
+            public void AppendDocument(Catalog documentCatalog, decimal version, IPdfTokenScanner tokenScanner)
             {
                 if (Memory == null)
                 {
-                    throw new ObjectDisposedException("Merger disposed already");
+                    throw new ObjectDisposedException("Merger closed already");
                 }
+
+                CurrentVersion = Math.Max(version, CurrentVersion);
 
                 var pagesReference = CopyPagesTree(documentCatalog.PageTree, RootPagesIndirectReference, tokenScanner);
                 DocumentPages.Add(new IndirectReferenceToken(pagesReference.Number));
+            }
+
+            public byte[] Build()
+            {
+                if (Memory == null)
+                {
+                    throw new ObjectDisposedException("Merger closed already");
+                }
+
+                if (DocumentPages.Count < 1)
+                {
+                    throw new PdfDocumentFormatException("Empty document");
+                }
+
+                var pagesDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
+                {
+                    { NameToken.Type, NameToken.Pages },
+                    { NameToken.Kids, new ArrayToken(DocumentPages) },
+                    { NameToken.Count, new NumericToken(DocumentPages.Count) }
+                });
+
+                var pagesRef = Context.WriteObject(Memory, pagesDictionary, (int)RootPagesIndirectReference.Data.ObjectNumber);
+
+                var catalog = new DictionaryToken(new Dictionary<NameToken, IToken>
+                {
+                    { NameToken.Type, NameToken.Catalog },
+                    { NameToken.Pages, new IndirectReferenceToken(pagesRef.Number) }
+                });
+
+                var catalogRef = Context.WriteObject(Memory, catalog);
+
+                TokenWriter.WriteCrossReferenceTable(Context.ObjectOffsets, catalogRef, Memory, null);
+                
+                if (CurrentVersion != DEFAULT_VERSION)
+                {
+                    Memory.Seek(0, SeekOrigin.Begin);
+                    WriteHeaderToStream();
+                }
+
+                var bytes = Memory.ToArray();
+
+                Close();
+
+                return bytes;
+            }
+
+            public void Close()
+            {
+                if (Memory == null)
+                    return;
+
+                Memory.Dispose();
+                Memory = null;
             }
 
             private ObjectToken CopyPagesTree(PageTreeNode treeNode, IndirectReferenceToken treeParentReference, IPdfTokenScanner tokenScanner)
@@ -182,13 +226,13 @@ namespace UglyToad.PdfPig.Writer
                 var pageReferences = new List<IndirectReferenceToken>();
                 foreach (var pageNode in treeNode.Children)
                 {
-                    IndirectReference newEntry;
+                    ObjectToken newEntry;
                     if (!pageNode.IsPage)
-                        newEntry = CopyPagesTree(pageNode, currentNodeReference, tokenScanner).Number;
-                    else 
-                        newEntry = CopyPageNode(pageNode, currentNodeReference, tokenScanner).Number;
+                        newEntry = CopyPagesTree(pageNode, currentNodeReference, tokenScanner);
+                    else
+                        newEntry = CopyPageNode(pageNode, currentNodeReference, tokenScanner);
 
-                    pageReferences.Add(new IndirectReferenceToken(newEntry));
+                    pageReferences.Add(new IndirectReferenceToken(newEntry.Number));
                 }
 
                 var pagesDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
@@ -281,51 +325,16 @@ namespace UglyToad.PdfPig.Writer
                 }
             }
 
-            public byte[] Build()
+            private void WriteHeaderToStream()
             {
-                if (Memory == null)
-                {
-                    throw new ObjectDisposedException("Merger disposed already");
-                }
+                WriteString($"%PDF-{CurrentVersion:0.0}", Memory);
 
-                if (DocumentPages.Count < 1)
-                {
-                    throw new PdfDocumentFormatException("Empty document");
-                }
-
-                var pagesDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
-                {
-                    { NameToken.Type, NameToken.Pages },
-                    { NameToken.Kids, new ArrayToken(DocumentPages) },
-                    { NameToken.Count, new NumericToken(DocumentPages.Count) }
-                });
-
-                var pagesRef = Context.WriteObject(Memory, pagesDictionary, (int)RootPagesIndirectReference.Data.ObjectNumber);
-
-                var catalog = new DictionaryToken(new Dictionary<NameToken, IToken>
-                {
-                    { NameToken.Type, NameToken.Catalog },
-                    { NameToken.Pages, new IndirectReferenceToken(pagesRef.Number) }
-                });
-
-                var catalogRef = Context.WriteObject(Memory, catalog);
-
-                TokenWriter.WriteCrossReferenceTable(Context.ObjectOffsets, catalogRef, Memory, null);
-                
-                var bytes = Memory.ToArray();
-
-                Close();
-
-                return bytes;
-            }
-
-            public void Close()
-            {
-                if (Memory == null)
-                    return;
-
-                Memory.Dispose();
-                Memory = null;
+                Memory.WriteText("%");
+                Memory.WriteByte(169);
+                Memory.WriteByte(205);
+                Memory.WriteByte(196);
+                Memory.WriteByte(210);
+                Memory.WriteNewLine();
             }
 
             // Note: This method is copied from UglyToad.PdfPig.Writer.PdfDocumentBuilder
