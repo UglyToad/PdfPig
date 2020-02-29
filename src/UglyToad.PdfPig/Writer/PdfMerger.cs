@@ -63,7 +63,7 @@ namespace UglyToad.PdfPig.Writer
                 throw new ArgumentNullException(nameof(files));
             }
 
-            const bool isLenientParsing = true;
+            const bool isLenientParsing = false;
 
             var documentBuilder = new DocumentMerger();
 
@@ -72,7 +72,7 @@ namespace UglyToad.PdfPig.Writer
                 var inputBytes = new ByteArrayInputBytes(file);
                 var coreScanner = new CoreTokenScanner(inputBytes);
 
-                var version = FileHeaderParser.Parse(coreScanner, true, Log);
+                var version = FileHeaderParser.Parse(coreScanner, isLenientParsing, Log);
 
                 var bruteForceSearcher = new BruteForceSearcher(inputBytes);
                 var crossReferenceParser = new CrossReferenceParser(Log, new XrefOffsetValidator(Log), new XrefCosOffsetChecker(Log, bruteForceSearcher), 
