@@ -33,8 +33,7 @@
             this.pdfScanner = pdfScanner;
         }
 
-        public Page Create(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers,
-            bool isLenientParsing)
+        public Page Create(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers)
         {
             if (dictionary == null)
             {
@@ -43,9 +42,9 @@
 
             var type = dictionary.GetNameOrDefault(NameToken.Type);
 
-            if (type != null && !type.Equals(NameToken.Page) && !isLenientParsing)
+            if (type != null && !type.Equals(NameToken.Page))
             {
-                throw new InvalidOperationException($"Page {number} had its type specified as {type} rather than 'Page'.");
+                log?.Error($"Page {number} had its type specified as {type} rather than 'Page'.");
             }
 
             var rotation = new PageRotationDegrees(pageTreeMembers.Rotation);
@@ -63,13 +62,13 @@
             {
                 var resource = pageTreeMembers.ParentResources.Dequeue();
 
-                resourceStore.LoadResourceDictionary(resource, isLenientParsing);
+                resourceStore.LoadResourceDictionary(resource);
                 stackDepth++;
             }
 
             if (dictionary.TryGet(NameToken.Resources, pdfScanner, out DictionaryToken resources))
             {
-                resourceStore.LoadResourceDictionary(resources, isLenientParsing);
+                resourceStore.LoadResourceDictionary(resources);
                 stackDepth++;
             }
             
@@ -109,7 +108,7 @@
                     }
                 }
                 
-                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, isLenientParsing);
+                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation);
             }
             else
             {
@@ -122,11 +121,11 @@
 
                 var bytes = contentStream.Decode(filterProvider);
 
-                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, isLenientParsing);
+                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation);
             }
 
             var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, 
-                new AnnotationProvider(pdfScanner, dictionary, isLenientParsing),
+                new AnnotationProvider(pdfScanner, dictionary),
                 pdfScanner);
 
             for (var i = 0; i < stackDepth; i++)
@@ -138,13 +137,12 @@
         }
 
         private PageContent GetContent(int pageNumber, IReadOnlyList<byte> contentBytes, CropBox cropBox, UserSpaceUnit userSpaceUnit,
-            PageRotationDegrees rotation,
-            bool isLenientParsing)
+            PageRotationDegrees rotation)
         {
             var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentBytes),
                 log);
 
-            var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit, rotation, isLenientParsing, pdfScanner, 
+            var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit, rotation, pdfScanner, 
                 pageContentParser,
                 filterProvider, 
                 log);

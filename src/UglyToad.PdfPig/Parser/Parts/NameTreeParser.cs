@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using Core;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -10,19 +9,17 @@
     {
         public static IReadOnlyDictionary<string, TResult> FlattenNameTreeToDictionary<TResult>(DictionaryToken nameTreeNodeDictionary,
             IPdfTokenScanner pdfScanner,
-            bool isLenientParsing,
             Func<IToken, TResult> valuesFactory) where TResult : class
         {
             var result = new Dictionary<string, TResult>();
 
-            FlattenNameTree(nameTreeNodeDictionary, pdfScanner, isLenientParsing, valuesFactory, result);
+            FlattenNameTree(nameTreeNodeDictionary, pdfScanner, valuesFactory, result);
 
             return result;
         }
 
         public static void FlattenNameTree<TResult>(DictionaryToken nameTreeNodeDictionary,
             IPdfTokenScanner pdfScanner,
-            bool isLenientParsing,
             Func<IToken, TResult> valuesFactory,
             Dictionary<string, TResult> result) where TResult : class
         {
@@ -52,11 +49,7 @@
                 {
                     if (DirectObjectFinder.TryGet(kid, pdfScanner, out DictionaryToken kidDictionary))
                     {
-                        FlattenNameTree(kidDictionary, pdfScanner, isLenientParsing, valuesFactory, result);
-                    }
-                    else if (!isLenientParsing)
-                    {
-                        throw new PdfDocumentFormatException($"Invalid kids entry in PDF name tree: {kid} in {kids}.");
+                        FlattenNameTree(kidDictionary, pdfScanner, valuesFactory, result);
                     }
                 }
             }

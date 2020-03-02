@@ -4,7 +4,6 @@
 
     internal interface IPageFactory
     {
-        Page Create(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers, 
-            bool isLenientParsing);
+        Page Create(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers);
     }
 }

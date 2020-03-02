@@ -27,7 +27,7 @@
             this.scanner = scanner;
         }
 
-        public IFont Generate(DictionaryToken dictionary, bool isLenientParsing)
+        public IFont Generate(DictionaryToken dictionary)
         {
             var baseFont = dictionary.GetNameOrDefault(NameToken.BaseFont);
 

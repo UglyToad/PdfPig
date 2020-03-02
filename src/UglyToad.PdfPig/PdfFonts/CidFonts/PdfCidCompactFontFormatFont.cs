@@ -71,7 +71,7 @@
                 throw new NotSupportedException("Multiple fonts in a CFF");
             }
 #endif
-            return fontCollection.Fonts.First().Value;
+            return fontCollection.FirstFont;
         }
     }
 }

@@ -105,7 +105,7 @@
 
         private class TestFontFactory : IFontFactory
         {
-            public IFont Get(DictionaryToken dictionary, bool isLenientParsing)
+            public IFont Get(DictionaryToken dictionary)
             {
                 return null;
             }

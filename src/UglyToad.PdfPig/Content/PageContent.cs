@@ -54,10 +54,14 @@
         {
             foreach (var image in images)
             {
-                var result = image.Match<IPdfImage>(x => XObjectFactory.ReadImage(x, pdfScanner, filterProvider, resourceStore),
-                    x => x);
-
-                yield return result;
+                if (image.TryGetFirst(out var xObjectContentRecord))
+                {
+                    yield return XObjectFactory.ReadImage(xObjectContentRecord, pdfScanner, filterProvider, resourceStore);
+                }
+                else if (image.TryGetSecond(out var inlineImage))
+                {
+                    yield return inlineImage;
+                }
             }
         }
 

@@ -18,7 +18,7 @@
             this.pdfScanner = pdfScanner;
         }
 
-        public Encoding Read(DictionaryToken fontDictionary, bool isLenientParsing, FontDescriptor descriptor = null,
+        public Encoding Read(DictionaryToken fontDictionary, FontDescriptor descriptor = null,
             Encoding fontEncoding = null)
         {
             if (!fontDictionary.TryGet(NameToken.Encoding, out var baseEncodingObject))

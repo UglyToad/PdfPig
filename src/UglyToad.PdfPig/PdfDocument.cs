@@ -25,9 +25,7 @@
     {
         private bool isDisposed;
         private readonly Lazy<AcroForm> documentForm;
-
-        private readonly bool isLenientParsing;
-
+        
         [NotNull]
         private readonly HeaderVersion version;
         
@@ -86,7 +84,6 @@
             IInputBytes inputBytes,
             HeaderVersion version, 
             CrossReferenceTable crossReferenceTable,
-            bool isLenientParsing,
             ParsingCachingProviders cachingProviders,
             IPageFactory pageFactory,
             Catalog catalog,
@@ -100,16 +97,15 @@
             this.log = log;
             this.inputBytes = inputBytes;
             this.version = version ?? throw new ArgumentNullException(nameof(version));
-            this.isLenientParsing = isLenientParsing;
             this.cachingProviders = cachingProviders ?? throw new ArgumentNullException(nameof(cachingProviders));
             this.encryptionDictionary = encryptionDictionary;
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.bookmarksProvider = bookmarksProvider ?? throw new ArgumentNullException(nameof(bookmarksProvider));
             Information = information ?? throw new ArgumentNullException(nameof(information));
-            pages = new Pages(catalog, pageFactory, isLenientParsing, pdfScanner);
+            pages = new Pages(catalog, pageFactory, pdfScanner);
             Structure = new Structure(catalog, crossReferenceTable, pdfScanner);
-            Advanced = new AdvancedPdfDocumentAccess(pdfScanner, filterProvider, catalog, isLenientParsing);
+            Advanced = new AdvancedPdfDocumentAccess(pdfScanner, filterProvider, catalog);
             documentForm = new Lazy<AcroForm>(() => acroFormFactory.GetAcroForm(catalog));
         }
 

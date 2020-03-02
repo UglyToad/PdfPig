@@ -19,6 +19,16 @@ namespace UglyToad.PdfPig.Core
         /// </summary>
         public abstract TResult Match<TResult>(Func<A, TResult> first, Func<B, TResult> second);
 
+        /// <summary>
+        /// Get the item if it is of the specific type.
+        /// </summary>
+        public abstract bool TryGetFirst(out A a);
+
+        /// <summary>
+        /// Get the item if it is of the specific type.
+        /// </summary>
+        public abstract bool TryGetSecond(out B b);
+
         private Union() { }
 
         /// <summary>
@@ -70,6 +80,20 @@ namespace UglyToad.PdfPig.Core
             }
 
             /// <inheritdoc />
+            public override bool TryGetFirst(out A a)
+            {
+                a = Item;
+                return true;
+            }
+
+            /// <inheritdoc />
+            public override bool TryGetSecond(out B b)
+            {
+                b = default(B);
+                return false;
+            }
+
+            /// <inheritdoc />
             public override string ToString()
             {
                 return Item?.ToString() ?? string.Empty;
@@ -106,6 +130,20 @@ namespace UglyToad.PdfPig.Core
             public override TResult Match<TResult>(Func<A, TResult> first, Func<B, TResult> second)
             {
                 return second(Item);
+            }
+
+            /// <inheritdoc />
+            public override bool TryGetFirst(out A a)
+            {
+                a = default(A);
+                return false;
+            }
+
+            /// <inheritdoc />
+            public override bool TryGetSecond(out B b)
+            {
+                b = Item;
+                return true;
             }
 
             /// <inheritdoc />

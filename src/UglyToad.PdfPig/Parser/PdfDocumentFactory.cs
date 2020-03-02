@@ -94,7 +94,7 @@
             var pdfScanner = new PdfTokenScanner(inputBytes, locationProvider, filterProvider, NoOpEncryptionHandler.Instance);
 
             var crossReferenceStreamParser = new CrossReferenceStreamParser(filterProvider);
-            var crossReferenceParser = new CrossReferenceParser(log, xrefValidator, objectChecker, crossReferenceStreamParser, new CrossReferenceTableParser());
+            var crossReferenceParser = new CrossReferenceParser(log, xrefValidator, objectChecker, crossReferenceStreamParser);
             
             var version = FileHeaderParser.Parse(scanner, isLenientParsing, log);
             
@@ -147,9 +147,9 @@
             var caching = new ParsingCachingProviders(bruteForceSearcher, resourceContainer);
 
             var acroFormFactory = new AcroFormFactory(pdfScanner, filterProvider, crossReferenceTable);
-            var bookmarksProvider = new BookmarksProvider(log, pdfScanner, isLenientParsing);
+            var bookmarksProvider = new BookmarksProvider(log, pdfScanner);
             
-            return new PdfDocument(log, inputBytes, version, crossReferenceTable, isLenientParsing, caching, pageFactory, catalog, information,
+            return new PdfDocument(log, inputBytes, version, crossReferenceTable, caching, pageFactory, catalog, information,
                 encryptionDictionary,
                 pdfScanner,
                 filterProvider,

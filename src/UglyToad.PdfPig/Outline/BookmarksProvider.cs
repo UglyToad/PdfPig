@@ -14,13 +14,11 @@
     {
         private readonly ILog log;
         private readonly IPdfTokenScanner pdfScanner;
-        private readonly bool isLenientParsing;
 
-        public BookmarksProvider(ILog log, IPdfTokenScanner pdfScanner, bool isLenientParsing)
+        public BookmarksProvider(ILog log, IPdfTokenScanner pdfScanner)
         {
             this.log = log;
             this.pdfScanner = pdfScanner;
-            this.isLenientParsing = isLenientParsing;
         }
 
         /// <summary>
@@ -33,10 +31,9 @@
                 return null;
             }
 
-            if (!isLenientParsing && outlinesDictionary.TryGet(NameToken.Type, pdfScanner, out NameToken typeName)
-                && typeName != NameToken.Outlines)
+            if (outlinesDictionary.TryGet(NameToken.Type, pdfScanner, out NameToken typeName) && typeName != NameToken.Outlines)
             {
-                throw new PdfDocumentFormatException($"Outlines (bookmarks) dictionary did not have correct type specified: {typeName}.");
+                log?.Error($"Outlines (bookmarks) dictionary did not have correct type specified: {typeName}.");
             }
 
             if (!outlinesDictionary.TryGet(NameToken.First, pdfScanner, out DictionaryToken next))
@@ -44,7 +41,7 @@
                 return null;
             }
 
-            var namedDestinations = ReadNamedDestinations(catalog, pdfScanner, isLenientParsing, log);
+            var namedDestinations = ReadNamedDestinations(catalog, pdfScanner, log);
 
             var roots = new List<BookmarkNode>();
             var seen = new HashSet<IndirectReference>();
@@ -102,10 +99,6 @@
                 {
                     bookmark = new DocumentBookmarkNode(title, level, destination, children);
                 }
-                else if (!isLenientParsing)
-                {
-                    throw new PdfDocumentFormatException($"Invalid destination name for bookmark node: {destStringToken.Data}.");
-                }
                 else
                 {
                     return;
@@ -121,10 +114,6 @@
                 else if (actionResult.destination != null)
                 {
                     bookmark = new DocumentBookmarkNode(title, level, actionResult.destination, children);
-                }
-                else if (!isLenientParsing)
-                {
-                    throw new PdfDocumentFormatException($"Invalid action for bookmark node: {actionDictionary}.");
                 }
                 else
                 {
@@ -168,7 +157,7 @@
 
         #region Named Destinations
         private static IReadOnlyDictionary<string, ExplicitDestination> ReadNamedDestinations(Catalog catalog, IPdfTokenScanner pdfScanner,
-            bool isLenientParsing, ILog log)
+            ILog log)
         {
             var result = new Dictionary<string, ExplicitDestination>();
 
@@ -198,7 +187,7 @@
                  * The keys in the name tree may be treated as text strings for display purposes.
                  * The destination value associated with a key in the name tree may be either an array or a dictionary. 
                  */
-                NameTreeParser.FlattenNameTree(dests, pdfScanner, isLenientParsing, value =>
+                NameTreeParser.FlattenNameTree(dests, pdfScanner, value =>
                 {
                     if (TryReadExplicitDestination(value, catalog, pdfScanner, log, out var destination))
                     {

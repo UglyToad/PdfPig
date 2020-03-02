@@ -4,6 +4,6 @@
 
     internal interface IFontFactory
     {
-        IFont Get(DictionaryToken dictionary, bool isLenientParsing);
+        IFont Get(DictionaryToken dictionary);
     }
 }
