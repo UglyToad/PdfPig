@@ -23,6 +23,10 @@
                 var page1 = document.GetPage(1);
 
                 Assert.Equal("Write something inInkscape", page1.Text);
+
+                var page2 = document.GetPage(2);
+
+                Assert.Equal("I am a simple pdf.", page2.Text);
             }
         }
     }
