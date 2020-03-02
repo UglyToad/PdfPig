@@ -234,13 +234,25 @@
                     pageReferences.Add(new IndirectReferenceToken(newEntry.Number));
                 }
 
-                var pagesDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
+                var newPagesNode = new Dictionary<NameToken, IToken>
                 {
                     { NameToken.Type, NameToken.Pages },
                     { NameToken.Kids, new ArrayToken(pageReferences) },
                     { NameToken.Count, new NumericToken(pageReferences.Count) },
                     { NameToken.Parent, treeParentReference }
-                });
+                };
+
+                foreach (var pair in treeNode.NodeDictionary.Data)
+                {
+                    if (IgnoreKeyForPagesNode(pair))
+                    {
+                        continue;
+                    }
+
+                    newPagesNode[NameToken.Create(pair.Key)] = CopyToken(pair.Value, tokenScanner);
+                }
+
+                var pagesDictionary = new DictionaryToken(newPagesNode);
 
                 return context.WriteObject(memory, pagesDictionary, currentNodeReserved);
             }
@@ -341,6 +353,14 @@
                 var bytes = OtherEncodings.StringAsLatin1Bytes(text);
                 stream.Write(bytes, 0, bytes.Length);
                 stream.WriteNewLine();
+            }
+
+            private static bool IgnoreKeyForPagesNode(KeyValuePair<string, IToken> token)
+            {
+                return string.Equals(token.Key, NameToken.Type.Data, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(token.Key, NameToken.Kids.Data, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(token.Key, NameToken.Count.Data, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(token.Key, NameToken.Parent.Data, StringComparison.OrdinalIgnoreCase);
             }
         }
     }
