@@ -24,53 +24,52 @@
 
         public KdTree(IReadOnlyList<T> candidates, Func<T, PdfPoint> candidatesPointFunc)
         {
-            var pointsIndex = Enumerable.Range(0, candidates.Count).Zip(candidates, (e, p) => (e, candidatesPointFunc(p), p)).ToList();
-            if (candidates != null && candidates.Count > 0)
+            if (candidates == null || candidates.Count == 0)
             {
-                Root = BuildTree(pointsIndex, 0);
+                throw new ArgumentException("KdTree(): candidates cannot be null or empty.", nameof(candidates));
             }
+
+            Root = BuildTree(
+                Enumerable.Range(0, candidates.Count).Zip(candidates, (e, p) => (e, candidatesPointFunc(p), p)).ToArray(), 
+                candidates.Count, 0);
         }
 
-        private KdTreeNode<T> BuildTree(IReadOnlyList<(int, PdfPoint, T)> P, int depth)
+        private KdTreeNode<T> BuildTree((int, PdfPoint, T)[] P, int length, int depth)
         {
-            var median = P.Count / 2;
-            if (depth % 2 == 0) // depth is even
+            int median = length / 2;
+
+            if (depth % 2 == 0)
             {
-                P = P.OrderBy(p => p.Item2.X).ToArray();
+                Array.Sort(P, (p0, p1) => p0.Item2.X.CompareTo(p1.Item2.X));
             }
             else
             {
-                P = P.OrderBy(p => p.Item2.Y).ToArray();
+                Array.Sort(P, (p0, p1) => p0.Item2.Y.CompareTo(p1.Item2.Y));
             }
 
             // left side
-            var P1 = P.Take(median).ToArray();
             KdTreeNode<T> vLeft = null;
-            if (P1.Length == 1)
+            if (median == 1)
             {
-                var item = P1[0];
-                vLeft = new KdTreeLeaf<T>(item.Item2, item.Item3, depth, item.Item1);
+                vLeft = new KdTreeLeaf<T>(P[0], depth);
             }
-            else if (P1.Length > 1)
+            else if (median > 1)
             {
-                vLeft = BuildTree(P1, depth + 1);
+                vLeft = BuildTree(P.Take(median).ToArray(), median, depth + 1);
             }
 
             // right side
-            var P2 = P.Skip(median + 1).ToArray();
             KdTreeNode<T> vRight = null;
-            if (P2.Length == 1)
+            if (median + 2 == length)
             {
-                var item = P2[0];
-                vRight = new KdTreeLeaf<T>(item.Item2, item.Item3, depth, item.Item1);
+                vRight = new KdTreeLeaf<T>(P[median + 1], depth);
             }
-            else if (P2.Length > 1)
+            else if (median + 2 < length)
             {
-                vRight = BuildTree(P2, depth + 1);
+                vRight = BuildTree(P.Skip(median + 1).ToArray(), length - median - 1, depth + 1);
             }
 
-            var medianItem = P[median];
-            return new KdTreeNode<T>(vLeft, vRight, medianItem.Item2, medianItem.Item3, depth, medianItem.Item1);
+            return new KdTreeNode<T>(vLeft, vRight, P[median], depth);
         }
 
         #region NN
@@ -155,8 +154,8 @@
         {
             public override bool IsLeaf => true;
 
-            public KdTreeLeaf(PdfPoint l, Q element, int depth, int index)
-                : base(null, null, l, element, depth, index)
+            public KdTreeLeaf((int, PdfPoint, Q) point, int depth)
+                : base(null, null, point, depth)
             { }
 
             public override string ToString()
@@ -189,14 +188,14 @@
 
             public int Index { get; }
 
-            public KdTreeNode(KdTreeNode<Q> leftChild, KdTreeNode<Q> rightChild, PdfPoint l, Q element, int depth, int index)
+            public KdTreeNode(KdTreeNode<Q> leftChild, KdTreeNode<Q> rightChild, (int, PdfPoint, Q) point, int depth)
             {
                 LeftChild = leftChild;
                 RightChild = rightChild;
-                Value = l;
-                Element = element;
+                Value = point.Item2;
+                Element = point.Item3;
                 Depth = depth % 2;
-                Index = index;
+                Index = point.Item1;
             }
 
             public IEnumerable<KdTreeLeaf<Q>> GetLeaves()
