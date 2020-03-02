@@ -196,6 +196,7 @@
                 "UglyToad.PdfPig.Util.IWordExtractor",
                 "UglyToad.PdfPig.Util.DefaultWordExtractor",
                 "UglyToad.PdfPig.Writer.PdfDocumentBuilder",
+                "UglyToad.PdfPig.Writer.PdfMerger",
                 "UglyToad.PdfPig.Writer.PdfPageBuilder",
                 "UglyToad.PdfPig.Writer.TokenWriter",
                 "UglyToad.PdfPig.XObjects.XObjectImage"
