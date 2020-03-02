@@ -15,9 +15,9 @@
     using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
-    using UglyToad.PdfPig.Exceptions;
-    using UglyToad.PdfPig.Graphics.Operations;
-    using UglyToad.PdfPig.Writer.Fonts;
+    using Exceptions;
+    using Graphics.Operations;
+    using Fonts;
 
     /// <summary>
     /// Merges PDF documents into each other.
@@ -79,6 +79,7 @@
 
                 CrossReferenceTable crossReference = null;
 
+                // ReSharper disable once AccessToModifiedClosure
                 var locationProvider = new ObjectLocationProvider(() => crossReference, bruteForceSearcher);
 
                 var pdfScanner = new PdfTokenScanner(inputBytes, locationProvider, FilterProvider, NoOpEncryptionHandler.Instance);
@@ -130,47 +131,44 @@
 
         private class DocumentMerger
         {
-            private const decimal DEFAULT_VERSION = 1.2m;
+            private const decimal DefaultVersion = 1.2m;
+            
+            private readonly BuilderContext context = new BuilderContext();
+            private readonly List<IndirectReferenceToken> documentPages = new List<IndirectReferenceToken>();
+            private readonly IndirectReferenceToken rootPagesIndirectReference;
 
-            private MemoryStream Memory = new MemoryStream();
-
-            private readonly BuilderContext Context = new BuilderContext();
-
-            private readonly List<IndirectReferenceToken> DocumentPages = new List<IndirectReferenceToken>();
-
-            private IndirectReferenceToken RootPagesIndirectReference;
-
-            private decimal CurrentVersion = DEFAULT_VERSION;
+            private decimal currentVersion = DefaultVersion;
+            private MemoryStream memory = new MemoryStream();
 
             public DocumentMerger()
             {
-                var reserved = Context.ReserveNumber();
-                RootPagesIndirectReference = new IndirectReferenceToken(new IndirectReference(reserved, 0));
+                var reserved = context.ReserveNumber();
+                rootPagesIndirectReference = new IndirectReferenceToken(new IndirectReference(reserved, 0));
 
                 WriteHeaderToStream();
             }
  
             public void AppendDocument(Catalog documentCatalog, decimal version, IPdfTokenScanner tokenScanner)
             {
-                if (Memory == null)
+                if (memory == null)
                 {
                     throw new ObjectDisposedException("Merger closed already");
                 }
 
-                CurrentVersion = Math.Max(version, CurrentVersion);
+                currentVersion = Math.Max(version, currentVersion);
 
-                var pagesReference = CopyPagesTree(documentCatalog.PageTree, RootPagesIndirectReference, tokenScanner);
-                DocumentPages.Add(new IndirectReferenceToken(pagesReference.Number));
+                var pagesReference = CopyPagesTree(documentCatalog.PageTree, rootPagesIndirectReference, tokenScanner);
+                documentPages.Add(new IndirectReferenceToken(pagesReference.Number));
             }
 
             public byte[] Build()
             {
-                if (Memory == null)
+                if (memory == null)
                 {
                     throw new ObjectDisposedException("Merger closed already");
                 }
 
-                if (DocumentPages.Count < 1)
+                if (documentPages.Count < 1)
                 {
                     throw new PdfDocumentFormatException("Empty document");
                 }
@@ -178,11 +176,11 @@
                 var pagesDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
                 {
                     { NameToken.Type, NameToken.Pages },
-                    { NameToken.Kids, new ArrayToken(DocumentPages) },
-                    { NameToken.Count, new NumericToken(DocumentPages.Count) }
+                    { NameToken.Kids, new ArrayToken(documentPages) },
+                    { NameToken.Count, new NumericToken(documentPages.Count) }
                 });
 
-                var pagesRef = Context.WriteObject(Memory, pagesDictionary, (int)RootPagesIndirectReference.Data.ObjectNumber);
+                var pagesRef = context.WriteObject(memory, pagesDictionary, (int)rootPagesIndirectReference.Data.ObjectNumber);
 
                 var catalog = new DictionaryToken(new Dictionary<NameToken, IToken>
                 {
@@ -190,17 +188,17 @@
                     { NameToken.Pages, new IndirectReferenceToken(pagesRef.Number) }
                 });
 
-                var catalogRef = Context.WriteObject(Memory, catalog);
+                var catalogRef = context.WriteObject(memory, catalog);
 
-                TokenWriter.WriteCrossReferenceTable(Context.ObjectOffsets, catalogRef, Memory, null);
+                TokenWriter.WriteCrossReferenceTable(context.ObjectOffsets, catalogRef, memory, null);
                 
-                if (CurrentVersion != DEFAULT_VERSION)
+                if (currentVersion != DefaultVersion)
                 {
-                    Memory.Seek(0, SeekOrigin.Begin);
+                    memory.Seek(0, SeekOrigin.Begin);
                     WriteHeaderToStream();
                 }
 
-                var bytes = Memory.ToArray();
+                var bytes = memory.ToArray();
 
                 Close();
 
@@ -209,18 +207,15 @@
 
             public void Close()
             {
-                if (Memory == null)
-                    return;
-
-                Memory.Dispose();
-                Memory = null;
+                memory?.Dispose();
+                memory = null;
             }
 
             private ObjectToken CopyPagesTree(PageTreeNode treeNode, IndirectReferenceToken treeParentReference, IPdfTokenScanner tokenScanner)
             {
                 Debug.Assert(!treeNode.IsPage);
 
-                var currentNodeReserved = Context.ReserveNumber();
+                var currentNodeReserved = context.ReserveNumber();
                 var currentNodeReference = new IndirectReferenceToken(new IndirectReference(currentNodeReserved, 0));
 
                 var pageReferences = new List<IndirectReferenceToken>();
@@ -228,10 +223,14 @@
                 {
                     ObjectToken newEntry;
                     if (!pageNode.IsPage)
+                    {
                         newEntry = CopyPagesTree(pageNode, currentNodeReference, tokenScanner);
+                    }
                     else
+                    {
                         newEntry = CopyPageNode(pageNode, currentNodeReference, tokenScanner);
-
+                    }
+                    
                     pageReferences.Add(new IndirectReferenceToken(newEntry.Number));
                 }
 
@@ -243,7 +242,7 @@
                     { NameToken.Parent, treeParentReference }
                 });
 
-                return Context.WriteObject(Memory, pagesDictionary, currentNodeReserved);
+                return context.WriteObject(memory, pagesDictionary, currentNodeReserved);
             }
 
             private ObjectToken CopyPageNode(PageTreeNode pageNode, IndirectReferenceToken parentPagesObject, IPdfTokenScanner tokenScanner)
@@ -269,7 +268,7 @@
                     pageDictionary.Add(NameToken.Create(name), CopyToken(token, tokenScanner));
                 }
 
-                return Context.WriteObject(Memory, new DictionaryToken(pageDictionary));
+                return context.WriteObject(memory, new DictionaryToken(pageDictionary));
             }
 
             /// <summary>
@@ -310,7 +309,7 @@
                     Debug.Assert(!(tokenObject is IndirectReferenceToken));
 
                     var newToken = CopyToken(tokenObject, tokenScanner);
-                    var objToken = Context.WriteObject(Memory, newToken);
+                    var objToken = context.WriteObject(memory, newToken);
                     return new IndirectReferenceToken(objToken.Number);
                 }
                 else if (tokenToCopy is StreamToken streamToken)
@@ -327,25 +326,21 @@
 
             private void WriteHeaderToStream()
             {
-                WriteString($"%PDF-{CurrentVersion:0.0}", Memory);
+                WriteString($"%PDF-{currentVersion:0.0}", memory);
 
-                Memory.WriteText("%");
-                Memory.WriteByte(169);
-                Memory.WriteByte(205);
-                Memory.WriteByte(196);
-                Memory.WriteByte(210);
-                Memory.WriteNewLine();
+                memory.WriteText("%");
+                memory.WriteByte(169);
+                memory.WriteByte(205);
+                memory.WriteByte(196);
+                memory.WriteByte(210);
+                memory.WriteNewLine();
             }
 
-            // Note: This method is copied from UglyToad.PdfPig.Writer.PdfDocumentBuilder
-            private static void WriteString(string text, MemoryStream stream, bool appendBreak = true)
+            private static void WriteString(string text, Stream stream)
             {
                 var bytes = OtherEncodings.StringAsLatin1Bytes(text);
                 stream.Write(bytes, 0, bytes.Length);
-                if (appendBreak)
-                {
-                    stream.WriteNewLine();
-                }
+                stream.WriteNewLine();
             }
         }
     }
