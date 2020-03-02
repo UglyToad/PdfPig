@@ -29,5 +29,31 @@
                 Assert.Equal("I am a simple pdf.", page2.Text);
             }
         }
+
+        [Fact]
+        public void CanMerge2SimpleDocumentsReversed()
+        {
+            var one = IntegrationHelpers.GetDocumentPath("Single Page Simple - from open office.pdf");
+            var two = IntegrationHelpers.GetDocumentPath("Single Page Simple - from inkscape.pdf");
+
+            var result = PdfMerger.Merge(one, two);
+
+            System.IO.File.WriteAllBytes(@"C:\temp\merged.pdf", result);
+
+            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            {
+                Assert.Equal(2, document.NumberOfPages);
+
+                Assert.Equal(1.5m, document.Version);
+
+                var page1 = document.GetPage(1);
+
+                Assert.Equal("I am a simple pdf.", page1.Text);
+
+                var page2 = document.GetPage(2);
+
+                Assert.Equal("Write something inInkscape", page2.Text);
+            }
+        }
     }
 }
