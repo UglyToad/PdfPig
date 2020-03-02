@@ -234,7 +234,7 @@ trailer
 trailer
 <<>>");
 
-            Action action = () => CrossReferenceTableParser.Parse(input, 0, false);
+            var result = CrossReferenceTableParser.Parse(input, 0, false);
 
             var offset = Assert.Single(result.ObjectOffsets);
             Assert.Equal(10, offset.Value);

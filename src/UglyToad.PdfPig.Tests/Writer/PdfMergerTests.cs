@@ -18,7 +18,11 @@
             {
                 Assert.Equal(2, document.NumberOfPages);
 
-                Assert.Equal(1.7m, document.Version);
+                Assert.Equal(1.5m, document.Version);
+
+                var page1 = document.GetPage(1);
+
+                Assert.Equal("Write something inInkscape", page1.Text);
             }
         }
     }
