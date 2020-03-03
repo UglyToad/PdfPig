@@ -193,6 +193,39 @@ endobj
             Assert.Equal(4, mediaBox.Length);
         }
 
+        [Fact]
+        public void CommentsInsideDictionaryFromSap()
+        {
+            const string s = @"<<
+/Author (ABCD )
+/CreationDate (D:20150505083655)
+/Creator (Form 2014 EN)
+/Producer (SAP NetWeaver 700 )
+%SAPinfoStart TOA_DARA
+%FUNCTION=( )
+%MANDANT=( )
+%DEL_DATE=( )
+%SAP_OBJECT=( )
+%AR_OBJECT=( )
+%OBJECT_ID=( )
+%FORM_ID=( )
+%FORMARCHIV=( )
+%RESERVE=( )
+%NOTIZ=( )
+%-( )
+%-( )
+%-( )
+%SAPinfoEnd TOA_DARA
+>>";
+
+            var input = StringBytesTestConverter.Convert(s);
+
+            Assert.True(tokenizer.TryTokenize(input.First, input.Bytes, out var token));
+
+            var dictionary = AssertDictionaryToken(token);
+
+            AssertDictionaryEntry<StringToken, string>(dictionary, NameToken.Producer, "SAP NetWeaver 700 ");
+        }
 
         private static void AssertDictionaryEntry<TValue, TValueData>(DictionaryToken dictionary, NameToken key,
             TValueData value) where TValue : IDataToken<TValueData>

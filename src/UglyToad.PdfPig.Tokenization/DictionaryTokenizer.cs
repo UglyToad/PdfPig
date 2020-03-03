@@ -60,7 +60,7 @@
             return true;
         }
 
-        private static Dictionary<NameToken, IToken> ConvertToDictionary(IReadOnlyList<IToken> tokens)
+        private static Dictionary<NameToken, IToken> ConvertToDictionary(List<IToken> tokens)
         {
             var result = new Dictionary<NameToken, IToken>();
 
