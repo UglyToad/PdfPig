@@ -705,7 +705,7 @@
         private static PdfPoint[] Intersect(PdfPath.BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
         {
             var ts = IntersectT(bezierCurve, p1, p2);
-            if (ts == null || ts.Count() == 0) return EmptyArray<PdfPoint>.Instance;
+            if (ts == null || ts.Length == 0) return EmptyArray<PdfPoint>.Instance;
 
             List<PdfPoint> points = new List<PdfPoint>();
             foreach (var t in ts)

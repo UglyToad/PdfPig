@@ -98,8 +98,8 @@
             Func<Letter, Letter, double> maxDistanceFunction, Func<PdfPoint, PdfPoint, double> distMeasure,
             int maxDegreeOfParallelism)
         {
-            if (pageLetters == null || pageLetters.Count() == 0) return new List<Word>();
-            TextDirection textDirection = pageLetters.ElementAt(0).TextDirection;
+            if (pageLetters == null || pageLetters.Count == 0) return new List<Word>();
+            TextDirection textDirection = pageLetters[0].TextDirection;
 
             if (pageLetters.Any(x => textDirection != x.TextDirection))
             {

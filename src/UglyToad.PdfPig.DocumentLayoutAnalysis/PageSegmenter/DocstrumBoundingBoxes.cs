@@ -307,7 +307,7 @@
                 pivot => true, (pivot, candidate) => true,
                 maxDegreeOfParallelism).ToList();
 
-            for (int a = 0; a < groupedIndexes.Count(); a++)
+            for (int a = 0; a < groupedIndexes.Count; a++)
             {
                 yield return new TextBlock(groupedIndexes[a].Select(i => lines[i]).ToList());
             }

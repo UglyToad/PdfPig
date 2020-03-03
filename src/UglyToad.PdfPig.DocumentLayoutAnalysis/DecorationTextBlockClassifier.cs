@@ -72,7 +72,7 @@
 
             ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
 
-            Parallel.For(0, pages.Count(), parallelOptions, p =>
+            Parallel.For(0, pages.Count, parallelOptions, p =>
             {
                 var words = pages[p].GetWords(wordExtractor);
                 var blocks = pageSegmenter.GetBlocks(words);
