@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using Core;
     using CrossReference;
-    using Exceptions;
     using Logging;
     using Parts.CrossReference;
     using Tokenization.Scanner;
@@ -15,16 +14,13 @@
         private readonly ILog log;
         private readonly XrefOffsetValidator offsetValidator;
         private readonly CrossReferenceStreamParser crossReferenceStreamParser;
-        private readonly XrefCosOffsetChecker xrefCosChecker;
 
         public CrossReferenceParser(ILog log, XrefOffsetValidator offsetValidator,
-            XrefCosOffsetChecker xrefCosChecker,
             CrossReferenceStreamParser crossReferenceStreamParser)
         {
             this.log = log;
             this.offsetValidator = offsetValidator;
             this.crossReferenceStreamParser = crossReferenceStreamParser;
-            this.xrefCosChecker = xrefCosChecker;
         }
         
         public CrossReferenceTable Parse(IInputBytes bytes, bool isLenientParsing, long crossReferenceLocation,
@@ -214,7 +210,10 @@
             var resolved = table.Build(crossReferenceLocation, log);
             
             // check the offsets of all referenced objects
-            xrefCosChecker.CheckCrossReferenceOffsets(bytes, resolved, isLenientParsing);
+            if (!CrossReferenceObjectOffsetValidator.ValidateCrossReferenceOffsets(bytes, resolved, log, out var actualOffsets))
+            {
+                resolved = new CrossReferenceTable(resolved.Type, actualOffsets, resolved.Trailer, resolved.CrossReferenceOffsets);
+            }
             
             return resolved;
         }

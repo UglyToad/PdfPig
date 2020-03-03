@@ -8,44 +8,37 @@
     using Util.JetBrains.Annotations;
 
     /// <summary>
-    /// Store the results of a brute force search for all objects in the document so we only do it once.
+    /// Brute force search for all objects in the document.
     /// </summary>
-    internal class BruteForceSearcher
+    internal static class BruteForceSearcher
     {
         private const int MinimumSearchOffset = 6;
 
-        private readonly IInputBytes bytes;
-
-        private Dictionary<IndirectReference, long> objectLocations;
-
-        public BruteForceSearcher([NotNull] IInputBytes bytes)
-        {
-            this.bytes = bytes ?? throw new ArgumentNullException(nameof(bytes));
-        }
-
+        /// <summary>
+        /// Find the offset of every object contained in the document by searching the entire document contents.
+        /// </summary>
+        /// <param name="bytes">The bytes of the document.</param>
+        /// <returns>The object keys and offsets for the objects in this document.</returns>
         [NotNull]
-        public IReadOnlyDictionary<IndirectReference, long> GetObjectLocations()
+        public static IReadOnlyDictionary<IndirectReference, long> GetObjectLocations(IInputBytes bytes)
         {
-            if (objectLocations != null)
+            if (bytes == null)
             {
-                return objectLocations;
+                throw new ArgumentNullException(nameof(bytes));
             }
 
             var loopProtection = 0;
 
-            var lastEndOfFile = GetLastEndOfFileMarker();
+            var lastEndOfFile = GetLastEndOfFileMarker(bytes);
 
             var results = new Dictionary<IndirectReference, long>();
 
             var originPosition = bytes.CurrentOffset;
 
-            long currentOffset = MinimumSearchOffset;
-            long lastObjectId = long.MinValue;
-            int lastGenerationId = int.MinValue;
-            long lastObjOffset = long.MinValue;
+            var currentOffset = (long)MinimumSearchOffset;
 
-            bool inObject = false;
-            bool endobjFound = false;
+            var currentlyInObject = false;
+
             do
             {
                 if (loopProtection > 1_000_000)
@@ -55,7 +48,7 @@
 
                 loopProtection++;
 
-                if (inObject)
+                if (currentlyInObject)
                 {
                     if (bytes.CurrentByte == 'e')
                     {
@@ -65,8 +58,7 @@
                         {
                             if (ReadHelper.IsString(bytes, "endobj"))
                             {
-                                inObject = false;
-                                endobjFound = true;
+                                currentlyInObject = false;
                                 loopProtection = 0;
 
                                 for (int i = 0; i < "endobj".Length; i++)
@@ -139,31 +131,21 @@
 
                 results[new IndirectReference(obj, generation)] = bytes.CurrentOffset;
 
-                inObject = true;
-                endobjFound = false;
+                currentlyInObject = true;
 
                 currentOffset++;
 
                 bytes.Seek(currentOffset);
                 loopProtection = 0;
             } while (currentOffset < lastEndOfFile && !bytes.IsAtEnd());
-
-            if ((lastEndOfFile < long.MaxValue || endobjFound) && lastObjOffset > 0)
-            {
-                // if the pdf wasn't cut off in the middle or if the last object ends with a "endobj" marker
-                // the last object id has to be added here so that it can't get lost as there isn't any subsequent object id
-                results[new IndirectReference(lastObjectId, lastGenerationId)] = lastObjOffset;
-            }
-
+            
             // reestablish origin position
             bytes.Seek(originPosition);
-
-            objectLocations = results;
-
-            return objectLocations;
+            
+            return results;
         }
 
-        private long GetLastEndOfFileMarker()
+        private static long GetLastEndOfFileMarker(IInputBytes bytes)
         {
             var originalOffset = bytes.CurrentOffset;
 

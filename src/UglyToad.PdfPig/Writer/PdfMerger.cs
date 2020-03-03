@@ -73,14 +73,13 @@
 
                 var version = FileHeaderParser.Parse(coreScanner, isLenientParsing, Log);
 
-                var bruteForceSearcher = new BruteForceSearcher(inputBytes);
-                var crossReferenceParser = new CrossReferenceParser(Log, new XrefOffsetValidator(Log), new XrefCosOffsetChecker(Log, bruteForceSearcher), 
+                var crossReferenceParser = new CrossReferenceParser(Log, new XrefOffsetValidator(Log),
                     new Parser.Parts.CrossReference.CrossReferenceStreamParser(FilterProvider));
 
                 CrossReferenceTable crossReference = null;
 
                 // ReSharper disable once AccessToModifiedClosure
-                var locationProvider = new ObjectLocationProvider(() => crossReference, bruteForceSearcher);
+                var locationProvider = new ObjectLocationProvider(() => crossReference, inputBytes);
 
                 var pdfScanner = new PdfTokenScanner(inputBytes, locationProvider, FilterProvider, NoOpEncryptionHandler.Instance);
 

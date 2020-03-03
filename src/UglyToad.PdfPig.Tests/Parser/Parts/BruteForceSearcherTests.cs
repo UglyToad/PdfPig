@@ -36,10 +36,18 @@ startxref
 216
 %%EOF";
 
+        private static readonly long[] TestDataOffsets = 
+        {
+            TestData.IndexOf("2 17 obj", StringComparison.OrdinalIgnoreCase),
+            TestData.IndexOf("3 0 obj", StringComparison.OrdinalIgnoreCase),
+            TestData.IndexOf("4 0 obj", StringComparison.OrdinalIgnoreCase),
+            TestData.IndexOf("5 0 obj", StringComparison.OrdinalIgnoreCase)
+        };
+
         [Fact]
         public void ReaderNull_Throws()
         {
-            Action action = () => new BruteForceSearcher(null);
+            Action action = () => BruteForceSearcher.GetObjectLocations(null);
 
             Assert.Throws<ArgumentNullException>(action);
         }
@@ -49,34 +57,24 @@ startxref
         public void SearcherFindsCorrectObjects()
         {
             var input = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(TestData));
-
-            var searcher = new BruteForceSearcher(input);
-
-            var locations = searcher.GetObjectLocations();
+            
+            var locations = BruteForceSearcher.GetObjectLocations(input);
 
             Assert.Equal(4, locations.Count);
 
-            Assert.Equal(locations.Values, new long[]
-            {
-                TestData.IndexOf("2 17 obj", StringComparison.OrdinalIgnoreCase),
-                TestData.IndexOf("3 0 obj", StringComparison.OrdinalIgnoreCase),
-                TestData.IndexOf("4 0 obj", StringComparison.OrdinalIgnoreCase),
-                TestData.IndexOf("5 0 obj", StringComparison.OrdinalIgnoreCase)
-            });
+            Assert.Equal(TestDataOffsets, locations.Values);
         }
 
         [Fact]
         public void ReaderOnlyCallsOnce()
         {
             var reader = StringBytesTestConverter.Convert(TestData, false);
-
-            var searcher = new BruteForceSearcher(reader.Bytes);
-
-            var locations = searcher.GetObjectLocations();
+            
+            var locations = BruteForceSearcher.GetObjectLocations(reader.Bytes);
 
             Assert.Equal(4, locations.Count);
             
-            var newLocations = searcher.GetObjectLocations();
+            var newLocations = BruteForceSearcher.GetObjectLocations(reader.Bytes);
 
             Assert.Equal(4, locations.Count);
 
@@ -92,9 +90,8 @@ startxref
             using (var fs = File.OpenRead(IntegrationHelpers.GetDocumentPath("Single Page Simple - from inkscape.pdf")))
             {
                 var bytes = new StreamInputBytes(fs);
-                var searcher = new BruteForceSearcher(bytes);
 
-                var locations = searcher.GetObjectLocations();
+                var locations = BruteForceSearcher.GetObjectLocations(bytes);
 
                 Assert.Equal(13, locations.Count);
 
@@ -118,9 +115,7 @@ startxref
         {
             var bytes = new ByteArrayInputBytes(File.ReadAllBytes(IntegrationHelpers.GetDocumentPath("Single Page Simple - from open office.pdf")));
 
-            var searcher = new BruteForceSearcher(bytes);
-
-            var locations = searcher.GetObjectLocations();
+            var locations = BruteForceSearcher.GetObjectLocations(bytes);
 
             Assert.Equal(13, locations.Count);
 
@@ -140,6 +135,18 @@ startxref
 
             var s = GetStringAt(bytes, locations[new IndirectReference(12, 0)]);
             Assert.StartsWith("12 0 obj", s);
+        }
+
+        [Fact]
+        public void BruteForceSearcherCorrectlyFindsAllObjectsWhenOffset()
+        {
+            var input = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(TestData));
+
+            input.Seek(593);
+
+            var locations = BruteForceSearcher.GetObjectLocations(input);
+
+            Assert.Equal(TestDataOffsets, locations.Values);
         }
 
         private static string GetStringAt(IInputBytes bytes, long location)
