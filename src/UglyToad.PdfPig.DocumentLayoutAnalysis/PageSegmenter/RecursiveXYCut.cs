@@ -119,7 +119,7 @@
 
             var firstWordBound = words[0].BoundingBox.Normalise();
             Projection currentProjection = new Projection(firstWordBound.Left, firstWordBound.Right);
-            int wordsCount = words.Count();
+            int wordsCount = words.Length;
 
             for (int i = 1; i < wordsCount; i++)
             {

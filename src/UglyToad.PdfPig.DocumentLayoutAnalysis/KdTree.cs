@@ -200,23 +200,23 @@
 
             public IEnumerable<KdTreeLeaf<Q>> GetLeaves()
             {
-                var leafs = new List<KdTreeLeaf<Q>>();
-                RecursiveGetLeaves(LeftChild, ref leafs);
-                RecursiveGetLeaves(RightChild, ref leafs);
-                return leafs;
+                var leaves = new List<KdTreeLeaf<Q>>();
+                RecursiveGetLeaves(LeftChild, ref leaves);
+                RecursiveGetLeaves(RightChild, ref leaves);
+                return leaves;
             }
 
-            private void RecursiveGetLeaves(KdTreeNode<Q> leaf, ref List<KdTreeLeaf<Q>> leafs)
+            private void RecursiveGetLeaves(KdTreeNode<Q> leaf, ref List<KdTreeLeaf<Q>> leaves)
             {
                 if (leaf == null) return;
                 if (leaf is KdTreeLeaf<Q> lLeaf)
                 {
-                    leafs.Add(lLeaf);
+                    leaves.Add(lLeaf);
                 }
                 else
                 {
-                    RecursiveGetLeaves(leaf.LeftChild, ref leafs);
-                    RecursiveGetLeaves(leaf.RightChild, ref leafs);
+                    RecursiveGetLeaves(leaf.LeftChild, ref leaves);
+                    RecursiveGetLeaves(leaf.RightChild, ref leaves);
                 }
             }
 
