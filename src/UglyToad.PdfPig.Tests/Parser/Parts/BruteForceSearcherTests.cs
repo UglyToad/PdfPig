@@ -85,6 +85,70 @@ startxref
         }
 
         [Fact]
+        public void ReaderEscapesUnexpectedObject()
+        {
+            const string s = @"%PDF-1.7
+abcd
+
+1 0 obj
+<< /Type /Any >>
+
+endobj
+
+%AZ 0 obj
+11 0 obj
+769
+endobj
+
+%%EOF";
+
+            var bytes = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(s));
+
+            var locations = BruteForceSearcher.GetObjectLocations(bytes);
+
+            Assert.Equal(2, locations.Count);
+
+            var expectedLocations = new long[]
+            {
+                s.IndexOf("1 0 obj", StringComparison.OrdinalIgnoreCase),
+                s.IndexOf("11 0 obj", StringComparison.OrdinalIgnoreCase)
+            };
+
+            Assert.Equal(expectedLocations, locations.Values);
+        }
+
+        [Fact]
+        public void ReaderEscapesUnexpectedGenerationNumber()
+        {
+            const string s = @"%PDF-2.0
+abcdefghijklmnop
+
+1 0 obj
+256
+endobj
+
+16-0 obj
+
+5 0 obj
+<< /IsEmpty false >>
+endobj";
+            
+            var bytes = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(s));
+
+            var locations = BruteForceSearcher.GetObjectLocations(bytes);
+
+            Assert.Equal(2, locations.Count);
+
+            var expectedLocations = new long[]
+            {
+                s.IndexOf("1 0 obj", StringComparison.OrdinalIgnoreCase),
+                s.IndexOf("5 0 obj", StringComparison.OrdinalIgnoreCase)
+            };
+
+            Assert.Equal(expectedLocations, locations.Values);
+        }
+
+        [Fact]
         public void BruteForceSearcherFileOffsetsCorrect()
         {
             using (var fs = File.OpenRead(IntegrationHelpers.GetDocumentPath("Single Page Simple - from inkscape.pdf")))

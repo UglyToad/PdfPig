@@ -33,6 +33,9 @@
 
             var results = new Dictionary<IndirectReference, long>();
 
+            var generationBytes = new StringBuilder();
+            var objectNumberBytes = new StringBuilder();
+
             var originPosition = bytes.CurrentOffset;
 
             var currentOffset = (long)MinimumSearchOffset;
@@ -61,7 +64,7 @@
                                 currentlyInObject = false;
                                 loopProtection = 0;
 
-                                for (int i = 0; i < "endobj".Length; i++)
+                                for (var i = 0; i < "endobj".Length; i++)
                                 {
                                     bytes.MoveNext();
                                     currentOffset++;
@@ -102,7 +105,6 @@
 
                 bytes.Seek(offset);
 
-                var generationBytes = new StringBuilder();
                 while (ReadHelper.IsDigit(bytes.CurrentByte) && offset >= MinimumSearchOffset)
                 {
                     generationBytes.Insert(0, (char)bytes.CurrentByte);
@@ -113,12 +115,12 @@
                 // We should now be at the space between object and generation number.
                 if (!ReadHelper.IsSpace(bytes.CurrentByte))
                 {
+                    currentOffset++;
                     continue;
                 }
 
                 bytes.Seek(--offset);
 
-                var objectNumberBytes = new StringBuilder();
                 while (ReadHelper.IsDigit(bytes.CurrentByte) && offset >= MinimumSearchOffset)
                 {
                     objectNumberBytes.Insert(0, (char)bytes.CurrentByte);
@@ -126,10 +128,21 @@
                     bytes.Seek(offset);
                 }
 
+                if (objectNumberBytes.Length == 0 || generationBytes.Length == 0)
+                {
+                    generationBytes.Clear();
+                    objectNumberBytes.Clear();
+                    currentOffset++;
+                    continue;
+                }
+
                 var obj = long.Parse(objectNumberBytes.ToString(), CultureInfo.InvariantCulture);
                 var generation = int.Parse(generationBytes.ToString(), CultureInfo.InvariantCulture);
 
                 results[new IndirectReference(obj, generation)] = bytes.CurrentOffset;
+
+                generationBytes.Clear();
+                objectNumberBytes.Clear();
 
                 currentlyInObject = true;
 
