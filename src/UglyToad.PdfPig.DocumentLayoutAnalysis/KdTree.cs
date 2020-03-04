@@ -29,14 +29,21 @@
                 throw new ArgumentException("KdTree(): candidates cannot be null or empty.", nameof(candidates));
             }
 
-            Root = BuildTree(
-                Enumerable.Range(0, candidates.Count).Zip(candidates, (e, p) => (e, candidatesPointFunc(p), p)).ToArray(), 
-                candidates.Count, 0);
+            Console.WriteLine("New");
+
+            Root = BuildTree(Enumerable.Range(0, candidates.Count).Zip(candidates, (e, p) => (e, candidatesPointFunc(p), p)).ToArray(), 0);
         }
 
-        private KdTreeNode<T> BuildTree((int, PdfPoint, T)[] P, int length, int depth)
+        private KdTreeNode<T> BuildTree((int, PdfPoint, T)[] P, int depth)
         {
-            int median = length / 2;
+            if (P.Length == 0)
+            {
+                return null;
+            }
+            else if (P.Length == 1)
+            {
+                return new KdTreeLeaf<T>(P[0], depth);
+            }
 
             if (depth % 2 == 0)
             {
@@ -47,27 +54,15 @@
                 Array.Sort(P, (p0, p1) => p0.Item2.Y.CompareTo(p1.Item2.Y));
             }
 
-            // left side
-            KdTreeNode<T> vLeft = null;
-            if (median == 1)
+            if (P.Length == 2)
             {
-                vLeft = new KdTreeLeaf<T>(P[0], depth);
-            }
-            else if (median > 1)
-            {
-                vLeft = BuildTree(P.Take(median).ToArray(), median, depth + 1);
+                return new KdTreeNode<T>(new KdTreeLeaf<T>(P[0], depth), null, P[1], depth);
             }
 
-            // right side
-            KdTreeNode<T> vRight = null;
-            if (median + 2 == length)
-            {
-                vRight = new KdTreeLeaf<T>(P[median + 1], depth);
-            }
-            else if (median + 2 < length)
-            {
-                vRight = BuildTree(P.Skip(median + 1).ToArray(), length - median - 1, depth + 1);
-            }
+            int median = P.Length / 2;
+
+            KdTreeNode<T> vLeft = BuildTree(P.Take(median).ToArray(), depth + 1);
+            KdTreeNode<T> vRight = BuildTree(P.Skip(median + 1).ToArray(), depth + 1);
 
             return new KdTreeNode<T>(vLeft, vRight, P[median], depth);
         }
