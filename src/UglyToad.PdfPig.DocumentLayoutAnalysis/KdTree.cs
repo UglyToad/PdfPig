@@ -29,8 +29,6 @@
                 throw new ArgumentException("KdTree(): candidates cannot be null or empty.", nameof(candidates));
             }
 
-            Console.WriteLine("New");
-
             Root = BuildTree(Enumerable.Range(0, candidates.Count).Zip(candidates, (e, p) => (e, candidatesPointFunc(p), p)).ToArray(), 0);
         }
 
