@@ -54,7 +54,7 @@
 
             if (P.Length == 2)
             {
-                return new KdTreeNode<T>(new KdTreeLeaf<T>(P[0], depth), null, P[1], depth);
+                return new KdTreeNode<T>(new KdTreeLeaf<T>(P[0], depth + 1), null, P[1], depth);
             }
 
             int median = P.Length / 2;
@@ -97,7 +97,7 @@
                 KdTreeNode<T> newNode = null;
                 double? newDist = null;
 
-                var pointValue = node.Depth == 0 ? point.X : point.Y;
+                var pointValue = node.IsAxisCutX ? point.X : point.Y;
 
                 if (pointValue < node.L)
                 {
@@ -162,7 +162,7 @@
             /// <summary>
             /// Split value.
             /// </summary>
-            public double L => Depth == 0 ? Value.X : Value.Y;
+            public double L => IsAxisCutX ? Value.X : Value.Y;
 
             public PdfPoint Value { get; }
 
@@ -173,8 +173,10 @@
             public Q Element { get; }
 
             /// <summary>
-            /// 0 is even (x), 1 is odd (y).
+            /// True if this cuts with X axis, false if cuts with Y axis.
             /// </summary>
+            public bool IsAxisCutX { get; }
+
             public int Depth { get; }
 
             public virtual bool IsLeaf => false;
@@ -187,7 +189,8 @@
                 RightChild = rightChild;
                 Value = point.Item2;
                 Element = point.Item3;
-                Depth = depth % 2;
+                Depth = depth;
+                IsAxisCutX = depth % 2 == 0;
                 Index = point.Item1;
             }
 
