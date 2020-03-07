@@ -2,6 +2,7 @@
 {
     using Integration;
     using PdfPig.Writer;
+    using System.IO;
     using Xunit;
 
     public class PdfMergerTests
@@ -53,6 +54,29 @@
                 var page2 = document.GetPage(2);
 
                 Assert.Equal("Write something inInkscape", page2.Text);
+            }
+        }
+
+        [Fact]
+        public void RootNodePageCount()
+        {
+            var one = IntegrationHelpers.GetDocumentPath("Single Page Simple - from open office.pdf");
+            var two = IntegrationHelpers.GetDocumentPath("Single Page Simple - from inkscape.pdf");
+
+            var result = PdfMerger.Merge(one, two);
+
+            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            {
+                Assert.Equal(2, document.NumberOfPages);
+            }
+
+            var oneBytes = File.ReadAllBytes(one);
+
+            var result2 = PdfMerger.Merge(new[] { result, oneBytes });
+
+            using (var document = PdfDocument.Open(result2, ParsingOptions.LenientParsingOff))
+            {
+                Assert.Equal(3, document.NumberOfPages);
             }
         }
     }

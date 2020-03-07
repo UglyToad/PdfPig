@@ -139,6 +139,8 @@
             private decimal currentVersion = DefaultVersion;
             private MemoryStream memory = new MemoryStream();
 
+            private int pageCount = 0;
+
             public DocumentMerger()
             {
                 var reserved = context.ReserveNumber();
@@ -156,7 +158,8 @@
 
                 currentVersion = Math.Max(version, currentVersion);
 
-                var pagesReference = CopyPagesTree(documentCatalog.PageTree, rootPagesIndirectReference, tokenScanner);
+                var (pagesReference, count) = CopyPagesTree(documentCatalog.PageTree, rootPagesIndirectReference, tokenScanner);
+                pageCount += count;
                 documentPages.Add(new IndirectReferenceToken(pagesReference.Number));
             }
 
@@ -176,7 +179,7 @@
                 {
                     { NameToken.Type, NameToken.Pages },
                     { NameToken.Kids, new ArrayToken(documentPages) },
-                    { NameToken.Count, new NumericToken(documentPages.Count) }
+                    { NameToken.Count, new NumericToken(pageCount) }
                 });
 
                 var pagesRef = context.WriteObject(memory, pagesDictionary, (int)rootPagesIndirectReference.Data.ObjectNumber);
@@ -210,7 +213,7 @@
                 memory = null;
             }
 
-            private ObjectToken CopyPagesTree(PageTreeNode treeNode, IndirectReferenceToken treeParentReference, IPdfTokenScanner tokenScanner)
+            private (ObjectToken, int) CopyPagesTree(PageTreeNode treeNode, IndirectReferenceToken treeParentReference, IPdfTokenScanner tokenScanner)
             {
                 Debug.Assert(!treeNode.IsPage);
 
@@ -218,16 +221,20 @@
                 var currentNodeReference = new IndirectReferenceToken(new IndirectReference(currentNodeReserved, 0));
 
                 var pageReferences = new List<IndirectReferenceToken>();
+                var nodeCount = 0;
                 foreach (var pageNode in treeNode.Children)
                 {
                     ObjectToken newEntry;
                     if (!pageNode.IsPage)
                     {
-                        newEntry = CopyPagesTree(pageNode, currentNodeReference, tokenScanner);
+                        var count = 0;
+                        (newEntry, count) = CopyPagesTree(pageNode, currentNodeReference, tokenScanner);
+                        nodeCount += count;
                     }
                     else
                     {
                         newEntry = CopyPageNode(pageNode, currentNodeReference, tokenScanner);
+                        ++nodeCount;
                     }
                     
                     pageReferences.Add(new IndirectReferenceToken(newEntry.Number));
@@ -237,7 +244,7 @@
                 {
                     { NameToken.Type, NameToken.Pages },
                     { NameToken.Kids, new ArrayToken(pageReferences) },
-                    { NameToken.Count, new NumericToken(pageReferences.Count) },
+                    { NameToken.Count, new NumericToken(nodeCount) },
                     { NameToken.Parent, treeParentReference }
                 };
 
@@ -253,7 +260,7 @@
 
                 var pagesDictionary = new DictionaryToken(newPagesNode);
 
-                return context.WriteObject(memory, pagesDictionary, currentNodeReserved);
+                return (context.WriteObject(memory, pagesDictionary, currentNodeReserved), nodeCount);
             }
 
             private ObjectToken CopyPageNode(PageTreeNode pageNode, IndirectReferenceToken parentPagesObject, IPdfTokenScanner tokenScanner)
