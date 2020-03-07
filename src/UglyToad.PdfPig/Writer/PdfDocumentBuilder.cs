@@ -33,7 +33,8 @@
         public DocumentInformationBuilder DocumentInformation { get; } = new DocumentInformationBuilder();
 
         /// <summary>
-        /// The current page builders in the document and the corresponding 1 indexed page numbers. Use <see cref="AddPage"/> to add a new page.
+        /// The current page builders in the document and the corresponding 1 indexed page numbers. Use <see cref="AddPage(double,double)"/>
+        /// or <see cref="AddPage(PageSize,bool)"/> to add a new page.
         /// </summary>
         public IReadOnlyDictionary<int, PdfPageBuilder> Pages => pages;
 
@@ -132,23 +133,23 @@
 
             return added;
         }
-
+        
         /// <summary>
         /// Add a new page with the specified size, this page will be included in the output when <see cref="Build"/> is called.
         /// </summary>
-        /// <param name="size">The size of the page to add.</param>
-        /// <param name="isPortrait">Whether the page is in portait or landscape orientation.</param>
+        /// <param name="width">The width of the page in points.</param>
+        /// <param name="height">The height of the page in points.</param>
         /// <returns>A builder for editing the new page.</returns>
-        public PdfPageBuilder AddPage(PageSize size, bool isPortrait = true)
+        public PdfPageBuilder AddPage(double width, double height)
         {
-            if (!size.TryGetPdfRectangle(out var rectangle))
+            if (width < 0)
             {
-                throw new ArgumentException($"No rectangle found for Page Size {size}.");
+                throw new ArgumentOutOfRangeException(nameof(width), $"Width cannot be negative, got: {width}.");
             }
 
-            if (!isPortrait)
+            if (height < 0)
             {
-                rectangle = new PdfRectangle(0, 0, rectangle.Height, rectangle.Width);
+                throw new ArgumentOutOfRangeException(nameof(height), $"Height cannot be negative, got: {height}.");
             }
 
             PdfPageBuilder builder = null;
@@ -166,10 +167,37 @@
                 builder = new PdfPageBuilder(pages.Count + 1, this);
             }
 
-            builder.PageSize = rectangle;
+            builder.PageSize = new PdfRectangle(0, 0, width, height);
             pages[builder.PageNumber] = builder;
 
             return builder;
+        }
+
+        /// <summary>
+        /// Add a new page with the specified size, this page will be included in the output when <see cref="Build"/> is called.
+        /// </summary>
+        /// <param name="size">The size of the page to add.</param>
+        /// <param name="isPortrait">Whether the page is in portait or landscape orientation.</param>
+        /// <returns>A builder for editing the new page.</returns>
+        public PdfPageBuilder AddPage(PageSize size, bool isPortrait = true)
+        {
+            if (size == PageSize.Custom)
+            {
+                throw new ArgumentException($"Cannot use ${nameof(PageSize.Custom)} for ${nameof(AddPage)} using the ${nameof(PageSize)} enum, call the overload with width and height instead.",
+                    nameof(size));
+            }
+
+            if (!size.TryGetPdfRectangle(out var rectangle))
+            {
+                throw new ArgumentException($"No rectangle found for Page Size {size}.");
+            }
+
+            if (!isPortrait)
+            {
+                return AddPage(rectangle.Height, rectangle.Width);
+            }
+
+            return AddPage(rectangle.Width, rectangle.Height);
         }
 
         /// <summary>

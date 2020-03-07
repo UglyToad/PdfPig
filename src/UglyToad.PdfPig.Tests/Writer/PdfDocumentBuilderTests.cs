@@ -26,6 +26,34 @@
         }
 
         [Fact]
+        public void CanCreateSingleCustomPageSize()
+        {
+            var builder = new PdfDocumentBuilder();
+
+            var page = builder.AddPage(120, 250);
+
+            var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+
+            page.AddText("Small page.", 12, new PdfPoint(25, 200), font);
+
+            var bytes = builder.Build();
+
+            WriteFile(nameof(CanCreateSingleCustomPageSize), bytes);
+
+            using (var document = PdfDocument.Open(bytes, ParsingOptions.LenientParsingOff))
+            {
+                Assert.Equal(1, document.NumberOfPages);
+
+                var page1 = document.GetPage(1);
+
+                Assert.Equal(120, page1.Width);
+                Assert.Equal(250, page1.Height);
+
+                Assert.Equal("Small page.", page1.Text);
+            }
+        }
+
+        [Fact]
         public void CanReadSingleBlankPage()
         {
             var result = CreateSingleBlankPage();
