@@ -25,5 +25,16 @@
         {
             return Data;
         }
+
+        /// <inheritdoc />
+        public bool Equals(IToken obj)
+        {
+            if (!(obj is CommentToken other))
+            {
+                return false;
+            }
+
+            return other.Data == Data;
+        }
     }
 }

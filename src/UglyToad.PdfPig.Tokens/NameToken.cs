@@ -59,6 +59,12 @@
         }
 
         /// <inheritdoc />
+        public bool Equals(IToken obj)
+        {
+            return Equals(obj as NameToken);
+        }
+
+        /// <inheritdoc />
         public override int GetHashCode()
         {
             return Data.GetHashCode();

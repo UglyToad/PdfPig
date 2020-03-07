@@ -30,17 +30,6 @@
         }
 
         /// <inheritdoc />
-        public override bool Equals(object obj)
-        {
-            if (!(obj is BooleanToken other))
-            {
-                return false;
-            }
-
-            return other.Data == Data;
-        }
-        
-        /// <inheritdoc />
         public override int GetHashCode()
         {
             return Data.GetHashCode();
@@ -50,6 +39,20 @@
         public override string ToString()
         {
             return Data.ToString();
+        }
+
+        /// <inheritdoc />
+        public bool Equals(IToken obj)
+        {
+            if (this == obj)
+                return true;
+
+            if (!(obj is BooleanToken other))
+            {
+                return false;
+            }
+
+            return other.Data == Data;
         }
     }
 }

@@ -35,6 +35,12 @@
         }
 
         /// <inheritdoc />
+        public bool Equals(IToken obj)
+        {
+            return obj is NullToken;
+        }
+
+        /// <inheritdoc />
         public override int GetHashCode()
         {
             return 0;

@@ -196,6 +196,20 @@
         }
 
         /// <inheritdoc />
+        public bool Equals(IToken obj)
+        {
+            if (this == obj)
+                return true;
+
+            if (!(obj is OperatorToken other))
+            {
+                return false;
+            }
+
+            return Data == other.Data;
+        }
+
+        /// <inheritdoc />
         public override int GetHashCode()
         {
             return Data.GetHashCode();
