@@ -114,6 +114,26 @@
             return new DictionaryToken(result);
         }
 
+
+        /// <inheritdoc />
+        public bool Equals(IToken obj)
+        {
+            if (this == obj)
+                return true;
+
+            if (!(obj is DictionaryToken other))
+            {
+                return false;
+            }
+
+            if (Data.Count != other.Data.Count)
+                return false;
+
+            // TODO: Maybe consider using a sorted dictionary?
+            return Data.OrderBy(kvp => kvp.Key)
+           .SequenceEqual(other.Data.OrderBy(kvp => kvp.Key));
+        }
+
         /// <inheritdoc />
         public override string ToString()
         {
