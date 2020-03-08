@@ -77,6 +77,9 @@
         /// </summary>
         public string ExpandedForm { get; }
         
+        /// <summary>
+        /// Create a new <see cref="MarkedContentElement"/>.
+        /// </summary>
         public MarkedContentElement(int markedContentIdentifier, NameToken tag, DictionaryToken properties, 
             string language,
             string actualText,

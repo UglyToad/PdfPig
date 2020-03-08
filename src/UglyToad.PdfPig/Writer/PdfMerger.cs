@@ -30,8 +30,7 @@
             new PngPredictor(), Log);
 
         /// <summary>
-        /// Merge two PDF documents together with the pages from <see cref="file1"/>
-        /// followed by <see cref="file2"/>.
+        /// Merge two PDF documents together with the pages from <paramref name="file1"/> followed by <paramref name="file2"/>.
         /// </summary>
         public static byte[] Merge(string file1, string file2)
         {
