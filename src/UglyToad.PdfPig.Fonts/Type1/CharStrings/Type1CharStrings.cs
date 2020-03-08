@@ -39,9 +39,16 @@
                     return false;
                 }
 
-                path = Run(sequence);
+                try
+                {
+                    path = Run(sequence);
 
-                glyphs[name] = path;
+                    glyphs[name] = path;
+                }
+                catch
+                {
+                    return false;
+                }
             }
 
             return true;
