@@ -63,9 +63,12 @@
                 {
                     var paired = kdTree.FindNearestNeighbours(pivot, pivotPoint, distMeasure, out int index, out double dist);
 
-                    if (filterFinal(pivot, paired) && dist < maxDistanceFunction(pivot, paired))
+                    if (index != -1)
                     {
-                        indexes[e] = index;
+                        if (filterFinal(pivot, paired) && dist < maxDistanceFunction(pivot, paired))
+                        {
+                            indexes[e] = index;
+                        }
                     }
                 }
             });
