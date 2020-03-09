@@ -3,6 +3,7 @@
     using System.IO;
     using System.Linq;
     using Content;
+    using Integration;
     using PdfPig.Core;
     using PdfPig.Fonts.Standard14Fonts;
     using PdfPig.Writer;
@@ -394,6 +395,44 @@
                 var page1 = document.GetPage(1);
 
                 Assert.Equal("Hello: řó", page1.Text);
+            }
+        }
+
+        [Fact]
+        public void CanWriteSinglePageWithJpg()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page = builder.AddPage(PageSize.A4);
+
+            var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+
+            page.AddText("Smile", 12, new PdfPoint(25, page.PageSize.Height - 52), font);
+
+            var img = IntegrationHelpers.GetDocumentPath("smile-250-by-160.jpg", false);
+
+            var expectedBounds = new PdfRectangle(25, page.PageSize.Height - 300, 200, page.PageSize.Height - 200);
+
+            var imageBytes = File.ReadAllBytes(img);
+
+            page.AddJpeg(imageBytes, expectedBounds);
+            
+            var bytes = builder.Build();
+            WriteFile(nameof(CanWriteSinglePageWithJpg), bytes);
+
+            using (var document = PdfDocument.Open(bytes))
+            {
+                var page1 = document.GetPage(1);
+
+                Assert.Equal("Smile", page1.Text);
+
+                var image = Assert.Single(page1.GetImages());
+
+                Assert.NotNull(image);
+
+                Assert.Equal(expectedBounds.BottomLeft, image.Bounds.BottomLeft);
+                Assert.Equal(expectedBounds.TopRight, image.Bounds.TopRight);
+
+                Assert.Equal(imageBytes, image.RawBytes);
             }
         }
 

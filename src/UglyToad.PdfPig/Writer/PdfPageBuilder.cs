@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using Content;
     using Core;
     using Fonts;
@@ -14,6 +15,8 @@
     using Graphics.Operations.TextPositioning;
     using Graphics.Operations.TextShowing;
     using Graphics.Operations.TextState;
+    using Images;
+    using Tokens;
 
     /// <summary>
     /// A builder used to add construct a page in a PDF document.
@@ -22,11 +25,16 @@
     {
         private readonly PdfDocumentBuilder documentBuilder;
         private readonly List<IGraphicsStateOperation> operations = new List<IGraphicsStateOperation>();
+        private readonly Dictionary<NameToken, IToken> resourcesDictionary = new Dictionary<NameToken, IToken>();
 
         //a sequence number of ShowText operation to determine whether letters belong to same operation or not (letters that belong to different operations have less changes to belong to same word)
         private int textSequence;
 
+        private int imageKey = 1;
+
         internal IReadOnlyList<IGraphicsStateOperation> Operations => operations;
+
+        internal IReadOnlyDictionary<NameToken, IToken> Resources => resourcesDictionary;
 
         /// <summary>
         /// The number of this page, 1-indexed.
@@ -248,6 +256,69 @@
             operations.Add(EndText.Value);
 
             return letters;
+        }
+
+        /// <summary>
+        /// Adds the JPEG image represented by the input bytes at the specified location.
+        /// </summary>
+        public void AddJpeg(byte[] fileBytes, PdfRectangle placementRectangle)
+        {
+            using (var stream = new MemoryStream(fileBytes))
+            {
+                AddJpeg(stream, placementRectangle);
+            }
+        }
+        
+        /// <summary>
+        /// Adds the JPEG image represented by the input stream at the specified location.
+        /// </summary>
+        public void AddJpeg(Stream fileStream, PdfRectangle placementRectangle)
+        {
+            var startFrom = fileStream.Position;
+            var info = JpegHandler.GetInformation(fileStream);
+
+            byte[] data;
+            using (var memory = new MemoryStream())
+            {
+                fileStream.Seek(startFrom, SeekOrigin.Begin);
+                fileStream.CopyTo(memory);
+                data = memory.ToArray();
+            }
+
+            var imgDictionary = new Dictionary<NameToken, IToken>
+            {
+                {NameToken.Type, NameToken.Xobject },
+                {NameToken.Subtype, NameToken.Image },
+                {NameToken.Width, new NumericToken(info.Width) },
+                {NameToken.Height, new NumericToken(info.Height) },
+                {NameToken.BitsPerComponent, new NumericToken(info.BitsPerComponent)},
+                {NameToken.ColorSpace, NameToken.Devicergb},
+                {NameToken.Filter, NameToken.DctDecode},
+                {NameToken.Length, new NumericToken(data.Length)}
+            };
+
+            var reference = documentBuilder.AddImage(new DictionaryToken(imgDictionary), data);
+
+            if (!resourcesDictionary.TryGetValue(NameToken.Xobject, out var xobjectsDict) || !(xobjectsDict is DictionaryToken xobjects))
+            {
+                xobjects = new DictionaryToken(new Dictionary<NameToken, IToken>());
+                resourcesDictionary[NameToken.Xobject] = xobjects;
+            }
+
+            var key = NameToken.Create($"I{imageKey++}");
+
+            resourcesDictionary[NameToken.Xobject] = xobjects.With(key, new IndirectReferenceToken(reference));
+
+            operations.Add(Push.Value);
+            // This needs to be the placement rectangle.
+            operations.Add(new ModifyCurrentTransformationMatrix(new []
+            {
+                (decimal)placementRectangle.Width, 0,
+                0, (decimal)placementRectangle.Height,
+                (decimal)placementRectangle.BottomLeft.X, (decimal)placementRectangle.BottomLeft.Y
+            }));
+            operations.Add(new InvokeNamedXObject(key));
+            operations.Add(Pop.Value);
         }
 
         private List<Letter> DrawLetters(string text, IWritingFont font, TransformationMatrix fontMatrix, decimal fontSize, TransformationMatrix textMatrix)

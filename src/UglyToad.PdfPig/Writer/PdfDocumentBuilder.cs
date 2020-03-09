@@ -19,8 +19,10 @@
     /// </summary>
     public class PdfDocumentBuilder
     {
+        private readonly BuilderContext context = new BuilderContext();
         private readonly Dictionary<int, PdfPageBuilder> pages = new Dictionary<int, PdfPageBuilder>();
         private readonly Dictionary<Guid, FontStored> fonts = new Dictionary<Guid, FontStored>();
+        private readonly Dictionary<Guid, ImageStored> images = new Dictionary<Guid, ImageStored>();
 
         /// <summary>
         /// Whether to include the document information dictionary in the produced document.
@@ -133,7 +135,18 @@
 
             return added;
         }
-        
+
+        internal IndirectReference AddImage(DictionaryToken dictionary, byte[] bytes)
+        {
+            var reserved = context.ReserveNumber();
+
+            var stored = new ImageStored(dictionary, bytes, reserved);
+
+            images[stored.Id] = stored;
+
+            return new IndirectReference(reserved, 0);
+        }
+
         /// <summary>
         /// Add a new page with the specified size, this page will be included in the output when <see cref="Build"/> is called.
         /// </summary>
@@ -206,7 +219,6 @@
         /// <returns>The bytes of the resulting PDF document.</returns>
         public byte[] Build()
         {
-            var context = new BuilderContext();
             var fontsWritten = new Dictionary<Guid, ObjectToken>();
             using (var memory = new MemoryStream())
             {
@@ -226,6 +238,13 @@
                 {
                     var fontObj = font.Value.FontProgram.WriteFont(font.Value.FontKey.Name, memory, context);
                     fontsWritten.Add(font.Key, fontObj);
+                }
+
+                foreach (var image in images)
+                {
+                    var streamToken = new StreamToken(image.Value.StreamDictionary, image.Value.StreamData);
+
+                    context.WriteObject(memory, streamToken, image.Value.ObjectNumber);
                 }
 
                 var resources = new Dictionary<NameToken, IToken>
@@ -249,16 +268,24 @@
                 var pageReferences = new List<IndirectReferenceToken>();
                 foreach (var page in pages)
                 {
+                    var individualResources = new Dictionary<NameToken, IToken>(resources); 
                     var pageDictionary = new Dictionary<NameToken, IToken>
                     {
                         {NameToken.Type, NameToken.Page},
-                        {
-                            NameToken.Resources,
-                            new DictionaryToken(resources)
-                        },
                         {NameToken.MediaBox, RectangleToArray(page.Value.PageSize)},
                         {NameToken.Parent, parentIndirect}
                     };
+
+                    if (page.Value.Resources.Count > 0)
+                    {
+                        foreach (var kvp in page.Value.Resources)
+                        {
+                            // TODO: combine resources if value is dictionary or array, otherwise overwrite.
+                            individualResources[kvp.Key] = kvp.Value;
+                        }
+                    }
+
+                    pageDictionary[NameToken.Resources] = new DictionaryToken(individualResources);
 
                     if (page.Value.Operations.Count > 0)
                     {
@@ -274,12 +301,14 @@
                     pageReferences.Add(new IndirectReferenceToken(pageRef.Number));
                 }
 
-                var pagesDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>
+                var pagesDictionaryData = new Dictionary<NameToken, IToken>
                 {
-                    { NameToken.Type, NameToken.Pages },
-                    { NameToken.Kids, new ArrayToken(pageReferences) },
-                    { NameToken.Count, new NumericToken(pageReferences.Count) }
-                });
+                    {NameToken.Type, NameToken.Pages},
+                    {NameToken.Kids, new ArrayToken(pageReferences)},
+                    {NameToken.Count, new NumericToken(pageReferences.Count)}
+                };
+                
+                var pagesDictionary = new DictionaryToken(pagesDictionaryData);
 
                 var pagesRef = context.WriteObject(memory, pagesDictionary, reserved);
 
@@ -358,6 +387,25 @@
             {
                 FontKey = fontKey ?? throw new ArgumentNullException(nameof(fontKey));
                 FontProgram = fontProgram ?? throw new ArgumentNullException(nameof(fontProgram));
+            }
+        }
+
+        internal class ImageStored
+        {
+            public Guid Id { get; }
+
+            public DictionaryToken StreamDictionary { get; }
+
+            public byte[] StreamData { get; }
+
+            public int ObjectNumber { get; }
+
+            public ImageStored(DictionaryToken streamDictionary, byte[] streamData, int objectNumber)
+            {
+                Id = Guid.NewGuid();
+                StreamDictionary = streamDictionary;
+                StreamData = streamData;
+                ObjectNumber = objectNumber;
             }
         }
 
