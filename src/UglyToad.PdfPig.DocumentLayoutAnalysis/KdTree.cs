@@ -66,12 +66,21 @@
         }
 
         #region NN
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pivot"></param>
+        /// <param name="pivotPointFunc"></param>
+        /// <param name="distanceMeasure"></param>
+        /// <param name="index">The nearest neighbour's index (returns -1 if not found).</param>
+        /// <param name="distance">The distance between the pivot and the nearest neighbour (returns <see cref="double.NaN"/> if not found).</param>
+        /// <returns>The nearest neighbour's element.</returns>
         public T FindNearestNeighbours(T pivot, Func<T, PdfPoint> pivotPointFunc, Func<PdfPoint, PdfPoint, double> distanceMeasure, out int index, out double distance)
         {
             var result = FindNearestNeighbours(Root, pivot, pivotPointFunc, distanceMeasure);
-            index = result.Item1.Index;
-            distance = result.Item2.Value;
-            return result.Item1.Element;
+            index = result.Item1 != null ? result.Item1.Index : -1;
+            distance = result.Item2.HasValue ? result.Item2.Value : double.NaN;
+            return result.Item1 != null ? result.Item1.Element : default;
         }
 
         private static (KdTreeNode<T>, double?) FindNearestNeighbours(KdTreeNode<T> node, T pivot, Func<T, PdfPoint> pivotPointFunc, Func<PdfPoint, PdfPoint, double> distance)
