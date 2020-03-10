@@ -254,7 +254,7 @@
         #region Sorted Queue
         private class QueueEntries : SortedSet<QueueEntry>
         {
-            int bound;
+            readonly int bound;
 
             public QueueEntries(int maximumBound)
             {

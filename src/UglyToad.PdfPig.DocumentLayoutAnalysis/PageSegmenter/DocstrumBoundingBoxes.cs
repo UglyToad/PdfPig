@@ -108,38 +108,39 @@
 
             ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
 
-            // 1. Estimate in line and between line spacing
+            // 1. Estimate within line and between line spacing
+            KdTree<Word> kdTreeWL = new KdTree<Word>(wordsList, w => w.BoundingBox.BottomLeft);
+            KdTree<Word> kdTreeBL = new KdTree<Word>(wordsList, w => w.BoundingBox.TopLeft);
+
             Parallel.For(0, wordsList.Count, parallelOptions, i =>
             {
                 var word = wordsList[i];
 
                 // Within-line distance
-                var pointsWithinLine = GetNearestPointDistance(wordsList, word,
-                    bb => bb.BottomRight, bb => bb.BottomRight,
-                    bb => bb.BottomLeft, bb => bb.BottomLeft,
-                    withinLine, Distances.Horizontal);
-
-                if (pointsWithinLine != null)
+                var neighbourWL = kdTreeWL.FindNearestNeighbours(word, 2, w => w.BoundingBox.BottomRight, (p1, p2) => Distances.WeightedEuclidean(p1, p2, 0.5));
+                foreach (var n in neighbourWL)
                 {
-                    withinLineDistList.Add(pointsWithinLine.Value);
+                    if (withinLine.Contains(Distances.Angle(word.BoundingBox.BottomRight, n.Item1.BoundingBox.BottomLeft)))
+                    {
+                        withinLineDistList.Add(Distances.Horizontal(word.BoundingBox.BottomRight, n.Item1.BoundingBox.BottomLeft));
+                    }
                 }
 
                 // Between-line distance
-                var pointsBetweenLine = GetNearestPointDistance(wordsList, word,
-                    bb => bb.BottomLeft, bb => bb.Centroid,
-                    bb => bb.TopLeft, bb => bb.Centroid,
-                    betweenLine, Distances.Vertical);
-
-                if (pointsBetweenLine != null)
+                var neighbourBL = kdTreeBL.FindNearestNeighbours(word, 2, w => w.BoundingBox.BottomLeft, (p1, p2) => Distances.WeightedEuclidean(p1, p2, 50));
+                foreach (var n in neighbourBL)
                 {
-                    betweenLineDistList.Add(pointsBetweenLine.Value);
+                    if (betweenLine.Contains(Distances.Angle(word.BoundingBox.Centroid, n.Item1.BoundingBox.Centroid)))
+                    {
+                        betweenLineDistList.Add(Distances.Vertical(word.BoundingBox.BottomLeft, n.Item1.BoundingBox.TopLeft));
+                    }
                 }
             });
 
             double? withinLineDistance = GetPeakAverageDistance(withinLineDistList);
             double? betweenLineDistance = GetPeakAverageDistance(betweenLineDistList);
 
-            if (withinLineDistance == null || betweenLineDistance == null)
+            if (!withinLineDistance.HasValue || !betweenLineDistance.HasValue)
             {
                 return new[] { new TextBlock(new[] { new TextLine(wordsList) }) };
             }
@@ -193,69 +194,15 @@
             return blocks.Where(b => b != null).ToList();
         }
 
-        /// <summary>
-        /// Get information on the nearest point, filtered for angle.
-        /// </summary>
-        private double? GetNearestPointDistance(List<Word> words, Word pivot, Func<PdfRectangle,
-            PdfPoint> funcPivotDist, Func<PdfRectangle, PdfPoint> funcPivotAngle,
-            Func<PdfRectangle, PdfPoint> funcPointsDist, Func<PdfRectangle, PdfPoint> funcPointsAngle,
-            AngleBounds angleBounds,
-            Func<PdfPoint, PdfPoint, double> finalDistanceMeasure)
-        {
-            var pointR = funcPivotDist(pivot.BoundingBox);
-
-            var pivotPoint = funcPivotAngle(pivot.BoundingBox);
-
-            var wordsWithinAngleBoundDistancePoints = new List<PdfPoint>();
-
-            // Filter to words within the angle range.
-            foreach (var word in words)
-            {
-                // Ignore the pivot word.
-                if (ReferenceEquals(word, pivot))
-                {
-                    continue;
-                }
-
-                var angle = Distances.Angle(pivotPoint, funcPointsAngle(word.BoundingBox));
-
-                if (angleBounds.Contains(angle))
-                {
-                    wordsWithinAngleBoundDistancePoints.Add(funcPointsDist(word.BoundingBox));
-                }
-            }
-
-            if (wordsWithinAngleBoundDistancePoints.Count == 0)
-            {
-                return null;
-            }
-
-            var closestWordIndex = Distances.FindIndexNearest(pointR, wordsWithinAngleBoundDistancePoints, p => p,
-                p => p, Distances.Euclidean, out _);
-
-            if (closestWordIndex < 0 || closestWordIndex >= wordsWithinAngleBoundDistancePoints.Count)
-            {
-                return null;
-            }
-
-            return finalDistanceMeasure(pointR, wordsWithinAngleBoundDistancePoints[closestWordIndex]);
-        }
-
         private static IEnumerable<TextLine> GetLines(List<Word> words, double maxDist, AngleBounds withinLine, int maxDegreeOfParallelism)
         {
             TextDirection textDirection = words[0].TextDirection;
-            var groupedIndexes = ClusteringAlgorithms.ClusterNearestNeighbours(words, Distances.Euclidean,
-                (pivot, candidate) => maxDist,
-                pivot => pivot.BoundingBox.BottomRight, candidate => candidate.BoundingBox.BottomLeft,
-                pivot => true,
-                (pivot, candidate) =>
-                {
-                    // Compare bottom right with bottom left for angle
-                    var withinLineAngle = Distances.Angle(pivot.BoundingBox.BottomRight, candidate.BoundingBox.BottomLeft);
-
-                    return (withinLineAngle >= withinLine.Lower && withinLineAngle <= withinLine.Upper);
-                },
-                maxDegreeOfParallelism).ToList();
+            var groupedIndexes = ClusteringAlgorithms.ClusterNearestNeighbours(words, 2, Distances.Euclidean,
+                    (pivot, candidate) => maxDist,
+                    pivot => pivot.BoundingBox.BottomRight, candidate => candidate.BoundingBox.BottomLeft,
+                    pivot => true,
+                    (pivot, candidate) => withinLine.Contains(Distances.Angle(pivot.BoundingBox.BottomRight, candidate.BoundingBox.BottomLeft)),
+                    maxDegreeOfParallelism).ToList();
 
             Func<IEnumerable<Word>, IReadOnlyList<Word>> orderFunc = l => l.OrderBy(x => x.BoundingBox.Left).ToList();
             if (textDirection == TextDirection.Rotate180)
@@ -287,7 +234,7 @@
              *  If the two lines are not overlapping, the distance is set to the max distance.
              **************************************************************************************************/
 
-            Func<PdfLine, PdfLine, double> euclidianOverlappingMiddleDistance = (l1, l2) =>
+            double euclidianOverlappingMiddleDistance(PdfLine l1, PdfLine l2)
             {
                 var left = Math.Max(l1.Point1.X, l2.Point1.X);
                 var d = (Math.Min(l1.Point2.X, l2.Point2.X) - left);
@@ -295,9 +242,9 @@
                 if (d < 0) return double.MaxValue; // not overlapping -> max distance
 
                 return Distances.Euclidean(
-            new PdfPoint(left + d / 2, l1.Point1.Y),
-            new PdfPoint(left + d / 2, l2.Point1.Y));
-            };
+                    new PdfPoint(left + d / 2, l1.Point1.Y),
+                    new PdfPoint(left + d / 2, l2.Point1.Y));
+            }
 
             var groupedIndexes = ClusteringAlgorithms.ClusterNearestNeighbours(lines,
                 euclidianOverlappingMiddleDistance,
