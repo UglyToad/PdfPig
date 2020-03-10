@@ -382,9 +382,15 @@
             }
             else
             {
-                if (!rectangle.Normalise().IntersectsWith(other.Normalise()))
+                var r1 = rectangle.Normalise();
+                var r2 = other.Normalise();
+                if (Math.Abs(r1.Rotation) < epsilon && Math.Abs(r2.Rotation) < epsilon)
                 {
-                    return false;
+                    // check rotation to avoid stackoverflow
+                    if (!r1.IntersectsWith(r2))
+                    {
+                        return false;
+                    }
                 }
 
                 if (rectangle.Contains(other.BottomLeft)) return true;

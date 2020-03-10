@@ -31,14 +31,14 @@
         /// <param name="letters">The letters in the page.</param>
         public IEnumerable<Word> GetWords(IReadOnlyList<Letter> letters)
         {
-            Func<Letter, Letter, double> baseMaxFunc = (l1, l2) =>
+            double baseMaxFunc(Letter l1, Letter l2)
             {
                 return Math.Max(Math.Max(Math.Max(
                     Math.Abs(l1.GlyphRectangle.Width),
                     Math.Abs(l2.GlyphRectangle.Width)),
-                    Math.Abs(l1.Width)), 
+                    Math.Abs(l1.Width)),
                     Math.Abs(l2.Width));
-            };
+            }
 
             List<Word> wordsH = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Horizontal).ToList(),
