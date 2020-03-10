@@ -134,9 +134,7 @@
 
                     foreach (var c in paired)
                     {
-                        var filter = filterFinal(pivot, c.Item1);
-                        var maxDist = maxDistanceFunction(pivot, c.Item1);
-                        if (filter && c.Item3 < maxDist)
+                        if (filterFinal(pivot, c.Item1) && c.Item3 < maxDistanceFunction(pivot, c.Item1))
                         {
                             indexes[e] = c.Item2;
                             break;
