@@ -20,11 +20,14 @@
 
         public Stream Stream { get; private set; }
 
+        public bool DisposeStream { get; set; }
+
         public PdfStreamWriter() : this(new MemoryStream()) { }
 
-        public PdfStreamWriter(Stream baseStream)
+        public PdfStreamWriter(Stream baseStream, bool disposeStream = true)
         {
             Stream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
+            DisposeStream = disposeStream;
         }
         
         public void Flush(decimal version, IndirectReferenceToken catalogReference)
@@ -110,15 +113,11 @@
         
         public byte[] ToArray()
         {
-            if (!Stream.CanSeek)
-                throw new NotSupportedException($"{Stream.GetType()} can't seek");
-            
             var currentPosition = Stream.Position;
             Stream.Seek(0, SeekOrigin.Begin);
 
             var bytes = new byte[Stream.Length];
 
-            // Should we slice the reading into smaller chunks?
             if (Stream.Read(bytes, 0, bytes.Length) != bytes.Length)
                 throw new Exception("Unable to read all the bytes from stream");
 
@@ -129,6 +128,12 @@
 
         public void Dispose()
         {
+            if (!DisposeStream)
+            {
+                Stream = null;
+                return;
+            }
+
             Stream?.Dispose();
             Stream = null;
         }
