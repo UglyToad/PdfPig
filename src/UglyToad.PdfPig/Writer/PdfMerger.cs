@@ -275,9 +275,8 @@
             /// </summary>
             /// <param name="tokenToCopy">Token to inspect for reference</param>
             /// <param name="tokenScanner">scanner get the content from the original document</param>
-            /// <param name="deepCopy">Weather we want to create a new token for basic token(Ex. NumericToken) because the original could be modified</param>
             /// <returns>A reference of the token that was copied. With all the reference updated</returns>
-            private IToken CopyToken(IToken tokenToCopy, IPdfTokenScanner tokenScanner, bool deepCopy = false)
+            private IToken CopyToken(IToken tokenToCopy, IPdfTokenScanner tokenScanner)
             {
                 // This token need to be deep copied, because they could contain reference. So we have to update them.
                 switch (tokenToCopy)
@@ -289,7 +288,7 @@
                         {
                             var name = setPair.Key;
                             var token = setPair.Value;
-                            newContent.Add(NameToken.Create(name), CopyToken(token, tokenScanner, deepCopy));
+                            newContent.Add(NameToken.Create(name), CopyToken(token, tokenScanner));
                         }
 
                         return new DictionaryToken(newContent);
@@ -299,7 +298,7 @@
                         var newArray = new List<IToken>(arrayToken.Length);
                         foreach (var token in arrayToken.Data)
                         {
-                            newArray.Add(CopyToken(token, tokenScanner, deepCopy));
+                            newArray.Add(CopyToken(token, tokenScanner));
                         }
 
                         return new ArrayToken(newArray);
@@ -315,7 +314,7 @@
 
                         Debug.Assert(!(tokenObject is IndirectReferenceToken));
 
-                        var newToken = CopyToken(tokenObject, tokenScanner, deepCopy);
+                        var newToken = CopyToken(tokenObject, tokenScanner);
                         newReferenceToken = context.WriteToken(newToken);
                         
                         referencesFromDocument.Add(referenceToken, newReferenceToken);
@@ -324,53 +323,22 @@
                     }
                     case StreamToken streamToken:
                     {
-                        var properties = CopyToken(streamToken.StreamDictionary, tokenScanner, deepCopy) as DictionaryToken;
+                        var properties = CopyToken(streamToken.StreamDictionary, tokenScanner) as DictionaryToken;
                         Debug.Assert(properties != null);
 
-                        var bytes = deepCopy ? new List<byte>(streamToken.Data) : streamToken.Data;
+                        var bytes = streamToken.Data;
                         return new StreamToken(properties, bytes);
                     }
                     
                     case ObjectToken _:
                     {
-                        // This is because, since we don't write token directly to the stream. So can't know the offset.
-                        // The token would be invalid. Although I don't think the copy of an object token would ever happen
+                        // Since we don't write token directly to the stream.
+                        // We can't know the offset. Therefore the token would be invalid
                         throw new NotSupportedException("Copying a Object token is not supported");
                     }
                 }
 
-                if (!deepCopy)
-                    return tokenToCopy;
-
-                // This tokens can't be deep copied
-                if (tokenToCopy is EndOfLineToken || tokenToCopy is NullToken || tokenToCopy is BooleanToken)
-                    return tokenToCopy;
-                
-                switch (tokenToCopy)
-                {
-                    case CommentToken commentToken:
-                        return new CommentToken(commentToken.Data);
-
-                    case HexToken hexToken:
-                        return new HexToken(hexToken.Data.ToCharArray());
-                    
-                    case InlineImageDataToken imageDataToken:
-                        return new InlineImageDataToken(imageDataToken.Data);
-                    
-                    case NameToken nameToken:
-                        return NameToken.Create(nameToken.Data);
-                    
-                    case NumericToken numericToken:
-                        return new NumericToken(numericToken.Data);
-                    
-                    case OperatorToken operatorToken:
-                        return OperatorToken.Create(operatorToken.Data);
-                    
-                    case StringToken stringToken:
-                        return new StringToken(stringToken.Data, stringToken.EncodedWith);
-                }
-                
-                throw new NotSupportedException($"Tried to deep copy {tokenToCopy.GetType()}");
+                return tokenToCopy;
             }
 
             private static bool IgnoreKeyForPagesNode(KeyValuePair<string, IToken> token)
