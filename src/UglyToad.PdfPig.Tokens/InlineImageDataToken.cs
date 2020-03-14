@@ -22,8 +22,10 @@
         /// <inheritdoc />
         public bool Equals(IToken obj)
         {
-            if (this == obj)
+            if (ReferenceEquals(this, obj))
+            {
                 return true;
+            }
 
             if (!(obj is InlineImageDataToken other))
             {
@@ -31,14 +33,17 @@
             }
 
             if (Data.Count != other.Data.Count)
+            {
                 return false;
+            }
 
-            // Note: This maybe slow?
-            // Maybe pre calculate some sort of hash and compare that?
+
             for (var index = 0; index < Data.Count; ++index)
             {
                 if (Data[index] != other.Data[index])
+                {
                     return false;
+                }
             }
 
             return true;

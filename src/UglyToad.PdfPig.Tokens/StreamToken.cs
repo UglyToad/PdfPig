@@ -33,8 +33,10 @@
         /// <inheritdoc />
         public bool Equals(IToken obj)
         {
-            if (this == obj)
+            if (ReferenceEquals(this, obj))
+            {
                 return true;
+            }
 
             if (!(obj is StreamToken other))
             {
@@ -46,12 +48,17 @@
                 return false;
             }
 
-            // Note: This maybe slow?
-            // Maybe pre calculate some sort of hash and compare that?
+            if (Data.Count != other.Data.Count)
+            {
+                return false;
+            }
+
             for (var index = 0; index < Data.Count; ++index)
             {
                 if (Data[index] != other.Data[index])
+                {
                     return false;
+                }
             }
 
             return true;

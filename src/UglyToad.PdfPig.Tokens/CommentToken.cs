@@ -29,6 +29,11 @@
         /// <inheritdoc />
         public bool Equals(IToken obj)
         {
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
             if (!(obj is CommentToken other))
             {
                 return false;
