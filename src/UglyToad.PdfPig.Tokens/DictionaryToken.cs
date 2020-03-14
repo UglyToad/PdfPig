@@ -118,8 +118,10 @@
         /// <inheritdoc />
         public bool Equals(IToken obj)
         {
-            if (this == obj)
+            if (ReferenceEquals(this, obj))
+            {
                 return true;
+            }
 
             if (!(obj is DictionaryToken other))
             {
@@ -127,11 +129,19 @@
             }
 
             if (Data.Count != other.Data.Count)
+            {
                 return false;
+            }
 
-            // TODO: Maybe consider using a sorted dictionary?
-            return Data.OrderBy(kvp => kvp.Key)
-           .SequenceEqual(other.Data.OrderBy(kvp => kvp.Key));
+            foreach (var kvp in other.Data)
+            {
+                if (!Data.TryGetValue(kvp.Key, out var val) || !val.Equals(kvp.Value))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <inheritdoc />

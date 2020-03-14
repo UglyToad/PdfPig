@@ -198,8 +198,10 @@
         /// <inheritdoc />
         public bool Equals(IToken obj)
         {
-            if (this == obj)
+            if (ReferenceEquals(this, obj))
+            {
                 return true;
+            }
 
             if (!(obj is OperatorToken other))
             {

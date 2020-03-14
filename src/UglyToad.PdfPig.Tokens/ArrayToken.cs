@@ -92,19 +92,27 @@
         /// <inheritdoc />
         public bool Equals(IToken obj)
         {
-            if (this == obj)
+            if (ReferenceEquals(this, obj))
+            {
                 return true;
+            }
 
             if (!(obj is ArrayToken other))
+            {
                 return false;
+            }
 
             if (other.Length != Length)
+            {
                 return false;
+            }
 
             for (var index = 0; index < Length; ++index)
             {
                 if (!Data[index].Equals(other[index]))
+                {
                     return false;
+                }
             }
 
             return true;

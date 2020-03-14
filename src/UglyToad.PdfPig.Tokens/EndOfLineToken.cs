@@ -17,15 +17,12 @@
         /// <inheritdoc />
         public bool Equals(IToken obj)
         {
-            if (this == obj)
-                return true;
-
-            if (!(obj is EndOfLineToken other))
+            if (ReferenceEquals(this, obj))
             {
-                return false;
+                return true;
             }
 
-            return true;
+            return obj is EndOfLineToken;
         }
     }
 }
