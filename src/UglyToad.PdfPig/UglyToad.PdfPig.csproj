@@ -5,6 +5,7 @@
     <LangVersion>latest</LangVersion>
     <Version>0.1.0</Version>
     <IsTestProject>False</IsTestProject>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">

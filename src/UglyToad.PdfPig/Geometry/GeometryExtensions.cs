@@ -587,6 +587,10 @@
             return tx >= 0 && (tx - 1) <= epsilon;
         }
 
+        /// <summary>
+        /// Whether the line formed by <paramref name="p11"/> and <paramref name="p12"/>
+        /// intersects the line formed by <paramref name="p21"/> and <paramref name="p22"/>.
+        /// </summary>
         public static bool IntersectsWith(PdfPoint p11, PdfPoint p12, PdfPoint p21, PdfPoint p22)
         {
             return (ccw(p11, p12, p21) != ccw(p11, p12, p22)) &&
@@ -780,8 +784,8 @@
         }
         #endregion
 
-        private static readonly double oneThird = 0.333333333333333333333;
-        private static readonly double sqrtOfThree = 1.73205080756888;
+        private const double OneThird = 0.333333333333333333333;
+        private const double SqrtOfThree = 1.73205080756888;
 
         private static (double Slope, double Intercept) GetSlopeIntercept(PdfPoint point1, PdfPoint point2)
         {
@@ -800,8 +804,8 @@
 
         private static double CubicRoot(double d)
         {
-            if (d < 0.0) return -Math.Pow(-d, oneThird);
-            return Math.Pow(d, oneThird);
+            if (d < 0.0) return -Math.Pow(-d, OneThird);
+            return Math.Pow(d, OneThird);
         }
 
         /// <summary>
@@ -854,7 +858,7 @@
                 x1 = SPlusT - bOver3a;           // real root
 
                 // Complex roots
-                double complexPart = sqrtOfThree / 2.0 * (S - T); // complex part of complex root
+                double complexPart = SqrtOfThree / 2.0 * (S - T); // complex part of complex root
                 if (Math.Abs(complexPart) <= epsilon) // if complex part == 0
                 {
                     // complex roots only have real part
@@ -866,7 +870,7 @@
             {
                 // François Viète's formula
                 Func<double, double, double, double> vietTrigonometricSolution = (p_, q_, k) => 2.0 * Math.Sqrt(-p_ / 3.0)
-                        * Math.Cos(oneThird * Math.Acos((3.0 * q_) / (2.0 * p_) * Math.Sqrt(-3.0 / p_)) - (2.0 * Math.PI * k) / 3.0);
+                        * Math.Cos(OneThird * Math.Acos((3.0 * q_) / (2.0 * p_) * Math.Sqrt(-3.0 / p_)) - (2.0 * Math.PI * k) / 3.0);
 
                 double p = Q * 3.0;         // (3.0 * a * c - b * b) / (3.0 * aSquared);
                 double q = -R * 2.0;        // (2.0 * bCubed - 9.0 * abc + 27.0 * aSquared * d) / (27.0 * aCubed);
