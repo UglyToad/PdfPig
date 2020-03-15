@@ -261,18 +261,18 @@
         /// <summary>
         /// Adds the JPEG image represented by the input bytes at the specified location.
         /// </summary>
-        public void AddJpeg(byte[] fileBytes, PdfRectangle placementRectangle)
+        public AddedImage AddJpeg(byte[] fileBytes, PdfRectangle placementRectangle)
         {
             using (var stream = new MemoryStream(fileBytes))
             {
-                AddJpeg(stream, placementRectangle);
+                return AddJpeg(stream, placementRectangle);
             }
         }
         
         /// <summary>
         /// Adds the JPEG image represented by the input stream at the specified location.
         /// </summary>
-        public void AddJpeg(Stream fileStream, PdfRectangle placementRectangle)
+        public AddedImage AddJpeg(Stream fileStream, PdfRectangle placementRectangle)
         {
             var startFrom = fileStream.Position;
             var info = JpegHandler.GetInformation(fileStream);
@@ -299,7 +299,8 @@
 
             var reference = documentBuilder.AddImage(new DictionaryToken(imgDictionary), data);
 
-            if (!resourcesDictionary.TryGetValue(NameToken.Xobject, out var xobjectsDict) || !(xobjectsDict is DictionaryToken xobjects))
+            if (!resourcesDictionary.TryGetValue(NameToken.Xobject, out var xobjectsDict) 
+                || !(xobjectsDict is DictionaryToken xobjects))
             {
                 xobjects = new DictionaryToken(new Dictionary<NameToken, IToken>());
                 resourcesDictionary[NameToken.Xobject] = xobjects;
@@ -312,6 +313,39 @@
             operations.Add(Push.Value);
             // This needs to be the placement rectangle.
             operations.Add(new ModifyCurrentTransformationMatrix(new []
+            {
+                (decimal)placementRectangle.Width, 0,
+                0, (decimal)placementRectangle.Height,
+                (decimal)placementRectangle.BottomLeft.X, (decimal)placementRectangle.BottomLeft.Y
+            }));
+            operations.Add(new InvokeNamedXObject(key));
+            operations.Add(Pop.Value);
+
+            return new AddedImage(reference, info.Width, info.Height);
+        }
+
+        /// <summary>
+        /// Adds the JPEG image previously added using <see cref="AddJpeg(byte[],PdfRectangle)"/>,
+        /// this will share the same image data to prevent duplication.
+        /// </summary>
+        /// <param name="image">An image previously added to this page or another page.</param>
+        /// <param name="placementRectangle">The size and location to draw the image on this page.</param>
+        public void AddJpeg(AddedImage image, PdfRectangle placementRectangle)
+        {
+            if (!resourcesDictionary.TryGetValue(NameToken.Xobject, out var xobjectsDict) 
+                || !(xobjectsDict is DictionaryToken xobjects))
+            {
+                xobjects = new DictionaryToken(new Dictionary<NameToken, IToken>());
+                resourcesDictionary[NameToken.Xobject] = xobjects;
+            }
+
+            var key = NameToken.Create($"I{imageKey++}");
+
+            resourcesDictionary[NameToken.Xobject] = xobjects.With(key, new IndirectReferenceToken(image.Reference));
+
+            operations.Add(Push.Value);
+            // This needs to be the placement rectangle.
+            operations.Add(new ModifyCurrentTransformationMatrix(new[]
             {
                 (decimal)placementRectangle.Width, 0,
                 0, (decimal)placementRectangle.Height,
@@ -412,6 +446,44 @@
             internal AdvancedEditing(List<IGraphicsStateOperation> operations)
             {
                 Operations = operations;
+            }
+        }
+
+        /// <summary>
+        /// A key representing an image available to use for the current document builder.
+        /// Create it by adding an image to a page using <see cref="AddJpeg(byte[],PdfRectangle)"/>.
+        /// </summary>
+        public class AddedImage
+        {
+            /// <summary>
+            /// The Id uniquely identifying this image on the builder.
+            /// </summary>
+            internal Guid Id { get; }
+
+            /// <summary>
+            /// The reference to the stored image XObject.
+            /// </summary>
+            internal IndirectReference Reference { get; }
+
+            /// <summary>
+            /// The width of the raw image in pixels.
+            /// </summary>
+            public int Width { get; }
+
+            /// <summary>
+            /// The height of the raw image in pixels.
+            /// </summary>
+            public int Height { get; }
+
+            /// <summary>
+            /// Create a new <see cref="AddedImage"/>.
+            /// </summary>
+            internal AddedImage(IndirectReference reference, int width, int height)
+            {
+                Id = Guid.NewGuid();
+                Reference = reference;
+                Width = width;
+                Height = height;
             }
         }
     }
