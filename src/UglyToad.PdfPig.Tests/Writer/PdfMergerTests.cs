@@ -38,9 +38,7 @@
             var two = IntegrationHelpers.GetDocumentPath("Single Page Simple - from inkscape.pdf");
 
             var result = PdfMerger.Merge(one, two);
-
-            System.IO.File.WriteAllBytes(@"C:\temp\merged.pdf", result);
-
+            
             using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
             {
                 Assert.Equal(2, document.NumberOfPages);
