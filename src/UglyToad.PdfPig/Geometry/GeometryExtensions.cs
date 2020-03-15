@@ -65,57 +65,45 @@
         /// The vertices of P are assumed to be in strict cyclic sequential order, either clockwise or 
         /// counter-clockwise relative to the origin P0. 
         /// </param>
-        internal static PdfRectangle ParametricPerpendicularProjection(IReadOnlyList<PdfPoint> polygon)
+        private static PdfRectangle ParametricPerpendicularProjection(IReadOnlyList<PdfPoint> polygon)
         {
             if (polygon == null || polygon.Count == 0)
             {
-                throw new ArgumentException("ParametricPerpendicularProjection(): polygon cannot be null and must contain at least one point.");
+                throw new ArgumentException("ParametricPerpendicularProjection(): polygon cannot be null and must contain at least one point.", nameof(polygon));
             }
-
-            if (polygon.Count < 4)
+            else if (polygon.Count == 1)
             {
-                if (polygon.Count == 1)
-                {
-                    return new PdfRectangle(polygon[0], polygon[0]);
-                }
-                else if (polygon.Count == 2)
-                {
-                    return new PdfRectangle(polygon[0], polygon[1]);
-                }
-                else
-                {
-                    PdfPoint p3 = polygon[0].Add(polygon[1].Subtract(polygon[2]));
-                    return new PdfRectangle(p3, polygon[1], polygon[0], polygon[2]);
-                }
+                return new PdfRectangle(polygon[0], polygon[0]);
+            }
+            else if (polygon.Count == 2)
+            {
+                return new PdfRectangle(polygon[0], polygon[1]);
             }
 
             PdfPoint[] MBR = new PdfPoint[0];
-            
-            double Amin = double.MaxValue;
-            double tmin = 1;
-            double tmax = 0;
-            double smax = 0;
+
+            double Amin = double.PositiveInfinity;
             int j = 1;
             int k = 0;
-            int l = -1;
 
             PdfPoint Q = new PdfPoint();
             PdfPoint R0 = new PdfPoint();
             PdfPoint R1 = new PdfPoint();
             PdfPoint u = new PdfPoint();
 
-            int nv = polygon.Count;
-            
             while (true)
             {
-                var Pk = polygon[k];
-                
+                PdfPoint Pk = polygon[k];
                 PdfPoint v = polygon[j].Subtract(Pk);
                 double r = 1.0 / v.DotProduct(v);
 
-                for (j = 0; j < nv; j++)
+                double tmin = 1;
+                double tmax = 0;
+                double smax = 0;
+                int l = -1;
+
+                for (j = 0; j < polygon.Count; j++)
                 {
-                    if (j == k) continue;
                     PdfPoint Pj = polygon[j];
                     u = Pj.Subtract(Pk);
                     double t = u.DotProduct(v) * r;
@@ -143,35 +131,46 @@
                     }
                 }
 
-                if (l == -1)
+                if (l != -1)
                 {
-                    // All points are colinear - rectangle has no area (need more tests)
-                    var bottomLeft = polygon.OrderBy(p => p.X).ThenBy(p => p.Y).First();
-                    var topRight = polygon.OrderByDescending(p => p.Y).OrderByDescending(p => p.X).First();
-                    return new PdfRectangle(bottomLeft, topRight, bottomLeft, topRight);
-                }
+                    PdfPoint PlMinusQ = polygon[l].Subtract(Q);
+                    PdfPoint R2 = R1.Add(PlMinusQ);
+                    PdfPoint R3 = R0.Add(PlMinusQ);
 
-                PdfPoint PlMinusQ = polygon[l].Subtract(Q);
-                PdfPoint R2 = R1.Add(PlMinusQ);
-                PdfPoint R3 = R0.Add(PlMinusQ);
-                u = R1.Subtract(R0);
-                double A = u.DotProduct(u) * smax;
+                    u = R1.Subtract(R0);
 
-                if (A < Amin)
-                {
-                    Amin = A;
-                    MBR = new[] { R0, R1, R2, R3 };
+                    double A = u.DotProduct(u) * smax;
+
+                    if (A < Amin)
+                    {
+                        Amin = A;
+                        MBR = new[] { R0, R1, R2, R3 };
+                    }
                 }
 
                 k++;
-                j = k;
+                j = k + 1;
 
-                if (j == nv) j = 0;
-
-                if (k == nv) break;
+                if (j == polygon.Count) j = 0;
+                if (k == polygon.Count) break;
             }
 
             return new PdfRectangle(MBR[2], MBR[3], MBR[1], MBR[0]);
+        }
+
+        /// <summary>
+        /// Algorithm to find the (oriented) minimum area rectangle (MAR) by first finding the convex hull of the points
+        /// and then finding its MAR.
+        /// </summary>
+        /// <param name="points">The points.</param>
+        public static PdfRectangle MinimumAreaRectangle(IEnumerable<PdfPoint> points)
+        {
+            if (points == null || points.Count() == 0)
+            {
+                throw new ArgumentException("MinimumAreaRectangle(): points cannot be null and must contain at least one point.", nameof(points));
+            }
+
+            return ParametricPerpendicularProjection(GrahamScan(points.Distinct()).ToList());
         }
 
         /// <summary>
@@ -241,10 +240,10 @@
 
             if (points.Count() < 3) return points;
 
-            Func<PdfPoint, PdfPoint, double> polarAngle = (PdfPoint point1, PdfPoint point2) =>
+            double polarAngle(PdfPoint point1, PdfPoint point2)
             {
                 return Math.Atan2(point2.Y - point1.Y, point2.X - point1.X) % Math.PI;
-            };
+            }
 
             Stack<PdfPoint> stack = new Stack<PdfPoint>();
             var sortedPoints = points.OrderBy(p => p.Y).ThenBy(p => p.X).ToList();
@@ -607,25 +606,25 @@
         {
             if (!IntersectsWith(p11, p12, p21, p22)) return null;
 
-            var eq1 = GetSlopeIntercept(p11, p12);
-            var eq2 = GetSlopeIntercept(p21, p22);
+            var (Slope1, Intercept1) = GetSlopeIntercept(p11, p12);
+            var (Slope2, Intercept2) = GetSlopeIntercept(p21, p22);
 
-            if (double.IsNaN(eq1.Slope))
+            if (double.IsNaN(Slope1))
             {
-                var x = eq1.Intercept;
-                var y = eq2.Slope * x + eq2.Intercept;
+                var x = Intercept1;
+                var y = Slope2 * x + Intercept2;
                 return new PdfPoint(x, y);
             }
-            else if (double.IsNaN(eq2.Slope))
+            else if (double.IsNaN(Slope2))
             {
-                var x = eq2.Intercept;
-                var y = eq1.Slope * x + eq1.Intercept;
+                var x = Intercept2;
+                var y = Slope1 * x + Intercept1;
                 return new PdfPoint(x, y);
             }
             else
             {
-                var x = (eq2.Intercept - eq1.Intercept) / (eq1.Slope - eq2.Slope);
-                var y = eq1.Slope * x + eq1.Intercept;
+                var x = (Intercept2 - Intercept1) / (Slope1 - Slope2);
+                var y = Slope1 * x + Intercept1;
                 return new PdfPoint(x, y);
             }
         }
@@ -875,7 +874,7 @@
             else // Casus irreducibilis
             {
                 // François Viète's formula
-                Func<double, double, double, double> vietTrigonometricSolution = (p_, q_, k) => 2.0 * Math.Sqrt(-p_ / 3.0)
+                double vietTrigonometricSolution(double p_, double q_, double k) => 2.0 * Math.Sqrt(-p_ / 3.0)
                         * Math.Cos(OneThird * Math.Acos((3.0 * q_) / (2.0 * p_) * Math.Sqrt(-3.0 / p_)) - (2.0 * Math.PI * k) / 3.0);
 
                 double p = Q * 3.0;         // (3.0 * a * c - b * b) / (3.0 * aSquared);
