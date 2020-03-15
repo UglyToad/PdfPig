@@ -142,8 +142,6 @@
             var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentBytes),
                 log);
 
-            var text = OtherEncodings.BytesAsLatin1String(contentBytes);
-
             var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit, rotation, pdfScanner, 
                 pageContentParser,
                 filterProvider, 
