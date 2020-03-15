@@ -278,6 +278,9 @@
         public static readonly NameToken If = new NameToken("IF");
         public static readonly NameToken Im = new NameToken("IM");
         public static readonly NameToken Image = new NameToken("Image");
+        public static readonly NameToken ImageB = new NameToken("ImageB");
+        public static readonly NameToken ImageC = new NameToken("ImageC");
+        public static readonly NameToken ImageI = new NameToken("ImageI");
         public static readonly NameToken ImageMask = new NameToken("ImageMask");
         public static readonly NameToken Index = new NameToken("Index");
         public static readonly NameToken Indexed = new NameToken("Indexed");

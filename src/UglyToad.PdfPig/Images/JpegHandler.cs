@@ -33,8 +33,8 @@
                         // ReSharper disable once UnusedVariable
                         var length = ReadShort(stream, shortBuffer);
                         var bpp = stream.ReadByte();
-                        var width = ReadShort(stream, shortBuffer);
                         var height = ReadShort(stream, shortBuffer);
+                        var width = ReadShort(stream, shortBuffer);
 
                         return new JpegInformation(width, height, bpp);
                     }

@@ -399,7 +399,7 @@
         }
 
         [Fact]
-        public void CanWriteSinglePageWithJpg()
+        public void CanWriteSinglePageWithJpeg()
         {
             var builder = new PdfDocumentBuilder();
             var page = builder.AddPage(PageSize.A4);
@@ -417,7 +417,7 @@
             page.AddJpeg(imageBytes, expectedBounds);
             
             var bytes = builder.Build();
-            WriteFile(nameof(CanWriteSinglePageWithJpg), bytes);
+            WriteFile(nameof(CanWriteSinglePageWithJpeg), bytes);
 
             using (var document = PdfDocument.Open(bytes))
             {

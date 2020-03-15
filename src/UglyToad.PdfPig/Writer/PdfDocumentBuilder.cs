@@ -247,9 +247,18 @@
                     context.WriteObject(memory, streamToken, image.Value.ObjectNumber);
                 }
 
+                var procSet = new List<NameToken>
+                {
+                    NameToken.Create("PDF"),
+                    NameToken.Text,
+                    NameToken.ImageB,
+                    NameToken.ImageC,
+                    NameToken.ImageI
+                };
+                
                 var resources = new Dictionary<NameToken, IToken>
                 {
-                    { NameToken.ProcSet, new ArrayToken(new []{ NameToken.Create("PDF"), NameToken.Create("Text") }) }
+                    { NameToken.ProcSet, new ArrayToken(procSet) }
                 };
 
                 if (fontsWritten.Count > 0)
