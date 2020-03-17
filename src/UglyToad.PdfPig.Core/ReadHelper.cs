@@ -123,7 +123,7 @@
         }
         
         /// <summary>
-        /// Determines if a character is whitespace or not.
+        /// Determines if a character is whitespace or not, this includes newlines.
         /// </summary>
         /// <remarks>
         /// These values are specified in table 1 (page 12) of ISO 32000-1:2008.

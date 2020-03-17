@@ -44,7 +44,7 @@
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            stream.WriteText($"/{Name}");
+            stream.WriteText($"/{Name.Data}");
             stream.WriteWhiteSpace();
             stream.WriteText(Symbol);
             stream.WriteNewLine();

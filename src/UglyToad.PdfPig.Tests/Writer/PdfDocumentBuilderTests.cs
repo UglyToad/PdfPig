@@ -3,6 +3,7 @@
     using System.IO;
     using System.Linq;
     using Content;
+    using Integration;
     using PdfPig.Core;
     using PdfPig.Fonts.Standard14Fonts;
     using PdfPig.Writer;
@@ -394,6 +395,102 @@
                 var page1 = document.GetPage(1);
 
                 Assert.Equal("Hello: řó", page1.Text);
+            }
+        }
+
+        [Fact]
+        public void CanWriteSinglePageWithJpeg()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page = builder.AddPage(PageSize.A4);
+
+            var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+
+            page.AddText("Smile", 12, new PdfPoint(25, page.PageSize.Height - 52), font);
+
+            var img = IntegrationHelpers.GetDocumentPath("smile-250-by-160.jpg", false);
+
+            var expectedBounds = new PdfRectangle(25, page.PageSize.Height - 300, 200, page.PageSize.Height - 200);
+
+            var imageBytes = File.ReadAllBytes(img);
+
+            page.AddJpeg(imageBytes, expectedBounds);
+            
+            var bytes = builder.Build();
+            WriteFile(nameof(CanWriteSinglePageWithJpeg), bytes);
+
+            using (var document = PdfDocument.Open(bytes))
+            {
+                var page1 = document.GetPage(1);
+
+                Assert.Equal("Smile", page1.Text);
+
+                var image = Assert.Single(page1.GetImages());
+
+                Assert.NotNull(image);
+
+                Assert.Equal(expectedBounds.BottomLeft, image.Bounds.BottomLeft);
+                Assert.Equal(expectedBounds.TopRight, image.Bounds.TopRight);
+
+                Assert.Equal(imageBytes, image.RawBytes);
+            }
+        }
+
+        [Fact]
+        public void CanWrite2PagesSharingJpeg()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page = builder.AddPage(PageSize.A4);
+
+            var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+
+            page.AddText("Smile", 12, new PdfPoint(25, page.PageSize.Height - 52), font);
+
+            var img = IntegrationHelpers.GetDocumentPath("smile-250-by-160.jpg", false);
+
+            var expectedBounds1 = new PdfRectangle(25, page.PageSize.Height - 300, 200, page.PageSize.Height - 200);
+
+            var imageBytes = File.ReadAllBytes(img);
+
+            var expectedBounds2 = new PdfRectangle(25, 600, 75, 650);
+
+            var jpeg = page.AddJpeg(imageBytes, expectedBounds1);
+            page.AddJpeg(jpeg, expectedBounds2);
+
+            var expectedBounds3 = new PdfRectangle(30, 500, 130, 550);
+
+            var page2 = builder.AddPage(PageSize.A4);
+            page2.AddJpeg(jpeg, expectedBounds3);
+
+            var bytes = builder.Build();
+            WriteFile(nameof(CanWrite2PagesSharingJpeg), bytes);
+
+            using (var document = PdfDocument.Open(bytes))
+            {
+                var page1 = document.GetPage(1);
+
+                Assert.Equal("Smile", page1.Text);
+
+                var page1Images = page1.GetImages().ToList();
+                Assert.Equal(2, page1Images.Count);
+
+                var image1 = page1Images[0];
+                Assert.Equal(expectedBounds1, image1.Bounds);
+
+                var image2 = page1Images[1];
+                Assert.Equal(expectedBounds2, image2.Bounds);
+
+                var page2Doc = document.GetPage(2);
+
+                var image3 = Assert.Single(page2Doc.GetImages());
+
+                Assert.NotNull(image3);
+
+                Assert.Equal(expectedBounds3, image3.Bounds);
+
+                Assert.Equal(imageBytes, image1.RawBytes);
+                Assert.Equal(imageBytes, image2.RawBytes);
+                Assert.Equal(imageBytes, image3.RawBytes);
             }
         }
 
