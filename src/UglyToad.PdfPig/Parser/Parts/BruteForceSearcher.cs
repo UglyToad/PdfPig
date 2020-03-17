@@ -42,6 +42,8 @@
 
             var currentlyInObject = false;
 
+            var objBuffer = new byte[4];
+
             do
             {
                 if (loopProtection > 1_000_000)
@@ -94,16 +96,23 @@
 
                 bytes.Seek(currentOffset);
 
-                if (!ReadHelper.IsString(bytes, " obj"))
+                bytes.Read(objBuffer);
+
+                if (!IsStartObjMarker(objBuffer))
                 {
                     currentOffset++;
                     continue;
                 }
 
                 // Current byte is ' '[obj]
-                var offset = currentOffset - 1;
+                var offset = currentOffset + 1;
 
                 bytes.Seek(offset);
+
+                while (ReadHelper.IsWhitespace(bytes.CurrentByte) && offset >= MinimumSearchOffset)
+                {
+                    bytes.Seek(--offset);
+                }
 
                 while (ReadHelper.IsDigit(bytes.CurrentByte) && offset >= MinimumSearchOffset)
                 {
@@ -113,13 +122,16 @@
                 }
 
                 // We should now be at the space between object and generation number.
-                if (!ReadHelper.IsSpace(bytes.CurrentByte))
+                if (!ReadHelper.IsWhitespace(bytes.CurrentByte))
                 {
                     currentOffset++;
                     continue;
                 }
 
-                bytes.Seek(--offset);
+                while (ReadHelper.IsWhitespace(bytes.CurrentByte))
+                {
+                    bytes.Seek(--offset);
+                }
 
                 while (ReadHelper.IsDigit(bytes.CurrentByte) && offset >= MinimumSearchOffset)
                 {
@@ -184,6 +196,18 @@
 
             bytes.Seek(originalOffset);
             return long.MaxValue;
+        }
+
+        private static bool IsStartObjMarker(byte[] data)
+        {
+            if (!ReadHelper.IsWhitespace(data[0]))
+            {
+                return false;
+            }
+
+            return (data[1] == 'o' || data[1] == 'O')
+                   && (data[2] == 'b' || data[2] == 'B')
+                   && (data[3] == 'j' || data[3] == 'J');
         }
     }
 }
