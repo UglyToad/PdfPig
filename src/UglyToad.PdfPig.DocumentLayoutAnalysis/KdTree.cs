@@ -7,37 +7,77 @@
 
     // for kd-tree with line segments, see https://stackoverflow.com/questions/14376679/how-to-represent-line-segments-in-kd-tree 
 
-    internal class KdTree : KdTree<PdfPoint>
+    /// <summary>
+    /// K-D tree data structure of <see cref="PdfPoint"/>.
+    /// </summary>
+    public class KdTree : KdTree<PdfPoint>
     {
-        public KdTree(PdfPoint[] candidates) : base(candidates, p => p)
+        /// <summary>
+        /// K-D tree data structure of <see cref="PdfPoint"/>.
+        /// </summary>
+        /// <param name="points">The points used to build the tree.</param>
+        public KdTree(PdfPoint[] points) : base(points, p => p)
         { }
 
-        public PdfPoint FindNearestNeighbours(PdfPoint pivot, Func<PdfPoint, PdfPoint, double> distanceMeasure, out int index, out double distance)
+        /// <summary>
+        /// Get the nearest neighbour to the pivot point.
+        /// Only returns 1 neighbour, even if equidistant points are found.
+        /// </summary>
+        /// <param name="pivot">The point for which to find the nearest neighbour.</param>
+        /// <param name="distanceMeasure">The distance measure used, e.g. the Euclidian distance.</param>
+        /// <param name="index">The nearest neighbour's index (returns -1 if not found).</param>
+        /// <param name="distance">The distance between the pivot and the nearest neighbour (returns <see cref="double.NaN"/> if not found).</param>
+        /// <returns>The nearest neighbour's point.</returns>
+        public PdfPoint FindNearestNeighbour(PdfPoint pivot, Func<PdfPoint, PdfPoint, double> distanceMeasure, out int index, out double distance)
         {
             return FindNearestNeighbour(pivot, p => p, distanceMeasure, out index, out distance);
         }
 
+        /// <summary>
+        /// Get the k nearest neighbours to the pivot point.
+        /// Might return more than k neighbours if points are equidistant.
+        /// <para>Use <see cref="FindNearestNeighbour(PdfPoint, Func{PdfPoint, PdfPoint, double}, out int, out double)"/> if only looking for the (single) closest point.</para>
+        /// </summary>
+        /// <param name="pivot">The point for which to find the nearest neighbour.</param>
+        /// <param name="k">The number of neighbours to return. Might return more than k neighbours if points are equidistant.</param>
+        /// <param name="distanceMeasure">The distance measure used, e.g. the Euclidian distance.</param>
+        /// <returns>Returns a list of tuples of the k nearest neighbours. Tuples are (element, index, distance).</returns>
         public IReadOnlyList<(PdfPoint, int, double)> FindNearestNeighbours(PdfPoint pivot, int k, Func<PdfPoint, PdfPoint, double> distanceMeasure)
         {
             return FindNearestNeighbours(pivot, k, p => p, distanceMeasure);
         }
     }
 
-    internal class KdTree<T>
+    /// <summary>
+    /// K-D tree data structure.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class KdTree<T>
     {
-        private readonly KdTreeNode<T> Root;
+        /// <summary>
+        /// The root of the tree.
+        /// </summary>
+        public readonly KdTreeNode<T> Root;
 
+        /// <summary>
+        /// Number of elements in the tree.
+        /// </summary>
         public readonly int Count;
 
-        public KdTree(IReadOnlyList<T> candidates, Func<T, PdfPoint> candidatesPointFunc)
+        /// <summary>
+        /// K-D tree data structure.
+        /// </summary>
+        /// <param name="elements">The elements used to build the tree.</param>
+        /// <param name="elementsPointFunc">The function that converts the candidate elements into a <see cref="PdfPoint"/>.</param>
+        public KdTree(IReadOnlyList<T> elements, Func<T, PdfPoint> elementsPointFunc)
         {
-            if (candidates == null || candidates.Count == 0)
+            if (elements == null || elements.Count == 0)
             {
-                throw new ArgumentException("KdTree(): candidates cannot be null or empty.", nameof(candidates));
+                throw new ArgumentException("KdTree(): candidates cannot be null or empty.", nameof(elements));
             }
 
-            Count = candidates.Count;
-            Root = BuildTree(Enumerable.Range(0, candidates.Count).Zip(candidates, (e, p) => (e, candidatesPointFunc(p), p)).ToArray(), 0);
+            Count = elements.Count;
+            Root = BuildTree(Enumerable.Range(0, elements.Count).Zip(elements, (e, p) => (e, elementsPointFunc(p), p)).ToArray(), 0);
         }
 
         private KdTreeNode<T> BuildTree((int, PdfPoint, T)[] P, int depth)
@@ -76,10 +116,11 @@
         #region NN
         /// <summary>
         /// Get the nearest neighbour to the pivot element.
+        /// Only returns 1 neighbour, even if equidistant points are found.
         /// </summary>
         /// <param name="pivot">The element for which to find the nearest neighbour.</param>
-        /// <param name="pivotPointFunc"></param>
-        /// <param name="distanceMeasure"></param>
+        /// <param name="pivotPointFunc">The function that converts the pivot element into a <see cref="PdfPoint"/>.</param>
+        /// <param name="distanceMeasure">The distance measure used, e.g. the Euclidian distance.</param>
         /// <param name="index">The nearest neighbour's index (returns -1 if not found).</param>
         /// <param name="distance">The distance between the pivot and the nearest neighbour (returns <see cref="double.NaN"/> if not found).</param>
         /// <returns>The nearest neighbour's element.</returns>
@@ -161,36 +202,21 @@
         #endregion
 
         #region k-NN
-        /*****************************************************************************
-         * WARNING: k-nearest neighbours algo will need more checks and tests.
-         *****************************************************************************/
-
         /// <summary>
-        /// Get the k nearest neighbours to the pivot element. If elements are equidistant, they are counted as one.
+        /// Get the k nearest neighbours to the pivot element.
+        /// Might return more than k neighbours if points are equidistant.
+        /// <para>Use <see cref="FindNearestNeighbour(KdTreeNode{T}, T, Func{T, PdfPoint}, Func{PdfPoint, PdfPoint, double})"/> if only looking for the (single) closest point.</para>
         /// </summary>
         /// <param name="pivot">The element for which to find the k nearest neighbours.</param>
-        /// <param name="k">The number of neighbours to return. If elements are equidistant, they are counted as one.</param>
-        /// <param name="pivotPointFunc"></param>
-        /// <param name="distanceMeasure"></param>
+        /// <param name="k">The number of neighbours to return. Might return more than k neighbours if points are equidistant.</param>
+        /// <param name="pivotPointFunc">The function that converts the pivot element into a <see cref="PdfPoint"/>.</param>
+        /// <param name="distanceMeasure">The distance measure used, e.g. the Euclidian distance.</param>
         /// <returns>Returns a list of tuples of the k nearest neighbours. Tuples are (element, index, distance).</returns>
         public IReadOnlyList<(T, int, double)> FindNearestNeighbours(T pivot, int k, Func<T, PdfPoint> pivotPointFunc, Func<PdfPoint, PdfPoint, double> distanceMeasure)
         {
-            if (k == 1)
-            {
-                // if only 1 neighbour required, use default to avoid creating KNearestNeighboursQueue
-                var nn = FindNearestNeighbour(pivot, pivotPointFunc, distanceMeasure, out int index, out double distance);
-                if (index == -1)
-                {
-                    return EmptyArray<(T, int, double)>.Instance;
-                }
-                return new List<(T, int, double)>() { (nn, index, distance) };
-            }
-            else
-            {
-                var kdTreeNodes = new KNearestNeighboursQueue(k);
-                FindNearestNeighbours(Root, pivot, k, pivotPointFunc, distanceMeasure, kdTreeNodes);
-                return kdTreeNodes.SelectMany(n => n.Value.Select(e => (e.Element, e.Index, n.Key))).ToList();
-            }
+            var kdTreeNodes = new KNearestNeighboursQueue(k);
+            FindNearestNeighbours(Root, pivot, k, pivotPointFunc, distanceMeasure, kdTreeNodes);
+            return kdTreeNodes.SelectMany(n => n.Value.Select(e => (e.Element, e.Index, n.Key))).ToList();
         }
 
         private static (KdTreeNode<T>, double) FindNearestNeighbours(KdTreeNode<T> node, T pivot, int k,
@@ -324,33 +350,57 @@
         }
         #endregion
 
-        private class KdTreeLeaf<Q> : KdTreeNode<Q>
+        /// <summary>
+        /// K-D tree leaf.
+        /// </summary>
+        /// <typeparam name="Q"></typeparam>
+        public class KdTreeLeaf<Q> : KdTreeNode<Q>
         {
+            /// <summary>
+            /// Return true if leaf.
+            /// </summary>
             public override bool IsLeaf => true;
 
-            public KdTreeLeaf((int, PdfPoint, Q) point, int depth)
+            internal KdTreeLeaf((int, PdfPoint, Q) point, int depth)
                 : base(null, null, point, depth)
             { }
 
+            /// <inheritdoc />
             public override string ToString()
             {
                 return "Leaf->" + Value.ToString();
             }
         }
 
-        private class KdTreeNode<Q>
+        /// <summary>
+        /// K-D tree node.
+        /// </summary>
+        /// <typeparam name="Q"></typeparam>
+        public class KdTreeNode<Q>
         {
             /// <summary>
-            /// Split value.
+            /// Split value (X or Y axis).
             /// </summary>
             public double L => IsAxisCutX ? Value.X : Value.Y;
 
+            /// <summary>
+            /// Split point.
+            /// </summary>
             public PdfPoint Value { get; }
 
+            /// <summary>
+            /// Left child.
+            /// </summary>
             public KdTreeNode<Q> LeftChild { get; internal set; }
 
+            /// <summary>
+            /// Right child.
+            /// </summary>
             public KdTreeNode<Q> RightChild { get; internal set; }
 
+            /// <summary>
+            /// The node's element.
+            /// </summary>
             public Q Element { get; }
 
             /// <summary>
@@ -358,13 +408,22 @@
             /// </summary>
             public bool IsAxisCutX { get; }
 
+            /// <summary>
+            /// The element's depth in the tree.
+            /// </summary>
             public int Depth { get; }
 
+            /// <summary>
+            /// Return true if leaf.
+            /// </summary>
             public virtual bool IsLeaf => false;
 
+            /// <summary>
+            /// The index of the element in the original array.
+            /// </summary>
             public int Index { get; }
 
-            public KdTreeNode(KdTreeNode<Q> leftChild, KdTreeNode<Q> rightChild, (int, PdfPoint, Q) point, int depth)
+            internal KdTreeNode(KdTreeNode<Q> leftChild, KdTreeNode<Q> rightChild, (int, PdfPoint, Q) point, int depth)
             {
                 LeftChild = leftChild;
                 RightChild = rightChild;
@@ -375,6 +434,9 @@
                 Index = point.Item1;
             }
 
+            /// <summary>
+            /// Get the leaves.
+            /// </summary>
             public IEnumerable<KdTreeLeaf<Q>> GetLeaves()
             {
                 var leaves = new List<KdTreeLeaf<Q>>();
@@ -397,6 +459,7 @@
                 }
             }
 
+            /// <inheritdoc />
             public override string ToString()
             {
                 return "Node->" + Value.ToString();
