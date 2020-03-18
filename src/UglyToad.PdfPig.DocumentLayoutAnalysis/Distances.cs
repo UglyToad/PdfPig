@@ -130,7 +130,7 @@
         /// <param name="pivotPoint"></param>
         /// <param name="distanceMeasure">The distance measure to use.</param>
         /// <param name="distance">The distance between reference point, and its nearest neighbour.</param>
-        internal static int FindIndexNearest<T>(T element, IReadOnlyList<T> candidates,
+        public static int FindIndexNearest<T>(T element, IReadOnlyList<T> candidates,
             Func<T, PdfPoint> candidatesPoint, Func<T, PdfPoint> pivotPoint,
             Func<PdfPoint, PdfPoint, double> distanceMeasure, out double distance)
         {
@@ -172,7 +172,7 @@
         /// <param name="pivotLine"></param>
         /// <param name="distanceMeasure">The distance measure between two lines to use.</param>
         /// <param name="distance">The distance between reference line, and its nearest neighbour.</param>
-        internal static int FindIndexNearest<T>(T element, IReadOnlyList<T> candidates,
+        public static int FindIndexNearest<T>(T element, IReadOnlyList<T> candidates,
             Func<T, PdfLine> candidatesLine, Func<T, PdfLine> pivotLine,
             Func<PdfLine, PdfLine, double> distanceMeasure, out double distance)
         {
