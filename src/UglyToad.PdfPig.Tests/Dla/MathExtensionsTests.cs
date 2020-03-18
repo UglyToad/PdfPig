@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Dla
 {
     using System.Collections.Generic;
+    using System.Linq;
     using UglyToad.PdfPig.DocumentLayoutAnalysis;
     using Xunit;
 
@@ -176,10 +177,26 @@
         }
 
         [Theory]
+        [MemberData(nameof(ModeData))]
+        public void ModeFloat(double[] data, double expected)
+        {
+            var dataFloat = data.Select(x => (float)x);
+            Assert.Equal((float)expected, dataFloat.Mode(), PreciseDoubleComparer);
+        }
+        
+        [Theory]
         [MemberData(nameof(ModeDataNaN))]
         public void ModeNaN(double[] data)
         {
             Assert.Equal(double.NaN, data.Mode());
+        }
+
+        [Theory]
+        [MemberData(nameof(ModeDataNaN))]
+        public void ModeNaNFloat(double[] data)
+        {
+            var dataFloat = data.Select(x => (float)x);
+            Assert.Equal(float.NaN, dataFloat.Mode());
         }
     }
 }
