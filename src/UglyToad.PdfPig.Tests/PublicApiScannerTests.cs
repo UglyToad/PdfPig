@@ -195,6 +195,7 @@
                 "UglyToad.PdfPig.Util.Adler32Checksum",
                 "UglyToad.PdfPig.Util.IWordExtractor",
                 "UglyToad.PdfPig.Util.DefaultWordExtractor",
+                "UglyToad.PdfPig.Writer.PdfAStandard",
                 "UglyToad.PdfPig.Writer.PdfDocumentBuilder",
                 "UglyToad.PdfPig.Writer.PdfMerger",
                 "UglyToad.PdfPig.Writer.PdfPageBuilder",
