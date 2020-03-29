@@ -334,6 +334,7 @@
         public static readonly NameToken Mac = new NameToken("Mac");
         public static readonly NameToken MacExpertEncoding = new NameToken("MacExpertEncoding");
         public static readonly NameToken MacRomanEncoding = new NameToken("MacRomanEncoding");
+        public static readonly NameToken Marked = new NameToken("Marked");
         public static readonly NameToken MarkInfo = new NameToken("MarkInfo");
         public static readonly NameToken Mask = new NameToken("Mask");
         public static readonly NameToken Matrix = new NameToken("Matrix");

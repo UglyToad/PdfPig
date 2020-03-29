@@ -13,8 +13,6 @@ namespace UglyToad.PdfPig.Writer
     using PdfPig.Fonts.Standard14Fonts;
     using PdfPig.Fonts.TrueType.Parser;
     using Tokens;
-    using Colors;
-    using Xmp;
 
     using Util.JetBrains.Annotations;
 
@@ -343,10 +341,16 @@ namespace UglyToad.PdfPig.Writer
 
                 if (ArchiveStandard != PdfAStandard.None)
                 {
-                    catalogDictionary[NameToken.OutputIntents] = OutputIntentsFactory.GetOutputIntentsArray(x => context.WriteObject(memory, x));
-                    var xmpStream = XmpWriter.GenerateXmpStream(DocumentInformation, 1.7m, ArchiveStandard);
-                    var xmpObj = context.WriteObject(memory, xmpStream);
-                    catalogDictionary[NameToken.Metadata] = new IndirectReferenceToken(xmpObj.Number);
+                    Func<IToken, ObjectToken> writerFunc = x => context.WriteObject(memory, x);
+
+                    PdfA1BRuleBuilder.Obey(catalogDictionary, writerFunc, DocumentInformation, ArchiveStandard);
+
+                    switch (ArchiveStandard)
+                    {
+                        case PdfAStandard.A1A:
+                            PdfA1ARuleBuilder.Obey(catalogDictionary);
+                            break;
+                    }
                 }
 
                 var catalog = new DictionaryToken(catalogDictionary);
