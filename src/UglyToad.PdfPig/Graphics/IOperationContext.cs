@@ -89,7 +89,6 @@
         /// <summary>
         /// Close the current subpath.
         /// </summary>
-        /// <returns></returns>
         PdfPoint CloseSubpath();
 
         /// <summary>

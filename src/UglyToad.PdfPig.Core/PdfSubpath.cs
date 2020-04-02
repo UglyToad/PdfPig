@@ -176,12 +176,12 @@
         /// </summary>
         public void Rectangle(double x, double y, double width, double height)
         {
-                                                // is equivalent to
+                                                // is equivalent to:
             MoveTo(x, y);                       // x y m
             LineTo(x + width, y);               // (x + width) y l
             LineTo(x + width, y + height);      // (x + width) (y + height) l
             LineTo(x, y + height);              // x (y + height) l
-            CloseSubpath();                        // h
+            CloseSubpath();                     // h
             IsDrawnAsRectangle = true;
         }
         
