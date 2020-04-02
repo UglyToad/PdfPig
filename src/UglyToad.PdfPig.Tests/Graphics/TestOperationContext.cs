@@ -99,7 +99,7 @@
         {
         }
 
-        public void ModifyClippingIntersect(ClippingRule clippingRule)
+        public void ModifyClippingIntersect(FillingRule clippingRule)
         {
         }
 

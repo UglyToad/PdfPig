@@ -131,6 +131,6 @@
         /// <summary>
         /// Modify the clipping rule of the current path.
         /// </summary>
-        void ModifyClippingIntersect(ClippingRule clippingRule);
+        void ModifyClippingIntersect(FillingRule clippingRule);
     }
 }
