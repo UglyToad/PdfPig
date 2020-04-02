@@ -412,7 +412,7 @@
                 CurrentPath = new PdfPath();
             }
 
-            AddSubpath();
+            AddCurrentSubpath();
             CurrentSubpath = new PdfSubpath();
         }
 
@@ -429,11 +429,11 @@
             }
 
             CurrentSubpath.ClosePath();
-            AddSubpath();
+            AddCurrentSubpath();
             return point;
         }
 
-        public void AddSubpath()
+        public void AddCurrentSubpath()
         {
             if (CurrentSubpath == null)
             {
@@ -446,22 +446,149 @@
 
         public void StrokePath(bool close)
         {
+            if (CurrentPath == null)
+            {
+                throw new ArgumentException("StrokePath(null)");
+                //return;
+            }
 
+            CurrentPath.SetStroked();
+
+            if (close)
+            {
+                CurrentSubpath.ClosePath();
+            }
+
+            ClosePath();
         }
 
         public void FillPath(FillingRule fillingRule, bool close)
         {
+            if (CurrentPath == null)
+            {
+                throw new ArgumentException("FillPath(null)");
+                //return;
+            }
 
+            CurrentPath.SetFilled(fillingRule);
+
+            if (close)
+            {
+                CurrentSubpath.ClosePath();
+            }
+
+            ClosePath();
         }
 
         public void FillStrokePath(FillingRule fillingRule, bool close)
         {
-            
+            if (CurrentPath == null)
+            {
+                throw new ArgumentException("FillStrokePath(null)");
+                //return;
+            }
+
+            CurrentPath.SetFilled(fillingRule);
+            CurrentPath.SetStroked();
+
+            if (close)
+            {
+                CurrentSubpath.ClosePath();
+            }
+
+            ClosePath();
         }
         
+        /// <summary>
+        /// End the path object without filling or stroking it. This operator shall be a path-painting no-op,
+        /// used primarily for the side effect of changing the current clipping path (see 8.5.4, "Clipping Path Operators").
+        /// </summary>
+        public void EndPath()
+        {
+            AddCurrentSubpath();
+
+            if (CurrentPath.IsClipping)
+            {
+                /*if (!clipPaths)
+                {
+                    // if we don't clip paths, add clipping paths
+                    paths.Add(CurrentPath);
+                    markedContentStack.AddPath(CurrentPath);
+                }*/
+                CurrentPath = null;
+                return;
+            }
+
+            paths.Add(CurrentPath);
+            markedContentStack.AddPath(CurrentPath);
+            CurrentPath = null;
+        }
+
         public void ClosePath()
         {
+            AddCurrentSubpath();
 
+            if (CurrentPath.IsClipping)
+            {
+                EndPath();
+                return;
+            }
+
+            var currentState = this.GetCurrentState();
+            if (CurrentPath.IsStroked)
+            {
+                CurrentPath.LineDashPattern = currentState.LineDashPattern;
+                CurrentPath.StrokeColor = currentState.CurrentStrokingColor;
+                CurrentPath.LineWidth = currentState.LineWidth;
+                CurrentPath.LineCapStyle = currentState.CapStyle;
+                CurrentPath.LineJoinStyle = currentState.JoinStyle;
+            }
+
+            if (CurrentPath.IsFilled)
+            {
+                CurrentPath.FillColor = currentState.CurrentNonStrokingColor;
+            }
+
+            //if (clipPaths)
+            //{
+                var clippedPath = currentState.CurrentClippingPath.Clip(CurrentPath);
+                if (clippedPath != null)
+                {
+                    paths.Add(clippedPath);
+                    markedContentStack.AddPath(clippedPath);
+                }
+            /*}
+            else
+            {
+                paths.Add(CurrentPath);
+                markedContentStack.AddPath(CurrentPath);
+            }*/
+
+            CurrentPath = null;
+        }
+        public void ModifyClippingIntersect(FillingRule clippingRule)
+        {
+            if (CurrentPath == null)
+            {
+                throw new ArgumentException("ModifyClippingIntersect(null)");
+            }
+
+            AddCurrentSubpath();
+
+            CurrentPath.SetClipping(clippingRule);
+            var currentClipping = GetCurrentState().CurrentClippingPath;
+            currentClipping.SetClipping(clippingRule);
+
+            var newClippings = CurrentPath.Clip(currentClipping);
+            if (newClippings == null)
+            {
+                Console.WriteLine("ContentStreamProcessor.ModifyClippingIntersect(): Warning, empty clipping path found... Clipping path not updated.");
+                log.Warn("ModifyClippingIntersect(): Warning, empty clipping path found... Clipping path not updated.");
+            }
+            else
+            {
+                GetCurrentState().CurrentClippingPath = newClippings;
+            }
         }
 
         public void SetNamedGraphicsState(NameToken stateName)
@@ -562,16 +689,6 @@
             var newMatrix = matrix.Multiply(TextMatrices.TextMatrix);
 
             TextMatrices.TextMatrix = newMatrix;
-        }
-
-        public void ModifyClippingIntersect(FillingRule clippingRule)
-        {
-            if (CurrentSubpath == null)
-            {
-                return;
-            }
-
-
         }
     }
 }

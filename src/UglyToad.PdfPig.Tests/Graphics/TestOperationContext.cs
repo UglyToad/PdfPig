@@ -65,6 +65,15 @@
         public void BeginSubpath()
         {
         }
+        public PdfPoint CloseSubpath()
+        {
+            return new PdfPoint();
+        }
+
+        public void AddCurrentSubpath()
+        {
+
+        }
 
         public void StrokePath(bool close)
         {

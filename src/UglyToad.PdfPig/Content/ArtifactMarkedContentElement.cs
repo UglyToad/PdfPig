@@ -1,8 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using System.Collections.Generic;
     using Core;
+    using System.Collections.Generic;
     using Tokens;
+    using UglyToad.PdfPig.Graphics;
 
     /// <inheritdoc />
     /// <summary>
@@ -73,7 +74,7 @@
             IReadOnlyList<NameToken> attached,
             IReadOnlyList<MarkedContentElement> children,
             IReadOnlyList<Letter> letters,
-            IReadOnlyList<PdfSubpath> paths,
+            IReadOnlyList<PdfPath> paths,
             IReadOnlyList<IPdfImage> images,
             int index) 
             : base(markedContentIdentifier, tag, properties, language,

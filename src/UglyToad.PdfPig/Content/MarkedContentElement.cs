@@ -2,8 +2,8 @@
 {
     using System;
     using System.Collections.Generic;
-    using Core;
     using Tokens;
+    using UglyToad.PdfPig.Graphics;
 
     /// <summary>
     /// A marked content element can be used to provide application specific data in the
@@ -50,7 +50,7 @@
         /// <summary>
         /// Paths contained in this marked content.
         /// </summary>
-        public IReadOnlyList<PdfSubpath> Paths { get; }
+        public IReadOnlyList<PdfPath> Paths { get; }
 
         /// <summary>
         /// Images contained in this marked content.
@@ -88,7 +88,7 @@
             bool isArtifact, 
             IReadOnlyList<MarkedContentElement> children,
             IReadOnlyList<Letter> letters,
-            IReadOnlyList<PdfSubpath> paths,
+            IReadOnlyList<PdfPath> paths,
             IReadOnlyList<IPdfImage> images,
                 int index)
         {

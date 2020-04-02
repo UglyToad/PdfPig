@@ -29,7 +29,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.CurrentSubpath?.ClosePath();
+            operationContext.CurrentPosition = operationContext.CloseSubpath();
         }
 
         /// <inheritdoc />
