@@ -63,7 +63,7 @@
             foreach (var charString in result.CharStrings.CharStrings)
             {
                 Assert.True(result.CharStrings.TryGenerate(charString.Key, out var path));
-                builder.AppendLine(path.ToFullSvg());
+                builder.AppendLine(path.ToFullSvg(double.NaN)); // TODO
             }
 
             builder.Append("</body></html>");

@@ -311,7 +311,7 @@
             /// <summary>
             /// Converts from the path command to an SVG string representing the path operation.
             /// </summary>
-            void WriteSvg(StringBuilder builder);
+            void WriteSvg(StringBuilder builder, double height);
         }
 
         /// <summary>
@@ -326,7 +326,7 @@
             }
 
             /// <inheritdoc />
-            public void WriteSvg(StringBuilder builder)
+            public void WriteSvg(StringBuilder builder, double height)
             {
                 builder.Append("Z ");
             }
@@ -373,9 +373,9 @@
             }
 
             /// <inheritdoc />
-            public void WriteSvg(StringBuilder builder)
+            public void WriteSvg(StringBuilder builder, double height)
             {
-                builder.Append("M ").Append(Location.X).Append(' ').Append(Location.Y).Append(' ');
+                builder.Append($"M {Location.X} {height - Location.Y} ");
             }
 
             /// <inheritdoc />
@@ -439,9 +439,9 @@
             }
 
             /// <inheritdoc />
-            public void WriteSvg(StringBuilder builder)
+            public void WriteSvg(StringBuilder builder, double height)
             {
-                builder.AppendFormat("L {0} {1} ", To.X, To.Y);
+                builder.Append($"L {To.X} {height - To.Y} ");
             }
 
             /// <inheritdoc />
@@ -543,10 +543,9 @@
             }
 
             /// <inheritdoc />
-            public void WriteSvg(StringBuilder builder)
+            public void WriteSvg(StringBuilder builder, double height)
             {
-                builder.AppendFormat("C {0} {1}, {2} {3}, {4} {5} ", FirstControlPoint.X, FirstControlPoint.Y, SecondControlPoint.X, SecondControlPoint.Y,
-                    EndPoint.X, EndPoint.Y);
+                builder.Append($"C {FirstControlPoint.X} { height - FirstControlPoint.Y}, { SecondControlPoint.X} {height - SecondControlPoint.Y}, {EndPoint.X} {height - EndPoint.Y} ");
             }
 
             private bool TrySolveQuadratic(bool isX, double currentMin, double currentMax, out (double min, double max) solutions)
