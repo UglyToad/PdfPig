@@ -4,7 +4,7 @@
     using UglyToad.PdfPig.Core;
     using Xunit;
 
-    public class PdfPathTests
+    public class PdfSubpathTests
     {
         private static readonly DoubleComparer DoubleComparer = new DoubleComparer(3);
         private static readonly DoubleComparer PreciseDoubleComparer = new DoubleComparer(6);
@@ -373,8 +373,11 @@
         public void IsCounterClockwise(double[][] source, bool expected)
         {
             PdfSubpath pdfPath = new PdfSubpath();
-            foreach (var point in source)
+            pdfPath.MoveTo(source[0][0], source[0][1]);
+
+            for (int i = 1; i < source.Length; i++)
             {
+                var point = source[i];
                 pdfPath.LineTo(point[0], point[1]);
             }
             pdfPath.LineTo(source[0][0], source[0][1]); // close path

@@ -451,8 +451,7 @@
         {
             if (CurrentPath == null)
             {
-                throw new ArgumentException("StrokePath(null)");
-                //return;
+                return;
             }
 
             CurrentPath.SetStroked();
@@ -469,8 +468,7 @@
         {
             if (CurrentPath == null)
             {
-                throw new ArgumentException("FillPath(null)");
-                //return;
+                return;
             }
 
             CurrentPath.SetFilled(fillingRule);
@@ -487,8 +485,7 @@
         {
             if (CurrentPath == null)
             {
-                throw new ArgumentException("FillStrokePath(null)");
-                //return;
+                return;
             }
 
             CurrentPath.SetFilled(fillingRule);
@@ -514,7 +511,7 @@
             {
                 if (!clipPaths)
                 {
-                    // if we don't clip paths, add clipping paths
+                    // if we don't clip paths, add clipping path to paths
                     paths.Add(CurrentPath);
                     markedContentStack.AddPath(CurrentPath);
                 }
@@ -573,24 +570,26 @@
         {
             if (CurrentPath == null)
             {
-                throw new ArgumentException("ModifyClippingIntersect(null)");
+                return;
             }
 
             AddCurrentSubpath();
-
             CurrentPath.SetClipping(clippingRule);
-            var currentClipping = GetCurrentState().CurrentClippingPath;
-            currentClipping.SetClipping(clippingRule);
 
-            var newClippings = CurrentPath.Clip(currentClipping);
-            if (newClippings == null)
+            if (clipPaths)
             {
-                Console.WriteLine("ContentStreamProcessor.ModifyClippingIntersect(): Warning, empty clipping path found... Clipping path not updated.");
-                log.Warn("ModifyClippingIntersect(): Warning, empty clipping path found... Clipping path not updated.");
-            }
-            else
-            {
-                GetCurrentState().CurrentClippingPath = newClippings;
+                var currentClipping = GetCurrentState().CurrentClippingPath;
+                currentClipping.SetClipping(clippingRule);
+
+                var newClippings = CurrentPath.Clip(currentClipping);
+                if (newClippings == null)
+                {
+                    log.Warn("Empty clipping path found. Clipping path not updated.");
+                }
+                else
+                {
+                    GetCurrentState().CurrentClippingPath = newClippings;
+                }
             }
         }
 
