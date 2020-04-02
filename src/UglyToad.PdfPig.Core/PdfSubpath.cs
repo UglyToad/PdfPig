@@ -6,14 +6,14 @@
     using System.Text;
 
     /// <summary>
-    /// 
+    /// A supbpath is made up of a sequence of connected segments.
     /// </summary>
     public class PdfSubpath
     {
         private readonly List<IPathCommand> commands = new List<IPathCommand>();
 
         /// <summary>
-        /// The sequence of sub-paths which form this <see cref="PdfSubpath"/>.
+        /// The sequence of commands which form this <see cref="PdfSubpath"/>.
         /// </summary>
         public IReadOnlyList<IPathCommand> Commands => commands;
 
