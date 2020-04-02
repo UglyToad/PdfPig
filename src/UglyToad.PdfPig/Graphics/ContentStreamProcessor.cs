@@ -48,6 +48,7 @@
         private readonly IPageContentParser pageContentParser;
         private readonly IFilterProvider filterProvider;
         private readonly ILog log;
+        private readonly bool clipPaths;
         private readonly MarkedContentStack markedContentStack = new MarkedContentStack();
 
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
@@ -86,7 +87,8 @@
             IPdfTokenScanner pdfScanner,
             IPageContentParser pageContentParser,
             IFilterProvider filterProvider,
-            ILog log)
+            ILog log, 
+            bool clipPaths)
         {
             this.resourceStore = resourceStore;
             this.userSpaceUnit = userSpaceUnit;
@@ -95,6 +97,7 @@
             this.pageContentParser = pageContentParser ?? throw new ArgumentNullException(nameof(pageContentParser));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.log = log;
+            this.clipPaths = clipPaths;
 
             // initiate CurrentClippingPath to cropBox
             var clippingSubpath = new PdfSubpath();
@@ -509,12 +512,12 @@
 
             if (CurrentPath.IsClipping)
             {
-                /*if (!clipPaths)
+                if (!clipPaths)
                 {
                     // if we don't clip paths, add clipping paths
                     paths.Add(CurrentPath);
                     markedContentStack.AddPath(CurrentPath);
-                }*/
+                }
                 CurrentPath = null;
                 return;
             }
@@ -549,20 +552,20 @@
                 CurrentPath.FillColor = currentState.CurrentNonStrokingColor;
             }
 
-            //if (clipPaths)
-            //{
+            if (clipPaths)
+            {
                 var clippedPath = currentState.CurrentClippingPath.Clip(CurrentPath);
                 if (clippedPath != null)
                 {
                     paths.Add(clippedPath);
                     markedContentStack.AddPath(clippedPath);
                 }
-            /*}
+            }
             else
             {
                 paths.Add(CurrentPath);
                 markedContentStack.AddPath(CurrentPath);
-            }*/
+            }
 
             CurrentPath = null;
         }

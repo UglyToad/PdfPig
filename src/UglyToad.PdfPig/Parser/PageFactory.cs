@@ -33,7 +33,7 @@
             this.pdfScanner = pdfScanner;
         }
 
-        public Page Create(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers)
+        public Page Create(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers, bool clipPaths)
         {
             if (dictionary == null)
             {
@@ -107,8 +107,8 @@
                         bytes.Add((byte)'\n');
                     }
                 }
-                
-                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation);
+
+                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, clipPaths);
             }
             else
             {
@@ -121,7 +121,7 @@
 
                 var bytes = contentStream.Decode(filterProvider);
 
-                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation);
+                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, clipPaths);
             }
 
             var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, 
@@ -137,15 +137,16 @@
         }
 
         private PageContent GetContent(int pageNumber, IReadOnlyList<byte> contentBytes, CropBox cropBox, UserSpaceUnit userSpaceUnit,
-            PageRotationDegrees rotation)
+            PageRotationDegrees rotation, bool clipPaths)
         {
             var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentBytes),
                 log);
 
-            var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit, rotation, pdfScanner, 
+            var context = new ContentStreamProcessor(cropBox.Bounds, resourceStore, userSpaceUnit, rotation, pdfScanner,
                 pageContentParser,
-                filterProvider, 
-                log);
+                filterProvider,
+                log,
+                clipPaths);
 
             return context.Process(pageNumber, operations);
         }

@@ -23,7 +23,7 @@
             Count = catalog.PagesDictionary.GetIntOrDefault(NameToken.Count);
         }
         
-        public Page GetPage(int pageNumber)
+        public Page GetPage(int pageNumber, bool clipPaths)
         {
             if (pageNumber <= 0 || pageNumber > Count)
             {
@@ -62,8 +62,8 @@
                     pageTreeMembers.Rotation = rotateToken.Int;
                 }
             }
-            
-            var page = pageFactory.Create(pageNumber, pageNode.NodeDictionary, pageTreeMembers);
+
+            var page = pageFactory.Create(pageNumber, pageNode.NodeDictionary, pageTreeMembers, clipPaths);
             
             return page;
         }
