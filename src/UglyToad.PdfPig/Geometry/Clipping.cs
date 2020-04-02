@@ -5,7 +5,7 @@
     /// <summary>
     /// 
     /// </summary>
-    public static class Clipping
+    internal static class Clipping
     {
         const double factor = 10_000.0;
 
