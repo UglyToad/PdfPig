@@ -911,7 +911,7 @@
 
         internal static string ToFullSvg(this PdfSubpath p, double height)
         {
-            static string BboxToRect(PdfRectangle box, string stroke)
+            string BboxToRect(PdfRectangle box, string stroke)
             {
                 var overallBbox = $"<rect x='{box.Left}' y='{box.Bottom}' width='{box.Width}' height='{box.Height}' stroke-width='2' fill='none' stroke='{stroke}'></rect>";
                 return overallBbox;
