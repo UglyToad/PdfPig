@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
     using System.Collections.Generic;
+    using System.Linq;
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Graphics.Colors;
     using UglyToad.PdfPig.Graphics.Core;
@@ -24,7 +25,17 @@
         /// <summary>
         /// 
         /// </summary>
+        public bool IsFilled { get; private set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public IColor FillColor { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool IsStroked { get; private set; }
 
         /// <summary>
         /// 
@@ -56,8 +67,82 @@
         /// </summary>
         public void SetClipping(FillingRule fillingRule)
         {
+            IsFilled = false;
+            IsStroked = false;
             IsClipping = true;
             FillingRule = fillingRule;
+        }
+
+        /// <summary>
+        /// Set the filling rule for this path.
+        /// </summary>
+        public void SetFilled(FillingRule fillingRule)
+        {
+            IsFilled = true;
+            FillingRule = fillingRule;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void SetStroked()
+        {
+            IsStroked = true;
+        }
+
+        /// <summary>
+        /// Create a clone with no Subpaths.
+        /// </summary>
+        public PdfPath CloneEmpty()
+        {
+            PdfPath newPath = new PdfPath();
+            if (IsClipping)
+            {
+                newPath.SetClipping(FillingRule);
+            }
+            else
+            {
+                if (IsFilled)
+                {
+                    newPath.SetFilled(FillingRule);
+                    newPath.FillColor = FillColor;
+                }
+
+                if (IsStroked)
+                {
+                    newPath.SetStroked();
+                    newPath.LineCapStyle = LineCapStyle;
+                    newPath.LineDashPattern = LineDashPattern;
+                    newPath.LineJoinStyle = LineJoinStyle;
+                    newPath.LineWidth = LineWidth;
+                    newPath.StrokeColor = StrokeColor;
+                }
+            }
+            return newPath;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public PdfRectangle? GetBoundingRectangle()
+        {
+            if (this.Count == 0)
+            {
+                return null;
+            }
+
+            var bboxes = this.Select(x => x.GetBoundingRectangle()).Where(x => x.HasValue).Select(x => x.Value).ToList();
+            if (bboxes.Count == 0)
+            {
+                return null;
+            }
+
+            var minX = bboxes.Min(x => x.Left);
+            var minY = bboxes.Min(x => x.Bottom);
+            var maxX = bboxes.Max(x => x.Right);
+            var maxY = bboxes.Max(x => x.Top);
+            return new PdfRectangle(minX, minY, maxX, maxY);
         }
     }
 }
