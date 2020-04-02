@@ -6,7 +6,7 @@
     using System.Text;
 
     /// <summary>
-    /// A path in a PDF document, used by glyphs and page content. Can contain multiple sub-paths.
+    /// 
     /// </summary>
     public class PdfSubpath
     {
@@ -21,16 +21,6 @@
         /// True if the <see cref="PdfSubpath"/> was originaly draw as a rectangle.
         /// </summary>
         public bool IsDrawnAsRectangle { get; internal set; }
-
-        /// <summary>
-        /// Rules for determining which points lie inside/outside the path.
-        /// </summary>
-        public ClippingRule ClippingRule { get; private set; }
-
-        /// <summary>
-        /// Returns true if this is a clipping path.
-        /// </summary>
-        public bool IsClipping { get; private set; }
 
         private PdfPoint? currentPosition;
 
@@ -72,15 +62,6 @@
             var points = filtered.Select(GetStartPoint).ToList();
             points.AddRange(filtered.Select(GetEndPoint));
             return new PdfPoint(points.Average(p => p.X), points.Average(p => p.Y));
-        }
-
-        /// <summary>
-        /// Set the clipping mode for this path.
-        /// </summary>
-        public void SetClipping(ClippingRule clippingRule)
-        {
-            IsClipping = true;
-            ClippingRule = clippingRule;
         }
 
         internal static PdfPoint GetStartPoint(IPathCommand command)

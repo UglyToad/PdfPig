@@ -3,7 +3,7 @@
     /// <summary>
     /// Rules for determining which points lie inside/outside a path.
     /// </summary>
-    public enum ClippingRule : byte
+    public enum FillingRule : byte
     {
         /// <summary>
         /// No rule.

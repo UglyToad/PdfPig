@@ -555,14 +555,14 @@
             TextMatrices.TextMatrix = newMatrix;
         }
 
-        public void ModifyClippingIntersect(ClippingRule clippingRule)
+        public void ModifyClippingIntersect(FillingRule clippingRule)
         {
             if (CurrentPath == null)
             {
                 return;
             }
 
-            CurrentPath.SetClipping(clippingRule);
+
         }
     }
 }
