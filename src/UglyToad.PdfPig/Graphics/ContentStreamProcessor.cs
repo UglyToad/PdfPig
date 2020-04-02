@@ -431,7 +431,7 @@
                 throw new ArgumentException("CloseSubpath(): first command not Move.");
             }
 
-            CurrentSubpath.ClosePath();
+            CurrentSubpath.CloseSubpath();
             AddCurrentSubpath();
             return point;
         }
@@ -458,7 +458,7 @@
 
             if (close)
             {
-                CurrentSubpath.ClosePath();
+                CurrentSubpath.CloseSubpath();
             }
 
             ClosePath();
@@ -475,7 +475,7 @@
 
             if (close)
             {
-                CurrentSubpath.ClosePath();
+                CurrentSubpath.CloseSubpath();
             }
 
             ClosePath();
@@ -493,7 +493,7 @@
 
             if (close)
             {
-                CurrentSubpath.ClosePath();
+                CurrentSubpath.CloseSubpath();
             }
 
             ClosePath();
