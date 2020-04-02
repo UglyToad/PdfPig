@@ -230,9 +230,8 @@
         /// </summary>
         public bool IsClosed()
         {
-            // need to check if filled -> true if filled
             if (Commands.Any(c => c is Close)) return true;
-            var filtered = Commands.Where(c => c is Line || c is BezierCurve).ToList();
+            var filtered = Commands.Where(c => c is Line || c is BezierCurve || c is Move).ToList();
             if (filtered.Count < 2) return false;
             if (!GetStartPoint(filtered.First()).Equals(GetEndPoint(filtered.Last()))) return false;
             return true;
