@@ -28,7 +28,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.FillPath(false);
+            operationContext.FillStrokePath(PdfPig.Core.FillingRule.EvenOdd, false);
         }
 
         /// <inheritdoc />
