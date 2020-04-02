@@ -14,6 +14,11 @@ namespace UglyToad.PdfPig.Graphics
     public class CurrentGraphicsState : IDeepCloneable<CurrentGraphicsState>
     {
         /// <summary>
+        /// The current clipping path.
+        /// </summary>
+        public PdfPath CurrentClippingPath { get; set; }
+
+        /// <summary>
         /// The <see cref="CurrentFontState"/> for this graphics state.
         /// </summary>
         public CurrentFontState FontState { get; set; } = new CurrentFontState();
@@ -131,7 +136,8 @@ namespace UglyToad.PdfPig.Graphics
                 Smoothness = Smoothness,
                 StrokeAdjustment = StrokeAdjustment,
                 CurrentStrokingColor = CurrentStrokingColor,
-                CurrentNonStrokingColor = CurrentNonStrokingColor
+                CurrentNonStrokingColor = CurrentNonStrokingColor,
+                CurrentClippingPath = CurrentClippingPath
             };
         }
     }
