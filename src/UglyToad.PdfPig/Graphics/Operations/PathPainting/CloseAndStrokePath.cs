@@ -1,34 +1,34 @@
-﻿namespace UglyToad.PdfPig.Graphics.Operations
+﻿namespace UglyToad.PdfPig.Graphics.Operations.PathPainting
 {
     using System.IO;
 
     /// <inheritdoc />
     /// <summary>
-    /// Fill the path, using the even-odd rule to determine the region to fill.
+    /// Close and stroke the path.
     /// </summary>
-    public class FillPathEvenOddRule : IGraphicsStateOperation
+    public class CloseAndStrokePath : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
         /// </summary>
-        public const string Symbol = "f*";
+        public const string Symbol = "s";
 
         /// <summary>
-        /// The instance of the <see cref="FillPathEvenOddRule"/> operation.
+        /// The instance of the <see cref="CloseAndStrokePath"/> operation.
         /// </summary>
-        public static readonly FillPathEvenOddRule Value = new FillPathEvenOddRule();
+        public static readonly CloseAndStrokePath Value = new CloseAndStrokePath();
 
         /// <inheritdoc />
         public string Operator => Symbol;
 
-        private FillPathEvenOddRule()
+        private CloseAndStrokePath()
         {
         }
 
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.FillPath(false);
+            operationContext.StrokePath(true);
         }
 
         /// <inheritdoc />

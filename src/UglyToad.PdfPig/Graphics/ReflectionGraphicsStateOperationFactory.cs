@@ -2,10 +2,6 @@ using UglyToad.PdfPig.Tokenization;
 
 namespace UglyToad.PdfPig.Graphics
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Reflection;
     using Operations;
     using Operations.ClippingPaths;
     using Operations.Compatibility;
@@ -19,7 +15,12 @@ namespace UglyToad.PdfPig.Graphics
     using Operations.TextShowing;
     using Operations.TextState;
     using PdfPig.Core;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Reflection;
     using Tokens;
+    using UglyToad.PdfPig.Graphics.Operations.PathPainting;
 
     internal class ReflectionGraphicsStateOperationFactory : IGraphicsStateOperationFactory
     {

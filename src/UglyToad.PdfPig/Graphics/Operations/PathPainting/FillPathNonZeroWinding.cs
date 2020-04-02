@@ -1,34 +1,35 @@
-﻿namespace UglyToad.PdfPig.Graphics.Operations
+﻿namespace UglyToad.PdfPig.Graphics.Operations.PathPainting
 {
     using System.IO;
-    
+
     /// <inheritdoc />
     /// <summary>
-    /// Close, fill, and then stroke the path, using the nonzero winding number rule to determine the region to fill. 
+    /// Fill the path, using the nonzero winding number rule to determine the region to fill. 
+    /// Any subpaths that are open are implicitly closed before being filled.
     /// </summary>
-    public class CloseFillPathNonZeroWindingAndStroke : IGraphicsStateOperation
+    public class FillPathNonZeroWinding : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
         /// </summary>
-        public const string Symbol = "b";
-        
+        public const string Symbol = "f";
+
         /// <summary>
-        /// The instance of the <see cref="CloseFillPathNonZeroWindingAndStroke"/> operation.
+        /// The instance of the <see cref="FillPathNonZeroWinding"/> operation.
         /// </summary>
-        public static readonly CloseFillPathNonZeroWindingAndStroke Value = new CloseFillPathNonZeroWindingAndStroke();
+        public static readonly FillPathNonZeroWinding Value = new FillPathNonZeroWinding();
 
         /// <inheritdoc />
         public string Operator => Symbol;
 
-        private CloseFillPathNonZeroWindingAndStroke()
-        {            
+        private FillPathNonZeroWinding()
+        {
         }
 
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.FillPath(true);
+            operationContext.FillPath(false);
         }
 
         /// <inheritdoc />

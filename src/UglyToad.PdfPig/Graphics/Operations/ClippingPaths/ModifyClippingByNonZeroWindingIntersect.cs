@@ -15,7 +15,7 @@
         public const string Symbol = "W";
 
         /// <summary>
-        /// The instance of the <see cref="EndPath"/> operation.
+        /// The instance of the <see cref="ModifyClippingByNonZeroWindingIntersect"/> operation.
         /// </summary>
         public static readonly ModifyClippingByNonZeroWindingIntersect Value = new ModifyClippingByNonZeroWindingIntersect();
 

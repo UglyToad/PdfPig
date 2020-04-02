@@ -1,28 +1,27 @@
-﻿namespace UglyToad.PdfPig.Graphics.Operations
+﻿namespace UglyToad.PdfPig.Graphics.Operations.PathPainting
 {
     using System.IO;
 
     /// <inheritdoc />
     /// <summary>
-    /// Equivalent to <see cref="FillPathNonZeroWinding"/> included only for compatibility. 
-    /// Although PDF consumer applications must be able to accept this operator, PDF producer applications should use <see cref="FillPathNonZeroWinding"/> instead.
+    /// Fill the path, using the even-odd rule to determine the region to fill.
     /// </summary>
-    public class FillPathNonZeroWindingCompatibility : IGraphicsStateOperation
+    public class FillPathEvenOddRule : IGraphicsStateOperation
     {
         /// <summary>
         /// The symbol for this operation in a stream.
         /// </summary>
-        public const string Symbol = "F";
+        public const string Symbol = "f*";
 
         /// <summary>
-        /// The instance of the <see cref="FillPathEvenOddRuleAndStroke"/> operation.
+        /// The instance of the <see cref="FillPathEvenOddRule"/> operation.
         /// </summary>
-        public static readonly FillPathNonZeroWindingCompatibility Value = new FillPathNonZeroWindingCompatibility();
+        public static readonly FillPathEvenOddRule Value = new FillPathEvenOddRule();
 
         /// <inheritdoc />
         public string Operator => Symbol;
 
-        private FillPathNonZeroWindingCompatibility()
+        private FillPathEvenOddRule()
         {
         }
 

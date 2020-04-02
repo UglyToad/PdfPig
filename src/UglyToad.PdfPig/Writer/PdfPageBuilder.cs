@@ -1,8 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Writer
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
     using Content;
     using Core;
     using Fonts;
@@ -16,7 +13,11 @@
     using Graphics.Operations.TextShowing;
     using Graphics.Operations.TextState;
     using Images;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
     using Tokens;
+    using UglyToad.PdfPig.Graphics.Operations.PathPainting;
 
     /// <summary>
     /// A builder used to add construct a page in a PDF document.
