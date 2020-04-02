@@ -18,7 +18,7 @@
         /// <summary>
         /// The current path.
         /// </summary>
-        public PdfPath Path { get; } = new PdfPath();
+        public PdfSubpath Path { get; } = new PdfSubpath();
 
         /// <summary>
         /// The current location of the active point.

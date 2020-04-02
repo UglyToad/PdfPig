@@ -14,7 +14,7 @@
         /// The current path being drawn if applicable.
         /// </summary>
         [CanBeNull]
-        PdfPath CurrentPath { get; }
+        PdfSubpath CurrentPath { get; }
 
         /// <summary>
         /// The active colorspaces for this content stream.

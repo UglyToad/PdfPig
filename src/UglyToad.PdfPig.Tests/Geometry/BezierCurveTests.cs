@@ -4,7 +4,7 @@
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Geometry;
     using Xunit;
-    using static UglyToad.PdfPig.Core.PdfPath;
+    using static UglyToad.PdfPig.Core.PdfSubpath;
 
     public class BezierCurveTests
     {

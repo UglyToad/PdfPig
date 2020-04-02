@@ -10,7 +10,7 @@
     {
         private readonly IReadOnlyDictionary<int, string> charStringIndexToName;
         private readonly object locker = new object();
-        private readonly Dictionary<string, PdfPath> glyphs = new Dictionary<string, PdfPath>();
+        private readonly Dictionary<string, PdfSubpath> glyphs = new Dictionary<string, PdfSubpath>();
 
         public IReadOnlyDictionary<string, CommandSequence> CharStrings { get; }
 
@@ -24,9 +24,9 @@
             Subroutines = subroutines ?? throw new ArgumentNullException(nameof(subroutines));
         }
 
-        public bool TryGenerate(string name, out PdfPath path)
+        public bool TryGenerate(string name, out PdfSubpath path)
         {
-            path = default(PdfPath);
+            path = default(PdfSubpath);
             lock (locker)
             {
                 if (glyphs.TryGetValue(name, out path))
@@ -54,7 +54,7 @@
             return true;
         }
 
-        private PdfPath Run(CommandSequence sequence)
+        private PdfSubpath Run(CommandSequence sequence)
         {
             var context = new Type1BuildCharContext(Subroutines, i =>
             {

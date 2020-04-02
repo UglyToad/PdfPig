@@ -28,12 +28,12 @@
 
         public IReadOnlyList<Letter> Letters { get; }
 
-        public IReadOnlyList<PdfPath> Paths { get; }
+        public IReadOnlyList<PdfSubpath> Paths { get; }
 
         public int NumberOfImages => images.Count;
 
         internal PageContent(IReadOnlyList<IGraphicsStateOperation> graphicsStateOperations, IReadOnlyList<Letter> letters,
-            IReadOnlyList<PdfPath> paths,
+            IReadOnlyList<PdfSubpath> paths,
             IReadOnlyList<Union<XObjectContentRecord, InlineImage>> images,
             IReadOnlyList<MarkedContentElement> markedContents,
             IPdfTokenScanner pdfScanner,

@@ -32,7 +32,7 @@
         /// <param name="name">The name of the character to retrieve the CharString for.</param>
         /// <param name="defaultWidthX">The default width for the glyph from the font's private dictionary.</param>
         /// <param name="nominalWidthX">The nominal width which individual glyph widths are encoded as the difference from.</param>
-        /// <returns>A <see cref="PdfPath"/> for the glyph.</returns>
+        /// <returns>A <see cref="PdfSubpath"/> for the glyph.</returns>
         public Type2Glyph Generate(string name, double defaultWidthX, double nominalWidthX)
         {
             Type2Glyph glyph;
@@ -223,7 +223,7 @@
         /// <summary>
         /// The path of the glyph.
         /// </summary>
-        public PdfPath Path { get; }
+        public PdfSubpath Path { get; }
 
         /// <summary>
         /// The width of the glyph as a difference from the nominal width X for the font. Optional.
@@ -233,7 +233,7 @@
         /// <summary>
         /// Create a new <see cref="Type2Glyph"/>.
         /// </summary>
-        public Type2Glyph(PdfPath path, double? width)
+        public Type2Glyph(PdfSubpath path, double? width)
         {
             Path = path ?? throw new ArgumentNullException(nameof(path));
             Width = width;

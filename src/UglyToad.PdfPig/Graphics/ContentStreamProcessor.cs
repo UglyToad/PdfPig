@@ -28,7 +28,7 @@
         /// <summary>
         /// Stores each path as it is encountered in the content stream.
         /// </summary>
-        private readonly List<PdfPath> paths = new List<PdfPath>();
+        private readonly List<PdfSubpath> paths = new List<PdfSubpath>();
 
         /// <summary>
         /// Stores a link to each image (either inline or XObject) as it is encountered in the content stream.
@@ -66,7 +66,7 @@
 
         public TransformationMatrix CurrentTransformationMatrix => GetCurrentState().CurrentTransformationMatrix;
 
-        public PdfPath CurrentPath { get; private set; }
+        public PdfSubpath CurrentPath { get; private set; }
 
         public IColorSpaceContext ColorSpaceContext { get; }
 
@@ -404,7 +404,7 @@
                 markedContentStack.AddPath(CurrentPath);
             }
 
-            CurrentPath = new PdfPath();
+            CurrentPath = new PdfSubpath();
             currentPathAdded = false;
         }
 
