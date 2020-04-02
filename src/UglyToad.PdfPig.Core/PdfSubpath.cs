@@ -181,7 +181,7 @@
             LineTo(x + width, y);               // (x + width) y l
             LineTo(x + width, y + height);      // (x + width) (y + height) l
             LineTo(x, y + height);              // x (y + height) l
-            ClosePath();                        // h
+            CloseSubpath();                        // h
             IsDrawnAsRectangle = true;
         }
         
@@ -212,7 +212,7 @@
         /// <summary>
         /// Close the path.
         /// </summary>
-        public void ClosePath()
+        public void CloseSubpath()
         {
             if (currentPosition.HasValue)
             {
