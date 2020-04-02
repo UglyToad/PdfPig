@@ -12,6 +12,7 @@
     using System.Xml.Serialization;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.ReadingOrderDetector;
+    using UglyToad.PdfPig.Graphics;
     using Util;
 
     /// <summary>
@@ -199,7 +200,7 @@
             return pageXmlPage;
         }
 
-        private PageXmlDocument.PageXmlLineDrawingRegion ToPageXmlLineDrawingRegion(PdfSubpath pdfPath, double height)
+        private PageXmlDocument.PageXmlLineDrawingRegion ToPageXmlLineDrawingRegion(PdfPath pdfPath, double height)
         {
             var bbox = pdfPath.GetBoundingRectangle();
             if (bbox.HasValue)

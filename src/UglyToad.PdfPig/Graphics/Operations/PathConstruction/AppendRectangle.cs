@@ -63,7 +63,7 @@
             var lowerLeftTransform = operationContext.CurrentTransformationMatrix.Transform(lowerLeft);
             var upperRightTransform = operationContext.CurrentTransformationMatrix.Transform(upperRight);
 
-            operationContext.CurrentPath.Rectangle(lowerLeftTransform.X, lowerLeftTransform.Y, upperRightTransform.X - lowerLeftTransform.X, upperRightTransform.Y - lowerLeftTransform.Y);
+            operationContext.CurrentSubpath.Rectangle(lowerLeftTransform.X, lowerLeftTransform.Y, upperRightTransform.X - lowerLeftTransform.X, upperRightTransform.Y - lowerLeftTransform.Y);
         }
 
         /// <inheritdoc />

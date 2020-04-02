@@ -20,7 +20,9 @@
 
         public TransformationMatrix CurrentTransformationMatrix => GetCurrentState().CurrentTransformationMatrix;
 
-        public PdfSubpath CurrentPath { get; set; }
+        public PdfSubpath CurrentSubpath { get; set; }
+
+        public PdfPath CurrentPath { get; set; }
 
         public IColorSpaceContext ColorSpaceContext { get; }
 
@@ -29,7 +31,7 @@
         public TestOperationContext()
         {
             StateStack.Push(new CurrentGraphicsState());
-            CurrentPath = new PdfSubpath();
+            CurrentSubpath = new PdfSubpath();
             ColorSpaceContext = new ColorSpaceContext(GetCurrentState, new ResourceStore(new TestPdfTokenScanner(), new TestFontFactory()));
         }
 

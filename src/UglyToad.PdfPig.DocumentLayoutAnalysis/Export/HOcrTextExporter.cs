@@ -6,6 +6,7 @@
     using System;
     using System.Linq;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
+    using UglyToad.PdfPig.Graphics;
     using Util;
 
     /// <summary>
@@ -176,7 +177,7 @@
         /// <param name="pageHeight"></param>
         /// <param name="subPaths"></param>
         /// <param name="level">The indent level.</param>
-        private string GetCode(PdfSubpath path, double pageHeight, bool subPaths, int level)
+        private string GetCode(PdfPath path, double pageHeight, bool subPaths, int level)
         {
             if (path == null) return string.Empty;
 
@@ -190,7 +191,7 @@
                     areaCount++;
                     hocr += GetIndent(level) + @"<div class='ocr_carea' id='block_" + pageCount + "_"
                         + areaCount + "' title='" + GetCode(bbox.Value, pageHeight) + "'>\n";
-                    foreach (var subPath in path.Commands)
+                    foreach (var subPath in path)
                     {
                         var subBbox = subPath.GetBoundingRectangle();
                         if (subBbox.HasValue)

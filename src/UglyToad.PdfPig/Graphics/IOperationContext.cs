@@ -11,10 +11,16 @@
     public interface IOperationContext
     {
         /// <summary>
+        /// The current subpath being drawn if applicable.
+        /// </summary>
+        [CanBeNull]
+        PdfSubpath CurrentSubpath { get; }
+
+        /// <summary>
         /// The current path being drawn if applicable.
         /// </summary>
         [CanBeNull]
-        PdfSubpath CurrentPath { get; }
+        PdfPath CurrentPath { get; }
 
         /// <summary>
         /// The active colorspaces for this content stream.

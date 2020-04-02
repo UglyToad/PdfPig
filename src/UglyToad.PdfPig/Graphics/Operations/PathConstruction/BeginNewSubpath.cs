@@ -45,7 +45,7 @@
             operationContext.BeginSubpath();
             var pointTransform = operationContext.CurrentTransformationMatrix.Transform(point);
             operationContext.CurrentPosition = pointTransform;
-            operationContext.CurrentPath.MoveTo(pointTransform.X, pointTransform.Y);
+            operationContext.CurrentSubpath.MoveTo(pointTransform.X, pointTransform.Y);
         }
 
         /// <inheritdoc />
