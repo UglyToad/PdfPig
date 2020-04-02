@@ -458,7 +458,7 @@
 
             if (close)
             {
-                CurrentSubpath.CloseSubpath();
+                CurrentSubpath?.CloseSubpath();
             }
 
             ClosePath();
@@ -475,7 +475,7 @@
 
             if (close)
             {
-                CurrentSubpath.CloseSubpath();
+                CurrentSubpath?.CloseSubpath();
             }
 
             ClosePath();
@@ -493,7 +493,7 @@
 
             if (close)
             {
-                CurrentSubpath.CloseSubpath();
+                CurrentSubpath?.CloseSubpath();
             }
 
             ClosePath();
@@ -501,6 +501,11 @@
         
         public void EndPath()
         {
+            if (CurrentPath == null)
+            {
+                return;
+            }
+
             AddCurrentSubpath();
 
             if (CurrentPath.IsClipping)
