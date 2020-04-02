@@ -17,6 +17,7 @@
     using Tokenization.Scanner;
     using Tokens;
     using XObjects;
+    using static UglyToad.PdfPig.Core.PdfSubpath;
 
     internal class ContentStreamProcessor : IOperationContext
     {
@@ -94,7 +95,14 @@
             this.pageContentParser = pageContentParser ?? throw new ArgumentNullException(nameof(pageContentParser));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.log = log;
-            graphicsStack.Push(new CurrentGraphicsState());
+
+            // initiate CurrentClippingPath to cropBox
+            var clippingSubpath = new PdfSubpath();
+            clippingSubpath.Rectangle(cropBox.BottomLeft.X, cropBox.BottomLeft.Y, cropBox.Width, cropBox.Height);
+            var clippingPath = new PdfPath() { clippingSubpath };
+            clippingPath.SetClipping(FillingRule.NonZeroWinding);
+
+            graphicsStack.Push(new CurrentGraphicsState() { CurrentClippingPath = clippingPath });
             ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore);
         }
 
@@ -399,7 +407,41 @@
 
         public void BeginSubpath()
         {
-  
+            if (CurrentPath == null)
+            {
+                CurrentPath = new PdfPath();
+            }
+
+            AddSubpath();
+            CurrentSubpath = new PdfSubpath();
+        }
+
+        public PdfPoint CloseSubpath()
+        {
+            PdfPoint point;
+            if (CurrentSubpath.Commands[0] is Move move)
+            {
+                point = move.Location;
+            }
+            else
+            {
+                throw new ArgumentException("CloseSubpath(): first command not Move.");
+            }
+
+            CurrentSubpath.ClosePath();
+            AddSubpath();
+            return point;
+        }
+
+        public void AddSubpath()
+        {
+            if (CurrentSubpath == null)
+            {
+                return;
+            }
+
+            CurrentPath.Add(CurrentSubpath);
+            CurrentSubpath = null;
         }
 
         public void StrokePath(bool close)
@@ -407,11 +449,16 @@
 
         }
 
-        public void FillPath(bool close)
+        public void FillPath(FillingRule fillingRule, bool close)
         {
 
         }
 
+        public void FillStrokePath(FillingRule fillingRule, bool close)
+        {
+            
+        }
+        
         public void ClosePath()
         {
 

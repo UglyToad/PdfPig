@@ -95,8 +95,16 @@
         /// <summary>
         /// Fill the current path.
         /// </summary>
+        /// <param name="fillingRule">The filling rule to use.</param>
         /// <param name="close">Whether to also close the path.</param>
-        void FillPath(bool close);
+        void FillPath(FillingRule fillingRule, bool close);
+
+        /// <summary>
+        /// Fill and stroke the current path.
+        /// </summary>
+        /// <param name="fillingRule">The filling rule to use.</param>
+        /// <param name="close">Whether to also close the path.</param>
+        void FillStrokePath(FillingRule fillingRule, bool close);
 
         /// <summary>
         /// Close the current path.

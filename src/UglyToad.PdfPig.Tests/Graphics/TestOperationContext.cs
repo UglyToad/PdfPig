@@ -69,8 +69,13 @@
         public void StrokePath(bool close)
         {
         }
-        public void FillPath(bool close)
+
+        public void FillPath(FillingRule fillingRule, bool close)
         {
+        }
+        public void FillStrokePath(FillingRule fillingRule, bool close)
+        {
+
         }
 
         public void ClosePath()
