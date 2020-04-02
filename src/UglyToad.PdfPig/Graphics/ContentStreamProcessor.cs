@@ -28,7 +28,7 @@
         /// <summary>
         /// Stores each path as it is encountered in the content stream.
         /// </summary>
-        private readonly List<PdfSubpath> paths = new List<PdfSubpath>();
+        private readonly List<PdfPath> paths = new List<PdfPath>();
 
         /// <summary>
         /// Stores a link to each image (either inline or XObject) as it is encountered in the content stream.
@@ -52,7 +52,6 @@
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
         private IFont activeExtendedGraphicsStateFont;
         private InlineImageBuilder inlineImageBuilder;
-        private bool currentPathAdded;
         private int pageNumber;
 
         /// <summary>
@@ -66,7 +65,9 @@
 
         public TransformationMatrix CurrentTransformationMatrix => GetCurrentState().CurrentTransformationMatrix;
 
-        public PdfSubpath CurrentPath { get; private set; }
+        public PdfSubpath CurrentSubpath { get; private set; }
+
+        public PdfPath CurrentPath { get; private set; }
 
         public IColorSpaceContext ColorSpaceContext { get; }
 
@@ -398,61 +399,22 @@
 
         public void BeginSubpath()
         {
-            if (CurrentPath != null && CurrentPath.Commands.Count > 0 && !currentPathAdded)
-            {
-                paths.Add(CurrentPath);
-                markedContentStack.AddPath(CurrentPath);
-            }
-
-            CurrentPath = new PdfSubpath();
-            currentPathAdded = false;
+  
         }
 
         public void StrokePath(bool close)
         {
-            if (CurrentPath == null)
-            {
-                return;
-            }
 
-            if (close)
-            {
-                ClosePath();
-            }
-            else
-            {
-                paths.Add(CurrentPath);
-                markedContentStack.AddPath(CurrentPath);
-                currentPathAdded = true;
-            }
         }
 
         public void FillPath(bool close)
         {
-            if (CurrentPath == null)
-            {
-                return;
-            }
 
-            if (close)
-            {
-                ClosePath();
-            }
-            else
-            {
-                paths.Add(CurrentPath);
-                markedContentStack.AddPath(CurrentPath);
-                currentPathAdded = true;
-            }
         }
 
         public void ClosePath()
         {
-            CurrentPath.ClosePath();
-            paths.Add(CurrentPath);
-            markedContentStack.AddPath(CurrentPath);
-            CurrentPath = null;
-            currentPathAdded = false;
+
         }
 
         public void SetNamedGraphicsState(NameToken stateName)
@@ -557,7 +519,7 @@
 
         public void ModifyClippingIntersect(FillingRule clippingRule)
         {
-            if (CurrentPath == null)
+            if (CurrentSubpath == null)
             {
                 return;
             }

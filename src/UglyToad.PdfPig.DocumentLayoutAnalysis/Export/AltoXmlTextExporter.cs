@@ -10,6 +10,7 @@
     using System.Xml;
     using System.Xml.Serialization;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
+    using UglyToad.PdfPig.Graphics;
     using Util;
 
     /// <inheritdoc />
@@ -159,7 +160,7 @@
             return altoPage;
         }
 
-        private AltoDocument.AltoGraphicalElement ToAltoGraphicalElement(PdfSubpath pdfPath, double height)
+        private AltoDocument.AltoGraphicalElement ToAltoGraphicalElement(PdfPath pdfPath, double height)
         {
             graphicalElementCount++;
 

@@ -78,7 +78,7 @@
             var controlPoint1Transform = operationContext.CurrentTransformationMatrix.Transform(controlPoint1);
             var controlPoint2Transform = operationContext.CurrentTransformationMatrix.Transform(controlPoint2);
             var endTransform = operationContext.CurrentTransformationMatrix.Transform(end);
-            operationContext.CurrentPath.BezierCurveTo(controlPoint1Transform.X, controlPoint1Transform.Y,
+            operationContext.CurrentSubpath.BezierCurveTo(controlPoint1Transform.X, controlPoint1Transform.Y,
                 controlPoint2Transform.X, controlPoint2Transform.Y,
                 endTransform.X, endTransform.Y);
             operationContext.CurrentPosition = endTransform;

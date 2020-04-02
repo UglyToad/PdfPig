@@ -60,7 +60,7 @@
             var end = new PdfPoint(X3, Y3);
             var controlPoint2Transform = operationContext.CurrentTransformationMatrix.Transform(controlPoint2);
             var endTransform = operationContext.CurrentTransformationMatrix.Transform(end);
-            operationContext.CurrentPath.BezierCurveTo(operationContext.CurrentPosition.X,
+            operationContext.CurrentSubpath.BezierCurveTo(operationContext.CurrentPosition.X,
                 operationContext.CurrentPosition.Y,
                 controlPoint2Transform.X,
                 controlPoint2Transform.Y,
