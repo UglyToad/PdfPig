@@ -57,7 +57,7 @@
             top?.AddLetter(letter);
         }
 
-        public void AddPath(PdfSubpath path)
+        public void AddPath(PdfPath path)
         {
             top?.AddPath(path);
         }
@@ -86,7 +86,7 @@
             private readonly DictionaryToken properties;
 
             private readonly List<Letter> letters = new List<Letter>();
-            private readonly List<PdfSubpath> paths = new List<PdfSubpath>();
+            private readonly List<PdfPath> paths = new List<PdfPath>();
             private readonly List<IPdfImage> images = new List<IPdfImage>();
 
             public List<MarkedContentElement> Children { get; } = new List<MarkedContentElement>();
@@ -108,7 +108,7 @@
                 images.Add(image);
             }
 
-            public void AddPath(PdfSubpath path)
+            public void AddPath(PdfPath path)
             {
                 paths.Add(path);
             }

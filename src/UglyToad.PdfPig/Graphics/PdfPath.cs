@@ -45,7 +45,7 @@
         /// <summary>
         /// Thickness in user space units of path to be stroked.
         /// </summary>
-        public double LineWidth { get; set; } = double.NaN;
+        public decimal LineWidth { get; set; }
 
         /// <summary>
         /// The pattern to be used for stroked lines.

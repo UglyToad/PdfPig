@@ -85,6 +85,17 @@
         /// Start a new sub-path.
         /// </summary>
         void BeginSubpath();
+        
+        /// <summary>
+        /// Close the current subpath.
+        /// </summary>
+        /// <returns></returns>
+        PdfPoint CloseSubpath();
+
+        /// <summary>
+        /// Add the current subpath to the path.
+        /// </summary>
+        void AddCurrentSubpath();
 
         /// <summary>
         /// Stroke the current path.

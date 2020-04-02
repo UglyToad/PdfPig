@@ -166,8 +166,8 @@
             }
             else
             {
-                // TODO: probably the wrong behaviour here, maybe line starts from (0, 0)?
-                MoveTo(x, y);
+                // PDF Reference 1.7 p226
+                throw new ArgumentNullException("LineTo(): currentPosition is null.");
             }
         }
         
@@ -176,11 +176,12 @@
         /// </summary>
         public void Rectangle(double x, double y, double width, double height)
         {
-            currentPosition = new PdfPoint(x, y);
-            LineTo(x + width, y);
-            LineTo(x + width, y + height);
-            LineTo(x, y + height);
-            LineTo(x, y);
+                                                // is equivalent to
+            MoveTo(x, y);                       // x y m
+            LineTo(x + width, y);               // (x + width) y l
+            LineTo(x + width, y + height);      // (x + width) (y + height) l
+            LineTo(x, y + height);              // x (y + height) l
+            ClosePath();                        // h
             IsDrawnAsRectangle = true;
         }
         
@@ -203,7 +204,8 @@
             }
             else
             {
-                MoveTo(x3, y3);
+                // PDF Reference 1.7 p226
+                throw new ArgumentNullException("BezierCurveTo(): currentPosition is null.");
             }
         }
         

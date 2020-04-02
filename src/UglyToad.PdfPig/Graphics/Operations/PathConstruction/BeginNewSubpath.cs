@@ -41,11 +41,10 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var point = new PdfPoint(X, Y);
             operationContext.BeginSubpath();
-            var pointTransform = operationContext.CurrentTransformationMatrix.Transform(point);
-            operationContext.CurrentPosition = pointTransform;
-            operationContext.CurrentSubpath.MoveTo(pointTransform.X, pointTransform.Y);
+            var point = operationContext.CurrentTransformationMatrix.Transform(new PdfPoint(X, Y));
+            operationContext.CurrentPosition = point;
+            operationContext.CurrentSubpath.MoveTo(point.X, point.Y);
         }
 
         /// <inheritdoc />
