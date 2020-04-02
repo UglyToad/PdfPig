@@ -81,71 +81,93 @@
                 return new PdfRectangle(polygon[0], polygon[1]);
             }
 
-            PdfPoint[] MBR = new PdfPoint[0];
+            double[] MBR = new double[8];
 
             double Amin = double.PositiveInfinity;
             int j = 1;
             int k = 0;
 
-            PdfPoint Q = new PdfPoint();
-            PdfPoint R0 = new PdfPoint();
-            PdfPoint R1 = new PdfPoint();
-            PdfPoint u = new PdfPoint();
+            double QX = double.NaN;
+            double QY = double.NaN;
+            double R0X = double.NaN;
+            double R0Y = double.NaN;
+            double R1X = double.NaN;
+            double R1Y = double.NaN;
 
             while (true)
             {
                 PdfPoint Pk = polygon[k];
-                PdfPoint v = polygon[j].Subtract(Pk);
-                double r = 1.0 / v.DotProduct(v);
+                PdfPoint Pj = polygon[j];
+
+                double vX = Pj.X - Pk.X;
+                double vY = Pj.Y - Pk.Y;
+                double r = 1.0 / (vX * vX + vY * vY);
 
                 double tmin = 1;
                 double tmax = 0;
                 double smax = 0;
                 int l = -1;
+                double uX;
+                double uY;
 
                 for (j = 0; j < polygon.Count; j++)
                 {
-                    PdfPoint Pj = polygon[j];
-                    u = Pj.Subtract(Pk);
-                    double t = u.DotProduct(v) * r;
-                    PdfPoint Pt = new PdfPoint(t * v.X + Pk.X, t * v.Y + Pk.Y);
-                    u = Pt.Subtract(Pj);
-                    double s = u.DotProduct(u);
+                    Pj = polygon[j];
+                    uX = Pj.X - Pk.X;
+                    uY = Pj.Y - Pk.Y;
+                    double t = (uX * vX + uY * vY) * r;
+
+                    double PtX = t * vX + Pk.X;
+                    double PtY = t * vY + Pk.Y;
+                    uX = PtX - Pj.X;
+                    uY = PtY - Pj.Y;
+
+                    double s = uX * uX + uY * uY;
 
                     if (t < tmin)
                     {
                         tmin = t;
-                        R0 = Pt;
+                        R0X = PtX;
+                        R0Y = PtY;
                     }
 
                     if (t > tmax)
                     {
                         tmax = t;
-                        R1 = Pt;
+                        R1X = PtX;
+                        R1Y = PtY;
                     }
 
                     if (s > smax)
                     {
                         smax = s;
-                        Q = Pt;
+                        QX = PtX;
+                        QY = PtY;
                         l = j;
                     }
                 }
 
                 if (l != -1)
                 {
-                    PdfPoint PlMinusQ = polygon[l].Subtract(Q);
-                    PdfPoint R2 = R1.Add(PlMinusQ);
-                    PdfPoint R3 = R0.Add(PlMinusQ);
+                    PdfPoint Pl = polygon[l];
+                    double PlMinusQX = Pl.X - QX;
+                    double PlMinusQY = Pl.Y - QY;
 
-                    u = R1.Subtract(R0);
+                    double R2X = R1X + PlMinusQX;
+                    double R2Y = R1Y + PlMinusQY;
 
-                    double A = u.DotProduct(u) * smax;
+                    double R3X = R0X + PlMinusQX;
+                    double R3Y = R0Y + PlMinusQY;
+
+                    uX = R1X - R0X;
+                    uY = R1Y - R0Y;
+
+                    double A = (uX * uX + uY * uY) * smax;
 
                     if (A < Amin)
                     {
                         Amin = A;
-                        MBR = new[] { R0, R1, R2, R3 };
+                        MBR = new[] { R0X, R0Y, R1X, R1Y, R2X, R2Y, R3X, R3Y };
                     }
                 }
 
@@ -156,7 +178,10 @@
                 if (k == polygon.Count) break;
             }
 
-            return new PdfRectangle(MBR[2], MBR[3], MBR[1], MBR[0]);
+            return new PdfRectangle(new PdfPoint(MBR[4], MBR[5]),
+                                    new PdfPoint(MBR[6], MBR[7]),
+                                    new PdfPoint(MBR[2], MBR[3]), 
+                                    new PdfPoint(MBR[0], MBR[1]));
         }
 
         /// <summary>
