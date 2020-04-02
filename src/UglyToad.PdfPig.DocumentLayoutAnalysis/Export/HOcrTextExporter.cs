@@ -47,7 +47,7 @@
         /// Get the hOCR (HTML) string of the page layout.
         /// </summary>
         /// <param name="document">The document.</param>
-        /// <param name="includePaths">Draw <see cref="PdfPath"/>s present in the page.</param>
+        /// <param name="includePaths">Draw PdfPaths present in the page.</param>
         /// <param name="useHocrjs">Will add a reference to the 'hocrjs' script just before the closing 'body' tag, adding the 
         /// interface to a plain hOCR file.<para>See https://github.com/kba/hocrjs for more information.</para></param>
         public string Get(PdfDocument document, bool includePaths = false, bool useHocrjs = false)
@@ -67,7 +67,7 @@
         }
 
         /// <summary>
-        /// Get the hOCR (HTML) string of the page layout. Excludes <see cref="PdfPath"/>s.
+        /// Get the hOCR (HTML) string of the page layout. Excludes PdfPaths.
         /// </summary>
         /// <param name="page">The page.</param>
         public string Get(Page page)
@@ -80,7 +80,7 @@
         /// </summary>
         /// <param name="page">The page.</param>
         /// <param name="imageName">The image name, if any.</param>
-        /// <param name="includePaths">Draw <see cref="PdfPath"/>s present in the page.</param>
+        /// <param name="includePaths">Draw PdfPaths present in the page.</param>
         /// <param name="useHocrjs">Will add a reference to the 'hocrjs' script just before the closing 'body' tag, adding the interface to a plain hOCR file.<para>See https://github.com/kba/hocrjs for more information.</para></param>
         public string Get(Page page, bool includePaths = false, string imageName = "unknown", bool useHocrjs = false)
         {
@@ -129,7 +129,7 @@
         /// </summary>
         /// <param name="page"></param>
         /// <param name="imageName"></param>
-        /// <param name="includePaths">Draw <see cref="PdfPath"/>s present in the page.</param>
+        /// <param name="includePaths">Draw PdfPaths present in the page.</param>
         private string GetCode(Page page, bool includePaths, string imageName = "unknown")
         {
             pageCount++;
@@ -176,7 +176,7 @@
         /// <param name="pageHeight"></param>
         /// <param name="subPaths"></param>
         /// <param name="level">The indent level.</param>
-        private string GetCode(PdfPath path, double pageHeight, bool subPaths, int level)
+        private string GetCode(PdfSubpath path, double pageHeight, bool subPaths, int level)
         {
             if (path == null) return string.Empty;
 

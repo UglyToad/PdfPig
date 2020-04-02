@@ -8,17 +8,17 @@
     /// <summary>
     /// A path in a PDF document, used by glyphs and page content. Can contain multiple sub-paths.
     /// </summary>
-    public class PdfPath
+    public class PdfSubpath
     {
         private readonly List<IPathCommand> commands = new List<IPathCommand>();
 
         /// <summary>
-        /// The sequence of sub-paths which form this <see cref="PdfPath"/>.
+        /// The sequence of sub-paths which form this <see cref="PdfSubpath"/>.
         /// </summary>
         public IReadOnlyList<IPathCommand> Commands => commands;
 
         /// <summary>
-        /// True if the <see cref="PdfPath"/> was originaly draw as a rectangle.
+        /// True if the <see cref="PdfSubpath"/> was originaly draw as a rectangle.
         /// </summary>
         public bool IsDrawnAsRectangle { get; internal set; }
 
@@ -63,7 +63,7 @@
         }
 
         /// <summary>
-        /// Get the <see cref="PdfPath"/>'s centroid point.
+        /// Get the <see cref="PdfSubpath"/>'s centroid point.
         /// </summary>
         public PdfPoint GetCentroid()
         {
@@ -124,12 +124,12 @@
         }
 
         /// <summary>
-        /// Simplify this <see cref="PdfPath"/> by converting everything to <see cref="PdfLine"/>s.
+        /// Simplify this <see cref="PdfSubpath"/> by converting everything to <see cref="PdfLine"/>s.
         /// </summary>
         /// <param name="n">Number of lines required (minimum is 1).</param>
-        internal PdfPath Simplify(int n = 4)
+        internal PdfSubpath Simplify(int n = 4)
         {
-            PdfPath simplifiedPath = new PdfPath();
+            PdfSubpath simplifiedPath = new PdfSubpath();
             var startPoint = GetStartPoint(Commands.First());
             simplifiedPath.MoveTo(startPoint.X, startPoint.Y);
 
@@ -315,7 +315,7 @@
         }
 
         /// <summary>
-        /// A command in a <see cref="PdfPath"/>.
+        /// A command in a <see cref="PdfSubpath"/>.
         /// </summary>
         public interface IPathCommand
         {
@@ -332,7 +332,7 @@
         }
 
         /// <summary>
-        /// Close the current <see cref="PdfPath"/>.
+        /// Close the current <see cref="PdfSubpath"/>.
         /// </summary>
         public class Close : IPathCommand
         {
@@ -363,7 +363,7 @@
         }
 
         /// <summary>
-        /// Move drawing of the current <see cref="PdfPath"/> to the specified location.
+        /// Move drawing of the current <see cref="PdfSubpath"/> to the specified location.
         /// </summary>
         public class Move : IPathCommand
         {
@@ -707,11 +707,11 @@
         }
 
         /// <summary>
-        /// Compares two <see cref="PdfPath"/>s for equality. Paths will only be considered equal if the commands which construct the paths are in the same order.
+        /// Compares two <see cref="PdfSubpath"/>s for equality. Paths will only be considered equal if the commands which construct the paths are in the same order.
         /// </summary>
         public override bool Equals(object obj)
         {
-            if (obj is PdfPath path)
+            if (obj is PdfSubpath path)
             {
                 if (Commands.Count != path.Commands.Count) return false;
 

@@ -5,6 +5,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
+    using static UglyToad.PdfPig.Core.PdfSubpath;
 
     /// <summary>
     /// Extension class to Geometry.
@@ -469,7 +470,7 @@
         /// <summary>
         /// Whether two lines intersect.
         /// </summary>
-        public static bool IntersectsWith(this PdfLine line, PdfPath.Line other)
+        public static bool IntersectsWith(this PdfLine line, Line other)
         {
             return IntersectsWith(line.Point1, line.Point2, other.From, other.To);
         }
@@ -485,7 +486,7 @@
         /// <summary>
         /// Get the <see cref="PdfPoint"/> that is the intersection of two lines.
         /// </summary>
-        public static PdfPoint? Intersect(this PdfLine line, PdfPath.Line other)
+        public static PdfPoint? Intersect(this PdfLine line, Line other)
         {
             return Intersect(line.Point1, line.Point2, other.From, other.To);
         }
@@ -501,7 +502,7 @@
         /// <summary>
         /// Checks if both lines are parallel.
         /// </summary>
-        public static bool ParallelTo(this PdfLine line, PdfPath.Line other)
+        public static bool ParallelTo(this PdfLine line, Line other)
         {
             return ParallelTo(line.Point1, line.Point2, other.From, other.To);
         }
@@ -511,7 +512,7 @@
         /// <summary>
         /// Whether the line segment contains the point.
         /// </summary>
-        public static bool Contains(this PdfPath.Line line, PdfPoint point)
+        public static bool Contains(this Line line, PdfPoint point)
         {
             return Contains(line.From, line.To, point);
         }
@@ -519,7 +520,7 @@
         /// <summary>
         /// Whether two lines intersect.
         /// </summary>
-        public static bool IntersectsWith(this PdfPath.Line line, PdfPath.Line other)
+        public static bool IntersectsWith(this Line line, Line other)
         {
             return IntersectsWith(line.From, line.To, other.From, other.To);
         }
@@ -527,7 +528,7 @@
         /// <summary>
         /// Whether two lines intersect.
         /// </summary>
-        public static bool IntersectsWith(this PdfPath.Line line, PdfLine other)
+        public static bool IntersectsWith(this Line line, PdfLine other)
         {
             return IntersectsWith(line.From, line.To, other.Point1, other.Point2);
         }
@@ -535,7 +536,7 @@
         /// <summary>
         /// Get the <see cref="PdfPoint"/> that is the intersection of two lines.
         /// </summary>
-        public static PdfPoint? Intersect(this PdfPath.Line line, PdfPath.Line other)
+        public static PdfPoint? Intersect(this Line line, Line other)
         {
             return Intersect(line.From, line.To, other.From, other.To);
         }
@@ -543,7 +544,7 @@
         /// <summary>
         /// Get the <see cref="PdfPoint"/> that is the intersection of two lines.
         /// </summary>
-        public static PdfPoint? Intersect(this PdfPath.Line line, PdfLine other)
+        public static PdfPoint? Intersect(this Line line, PdfLine other)
         {
             return Intersect(line.From, line.To, other.Point1, other.Point2);
         }
@@ -551,7 +552,7 @@
         /// <summary>
         /// Checks if both lines are parallel.
         /// </summary>
-        public static bool ParallelTo(this PdfPath.Line line, PdfPath.Line other)
+        public static bool ParallelTo(this Line line, Line other)
         {
             return ParallelTo(line.From, line.To, other.From, other.To);
         }
@@ -559,7 +560,7 @@
         /// <summary>
         /// Checks if both lines are parallel.
         /// </summary>
-        public static bool ParallelTo(this PdfPath.Line line, PdfLine other)
+        public static bool ParallelTo(this Line line, PdfLine other)
         {
             return ParallelTo(line.From, line.To, other.Point1, other.Point2);
         }
@@ -641,7 +642,7 @@
         /// </summary>
         /// <param name="bezierCurve">The original bezier curve.</param>
         /// <param name="tau">The t value were to split the curve, usually between 0 and 1, but not necessary.</param>
-        public static (PdfPath.BezierCurve, PdfPath.BezierCurve) Split(this PdfPath.BezierCurve bezierCurve, double tau)
+        public static (BezierCurve, BezierCurve) Split(this BezierCurve bezierCurve, double tau)
         {
             // De Casteljau Algorithm
             PdfPoint[][] points = new PdfPoint[4][];
@@ -668,29 +669,29 @@
                 }
             }
 
-            return (new PdfPath.BezierCurve(points[0][0], points[1][0], points[2][0], points[3][0]),
-                    new PdfPath.BezierCurve(points[3][0], points[2][1], points[1][2], points[0][3]));
+            return (new BezierCurve(points[0][0], points[1][0], points[2][0], points[3][0]),
+                    new BezierCurve(points[3][0], points[2][1], points[1][2], points[0][3]));
         }
 
         /// <summary>
         /// Checks if the curve and the line are intersecting.
-        /// <para>Avoid using this method as it is not optimised. Use <see cref="Intersect(PdfPath.BezierCurve, PdfLine)"/> instead.</para>
+        /// <para>Avoid using this method as it is not optimised. Use <see cref="Intersect(BezierCurve, PdfLine)"/> instead.</para>
         /// </summary>
-        public static bool IntersectsWith(this PdfPath.BezierCurve bezierCurve, PdfLine line)
+        public static bool IntersectsWith(this BezierCurve bezierCurve, PdfLine line)
         {
             return IntersectsWith(bezierCurve, line.Point1, line.Point2);
         }
 
         /// <summary>
         /// Checks if the curve and the line are intersecting.
-        /// <para>Avoid using this method as it is not optimised. Use <see cref="Intersect(PdfPath.BezierCurve, PdfPath.Line)"/> instead.</para>
+        /// <para>Avoid using this method as it is not optimised. Use <see cref="Intersect(BezierCurve, Line)"/> instead.</para>
         /// </summary>
-        public static bool IntersectsWith(this PdfPath.BezierCurve bezierCurve, PdfPath.Line line)
+        public static bool IntersectsWith(this BezierCurve bezierCurve, Line line)
         {
             return IntersectsWith(bezierCurve, line.From, line.To);
         }
 
-        private static bool IntersectsWith(PdfPath.BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
+        private static bool IntersectsWith(BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
         {
             return Intersect(bezierCurve, p1, p2).Length > 0;
         }
@@ -698,7 +699,7 @@
         /// <summary>
         /// Get the <see cref="PdfPoint"/>s that are the intersections of the line and the curve.
         /// </summary>
-        public static PdfPoint[] Intersect(this PdfPath.BezierCurve bezierCurve, PdfLine line)
+        public static PdfPoint[] Intersect(this BezierCurve bezierCurve, PdfLine line)
         {
             return Intersect(bezierCurve, line.Point1, line.Point2);
         }
@@ -706,12 +707,12 @@
         /// <summary>
         /// Get the <see cref="PdfPoint"/>s that are the intersections of the line and the curve.
         /// </summary>
-        public static PdfPoint[] Intersect(this PdfPath.BezierCurve bezierCurve, PdfPath.Line line)
+        public static PdfPoint[] Intersect(this BezierCurve bezierCurve, Line line)
         {
             return Intersect(bezierCurve, line.From, line.To);
         }
         
-        private static PdfPoint[] Intersect(PdfPath.BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
+        private static PdfPoint[] Intersect(BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
         {
             var ts = IntersectT(bezierCurve, p1, p2);
             if (ts == null || ts.Length == 0) return EmptyArray<PdfPoint>.Instance;
@@ -720,12 +721,12 @@
             foreach (var t in ts)
             {
                 PdfPoint point = new PdfPoint(
-                    PdfPath.BezierCurve.ValueWithT(bezierCurve.StartPoint.X,
+                    BezierCurve.ValueWithT(bezierCurve.StartPoint.X,
                                            bezierCurve.FirstControlPoint.X,
                                            bezierCurve.SecondControlPoint.X,
                                            bezierCurve.EndPoint.X,
                                            t),
-                    PdfPath.BezierCurve.ValueWithT(bezierCurve.StartPoint.Y,
+                    BezierCurve.ValueWithT(bezierCurve.StartPoint.Y,
                                            bezierCurve.FirstControlPoint.Y,
                                            bezierCurve.SecondControlPoint.Y,
                                            bezierCurve.EndPoint.Y,
@@ -738,8 +739,8 @@
         /// <summary>
         /// Get the t values that are the intersections of the line and the curve.
         /// </summary>
-        /// <returns>List of t values where the <see cref="PdfPath.BezierCurve"/> and the <see cref="PdfLine"/> intersect.</returns>
-        public static double[] IntersectT(this PdfPath.BezierCurve bezierCurve, PdfLine line)
+        /// <returns>List of t values where the <see cref="BezierCurve"/> and the <see cref="PdfLine"/> intersect.</returns>
+        public static double[] IntersectT(this BezierCurve bezierCurve, PdfLine line)
         {
             return IntersectT(bezierCurve, line.Point1, line.Point2);
         }
@@ -747,13 +748,13 @@
         /// <summary>
         /// Get the t values that are the intersections of the line and the curve.
         /// </summary>
-        /// <returns>List of t values where the <see cref="PdfPath.BezierCurve"/> and the <see cref="PdfPath.Line"/> intersect.</returns>
-        public static double[] IntersectT(this PdfPath.BezierCurve bezierCurve, PdfPath.Line line)
+        /// <returns>List of t values where the <see cref="BezierCurve"/> and the <see cref="Line"/> intersect.</returns>
+        public static double[] IntersectT(this BezierCurve bezierCurve, Line line)
         {
             return IntersectT(bezierCurve, line.From, line.To);
         }
 
-        private static double[] IntersectT(PdfPath.BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
+        private static double[] IntersectT(BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
         {
             // if the bounding boxes do not intersect, they cannot intersect
             var bezierBbox = bezierCurve.GetBoundingRectangle();
@@ -887,7 +888,7 @@
             return new[] {x1, x2, x3};
         }
 
-        internal static string ToSvg(this PdfPath p)
+        internal static string ToSvg(this PdfSubpath p)
         {
             var builder = new StringBuilder();
             foreach (var pathCommand in p.Commands)
@@ -908,7 +909,7 @@
             return builder.ToString();
         }
 
-        internal static string ToFullSvg(this PdfPath p)
+        internal static string ToFullSvg(this PdfSubpath p)
         {
             string BboxToRect(PdfRectangle box, string stroke)
             {

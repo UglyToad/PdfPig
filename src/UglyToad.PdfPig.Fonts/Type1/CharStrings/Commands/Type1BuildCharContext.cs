@@ -6,8 +6,8 @@
 
     internal class Type1BuildCharContext
     {
-        private readonly Func<int, PdfPath> characterByIndexFactory;
-        private readonly Func<string, PdfPath> characterByNameFactory;
+        private readonly Func<int, PdfSubpath> characterByIndexFactory;
+        private readonly Func<string, PdfSubpath> characterByNameFactory;
         public IReadOnlyDictionary<int, Type1CharStrings.CommandSequence> Subroutines { get; }
 
         public double WidthX { get; set; }
@@ -20,7 +20,7 @@
 
         public bool IsFlexing { get; set; }
 
-        public PdfPath Path { get; private set; } = new PdfPath();
+        public PdfSubpath Path { get; private set; } = new PdfSubpath();
 
         public PdfPoint CurrentPosition { get; set; }
 
@@ -31,8 +31,8 @@
         public IReadOnlyList<PdfPoint> FlexPoints { get; }
 
         public Type1BuildCharContext(IReadOnlyDictionary<int, Type1CharStrings.CommandSequence> subroutines,
-            Func<int, PdfPath> characterByIndexFactory,
-            Func<string, PdfPath> characterByNameFactory)
+            Func<int, PdfSubpath> characterByIndexFactory,
+            Func<string, PdfSubpath> characterByNameFactory)
         {
             this.characterByIndexFactory = characterByIndexFactory ?? throw new ArgumentNullException(nameof(characterByIndexFactory));
             this.characterByNameFactory = characterByNameFactory ?? throw new ArgumentNullException(nameof(characterByNameFactory));
@@ -44,17 +44,17 @@
 
         }
 
-        public PdfPath GetCharacter(int characterCode)
+        public PdfSubpath GetCharacter(int characterCode)
         {
             return characterByIndexFactory(characterCode);
         }
 
-        public PdfPath GetCharacter(string characterName)
+        public PdfSubpath GetCharacter(string characterName)
         {
             return characterByNameFactory(characterName);
         }
 
-        public void SetPath(PdfPath path)
+        public void SetPath(PdfSubpath path)
         {
             Path = path ?? throw new ArgumentNullException(nameof(path));
         }
