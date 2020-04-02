@@ -65,6 +65,7 @@
         public void BeginSubpath()
         {
         }
+
         public PdfPoint CloseSubpath()
         {
             return new PdfPoint();
@@ -85,6 +86,10 @@
         public void FillStrokePath(FillingRule fillingRule, bool close)
         {
 
+        }
+
+        public void EndPath()
+        {
         }
 
         public void ClosePath()

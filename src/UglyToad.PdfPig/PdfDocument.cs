@@ -141,8 +141,9 @@
         /// Get the page with the specified page number (1 indexed).
         /// </summary>
         /// <param name="pageNumber">The number of the page to return, this starts from 1.</param>
+        /// <param name="clipPaths">Paths will be clipped if set to true. Default is false.</param>
         /// <returns>The page.</returns>
-        public Page GetPage(int pageNumber)
+        public Page GetPage(int pageNumber, bool clipPaths = false)
         {
             if (isDisposed)
             {
@@ -153,7 +154,7 @@
 
             try
             {
-                return pages.GetPage(pageNumber);
+                return pages.GetPage(pageNumber, clipPaths);
             }
             catch (Exception ex)
             {
