@@ -82,7 +82,8 @@ namespace UglyToad.PdfPig.Tests.Integration
         [Fact]
         public void CanGetArtifact()
         {
-            using (var document = PdfDocument.Open(GetPath1()))
+            // deactivate clipping for the moment
+            using (var document = PdfDocument.Open(GetPath1(), new ParsingOptions() { ClipPaths = false }))
             {
                 var page = document.GetPage(2);
                 var mcs = page.GetMarkedContents();
