@@ -17,7 +17,7 @@
             if (array == null || array.Count() == 0) return float.NaN;
             var sorted = array.GroupBy(v => v).Select(v => (v.Count(), v.Key)).OrderByDescending(g => g.Item1);
             var mode = sorted.First();
-            if (mode.Item1 == sorted.ElementAt(1).Item1) return float.NaN;
+            if (sorted.Count() > 1 && mode.Item1 == sorted.ElementAt(1).Item1) return float.NaN;
             return mode.Key;
         }
 
@@ -30,7 +30,7 @@
             if (array == null || array.Count() == 0) return double.NaN;
             var sorted = array.GroupBy(v => v).Select(v => (v.Count(), v.Key)).OrderByDescending(g => g.Item1);
             var mode = sorted.First();
-            if (mode.Item1 == sorted.ElementAt(1).Item1) return double.NaN;
+            if (sorted.Count() > 1 && mode.Item1 == sorted.ElementAt(1).Item1) return double.NaN;
             return mode.Key;
         }
     }
