@@ -419,8 +419,13 @@
             CurrentSubpath = new PdfSubpath();
         }
 
-        public PdfPoint CloseSubpath()
+        public PdfPoint? CloseSubpath()
         {
+            if (CurrentSubpath == null)
+            {
+                return null;
+            }
+
             PdfPoint point;
             if (CurrentSubpath.Commands[0] is Move move)
             {
