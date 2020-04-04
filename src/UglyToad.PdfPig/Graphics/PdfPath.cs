@@ -23,47 +23,48 @@
         public bool IsClipping { get; private set; }
 
         /// <summary>
-        /// 
+        /// Returns true if the path is filled.
         /// </summary>
         public bool IsFilled { get; private set; }
 
         /// <summary>
-        /// 
+        /// The fill color.
         /// </summary>
-        public IColor FillColor { get; set; }
+        public IColor FillColor { get; internal set; }
 
         /// <summary>
-        /// 
+        /// Returns true if the path is stroked.
         /// </summary>
         public bool IsStroked { get; private set; }
 
         /// <summary>
-        /// 
+        /// The stroke color.
         /// </summary>
-        public IColor StrokeColor { get; set; }
+        public IColor StrokeColor { get; internal set; }
 
         /// <summary>
         /// Thickness in user space units of path to be stroked.
         /// </summary>
-        public decimal LineWidth { get; set; }
+        public decimal LineWidth { get; internal set; }
 
         /// <summary>
         /// The pattern to be used for stroked lines.
         /// </summary>
-        public LineDashPattern? LineDashPattern { get; set; }
+        public LineDashPattern? LineDashPattern { get; internal set; }
 
         /// <summary>
         /// The cap style to be used for stroked lines.
         /// </summary>
-        public LineCapStyle LineCapStyle { get; set; }
+        public LineCapStyle LineCapStyle { get; internal set; }
 
         /// <summary>
         /// The join style to be used for stroked lines.
         /// </summary>
-        public LineJoinStyle LineJoinStyle { get; set; }
+        public LineJoinStyle LineJoinStyle { get; internal set; }
 
         /// <summary>
-        /// Set the clipping mode for this path.
+        /// Set the clipping mode for this path and IsClipping to true.
+        /// <para>IsFilled and IsStroked flags will be set to false.</para>
         /// </summary>
         public void SetClipping(FillingRule fillingRule)
         {
@@ -74,7 +75,7 @@
         }
 
         /// <summary>
-        /// Set the filling rule for this path.
+        /// Set the filling rule for this path and IsFilled to true.
         /// </summary>
         public void SetFilled(FillingRule fillingRule)
         {
@@ -83,7 +84,7 @@
         }
 
         /// <summary>
-        /// 
+        /// Set IsStroked to true.
         /// </summary>
         public void SetStroked()
         {
@@ -93,7 +94,7 @@
         /// <summary>
         /// Create a clone with no Subpaths.
         /// </summary>
-        public PdfPath CloneEmpty()
+        internal PdfPath CloneEmpty()
         {
             PdfPath newPath = new PdfPath();
             if (IsClipping)
@@ -122,9 +123,9 @@
         }
 
         /// <summary>
-        /// 
+        /// Gets a <see cref="PdfRectangle"/> which entirely contains the geometry of the defined path.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>For paths which don't define any geometry this returns <see langword="null"/>.</returns>
         public PdfRectangle? GetBoundingRectangle()
         {
             if (this.Count == 0)
