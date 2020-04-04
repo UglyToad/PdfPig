@@ -33,6 +33,8 @@
 
         private readonly IInputBytes inputBytes;
 
+        private readonly bool clipPaths;
+
         [NotNull]
         private readonly ParsingCachingProviders cachingProviders;
 
@@ -92,7 +94,8 @@
             IPdfTokenScanner pdfScanner,
             IFilterProvider filterProvider,
             AcroFormFactory acroFormFactory,
-            BookmarksProvider bookmarksProvider)
+            BookmarksProvider bookmarksProvider,
+            bool clipPaths)
         {
             this.log = log;
             this.inputBytes = inputBytes;
@@ -102,6 +105,7 @@
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.bookmarksProvider = bookmarksProvider ?? throw new ArgumentNullException(nameof(bookmarksProvider));
+            this.clipPaths = clipPaths;
             Information = information ?? throw new ArgumentNullException(nameof(information));
             pages = new Pages(catalog, pageFactory, pdfScanner);
             Structure = new Structure(catalog, crossReferenceTable, pdfScanner);
@@ -141,9 +145,8 @@
         /// Get the page with the specified page number (1 indexed).
         /// </summary>
         /// <param name="pageNumber">The number of the page to return, this starts from 1.</param>
-        /// <param name="clipPaths">Paths will be clipped if set to true. Default is false.</param>
         /// <returns>The page.</returns>
-        public Page GetPage(int pageNumber, bool clipPaths = false)
+        public Page GetPage(int pageNumber)
         {
             if (isDisposed)
             {
