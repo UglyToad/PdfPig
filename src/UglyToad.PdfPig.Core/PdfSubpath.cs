@@ -238,9 +238,9 @@
         }
 
         /// <summary>
-        /// Gets a <see cref="PdfRectangle"/> which entirely contains the geometry of the defined path.
+        /// Gets a <see cref="PdfRectangle"/> which entirely contains the geometry of the defined subpath.
         /// </summary>
-        /// <returns>For paths which don't define any geometry this returns <see langword="null"/>.</returns>
+        /// <returns>For subpaths which don't define any geometry this returns <see langword="null"/>.</returns>
         public PdfRectangle? GetBoundingRectangle()
         {
             if (commands.Count == 0)
