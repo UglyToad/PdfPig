@@ -343,12 +343,14 @@ namespace UglyToad.PdfPig.Writer
                 {
                     Func<IToken, ObjectToken> writerFunc = x => context.WriteObject(memory, x);
 
-                    PdfA1BRuleBuilder.Obey(catalogDictionary, writerFunc, DocumentInformation, ArchiveStandard);
+                    PdfABaselineRuleBuilder.Obey(catalogDictionary, writerFunc, DocumentInformation, ArchiveStandard);
 
                     switch (ArchiveStandard)
                     {
                         case PdfAStandard.A1A:
                             PdfA1ARuleBuilder.Obey(catalogDictionary);
+                            break;
+                        case PdfAStandard.A2B:
                             break;
                     }
                 }

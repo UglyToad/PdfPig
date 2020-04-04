@@ -6,7 +6,7 @@ using UglyToad.PdfPig.Writer.Xmp;
 
 namespace UglyToad.PdfPig.Writer
 {
-    internal static class PdfA1BRuleBuilder
+    internal static class PdfABaselineRuleBuilder
     {
         public static void Obey(Dictionary<NameToken, IToken> catalog, Func<IToken, ObjectToken> writerFunc,
             PdfDocumentBuilder.DocumentInformationBuilder documentInformationBuilder,

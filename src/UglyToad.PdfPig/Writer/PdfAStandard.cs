@@ -16,6 +16,10 @@
         /// <summary>
         /// Compliance with PDF/A1-A. Level A (accessible) conformance are PDF/A1-B standards in addition to features intended to improve a document's accessibility. 
         /// </summary>
-        A1A = 2
+        A1A = 2,
+        /// <summary>
+        /// Compliance with PDF/A2-B. Level B (basic) conformance are standards necessary for the reliable reproduction of a document's visual appearance.
+        /// </summary>
+        A2B = 3
     }
 }
