@@ -17,6 +17,11 @@
         };
 
         /// <summary>
+        /// Should the parser clip paths? Default is true.
+        /// </summary>
+        public bool ClipPaths { get; set; } = true;
+
+        /// <summary>
         /// Should the parser ignore issues where the document does not conform to the PDF specification?
         /// </summary>
         public bool UseLenientParsing { get; set; } = true;
