@@ -8,6 +8,8 @@
 
     internal class NumericTokenizer : ITokenizer
     {
+        private static readonly StringBuilderPool StringBuilderPool = new StringBuilderPool(10);
+
         private const byte Zero = 48;
         private const byte Nine = 57;
 
@@ -21,7 +23,7 @@
 
             if ((currentByte >= Zero && currentByte <= Nine) || currentByte == '-' || currentByte == '+' || currentByte == '.')
             {
-                characters = new StringBuilder();
+                characters = StringBuilderPool.Borrow();
                 characters.Append((char)currentByte);
             }
             else
@@ -51,6 +53,7 @@
             try
             {
                 var str = characters.ToString();
+                StringBuilderPool.Return(characters);
 
                 switch (str)
                 {
