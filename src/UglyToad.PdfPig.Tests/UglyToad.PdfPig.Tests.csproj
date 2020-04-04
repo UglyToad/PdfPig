@@ -6,6 +6,8 @@
     <IsPackable>false</IsPackable>
     <DebugType>full</DebugType>
     <LangVersion>latest</LangVersion>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\pdfpig.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>

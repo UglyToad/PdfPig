@@ -1,10 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net45;net451;net452;net46;net461;net462;net47</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <Version>0.1.1</Version>
     <IsTestProject>False</IsTestProject>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\pdfpig.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -24,6 +26,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\GlyphList\*" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\pdfpig.snk" Link="pdfpig.snk" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\UglyToad.PdfPig.Core\UglyToad.PdfPig.Core.csproj" />

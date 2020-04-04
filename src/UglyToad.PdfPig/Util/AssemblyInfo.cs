@@ -1,3 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("UglyToad.PdfPig.Tests")]
+[assembly: InternalsVisibleTo("UglyToad.PdfPig.Tests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100d9cef5b9991815a775d2f427fd8f9bf5035039ec10f43ba2b6c" +
+                              "b2bfb054c00fbcd9570b01b5e276ac798fe0140c2b5e3c378fb7b9ff927534acc72709c09bd7f5d055865d5431913c51db8f59c3abf86557dc6d0484a3d4879a0d31ca080f123dacd261" +
+                              "0572f1f4ea3109f06b6279384174427b15bb3c2b0ceec00794e0a73a5")]
