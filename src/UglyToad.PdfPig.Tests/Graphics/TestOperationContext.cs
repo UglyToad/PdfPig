@@ -66,7 +66,7 @@
         {
         }
 
-        public PdfPoint CloseSubpath()
+        public PdfPoint? CloseSubpath()
         {
             return new PdfPoint();
         }

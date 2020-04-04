@@ -89,7 +89,7 @@
         /// <summary>
         /// Close the current subpath.
         /// </summary>
-        PdfPoint CloseSubpath();
+        PdfPoint? CloseSubpath();
 
         /// <summary>
         /// Add the current subpath to the path.
