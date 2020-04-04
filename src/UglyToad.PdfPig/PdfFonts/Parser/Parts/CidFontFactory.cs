@@ -157,7 +157,7 @@
         {
             var widths = new Dictionary<int, double>();
 
-            if (!dict.TryGet(NameToken.W, out var widthsItem) || !(widthsItem is ArrayToken widthArray))
+            if (!dict.TryGet(NameToken.W, pdfScanner, out ArrayToken widthArray))
             {
                 return widths;
             }

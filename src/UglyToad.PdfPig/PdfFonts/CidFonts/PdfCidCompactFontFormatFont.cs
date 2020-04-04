@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.CidFonts
 {
     using System;
-    using System.Linq;
     using Core;
     using Fonts.CompactFontFormat;
 
@@ -20,7 +19,14 @@
 
         public bool TryGetBoundingBox(int characterIdentifier, out PdfRectangle boundingBox)
         {
+            boundingBox = new PdfRectangle(0, 0, 500, 0);
+
             var font = GetFont();
+
+            if (font.Encoding == null)
+            {
+                return false;
+            }
 
             var characterName = GetCharacterName(characterIdentifier);
 
