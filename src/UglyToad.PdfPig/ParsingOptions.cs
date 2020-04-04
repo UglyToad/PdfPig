@@ -18,6 +18,7 @@
 
         /// <summary>
         /// Should the parser clip paths? Default is true.
+        /// <para>Bezier curves will be transformed into polylines if clipping is set to true.</para>
         /// </summary>
         public bool ClipPaths { get; set; } = true;
 
