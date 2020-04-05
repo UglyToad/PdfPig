@@ -5,9 +5,9 @@
     using System.IO;
     using IO;
 
-    internal class PngPredictor : IPngPredictor
+    internal static class PngPredictor
     {
-        public byte[] Decode(byte[] inputBytes, int predictor, int colors, int bitsPerComponent, int columns)
+        public static byte[] Decode(byte[] inputBytes, int predictor, int colors, int bitsPerComponent, int columns)
         {
             if (inputBytes == null)
             {

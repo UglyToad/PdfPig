@@ -22,23 +22,14 @@
         private const int NineBitBoundary = 511;
         private const int TenBitBoundary = 1023;
         private const int ElevenBitBoundary = 2047;
-
-        private readonly IDecodeParameterResolver decodeParameterResolver;
-        private readonly IPngPredictor pngPredictor;
-
-        public LzwFilter(IDecodeParameterResolver decodeParameterResolver, IPngPredictor pngPredictor)
-        {
-            this.decodeParameterResolver = decodeParameterResolver ?? throw new ArgumentNullException(nameof(decodeParameterResolver));
-            this.pngPredictor = pngPredictor ?? throw new ArgumentNullException(nameof(pngPredictor));
-        }
-
+        
         /// <inheritdoc />
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
         public byte[] Decode(IReadOnlyList<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
-            var parameters = decodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
+            var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
             var predictor = parameters.GetIntOrDefault(NameToken.Predictor, -1);
 
@@ -52,7 +43,7 @@
                 var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
                 var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
 
-                var result = pngPredictor.Decode(decompressed, predictor, colors, bitsPerComponent, columns);
+                var result = PngPredictor.Decode(decompressed, predictor, colors, bitsPerComponent, columns);
 
                 return result;
             }
@@ -64,7 +55,8 @@
 
         private static byte[] Decode(IReadOnlyList<byte> input, bool isEarlyChange)
         {
-            var result = new List<byte>();
+            // A guess.
+            var result = new List<byte>((int)(input.Count * 1.5));
 
             var table = GetDefaultTable();
 

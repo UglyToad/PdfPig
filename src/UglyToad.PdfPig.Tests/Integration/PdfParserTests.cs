@@ -100,7 +100,7 @@
                 {NameToken.DecodeParms, paramsDict}
             });
 
-            var filter = new FlateFilter(new DecodeParameterResolver(null), new PngPredictor(), null);
+            var filter = new FlateFilter();
             var filtered = filter.Decode(streamBytes, dictionary, 0);
             
             var expected =

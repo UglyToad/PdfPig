@@ -1,40 +1,39 @@
-﻿namespace UglyToad.PdfPig.Tokenization
-{
-    using System.Collections.Generic;
-    using System.Text;
+﻿using System.Collections.Generic;
 
+namespace UglyToad.PdfPig.Tokenization
+{
     /// <summary>
-    /// A pool for <see cref="StringBuilder"/>s to reduce allocations during tokenization.
+    /// An object pool for lists.
     /// </summary>
-    internal class StringBuilderPool
+    public class ListPool<T>
     {
         private readonly int capacity;
         private readonly object locker = new object();
-        private readonly Stack<StringBuilder> pool = new Stack<StringBuilder>();
+        private readonly Stack<List<T>> pool = new Stack<List<T>>();
 
         /// <summary>
-        /// Create a new <see cref="StringBuilderPool"/> holding the number of items specified by the capacity.
+        /// Create a new <see cref="List{T}"/> holding the number of items specified by the capacity.
         /// </summary>
-        public StringBuilderPool(int capacity = 5)
+        public ListPool(int capacity = 5)
         {
             this.capacity = capacity;
 
             for (var i = 0; i < capacity; i++)
             {
-                pool.Push(new StringBuilder());
+                pool.Push(new List<T>(10));
             }
         }
 
         /// <summary>
         /// Get an item from the pool, remember to return it using <see cref="Return"/> at the end.
         /// </summary>
-        public StringBuilder Borrow()
+        public List<T> Borrow()
         {
             lock (locker)
             {
                 if (pool.Count == 0)
                 {
-                    return new StringBuilder();
+                    return new List<T>();
                 }
 
                 return pool.Pop();
@@ -42,9 +41,9 @@
         }
 
         /// <summary>
-        /// Returns an item to the pool of available builders.
+        /// Returns an item to the pool of available lists..
         /// </summary>
-        public void Return(StringBuilder instance)
+        public void Return(List<T> instance)
         {
             if (instance == null)
             {

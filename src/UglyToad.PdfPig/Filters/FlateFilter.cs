@@ -5,7 +5,6 @@
     using System.IO;
     using System.IO.Compression;
     using System.Linq;
-    using Logging;
     using Tokens;
     using Util;
 
@@ -30,17 +29,6 @@
         private const byte Deflate32KbWindow = 120;
         private const byte ChecksumBits = 1;
 
-        private readonly IDecodeParameterResolver decodeParameterResolver;
-        private readonly IPngPredictor pngPredictor;
-        private readonly ILog log;
-
-        public FlateFilter(IDecodeParameterResolver decodeParameterResolver, IPngPredictor pngPredictor, ILog log)
-        {
-            this.decodeParameterResolver = decodeParameterResolver;
-            this.pngPredictor = pngPredictor;
-            this.log = log;
-        }
-
         /// <inheritdoc />
         public bool IsSupported { get; } = true;
 
@@ -52,7 +40,7 @@
                 throw new ArgumentNullException(nameof(input));
             }
 
-            var parameters = decodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
+            var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
             var predictor = parameters.GetIntOrDefault(NameToken.Predictor, -1);
 
@@ -70,13 +58,13 @@
                 var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
                 var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
 
-                var result = pngPredictor.Decode(decompressed, predictor, colors, bitsPerComponent, columns);
+                var result = PngPredictor.Decode(decompressed, predictor, colors, bitsPerComponent, columns);
 
                 return result;
             }
-            catch (Exception ex)
+            catch
             {
-                log.Error("Could not decode a flate stream due to an error.", ex);
+                // ignored.
             }
 
             return bytes;
@@ -84,26 +72,18 @@
 
         private byte[] Decompress(byte[] input)
         {
-            try
+            using (var memoryStream = new MemoryStream(input))
+            using (var output = new MemoryStream())
             {
-                using (var memoryStream = new MemoryStream(input))
-                using (var output = new MemoryStream())
-                {
-                    // The first 2 bytes are the header which DeflateStream does not support.
-                    memoryStream.ReadByte();
-                    memoryStream.ReadByte();
+                // The first 2 bytes are the header which DeflateStream does not support.
+                memoryStream.ReadByte();
+                memoryStream.ReadByte();
 
-                    using (var deflate = new DeflateStream(memoryStream, CompressionMode.Decompress))
-                    {
-                        deflate.CopyTo(output);
-                        return output.ToArray();
-                    }
+                using (var deflate = new DeflateStream(memoryStream, CompressionMode.Decompress))
+                {
+                    deflate.CopyTo(output);
+                    return output.ToArray();
                 }
-            }
-            catch (Exception ex)
-            {
-                log?.Error("Could not decode the input using the deflate stream. Input was: " + input, ex);
-                throw;
             }
         }
 

@@ -1,3 +1,5 @@
+using UglyToad.PdfPig.Tokenization;
+
 namespace UglyToad.PdfPig.Graphics
 {
     using System;
@@ -21,6 +23,8 @@ namespace UglyToad.PdfPig.Graphics
 
     internal class ReflectionGraphicsStateOperationFactory : IGraphicsStateOperationFactory
     {
+        private static readonly ListPool<decimal> DecimalListPool = new ListPool<decimal>(10);
+
         private readonly IReadOnlyDictionary<string, Type> operations;
 
         public ReflectionGraphicsStateOperationFactory()
@@ -51,7 +55,7 @@ namespace UglyToad.PdfPig.Graphics
 
         private static decimal[] TokensToDecimalArray(IReadOnlyList<IToken> tokens, bool exceptLast = false)
         {
-            var result = new List<decimal>();
+            var result = DecimalListPool.Borrow();
 
             for (var i = 0; i < tokens.Count - (exceptLast ? 1 : 0); i++)
             {
@@ -65,7 +69,9 @@ namespace UglyToad.PdfPig.Graphics
 
                         if (!(innerOperand is NumericToken innerNumeric))
                         {
-                            return result.ToArray();
+                            var val = result.ToArray();
+                            DecimalListPool.Return(result);
+                            return val.ToArray();
                         }
 
                         result.Add(innerNumeric.Data);
@@ -74,13 +80,17 @@ namespace UglyToad.PdfPig.Graphics
 
                 if (!(operand is NumericToken numeric))
                 {
-                    return result.ToArray();
+                    var val = result.ToArray();
+                    DecimalListPool.Return(result);
+                    return val.ToArray();
                 }
 
                 result.Add(numeric.Data);
             }
 
-            return result.ToArray();
+            var returnValue = result.ToArray();
+            DecimalListPool.Return(result);
+            return returnValue;
         }
 
         private static int OperandToInt(IToken token)

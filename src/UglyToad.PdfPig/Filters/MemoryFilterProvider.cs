@@ -4,25 +4,25 @@
     using System.Collections.Generic;
     using System.Linq;
     using Core;
-    using Exceptions;
-    using Logging;
     using Tokens;
 
     internal class MemoryFilterProvider : IFilterProvider
     {
         private readonly IReadOnlyDictionary<string, IFilter> filterInstances; 
 
-        public MemoryFilterProvider(IDecodeParameterResolver decodeParameterResolver, IPngPredictor pngPredictor, ILog log)
+        public static readonly IFilterProvider Instance = new MemoryFilterProvider();
+
+        private MemoryFilterProvider()
         {
             var ascii85 = new Ascii85Filter();
             var asciiHex = new AsciiHexDecodeFilter();
             var ccitt = new CcittFaxDecodeFilter();
             var dct = new DctDecodeFilter();
-            var flate = new FlateFilter(decodeParameterResolver, pngPredictor, log);
+            var flate = new FlateFilter();
             var jbig2 = new Jbig2DecodeFilter();
             var jpx = new JpxDecodeFilter();
             var runLength = new RunLengthFilter();
-            var lzw = new LzwFilter(decodeParameterResolver, pngPredictor);
+            var lzw = new LzwFilter();
 
             filterInstances = new Dictionary<string, IFilter>
             {

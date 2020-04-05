@@ -80,7 +80,7 @@
 
         private static PdfDocument OpenDocument(IInputBytes inputBytes, ISeekableTokenScanner scanner, ILog log, bool isLenientParsing, IReadOnlyList<string> passwords)
         {
-            var filterProvider = new MemoryFilterProvider(new DecodeParameterResolver(log), new PngPredictor(), log);
+            var filterProvider = MemoryFilterProvider.Instance;
 
             CrossReferenceTable crossReferenceTable = null;
 
@@ -127,7 +127,7 @@
 
             var fontFactory = new FontFactory(log, new Type0FontHandler(cidFontFactory,
                 filterProvider, pdfScanner),
-                new TrueTypeFontHandler(log, pdfScanner, filterProvider, encodingReader, new SystemFontFinder(),
+                new TrueTypeFontHandler(log, pdfScanner, filterProvider, encodingReader, SystemFontFinder.Instance,
                     type1Handler),
                 type1Handler,
                 new Type3FontHandler(pdfScanner, filterProvider, encodingReader));

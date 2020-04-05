@@ -4,7 +4,6 @@
     using System.IO;
     using System.Linq;
     using Filters;
-    using Logging;
     using Tokens;
 
     internal static class DataCompresser
@@ -15,7 +14,7 @@
             using (var memoryStream = new MemoryStream(bytes))
             {
                 var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>());
-                var flater = new FlateFilter(new DecodeParameterResolver(new NoOpLog()), new PngPredictor(), new NoOpLog());
+                var flater = new FlateFilter();
                 var result = flater.Encode(memoryStream, parameters, 0);
                 return result;
             }

@@ -38,14 +38,12 @@
                 throw new ArgumentNullException(nameof(data));
             }
 
-            var previousPrevious = default(IToken);
-            var previous = default(IToken);
-
-            var result = new List<IToken>();
-            foreach (var token in data)
+            var result = new List<IToken>(data.Count);
+            for (var i = 0; i < data.Count; i++)
             {
-                // Roll any "number number R" sequence into an indirect reference
-                if (ReferenceEquals(token, OperatorToken.R) && previous is NumericToken generation && previousPrevious is NumericToken objectNumber)
+                var token = data[i];
+
+                if (i >= 2 && ReferenceEquals(token, OperatorToken.R) && (data[i - 1] is NumericToken generation) && (data[i - 2] is NumericToken objectNumber))
                 {
                     // Clear the previous 2 tokens.
                     result.RemoveRange(result.Count - 2, 2);
@@ -56,9 +54,6 @@
                 {
                     result.Add(token);
                 }
-
-                previousPrevious = previous;
-                previous = token;
             }
 
             Data = result;

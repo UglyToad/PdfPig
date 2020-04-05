@@ -1,4 +1,6 @@
-﻿namespace UglyToad.PdfPig.Fonts.SystemFonts
+﻿using System.Collections.Concurrent;
+
+namespace UglyToad.PdfPig.Fonts.SystemFonts
 {
     using System;
     using System.Collections.Generic;
@@ -14,9 +16,15 @@
     public class SystemFontFinder : ISystemFontFinder
     {
         private static readonly IReadOnlyDictionary<string, string[]> NameSubstitutes;
+        private static readonly Lazy<IReadOnlyList<SystemFontRecord>> AvailableFonts;
 
         private static readonly object CacheLock = new object();
         private static readonly Dictionary<string, TrueTypeFont> Cache = new Dictionary<string, TrueTypeFont>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// The instance of <see cref="SystemFontFinder"/>.
+        /// </summary>
+        public static readonly ISystemFontFinder Instance = new SystemFontFinder();
 
         static SystemFontFinder()
         {
@@ -66,18 +74,7 @@
             }
 
             NameSubstitutes = dict;
-        }
 
-        private readonly Lazy<IReadOnlyList<SystemFontRecord>> availableFonts;
-
-        private readonly Dictionary<string, string> nameToFileNameMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        private readonly HashSet<string> readFiles = new HashSet<string>();
-
-        /// <summary>
-        /// Create a new <see cref="SystemFontFinder"/>.
-        /// </summary>
-        public SystemFontFinder()
-        {
             ISystemFontLister lister;
 #if NETSTANDARD2_0
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -100,7 +97,18 @@
             lister = new WindowsSystemFontLister();
 #endif
 
-            availableFonts = new Lazy<IReadOnlyList<SystemFontRecord>>(() => lister.GetAllFonts().ToList());
+            AvailableFonts = new Lazy<IReadOnlyList<SystemFontRecord>>(() => lister.GetAllFonts().ToList());
+        }
+
+        private readonly ConcurrentDictionary<string, string> nameToFileNameMap = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private readonly object readFilesLock = new object();
+        private readonly HashSet<string> readFiles = new HashSet<string>();
+
+        /// <summary>
+        /// Create a new <see cref="SystemFontFinder"/>.
+        /// </summary>
+        private SystemFontFinder()
+        {
         }
 
         /// <inheritdoc />
@@ -179,7 +187,7 @@
                 return null;
             }
 
-            var nameCandidates = availableFonts.Value.Where(x => Path.GetFileName(x.Path)?.StartsWith(name[0].ToString(), StringComparison.OrdinalIgnoreCase) == true);
+            var nameCandidates = AvailableFonts.Value.Where(x => Path.GetFileName(x.Path)?.StartsWith(name[0].ToString(), StringComparison.OrdinalIgnoreCase) == true);
 
             foreach (var systemFontRecord in nameCandidates)
             {
@@ -189,7 +197,7 @@
                 }
             }
 
-            foreach (var record in availableFonts.Value)
+            foreach (var record in AvailableFonts.Value)
             {
                 if (TryGetTrueTypeFont(name, record, out var font))
                 {
@@ -207,9 +215,12 @@
             font = null;
             if (record.Type == SystemFontType.TrueType)
             {
-                if (readFiles.Contains(record.Path))
+                lock (readFilesLock)
                 {
-                    return false;
+                    if (readFiles.Contains(record.Path))
+                    {
+                        return false;
+                    }
                 }
 
                 return TryReadFile(record.Path, true, name, out font);
@@ -221,7 +232,6 @@
         private bool TryReadFile(string fileName, bool readNameFirst, string fontName, out TrueTypeFont font)
         {
             font = null;
-            readFiles.Add(fileName);
 
             var bytes = File.ReadAllBytes(fileName);
 
@@ -233,15 +243,25 @@
 
                 if (name == null)
                 {
+                    lock (readFilesLock)
+                    {
+                        readFiles.Add(fileName);
+                    }
+
                     return false;
                 }
 
                 var fontNameFromFile = name.GetPostscriptName() ?? name.FontName;
 
-                nameToFileNameMap[fontNameFromFile] = fileName;
+                nameToFileNameMap.TryAdd(fontNameFromFile, fileName);
 
                 if (!string.Equals(fontNameFromFile, fontName, StringComparison.OrdinalIgnoreCase))
                 {
+                    lock (readFilesLock)
+                    {
+                        readFiles.Add(fileName);
+                    }
+
                     return false;
                 }
             }
@@ -256,6 +276,11 @@
                 {
                     Cache[psName] = font;
                 }
+            }
+
+            lock (readFilesLock)
+            {
+                readFiles.Add(fileName);
             }
 
             return true;

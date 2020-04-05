@@ -8,6 +8,8 @@
 
     internal class NameTokenizer : ITokenizer
     {
+        private static readonly ListPool<byte> ListPool = new ListPool<byte>(10);
+
         public bool ReadsNextByte { get; } = true;
 
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
@@ -19,7 +21,7 @@
                 return false;
             }
 
-            var bytes = new List<byte>();
+            var bytes = ListPool.Borrow();
 
             bool escapeActive = false;
             int postEscapeRead = 0;
@@ -90,7 +92,9 @@
                 }
             }
 
-            byte[] byteArray = bytes.ToArray();
+            var byteArray = bytes.ToArray();
+
+            ListPool.Return(bytes);
 
             var str = ReadHelper.IsValidUtf8(byteArray)
                 ? Encoding.UTF8.GetString(byteArray)

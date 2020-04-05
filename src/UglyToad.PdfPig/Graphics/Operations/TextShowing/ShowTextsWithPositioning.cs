@@ -39,10 +39,10 @@
                 throw new ArgumentNullException(nameof(array));
             }
 
-            foreach (var token in array)
+            for (var i = 0; i < array.Count; i++)
             {
-                if (!(token is NumericToken) && !(token is HexToken)
-                    && !(token is StringToken))
+                var token = array[i];
+                if (!(token is StringToken) && !(token is NumericToken) && !(token is HexToken))
                 {
                     throw new ArgumentException($"Found invalid token for showing texts with position: {token}");
                 }

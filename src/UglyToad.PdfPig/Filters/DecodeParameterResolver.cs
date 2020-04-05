@@ -2,19 +2,11 @@
 {
     using System;
     using System.Collections.Generic;
-    using Logging;
     using Tokens;
 
-    internal class DecodeParameterResolver : IDecodeParameterResolver
+    internal static class DecodeParameterResolver
     {
-        private readonly ILog log;
-
-        public DecodeParameterResolver(ILog log)
-        {
-            this.log = log;
-        }
-
-        public DictionaryToken GetFilterParameters(DictionaryToken streamDictionary, int index)
+        public static DictionaryToken GetFilterParameters(DictionaryToken streamDictionary, int index)
         {
             if (streamDictionary == null)
             {
@@ -48,10 +40,6 @@
                     }
                     break;
                 default:
-                    if (parameters != null)
-                    {
-                        log?.Error("Expected the decode parameters for the stream to be either an array or dictionary");
-                    }
                     break;
             }
 

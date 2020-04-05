@@ -8,7 +8,7 @@
 
     public class FlateFilterTests
     {
-        private readonly FlateFilter filter = new FlateFilter(new DecodeParameterResolver(new TestingLog()), new PngPredictor(), new TestingLog());
+        private readonly FlateFilter filter = new FlateFilter();
 
         [Fact]
         public void EncodeAndDecodePreservesInput()
