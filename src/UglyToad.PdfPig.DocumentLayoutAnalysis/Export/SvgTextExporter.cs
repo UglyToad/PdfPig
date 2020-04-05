@@ -4,23 +4,27 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
-    using UglyToad.PdfPig.Content;
-    using UglyToad.PdfPig.Graphics;
-    using UglyToad.PdfPig.Graphics.Colors;
-    using UglyToad.PdfPig.Graphics.Core;
+    using Content;
+    using Graphics;
+    using Graphics.Colors;
+    using Graphics.Core;
 
+    /// <inheritdoc />
     /// <summary>
-    /// 
+    /// Exports a page as an SVG.
     /// </summary>
     public class SvgTextExporter : ITextExporter
     {
-        static readonly int rounding = 4;
+        private const int Rounding = 4;
+
+        private static readonly Dictionary<string, string> Fonts = new Dictionary<string, string>()
+        {
+            { "ArialMT", "Arial Rounded MT Bold" }
+        };
 
         /// <summary>
-        /// 
+        /// Get the page contents as an SVG.
         /// </summary>
-        /// <param name="page"></param>
-        /// <returns></returns>
         public string Get(Page page)
         {
             var builder = new StringBuilder($"<svg width='{page.Width}' height='{page.Height}'><g transform=\"scale(1, 1) translate(0, 0)\">");
@@ -48,24 +52,19 @@
             builder.Append("</g></svg>");
             return builder.ToString();
         }
-
-        static readonly Dictionary<string, string> _fonts = new Dictionary<string, string>()
-        {
-            { "ArialMT", "Arial Rounded MT Bold" }
-        };
-
+        
         private static string LetterToSvg(Letter l, double height)
         {
             string fontFamily = GetFontFamily(l.FontName, out string style, out string weight);
             string rotation = "";
             if (l.GlyphRectangle.Rotation != 0)
             {
-                rotation = $" transform='rotate({Math.Round(-l.GlyphRectangle.Rotation, rounding)} {Math.Round(l.GlyphRectangle.BottomLeft.X, rounding)},{Math.Round(height - l.GlyphRectangle.TopLeft.Y, rounding)})'";
+                rotation = $" transform='rotate({Math.Round(-l.GlyphRectangle.Rotation, Rounding)} {Math.Round(l.GlyphRectangle.BottomLeft.X, Rounding)},{Math.Round(height - l.GlyphRectangle.TopLeft.Y, Rounding)})'";
             }
 
-            string fontSize = l.FontSize != 1 ? $"font-size='{l.FontSize.ToString("0")}'" : $"style='font-size:{Math.Round(l.GlyphRectangle.Height, 2)}px'";
+            string fontSize = l.FontSize != 1 ? $"font-size='{l.FontSize:0}'" : $"style='font-size:{Math.Round(l.GlyphRectangle.Height, 2)}px'";
 
-            return $"<text x='{Math.Round(l.StartBaseLine.X, rounding)}' y='{Math.Round(height - l.StartBaseLine.Y, rounding)}'{rotation} font-family='{fontFamily}' font-style='{style}' font-weight='{weight}' {fontSize} fill='{ColorToSvg(l.Color)}'>{l.Value}</text>";
+            return $"<text x='{Math.Round(l.StartBaseLine.X, Rounding)}' y='{Math.Round(height - l.StartBaseLine.Y, Rounding)}'{rotation} font-family='{fontFamily}' font-style='{style}' font-weight='{weight}' {fontSize} fill='{ColorToSvg(l.Color)}'>{l.Value}</text>";
         }
 
         private static string GetFontFamily(string fontName, out string style, out string weight)
@@ -79,7 +78,7 @@
                 if (fontName.Length > 7 && fontName[6] == '+')
                 {
                     var split = fontName.Split('+');
-                    if (split[0].All(c => char.IsUpper(c)))
+                    if (split[0].All(char.IsUpper))
                     {
                         fontName = split[1];
                     }
@@ -118,7 +117,7 @@
                 }
             }
 
-            if (_fonts.ContainsKey(fontName)) fontName = _fonts[fontName];
+            if (Fonts.ContainsKey(fontName)) fontName = Fonts[fontName];
             return fontName;
         }
 
