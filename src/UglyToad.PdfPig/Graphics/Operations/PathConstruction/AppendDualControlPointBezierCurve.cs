@@ -71,6 +71,8 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
+            if (operationContext.CurrentSubpath == null) return;
+
             var controlPoint1 = operationContext.CurrentTransformationMatrix.Transform(new PdfPoint(X1, Y1));
             var controlPoint2 = operationContext.CurrentTransformationMatrix.Transform(new PdfPoint(X2, Y2));
             var end = operationContext.CurrentTransformationMatrix.Transform(new PdfPoint(X3, Y3));

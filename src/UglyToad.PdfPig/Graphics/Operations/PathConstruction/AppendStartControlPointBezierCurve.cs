@@ -56,6 +56,8 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
+            if (operationContext.CurrentSubpath == null) return;
+
             var controlPoint2 = operationContext.CurrentTransformationMatrix.Transform(new PdfPoint(X2, Y2));
             var end = operationContext.CurrentTransformationMatrix.Transform(new PdfPoint(X3, Y3));
             operationContext.CurrentSubpath.BezierCurveTo(operationContext.CurrentPosition.X,
