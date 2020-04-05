@@ -70,1318 +70,10 @@
 *                                                                              *
 *******************************************************************************/
 
-
-//use_lines: Enables open path clipping. Adds a very minor cost to performance.
-
-using System;
-using System.Collections.Generic;
-
-namespace UglyToad.PdfPig.Geometry
+namespace UglyToad.PdfPig.Geometry.ClipperLibrary
 {
-    internal struct DoublePoint
-    {
-        public double X;
-
-        public double Y;
-
-        public DoublePoint(double x = 0, double y = 0)
-        {
-            this.X = x; this.Y = y;
-        }
-
-        public DoublePoint(DoublePoint dp)
-        {
-            this.X = dp.X; this.Y = dp.Y;
-        }
-
-        public DoublePoint(IntPoint ip)
-        {
-            this.X = ip.X; this.Y = ip.Y;
-        }
-    };
-
-
-    //------------------------------------------------------------------------------
-    // PolyTree & PolyNode classes
-    //------------------------------------------------------------------------------
-
-    internal class PolyTree : PolyNode
-    {
-        internal List<PolyNode> m_AllPolys = new List<PolyNode>();
-
-        //The GC probably handles this cleanup more efficiently ...
-        //~PolyTree(){Clear();}
-
-        public void Clear()
-        {
-            for (int i = 0; i < m_AllPolys.Count; i++)
-                m_AllPolys[i] = null;
-            m_AllPolys.Clear();
-            m_Childs.Clear();
-        }
-
-        public PolyNode GetFirst()
-        {
-            if (m_Childs.Count > 0)
-                return m_Childs[0];
-            else
-                return null;
-        }
-
-        public int Total
-        {
-            get
-            {
-                int result = m_AllPolys.Count;
-                //with negative offsets, ignore the hidden outer polygon ...
-                if (result > 0 && m_Childs[0] != m_AllPolys[0]) result--;
-                return result;
-            }
-        }
-    }
-
-    internal class PolyNode
-    {
-        internal PolyNode m_Parent;
-        internal List<IntPoint> m_polygon = new List<IntPoint>();
-        internal int m_Index;
-        internal JoinType m_jointype;
-        internal EndType m_endtype;
-        internal List<PolyNode> m_Childs = new List<PolyNode>();
-
-        private bool IsHoleNode()
-        {
-            bool result = true;
-            PolyNode node = m_Parent;
-            while (node != null)
-            {
-                result = !result;
-                node = node.m_Parent;
-            }
-            return result;
-        }
-
-        public int ChildCount
-        {
-            get { return m_Childs.Count; }
-        }
-
-        public List<IntPoint> Contour
-        {
-            get { return m_polygon; }
-        }
-
-        internal void AddChild(PolyNode Child)
-        {
-            int cnt = m_Childs.Count;
-            m_Childs.Add(Child);
-            Child.m_Parent = this;
-            Child.m_Index = cnt;
-        }
-
-        public PolyNode GetNext()
-        {
-            if (m_Childs.Count > 0)
-                return m_Childs[0];
-            else
-                return GetNextSiblingUp();
-        }
-
-        internal PolyNode GetNextSiblingUp()
-        {
-            if (m_Parent == null)
-                return null;
-            else if (m_Index == m_Parent.m_Childs.Count - 1)
-                return m_Parent.GetNextSiblingUp();
-            else
-                return m_Parent.m_Childs[m_Index + 1];
-        }
-        public List<PolyNode> Childs
-        {
-            get { return m_Childs; }
-        }
-
-        public PolyNode Parent
-        {
-            get { return m_Parent; }
-        }
-
-        public bool IsHole
-        {
-            get { return IsHoleNode(); }
-        }
-
-        public bool IsOpen { get; set; }
-    }
-
-    //------------------------------------------------------------------------------
-    // Int128 struct (enables safe math on signed 64bit integers)
-    // eg Int128 val1((long)9223372036854775807); //ie 2^63 -1
-    //    Int128 val2((long)9223372036854775807);
-    //    Int128 val3 = val1 * val2;
-    //    val3.ToString => "85070591730234615847396907784232501249" (8.5e+37)
-    //------------------------------------------------------------------------------
-
-    internal struct Int128
-    {
-        private long hi;
-        private ulong lo;
-
-        public Int128(long _lo)
-        {
-            lo = (ulong)_lo;
-            if (_lo < 0) hi = -1;
-            else hi = 0;
-        }
-
-        public Int128(long _hi, ulong _lo)
-        {
-            lo = _lo;
-            hi = _hi;
-        }
-
-        public Int128(Int128 val)
-        {
-            hi = val.hi;
-            lo = val.lo;
-        }
-
-        public bool IsNegative()
-        {
-            return hi < 0;
-        }
-
-        public static bool operator ==(Int128 val1, Int128 val2)
-        {
-            if ((object)val1 == (object)val2) return true;
-            else if ((object)val1 is null || (object)val2 is null) return false;
-            return (val1.hi == val2.hi && val1.lo == val2.lo);
-        }
-
-        public static bool operator !=(Int128 val1, Int128 val2)
-        {
-            return !(val1 == val2);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj == null || !(obj is Int128))
-                return false;
-            Int128 i128 = (Int128)obj;
-            return (i128.hi == hi && i128.lo == lo);
-        }
-
-        public override int GetHashCode()
-        {
-            return hi.GetHashCode() ^ lo.GetHashCode();
-        }
-
-        public static bool operator >(Int128 val1, Int128 val2)
-        {
-            if (val1.hi != val2.hi)
-                return val1.hi > val2.hi;
-            else
-                return val1.lo > val2.lo;
-        }
-
-        public static bool operator <(Int128 val1, Int128 val2)
-        {
-            if (val1.hi != val2.hi)
-                return val1.hi < val2.hi;
-            else
-                return val1.lo < val2.lo;
-        }
-
-        public static Int128 operator +(Int128 lhs, Int128 rhs)
-        {
-            lhs.hi += rhs.hi;
-            lhs.lo += rhs.lo;
-            if (lhs.lo < rhs.lo) lhs.hi++;
-            return lhs;
-        }
-
-        public static Int128 operator -(Int128 lhs, Int128 rhs)
-        {
-            return lhs + -rhs;
-        }
-
-        public static Int128 operator -(Int128 val)
-        {
-            if (val.lo == 0)
-                return new Int128(-val.hi, 0);
-            else
-                return new Int128(~val.hi, ~val.lo + 1);
-        }
-
-        public static explicit operator double(Int128 val)
-        {
-            const double shift64 = 18446744073709551616.0; //2^64
-            if (val.hi < 0)
-            {
-                if (val.lo == 0)
-                    return (double)val.hi * shift64;
-                else
-                    return -(double)(~val.lo + ~val.hi * shift64);
-            }
-            else
-                return (double)(val.lo + val.hi * shift64);
-        }
-
-        //nb: Constructing two new Int128 objects every time we want to multiply longs  
-        //is slow. So, although calling the Int128Mul method doesn't look as clean, the 
-        //code runs significantly faster than if we'd used the * operator.
-
-        public static Int128 Int128Mul(long lhs, long rhs)
-        {
-            bool negate = (lhs < 0) != (rhs < 0);
-            if (lhs < 0) lhs = -lhs;
-            if (rhs < 0) rhs = -rhs;
-            ulong int1Hi = (ulong)lhs >> 32;
-            ulong int1Lo = (ulong)lhs & 0xFFFFFFFF;
-            ulong int2Hi = (ulong)rhs >> 32;
-            ulong int2Lo = (ulong)rhs & 0xFFFFFFFF;
-
-            //nb: see comments in clipper.pas
-            ulong a = int1Hi * int2Hi;
-            ulong b = int1Lo * int2Lo;
-            ulong c = int1Hi * int2Lo + int1Lo * int2Hi;
-
-            ulong lo;
-            long hi;
-            hi = (long)(a + (c >> 32));
-
-            unchecked { lo = (c << 32) + b; }
-            if (lo < b) hi++;
-            Int128 result = new Int128(hi, lo);
-            return negate ? -result : result;
-        }
-    };
-
-    //------------------------------------------------------------------------------
-    //------------------------------------------------------------------------------
-
-    internal struct IntPoint
-    {
-        public long X;
-
-        public long Y;
-
-        public IntPoint(long X, long Y)
-        {
-            this.X = X; this.Y = Y;
-        }
-
-        public IntPoint(double x, double y)
-        {
-            this.X = (long)x; this.Y = (long)y;
-        }
-
-        public IntPoint(IntPoint pt)
-        {
-            this.X = pt.X; this.Y = pt.Y;
-        }
-
-        public static bool operator ==(IntPoint a, IntPoint b)
-        {
-            return a.X == b.X && a.Y == b.Y;
-        }
-
-        public static bool operator !=(IntPoint a, IntPoint b)
-        {
-            return a.X != b.X || a.Y != b.Y;
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj == null) return false;
-            if (obj is IntPoint a)
-            {
-                return (X == a.X) && (Y == a.Y);
-            }
-            else return false;
-        }
-
-        public override int GetHashCode()
-        {
-            //simply prevents a compiler warning
-            return base.GetHashCode();
-        }
-
-    }// end struct IntPoint
-
-    internal struct IntRect
-    {
-        public long left;
-
-        public long top;
-
-        public long right;
-
-        public long bottom;
-
-        public IntRect(long l, long t, long r, long b)
-        {
-            this.left = l; this.top = t;
-            this.right = r; this.bottom = b;
-        }
-
-        public IntRect(IntRect ir)
-        {
-            this.left = ir.left; this.top = ir.top;
-            this.right = ir.right; this.bottom = ir.bottom;
-        }
-    }
-
-    internal enum ClipType
-    {
-        ctIntersection,
-        ctUnion,
-        ctDifference,
-        ctXor
-    };
-
-
-    internal enum PolyType
-    {
-        ptSubject,
-        ptClip
-    };
-
-    /// <summary>
-    /// By far the most widely used winding rules for polygon filling are
-    /// EvenOdd and NonZero (GDI, GDI+, XLib, OpenGL, Cairo, AGG, Quartz, SVG, Gr32)
-    /// Others rules include Positive, Negative and ABS_GTR_EQ_TWO (only in OpenGL)
-    /// see http://glprogramming.com/red/chapter11.html
-    /// </summary>
-    internal enum PolyFillType
-    {
-        pftEvenOdd,
-        pftNonZero,
-    };
-
-    internal enum JoinType
-    {
-        jtSquare,
-        jtRound,
-        jtMiter
-    };
-
-    internal enum EndType
-    {
-        etClosedPolygon,
-        etClosedLine,
-        etOpenButt,
-        etOpenSquare,
-        etOpenRound
-    };
-
-    internal enum EdgeSide { esLeft, esRight };
-    internal enum Direction { dRightToLeft, dLeftToRight };
-
-    internal class TEdge
-    {
-        internal IntPoint Bot;
-        internal IntPoint Curr; //current (updated for every new scanbeam)
-        internal IntPoint Top;
-        internal IntPoint Delta;
-        internal double Dx;
-        internal PolyType PolyTyp;
-        internal EdgeSide Side; //side only refers to current side of solution poly
-        internal int WindDelta; //1 or -1 depending on winding direction
-        internal int WindCnt;
-        internal int WindCnt2; //winding count of the opposite polytype
-        internal int OutIdx;
-        internal TEdge Next;
-        internal TEdge Prev;
-        internal TEdge NextInLML;
-        internal TEdge NextInAEL;
-        internal TEdge PrevInAEL;
-        internal TEdge NextInSEL;
-        internal TEdge PrevInSEL;
-    };
-
-    internal class IntersectNode
-    {
-        internal TEdge Edge1;
-        internal TEdge Edge2;
-        internal IntPoint Pt;
-    };
-
-    internal class MyIntersectNodeSort : IComparer<IntersectNode>
-    {
-        public int Compare(IntersectNode node1, IntersectNode node2)
-        {
-            long i = node2.Pt.Y - node1.Pt.Y;
-            if (i > 0) return 1;
-            else if (i < 0) return -1;
-            else return 0;
-        }
-    }
-
-    internal class LocalMinima
-    {
-        internal long Y;
-        internal TEdge LeftBound;
-        internal TEdge RightBound;
-        internal LocalMinima Next;
-    };
-
-    internal class Scanbeam
-    {
-        internal long Y;
-        internal Scanbeam Next;
-    };
-
-    internal class Maxima
-    {
-        internal long X;
-        internal Maxima Next;
-        internal Maxima Prev;
-    };
-
-    /// <summary>
-    /// OutRec: contains a path in the clipping solution. Edges in the AEL will
-    /// carry a pointer to an OutRec when they are part of the clipping solution.
-    /// </summary>
-    internal class OutRec
-    {
-        internal int Idx;
-        internal bool IsHole;
-        internal bool IsOpen;
-        internal OutRec FirstLeft; //see comments in clipper.pas
-        internal OutPt Pts;
-        internal OutPt BottomPt;
-        internal PolyNode PolyNode;
-    };
-
-    internal class OutPt
-    {
-        internal int Idx;
-        internal IntPoint Pt;
-        internal OutPt Next;
-        internal OutPt Prev;
-    };
-
-    internal class Join
-    {
-        internal OutPt OutPt1;
-        internal OutPt OutPt2;
-        internal IntPoint OffPt;
-    };
-
-    internal class ClipperBase
-    {
-        internal const double horizontal = -3.4E+38;
-        internal const int Skip = -2;
-        internal const int Unassigned = -1;
-        internal const double tolerance = 1.0E-20;
-        internal static bool NearZero(double val) { return (val > -tolerance) && (val < tolerance); }
-
-        public const long loRange = 0x3FFFFFFF;
-
-        public const long hiRange = 0x3FFFFFFFFFFFFFFFL;
-
-        internal LocalMinima m_MinimaList;
-        internal LocalMinima m_CurrentLM;
-        internal List<List<TEdge>> m_edges = new List<List<TEdge>>();
-        internal Scanbeam m_Scanbeam;
-        internal List<OutRec> m_PolyOuts;
-        internal TEdge m_ActiveEdges;
-        internal bool m_UseFullRange;
-        internal bool m_HasOpenPaths;
-
-        //------------------------------------------------------------------------------
-        public bool PreserveCollinear
-        {
-            get;
-            set;
-        }
-        //------------------------------------------------------------------------------
-        public void Swap(ref long val1, ref long val2)
-        {
-            long tmp = val1;
-            val1 = val2;
-            val2 = tmp;
-        }
-        //------------------------------------------------------------------------------
-
-        internal static bool IsHorizontal(TEdge e)
-        {
-            return e.Delta.Y == 0;
-        }
-        //------------------------------------------------------------------------------
-
-        internal bool PointIsVertex(IntPoint pt, OutPt pp)
-        {
-            OutPt pp2 = pp;
-            do
-            {
-                if (pp2.Pt == pt) return true;
-                pp2 = pp2.Next;
-            }
-            while (pp2 != pp);
-            return false;
-        }
-        //------------------------------------------------------------------------------
-
-        internal bool PointOnLineSegment(IntPoint pt,
-            IntPoint linePt1, IntPoint linePt2, bool UseFullRange)
-        {
-            if (UseFullRange)
-                return ((pt.X == linePt1.X) && (pt.Y == linePt1.Y)) ||
-                  ((pt.X == linePt2.X) && (pt.Y == linePt2.Y)) ||
-                  (((pt.X > linePt1.X) == (pt.X < linePt2.X)) &&
-                  ((pt.Y > linePt1.Y) == (pt.Y < linePt2.Y)) &&
-                  ((Int128.Int128Mul((pt.X - linePt1.X), (linePt2.Y - linePt1.Y)) ==
-                  Int128.Int128Mul((linePt2.X - linePt1.X), (pt.Y - linePt1.Y)))));
-            else
-                return ((pt.X == linePt1.X) && (pt.Y == linePt1.Y)) ||
-                  ((pt.X == linePt2.X) && (pt.Y == linePt2.Y)) ||
-                  (((pt.X > linePt1.X) == (pt.X < linePt2.X)) &&
-                  ((pt.Y > linePt1.Y) == (pt.Y < linePt2.Y)) &&
-                  ((pt.X - linePt1.X) * (linePt2.Y - linePt1.Y) ==
-                    (linePt2.X - linePt1.X) * (pt.Y - linePt1.Y)));
-        }
-        //------------------------------------------------------------------------------
-
-        internal bool PointOnPolygon(IntPoint pt, OutPt pp, bool UseFullRange)
-        {
-            OutPt pp2 = pp;
-            while (true)
-            {
-                if (PointOnLineSegment(pt, pp2.Pt, pp2.Next.Pt, UseFullRange))
-                    return true;
-                pp2 = pp2.Next;
-                if (pp2 == pp) break;
-            }
-            return false;
-        }
-        //------------------------------------------------------------------------------
-
-        internal static bool SlopesEqual(TEdge e1, TEdge e2, bool UseFullRange)
-        {
-            if (UseFullRange)
-                return Int128.Int128Mul(e1.Delta.Y, e2.Delta.X) ==
-                    Int128.Int128Mul(e1.Delta.X, e2.Delta.Y);
-            else return (long)(e1.Delta.Y) * (e2.Delta.X) ==
-              (long)(e1.Delta.X) * (e2.Delta.Y);
-        }
-        //------------------------------------------------------------------------------
-
-        internal static bool SlopesEqual(IntPoint pt1, IntPoint pt2,
-            IntPoint pt3, bool UseFullRange)
-        {
-            if (UseFullRange)
-                return Int128.Int128Mul(pt1.Y - pt2.Y, pt2.X - pt3.X) ==
-                  Int128.Int128Mul(pt1.X - pt2.X, pt2.Y - pt3.Y);
-            else return
-              (pt1.Y - pt2.Y) * (pt2.X - pt3.X) - (pt1.X - pt2.X) * (pt2.Y - pt3.Y) == 0;
-        }
-        //------------------------------------------------------------------------------
-
-        internal static bool SlopesEqual(IntPoint pt1, IntPoint pt2,
-            IntPoint pt3, IntPoint pt4, bool UseFullRange)
-        {
-            if (UseFullRange)
-                return Int128.Int128Mul(pt1.Y - pt2.Y, pt3.X - pt4.X) ==
-                  Int128.Int128Mul(pt1.X - pt2.X, pt3.Y - pt4.Y);
-            else return
-              (pt1.Y - pt2.Y) * (pt3.X - pt4.X) - (pt1.X - pt2.X) * (pt3.Y - pt4.Y) == 0;
-        }
-        //------------------------------------------------------------------------------
-
-        internal ClipperBase() //constructor (nb: no external instantiation)
-        {
-            m_MinimaList = null;
-            m_CurrentLM = null;
-            m_UseFullRange = false;
-            m_HasOpenPaths = false;
-        }
-        //------------------------------------------------------------------------------
-
-        public virtual void Clear()
-        {
-            DisposeLocalMinimaList();
-            for (int i = 0; i < m_edges.Count; ++i)
-            {
-                for (int j = 0; j < m_edges[i].Count; ++j) m_edges[i][j] = null;
-                m_edges[i].Clear();
-            }
-            m_edges.Clear();
-            m_UseFullRange = false;
-            m_HasOpenPaths = false;
-        }
-        //------------------------------------------------------------------------------
-
-        private void DisposeLocalMinimaList()
-        {
-            while (m_MinimaList != null)
-            {
-                LocalMinima tmpLm = m_MinimaList.Next;
-                m_MinimaList = null;
-                m_MinimaList = tmpLm;
-            }
-            m_CurrentLM = null;
-        }
-        //------------------------------------------------------------------------------
-
-        void RangeTest(IntPoint Pt, ref bool useFullRange)
-        {
-            if (useFullRange)
-            {
-                if (Pt.X > hiRange || Pt.Y > hiRange || -Pt.X > hiRange || -Pt.Y > hiRange)
-                    throw new ClipperException("Coordinate outside allowed range");
-            }
-            else if (Pt.X > loRange || Pt.Y > loRange || -Pt.X > loRange || -Pt.Y > loRange)
-            {
-                useFullRange = true;
-                RangeTest(Pt, ref useFullRange);
-            }
-        }
-        //------------------------------------------------------------------------------
-
-        private void InitEdge(TEdge e, TEdge eNext,
-          TEdge ePrev, IntPoint pt)
-        {
-            e.Next = eNext;
-            e.Prev = ePrev;
-            e.Curr = pt;
-            e.OutIdx = Unassigned;
-        }
-        //------------------------------------------------------------------------------
-
-        private void InitEdge2(TEdge e, PolyType polyType)
-        {
-            if (e.Curr.Y >= e.Next.Curr.Y)
-            {
-                e.Bot = e.Curr;
-                e.Top = e.Next.Curr;
-            }
-            else
-            {
-                e.Top = e.Curr;
-                e.Bot = e.Next.Curr;
-            }
-            SetDx(e);
-            e.PolyTyp = polyType;
-        }
-        //------------------------------------------------------------------------------
-
-        private TEdge FindNextLocMin(TEdge E)
-        {
-            TEdge E2;
-            for (; ; )
-            {
-                while (E.Bot != E.Prev.Bot || E.Curr == E.Top) E = E.Next;
-                if (E.Dx != horizontal && E.Prev.Dx != horizontal) break;
-                while (E.Prev.Dx == horizontal) E = E.Prev;
-                E2 = E;
-                while (E.Dx == horizontal) E = E.Next;
-                if (E.Top.Y == E.Prev.Bot.Y) continue; //ie just an intermediate horz.
-                if (E2.Prev.Bot.X < E.Bot.X) E = E2;
-                break;
-            }
-            return E;
-        }
-        //------------------------------------------------------------------------------
-
-        private TEdge ProcessBound(TEdge E, bool LeftBoundIsForward)
-        {
-            TEdge EStart, Result = E;
-            TEdge Horz;
-
-            if (Result.OutIdx == Skip)
-            {
-                //check if there are edges beyond the skip edge in the bound and if so
-                //create another LocMin and calling ProcessBound once more ...
-                E = Result;
-                if (LeftBoundIsForward)
-                {
-                    while (E.Top.Y == E.Next.Bot.Y) E = E.Next;
-                    while (E != Result && E.Dx == horizontal) E = E.Prev;
-                }
-                else
-                {
-                    while (E.Top.Y == E.Prev.Bot.Y) E = E.Prev;
-                    while (E != Result && E.Dx == horizontal) E = E.Next;
-                }
-                if (E == Result)
-                {
-                    if (LeftBoundIsForward) Result = E.Next;
-                    else Result = E.Prev;
-                }
-                else
-                {
-                    //there are more edges in the bound beyond result starting with E
-                    if (LeftBoundIsForward)
-                        E = Result.Next;
-                    else
-                        E = Result.Prev;
-                    LocalMinima locMin = new LocalMinima
-                    {
-                        Next = null,
-                        Y = E.Bot.Y,
-                        LeftBound = null,
-                        RightBound = E
-                    };
-                    E.WindDelta = 0;
-                    Result = ProcessBound(E, LeftBoundIsForward);
-                    InsertLocalMinima(locMin);
-                }
-                return Result;
-            }
-
-            if (E.Dx == horizontal)
-            {
-                //We need to be careful with open paths because this may not be a
-                //true local minima (ie E may be following a skip edge).
-                //Also, consecutive horz. edges may start heading left before going right.
-                if (LeftBoundIsForward) EStart = E.Prev;
-                else EStart = E.Next;
-                if (EStart.Dx == horizontal) //ie an adjoining horizontal skip edge
-                {
-                    if (EStart.Bot.X != E.Bot.X && EStart.Top.X != E.Bot.X)
-                        ReverseHorizontal(E);
-                }
-                else if (EStart.Bot.X != E.Bot.X)
-                    ReverseHorizontal(E);
-            }
-
-            EStart = E;
-            if (LeftBoundIsForward)
-            {
-                while (Result.Top.Y == Result.Next.Bot.Y && Result.Next.OutIdx != Skip)
-                    Result = Result.Next;
-                if (Result.Dx == horizontal && Result.Next.OutIdx != Skip)
-                {
-                    //nb: at the top of a bound, horizontals are added to the bound
-                    //only when the preceding edge attaches to the horizontal's left vertex
-                    //unless a Skip edge is encountered when that becomes the top divide
-                    Horz = Result;
-                    while (Horz.Prev.Dx == horizontal) Horz = Horz.Prev;
-                    if (Horz.Prev.Top.X > Result.Next.Top.X) Result = Horz.Prev;
-                }
-                while (E != Result)
-                {
-                    E.NextInLML = E.Next;
-                    if (E.Dx == horizontal && E != EStart && E.Bot.X != E.Prev.Top.X)
-                        ReverseHorizontal(E);
-                    E = E.Next;
-                }
-                if (E.Dx == horizontal && E != EStart && E.Bot.X != E.Prev.Top.X)
-                    ReverseHorizontal(E);
-                Result = Result.Next; //move to the edge just beyond current bound
-            }
-            else
-            {
-                while (Result.Top.Y == Result.Prev.Bot.Y && Result.Prev.OutIdx != Skip)
-                    Result = Result.Prev;
-                if (Result.Dx == horizontal && Result.Prev.OutIdx != Skip)
-                {
-                    Horz = Result;
-                    while (Horz.Next.Dx == horizontal) Horz = Horz.Next;
-                    if (Horz.Next.Top.X == Result.Prev.Top.X ||
-                        Horz.Next.Top.X > Result.Prev.Top.X) Result = Horz.Next;
-                }
-
-                while (E != Result)
-                {
-                    E.NextInLML = E.Prev;
-                    if (E.Dx == horizontal && E != EStart && E.Bot.X != E.Next.Top.X)
-                        ReverseHorizontal(E);
-                    E = E.Prev;
-                }
-                if (E.Dx == horizontal && E != EStart && E.Bot.X != E.Next.Top.X)
-                    ReverseHorizontal(E);
-                Result = Result.Prev; //move to the edge just beyond current bound
-            }
-            return Result;
-        }
-        //------------------------------------------------------------------------------
-
-        public bool AddPath(List<IntPoint> pg, PolyType polyType, bool Closed)
-        {
-            if (!Closed && polyType == PolyType.ptClip)
-                throw new ClipperException("AddPath: Open paths must be subject.");
-
-            int highI = (int)pg.Count - 1;
-            if (Closed) while (highI > 0 && (pg[highI] == pg[0])) --highI;
-            while (highI > 0 && (pg[highI] == pg[highI - 1])) --highI;
-            if ((Closed && highI < 2) || (!Closed && highI < 1)) return false;
-
-            //create a new edge array ...
-            List<TEdge> edges = new List<TEdge>(highI + 1);
-            for (int i = 0; i <= highI; i++) edges.Add(new TEdge());
-
-            bool IsFlat = true;
-
-            //1. Basic (first) edge initialization ...
-            edges[1].Curr = pg[1];
-            RangeTest(pg[0], ref m_UseFullRange);
-            RangeTest(pg[highI], ref m_UseFullRange);
-            InitEdge(edges[0], edges[1], edges[highI], pg[0]);
-            InitEdge(edges[highI], edges[0], edges[highI - 1], pg[highI]);
-            for (int i = highI - 1; i >= 1; --i)
-            {
-                RangeTest(pg[i], ref m_UseFullRange);
-                InitEdge(edges[i], edges[i + 1], edges[i - 1], pg[i]);
-            }
-            TEdge eStart = edges[0];
-
-            //2. Remove duplicate vertices, and (when closed) collinear edges ...
-            TEdge E = eStart, eLoopStop = eStart;
-            for (; ; )
-            {
-                //nb: allows matching start and end points when not Closed ...
-                if (E.Curr == E.Next.Curr && (Closed || E.Next != eStart))
-                {
-                    if (E == E.Next) break;
-                    if (E == eStart) eStart = E.Next;
-                    E = RemoveEdge(E);
-                    eLoopStop = E;
-                    continue;
-                }
-                if (E.Prev == E.Next)
-                    break; //only two vertices
-                else if (Closed &&
-                  SlopesEqual(E.Prev.Curr, E.Curr, E.Next.Curr, m_UseFullRange) &&
-                  (!PreserveCollinear ||
-                  !Pt2IsBetweenPt1AndPt3(E.Prev.Curr, E.Curr, E.Next.Curr)))
-                {
-                    //Collinear edges are allowed for open paths but in closed paths
-                    //the default is to merge adjacent collinear edges into a single edge.
-                    //However, if the PreserveCollinear property is enabled, only overlapping
-                    //collinear edges (ie spikes) will be removed from closed paths.
-                    if (E == eStart) eStart = E.Next;
-                    E = RemoveEdge(E);
-                    E = E.Prev;
-                    eLoopStop = E;
-                    continue;
-                }
-                E = E.Next;
-                if ((E == eLoopStop) || (!Closed && E.Next == eStart)) break;
-            }
-
-            if ((!Closed && (E == E.Next)) || (Closed && (E.Prev == E.Next)))
-                return false;
-
-            if (!Closed)
-            {
-                m_HasOpenPaths = true;
-                eStart.Prev.OutIdx = Skip;
-            }
-
-            //3. Do second stage of edge initialization ...
-            E = eStart;
-            do
-            {
-                InitEdge2(E, polyType);
-                E = E.Next;
-                if (IsFlat && E.Curr.Y != eStart.Curr.Y) IsFlat = false;
-            }
-            while (E != eStart);
-
-            //4. Finally, add edge bounds to LocalMinima list ...
-
-            //Totally flat paths must be handled differently when adding them
-            //to LocalMinima list to avoid endless loops etc ...
-            if (IsFlat)
-            {
-                if (Closed) return false;
-                E.Prev.OutIdx = Skip;
-                LocalMinima locMin = new LocalMinima
-                {
-                    Next = null,
-                    Y = E.Bot.Y,
-                    LeftBound = null,
-                    RightBound = E
-                };
-                locMin.RightBound.Side = EdgeSide.esRight;
-                locMin.RightBound.WindDelta = 0;
-                for (; ; )
-                {
-                    if (E.Bot.X != E.Prev.Top.X) ReverseHorizontal(E);
-                    if (E.Next.OutIdx == Skip) break;
-                    E.NextInLML = E.Next;
-                    E = E.Next;
-                }
-                InsertLocalMinima(locMin);
-                m_edges.Add(edges);
-                return true;
-            }
-
-            m_edges.Add(edges);
-            bool leftBoundIsForward;
-            TEdge EMin = null;
-
-            //workaround to avoid an endless loop in the while loop below when
-            //open paths have matching start and end points ...
-            if (E.Prev.Bot == E.Prev.Top) E = E.Next;
-
-            for (; ; )
-            {
-                E = FindNextLocMin(E);
-                if (E == EMin) break;
-                else if (EMin == null) EMin = E;
-
-                //E and E.Prev now share a local minima (left aligned if horizontal).
-                //Compare their slopes to find which starts which bound ...
-                LocalMinima locMin = new LocalMinima
-                {
-                    Next = null,
-                    Y = E.Bot.Y
-                };
-                if (E.Dx < E.Prev.Dx)
-                {
-                    locMin.LeftBound = E.Prev;
-                    locMin.RightBound = E;
-                    leftBoundIsForward = false; //Q.nextInLML = Q.prev
-                }
-                else
-                {
-                    locMin.LeftBound = E;
-                    locMin.RightBound = E.Prev;
-                    leftBoundIsForward = true; //Q.nextInLML = Q.next
-                }
-                locMin.LeftBound.Side = EdgeSide.esLeft;
-                locMin.RightBound.Side = EdgeSide.esRight;
-
-                if (!Closed) locMin.LeftBound.WindDelta = 0;
-                else if (locMin.LeftBound.Next == locMin.RightBound)
-                    locMin.LeftBound.WindDelta = -1;
-                else locMin.LeftBound.WindDelta = 1;
-                locMin.RightBound.WindDelta = -locMin.LeftBound.WindDelta;
-
-                E = ProcessBound(locMin.LeftBound, leftBoundIsForward);
-                if (E.OutIdx == Skip) E = ProcessBound(E, leftBoundIsForward);
-
-                TEdge E2 = ProcessBound(locMin.RightBound, !leftBoundIsForward);
-                if (E2.OutIdx == Skip) E2 = ProcessBound(E2, !leftBoundIsForward);
-
-                if (locMin.LeftBound.OutIdx == Skip)
-                    locMin.LeftBound = null;
-                else if (locMin.RightBound.OutIdx == Skip)
-                    locMin.RightBound = null;
-                InsertLocalMinima(locMin);
-                if (!leftBoundIsForward) E = E2;
-            }
-            return true;
-
-        }
-        //------------------------------------------------------------------------------
-
-        public bool AddPaths(List<List<IntPoint>> ppg, PolyType polyType, bool closed)
-        {
-            bool result = false;
-            for (int i = 0; i < ppg.Count; ++i)
-                if (AddPath(ppg[i], polyType, closed)) result = true;
-            return result;
-        }
-        //------------------------------------------------------------------------------
-
-        internal bool Pt2IsBetweenPt1AndPt3(IntPoint pt1, IntPoint pt2, IntPoint pt3)
-        {
-            if ((pt1 == pt3) || (pt1 == pt2) || (pt3 == pt2)) return false;
-            else if (pt1.X != pt3.X) return (pt2.X > pt1.X) == (pt2.X < pt3.X);
-            else return (pt2.Y > pt1.Y) == (pt2.Y < pt3.Y);
-        }
-        //------------------------------------------------------------------------------
-
-        TEdge RemoveEdge(TEdge e)
-        {
-            //removes e from double_linked_list (but without removing from memory)
-            e.Prev.Next = e.Next;
-            e.Next.Prev = e.Prev;
-            TEdge result = e.Next;
-            e.Prev = null; //flag as removed (see ClipperBase.Clear)
-            return result;
-        }
-        //------------------------------------------------------------------------------
-
-        private void SetDx(TEdge e)
-        {
-            e.Delta.X = (e.Top.X - e.Bot.X);
-            e.Delta.Y = (e.Top.Y - e.Bot.Y);
-            if (e.Delta.Y == 0) e.Dx = horizontal;
-            else e.Dx = (double)(e.Delta.X) / (e.Delta.Y);
-        }
-        //---------------------------------------------------------------------------
-
-        private void InsertLocalMinima(LocalMinima newLm)
-        {
-            if (m_MinimaList == null)
-            {
-                m_MinimaList = newLm;
-            }
-            else if (newLm.Y >= m_MinimaList.Y)
-            {
-                newLm.Next = m_MinimaList;
-                m_MinimaList = newLm;
-            }
-            else
-            {
-                LocalMinima tmpLm = m_MinimaList;
-                while (tmpLm.Next != null && (newLm.Y < tmpLm.Next.Y))
-                    tmpLm = tmpLm.Next;
-                newLm.Next = tmpLm.Next;
-                tmpLm.Next = newLm;
-            }
-        }
-        //------------------------------------------------------------------------------
-
-        internal bool PopLocalMinima(long Y, out LocalMinima current)
-        {
-            current = m_CurrentLM;
-            if (m_CurrentLM != null && m_CurrentLM.Y == Y)
-            {
-                m_CurrentLM = m_CurrentLM.Next;
-                return true;
-            }
-            return false;
-        }
-        //------------------------------------------------------------------------------
-
-        private void ReverseHorizontal(TEdge e)
-        {
-            //swap horizontal edges' top and bottom x's so they follow the natural
-            //progression of the bounds - ie so their xbots will align with the
-            //adjoining lower edge. [Helpful in the ProcessHorizontal() method.]
-            Swap(ref e.Top.X, ref e.Bot.X);
-        }
-        //------------------------------------------------------------------------------
-
-        internal virtual void Reset()
-        {
-            m_CurrentLM = m_MinimaList;
-            if (m_CurrentLM == null) return; //ie nothing to process
-
-            //reset all edges ...
-            m_Scanbeam = null;
-            LocalMinima lm = m_MinimaList;
-            while (lm != null)
-            {
-                InsertScanbeam(lm.Y);
-                TEdge e = lm.LeftBound;
-                if (e != null)
-                {
-                    e.Curr = e.Bot;
-                    e.OutIdx = Unassigned;
-                }
-                e = lm.RightBound;
-                if (e != null)
-                {
-                    e.Curr = e.Bot;
-                    e.OutIdx = Unassigned;
-                }
-                lm = lm.Next;
-            }
-            m_ActiveEdges = null;
-        }
-        //------------------------------------------------------------------------------
-
-        public static IntRect GetBounds(List<List<IntPoint>> paths)
-        {
-            int i = 0, cnt = paths.Count;
-            while (i < cnt && paths[i].Count == 0) i++;
-            if (i == cnt) return new IntRect(0, 0, 0, 0);
-            IntRect result = new IntRect
-            {
-                left = paths[i][0].X
-            };
-            result.right = result.left;
-            result.top = paths[i][0].Y;
-            result.bottom = result.top;
-            for (; i < cnt; i++)
-                for (int j = 0; j < paths[i].Count; j++)
-                {
-                    if (paths[i][j].X < result.left) result.left = paths[i][j].X;
-                    else if (paths[i][j].X > result.right) result.right = paths[i][j].X;
-                    if (paths[i][j].Y < result.top) result.top = paths[i][j].Y;
-                    else if (paths[i][j].Y > result.bottom) result.bottom = paths[i][j].Y;
-                }
-            return result;
-        }
-        //------------------------------------------------------------------------------
-
-        internal void InsertScanbeam(long Y)
-        {
-            //single-linked list: sorted descending, ignoring dups.
-            if (m_Scanbeam == null)
-            {
-                m_Scanbeam = new Scanbeam
-                {
-                    Next = null,
-                    Y = Y
-                };
-            }
-            else if (Y > m_Scanbeam.Y)
-            {
-                Scanbeam newSb = new Scanbeam
-                {
-                    Y = Y,
-                    Next = m_Scanbeam
-                };
-                m_Scanbeam = newSb;
-            }
-            else
-            {
-                Scanbeam sb2 = m_Scanbeam;
-                while (sb2.Next != null && (Y <= sb2.Next.Y)) sb2 = sb2.Next;
-                if (Y == sb2.Y) return; //ie ignores duplicates
-                Scanbeam newSb = new Scanbeam
-                {
-                    Y = Y,
-                    Next = sb2.Next
-                };
-                sb2.Next = newSb;
-            }
-        }
-        //------------------------------------------------------------------------------
-
-        internal bool PopScanbeam(out long Y)
-        {
-            if (m_Scanbeam == null)
-            {
-                Y = 0;
-                return false;
-            }
-            Y = m_Scanbeam.Y;
-            m_Scanbeam = m_Scanbeam.Next;
-            return true;
-        }
-        //------------------------------------------------------------------------------
-
-        internal bool LocalMinimaPending()
-        {
-            return (m_CurrentLM != null);
-        }
-        //------------------------------------------------------------------------------
-
-        internal OutRec CreateOutRec()
-        {
-            OutRec result = new OutRec
-            {
-                Idx = Unassigned,
-                IsHole = false,
-                IsOpen = false,
-                FirstLeft = null,
-                Pts = null,
-                BottomPt = null,
-                PolyNode = null
-            };
-            m_PolyOuts.Add(result);
-            result.Idx = m_PolyOuts.Count - 1;
-            return result;
-        }
-        //------------------------------------------------------------------------------
-
-        internal void DisposeOutRec(int index)
-        {
-            OutRec outRec = m_PolyOuts[index];
-            outRec.Pts = null;
-            outRec = null;
-            m_PolyOuts[index] = null;
-        }
-        //------------------------------------------------------------------------------
-
-        internal void UpdateEdgeIntoAEL(ref TEdge e)
-        {
-            if (e.NextInLML == null)
-                throw new ClipperException("UpdateEdgeIntoAEL: invalid call");
-            TEdge AelPrev = e.PrevInAEL;
-            TEdge AelNext = e.NextInAEL;
-            e.NextInLML.OutIdx = e.OutIdx;
-            if (AelPrev != null)
-                AelPrev.NextInAEL = e.NextInLML;
-            else m_ActiveEdges = e.NextInLML;
-            if (AelNext != null)
-                AelNext.PrevInAEL = e.NextInLML;
-            e.NextInLML.Side = e.Side;
-            e.NextInLML.WindDelta = e.WindDelta;
-            e.NextInLML.WindCnt = e.WindCnt;
-            e.NextInLML.WindCnt2 = e.WindCnt2;
-            e = e.NextInLML;
-            e.Curr = e.Bot;
-            e.PrevInAEL = AelPrev;
-            e.NextInAEL = AelNext;
-            if (!IsHorizontal(e)) InsertScanbeam(e.Top.Y);
-        }
-        //------------------------------------------------------------------------------
-
-        internal void SwapPositionsInAEL(TEdge edge1, TEdge edge2)
-        {
-            //check that one or other edge hasn't already been removed from AEL ...
-            if (edge1.NextInAEL == edge1.PrevInAEL ||
-              edge2.NextInAEL == edge2.PrevInAEL) return;
-
-            if (edge1.NextInAEL == edge2)
-            {
-                TEdge next = edge2.NextInAEL;
-                if (next != null)
-                    next.PrevInAEL = edge1;
-                TEdge prev = edge1.PrevInAEL;
-                if (prev != null)
-                    prev.NextInAEL = edge2;
-                edge2.PrevInAEL = prev;
-                edge2.NextInAEL = edge1;
-                edge1.PrevInAEL = edge2;
-                edge1.NextInAEL = next;
-            }
-            else if (edge2.NextInAEL == edge1)
-            {
-                TEdge next = edge1.NextInAEL;
-                if (next != null)
-                    next.PrevInAEL = edge2;
-                TEdge prev = edge2.PrevInAEL;
-                if (prev != null)
-                    prev.NextInAEL = edge1;
-                edge1.PrevInAEL = prev;
-                edge1.NextInAEL = edge2;
-                edge2.PrevInAEL = edge1;
-                edge2.NextInAEL = next;
-            }
-            else
-            {
-                TEdge next = edge1.NextInAEL;
-                TEdge prev = edge1.PrevInAEL;
-                edge1.NextInAEL = edge2.NextInAEL;
-                if (edge1.NextInAEL != null)
-                    edge1.NextInAEL.PrevInAEL = edge1;
-                edge1.PrevInAEL = edge2.PrevInAEL;
-                if (edge1.PrevInAEL != null)
-                    edge1.PrevInAEL.NextInAEL = edge1;
-                edge2.NextInAEL = next;
-                if (edge2.NextInAEL != null)
-                    edge2.NextInAEL.PrevInAEL = edge2;
-                edge2.PrevInAEL = prev;
-                if (edge2.PrevInAEL != null)
-                    edge2.PrevInAEL.NextInAEL = edge2;
-            }
-
-            if (edge1.PrevInAEL == null)
-                m_ActiveEdges = edge1;
-            else if (edge2.PrevInAEL == null)
-                m_ActiveEdges = edge2;
-        }
-        //------------------------------------------------------------------------------
-
-        internal void DeleteFromAEL(TEdge e)
-        {
-            TEdge AelPrev = e.PrevInAEL;
-            TEdge AelNext = e.NextInAEL;
-            if (AelPrev == null && AelNext == null && (e != m_ActiveEdges))
-                return; //already deleted
-            if (AelPrev != null)
-                AelPrev.NextInAEL = AelNext;
-            else m_ActiveEdges = AelNext;
-            if (AelNext != null)
-                AelNext.PrevInAEL = AelPrev;
-            e.NextInAEL = null;
-            e.PrevInAEL = null;
-        }
-        //------------------------------------------------------------------------------
-
-    } //end ClipperBase
+    using System;
+    using System.Collections.Generic;
 
     internal class Clipper : ClipperBase
     {
@@ -1392,16 +84,16 @@ namespace UglyToad.PdfPig.Geometry
 
         public const int ioPreserveCollinear = 4;
 
-        private ClipType m_ClipType;
-        private Maxima m_Maxima;
-        private TEdge m_SortedEdges;
-        private readonly List<IntersectNode> m_IntersectList;
-        readonly IComparer<IntersectNode> m_IntersectNodeComparer;
+        private ClipperClipType m_ClipType;
+        private ClipperMaxima m_Maxima;
+        private ClipperTEdge m_SortedEdges;
+        private readonly List<ClipperIntersectNode> m_IntersectList;
+        readonly IComparer<ClipperIntersectNode> m_IntersectNodeComparer;
         private bool m_ExecuteLocked;
-        private PolyFillType m_ClipFillType;
-        private PolyFillType m_SubjFillType;
-        private readonly List<Join> m_Joins;
-        private readonly List<Join> m_GhostJoins;
+        private ClipperPolyFillType m_ClipFillType;
+        private ClipperPolyFillType m_SubjFillType;
+        private readonly List<ClipperJoin> m_Joins;
+        private readonly List<ClipperJoin> m_GhostJoins;
         private bool m_UsingPolyTree;
 
         public Clipper(int InitOptions = 0) : base() //constructor
@@ -1410,13 +102,13 @@ namespace UglyToad.PdfPig.Geometry
             m_Maxima = null;
             m_ActiveEdges = null;
             m_SortedEdges = null;
-            m_IntersectList = new List<IntersectNode>();
-            m_IntersectNodeComparer = new MyIntersectNodeSort();
+            m_IntersectList = new List<ClipperIntersectNode>();
+            m_IntersectNodeComparer = new ClipperIntersectNodeSort();
             m_ExecuteLocked = false;
             m_UsingPolyTree = false;
-            m_PolyOuts = new List<OutRec>();
-            m_Joins = new List<Join>();
-            m_GhostJoins = new List<Join>();
+            m_PolyOuts = new List<ClipperOutRec>();
+            m_Joins = new List<ClipperJoin>();
+            m_GhostJoins = new List<ClipperJoin>();
             ReverseSolution = (ioReverseSolution & InitOptions) != 0;
             StrictlySimple = (ioStrictlySimple & InitOptions) != 0;
             PreserveCollinear = (ioPreserveCollinear & InitOptions) != 0;
@@ -1426,7 +118,7 @@ namespace UglyToad.PdfPig.Geometry
         private void InsertMaxima(long X)
         {
             //double-linked list: sorted ascending, ignoring dups.
-            Maxima newMax = new Maxima
+            ClipperMaxima newMax = new ClipperMaxima
             {
                 X = X
             };
@@ -1434,23 +126,23 @@ namespace UglyToad.PdfPig.Geometry
             {
                 m_Maxima = newMax;
                 m_Maxima.Next = null;
-                m_Maxima.Prev = null;
+                m_Maxima.Previous = null;
             }
             else if (X < m_Maxima.X)
             {
                 newMax.Next = m_Maxima;
-                newMax.Prev = null;
+                newMax.Previous = null;
                 m_Maxima = newMax;
             }
             else
             {
-                Maxima m = m_Maxima;
+                ClipperMaxima m = m_Maxima;
                 while (m.Next != null && (X >= m.Next.X)) m = m.Next;
                 if (X == m.X) return; //ie ignores duplicates (& CG to clean up newMax)
                                       //insert newMax between m and m.Next ...
                 newMax.Next = m.Next;
-                newMax.Prev = m;
-                if (m.Next != null) m.Next.Prev = newMax;
+                newMax.Previous = m;
+                if (m.Next != null) m.Next.Previous = newMax;
                 m.Next = newMax;
             }
         }
@@ -1470,22 +162,22 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        public bool Execute(ClipType clipType, List<List<IntPoint>> solution,
-            PolyFillType FillType = PolyFillType.pftEvenOdd)
+        public bool Execute(ClipperClipType clipType, List<List<ClipperIntPoint>> solution,
+            ClipperPolyFillType FillType = ClipperPolyFillType.EvenOdd)
         {
             return Execute(clipType, solution, FillType, FillType);
         }
         //------------------------------------------------------------------------------
 
-        public bool Execute(ClipType clipType, PolyTree polytree,
-            PolyFillType FillType = PolyFillType.pftEvenOdd)
+        public bool Execute(ClipperClipType clipType, ClipperPolyTree polytree,
+            ClipperPolyFillType FillType = ClipperPolyFillType.EvenOdd)
         {
             return Execute(clipType, polytree, FillType, FillType);
         }
         //------------------------------------------------------------------------------
 
-        public bool Execute(ClipType clipType, List<List<IntPoint>> solution,
-            PolyFillType subjFillType, PolyFillType clipFillType)
+        public bool Execute(ClipperClipType clipType, List<List<ClipperIntPoint>> solution,
+            ClipperPolyFillType subjFillType, ClipperPolyFillType clipFillType)
         {
             if (m_ExecuteLocked) return false;
             if (m_HasOpenPaths) throw
@@ -1513,8 +205,8 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        public bool Execute(ClipType clipType, PolyTree polytree,
-            PolyFillType subjFillType, PolyFillType clipFillType)
+        public bool Execute(ClipperClipType clipType, ClipperPolyTree polytree,
+            ClipperPolyFillType subjFillType, ClipperPolyFillType clipFillType)
         {
             if (m_ExecuteLocked) return false;
             m_ExecuteLocked = true;
@@ -1538,7 +230,7 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        internal void FixHoleLinkage(OutRec outRec)
+        internal void FixHoleLinkage(ClipperOutRec outRec)
         {
             //skip if an outermost polygon or
             //already already points to the correct FirstLeft ...
@@ -1546,7 +238,7 @@ namespace UglyToad.PdfPig.Geometry
                   (outRec.IsHole != outRec.FirstLeft.IsHole &&
                   outRec.FirstLeft.Pts != null)) return;
 
-            OutRec orfl = outRec.FirstLeft;
+            ClipperOutRec orfl = outRec.FirstLeft;
             while (orfl != null && ((orfl.IsHole == outRec.IsHole) || orfl.Pts == null))
                 orfl = orfl.FirstLeft;
             outRec.FirstLeft = orfl;
@@ -1574,7 +266,7 @@ namespace UglyToad.PdfPig.Geometry
                 }
 
                 //fix orientations ...
-                foreach (OutRec outRec in m_PolyOuts)
+                foreach (ClipperOutRec outRec in m_PolyOuts)
                 {
                     if (outRec.Pts == null || outRec.IsOpen) continue;
                     if ((outRec.IsHole ^ ReverseSolution) == (Area(outRec) > 0))
@@ -1583,7 +275,7 @@ namespace UglyToad.PdfPig.Geometry
 
                 JoinCommonEdges();
 
-                foreach (OutRec outRec in m_PolyOuts)
+                foreach (ClipperOutRec outRec in m_PolyOuts)
                 {
                     if (outRec.Pts == null)
                         continue;
@@ -1612,9 +304,9 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private void AddJoin(OutPt Op1, OutPt Op2, IntPoint OffPt)
+        private void AddJoin(ClipperOutPt Op1, ClipperOutPt Op2, ClipperIntPoint OffPt)
         {
-            Join j = new Join
+            ClipperJoin j = new ClipperJoin
             {
                 OutPt1 = Op1,
                 OutPt2 = Op2,
@@ -1624,9 +316,9 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private void AddGhostJoin(OutPt Op, IntPoint OffPt)
+        private void AddGhostJoin(ClipperOutPt Op, ClipperIntPoint OffPt)
         {
-            Join j = new Join
+            ClipperJoin j = new ClipperJoin
             {
                 OutPt1 = Op,
                 OffPt = OffPt
@@ -1637,12 +329,12 @@ namespace UglyToad.PdfPig.Geometry
 
         private void InsertLocalMinimaIntoAEL(long botY)
         {
-            while (PopLocalMinima(botY, out LocalMinima lm))
+            while (PopLocalMinima(botY, out ClipperLocalMinima lm))
             {
-                TEdge lb = lm.LeftBound;
-                TEdge rb = lm.RightBound;
+                ClipperTEdge lb = lm.LeftBound;
+                ClipperTEdge rb = lm.RightBound;
 
-                OutPt Op1 = null;
+                ClipperOutPt Op1 = null;
                 if (lb == null)
                 {
                     InsertEdgeIntoAEL(rb, null);
@@ -1692,7 +384,7 @@ namespace UglyToad.PdfPig.Geometry
                     {
                         //if the horizontal Rb and a 'ghost' horizontal overlap, then convert
                         //the 'ghost' join to a real join ready for later ...
-                        Join j = m_GhostJoins[i];
+                        ClipperJoin j = m_GhostJoins[i];
                         if (HorzSegmentsOverlap(j.OutPt1.Pt.X, j.OffPt.X, rb.Bot.X, rb.Top.X))
                             AddJoin(j.OutPt1, Op1, j.OffPt);
                     }
@@ -1704,7 +396,7 @@ namespace UglyToad.PdfPig.Geometry
                   SlopesEqual(lb.PrevInAEL.Curr, lb.PrevInAEL.Top, lb.Curr, lb.Top, m_UseFullRange) &&
                   lb.WindDelta != 0 && lb.PrevInAEL.WindDelta != 0)
                 {
-                    OutPt Op2 = AddOutPt(lb.PrevInAEL, lb.Bot);
+                    ClipperOutPt Op2 = AddOutPt(lb.PrevInAEL, lb.Bot);
                     AddJoin(Op1, Op2, lb.Top);
                 }
 
@@ -1715,11 +407,11 @@ namespace UglyToad.PdfPig.Geometry
                       SlopesEqual(rb.PrevInAEL.Curr, rb.PrevInAEL.Top, rb.Curr, rb.Top, m_UseFullRange) &&
                       rb.WindDelta != 0 && rb.PrevInAEL.WindDelta != 0)
                     {
-                        OutPt Op2 = AddOutPt(rb.PrevInAEL, rb.Bot);
+                        ClipperOutPt Op2 = AddOutPt(rb.PrevInAEL, rb.Bot);
                         AddJoin(Op1, Op2, rb.Top);
                     }
 
-                    TEdge e = lb.NextInAEL;
+                    ClipperTEdge e = lb.NextInAEL;
                     if (e != null)
                         while (e != rb)
                         {
@@ -1733,7 +425,7 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private void InsertEdgeIntoAEL(TEdge edge, TEdge startEdge)
+        private void InsertEdgeIntoAEL(ClipperTEdge edge, ClipperTEdge startEdge)
         {
             if (m_ActiveEdges == null)
             {
@@ -1762,7 +454,7 @@ namespace UglyToad.PdfPig.Geometry
         }
         //----------------------------------------------------------------------
 
-        private bool E2InsertsBeforeE1(TEdge e1, TEdge e2)
+        private bool E2InsertsBeforeE1(ClipperTEdge e1, ClipperTEdge e2)
         {
             if (e2.Curr.X == e1.Curr.X)
             {
@@ -1774,28 +466,28 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private bool IsEvenOddFillType(TEdge edge)
+        private bool IsEvenOddFillType(ClipperTEdge edge)
         {
-            if (edge.PolyTyp == PolyType.ptSubject)
-                return m_SubjFillType == PolyFillType.pftEvenOdd;
+            if (edge.PolyTyp == ClipperPolyType.Subject)
+                return m_SubjFillType == ClipperPolyFillType.EvenOdd;
             else
-                return m_ClipFillType == PolyFillType.pftEvenOdd;
+                return m_ClipFillType == ClipperPolyFillType.EvenOdd;
         }
         //------------------------------------------------------------------------------
 
-        private bool IsEvenOddAltFillType(TEdge edge)
+        private bool IsEvenOddAltFillType(ClipperTEdge edge)
         {
-            if (edge.PolyTyp == PolyType.ptSubject)
-                return m_ClipFillType == PolyFillType.pftEvenOdd;
+            if (edge.PolyTyp == ClipperPolyType.Subject)
+                return m_ClipFillType == ClipperPolyFillType.EvenOdd;
             else
-                return m_SubjFillType == PolyFillType.pftEvenOdd;
+                return m_SubjFillType == ClipperPolyFillType.EvenOdd;
         }
         //------------------------------------------------------------------------------
 
-        private bool IsContributing(TEdge edge)
+        private bool IsContributing(ClipperTEdge edge)
         {
-            PolyFillType pft, pft2;
-            if (edge.PolyTyp == PolyType.ptSubject)
+            ClipperPolyFillType pft, pft2;
+            if (edge.PolyTyp == ClipperPolyType.Subject)
             {
                 pft = m_SubjFillType;
                 pft2 = m_ClipFillType;
@@ -1809,27 +501,27 @@ namespace UglyToad.PdfPig.Geometry
             switch (pft)
             {
                 default:
-                case PolyFillType.pftEvenOdd:
+                case ClipperPolyFillType.EvenOdd:
                     //return false if a subj line has been flagged as inside a subj polygon
                     if (edge.WindDelta == 0 && edge.WindCnt != 1) return false;
                     break;
-                case PolyFillType.pftNonZero:
+                case ClipperPolyFillType.NonZero:
                     if (Math.Abs(edge.WindCnt) != 1) return false;
                     break;
             }
 
             switch (m_ClipType)
             {
-                case ClipType.ctIntersection:
+                case ClipperClipType.Intersection:
                     return (edge.WindCnt2 != 0);
-                case ClipType.ctUnion:
+                case ClipperClipType.Union:
                     return (edge.WindCnt2 == 0);
-                case ClipType.ctDifference:
-                    if (edge.PolyTyp == PolyType.ptSubject)
+                case ClipperClipType.Difference:
+                    if (edge.PolyTyp == ClipperPolyType.Subject)
                         return (edge.WindCnt2 == 0);
                     else
                         return (edge.WindCnt2 != 0);
-                case ClipType.ctXor:
+                case ClipperClipType.Xor:
                     if (edge.WindDelta == 0) //XOr always contributing unless open
                         return (edge.WindCnt2 == 0);
                     else
@@ -1839,20 +531,20 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private void SetWindingCount(TEdge edge)
+        private void SetWindingCount(ClipperTEdge edge)
         {
-            TEdge e = edge.PrevInAEL;
+            ClipperTEdge e = edge.PrevInAEL;
             //find the edge of the same polytype that immediately preceeds 'edge' in AEL
             while (e != null && ((e.PolyTyp != edge.PolyTyp) || (e.WindDelta == 0))) e = e.PrevInAEL;
             if (e == null)
             {
-                PolyFillType pft = (edge.PolyTyp == PolyType.ptSubject ? m_SubjFillType : m_ClipFillType);
+                ClipperPolyFillType pft = (edge.PolyTyp == ClipperPolyType.Subject ? m_SubjFillType : m_ClipFillType);
                 if (edge.WindDelta == 0) edge.WindCnt = 1; // (pft == PolyFillType.pftNegative ? -1 : 1);
                 else edge.WindCnt = edge.WindDelta;
                 edge.WindCnt2 = 0;
                 e = m_ActiveEdges; //ie get ready to calc WindCnt2
             }
-            else if (edge.WindDelta == 0 && m_ClipType != ClipType.ctUnion)
+            else if (edge.WindDelta == 0 && m_ClipType != ClipperClipType.Union)
             {
                 edge.WindCnt = 1;
                 edge.WindCnt2 = e.WindCnt2;
@@ -1865,7 +557,7 @@ namespace UglyToad.PdfPig.Geometry
                 {
                     //are we inside a subj polygon ...
                     bool Inside = true;
-                    TEdge e2 = e.PrevInAEL;
+                    ClipperTEdge e2 = e.PrevInAEL;
                     while (e2 != null)
                     {
                         if (e2.PolyTyp == e.PolyTyp && e2.WindDelta != 0)
@@ -1939,7 +631,7 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private void AddEdgeToSEL(TEdge edge)
+        private void AddEdgeToSEL(ClipperTEdge edge)
         {
             //SEL pointers in PEdge are use to build transient lists of horizontal edges.
             //However, since we don't need to worry about processing order, all additions
@@ -1960,12 +652,12 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        internal bool PopEdgeFromSEL(out TEdge e)
+        internal bool PopEdgeFromSEL(out ClipperTEdge e)
         {
             //Pop edge from front of SEL (ie SEL is a FILO list)
             e = m_SortedEdges;
             if (e == null) return false;
-            TEdge oldE = e;
+            ClipperTEdge oldE = e;
             m_SortedEdges = e.NextInSEL;
             if (m_SortedEdges != null) m_SortedEdges.PrevInSEL = null;
             oldE.NextInSEL = null;
@@ -1976,7 +668,7 @@ namespace UglyToad.PdfPig.Geometry
 
         private void CopyAELToSEL()
         {
-            TEdge e = m_ActiveEdges;
+            ClipperTEdge e = m_ActiveEdges;
             m_SortedEdges = e;
             while (e != null)
             {
@@ -1987,7 +679,7 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private void SwapPositionsInSEL(TEdge edge1, TEdge edge2)
+        private void SwapPositionsInSEL(ClipperTEdge edge1, ClipperTEdge edge2)
         {
             if (edge1.NextInSEL == null && edge1.PrevInSEL == null)
                 return;
@@ -1996,10 +688,10 @@ namespace UglyToad.PdfPig.Geometry
 
             if (edge1.NextInSEL == edge2)
             {
-                TEdge next = edge2.NextInSEL;
+                ClipperTEdge next = edge2.NextInSEL;
                 if (next != null)
                     next.PrevInSEL = edge1;
-                TEdge prev = edge1.PrevInSEL;
+                ClipperTEdge prev = edge1.PrevInSEL;
                 if (prev != null)
                     prev.NextInSEL = edge2;
                 edge2.PrevInSEL = prev;
@@ -2009,10 +701,10 @@ namespace UglyToad.PdfPig.Geometry
             }
             else if (edge2.NextInSEL == edge1)
             {
-                TEdge next = edge1.NextInSEL;
+                ClipperTEdge next = edge1.NextInSEL;
                 if (next != null)
                     next.PrevInSEL = edge2;
-                TEdge prev = edge2.PrevInSEL;
+                ClipperTEdge prev = edge2.PrevInSEL;
                 if (prev != null)
                     prev.NextInSEL = edge1;
                 edge1.PrevInSEL = prev;
@@ -2022,8 +714,8 @@ namespace UglyToad.PdfPig.Geometry
             }
             else
             {
-                TEdge next = edge1.NextInSEL;
-                TEdge prev = edge1.PrevInSEL;
+                ClipperTEdge next = edge1.NextInSEL;
+                ClipperTEdge prev = edge1.PrevInSEL;
                 edge1.NextInSEL = edge2.NextInSEL;
                 if (edge1.NextInSEL != null)
                     edge1.NextInSEL.PrevInSEL = edge1;
@@ -2046,7 +738,7 @@ namespace UglyToad.PdfPig.Geometry
         //------------------------------------------------------------------------------
 
 
-        private void AddLocalMaxPoly(TEdge e1, TEdge e2, IntPoint pt)
+        private void AddLocalMaxPoly(ClipperTEdge e1, ClipperTEdge e2, ClipperIntPoint pt)
         {
             AddOutPt(e1, pt);
             if (e2.WindDelta == 0) AddOutPt(e2, pt);
@@ -2062,16 +754,16 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private OutPt AddLocalMinPoly(TEdge e1, TEdge e2, IntPoint pt)
+        private ClipperOutPt AddLocalMinPoly(ClipperTEdge e1, ClipperTEdge e2, ClipperIntPoint pt)
         {
-            OutPt result;
-            TEdge e, prevE;
+            ClipperOutPt result;
+            ClipperTEdge e, prevE;
             if (IsHorizontal(e2) || (e1.Dx > e2.Dx))
             {
                 result = AddOutPt(e1, pt);
                 e2.OutIdx = e1.OutIdx;
-                e1.Side = EdgeSide.esLeft;
-                e2.Side = EdgeSide.esRight;
+                e1.Side = ClipperEdgeSide.Left;
+                e2.Side = ClipperEdgeSide.Right;
                 e = e1;
                 if (e.PrevInAEL == e2)
                     prevE = e2.PrevInAEL;
@@ -2082,8 +774,8 @@ namespace UglyToad.PdfPig.Geometry
             {
                 result = AddOutPt(e2, pt);
                 e1.OutIdx = e2.OutIdx;
-                e1.Side = EdgeSide.esRight;
-                e2.Side = EdgeSide.esLeft;
+                e1.Side = ClipperEdgeSide.Right;
+                e2.Side = ClipperEdgeSide.Left;
                 e = e2;
                 if (e.PrevInAEL == e1)
                     prevE = e1.PrevInAEL;
@@ -2096,9 +788,9 @@ namespace UglyToad.PdfPig.Geometry
                 long xPrev = TopX(prevE, pt.Y);
                 long xE = TopX(e, pt.Y);
                 if ((xPrev == xE) && (e.WindDelta != 0) && (prevE.WindDelta != 0) &&
-                  SlopesEqual(new IntPoint(xPrev, pt.Y), prevE.Top, new IntPoint(xE, pt.Y), e.Top, m_UseFullRange))
+                  SlopesEqual(new ClipperIntPoint(xPrev, pt.Y), prevE.Top, new ClipperIntPoint(xE, pt.Y), e.Top, m_UseFullRange))
                 {
-                    OutPt outPt = AddOutPt(prevE, pt);
+                    ClipperOutPt outPt = AddOutPt(prevE, pt);
                     AddJoin(result, outPt, e.Top);
                 }
             }
@@ -2106,15 +798,15 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private OutPt AddOutPt(TEdge e, IntPoint pt)
+        private ClipperOutPt AddOutPt(ClipperTEdge e, ClipperIntPoint pt)
         {
             if (e.OutIdx < 0)
             {
-                OutRec outRec = CreateOutRec();
+                ClipperOutRec outRec = CreateOutRec();
                 outRec.IsOpen = (e.WindDelta == 0);
-                OutPt newOp = new OutPt();
+                ClipperOutPt newOp = new ClipperOutPt();
                 outRec.Pts = newOp;
-                newOp.Idx = outRec.Idx;
+                newOp.Index = outRec.Idx;
                 newOp.Pt = pt;
                 newOp.Next = newOp;
                 newOp.Prev = newOp;
@@ -2125,16 +817,16 @@ namespace UglyToad.PdfPig.Geometry
             }
             else
             {
-                OutRec outRec = m_PolyOuts[e.OutIdx];
+                ClipperOutRec outRec = m_PolyOuts[e.OutIdx];
                 //OutRec.Pts is the 'Left-most' point & OutRec.Pts.Prev is the 'Right-most'
-                OutPt op = outRec.Pts;
-                bool ToFront = (e.Side == EdgeSide.esLeft);
+                ClipperOutPt op = outRec.Pts;
+                bool ToFront = (e.Side == ClipperEdgeSide.Left);
                 if (ToFront && pt == op.Pt) return op;
                 else if (!ToFront && pt == op.Prev.Pt) return op.Prev;
 
-                OutPt newOp = new OutPt
+                ClipperOutPt newOp = new ClipperOutPt
                 {
-                    Idx = outRec.Idx,
+                    Index = outRec.Idx,
                     Pt = pt,
                     Next = op,
                     Prev = op.Prev
@@ -2147,19 +839,19 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private OutPt GetLastOutPt(TEdge e)
+        private ClipperOutPt GetLastOutPt(ClipperTEdge e)
         {
-            OutRec outRec = m_PolyOuts[e.OutIdx];
-            if (e.Side == EdgeSide.esLeft)
+            ClipperOutRec outRec = m_PolyOuts[e.OutIdx];
+            if (e.Side == ClipperEdgeSide.Left)
                 return outRec.Pts;
             else
                 return outRec.Pts.Prev;
         }
         //------------------------------------------------------------------------------
 
-        internal void SwapPoints(ref IntPoint pt1, ref IntPoint pt2)
+        internal void SwapPoints(ref ClipperIntPoint pt1, ref ClipperIntPoint pt2)
         {
-            IntPoint tmp = new IntPoint(pt1);
+            ClipperIntPoint tmp = new ClipperIntPoint(pt1);
             pt1 = pt2;
             pt2 = tmp;
         }
@@ -2173,10 +865,10 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private void SetHoleState(TEdge e, OutRec outRec)
+        private void SetHoleState(ClipperTEdge e, ClipperOutRec outRec)
         {
-            TEdge e2 = e.PrevInAEL;
-            TEdge eTmp = null;
+            ClipperTEdge e2 = e.PrevInAEL;
+            ClipperTEdge eTmp = null;
             while (e2 != null)
             {
                 if (e2.OutIdx >= 0 && e2.WindDelta != 0)
@@ -2202,16 +894,16 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private double GetDx(IntPoint pt1, IntPoint pt2)
+        private double GetDx(ClipperIntPoint pt1, ClipperIntPoint pt2)
         {
-            if (pt1.Y == pt2.Y) return horizontal;
+            if (pt1.Y == pt2.Y) return Horizontal;
             else return (double)(pt2.X - pt1.X) / (pt2.Y - pt1.Y);
         }
         //---------------------------------------------------------------------------
 
-        private bool FirstIsBottomPt(OutPt btmPt1, OutPt btmPt2)
+        private bool FirstIsBottomPt(ClipperOutPt btmPt1, ClipperOutPt btmPt2)
         {
-            OutPt p = btmPt1.Prev;
+            ClipperOutPt p = btmPt1.Prev;
             while ((p.Pt == btmPt1.Pt) && (p != btmPt1)) p = p.Prev;
             double dx1p = Math.Abs(GetDx(btmPt1.Pt, p.Pt));
             p = btmPt1.Next;
@@ -2233,10 +925,10 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private OutPt GetBottomPt(OutPt pp)
+        private ClipperOutPt GetBottomPt(ClipperOutPt pp)
         {
-            OutPt dups = null;
-            OutPt p = pp.Next;
+            ClipperOutPt dups = null;
+            ClipperOutPt p = pp.Next;
             while (p != pp)
             {
                 if (p.Pt.Y > pp.Pt.Y)
@@ -2272,15 +964,15 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private OutRec GetLowermostRec(OutRec outRec1, OutRec outRec2)
+        private ClipperOutRec GetLowermostRec(ClipperOutRec outRec1, ClipperOutRec outRec2)
         {
             //work out which polygon fragment has the correct hole state ...
             if (outRec1.BottomPt == null)
                 outRec1.BottomPt = GetBottomPt(outRec1.Pts);
             if (outRec2.BottomPt == null)
                 outRec2.BottomPt = GetBottomPt(outRec2.Pts);
-            OutPt bPt1 = outRec1.BottomPt;
-            OutPt bPt2 = outRec2.BottomPt;
+            ClipperOutPt bPt1 = outRec1.BottomPt;
+            ClipperOutPt bPt2 = outRec2.BottomPt;
             if (bPt1.Pt.Y > bPt2.Pt.Y) return outRec1;
             else if (bPt1.Pt.Y < bPt2.Pt.Y) return outRec2;
             else if (bPt1.Pt.X < bPt2.Pt.X) return outRec1;
@@ -2292,7 +984,7 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        bool OutRec1RightOfOutRec2(OutRec outRec1, OutRec outRec2)
+        bool OutRec1RightOfOutRec2(ClipperOutRec outRec1, ClipperOutRec outRec2)
         {
             do
             {
@@ -2303,21 +995,21 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private OutRec GetOutRec(int idx)
+        private ClipperOutRec GetOutRec(int idx)
         {
-            OutRec outrec = m_PolyOuts[idx];
+            ClipperOutRec outrec = m_PolyOuts[idx];
             while (outrec != m_PolyOuts[outrec.Idx])
                 outrec = m_PolyOuts[outrec.Idx];
             return outrec;
         }
         //------------------------------------------------------------------------------
 
-        private void AppendPolygon(TEdge e1, TEdge e2)
+        private void AppendPolygon(ClipperTEdge e1, ClipperTEdge e2)
         {
-            OutRec outRec1 = m_PolyOuts[e1.OutIdx];
-            OutRec outRec2 = m_PolyOuts[e2.OutIdx];
+            ClipperOutRec outRec1 = m_PolyOuts[e1.OutIdx];
+            ClipperOutRec outRec2 = m_PolyOuts[e2.OutIdx];
 
-            OutRec holeStateRec;
+            ClipperOutRec holeStateRec;
             if (OutRec1RightOfOutRec2(outRec1, outRec2))
                 holeStateRec = outRec2;
             else if (OutRec1RightOfOutRec2(outRec2, outRec1))
@@ -2327,15 +1019,15 @@ namespace UglyToad.PdfPig.Geometry
 
             //get the start and ends of both output polygons and
             //join E2 poly onto E1 poly and delete pointers to E2 ...
-            OutPt p1_lft = outRec1.Pts;
-            OutPt p1_rt = p1_lft.Prev;
-            OutPt p2_lft = outRec2.Pts;
-            OutPt p2_rt = p2_lft.Prev;
+            ClipperOutPt p1_lft = outRec1.Pts;
+            ClipperOutPt p1_rt = p1_lft.Prev;
+            ClipperOutPt p2_lft = outRec2.Pts;
+            ClipperOutPt p2_rt = p2_lft.Prev;
 
             //join e2 poly onto e1 poly and delete pointers to e2 ...
-            if (e1.Side == EdgeSide.esLeft)
+            if (e1.Side == ClipperEdgeSide.Left)
             {
-                if (e2.Side == EdgeSide.esLeft)
+                if (e2.Side == ClipperEdgeSide.Left)
                 {
                     //z y x a b c
                     ReversePolyPtLinks(p2_lft);
@@ -2357,7 +1049,7 @@ namespace UglyToad.PdfPig.Geometry
             }
             else
             {
-                if (e2.Side == EdgeSide.esRight)
+                if (e2.Side == ClipperEdgeSide.Right)
                 {
                     //a b c z y x
                     ReversePolyPtLinks(p2_lft);
@@ -2394,7 +1086,7 @@ namespace UglyToad.PdfPig.Geometry
             e1.OutIdx = Unassigned; //nb: safe because we only get here via AddLocalMaxPoly
             e2.OutIdx = Unassigned;
 
-            TEdge e = m_ActiveEdges;
+            ClipperTEdge e = m_ActiveEdges;
             while (e != null)
             {
                 if (e.OutIdx == ObsoleteIdx)
@@ -2409,11 +1101,11 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private void ReversePolyPtLinks(OutPt pp)
+        private void ReversePolyPtLinks(ClipperOutPt pp)
         {
             if (pp == null) return;
-            OutPt pp1;
-            OutPt pp2;
+            ClipperOutPt pp1;
+            ClipperOutPt pp2;
             pp1 = pp;
             do
             {
@@ -2425,15 +1117,15 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private static void SwapSides(TEdge edge1, TEdge edge2)
+        private static void SwapSides(ClipperTEdge edge1, ClipperTEdge edge2)
         {
-            EdgeSide side = edge1.Side;
+            ClipperEdgeSide side = edge1.Side;
             edge1.Side = edge2.Side;
             edge2.Side = side;
         }
         //------------------------------------------------------------------------------
 
-        private static void SwapPolyIndexes(TEdge edge1, TEdge edge2)
+        private static void SwapPolyIndexes(ClipperTEdge edge1, ClipperTEdge edge2)
         {
             int outIdx = edge1.OutIdx;
             edge1.OutIdx = edge2.OutIdx;
@@ -2441,7 +1133,7 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private void IntersectEdges(TEdge e1, TEdge e2, IntPoint pt)
+        private void IntersectEdges(ClipperTEdge e1, ClipperTEdge e2, ClipperIntPoint pt)
         {
             //e1 will be to the left of e2 BELOW the intersection. Therefore e1 is before
             //e2 in AEL except when e1 is being inserted at the intersection point ...
@@ -2458,7 +1150,7 @@ namespace UglyToad.PdfPig.Geometry
                 if (e1.WindDelta == 0 && e2.WindDelta == 0) return;
                 //if intersecting a subj line with a subj poly ...
                 else if (e1.PolyTyp == e2.PolyTyp &&
-                  e1.WindDelta != e2.WindDelta && m_ClipType == ClipType.ctUnion)
+                  e1.WindDelta != e2.WindDelta && m_ClipType == ClipperClipType.Union)
                 {
                     if (e1.WindDelta == 0)
                     {
@@ -2480,13 +1172,13 @@ namespace UglyToad.PdfPig.Geometry
                 else if (e1.PolyTyp != e2.PolyTyp)
                 {
                     if ((e1.WindDelta == 0) && Math.Abs(e2.WindCnt) == 1 &&
-                      (m_ClipType != ClipType.ctUnion || e2.WindCnt2 == 0))
+                      (m_ClipType != ClipperClipType.Union || e2.WindCnt2 == 0))
                     {
                         AddOutPt(e1, pt);
                         if (e1Contributing) e1.OutIdx = Unassigned;
                     }
                     else if ((e2.WindDelta == 0) && (Math.Abs(e1.WindCnt) == 1) &&
-                      (m_ClipType != ClipType.ctUnion || e1.WindCnt2 == 0))
+                      (m_ClipType != ClipperClipType.Union || e1.WindCnt2 == 0))
                     {
                         AddOutPt(e2, pt);
                         if (e2Contributing) e2.OutIdx = Unassigned;
@@ -2522,8 +1214,8 @@ namespace UglyToad.PdfPig.Geometry
                 else e2.WindCnt2 = (e2.WindCnt2 == 0) ? 1 : 0;
             }
 
-            PolyFillType e1FillType, e2FillType, e1FillType2, e2FillType2;
-            if (e1.PolyTyp == PolyType.ptSubject)
+            ClipperPolyFillType e1FillType, e2FillType, e1FillType2, e2FillType2;
+            if (e1.PolyTyp == ClipperPolyType.Subject)
             {
                 e1FillType = m_SubjFillType;
                 e1FillType2 = m_ClipFillType;
@@ -2533,7 +1225,7 @@ namespace UglyToad.PdfPig.Geometry
                 e1FillType = m_ClipFillType;
                 e1FillType2 = m_SubjFillType;
             }
-            if (e2.PolyTyp == PolyType.ptSubject)
+            if (e2.PolyTyp == ClipperPolyType.Subject)
             {
                 e2FillType = m_SubjFillType;
                 e2FillType2 = m_ClipFillType;
@@ -2550,7 +1242,7 @@ namespace UglyToad.PdfPig.Geometry
             if (e1Contributing && e2Contributing)
             {
                 if ((e1Wc != 0 && e1Wc != 1) || (e2Wc != 0 && e2Wc != 1) ||
-                  (e1.PolyTyp != e2.PolyTyp && m_ClipType != ClipType.ctXor))
+                  (e1.PolyTyp != e2.PolyTyp && m_ClipType != ClipperClipType.Xor))
                 {
                     AddLocalMaxPoly(e1, e2, pt);
                 }
@@ -2594,20 +1286,20 @@ namespace UglyToad.PdfPig.Geometry
                 else if (e1Wc == 1 && e2Wc == 1)
                     switch (m_ClipType)
                     {
-                        case ClipType.ctIntersection:
+                        case ClipperClipType.Intersection:
                             if (e1Wc2 > 0 && e2Wc2 > 0)
                                 AddLocalMinPoly(e1, e2, pt);
                             break;
-                        case ClipType.ctUnion:
+                        case ClipperClipType.Union:
                             if (e1Wc2 <= 0 && e2Wc2 <= 0)
                                 AddLocalMinPoly(e1, e2, pt);
                             break;
-                        case ClipType.ctDifference:
-                            if (((e1.PolyTyp == PolyType.ptClip) && (e1Wc2 > 0) && (e2Wc2 > 0)) ||
-                                ((e1.PolyTyp == PolyType.ptSubject) && (e1Wc2 <= 0) && (e2Wc2 <= 0)))
+                        case ClipperClipType.Difference:
+                            if (((e1.PolyTyp == ClipperPolyType.Clip) && (e1Wc2 > 0) && (e2Wc2 > 0)) ||
+                                ((e1.PolyTyp == ClipperPolyType.Subject) && (e1Wc2 <= 0) && (e2Wc2 <= 0)))
                                 AddLocalMinPoly(e1, e2, pt);
                             break;
-                        case ClipType.ctXor:
+                        case ClipperClipType.Xor:
                             AddLocalMinPoly(e1, e2, pt);
                             break;
                     }
@@ -2620,45 +1312,45 @@ namespace UglyToad.PdfPig.Geometry
         private void ProcessHorizontals()
         {
             //m_SortedEdges;
-            while (PopEdgeFromSEL(out TEdge horzEdge))
+            while (PopEdgeFromSEL(out ClipperTEdge horzEdge))
                 ProcessHorizontal(horzEdge);
         }
         //------------------------------------------------------------------------------
 
-        void GetHorzDirection(TEdge HorzEdge, out Direction Dir, out long Left, out long Right)
+        void GetHorzDirection(ClipperTEdge HorzEdge, out ClipperDirection Dir, out long Left, out long Right)
         {
             if (HorzEdge.Bot.X < HorzEdge.Top.X)
             {
                 Left = HorzEdge.Bot.X;
                 Right = HorzEdge.Top.X;
-                Dir = Direction.dLeftToRight;
+                Dir = ClipperDirection.LeftToRight;
             }
             else
             {
                 Left = HorzEdge.Top.X;
                 Right = HorzEdge.Bot.X;
-                Dir = Direction.dRightToLeft;
+                Dir = ClipperDirection.RightToLeft;
             }
         }
         //------------------------------------------------------------------------
 
-        private void ProcessHorizontal(TEdge horzEdge)
+        private void ProcessHorizontal(ClipperTEdge horzEdge)
         {
             bool IsOpen = horzEdge.WindDelta == 0;
 
-            GetHorzDirection(horzEdge, out Direction dir, out long horzLeft, out long horzRight);
+            GetHorzDirection(horzEdge, out ClipperDirection dir, out long horzLeft, out long horzRight);
 
-            TEdge eLastHorz = horzEdge, eMaxPair = null;
+            ClipperTEdge eLastHorz = horzEdge, eMaxPair = null;
             while (eLastHorz.NextInLML != null && IsHorizontal(eLastHorz.NextInLML))
                 eLastHorz = eLastHorz.NextInLML;
             if (eLastHorz.NextInLML == null)
                 eMaxPair = GetMaximaPair(eLastHorz);
 
-            Maxima currMax = m_Maxima;
+            ClipperMaxima currMax = m_Maxima;
             if (currMax != null)
             {
                 //get the first maxima in range (X) ...
-                if (dir == Direction.dLeftToRight)
+                if (dir == ClipperDirection.LeftToRight)
                 {
                     while (currMax != null && currMax.X <= horzEdge.Bot.X)
                         currMax = currMax.Next;
@@ -2673,11 +1365,11 @@ namespace UglyToad.PdfPig.Geometry
                 }
             }
 
-            OutPt op1 = null;
+            ClipperOutPt op1 = null;
             for (; ; ) //loop through consec. horizontal edges
             {
                 bool IsLastHorz = (horzEdge == eLastHorz);
-                TEdge e = GetNextInAEL(horzEdge, dir);
+                ClipperTEdge e = GetNextInAEL(horzEdge, dir);
                 while (e != null)
                 {
 
@@ -2686,12 +1378,12 @@ namespace UglyToad.PdfPig.Geometry
                     //'simplifying' polygons (ie if the Simplify property is set).
                     if (currMax != null)
                     {
-                        if (dir == Direction.dLeftToRight)
+                        if (dir == ClipperDirection.LeftToRight)
                         {
                             while (currMax != null && currMax.X < e.Curr.X)
                             {
                                 if (horzEdge.OutIdx >= 0 && !IsOpen)
-                                    AddOutPt(horzEdge, new IntPoint(currMax.X, horzEdge.Bot.Y));
+                                    AddOutPt(horzEdge, new ClipperIntPoint(currMax.X, horzEdge.Bot.Y));
                                 currMax = currMax.Next;
                             }
                         }
@@ -2700,14 +1392,14 @@ namespace UglyToad.PdfPig.Geometry
                             while (currMax != null && currMax.X > e.Curr.X)
                             {
                                 if (horzEdge.OutIdx >= 0 && !IsOpen)
-                                    AddOutPt(horzEdge, new IntPoint(currMax.X, horzEdge.Bot.Y));
-                                currMax = currMax.Prev;
+                                    AddOutPt(horzEdge, new ClipperIntPoint(currMax.X, horzEdge.Bot.Y));
+                                currMax = currMax.Previous;
                             }
                         }
                     };
 
-                    if ((dir == Direction.dLeftToRight && e.Curr.X > horzRight) ||
-                      (dir == Direction.dRightToLeft && e.Curr.X < horzLeft)) break;
+                    if ((dir == ClipperDirection.LeftToRight && e.Curr.X > horzRight) ||
+                      (dir == ClipperDirection.RightToLeft && e.Curr.X < horzLeft)) break;
 
                     //Also break if we've got to the end of an intermediate horizontal edge ...
                     //nb: Smaller Dx's are to the right of larger Dx's ABOVE the horizontal.
@@ -2717,14 +1409,14 @@ namespace UglyToad.PdfPig.Geometry
                     if (horzEdge.OutIdx >= 0 && !IsOpen)  //note: may be done multiple times
                     {
                         op1 = AddOutPt(horzEdge, e.Curr);
-                        TEdge eNextHorz = m_SortedEdges;
+                        ClipperTEdge eNextHorz = m_SortedEdges;
                         while (eNextHorz != null)
                         {
                             if (eNextHorz.OutIdx >= 0 &&
                               HorzSegmentsOverlap(horzEdge.Bot.X,
                               horzEdge.Top.X, eNextHorz.Bot.X, eNextHorz.Top.X))
                             {
-                                OutPt op2 = GetLastOutPt(eNextHorz);
+                                ClipperOutPt op2 = GetLastOutPt(eNextHorz);
                                 AddJoin(op2, op1, eNextHorz.Top);
                             }
                             eNextHorz = eNextHorz.NextInSEL;
@@ -2743,17 +1435,17 @@ namespace UglyToad.PdfPig.Geometry
                         return;
                     }
 
-                    if (dir == Direction.dLeftToRight)
+                    if (dir == ClipperDirection.LeftToRight)
                     {
-                        IntPoint Pt = new IntPoint(e.Curr.X, horzEdge.Curr.Y);
+                        ClipperIntPoint Pt = new ClipperIntPoint(e.Curr.X, horzEdge.Curr.Y);
                         IntersectEdges(horzEdge, e, Pt);
                     }
                     else
                     {
-                        IntPoint Pt = new IntPoint(e.Curr.X, horzEdge.Curr.Y);
+                        ClipperIntPoint Pt = new ClipperIntPoint(e.Curr.X, horzEdge.Curr.Y);
                         IntersectEdges(e, horzEdge, Pt);
                     }
-                    TEdge eNext = GetNextInAEL(e, dir);
+                    ClipperTEdge eNext = GetNextInAEL(e, dir);
                     SwapPositionsInAEL(horzEdge, e);
                     e = eNext;
                 } //end while(e != null)
@@ -2770,14 +1462,14 @@ namespace UglyToad.PdfPig.Geometry
             if (horzEdge.OutIdx >= 0 && op1 == null)
             {
                 op1 = GetLastOutPt(horzEdge);
-                TEdge eNextHorz = m_SortedEdges;
+                ClipperTEdge eNextHorz = m_SortedEdges;
                 while (eNextHorz != null)
                 {
                     if (eNextHorz.OutIdx >= 0 &&
                       HorzSegmentsOverlap(horzEdge.Bot.X,
                       horzEdge.Top.X, eNextHorz.Bot.X, eNextHorz.Top.X))
                     {
-                        OutPt op2 = GetLastOutPt(eNextHorz);
+                        ClipperOutPt op2 = GetLastOutPt(eNextHorz);
                         AddJoin(op2, op1, eNextHorz.Top);
                     }
                     eNextHorz = eNextHorz.NextInSEL;
@@ -2794,14 +1486,14 @@ namespace UglyToad.PdfPig.Geometry
                     UpdateEdgeIntoAEL(ref horzEdge);
                     if (horzEdge.WindDelta == 0) return;
                     //nb: HorzEdge is no longer horizontal here
-                    TEdge ePrev = horzEdge.PrevInAEL;
-                    TEdge eNext = horzEdge.NextInAEL;
+                    ClipperTEdge ePrev = horzEdge.PrevInAEL;
+                    ClipperTEdge eNext = horzEdge.NextInAEL;
                     if (ePrev != null && ePrev.Curr.X == horzEdge.Bot.X &&
                       ePrev.Curr.Y == horzEdge.Bot.Y && ePrev.WindDelta != 0 &&
                       (ePrev.OutIdx >= 0 && ePrev.Curr.Y > ePrev.Top.Y &&
                       SlopesEqual(horzEdge, ePrev, m_UseFullRange)))
                     {
-                        OutPt op2 = AddOutPt(ePrev, horzEdge.Bot);
+                        ClipperOutPt op2 = AddOutPt(ePrev, horzEdge.Bot);
                         AddJoin(op1, op2, horzEdge.Top);
                     }
                     else if (eNext != null && eNext.Curr.X == horzEdge.Bot.X &&
@@ -2809,7 +1501,7 @@ namespace UglyToad.PdfPig.Geometry
                       eNext.OutIdx >= 0 && eNext.Curr.Y > eNext.Top.Y &&
                       SlopesEqual(horzEdge, eNext, m_UseFullRange))
                     {
-                        OutPt op2 = AddOutPt(eNext, horzEdge.Bot);
+                        ClipperOutPt op2 = AddOutPt(eNext, horzEdge.Bot);
                         AddJoin(op1, op2, horzEdge.Top);
                     }
                 }
@@ -2824,25 +1516,25 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private TEdge GetNextInAEL(TEdge e, Direction Direction)
+        private ClipperTEdge GetNextInAEL(ClipperTEdge e, ClipperDirection Direction)
         {
-            return Direction == Direction.dLeftToRight ? e.NextInAEL : e.PrevInAEL;
+            return Direction == ClipperDirection.LeftToRight ? e.NextInAEL : e.PrevInAEL;
         }
         //------------------------------------------------------------------------------
 
-        private bool IsMaxima(TEdge e, double Y)
+        private bool IsMaxima(ClipperTEdge e, double Y)
         {
             return (e != null && e.Top.Y == Y && e.NextInLML == null);
         }
         //------------------------------------------------------------------------------
 
-        private bool IsIntermediate(TEdge e, double Y)
+        private bool IsIntermediate(ClipperTEdge e, double Y)
         {
             return (e.Top.Y == Y && e.NextInLML != null);
         }
         //------------------------------------------------------------------------------
 
-        internal TEdge GetMaximaPair(TEdge e)
+        internal ClipperTEdge GetMaximaPair(ClipperTEdge e)
         {
             if ((e.Next.Top == e.Top) && e.Next.NextInLML == null)
                 return e.Next;
@@ -2853,10 +1545,10 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        internal TEdge GetMaximaPairEx(TEdge e)
+        internal ClipperTEdge GetMaximaPairEx(ClipperTEdge e)
         {
             //as above but returns null if MaxPair isn't in AEL (unless it's horizontal)
-            TEdge result = GetMaximaPair(e);
+            ClipperTEdge result = GetMaximaPair(e);
             if (result == null || result.OutIdx == Skip ||
               ((result.NextInAEL == result.PrevInAEL) && !IsHorizontal(result))) return null;
             return result;
@@ -2891,7 +1583,7 @@ namespace UglyToad.PdfPig.Geometry
             if (m_ActiveEdges == null) return;
 
             //prepare for sorting ...
-            TEdge e = m_ActiveEdges;
+            ClipperTEdge e = m_ActiveEdges;
             m_SortedEdges = e;
             while (e != null)
             {
@@ -2909,13 +1601,13 @@ namespace UglyToad.PdfPig.Geometry
                 e = m_SortedEdges;
                 while (e.NextInSEL != null)
                 {
-                    TEdge eNext = e.NextInSEL;
+                    ClipperTEdge eNext = e.NextInSEL;
                     if (e.Curr.X > eNext.Curr.X)
                     {
-                        IntersectPoint(e, eNext, out IntPoint pt);
+                        IntersectPoint(e, eNext, out ClipperIntPoint pt);
                         if (pt.Y < topY)
-                            pt = new IntPoint(TopX(e, topY), topY);
-                        IntersectNode newNode = new IntersectNode
+                            pt = new ClipperIntPoint(TopX(e, topY), topY);
+                        ClipperIntersectNode newNode = new ClipperIntersectNode
                         {
                             Edge1 = e,
                             Edge2 = eNext,
@@ -2936,7 +1628,7 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private bool EdgesAdjacent(IntersectNode inode)
+        private bool EdgesAdjacent(ClipperIntersectNode inode)
         {
             return (inode.Edge1.NextInSEL == inode.Edge2) ||
               (inode.Edge1.PrevInSEL == inode.Edge2);
@@ -2960,7 +1652,7 @@ namespace UglyToad.PdfPig.Geometry
                     while (j < cnt && !EdgesAdjacent(m_IntersectList[j])) j++;
                     if (j == cnt) return false;
 
-                    IntersectNode tmp = m_IntersectList[i];
+                    ClipperIntersectNode tmp = m_IntersectList[i];
                     m_IntersectList[i] = m_IntersectList[j];
                     m_IntersectList[j] = tmp;
 
@@ -2975,7 +1667,7 @@ namespace UglyToad.PdfPig.Geometry
         {
             for (int i = 0; i < m_IntersectList.Count; i++)
             {
-                IntersectNode iNode = m_IntersectList[i];
+                ClipperIntersectNode iNode = m_IntersectList[i];
                 {
                     IntersectEdges(iNode.Edge1, iNode.Edge2, iNode.Pt);
                     SwapPositionsInAEL(iNode.Edge1, iNode.Edge2);
@@ -2991,7 +1683,7 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private static long TopX(TEdge edge, long currentY)
+        private static long TopX(ClipperTEdge edge, long currentY)
         {
             if (currentY == edge.Top.Y)
                 return edge.Top.X;
@@ -2999,9 +1691,9 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private void IntersectPoint(TEdge edge1, TEdge edge2, out IntPoint ip)
+        private void IntersectPoint(ClipperTEdge edge1, ClipperTEdge edge2, out ClipperIntPoint ip)
         {
-            ip = new IntPoint();
+            ip = new ClipperIntPoint();
             double b1, b2;
             //nb: with very large coordinate values, it's possible for SlopesEqual() to 
             //return false but for the edge.Dx value be equal due to double precision rounding.
@@ -3076,7 +1768,7 @@ namespace UglyToad.PdfPig.Geometry
 
         private void ProcessEdgesAtTopOfScanbeam(long topY)
         {
-            TEdge e = m_ActiveEdges;
+            ClipperTEdge e = m_ActiveEdges;
             while (e != null)
             {
                 //1. process maxima, treating them as if they're 'bent' horizontal edges,
@@ -3085,14 +1777,14 @@ namespace UglyToad.PdfPig.Geometry
 
                 if (IsMaximaEdge)
                 {
-                    TEdge eMaxPair = GetMaximaPairEx(e);
+                    ClipperTEdge eMaxPair = GetMaximaPairEx(e);
                     IsMaximaEdge = (eMaxPair == null || !IsHorizontal(eMaxPair));
                 }
 
                 if (IsMaximaEdge)
                 {
                     if (StrictlySimple) InsertMaxima(e.Top.X);
-                    TEdge ePrev = e.PrevInAEL;
+                    ClipperTEdge ePrev = e.PrevInAEL;
                     DoMaxima(e);
                     if (ePrev == null) e = m_ActiveEdges;
                     else e = ePrev.NextInAEL;
@@ -3116,14 +1808,14 @@ namespace UglyToad.PdfPig.Geometry
                     //make sure both edges have a vertex here ...
                     if (StrictlySimple)
                     {
-                        TEdge ePrev = e.PrevInAEL;
+                        ClipperTEdge ePrev = e.PrevInAEL;
                         if ((e.OutIdx >= 0) && (e.WindDelta != 0) && ePrev != null &&
                           (ePrev.OutIdx >= 0) && (ePrev.Curr.X == e.Curr.X) &&
                           (ePrev.WindDelta != 0))
                         {
-                            IntPoint ip = new IntPoint(e.Curr);
-                            OutPt op = AddOutPt(ePrev, ip);
-                            OutPt op2 = AddOutPt(e, ip);
+                            ClipperIntPoint ip = new ClipperIntPoint(e.Curr);
+                            ClipperOutPt op = AddOutPt(ePrev, ip);
+                            ClipperOutPt op2 = AddOutPt(e, ip);
                             AddJoin(op, op2, ip); //StrictlySimple (type-3) join
                         }
                     }
@@ -3142,21 +1834,21 @@ namespace UglyToad.PdfPig.Geometry
             {
                 if (IsIntermediate(e, topY))
                 {
-                    OutPt op = null;
+                    ClipperOutPt op = null;
                     if (e.OutIdx >= 0)
                         op = AddOutPt(e, e.Top);
                     UpdateEdgeIntoAEL(ref e);
 
                     //if output polygons share an edge, they'll need joining later ...
-                    TEdge ePrev = e.PrevInAEL;
-                    TEdge eNext = e.NextInAEL;
+                    ClipperTEdge ePrev = e.PrevInAEL;
+                    ClipperTEdge eNext = e.NextInAEL;
                     if (ePrev != null && ePrev.Curr.X == e.Bot.X &&
                       ePrev.Curr.Y == e.Bot.Y && op != null &&
                       ePrev.OutIdx >= 0 && ePrev.Curr.Y > ePrev.Top.Y &&
                       SlopesEqual(e.Curr, e.Top, ePrev.Curr, ePrev.Top, m_UseFullRange) &&
                       (e.WindDelta != 0) && (ePrev.WindDelta != 0))
                     {
-                        OutPt op2 = AddOutPt(ePrev, e.Bot);
+                        ClipperOutPt op2 = AddOutPt(ePrev, e.Bot);
                         AddJoin(op, op2, e.Top);
                     }
                     else if (eNext != null && eNext.Curr.X == e.Bot.X &&
@@ -3165,7 +1857,7 @@ namespace UglyToad.PdfPig.Geometry
                       SlopesEqual(e.Curr, e.Top, eNext.Curr, eNext.Top, m_UseFullRange) &&
                       (e.WindDelta != 0) && (eNext.WindDelta != 0))
                     {
-                        OutPt op2 = AddOutPt(eNext, e.Bot);
+                        ClipperOutPt op2 = AddOutPt(eNext, e.Bot);
                         AddJoin(op, op2, e.Top);
                     }
                 }
@@ -3174,9 +1866,9 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private void DoMaxima(TEdge e)
+        private void DoMaxima(ClipperTEdge e)
         {
-            TEdge eMaxPair = GetMaximaPairEx(e);
+            ClipperTEdge eMaxPair = GetMaximaPairEx(e);
             if (eMaxPair == null)
             {
                 if (e.OutIdx >= 0)
@@ -3185,7 +1877,7 @@ namespace UglyToad.PdfPig.Geometry
                 return;
             }
 
-            TEdge eNext = e.NextInAEL;
+            ClipperTEdge eNext = e.NextInAEL;
             while (eNext != null && eNext != eMaxPair)
             {
                 IntersectEdges(e, eNext, e.Top);
@@ -3228,23 +1920,23 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        public static void ReversePaths(List<List<IntPoint>> polys)
+        public static void ReversePaths(List<List<ClipperIntPoint>> polys)
         {
             foreach (var poly in polys) { poly.Reverse(); }
         }
         //------------------------------------------------------------------------------
 
-        public static bool Orientation(List<IntPoint> poly)
+        public static bool Orientation(List<ClipperIntPoint> poly)
         {
             return Area(poly) >= 0;
         }
         //------------------------------------------------------------------------------
 
-        private int PointCount(OutPt pts)
+        private int PointCount(ClipperOutPt pts)
         {
             if (pts == null) return 0;
             int result = 0;
-            OutPt p = pts;
+            ClipperOutPt p = pts;
             do
             {
                 result++;
@@ -3255,18 +1947,18 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private void BuildResult(List<List<IntPoint>> polyg)
+        private void BuildResult(List<List<ClipperIntPoint>> polyg)
         {
             polyg.Clear();
             polyg.Capacity = m_PolyOuts.Count;
             for (int i = 0; i < m_PolyOuts.Count; i++)
             {
-                OutRec outRec = m_PolyOuts[i];
+                ClipperOutRec outRec = m_PolyOuts[i];
                 if (outRec.Pts == null) continue;
-                OutPt p = outRec.Pts.Prev;
+                ClipperOutPt p = outRec.Pts.Prev;
                 int cnt = PointCount(p);
                 if (cnt < 2) continue;
-                List<IntPoint> pg = new List<IntPoint>(cnt);
+                List<ClipperIntPoint> pg = new List<ClipperIntPoint>(cnt);
                 for (int j = 0; j < cnt; j++)
                 {
                     pg.Add(p.Pt);
@@ -3277,36 +1969,36 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private void BuildResult2(PolyTree polytree)
+        private void BuildResult2(ClipperPolyTree polytree)
         {
             polytree.Clear();
 
             //add each output polygon/contour to polytree ...
-            polytree.m_AllPolys.Capacity = m_PolyOuts.Count;
+            polytree.AllPolys.Capacity = m_PolyOuts.Count;
             for (int i = 0; i < m_PolyOuts.Count; i++)
             {
-                OutRec outRec = m_PolyOuts[i];
+                ClipperOutRec outRec = m_PolyOuts[i];
                 int cnt = PointCount(outRec.Pts);
                 if ((outRec.IsOpen && cnt < 2) ||
                   (!outRec.IsOpen && cnt < 3)) continue;
                 FixHoleLinkage(outRec);
-                PolyNode pn = new PolyNode();
-                polytree.m_AllPolys.Add(pn);
+                ClipperPolyNode pn = new ClipperPolyNode();
+                polytree.AllPolys.Add(pn);
                 outRec.PolyNode = pn;
-                pn.m_polygon.Capacity = cnt;
-                OutPt op = outRec.Pts.Prev;
+                pn.Polygon.Capacity = cnt;
+                ClipperOutPt op = outRec.Pts.Prev;
                 for (int j = 0; j < cnt; j++)
                 {
-                    pn.m_polygon.Add(op.Pt);
+                    pn.Polygon.Add(op.Pt);
                     op = op.Prev;
                 }
             }
 
             //fixup PolyNode links etc ...
-            polytree.m_Childs.Capacity = m_PolyOuts.Count;
+            polytree.Children.Capacity = m_PolyOuts.Count;
             for (int i = 0; i < m_PolyOuts.Count; i++)
             {
-                OutRec outRec = m_PolyOuts[i];
+                ClipperOutRec outRec = m_PolyOuts[i];
                 if (outRec.PolyNode == null) continue;
                 else if (outRec.IsOpen)
                 {
@@ -3322,17 +2014,17 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private void FixupOutPolyline(OutRec outrec)
+        private void FixupOutPolyline(ClipperOutRec outrec)
         {
-            OutPt pp = outrec.Pts;
-            OutPt lastPP = pp.Prev;
+            ClipperOutPt pp = outrec.Pts;
+            ClipperOutPt lastPP = pp.Prev;
             while (pp != lastPP)
             {
                 pp = pp.Next;
                 if (pp.Pt == pp.Prev.Pt)
                 {
                     if (pp == lastPP) lastPP = pp.Prev;
-                    OutPt tmpPP = pp.Prev;
+                    ClipperOutPt tmpPP = pp.Prev;
                     tmpPP.Next = pp.Next;
                     pp.Next.Prev = tmpPP;
                     pp = tmpPP;
@@ -3342,13 +2034,13 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private void FixupOutPolygon(OutRec outRec)
+        private void FixupOutPolygon(ClipperOutRec outRec)
         {
             //FixupOutPolygon() - removes duplicate points and simplifies consecutive
             //parallel edges by removing the middle vertex.
-            OutPt lastOK = null;
+            ClipperOutPt lastOK = null;
             outRec.BottomPt = null;
-            OutPt pp = outRec.Pts;
+            ClipperOutPt pp = outRec.Pts;
             bool preserveCol = PreserveCollinear || StrictlySimple;
             for (; ; )
             {
@@ -3378,12 +2070,12 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        OutPt DupOutPt(OutPt outPt, bool InsertAfter)
+        ClipperOutPt DupOutPt(ClipperOutPt outPt, bool InsertAfter)
         {
-            OutPt result = new OutPt
+            ClipperOutPt result = new ClipperOutPt
             {
                 Pt = outPt.Pt,
-                Idx = outPt.Idx
+                Index = outPt.Index
             };
             if (InsertAfter)
             {
@@ -3419,13 +2111,13 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        bool JoinHorz(OutPt op1, OutPt op1b, OutPt op2, OutPt op2b,
-          IntPoint Pt, bool DiscardLeft)
+        bool JoinHorz(ClipperOutPt op1, ClipperOutPt op1b, ClipperOutPt op2, ClipperOutPt op2b,
+          ClipperIntPoint Pt, bool DiscardLeft)
         {
-            Direction Dir1 = (op1.Pt.X > op1b.Pt.X ?
-              Direction.dRightToLeft : Direction.dLeftToRight);
-            Direction Dir2 = (op2.Pt.X > op2b.Pt.X ?
-              Direction.dRightToLeft : Direction.dLeftToRight);
+            ClipperDirection Dir1 = (op1.Pt.X > op1b.Pt.X ?
+              ClipperDirection.RightToLeft : ClipperDirection.LeftToRight);
+            ClipperDirection Dir2 = (op2.Pt.X > op2b.Pt.X ?
+              ClipperDirection.RightToLeft : ClipperDirection.LeftToRight);
             if (Dir1 == Dir2) return false;
 
             //When DiscardLeft, we want Op1b to be on the Left of Op1, otherwise we
@@ -3433,7 +2125,7 @@ namespace UglyToad.PdfPig.Geometry
             //So, to facilitate this while inserting Op1b and Op2b ...
             //when DiscardLeft, make sure we're AT or RIGHT of Pt before adding Op1b,
             //otherwise make sure we're AT or LEFT of Pt. (Likewise with Op2b.)
-            if (Dir1 == Direction.dLeftToRight)
+            if (Dir1 == ClipperDirection.LeftToRight)
             {
                 while (op1.Next.Pt.X <= Pt.X &&
                   op1.Next.Pt.X >= op1.Pt.X && op1.Next.Pt.Y == Pt.Y)
@@ -3462,7 +2154,7 @@ namespace UglyToad.PdfPig.Geometry
                 }
             }
 
-            if (Dir2 == Direction.dLeftToRight)
+            if (Dir2 == ClipperDirection.LeftToRight)
             {
                 while (op2.Next.Pt.X <= Pt.X &&
                   op2.Next.Pt.X >= op2.Pt.X && op2.Next.Pt.Y == Pt.Y)
@@ -3491,7 +2183,7 @@ namespace UglyToad.PdfPig.Geometry
                 };
             };
 
-            if ((Dir1 == Direction.dLeftToRight) == DiscardLeft)
+            if ((Dir1 == ClipperDirection.LeftToRight) == DiscardLeft)
             {
                 op1.Prev = op2;
                 op2.Next = op1;
@@ -3509,10 +2201,10 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private bool JoinPoints(Join j, OutRec outRec1, OutRec outRec2)
+        private bool JoinPoints(ClipperJoin j, ClipperOutRec outRec1, ClipperOutRec outRec2)
         {
-            OutPt op1 = j.OutPt1, op1b;
-            OutPt op2 = j.OutPt2, op2b;
+            ClipperOutPt op1 = j.OutPt1, op1b;
+            ClipperOutPt op2 = j.OutPt2, op2b;
 
             //There are 3 kinds of joins for output polygons ...
             //1. Horizontal joins where Join.OutPt1 & Join.OutPt2 are vertices anywhere
@@ -3587,7 +2279,7 @@ namespace UglyToad.PdfPig.Geometry
                 //DiscardLeftSide: when overlapping edges are joined, a spike will created
                 //which needs to be cleaned up. However, we don't want Op1 or Op2 caught up
                 //on the discard Side as either may still be needed for other joins ...
-                IntPoint Pt;
+                ClipperIntPoint Pt;
                 bool DiscardLeftSide;
                 if (op1.Pt.X >= Left && op1.Pt.X <= Right)
                 {
@@ -3677,15 +2369,15 @@ namespace UglyToad.PdfPig.Geometry
         /// <param name="pt"></param>
         /// <param name="path"></param>
         /// <returns></returns>
-        public static int PointInPolygon(IntPoint pt, List<IntPoint> path)
+        public static int PointInPolygon(ClipperIntPoint pt, List<ClipperIntPoint> path)
         {
             // http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.88.5498&rep=rep1&type=pdf
             int result = 0, cnt = path.Count;
             if (cnt < 3) return 0;
-            IntPoint ip = path[0];
+            ClipperIntPoint ip = path[0];
             for (int i = 1; i <= cnt; ++i)
             {
-                IntPoint ipNext = (i == cnt ? path[0] : path[i]);
+                ClipperIntPoint ipNext = (i == cnt ? path[0] : path[i]);
                 if (ipNext.Y == pt.Y)
                 {
                     if ((ipNext.X == pt.X) || (ip.Y == pt.Y &&
@@ -3723,11 +2415,11 @@ namespace UglyToad.PdfPig.Geometry
 
         //See "The Point in Polygon Problem for Arbitrary Polygons" by Hormann & Agathos
         //http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.88.5498&rep=rep1&type=pdf
-        private static int PointInPolygon(IntPoint pt, OutPt op)
+        private static int PointInPolygon(ClipperIntPoint pt, ClipperOutPt op)
         {
             //returns 0 if false, +1 if true, -1 if pt ON polygon boundary
             int result = 0;
-            OutPt startOp = op;
+            ClipperOutPt startOp = op;
             long ptx = pt.X, pty = pt.Y;
             long poly0x = op.Pt.X, poly0y = op.Pt.Y;
             do
@@ -3770,9 +2462,9 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private static bool Poly2ContainsPoly1(OutPt outPt1, OutPt outPt2)
+        private static bool Poly2ContainsPoly1(ClipperOutPt outPt1, ClipperOutPt outPt2)
         {
-            OutPt op = outPt1;
+            ClipperOutPt op = outPt1;
             do
             {
                 //nb: PointInPolygon returns 0 if false, +1 if true, -1 if pt on polygon
@@ -3785,11 +2477,11 @@ namespace UglyToad.PdfPig.Geometry
         }
         //----------------------------------------------------------------------
 
-        private void FixupFirstLefts1(OutRec OldOutRec, OutRec NewOutRec)
+        private void FixupFirstLefts1(ClipperOutRec OldOutRec, ClipperOutRec NewOutRec)
         {
-            foreach (OutRec outRec in m_PolyOuts)
+            foreach (ClipperOutRec outRec in m_PolyOuts)
             {
-                OutRec firstLeft = ParseFirstLeft(outRec.FirstLeft);
+                ClipperOutRec firstLeft = ParseFirstLeft(outRec.FirstLeft);
                 if (outRec.Pts != null && firstLeft == OldOutRec)
                 {
                     if (Poly2ContainsPoly1(outRec.Pts, NewOutRec.Pts))
@@ -3799,18 +2491,18 @@ namespace UglyToad.PdfPig.Geometry
         }
         //----------------------------------------------------------------------
 
-        private void FixupFirstLefts2(OutRec innerOutRec, OutRec outerOutRec)
+        private void FixupFirstLefts2(ClipperOutRec innerOutRec, ClipperOutRec outerOutRec)
         {
             //A polygon has split into two such that one is now the inner of the other.
             //It's possible that these polygons now wrap around other polygons, so check
             //every polygon that's also contained by OuterOutRec's FirstLeft container
             //(including nil) to see if they've become inner to the new inner polygon ...
-            OutRec orfl = outerOutRec.FirstLeft;
-            foreach (OutRec outRec in m_PolyOuts)
+            ClipperOutRec orfl = outerOutRec.FirstLeft;
+            foreach (ClipperOutRec outRec in m_PolyOuts)
             {
                 if (outRec.Pts == null || outRec == outerOutRec || outRec == innerOutRec)
                     continue;
-                OutRec firstLeft = ParseFirstLeft(outRec.FirstLeft);
+                ClipperOutRec firstLeft = ParseFirstLeft(outRec.FirstLeft);
                 if (firstLeft != orfl && firstLeft != innerOutRec && firstLeft != outerOutRec)
                     continue;
                 if (Poly2ContainsPoly1(outRec.Pts, innerOutRec.Pts))
@@ -3823,19 +2515,19 @@ namespace UglyToad.PdfPig.Geometry
         }
         //----------------------------------------------------------------------
 
-        private void FixupFirstLefts3(OutRec OldOutRec, OutRec NewOutRec)
+        private void FixupFirstLefts3(ClipperOutRec OldOutRec, ClipperOutRec NewOutRec)
         {
             //same as FixupFirstLefts1 but doesn't call Poly2ContainsPoly1()
-            foreach (OutRec outRec in m_PolyOuts)
+            foreach (ClipperOutRec outRec in m_PolyOuts)
             {
-                OutRec firstLeft = ParseFirstLeft(outRec.FirstLeft);
+                ClipperOutRec firstLeft = ParseFirstLeft(outRec.FirstLeft);
                 if (outRec.Pts != null && firstLeft == OldOutRec)
                     outRec.FirstLeft = NewOutRec;
             }
         }
         //----------------------------------------------------------------------
 
-        private static OutRec ParseFirstLeft(OutRec FirstLeft)
+        private static ClipperOutRec ParseFirstLeft(ClipperOutRec FirstLeft)
         {
             while (FirstLeft != null && FirstLeft.Pts == null)
                 FirstLeft = FirstLeft.FirstLeft;
@@ -3847,17 +2539,17 @@ namespace UglyToad.PdfPig.Geometry
         {
             for (int i = 0; i < m_Joins.Count; i++)
             {
-                Join join = m_Joins[i];
+                ClipperJoin join = m_Joins[i];
 
-                OutRec outRec1 = GetOutRec(join.OutPt1.Idx);
-                OutRec outRec2 = GetOutRec(join.OutPt2.Idx);
+                ClipperOutRec outRec1 = GetOutRec(join.OutPt1.Index);
+                ClipperOutRec outRec2 = GetOutRec(join.OutPt2.Index);
 
                 if (outRec1.Pts == null || outRec2.Pts == null) continue;
                 if (outRec1.IsOpen || outRec2.IsOpen) continue;
 
                 //get the polygon fragment with the correct hole state (FirstLeft)
                 //before calling JoinPoints() ...
-                OutRec holeStateRec;
+                ClipperOutRec holeStateRec;
                 if (outRec1 == outRec2) holeStateRec = outRec1;
                 else if (OutRec1RightOfOutRec2(outRec1, outRec2)) holeStateRec = outRec2;
                 else if (OutRec1RightOfOutRec2(outRec2, outRec1)) holeStateRec = outRec1;
@@ -3933,12 +2625,12 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private void UpdateOutPtIdxs(OutRec outrec)
+        private void UpdateOutPtIdxs(ClipperOutRec outrec)
         {
-            OutPt op = outrec.Pts;
+            ClipperOutPt op = outrec.Pts;
             do
             {
-                op.Idx = outrec.Idx;
+                op.Index = outrec.Idx;
                 op = op.Prev;
             }
             while (op != outrec.Pts);
@@ -3950,26 +2642,26 @@ namespace UglyToad.PdfPig.Geometry
             int i = 0;
             while (i < m_PolyOuts.Count)
             {
-                OutRec outrec = m_PolyOuts[i++];
-                OutPt op = outrec.Pts;
+                ClipperOutRec outrec = m_PolyOuts[i++];
+                ClipperOutPt op = outrec.Pts;
                 if (op == null || outrec.IsOpen) continue;
                 do //for each Pt in Polygon until duplicate found do ...
                 {
-                    OutPt op2 = op.Next;
+                    ClipperOutPt op2 = op.Next;
                     while (op2 != outrec.Pts)
                     {
                         if ((op.Pt == op2.Pt) && op2.Next != op && op2.Prev != op)
                         {
                             //split the polygon into two ...
-                            OutPt op3 = op.Prev;
-                            OutPt op4 = op2.Prev;
+                            ClipperOutPt op3 = op.Prev;
+                            ClipperOutPt op4 = op2.Prev;
                             op.Prev = op4;
                             op4.Next = op;
                             op2.Prev = op3;
                             op3.Next = op2;
 
                             outrec.Pts = op;
-                            OutRec outrec2 = CreateOutRec();
+                            ClipperOutRec outrec2 = CreateOutRec();
                             outrec2.Pts = op2;
                             UpdateOutPtIdxs(outrec2);
                             if (Poly2ContainsPoly1(outrec2.Pts, outrec.Pts))
@@ -4007,7 +2699,7 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        public static double Area(List<IntPoint> poly)
+        public static double Area(List<ClipperIntPoint> poly)
         {
             int cnt = poly.Count;
             if (cnt < 3) return 0;
@@ -4021,15 +2713,15 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        internal double Area(OutRec outRec)
+        internal double Area(ClipperOutRec outRec)
         {
             return Area(outRec.Pts);
         }
         //------------------------------------------------------------------------------
 
-        internal double Area(OutPt op)
+        internal double Area(ClipperOutPt op)
         {
-            OutPt opFirst = op;
+            ClipperOutPt opFirst = op;
             if (op == null) return 0;
             double a = 0;
             do
@@ -4050,16 +2742,16 @@ namespace UglyToad.PdfPig.Geometry
         /// <param name="poly"></param>
         /// <param name="fillType"></param>
         /// <returns></returns>
-        public static List<List<IntPoint>> SimplifyPolygon(List<IntPoint> poly,
-              PolyFillType fillType = PolyFillType.pftEvenOdd)
+        public static List<List<ClipperIntPoint>> SimplifyPolygon(List<ClipperIntPoint> poly,
+              ClipperPolyFillType fillType = ClipperPolyFillType.EvenOdd)
         {
-            List<List<IntPoint>> result = new List<List<IntPoint>>();
+            List<List<ClipperIntPoint>> result = new List<List<ClipperIntPoint>>();
             Clipper c = new Clipper
             {
                 StrictlySimple = true
             };
-            c.AddPath(poly, PolyType.ptSubject, true);
-            c.Execute(ClipType.ctUnion, result, fillType, fillType);
+            c.AddPath(poly, ClipperPolyType.Subject, true);
+            c.Execute(ClipperClipType.Union, result, fillType, fillType);
             return result;
         }
         //------------------------------------------------------------------------------
@@ -4069,21 +2761,21 @@ namespace UglyToad.PdfPig.Geometry
         /// <param name="polys"></param>
         /// <param name="fillType"></param>
         /// <returns></returns>
-        public static List<List<IntPoint>> SimplifyPolygons(List<List<IntPoint>> polys,
-            PolyFillType fillType = PolyFillType.pftEvenOdd)
+        public static List<List<ClipperIntPoint>> SimplifyPolygons(List<List<ClipperIntPoint>> polys,
+            ClipperPolyFillType fillType = ClipperPolyFillType.EvenOdd)
         {
-            List<List<IntPoint>> result = new List<List<IntPoint>>();
+            List<List<ClipperIntPoint>> result = new List<List<ClipperIntPoint>>();
             Clipper c = new Clipper
             {
                 StrictlySimple = true
             };
-            c.AddPaths(polys, PolyType.ptSubject, true);
-            c.Execute(ClipType.ctUnion, result, fillType, fillType);
+            c.AddPaths(polys, ClipperPolyType.Subject, true);
+            c.Execute(ClipperClipType.Union, result, fillType, fillType);
             return result;
         }
         //------------------------------------------------------------------------------
 
-        private static double DistanceFromLineSqrd(IntPoint pt, IntPoint ln1, IntPoint ln2)
+        private static double DistanceFromLineSqrd(ClipperIntPoint pt, ClipperIntPoint ln1, ClipperIntPoint ln2)
         {
             //The equation of a line in general form (Ax + By + C = 0)
             //given 2 points (x¹,y¹) & (x²,y²) is ...
@@ -4109,8 +2801,8 @@ namespace UglyToad.PdfPig.Geometry
         /// <param name="pt3"></param>
         /// <param name="distSqrd"></param>
         /// <returns></returns>
-        private static bool SlopesNearCollinear(IntPoint pt1,
-            IntPoint pt2, IntPoint pt3, double distSqrd)
+        private static bool SlopesNearCollinear(ClipperIntPoint pt1,
+            ClipperIntPoint pt2, ClipperIntPoint pt3, double distSqrd)
         {
             if (Math.Abs(pt1.X - pt2.X) > Math.Abs(pt1.Y - pt2.Y))
             {
@@ -4133,7 +2825,7 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private static bool PointsAreClose(IntPoint pt1, IntPoint pt2, double distSqrd)
+        private static bool PointsAreClose(ClipperIntPoint pt1, ClipperIntPoint pt2, double distSqrd)
         {
             double dx = (double)pt1.X - pt2.X;
             double dy = (double)pt1.Y - pt2.Y;
@@ -4141,12 +2833,12 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        private static OutPt ExcludeOp(OutPt op)
+        private static ClipperOutPt ExcludeOp(ClipperOutPt op)
         {
-            OutPt result = op.Prev;
+            ClipperOutPt result = op.Prev;
             result.Next = op.Next;
             op.Next.Prev = result;
-            result.Idx = 0;
+            result.Index = 0;
             return result;
         }
         //------------------------------------------------------------------------------
@@ -4156,7 +2848,7 @@ namespace UglyToad.PdfPig.Geometry
         /// <param name="path"></param>
         /// <param name="distance">proximity in units/pixels below which vertices will be stripped.
         /// <para>Default ~= sqrt(2) so when adjacent vertices or semi-adjacent vertices have both x and y coords within 1 unit, then the second vertex will be stripped.</para></param>
-        public static List<IntPoint> CleanPolygon(List<IntPoint> path, double distance = 1.415)
+        public static List<ClipperIntPoint> CleanPolygon(List<ClipperIntPoint> path, double distance = 1.415)
         {
             //distance = proximity in units/pixels below which vertices will be stripped. 
             //Default ~= sqrt(2) so when adjacent vertices or semi-adjacent vertices have 
@@ -4164,22 +2856,22 @@ namespace UglyToad.PdfPig.Geometry
 
             int cnt = path.Count;
 
-            if (cnt == 0) return new List<IntPoint>();
+            if (cnt == 0) return new List<ClipperIntPoint>();
 
-            OutPt[] outPts = new OutPt[cnt];
-            for (int i = 0; i < cnt; ++i) outPts[i] = new OutPt();
+            ClipperOutPt[] outPts = new ClipperOutPt[cnt];
+            for (int i = 0; i < cnt; ++i) outPts[i] = new ClipperOutPt();
 
             for (int i = 0; i < cnt; ++i)
             {
                 outPts[i].Pt = path[i];
                 outPts[i].Next = outPts[(i + 1) % cnt];
                 outPts[i].Next.Prev = outPts[i];
-                outPts[i].Idx = 0;
+                outPts[i].Index = 0;
             }
 
             double distSqrd = distance * distance;
-            OutPt op = outPts[0];
-            while (op.Idx == 0 && op.Next != op.Prev)
+            ClipperOutPt op = outPts[0];
+            while (op.Index == 0 && op.Next != op.Prev)
             {
                 if (PointsAreClose(op.Pt, op.Prev.Pt, distSqrd))
                 {
@@ -4199,13 +2891,13 @@ namespace UglyToad.PdfPig.Geometry
                 }
                 else
                 {
-                    op.Idx = 1;
+                    op.Index = 1;
                     op = op.Next;
                 }
             }
 
             if (cnt < 3) cnt = 0;
-            List<IntPoint> result = new List<IntPoint>(cnt);
+            List<ClipperIntPoint> result = new List<ClipperIntPoint>(cnt);
             for (int i = 0; i < cnt; ++i)
             {
                 result.Add(op.Pt);
@@ -4222,44 +2914,44 @@ namespace UglyToad.PdfPig.Geometry
         /// <param name="polys"></param>
         /// <param name="distance">proximity in units/pixels below which vertices will be stripped.
         /// <para>Default ~= sqrt(2) so when adjacent vertices or semi-adjacent vertices have both x and y coords within 1 unit, then the second vertex will be stripped.</para></param>
-        public static List<List<IntPoint>> CleanPolygons(List<List<IntPoint>> polys,
+        public static List<List<ClipperIntPoint>> CleanPolygons(List<List<ClipperIntPoint>> polys,
             double distance = 1.415)
         {
-            List<List<IntPoint>> result = new List<List<IntPoint>>(polys.Count);
+            List<List<ClipperIntPoint>> result = new List<List<ClipperIntPoint>>(polys.Count);
             for (int i = 0; i < polys.Count; i++)
                 result.Add(CleanPolygon(polys[i], distance));
             return result;
         }
         //------------------------------------------------------------------------------
 
-        internal static List<List<IntPoint>> Minkowski(List<IntPoint> pattern, List<IntPoint> path, bool IsSum, bool IsClosed)
+        internal static List<List<ClipperIntPoint>> Minkowski(List<ClipperIntPoint> pattern, List<ClipperIntPoint> path, bool IsSum, bool IsClosed)
         {
             int delta = (IsClosed ? 1 : 0);
             int polyCnt = pattern.Count;
             int pathCnt = path.Count;
-            List<List<IntPoint>> result = new List<List<IntPoint>>(pathCnt);
+            List<List<ClipperIntPoint>> result = new List<List<ClipperIntPoint>>(pathCnt);
             if (IsSum)
                 for (int i = 0; i < pathCnt; i++)
                 {
-                    List<IntPoint> p = new List<IntPoint>(polyCnt);
-                    foreach (IntPoint ip in pattern)
-                        p.Add(new IntPoint(path[i].X + ip.X, path[i].Y + ip.Y));
+                    List<ClipperIntPoint> p = new List<ClipperIntPoint>(polyCnt);
+                    foreach (ClipperIntPoint ip in pattern)
+                        p.Add(new ClipperIntPoint(path[i].X + ip.X, path[i].Y + ip.Y));
                     result.Add(p);
                 }
             else
                 for (int i = 0; i < pathCnt; i++)
                 {
-                    List<IntPoint> p = new List<IntPoint>(polyCnt);
-                    foreach (IntPoint ip in pattern)
-                        p.Add(new IntPoint(path[i].X - ip.X, path[i].Y - ip.Y));
+                    List<ClipperIntPoint> p = new List<ClipperIntPoint>(polyCnt);
+                    foreach (ClipperIntPoint ip in pattern)
+                        p.Add(new ClipperIntPoint(path[i].X - ip.X, path[i].Y - ip.Y));
                     result.Add(p);
                 }
 
-            List<List<IntPoint>> quads = new List<List<IntPoint>>((pathCnt + delta) * (polyCnt + 1));
+            List<List<ClipperIntPoint>> quads = new List<List<ClipperIntPoint>>((pathCnt + delta) * (polyCnt + 1));
             for (int i = 0; i < pathCnt - 1 + delta; i++)
                 for (int j = 0; j < polyCnt; j++)
                 {
-                    List<IntPoint> quad = new List<IntPoint>(4)
+                    List<ClipperIntPoint> quad = new List<ClipperIntPoint>(4)
                     {
                         result[i % pathCnt][j % polyCnt],
                         result[(i + 1) % pathCnt][j % polyCnt],
@@ -4273,61 +2965,61 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        public static List<List<IntPoint>> MinkowskiSum(List<IntPoint> pattern, List<IntPoint> path, bool pathIsClosed)
+        public static List<List<ClipperIntPoint>> MinkowskiSum(List<ClipperIntPoint> pattern, List<ClipperIntPoint> path, bool pathIsClosed)
         {
-            List<List<IntPoint>> paths = Minkowski(pattern, path, true, pathIsClosed);
+            List<List<ClipperIntPoint>> paths = Minkowski(pattern, path, true, pathIsClosed);
             Clipper c = new Clipper();
-            c.AddPaths(paths, PolyType.ptSubject, true);
-            c.Execute(ClipType.ctUnion, paths, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
+            c.AddPaths(paths, ClipperPolyType.Subject, true);
+            c.Execute(ClipperClipType.Union, paths, ClipperPolyFillType.NonZero, ClipperPolyFillType.NonZero);
             return paths;
         }
         //------------------------------------------------------------------------------
 
-        private static List<IntPoint> TranslatePath(List<IntPoint> path, IntPoint delta)
+        private static List<ClipperIntPoint> TranslatePath(List<ClipperIntPoint> path, ClipperIntPoint delta)
         {
-            List<IntPoint> outPath = new List<IntPoint>(path.Count);
+            List<ClipperIntPoint> outPath = new List<ClipperIntPoint>(path.Count);
             for (int i = 0; i < path.Count; i++)
-                outPath.Add(new IntPoint(path[i].X + delta.X, path[i].Y + delta.Y));
+                outPath.Add(new ClipperIntPoint(path[i].X + delta.X, path[i].Y + delta.Y));
             return outPath;
         }
         //------------------------------------------------------------------------------
 
-        public static List<List<IntPoint>> MinkowskiSum(List<IntPoint> pattern, List<List<IntPoint>> paths, bool pathIsClosed)
+        public static List<List<ClipperIntPoint>> MinkowskiSum(List<ClipperIntPoint> pattern, List<List<ClipperIntPoint>> paths, bool pathIsClosed)
         {
-            List<List<IntPoint>> solution = new List<List<IntPoint>>();
+            List<List<ClipperIntPoint>> solution = new List<List<ClipperIntPoint>>();
             Clipper c = new Clipper();
             for (int i = 0; i < paths.Count; ++i)
             {
-                List<List<IntPoint>> tmp = Minkowski(pattern, paths[i], true, pathIsClosed);
-                c.AddPaths(tmp, PolyType.ptSubject, true);
+                List<List<ClipperIntPoint>> tmp = Minkowski(pattern, paths[i], true, pathIsClosed);
+                c.AddPaths(tmp, ClipperPolyType.Subject, true);
                 if (pathIsClosed)
                 {
-                    List<IntPoint> path = TranslatePath(paths[i], pattern[0]);
-                    c.AddPath(path, PolyType.ptClip, true);
+                    List<ClipperIntPoint> path = TranslatePath(paths[i], pattern[0]);
+                    c.AddPath(path, ClipperPolyType.Clip, true);
                 }
             }
-            c.Execute(ClipType.ctUnion, solution,
-              PolyFillType.pftNonZero, PolyFillType.pftNonZero);
+            c.Execute(ClipperClipType.Union, solution,
+              ClipperPolyFillType.NonZero, ClipperPolyFillType.NonZero);
             return solution;
         }
         //------------------------------------------------------------------------------
 
-        public static List<List<IntPoint>> MinkowskiDiff(List<IntPoint> poly1, List<IntPoint> poly2)
+        public static List<List<ClipperIntPoint>> MinkowskiDiff(List<ClipperIntPoint> poly1, List<ClipperIntPoint> poly2)
         {
-            List<List<IntPoint>> paths = Minkowski(poly1, poly2, false, true);
+            List<List<ClipperIntPoint>> paths = Minkowski(poly1, poly2, false, true);
             Clipper c = new Clipper();
-            c.AddPaths(paths, PolyType.ptSubject, true);
-            c.Execute(ClipType.ctUnion, paths, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
+            c.AddPaths(paths, ClipperPolyType.Subject, true);
+            c.Execute(ClipperClipType.Union, paths, ClipperPolyFillType.NonZero, ClipperPolyFillType.NonZero);
             return paths;
         }
         //------------------------------------------------------------------------------
 
         internal enum NodeType { ntAny, ntOpen, ntClosed };
 
-        public static List<List<IntPoint>> PolyTreeToPaths(PolyTree polytree)
+        public static List<List<ClipperIntPoint>> PolyTreeToPaths(ClipperPolyTree polytree)
         {
 
-            List<List<IntPoint>> result = new List<List<IntPoint>>
+            List<List<ClipperIntPoint>> result = new List<List<ClipperIntPoint>>
             {
                 Capacity = polytree.Total
             };
@@ -4336,7 +3028,7 @@ namespace UglyToad.PdfPig.Geometry
         }
         //------------------------------------------------------------------------------
 
-        internal static void AddPolyNodeToPaths(PolyNode polynode, NodeType nt, List<List<IntPoint>> paths)
+        internal static void AddPolyNodeToPaths(ClipperPolyNode polynode, NodeType nt, List<List<ClipperIntPoint>> paths)
         {
             bool match = true;
             switch (nt)
@@ -4346,447 +3038,34 @@ namespace UglyToad.PdfPig.Geometry
                 default: break;
             }
 
-            if (polynode.m_polygon.Count > 0 && match)
-                paths.Add(polynode.m_polygon);
-            foreach (PolyNode pn in polynode.Childs)
+            if (polynode.Polygon.Count > 0 && match)
+                paths.Add(polynode.Polygon);
+            foreach (ClipperPolyNode pn in polynode.Children)
                 AddPolyNodeToPaths(pn, nt, paths);
         }
         //------------------------------------------------------------------------------
 
-        public static List<List<IntPoint>> OpenPathsFromPolyTree(PolyTree polytree)
+        public static List<List<ClipperIntPoint>> OpenPathsFromPolyTree(ClipperPolyTree polytree)
         {
-            List<List<IntPoint>> result = new List<List<IntPoint>>
+            List<List<ClipperIntPoint>> result = new List<List<ClipperIntPoint>>
             {
                 Capacity = polytree.ChildCount
             };
             for (int i = 0; i < polytree.ChildCount; i++)
-                if (polytree.Childs[i].IsOpen)
-                    result.Add(polytree.Childs[i].m_polygon);
+                if (polytree.Children[i].IsOpen)
+                    result.Add(polytree.Children[i].Polygon);
             return result;
         }
         //------------------------------------------------------------------------------
 
-        public static List<List<IntPoint>> ClosedPathsFromPolyTree(PolyTree polytree)
+        public static List<List<ClipperIntPoint>> ClosedPathsFromPolyTree(ClipperPolyTree polytree)
         {
-            List<List<IntPoint>> result = new List<List<IntPoint>>
+            List<List<ClipperIntPoint>> result = new List<List<ClipperIntPoint>>
             {
                 Capacity = polytree.Total
             };
             AddPolyNodeToPaths(polytree, NodeType.ntClosed, result);
             return result;
         }
-        //------------------------------------------------------------------------------
-
-    } //end Clipper
-
-    internal class ClipperOffset
-    {
-        private List<List<IntPoint>> m_destPolys;
-        private List<IntPoint> m_srcPoly;
-        private List<IntPoint> m_destPoly;
-        private readonly List<DoublePoint> m_normals = new List<DoublePoint>();
-        private double m_delta, m_sinA, m_sin, m_cos;
-        private double m_miterLim, m_StepsPerRad;
-
-        private IntPoint m_lowest;
-        private readonly PolyNode m_polyNodes = new PolyNode();
-
-        public double ArcTolerance { get; set; }
-
-        public double MiterLimit { get; set; }
-
-        private const double two_pi = Math.PI * 2;
-        private const double def_arc_tolerance = 0.25;
-
-        public ClipperOffset(
-          double miterLimit = 2.0, double arcTolerance = def_arc_tolerance)
-        {
-            MiterLimit = miterLimit;
-            ArcTolerance = arcTolerance;
-            m_lowest.X = -1;
-        }
-        //------------------------------------------------------------------------------
-
-        public void Clear()
-        {
-            m_polyNodes.Childs.Clear();
-            m_lowest.X = -1;
-        }
-        //------------------------------------------------------------------------------
-
-        internal static long Round(double value)
-        {
-            return value < 0 ? (long)(value - 0.5) : (long)(value + 0.5);
-        }
-        //------------------------------------------------------------------------------
-
-        public void AddPath(List<IntPoint> path, JoinType joinType, EndType endType)
-        {
-            int highI = path.Count - 1;
-            if (highI < 0) return;
-            PolyNode newNode = new PolyNode
-            {
-                m_jointype = joinType,
-                m_endtype = endType
-            };
-
-            //strip duplicate points from path and also get index to the lowest point ...
-            if (endType == EndType.etClosedLine || endType == EndType.etClosedPolygon)
-                while (highI > 0 && path[0] == path[highI]) highI--;
-            newNode.m_polygon.Capacity = highI + 1;
-            newNode.m_polygon.Add(path[0]);
-            int j = 0, k = 0;
-            for (int i = 1; i <= highI; i++)
-                if (newNode.m_polygon[j] != path[i])
-                {
-                    j++;
-                    newNode.m_polygon.Add(path[i]);
-                    if (path[i].Y > newNode.m_polygon[k].Y ||
-                      (path[i].Y == newNode.m_polygon[k].Y &&
-                      path[i].X < newNode.m_polygon[k].X)) k = j;
-                }
-            if (endType == EndType.etClosedPolygon && j < 2) return;
-
-            m_polyNodes.AddChild(newNode);
-
-            //if this path's lowest pt is lower than all the others then update m_lowest
-            if (endType != EndType.etClosedPolygon) return;
-            if (m_lowest.X < 0)
-                m_lowest = new IntPoint(m_polyNodes.ChildCount - 1, k);
-            else
-            {
-                IntPoint ip = m_polyNodes.Childs[(int)m_lowest.X].m_polygon[(int)m_lowest.Y];
-                if (newNode.m_polygon[k].Y > ip.Y ||
-                  (newNode.m_polygon[k].Y == ip.Y &&
-                  newNode.m_polygon[k].X < ip.X))
-                    m_lowest = new IntPoint(m_polyNodes.ChildCount - 1, k);
-            }
-        }
-        //------------------------------------------------------------------------------
-
-        public void AddPaths(List<List<IntPoint>> paths, JoinType joinType, EndType endType)
-        {
-            foreach (List<IntPoint> p in paths)
-                AddPath(p, joinType, endType);
-        }
-        //------------------------------------------------------------------------------
-
-        private void FixOrientations()
-        {
-            //fixup orientations of all closed paths if the orientation of the
-            //closed path with the lowermost vertex is wrong ...
-            if (m_lowest.X >= 0 &&
-              !Clipper.Orientation(m_polyNodes.Childs[(int)m_lowest.X].m_polygon))
-            {
-                for (int i = 0; i < m_polyNodes.ChildCount; i++)
-                {
-                    PolyNode node = m_polyNodes.Childs[i];
-                    if (node.m_endtype == EndType.etClosedPolygon ||
-                      (node.m_endtype == EndType.etClosedLine &&
-                      Clipper.Orientation(node.m_polygon)))
-                        node.m_polygon.Reverse();
-                }
-            }
-            else
-            {
-                for (int i = 0; i < m_polyNodes.ChildCount; i++)
-                {
-                    PolyNode node = m_polyNodes.Childs[i];
-                    if (node.m_endtype == EndType.etClosedLine &&
-                      !Clipper.Orientation(node.m_polygon))
-                        node.m_polygon.Reverse();
-                }
-            }
-        }
-        //------------------------------------------------------------------------------
-
-        internal static DoublePoint GetUnitNormal(IntPoint pt1, IntPoint pt2)
-        {
-            double dx = (pt2.X - pt1.X);
-            double dy = (pt2.Y - pt1.Y);
-            if ((dx == 0) && (dy == 0)) return new DoublePoint();
-
-            double f = 1 * 1.0 / Math.Sqrt(dx * dx + dy * dy);
-            dx *= f;
-            dy *= f;
-
-            return new DoublePoint(dy, -dx);
-        }
-        //------------------------------------------------------------------------------
-
-        private void DoOffset(double delta)
-        {
-            m_destPolys = new List<List<IntPoint>>();
-            m_delta = delta;
-
-            //if Zero offset, just copy any CLOSED polygons to m_p and return ...
-            if (ClipperBase.NearZero(delta))
-            {
-                m_destPolys.Capacity = m_polyNodes.ChildCount;
-                for (int i = 0; i < m_polyNodes.ChildCount; i++)
-                {
-                    PolyNode node = m_polyNodes.Childs[i];
-                    if (node.m_endtype == EndType.etClosedPolygon)
-                        m_destPolys.Add(node.m_polygon);
-                }
-                return;
-            }
-
-            //see offset_triginometry3.svg in the documentation folder ...
-            if (MiterLimit > 2) m_miterLim = 2 / (MiterLimit * MiterLimit);
-            else m_miterLim = 0.5;
-
-            double y;
-            if (ArcTolerance <= 0.0)
-                y = def_arc_tolerance;
-            else if (ArcTolerance > Math.Abs(delta) * def_arc_tolerance)
-                y = Math.Abs(delta) * def_arc_tolerance;
-            else
-                y = ArcTolerance;
-            //see offset_triginometry2.svg in the documentation folder ...
-            double steps = Math.PI / Math.Acos(1 - y / Math.Abs(delta));
-            m_sin = Math.Sin(two_pi / steps);
-            m_cos = Math.Cos(two_pi / steps);
-            m_StepsPerRad = steps / two_pi;
-            if (delta < 0.0) m_sin = -m_sin;
-
-            m_destPolys.Capacity = m_polyNodes.ChildCount * 2;
-            for (int i = 0; i < m_polyNodes.ChildCount; i++)
-            {
-                PolyNode node = m_polyNodes.Childs[i];
-                m_srcPoly = node.m_polygon;
-
-                int len = m_srcPoly.Count;
-
-                if (len == 0 || (delta <= 0 && (len < 3 ||
-                  node.m_endtype != EndType.etClosedPolygon)))
-                    continue;
-
-                m_destPoly = new List<IntPoint>();
-
-                if (len == 1)
-                {
-                    if (node.m_jointype == JoinType.jtRound)
-                    {
-                        double X = 1.0, Y = 0.0;
-                        for (int j = 1; j <= steps; j++)
-                        {
-                            m_destPoly.Add(new IntPoint(
-                              Round(m_srcPoly[0].X + X * delta),
-                              Round(m_srcPoly[0].Y + Y * delta)));
-                            double X2 = X;
-                            X = X * m_cos - m_sin * Y;
-                            Y = X2 * m_sin + Y * m_cos;
-                        }
-                    }
-                    else
-                    {
-                        double X = -1.0, Y = -1.0;
-                        for (int j = 0; j < 4; ++j)
-                        {
-                            m_destPoly.Add(new IntPoint(
-                              Round(m_srcPoly[0].X + X * delta),
-                              Round(m_srcPoly[0].Y + Y * delta)));
-                            if (X < 0) X = 1;
-                            else if (Y < 0) Y = 1;
-                            else X = -1;
-                        }
-                    }
-                    m_destPolys.Add(m_destPoly);
-                    continue;
-                }
-
-                //build m_normals ...
-                m_normals.Clear();
-                m_normals.Capacity = len;
-                for (int j = 0; j < len - 1; j++)
-                    m_normals.Add(GetUnitNormal(m_srcPoly[j], m_srcPoly[j + 1]));
-                if (node.m_endtype == EndType.etClosedLine ||
-                  node.m_endtype == EndType.etClosedPolygon)
-                    m_normals.Add(GetUnitNormal(m_srcPoly[len - 1], m_srcPoly[0]));
-                else
-                    m_normals.Add(new DoublePoint(m_normals[len - 2]));
-
-                if (node.m_endtype == EndType.etClosedPolygon)
-                {
-                    int k = len - 1;
-                    for (int j = 0; j < len; j++)
-                        OffsetPoint(j, ref k, node.m_jointype);
-                    m_destPolys.Add(m_destPoly);
-                }
-                else if (node.m_endtype == EndType.etClosedLine)
-                {
-                    int k = len - 1;
-                    for (int j = 0; j < len; j++)
-                        OffsetPoint(j, ref k, node.m_jointype);
-                    m_destPolys.Add(m_destPoly);
-                    m_destPoly = new List<IntPoint>();
-                    //re-build m_normals ...
-                    DoublePoint n = m_normals[len - 1];
-                    for (int j = len - 1; j > 0; j--)
-                        m_normals[j] = new DoublePoint(-m_normals[j - 1].X, -m_normals[j - 1].Y);
-                    m_normals[0] = new DoublePoint(-n.X, -n.Y);
-                    k = 0;
-                    for (int j = len - 1; j >= 0; j--)
-                        OffsetPoint(j, ref k, node.m_jointype);
-                    m_destPolys.Add(m_destPoly);
-                }
-                else
-                {
-                    int k = 0;
-                    for (int j = 1; j < len - 1; ++j)
-                        OffsetPoint(j, ref k, node.m_jointype);
-
-                    IntPoint pt1;
-                    if (node.m_endtype == EndType.etOpenButt)
-                    {
-                        int j = len - 1;
-                        pt1 = new IntPoint((long)Round(m_srcPoly[j].X + m_normals[j].X *
-                          delta), (long)Round(m_srcPoly[j].Y + m_normals[j].Y * delta));
-                        m_destPoly.Add(pt1);
-                        pt1 = new IntPoint((long)Round(m_srcPoly[j].X - m_normals[j].X *
-                          delta), (long)Round(m_srcPoly[j].Y - m_normals[j].Y * delta));
-                        m_destPoly.Add(pt1);
-                    }
-                    else
-                    {
-                        int j = len - 1;
-                        k = len - 2;
-                        m_sinA = 0;
-                        m_normals[j] = new DoublePoint(-m_normals[j].X, -m_normals[j].Y);
-                        if (node.m_endtype == EndType.etOpenSquare)
-                            DoSquare(j, k);
-                        else
-                            DoRound(j, k);
-                    }
-
-                    //re-build m_normals ...
-                    for (int j = len - 1; j > 0; j--)
-                        m_normals[j] = new DoublePoint(-m_normals[j - 1].X, -m_normals[j - 1].Y);
-
-                    m_normals[0] = new DoublePoint(-m_normals[1].X, -m_normals[1].Y);
-
-                    k = len - 1;
-                    for (int j = k - 1; j > 0; --j)
-                        OffsetPoint(j, ref k, node.m_jointype);
-
-                    if (node.m_endtype == EndType.etOpenButt)
-                    {
-                        pt1 = new IntPoint(Round(m_srcPoly[0].X - m_normals[0].X * delta),
-                          Round(m_srcPoly[0].Y - m_normals[0].Y * delta));
-                        m_destPoly.Add(pt1);
-                        pt1 = new IntPoint(Round(m_srcPoly[0].X + m_normals[0].X * delta),
-                          Round(m_srcPoly[0].Y + m_normals[0].Y * delta));
-                        m_destPoly.Add(pt1);
-                    }
-                    else
-                    {
-                        k = 1;
-                        m_sinA = 0;
-                        if (node.m_endtype == EndType.etOpenSquare)
-                            DoSquare(0, 1);
-                        else
-                            DoRound(0, 1);
-                    }
-                    m_destPolys.Add(m_destPoly);
-                }
-            }
-        }
-        //------------------------------------------------------------------------------
-
-        void OffsetPoint(int j, ref int k, JoinType jointype)
-        {
-            //cross product ...
-            m_sinA = (m_normals[k].X * m_normals[j].Y - m_normals[j].X * m_normals[k].Y);
-
-            if (Math.Abs(m_sinA * m_delta) < 1.0)
-            {
-                //dot product ...
-                double cosA = (m_normals[k].X * m_normals[j].X + m_normals[j].Y * m_normals[k].Y);
-                if (cosA > 0) // angle ==> 0 degrees
-                {
-                    m_destPoly.Add(new IntPoint(Round(m_srcPoly[j].X + m_normals[k].X * m_delta),
-                      Round(m_srcPoly[j].Y + m_normals[k].Y * m_delta)));
-                    return;
-                }
-                //else angle ==> 180 degrees   
-            }
-            else if (m_sinA > 1.0) m_sinA = 1.0;
-            else if (m_sinA < -1.0) m_sinA = -1.0;
-
-            if (m_sinA * m_delta < 0)
-            {
-                m_destPoly.Add(new IntPoint(Round(m_srcPoly[j].X + m_normals[k].X * m_delta),
-                  Round(m_srcPoly[j].Y + m_normals[k].Y * m_delta)));
-                m_destPoly.Add(m_srcPoly[j]);
-                m_destPoly.Add(new IntPoint(Round(m_srcPoly[j].X + m_normals[j].X * m_delta),
-                  Round(m_srcPoly[j].Y + m_normals[j].Y * m_delta)));
-            }
-            else
-                switch (jointype)
-                {
-                    case JoinType.jtMiter:
-                        {
-                            double r = 1 + (m_normals[j].X * m_normals[k].X +
-                              m_normals[j].Y * m_normals[k].Y);
-                            if (r >= m_miterLim) DoMiter(j, k, r); else DoSquare(j, k);
-                            break;
-                        }
-                    case JoinType.jtSquare: DoSquare(j, k); break;
-                    case JoinType.jtRound: DoRound(j, k); break;
-                }
-            k = j;
-        }
-        //------------------------------------------------------------------------------
-
-        internal void DoSquare(int j, int k)
-        {
-            double dx = Math.Tan(Math.Atan2(m_sinA,
-                m_normals[k].X * m_normals[j].X + m_normals[k].Y * m_normals[j].Y) / 4);
-            m_destPoly.Add(new IntPoint(
-                Round(m_srcPoly[j].X + m_delta * (m_normals[k].X - m_normals[k].Y * dx)),
-                Round(m_srcPoly[j].Y + m_delta * (m_normals[k].Y + m_normals[k].X * dx))));
-            m_destPoly.Add(new IntPoint(
-                Round(m_srcPoly[j].X + m_delta * (m_normals[j].X + m_normals[j].Y * dx)),
-                Round(m_srcPoly[j].Y + m_delta * (m_normals[j].Y - m_normals[j].X * dx))));
-        }
-        //------------------------------------------------------------------------------
-
-        internal void DoMiter(int j, int k, double r)
-        {
-            double q = m_delta / r;
-            m_destPoly.Add(new IntPoint(Round(m_srcPoly[j].X + (m_normals[k].X + m_normals[j].X) * q),
-                Round(m_srcPoly[j].Y + (m_normals[k].Y + m_normals[j].Y) * q)));
-        }
-        //------------------------------------------------------------------------------
-
-        internal void DoRound(int j, int k)
-        {
-            double a = Math.Atan2(m_sinA,
-            m_normals[k].X * m_normals[j].X + m_normals[k].Y * m_normals[j].Y);
-            int steps = Math.Max((int)Round(m_StepsPerRad * Math.Abs(a)), 1);
-
-            double X = m_normals[k].X, Y = m_normals[k].Y, X2;
-            for (int i = 0; i < steps; ++i)
-            {
-                m_destPoly.Add(new IntPoint(
-                    Round(m_srcPoly[j].X + X * m_delta),
-                    Round(m_srcPoly[j].Y + Y * m_delta)));
-                X2 = X;
-                X = X * m_cos - m_sin * Y;
-                Y = X2 * m_sin + Y * m_cos;
-            }
-            m_destPoly.Add(new IntPoint(
-            Round(m_srcPoly[j].X + m_normals[j].X * m_delta),
-            Round(m_srcPoly[j].Y + m_normals[j].Y * m_delta)));
-        }
-        //------------------------------------------------------------------------------
     }
-
-    class ClipperException : Exception
-    {
-        public ClipperException(string description) : base(description) { }
-    }
-    //------------------------------------------------------------------------------
-
-} //end ClipperLib namespace
+}
