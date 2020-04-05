@@ -1,12 +1,11 @@
-﻿using UglyToad.PdfPig.DocumentLayoutAnalysis.Export;
-
-namespace UglyToad.PdfPig.Tests.Integration
+﻿namespace UglyToad.PdfPig.Tests.Integration
 {
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using PdfPig.Core;
+    using DocumentLayoutAnalysis.Export;
     using Xunit;
 
     public class LaTexTests
