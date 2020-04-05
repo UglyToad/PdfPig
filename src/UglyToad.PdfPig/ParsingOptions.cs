@@ -17,10 +17,11 @@
         };
 
         /// <summary>
-        /// Should the parser clip paths? Default is true.
-        /// <para>Bezier curves will be transformed into polylines if clipping is set to true.</para>
+        /// Should the parser apply clipping to paths?
+        /// Defaults to <see langword="false"/>.
+        /// <para>Bezier curves will be transformed into polylines if clipping is set to <see langword="true"/>.</para>
         /// </summary>
-        public bool ClipPaths { get; set; } = true;
+        public bool ClipPaths { get; set; } = false;
 
         /// <summary>
         /// Should the parser ignore issues where the document does not conform to the PDF specification?
