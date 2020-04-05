@@ -1,11 +1,10 @@
-﻿using System.Xml;
-
-namespace UglyToad.PdfPig.DocumentLayoutAnalysis.Export
+﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis.Export
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
+    using System.Xml;
     using Content;
     using Graphics;
     using Graphics.Colors;
