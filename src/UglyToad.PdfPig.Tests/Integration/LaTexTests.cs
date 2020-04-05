@@ -1,4 +1,6 @@
-﻿namespace UglyToad.PdfPig.Tests.Integration
+﻿using UglyToad.PdfPig.DocumentLayoutAnalysis.Export;
+
+namespace UglyToad.PdfPig.Tests.Integration
 {
     using System;
     using System.Collections.Generic;
@@ -142,6 +144,19 @@ used per estimate, we introduce a “complement class”Naive Bayes is often us
                 var text = OtherEncodings.BytesAsLatin1String(metadata.GetXmlBytes().ToArray());
 
                 Assert.StartsWith("<?xpacket begin='' id='W5M0MpCehiHzreSzNTczkc9d'", text);
+            }
+        }
+
+        [Fact]
+        public void CanExportSvg()
+        {
+            using (var document = PdfDocument.Open(GetFilename(), new ParsingOptions{ ClipPaths = true }))
+            {
+                var page = document.GetPage(1);
+
+                var svg = new SvgTextExporter().Get(page);
+
+                Assert.NotNull(svg);
             }
         }
 

@@ -1,4 +1,6 @@
-﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis.Export
+﻿using System.Xml;
+
+namespace UglyToad.PdfPig.DocumentLayoutAnalysis.Export
 {
     using System;
     using System.Collections.Generic;
@@ -44,16 +46,17 @@
                 }
             }
 
+            var doc = new XmlDocument();
             foreach (var letter in page.Letters)
             {
-                builder.Append(LetterToSvg(letter, page.Height));
+                builder.Append(LetterToSvg(letter, page.Height, doc));
             }
 
             builder.Append("</g></svg>");
             return builder.ToString();
         }
         
-        private static string LetterToSvg(Letter l, double height)
+        private static string LetterToSvg(Letter l, double height, XmlDocument doc)
         {
             string fontFamily = GetFontFamily(l.FontName, out string style, out string weight);
             string rotation = "";
@@ -64,7 +67,12 @@
 
             string fontSize = l.FontSize != 1 ? $"font-size='{l.FontSize:0}'" : $"style='font-size:{Math.Round(l.GlyphRectangle.Height, 2)}px'";
 
-            return $"<text x='{Math.Round(l.StartBaseLine.X, Rounding)}' y='{Math.Round(height - l.StartBaseLine.Y, Rounding)}'{rotation} font-family='{fontFamily}' font-style='{style}' font-weight='{weight}' {fontSize} fill='{ColorToSvg(l.Color)}'>{l.Value}</text>";
+            var safeValue = XmlEscape(l, doc);
+            var x = Math.Round(l.StartBaseLine.X, Rounding);
+            var y = Math.Round(height - l.StartBaseLine.Y, Rounding);
+
+            return $"<text x='{x}' y='{y}'{rotation} font-family='{fontFamily}' font-style='{style}' font-weight='{weight}' {fontSize} fill='{ColorToSvg(l.Color)}'>{safeValue}</text>" 
+                   + Environment.NewLine;
         }
 
         private static string GetFontFamily(string fontName, out string style, out string weight)
@@ -119,6 +127,13 @@
 
             if (Fonts.ContainsKey(fontName)) fontName = Fonts[fontName];
             return fontName;
+        }
+
+        private static string XmlEscape(Letter letter, XmlDocument doc)
+        {
+            XmlNode node = doc.CreateElement("root");
+            node.InnerText = letter.Value;
+            return node.InnerXml;
         }
 
         private static string ColorToSvg(IColor color)
