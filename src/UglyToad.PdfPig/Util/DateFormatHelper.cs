@@ -2,8 +2,20 @@
 {
     using System;
 
-    internal static class DateFormatHelper
+    /// <summary>
+    /// Helper class for dates.
+    /// </summary>
+    public static class DateFormatHelper
     {
+        /// <summary>
+        /// Try parsing a pdf formated date string into a <see cref="DateTimeOffset"/>.
+        /// <para>Date values used in a PDF shall conform to a standard date format, which closely 
+        /// follows that of the international standard ASN.1, defined in ISO/IEC 8824. A date shall be a text string 
+        /// of the form (D:YYYYMMDDHHmmSSOHH'mm).</para>
+        /// </summary>
+        /// <param name="s">The pdf formated date string, e.g. D:199812231952-08'00.</param>
+        /// <param name="offset">The parsed date.</param>
+        /// <returns>True if parsed.</returns>
         public static bool TryParseDateTimeOffset(string s, out DateTimeOffset offset)
         {
             offset = DateTimeOffset.MinValue;
