@@ -39,7 +39,28 @@
         /// <param name="minimumWidth">The minimum width for a block.</param>
         public IReadOnlyList<TextBlock> GetBlocks(IEnumerable<Word> pageWords, double minimumWidth)
         {
-            return GetBlocks(pageWords, minimumWidth, k => Math.Round(k.Mode(), 3), k => Math.Round(k.Mode() * 1.5, 3));
+            return GetBlocks(pageWords, minimumWidth,
+                (letters) =>
+                {
+                    var widths = letters.Select(x => Math.Max(Math.Round(x.Width, 3), Math.Round(x.GlyphRectangle.Width, 3)));
+                    var mode = widths.Mode();
+                    if (double.IsNaN(mode) || mode == 0)
+                    {
+                        mode = widths.Average();
+                    }
+                    return mode;
+                },
+                (letters) =>
+                {
+                    var heights = letters.Select(x => Math.Round(x.GlyphRectangle.Height, 3));
+                    var mode = heights.Mode();
+                    if (double.IsNaN(mode) || mode == 0)
+                    {
+                        mode = heights.Average();
+                    }
+                    return mode * 1.5;
+                }
+            );
         }
 
         /// <summary>
@@ -63,8 +84,8 @@
         /// <param name="dominantFontWidthFunc">The function that determines the dominant font width.</param>
         /// <param name="dominantFontHeightFunc">The function that determines the dominant font height.</param>
         public IReadOnlyList<TextBlock> GetBlocks(IEnumerable<Word> pageWords, double minimumWidth,
-            Func<IEnumerable<double>, double> dominantFontWidthFunc,
-            Func<IEnumerable<double>, double> dominantFontHeightFunc)
+            Func<IEnumerable<Letter>, double> dominantFontWidthFunc,
+            Func<IEnumerable<Letter>, double> dominantFontHeightFunc)
         {
             if (pageWords.Count() == 0) return EmptyArray<TextBlock>.Instance;
 
@@ -89,13 +110,13 @@
         }
 
         private XYNode VerticalCut(XYLeaf leaf, double minimumWidth,
-            Func<IEnumerable<double>, double> dominantFontWidthFunc,
-            Func<IEnumerable<double>, double> dominantFontHeightFunc, int level = 0)
+            Func<IEnumerable<Letter>, double> dominantFontWidthFunc,
+            Func<IEnumerable<Letter>, double> dominantFontHeightFunc, int level = 0)
         {
             // Order words left to right
             var words = leaf.Words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).OrderBy(w => w.BoundingBox.Normalise().Left).ToArray();
 
-            if (!words.Any())
+            if (words.Length == 0)
             {
                 return new XYNode(null);
             }
@@ -112,8 +133,7 @@
             }
 
             // Determine dominant font width
-            double dominantFontWidth = dominantFontWidthFunc(words.SelectMany(x => x.Letters)
-                .Select(x => x.GlyphRectangle.Normalise().Width));
+            double dominantFontWidth = dominantFontWidthFunc(words.SelectMany(x => x.Letters));
 
             List<Projection> projectionProfile = new List<Projection>();
 
@@ -197,13 +217,13 @@
         }
 
         private XYNode HorizontalCut(XYLeaf leaf, double minimumWidth,
-            Func<IEnumerable<double>, double> dominantFontWidthFunc,
-            Func<IEnumerable<double>, double> dominantFontHeightFunc, int level = 0)
+            Func<IEnumerable<Letter>, double> dominantFontWidthFunc,
+            Func<IEnumerable<Letter>, double> dominantFontHeightFunc, int level = 0)
         {
             // Order words bottom to top
             var words = leaf.Words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).OrderBy(w => w.BoundingBox.Normalise().Bottom).ToArray();
 
-            if (!words.Any())
+            if (words.Length == 0)
             {
                 return new XYNode(null);
             }
@@ -219,14 +239,13 @@
             }
 
             // Determine dominant font height
-            double dominantFontHeight = dominantFontHeightFunc(words.SelectMany(x => x.Letters)
-                .Select(x => x.GlyphRectangle.Normalise().Height));
+            double dominantFontHeight = dominantFontHeightFunc(words.SelectMany(x => x.Letters));
 
             List<Projection> projectionProfile = new List<Projection>();
 
             var firstWordBound = words[0].BoundingBox.Normalise();
             Projection currentProjection = new Projection(firstWordBound.Bottom, firstWordBound.Top);
-            int wordsCount = words.Count();
+            int wordsCount = words.Length;
 
             for (int i = 1; i < wordsCount; i++)
             {
