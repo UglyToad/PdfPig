@@ -17,7 +17,7 @@
     using Tokenization.Scanner;
     using Tokens;
     using XObjects;
-    using static UglyToad.PdfPig.Core.PdfSubpath;
+    using static PdfPig.Core.PdfSubpath;
 
     internal class ContentStreamProcessor : IOperationContext
     {
@@ -540,7 +540,7 @@
                 return;
             }
 
-            var currentState = this.GetCurrentState();
+            var currentState = GetCurrentState();
             if (CurrentPath.IsStroked)
             {
                 CurrentPath.LineDashPattern = currentState.LineDashPattern;
