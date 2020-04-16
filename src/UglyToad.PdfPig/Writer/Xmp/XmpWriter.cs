@@ -143,6 +143,10 @@ namespace UglyToad.PdfPig.Writer.Xmp
                     part = 2;
                     conformance = "B";
                     break;
+                case PdfAStandard.A2A:
+                    part = 2;
+                    conformance = "A";
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(standard), standard, null);
             }
