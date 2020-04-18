@@ -217,15 +217,13 @@
 
                 var boundingBox = font.GetBoundingBox(code);
 
-                var transformedGlyphBounds = rotation.Rotate(transformationMatrix)
-                    .Transform(textMatrix
-                        .Transform(renderingMatrix
-                            .Transform(boundingBox.GlyphBounds)));
+                var rotatedTransformationMatrix = rotation.Rotate(transformationMatrix);
 
-                var transformedPdfBounds = rotation.Rotate(transformationMatrix)
-                    .Transform(textMatrix
-                        .Transform(renderingMatrix
-                            .Transform(new PdfRectangle(0, 0, boundingBox.Width, 0))));
+                var transformedGlyphBounds = PerformantRectangleTransformer
+                    .Transform(renderingMatrix, textMatrix, rotatedTransformationMatrix, boundingBox.GlyphBounds);
+
+                var transformedPdfBounds = PerformantRectangleTransformer
+                    .Transform(renderingMatrix, textMatrix, rotatedTransformationMatrix, new PdfRectangle(0, 0, boundingBox.Width, 0));
 
                 // If the text rendering mode calls for filling, the current nonstroking color in the graphics state is used; 
                 // if it calls for stroking, the current stroking color is used.
@@ -572,6 +570,7 @@
 
             CurrentPath = null;
         }
+
         public void ModifyClippingIntersect(FillingRule clippingRule)
         {
             if (CurrentPath == null)
