@@ -3,31 +3,31 @@
     /// <summary>
     /// Direction of the text.
     /// </summary>
-    public enum TextDirection
+    public enum TextDirection : byte
     {
         /// <summary>
         /// Other text direction.
         /// </summary>
-        Other,
+        Other = 0,
 
         /// <summary>
         /// Usual text direction (Left to Right).
         /// </summary>
-        Horizontal,
+        Horizontal = 1,
 
         /// <summary>
         /// Horizontal text, upside down.
         /// </summary>
-        Rotate180,
+        Rotate180 = 2,
 
         /// <summary>
         /// Rotated text going down.
         /// </summary>
-        Rotate90,
+        Rotate90 = 3,
 
         /// <summary>
         /// Rotated text going up.
         /// </summary>
-        Rotate270
+        Rotate270 = 4
     }
 }

@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.1022
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.Examples", "UglyToad.Examples.csproj", "{F72DA3EE-FBED-4271-88CC-05D883FD4DAD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.Core", "..\src\UglyToad.PdfPig.Core\UglyToad.PdfPig.Core.csproj", "{B12C9CFF-879B-4C70-8C7B-7DBF953608C5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.Fonts", "..\src\UglyToad.PdfPig.Fonts\UglyToad.PdfPig.Fonts.csproj", "{371FB56D-E9BE-40A2-8419-5F5F6F8FE0C0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.Tokenization", "..\src\UglyToad.PdfPig.Tokenization\UglyToad.PdfPig.Tokenization.csproj", "{E5BD532A-B3D0-4975-80CD-8B0B6D70FD17}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.Tokens", "..\src\UglyToad.PdfPig.Tokens\UglyToad.PdfPig.Tokens.csproj", "{50308C34-4074-4D36-AA93-57CFC812D831}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig", "..\src\UglyToad.PdfPig\UglyToad.PdfPig.csproj", "{75ED54D6-308F-44AD-B85E-C027F3AA80AE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F72DA3EE-FBED-4271-88CC-05D883FD4DAD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F72DA3EE-FBED-4271-88CC-05D883FD4DAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F72DA3EE-FBED-4271-88CC-05D883FD4DAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F72DA3EE-FBED-4271-88CC-05D883FD4DAD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B12C9CFF-879B-4C70-8C7B-7DBF953608C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B12C9CFF-879B-4C70-8C7B-7DBF953608C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B12C9CFF-879B-4C70-8C7B-7DBF953608C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B12C9CFF-879B-4C70-8C7B-7DBF953608C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{371FB56D-E9BE-40A2-8419-5F5F6F8FE0C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{371FB56D-E9BE-40A2-8419-5F5F6F8FE0C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{371FB56D-E9BE-40A2-8419-5F5F6F8FE0C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{371FB56D-E9BE-40A2-8419-5F5F6F8FE0C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E5BD532A-B3D0-4975-80CD-8B0B6D70FD17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5BD532A-B3D0-4975-80CD-8B0B6D70FD17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5BD532A-B3D0-4975-80CD-8B0B6D70FD17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5BD532A-B3D0-4975-80CD-8B0B6D70FD17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{50308C34-4074-4D36-AA93-57CFC812D831}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50308C34-4074-4D36-AA93-57CFC812D831}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{50308C34-4074-4D36-AA93-57CFC812D831}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50308C34-4074-4D36-AA93-57CFC812D831}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75ED54D6-308F-44AD-B85E-C027F3AA80AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75ED54D6-308F-44AD-B85E-C027F3AA80AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75ED54D6-308F-44AD-B85E-C027F3AA80AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75ED54D6-308F-44AD-B85E-C027F3AA80AE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {03F738BD-74E0-4DE7-8063-0ACE16E931F1}
+	EndGlobalSection
+EndGlobal

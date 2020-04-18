@@ -1,4 +1,6 @@
-﻿namespace UglyToad.PdfPig.Fonts.AdobeFontMetrics
+﻿using System.Collections.Generic;
+
+namespace UglyToad.PdfPig.Fonts.AdobeFontMetrics
 {
     using System;
     using System.Globalization;
@@ -11,6 +13,9 @@
     /// </summary>
     public static class AdobeFontMetricsParser
     {
+        private static readonly object Locker = new object();
+        private static readonly Dictionary<string, string> CharacterNames = new Dictionary<string, string>();
+
         /// <summary>
         /// This is a comment in a AFM file.
         /// </summary>
@@ -603,7 +608,18 @@
                         }
                     case CharmetricsN:
                         {
-                            metric.Name = parts[1];
+                            lock (Locker)
+                            {
+                                var name = parts[1];
+
+                                if (!CharacterNames.TryGetValue(name, out var cached))
+                                {
+                                    cached = name;
+                                    CharacterNames[name] = cached;
+                                }
+
+                                metric.Name = cached;
+                            }
                             break;
                         }
                     case CharmetricsB:

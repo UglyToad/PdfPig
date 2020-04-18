@@ -93,5 +93,45 @@
                     "Expected object count to be lower than 24");
             }
         }
+
+        [Fact]
+        public void CanMergeWithObjectStream()
+        {
+            var first = IntegrationHelpers.GetDocumentPath("Single Page Simple - from google drive.pdf");
+            var second = IntegrationHelpers.GetDocumentPath("Multiple Page - from Mortality Statistics.pdf");
+
+            var result = PdfMerger.Merge(first, second);
+
+            WriteFile(nameof(CanMergeWithObjectStream), result);
+
+            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            {
+                Assert.Equal(7, document.NumberOfPages);
+
+                foreach (var page in document.GetPages())
+                {
+                    Assert.NotNull(page.Text);
+                }
+            }
+        }
+
+        private static void WriteFile(string name, byte[] bytes)
+        {
+            try
+            {
+                if (!Directory.Exists("Merger"))
+                {
+                    Directory.CreateDirectory("Merger");
+                }
+
+                var output = Path.Combine("Merger", $"{name}.pdf");
+
+                File.WriteAllBytes(output, bytes);
+            }
+            catch
+            {
+                // ignored.
+            }
+        }
     }
 }

@@ -494,40 +494,16 @@
             }
         }
 
-        [Fact]
-        public void CanGeneratePdfA1BFile()
+        [Theory]
+        [InlineData(PdfAStandard.A1B)]
+        [InlineData(PdfAStandard.A1A)]
+        [InlineData(PdfAStandard.A2B)]
+        [InlineData(PdfAStandard.A2A)]
+        public void CanGeneratePdfAFile(PdfAStandard standard)
         {
             var builder = new PdfDocumentBuilder
             {
-                ArchiveStandard = PdfAStandard.A1B
-            };
-
-            var page = builder.AddPage(PageSize.A4);
-
-            var font = builder.AddTrueTypeFont(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf"));
-
-            page.AddText("Howdy!", 12, new PdfPoint(25, 670), font);
-
-            var bytes = builder.Build();
-
-            WriteFile(nameof(CanGeneratePdfA1BFile), bytes);
-
-            using (var pdf = PdfDocument.Open(bytes, ParsingOptions.LenientParsingOff))
-            {
-                Assert.Equal(1, pdf.NumberOfPages);
-
-                Assert.True(pdf.TryGetXmpMetadata(out var xmp));
-
-                Assert.NotNull(xmp.GetXDocument());
-            }
-        }
-
-        [Fact]
-        public void CanGeneratePdfA1AFile()
-        {
-            var builder = new PdfDocumentBuilder
-            {
-                ArchiveStandard = PdfAStandard.A1A
+                ArchiveStandard = standard
             };
 
             var page = builder.AddPage(PageSize.A4);
@@ -537,39 +513,11 @@
 
             var font = builder.AddTrueTypeFont(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf"));
 
-            page.AddText("Howdy PDF/A-1A!", 10, new PdfPoint(25, 700), font);
+            page.AddText($"Howdy PDF/{standard}!", 10, new PdfPoint(25, 700), font);
 
             var bytes = builder.Build();
 
-            WriteFile(nameof(CanGeneratePdfA1AFile), bytes);
-
-            using (var pdf = PdfDocument.Open(bytes, ParsingOptions.LenientParsingOff))
-            {
-                Assert.Equal(1, pdf.NumberOfPages);
-
-                Assert.True(pdf.TryGetXmpMetadata(out var xmp));
-
-                Assert.NotNull(xmp.GetXDocument());
-            }
-        }
-
-        [Fact]
-        public void CanGeneratePdfA2BFile()
-        {
-            var builder = new PdfDocumentBuilder
-            {
-                ArchiveStandard = PdfAStandard.A2B
-            };
-
-            var page = builder.AddPage(PageSize.A4);
-
-            var font = builder.AddTrueTypeFont(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf"));
-
-            page.AddText("Howdy PDF/A-2B and welcome!", 10, new PdfPoint(25, 700), font);
-
-            var bytes = builder.Build();
-
-            WriteFile(nameof(CanGeneratePdfA2BFile), bytes);
+            WriteFile(nameof(CanGeneratePdfAFile) + standard, bytes);
 
             using (var pdf = PdfDocument.Open(bytes, ParsingOptions.LenientParsingOff))
             {

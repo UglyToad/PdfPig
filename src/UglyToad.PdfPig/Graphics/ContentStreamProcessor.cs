@@ -17,7 +17,7 @@
     using Tokenization.Scanner;
     using Tokens;
     using XObjects;
-    using static UglyToad.PdfPig.Core.PdfSubpath;
+    using static PdfPig.Core.PdfSubpath;
 
     internal class ContentStreamProcessor : IOperationContext
     {
@@ -49,6 +49,7 @@
         private readonly IFilterProvider filterProvider;
         private readonly ILog log;
         private readonly bool clipPaths;
+        private readonly PdfVector pageSize;
         private readonly MarkedContentStack markedContentStack = new MarkedContentStack();
 
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
@@ -88,7 +89,8 @@
             IPageContentParser pageContentParser,
             IFilterProvider filterProvider,
             ILog log, 
-            bool clipPaths)
+            bool clipPaths,
+            PdfVector pageSize)
         {
             this.resourceStore = resourceStore;
             this.userSpaceUnit = userSpaceUnit;
@@ -98,6 +100,7 @@
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.log = log;
             this.clipPaths = clipPaths;
+            this.pageSize = pageSize;
 
             // initiate CurrentClippingPath to cropBox
             var clippingSubpath = new PdfSubpath();
@@ -175,7 +178,7 @@
 
             // TODO: this does not seem correct, produces the correct result for now but we need to revisit.
             // see: https://stackoverflow.com/questions/48010235/pdf-specification-get-font-size-in-points
-            var pointSize = Math.Round(rotation.Rotate(transformationMatrix).Multiply(TextMatrices.TextMatrix).Multiply(fontSize).A, 2);
+            var pointSize = Math.Round(transformationMatrix.Multiply(TextMatrices.TextMatrix).Multiply(fontSize).A, 2);
 
             if (pointSize < 0)
             {
@@ -216,16 +219,18 @@
                 }
 
                 var boundingBox = font.GetBoundingBox(code);
+                
+                var transformedGlyphBounds = PerformantRectangleTransformer
+                    .Transform(renderingMatrix, textMatrix, transformationMatrix, boundingBox.GlyphBounds);
 
-                var transformedGlyphBounds = rotation.Rotate(transformationMatrix)
-                    .Transform(textMatrix
-                        .Transform(renderingMatrix
-                            .Transform(boundingBox.GlyphBounds)));
+                var transformedPdfBounds = PerformantRectangleTransformer
+                    .Transform(renderingMatrix, textMatrix, transformationMatrix, new PdfRectangle(0, 0, boundingBox.Width, 0));
 
-                var transformedPdfBounds = rotation.Rotate(transformationMatrix)
-                    .Transform(textMatrix
-                        .Transform(renderingMatrix
-                            .Transform(new PdfRectangle(0, 0, boundingBox.Width, 0))));
+                if (rotation.Value > 0)
+                {
+                    transformedGlyphBounds = rotation.Rotate(transformedGlyphBounds, pageSize);
+                    transformedPdfBounds = rotation.Rotate(transformedPdfBounds, pageSize);
+                }
 
                 // If the text rendering mode calls for filling, the current nonstroking color in the graphics state is used; 
                 // if it calls for stroking, the current stroking color is used.
@@ -540,7 +545,7 @@
                 return;
             }
 
-            var currentState = this.GetCurrentState();
+            var currentState = GetCurrentState();
             if (CurrentPath.IsStroked)
             {
                 CurrentPath.LineDashPattern = currentState.LineDashPattern;
@@ -572,6 +577,7 @@
 
             CurrentPath = null;
         }
+
         public void ModifyClippingIntersect(FillingRule clippingRule)
         {
             if (CurrentPath == null)

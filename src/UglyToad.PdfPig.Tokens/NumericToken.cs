@@ -11,6 +11,11 @@
     public class NumericToken : IDataToken<decimal>
     {
         /// <summary>
+        /// Single instance of numeric token for -1.
+        /// </summary>
+        public static readonly NumericToken MinusOne = new NumericToken(-1);
+
+        /// <summary>
         /// Single instance of numeric token for 0.
         /// </summary>
         public static readonly NumericToken Zero = new NumericToken(0);
@@ -65,9 +70,64 @@
         public static readonly NumericToken Ten = new NumericToken(10);
 
         /// <summary>
+        /// Single instance of numeric token for 11.
+        /// </summary>
+        public static readonly NumericToken Eleven = new NumericToken(11);
+        
+        /// <summary>
+        /// Single instance of numeric token for 12.
+        /// </summary>
+        public static readonly NumericToken Twelve = new NumericToken(12);
+
+        /// <summary>
+        /// Single instance of numeric token for 13.
+        /// </summary>
+        public static readonly NumericToken Thirteen = new NumericToken(13);
+
+        /// <summary>
+        /// Single instance of numeric token for 14.
+        /// </summary>
+        public static readonly NumericToken Fourteen = new NumericToken(14);
+
+        /// <summary>
+        /// Single instance of numeric token for 15.
+        /// </summary>
+        public static readonly NumericToken Fifteen = new NumericToken(15);
+
+        /// <summary>
+        /// Single instance of numeric token for 16.
+        /// </summary>
+        public static readonly NumericToken Sixteen = new NumericToken(16);
+
+        /// <summary>
+        /// Single instance of numeric token for 17.
+        /// </summary>
+        public static readonly NumericToken Seventeen = new NumericToken(17);
+
+        /// <summary>
+        /// Single instance of numeric token for 18.
+        /// </summary>
+        public static readonly NumericToken Eighteen = new NumericToken(18);
+
+        /// <summary>
+        /// Single instance of numeric token for 19.
+        /// </summary>
+        public static readonly NumericToken Nineteen = new NumericToken(19);
+
+        /// <summary>
+        /// Single instance of numeric token for 20.
+        /// </summary>
+        public static readonly NumericToken Twenty = new NumericToken(20);
+
+        /// <summary>
         /// Single instance of numeric token for 100.
         /// </summary>
         public static readonly NumericToken OneHundred = new NumericToken(100);
+
+        /// <summary>
+        /// Single instance of numeric token for 500.
+        /// </summary>
+        public static readonly NumericToken FiveHundred = new NumericToken(500);
 
         /// <summary>
         /// Single instance of numeric token for 1000.

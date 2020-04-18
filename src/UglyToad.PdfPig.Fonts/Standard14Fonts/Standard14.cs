@@ -33,8 +33,8 @@
     {
         private static readonly HashSet<string> Standard14Names = new HashSet<string>();
         private static readonly Dictionary<string, string> Standard14Mapping = new Dictionary<string, string>(34);
-        private static readonly Dictionary<string, AdobeFontMetrics> Standard14AfmMap = new Dictionary<string, AdobeFontMetrics>(34);
-        private static readonly Dictionary<Standard14Font, AdobeFontMetrics> Standard14AfmTypeMap = new Dictionary<Standard14Font, AdobeFontMetrics>(14);
+        private static readonly Dictionary<Standard14Font, string> BuilderTypesToNames = new Dictionary<Standard14Font, string>(14);
+        private static readonly Dictionary<string, AdobeFontMetrics> Standard14Cache = new Dictionary<string, AdobeFontMetrics>(34);
 
         static Standard14()
         {
@@ -88,9 +88,14 @@
             Standard14Names.Add(fontName);
             Standard14Mapping.Add(fontName, afmName);
 
-            if (Standard14AfmMap.TryGetValue(afmName, out var metrics))
+            if (type.HasValue)
             {
-                Standard14AfmMap[fontName] = metrics;
+                BuilderTypesToNames[type.Value] = afmName;
+            }
+
+            if (Standard14Cache.TryGetValue(afmName, out var metrics))
+            {
+                Standard14Cache[fontName] = metrics;
             }
 
             try
@@ -112,11 +117,7 @@
                     bytes = new ByteArrayInputBytes(memory.ToArray());
                 }
 
-                Standard14AfmMap[fontName] = AdobeFontMetricsParser.Parse(bytes, true);
-                if (type.HasValue)
-                {
-                    Standard14AfmTypeMap[type.Value] = Standard14AfmMap[fontName];
-                }
+                Standard14Cache[fontName] = AdobeFontMetricsParser.Parse(bytes, true);
             }
             catch (Exception ex)
             {
@@ -130,7 +131,7 @@
         /// </summary>
         public static AdobeFontMetrics GetAdobeFontMetrics(string baseName)
         {
-            Standard14AfmMap.TryGetValue(baseName, out var metrics);
+            Standard14Cache.TryGetValue(baseName, out var metrics);
 
             return metrics;
         }
@@ -140,7 +141,7 @@
         /// </summary>
         public static AdobeFontMetrics GetAdobeFontMetrics(Standard14Font fontType)
         {
-            return Standard14AfmTypeMap[fontType];
+            return Standard14Cache[BuilderTypesToNames[fontType]];
         }
         
         /// <summary>

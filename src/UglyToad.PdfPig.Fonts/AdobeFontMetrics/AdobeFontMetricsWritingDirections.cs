@@ -3,7 +3,7 @@
     /// <summary>
     /// The meaning of the metric sets field.
     /// </summary>
-    public enum AdobeFontMetricsWritingDirections
+    public enum AdobeFontMetricsWritingDirections : byte
     {
         /// <summary>
         /// Writing direction 0 only.
