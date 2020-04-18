@@ -47,14 +47,14 @@
                 log?.Error($"Page {number} had its type specified as {type} rather than 'Page'.");
             }
 
+            MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers);
+            CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox);
+
             var rotation = new PageRotationDegrees(pageTreeMembers.Rotation);
             if (dictionary.TryGet(NameToken.Rotate, pdfScanner, out NumericToken rotateToken))
             {
                 rotation = new PageRotationDegrees(rotateToken.Int);
             }
-
-            MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers);
-            CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox);
 
             var stackDepth = 0;
 
@@ -70,6 +70,19 @@
             {
                 resourceStore.LoadResourceDictionary(resources);
                 stackDepth++;
+            }
+
+            // Apply rotation.
+            if (rotation.SwapsAxis)
+            {
+                mediaBox = new MediaBox(new PdfRectangle(mediaBox.Bounds.Bottom, 
+                    mediaBox.Bounds.Left, 
+                    mediaBox.Bounds.Top,
+                    mediaBox.Bounds.Right));
+                cropBox = new CropBox(new PdfRectangle(cropBox.Bounds.Bottom,
+                    cropBox.Bounds.Left,
+                    cropBox.Bounds.Top,
+                    cropBox.Bounds.Right));
             }
             
             UserSpaceUnit userSpaceUnit = GetUserSpaceUnits(dictionary);
@@ -108,7 +121,7 @@
                     }
                 }
 
-                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, clipPaths);
+                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, clipPaths, mediaBox);
             }
             else
             {
@@ -121,7 +134,7 @@
 
                 var bytes = contentStream.Decode(filterProvider);
 
-                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, clipPaths);
+                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, clipPaths, mediaBox);
             }
 
             var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, 
@@ -137,7 +150,7 @@
         }
 
         private PageContent GetContent(int pageNumber, IReadOnlyList<byte> contentBytes, CropBox cropBox, UserSpaceUnit userSpaceUnit,
-            PageRotationDegrees rotation, bool clipPaths)
+            PageRotationDegrees rotation, bool clipPaths, MediaBox mediaBox)
         {
             var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentBytes),
                 log);
@@ -146,7 +159,8 @@
                 pageContentParser,
                 filterProvider,
                 log,
-                clipPaths);
+                clipPaths,
+                new PdfVector(mediaBox.Bounds.Width, mediaBox.Bounds.Height));
 
             return context.Process(pageNumber, operations);
         }

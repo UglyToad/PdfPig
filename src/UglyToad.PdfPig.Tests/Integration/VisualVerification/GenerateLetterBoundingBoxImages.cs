@@ -16,7 +16,10 @@
         private const string SingleInkscapePage = "Single Page Simple - from inkscape";
         private const string MotorInsuranceClaim = "Motor Insurance claim form";
         private const string PigProduction = "Pig Production Handbook";
-
+        private const string SinglePage90ClockwiseRotation = "SinglePage90ClockwiseRotation - from PdfPig";
+        private const string SinglePage180ClockwiseRotation = "SinglePage180ClockwiseRotation - from PdfPig";
+        private const string SinglePage270ClockwiseRotation = "SinglePage270ClockwiseRotation - from PdfPig";
+        
         private static string GetFilename(string name)
         {
             var documentFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Integration", "Documents"));
@@ -95,6 +98,24 @@
             Run(ByzantineGenerals, 702);
         }
 
+        [Fact]
+        public void SinglePage90ClockwiseRotationFromPdfPig()
+        {
+            Run(SinglePage90ClockwiseRotation, 595);
+        }
+
+        [Fact]
+        public void SinglePage180ClockwiseRotationFromPdfPig()
+        {
+            Run(SinglePage180ClockwiseRotation, 842);
+        }
+
+        [Fact]
+        public void SinglePage270ClockwiseRotationFromPdfPig()
+        {
+            Run(SinglePage270ClockwiseRotation, 595);
+        }
+
         private static void Run(string file, int imageHeight = 792)
         {
             var pdfFileName = GetFilename(file);
@@ -105,14 +126,14 @@
                 var page = document.GetPage(1);
 
                 var violetPen = new Pen(Color.BlueViolet, 1);
-                var greenPen = new Pen(Color.Crimson, 1);
+                var redPen = new Pen(Color.Crimson, 1);
 
                 using (var bitmap = new Bitmap(image))
                 using (var graphics = Graphics.FromImage(bitmap))
                 {
                     foreach (var word in page.GetWords())
                     {
-                        DrawRectangle(word.BoundingBox, graphics, greenPen, imageHeight);
+                        DrawRectangle(word.BoundingBox, graphics, redPen, imageHeight);
                     }
 
                     foreach (var letter in page.Letters)
