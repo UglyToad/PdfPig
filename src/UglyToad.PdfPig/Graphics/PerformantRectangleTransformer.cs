@@ -1,87 +1,93 @@
-﻿using UglyToad.PdfPig.Core;
-
-namespace UglyToad.PdfPig.Graphics
+﻿namespace UglyToad.PdfPig.Graphics
 {
+    using PdfPig.Core;
+
     internal static class PerformantRectangleTransformer
     {
         public static PdfRectangle Transform(TransformationMatrix first, TransformationMatrix second, TransformationMatrix third, PdfRectangle rectangle)
         {
-            var mutable = new MutableRectangle(rectangle);
+            var tl = rectangle.TopLeft;
+            var tr = rectangle.TopRight;
+            var bl = rectangle.BottomLeft;
+            var br = rectangle.BottomRight;
 
-            mutable.Transform(first);
-            mutable.Transform(second);
-            mutable.Transform(third);
+            var topLeftX = tl.X;
+            var topLeftY = tl.Y;
 
-            return mutable.ToRectangle();
-        }
+            var topRightX = tr.X;
+            var topRightY = tr.Y;
 
-        private struct MutableRectangle
-        {
-            private double topLeftX;
-            private double topLeftY;
+            var bottomLeftX = bl.X;
+            var bottomLeftY = bl.Y;
 
-            private double topRightX;
-            private double topRightY;
+            var bottomRightX = br.X;
+            var bottomRightY = br.Y;
 
-            private double bottomLeftX;
-            private double bottomLeftY;
+            // First
+            var x = first.A * topLeftX + first.C * topLeftY + first.E;
+            var y = first.B * topLeftX + first.D * topLeftY + first.F;
+            topLeftX = x;
+            topLeftY = y;
 
-            private double bottomRightX;
-            private double bottomRightY;
+            x = first.A * topRightX + first.C * topRightY + first.E;
+            y = first.B * topRightX + first.D * topRightY + first.F;
+            topRightX = x;
+            topRightY = y;
 
-            public MutableRectangle(PdfRectangle rectangle)
-            {
-                topLeftX = rectangle.TopLeft.X;
-                topLeftY = rectangle.TopLeft.Y;
+            x = first.A * bottomLeftX + first.C * bottomLeftY + first.E;
+            y = first.B * bottomLeftX + first.D * bottomLeftY + first.F;
+            bottomLeftX = x;
+            bottomLeftY = y;
 
-                topRightX = rectangle.TopRight.X;
-                topRightY = rectangle.TopRight.Y;
+            x = first.A * bottomRightX + first.C * bottomRightY + first.E;
+            y = first.B * bottomRightX + first.D * bottomRightY + first.F;
+            bottomRightX = x;
+            bottomRightY = y;
 
-                bottomLeftX = rectangle.BottomLeft.X;
-                bottomLeftY = rectangle.BottomLeft.Y;
+            // Second
+            x = second.A * topLeftX + second.C * topLeftY + second.E;
+            y = second.B * topLeftX + second.D * topLeftY + second.F;
+            topLeftX = x;
+            topLeftY = y;
 
-                bottomRightX = rectangle.BottomRight.X;
-                bottomRightY = rectangle.BottomRight.Y;
-            }
+            x = second.A * topRightX + second.C * topRightY + second.E;
+            y = second.B * topRightX + second.D * topRightY + second.F;
+            topRightX = x;
+            topRightY = y;
 
-            public void Transform(TransformationMatrix matrix)
-            {
-                /*
-                 * TransformationMatrix.Transform(PdfPoint original)
-                 * var x = A * original.X + C * original.Y + E;
-                 * var y = B * original.X + D * original.Y + F;
-                 * return new PdfPoint(x, y);
-                 *
-                 * For a rectangle runs on TopLeft, TopRight, BottomLeft and BottomRight
-                 * and returns a new rectangle.
-                 */
+            x = second.A * bottomLeftX + second.C * bottomLeftY + second.E;
+            y = second.B * bottomLeftX + second.D * bottomLeftY + second.F;
+            bottomLeftX = x;
+            bottomLeftY = y;
 
-                var x = matrix.A * topLeftX + matrix.C * topLeftY + matrix.E;
-                var y = matrix.B * topLeftX + matrix.D * topLeftY + matrix.F;
-                topLeftX = x;
-                topLeftY = y;
+            x = second.A * bottomRightX + second.C * bottomRightY + second.E;
+            y = second.B * bottomRightX + second.D * bottomRightY + second.F;
+            bottomRightX = x;
+            bottomRightY = y;
 
-                x = matrix.A * topRightX + matrix.C * topRightY + matrix.E;
-                y = matrix.B * topRightX + matrix.D * topRightY + matrix.F;
-                topRightX = x;
-                topRightY = y;
+            // Third
+            x = third.A * topLeftX + third.C * topLeftY + third.E;
+            y = third.B * topLeftX + third.D * topLeftY + third.F;
+            topLeftX = x;
+            topLeftY = y;
 
-                x = matrix.A * bottomLeftX + matrix.C * bottomLeftY + matrix.E;
-                y = matrix.B * bottomLeftX + matrix.D * bottomLeftY + matrix.F;
-                bottomLeftX = x;
-                bottomLeftY = y;
+            x = third.A * topRightX + third.C * topRightY + third.E;
+            y = third.B * topRightX + third.D * topRightY + third.F;
+            topRightX = x;
+            topRightY = y;
 
-                x = matrix.A * bottomRightX + matrix.C * bottomRightY + matrix.E;
-                y = matrix.B * bottomRightX + matrix.D * bottomRightY + matrix.F;
-                bottomRightX = x;
-                bottomRightY = y;
-            }
+            x = third.A * bottomLeftX + third.C * bottomLeftY + third.E;
+            y = third.B * bottomLeftX + third.D * bottomLeftY + third.F;
+            bottomLeftX = x;
+            bottomLeftY = y;
 
-            public PdfRectangle ToRectangle()
-            {
-                return new PdfRectangle(new PdfPoint(topLeftX, topLeftY), new PdfPoint(topRightX, topRightY),
-                    new PdfPoint(bottomLeftX, bottomLeftY), new PdfPoint(bottomRightX, bottomRightY));
-            }
+            x = third.A * bottomRightX + third.C * bottomRightY + third.E;
+            y = third.B * bottomRightX + third.D * bottomRightY + third.F;
+            bottomRightX = x;
+            bottomRightY = y;
+
+            return new PdfRectangle(new PdfPoint(topLeftX, topLeftY), new PdfPoint(topRightX, topRightY),
+                new PdfPoint(bottomLeftX, bottomLeftY), new PdfPoint(bottomRightX, bottomRightY));
         }
     }
 }
