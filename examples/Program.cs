@@ -19,6 +19,10 @@
                 {1,
                     ("Extract Words with newline detection",
                     () => OpenDocumentAndExtractWords.Run(Path.Combine(filesDirectory, "Two Page Text Only - from libre office.pdf")))
+                },
+                {2,
+                    ("Extract images",
+                    () => ExtractImages.Run(Path.Combine(filesDirectory, "2006_Swedish_Touring_Car_Championship.pdf")))
                 }
             };
 
