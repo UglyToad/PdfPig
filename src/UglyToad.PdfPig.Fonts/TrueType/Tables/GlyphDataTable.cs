@@ -15,7 +15,7 @@
     {
         private readonly IReadOnlyList<uint> glyphOffsets;
         private readonly PdfRectangle maxGlyphBounds;
-        private readonly TrueTypeDataBytes tableBytes;
+        private TrueTypeDataBytes tableBytes;
 
         /// <inheritdoc />
         public string Tag => TrueTypeHeaderTable.Glyf;
@@ -98,6 +98,11 @@
 
         private IReadOnlyList<IGlyphDescription> ReadGlyphs()
         {
+            if (tableBytes == null)
+            {
+                throw new InvalidOperationException("Bytes cache was discarded before lazy value evaluated.");
+            }
+
             var data = tableBytes;
 
             var offsets = glyphOffsets;
@@ -148,6 +153,8 @@
             {
                 result[compositeLocation.Key] = ReadCompositeGlyph(data, compositeLocation.Value, compositeLocations, result, emptyGlyph);
             }
+
+            tableBytes = null;
 
             return result;
         }
