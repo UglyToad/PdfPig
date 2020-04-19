@@ -1,4 +1,6 @@
-﻿namespace UglyToad.PdfPig.Tests.Integration
+﻿using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
+
+namespace UglyToad.PdfPig.Tests.Integration
 {
     using System;
     using System.Collections.Generic;
@@ -156,6 +158,19 @@ used per estimate, we introduce a “complement class”Naive Bayes is often us
                 var svg = new SvgTextExporter().Get(page);
 
                 Assert.NotNull(svg);
+            }
+        }
+
+        [Fact]
+        public void CanExtractContentOrderText()
+        {
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                foreach (var page in document.GetPages())
+                {
+                    var text = ContentOrderTextExtractor.GetText(page);
+                    Assert.NotNull(text);
+                }
             }
         }
 

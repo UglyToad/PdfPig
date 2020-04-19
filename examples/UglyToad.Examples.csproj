@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\src\UglyToad.PdfPig.DocumentLayoutAnalysis\UglyToad.PdfPig.DocumentLayoutAnalysis.csproj" />
     <ProjectReference Include="..\src\UglyToad.PdfPig\UglyToad.PdfPig.csproj" />
   </ItemGroup>
 </Project>

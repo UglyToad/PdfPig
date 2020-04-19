@@ -17,12 +17,16 @@
             var examples = new Dictionary<int, (string name, Action action)>
             {
                 {1,
-                    ("Extract Words with newline detection",
+                    ("Extract Words with newline detection (example with algorithm)",
                     () => OpenDocumentAndExtractWords.Run(Path.Combine(filesDirectory, "Two Page Text Only - from libre office.pdf")))
                 },
                 {2,
                     ("Extract images",
                     () => ExtractImages.Run(Path.Combine(filesDirectory, "2006_Swedish_Touring_Car_Championship.pdf")))
+                },
+                {3,
+                    ("Extract Text with newlines (using built-in content extractor)",
+                    () => ExtractTextWithNewlines.Run(Path.Combine(filesDirectory, "Two Page Text Only - from libre office.pdf")))
                 }
             };
 
