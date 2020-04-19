@@ -178,7 +178,13 @@
 
             // TODO: this does not seem correct, produces the correct result for now but we need to revisit.
             // see: https://stackoverflow.com/questions/48010235/pdf-specification-get-font-size-in-points
-            var pointSize = Math.Round(transformationMatrix.Multiply(TextMatrices.TextMatrix).Multiply(fontSize).A, 2);
+            var fontSizeMatrix = transformationMatrix.Multiply(TextMatrices.TextMatrix).Multiply(fontSize);
+            var pointSize = Math.Round(fontSizeMatrix.A, 2);
+            // Assume a rotated letter
+            if (pointSize == 0)
+            {
+                pointSize = Math.Round(fontSizeMatrix.B, 2);
+            }
 
             if (pointSize < 0)
             {
