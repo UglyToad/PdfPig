@@ -197,6 +197,7 @@
                 "UglyToad.PdfPig.Util.IWordExtractor",
                 "UglyToad.PdfPig.Util.DefaultWordExtractor",
                 "UglyToad.PdfPig.Util.DateFormatHelper",
+                "UglyToad.PdfPig.Util.WhitespaceSizeStatistics",
                 "UglyToad.PdfPig.Writer.PdfAStandard",
                 "UglyToad.PdfPig.Writer.PdfDocumentBuilder",
                 "UglyToad.PdfPig.Writer.PdfMerger",
