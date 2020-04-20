@@ -61,9 +61,10 @@
         public IColor Color { get; }
 
         /// <summary>
-        /// The size of the font in points. This is not ready for public consumption as the calculation is incorrect.
+        /// The size of the font in points.
+        /// <para>This is considered experimental because the calculated value is incorrect for some documents at present.</para>
         /// </summary>
-        internal double PointSize { get; }
+        public double PointSize { get; }
 
         /// <summary>
         /// Sequence number of the ShowText operation that printed this letter.

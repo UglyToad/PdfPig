@@ -107,8 +107,8 @@
                 return false;
             }
 
-            var ptSizePrevious = (int)Math.Round(page.ExperimentalAccess.GetPointSize(previous));
-            var ptSize = (int)Math.Round(page.ExperimentalAccess.GetPointSize(letter));
+            var ptSizePrevious = (int)Math.Round(previous.PointSize);
+            var ptSize = (int)Math.Round(letter.PointSize);
             var minPtSize = ptSize < ptSizePrevious ? ptSize : ptSizePrevious;
 
             var gap = Math.Abs(previous.StartBaseLine.Y - letter.StartBaseLine.Y);
