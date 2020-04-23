@@ -106,7 +106,7 @@
                 throw new ArgumentException("NearestNeighbourWordExtractor.GetWords(): Mixed Text Direction.");
             }
 
-            var groupedIndexes = ClusteringAlgorithms.ClusterNearestNeighbours(pageLetters,
+            var groupedIndexes = Clustering.NearestNeighbours(pageLetters,
                 distMeasure, maxDistanceFunction,
                 l => l.EndBaseLine, l => l.StartBaseLine,
                 l => !string.IsNullOrWhiteSpace(l.Value),
