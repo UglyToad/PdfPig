@@ -197,7 +197,7 @@
         private static IEnumerable<TextLine> GetLines(List<Word> words, double maxDist, AngleBounds withinLine, int maxDegreeOfParallelism)
         {
             TextDirection textDirection = words[0].TextDirection;
-            var groupedIndexes = ClusteringAlgorithms.ClusterNearestNeighbours(words, 2, Distances.Euclidean,
+            var groupedIndexes = Clustering.NearestNeighbours(words, 2, Distances.Euclidean,
                     (pivot, candidate) => maxDist,
                     pivot => pivot.BoundingBox.BottomRight, candidate => candidate.BoundingBox.BottomLeft,
                     pivot => true,
@@ -246,7 +246,7 @@
                     new PdfPoint(left + d / 2, l2.Point1.Y));
             }
 
-            var groupedIndexes = ClusteringAlgorithms.ClusterNearestNeighbours(lines,
+            var groupedIndexes = Clustering.NearestNeighbours(lines,
                 euclidianOverlappingMiddleDistance,
                 (pivot, candidate) => maxDist,
                 pivot => new PdfLine(pivot.BoundingBox.BottomLeft, pivot.BoundingBox.BottomRight),
