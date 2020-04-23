@@ -26,10 +26,18 @@
 
                 bytesRead += 4;
             }
-            
+
+            int numberNonHorizontal = glyphCount - metricCount;
+
+            // handle bad fonts with too many hmetrics
+            if (numberNonHorizontal < 0)
+            {
+                numberNonHorizontal = glyphCount;
+            }
+
             // The number of entries in the left side bearing field per entry is number of glyphs - number of metrics
             // For bearings over the metric count, the width is the same as the last width in advanced widths.
-            var additionalLeftSideBearings = new short[glyphCount - metricCount];
+            var additionalLeftSideBearings = new short[numberNonHorizontal];
 
             for (var i = 0; i < additionalLeftSideBearings.Length; i++)
             {
