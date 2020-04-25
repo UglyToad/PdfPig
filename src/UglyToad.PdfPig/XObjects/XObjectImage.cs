@@ -15,7 +15,8 @@
     /// </summary>
     public class XObjectImage : IPdfImage
     {
-        private readonly Lazy<IReadOnlyList<byte>> bytes;
+        [CanBeNull]
+        private readonly Lazy<IReadOnlyList<byte>> bytesFactory;
 
         /// <inheritdoc />
         public PdfRectangle Bounds { get; }
@@ -62,10 +63,6 @@
 
         /// <inheritdoc />
         public IReadOnlyList<byte> RawBytes { get; }
-
-        /// <inheritdoc />
-        [NotNull]
-        public IReadOnlyList<byte> Bytes => bytes.Value;
         
         /// <summary>
         /// Creates a new <see cref="XObjectImage"/>.
@@ -93,7 +90,21 @@
             Decode = decode;
             ImageDictionary = imageDictionary ?? throw new ArgumentNullException(nameof(imageDictionary));
             RawBytes = rawBytes;
-            this.bytes = bytes ?? throw new ArgumentNullException(nameof(bytes));
+            bytesFactory = bytes;
+        }
+
+        /// <inheritdoc />
+        public bool TryGetBytes(out IReadOnlyList<byte> bytes)
+        {
+            bytes = null;
+            if (bytesFactory == null)
+            {
+                return false;
+            }
+
+            bytes = bytesFactory.Value;
+
+            return true;
         }
 
         /// <inheritdoc />

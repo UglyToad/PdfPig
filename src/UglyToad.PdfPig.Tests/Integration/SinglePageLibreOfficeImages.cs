@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
     using System.Linq;
     using Xunit;
 
@@ -74,13 +73,12 @@
                 var page = document.GetPage(1);
                 foreach (var image in page.GetImages())
                 {
-                    try
+                    if (image.TryGetBytes(out var bytes))
                     {
-                        Assert.NotNull(image.Bytes);
+                        Assert.NotNull(bytes);
                     }
-                    catch (NotSupportedException )
+                    else
                     {
-                        // Should allow access to raw bytes.
                         Assert.NotNull(image.RawBytes);
                     }
                 }

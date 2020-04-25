@@ -43,13 +43,6 @@
         int BitsPerComponent { get; }
 
         /// <summary>
-        /// The bytes of the image with any filters decoded.
-        /// If the filter used to encode the bytes is not supported accessing this property will throw, access the <see cref="RawBytes"/>
-        /// instead.
-        /// </summary>
-        IReadOnlyList<byte> Bytes { get; }
-
-        /// <summary>
         /// The encoded bytes of the image with all filters still applied.
         /// </summary>
         IReadOnlyList<byte> RawBytes { get; }
@@ -90,5 +83,11 @@
         /// Whether this image is an <see cref="InlineImage"/> or a <see cref="XObjectImage"/>.
         /// </summary>
         bool IsInlineImage { get; }
+
+        /// <summary>
+        /// Get the decoded bytes of the image if applicable. For JPEG images and some other types the
+        /// <see cref="RawBytes"/> should be used directly.
+        /// </summary>
+        bool TryGetBytes(out IReadOnlyList<byte> bytes);
     }
 }

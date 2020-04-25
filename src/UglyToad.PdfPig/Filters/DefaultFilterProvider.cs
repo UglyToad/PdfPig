@@ -6,13 +6,20 @@
     using Core;
     using Tokens;
 
-    internal class MemoryFilterProvider : IFilterProvider
+    /// <inheritdoc />
+    /// <summary>
+    /// The default implementation of the <see cref="T:UglyToad.PdfPig.Filters.IFilterProvider" />.
+    /// </summary>
+    public class DefaultFilterProvider : IFilterProvider
     {
         private readonly IReadOnlyDictionary<string, IFilter> filterInstances; 
 
-        public static readonly IFilterProvider Instance = new MemoryFilterProvider();
+        /// <summary>
+        /// The single instance of this provider.
+        /// </summary>
+        public static readonly IFilterProvider Instance = new DefaultFilterProvider();
 
-        private MemoryFilterProvider()
+        private DefaultFilterProvider()
         {
             var ascii85 = new Ascii85Filter();
             var asciiHex = new AsciiHexDecodeFilter();
@@ -45,6 +52,7 @@
             };
         }
 
+        /// <inheritdoc />
         public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary)
         {
             if (dictionary == null)
@@ -76,6 +84,7 @@
             }
         }
 
+        /// <inheritdoc />
         public IReadOnlyList<IFilter> GetNamedFilters(IReadOnlyList<NameToken> names)
         {
             if (names == null)
@@ -103,6 +112,7 @@
             return factory;
         }
 
+        /// <inheritdoc />
         public IReadOnlyList<IFilter> GetAllFilters()
         {
             return filterInstances.Values.Distinct().ToList();

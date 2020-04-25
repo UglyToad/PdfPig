@@ -24,7 +24,7 @@
     {
         private static readonly ILog Log = new NoOpLog();
 
-        private static readonly IFilterProvider FilterProvider = MemoryFilterProvider.Instance;
+        private static readonly IFilterProvider FilterProvider = DefaultFilterProvider.Instance;
 
         /// <summary>
         /// Merge two PDF documents together with the pages from <paramref name="file1"/> followed by <paramref name="file2"/>.

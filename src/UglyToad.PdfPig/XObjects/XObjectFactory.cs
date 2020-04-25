@@ -66,7 +66,19 @@
             var interpolate = dictionary.TryGet(NameToken.Interpolate, pdfScanner, out BooleanToken interpolateToken)
                               && interpolateToken.Data;
 
-            var decodedBytes = new Lazy<IReadOnlyList<byte>>(() => xObject.Stream.Decode(filterProvider));
+            var filters = filterProvider.GetFilters(xObject.Stream.StreamDictionary);
+            var supportsFilters = true;
+            foreach (var filter in filters)
+            {
+                if (!filter.IsSupported)
+                {
+                    supportsFilters = false;
+                    break;
+                }
+            }
+
+            var decodedBytes = supportsFilters ? new Lazy<IReadOnlyList<byte>>(() => xObject.Stream.Decode(filterProvider))
+                : null;
 
             var decode = EmptyArray<decimal>.Instance;
 

@@ -4,10 +4,9 @@
     using Tokens;
 
     /// <summary>
-    /// A filter is used in a PDF to encode/decode data either to compress it
-    /// or derive an ASCII representation of the data.
+    /// A filter is used in a PDF to encode/decode data either to compress it or derive an ASCII representation of the data.
     /// </summary>
-    internal interface IFilter
+    public interface IFilter
     {
         /// <summary>
         /// Whether this library can decode information encoded using this filter.

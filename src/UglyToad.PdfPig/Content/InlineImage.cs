@@ -48,9 +48,6 @@
         public bool Interpolate { get; }
 
         /// <inheritdoc />
-        public IReadOnlyList<byte> Bytes => bytesFactory.Value;
-
-        /// <inheritdoc />
         public IReadOnlyList<byte> RawBytes { get; }
 
         /// <summary>
@@ -76,7 +73,18 @@
             Interpolate = interpolate;
 
             RawBytes = bytes;
-            bytesFactory = new Lazy<IReadOnlyList<byte>>(() =>
+
+            var supportsFilters = true;
+            foreach (var filter in filters)
+            {
+                if (!filter.IsSupported)
+                {
+                    supportsFilters = false;
+                    break;
+                }
+            }
+
+            bytesFactory = supportsFilters ? new Lazy<IReadOnlyList<byte>>(() =>
             {
                 var b = bytes.ToArray();
                 for (var i = 0; i < filters.Count; i++)
@@ -86,7 +94,21 @@
                 }
 
                 return b;
-            });
+            }) : null;
+        }
+
+        /// <inheritdoc />
+        public bool TryGetBytes(out IReadOnlyList<byte> bytes)
+        {
+            bytes = null;
+            if (bytesFactory == null)
+            {
+                return false;
+            }
+
+            bytes = bytesFactory.Value;
+
+            return true;
         }
 
         /// <inheritdoc />

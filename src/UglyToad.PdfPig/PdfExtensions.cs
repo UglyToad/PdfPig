@@ -7,7 +7,10 @@
     using Tokenization.Scanner;
     using Tokens;
 
-    internal static class PdfExtensions
+    /// <summary>
+    /// Extensions for PDF types.
+    /// </summary>
+    public static class PdfExtensions
     {
         /// <summary>
         /// Try and get the entry with a given name and type or look-up the object if it's an indirect reference.
@@ -44,7 +47,10 @@
             return typedToken;
         }
         
-        internal static IReadOnlyList<byte> Decode(this StreamToken stream, IFilterProvider filterProvider)
+        /// <summary>
+        /// Get the decoded data from this stream.
+        /// </summary>
+        public static IReadOnlyList<byte> Decode(this StreamToken stream, IFilterProvider filterProvider)
         {
             var filters = filterProvider.GetFilters(stream.StreamDictionary);
 
