@@ -3,6 +3,7 @@
     using System;
     using System.IO;
     using System.Linq;
+    using PdfPig;
     using PdfPig.Writer;
 
     internal static class MergePdfDocuments
@@ -20,6 +21,11 @@
                 var output = Path.Combine(location, "outputOfMerge.pdf");
                 File.WriteAllBytes(output, resultFileBytes);
                 Console.WriteLine($"File output to: {output}");
+
+                using (var doc = PdfDocument.Open(resultFileBytes))
+                {
+                    Console.WriteLine($"Generated document with {doc.NumberOfPages} pages.");
+                }
             }
             catch (Exception ex)
             {

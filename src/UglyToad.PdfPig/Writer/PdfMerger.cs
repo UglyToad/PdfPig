@@ -49,6 +49,28 @@
         }
 
         /// <summary>
+        /// Merge multiple PDF documents together with the pages in the order the file paths are provided.
+        /// </summary>
+        public static byte[] Merge(params string[] filePaths)
+        {
+            var bytes = new List<byte[]>(filePaths.Length);
+
+            for (var i = 0; i < filePaths.Length; i++)
+            {
+                var filePath = filePaths[i];
+
+                if (filePath == null)
+                {
+                    throw new ArgumentNullException(nameof(filePaths), $"Null filepath at index {i}.");
+                }
+
+                bytes.Add(File.ReadAllBytes(filePath));
+            }
+
+            return Merge(bytes);
+        }
+
+        /// <summary>
         /// Merge the set of PDF documents.
         /// </summary>
         public static byte[] Merge(IReadOnlyList<byte[]> files)
