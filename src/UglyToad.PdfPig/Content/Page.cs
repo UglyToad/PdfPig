@@ -4,13 +4,12 @@
     using System.Collections.Generic;
     using System.Text;
     using Annotations;
-    using Core;
     using Graphics.Operations;
     using Tokens;
     using Util;
     using Util.JetBrains.Annotations;
     using Tokenization.Scanner;
-    using UglyToad.PdfPig.Graphics;
+    using Graphics;
 
     /// <summary>
     /// Contains the content and provides access to methods of a single page in the <see cref="PdfDocument"/>.

@@ -9,7 +9,7 @@
     /// <summary>
     /// Clustering Algorithms.
     /// </summary>
-    internal class ClusteringAlgorithms
+    public static class Clustering
     {
         /// <summary>
         /// Algorithm to group elements using nearest neighbours.
@@ -26,7 +26,7 @@
         /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
         /// <para>A positive property value limits the number of concurrent operations to the set value. 
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
-        internal static IEnumerable<HashSet<int>> ClusterNearestNeighbours<T>(IReadOnlyList<T> elements,
+        public static IEnumerable<HashSet<int>> NearestNeighbours<T>(IReadOnlyList<T> elements,
             Func<PdfPoint, PdfPoint, double> distMeasure,
             Func<T, T, double> maxDistanceFunction,
             Func<T, PdfPoint> pivotPoint, Func<T, PdfPoint> candidatesPoint,
@@ -94,7 +94,7 @@
         /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
         /// <para>A positive property value limits the number of concurrent operations to the set value. 
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
-        internal static IEnumerable<HashSet<int>> ClusterNearestNeighbours<T>(IReadOnlyList<T> elements, int k,
+        public static IEnumerable<HashSet<int>> NearestNeighbours<T>(IReadOnlyList<T> elements, int k,
             Func<PdfPoint, PdfPoint, double> distMeasure,
             Func<T, T, double> maxDistanceFunction,
             Func<T, PdfPoint> pivotPoint, Func<T, PdfPoint> candidatesPoint,
@@ -161,7 +161,7 @@
         /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
         /// <para>A positive property value limits the number of concurrent operations to the set value. 
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
-        internal static IEnumerable<HashSet<int>> ClusterNearestNeighbours<T>(T[] elements,
+        public static IEnumerable<HashSet<int>> NearestNeighbours<T>(IReadOnlyList<T> elements,
             Func<PdfLine, PdfLine, double> distMeasure,
             Func<T, T, double> maxDistanceFunction,
             Func<T, PdfLine> pivotLine, Func<T, PdfLine> candidatesLine,
@@ -185,12 +185,12 @@
              *  (i,j,k) will form a group and (m,n) will form another group.
              *************************************************************************************/
 
-            int[] indexes = Enumerable.Repeat(-1, elements.Length).ToArray();
+            int[] indexes = Enumerable.Repeat(-1, elements.Count).ToArray();
 
             ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
 
             // 1. Find nearest neighbours indexes
-            Parallel.For(0, elements.Length, parallelOptions, e =>
+            Parallel.For(0, elements.Count, parallelOptions, e =>
             {
                 var pivot = elements[e];
 

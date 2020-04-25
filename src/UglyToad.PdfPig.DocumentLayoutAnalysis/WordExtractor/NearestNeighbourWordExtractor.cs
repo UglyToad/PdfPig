@@ -108,7 +108,7 @@
         {
             if (pageLetters == null || pageLetters.Count == 0) return new List<Word>();
 
-            var groupedIndexes = ClusteringAlgorithms.ClusterNearestNeighbours(pageLetters,
+            var groupedIndexes = Clustering.NearestNeighbours(pageLetters,
                 distMeasure, maxDistanceFunction,
                 l => l.EndBaseLine, l => l.StartBaseLine,
                 l => !string.IsNullOrWhiteSpace(l.Value),
