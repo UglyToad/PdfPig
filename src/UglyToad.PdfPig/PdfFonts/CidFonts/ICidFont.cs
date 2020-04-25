@@ -34,6 +34,8 @@
         /// </summary>
         CharacterIdentifierSystemInfo SystemInfo { get; }
 
+        FontDetails Details { get; }
+
         TransformationMatrix FontMatrix { get; }
 
         CidFontType CidFontType { get; }

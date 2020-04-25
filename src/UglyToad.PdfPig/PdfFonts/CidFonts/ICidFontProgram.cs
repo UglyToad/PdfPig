@@ -8,6 +8,8 @@
     /// </summary>
     internal interface ICidFontProgram
     {
+        FontDetails Details { get; }
+
         bool TryGetBoundingBox(int characterIdentifier, out PdfRectangle boundingBox);
 
         bool TryGetBoundingBox(int characterIdentifier, Func<int, int?> characterCodeToGlyphId, out PdfRectangle boundingBox);

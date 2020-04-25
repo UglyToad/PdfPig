@@ -25,6 +25,9 @@
 
         public CharacterIdentifierSystemInfo SystemInfo { get; }
 
+        public FontDetails Details => fontProgram?.Details ?? Descriptor?.ToDetails(BaseFont?.Data) 
+                                      ?? FontDetails.GetDefault(BaseFont?.Data);
+
         public TransformationMatrix FontMatrix { get; }
 
         public CidFontType CidFontType => CidFontType.Type0;

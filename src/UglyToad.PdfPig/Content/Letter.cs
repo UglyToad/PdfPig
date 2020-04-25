@@ -2,6 +2,7 @@
 {
     using Core;
     using Graphics.Colors;
+    using PdfFonts;
 
     /// <summary>
     /// A glyph or combination of glyphs (characters) drawn by a PDF content stream.
@@ -53,7 +54,12 @@
         /// <summary>
         /// The name of the font.
         /// </summary>
-        public string FontName { get; }
+        public string FontName => Font?.Name;
+
+        /// <summary>
+        /// Details about the font for this letter.
+        /// </summary>
+        public FontDetails Font { get; }
 
         /// <summary>
         /// The color of the letter.
@@ -79,7 +85,7 @@
             PdfPoint endBaseLine,
             double width,
             double fontSize,
-            string fontName, 
+            FontDetails font, 
             IColor color,
             double pointSize,
             int textSequence)
@@ -90,7 +96,7 @@
             EndBaseLine = endBaseLine;
             Width = width;
             FontSize = fontSize;
-            FontName = fontName;
+            Font = font;
             Color = color ?? GrayColor.Black;
             PointSize = pointSize;
             TextSequence = textSequence;

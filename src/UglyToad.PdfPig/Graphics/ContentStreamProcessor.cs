@@ -251,7 +251,7 @@
                     transformedPdfBounds.BottomRight,
                     transformedPdfBounds.Width,
                     fontSize,
-                    font.Name.Data,
+                    font.Details,
                     color,
                     pointSize,
                     textSequence);

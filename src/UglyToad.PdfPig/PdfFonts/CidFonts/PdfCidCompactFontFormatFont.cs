@@ -8,9 +8,36 @@
     {
         private readonly CompactFontFormatFontCollection fontCollection;
 
+        public FontDetails Details { get; }
+
         public PdfCidCompactFontFormatFont(CompactFontFormatFontCollection fontCollection)
         {
             this.fontCollection = fontCollection;
+            Details = GetDetails(fontCollection?.FirstFont);
+        }
+
+        private static FontDetails GetDetails(CompactFontFormatFont font)
+        {
+            if (font == null)
+            {
+                return FontDetails.GetDefault();
+            }
+
+            FontDetails WithWeightValues(bool isbold, int weight) => new FontDetails(null, isbold, weight, font.ItalicAngle != 0);
+
+            switch (font.Weight?.ToLowerInvariant())
+            {
+                case "light":
+                    return WithWeightValues(false, 300);
+                case "semibold":
+                    return WithWeightValues(true, 600);
+                case "bold":
+                    return WithWeightValues(true, FontDetails.BoldWeight);
+                case "black":
+                    return WithWeightValues(true, 900);
+                default:
+                    return WithWeightValues(false, FontDetails.DefaultWeight);
+            }
         }
 
         public TransformationMatrix GetFontTransformationMatrix() => fontCollection.GetFirstTransformationMatrix();

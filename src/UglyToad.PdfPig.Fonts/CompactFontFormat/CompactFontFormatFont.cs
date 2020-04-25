@@ -29,6 +29,16 @@
         /// </summary>
         public TransformationMatrix FontMatrix => TopDictionary.FontMatrix;
 
+        /// <summary>
+        /// The value of Weight from the top dictionary or <see langword="null"/>.
+        /// </summary>
+        public string Weight => TopDictionary?.Weight;
+
+        /// <summary>
+        /// The value of Italic Angle from the top dictionary or 0.
+        /// </summary>
+        public decimal ItalicAngle => TopDictionary?.ItalicAngle ?? 0;
+
         internal CompactFontFormatFont(CompactFontFormatTopLevelDictionary topDictionary, CompactFontFormatPrivateDictionary privateDictionary,
             ICompactFontFormatCharset charset,
             Union<Type1CharStrings, Type2CharStrings> charStrings, Encoding fontEncoding)

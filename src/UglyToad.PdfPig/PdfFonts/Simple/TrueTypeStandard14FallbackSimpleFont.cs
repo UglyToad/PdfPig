@@ -26,6 +26,8 @@
 
         public bool IsVertical { get; } = false;
 
+        public FontDetails Details { get; set; }
+
         public TrueTypeStandard14FallbackSimpleFont(NameToken name, AdobeFontMetrics fontMetrics, Encoding encoding, TrueTypeFont font,
             MetricOverrides overrides)
         {
@@ -34,6 +36,10 @@
             this.font = font;
             this.overrides = overrides;
             Name = name;
+            Details = fontMetrics == null ? FontDetails.GetDefault(Name?.Data) : new FontDetails(Name?.Data,
+                fontMetrics.Weight == "Bold",
+                fontMetrics.Weight == "Bold" ? 700 : FontDetails.DefaultWeight,
+                fontMetrics.ItalicAngle != 0);
         }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)

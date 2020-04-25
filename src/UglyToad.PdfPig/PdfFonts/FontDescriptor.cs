@@ -179,6 +179,14 @@
             CharSet = builder.CharSet;
         }
 
+        internal FontDetails ToDetails(string name = null)
+        {
+            return new FontDetails(name ?? FontName ?? string.Empty,
+                FontWeight > 500,
+                (int)FontWeight,
+                Flags.HasFlag(FontDescriptorFlags.Italic));
+        }
+
         /// <summary>
         /// Provides a mutable way to construct a <see cref="FontDescriptor"/>.
         /// </summary>

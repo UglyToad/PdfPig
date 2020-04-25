@@ -32,6 +32,9 @@
 
         public FontDescriptor Descriptor { get; }
 
+        public FontDetails Details => fontProgram?.Details ?? Descriptor?.ToDetails(BaseFont?.Data)
+                                      ?? FontDetails.GetDefault(BaseFont?.Data);
+
         public Type2CidFont(NameToken type, NameToken subType, NameToken baseFont, CharacterIdentifierSystemInfo systemInfo,
             FontDescriptor descriptor, ICidFontProgram fontProgram,
             VerticalWritingMetrics verticalWritingMetrics,

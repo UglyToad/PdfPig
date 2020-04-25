@@ -16,8 +16,9 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using PdfFonts;
     using Tokens;
-    using UglyToad.PdfPig.Graphics.Operations.PathPainting;
+    using Graphics.Operations.PathPainting;
 
     /// <summary>
     /// A builder used to add construct a page in a PDF document.
@@ -388,7 +389,7 @@
 
                 var documentSpace = textMatrix.Transform(renderingMatrix.Transform(fontMatrix.Transform(rect)));
 
-                var letter = new Letter(c.ToString(), documentSpace, advanceRect.BottomLeft, advanceRect.BottomRight, width, (double)fontSize, font.Name,
+                var letter = new Letter(c.ToString(), documentSpace, advanceRect.BottomLeft, advanceRect.BottomRight, width, (double)fontSize, FontDetails.GetDefault(font.Name),
                     GrayColor.Black,
                     (double)fontSize,
                     textSequence);

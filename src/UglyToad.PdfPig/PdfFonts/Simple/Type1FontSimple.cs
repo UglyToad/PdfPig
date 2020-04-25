@@ -41,6 +41,8 @@
 
         public bool IsVertical { get; } = false;
 
+        public FontDetails Details { get; }
+
         public Type1FontSimple(NameToken name, int firstChar, int lastChar, double[] widths, FontDescriptor fontDescriptor, Encoding encoding, 
             CMap toUnicodeCMap,
             Union<Type1Font, CompactFontFormatFontCollection> fontProgram)
@@ -70,6 +72,8 @@
             fontMatrix = matrix;
 
             Name = name;
+            Details = fontDescriptor?.ToDetails(name?.Data) 
+                      ?? FontDetails.GetDefault(name?.Data);
         }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)

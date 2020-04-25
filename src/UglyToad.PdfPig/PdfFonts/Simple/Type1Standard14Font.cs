@@ -17,7 +17,10 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
         private readonly Encoding encoding;
 
         public NameToken Name { get; }
+
         public bool IsVertical { get; }
+
+        public FontDetails Details { get; }
 
         private readonly TransformationMatrix fontMatrix = TransformationMatrix.FromValues(0.001, 0, 0, 0.001, 0, 0);
 
@@ -29,6 +32,10 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
             Name = NameToken.Create(standardFontMetrics.FontName);
             
             IsVertical = false;
+            Details = new FontDetails(Name.Data,
+                standardFontMetrics.Weight == "Bold",
+                standardFontMetrics.Weight == "Bold" ? 700 : FontDetails.DefaultWeight,
+                standardFontMetrics.ItalicAngle != 0);
         }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)

@@ -9,6 +9,8 @@
         
         bool IsVertical { get; }
 
+        FontDetails Details { get; }
+
         int ReadCharacterCode(IInputBytes bytes, out int codeLength);
 
         bool TryGetUnicode(int characterCode, out string value);

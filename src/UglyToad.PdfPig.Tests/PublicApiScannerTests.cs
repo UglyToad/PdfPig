@@ -91,6 +91,7 @@
                 "UglyToad.PdfPig.PdfFonts.DescriptorFontFile",
                 "UglyToad.PdfPig.PdfFonts.FontDescriptor",
                 "UglyToad.PdfPig.PdfFonts.FontDescriptorFlags",
+                "UglyToad.PdfPig.PdfFonts.FontDetails",
                 "UglyToad.PdfPig.PdfFonts.FontStretch",
                 "UglyToad.PdfPig.Geometry.GeometryExtensions",
                 "UglyToad.PdfPig.Graphics.Colors.CMYKColor",

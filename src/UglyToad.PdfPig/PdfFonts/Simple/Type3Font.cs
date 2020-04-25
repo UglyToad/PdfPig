@@ -24,6 +24,8 @@
 
         public bool IsVertical { get; } = false;
 
+        public FontDetails Details { get; }
+
         public Type3Font(NameToken name, PdfRectangle boundingBox, TransformationMatrix fontMatrix,
             Encoding encoding, int firstChar, int lastChar, double[] widths,
             CMap toUnicodeCMap)
@@ -37,6 +39,7 @@
             this.lastChar = lastChar;
             this.widths = widths;
             this.toUnicodeCMap = new ToUnicodeCMap(toUnicodeCMap);
+            Details = FontDetails.GetDefault(name?.Data);
         }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)

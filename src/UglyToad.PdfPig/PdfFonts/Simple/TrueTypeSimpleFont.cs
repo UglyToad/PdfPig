@@ -35,6 +35,8 @@
 
         public bool IsVertical { get; }
 
+        public FontDetails Details { get; }
+
         [NotNull]
         public ToUnicodeCMap ToUnicode { get; set; }
 
@@ -55,6 +57,8 @@
             Name = name;
             IsVertical = false;
             ToUnicode = new ToUnicodeCMap(toUnicodeCMap);
+            Details = descriptor?.ToDetails(Name?.Data) 
+                      ?? FontDetails.GetDefault(Name?.Data);
         }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)

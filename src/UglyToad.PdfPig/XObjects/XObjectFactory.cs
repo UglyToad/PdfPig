@@ -1,4 +1,6 @@
-﻿namespace UglyToad.PdfPig.XObjects
+﻿using UglyToad.PdfPig.Parser.Parts;
+
+namespace UglyToad.PdfPig.XObjects
 {
     using System;
     using System.Collections.Generic;
@@ -66,14 +68,35 @@
             var interpolate = dictionary.TryGet(NameToken.Interpolate, pdfScanner, out BooleanToken interpolateToken)
                               && interpolateToken.Data;
 
-            var filters = filterProvider.GetFilters(xObject.Stream.StreamDictionary);
-            var supportsFilters = true;
-            foreach (var filter in filters)
+            DictionaryToken filterDictionary = xObject.Stream.StreamDictionary;
+            if (xObject.Stream.StreamDictionary.TryGet(NameToken.Filter, out var filterToken)
+                && filterToken is IndirectReferenceToken)
             {
-                if (!filter.IsSupported)
+                if (filterDictionary.TryGet(NameToken.Filter, pdfScanner, out ArrayToken filterArray))
                 {
-                    supportsFilters = false;
-                    break;
+                    filterDictionary = filterDictionary.With(NameToken.Filter, filterArray);
+                }
+                else if (filterDictionary.TryGet(NameToken.Filter, pdfScanner, out NameToken filterNameToken))
+                {
+                    filterDictionary = filterDictionary.With(NameToken.Filter, filterNameToken);
+                }
+                else
+                {
+                    filterDictionary = null;
+                }
+            }
+
+            var supportsFilters = filterDictionary != null;
+            if (filterDictionary != null)
+            {
+                var filters = filterProvider.GetFilters(filterDictionary);
+                foreach (var filter in filters)
+                {
+                    if (!filter.IsSupported)
+                    {
+                        supportsFilters = false;
+                        break;
+                    }
                 }
             }
 

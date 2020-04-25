@@ -36,6 +36,8 @@
 
         public bool IsVertical => CMap.WritingMode == WritingMode.Vertical;
 
+        public FontDetails Details { get; }
+
         public Type0Font(NameToken baseFont, ICidFont cidFont, CMap cmap, CMap toUnicodeCMap,
             CMap ucs2CMap,
             bool isChineseJapaneseOrKorean)
@@ -47,6 +49,8 @@
             CidFont = cidFont ?? throw new ArgumentNullException(nameof(cidFont));
             CMap = cmap ?? throw new ArgumentNullException(nameof(cmap));
             ToUnicode = new ToUnicodeCMap(toUnicodeCMap);
+            Details = cidFont.Details?.WithName(Name.Data) 
+                      ?? FontDetails.GetDefault(Name.Data);
         }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)
