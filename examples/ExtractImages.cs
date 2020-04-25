@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.Examples
 {
     using System;
-    using System.Linq;
     using PdfPig;
     using PdfPig.Content;
     using PdfPig.XObjects;
@@ -16,25 +15,23 @@
                 {
                     foreach (var image in page.GetImages())
                     {
+                        if (!image.TryGetBytes(out var b))
+                        {
+                            b = image.RawBytes;
+                        }
+
+                        var type = string.Empty;
                         switch (image)
                         {
                             case XObjectImage ximg:
-                                byte[] b;
-                                try
-                                {
-                                    b = ximg.Bytes.ToArray();
-                                }
-                                catch
-                                {
-                                    b = ximg.RawBytes.ToArray();
-                                }
-
-                                Console.WriteLine($"Image with {b.Length} bytes and dictionary {ximg.ImageDictionary}.");
+                                type = "XObject";
                                 break;
                             case InlineImage inline:
-                                Console.WriteLine($"Inline image: {inline.RawBytes.Count} bytes.");
+                                type = "Inline";
                                 break;
                         }
+
+                        Console.WriteLine($"Image with {b.Count} bytes of type '{type}' on page {page.Number}. Location: {image.Bounds}.");
                     }
                 }
             }

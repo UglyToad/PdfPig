@@ -21,12 +21,27 @@
                     () => OpenDocumentAndExtractWords.Run(Path.Combine(filesDirectory, "Two Page Text Only - from libre office.pdf")))
                 },
                 {2,
+                    ("Extract Text with newlines (using built-in content extractor)",
+                    () => ExtractTextWithNewlines.Run(Path.Combine(filesDirectory, "Two Page Text Only - from libre office.pdf")))
+                },
+                {3,
                     ("Extract images",
                     () => ExtractImages.Run(Path.Combine(filesDirectory, "2006_Swedish_Touring_Car_Championship.pdf")))
                 },
-                {3,
-                    ("Extract Text with newlines (using built-in content extractor)",
-                    () => ExtractTextWithNewlines.Run(Path.Combine(filesDirectory, "Two Page Text Only - from libre office.pdf")))
+                {4,
+                    ("Merge PDF Documents",
+                    () => MergePdfDocuments.Run(Path.Combine(filesDirectory, "Two Page Text Only - from libre office.pdf"),
+                        Path.Combine(filesDirectory, "2006_Swedish_Touring_Car_Championship.pdf"),
+                        Path.Combine(filesDirectory, "Rotated Text Libre Office.pdf")))
+                },
+                {5,
+                    ("Extract form contents",
+                    () => GetFormContents.Run(Path.Combine(filesDirectory, "AcroFormsBasicFields.pdf")))
+                },
+                {6,
+                    ("Generate PDF/A-2A compliant file",
+                    () => GeneratePdfA2AFile.Run(Path.Combine(filesDirectory, "..", "..", "Fonts", "TrueType", "Roboto-Regular.ttf"),
+                        Path.Combine(filesDirectory, "smile-250-by-160.jpg")))
                 }
             };
 
@@ -53,6 +68,12 @@
                 }
 
                 act.action.Invoke();
+
+                Console.WriteLine();
+                Console.WriteLine();
+
+                Console.WriteLine(choices);
+                Console.WriteLine();
             } while (true);
         }
     }
