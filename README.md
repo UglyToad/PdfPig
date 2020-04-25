@@ -1,6 +1,6 @@
 <image src="https://raw.githubusercontent.com/UglyToad/Pdf/master/documentation/pdfpig.png" width="128px" height="128px"/>
 
-# PdfPig #
+# PdfPig
 
 [![Build Status](https://dev.azure.com/pdfpig/pdfpig/_apis/build/status/UglyToad.PdfPig?branchName=master)](https://dev.azure.com/pdfpig/pdfpig/_build/latest?definitionId=1&branchName=master)
 [![codecov](https://codecov.io/gh/UglyToad/PdfPig/branch/master/graph/badge.svg)](https://codecov.io/gh/UglyToad/PdfPig)
@@ -14,7 +14,7 @@ This project aims to port [PDFBox](https://github.com/apache/pdfbox) to C#.
 
 **Migrating to 0.1.x from 0.0.x?** Use this guide: [migration to 0.1.x](https://github.com/UglyToad/PdfPig/wiki/Migration-0.0.X-to-0.1.0).
 
-## Installation ##
+## Installation
 
 The package is available via the releases tab or from Nuget:
 
@@ -26,7 +26,7 @@ Or from the package manager console:
 
 While the version is below 1.0.0 minor versions will change the public API without warning (SemVer will not be followed until 1.0.0 is reached).
 
-## Get Started ##
+## Get Started
 
 The simplest usage at this stage is to open a document, reading the words from every page:
 
@@ -49,7 +49,7 @@ An example of the output of this is shown below:
 
 Where for the PDF text ("Write something in") shown at the top the 3 words (in pink) are detected and each word contains the individual letters with glyph bounding boxes.
 
-To create documents use the class ```PdfDocumentBuilder```. The Standard 14 fonts provide a quick way to get started:
+To create documents use the class `PdfDocumentBuilder`. The Standard 14 fonts provide a quick way to get started:
 
     PdfDocumentBuilder builder = new PdfDocumentBuilder();
 
@@ -68,12 +68,11 @@ The output is a 1 page PDF document with the text "Hello World!" in Helvetica ne
 
 ![Image shows a PDF document in Google Chrome's PDF viewer. The text "Hello World!" is visible](https://raw.githubusercontent.com/UglyToad/Pdf/master/documentation/builder-output.png)
 
-
 Each font must be registered with the PdfDocumentBuilder prior to use enable pages to share the font resources. Only Standard 14 fonts and TrueType fonts (.ttf) are supported.
 
-## Usage ##
+## Usage
 
-The ```PdfDocument``` class provides access to the contents of a document loaded either from file or passed in as bytes. To open from a file use the ```PdfDocument.Open``` static method:
+The `PdfDocument` class provides access to the contents of a document loaded either from file or passed in as bytes. To open from a file use the `PdfDocument.Open` static method:
 
     using UglyToad.PdfPig;
     using UglyToad.PdfPig.Content;
@@ -90,8 +89,8 @@ The ```PdfDocument``` class provides access to the contents of a document loaded
 
         string text = page.Text;
     }
-    
-```PdfDocument``` should only be used in a ```using``` statement since it implements ```IDisposable``` (unless the consumer disposes of it elsewhere).
+
+`PdfDocument` should only be used in a `using` statement since it implements `IDisposable` (unless the consumer disposes of it elsewhere).
 
 Encrypted documents can be opened by PdfPig. To provide an owner or user password provide the optional `ParsingOptions` when calling `Open` with the `Password` property defined. For example:
 
@@ -99,18 +98,18 @@ Encrypted documents can be opened by PdfPig. To provide an owner or user passwor
 
 You can also provide a list of passwords to try:
 
-    using (PdfDocument document = PdfDocument.Open(@"C:\file.pdf", new ParsingOptions 
-    { 
-        Passwords = new List<string> { "One", "Two" } 
+    using (PdfDocument document = PdfDocument.Open(@"C:\file.pdf", new ParsingOptions
+    {
+        Passwords = new List<string> { "One", "Two" }
     }))
 
-The document contains the version of the PDF specification it complies with, accessed by ```document.Version```:
+The document contains the version of the PDF specification it complies with, accessed by `document.Version`:
 
     decimal version = document.Version;
 
-### Document Creation (0.0.5) ###
+### Document Creation (0.0.5)
 
-The ```PdfDocumentBuilder``` creates a new document with no pages or content. 
+The `PdfDocumentBuilder` creates a new document with no pages or content.
 
 For text content, a font must be registered with the builder. This library supports Standard 14 fonts provided by Adobe by default and TrueType format fonts.
 
@@ -128,11 +127,11 @@ Passing in the bytes of a TrueType file (.ttf). You can check the suitability of
 
 Which provides a list of reasons why the font cannot be used if the check fails. You should check the license for a TrueType font prior to use, since the compressed font file is embedded in, and distributed with, the resultant document.
 
-The ```AddedFont``` class represents a key to the font stored on the document builder. This must be provided when adding text content to pages. To add a page to a document use:
+The `AddedFont` class represents a key to the font stored on the document builder. This must be provided when adding text content to pages. To add a page to a document use:
 
     PdfPageBuilder AddPage(PageSize size, bool isPortrait = true)
 
-This creates a new ```PdfPageBuilder``` with the specified size. The first added page is page number 1, then 2, then 3, etc. The page builder supports adding text, drawing lines and rectangles and measuring the size of text prior to drawing.
+This creates a new `PdfPageBuilder` with the specified size. The first added page is page number 1, then 2, then 3, etc. The page builder supports adding text, drawing lines and rectangles and measuring the size of text prior to drawing.
 
 To draw lines and rectangles use the methods:
 
@@ -141,15 +140,15 @@ To draw lines and rectangles use the methods:
 
 The line width can be varied and defaults to 1. Rectangles are unfilled and the fill color cannot be changed at present.
 
-To write text to the page you must have a reference to an ```AddedFont``` from the methods on ```PdfDocumentBuilder``` as described above. You can then draw the text to the page using:
+To write text to the page you must have a reference to an `AddedFont` from the methods on `PdfDocumentBuilder` as described above. You can then draw the text to the page using:
 
     IReadOnlyList<Letter> AddText(string text, decimal fontSize, PdfPoint position, PdfDocumentBuilder.AddedFont font)
 
-Where ```position``` is the baseline of the text to draw. Currently **only ASCII text is supported**. You can also measure the resulting size of text prior to drawing using the method:
+Where `position` is the baseline of the text to draw. Currently **only ASCII text is supported**. You can also measure the resulting size of text prior to drawing using the method:
 
     IReadOnlyList<Letter> MeasureText(string text, decimal fontSize, PdfPoint position, PdfDocumentBuilder.AddedFont font)
 
-Which does not change the state of the page, unlike ```AddText```.
+Which does not change the state of the page, unlike `AddText`.
 
 Changing the RGB color of text, lines and rectangles is supported using:
 
@@ -162,9 +161,9 @@ Which take RGB values between 0 and 255. The color will remain active for all op
 
 Which resets the color for stroke, fill and text drawing to black.
 
-### Document Information ###
+### Document Information
 
-The ```PdfDocument``` provides access to the document metadata as ```DocumentInformation``` defined in the PDF file. These tend not to be provided therefore most of these entries will be ```null```:
+The `PdfDocument` provides access to the document metadata as `DocumentInformation` defined in the PDF file. These tend not to be provided therefore most of these entries will be `null`:
 
     PdfDocument document = PdfDocument.Open(fileName);
 
@@ -175,7 +174,7 @@ The ```PdfDocument``` provides access to the document metadata as ```DocumentInf
     string title = document.Information.Title;
     // etc...
 
-### Document Structure (0.0.3) ###
+### Document Structure (0.0.3)
 
 The document now has a Structure member:
 
@@ -186,17 +185,17 @@ This provides access to tokenized PDF document content:
     Catalog catalog = structure.Catalog;
     DictionaryToken pagesDictionary = catalog.PagesDictionary;
 
-The pages dictionary is the root of the pages tree within a PDF document. The structure also exposes a ```GetObject(IndirectReference reference)```  method which allows random access to any object in the PDF as long as its identifier number is known. This is an identifier of the form ```69 0 R``` where 69 is the object number and 0 is the generation.
+The pages dictionary is the root of the pages tree within a PDF document. The structure also exposes a `GetObject(IndirectReference reference)` method which allows random access to any object in the PDF as long as its identifier number is known. This is an identifier of the form `69 0 R` where 69 is the object number and 0 is the generation.
 
-### Page ###
-    
-The ```Page``` contains the page width and height in points as well as mapping to the ```PageSize``` enum:
+### Page
+
+The `Page` contains the page width and height in points as well as mapping to the `PageSize` enum:
 
     PageSize size = Page.Size;
-    
+
     bool isA4 = size == PageSize.A4;
 
-```Page``` provides access to the text of the page:
+`Page` provides access to the text of the page:
 
     string text = page.Text;
 
@@ -216,27 +215,27 @@ There is also an early access (0.0.3) API for retrieving the raw bytes of PDF im
 
 This API will be changed in future releases.
 
-### Letter ###
+### Letter
 
 Due to the way a PDF is structured internally the page text may not be a readable representation of the text as it appears in the document. Since PDF is a presentation format, text can be drawn in any order, not necessarily reading order. This means spaces may be missing or words may be in unexpected positions in the text.
 
-To help users resolve actual text order on the page, the ```Page``` file provides access to a list of the letters:
+To help users resolve actual text order on the page, the `Page` file provides access to a list of the letters:
 
     IReadOnlyList<Letter> letters = page.Letters;
 
 These letters contain:
 
-+ The text of the letter: ```letter.Value```.
-+ The location of the lower left of the letter: ```letter.Location```.
-+ The width of the letter: ```letter.Width```.
-+ The font size in unscaled relative text units (these sizes are internal to the PDF and do not correspond to sizes in pixels, points or other units): ```letter.FontSize```.
-+ The name of the font used to render the letter if available: ```letter.FontName```.
-+ A rectangle which is the smallest rectangle that completely contains the visible region of the letter/glyph: ```letter.GlyphRectangle```.
-+ The points at the start and end of the baseline `StartBaseLine` and `EndBaseLine` which indicate if the letter is rotated. The `TextDirection` indicates if this is a commonly used rotation or a custom rotation.
+- The text of the letter: `letter.Value`.
+- The location of the lower left of the letter: `letter.Location`.
+- The width of the letter: `letter.Width`.
+- The font size in unscaled relative text units (these sizes are internal to the PDF and do not correspond to sizes in pixels, points or other units): `letter.FontSize`.
+- The name of the font used to render the letter if available: `letter.FontName`.
+- A rectangle which is the smallest rectangle that completely contains the visible region of the letter/glyph: `letter.GlyphRectangle`.
+- The points at the start and end of the baseline `StartBaseLine` and `EndBaseLine` which indicate if the letter is rotated. The `TextDirection` indicates if this is a commonly used rotation or a custom rotation.
 
 Letter position is measured in PDF coordinates where the origin is the lower left corner of the page. Therefore a higher Y value means closer to the top of the page.
 
-### Annotations (0.0.5) ###
+### Annotations (0.0.5)
 
 Early support for retrieving annotations on each page is provided using the method:
 
@@ -244,7 +243,7 @@ Early support for retrieving annotations on each page is provided using the meth
 
 This call is not cached and the document must not have been disposed prior to use. The annotations API may change in future.
 
-### Bookmarks (0.0.10) ###
+### Bookmarks (0.0.10)
 
 The bookmarks (outlines) of a document may be retrieved at the document level:
 
@@ -252,7 +251,7 @@ The bookmarks (outlines) of a document may be retrieved at the document level:
 
 This will return `false` if the document does not define any bookmarks.
 
-### Forms (0.0.10) ###
+### Forms (0.0.10)
 
 Form fields for interactive forms (AcroForms) can be retrieved using:
 
@@ -262,13 +261,13 @@ This will return `false` if the document does not contain a form.
 
 The fields can be accessed using the `AcroForm`'s `Fields` property. Since the form is defined at the document level this will return fields from all pages in the document. Fields are of the types defined by the enum `AcroFieldType`, for example `PushButton`, `Checkbox`, `Text`, etc.
 
-### Hyperlinks (0.1.0) ###
+### Hyperlinks (0.1.0)
 
 A page has a method to extract hyperlinks (annotations of link type):
 
     IReadOnlyList<UglyToad.PdfPig.Content.Hyperlink> hyperlinks = page.GetHyperlinks();
 
-### TrueType (0.1.0) ###
+### TrueType (0.1.0)
 
 The classes used to work with TrueType fonts in the PDF file are now available for public consumption. Given an input file:
 
@@ -281,7 +280,7 @@ The classes used to work with TrueType fonts in the PDF file are now available f
 
 The parsed font can then be inspected.
 
-### Embedded Files (0.1.0) ###
+### Embedded Files (0.1.0)
 
 PDF files may contain other files entirely embedded inside them for document annotations. The list of embedded files and their byte content may be accessed:
 
@@ -293,16 +292,23 @@ PDF files may contain other files entirely embedded inside them for document ann
         IReadOnlyList<byte> bytes = firstFile.Bytes;
     }
 
-## Issues ##
+### Merging (0.1.2)
+
+You can merge 2 or more existing PDF files using the `PdfMerger` class:
+
+    var resultFileBytes = PdfMerger.Merge(filePath1, filePath2);
+    File.WriteAllBytes(@"C:\pdfs\outputfilename.pdf", resultFileBytes);
+
+## Issues
 
 Please do file an issue if you encounter a bug.
 
 However in order for us to assist you, you **must** provide the file which causes your issue. Please host this in a publically available place.
 
-## Status ##
+## Status
 
-*Why is class or property X internal?* Internal properties and classes are not stable enough for the end user yet. If you want to access them feel free to use reflection but be aware they may change or disappear between versions.
+_Why is class or property X internal?_ Internal properties and classes are not stable enough for the end user yet. If you want to access them feel free to use reflection but be aware they may change or disappear between versions.
 
-## Credit ##
+## Credit
 
 This project wouldn't be possible without the work done by the [PDFBox](https://pdfbox.apache.org/) team and the Apache Foundation. Any bugs in the code are entirely my fault.
