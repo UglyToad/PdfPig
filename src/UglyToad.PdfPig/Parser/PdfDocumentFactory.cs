@@ -58,7 +58,7 @@
 
             var passwords = new List<string>();
 
-            var clipPaths = options?.ClipPaths ?? true;
+            var clipPaths = options?.ClipPaths ?? false;
 
             if (options?.Password != null)
             {
