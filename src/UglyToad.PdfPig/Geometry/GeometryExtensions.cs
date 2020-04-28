@@ -230,7 +230,7 @@
             var slope = sumProduct / sumDiffSquaredX;
 
             // Rotate the points to build the axis-aligned bounding box (AABB)
-            var angleRad = Math.Atan(slope);
+            var angleRad = Math.Atan(slope); // -π/2 ≤ θ ≤ π/2
             var cos = Math.Cos(angleRad);
             var sin = Math.Sin(angleRad);
 
