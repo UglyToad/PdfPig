@@ -49,12 +49,13 @@
 
         /// <summary>
         /// The angle in degrees between the horizontal axis and the line between two points.
+        /// <para>-180 ≤ θ ≤ 180</para>
         /// </summary>
-        /// <param name="point1">The first point.</param>
-        /// <param name="point2">The second point.</param>
-        public static double Angle(PdfPoint point1, PdfPoint point2)
+        /// <param name="startPoint">The first point.</param>
+        /// <param name="endPoint">The second point.</param>
+        public static double Angle(PdfPoint startPoint, PdfPoint endPoint)
         {
-            return Math.Atan2(point2.Y - point1.Y, point2.X - point1.X) * 57.29577951;
+            return Math.Atan2(endPoint.Y - startPoint.Y, endPoint.X - startPoint.X) * 180 / Math.PI;
         }
 
         /// <summary>

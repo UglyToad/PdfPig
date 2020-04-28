@@ -333,33 +333,33 @@
             // Find the orientation of the OBB, using the baseline angle
             var firstLetter = letters[0];
             var lastLetter = letters[letters.Count - 1];
+
             var baseLineAngle = Math.Atan2(
                 lastLetter.EndBaseLine.Y - firstLetter.StartBaseLine.Y,
                 lastLetter.EndBaseLine.X - firstLetter.StartBaseLine.X) * 180 / Math.PI;
 
-            var bbox = obb;
-            var deltaAngle = Math.Abs(baseLineAngle - angleRad * 180 / Math.PI);
-
+            double deltaAngle = Math.Abs(baseLineAngle - obb.Rotation);
             double deltaAngle1 = Math.Abs(baseLineAngle - obb1.Rotation);
             if (deltaAngle1 < deltaAngle)
             {
                 deltaAngle = deltaAngle1;
-                bbox = obb1;
+                obb = obb1;
             }
 
             double deltaAngle2 = Math.Abs(baseLineAngle - obb2.Rotation);
             if (deltaAngle2 < deltaAngle)
             {
                 deltaAngle = deltaAngle2;
-                bbox = obb2;
+                obb = obb2;
             }
 
             double deltaAngle3 = Math.Abs(baseLineAngle - obb3.Rotation);
             if (deltaAngle3 < deltaAngle)
             {
-                bbox = obb3;
+                obb = obb3;
             }
-            return new Tuple<string, PdfRectangle>(builder.ToString(), bbox);
+
+            return new Tuple<string, PdfRectangle>(builder.ToString(), obb);
         }
         #endregion
 

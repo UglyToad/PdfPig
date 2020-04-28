@@ -81,6 +81,7 @@
 
         /// <summary>
         /// Rotation angle of the rectangle. Counterclockwise, in degrees.
+        /// <para>-180 ≤ θ ≤ 180</para>
         /// </summary>
         public double Rotation
         {
@@ -173,6 +174,9 @@
                                     BottomLeft.Translate(dx, dy), BottomRight.Translate(dx, dy));
         }
 
+        /// <summary>
+        /// -π ≤ θ ≤ π
+        /// </summary>
         private double GetT()
         {
             if (!BottomRight.Equals(BottomLeft))
