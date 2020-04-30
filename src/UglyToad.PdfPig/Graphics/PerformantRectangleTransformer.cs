@@ -86,8 +86,8 @@
             bottomRightX = x;
             bottomRightY = y;
 
-            return new PdfRectangle(new PdfPoint(topLeftX, topLeftY), new PdfPoint(topRightX, topRightY),
-                new PdfPoint(bottomLeftX, bottomLeftY), new PdfPoint(bottomRightX, bottomRightY));
+            return new PdfRectangle(new PdfPoint(bottomLeftX, bottomLeftY), new PdfPoint(topLeftX, topLeftY),
+                                    new PdfPoint(topRightX, topRightY), new PdfPoint(bottomRightX, bottomRightY));
         }
     }
 }

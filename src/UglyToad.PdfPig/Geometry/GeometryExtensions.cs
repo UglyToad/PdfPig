@@ -178,10 +178,10 @@
                 if (k == polygon.Count) break;
             }
 
-            return new PdfRectangle(new PdfPoint(MBR[4], MBR[5]),
-                                    new PdfPoint(MBR[6], MBR[7]),
-                                    new PdfPoint(MBR[2], MBR[3]), 
-                                    new PdfPoint(MBR[0], MBR[1]));
+            return new PdfRectangle(new PdfPoint(MBR[0], MBR[1]),
+                                    new PdfPoint(MBR[2], MBR[3]),
+                                    new PdfPoint(MBR[4], MBR[5]),
+                                    new PdfPoint(MBR[6], MBR[7]));
         }
 
         /// <summary>

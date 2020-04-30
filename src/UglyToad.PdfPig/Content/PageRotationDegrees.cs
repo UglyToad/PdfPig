@@ -120,8 +120,8 @@
                     (pt.X * -sin) + (pt.Y * cos) + dy);
             }
 
-            return new PdfRectangle(Multiply(rectangle.TopLeft), Multiply(rectangle.TopRight),
-                Multiply(rectangle.BottomLeft), Multiply(rectangle.BottomRight));
+            return new PdfRectangle(Multiply(rectangle.BottomLeft), Multiply(rectangle.TopLeft),
+                Multiply(rectangle.TopRight), Multiply(rectangle.BottomRight));
         }
 
         /// <inheritdoc />

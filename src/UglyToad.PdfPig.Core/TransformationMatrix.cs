@@ -243,9 +243,9 @@
         public PdfRectangle Transform(PdfRectangle original)
         {
             return new PdfRectangle(
+                Transform(original.BottomLeft),
                 Transform(original.TopLeft),
                 Transform(original.TopRight),
-                Transform(original.BottomLeft),
                 Transform(original.BottomRight)
             );
         }

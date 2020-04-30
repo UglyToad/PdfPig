@@ -127,12 +127,12 @@
         /// <typeparam name="T"></typeparam>
         /// <param name="element">The reference point, for which to find the nearest neighbour.</param>
         /// <param name="candidates">The list of neighbours candidates.</param>
-        /// <param name="candidatesPoint"></param>
         /// <param name="pivotPoint"></param>
+        /// <param name="candidatesPoint"></param>
         /// <param name="distanceMeasure">The distance measure to use.</param>
         /// <param name="distance">The distance between reference point, and its nearest neighbour.</param>
         public static int FindIndexNearest<T>(T element, IReadOnlyList<T> candidates,
-            Func<T, PdfPoint> candidatesPoint, Func<T, PdfPoint> pivotPoint,
+            Func<T, PdfPoint> pivotPoint, Func<T, PdfPoint> candidatesPoint,
             Func<PdfPoint, PdfPoint, double> distanceMeasure, out double distance)
         {
             if (candidates == null || candidates.Count == 0)
@@ -152,7 +152,7 @@
 
             for (var i = 0; i < candidates.Count; i++)
             {
-                double currentDistance = distanceMeasure(candidatesPoints[i], pivot);
+                double currentDistance = distanceMeasure(pivot, candidatesPoints[i]);
                 if (currentDistance < distance && !candidates[i].Equals(element))
                 {
                     distance = currentDistance;
@@ -169,12 +169,12 @@
         /// <typeparam name="T"></typeparam>
         /// <param name="element">The reference line, for which to find the nearest neighbour.</param>
         /// <param name="candidates">The list of neighbours candidates.</param>
-        /// <param name="candidatesLine"></param>
         /// <param name="pivotLine"></param>
+        /// <param name="candidateLine"></param>
         /// <param name="distanceMeasure">The distance measure between two lines to use.</param>
         /// <param name="distance">The distance between reference line, and its nearest neighbour.</param>
         public static int FindIndexNearest<T>(T element, IReadOnlyList<T> candidates,
-            Func<T, PdfLine> candidatesLine, Func<T, PdfLine> pivotLine,
+            Func<T, PdfLine> pivotLine, Func<T, PdfLine> candidateLine,
             Func<PdfLine, PdfLine, double> distanceMeasure, out double distance)
         {
             if (candidates == null || candidates.Count == 0)
@@ -189,12 +189,12 @@
 
             distance = double.MaxValue;
             int closestLineIndex = -1;
-            var candidatesLines = candidates.Select(candidatesLine).ToList();
+            var candidatesLines = candidates.Select(candidateLine).ToList();
             var pivot = pivotLine(element);
 
             for (var i = 0; i < candidates.Count; i++)
             {
-                double currentDistance = distanceMeasure(candidatesLines[i], pivot);
+                double currentDistance = distanceMeasure(pivot, candidatesLines[i]);
                 if (currentDistance < distance && !candidates[i].Equals(element))
                 {
                     distance = currentDistance;

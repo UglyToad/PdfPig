@@ -48,14 +48,14 @@
 
             List<Word> wordsH = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Horizontal).ToList(),
-                (l1, l2) => maxDistFunc(l1, l2),
+                maxDistFunc,
                 Distances.Manhattan, filterFunc, MaxDegreeOfParallelism)
                 .OrderByDescending(x => x.BoundingBox.Bottom)
                 .ThenBy(x => x.BoundingBox.Left).ToList();
 
             var words270 = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Rotate270).ToList(),
-                (l1, l2) => maxDistFunc(l1, l2),
+                maxDistFunc,
                 Distances.Manhattan, filterFunc, MaxDegreeOfParallelism)
                 .OrderBy(x => x.BoundingBox.Right)
                 .ThenByDescending(x => x.BoundingBox.Bottom);
@@ -63,7 +63,7 @@
 
             var words180 = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Rotate180).ToList(),
-                (l1, l2) => maxDistFunc(l1, l2),
+                maxDistFunc,
                 Distances.Manhattan, filterFunc, MaxDegreeOfParallelism)
                 .OrderBy(x => x.BoundingBox.Top)
                 .ThenByDescending(x => x.BoundingBox.Right);
@@ -71,7 +71,7 @@
 
             var words90 = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Rotate90).ToList(),
-                (l1, l2) => maxDistFunc(l1, l2),
+                maxDistFunc,
                 Distances.Manhattan, filterFunc, MaxDegreeOfParallelism)
                 .OrderByDescending(x => x.BoundingBox.Left)
                 .ThenBy(x => x.BoundingBox.Top);

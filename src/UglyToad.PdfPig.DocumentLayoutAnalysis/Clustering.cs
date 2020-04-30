@@ -41,7 +41,7 @@
              *  Only conciders a neighbour if it is within the maximum distance. 
              *  If not within the maximum distance, index will be set to -1.
              *  Each element has only one connected neighbour.
-             *  NB: Given the possible asymmetry in the relationship, it is possible 
+             *  NB: Given the asymmetry in the relationship, it is possible 
              *  that if indexes[i] = j then indexes[j] != i.
              *  
              * 2. Group indexes
@@ -109,7 +109,7 @@
              *  Only conciders a neighbour if it is within the maximum distance. 
              *  If not within the maximum distance, index will be set to -1.
              *  Each element has only one connected neighbour.
-             *  NB: Given the possible asymmetry in the relationship, it is possible 
+             *  NB: Given the asymmetry in the relationship, it is possible 
              *  that if indexes[i] = j then indexes[j] != i.
              *  
              * 2. Group indexes
@@ -176,7 +176,7 @@
              *  Only conciders a neighbour if it is within the maximum distance. 
              *  If not within the maximum distance, index will be set to -1.
              *  Each element has only one connected neighbour.
-             *  NB: Given the possible asymmetry in the relationship, it is possible 
+             *  NB: Given the asymmetry in the relationship, it is possible 
              *  that if indexes[i] = j then indexes[j] != i.
              *  
              * 2. Group indexes
@@ -196,7 +196,7 @@
 
                 if (filterPivot(pivot))
                 {
-                    int index = Distances.FindIndexNearest(pivot, elements, candidatesLine, pivotLine, distMeasure, out double dist);
+                    int index = Distances.FindIndexNearest(pivot, elements, pivotLine, candidatesLine, distMeasure, out double dist);
 
                     if (index != -1)
                     {
@@ -218,7 +218,7 @@
         /// <para>https://en.wikipedia.org/wiki/Depth-first_search</para>
         /// </summary>
         /// <param name="edges">The graph. edges[i] = j indicates that there is an edge between i and j.</param>
-        /// <returns>A List of HashSets containing containing the grouped indexes.</returns>
+        /// <returns>A List of HashSets containing the grouped indexes.</returns>
         internal static List<HashSet<int>> GroupIndexes(int[] edges)
         {
             int[][] adjacency = new int[edges.Length][];
@@ -249,7 +249,7 @@
         /// <para>https://en.wikipedia.org/wiki/Depth-first_search</para>
         /// </summary>
         /// <param name="edges">The graph. edges[i] = [j, k, l, ...] indicates that there is an edge between i and each element j, k, l, ...</param>
-        /// <returns>A List of HashSets containing containing the grouped indexes.</returns>
+        /// <returns>A List of HashSets containing the grouped indexes.</returns>
         internal static List<HashSet<int>> GroupIndexes(int[][] edges)
         {
             int[][] adjacency = new int[edges.Length][];
@@ -292,7 +292,7 @@
             Stack<int> S = new Stack<int>();
             S.Push(s);
 
-            while (S.Any())
+            while (S.Count > 0)
             {
                 var u = S.Pop();
                 if (!isDone[u])
@@ -306,6 +306,39 @@
                 }
             }
             return group;
+        }
+
+        private static HashSet<int> DfsIterativeTopoSort(int s, int[][] adj, ref bool[] isDone)
+        {
+            // https://stackoverflow.com/questions/20153488/topological-sort-using-dfs-without-recursion
+            Stack<int> postOrder = new Stack<int>();
+            Stack<(bool isParent, int u)> S = new Stack<(bool, int)>();
+
+            if (!isDone[s])
+            {
+                S.Push((false, s));
+            }
+
+            while (S.Count > 0)
+            {
+                var (isParent, u) = S.Pop();
+                if (isParent)
+                {
+                    postOrder.Push(u);
+                    continue;
+                }
+
+                isDone[u] = true;
+                S.Push((true, u));
+                foreach (var v in adj[u])
+                {
+                    if (!isDone[v])
+                    {
+                        S.Push((false, v));
+                    }
+                }
+            }
+            return new HashSet<int>(postOrder);
         }
     }
 }

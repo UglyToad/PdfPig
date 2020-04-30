@@ -20,12 +20,12 @@
         public TextDirection TextDirection { get; }
 
         /// <summary>
-        /// The placement position of the character in PDF space. See <see cref="StartBaseLine"/>
+        /// The placement position of the character in PDF space. See <see cref="StartBaseLine"/>.
         /// </summary>
         public PdfPoint Location => StartBaseLine;
 
         /// <summary>
-        /// The placement position of the character in PDF space (the start point of the baseline). See <see cref="Location"/>
+        /// The placement position of the character in PDF space (the start point of the baseline). See <see cref="Location"/>.
         /// </summary>
         public PdfPoint StartBaseLine { get; }
 

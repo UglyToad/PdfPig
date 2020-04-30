@@ -144,13 +144,13 @@
         /// <param name="x2">Top right point's x coordinate of the rectangle.</param>
         /// <param name="y2">Top right point's y coordinate of the rectangle.</param>
         public PdfRectangle(double x1, double y1, double x2, double y2) :
-            this(new PdfPoint(x1, y2), new PdfPoint(x2, y2), new PdfPoint(x1, y1), new PdfPoint(x2, y1))
+            this(new PdfPoint(x1, y1), new PdfPoint(x1, y2), new PdfPoint(x2, y2), new PdfPoint(x2, y1))
         { }
 
         /// <summary>
         /// Create a new <see cref="PdfRectangle"/>.
         /// </summary>
-        public PdfRectangle(PdfPoint topLeft, PdfPoint topRight, PdfPoint bottomLeft, PdfPoint bottomRight)
+        public PdfRectangle(PdfPoint bottomLeft, PdfPoint topLeft, PdfPoint topRight, PdfPoint bottomRight)
         {
             TopLeft = topLeft;
             TopRight = topRight;
@@ -170,8 +170,8 @@
         /// <returns>A new rectangle shifted on the y axis by the given delta value.</returns>
         public PdfRectangle Translate(double dx, double dy)
         {
-            return new PdfRectangle(TopLeft.Translate(dx, dy), TopRight.Translate(dx, dy),
-                                    BottomLeft.Translate(dx, dy), BottomRight.Translate(dx, dy));
+            return new PdfRectangle(BottomLeft.Translate(dx, dy), TopLeft.Translate(dx, dy),
+                                    TopRight.Translate(dx, dy), BottomRight.Translate(dx, dy));
         }
 
         /// <summary>
@@ -196,7 +196,7 @@
             var cos = Math.Cos(t);
             var sin = Math.Sin(t);
 
-            var inverseRotation = new TransformationMatrix(          
+            var inverseRotation = new TransformationMatrix(
                 cos, -sin, 0,
                 sin, cos, 0,
                 0, 0, 1);
