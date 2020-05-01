@@ -10,10 +10,18 @@
     public interface IPageSegmenter
     {
         /// <summary>
-        /// Get the text blocks.
+        /// Get the blocks using default options values.
         /// </summary>
-        /// <param name="pageWords">The words to generate text blocks for.</param>
+        /// <param name="words">The page's words to generate text blocks for.</param>
         /// <returns>A list of text blocks from this approach.</returns>
-        IReadOnlyList<TextBlock> GetBlocks(IEnumerable<Word> pageWords);
+        IReadOnlyList<TextBlock> GetBlocks(IEnumerable<Word> words);
+
+        /// <summary>
+        /// Get the text blocks using options.
+        /// </summary>
+        /// <param name="words">The page's words to generate text blocks for.</param>
+        /// <param name="options"></param>
+        /// <returns>A list of text blocks from this approach.</returns>
+        IReadOnlyList<TextBlock> GetBlocks(IEnumerable<Word> words, DlaOptions options);
     }
 }
