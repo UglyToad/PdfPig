@@ -49,40 +49,30 @@
             List<Word> wordsH = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Horizontal).ToList(),
                 maxDistFunc,
-                Distances.Manhattan, filterFunc, MaxDegreeOfParallelism)
-                .OrderByDescending(x => x.BoundingBox.Bottom)
-                .ThenBy(x => x.BoundingBox.Left).ToList();
+                Distances.Manhattan, filterFunc, MaxDegreeOfParallelism);
 
             var words270 = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Rotate270).ToList(),
                 maxDistFunc,
-                Distances.Manhattan, filterFunc, MaxDegreeOfParallelism)
-                .OrderBy(x => x.BoundingBox.Right)
-                .ThenByDescending(x => x.BoundingBox.Bottom);
+                Distances.Manhattan, filterFunc, MaxDegreeOfParallelism);
             wordsH.AddRange(words270);
 
             var words180 = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Rotate180).ToList(),
                 maxDistFunc,
-                Distances.Manhattan, filterFunc, MaxDegreeOfParallelism)
-                .OrderBy(x => x.BoundingBox.Top)
-                .ThenByDescending(x => x.BoundingBox.Right);
+                Distances.Manhattan, filterFunc, MaxDegreeOfParallelism);
             wordsH.AddRange(words180);
 
             var words90 = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Rotate90).ToList(),
                 maxDistFunc,
-                Distances.Manhattan, filterFunc, MaxDegreeOfParallelism)
-                .OrderByDescending(x => x.BoundingBox.Left)
-                .ThenBy(x => x.BoundingBox.Top);
+                Distances.Manhattan, filterFunc, MaxDegreeOfParallelism);
             wordsH.AddRange(words90);
 
             var wordsU = GetWords(
                 letters.Where(l => l.TextDirection == TextDirection.Other).ToList(),
                 (l1, l2) => maxDistFunc(l1, l2) * 2.0, // allow twice the distance for oriented text
-                Distances.Euclidean, filterFunc, MaxDegreeOfParallelism)
-                .OrderByDescending(x => x.BoundingBox.Bottom)
-                .ThenBy(x => x.BoundingBox.Left);
+                Distances.Euclidean, filterFunc, MaxDegreeOfParallelism);
             wordsH.AddRange(wordsU);
 
             return wordsH;

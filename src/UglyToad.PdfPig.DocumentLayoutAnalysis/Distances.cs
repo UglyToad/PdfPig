@@ -59,6 +59,28 @@
         }
 
         /// <summary>
+        /// Bound angle so that -180 ≤ θ ≤ 180.
+        /// </summary>
+        /// <param name="angle">The angle to bound.</param>
+        public static double BoundAngle180(double angle)
+        {
+            angle = (angle + 180) % 360;
+            if (angle < 0) angle += 360;
+            return angle - 180;
+        }
+
+        /// <summary>
+        /// Bound angle so that 0 ≤ θ ≤ 360.
+        /// </summary>
+        /// <param name="angle">The angle to bound.</param>
+        public static double BoundAngle0to360(double angle)
+        {
+            angle %= 360;
+            if (angle < 0) angle += 360;
+            return angle;
+        }
+
+        /// <summary>
         /// The absolute distance between the Y coordinates of two points.
         /// </summary>
         /// <param name="point1">The first point.</param>

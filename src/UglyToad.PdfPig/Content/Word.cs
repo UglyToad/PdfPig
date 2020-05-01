@@ -40,7 +40,7 @@
         /// <summary>
         /// Create a new <see cref="Word"/>.
         /// </summary>
-        /// <param name="letters">The letters contained in the word.</param>
+        /// <param name="letters">The letters contained in the word, in the correct order.</param>
         public Word(IReadOnlyList<Letter> letters)
         {
             if (letters == null)
@@ -56,7 +56,6 @@
             Letters = letters;
 
             var tempTextDirection = letters[0].TextDirection;
-
             if (tempTextDirection != TextDirection.Other)
             {
                 foreach (var letter in letters)
@@ -70,7 +69,6 @@
             }
 
             Tuple<string, PdfRectangle> data;
-
             switch (tempTextDirection)
             {
                 case TextDirection.Horizontal:
@@ -89,6 +87,7 @@
                     data = GetBoundingBox270(letters);
                     break;
 
+                case TextDirection.Other:
                 default:
                     data = GetBoundingBoxOther(letters);
                     break;
@@ -104,8 +103,6 @@
         #region Bounding box
         private Tuple<string, PdfRectangle> GetBoundingBoxH(IReadOnlyList<Letter> letters)
         {
-            // need to check for word order
-
             var builder = new StringBuilder();
 
             var blX = double.MaxValue;
@@ -134,9 +131,9 @@
                     trX = right;
                 }
 
-                if (letter.GlyphRectangle.Top > trY)
+                if (letter.GlyphRectangle.TopLeft.Y > trY)
                 {
-                    trY = letter.GlyphRectangle.Top;
+                    trY = letter.GlyphRectangle.TopLeft.Y;
                 }
             }
 
@@ -145,7 +142,6 @@
 
         private Tuple<string, PdfRectangle> GetBoundingBox180(IReadOnlyList<Letter> letters)
         {
-            // need to check for word order
             var builder = new StringBuilder();
 
             var blX = double.MinValue;
@@ -185,7 +181,6 @@
 
         private Tuple<string, PdfRectangle> GetBoundingBox90(IReadOnlyList<Letter> letters)
         {
-            // need to check for word order
             var builder = new StringBuilder();
 
             var b = double.MaxValue;
@@ -227,7 +222,6 @@
 
         private Tuple<string, PdfRectangle> GetBoundingBox270(IReadOnlyList<Letter> letters)
         {
-            // need to check for word order
             var builder = new StringBuilder();
 
             var t = double.MaxValue;
@@ -269,7 +263,6 @@
 
         private Tuple<string, PdfRectangle> GetBoundingBoxOther(IReadOnlyList<Letter> letters)
         {
-            // need to check for word order
             var builder = new StringBuilder();
             for (var i = 0; i < letters.Count; i++)
             {
@@ -341,14 +334,12 @@
 
                 // Candidates bounding boxes
                 var obb = rotateBack.Transform(aabb);
-                //var obb1 = new PdfRectangle(obb.BottomLeft, obb.TopLeft, obb.BottomRight, obb.TopRight);
-                //var obb2 = new PdfRectangle(obb.TopRight, obb.BottomRight, obb.TopLeft, obb.BottomLeft);
-                //var obb3 = new PdfRectangle(obb.BottomRight, obb.BottomLeft, obb.TopRight, obb.TopLeft);
                 var obb1 = new PdfRectangle(obb.BottomRight, obb.BottomLeft, obb.TopLeft, obb.TopRight);
                 var obb2 = new PdfRectangle(obb.TopRight, obb.BottomRight, obb.BottomLeft, obb.TopLeft);
                 var obb3 = new PdfRectangle(obb.TopLeft, obb.TopRight, obb.BottomRight, obb.BottomLeft);
 
                 // Find the orientation of the OBB, using the baseline angle
+                // Assumes word order is correct
                 var firstLetter = letters[0];
                 var lastLetter = letters[letters.Count - 1];
 
@@ -356,22 +347,22 @@
                     lastLetter.EndBaseLine.Y - firstLetter.StartBaseLine.Y,
                     lastLetter.EndBaseLine.X - firstLetter.StartBaseLine.X) * 180 / Math.PI;
 
-                double deltaAngle = Math.Abs(baseLineAngle - obb.Rotation);
-                double deltaAngle1 = Math.Abs(baseLineAngle - obb1.Rotation);
+                double deltaAngle = Math.Abs(BoundAngle180(obb.Rotation - baseLineAngle));
+                double deltaAngle1 = Math.Abs(BoundAngle180(obb1.Rotation - baseLineAngle));
                 if (deltaAngle1 < deltaAngle)
                 {
                     deltaAngle = deltaAngle1;
                     obb = obb1;
                 }
 
-                double deltaAngle2 = Math.Abs(baseLineAngle - obb2.Rotation);
+                double deltaAngle2 = Math.Abs(BoundAngle180(obb2.Rotation - baseLineAngle));
                 if (deltaAngle2 < deltaAngle)
                 {
                     deltaAngle = deltaAngle2;
                     obb = obb2;
                 }
 
-                double deltaAngle3 = Math.Abs(baseLineAngle - obb3.Rotation);
+                double deltaAngle3 = Math.Abs(BoundAngle180(obb3.Rotation - baseLineAngle));
                 if (deltaAngle3 < deltaAngle)
                 {
                     obb = obb3;
@@ -381,6 +372,17 @@
             }
         }
         #endregion
+
+        /// <summary>
+        /// Bound angle so that -180 ≤ θ ≤ 180.
+        /// </summary>
+        /// <param name="angle">The angle to bound.</param>
+        private static double BoundAngle180(double angle)
+        {
+            angle = (angle + 180) % 360;
+            if (angle < 0) angle += 360;
+            return angle - 180;
+        }
 
         /// <inheritdoc />
         public override string ToString()
