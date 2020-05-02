@@ -333,9 +333,9 @@
         {
             /// <summary>
             /// The minimum width for a block.
-            /// <para>Default value is 0.</para>
+            /// <para>Default value is 1.</para>
             /// </summary>
-            public double MinimumWidth { get; set; } = 0;
+            public double MinimumWidth { get; set; } = 1;
 
             /// <summary>
             /// The function that determines the dominant font width.
