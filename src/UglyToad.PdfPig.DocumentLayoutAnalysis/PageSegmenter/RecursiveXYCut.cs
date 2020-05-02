@@ -72,6 +72,13 @@
             Func<IEnumerable<Letter>, double> dominantFontWidthFunc,
             Func<IEnumerable<Letter>, double> dominantFontHeightFunc)
         {
+            // Filter out white spaces
+            words = words.Where(w => !string.IsNullOrWhiteSpace(w.Text));
+            if (words.Count() == 0)
+            {
+                return EmptyArray<TextBlock>.Instance;
+            }
+
             XYLeaf root = new XYLeaf(words); // Create a root node.
             XYNode node = VerticalCut(root, minimumWidth, dominantFontWidthFunc, dominantFontHeightFunc);
 
@@ -97,7 +104,7 @@
             Func<IEnumerable<Letter>, double> dominantFontHeightFunc, int level = 0)
         {
             // Order words left to right
-            var words = leaf.Words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).OrderBy(w => w.BoundingBox.Normalise().Left).ToArray();
+            var words = leaf.Words.OrderBy(w => w.BoundingBox.Normalise().Left).ToArray();
 
             if (words.Length == 0)
             {
@@ -204,7 +211,7 @@
             Func<IEnumerable<Letter>, double> dominantFontHeightFunc, int level = 0)
         {
             // Order words bottom to top
-            var words = leaf.Words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).OrderBy(w => w.BoundingBox.Normalise().Bottom).ToArray();
+            var words = leaf.Words.OrderBy(w => w.BoundingBox.Normalise().Bottom).ToArray();
 
             if (words.Length == 0)
             {
