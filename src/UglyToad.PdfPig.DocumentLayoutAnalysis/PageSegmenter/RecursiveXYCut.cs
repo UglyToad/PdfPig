@@ -43,6 +43,13 @@
         {
             if (options is RecursiveXYCutOptions ryxcOptions)
             {
+                if (words == null)
+                {
+                    return EmptyArray<TextBlock>.Instance;
+                }
+
+                if (!words.Any()) return EmptyArray<TextBlock>.Instance;
+
                 return GetBlocks(words,
                     ryxcOptions.MinimumWidth,
                     ryxcOptions.DominantFontWidthFunc,
@@ -57,17 +64,15 @@
         /// <summary>
         /// Get the blocks.
         /// </summary>
-        /// <param name="pageWords">The words in the page.</param>
+        /// <param name="words">The words in the page.</param>
         /// <param name="minimumWidth">The minimum width for a block.</param>
         /// <param name="dominantFontWidthFunc">The function that determines the dominant font width.</param>
         /// <param name="dominantFontHeightFunc">The function that determines the dominant font height.</param>
-        private IReadOnlyList<TextBlock> GetBlocks(IEnumerable<Word> pageWords, double minimumWidth,
+        private IReadOnlyList<TextBlock> GetBlocks(IEnumerable<Word> words, double minimumWidth,
             Func<IEnumerable<Letter>, double> dominantFontWidthFunc,
             Func<IEnumerable<Letter>, double> dominantFontHeightFunc)
         {
-            if (!pageWords.Any()) return EmptyArray<TextBlock>.Instance;
-
-            XYLeaf root = new XYLeaf(pageWords); // Create a root node.
+            XYLeaf root = new XYLeaf(words); // Create a root node.
             XYNode node = VerticalCut(root, minimumWidth, dominantFontWidthFunc, dominantFontHeightFunc);
 
             if (node.IsLeaf)

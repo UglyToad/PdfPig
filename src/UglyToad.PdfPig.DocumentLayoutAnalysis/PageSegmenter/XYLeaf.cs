@@ -5,6 +5,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using UglyToad.PdfPig.DocumentLayoutAnalysis.ReadingOrderDetector;
     using UglyToad.PdfPig.Geometry;
 
     /// <summary>
@@ -40,8 +41,9 @@
         /// </summary>
         public IReadOnlyList<TextLine> GetLines()
         {
-            return Words.GroupBy(x => x.BoundingBox.Bottom).OrderByDescending(x => x.Key)
-                .Select(x => new TextLine(x.ToList())).ToArray();
+            return Words.GroupBy(x => x.BoundingBox.Bottom)
+                .Select(x => new TextLine(x.OrderByReadingOrder()))
+                .OrderByReadingOrder();
         }
 
         /// <summary>
