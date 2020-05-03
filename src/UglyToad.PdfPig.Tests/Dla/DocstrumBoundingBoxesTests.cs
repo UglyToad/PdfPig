@@ -50,6 +50,23 @@
                     "Morbi vestibulum varius ipsum nec molestie. Proin auctor efficitur diam ut luctus. Phasellus cursus maximus ultricies. Mauris eu neque ut sem semper tempus. Curabitur non lorem eu nunc lobortis vi- verra at in diam. Pellentesque euismod purus a leo lobortis tempor. Maecenas mollis ligula at sem sus- cipit fringilla. Mauris sollicitudin tincidunt lectus id tempor. Etiam ut nisi est.",
                     "1. Ut volutpat, velit at interdum consectetur, nisl lorem consequat mauris, feugiat dignissim tellus massa ut nisl. 2. Praesent at est nisi. Pellentesque rutrum lorem sed dui accumsan gravida. 3. Pellentesque dictum nisl vitae urna luctus, congue pulvinar mi congue.",
                 }
+            },
+            new object[]
+            {
+                "no vertical distance.pdf",
+                new string[]
+                {
+                    "Document’s second line left aligned.",
+                    "Document’s first line right aligned."
+                }
+            },
+            new object[]
+            {
+                "no horizontal distance.pdf",
+                new string[]
+                {
+                    "First. Second."
+                }
             }
         };
 

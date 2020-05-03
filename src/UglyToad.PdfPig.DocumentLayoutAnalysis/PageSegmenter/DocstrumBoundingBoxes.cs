@@ -103,7 +103,8 @@
                 maxDegreeOfParallelism,
                 out double withinLineDistance, out double betweenLineDistance))
             {
-                return new[] { new TextBlock(new[] { new TextLine(words) }) };
+                if (double.IsNaN(withinLineDistance)) withinLineDistance = 0;
+                if (double.IsNaN(betweenLineDistance)) betweenLineDistance = 0;
             }
 
             // 2. Determination of Text Lines
@@ -189,16 +190,10 @@
             double? withinLinePeak = GetPeakAverageDistance(withinLineDistList, wlBinSize);
             double? betweenLinePeak = GetPeakAverageDistance(betweenLineDistList, blBinSize);
 
-            if (!withinLinePeak.HasValue || !betweenLinePeak.HasValue)
-            {
-                withinLineDistance = withinLinePeak ?? double.NaN;
-                betweenLineDistance = betweenLinePeak ?? double.NaN;
-                return false;
-            }
+            withinLineDistance = withinLinePeak ?? double.NaN;
+            betweenLineDistance = betweenLinePeak ?? double.NaN;
 
-            withinLineDistance = withinLinePeak.Value;
-            betweenLineDistance = betweenLinePeak.Value;
-            return true;
+            return withinLinePeak.HasValue && betweenLinePeak.HasValue;
         }
 
         /// <summary>
