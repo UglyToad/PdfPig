@@ -42,7 +42,7 @@
         /// </summary>
         /// <param name="lines">The words contained in the line, in the correct order.</param>
         /// <param name="separator"></param>
-        public TextBlock(IReadOnlyList<TextLine> lines, string separator = " ")
+        public TextBlock(IReadOnlyList<TextLine> lines, string separator = "\n")
         {
             if (lines == null)
             {

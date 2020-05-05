@@ -39,10 +39,10 @@
         /// <summary>
         /// Gets the lines of the leaf.
         /// </summary>
-        public IReadOnlyList<TextLine> GetLines()
+        public IReadOnlyList<TextLine> GetLines(string wordSeparator)
         {
             return Words.GroupBy(x => x.BoundingBox.Bottom)
-                .Select(x => new TextLine(x.OrderByReadingOrder()))
+                .Select(x => new TextLine(x.OrderByReadingOrder(), wordSeparator))
                 .OrderByReadingOrder();
         }
 
@@ -50,10 +50,8 @@
         /// Create a new <see cref="XYLeaf"/>.
         /// </summary>
         /// <param name="words">The words contained in the leaf.</param>
-        public XYLeaf(params Word[] words) : this(words == null ? null : words.ToList())
-        {
-
-        }
+        public XYLeaf(params Word[] words) : this(words?.ToList())
+        { }
 
         /// <summary>
         /// Create a new <see cref="XYLeaf"/>.

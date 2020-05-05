@@ -14,7 +14,7 @@
     /// <summary>
     /// Algorithm that retrieve blocks that are labelled as decoration (e.g. headers, footers) for each page in the document, using a content and a geometric similarity measure.
     /// <para>Decoration blocks are blocks that contains information such as author names, publication titles, page numbers, etc.
-    /// They are printed repeatedly at the border of each page, usually placed inside headers or footers, but sometimes also at the 
+    /// They are printed repeatedly at the border of each page, usually placed inside headers or footers, but sometimes also at the
     /// left or right edge of the page.</para>
     /// <para>See section 4.1 of 'Unsupervised document structure analysis of digital scientific articles' by S. Klampfl, M. Granitzer, K. Jack, R. Kern.</para>
     /// </summary>
@@ -26,7 +26,7 @@
         /// <summary>
         /// Get blocks that are labelled as decoration for each page in the document, using a content and a geometric similarity measure.
         /// <para>Decoration blocks are blocks that contains information such as author names, publication titles, page numbers, etc.
-        /// They are printed repeatedly at the border of each page, usually placed inside headers or footers, but sometimes also at the 
+        /// They are printed repeatedly at the border of each page, usually placed inside headers or footers, but sometimes also at the
         /// left or right edge of the page.</para>
         /// </summary>
         /// <param name="pages">The <see cref="Page"/>s in the document. All of them are needed for the algorithm to work.</param>
@@ -34,8 +34,8 @@
         /// <param name="pageSegmenter"></param>
         /// <param name="similarityThreshold">Minimum similarity score to decide wether a block is labelled as decoration or not.</param>
         /// <param name="n">Number of blocks in a page to be considered when looking for decoration blocks.</param>
-        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
-        /// <para>A positive property value limits the number of concurrent operations to the set value. 
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled.
+        /// <para>A positive property value limits the number of concurrent operations to the set value.
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
         public static IReadOnlyList<IReadOnlyList<TextBlock>> Get(IReadOnlyList<Page> pages,
             IWordExtractor wordExtractor, IPageSegmenter pageSegmenter,
@@ -47,7 +47,7 @@
         /// <summary>
         /// Get blocks that are labelled as decoration for each page in the document, using a content and a geometric similarity measure.
         /// <para>Decoration blocks are blocks that contains information such as author names, publication titles, page numbers, etc.
-        /// They are printed repeatedly at the border of each page, usually placed inside headers or footers, but sometimes also at the 
+        /// They are printed repeatedly at the border of each page, usually placed inside headers or footers, but sometimes also at the
         /// left or right edge of the page.</para>
         /// </summary>
         /// <param name="pages">The <see cref="Page"/>s in the document. All of them are needed for the algorithm to work.</param>
@@ -56,8 +56,8 @@
         /// <param name="minimumEditDistanceNormalised">Minimum edit distance normalised. A value of 0 means both strings are exactly equal.</param>
         /// <param name="similarityThreshold">Minimum similarity score to decide wether a block is labelled as decoration or not.</param>
         /// <param name="n">Number of blocks in a page to be considered when looking for decoration blocks.</param>
-        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
-        /// <para>A positive property value limits the number of concurrent operations to the set value. 
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled.
+        /// <para>A positive property value limits the number of concurrent operations to the set value.
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
         public static IReadOnlyList<IReadOnlyList<TextBlock>> Get(IReadOnlyList<Page> pages,
             IWordExtractor wordExtractor, IPageSegmenter pageSegmenter, Func<string, string, double> minimumEditDistanceNormalised,
@@ -92,14 +92,14 @@
         /// <summary>
         /// Get blocks that are labelled as decoration for each page in the document, using a content and a geometric similarity measure.
         /// <para>Decoration blocks are blocks that contains information such as author names, publication titles, page numbers, etc.
-        /// They are printed repeatedly at the border of each page, usually placed inside headers or footers, but sometimes also at the 
+        /// They are printed repeatedly at the border of each page, usually placed inside headers or footers, but sometimes also at the
         /// left or right edge of the page.</para>
         /// </summary>
         /// <param name="pagesTextBlocks">The <see cref="TextBlock"/>s of every pages in the document. All of them are needed for the algorithm to work.</param>
         /// <param name="similarityThreshold">Minimum similarity score to decide wether a block is labelled as decoration or not.</param>
         /// <param name="n">Number of blocks in a page to be considered when looking for decoration blocks.</param>
-        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
-        /// <para>A positive property value limits the number of concurrent operations to the set value. 
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled.
+        /// <para>A positive property value limits the number of concurrent operations to the set value.
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
         public static IReadOnlyList<IReadOnlyList<TextBlock>> Get(IReadOnlyList<IReadOnlyList<TextBlock>> pagesTextBlocks,
             double similarityThreshold = 0.25, int n = 5, int maxDegreeOfParallelism = -1)
@@ -110,15 +110,15 @@
         /// <summary>
         /// Get blocks that are labelled as decoration for each page in the document, using a content and a geometric similarity measure.
         /// <para>Decoration blocks are blocks that contains information such as author names, publication titles, page numbers, etc.
-        /// They are printed repeatedly at the border of each page, usually placed inside headers or footers, but sometimes also at the 
+        /// They are printed repeatedly at the border of each page, usually placed inside headers or footers, but sometimes also at the
         /// left or right edge of the page.</para>
         /// </summary>
         /// <param name="pagesTextBlocks">The <see cref="TextBlock"/>s of every pages in the document. All of them are needed for the algorithm to work.</param>
         /// <param name="minimumEditDistanceNormalised">Minimum edit distance normalised. A value of 0 means both strings are exactly equal.</param>
         /// <param name="similarityThreshold">Minimum similarity score to decide wether a block is labelled as decoration or not.</param>
         /// <param name="n">Number of blocks in a page to be considered when looking for decoration blocks.</param>
-        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
-        /// <para>A positive property value limits the number of concurrent operations to the set value. 
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled.
+        /// <para>A positive property value limits the number of concurrent operations to the set value.
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
         public static IReadOnlyList<IReadOnlyList<TextBlock>> Get(IReadOnlyList<IReadOnlyList<TextBlock>> pagesTextBlocks,
             Func<string, string, double> minimumEditDistanceNormalised, double similarityThreshold = 0.25, int n = 5, int maxDegreeOfParallelism = -1)
@@ -219,7 +219,7 @@
         }
 
         /// <summary>
-        /// [The content similarity] is calculated from the normalized edit 
+        /// [The content similarity] is calculated from the normalized edit
         /// distance between the two content strings, where digits are replaced with “@” chars.
         /// A content similarity of 1 is reached when both strings are exactly equal.
         /// </summary>
@@ -248,7 +248,7 @@
         }
 
         /// <summary>
-        /// This similarity score is a value in the range [0,1] and given 
+        /// This similarity score is a value in the range [0,1] and given
         /// by the product between the content and the geometric similarity.
         /// </summary>
         private static double Similarity(TextBlock b1, TextBlock b2, Func<string, string, double> minimumEditDistanceNormalised)

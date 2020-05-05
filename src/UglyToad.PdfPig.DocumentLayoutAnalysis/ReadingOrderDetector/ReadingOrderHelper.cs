@@ -11,8 +11,8 @@
     public static class ReadingOrderHelper
     {
         /// <summary>
-        /// Order words by reader order in a line.
-        /// <para>Assumes LtR.</para>
+        /// Order words by reading order in a line.
+        /// <para>Assumes LtR and accounts for rotation.</para>
         /// </summary>
         /// <param name="words"></param>
         public static List<Word> OrderByReadingOrder(this IEnumerable<Word> words)
@@ -86,8 +86,8 @@
         }
 
         /// <summary>
-        /// Order lines by reader order in a block.
-        /// <para>Assumes LtR.</para>
+        /// Order lines by reading order in a block.
+        /// <para>Assumes TtB and accounts for rotation.</para>
         /// </summary>
         /// <param name="lines"></param>
         public static IReadOnlyList<TextLine> OrderByReadingOrder(this IEnumerable<TextLine> lines)
@@ -159,7 +159,5 @@
                     }
             }
         }
-
-
     }
 }

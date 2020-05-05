@@ -164,7 +164,7 @@
 
             if (distanceMeasure == null)
             {
-                throw new ArgumentException("Distances.FindIndexNearest(): The distance measure must not be null.", "distanceMeasure");
+                throw new ArgumentException("Distances.FindIndexNearest(): The distance measure must not be null.", nameof(distanceMeasure));
             }
 
             distance = double.MaxValue;
@@ -206,7 +206,7 @@
 
             if (distanceMeasure == null)
             {
-                throw new ArgumentException("Distances.FindIndexNearest(): The distance measure must not be null.", "distanceMeasure");
+                throw new ArgumentException("Distances.FindIndexNearest(): The distance measure must not be null.", nameof(distanceMeasure));
             }
 
             distance = double.MaxValue;

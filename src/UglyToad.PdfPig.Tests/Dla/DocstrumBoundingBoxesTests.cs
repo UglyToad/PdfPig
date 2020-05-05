@@ -74,11 +74,12 @@
         [MemberData(nameof(DataExtract))]
         public void GetBlocks(string name, string[] expected)
         {
+            var options = new DocstrumBoundingBoxes.DocstrumBoundingBoxesOptions() { LineSeparator = " " };
             using (var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath(name)))
             {
                 var page = document.GetPage(1);
                 var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
-                var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
+                var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words, options);
 
                 Assert.Equal(expected.Length, blocks.Count);
                 var orderedBlocks = blocks.OrderBy(b => b.BoundingBox.BottomLeft.X)

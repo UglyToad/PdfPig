@@ -131,7 +131,7 @@
 
         /// <summary>
         /// PageXml Text colour in RGB encoded format
-        /// <para>(red value) + (256 x green value) + (65536 x blue value).</para> 
+        /// <para>(red value) + (256 x green value) + (65536 x blue value).</para>
         /// </summary>
         private string ToRgbEncoded(IColor color)
         {
@@ -168,7 +168,7 @@
 
                 regions.AddRange(blocks.Select(b => ToPageXmlTextRegion(b, page.Height)));
 
-                if (orderedRegions.Any())
+                if (orderedRegions.Count > 0)
                 {
                     pageXmlPage.ReadingOrder = new PageXmlDocument.PageXmlReadingOrder()
                     {
@@ -190,7 +190,7 @@
             if (includePaths)
             {
                 var graphicalElements = page.ExperimentalAccess.Paths.Select(p => ToPageXmlLineDrawingRegion(p, page.Height));
-                if (graphicalElements.Where(g => g != null).Count() > 0)
+                if (graphicalElements.Any(g => g != null))
                 {
                     regions.AddRange(graphicalElements.Where(g => g != null));
                 }

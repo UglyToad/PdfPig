@@ -9,7 +9,7 @@
 
     /// <inheritdoc />
     /// <summary>
-    /// The recursive X-Y cut is a top-down page segmentation technique that decomposes a document 
+    /// The recursive X-Y cut is a top-down page segmentation technique that decomposes a document
     /// recursively into a set of rectangular blocks. This implementation leverages bounding boxes.
     /// https://en.wikipedia.org/wiki/Recursive_X-Y_cut
     /// <para>See 'Recursive X-Y Cut using Bounding Boxes of Connected Components' by Jaekyu Ha, Robert M.Haralick and Ihsin T. Phillips</para>
@@ -53,7 +53,9 @@
                 return GetBlocks(words,
                     ryxcOptions.MinimumWidth,
                     ryxcOptions.DominantFontWidthFunc,
-                    ryxcOptions.DominantFontHeightFunc);
+                    ryxcOptions.DominantFontHeightFunc,
+                    ryxcOptions.WordSeparator,
+                    ryxcOptions.LineSeparator);
             }
             else
             {
@@ -68,13 +70,16 @@
         /// <param name="minimumWidth">The minimum width for a block.</param>
         /// <param name="dominantFontWidthFunc">The function that determines the dominant font width.</param>
         /// <param name="dominantFontHeightFunc">The function that determines the dominant font height.</param>
+        /// <param name="wordSeparator"></param>
+        /// <param name="lineSeparator"></param>
         private IReadOnlyList<TextBlock> GetBlocks(IEnumerable<Word> words, double minimumWidth,
             Func<IEnumerable<Letter>, double> dominantFontWidthFunc,
-            Func<IEnumerable<Letter>, double> dominantFontHeightFunc)
+            Func<IEnumerable<Letter>, double> dominantFontHeightFunc,
+            string wordSeparator, string lineSeparator)
         {
             // Filter out white spaces
             words = words.Where(w => !string.IsNullOrWhiteSpace(w.Text));
-            if (words.Count() == 0)
+            if (!words.Any())
             {
                 return EmptyArray<TextBlock>.Instance;
             }
@@ -84,7 +89,7 @@
 
             if (node.IsLeaf)
             {
-                return new List<TextBlock> { new TextBlock((node as XYLeaf).GetLines()) };
+                return new List<TextBlock> { new TextBlock((node as XYLeaf).GetLines(wordSeparator), lineSeparator) };
             }
             else
             {
@@ -92,7 +97,7 @@
 
                 if (leaves.Count > 0)
                 {
-                    return leaves.Select(l => new TextBlock(l.GetLines())).ToList();
+                    return leaves.Select(l => new TextBlock(l.GetLines(wordSeparator), lineSeparator)).ToList();
                 }
             }
 
@@ -193,7 +198,7 @@
                 return normalisedBB.Left >= p.LowerBound && normalisedBB.Right <= p.UpperBound;
             }));
 
-            var newLeaves = newLeavesEnums.Where(e => e.Count() > 0).Select(e => new XYLeaf(e));
+            var newLeaves = newLeavesEnums.Where(e => e.Any()).Select(e => new XYLeaf(e));
             var newNodes = newLeaves.Select(l => HorizontalCut(l, minimumWidth,
                 dominantFontWidthFunc, dominantFontHeightFunc, level)).ToList();
 
@@ -293,7 +298,7 @@
                 return normalisedBB.Bottom >= p.LowerBound && normalisedBB.Top <= p.UpperBound;
             }));
 
-            var newLeaves = newLeavesEnums.Where(e => e.Count() > 0).Select(e => new XYLeaf(e));
+            var newLeaves = newLeavesEnums.Where(e => e.Any()).Select(e => new XYLeaf(e));
             var newNodes = newLeaves.Select(l => VerticalCut(l, minimumWidth,
                 dominantFontWidthFunc, dominantFontHeightFunc, level)).ToList();
 
@@ -329,7 +334,7 @@
         /// <summary>
         /// Recursive X-Y cut page segmenter options.
         /// </summary>
-        public class RecursiveXYCutOptions : DlaOptions
+        public class RecursiveXYCutOptions : PageSegmenterOptions
         {
             /// <summary>
             /// The minimum width for a block.
