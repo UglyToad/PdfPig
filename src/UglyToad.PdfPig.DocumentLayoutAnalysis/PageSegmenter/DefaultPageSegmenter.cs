@@ -48,7 +48,7 @@
             }
             else
             {
-                throw new ArgumentException("Options provided must be of type DefaultPageSegmenterOptions.", nameof(options));
+                throw new ArgumentException("Options provided must be of type " + nameof(DefaultPageSegmenterOptions) + ".", nameof(options));
             }
         }
 

@@ -62,7 +62,7 @@
             }
             else
             {
-                throw new ArgumentException("Options provided must be of type DocstrumBoundingBoxesOptions.", nameof(options));
+                throw new ArgumentException("Options provided must be of type " + nameof(DocstrumBoundingBoxesOptions) + ".", nameof(options));
             }
         }
 

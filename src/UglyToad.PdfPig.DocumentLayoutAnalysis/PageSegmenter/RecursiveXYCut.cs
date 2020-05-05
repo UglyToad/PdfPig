@@ -59,7 +59,7 @@
             }
             else
             {
-                throw new ArgumentException("Options provided must be of type RecursiveXYCutOptions.", nameof(options));
+                throw new ArgumentException("Options provided must be of type " + nameof(RecursiveXYCutOptions) + ".", nameof(options));
             }
         }
 
