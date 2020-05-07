@@ -13,6 +13,11 @@
     public class TextBlock
     {
         /// <summary>
+        /// The separator used between lines in the block.
+        /// </summary>
+        public readonly string Separator;
+
+        /// <summary>
         /// The text of the block.
         /// </summary>
         public string Text { get; }
@@ -41,7 +46,7 @@
         /// Create a new <see cref="TextBlock"/>.
         /// </summary>
         /// <param name="lines">The words contained in the line, in the correct order.</param>
-        /// <param name="separator"></param>
+        /// <param name="separator">The separator used between lines in the block.</param>
         public TextBlock(IReadOnlyList<TextLine> lines, string separator = "\n")
         {
             if (lines == null)
@@ -53,6 +58,8 @@
             {
                 throw new ArgumentException("Empty lines provided.", nameof(lines));
             }
+
+            Separator = separator;
 
             ReadingOrder = -1;
             TextLines = lines;
