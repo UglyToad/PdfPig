@@ -37,12 +37,10 @@
         {
             if (options is DefaultPageSegmenterOptions dOptions)
             {
-                if (words == null)
+                if (words?.Any() != true)
                 {
                     return EmptyArray<TextBlock>.Instance;
                 }
-
-                if (!words.Any()) return EmptyArray<TextBlock>.Instance;
 
                 return new List<TextBlock>() { new TextBlock(new XYLeaf(words).GetLines(dOptions.WordSeparator), dOptions.LineSeparator) };
             }

@@ -15,9 +15,9 @@
         public string Value { get; }
 
         /// <summary>
-        /// Text direction of the letter.
+        /// The text orientation of the letter.
         /// </summary>
-        public TextDirection TextDirection { get; }
+        public TextOrientation TextOrientation { get; }
 
         /// <summary>
         /// The placement position of the character in PDF space. See <see cref="StartBaseLine"/>.
@@ -100,32 +100,32 @@
             Color = color ?? GrayColor.Black;
             PointSize = pointSize;
             TextSequence = textSequence;
-            TextDirection = GetTextDirection();
+            TextOrientation = GetTextOrientation();
         }
 
-        private TextDirection GetTextDirection()
+        private TextOrientation GetTextOrientation()
         {
             if (System.Math.Abs(StartBaseLine.Y - EndBaseLine.Y) < 10e-5)
             {
                 if (StartBaseLine.X > EndBaseLine.X)
                 {
-                    return TextDirection.Rotate180;
+                    return TextOrientation.Rotate180;
                 }
 
-                return TextDirection.Horizontal;
+                return TextOrientation.Horizontal;
             }
 
             if (System.Math.Abs(StartBaseLine.X - EndBaseLine.X) < 10e-5)
             {
                 if (StartBaseLine.Y > EndBaseLine.Y)
                 {
-                    return TextDirection.Rotate90;
+                    return TextOrientation.Rotate90;
                 }
 
-                return TextDirection.Rotate270;
+                return TextOrientation.Rotate270;
             }
 
-            return TextDirection.Other;
+            return TextOrientation.Other;
         }
 
         /// <summary>

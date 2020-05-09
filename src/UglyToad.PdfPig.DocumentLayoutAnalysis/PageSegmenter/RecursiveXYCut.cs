@@ -43,12 +43,10 @@
         {
             if (options is RecursiveXYCutOptions ryxcOptions)
             {
-                if (words == null)
+                if (words?.Any() != true)
                 {
                     return EmptyArray<TextBlock>.Instance;
                 }
-
-                if (!words.Any()) return EmptyArray<TextBlock>.Instance;
 
                 return GetBlocks(words,
                     ryxcOptions.MinimumWidth,

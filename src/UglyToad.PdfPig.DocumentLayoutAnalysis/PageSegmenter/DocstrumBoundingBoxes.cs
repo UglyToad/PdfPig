@@ -45,12 +45,10 @@
         {
             if (options is DocstrumBoundingBoxesOptions dbbOptions)
             {
-                if (words == null)
+                if (words?.Any() != true)
                 {
                     return EmptyArray<TextBlock>.Instance;
                 }
-
-                if (!words.Any()) return EmptyArray<TextBlock>.Instance;
 
                 return GetBlocks(words.ToList(),
                     dbbOptions.WithinLineBounds, dbbOptions.WithinLineMultiplier, dbbOptions.WithinLineBinSize,
@@ -250,7 +248,7 @@
         private static IEnumerable<TextLine> GetLines(IReadOnlyList<Word> words, double maxWLDistance, AngleBounds withinLine,
             string wordSeparator, int maxDegreeOfParallelism)
         {
-            var groupedIndexes = Clustering.NearestNeighbours(words,
+            var groupedWords = Clustering.NearestNeighbours(words,
                 2,
                 Distances.Euclidean,
                 (_, __) => maxWLDistance,
@@ -260,9 +258,9 @@
                 (pivot, candidate) => withinLine.Contains(AngleWL(pivot, candidate)),
                 maxDegreeOfParallelism).ToList();
 
-            for (var a = 0; a < groupedIndexes.Count; a++)
+            foreach (var g in groupedWords)
             {
-                yield return new TextLine(groupedIndexes[a].Select(i => words[i]).OrderByReadingOrder(), wordSeparator);
+                yield return new TextLine(g.OrderByReadingOrder(), wordSeparator);
             }
         }
 
@@ -304,7 +302,7 @@
              *  then they are said to meet the criteria to belong to the same structural block.
              ******************************************************************************************************/
 
-            var groupedIndexes = Clustering.NearestNeighbours(
+            var groupedLines = Clustering.NearestNeighbours(
                 lines,
                 (l1, l2) => PerpendicularOverlappingDistance(l1, l2, angularDifference, epsilon),
                 (_, __) => maxBLDistance,
@@ -314,9 +312,9 @@
                 (_, __) => true,
                 maxDegreeOfParallelism).ToList();
 
-            for (int a = 0; a < groupedIndexes.Count; a++)
+            foreach (var g in groupedLines)
             {
-                yield return new TextBlock(groupedIndexes[a].Select(i => lines[i]).OrderByReadingOrder(), lineSeparator);
+                yield return new TextBlock(g.OrderByReadingOrder(), lineSeparator);
             }
         }
 

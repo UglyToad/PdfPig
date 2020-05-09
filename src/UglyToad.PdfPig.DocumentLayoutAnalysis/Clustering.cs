@@ -26,7 +26,7 @@
         /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
         /// <para>A positive property value limits the number of concurrent operations to the set value. 
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
-        public static IEnumerable<HashSet<int>> NearestNeighbours<T>(IReadOnlyList<T> elements,
+        public static IEnumerable<IReadOnlyList<T>> NearestNeighbours<T>(IReadOnlyList<T> elements,
             Func<PdfPoint, PdfPoint, double> distMeasure,
             Func<T, T, double> maxDistanceFunction,
             Func<T, PdfPoint> pivotPoint, Func<T, PdfPoint> candidatesPoint,
@@ -64,18 +64,18 @@
                 {
                     var paired = kdTree.FindNearestNeighbour(pivot, pivotPoint, distMeasure, out int index, out double dist);
 
-                    if (index != -1)
+                    if (index != -1 && filterFinal(pivot, paired) && dist < maxDistanceFunction(pivot, paired))
                     {
-                        if (filterFinal(pivot, paired) && dist < maxDistanceFunction(pivot, paired))
-                        {
-                            indexes[e] = index;
-                        }
+                        indexes[e] = index;
                     }
                 }
             });
 
             // 2. Group indexes
-            return GroupIndexes(indexes);
+            foreach (var group in GroupIndexes(indexes))
+            {
+                yield return group.Select(i => elements[i]).ToList();
+            }
         }
 
         /// <summary>
@@ -94,7 +94,7 @@
         /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
         /// <para>A positive property value limits the number of concurrent operations to the set value. 
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
-        public static IEnumerable<HashSet<int>> NearestNeighbours<T>(IReadOnlyList<T> elements, int k,
+        public static IEnumerable<IReadOnlyList<T>> NearestNeighbours<T>(IReadOnlyList<T> elements, int k,
             Func<PdfPoint, PdfPoint, double> distMeasure,
             Func<T, T, double> maxDistanceFunction,
             Func<T, PdfPoint> pivotPoint, Func<T, PdfPoint> candidatesPoint,
@@ -130,9 +130,7 @@
 
                 if (filterPivot(pivot))
                 {
-                    var paired = kdTree.FindNearestNeighbours(pivot, k, pivotPoint, distMeasure);
-
-                    foreach (var c in paired)
+                    foreach (var c in kdTree.FindNearestNeighbours(pivot, k, pivotPoint, distMeasure))
                     {
                         if (filterFinal(pivot, c.Item1) && c.Item3 < maxDistanceFunction(pivot, c.Item1))
                         {
@@ -144,7 +142,10 @@
             });
 
             // 2. Group indexes
-            return GroupIndexes(indexes);
+            foreach (var group in GroupIndexes(indexes))
+            {
+                yield return group.Select(i => elements[i]).ToList();
+            }
         }
 
         /// <summary>
@@ -161,7 +162,7 @@
         /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
         /// <para>A positive property value limits the number of concurrent operations to the set value. 
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
-        public static IEnumerable<HashSet<int>> NearestNeighbours<T>(IReadOnlyList<T> elements,
+        public static IEnumerable<IReadOnlyList<T>> NearestNeighbours<T>(IReadOnlyList<T> elements,
             Func<PdfLine, PdfLine, double> distMeasure,
             Func<T, T, double> maxDistanceFunction,
             Func<T, PdfLine> pivotLine, Func<T, PdfLine> candidatesLine,
@@ -210,7 +211,10 @@
             });
 
             // 2. Group indexes
-            return GroupIndexes(indexes);
+            foreach (var group in GroupIndexes(indexes))
+            {
+                yield return group.Select(i => elements[i]).ToList();
+            }
         }
 
         /// <summary>
@@ -306,39 +310,6 @@
                 }
             }
             return group;
-        }
-
-        private static HashSet<int> DfsIterativeTopoSort(int s, int[][] adj, ref bool[] isDone)
-        {
-            // https://stackoverflow.com/questions/20153488/topological-sort-using-dfs-without-recursion
-            Stack<int> postOrder = new Stack<int>();
-            Stack<(bool isParent, int u)> S = new Stack<(bool, int)>();
-
-            if (!isDone[s])
-            {
-                S.Push((false, s));
-            }
-
-            while (S.Count > 0)
-            {
-                var (isParent, u) = S.Pop();
-                if (isParent)
-                {
-                    postOrder.Push(u);
-                    continue;
-                }
-
-                isDone[u] = true;
-                S.Push((true, u));
-                foreach (var v in adj[u])
-                {
-                    if (!isDone[v])
-                    {
-                        S.Push((false, v));
-                    }
-                }
-            }
-            return new HashSet<int>(postOrder);
         }
     }
 }

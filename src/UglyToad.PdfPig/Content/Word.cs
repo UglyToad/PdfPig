@@ -5,7 +5,6 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
-    using UglyToad.PdfPig.Geometry;
 
     /// <summary>
     /// A word.
@@ -18,9 +17,9 @@
         public string Text { get; }
 
         /// <summary>
-        /// The text direction of the word.
+        /// The text orientation of the word.
         /// </summary>
-        public TextDirection TextDirection { get; }
+        public TextOrientation TextOrientation { get; }
 
         /// <summary>
         /// The rectangle completely containing the word.
@@ -55,39 +54,39 @@
 
             Letters = letters;
 
-            var tempTextDirection = letters[0].TextDirection;
-            if (tempTextDirection != TextDirection.Other)
+            var tempTextOrientation = letters[0].TextOrientation;
+            if (tempTextOrientation != TextOrientation.Other)
             {
                 foreach (var letter in letters)
                 {
-                    if (letter.TextDirection != tempTextDirection)
+                    if (letter.TextOrientation != tempTextOrientation)
                     {
-                        tempTextDirection = TextDirection.Other;
+                        tempTextOrientation = TextOrientation.Other;
                         break;
                     }
                 }
             }
 
             Tuple<string, PdfRectangle> data;
-            switch (tempTextDirection)
+            switch (tempTextOrientation)
             {
-                case TextDirection.Horizontal:
+                case TextOrientation.Horizontal:
                     data = GetBoundingBoxH(letters);
                     break;
 
-                case TextDirection.Rotate180:
+                case TextOrientation.Rotate180:
                     data = GetBoundingBox180(letters);
                     break;
 
-                case TextDirection.Rotate90:
+                case TextOrientation.Rotate90:
                     data = GetBoundingBox90(letters);
                     break;
 
-                case TextDirection.Rotate270:
+                case TextOrientation.Rotate270:
                     data = GetBoundingBox270(letters);
                     break;
 
-                case TextDirection.Other:
+                case TextOrientation.Other:
                 default:
                     data = GetBoundingBoxOther(letters);
                     break;
@@ -97,7 +96,7 @@
             BoundingBox = data.Item2;
 
             FontName = letters[0].FontName;
-            TextDirection = tempTextDirection;
+            TextOrientation = tempTextOrientation;
         }
 
         #region Bounding box

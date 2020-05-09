@@ -22,34 +22,34 @@
                 return words.ToList();
             }
 
-            var textDirection = words.First().TextDirection;
-            if (textDirection != TextDirection.Other)
+            var TextOrientation = words.First().TextOrientation;
+            if (TextOrientation != TextOrientation.Other)
             {
                 foreach (var word in words)
                 {
-                    if (word.TextDirection != textDirection)
+                    if (word.TextOrientation != TextOrientation)
                     {
-                        textDirection = TextDirection.Other;
+                        TextOrientation = TextOrientation.Other;
                         break;
                     }
                 }
             }
 
-            switch (textDirection)
+            switch (TextOrientation)
             {
-                case TextDirection.Horizontal:
+                case TextOrientation.Horizontal:
                     return words.OrderBy(w => w.BoundingBox.BottomLeft.X).ToList();
 
-                case TextDirection.Rotate180:
+                case TextOrientation.Rotate180:
                     return words.OrderByDescending(w => w.BoundingBox.BottomLeft.X).ToList();
 
-                case TextDirection.Rotate90:
+                case TextOrientation.Rotate90:
                     return words.OrderByDescending(w => w.BoundingBox.BottomLeft.Y).ToList();
 
-                case TextDirection.Rotate270:
+                case TextOrientation.Rotate270:
                     return words.OrderBy(w => w.BoundingBox.BottomLeft.Y).ToList();
 
-                case TextDirection.Other:
+                case TextOrientation.Other:
                 default:
                     // We consider the words roughly have the same rotation.
                     var avgAngle = words.Average(w => w.BoundingBox.Rotation);
@@ -97,34 +97,34 @@
                 return lines.ToList();
             }
 
-            var textDirection = lines.First().TextDirection;
-            if (textDirection != TextDirection.Other)
+            var TextOrientation = lines.First().TextOrientation;
+            if (TextOrientation != TextOrientation.Other)
             {
                 foreach (var line in lines)
                 {
-                    if (line.TextDirection != textDirection)
+                    if (line.TextOrientation != TextOrientation)
                     {
-                        textDirection = TextDirection.Other;
+                        TextOrientation = TextOrientation.Other;
                         break;
                     }
                 }
             }
 
-            switch (textDirection)
+            switch (TextOrientation)
             {
-                case TextDirection.Horizontal:
+                case TextOrientation.Horizontal:
                     return lines.OrderByDescending(w => w.BoundingBox.BottomLeft.Y).ToList();
 
-                case TextDirection.Rotate180:
+                case TextOrientation.Rotate180:
                     return lines.OrderBy(w => w.BoundingBox.BottomLeft.Y).ToList();
 
-                case TextDirection.Rotate90:
+                case TextOrientation.Rotate90:
                     return lines.OrderByDescending(w => w.BoundingBox.BottomLeft.X).ToList();
 
-                case TextDirection.Rotate270:
+                case TextOrientation.Rotate270:
                     return lines.OrderBy(w => w.BoundingBox.BottomLeft.X).ToList();
 
-                case TextDirection.Other:
+                case TextOrientation.Other:
                 default:
                     // We consider the lines roughly have the same rotation.
                     var avgAngle = lines.Average(w => w.BoundingBox.Rotation);

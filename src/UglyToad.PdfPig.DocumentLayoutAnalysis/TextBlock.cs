@@ -25,7 +25,7 @@
         /// <summary>
         /// The text direction of the block.
         /// </summary>
-        public TextDirection TextDirection { get; }
+        public TextOrientation TextOrientation { get; }
 
         /// <summary>
         /// The rectangle completely containing the block.
@@ -68,49 +68,49 @@
             {
                 BoundingBox = lines[0].BoundingBox;
                 Text = lines[0].Text;
-                TextDirection = lines[0].TextDirection;
+                TextOrientation = lines[0].TextOrientation;
             }
             else
             {
-                var tempTextDirection = lines[0].TextDirection;
-                if (tempTextDirection != TextDirection.Other)
+                var tempTextOrientation = lines[0].TextOrientation;
+                if (tempTextOrientation != TextOrientation.Other)
                 {
                     foreach (var letter in lines)
                     {
-                        if (letter.TextDirection != tempTextDirection)
+                        if (letter.TextOrientation != tempTextOrientation)
                         {
-                            tempTextDirection = TextDirection.Other;
+                            tempTextOrientation = TextOrientation.Other;
                             break;
                         }
                     }
                 }
 
-                switch (tempTextDirection)
+                switch (tempTextOrientation)
                 {
-                    case TextDirection.Horizontal:
+                    case TextOrientation.Horizontal:
                         BoundingBox = GetBoundingBoxH(lines);
                         break;
 
-                    case TextDirection.Rotate180:
+                    case TextOrientation.Rotate180:
                         BoundingBox = GetBoundingBox180(lines);
                         break;
 
-                    case TextDirection.Rotate90:
+                    case TextOrientation.Rotate90:
                         BoundingBox = GetBoundingBox90(lines);
                         break;
 
-                    case TextDirection.Rotate270:
+                    case TextOrientation.Rotate270:
                         BoundingBox = GetBoundingBox270(lines);
                         break;
 
-                    case TextDirection.Other:
+                    case TextOrientation.Other:
                     default:
                         BoundingBox = GetBoundingBoxOther(lines);
                         break;
                 }
 
                 Text = string.Join(separator, lines.Select(x => x.Text));
-                TextDirection = tempTextDirection;
+                TextOrientation = tempTextOrientation;
             }
         }
 
