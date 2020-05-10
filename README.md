@@ -305,10 +305,6 @@ Please do file an issue if you encounter a bug.
 
 However in order for us to assist you, you **must** provide the file which causes your issue. Please host this in a publically available place.
 
-## Status
-
-_Why is class or property X internal?_ Internal properties and classes are not stable enough for the end user yet. If you want to access them feel free to use reflection but be aware they may change or disappear between versions.
-
 ## Credit
 
-This project wouldn't be possible without the work done by the [PDFBox](https://pdfbox.apache.org/) team and the Apache Foundation. Any bugs in the code are entirely my fault.
+This project wouldn't be possible without the work done by the [PDFBox](https://pdfbox.apache.org/) team and the Apache Foundation.
