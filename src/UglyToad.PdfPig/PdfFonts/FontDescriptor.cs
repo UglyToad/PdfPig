@@ -184,7 +184,7 @@
             return new FontDetails(name ?? FontName ?? string.Empty,
                 FontWeight > 500,
                 (int)FontWeight,
-                Flags.HasFlag(FontDescriptorFlags.Italic));
+                Flags.HasFlag(FontDescriptorFlags.Italic) || ItalicAngle != 0);
         }
 
         /// <summary>
