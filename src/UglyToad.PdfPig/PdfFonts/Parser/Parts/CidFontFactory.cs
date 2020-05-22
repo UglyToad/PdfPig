@@ -166,7 +166,7 @@
             var counter = 0;
             while (counter < size)
             {
-                var firstCode = (NumericToken)widthArray.Data[counter++];
+                var firstCode = DirectObjectFinder.Get<NumericToken>(widthArray.Data[counter++], pdfScanner);
                 var next = widthArray.Data[counter++];
                 if (DirectObjectFinder.TryGet(next, pdfScanner, out ArrayToken array))
                 {
@@ -175,14 +175,14 @@
 
                     for (var i = 0; i < arraySize; i++)
                     {
-                        var width = (NumericToken)array.Data[i];
+                        var width = DirectObjectFinder.Get<NumericToken>(array.Data[i], pdfScanner);
                         widths[startRange + i] = width.Double;
                     }
                 }
                 else
                 {
-                    var secondCode = (NumericToken)next;
-                    var rangeWidth = (NumericToken)widthArray.Data[counter++];
+                    var secondCode = DirectObjectFinder.Get<NumericToken>(next, pdfScanner);
+                    var rangeWidth = DirectObjectFinder.Get<NumericToken>(widthArray.Data[counter++], pdfScanner);
                     var startRange = firstCode.Int;
                     var endRange = secondCode.Int;
                     var width = rangeWidth.Double;
