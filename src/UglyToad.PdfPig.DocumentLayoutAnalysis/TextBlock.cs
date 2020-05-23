@@ -217,8 +217,8 @@
                 }
             }
 
-            return new PdfRectangle(new PdfPoint(b, l), new PdfPoint(t, l),
-                                    new PdfPoint(t, r), new PdfPoint(b, r));
+            return new PdfRectangle(new PdfPoint(t, l), new PdfPoint(t, r),
+                                    new PdfPoint(b, l), new PdfPoint(b, r));
         }
 
         private PdfRectangle GetBoundingBox270(IReadOnlyList<TextLine> lines)
@@ -253,8 +253,8 @@
                 }
             }
 
-            return new PdfRectangle(new PdfPoint(b, l), new PdfPoint(t, l),
-                                    new PdfPoint(t, r), new PdfPoint(b, r));
+            return new PdfRectangle(new PdfPoint(t, l), new PdfPoint(t, r),
+                                    new PdfPoint(b, l), new PdfPoint(b, r));
         }
 
         private PdfRectangle GetBoundingBoxOther(IReadOnlyList<TextLine> lines)
@@ -269,9 +269,9 @@
 
             // Candidates bounding boxes
             var obb = Geometry.GeometryExtensions.MinimumAreaRectangle(points);
-            var obb1 = new PdfRectangle(obb.BottomRight, obb.BottomLeft, obb.TopLeft, obb.TopRight);
-            var obb2 = new PdfRectangle(obb.TopRight, obb.BottomRight, obb.BottomLeft, obb.TopLeft);
-            var obb3 = new PdfRectangle(obb.TopLeft, obb.TopRight, obb.BottomRight, obb.BottomLeft);
+            var obb1 = new PdfRectangle(obb.BottomLeft, obb.TopLeft, obb.BottomRight, obb.TopRight);
+            var obb2 = new PdfRectangle(obb.BottomRight, obb.BottomLeft, obb.TopRight, obb.TopLeft);
+            var obb3 = new PdfRectangle(obb.TopRight, obb.BottomRight, obb.TopLeft, obb.BottomLeft);
 
             // Find the orientation of the OBB, using the baseline angle
             // Assumes line order is correct
