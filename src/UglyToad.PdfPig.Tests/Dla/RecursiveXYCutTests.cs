@@ -35,7 +35,7 @@
         [MemberData(nameof(DataExtract))]
         public void GetBlocks(string name, string[] expected)
         {
-            using (var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath(name)))
+            using (var document = PdfDocument.Open(DlaHelper.GetDocumentPath(name)))
             {
                 var page = document.GetPage(1);
                 var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
