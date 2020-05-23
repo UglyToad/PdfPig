@@ -215,8 +215,8 @@
             }
 
             return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(
-                new PdfPoint(b, l), new PdfPoint(t, l),
-                new PdfPoint(t, r), new PdfPoint(b, r)));
+                new PdfPoint(t, l), new PdfPoint(t, r),
+                new PdfPoint(b, l), new PdfPoint(b, r)));
         }
 
         private Tuple<string, PdfRectangle> GetBoundingBox270(IReadOnlyList<Letter> letters)
@@ -256,8 +256,8 @@
             }
 
             return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(
-                new PdfPoint(b, l), new PdfPoint(t, l),
-                new PdfPoint(t, r), new PdfPoint(b, r)));
+                new PdfPoint(t, l), new PdfPoint(t, r),
+                new PdfPoint(b, l), new PdfPoint(b, r)));
         }
 
         private Tuple<string, PdfRectangle> GetBoundingBoxOther(IReadOnlyList<Letter> letters)
@@ -333,9 +333,9 @@
 
                 // Candidates bounding boxes
                 var obb = rotateBack.Transform(aabb);
-                var obb1 = new PdfRectangle(obb.BottomRight, obb.BottomLeft, obb.TopLeft, obb.TopRight);
-                var obb2 = new PdfRectangle(obb.TopRight, obb.BottomRight, obb.BottomLeft, obb.TopLeft);
-                var obb3 = new PdfRectangle(obb.TopLeft, obb.TopRight, obb.BottomRight, obb.BottomLeft);
+                var obb1 = new PdfRectangle(obb.BottomLeft, obb.TopLeft, obb.BottomRight, obb.TopRight);
+                var obb2 = new PdfRectangle(obb.BottomRight, obb.BottomLeft, obb.TopRight, obb.TopLeft);
+                var obb3 = new PdfRectangle(obb.TopRight, obb.BottomRight, obb.TopLeft, obb.BottomLeft);
 
                 // Find the orientation of the OBB, using the baseline angle
                 // Assumes word order is correct
