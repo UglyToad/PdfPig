@@ -12,6 +12,11 @@
     public class TextLine
     {
         /// <summary>
+        /// The separator used between words in the line.
+        /// </summary>
+        public readonly string Separator;
+
+        /// <summary>
         /// The text of the line.
         /// </summary>
         public string Text { get; }
@@ -34,8 +39,9 @@
         /// <summary>
         /// Create a new <see cref="TextLine"/>.
         /// </summary>
-        /// <param name="words">The words contained in the line.</param>
-        public TextLine(IReadOnlyList<Word> words)
+        /// <param name="words">The words contained in the line, in the correct order.</param>
+        /// <param name="separator">The separator used between words in the line.</param>
+        public TextLine(IReadOnlyList<Word> words, string separator = " ")
         {
             if (words == null)
             {
@@ -46,6 +52,8 @@
             {
                 throw new ArgumentException("Empty words provided.", nameof(words));
             }
+
+            Separator = separator;
 
             Words = words;
 
