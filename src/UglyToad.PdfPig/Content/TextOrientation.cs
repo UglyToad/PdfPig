@@ -1,17 +1,17 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
     /// <summary>
-    /// Direction of the text.
+    /// Orientation of the text.
     /// </summary>
-    public enum TextDirection : byte
+    public enum TextOrientation : byte
     {
         /// <summary>
-        /// Other text direction.
+        /// Other text orientation.
         /// </summary>
         Other = 0,
 
         /// <summary>
-        /// Usual text direction (Left to Right).
+        /// Usual text orientation (Left to Right).
         /// </summary>
         Horizontal = 1,
 

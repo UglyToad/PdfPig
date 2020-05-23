@@ -17,9 +17,9 @@
         public string Text { get; }
 
         /// <summary>
-        /// The text direction of the block.
+        /// The text orientation of the block.
         /// </summary>
-        public TextDirection TextDirection { get; }
+        public TextOrientation TextOrientation { get; }
 
         /// <summary>
         /// The rectangle completely containing the block.
@@ -64,7 +64,7 @@
             var maxY = lines.Max(x => x.BoundingBox.Top);
             BoundingBox = new PdfRectangle(minX, minY, maxX, maxY);
 
-            TextDirection = lines[0].TextDirection;
+            TextOrientation = lines[0].TextOrientation;
         }
 
         /// <summary>

@@ -47,14 +47,14 @@
             }
 
             List<Word> wordsH = GetWords(
-                letters.Where(l => l.TextDirection == TextDirection.Horizontal).ToList(),
+                letters.Where(l => l.TextOrientation == TextOrientation.Horizontal).ToList(),
                 (l1, l2) => maxDistFunc(l1, l2),
                 Distances.Manhattan, filterFunc, MaxDegreeOfParallelism)
                 .OrderByDescending(x => x.BoundingBox.Bottom)
                 .ThenBy(x => x.BoundingBox.Left).ToList();
 
             var words270 = GetWords(
-                letters.Where(l => l.TextDirection == TextDirection.Rotate270).ToList(),
+                letters.Where(l => l.TextOrientation == TextOrientation.Rotate270).ToList(),
                 (l1, l2) => maxDistFunc(l1, l2),
                 Distances.Manhattan, filterFunc, MaxDegreeOfParallelism)
                 .OrderBy(x => x.BoundingBox.Right)
@@ -62,7 +62,7 @@
             wordsH.AddRange(words270);
 
             var words180 = GetWords(
-                letters.Where(l => l.TextDirection == TextDirection.Rotate180).ToList(),
+                letters.Where(l => l.TextOrientation == TextOrientation.Rotate180).ToList(),
                 (l1, l2) => maxDistFunc(l1, l2),
                 Distances.Manhattan, filterFunc, MaxDegreeOfParallelism)
                 .OrderBy(x => x.BoundingBox.Top)
@@ -70,7 +70,7 @@
             wordsH.AddRange(words180);
 
             var words90 = GetWords(
-                letters.Where(l => l.TextDirection == TextDirection.Rotate90).ToList(),
+                letters.Where(l => l.TextOrientation == TextOrientation.Rotate90).ToList(),
                 (l1, l2) => maxDistFunc(l1, l2),
                 Distances.Manhattan, filterFunc, MaxDegreeOfParallelism)
                 .OrderByDescending(x => x.BoundingBox.Left)
@@ -78,7 +78,7 @@
             wordsH.AddRange(words90);
 
             var wordsU = GetWords(
-                letters.Where(l => l.TextDirection == TextDirection.Other).ToList(),
+                letters.Where(l => l.TextOrientation == TextOrientation.Other).ToList(),
                 (l1, l2) => maxDistFunc(l1, l2) * 2.0, // allow twice the distance for oriented text
                 Distances.Euclidean, filterFunc, MaxDegreeOfParallelism)
                 .OrderByDescending(x => x.BoundingBox.Bottom)
