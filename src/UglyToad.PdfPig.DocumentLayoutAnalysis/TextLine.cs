@@ -17,9 +17,9 @@
         public string Text { get; }
 
         /// <summary>
-        /// The text direction of the line.
+        /// The text orientation of the line.
         /// </summary>
-        public TextDirection TextDirection { get; }
+        public TextOrientation TextOrientation { get; }
 
         /// <summary>
         /// The rectangle completely containing the line.
@@ -59,13 +59,13 @@
 
             BoundingBox = new PdfRectangle(minX, minY, maxX, maxY);
 
-            if (words.All(x => x.TextDirection == words[0].TextDirection))
+            if (words.All(x => x.TextOrientation == words[0].TextOrientation))
             {
-                TextDirection = words[0].TextDirection;
+                TextOrientation = words[0].TextOrientation;
             }
             else
             {
-                TextDirection = TextDirection.Other;
+                TextOrientation = TextOrientation.Other;
             }
         }
 

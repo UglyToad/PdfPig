@@ -196,7 +196,7 @@
 
         private static IEnumerable<TextLine> GetLines(List<Word> words, double maxDist, AngleBounds withinLine, int maxDegreeOfParallelism)
         {
-            TextDirection textDirection = words[0].TextDirection;
+            TextOrientation TextOrientation = words[0].TextOrientation;
             var groupedIndexes = Clustering.NearestNeighbours(words, 2, Distances.Euclidean,
                     (pivot, candidate) => maxDist,
                     pivot => pivot.BoundingBox.BottomRight, candidate => candidate.BoundingBox.BottomLeft,
@@ -205,15 +205,15 @@
                     maxDegreeOfParallelism).ToList();
 
             Func<IEnumerable<Word>, IReadOnlyList<Word>> orderFunc = l => l.OrderBy(x => x.BoundingBox.Left).ToList();
-            if (textDirection == TextDirection.Rotate180)
+            if (TextOrientation == TextOrientation.Rotate180)
             {
                 orderFunc = l => l.OrderByDescending(x => x.BoundingBox.Right).ToList();
             }
-            else if (textDirection == TextDirection.Rotate90)
+            else if (TextOrientation == TextOrientation.Rotate90)
             {
                 orderFunc = l => l.OrderByDescending(x => x.BoundingBox.Top).ToList();
             }
-            else if (textDirection == TextDirection.Rotate270)
+            else if (TextOrientation == TextOrientation.Rotate270)
             {
                 orderFunc = l => l.OrderBy(x => x.BoundingBox.Bottom).ToList();
             }
