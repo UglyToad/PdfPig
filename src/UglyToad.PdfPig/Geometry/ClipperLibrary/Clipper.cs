@@ -2843,7 +2843,7 @@ namespace UglyToad.PdfPig.Geometry.ClipperLibrary
         }
         //------------------------------------------------------------------------------
         /// <summary>
-        /// 
+        /// Clean polygon.
         /// </summary>
         /// <param name="path"></param>
         /// <param name="distance">proximity in units/pixels below which vertices will be stripped.
@@ -2909,7 +2909,7 @@ namespace UglyToad.PdfPig.Geometry.ClipperLibrary
         //------------------------------------------------------------------------------
 
         /// <summary>
-        /// 
+        /// Clean polygon.
         /// </summary>
         /// <param name="polys"></param>
         /// <param name="distance">proximity in units/pixels below which vertices will be stripped.
