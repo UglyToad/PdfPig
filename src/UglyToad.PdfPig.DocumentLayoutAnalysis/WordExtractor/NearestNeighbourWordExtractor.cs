@@ -118,7 +118,7 @@
             List<Word> words = new List<Word>();
             for (int a = 0; a < groupedIndexes.Count; a++)
             {
-                words.Add(new Word(groupedIndexes[a].Select(i => pageLetters[i]).ToList()));
+                words.Add(new Word(groupedIndexes[a]));
             }
 
             return words;
