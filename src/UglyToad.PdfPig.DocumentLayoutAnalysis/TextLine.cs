@@ -210,8 +210,8 @@
                 }
             }
 
-            return new PdfRectangle(new PdfPoint(b, l), new PdfPoint(t, l),
-                                    new PdfPoint(t, r), new PdfPoint(b, r));
+            return new PdfRectangle(new PdfPoint(t, l), new PdfPoint(t, r),
+                                    new PdfPoint(b, l), new PdfPoint(b, r));
         }
 
         private PdfRectangle GetBoundingBox270(IReadOnlyList<Word> words)
@@ -246,8 +246,8 @@
                 }
             }
 
-            return new PdfRectangle(new PdfPoint(b, l), new PdfPoint(t, l),
-                                    new PdfPoint(t, r), new PdfPoint(b, r));
+            return new PdfRectangle(new PdfPoint(t, l), new PdfPoint(t, r),
+                                    new PdfPoint(b, l), new PdfPoint(b, r));
         }
 
         private static PdfRectangle GetBoundingBoxOther(IReadOnlyList<Word> words)
@@ -292,11 +292,11 @@
 
             var transformedPoints = words.SelectMany(r => new[]
             {
-                    r.BoundingBox.BottomLeft,
-                    r.BoundingBox.BottomRight,
-                    r.BoundingBox.TopLeft,
-                    r.BoundingBox.TopRight
-                }).Distinct().Select(p => inverseRotation.Transform(p));
+                r.BoundingBox.BottomLeft,
+                r.BoundingBox.BottomRight,
+                r.BoundingBox.TopLeft,
+                r.BoundingBox.TopRight
+            }).Distinct().Select(p => inverseRotation.Transform(p));
             var aabb = new PdfRectangle(transformedPoints.Min(p => p.X),
                                         transformedPoints.Min(p => p.Y),
                                         transformedPoints.Max(p => p.X),
@@ -310,9 +310,9 @@
 
             // Candidates bounding boxes
             var obb = rotateBack.Transform(aabb);
-            var obb1 = new PdfRectangle(obb.BottomRight, obb.BottomLeft, obb.TopLeft, obb.TopRight);
-            var obb2 = new PdfRectangle(obb.TopRight, obb.BottomRight, obb.BottomLeft, obb.TopLeft);
-            var obb3 = new PdfRectangle(obb.TopLeft, obb.TopRight, obb.BottomRight, obb.BottomLeft);
+            var obb1 = new PdfRectangle(obb.BottomLeft, obb.TopLeft, obb.BottomRight, obb.TopRight);
+            var obb2 = new PdfRectangle(obb.BottomRight, obb.BottomLeft, obb.TopRight, obb.TopLeft);
+            var obb3 = new PdfRectangle(obb.TopRight, obb.BottomRight, obb.TopLeft, obb.BottomLeft);
 
             // Find the orientation of the OBB, using the baseline angle
             // Assumes word order is correct
