@@ -197,7 +197,7 @@
 
                 if (filterPivot(pivot))
                 {
-                    int index = Distances.FindIndexNearest(pivot, elements, candidatesLine, pivotLine, distMeasure, out double dist);
+                    int index = Distances.FindIndexNearest(pivot, elements, pivotLine, candidatesLine,  distMeasure, out double dist);
 
                     if (index != -1)
                     {
