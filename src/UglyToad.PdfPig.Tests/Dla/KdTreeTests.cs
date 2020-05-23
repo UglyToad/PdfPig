@@ -6727,7 +6727,6 @@
 
             // root -> right side -> right side
             Assert.Null(kdTree.Root.RightChild.RightChild);
-
         }
 
         [Theory]
