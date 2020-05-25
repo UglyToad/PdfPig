@@ -15,7 +15,7 @@
         /// <returns>The mode of the sequence. Returns <see cref="float.NaN"/> if the sequence has no mode or if it is not unique.</returns>
         public static float Mode(this IEnumerable<float> array)
         {
-            if (array == null || !array.Any()) return float.NaN;
+            if (array?.Any() != true) return float.NaN;
             var sorted = array.GroupBy(v => v).Select(v => (v.Count(), v.Key)).OrderByDescending(g => g.Item1);
             var mode = sorted.First();
             if (sorted.Count() > 1 && mode.Item1 == sorted.ElementAt(1).Item1) return float.NaN;
@@ -29,7 +29,7 @@
         /// <returns>The mode of the sequence. Returns <see cref="double.NaN"/> if the sequence has no mode or if it is not unique.</returns>
         public static double Mode(this IEnumerable<double> array)
         {
-            if (array == null || !array.Any()) return double.NaN;
+            if (array?.Any() != true) return double.NaN;
             var sorted = array.GroupBy(v => v).Select(v => (v.Count(), v.Key)).OrderByDescending(g => g.Item1);
             var mode = sorted.First();
             if (sorted.Count() > 1 && mode.Item1 == sorted.ElementAt(1).Item1) return double.NaN;

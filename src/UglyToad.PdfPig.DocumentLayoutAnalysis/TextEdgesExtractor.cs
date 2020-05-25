@@ -29,15 +29,15 @@
         /// </summary>
         /// <param name="pageWords">The words in the page.</param>
         /// <param name="minimumElements">The minimum number of elements to define a text edge.</param>
-        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
-        /// <para>A positive property value limits the number of concurrent operations to the set value. 
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled.
+        /// <para>A positive property value limits the number of concurrent operations to the set value.
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
         public static IReadOnlyDictionary<EdgeType, List<PdfLine>> GetEdges(IEnumerable<Word> pageWords, int minimumElements = 4,
             int maxDegreeOfParallelism = -1)
         {
             if (minimumElements < 0)
             {
-                throw new ArgumentException("TextEdgesExtractor.GetEdges(): The minimum number of elements should be positive.", "minimumElements");
+                throw new ArgumentException("TextEdgesExtractor.GetEdges(): The minimum number of elements should be positive.", nameof(minimumElements));
             }
 
             var cleanWords = pageWords.Where(x => !string.IsNullOrWhiteSpace(x.Text.Trim()));
@@ -46,10 +46,7 @@
 
             ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
 
-            Parallel.ForEach(edgesFuncs, parallelOptions, f =>
-            {
-                dictionary.TryAdd(f.Item1, GetVerticalEdges(cleanWords, f.Item2, minimumElements));
-            });
+            Parallel.ForEach(edgesFuncs, parallelOptions, f => dictionary.TryAdd(f.Item1, GetVerticalEdges(cleanWords, f.Item2, minimumElements)));
             return dictionary.ToDictionary(x => x.Key, x => x.Value);
         }
 

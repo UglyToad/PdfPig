@@ -99,8 +99,8 @@
 		/// <param name="filterPivotFunction"></param>
         /// <param name="filterFunction">Function used to filter out connection between letters, e.g. check if the letters have the same color.
         /// <para>If the function returns false, a new word will be created.</para></param>
-        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
-        /// <para>A positive property value limits the number of concurrent operations to the set value. 
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled.
+        /// <para>A positive property value limits the number of concurrent operations to the set value.
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
         private List<Word> GetWords(IReadOnlyList<Letter> letters,
             Func<Letter, Letter, double> maxDistanceFunction, Func<PdfPoint, PdfPoint, double> distMeasure,
