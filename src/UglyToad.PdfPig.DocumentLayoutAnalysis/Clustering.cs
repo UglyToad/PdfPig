@@ -23,8 +23,8 @@
         /// <param name="candidatesPoint">The candidates' point to use for pairing, e.g. BottomLeft, TopLeft.</param>
         /// <param name="filterPivot">Filter to apply to the pivot point. If false, point will not be paired at all, e.g. is white space.</param>
         /// <param name="filterFinal">Filter to apply to both the pivot and the paired point. If false, point will not be paired at all, e.g. pivot and paired point have same font.</param>
-        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
-        /// <para>A positive property value limits the number of concurrent operations to the set value. 
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled.
+        /// <para>A positive property value limits the number of concurrent operations to the set value.
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
         public static IEnumerable<IReadOnlyList<T>> NearestNeighbours<T>(IReadOnlyList<T> elements,
             Func<PdfPoint, PdfPoint, double> distMeasure,
@@ -91,8 +91,8 @@
         /// <param name="candidatesPoint">The candidates' point to use for pairing, e.g. BottomLeft, TopLeft.</param>
         /// <param name="filterPivot">Filter to apply to the pivot point. If false, point will not be paired at all, e.g. is white space.</param>
         /// <param name="filterFinal">Filter to apply to both the pivot and the paired point. If false, point will not be paired at all, e.g. pivot and paired point have same font.</param>
-        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
-        /// <para>A positive property value limits the number of concurrent operations to the set value. 
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled.
+        /// <para>A positive property value limits the number of concurrent operations to the set value.
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
         public static IEnumerable<IReadOnlyList<T>> NearestNeighbours<T>(IReadOnlyList<T> elements, int k,
             Func<PdfPoint, PdfPoint, double> distMeasure,
@@ -159,8 +159,8 @@
         /// <param name="candidatesLine">The candidates' line to use for pairing.</param>
         /// <param name="filterPivot">Filter to apply to the pivot point. If false, point will not be paired at all, e.g. is white space.</param>
         /// <param name="filterFinal">Filter to apply to both the pivot and the paired point. If false, point will not be paired at all, e.g. pivot and paired point have same font.</param>
-        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled. 
-        /// <para>A positive property value limits the number of concurrent operations to the set value. 
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled.
+        /// <para>A positive property value limits the number of concurrent operations to the set value.
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
         public static IEnumerable<IReadOnlyList<T>> NearestNeighbours<T>(IReadOnlyList<T> elements,
             Func<PdfLine, PdfLine, double> distMeasure,

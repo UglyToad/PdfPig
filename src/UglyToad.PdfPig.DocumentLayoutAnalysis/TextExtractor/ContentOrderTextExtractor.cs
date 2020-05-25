@@ -68,7 +68,7 @@
                     else if (previous.Value != " ")
                     {
                         var gap = letter.StartBaseLine.X - previous.EndBaseLine.X;
-                        
+
                         if (WhitespaceSizeStatistics.IsProbablyWhitespace(gap, previous))
                         {
                             sb.Append(" ");
