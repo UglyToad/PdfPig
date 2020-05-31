@@ -90,5 +90,21 @@
                 Assert.False(document.TryGetBookmarks(out _));
             }
         }
+
+        [Fact]
+        public void StartXRefNotNearEnd()
+        {
+            var bytes = File.ReadAllBytes(GetFilename());
+
+            var emptyTrailer = new byte[2026];
+            emptyTrailer[0] = 10;
+
+            bytes = bytes.Concat(emptyTrailer).ToArray();
+
+            using (var document = PdfDocument.Open(bytes, ParsingOptions.LenientParsingOff))
+            {
+                Assert.Equal(1, document.NumberOfPages);
+            }
+        }
     }
 }

@@ -38,7 +38,7 @@
             (byte) 'e',
             (byte) 'f'
         };
-        
+
         public static long GetFirstCrossReferenceOffset(IInputBytes bytes, ISeekableTokenScanner scanner, bool isLenientParsing)
         {
             if (bytes == null)
@@ -54,10 +54,6 @@
             var fileLength = bytes.Length;
 
             var offsetFromEnd = fileLength < EndOfFileSearchRange ? (int)fileLength : EndOfFileSearchRange;
-
-            var startPosition = fileLength - offsetFromEnd;
-
-            bytes.Seek(startPosition);
 
             var startXrefPosition = GetStartXrefPosition(bytes, offsetFromEnd);
 
@@ -96,38 +92,48 @@
             var startXrefs = new List<int>();
 
             var index = 0;
-            var offset = 0;
-            
-            // Starting scanning the last 1024 bytes.
-            while (bytes.MoveNext())
+
+            var fileLength = bytes.Length;
+            var multiple = 1;
+
+            var actualStartOffset = Math.Max(0, fileLength - (offsetFromEnd * multiple));
+            do
             {
-                offset++;
-                if (bytes.CurrentByte == StartXRefBytes[index])
+                multiple *= 2;
+                bytes.Seek(actualStartOffset);
+
+                // Starting scanning the file bytes.
+                while (bytes.MoveNext())
                 {
-                    // We might be reading "startxref".
-                    index++;
-                }
-                else
-                {
-                    index = 0;
+                    if (bytes.CurrentByte == StartXRefBytes[index])
+                    {
+                        // We might be reading "startxref".
+                        index++;
+                    }
+                    else
+                    {
+                        index = 0;
+                    }
+
+                    if (index == StartXRefBytes.Length)
+                    {
+                        // Add this "startxref" (position from the start of the document to the first 's').
+                        startXrefs.Add((int)bytes.CurrentOffset - StartXRefBytes.Length);
+
+                        // Continue scanning in case there are further "startxref"s. Not sure if this ever happens.
+                        index = 0;
+                    }
                 }
 
-                if (index == StartXRefBytes.Length)
-                {
-                    // Add this "startxref" (position from the end of the document to the first 's').
-                    startXrefs.Add(offsetFromEnd - (offset - StartXRefBytes.Length));
-
-                    // Continue scanning in case there are further "startxref"s. Not sure if this ever happens.
-                    index = 0;
-                }
-            }
-
+                actualStartOffset = Math.Max(0, fileLength - (offsetFromEnd * multiple));
+            } while (startXrefs.Count == 0 && actualStartOffset > 0);
+            
             if (startXrefs.Count == 0)
             {
-                throw new PdfDocumentFormatException("Could not find the startxref within the last 1024 characters.");
+                throw new PdfDocumentFormatException($"Could not find the startxref within the last {offsetFromEnd} characters.");
             }
 
-            return bytes.Length - startXrefs[startXrefs.Count - 1];
+            return startXrefs[startXrefs.Count - 1];
         }
     }
 }
