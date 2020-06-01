@@ -393,7 +393,7 @@
             var formMatrix = TransformationMatrix.Identity;
             if (formStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Matrix, pdfScanner, out var formMatrixToken))
             {
-                formMatrix = TransformationMatrix.FromArray(formMatrixToken.Data.OfType<NumericToken>().Select(x => (double)x.Data).ToArray());
+                formMatrix = TransformationMatrix.FromArray(formMatrixToken.Data.OfType<NumericToken>().Select(x => x.Double).ToArray());
             }
 
             // 2. Update current transformation matrix.
