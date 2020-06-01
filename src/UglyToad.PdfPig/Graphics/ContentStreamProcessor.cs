@@ -397,7 +397,7 @@
             }
 
             // 2. Update current transformation matrix.
-            var resultingTransformationMatrix = startState.CurrentTransformationMatrix.Multiply(formMatrix);
+            var resultingTransformationMatrix = formMatrix.Multiply(startState.CurrentTransformationMatrix);
 
             startState.CurrentTransformationMatrix = resultingTransformationMatrix;
 
