@@ -79,6 +79,28 @@
         }
 
         /// <summary>
+        /// Bound angle so that -180 ≤ θ ≤ 180.
+        /// </summary>
+        /// <param name="angle">The angle to bound.</param>
+        public static double BoundAngle180(double angle)
+        {
+            angle = (angle + 180) % 360;
+            if (angle < 0) angle += 360;
+            return angle - 180;
+        }
+
+        /// <summary>
+        /// Bound angle so that 0 ≤ θ ≤ 360.
+        /// </summary>
+        /// <param name="angle">The angle to bound.</param>
+        public static double BoundAngle0to360(double angle)
+        {
+            angle %= 360;
+            if (angle < 0) angle += 360;
+            return angle;
+        }
+
+        /// <summary>
         /// Get the minimum edit distance between two strings.
         /// </summary>
         /// <param name="string1">The first string.</param>
@@ -127,32 +149,32 @@
         /// <typeparam name="T"></typeparam>
         /// <param name="element">The reference point, for which to find the nearest neighbour.</param>
         /// <param name="candidates">The list of neighbours candidates.</param>
-        /// <param name="candidatesPoint"></param>
         /// <param name="pivotPoint"></param>
+        /// <param name="candidatePoint"></param>
         /// <param name="distanceMeasure">The distance measure to use.</param>
-        /// <param name="distance">The distance between reference point, and its nearest neighbour.</param>
+        /// <param name="distance">The distance between the reference element and its nearest neighbour.</param>
         public static int FindIndexNearest<T>(T element, IReadOnlyList<T> candidates,
-            Func<T, PdfPoint> candidatesPoint, Func<T, PdfPoint> pivotPoint,
+            Func<T, PdfPoint> pivotPoint, Func<T, PdfPoint> candidatePoint,
             Func<PdfPoint, PdfPoint, double> distanceMeasure, out double distance)
         {
             if (candidates == null || candidates.Count == 0)
             {
-                throw new ArgumentException("Distances.FindIndexNearest(): The list of neighbours candidates is either null or empty.", "points");
+                throw new ArgumentException("Distances.FindIndexNearest(): The list of neighbours candidates is either null or empty.", nameof(candidates));
             }
 
             if (distanceMeasure == null)
             {
-                throw new ArgumentException("Distances.FindIndexNearest(): The distance measure must not be null.", "distanceMeasure");
+                throw new ArgumentException("Distances.FindIndexNearest(): The distance measure must not be null.", nameof(distanceMeasure));
             }
 
             distance = double.MaxValue;
             int closestPointIndex = -1;
-            var candidatesPoints = candidates.Select(candidatesPoint).ToList();
+            var candidatesPoints = candidates.Select(candidatePoint).ToList();
             var pivot = pivotPoint(element);
 
             for (var i = 0; i < candidates.Count; i++)
             {
-                double currentDistance = distanceMeasure(candidatesPoints[i], pivot);
+                double currentDistance = distanceMeasure(pivot, candidatesPoints[i]);
                 if (currentDistance < distance && !candidates[i].Equals(element))
                 {
                     distance = currentDistance;
@@ -169,32 +191,32 @@
         /// <typeparam name="T"></typeparam>
         /// <param name="element">The reference line, for which to find the nearest neighbour.</param>
         /// <param name="candidates">The list of neighbours candidates.</param>
-        /// <param name="candidatesLine"></param>
         /// <param name="pivotLine"></param>
+        /// <param name="candidateLine"></param>
         /// <param name="distanceMeasure">The distance measure between two lines to use.</param>
-        /// <param name="distance">The distance between reference line, and its nearest neighbour.</param>
+        /// <param name="distance">The distance between the reference element and its nearest neighbour.</param>
         public static int FindIndexNearest<T>(T element, IReadOnlyList<T> candidates,
-            Func<T, PdfLine> candidatesLine, Func<T, PdfLine> pivotLine,
+            Func<T, PdfLine> pivotLine, Func<T, PdfLine> candidateLine,
             Func<PdfLine, PdfLine, double> distanceMeasure, out double distance)
         {
             if (candidates == null || candidates.Count == 0)
             {
-                throw new ArgumentException("Distances.FindIndexNearest(): The list of neighbours candidates is either null or empty.", "lines");
+                throw new ArgumentException("Distances.FindIndexNearest(): The list of neighbours candidates is either null or empty.", nameof(candidates));
             }
 
             if (distanceMeasure == null)
             {
-                throw new ArgumentException("Distances.FindIndexNearest(): The distance measure must not be null.", "distanceMeasure");
+                throw new ArgumentException("Distances.FindIndexNearest(): The distance measure must not be null.", nameof(distanceMeasure));
             }
 
             distance = double.MaxValue;
             int closestLineIndex = -1;
-            var candidatesLines = candidates.Select(candidatesLine).ToList();
+            var candidatesLines = candidates.Select(candidateLine).ToList();
             var pivot = pivotLine(element);
 
             for (var i = 0; i < candidates.Count; i++)
             {
-                double currentDistance = distanceMeasure(candidatesLines[i], pivot);
+                double currentDistance = distanceMeasure(pivot, candidatesLines[i]);
                 if (currentDistance < distance && !candidates[i].Equals(element))
                 {
                     distance = currentDistance;
