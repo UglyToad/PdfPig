@@ -66,63 +66,6 @@
 
             Value = rotation;
         }
-        
-        [Pure]
-        internal PdfRectangle Rotate(PdfRectangle rectangle, PdfVector pageSize)
-        {
-            // TODO: this is a bit of a hack because I don't understand matrices
-            /* There should be a single Affine Transform we can apply to any point resulting
-             * from a content stream operation which will rotate the point and translate it back to
-             * a point where the origin is in the page's lower left corner.
-             *
-             * For example this matrix represents a (clockwise) rotation and translation:
-             * [  cos  sin  tx ]
-             * [ -sin  cos  ty ]
-             * [    0    0   1 ]
-             *
-             * The values of tx and ty are those required to move the origin back to the expected origin (lower-left).
-             * The corresponding values should be:
-             * Rotation:  0   90  180  270
-             *       tx:  0    0    w    w
-             *       ty:  0    h    h    0
-             *
-             * Where w and h are the page width and height after rotation.
-            */        
-            double cos, sin;
-            double dx = 0, dy = 0;
-            switch (Value)
-            {
-                case 0:
-                    return rectangle;
-                case 90:
-                    cos = 0;
-                    sin = 1;
-                    dy = pageSize.Y;
-                    break;
-                case 180:
-                    cos = -1;
-                    sin = 0;
-                    dx = pageSize.X;
-                    dy = pageSize.Y;
-                    break;
-                case 270:
-                    cos = 0;
-                    sin = -1;
-                    dx = pageSize.X;
-                    break;
-                default:
-                    throw new InvalidOperationException($"Invalid value for rotation: {Value}.");
-            }
-
-            PdfPoint Multiply(PdfPoint pt)
-            {
-                return new PdfPoint((pt.X * cos) + (pt.Y * sin) + dx,
-                    (pt.X * -sin) + (pt.Y * cos) + dy);
-            }
-
-            return new PdfRectangle(Multiply(rectangle.TopLeft), Multiply(rectangle.TopRight),
-                Multiply(rectangle.BottomLeft), Multiply(rectangle.BottomRight));
-        }
 
         /// <inheritdoc />
         public override int GetHashCode()
