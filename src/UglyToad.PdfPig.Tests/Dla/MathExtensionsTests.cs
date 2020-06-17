@@ -183,7 +183,7 @@
             var dataFloat = data.Select(x => (float)x);
             Assert.Equal((float)expected, dataFloat.Mode(), PreciseDoubleComparer);
         }
-        
+
         [Theory]
         [MemberData(nameof(ModeDataNaN))]
         public void ModeNaN(double[] data)

@@ -16,7 +16,7 @@
         /// K-D tree data structure of <see cref="PdfPoint"/>.
         /// </summary>
         /// <param name="points">The points used to build the tree.</param>
-        public KdTree(PdfPoint[] points) : base(points, p => p)
+        public KdTree(IReadOnlyList<PdfPoint> points) : base(points, p => p)
         { }
 
         /// <summary>

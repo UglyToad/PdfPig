@@ -79,7 +79,7 @@
                 "UglyToad.PdfPig.Content.PageSize",
                 "UglyToad.PdfPig.Content.PageTreeNode",
                 "UglyToad.PdfPig.Content.Word",
-                "UglyToad.PdfPig.Content.TextDirection",
+                "UglyToad.PdfPig.Content.TextOrientation",
                 "UglyToad.PdfPig.Content.XmpMetadata",
                 "UglyToad.PdfPig.CrossReference.CrossReferenceTable",
                 "UglyToad.PdfPig.CrossReference.CrossReferenceType",
