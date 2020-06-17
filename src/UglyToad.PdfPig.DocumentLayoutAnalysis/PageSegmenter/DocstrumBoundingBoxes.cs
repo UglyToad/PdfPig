@@ -320,7 +320,6 @@
 
         /// <summary>
         /// Perpendicular overlapping distance.
-        /// TODO: describe checks done
         /// </summary>
         /// <param name="line1"></param>
         /// <param name="line2"></param>
@@ -419,7 +418,6 @@
                 overlap = false;
             }
 
-            //double pj = Math.Sqrt((Dj.Y - Cj.Y) * (Dj.Y - Cj.Y) + (Dj.X - Cj.X) * (Dj.X - Cj.X));
             double pj = Distances.Euclidean(Cj, Dj);
 
             normalisedOverlap = (overlap ? pj : -pj) / j.Length;
@@ -445,24 +443,31 @@
 
         private static PdfPoint? GetTranslatedPoint(double xPi, double yPi, double xPj, double yPj, double dXi, double dYi, double dXj, double dYj, double epsilon)
         {
+            double xAj;
+            double yAj;
+
             double dYidYj = dYi * dYj;
             double dXidXj = dXi * dXj;
             double denominator = dYidYj + dXidXj;
+
             if (denominator.AlmostEqualsToZero(epsilon))
             {
                 // The denominator is 0 when translating points, meaning the lines are perpendicular.
                 return null;
             }
 
-            double xTj = (xPi * dXidXj + xPj * dYidYj + dXj * dYi * (yPi - yPj)) / denominator;
-            double yTj = yPj; // TODO: need to check that
-
-            if (dXj > epsilon)
+            if (!dXj.AlmostEqualsToZero(epsilon)) // dXj != 0
             {
-                yTj = dYj / dXj * (xTj - xPj) + yPj;
+                xAj = (xPi * dXidXj + xPj * dYidYj + dXj * dYi * (yPi - yPj)) / denominator;
+                yAj = dYj / dXj * (xAj - xPj) + yPj;
+            }
+            else // If dXj = 0, then yAj is calculated first, and xAj is calculated from that.
+            {
+                yAj = (yPi * dYidYj + yPj * dXidXj + dYj * dXi * (xPi - xPj)) / denominator;
+                xAj = xPj;
             }
 
-            return new PdfPoint(xTj, yTj);
+            return new PdfPoint(xAj, yAj);
         }
 
         /// <summary>
@@ -479,11 +484,10 @@
             double bx = pl2.X - pl1.X;
             double by = pl2.Y - pl1.Y;
 
-            double dotProd1 = ax * bx + ay * by;
-            if (dotProd1 < 0) return false;
+            double dotProd = ax * bx + ay * by;
+            if (dotProd < 0) return false;
 
-            double dotProd2 = bx * bx + by * by;
-            return dotProd1 <= dotProd2;
+            return dotProd <= (bx * bx + by * by);
         }
 
         /// <summary>
