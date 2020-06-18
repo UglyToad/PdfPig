@@ -88,7 +88,7 @@
             IPdfTokenScanner pdfScanner,
             IPageContentParser pageContentParser,
             IFilterProvider filterProvider,
-            ILog log, 
+            ILog log,
             bool clipPaths,
             PdfVector pageSize)
         {
@@ -108,8 +108,73 @@
             var clippingPath = new PdfPath() { clippingSubpath };
             clippingPath.SetClipping(FillingRule.NonZeroWinding);
 
-            graphicsStack.Push(new CurrentGraphicsState() { CurrentClippingPath = clippingPath });
+            graphicsStack.Push(new CurrentGraphicsState()
+            {
+                CurrentTransformationMatrix = GetInitialMatrix(),
+                CurrentClippingPath = clippingPath
+            });
+
             ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore);
+        }
+
+        [System.Diagnostics.Contracts.Pure]
+        private TransformationMatrix GetInitialMatrix()
+        {
+            // TODO: this is a bit of a hack because I don't understand matrices
+            // TODO: use MediaBox (i.e. pageSize) or CropBox?
+
+            /* 
+             * There should be a single Affine Transform we can apply to any point resulting
+             * from a content stream operation which will rotate the point and translate it back to
+             * a point where the origin is in the page's lower left corner.
+             *
+             * For example this matrix represents a (clockwise) rotation and translation:
+             * [  cos  sin  tx ]
+             * [ -sin  cos  ty ]
+             * [    0    0   1 ]
+             * Warning: rotation is counter-clockwise here
+             * 
+             * The values of tx and ty are those required to move the origin back to the expected origin (lower-left).
+             * The corresponding values should be:
+             * Rotation:  0   90  180  270
+             *       tx:  0    0    w    w
+             *       ty:  0    h    h    0
+             *
+             * Where w and h are the page width and height after rotation.
+            */
+
+            double cos, sin;
+            double dx = 0, dy = 0;
+            switch (rotation.Value)
+            {
+                case 0:
+                    cos = 1;
+                    sin = 0;
+                    break;
+                case 90:
+                    cos = 0;
+                    sin = 1;
+                    dy = pageSize.Y;
+                    break;
+                case 180:
+                    cos = -1;
+                    sin = 0;
+                    dx = pageSize.X;
+                    dy = pageSize.Y;
+                    break;
+                case 270:
+                    cos = 0;
+                    sin = -1;
+                    dx = pageSize.X;
+                    break;
+                default:
+                    throw new InvalidOperationException($"Invalid value for page rotation: {rotation.Value}.");
+            }
+
+            return new TransformationMatrix(
+                cos, -sin, 0,
+                sin, cos, 0,
+                dx, dy, 1);
         }
 
         public PageContent Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations)
@@ -225,18 +290,12 @@
                 }
 
                 var boundingBox = font.GetBoundingBox(code);
-                
+
                 var transformedGlyphBounds = PerformantRectangleTransformer
                     .Transform(renderingMatrix, textMatrix, transformationMatrix, boundingBox.GlyphBounds);
 
                 var transformedPdfBounds = PerformantRectangleTransformer
                     .Transform(renderingMatrix, textMatrix, transformationMatrix, new PdfRectangle(0, 0, boundingBox.Width, 0));
-
-                if (rotation.Value > 0)
-                {
-                    transformedGlyphBounds = rotation.Rotate(transformedGlyphBounds, pageSize);
-                    transformedPdfBounds = rotation.Rotate(transformedPdfBounds, pageSize);
-                }
 
                 // If the text rendering mode calls for filling, the current nonstroking color in the graphics state is used; 
                 // if it calls for stroking, the current stroking color is used.
@@ -393,11 +452,11 @@
             var formMatrix = TransformationMatrix.Identity;
             if (formStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Matrix, pdfScanner, out var formMatrixToken))
             {
-                formMatrix = TransformationMatrix.FromArray(formMatrixToken.Data.OfType<NumericToken>().Select(x => (double)x.Data).ToArray());
+                formMatrix = TransformationMatrix.FromArray(formMatrixToken.Data.OfType<NumericToken>().Select(x => x.Double).ToArray());
             }
 
             // 2. Update current transformation matrix.
-            var resultingTransformationMatrix = startState.CurrentTransformationMatrix.Multiply(formMatrix);
+            var resultingTransformationMatrix = formMatrix.Multiply(startState.CurrentTransformationMatrix);
 
             startState.CurrentTransformationMatrix = resultingTransformationMatrix;
 
