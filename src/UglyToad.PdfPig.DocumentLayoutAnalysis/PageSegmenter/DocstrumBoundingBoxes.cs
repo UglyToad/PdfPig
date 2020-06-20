@@ -9,7 +9,6 @@
     using System.Threading.Tasks;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.ReadingOrderDetector;
 
-    /// <inheritdoc />
     /// <summary>
     /// The Document Spectrum (Docstrum) algorithm is a bottom-up page segmentation technique based on nearest-neighbourhood
     /// clustering of connected components extracted from the document.
@@ -23,7 +22,6 @@
         /// </summary>
         public static DocstrumBoundingBoxes Instance { get; } = new DocstrumBoundingBoxes();
 
-        /// <inheritdoc />
         /// <summary>
         /// Get the blocks using default options values.
         /// </summary>
@@ -34,7 +32,6 @@
             return GetBlocks(words, new DocstrumBoundingBoxesOptions());
         }
 
-        /// <inheritdoc />
         /// <summary>
         /// Get the blocks using options values.
         /// </summary>
@@ -320,7 +317,6 @@
 
         /// <summary>
         /// Perpendicular overlapping distance.
-        /// TODO: describe checks done
         /// </summary>
         /// <param name="line1"></param>
         /// <param name="line2"></param>
@@ -419,7 +415,6 @@
                 overlap = false;
             }
 
-            //double pj = Math.Sqrt((Dj.Y - Cj.Y) * (Dj.Y - Cj.Y) + (Dj.X - Cj.X) * (Dj.X - Cj.X));
             double pj = Distances.Euclidean(Cj, Dj);
 
             normalisedOverlap = (overlap ? pj : -pj) / j.Length;
@@ -448,21 +443,29 @@
             double dYidYj = dYi * dYj;
             double dXidXj = dXi * dXj;
             double denominator = dYidYj + dXidXj;
+
             if (denominator.AlmostEqualsToZero(epsilon))
             {
                 // The denominator is 0 when translating points, meaning the lines are perpendicular.
                 return null;
             }
 
-            double xTj = (xPi * dXidXj + xPj * dYidYj + dXj * dYi * (yPi - yPj)) / denominator;
-            double yTj = yPj; // TODO: need to check that
+            double xAj;
+            double yAj;
 
-            if (dXj > epsilon)
+            if (!dXj.AlmostEqualsToZero(epsilon)) // dXj != 0
             {
-                yTj = dYj / dXj * (xTj - xPj) + yPj;
+                xAj = (xPi * dXidXj + xPj * dYidYj + dXj * dYi * (yPi - yPj)) / denominator;
+                yAj = dYj / dXj * (xAj - xPj) + yPj;
+            }
+            else // If dXj = 0, then yAj is calculated first, and xAj is calculated from that.
+            {
+                // TODO: check that
+                yAj = (yPi * dYidYj + yPj * dXidXj + dYj * dXi * (xPi - xPj)) / denominator;
+                xAj = xPj;
             }
 
-            return new PdfPoint(xTj, yTj);
+            return new PdfPoint(xAj, yAj);
         }
 
         /// <summary>
@@ -482,8 +485,7 @@
             double dotProd1 = ax * bx + ay * by;
             if (dotProd1 < 0) return false;
 
-            double dotProd2 = bx * bx + by * by;
-            return dotProd1 <= dotProd2;
+            return dotProd1 <= (bx * bx + by * by);
         }
 
         /// <summary>

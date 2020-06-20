@@ -7,7 +7,6 @@
     using System.Linq;
     using UglyToad.PdfPig.Geometry;
 
-    /// <inheritdoc />
     /// <summary>
     /// The recursive X-Y cut is a top-down page segmentation technique that decomposes a document
     /// recursively into a set of rectangular blocks. This implementation leverages bounding boxes.
@@ -21,7 +20,6 @@
         /// </summary>
         public static RecursiveXYCut Instance { get; } = new RecursiveXYCut();
 
-        /// <inheritdoc />
         /// <summary>
         /// Get the blocks using default options values.
         /// </summary>
@@ -32,7 +30,6 @@
             return GetBlocks(words, new RecursiveXYCutOptions());
         }
 
-        /// <inheritdoc />
         /// <summary>
         /// Get the blocks using options values.
         /// </summary>

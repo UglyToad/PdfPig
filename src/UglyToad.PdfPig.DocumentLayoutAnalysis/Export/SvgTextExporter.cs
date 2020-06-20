@@ -10,7 +10,6 @@
     using Graphics.Colors;
     using Graphics.Core;
 
-    /// <inheritdoc />
     /// <summary>
     /// Exports a page as an SVG.
     /// </summary>
