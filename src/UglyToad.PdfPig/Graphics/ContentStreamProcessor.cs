@@ -49,6 +49,7 @@
         private readonly IFilterProvider filterProvider;
         private readonly ILog log;
         private readonly bool clipPaths;
+        private readonly bool suppressDuplicateOverlappingText;
         private readonly PdfVector pageSize;
         private readonly MarkedContentStack markedContentStack = new MarkedContentStack();
 
@@ -305,19 +306,34 @@
                     ? currentState.CurrentNonStrokingColor
                     : currentState.CurrentStrokingColor;
 
-                var letter = new Letter(unicode, transformedGlyphBounds,
-                    transformedPdfBounds.BottomLeft,
-                    transformedPdfBounds.BottomRight,
-                    transformedPdfBounds.Width,
-                    fontSize,
-                    font.Details,
-                    color,
-                    pointSize,
-                    textSequence);
+                bool showCharacter = true;
+                if (suppressDuplicateOverlappingText)
+                {
+                    if (letters[letters.Count -1].Value.Equals(unicode))
+                    {
+                        // only check the last letter for the moment
 
-                letters.Add(letter);
+                        double tolerance = transformedGlyphBounds.Width / unicode.Length / 3.0;
 
-                markedContentStack.AddLetter(letter);
+
+                    }
+                }
+
+                if (showCharacter)
+                {
+                    var letter = new Letter(unicode, transformedGlyphBounds,
+                        transformedPdfBounds.BottomLeft,
+                        transformedPdfBounds.BottomRight,
+                        transformedPdfBounds.Width,
+                        fontSize,
+                        font.Details,
+                        color,
+                        pointSize,
+                        textSequence);
+
+                    letters.Add(letter);
+                    markedContentStack.AddLetter(letter);
+                }
 
                 double tx, ty;
                 if (font.IsVertical)
