@@ -13,7 +13,6 @@
     using UglyToad.PdfPig.Graphics;
     using Util;
 
-    /// <inheritdoc />
     /// <summary>
     /// Alto 4.1 (XML) text exporter.
     /// <para>See https://github.com/altoxml/schema </para>
@@ -66,7 +65,6 @@
             return Serialize(altoDocument);
         }
 
-        /// <inheritdoc />
         /// <summary>
         /// Get the Alto (XML) string of the page layout. Excludes <see cref="T:UglyToad.PdfPig.Geometry.PdfSubpath" />s.
         /// </summary>

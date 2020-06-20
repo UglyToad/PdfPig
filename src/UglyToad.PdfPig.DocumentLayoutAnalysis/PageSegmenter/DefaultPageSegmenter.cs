@@ -6,7 +6,6 @@
     using System.Collections.Generic;
     using System.Linq;
 
-    /// <inheritdoc />
     /// <summary>
     /// Default Page Segmenter. All words are included in one block.
     /// </summary>
@@ -17,7 +16,6 @@
         /// </summary>
         public static DefaultPageSegmenter Instance { get; } = new DefaultPageSegmenter();
 
-        /// <inheritdoc />
         /// <summary>
         /// Get the blocks using default options values.
         /// </summary>
