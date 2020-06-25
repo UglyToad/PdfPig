@@ -57,6 +57,11 @@
             top?.AddLetter(letter);
         }
 
+        public void ReplaceLetter(Letter oldLetter, Letter newLetter)
+        {
+            top?.ReplaceLetter(oldLetter, newLetter);
+        }
+
         public void AddPath(PdfPath path)
         {
             top?.AddPath(path);
@@ -101,6 +106,15 @@
             public void AddLetter(Letter letter)
             {
                 letters.Add(letter);
+            }
+
+            public void ReplaceLetter(Letter oldLetter, Letter newLetter)
+            {
+                var index = letters.IndexOf(oldLetter);
+                if (index != -1)
+                {
+                    letters[index] = newLetter;
+                }
             }
 
             public void AddImage(IPdfImage image)

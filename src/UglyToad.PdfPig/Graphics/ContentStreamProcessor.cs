@@ -312,11 +312,11 @@
                 int duplicatesOverlappingIndex = -1;
                 if (suppressDuplicateOverlappingText && letters.Count > 0)
                 {
-                    var duplicates = letters.Where(l => l.Value.Equals(unicode) && l.Font.Name.Equals(font.Details.Name));
+                    var duplicates = letters.Where(l => l.Value.Equals(unicode) && 
+                                                        l.Font.Name.Equals(font.Details.Name)); // do other checks?
                     if (duplicates.Any())
                     {
                         double tolerance = transformedGlyphBounds.Width / unicode.Length / 3.0;
-
                         double minX = transformedGlyphBounds.BottomLeft.X - tolerance;
                         double maxX = transformedGlyphBounds.BottomLeft.X + tolerance;
                         double minY = transformedGlyphBounds.BottomLeft.Y - tolerance;
@@ -354,20 +354,22 @@
                 }
                 else if (duplicatesOverlappingIndex != -1)
                 {
+                    // update font details to bold
                     var fontDetails = new FontDetails(font.Details.Name, true, font.Details.Weight, font.Details.IsItalic);
+
                     var letter = new Letter(unicode,
                         transformedGlyphBounds,             // TODO: need to update the bounding box
                         transformedPdfBounds.BottomLeft,    // TODO: need to update bottom left
                         transformedPdfBounds.BottomRight,   // TODO: need to update bottom right 
-                        transformedPdfBounds.Width,
+                        transformedPdfBounds.Width,         // TODO: need to update width
                         fontSize,
                         fontDetails,                        // update font details to bold
                         color,
                         pointSize,
                         textSequence);                      // update textSequence?
 
-                    // TODO: update markedContentStack
-                    letters[duplicatesOverlappingIndex] = letter;
+                    markedContentStack.ReplaceLetter(letters[duplicatesOverlappingIndex], letter);  // update markedContentStack
+                    letters[duplicatesOverlappingIndex] = letter;                                   // update letters
                 }
 
                 double tx, ty;
