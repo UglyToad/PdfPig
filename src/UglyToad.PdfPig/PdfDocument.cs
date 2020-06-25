@@ -25,15 +25,17 @@
     {
         private bool isDisposed;
         private readonly Lazy<AcroForm> documentForm;
-        
+
         [NotNull]
         private readonly HeaderVersion version;
-        
+
         private readonly ILog log;
 
         private readonly IInputBytes inputBytes;
 
         private readonly bool clipPaths;
+
+        private readonly bool suppressDuplicateOverlappingText;
 
         [NotNull]
         private readonly ParsingCachingProviders cachingProviders;
@@ -82,20 +84,21 @@
         /// </summary>
         public bool IsEncrypted => encryptionDictionary != null;
 
-        internal PdfDocument(ILog log, 
+        internal PdfDocument(ILog log,
             IInputBytes inputBytes,
-            HeaderVersion version, 
+            HeaderVersion version,
             CrossReferenceTable crossReferenceTable,
             ParsingCachingProviders cachingProviders,
             IPageFactory pageFactory,
             Catalog catalog,
-            DocumentInformation information, 
+            DocumentInformation information,
             EncryptionDictionary encryptionDictionary,
             IPdfTokenScanner pdfScanner,
             IFilterProvider filterProvider,
             AcroFormFactory acroFormFactory,
             BookmarksProvider bookmarksProvider,
-            bool clipPaths)
+            bool clipPaths,
+            bool suppressDuplicateOverlappingText)
         {
             this.log = log;
             this.inputBytes = inputBytes;
@@ -106,6 +109,7 @@
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.bookmarksProvider = bookmarksProvider ?? throw new ArgumentNullException(nameof(bookmarksProvider));
             this.clipPaths = clipPaths;
+            this.suppressDuplicateOverlappingText = suppressDuplicateOverlappingText;
             Information = information ?? throw new ArgumentNullException(nameof(information));
             pages = new Pages(catalog, pageFactory, pdfScanner);
             Structure = new Structure(catalog, crossReferenceTable, pdfScanner);
@@ -157,7 +161,7 @@
 
             try
             {
-                return pages.GetPage(pageNumber, clipPaths);
+                return pages.GetPage(pageNumber, clipPaths, suppressDuplicateOverlappingText);
             }
             catch (Exception ex)
             {

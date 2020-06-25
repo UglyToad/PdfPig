@@ -33,7 +33,7 @@
             this.pdfScanner = pdfScanner;
         }
 
-        public Page Create(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers, bool clipPaths)
+        public Page Create(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers, bool clipPaths, bool suppressDuplicateOverlappingText)
         {
             if (dictionary == null)
             {
@@ -76,7 +76,7 @@
             if (rotation.SwapsAxis)
             {
                 mediaBox = new MediaBox(new PdfRectangle(mediaBox.Bounds.Bottom, 
-                    mediaBox.Bounds.Left, 
+                    mediaBox.Bounds.Left,
                     mediaBox.Bounds.Top,
                     mediaBox.Bounds.Right));
                 cropBox = new CropBox(new PdfRectangle(cropBox.Bounds.Bottom,
@@ -84,7 +84,7 @@
                     cropBox.Bounds.Top,
                     cropBox.Bounds.Right));
             }
-            
+
             UserSpaceUnit userSpaceUnit = GetUserSpaceUnits(dictionary);
 
             PageContent content = default(PageContent);
@@ -121,7 +121,7 @@
                     }
                 }
 
-                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, clipPaths, mediaBox);
+                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, clipPaths, suppressDuplicateOverlappingText, mediaBox);
             }
             else
             {
@@ -134,7 +134,7 @@
 
                 var bytes = contentStream.Decode(filterProvider);
 
-                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, clipPaths, mediaBox);
+                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, clipPaths, suppressDuplicateOverlappingText, mediaBox);
             }
 
             var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, 
@@ -150,7 +150,7 @@
         }
 
         private PageContent GetContent(int pageNumber, IReadOnlyList<byte> contentBytes, CropBox cropBox, UserSpaceUnit userSpaceUnit,
-            PageRotationDegrees rotation, bool clipPaths, MediaBox mediaBox)
+            PageRotationDegrees rotation, bool clipPaths, bool suppressDuplicateOverlappingText, MediaBox mediaBox)
         {
             var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentBytes),
                 log);
@@ -160,6 +160,7 @@
                 filterProvider,
                 log,
                 clipPaths,
+                suppressDuplicateOverlappingText,
                 new PdfVector(mediaBox.Bounds.Width, mediaBox.Bounds.Height));
 
             return context.Process(pageNumber, operations);

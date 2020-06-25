@@ -23,7 +23,7 @@
             Count = catalog.PagesDictionary.GetIntOrDefault(NameToken.Count);
         }
         
-        public Page GetPage(int pageNumber, bool clipPaths)
+        public Page GetPage(int pageNumber, bool clipPaths, bool suppressDuplicateOverlappingText)
         {
             if (pageNumber <= 0 || pageNumber > Count)
             {
@@ -42,7 +42,7 @@
             }
 
             var pageTreeMembers = new PageTreeMembers();
-            
+
             while (pageStack.Count > 0)
             {
                 currentNode = pageStack.Pop();
@@ -51,7 +51,7 @@
                 {
                     pageTreeMembers.ParentResources.Enqueue(resourcesDictionary);
                 }
-                
+
                 if (currentNode.NodeDictionary.TryGet(NameToken.MediaBox, pdfScanner, out ArrayToken mediaBox))
                 {
                     pageTreeMembers.MediaBox = new MediaBox(mediaBox.ToRectangle(pdfScanner));
@@ -63,8 +63,8 @@
                 }
             }
 
-            var page = pageFactory.Create(pageNumber, pageNode.NodeDictionary, pageTreeMembers, clipPaths);
-            
+            var page = pageFactory.Create(pageNumber, pageNode.NodeDictionary, pageTreeMembers, clipPaths, suppressDuplicateOverlappingText);
+
             return page;
         }
     }

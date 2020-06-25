@@ -91,6 +91,7 @@
             IFilterProvider filterProvider,
             ILog log,
             bool clipPaths,
+            bool suppressDuplicateOverlappingText,
             PdfVector pageSize)
         {
             this.resourceStore = resourceStore;
@@ -101,6 +102,7 @@
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.log = log;
             this.clipPaths = clipPaths;
+            this.suppressDuplicateOverlappingText = suppressDuplicateOverlappingText;
             this.pageSize = pageSize;
 
             // initiate CurrentClippingPath to cropBox
@@ -307,21 +309,37 @@
                     : currentState.CurrentStrokingColor;
 
                 bool showCharacter = true;
-                if (suppressDuplicateOverlappingText)
+                int duplicatesOverlappingIndex = -1;
+                if (suppressDuplicateOverlappingText && letters.Count > 0)
                 {
-                    if (letters[letters.Count -1].Value.Equals(unicode))
+                    var duplicates = letters.Where(l => l.Value.Equals(unicode) && l.Font.Name.Equals(font.Details.Name));
+                    if (duplicates.Any())
                     {
-                        // only check the last letter for the moment
-
                         double tolerance = transformedGlyphBounds.Width / unicode.Length / 3.0;
 
+                        double minX = transformedGlyphBounds.BottomLeft.X - tolerance;
+                        double maxX = transformedGlyphBounds.BottomLeft.X + tolerance;
+                        double minY = transformedGlyphBounds.BottomLeft.Y - tolerance;
+                        double maxY = transformedGlyphBounds.BottomLeft.Y + tolerance;
 
+                        var duplicatesOverlapping = duplicates.FirstOrDefault(l => minX <= l.GlyphRectangle.BottomLeft.X &&
+                                                                                   maxX >= l.GlyphRectangle.BottomLeft.X &&
+                                                                                   minY <= l.GlyphRectangle.BottomLeft.Y &&
+                                                                                   maxY >= l.GlyphRectangle.BottomLeft.Y);
+
+                        if (duplicatesOverlapping != default)
+                        {
+                            log.Warn("Duplicate overlapping text found.");
+                            duplicatesOverlappingIndex = letters.IndexOf(duplicatesOverlapping);
+                            showCharacter = false;
+                        }
                     }
                 }
 
                 if (showCharacter)
                 {
-                    var letter = new Letter(unicode, transformedGlyphBounds,
+                    var letter = new Letter(unicode,
+                        transformedGlyphBounds,
                         transformedPdfBounds.BottomLeft,
                         transformedPdfBounds.BottomRight,
                         transformedPdfBounds.Width,
@@ -333,6 +351,23 @@
 
                     letters.Add(letter);
                     markedContentStack.AddLetter(letter);
+                }
+                else if (duplicatesOverlappingIndex != -1)
+                {
+                    var fontDetails = new FontDetails(font.Details.Name, true, font.Details.Weight, font.Details.IsItalic);
+                    var letter = new Letter(unicode,
+                        transformedGlyphBounds,             // TODO: need to update the bounding box
+                        transformedPdfBounds.BottomLeft,    // TODO: need to update bottom left
+                        transformedPdfBounds.BottomRight,   // TODO: need to update bottom right 
+                        transformedPdfBounds.Width,
+                        fontSize,
+                        fontDetails,                        // update font details to bold
+                        color,
+                        pointSize,
+                        textSequence);                      // update textSequence?
+
+                    // TODO: update markedContentStack
+                    letters[duplicatesOverlappingIndex] = letter;
                 }
 
                 double tx, ty;

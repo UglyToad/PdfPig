@@ -24,6 +24,12 @@
         public bool ClipPaths { get; set; } = false;
 
         /// <summary>
+        /// Should the parser suppress duplicate overlapping text (used to create fake bold).
+        /// Defaults to <see langword="true"/>.
+        /// </summary>
+        public bool SuppressDuplicateOverlappingText { get; set; } = true;
+
+        /// <summary>
         /// Should the parser ignore issues where the document does not conform to the PDF specification?
         /// </summary>
         public bool UseLenientParsing { get; set; } = true;

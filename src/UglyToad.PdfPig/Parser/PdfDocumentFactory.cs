@@ -60,6 +60,8 @@
 
             var clipPaths = options?.ClipPaths ?? false;
 
+            var suppressDuplicateOverlappingText = options?.SuppressDuplicateOverlappingText ?? true;
+
             if (options?.Password != null)
             {
                 passwords.Add(options.Password);
@@ -75,13 +77,13 @@
                 passwords.Add(string.Empty);
             }
 
-            var document = OpenDocument(inputBytes, tokenScanner, options?.Logger ?? new NoOpLog(), isLenientParsing, passwords, clipPaths);
+            var document = OpenDocument(inputBytes, tokenScanner, options?.Logger ?? new NoOpLog(), isLenientParsing, passwords, clipPaths, suppressDuplicateOverlappingText);
 
             return document;
         }
 
-        private static PdfDocument OpenDocument(IInputBytes inputBytes, ISeekableTokenScanner scanner, ILog log, bool isLenientParsing, 
-            IReadOnlyList<string> passwords, bool clipPaths)
+        private static PdfDocument OpenDocument(IInputBytes inputBytes, ISeekableTokenScanner scanner, ILog log, bool isLenientParsing,
+            IReadOnlyList<string> passwords, bool clipPaths, bool suppressDuplicateOverlappingText)
         {
             var filterProvider = DefaultFilterProvider.Instance;
 
@@ -96,25 +98,25 @@
 
             var crossReferenceStreamParser = new CrossReferenceStreamParser(filterProvider);
             var crossReferenceParser = new CrossReferenceParser(log, xrefValidator, crossReferenceStreamParser);
-            
+
             var version = FileHeaderParser.Parse(scanner, isLenientParsing, log);
-            
+
             var crossReferenceOffset = FileTrailerParser.GetFirstCrossReferenceOffset(inputBytes, scanner,
                 isLenientParsing) + version.OffsetInFile;
-            
+
             // TODO: make this use the scanner.
             var validator = new CrossReferenceOffsetValidator(xrefValidator);
 
             crossReferenceOffset = validator.Validate(crossReferenceOffset, scanner, inputBytes, isLenientParsing);
-            
-            crossReferenceTable = crossReferenceParser.Parse(inputBytes, isLenientParsing, 
+
+            crossReferenceTable = crossReferenceParser.Parse(inputBytes, isLenientParsing,
                 crossReferenceOffset,
                 version.OffsetInFile,
-                pdfScanner, 
+                pdfScanner,
                 scanner);
-            
-            var (rootReference, rootDictionary) = ParseTrailer(crossReferenceTable, isLenientParsing, 
-                pdfScanner, 
+
+            var (rootReference, rootDictionary) = ParseTrailer(crossReferenceTable, isLenientParsing,
+                pdfScanner,
                 out var encryptionDictionary);
 
             var encryptionHandler = encryptionDictionary != null ?
@@ -134,29 +136,30 @@
                     type1Handler),
                 type1Handler,
                 new Type3FontHandler(pdfScanner, filterProvider, encodingReader));
-            
+
             var resourceContainer = new ResourceStore(pdfScanner, fontFactory);
-            
+
             var information = DocumentInformationFactory.Create(pdfScanner, crossReferenceTable.Trailer);
 
             var catalog = CatalogFactory.Create(rootReference, rootDictionary, pdfScanner, isLenientParsing);
 
-            var pageFactory = new PageFactory(pdfScanner, resourceContainer, filterProvider, 
-                new PageContentParser(new ReflectionGraphicsStateOperationFactory()), 
+            var pageFactory = new PageFactory(pdfScanner, resourceContainer, filterProvider,
+                new PageContentParser(new ReflectionGraphicsStateOperationFactory()),
                 log);
 
             var caching = new ParsingCachingProviders(resourceContainer);
 
             var acroFormFactory = new AcroFormFactory(pdfScanner, filterProvider, crossReferenceTable);
             var bookmarksProvider = new BookmarksProvider(log, pdfScanner);
-            
+
             return new PdfDocument(log, inputBytes, version, crossReferenceTable, caching, pageFactory, catalog, information,
                 encryptionDictionary,
                 pdfScanner,
                 filterProvider,
                 acroFormFactory,
                 bookmarksProvider,
-                clipPaths);
+                clipPaths,
+                suppressDuplicateOverlappingText);
         }
 
         private static (IndirectReference, DictionaryToken) ParseTrailer(CrossReferenceTable crossReferenceTable, bool isLenientParsing, IPdfTokenScanner pdfTokenScanner,
@@ -173,9 +176,9 @@
 
                 encryptionDictionary = EncryptionDictionaryFactory.Read(encryptionDictionaryToken, pdfTokenScanner);
             }
-            
+
             var rootDictionary = DirectObjectFinder.Get<DictionaryToken>(crossReferenceTable.Trailer.Root, pdfTokenScanner);
-            
+
             if (!rootDictionary.ContainsKey(NameToken.Type) && isLenientParsing)
             {
                 rootDictionary = rootDictionary.With(NameToken.Type, NameToken.Catalog);
