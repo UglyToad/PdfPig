@@ -3,15 +3,16 @@
     using System.Collections.Generic;
     using System.Linq;
     using UglyToad.PdfPig.Content;
+    using UglyToad.PdfPig.PdfFonts;
 
     /// <summary>
-    /// Checks if each letter is a duplicate and overlaps any other letter and remove the duplicate. Duplicate overlapping letters might be used to simulate bold.
+    /// Checks if each letter is a duplicate and overlaps any other letter and remove the duplicate, and flag the remaining as bold.
     /// <para>Logic inspired from PdfBox's PDFTextStripper class.</para>
     /// </summary>
     public static class DuplicateOverlappingTextProcessor
     {
         /// <summary>
-        /// Checks if each letter is a duplicate and overlaps any other letter and remove the duplicate. Duplicate overlapping letters might be used to simulate bold.
+        /// Checks if each letter is a duplicate and overlaps any other letter and remove the duplicate, and flag the remaining as bold.
         /// <para>Logic inspired from PdfBox's PDFTextStripper class.</para>
         /// </summary>
         /// <param name="letters">Letters to be processed.</param>
@@ -30,6 +31,7 @@
             {
                 var letter = queue.Dequeue();
                 bool addLetter = true;
+                int duplicatesOverlappingIndex = -1;
 
                 var duplicates = cleanLetters.Where(l => l.Value.Equals(letter.Value) && l.FontName.Equals(letter.FontName)); // do other checks?
 
@@ -50,6 +52,7 @@
                     {
                         // duplicate overlapping letter was found, keeping the existing one and not adding this one.
                         addLetter = false;
+                        duplicatesOverlappingIndex = cleanLetters.IndexOf(duplicatesOverlapping);
                     }
                 }
 
@@ -57,13 +60,31 @@
                 {
                     cleanLetters.Add(letter);
                 }
-                else
+                else if (duplicatesOverlappingIndex != -1)
                 {
-                    // TODO: update font details to bold
                     // TODO: need to update the bounding box
                     // TODO: need to update bottom left/right
                     // TODO: need to update width
                     // update textSequence?
+
+                    // update font details to bold
+                    var fontDetails = new FontDetails(letter.Font.Name, true, letter.Font.Weight, letter.Font.IsItalic);
+
+                    var newLetter = new Letter(letter.Value,
+                        letter.GlyphRectangle,
+                        letter.StartBaseLine,
+                        letter.EndBaseLine,
+                        letter.Width,
+                        letter.FontSize,
+                        fontDetails,
+                        letter.Color,
+                        letter.PointSize,
+                        letter.TextSequence);
+
+                    // update markedContentStack?
+
+                    // update letters
+                    cleanLetters[duplicatesOverlappingIndex] = newLetter;
                 }
             }
 
