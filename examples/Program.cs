@@ -42,6 +42,10 @@
                     ("Generate PDF/A-2A compliant file",
                     () => GeneratePdfA2AFile.Run(Path.Combine(filesDirectory, "..", "..", "Fonts", "TrueType", "Roboto-Regular.ttf"),
                         Path.Combine(filesDirectory, "smile-250-by-160.jpg")))
+                },
+                {7,
+                    ("Advance text extraction using layout analysis algorithms",
+                    () => AdvancedTextExtraction.Run(Path.Combine(filesDirectory, "ICML03-081.pdf")))
                 }
             };
 
