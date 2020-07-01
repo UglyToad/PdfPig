@@ -80,12 +80,12 @@
         /// <summary>
         /// Create a new letter to represent some text drawn by the Tj operator.
         /// </summary>
-        internal Letter(string value, PdfRectangle glyphRectangle, 
-            PdfPoint startBaseLine, 
+        public Letter(string value, PdfRectangle glyphRectangle,
+            PdfPoint startBaseLine,
             PdfPoint endBaseLine,
             double width,
             double fontSize,
-            FontDetails font, 
+            FontDetails font,
             IColor color,
             double pointSize,
             int textSequence)
