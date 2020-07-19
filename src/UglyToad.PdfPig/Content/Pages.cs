@@ -22,16 +22,23 @@
 
             Count = catalog.PagesDictionary.GetIntOrDefault(NameToken.Count);
         }
-        
+
         public Page GetPage(int pageNumber, bool clipPaths)
         {
             if (pageNumber <= 0 || pageNumber > Count)
             {
-                throw new ArgumentOutOfRangeException(nameof(pageNumber), 
+                throw new ArgumentOutOfRangeException(nameof(pageNumber),
                     $"Page number {pageNumber} invalid, must be between 1 and {Count}.");
             }
 
             var pageNode = catalog.GetPageNode(pageNumber);
+            return CreateFromPageTreeNode(pageNode, pdfScanner, pageFactory, pageNumber, clipPaths);
+        }
+
+        public static Page CreateFromPageTreeNode(PageTreeNode pageNode, IPdfTokenScanner pdfScanner,
+            IPageFactory pageFactory,
+            int pageNumber, bool clipPaths)
+        {
             var pageStack = new Stack<PageTreeNode>();
 
             var currentNode = pageNode;
@@ -42,7 +49,7 @@
             }
 
             var pageTreeMembers = new PageTreeMembers();
-            
+
             while (pageStack.Count > 0)
             {
                 currentNode = pageStack.Pop();
@@ -51,7 +58,7 @@
                 {
                     pageTreeMembers.ParentResources.Enqueue(resourcesDictionary);
                 }
-                
+
                 if (currentNode.NodeDictionary.TryGet(NameToken.MediaBox, pdfScanner, out ArrayToken mediaBox))
                 {
                     pageTreeMembers.MediaBox = new MediaBox(mediaBox.ToRectangle(pdfScanner));
@@ -64,7 +71,7 @@
             }
 
             var page = pageFactory.Create(pageNumber, pageNode.NodeDictionary, pageTreeMembers, clipPaths);
-            
+
             return page;
         }
     }

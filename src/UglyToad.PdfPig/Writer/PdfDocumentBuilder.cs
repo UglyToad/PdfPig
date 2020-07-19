@@ -53,6 +53,11 @@ namespace UglyToad.PdfPig.Writer
         internal IReadOnlyDictionary<Guid, IWritingFont> Fonts => fonts.ToDictionary(x => x.Key, x => x.Value.FontProgram);
 
         /// <summary>
+        /// Create a builder from an existing PDF file.
+        /// </summary>
+        public static PdfDocumentBuilder FromPdf(IReadOnlyList<byte> bytes) => PdfDocumentToPdfDocumentBuilderFactory.Convert(new ByteArrayInputBytes(bytes));
+
+        /// <summary>
         /// Determines whether the bytes of the TrueType font file provided can be used in a PDF document.
         /// </summary>
         /// <param name="fontFileBytes">The bytes of a TrueType font file.</param>
