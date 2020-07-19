@@ -291,12 +291,15 @@
                 return new CharacterIdentifierToGlyphIndexMap();
             }
 
-            if (entry is NameToken)
+            if (DirectObjectFinder.TryGet(entry, pdfScanner, out NameToken _))
             {
                 return new CharacterIdentifierToGlyphIndexMap();
             }
 
-            var stream = DirectObjectFinder.Get<StreamToken>(entry, pdfScanner);
+            if (!DirectObjectFinder.TryGet(entry, pdfScanner, out StreamToken stream))
+            {
+                throw new PdfDocumentFormatException($"No stream or name token found for /CIDToGIDMap in dictionary: {dictionary}.");
+            }
 
             var bytes = stream.Decode(filterProvider);
 
