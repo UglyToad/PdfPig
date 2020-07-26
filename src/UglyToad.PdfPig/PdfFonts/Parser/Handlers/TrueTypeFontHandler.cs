@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Linq;
     using Cmap;
     using Core;
@@ -136,7 +137,7 @@
                         }
                         else
                         {
-                            glyphName = index.ToString();
+                            glyphName = index.ToString(CultureInfo.InvariantCulture);
                         }
 
                         fakeEncoding[i] = glyphName;

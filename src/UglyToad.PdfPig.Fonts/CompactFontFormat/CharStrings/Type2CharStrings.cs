@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Text;
     using Core;
 
@@ -184,7 +185,7 @@
                     if (i >= 0)
                     {
                         var value = Values[i];
-                        stringBuilder.AppendLine(value.ToString("N"));
+                        stringBuilder.AppendLine(value.ToString("N", CultureInfo.InvariantCulture));
                     }
 
                     foreach (var identifier in GetCommandsAt(i + 1))

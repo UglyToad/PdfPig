@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Core
 {
     using System;
+    using System.Globalization;
 
     /// <summary>
     /// A rectangle in a PDF file. 
@@ -208,7 +209,7 @@
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"[{TopLeft}, {Width}, {Height}]";
+            return $"[{TopLeft}, {Width.ToString(CultureInfo.InvariantCulture)}, {Height.ToString(CultureInfo.InvariantCulture)}]";
         }
     }
 }

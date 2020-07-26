@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Core
 {
     using System.Diagnostics;
+    using System.Globalization;
 
     /// <summary>
     /// A point in a PDF file. 
@@ -112,7 +113,7 @@
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"(x:{X}, y:{Y})";
+            return $"(x:{X.ToString(CultureInfo.InvariantCulture)}, y:{Y.ToString(CultureInfo.InvariantCulture)})";
         }
     }
 }

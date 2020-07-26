@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Tokenization
 {
     using System.Collections.Generic;
+    using System.Threading;
     using PdfPig.Tokenization;
     using PdfPig.Tokens;
     using Xunit;
@@ -17,6 +18,7 @@
         [InlineData("\0")]
         public void InvalidFirstCharacter_ReturnsFalse(string s)
         {
+            var cult =  Thread.CurrentThread.CurrentCulture;
             var input = StringBytesTestConverter.Convert(s);
 
             var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);

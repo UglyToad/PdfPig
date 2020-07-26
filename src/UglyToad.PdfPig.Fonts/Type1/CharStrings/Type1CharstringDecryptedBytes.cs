@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
 
     internal class Type1CharstringDecryptedBytes
     {
@@ -25,7 +26,7 @@
         {
             Bytes = bytes ?? throw new ArgumentNullException(nameof(bytes));
             Index = index;
-            Name = name ?? index.ToString();
+            Name = name ?? index.ToString(CultureInfo.InvariantCulture);
             Source = SourceType.Charstring;
         }
 

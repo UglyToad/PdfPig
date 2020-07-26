@@ -1,12 +1,13 @@
 ﻿namespace UglyToad.PdfPig.Geometry
 {
     using System;
+    using System.Globalization;
 
     /// <summary>
     /// By default user space units correspond to 1/72nd of an inch (a typographic point).
     /// The UserUnit entry in a page dictionary can define the space units as a different multiple of 1/72 (1 point).
     /// </summary>
-    internal struct UserSpaceUnit
+    internal readonly struct UserSpaceUnit
     {
         public static readonly UserSpaceUnit Default = new UserSpaceUnit(1);
 
@@ -30,7 +31,7 @@
 
         public override string ToString()
         {
-            return PointMultiples.ToString();
+            return PointMultiples.ToString(CultureInfo.InvariantCulture);
         }
     }
 }

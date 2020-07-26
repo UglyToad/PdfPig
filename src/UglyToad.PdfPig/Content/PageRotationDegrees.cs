@@ -1,14 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
     using System;
-    using System.Diagnostics.Contracts;
-    using Core;
-    using Geometry;
+    using System.Globalization;
 
     /// <summary>
     /// Represents the rotation of a page in a PDF document defined by the page dictionary in degrees clockwise.
     /// </summary>
-    public struct PageRotationDegrees : IEquatable<PageRotationDegrees>
+    public readonly struct PageRotationDegrees : IEquatable<PageRotationDegrees>
     {
         /// <summary>
         /// The rotation of the page in degrees clockwise.
@@ -76,7 +74,7 @@
         /// <inheritdoc />
         public override string ToString()
         {
-            return Value.ToString();
+            return Value.ToString(CultureInfo.InvariantCulture);
         }
 
         /// <inheritdoc />

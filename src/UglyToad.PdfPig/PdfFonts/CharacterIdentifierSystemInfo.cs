@@ -1,11 +1,12 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts
 {
+    using System.Globalization;
     using CidFonts;
 
     /// <summary>
     /// Specifies the character collection associated with the <see cref="ICidFont"/> (CIDFont).
     /// </summary>
-    internal struct CharacterIdentifierSystemInfo
+    internal readonly struct CharacterIdentifierSystemInfo
     {
         /// <summary>
         /// Identifies the issuer of the character collection.
@@ -31,7 +32,7 @@
 
         public override string ToString()
         {
-            return $"{Registry}-{Ordering}-{Supplement}";
+            return $"{Registry}-{Ordering}-{Supplement.ToString(CultureInfo.InvariantCulture)}";
         }
     }
 }
