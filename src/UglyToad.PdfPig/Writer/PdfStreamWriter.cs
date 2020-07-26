@@ -7,7 +7,7 @@
     using Core;
     using Graphics.Operations;
     using Tokens;
-    
+
     /// <summary>
     /// This class would lazily flush all token. Allowing us to make changes to references without need to rewrite the whole stream
     /// </summary>
@@ -30,12 +30,14 @@
             Stream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
             DisposeStream = disposeStream;
         }
-        
+
         public void Flush(decimal version, IndirectReferenceToken catalogReference)
         {
             if (catalogReference == null)
+            {
                 throw new ArgumentNullException(nameof(catalogReference));
-            
+            }
+
             WriteString($"%PDF-{version.ToString("0.0", CultureInfo.InvariantCulture)}", Stream);
 
             Stream.WriteText("%");
@@ -47,7 +49,7 @@
 
             var offsets = new Dictionary<IndirectReference, long>();
             ObjectToken catalogToken = null;
-            foreach(var pair in tokenReferences)
+            foreach (var pair in tokenReferences)
             {
                 var referenceToken = pair.Key;
                 var token = pair.Value;
@@ -98,7 +100,7 @@
 
             return reference;
         }
-        
+
         public int ReserveNumber()
         {
             var reserved = CurrentNumber;
@@ -108,10 +110,10 @@
         }
 
         public IndirectReferenceToken ReserveNumberToken()
-        { 
+        {
             return new IndirectReferenceToken(new IndirectReference(ReserveNumber(), 0));
         }
-        
+
         public byte[] ToArray()
         {
             var currentPosition = Stream.Position;
@@ -120,7 +122,9 @@
             var bytes = new byte[Stream.Length];
 
             if (Stream.Read(bytes, 0, bytes.Length) != bytes.Length)
+            {
                 throw new Exception("Unable to read all the bytes from stream");
+            }
 
             Stream.Seek(currentPosition, SeekOrigin.Begin);
 
@@ -138,7 +142,7 @@
             Stream?.Dispose();
             Stream = null;
         }
-        
+
         private IndirectReferenceToken AddToken(IToken token, int reservedNumber)
         {
             var reference = new IndirectReference(reservedNumber, 0);
@@ -149,7 +153,7 @@
 
         private IndirectReferenceToken FindToken(IToken token)
         {
-            foreach(var pair in tokenReferences)
+            foreach (var pair in tokenReferences)
             {
                 var reference = pair.Key;
                 var storedToken = pair.Value;
@@ -161,7 +165,7 @@
 
             return null;
         }
-        
+
         private static void WriteString(string text, Stream stream)
         {
             var bytes = OtherEncodings.StringAsLatin1Bytes(text);
