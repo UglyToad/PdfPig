@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations
 {
     using System;
+    using System.Globalization;
     using System.IO;
     using PdfPig.Core;
 
@@ -37,7 +38,7 @@
 
         public static void WriteDecimal(this Stream stream, decimal value)
         {
-            stream.WriteText(value.ToString("G"));
+            stream.WriteText(value.ToString("G", CultureInfo.InvariantCulture));
         }
 
         public static void WriteNumberText(this Stream stream, decimal number, string text)

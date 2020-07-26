@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.IO;
     using Core;
     using Graphics.Operations;
@@ -35,7 +36,7 @@
             if (catalogReference == null)
                 throw new ArgumentNullException(nameof(catalogReference));
             
-            WriteString($"%PDF-{version:0.0}", Stream);
+            WriteString($"%PDF-{version.ToString("0.0", CultureInfo.InvariantCulture)}", Stream);
 
             Stream.WriteText("%");
             Stream.WriteByte(169);

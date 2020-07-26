@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
     using System;
+    using System.Globalization;
     using System.IO;
     using System.Linq;
     using Content;
@@ -63,7 +64,10 @@
                 {
                     var stripped = x.Trim();
                     var parts = stripped.Split('|');
-                    return (index: int.Parse(parts[0]), letter: parts[1], x: double.Parse(parts[2]), y: double.Parse(parts[3]));
+                    var index = int.Parse(parts[0]);
+                    var xval = double.Parse(parts[2], CultureInfo.InvariantCulture);
+                    var yval = double.Parse(parts[3], CultureInfo.InvariantCulture);
+                    return (index, letter: parts[1], x: xval, y: yval);
                 }).ToArray();
 
             using (var document = PdfDocument.Open(GetFilename()))
