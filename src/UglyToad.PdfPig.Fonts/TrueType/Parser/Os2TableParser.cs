@@ -35,7 +35,7 @@
             var selectionFlags = data.ReadUnsignedShort();
             var firstCharacterIndex = data.ReadUnsignedShort();
             var lastCharacterIndex = data.ReadUnsignedShort();
-            var unicodeCharRange = new[] {ulCharRange1, ulCharRange2, ulCharRange3, ulCharRange4};
+            var unicodeCharRange = new[] { ulCharRange1, ulCharRange2, ulCharRange3, ulCharRange4 };
 
             var vendorId = Encoding.ASCII.GetString(vendorIdBytes);
 
@@ -67,11 +67,42 @@
                     lastCharacterIndex);
             }
 
-            var sTypoAscender = data.ReadSignedShort();
-            var sTypoDescender = data.ReadSignedShort();
-            var sTypoLineGap = data.ReadSignedShort();
-            var usWinAscent = data.ReadUnsignedShort();
-            var usWinDescent = data.ReadUnsignedShort();
+            short sTypoAscender;
+            short sTypoDescender;
+            short sTypoLineGap;
+            ushort usWinAscent;
+            ushort usWinDescent;
+
+            try
+            {
+                sTypoAscender = data.ReadSignedShort();
+                sTypoDescender = data.ReadSignedShort();
+                sTypoLineGap = data.ReadSignedShort();
+                usWinAscent = data.ReadUnsignedShort();
+                usWinDescent = data.ReadUnsignedShort();
+            }
+            catch
+            {
+                // Font may be invalid. Try falling back to shorter version...
+                return new Os2Table(header, version, xAvgCharWidth,
+                    weightClass, widthClass, typeFlags, ySubscriptXSize,
+                    ySubscriptYSize,
+                    ySubscriptXOffset,
+                    ySubscriptYOffset,
+                    ySuperscriptXSize,
+                    ySuperscriptYSize,
+                    ySuperscriptXOffset,
+                    ySuperscriptYOffset,
+                    yStrikeoutSize,
+                    yStrikeoutPosition,
+                    familyClass,
+                    panose,
+                    unicodeCharRange,
+                    vendorId,
+                    selectionFlags,
+                    firstCharacterIndex,
+                    lastCharacterIndex);
+            }
 
             if (version == 0)
             {
@@ -93,7 +124,7 @@
                     selectionFlags,
                     firstCharacterIndex,
                     lastCharacterIndex,
-                    sTypoAscender, 
+                    sTypoAscender,
                     sTypoDescender,
                     sTypoLineGap,
                     usWinAscent,
@@ -173,7 +204,7 @@
 
             var usLowerOpticalPointSize = data.ReadUnsignedShort();
             var usUpperOpticalPointSize = data.ReadUnsignedShort();
-            
+
             return new Os2Version5OpenTypeTable(header, version, xAvgCharWidth,
                 weightClass, widthClass, typeFlags, ySubscriptXSize,
                 ySubscriptYSize,
