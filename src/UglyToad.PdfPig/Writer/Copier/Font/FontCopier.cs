@@ -56,6 +56,8 @@
             if (writtenFont == null)
             {
                 newFontObject.DestinationReferenceToken = copier.WriteToken(copier.CopyObject(dictionaryToken, tokenScanner));
+                copier.SetNewReference(sourceReferenceToken, newFontObject.DestinationReferenceToken);;
+
                 writtenFonts.Add(newFontObject);
                 return newFontObject.DestinationReferenceToken;
             }
