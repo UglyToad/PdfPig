@@ -116,6 +116,26 @@
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="referenceToken"></param>
+        /// <returns></returns>
+        public IToken GetToken(IndirectReferenceToken referenceToken)
+        {
+            return tokenReferences.TryGetValue(referenceToken, out var token) ? token : null;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="referenceToken"></param>
+        /// <param name="newToken"></param>
+        public void ReplaceToken(IndirectReferenceToken referenceToken, IToken newToken)
+        { 
+            tokenReferences[referenceToken] = newToken;
+        }
+
+        /// <summary>
         /// Reserve a number for a token
         /// </summary>
         /// <returns></returns>
