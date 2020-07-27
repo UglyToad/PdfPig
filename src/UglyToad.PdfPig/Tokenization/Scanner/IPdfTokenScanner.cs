@@ -7,7 +7,7 @@
     /// <summary>
     /// Tokenizes objects from bytes in a PDF file.
     /// </summary>
-    internal interface IPdfTokenScanner : ISeekableTokenScanner, IDisposable
+    public interface IPdfTokenScanner : ISeekableTokenScanner, IDisposable
     {
         /// <summary>
         /// Tokenize the object with a given object number.
