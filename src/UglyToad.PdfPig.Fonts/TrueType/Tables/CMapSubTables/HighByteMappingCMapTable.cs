@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
 
     /// <inheritdoc />
     /// <summary>
@@ -31,6 +32,11 @@
             }
 
             return index;
+        }
+
+        public int[] GetCharactersCode()
+        {
+            return characterCodesToGlyphIndices.Keys.ToArray();
         }
 
         public static HighByteMappingCMapTable Load(TrueTypeDataBytes data, int numberOfGlyphs, TrueTypeCMapPlatform platformId, ushort encodingId)

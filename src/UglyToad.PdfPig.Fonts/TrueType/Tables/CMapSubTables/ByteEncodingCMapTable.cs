@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
 {
     using System.IO;
+    using System.Linq;
     using Core;
 
     /// <summary>
@@ -47,6 +48,11 @@
             }
 
             return glyphMapping[characterCode];
+        }
+
+        public int[] GetCharactersCode()
+        {
+            return Enumerable.Range(0, GlyphMappingLength).Where(i => glyphMapping[i] != 0).ToArray();
         }
 
         public void Write(Stream stream)

@@ -23,5 +23,11 @@
         /// <param name="characterCode">The character code.</param>
         /// <returns>The index of the glyph information for this character.</returns>
         int CharacterCodeToGlyphIndex(int characterCode);
+
+        /// <summary>
+        /// Return a list of characters mapped in this sub table
+        /// </summary>
+        /// <returns></returns>
+        int[] GetCharactersCode();
     }
 }

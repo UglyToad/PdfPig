@@ -3,6 +3,7 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
 
     /// <inheritdoc />
     /// <summary>
@@ -54,6 +55,58 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
             }
 
             return 0;
+        }
+
+        public int[] GetCharactersCode()
+        {
+            var charactersCode = new List<int>();
+
+            ushort minCharacterStart = 0xffff;
+
+            foreach (var segmentIndex in Enumerable.Range(0, Segments.Count - 1))
+            {
+                var segment = Segments[segmentIndex];
+
+                minCharacterStart = Math.Min(minCharacterStart, (ushort)segment.StartCode);
+
+                var characterCountInSegment = (segment.EndCode - segment.StartCode) + 1;
+                if (segment.IdRangeOffset == 0)
+                {
+                    var chars = Enumerable.Range(segment.StartCode, characterCountInSegment);
+                    charactersCode.AddRange(chars);
+                }
+                else
+                {
+                    var chars = Enumerable.Range(0, characterCountInSegment).Where(i =>
+                    {
+                        var offset = segment.IdRangeOffset / 2 + i;
+                        var charCodeIndex = offset - Segments.Count + segmentIndex;
+
+                        return charCodeIndex >= 0 && charCodeIndex < GlyphIds.Count;
+                    }).Select(c => c + segment.StartCode);
+                    charactersCode.AddRange(chars);
+                }
+            }
+
+            if (minCharacterStart < 0xf000)
+            {
+                return charactersCode.ToArray();
+            }
+
+            if (minCharacterStart < 0xf100)
+            {
+                minCharacterStart = 0xf000;
+            }
+            else if (minCharacterStart < 0xf200)
+            {
+                minCharacterStart = 0xf100;
+            }
+            else
+            {
+                minCharacterStart = 0xf200;
+            }
+
+            return charactersCode.Select(c => c - minCharacterStart).ToArray();
         }
 
         public static Format4CMapTable Load(TrueTypeDataBytes data, TrueTypeCMapPlatform platformId, ushort encodingId)
