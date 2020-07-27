@@ -11,26 +11,40 @@
     /// <summary>
     /// This class would lazily flush all token. Allowing us to make changes to references without need to rewrite the whole stream
     /// </summary>
-    internal class PdfStreamWriter : IDisposable
+    public class PdfStreamWriter : IDisposable
     {
         private readonly List<int> reservedNumbers = new List<int>();
 
         private readonly Dictionary<IndirectReferenceToken, IToken> tokenReferences = new Dictionary<IndirectReferenceToken, IToken>();
 
-        public int CurrentNumber { get; private set; } = 1;
+        private int currentNumber = 1;
 
-        public Stream Stream { get; private set; }
+        private Stream stream;
 
+        /// <summary>
+        /// Flag to set whether or not we want to dispose the stream
+        /// </summary>
         public bool DisposeStream { get; set; }
 
+        /// <summary>
+        /// Construct a PdfStreamWriter with a memory stream
+        /// </summary>
         public PdfStreamWriter() : this(new MemoryStream()) { }
 
+        /// <summary>
+        /// Construct a PdfStreamWriter
+        /// </summary>
         public PdfStreamWriter(Stream baseStream, bool disposeStream = true)
         {
-            Stream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
+            stream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
             DisposeStream = disposeStream;
         }
 
+        /// <summary>
+        /// Flush the document with all the token that we have accumulated
+        /// </summary>
+        /// <param name="version">Pdf Version that we are targeting</param>
+        /// <param name="catalogReference">Catalog's indirect reference token to which the token are related</param>
         public void Flush(decimal version, IndirectReferenceToken catalogReference)
         {
             if (catalogReference == null)
@@ -38,14 +52,14 @@
                 throw new ArgumentNullException(nameof(catalogReference));
             }
 
-            WriteString($"%PDF-{version.ToString("0.0", CultureInfo.InvariantCulture)}", Stream);
+            WriteString($"%PDF-{version.ToString("0.0", CultureInfo.InvariantCulture)}", stream);
 
-            Stream.WriteText("%");
-            Stream.WriteByte(169);
-            Stream.WriteByte(205);
-            Stream.WriteByte(196);
-            Stream.WriteByte(210);
-            Stream.WriteNewLine();
+            stream.WriteText("%");
+            stream.WriteByte(169);
+            stream.WriteByte(205);
+            stream.WriteByte(196);
+            stream.WriteByte(210);
+            stream.WriteNewLine();
 
             var offsets = new Dictionary<IndirectReference, long>();
             ObjectToken catalogToken = null;
@@ -53,10 +67,10 @@
             {
                 var referenceToken = pair.Key;
                 var token = pair.Value;
-                var offset = Stream.Position;
+                var offset = stream.Position;
                 var obj = new ObjectToken(offset, referenceToken.Data, token);
 
-                TokenWriter.WriteToken(obj, Stream);
+                TokenWriter.WriteToken(obj, stream);
 
                 offsets.Add(referenceToken.Data, offset);
 
@@ -72,9 +86,15 @@
             }
 
             // TODO: Support document information
-            TokenWriter.WriteCrossReferenceTable(offsets, catalogToken, Stream, null);
+            TokenWriter.WriteCrossReferenceTable(offsets, catalogToken, stream, null);
         }
 
+        /// <summary>
+        /// Push a new token to be written
+        /// </summary>
+        /// <param name="token"></param>
+        /// <param name="reservedNumber"></param>
+        /// <returns></returns>
         public IndirectReferenceToken WriteToken(IToken token, int? reservedNumber = null)
         {
             // if you can't consider deduplicating the token. 
@@ -92,55 +112,65 @@
                 return AddToken(token, reservedNumber.Value);
             }
 
-            var reference = FindToken(token);
-            if (reference == null)
-            {
-                return AddToken(token, CurrentNumber++);
-            }
-
-            return reference;
+            return AddToken(token, currentNumber++);
         }
 
+        /// <summary>
+        /// Reserve a number for a token
+        /// </summary>
+        /// <returns></returns>
         public int ReserveNumber()
         {
-            var reserved = CurrentNumber;
+            var reserved = currentNumber;
             reservedNumbers.Add(reserved);
-            CurrentNumber++;
+            currentNumber++;
             return reserved;
         }
 
+        /// <summary>
+        /// Reserve a number and create a token with it
+        /// </summary>
+        /// <returns></returns>
         public IndirectReferenceToken ReserveNumberToken()
         {
             return new IndirectReferenceToken(new IndirectReference(ReserveNumber(), 0));
         }
 
+        /// <summary>
+        /// Return the bytes that have been flushed to the stream
+        /// </summary>
+        /// <returns></returns>
         public byte[] ToArray()
         {
-            var currentPosition = Stream.Position;
-            Stream.Seek(0, SeekOrigin.Begin);
+            var currentPosition = stream.Position;
+            stream.Seek(0, SeekOrigin.Begin);
 
-            var bytes = new byte[Stream.Length];
+            var bytes = new byte[stream.Length];
 
-            if (Stream.Read(bytes, 0, bytes.Length) != bytes.Length)
+            if (stream.Read(bytes, 0, bytes.Length) != bytes.Length)
             {
                 throw new Exception("Unable to read all the bytes from stream");
             }
 
-            Stream.Seek(currentPosition, SeekOrigin.Begin);
+            stream.Seek(currentPosition, SeekOrigin.Begin);
 
             return bytes;
         }
 
+
+        /// <summary>
+        /// Dispose the stream if the PdfStreamWriter#DisposeStream flag is set
+        /// </summary>
         public void Dispose()
         {
             if (!DisposeStream)
             {
-                Stream = null;
+                stream = null;
                 return;
             }
 
-            Stream?.Dispose();
-            Stream = null;
+            stream?.Dispose();
+            stream = null;
         }
 
         private IndirectReferenceToken AddToken(IToken token, int reservedNumber)
@@ -149,21 +179,6 @@
             var referenceToken = new IndirectReferenceToken(reference);
             tokenReferences.Add(referenceToken, token);
             return referenceToken;
-        }
-
-        private IndirectReferenceToken FindToken(IToken token)
-        {
-            foreach (var pair in tokenReferences)
-            {
-                var reference = pair.Key;
-                var storedToken = pair.Value;
-                if (storedToken.Equals(token))
-                {
-                    return reference;
-                }
-            }
-
-            return null;
         }
 
         private static void WriteString(string text, Stream stream)
