@@ -664,7 +664,7 @@
 
             if (!objectLocationProvider.TryGetOffset(reference, out var offset))
             {
-                throw new InvalidOperationException($"Could not find the object with reference: {reference}.");
+                return null;
             }
 
             // Negative offsets refer to a stream with that number.

@@ -11,6 +11,7 @@
     {
         /// <summary>
         /// Tokenize the object with a given object number.
+        /// May return null when the reference is undefined
         /// </summary>
         /// <param name="reference">The object number for the object to tokenize.</param>
         /// <returns>The tokenized object.</returns>
