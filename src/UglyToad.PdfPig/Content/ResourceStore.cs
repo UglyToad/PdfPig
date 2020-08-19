@@ -148,7 +148,8 @@
 
                     if (fontObject == null)
                     {
-                        throw new InvalidOperationException($"Could not retrieve the font with name: {pair.Key} which should have been object {objectKey}");
+                        //This is a valid use case
+                        continue;
                     }
 
                     loadedFonts[reference] = fontFactory.Get(fontObject);

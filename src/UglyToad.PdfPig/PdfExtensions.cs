@@ -32,7 +32,7 @@
             return true;
         }
 
-        internal static T Get<T>(this DictionaryToken dictionary, NameToken name, IPdfTokenScanner scanner) where T : IToken
+        internal static T Get<T>(this DictionaryToken dictionary, NameToken name, IPdfTokenScanner scanner) where T : class, IToken
         {
             if (!dictionary.TryGet(name, out var token) || !(token is T typedToken))
             {

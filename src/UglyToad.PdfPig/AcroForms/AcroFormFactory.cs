@@ -162,6 +162,10 @@
                     }
 
                     var kidObject = tokenScanner.Get(kidReferenceToken.Data);
+                    if (kidObject is null)
+                    {
+                        throw new InvalidOperationException($"Could not find the object with reference: {kidReferenceToken.Data}.");
+                    }
 
                     if (kidObject.Data is DictionaryToken kidDictionaryToken)
                     {

@@ -51,6 +51,36 @@ endobj";
         }
 
         [Fact]
+        public void ReadsObjectWithUndefinedIndirectReference()
+        {
+            const string s = @"
+5 0 obj
+<<
+/XObject <<
+/Pic1 7 0 R
+>>
+/ProcSet [/PDF /Text /ImageC ]
+/Font <<
+/F0 8 0 R
+/F1 9 0 R
+/F2 10 0 R
+/F3 0 0 R
+>>
+>>
+endobj";
+
+            var scanner = GetScanner(s);
+
+            ReadToEnd(scanner);
+
+            var token = scanner.Get(new IndirectReference(5, 0));
+            Assert.NotNull(token);
+
+            token = scanner.Get(new IndirectReference(0, 0));
+            Assert.Null(token);
+        }
+
+        [Fact]
         public void ReadsNumericObjectWithComment()
         {
             const string s = @"%PDF-1.2

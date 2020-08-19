@@ -138,7 +138,7 @@
 
             try
             {
-                if (!(pdfScanner.Get(descriptor.FontFile.ObjectKey.Data).Data is StreamToken stream))
+                if (!(pdfScanner.Get(descriptor.FontFile.ObjectKey.Data)?.Data is StreamToken stream))
                 {
                     return null;
                 }

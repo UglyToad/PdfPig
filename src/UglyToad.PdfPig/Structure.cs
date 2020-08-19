@@ -45,7 +45,7 @@
         /// <returns>The tokenized PDF object from the file.</returns>
         public ObjectToken GetObject(IndirectReference reference)
         {
-            return TokenScanner.Get(reference);
+            return TokenScanner.Get(reference) ?? throw new InvalidOperationException($"Could not find the object with reference: {reference}.");
         }
     }
 }
