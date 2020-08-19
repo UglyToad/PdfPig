@@ -26,7 +26,7 @@
                 return null;
             }
 
-            if (baseEncodingObject is NameToken name)
+            if (DirectObjectFinder.TryGet(baseEncodingObject, pdfScanner, out NameToken name))
             {
                 if (TryGetNamedEncoding(descriptor, name, out var namedEncoding))
                 {
