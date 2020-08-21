@@ -562,10 +562,15 @@
 
                 Assert.Equal(expectedBounds.BottomLeft, image.Bounds.BottomLeft);
                 Assert.Equal(expectedBounds.TopRight, image.Bounds.TopRight);
+
+                Assert.True(image.TryGetPng(out var png));
+                Assert.NotNull(png);
+
+                WriteFile(nameof(CanWriteSinglePageWithPng) + "out", png, "png");
             }
         }
 
-        private static void WriteFile(string name, byte[] bytes)
+        private static void WriteFile(string name, byte[] bytes, string extension = "pdf")
         {
             try
             {
@@ -574,7 +579,7 @@
                     Directory.CreateDirectory("Builder");
                 }
 
-                var output = Path.Combine("Builder", $"{name}.pdf");
+                var output = Path.Combine("Builder", $"{name}.{extension}");
 
                 File.WriteAllBytes(output, bytes);
             }
