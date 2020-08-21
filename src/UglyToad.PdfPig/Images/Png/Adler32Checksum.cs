@@ -6,7 +6,7 @@
     /// Used to calculate the Adler-32 checksum used for ZLIB data in accordance with 
     /// RFC 1950: ZLIB Compressed Data Format Specification.
     /// </summary>
-    public static class Adler32Checksum
+    internal static class Adler32Checksum
     {
         // Both sums (s1 and s2) are done modulo 65521.
         private const int AdlerModulus = 65521;

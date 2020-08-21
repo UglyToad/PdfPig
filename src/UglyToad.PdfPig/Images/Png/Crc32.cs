@@ -5,7 +5,7 @@
     /// <summary>
     /// 32-bit Cyclic Redundancy Code used by the PNG for checking the data is intact.
     /// </summary>
-    public static class Crc32
+    internal static class Crc32
     {
         private const uint Polynomial = 0xEDB88320;
 

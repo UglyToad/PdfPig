@@ -5,7 +5,7 @@
     /// <summary>
     /// Enables execution of custom logic whenever a chunk is read.
     /// </summary>
-    public interface IChunkVisitor
+    internal interface IChunkVisitor
     {
         /// <summary>
         /// Called by the PNG reader after a chunk is read.
