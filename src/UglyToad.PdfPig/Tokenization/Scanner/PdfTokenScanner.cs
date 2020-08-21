@@ -8,9 +8,7 @@
     using System.Text.RegularExpressions;
     using Core;
     using Encryption;
-    using Exceptions;
     using Filters;
-    using Parser.Parts;
     using Tokens;
 
     internal class PdfTokenScanner : IPdfTokenScanner
@@ -144,6 +142,21 @@
                         coreTokenScanner.Seek(previousTokenPositions[0]);
                         break;
                     }
+
+                    if (readTokens.Count == 3 && readTokens[1] is NumericToken extraObjNum && readTokens[2] is NumericToken extraGenNum)
+                    {
+                        // An obj was encountered after reading the actual token and the object and generation number of the following token.
+                        var actualReference = new IndirectReference(objectNumber.Int, generation.Int);
+                        var actualToken = encryptionHandler.Decrypt(actualReference, readTokens[0]);
+
+                        CurrentToken = new ObjectToken(startPosition, actualReference, actualToken);
+
+                        readTokens.Clear();
+                        coreTokenScanner.Seek(previousTokenPositions[0]);
+
+                        return true;
+                    }
+
                     // This should never happen.
                     Debug.Assert(false, "Encountered a start object 'obj' operator before the end of the previous object.");
                     return false;
