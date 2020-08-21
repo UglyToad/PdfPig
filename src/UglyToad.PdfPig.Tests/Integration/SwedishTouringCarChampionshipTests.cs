@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
     using Content;
+    using Images.Png;
     using Xunit;
 
     public class SwedishTouringCarChampionshipTests
@@ -87,6 +88,30 @@
                 Assert.Equal("The 2006 Swedish Touring Car Championship season was the 11th Swedish Touring Car Championship (STCC) season. " +
                              "In total nine racing weekends at six different circuits were held; each", fullLink.Text);
                 Assert.Equal("https://en.wikipedia.org/wiki/Swedish_Touring_Car_Championship", fullLink.Uri);
+            }
+        }
+
+        [Fact]
+        public void GetsImagesAsPng()
+        {
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                foreach (var page in document.GetPages())
+                {
+                    foreach (var image in page.GetImages())
+                    {
+                        if (!image.TryGetBytes(out _))
+                        {
+                            continue;
+                        }
+
+                        Assert.True(image.TryGetPng(out var png));
+
+                        var pngActual = Png.Open(png);
+
+                        Assert.NotNull(pngActual);
+                    }
+                }
             }
         }
     }

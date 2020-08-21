@@ -89,5 +89,10 @@
         /// <see cref="RawBytes"/> should be used directly.
         /// </summary>
         bool TryGetBytes(out IReadOnlyList<byte> bytes);
+
+        /// <summary>
+        /// Try to convert the image to PNG. Doesn't support conversion of JPG to PNG.
+        /// </summary>
+        bool TryGetPng(out byte[] bytes);
     }
 }

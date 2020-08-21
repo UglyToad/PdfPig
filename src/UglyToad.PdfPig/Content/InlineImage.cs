@@ -112,6 +112,13 @@
         }
 
         /// <inheritdoc />
+        public bool TryGetPng(out byte[] bytes)
+        {
+            bytes = null;
+            return false;
+        }
+
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Inline Image (w {Bounds.Width}, h {Bounds.Height})";
