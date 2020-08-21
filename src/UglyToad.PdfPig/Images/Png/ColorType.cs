@@ -6,7 +6,7 @@
     /// Describes the interpretation of the image data.
     /// </summary>
     [Flags]
-    public enum ColorType : byte
+    internal enum ColorType : byte
     {
         /// <summary>
         /// Grayscale.

@@ -562,8 +562,6 @@
 
                 Assert.Equal(expectedBounds.BottomLeft, image.Bounds.BottomLeft);
                 Assert.Equal(expectedBounds.TopRight, image.Bounds.TopRight);
-
-                Assert.Equal(imageBytes, image.RawBytes);
             }
         }
 

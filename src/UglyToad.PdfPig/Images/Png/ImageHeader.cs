@@ -6,12 +6,8 @@
     /// <summary>
     /// The high level information about the image.
     /// </summary>
-    public readonly struct ImageHeader
+    internal readonly struct ImageHeader
     {
-        internal static readonly byte[] HeaderBytes = {
-            73, 72, 68, 82
-        };
-
         private static readonly IReadOnlyDictionary<ColorType, HashSet<byte>> PermittedBitDepths = new Dictionary<ColorType, HashSet<byte>>
         {
             {ColorType.None, new HashSet<byte> {1, 2, 4, 8, 16}},

@@ -3,7 +3,7 @@
     /// <summary>
     /// Indicates the transmission order of the image data.
     /// </summary>
-    public enum InterlaceMethod : byte
+    internal enum InterlaceMethod : byte
     {
         /// <summary>
         /// No interlace.

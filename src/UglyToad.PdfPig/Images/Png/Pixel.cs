@@ -3,7 +3,7 @@
     /// <summary>
     /// A pixel in a <see cref="Png"/> image.
     /// </summary>
-    public readonly struct Pixel
+    internal readonly struct Pixel
     {
         /// <summary>
         /// The red value for the pixel.

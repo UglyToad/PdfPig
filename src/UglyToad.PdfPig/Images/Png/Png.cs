@@ -6,7 +6,7 @@
     /// <summary>
     /// A PNG image. Call <see cref="Open(byte[],IChunkVisitor)"/> to open from file or bytes.
     /// </summary>
-    public class Png
+    internal class Png
     {
         private readonly RawPngData data;
 
