@@ -333,7 +333,13 @@
         /// </summary>
         /// <param name="image">An image previously added to this page or another page.</param>
         /// <param name="placementRectangle">The size and location to draw the image on this page.</param>
-        public void AddJpeg(AddedImage image, PdfRectangle placementRectangle)
+        public void AddJpeg(AddedImage image, PdfRectangle placementRectangle) => AddImage(image, placementRectangle);
+
+        /// <summary>
+        /// Adds the image previously added using <see cref="AddJpeg(byte[], PdfRectangle)"/>
+        /// or <see cref="AddPng(byte[], PdfRectangle)"/> sharing the same image to prevent duplication.
+        /// </summary>
+        public void AddImage(AddedImage image, PdfRectangle placementRectangle)
         {
             if (!resourcesDictionary.TryGetValue(NameToken.Xobject, out var xobjectsDict) 
                 || !(xobjectsDict is DictionaryToken xobjects))
