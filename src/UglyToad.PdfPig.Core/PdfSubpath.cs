@@ -29,28 +29,13 @@
         /// <summary>
         /// Return true if points are organised in a clockwise order. Works only with closed paths.
         /// </summary>
-        /// <returns></returns>
-        public bool IsClockwise
-        {
-            get
-            {
-                if (!IsClosed()) return false;
-                return shoeLaceSum > 0;
-            }
-        }
+        public bool IsClockwise => IsClosed() && shoeLaceSum > 0;
 
         /// <summary>
         /// Return true if points are organised in a counterclockwise order. Works only with closed paths.
         /// </summary>
         /// <returns></returns>
-        public bool IsCounterClockwise
-        {
-            get
-            {
-                if (!IsClosed()) return false;
-                return shoeLaceSum < 0;
-            }
-        }
+        public bool IsCounterClockwise => IsClosed() && shoeLaceSum < 0;
 
         /// <summary>
         /// Get the <see cref="PdfSubpath"/>'s centroid point.
@@ -58,9 +43,14 @@
         public PdfPoint GetCentroid()
         {
             var filtered = commands.Where(c => c is Line || c is BezierCurve).ToList();
-            if (filtered.Count == 0) return new PdfPoint();
+            if (filtered.Count == 0)
+            {
+                return new PdfPoint();
+            }
+
             var points = filtered.Select(GetStartPoint).ToList();
             points.AddRange(filtered.Select(GetEndPoint));
+
             return new PdfPoint(points.Average(p => p.X), points.Average(p => p.Y));
         }
 
@@ -230,10 +220,40 @@
         /// </summary>
         public bool IsClosed()
         {
-            if (Commands.Any(c => c is Close)) return true;
-            var filtered = Commands.Where(c => c is Line || c is BezierCurve || c is Move).ToList();
-            if (filtered.Count < 2) return false;
-            if (!GetStartPoint(filtered.First()).Equals(GetEndPoint(filtered.Last()))) return false;
+            var filteredCount = 0;
+            IPathCommand last = null;
+            IPathCommand first = null;
+            for (int i = Commands.Count - 1; i >= 0; i--)
+            {
+                var cmd = Commands[i];
+
+                if (cmd is Close)
+                {
+                    return true;
+                }
+
+                if (cmd is Line || cmd is BezierCurve || cmd is Move)
+                {
+                    if (last == null)
+                    {
+                        last = cmd;
+                    }
+
+                    first = cmd;
+                    filteredCount++;
+                }
+            }
+
+            if (filteredCount < 2 || last == null || first == null)
+            {
+                return false;
+            }
+
+            if (!GetStartPoint(first).Equals(GetEndPoint(last)))
+            {
+                return false;
+            }
+
             return true;
         }
 
@@ -294,6 +314,42 @@
             // ReSharper restore CompareOfFloatsByEqualityOperator
 
             return new PdfRectangle(minX, minY, maxX, maxY);
+        }
+
+        /// <summary>
+        /// If <see cref="IsDrawnAsRectangle"/> then returns the rectangle dimensions specified. Otherwise returns <see langword="null"/>.
+        /// </summary>
+        /// <remarks>
+        /// Since a rectangle is interpreted as a move command followed by 3 lines and a close command this condenses the 5 commands back into a single rectangle.
+        /// </remarks>
+        public PdfRectangle? GetDrawnRectangle()
+        {
+            if (!IsDrawnAsRectangle || Commands.Count != 5)
+            {
+                return null;
+            }
+
+            if (!(Commands[0] is Move mv) || !(Commands[1] is Line line1) || !(Commands[2] is Line line2) || !(Commands[3] is Line line3)
+                || !(Commands[4] is Close))
+            {
+                return null;
+            }
+
+            if (!line1.From.Equals(mv.Location) || line1.To.Y != mv.Location.Y)
+            {
+                return null;
+            }
+
+            var width = line1.To.X - mv.Location.X;
+
+            if (!line2.From.Equals(line1.To) || line2.To.X != line1.To.X)
+            {
+                return null;
+            }
+
+            var height = line2.To.Y - line1.To.Y;
+
+            return new PdfRectangle(mv.Location, new PdfPoint(mv.Location.X + width, mv.Location.Y + height));
         }
 
         /// <summary>
@@ -450,6 +506,7 @@
                 {
                     return From.Equals(line.From) && To.Equals(line.To);
                 }
+
                 return false;
             }
 
@@ -692,17 +749,20 @@
         /// </summary>
         public override bool Equals(object obj)
         {
-            if (obj is PdfSubpath path)
+            if (!(obj is PdfSubpath path) || Commands.Count != path.Commands.Count)
             {
-                if (Commands.Count != path.Commands.Count) return false;
-
-                for (int i = 0; i < Commands.Count; i++)
-                {
-                    if (!Commands[i].Equals(path.Commands[i])) return false;
-                }
-                return true;
+                return false;
             }
-            return false;
+
+            for (int i = 0; i < Commands.Count; i++)
+            {
+                if (!Commands[i].Equals(path.Commands[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -715,6 +775,7 @@
             {
                 hash = hash * (i + 1) * 17 + Commands[i].GetHashCode();
             }
+
             return hash;
         }
     }
