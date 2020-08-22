@@ -109,45 +109,7 @@
         }
 
         /// <inheritdoc />
-        public bool TryGetPng(out byte[] bytes)
-        {
-            bytes = null;
-            if (ColorSpace != Graphics.Colors.ColorSpace.DeviceRGB || !TryGetBytes(out var bytesPure))
-            {
-                return false;
-            }
-
-            try
-            {
-                var builder = PngBuilder.Create(WidthInSamples, HeightInSamples, false);
-
-                var isCorrectlySized = bytesPure.Count == (WidthInSamples * HeightInSamples * (BitsPerComponent / 8) * 3);
-
-                if (!isCorrectlySized)
-                {
-                    return false;
-                }
-
-                var i = 0;
-                for (var y = 0; y < HeightInSamples; y++)
-                {
-                    for (var x = 0; x < WidthInSamples; x++)
-                    {
-                        builder.SetPixel(bytesPure[i++], bytesPure[i++], bytesPure[i++], x, y);
-                    }
-                }
-
-                bytes = builder.Save();
-
-                return true;
-            }
-            catch
-            {
-                // ignored.
-            }
-
-            return false;
-        }
+        public bool TryGetPng(out byte[] bytes) => PngFromPdfImageFactory.TryGenerate(this, out bytes);
 
         /// <inheritdoc />
         public override string ToString()

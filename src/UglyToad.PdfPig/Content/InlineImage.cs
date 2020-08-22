@@ -8,6 +8,7 @@
     using Graphics.Colors;
     using Graphics.Core;
     using Tokens;
+    using Images.Png;
 
     /// <inheritdoc />
     /// <summary>
@@ -112,11 +113,7 @@
         }
 
         /// <inheritdoc />
-        public bool TryGetPng(out byte[] bytes)
-        {
-            bytes = null;
-            return false;
-        }
+        public bool TryGetPng(out byte[] bytes) => PngFromPdfImageFactory.TryGenerate(this, out bytes);
 
         /// <inheritdoc />
         public override string ToString()
