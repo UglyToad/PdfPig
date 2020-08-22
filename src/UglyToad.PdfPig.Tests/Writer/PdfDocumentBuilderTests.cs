@@ -529,7 +529,48 @@
             }
         }
 
-        private static void WriteFile(string name, byte[] bytes)
+        [Fact]
+        public void CanWriteSinglePageWithPng()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page = builder.AddPage(PageSize.A4);
+
+            var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+
+            page.AddText("Piggy", 12, new PdfPoint(25, page.PageSize.Height - 52), font);
+
+            var img = IntegrationHelpers.GetDocumentPath("pdfpig.png", false);
+
+            var expectedBounds = new PdfRectangle(25, page.PageSize.Height - 300, 200, page.PageSize.Height - 200);
+
+            var imageBytes = File.ReadAllBytes(img);
+
+            page.AddPng(imageBytes, expectedBounds);
+
+            var bytes = builder.Build();
+            WriteFile(nameof(CanWriteSinglePageWithPng), bytes);
+
+            using (var document = PdfDocument.Open(bytes))
+            {
+                var page1 = document.GetPage(1);
+
+                Assert.Equal("Piggy", page1.Text);
+
+                var image = Assert.Single(page1.GetImages());
+
+                Assert.NotNull(image);
+
+                Assert.Equal(expectedBounds.BottomLeft, image.Bounds.BottomLeft);
+                Assert.Equal(expectedBounds.TopRight, image.Bounds.TopRight);
+
+                Assert.True(image.TryGetPng(out var png));
+                Assert.NotNull(png);
+
+                WriteFile(nameof(CanWriteSinglePageWithPng) + "out", png, "png");
+            }
+        }
+
+        private static void WriteFile(string name, byte[] bytes, string extension = "pdf")
         {
             try
             {
@@ -538,7 +579,7 @@
                     Directory.CreateDirectory("Builder");
                 }
 
-                var output = Path.Combine("Builder", $"{name}.pdf");
+                var output = Path.Combine("Builder", $"{name}.{extension}");
 
                 File.WriteAllBytes(output, bytes);
             }

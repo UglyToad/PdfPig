@@ -19,6 +19,7 @@
     using PdfFonts;
     using Tokens;
     using Graphics.Operations.PathPainting;
+    using Images.Png;
 
     /// <summary>
     /// A builder used to add construct a page in a PDF document.
@@ -332,7 +333,13 @@
         /// </summary>
         /// <param name="image">An image previously added to this page or another page.</param>
         /// <param name="placementRectangle">The size and location to draw the image on this page.</param>
-        public void AddJpeg(AddedImage image, PdfRectangle placementRectangle)
+        public void AddJpeg(AddedImage image, PdfRectangle placementRectangle) => AddImage(image, placementRectangle);
+
+        /// <summary>
+        /// Adds the image previously added using <see cref="AddJpeg(byte[], PdfRectangle)"/>
+        /// or <see cref="AddPng(byte[], PdfRectangle)"/> sharing the same image to prevent duplication.
+        /// </summary>
+        public void AddImage(AddedImage image, PdfRectangle placementRectangle)
         {
             if (!resourcesDictionary.TryGetValue(NameToken.Xobject, out var xobjectsDict) 
                 || !(xobjectsDict is DictionaryToken xobjects))
@@ -355,6 +362,86 @@
             }));
             operations.Add(new InvokeNamedXObject(key));
             operations.Add(Pop.Value);
+        }
+
+        /// <summary>
+        /// Adds the PNG image represented by the input bytes at the specified location.
+        /// </summary>
+        public AddedImage AddPng(byte[] pngBytes, PdfRectangle placementRectangle)
+        {
+            using (var memoryStream = new MemoryStream(pngBytes))
+            {
+                return AddPng(memoryStream, placementRectangle);
+            }
+        }
+
+        /// <summary>
+        /// Adds the PNG image represented by the input stream at the specified location.
+        /// </summary>
+        public AddedImage AddPng(Stream pngStream, PdfRectangle placementRectangle)
+        {
+            var png = Png.Open(pngStream);
+
+            byte[] data;
+            var pixelBuffer = new byte[3];
+            using (var memoryStream = new MemoryStream())
+            {
+                for (var rowIndex = 0; rowIndex < png.Height; rowIndex++)
+                {
+                    for (var colIndex = 0; colIndex < png.Width; colIndex++)
+                    {
+                        var pixel = png.GetPixel(colIndex, rowIndex);
+
+                        pixelBuffer[0] = pixel.R;
+                        pixelBuffer[1] = pixel.G;
+                        pixelBuffer[2] = pixel.B;
+
+                        memoryStream.Write(pixelBuffer, 0, pixelBuffer.Length);
+                    }
+                }
+
+                data = memoryStream.ToArray();
+            }
+
+            var compressed = DataCompresser.CompressBytes(data);
+
+            var imgDictionary = new Dictionary<NameToken, IToken>
+            {
+                {NameToken.Type, NameToken.Xobject },
+                {NameToken.Subtype, NameToken.Image },
+                {NameToken.Width, new NumericToken(png.Width) },
+                {NameToken.Height, new NumericToken(png.Height) },
+                {NameToken.BitsPerComponent, new NumericToken(png.Header.BitDepth)},
+                {NameToken.ColorSpace, NameToken.Devicergb},
+                {NameToken.Filter, NameToken.FlateDecode},
+                {NameToken.Length, new NumericToken(compressed.Length)}
+            };
+            
+            var reference = documentBuilder.AddImage(new DictionaryToken(imgDictionary), compressed);
+
+            if (!resourcesDictionary.TryGetValue(NameToken.Xobject, out var xobjectsDict)
+                || !(xobjectsDict is DictionaryToken xobjects))
+            {
+                xobjects = new DictionaryToken(new Dictionary<NameToken, IToken>());
+                resourcesDictionary[NameToken.Xobject] = xobjects;
+            }
+
+            var key = NameToken.Create($"I{imageKey++}");
+
+            resourcesDictionary[NameToken.Xobject] = xobjects.With(key, new IndirectReferenceToken(reference));
+
+            operations.Add(Push.Value);
+            // This needs to be the placement rectangle.
+            operations.Add(new ModifyCurrentTransformationMatrix(new[]
+            {
+                (decimal)placementRectangle.Width, 0,
+                0, (decimal)placementRectangle.Height,
+                (decimal)placementRectangle.BottomLeft.X, (decimal)placementRectangle.BottomLeft.Y
+            }));
+            operations.Add(new InvokeNamedXObject(key));
+            operations.Add(Pop.Value);
+
+            return new AddedImage(reference, png.Width, png.Height);
         }
 
         private List<Letter> DrawLetters(string text, IWritingFont font, TransformationMatrix fontMatrix, decimal fontSize, TransformationMatrix textMatrix)

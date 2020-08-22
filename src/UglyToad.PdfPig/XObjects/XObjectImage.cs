@@ -6,6 +6,7 @@
     using Core;
     using Graphics.Colors;
     using Graphics.Core;
+    using Images.Png;
     using Tokens;
     using Util.JetBrains.Annotations;
 
@@ -106,6 +107,9 @@
 
             return true;
         }
+
+        /// <inheritdoc />
+        public bool TryGetPng(out byte[] bytes) => PngFromPdfImageFactory.TryGenerate(this, out bytes);
 
         /// <inheritdoc />
         public override string ToString()
