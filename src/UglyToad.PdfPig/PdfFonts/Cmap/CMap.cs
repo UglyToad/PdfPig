@@ -60,10 +60,18 @@
 
         public bool HasUnicodeMappings => BaseFontCharacterMap.Count > 0;
 
-        private readonly int minCodeLength;
+        /// <summary>
+        /// Issue #202 seems to indicate empty codespace ranges are possible.
+        /// </summary>
+        private readonly bool hasEmptyCodespace;
+        private readonly int minCodeLength = 4;
         private readonly int maxCodeLength;
 
-        public CMap(CharacterIdentifierSystemInfo info, int type, int wMode, string name, string version, IReadOnlyDictionary<int, string> baseFontCharacterMap, IReadOnlyList<CodespaceRange> codespaceRanges, IReadOnlyList<CidRange> cidRanges, IReadOnlyList<CidCharacterMapping> cidCharacterMappings)
+        public CMap(CharacterIdentifierSystemInfo info, int type, int wMode, string name, string version, 
+            IReadOnlyDictionary<int, string> baseFontCharacterMap, 
+            IReadOnlyList<CodespaceRange> codespaceRanges, 
+            IReadOnlyList<CidRange> cidRanges, 
+            IReadOnlyList<CidCharacterMapping> cidCharacterMappings)
         {
             if (cidCharacterMappings == null)
             {
@@ -78,8 +86,17 @@
             BaseFontCharacterMap = baseFontCharacterMap ?? throw new ArgumentNullException(nameof(baseFontCharacterMap));
             CodespaceRanges = codespaceRanges ?? throw new ArgumentNullException(nameof(codespaceRanges));
             CidRanges = cidRanges ?? throw new ArgumentNullException(nameof(cidRanges));
-            maxCodeLength = CodespaceRanges.Max(x => x.CodeLength);
-            minCodeLength = CodespaceRanges.Min(x => x.CodeLength);
+
+            // Issue #202 possible empty codespace ranges?
+            if (CodespaceRanges.Count > 0)
+            {
+                maxCodeLength = CodespaceRanges.Max(x => x.CodeLength);
+                minCodeLength = CodespaceRanges.Min(x => x.CodeLength);
+            }
+            else
+            {
+                hasEmptyCodespace = true;
+            }
 
             var characterMappings = new Dictionary<int, CidCharacterMapping>();
 
@@ -135,6 +152,13 @@
 
         public int ReadCode(IInputBytes bytes)
         {
+            if (hasEmptyCodespace)
+            {
+                var data = new byte[minCodeLength];
+                bytes.Read(data);
+                return data.ToInt(minCodeLength);
+            }
+
             byte[] result = new byte[maxCodeLength];
 
             result[0] = bytes.CurrentByte;
@@ -165,7 +189,7 @@
                 }
             }
 
-            throw new InvalidOperationException("CMap is invalid");
+            throw new PdfDocumentFormatException($"CMap is invalid, min code length was {minCodeLength}, max was {maxCodeLength}.");
         }
 
         private static byte ReadByte(IInputBytes bytes)
