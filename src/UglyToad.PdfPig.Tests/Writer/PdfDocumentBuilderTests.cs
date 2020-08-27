@@ -570,6 +570,24 @@
             }
         }
 
+        [Fact]
+        public void CanCreateDocumentInformationDictionaryWithNonAsciiCharacters()
+        {
+            const string littlePig = "маленький поросенок";
+            var builder = new PdfDocumentBuilder();
+            builder.DocumentInformation.Title = littlePig;
+            var page = builder.AddPage(PageSize.A4);
+            var font = builder.AddTrueTypeFont(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf"));
+            page.AddText(littlePig, 12, new PdfPoint(120, 600), font);
+
+            var file = builder.Build();
+            WriteFile(nameof(CanCreateDocumentInformationDictionaryWithNonAsciiCharacters), file);
+            using (var document = PdfDocument.Open(file))
+            {
+                Assert.Equal(littlePig, document.Information.Title);
+            }
+        }
+
         private static void WriteFile(string name, byte[] bytes, string extension = "pdf")
         {
             try

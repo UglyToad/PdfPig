@@ -368,8 +368,28 @@
 
         private static void WriteString(StringToken stringToken, Stream outputStream)
         {
+            if (stringToken.EncodedWith == StringToken.Encoding.Iso88591)
+            {
+                var isUtf16 = false;
+                for (var i = 0; i < stringToken.Data.Length; i++)
+                {
+                    var c = stringToken.Data[i];
+                    // Close enough.
+                    if (c > 250)
+                    {
+                        isUtf16 = true;
+                        break;
+                    }
+                }
+
+                if (isUtf16)
+                {
+                    stringToken = new StringToken(stringToken.Data, StringToken.Encoding.Utf16BE);
+                }
+            }
+
             outputStream.WriteByte(StringStart);
-            var bytes = OtherEncodings.StringAsLatin1Bytes(stringToken.Data);
+            var bytes = stringToken.GetBytes();
             outputStream.Write(bytes, 0, bytes.Length);
             outputStream.WriteByte(StringEnd);
 
