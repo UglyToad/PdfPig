@@ -18,7 +18,8 @@
         public IReadOnlyList<IPathCommand> Commands => commands;
 
         /// <summary>
-        /// True if the <see cref="PdfSubpath"/> was originaly draw as a rectangle.
+        /// True if the <see cref="PdfSubpath"/> was originaly drawn using the rectangle ('re') operator.
+        /// <para>Always false if paths are clipped.</para>
         /// </summary>
         public bool IsDrawnAsRectangle { get; internal set; }
 
@@ -34,7 +35,6 @@
         /// <summary>
         /// Return true if points are organised in a counterclockwise order. Works only with closed paths.
         /// </summary>
-        /// <returns></returns>
         public bool IsCounterClockwise => IsClosed() && shoeLaceSum < 0;
 
         /// <summary>
