@@ -829,27 +829,26 @@
             return (pt2.X - pt1.X) * (pt3.Y - pt2.Y) - (pt2.Y - pt1.Y) * (pt3.X - pt2.X);
         }
 
+        /// <summary>
+        /// nb: returns MaxInt ((2^32)-1) when pt is on a line
+        /// </summary>
         private static int PointInPathsWindingCount(ClipperIntPoint pt, List<List<ClipperIntPoint>> paths)
         {
-            int i, j, len;
-            List<ClipperIntPoint> p;
-            ClipperIntPoint prevPt;
-            bool isAbove;
-            double crossProd;
-
-            //nb: returns MaxInt ((2^32)-1) when pt is on a line
-
-            var Result = 0; // /!\
-            for (i = 0; i < paths.Count; i++)
+            var result = 0;
+            for (int i = 0; i < paths.Count; i++)
             {
-                j = 0;
-                p = paths[i];
-                len = p.Count;
+                int j = 0;
+                List<ClipperIntPoint> p = paths[i];
+                int len = p.Count;
+
                 if (len < 3) continue;
-                prevPt = p[len - 1];
+                ClipperIntPoint prevPt = p[len - 1];
+
                 while ((j < len) && (p[j].Y == prevPt.Y)) j++;
                 if (j == len) continue;
-                isAbove = (prevPt.Y < pt.Y);
+
+                bool isAbove = prevPt.Y < pt.Y;
+
                 while (j < len)
                 {
                     if (isAbove)
@@ -863,16 +862,15 @@
                         {
                             prevPt = p[j - 1];
                         }
-                        crossProd = CrossProduct(prevPt, p[j], pt);
+
+                        double crossProd = CrossProduct(prevPt, p[j], pt);
                         if (crossProd == 0)
                         {
                             return int.MaxValue;
-                            //result:= MaxInt;
-                            //Exit;
                         }
                         else if (crossProd < 0)
                         {
-                            Result--;
+                            result--;
                         }
                     }
                     else
@@ -886,23 +884,23 @@
                         {
                             prevPt = p[j - 1];
                         }
-                        crossProd = CrossProduct(prevPt, p[j], pt);
+
+                        double crossProd = CrossProduct(prevPt, p[j], pt);
                         if (crossProd == 0)
                         {
                             return int.MaxValue;
-                            //result:= MaxInt;
-                            //Exit;
                         }
                         else if (crossProd > 0)
                         {
-                            Result++;
+                            result++;
                         }
                     }
+
                     j++;
                     isAbove = !isAbove;
                 }
             }
-            return Result;
+            return result;
         }
 
         private static bool PointInPaths(ClipperIntPoint pt, List<List<ClipperIntPoint>> paths, ClipperPolyFillType fillRule, bool includeBorder)
@@ -915,11 +913,11 @@
 
             switch (fillRule)
             {
+                default:
                 case ClipperPolyFillType.EvenOdd:
-                    return wc % 2 != 0; // Odd()
+                    return wc % 2 != 0;
 
                 case ClipperPolyFillType.NonZero:
-                default:
                     return wc != 0;
             }
         }
