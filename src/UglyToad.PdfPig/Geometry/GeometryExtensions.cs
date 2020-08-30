@@ -323,7 +323,7 @@
 
         #region PdfRectangle
         /// <summary>
-        /// Whether the rectangle contains the point.
+        /// Whether the point is located inside the rectangle.
         /// </summary>
         /// <param name="rectangle">The rectangle that should contain the point.</param>
         /// <param name="point">The point that should be contained within the rectangle.</param>
@@ -372,7 +372,7 @@
         }
 
         /// <summary>
-        /// Whether the rectangle contains the rectangle.
+        /// Whether the other rectangle is located inside the rectangle.
         /// </summary>
         /// <param name="rectangle">The rectangle that should contain the other rectangle.</param>
         /// <param name="other">The other rectangle that should be contained within the rectangle.</param>
@@ -480,7 +480,7 @@
 
         #region PdfLine
         /// <summary>
-        /// Whether the line segment contains the point.
+        /// Whether the point is located on the line segment.
         /// </summary>
         public static bool Contains(this PdfLine line, PdfPoint point)
         {
@@ -538,7 +538,7 @@
 
         #region Path Line
         /// <summary>
-        /// Whether the line segment contains the point.
+        /// Whether the point is located on the line segment.
         /// </summary>
         public static bool Contains(this Line line, PdfPoint point)
         {
@@ -924,7 +924,7 @@
         #endregion
 
         /// <summary>
-        /// Whether the subpath contains the point.
+        /// Whether the point is located inside the subpath.
         /// <para>Ignores winding rule.</para>
         /// </summary>
         /// <param name="subpath">The subpath that should contain the point.</param>
@@ -939,7 +939,7 @@
         }
 
         /// <summary>
-        /// Whether the subpath contains the rectangle.
+        /// Whether the rectangle is located inside the subpath.
         /// <para>Ignores winding rule.</para>
         /// </summary>
         /// <param name="subpath">The subpath that should contain the rectangle.</param>
@@ -956,7 +956,7 @@
         }
 
         /// <summary>
-        /// Whether the subpath contains the other subpath.
+        /// Whether the other subpath is located inside the subpath.
         /// <para>Ignores winding rule.</para>
         /// </summary>
         /// <param name="subpath">The subpath that should contain the rectangle.</param>
@@ -989,7 +989,7 @@
         }
 
         /// <summary>
-        /// Whether the path contains the point.
+        /// Whether the point is located inside the path.
         /// </summary>
         /// <param name="path">The path that should contain the point.</param>
         /// <param name="point">The point that should be contained within the path.</param>
@@ -1004,7 +1004,7 @@
         }
 
         /// <summary>
-        /// Whether the path contains the rectangle.
+        /// Whether the rectangle is located inside the path.
         /// </summary>
         /// <param name="path">The path that should contain the rectangle.</param>
         /// <param name="rectangle">The rectangle that should be contained within the path.</param>
@@ -1021,7 +1021,7 @@
         }
 
         /// <summary>
-        /// Whether the path contains the subpath.
+        /// Whether the subpath is located inside the path.
         /// </summary>
         /// <param name="path">The path that should contain the subpath.</param>
         /// <param name="subpath">The subpath that should be contained within the path.</param>
@@ -1038,7 +1038,7 @@
         }
 
         /// <summary>
-        /// Whether the path contains the other path.
+        /// Whether the other path is located inside the path.
         /// </summary>
         /// <param name="path">The path that should contain the path.</param>
         /// <param name="other">The other path that should be contained within the path.</param>
