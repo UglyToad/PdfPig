@@ -59,14 +59,14 @@
         }
 
         /// <summary>
-        /// Algorithm to find a minimal bounding rectangle (MBR) such that the MBR corresponds to a rectangle 
+        /// Algorithm to find a minimal bounding rectangle (MBR) such that the MBR corresponds to a rectangle
         /// with smallest possible area completely enclosing the polygon.
         /// <para>From 'A Fast Algorithm for Generating a Minimal Bounding Rectangle' by Lennert D. Den Boer.</para>
         /// </summary>
         /// <param name="polygon">
         /// Polygon P is assumed to be both simple and convex, and to contain no duplicate (coincident) vertices.
-        /// The vertices of P are assumed to be in strict cyclic sequential order, either clockwise or 
-        /// counter-clockwise relative to the origin P0. 
+        /// The vertices of P are assumed to be in strict cyclic sequential order, either clockwise or
+        /// counter-clockwise relative to the origin P0.
         /// </param>
         private static PdfRectangle ParametricPerpendicularProjection(IReadOnlyList<PdfPoint> polygon)
         {
@@ -182,7 +182,7 @@
 
             return new PdfRectangle(new PdfPoint(MBR[4], MBR[5]),
                                     new PdfPoint(MBR[6], MBR[7]),
-                                    new PdfPoint(MBR[2], MBR[3]), 
+                                    new PdfPoint(MBR[2], MBR[3]),
                                     new PdfPoint(MBR[0], MBR[1]));
         }
 
@@ -193,7 +193,7 @@
         /// <param name="points">The points.</param>
         public static PdfRectangle MinimumAreaRectangle(IEnumerable<PdfPoint> points)
         {
-            if (points == null || points.Count() == 0)
+            if (points?.Any() != true)
             {
                 throw new ArgumentException("MinimumAreaRectangle(): points cannot be null and must contain at least one point.", nameof(points));
             }
@@ -210,7 +210,7 @@
         {
             if (points == null || points.Count < 2)
             {
-                throw new ArgumentException("OrientedBoundingBox(): points cannot be null and must contain at least two points.");
+                throw new ArgumentException("OrientedBoundingBox(): points cannot be null and must contain at least two points.", nameof(points));
             }
 
             // Fitting a line through the points
@@ -252,8 +252,7 @@
                 cos, sin, 0,
                 -sin, cos, 0,
                 0, 0, 1);
-            var obb = rotateBack.Transform(aabb);
-            return obb;
+            return rotateBack.Transform(aabb);
         }
 
         /// <summary>
@@ -261,9 +260,9 @@
         /// </summary>
         public static IEnumerable<PdfPoint> GrahamScan(IEnumerable<PdfPoint> points)
         {
-            if (points == null || points.Count() == 0)
+            if (points?.Any() != true)
             {
-                throw new ArgumentException("GrahamScan(): points cannot be null and must contain at least one point.");
+                throw new ArgumentException("GrahamScan(): points cannot be null and must contain at least one point.", nameof(points));
             }
 
             if (points.Count() < 3) return points;
@@ -434,12 +433,12 @@
                 if (IntersectsWith(rectangle.BottomLeft, rectangle.BottomRight, other.BottomRight, other.TopRight)) return true;
                 if (IntersectsWith(rectangle.BottomLeft, rectangle.BottomRight, other.TopRight, other.TopLeft)) return true;
                 if (IntersectsWith(rectangle.BottomLeft, rectangle.BottomRight,other.TopLeft, other.BottomLeft)) return true;
-                
+
                 if (IntersectsWith(rectangle.BottomRight, rectangle.TopRight, other.BottomLeft, other.BottomRight)) return true;
                 if (IntersectsWith(rectangle.BottomRight, rectangle.TopRight,other.BottomRight, other.TopRight)) return true;
                 if (IntersectsWith(rectangle.BottomRight, rectangle.TopRight, other.TopRight, other.TopLeft)) return true;
                 if (IntersectsWith(rectangle.BottomRight, rectangle.TopRight, other.TopLeft, other.BottomLeft)) return true;
-                
+
                 if (IntersectsWith(rectangle.TopRight, rectangle.TopLeft, other.BottomLeft, other.BottomRight)) return true;
                 if (IntersectsWith(rectangle.TopRight, rectangle.TopLeft, other.BottomRight, other.TopRight)) return true;
                 if (IntersectsWith(rectangle.TopRight, rectangle.TopLeft, other.TopRight, other.TopLeft)) return true;
@@ -739,7 +738,7 @@
         {
             return Intersect(bezierCurve, line.From, line.To);
         }
-        
+
         private static PdfPoint[] Intersect(BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
         {
             var ts = IntersectT(bezierCurve, p1, p2);
@@ -814,7 +813,7 @@
 
             var solution = SolveCubicEquation(a, b, c, d);
 
-            return solution.Where(s => !double.IsNaN(s)).Where(s => s >= -epsilon && (s - 1) <= epsilon).OrderBy(s => s).ToArray();
+            return solution.Where(s => !double.IsNaN(s) && s >= -epsilon && (s - 1) <= epsilon).OrderBy(s => s).ToArray();
         }
         #endregion
 
@@ -1056,7 +1055,6 @@
             }
             return true;
         }
-
         #endregion
 
         private const double OneThird = 0.333333333333333333333;
@@ -1182,8 +1180,7 @@
         {
             string BboxToRect(PdfRectangle box, string stroke)
             {
-                var overallBbox = $"<rect x='{box.Left}' y='{box.Bottom}' width='{box.Width}' height='{box.Height}' stroke-width='2' fill='none' stroke='{stroke}'></rect>";
-                return overallBbox;
+                return $"<rect x='{box.Left}' y='{box.Bottom}' width='{box.Width}' height='{box.Height}' stroke-width='2' fill='none' stroke='{stroke}'></rect>";
             }
 
             var glyph = p.ToSvg(height);
@@ -1202,9 +1199,7 @@
             var path = $"<path d='{glyph}' stroke='cyan' stroke-width='3'></path>";
             var bboxRect = bbox.HasValue ? BboxToRect(bbox.Value, "yellow") : string.Empty;
             var others = string.Join(" ", bboxes.Select(x => BboxToRect(x, "gray")));
-            var result = $"<svg width='500' height='500'><g transform=\"scale(0.2, -0.2) translate(100, -700)\">{path} {bboxRect} {others}</g></svg>";
-
-            return result;
+            return $"<svg width='500' height='500'><g transform=\"scale(0.2, -0.2) translate(100, -700)\">{path} {bboxRect} {others}</g></svg>";
         }
     }
 }
