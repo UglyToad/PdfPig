@@ -928,7 +928,7 @@
         /// </summary>
         /// <param name="subpath">The subpath that should contain the point.</param>
         /// <param name="point">The point that should be contained within the subpath.</param>
-        /// <param name="includeBorder">If set to false, will return false if the point belongs to the border.</param>
+        /// <param name="includeBorder">If set to false, will return false if the point belongs to the subpath's border.</param>
         public static bool Contains(this PdfSubpath subpath, PdfPoint point, bool includeBorder = false)
         {
             return PointInPaths(point.ToClipperIntPoint(),
@@ -943,14 +943,16 @@
         /// </summary>
         /// <param name="subpath">The subpath that should contain the rectangle.</param>
         /// <param name="rectangle">The rectangle that should be contained within the subpath.</param>
-        /// <param name="includeBorder">[Not used for the moment] If set to false, will return false if the point belongs to the border.</param>
+        /// <param name="includeBorder">If set to false, will return false if the rectangle is on the subpath's border.</param>
         public static bool Contains(this PdfSubpath subpath, PdfRectangle rectangle, bool includeBorder = false)
         {
+            // NB, For later dev: Might not work for concave outer subpath, as it can contain all the points of the rectangle, but have overlapping edges.
             var clipperPaths = new List<List<ClipperIntPoint>>() { subpath.ToClipperPolygon().ToList() };
-            if (!PointInPaths(rectangle.BottomLeft.ToClipperIntPoint(), clipperPaths, ClipperPolyFillType.EvenOdd, includeBorder)) return false;
-            if (!PointInPaths(rectangle.TopLeft.ToClipperIntPoint(), clipperPaths, ClipperPolyFillType.EvenOdd, includeBorder)) return false;
-            if (!PointInPaths(rectangle.TopRight.ToClipperIntPoint(), clipperPaths, ClipperPolyFillType.EvenOdd, includeBorder)) return false;
-            if (!PointInPaths(rectangle.BottomRight.ToClipperIntPoint(), clipperPaths, ClipperPolyFillType.EvenOdd, includeBorder)) return false;
+            foreach (var point in rectangle.ToClipperPolygon())
+            {
+                if (!PointInPaths(point, clipperPaths, ClipperPolyFillType.EvenOdd, includeBorder)) return false;
+            }
+
             return true;
         }
 
@@ -960,9 +962,10 @@
         /// </summary>
         /// <param name="subpath">The subpath that should contain the rectangle.</param>
         /// <param name="other">The other subpath that should be contained within the subpath.</param>
-        /// <param name="includeBorder">[Not used for the moment] If set to false, will return false if the point belongs to the border.</param>
+        /// <param name="includeBorder">If set to false, will return false if the other subpath is on the subpath's border.</param>
         public static bool Contains(this PdfSubpath subpath, PdfSubpath other, bool includeBorder = false)
         {
+            // NB, For later dev: Might not work for concave outer subpath, as it can contain all the points of the inner subpath, but have overlapping edges.
             var clipperPaths = new List<List<ClipperIntPoint>>() { subpath.ToClipperPolygon().ToList() };
             foreach (var pt in other.ToClipperPolygon())
             {
@@ -992,7 +995,7 @@
         /// </summary>
         /// <param name="path">The path that should contain the point.</param>
         /// <param name="point">The point that should be contained within the path.</param>
-        /// <param name="includeBorder">If set to false, will return false if the point belongs to the border.</param>
+        /// <param name="includeBorder">If set to false, will return false if the point belongs to the path's border.</param>
         public static bool Contains(this PdfPath path, PdfPoint point, bool includeBorder = false)
         {
             var clipperPaths = path.Select(sp => sp.ToClipperPolygon().ToList()).ToList();
@@ -1007,15 +1010,17 @@
         /// </summary>
         /// <param name="path">The path that should contain the rectangle.</param>
         /// <param name="rectangle">The rectangle that should be contained within the path.</param>
-        /// <param name="includeBorder">If set to false, will return false if the point belongs to the border.</param>
+        /// <param name="includeBorder">If set to false, will return false if the rectangle is on the path's border.</param>
         public static bool Contains(this PdfPath path, PdfRectangle rectangle, bool includeBorder = false)
         {
+            // NB, For later dev: Might not work for concave outer path, as it can contain all the points of the inner rectangle, but have overlapping edges.
             var clipperPaths = path.Select(sp => sp.ToClipperPolygon().ToList()).ToList();
             var fillType = path.FillingRule == FillingRule.NonZeroWinding ? ClipperPolyFillType.NonZero : ClipperPolyFillType.EvenOdd;
-            if (!PointInPaths(rectangle.BottomLeft.ToClipperIntPoint(), clipperPaths, fillType, includeBorder)) return false;
-            if (!PointInPaths(rectangle.TopLeft.ToClipperIntPoint(), clipperPaths, fillType, includeBorder)) return false;
-            if (!PointInPaths(rectangle.TopRight.ToClipperIntPoint(), clipperPaths, fillType, includeBorder)) return false;
-            if (!PointInPaths(rectangle.BottomRight.ToClipperIntPoint(), clipperPaths, fillType, includeBorder)) return false;
+            foreach (var point in rectangle.ToClipperPolygon())
+            {
+                if (!PointInPaths(point, clipperPaths, fillType, includeBorder)) return false;
+            }
+
             return true;
         }
 
@@ -1024,9 +1029,10 @@
         /// </summary>
         /// <param name="path">The path that should contain the subpath.</param>
         /// <param name="subpath">The subpath that should be contained within the path.</param>
-        /// <param name="includeBorder">If set to false, will return false if the point belongs to the border.</param>
+        /// <param name="includeBorder">If set to false, will return false if the subpath is on the path's border.</param>
         public static bool Contains(this PdfPath path, PdfSubpath subpath, bool includeBorder = false)
         {
+            // NB, For later dev: Might not work for concave outer path, as it can contain all the points of the inner subpath, but have overlapping edges.
             var clipperPaths = path.Select(sp => sp.ToClipperPolygon().ToList()).ToList();
             var fillType = path.FillingRule == FillingRule.NonZeroWinding ? ClipperPolyFillType.NonZero : ClipperPolyFillType.EvenOdd;
             foreach (var p in subpath.ToClipperPolygon())
@@ -1041,9 +1047,10 @@
         /// </summary>
         /// <param name="path">The path that should contain the path.</param>
         /// <param name="other">The other path that should be contained within the path.</param>
-        /// <param name="includeBorder">If set to false, will return false if the point belongs to the border.</param>
+        /// <param name="includeBorder">If set to false, will return false if the other subpath is on the path's border.</param>
         public static bool Contains(this PdfPath path, PdfPath other, bool includeBorder = false)
         {
+            // NB, For later dev: Might not work for concave outer path, as it can contain all the points of the inner path, but have overlapping edges.
             var clipperPaths = path.Select(sp => sp.ToClipperPolygon().ToList()).ToList();
             var fillType = path.FillingRule == FillingRule.NonZeroWinding ? ClipperPolyFillType.NonZero : ClipperPolyFillType.EvenOdd;
             foreach (var subpath in other)
