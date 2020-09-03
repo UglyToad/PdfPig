@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using Core;
     using Fonts;
     using Fonts.Encodings;
     using PdfPig.Parser.Parts;
@@ -47,13 +48,22 @@
 
                     return WinAnsiEncoding.Instance;
                 }
+
+                throw new InvalidOperationException($"Did not recognize named font: {name} in {fontDictionary}.");
             }
 
-            DictionaryToken encodingDictionary = DirectObjectFinder.Get<DictionaryToken>(baseEncodingObject, pdfScanner);
+            try
+            {
+                DictionaryToken encodingDictionary = DirectObjectFinder.Get<DictionaryToken>(baseEncodingObject, pdfScanner);
 
-            var encoding = ReadEncodingDictionary(encodingDictionary, fontEncoding);
+                var encoding = ReadEncodingDictionary(encodingDictionary, fontEncoding);
 
-            return encoding;
+                return encoding;
+            }
+            catch (Exception ex)
+            {
+                throw new PdfDocumentFormatException($"Failed to locate encoding in {fontDictionary}.", ex);
+            }
         }
 
         private Encoding ReadEncodingDictionary(DictionaryToken encodingDictionary, Encoding fontEncoding)
