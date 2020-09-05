@@ -1,4 +1,4 @@
-namespace UglyToad.PdfPig.Writer.Copier
+﻿namespace UglyToad.PdfPig.Writer.Copier
 {
     using System;
     using System.Collections.Generic;
@@ -14,7 +14,7 @@ namespace UglyToad.PdfPig.Writer.Copier
         /// <inheritdoc/>
         public MultiCopier(PdfStreamWriter destinationStream) : base(destinationStream)
         {
-            copiers = new List<IObjectCopier>() { new PagesCopier(this) };
+            copiers = new List<IObjectCopier>();
         }
 
         /// <summary>

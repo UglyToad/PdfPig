@@ -7,6 +7,7 @@
     using Content;
     using Copier;
     using Copier.Font;
+    using Copier.Page;
     using Core;
     using CrossReference;
     using Encryption;
@@ -164,17 +165,21 @@
             {
                 context = new PdfStreamWriter();
                 pagesTokenReferences = new List<IndirectReferenceToken>();
-                copier = new MultiCopier(context);
-                copier.AddCopier(new FontCopier(copier));
 
                 rootPagesReference = context.ReserveNumberToken();
+
+                copier = new MultiCopier(context);
+                copier.AddCopier(new PagesCopier(copier, rootPagesReference));
+                copier.AddCopier(new FontCopier(copier));
+
             }
  
             public void AppendDocument(Catalog documentCatalog, decimal version, IPdfTokenScanner tokenScanner)
             {
                 currentVersion = Math.Max(version, currentVersion);
 
-                pagesTokenReferences.Add(CopyPagesTree(new IndirectReferenceToken(documentCatalog.PageTree.Reference), rootPagesReference, tokenScanner));
+                var copiedPages = copier.CopyObject(new IndirectReferenceToken(documentCatalog.PageTree.Reference), tokenScanner) as IndirectReferenceToken;
+                pagesTokenReferences.Add(copiedPages);
 
                 pageCount += documentCatalog.PagesDictionary.Get<NumericToken>(NameToken.Count, tokenScanner).Int;
 
@@ -214,29 +219,9 @@
                 return bytes;
             }
 
-            public void Close()
+            private void Close()
             {
                 context.Dispose();
-            }
-
-            private IndirectReferenceToken CopyPagesTree(IndirectReferenceToken treeNodeReferenceToken, IndirectReferenceToken treeParentReference, IPdfTokenScanner tokenScanner)
-            {
-                var newTreeNodeReference = copier.CopyObject(treeNodeReferenceToken, tokenScanner) as IndirectReferenceToken;
-                var newTreeNodeToken = context.GetToken(newTreeNodeReference) as DictionaryToken;
-
-                var newContent = new Dictionary<NameToken, IToken>()
-                {
-                    {NameToken.Parent, treeParentReference}
-                };
-
-                foreach (var dataSet in newTreeNodeToken.Data)
-                {
-                    newContent.Add(NameToken.Create(dataSet.Key), dataSet.Value);
-                }
-
-                context.ReplaceToken(newTreeNodeReference, new DictionaryToken(newContent));
-
-                return newTreeNodeReference;
             }
         }
     }
