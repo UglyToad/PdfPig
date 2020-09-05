@@ -50,14 +50,14 @@
 
         public byte[] FontDataBytes { get; private set; } = null;
 
-        private int[] charCodes_ = null;
+        private int[] charCodes = null;
         public int[] CharCodes
         {
             get
             {
-                if (charCodes_ != null)
+                if (charCodes != null)
                 {
-                    return charCodes_;
+                    return charCodes;
                 }
 
                 if (Type == NameToken.TrueType)
@@ -66,12 +66,12 @@
                     var cmap = trueTypeFont.WindowsUnicodeCMap ?? trueTypeFont.WindowsSymbolCMap ?? trueTypeFont.MacRomanCMap
                         ?? throw new InvalidOperationException("Cannot subset font due to missing cmap subtables."); ;
 
-                    charCodes_ = cmap.GetCharactersCode().OrderBy(k => k).ToArray();
+                    charCodes = cmap.GetCharacterCodes().OrderBy(k => k).ToArray();
                 }
                 else if (Type == NameToken.Type1)
                 {
                     var type1Font = FontData as Type1Font;
-                    charCodes_ = type1Font.Encoding.Keys.OrderBy(k => k).ToArray();
+                    charCodes = type1Font.Encoding.Keys.OrderBy(k => k).ToArray();
                 }
                 else
                 {
@@ -79,7 +79,7 @@
                     return null;
                 }
 
-                return charCodes_;
+                return charCodes;
             }
         }
 
@@ -96,12 +96,12 @@
             }
             else
             {
-                throw new IOException($"Unable to extract the font name of font located at {fontReference}");
+                throw new PdfDocumentFormatException($"Unable to extract the font name of font located at {fontReference}");
             }
 
             if (!fontDictionary.TryGet(NameToken.Subtype, out NameToken fontType))
             {
-                throw new Exception($"Unable to extract font subtype from {fontDictionary}");
+                throw new PdfDocumentFormatException($"Unable to extract font subtype from {fontDictionary}");
             }
 
             if (!fontDictionary.TryGet(NameToken.FontDescriptor, out tokenObj))
@@ -150,17 +150,16 @@
             else if (type == NameToken.Type1)
             {
                 var length1 = 0;
+                
                 if (fontFileStream.StreamDictionary.TryGet(NameToken.Length1, out tokenObj))
                 {
-                    // TODO: I think every stream dict should have this field.
-                    length1 = (tokenObj as NumericToken).Int;
+                    length1 = TokenHelper.GetTokenAs<NumericToken>(tokenObj, lookupFunc).Int;
                 }
 
                 var length2 = 0;
                 if (!fontFileStream.StreamDictionary.TryGet(NameToken.Length2, out tokenObj))
                 {
-                    // TODO: I think every stream dict should have this field.
-                    length2 = (tokenObj as NumericToken).Int;
+                    length2 = TokenHelper.GetTokenAs<NumericToken>(tokenObj, lookupFunc).Int;
                 }
 
                 return (Type1FontParser.Parse(new ByteArrayInputBytes(bytes), length1, length2), bytes);

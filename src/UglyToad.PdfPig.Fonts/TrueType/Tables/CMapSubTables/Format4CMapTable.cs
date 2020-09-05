@@ -57,7 +57,7 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
             return 0;
         }
 
-        public int[] GetCharactersCode()
+        public int[] GetCharacterCodes()
         {
             var charactersCode = new List<int>();
 

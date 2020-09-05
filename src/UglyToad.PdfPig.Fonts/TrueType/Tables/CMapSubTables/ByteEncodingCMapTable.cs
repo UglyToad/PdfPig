@@ -50,7 +50,7 @@
             return glyphMapping[characterCode];
         }
 
-        public int[] GetCharactersCode()
+        public int[] GetCharacterCodes()
         {
             return Enumerable.Range(0, GlyphMappingLength).Where(i => glyphMapping[i] != 0).ToArray();
         }

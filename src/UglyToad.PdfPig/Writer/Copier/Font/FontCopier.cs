@@ -10,7 +10,7 @@
     public class FontCopier : IObjectCopier
     {
         private readonly List<FontObject> writtenFonts;
-        private ObjectCopier copier;
+        private readonly ObjectCopier copier;
 
         /// <inheritdoc/>
         public FontCopier(ObjectCopier mainCopier)

@@ -59,7 +59,7 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
             return glyphIndices[offset];
         }
 
-        public int[] GetCharactersCode()
+        public int[] GetCharacterCodes()
         {
             return Enumerable.Range(0, entryCount).Where(i => glyphIndices[i] != 0).Select(i => FirstCharacterCode + i).ToArray();
         }

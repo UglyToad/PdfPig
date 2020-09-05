@@ -11,19 +11,21 @@
         {
             var original = token;
 
-            checkToken:
-            switch (token)
+            while (true)
             {
-                case T retval:
-                    return retval;
-                case IndirectReferenceToken tokenReference:
-                    token = lookupFunc(tokenReference);
-                    goto checkToken;
-                case ObjectToken tokenObject:
-                    token = tokenObject.Data;
-                    goto checkToken;
-                default:
-                    throw new IOException($"Unable to extract a {typeof(T)} token from {original}");
+                switch (token)
+                {
+                    case T result:
+                        return result;
+                    case IndirectReferenceToken tokenReference:
+                        token = lookupFunc(tokenReference);
+                        continue;
+                    case ObjectToken tokenObject:
+                        token = tokenObject.Data;
+                        continue;
+                    default:
+                        throw new InvalidOperationException($"Unable to extract a {typeof(T)} token from {original}");
+                }
             }
         }
     }

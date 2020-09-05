@@ -34,7 +34,7 @@
             return index;
         }
 
-        public int[] GetCharactersCode()
+        public int[] GetCharacterCodes()
         {
             return characterCodesToGlyphIndices.Keys.ToArray();
         }

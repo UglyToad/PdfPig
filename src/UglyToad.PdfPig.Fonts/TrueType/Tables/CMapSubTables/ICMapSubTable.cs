@@ -28,6 +28,6 @@
         /// Return a list of characters mapped in this sub table
         /// </summary>
         /// <returns></returns>
-        int[] GetCharactersCode();
+        int[] GetCharacterCodes();
     }
 }
