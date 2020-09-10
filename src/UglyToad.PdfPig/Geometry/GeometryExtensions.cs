@@ -5,6 +5,8 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
+    using UglyToad.PdfPig.Geometry.ClipperLibrary;
+    using UglyToad.PdfPig.Graphics;
     using static UglyToad.PdfPig.Core.PdfSubpath;
 
     /// <summary>
@@ -57,14 +59,14 @@
         }
 
         /// <summary>
-        /// Algorithm to find a minimal bounding rectangle (MBR) such that the MBR corresponds to a rectangle 
+        /// Algorithm to find a minimal bounding rectangle (MBR) such that the MBR corresponds to a rectangle
         /// with smallest possible area completely enclosing the polygon.
         /// <para>From 'A Fast Algorithm for Generating a Minimal Bounding Rectangle' by Lennert D. Den Boer.</para>
         /// </summary>
         /// <param name="polygon">
         /// Polygon P is assumed to be both simple and convex, and to contain no duplicate (coincident) vertices.
-        /// The vertices of P are assumed to be in strict cyclic sequential order, either clockwise or 
-        /// counter-clockwise relative to the origin P0. 
+        /// The vertices of P are assumed to be in strict cyclic sequential order, either clockwise or
+        /// counter-clockwise relative to the origin P0.
         /// </param>
         private static PdfRectangle ParametricPerpendicularProjection(IReadOnlyList<PdfPoint> polygon)
         {
@@ -180,7 +182,7 @@
 
             return new PdfRectangle(new PdfPoint(MBR[4], MBR[5]),
                                     new PdfPoint(MBR[6], MBR[7]),
-                                    new PdfPoint(MBR[2], MBR[3]), 
+                                    new PdfPoint(MBR[2], MBR[3]),
                                     new PdfPoint(MBR[0], MBR[1]));
         }
 
@@ -191,7 +193,7 @@
         /// <param name="points">The points.</param>
         public static PdfRectangle MinimumAreaRectangle(IEnumerable<PdfPoint> points)
         {
-            if (points == null || points.Count() == 0)
+            if (points?.Any() != true)
             {
                 throw new ArgumentException("MinimumAreaRectangle(): points cannot be null and must contain at least one point.", nameof(points));
             }
@@ -208,7 +210,7 @@
         {
             if (points == null || points.Count < 2)
             {
-                throw new ArgumentException("OrientedBoundingBox(): points cannot be null and must contain at least two points.");
+                throw new ArgumentException("OrientedBoundingBox(): points cannot be null and must contain at least two points.", nameof(points));
             }
 
             // Fitting a line through the points
@@ -250,8 +252,7 @@
                 cos, sin, 0,
                 -sin, cos, 0,
                 0, 0, 1);
-            var obb = rotateBack.Transform(aabb);
-            return obb;
+            return rotateBack.Transform(aabb);
         }
 
         /// <summary>
@@ -259,9 +260,9 @@
         /// </summary>
         public static IEnumerable<PdfPoint> GrahamScan(IEnumerable<PdfPoint> points)
         {
-            if (points == null || points.Count() == 0)
+            if (points?.Any() != true)
             {
-                throw new ArgumentException("GrahamScan(): points cannot be null and must contain at least one point.");
+                throw new ArgumentException("GrahamScan(): points cannot be null and must contain at least one point.", nameof(points));
             }
 
             if (points.Count() < 3) return points;
@@ -321,7 +322,7 @@
 
         #region PdfRectangle
         /// <summary>
-        /// Whether the rectangle contains the point.
+        /// Whether the point is located inside the rectangle.
         /// </summary>
         /// <param name="rectangle">The rectangle that should contain the point.</param>
         /// <param name="point">The point that should be contained within the rectangle.</param>
@@ -370,7 +371,7 @@
         }
 
         /// <summary>
-        /// Whether the rectangle contains the rectangle.
+        /// Whether the other rectangle is located inside the rectangle.
         /// </summary>
         /// <param name="rectangle">The rectangle that should contain the other rectangle.</param>
         /// <param name="other">The other rectangle that should be contained within the rectangle.</param>
@@ -432,12 +433,12 @@
                 if (IntersectsWith(rectangle.BottomLeft, rectangle.BottomRight, other.BottomRight, other.TopRight)) return true;
                 if (IntersectsWith(rectangle.BottomLeft, rectangle.BottomRight, other.TopRight, other.TopLeft)) return true;
                 if (IntersectsWith(rectangle.BottomLeft, rectangle.BottomRight,other.TopLeft, other.BottomLeft)) return true;
-                
+
                 if (IntersectsWith(rectangle.BottomRight, rectangle.TopRight, other.BottomLeft, other.BottomRight)) return true;
                 if (IntersectsWith(rectangle.BottomRight, rectangle.TopRight,other.BottomRight, other.TopRight)) return true;
                 if (IntersectsWith(rectangle.BottomRight, rectangle.TopRight, other.TopRight, other.TopLeft)) return true;
                 if (IntersectsWith(rectangle.BottomRight, rectangle.TopRight, other.TopLeft, other.BottomLeft)) return true;
-                
+
                 if (IntersectsWith(rectangle.TopRight, rectangle.TopLeft, other.BottomLeft, other.BottomRight)) return true;
                 if (IntersectsWith(rectangle.TopRight, rectangle.TopLeft, other.BottomRight, other.TopRight)) return true;
                 if (IntersectsWith(rectangle.TopRight, rectangle.TopLeft, other.TopRight, other.TopLeft)) return true;
@@ -454,6 +455,7 @@
 
         /// <summary>
         /// Gets the <see cref="PdfRectangle"/> that is the intersection of two rectangles.
+        /// <para>Only works for axis-aligned rectangles.</para>
         /// </summary>
         public static PdfRectangle? Intersect(this PdfRectangle rectangle, PdfRectangle other)
         {
@@ -477,7 +479,7 @@
 
         #region PdfLine
         /// <summary>
-        /// Whether the line segment contains the point.
+        /// Whether the point is located on the line segment.
         /// </summary>
         public static bool Contains(this PdfLine line, PdfPoint point)
         {
@@ -535,7 +537,7 @@
 
         #region Path Line
         /// <summary>
-        /// Whether the line segment contains the point.
+        /// Whether the point is located on the line segment.
         /// </summary>
         public static bool Contains(this Line line, PdfPoint point)
         {
@@ -736,7 +738,7 @@
         {
             return Intersect(bezierCurve, line.From, line.To);
         }
-        
+
         private static PdfPoint[] Intersect(BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
         {
             var ts = IntersectT(bezierCurve, p1, p2);
@@ -811,7 +813,254 @@
 
             var solution = SolveCubicEquation(a, b, c, d);
 
-            return solution.Where(s => !double.IsNaN(s)).Where(s => s >= -epsilon && (s - 1) <= epsilon).OrderBy(s => s).ToArray();
+            return solution.Where(s => !double.IsNaN(s) && s >= -epsilon && (s - 1) <= epsilon).OrderBy(s => s).ToArray();
+        }
+        #endregion
+
+        #region PdfPath & PdfSubpath
+        #region Clipper extension
+        // https://stackoverflow.com/questions/54723622/point-in-polygon-hit-test-algorithm
+        // Ported from Angus Johnson's Delphi Pascal code (Clipper's author)
+        // Might be made available in the next Clipper release?
+
+        private static double CrossProduct(ClipperIntPoint pt1, ClipperIntPoint pt2, ClipperIntPoint pt3)
+        {
+            return (pt2.X - pt1.X) * (pt3.Y - pt2.Y) - (pt2.Y - pt1.Y) * (pt3.X - pt2.X);
+        }
+
+        /// <summary>
+        /// nb: returns MaxInt ((2^32)-1) when pt is on a line
+        /// </summary>
+        private static int PointInPathsWindingCount(ClipperIntPoint pt, List<List<ClipperIntPoint>> paths)
+        {
+            var result = 0;
+            for (int i = 0; i < paths.Count; i++)
+            {
+                int j = 0;
+                List<ClipperIntPoint> p = paths[i];
+                int len = p.Count;
+
+                if (len < 3) continue;
+                ClipperIntPoint prevPt = p[len - 1];
+
+                while ((j < len) && (p[j].Y == prevPt.Y)) j++;
+                if (j == len) continue;
+
+                bool isAbove = prevPt.Y < pt.Y;
+
+                while (j < len)
+                {
+                    if (isAbove)
+                    {
+                        while ((j < len) && (p[j].Y < pt.Y)) j++;
+                        if (j == len)
+                        {
+                            break;
+                        }
+                        else if (j > 0)
+                        {
+                            prevPt = p[j - 1];
+                        }
+
+                        double crossProd = CrossProduct(prevPt, p[j], pt);
+                        if (crossProd == 0)
+                        {
+                            return int.MaxValue;
+                        }
+                        else if (crossProd < 0)
+                        {
+                            result--;
+                        }
+                    }
+                    else
+                    {
+                        while ((j < len) && (p[j].Y > pt.Y)) j++;
+                        if (j == len)
+                        {
+                            break;
+                        }
+                        else if (j > 0)
+                        {
+                            prevPt = p[j - 1];
+                        }
+
+                        double crossProd = CrossProduct(prevPt, p[j], pt);
+                        if (crossProd == 0)
+                        {
+                            return int.MaxValue;
+                        }
+                        else if (crossProd > 0)
+                        {
+                            result++;
+                        }
+                    }
+
+                    j++;
+                    isAbove = !isAbove;
+                }
+            }
+            return result;
+        }
+
+        private static bool PointInPaths(ClipperIntPoint pt, List<List<ClipperIntPoint>> paths, ClipperPolyFillType fillRule, bool includeBorder)
+        {
+            int wc = PointInPathsWindingCount(pt, paths);
+            if (wc == int.MaxValue)
+            {
+                return includeBorder;
+            }
+
+            switch (fillRule)
+            {
+                default:
+                case ClipperPolyFillType.EvenOdd:
+                    return wc % 2 != 0;
+
+                case ClipperPolyFillType.NonZero:
+                    return wc != 0;
+            }
+        }
+        #endregion
+
+        /// <summary>
+        /// Whether the point is located inside the subpath.
+        /// <para>Ignores winding rule.</para>
+        /// </summary>
+        /// <param name="subpath">The subpath that should contain the point.</param>
+        /// <param name="point">The point that should be contained within the subpath.</param>
+        /// <param name="includeBorder">If set to false, will return false if the point belongs to the subpath's border.</param>
+        public static bool Contains(this PdfSubpath subpath, PdfPoint point, bool includeBorder = false)
+        {
+            return PointInPaths(point.ToClipperIntPoint(),
+                new List<List<ClipperIntPoint>>() { subpath.ToClipperPolygon().ToList() },
+                ClipperPolyFillType.EvenOdd,
+                includeBorder);
+        }
+
+        /// <summary>
+        /// Whether the rectangle is located inside the subpath.
+        /// <para>Ignores winding rule.</para>
+        /// </summary>
+        /// <param name="subpath">The subpath that should contain the rectangle.</param>
+        /// <param name="rectangle">The rectangle that should be contained within the subpath.</param>
+        /// <param name="includeBorder">If set to false, will return false if the rectangle is on the subpath's border.</param>
+        public static bool Contains(this PdfSubpath subpath, PdfRectangle rectangle, bool includeBorder = false)
+        {
+            // NB, For later dev: Might not work for concave outer subpath, as it can contain all the points of the rectangle, but have overlapping edges.
+            var clipperPaths = new List<List<ClipperIntPoint>>() { subpath.ToClipperPolygon().ToList() };
+            foreach (var point in rectangle.ToClipperPolygon())
+            {
+                if (!PointInPaths(point, clipperPaths, ClipperPolyFillType.EvenOdd, includeBorder)) return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Whether the other subpath is located inside the subpath.
+        /// <para>Ignores winding rule.</para>
+        /// </summary>
+        /// <param name="subpath">The subpath that should contain the rectangle.</param>
+        /// <param name="other">The other subpath that should be contained within the subpath.</param>
+        /// <param name="includeBorder">If set to false, will return false if the other subpath is on the subpath's border.</param>
+        public static bool Contains(this PdfSubpath subpath, PdfSubpath other, bool includeBorder = false)
+        {
+            // NB, For later dev: Might not work for concave outer subpath, as it can contain all the points of the inner subpath, but have overlapping edges.
+            var clipperPaths = new List<List<ClipperIntPoint>>() { subpath.ToClipperPolygon().ToList() };
+            foreach (var pt in other.ToClipperPolygon())
+            {
+                if (!PointInPaths(pt, clipperPaths, ClipperPolyFillType.EvenOdd, includeBorder)) return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Get the area of the path.
+        /// </summary>
+        /// <param name="path"></param>
+        public static double GetArea(this PdfPath path)
+        {
+            var clipperPaths = path.Select(sp => sp.ToClipperPolygon().ToList()).ToList();
+            var simplifieds = Clipper.SimplifyPolygons(clipperPaths, path.FillingRule == FillingRule.NonZeroWinding ? ClipperPolyFillType.NonZero : ClipperPolyFillType.EvenOdd);
+            double sum = 0;
+            foreach (var simplified in simplifieds)
+            {
+                sum += Clipper.Area(simplified);
+            }
+            return sum;
+        }
+
+        /// <summary>
+        /// Whether the point is located inside the path.
+        /// </summary>
+        /// <param name="path">The path that should contain the point.</param>
+        /// <param name="point">The point that should be contained within the path.</param>
+        /// <param name="includeBorder">If set to false, will return false if the point belongs to the path's border.</param>
+        public static bool Contains(this PdfPath path, PdfPoint point, bool includeBorder = false)
+        {
+            var clipperPaths = path.Select(sp => sp.ToClipperPolygon().ToList()).ToList();
+            return PointInPaths(point.ToClipperIntPoint(),
+                clipperPaths,
+                path.FillingRule == FillingRule.NonZeroWinding ? ClipperPolyFillType.NonZero : ClipperPolyFillType.EvenOdd,
+                includeBorder);
+        }
+
+        /// <summary>
+        /// Whether the rectangle is located inside the path.
+        /// </summary>
+        /// <param name="path">The path that should contain the rectangle.</param>
+        /// <param name="rectangle">The rectangle that should be contained within the path.</param>
+        /// <param name="includeBorder">If set to false, will return false if the rectangle is on the path's border.</param>
+        public static bool Contains(this PdfPath path, PdfRectangle rectangle, bool includeBorder = false)
+        {
+            // NB, For later dev: Might not work for concave outer path, as it can contain all the points of the inner rectangle, but have overlapping edges.
+            var clipperPaths = path.Select(sp => sp.ToClipperPolygon().ToList()).ToList();
+            var fillType = path.FillingRule == FillingRule.NonZeroWinding ? ClipperPolyFillType.NonZero : ClipperPolyFillType.EvenOdd;
+            foreach (var point in rectangle.ToClipperPolygon())
+            {
+                if (!PointInPaths(point, clipperPaths, fillType, includeBorder)) return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Whether the subpath is located inside the path.
+        /// </summary>
+        /// <param name="path">The path that should contain the subpath.</param>
+        /// <param name="subpath">The subpath that should be contained within the path.</param>
+        /// <param name="includeBorder">If set to false, will return false if the subpath is on the path's border.</param>
+        public static bool Contains(this PdfPath path, PdfSubpath subpath, bool includeBorder = false)
+        {
+            // NB, For later dev: Might not work for concave outer path, as it can contain all the points of the inner subpath, but have overlapping edges.
+            var clipperPaths = path.Select(sp => sp.ToClipperPolygon().ToList()).ToList();
+            var fillType = path.FillingRule == FillingRule.NonZeroWinding ? ClipperPolyFillType.NonZero : ClipperPolyFillType.EvenOdd;
+            foreach (var p in subpath.ToClipperPolygon())
+            {
+                if (!PointInPaths(p, clipperPaths, fillType, includeBorder)) return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Whether the other path is located inside the path.
+        /// </summary>
+        /// <param name="path">The path that should contain the path.</param>
+        /// <param name="other">The other path that should be contained within the path.</param>
+        /// <param name="includeBorder">If set to false, will return false if the other subpath is on the path's border.</param>
+        public static bool Contains(this PdfPath path, PdfPath other, bool includeBorder = false)
+        {
+            // NB, For later dev: Might not work for concave outer path, as it can contain all the points of the inner path, but have overlapping edges.
+            var clipperPaths = path.Select(sp => sp.ToClipperPolygon().ToList()).ToList();
+            var fillType = path.FillingRule == FillingRule.NonZeroWinding ? ClipperPolyFillType.NonZero : ClipperPolyFillType.EvenOdd;
+            foreach (var subpath in other)
+            {
+                foreach (var p in subpath.ToClipperPolygon())
+                {
+                    if (!PointInPaths(p, clipperPaths, fillType, includeBorder)) return false;
+                }
+            }
+            return true;
         }
         #endregion
 
@@ -938,8 +1187,7 @@
         {
             string BboxToRect(PdfRectangle box, string stroke)
             {
-                var overallBbox = $"<rect x='{box.Left}' y='{box.Bottom}' width='{box.Width}' height='{box.Height}' stroke-width='2' fill='none' stroke='{stroke}'></rect>";
-                return overallBbox;
+                return $"<rect x='{box.Left}' y='{box.Bottom}' width='{box.Width}' height='{box.Height}' stroke-width='2' fill='none' stroke='{stroke}'></rect>";
             }
 
             var glyph = p.ToSvg(height);
@@ -958,9 +1206,7 @@
             var path = $"<path d='{glyph}' stroke='cyan' stroke-width='3'></path>";
             var bboxRect = bbox.HasValue ? BboxToRect(bbox.Value, "yellow") : string.Empty;
             var others = string.Join(" ", bboxes.Select(x => BboxToRect(x, "gray")));
-            var result = $"<svg width='500' height='500'><g transform=\"scale(0.2, -0.2) translate(100, -700)\">{path} {bboxRect} {others}</g></svg>";
-
-            return result;
+            return $"<svg width='500' height='500'><g transform=\"scale(0.2, -0.2) translate(100, -700)\">{path} {bboxRect} {others}</g></svg>";
         }
     }
 }
