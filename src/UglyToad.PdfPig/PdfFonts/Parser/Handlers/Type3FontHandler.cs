@@ -49,9 +49,26 @@
                     toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap));
                 }
             }
-            
-            return new Type3Font(NameToken.Type3, boundingBox, fontMatrix, encoding, firstCharacter,
+
+            var name = GetFontName(dictionary);
+
+            return new Type3Font(name, boundingBox, fontMatrix, encoding, firstCharacter,
                 lastCharacter, widths, toUnicodeCMap);
+        }
+
+        private NameToken GetFontName(DictionaryToken dictionary)
+        {
+            if (!dictionary.TryGet(NameToken.Name, out var fontName))
+            {
+                return NameToken.Type3;
+            }
+
+            if (fontName is NameToken nameToken)
+            {
+                return nameToken;
+            }
+
+            return NameToken.Type3;
         }
 
         private TransformationMatrix GetFontMatrix(DictionaryToken dictionary)
