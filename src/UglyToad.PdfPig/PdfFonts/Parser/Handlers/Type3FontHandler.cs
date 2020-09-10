@@ -58,14 +58,9 @@
 
         private NameToken GetFontName(DictionaryToken dictionary)
         {
-            if (!dictionary.TryGet(NameToken.Name, out var fontName))
+            if (dictionary.TryGet(NameToken.Name, scanner, out NameToken fontName))
             {
-                return NameToken.Type3;
-            }
-
-            if (fontName is NameToken nameToken)
-            {
-                return nameToken;
+                return fontName;
             }
 
             return NameToken.Type3;
