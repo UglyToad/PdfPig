@@ -19,6 +19,10 @@
             try
             {
                 var folder = Environment.GetEnvironmentVariable("$HOME");
+                if (string.IsNullOrWhiteSpace(folder))
+                {
+                    folder = Environment.GetEnvironmentVariable("HOME");
+                }
 
                 if (!string.IsNullOrWhiteSpace(folder))
                 {
@@ -48,7 +52,7 @@
 
                 try
                 {
-                    files = Directory.GetFiles(directory);
+                    files = Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories);
                 }
                 catch
                 {
