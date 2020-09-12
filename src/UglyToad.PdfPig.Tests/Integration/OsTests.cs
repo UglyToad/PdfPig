@@ -37,6 +37,8 @@ namespace UglyToad.PdfPig.Tests.Integration
                     var current = page.Letters[i];
                     Assert.Equal(bbox, current.GlyphRectangle.ToString());
                     Assert.Equal(rotation, current.GlyphRectangle.Rotation, 3);
+
+
                 }
             }
         }
