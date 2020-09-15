@@ -13,7 +13,7 @@
     /// </summary>
     internal static class ClippingExtensions
     {
-        private const double Factor = 10_000.0;
+        public const double Factor = 10_000.0;
 
         /// <summary>
         /// Number of lines to use when transforming bezier curve to polyline.
@@ -219,6 +219,11 @@
         internal static ClipperIntPoint ToClipperIntPoint(this PdfPoint point)
         {
             return new ClipperIntPoint(point.X * Factor, point.Y * Factor);
+        }
+
+        internal static List<ClipperIntPoint> ToClipperIntPoint(this PdfLine line)
+        {
+            return new List<ClipperIntPoint>() { line.Point1.ToClipperIntPoint(), line.Point2.ToClipperIntPoint() };
         }
     }
 }
