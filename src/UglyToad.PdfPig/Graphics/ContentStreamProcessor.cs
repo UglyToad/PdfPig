@@ -106,7 +106,7 @@
             var clippingSubpath = new PdfSubpath();
             clippingSubpath.Rectangle(cropBox.BottomLeft.X, cropBox.BottomLeft.Y, cropBox.Width, cropBox.Height);
             var clippingPath = new PdfPath() { clippingSubpath };
-            clippingPath.SetClipping(FillingRule.NonZeroWinding);
+            clippingPath.SetClipping(FillingRule.EvenOdd);
 
             graphicsStack.Push(new CurrentGraphicsState()
             {
@@ -627,7 +627,7 @@
 
             if (clipPaths)
             {
-                var clippedPath = currentState.CurrentClippingPath.Clip(CurrentPath);
+                var clippedPath = currentState.CurrentClippingPath.Clip(CurrentPath, log);
                 if (clippedPath != null)
                 {
                     paths.Add(clippedPath);
@@ -658,7 +658,7 @@
                 var currentClipping = GetCurrentState().CurrentClippingPath;
                 currentClipping.SetClipping(clippingRule);
 
-                var newClippings = CurrentPath.Clip(currentClipping);
+                var newClippings = CurrentPath.Clip(currentClipping, log);
                 if (newClippings == null)
                 {
                     log.Warn("Empty clipping path found. Clipping path not updated.");
