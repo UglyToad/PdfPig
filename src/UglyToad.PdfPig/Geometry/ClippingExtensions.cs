@@ -6,6 +6,7 @@
     using ClipperLibrary;
     using Core;
     using Graphics;
+    using UglyToad.PdfPig.Logging;
     using static Core.PdfSubpath;
 
     /// <summary>
@@ -23,7 +24,7 @@
         /// <summary>
         /// Generates the result of applying a clipping path to another path.
         /// </summary>
-        public static PdfPath Clip(this PdfPath clipping, PdfPath subject)
+        public static PdfPath Clip(this PdfPath clipping, PdfPath subject, ILog log = null)
         {
             if (clipping == null)
             {
@@ -61,7 +62,10 @@
                     subPathClipping.CloseSubpath();
                 }
 
-                clipper.AddPath(subPathClipping.ToClipperPolygon().ToList(), ClipperPolyType.Clip, true);
+                if (!clipper.AddPath(subPathClipping.ToClipperPolygon().ToList(), ClipperPolyType.Clip, true))
+                {
+                    log?.Error("ClippingExtensions.Clip(): failed to add clipping subpath.");
+                }
             }
 
             // Subject path
@@ -74,13 +78,27 @@
                     continue;
                 }
 
+                if (subjectClose && !subPathSubject.IsClosed()
+                    && subPathSubject.Commands.Count(sp => sp is Line) < 2
+                    && subPathSubject.Commands.Count(sp => sp is BezierCurve) == 0)
+                {
+                    // strange here:
+                    // the subpath contains maximum 1 line and no curves
+                    // it cannot be filled or a be clipping path
+                    // cancel closing the path/subpath
+                    subjectClose = false;
+                }
+
                 // Force close subject if need be
                 if (subjectClose && !subPathSubject.IsClosed())
                 {
                     subPathSubject.CloseSubpath();
                 }
 
-                clipper.AddPath(subPathSubject.ToClipperPolygon().ToList(), ClipperPolyType.Subject, subjectClose);
+                if (!clipper.AddPath(subPathSubject.ToClipperPolygon().ToList(), ClipperPolyType.Subject, subjectClose))
+                {
+                    log?.Error("ClippingExtensions.Clip(): failed to add subject subpath for clipping.");
+                }
             }
 
             var clippingFillType = clipping.FillingRule == FillingRule.NonZeroWinding ? ClipperPolyFillType.NonZero : ClipperPolyFillType.EvenOdd;
@@ -164,11 +182,12 @@
                 yield break;
             }
 
-            if (pdfPath.Commands[0] is Move currentMove)
+            ClipperIntPoint movePoint;
+            if (pdfPath.Commands[0] is Move move)
             {
-                var previous = currentMove.Location.ToClipperIntPoint();
+                movePoint = move.Location.ToClipperIntPoint();
 
-                yield return previous;
+                yield return movePoint;
 
                 if (pdfPath.Commands.Count == 1)
                 {
@@ -185,7 +204,7 @@
                 var command = pdfPath.Commands[i];
                 if (command is Move)
                 {
-                    throw new ArgumentException("ToClipperPolygon():only one move allowed per subpath.", nameof(pdfPath));
+                    throw new ArgumentException("ToClipperPolygon(): only one move allowed per subpath.", nameof(pdfPath));
                 }
 
                 if (command is Line line)
@@ -203,7 +222,11 @@
                 }
                 else if (command is Close)
                 {
-                    yield return currentMove.Location.ToClipperIntPoint();
+                    if (movePoint == null)
+                    {
+                        throw new ArgumentException("ToClipperPolygon(): Move command was null, cannot close the subpath.");
+                    }
+                    yield return movePoint;
                 }
             }
         }
