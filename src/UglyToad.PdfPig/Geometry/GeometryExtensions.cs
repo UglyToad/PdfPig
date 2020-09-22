@@ -475,6 +475,65 @@
             var points = new[] { rectangle.BottomLeft, rectangle.BottomRight, rectangle.TopLeft, rectangle.TopRight };
             return new PdfRectangle(points.Min(p => p.X), points.Min(p => p.Y), points.Max(p => p.X), points.Max(p => p.Y));
         }
+
+        /// <summary>
+        /// Whether the rectangle and the line intersect.
+        /// </summary>
+        /// <param name="rectangle"></param>
+        /// <param name="line"></param>
+        public static bool IntersectsWith(this PdfRectangle rectangle, PdfLine line)
+        {
+            return IntersectsWith(rectangle, line.Point1, line.Point2);
+        }
+
+        /// <summary>
+        /// Gets the <see cref="PdfLine"/> that is the intersection of the rectangle and the line.
+        /// </summary>
+        /// <param name="rectangle"></param>
+        /// <param name="line"></param>
+        public static PdfLine? Intersect(this PdfRectangle rectangle, PdfLine line)
+        {
+            var i = Intersect(rectangle, line.Point1, line.Point2);
+            if (i != null)
+            {
+                return new PdfLine(i[0], i[1]);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the list of <see cref="PdfLine"/>s that are the intersection of the rectangle and the lines.
+        /// </summary>
+        /// <param name="rectangle"></param>
+        /// <param name="lines"></param>
+        /// <returns></returns>
+        public static List<PdfLine> Intersect(this PdfRectangle rectangle, List<PdfLine> lines)
+        {
+            var clipper = new Clipper();
+            clipper.AddPath(rectangle.ToClipperPolygon().ToList(), ClipperPolyType.Clip, true);
+
+            foreach (var line in lines)
+            {
+                clipper.AddPath(line.ToClipperIntPoint(), ClipperPolyType.Subject, false);
+            }
+
+            var solutions = new ClipperPolyTree();
+            if (clipper.Execute(ClipperClipType.Intersection, solutions))
+            {
+                List<PdfLine> rv = new List<PdfLine>();
+                foreach (var solution in solutions.Children)
+                {
+                    rv.Add(new PdfLine(new PdfPoint(solution.Contour[0].X / ClippingExtensions.Factor, solution.Contour[0].Y / ClippingExtensions.Factor),
+                                      new PdfPoint(solution.Contour[1].X / ClippingExtensions.Factor, solution.Contour[1].Y / ClippingExtensions.Factor)));
+                }
+                return rv;
+            }
+            else
+            {
+                return new List<PdfLine>();
+            }
+            // clipper.clear() ??
+        }
         #endregion
 
         #region PdfLine
@@ -532,6 +591,26 @@
         public static bool ParallelTo(this PdfLine line, Line other)
         {
             return ParallelTo(line.Point1, line.Point2, other.From, other.To);
+        }
+
+        /// <summary>
+        /// Gets the <see cref="PdfLine"/> that is the intersection of the rectangle and the line.
+        /// </summary>
+        /// <param name="rectangle"></param>
+        /// <param name="line"></param>
+        public static PdfLine? Intersect(this PdfLine line, PdfRectangle rectangle)
+        {
+            return rectangle.Intersect(line);
+        }
+
+        /// <summary>
+        /// Whether the rectangle and the line intersect.
+        /// </summary>
+        /// <param name="rectangle"></param>
+        /// <param name="line"></param>
+        public static bool IntersectsWith(this PdfLine line, PdfRectangle rectangle)
+        {
+            return rectangle.IntersectsWith(line);
         }
         #endregion
 
@@ -655,6 +734,65 @@
                 var y = Slope1 * x + Intercept1;
                 return new PdfPoint(x, y);
             }
+        }
+
+        /// <summary>
+        /// The intersection of the line formed by <paramref name="pl1"/> and <paramref name="pl2"/>
+        /// intersects the rectangle.
+        /// </summary>
+        private static PdfPoint[] Intersect(PdfRectangle rectangle, PdfPoint pl1, PdfPoint pl2)
+        {
+            var clipper = new Clipper();
+            clipper.AddPath(rectangle.ToClipperPolygon().ToList(), ClipperPolyType.Clip, true);
+
+            clipper.AddPath(new List<ClipperIntPoint>() { pl1.ToClipperIntPoint(), pl2.ToClipperIntPoint() }, ClipperPolyType.Subject, false);
+
+            var solutions = new ClipperPolyTree();
+            if (clipper.Execute(ClipperClipType.Intersection, solutions))
+            {
+                if (solutions.Children.Count == 0)
+                {
+                    return null;
+                }
+                else if (solutions.Children.Count == 1)
+                {
+                    var solution = solutions.Children[0];
+
+                    return new[]
+                    {
+                        new PdfPoint(solution.Contour[0].X / ClippingExtensions.Factor, solution.Contour[0].Y / ClippingExtensions.Factor),
+                        new PdfPoint(solution.Contour[1].X / ClippingExtensions.Factor, solution.Contour[1].Y / ClippingExtensions.Factor)
+                    };
+                }
+                else
+                {
+                    throw new ArgumentException("GeometryExtensions.Intersect(PdfRectangle, PdfPoint, PdfPoint): more than one solution found.");
+                }
+            }
+            else
+            {
+                return null;
+            }
+            // clipper.clear() ??
+        }
+
+        /// <summary>
+        /// Whether the line formed by <paramref name="pl1"/> and <paramref name="pl2"/>
+        /// intersects the rectangle.
+        /// </summary>
+        public static bool IntersectsWith(PdfRectangle rectangle, PdfPoint pl1, PdfPoint pl2)
+        {
+            var clipper = new Clipper();
+            clipper.AddPath(rectangle.ToClipperPolygon().ToList(), ClipperPolyType.Clip, true);
+
+            clipper.AddPath(new List<ClipperIntPoint>() { pl1.ToClipperIntPoint(), pl2.ToClipperIntPoint() }, ClipperPolyType.Subject, false);
+
+            var solutions = new ClipperPolyTree();
+            if (clipper.Execute(ClipperClipType.Intersection, solutions))
+            {
+                return solutions.Children.Count > 0;
+            }
+            return false;
         }
 
         private static bool ParallelTo(PdfPoint p11, PdfPoint p12, PdfPoint p21, PdfPoint p22)
