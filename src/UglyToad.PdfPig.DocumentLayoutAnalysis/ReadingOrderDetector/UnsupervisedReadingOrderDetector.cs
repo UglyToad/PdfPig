@@ -1,31 +1,115 @@
 ﻿namespace UglyToad.PdfPig.DocumentLayoutAnalysis.ReadingOrderDetector
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
 
     /// <summary>
-    /// Algorithm that retrieve the blocks' reading order using both (spatial) Allen’s interval relations and rendering order (TextSequence).
+    /// Algorithm that retrieve the blocks' reading order using spatial reasoning (Allen’s interval relations) and possibly the rendering order (TextSequence).
     /// <para>See section 4.1 of 'Unsupervised document structure analysis of digital scientific articles' by S. Klampfl, M. Granitzer, K. Jack, R. Kern and 'Document Understanding for a Broad Class of Documents' by L. Todoran, M. Worring, M. Aiello and C. Monz.</para>
     /// </summary>
     public class UnsupervisedReadingOrderDetector : IReadingOrderDetector
     {
         /// <summary>
+        /// The rules encoding the spatial reasoning constraints.
+        /// <para>See 'Document Understanding for a Broad Class of Documents' by L. Todoran, M. Worring, M. Aiello and C. Monz.</para>
+        /// </summary>
+        public enum SpatialReasoningRules
+        {
+            /// <summary>
+            /// Basic spacial reasoning.
+            /// <para>In western culture the reading order is from left to right and from top to bottom.</para>
+            /// </summary>
+            Basic = 0,
+
+            /// <summary>
+            /// Text-blocks are read in rows from left-to-right, top-to-bottom.
+            /// <para>The diagonal direction 'left-bottom to top-right' cannot be present among the Basic relations allowed.</para>
+            /// </summary>
+            RowWise = 1,
+
+            /// <summary>
+            /// Text-blocks are read in columns, from top-to-bottom and from left-to-right.
+            /// <para>The diagonal direction 'right-top to bottom-left' cannot be present among the Basic relations allowed.</para>
+            /// </summary>
+            ColumnWise = 2
+        }
+
+        /// <summary>
         /// Create an instance of unsupervised reading order detector, <see cref="UnsupervisedReadingOrderDetector"/>.
-        /// <para>This detector uses the (spatial) Allen’s interval relations and rendering order (TextSequence).</para>
+        /// <para>This detector uses spatial reasoning (Allen’s interval relations) and possibly the rendering order (TextSequence).</para>
         /// </summary>
         public static UnsupervisedReadingOrderDetector Instance { get; } = new UnsupervisedReadingOrderDetector();
 
-        private readonly double T;
+        /// <summary>
+        /// Whether or not to also use the rendering order, as indicated by the TextSequence.
+        /// </summary>
+        public bool UseRenderingOrder { get; }
 
         /// <summary>
-        /// Algorithm that retrieve the blocks' reading order using both (spatial) Allen’s interval relations and rendering order.
+        /// The rule to be used that encodes the spatial reasoning constraints.
+        /// </summary>
+        public SpatialReasoningRules SpatialReasoningRule { get; }
+
+        /// <summary>
+        /// The tolerance parameter T. If two coordinates are closer than T they are considered equal.
+        /// <para>This flexibility is necessary because due to the inherent noise in the PDF extraction text blocks in the
+        /// same column might not be exactly aligned.</para>
+        /// </summary>
+        public double T { get; }
+
+        private Func<TextBlock, TextBlock, double, bool> getBeforeInMethod;
+
+        /// <summary>
+        /// Algorithm that retrieve the blocks' reading order using spatial reasoning (Allen’s interval relations) and possibly the rendering order (TextSequence).
         /// </summary>
         /// <param name="T">The tolerance parameter T. If two coordinates are closer than T they are considered equal.
         /// This flexibility is necessary because due to the inherent noise in the PDF extraction text blocks in the
         /// same column might not be exactly aligned.</param>
-        public UnsupervisedReadingOrderDetector(double T = 5)
+        /// <param name="spatialReasoningRule">The rule to be used that encodes the spatial reasoning constraints.</param>
+        /// <param name="useRenderingOrder">Whether or not to also use the rendering order, as indicated by the TextSequence.</param>
+        public UnsupervisedReadingOrderDetector(double T = 5, SpatialReasoningRules spatialReasoningRule = SpatialReasoningRules.ColumnWise, bool useRenderingOrder = true)
         {
             this.T = T;
+            this.SpatialReasoningRule = spatialReasoningRule;
+            this.UseRenderingOrder = useRenderingOrder;
+
+            switch (SpatialReasoningRule)
+            {
+                case SpatialReasoningRules.ColumnWise:
+                    if (UseRenderingOrder)
+                    {
+                        getBeforeInMethod = (TextBlock a, TextBlock b, double T) => GetBeforeInReadingVertical(a, b, T) || GetBeforeInRendering(a, b);
+                    }
+                    else
+                    {
+                        getBeforeInMethod = GetBeforeInReadingVertical;
+                    }
+                    break;
+
+                case SpatialReasoningRules.RowWise:
+                    if (UseRenderingOrder)
+                    {
+                        getBeforeInMethod = (TextBlock a, TextBlock b, double T) => GetBeforeInReadingHorizontal(a, b, T) || GetBeforeInRendering(a, b);
+                    }
+                    else
+                    {
+                        getBeforeInMethod = GetBeforeInReadingHorizontal;
+                    }
+                    break;
+
+                case SpatialReasoningRules.Basic:
+                default:
+                    if (UseRenderingOrder)
+                    {
+                        getBeforeInMethod = (TextBlock a, TextBlock b, double T) => GetBeforeInReading(a, b, T) || GetBeforeInRendering(a, b);
+                    }
+                    else
+                    {
+                        getBeforeInMethod = GetBeforeInReading;
+                    }
+                    break;
+            }
         }
 
         /// <summary>
@@ -78,7 +162,8 @@
                     if (i == j) continue;
                     var b = textBlocks[j];
 
-                    if (GetBeforeInReadingRendering(a, b, T))
+                    //if (GetBeforeInReadingRendering(a, b, T))
+                    if (getBeforeInMethod(a, b, T))
                     {
                         graph[i].Add(j);
                     }
@@ -88,19 +173,20 @@
             return graph;
         }
 
-        private bool GetBeforeInReadingRendering(TextBlock a, TextBlock b, double T)
-        {
-            return GetBeforeInReadingVertical(a, b, T) || GetBeforeInRendering(a, b);
-        }
-
-        private bool GetBeforeInRendering(TextBlock a, TextBlock b)
+        private static bool GetBeforeInRendering(TextBlock a, TextBlock b)
         {
             var avgTextSequenceA = a.TextLines.SelectMany(tl => tl.Words).SelectMany(w => w.Letters).Select(l => l.TextSequence).Average();
             var avgTextSequenceB = b.TextLines.SelectMany(tl => tl.Words).SelectMany(w => w.Letters).Select(l => l.TextSequence).Average();
             return avgTextSequenceA < avgTextSequenceB;
         }
 
-        private bool GetBeforeInReading(TextBlock a, TextBlock b, double T)
+        /// <summary>
+        /// Rule encoding the fact that in western culture the reading order is from left to right and from top to bottom.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <param name="T">The tolerance parameter T.</param>
+        private static bool GetBeforeInReading(TextBlock a, TextBlock b, double T)
         {
             IntervalRelations xRelation = GetIntervalRelationX(a, b, T);
             IntervalRelations yRelation = GetIntervalRelationY(a, b, T);
@@ -119,8 +205,7 @@
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <param name="T">The tolerance parameter T.</param>
-        /// <returns></returns>
-        private bool GetBeforeInReadingVertical(TextBlock a, TextBlock b, double T)
+        private static bool GetBeforeInReadingVertical(TextBlock a, TextBlock b, double T)
         {
             IntervalRelations xRelation = GetIntervalRelationX(a, b, T);
             IntervalRelations yRelation = GetIntervalRelationY(a, b, T);
@@ -150,7 +235,7 @@
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <param name="T">The tolerance parameter T.</param>
-        private bool GetBeforeInReadingHorizontal(TextBlock a, TextBlock b, double T)
+        private static bool GetBeforeInReadingHorizontal(TextBlock a, TextBlock b, double T)
         {
             IntervalRelations xRelation = GetIntervalRelationX(a, b, T);
             IntervalRelations yRelation = GetIntervalRelationY(a, b, T);
@@ -183,7 +268,7 @@
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <param name="T">The tolerance parameter T. If two coordinates are closer than T they are considered equal.</param>
-        private IntervalRelations GetIntervalRelationX(TextBlock a, TextBlock b, double T)
+        private static IntervalRelations GetIntervalRelationX(TextBlock a, TextBlock b, double T)
         {
             if (a.BoundingBox.Right < b.BoundingBox.Left - T)
             {
@@ -267,7 +352,7 @@
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <param name="T">The tolerance parameter T. If two coordinates are closer than T they are considered equal.</param>
-        private IntervalRelations GetIntervalRelationY(TextBlock a, TextBlock b, double T)
+        private static IntervalRelations GetIntervalRelationY(TextBlock a, TextBlock b, double T)
         {
             if (a.BoundingBox.Bottom < b.BoundingBox.Top - T)
             {
