@@ -6,7 +6,8 @@
 
     /// <summary>
     /// Algorithm that retrieve the blocks' reading order using spatial reasoning (Allen’s interval relations) and possibly the rendering order (TextSequence).
-    /// <para>See section 4.1 of 'Unsupervised document structure analysis of digital scientific articles' by S. Klampfl, M. Granitzer, K. Jack, R. Kern and 'Document Understanding for a Broad Class of Documents' by L. Todoran, M. Worring, M. Aiello and C. Monz.</para>
+    /// <para>See section 4.1 of 'Unsupervised document structure analysis of digital scientific articles' by S. Klampfl, M. Granitzer, K. Jack, R. Kern
+    /// and 'Document Understanding for a Broad Class of Documents' by L. Todoran, M. Worring, M. Aiello and C. Monz.</para>
     /// </summary>
     public class UnsupervisedReadingOrderDetector : IReadingOrderDetector
     {
@@ -79,7 +80,7 @@
                 case SpatialReasoningRules.ColumnWise:
                     if (UseRenderingOrder)
                     {
-                        getBeforeInMethod = (TextBlock a, TextBlock b, double T) => GetBeforeInReadingVertical(a, b, T) || GetBeforeInRendering(a, b);
+                        getBeforeInMethod = (TextBlock a, TextBlock b, double t) => GetBeforeInReadingVertical(a, b, t) || GetBeforeInRendering(a, b);
                     }
                     else
                     {
@@ -90,7 +91,7 @@
                 case SpatialReasoningRules.RowWise:
                     if (UseRenderingOrder)
                     {
-                        getBeforeInMethod = (TextBlock a, TextBlock b, double T) => GetBeforeInReadingHorizontal(a, b, T) || GetBeforeInRendering(a, b);
+                        getBeforeInMethod = (TextBlock a, TextBlock b, double t) => GetBeforeInReadingHorizontal(a, b, t) || GetBeforeInRendering(a, b);
                     }
                     else
                     {
@@ -102,7 +103,7 @@
                 default:
                     if (UseRenderingOrder)
                     {
-                        getBeforeInMethod = (TextBlock a, TextBlock b, double T) => GetBeforeInReading(a, b, T) || GetBeforeInRendering(a, b);
+                        getBeforeInMethod = (TextBlock a, TextBlock b, double t) => GetBeforeInReading(a, b, t) || GetBeforeInRendering(a, b);
                     }
                     else
                     {
@@ -162,7 +163,6 @@
                     if (i == j) continue;
                     var b = textBlocks[j];
 
-                    //if (GetBeforeInReadingRendering(a, b, T))
                     if (getBeforeInMethod(a, b, T))
                     {
                         graph[i].Add(j);
@@ -516,14 +516,6 @@
             /// <para>..........|____Y____|............</para>
             /// </summary>
             Equals
-        }
-
-        private class NodeComparer : IComparer<KeyValuePair<int, List<int>>>
-        {
-            public int Compare(KeyValuePair<int, List<int>> x, KeyValuePair<int, List<int>> y)
-            {
-                return x.Value.Count.CompareTo(y.Value.Count);
-            }
         }
     }
 }
