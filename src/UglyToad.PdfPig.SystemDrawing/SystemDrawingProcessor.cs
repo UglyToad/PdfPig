@@ -48,7 +48,6 @@
                 }
 
                 bitmap.Save(ms, ImageFormat.Png);
-                //bitmap.Save(@"D:\MachineLearning\Document Layout Analysis\text samples\0000000000_test_image_system-drawing.png");
             }
 
             return ms;
@@ -66,7 +65,10 @@
 
             if (image.TryGetPng(out var png))
             {
-                graphics.DrawImage(Image.FromStream(new MemoryStream(png)), upperLeft.X, upperLeft.Y, (float)(image.Bounds.Width * mult), (float)(image.Bounds.Height * mult));
+                using (var img = Image.FromStream(new MemoryStream(png)))
+                {
+                    graphics.DrawImage(img, upperLeft.X, upperLeft.Y, (float)(image.Bounds.Width * mult), (float)(image.Bounds.Height * mult));
+                }
             }
             else
             {
@@ -79,7 +81,7 @@
                     }
                     catch (Exception)
                     {
-                 
+
                     }
                 }
 

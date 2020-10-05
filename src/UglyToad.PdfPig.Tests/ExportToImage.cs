@@ -9,8 +9,6 @@ namespace UglyToad.PdfPig.Tests
     public class ExportToImage
     {
         private const int mult = 3;
-        // lm970914 -> 15
-
 
         private const string ByzantineGenerals = "byz";
         private const string NonLatinAcrobatDistiller = "Single Page Non Latin - from acrobat distiller";
@@ -67,6 +65,12 @@ namespace UglyToad.PdfPig.Tests
         }
 
         [Fact]
+        public void SinglePageType1ContentTest2()
+        {
+            Run(SinglePageType1Content, 4);
+        }
+
+        [Fact]
         public void SingleInkscapePageTest()
         {
             Run(SingleInkscapePage, 1);
@@ -77,7 +81,6 @@ namespace UglyToad.PdfPig.Tests
         {
             Run(MotorInsuranceClaim, 1);
         }
-
 
         [Fact]
         public void PigProductionTest()
@@ -105,24 +108,22 @@ namespace UglyToad.PdfPig.Tests
 
         public static void Run(string file, int pageNo)
         {
+            if (!Directory.Exists("Images"))
+            {
+                Directory.CreateDirectory("Images");
+            }
+
             var pdfFileName = GetFilename(file);
             using (var doc = PdfDocument.Open(pdfFileName))
             {
                 var page = doc.GetPage(pageNo);
-                var ms = page.ToImage(mult, new SystemDrawingProcessor());
-
-                var bitmap = Image.FromStream(ms);
-                //bitmap.Save(@"D:\MachineLearning\Document Layout Analysis\text samples\0000000000_test_image_system-drawing.png");
-
-                var imageName = $"{file}_system-drawing.jpg";
-
-                if (!Directory.Exists("Images"))
+                using (var ms = page.ToImage(mult, new SystemDrawingProcessor()))
                 {
-                    Directory.CreateDirectory("Images");
+                    var bitmap = Image.FromStream(ms);
+                    var imageName = $"{file}_{pageNo}_system-drawing.jpg";
+                    var savePath = Path.Combine("Images", imageName);
+                    bitmap.Save(savePath);
                 }
-
-                var savePath = Path.Combine("Images", imageName);
-                bitmap.Save(savePath);
             }
         }
     }
