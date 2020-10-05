@@ -21,6 +21,7 @@ namespace UglyToad.PdfPig.Tests
         private const string SinglePage90ClockwiseRotation = "SinglePage90ClockwiseRotation - from PdfPig";
         private const string SinglePage180ClockwiseRotation = "SinglePage180ClockwiseRotation - from PdfPig";
         private const string SinglePage270ClockwiseRotation = "SinglePage270ClockwiseRotation - from PdfPig";
+        private const string TransparentImage = "Random 2 Columns Lists Images";
 
         private static string GetFilename(string name)
         {
@@ -104,6 +105,12 @@ namespace UglyToad.PdfPig.Tests
         public void SinglePage270ClockwiseRotationTest()
         {
             Run(SinglePage270ClockwiseRotation, 1);
+        }
+
+        [Fact]
+        public void TransparentImageTest()
+        {
+            Run(TransparentImage, 1);
         }
 
         public static void Run(string file, int pageNo)

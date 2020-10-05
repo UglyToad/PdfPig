@@ -91,7 +91,7 @@
             return fontMatrix;
         }
 
-        public bool TryGetPath(int characterCode, out List<PdfSubpath> path)
+        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
         {
             path = new List<PdfSubpath>();
             return false;

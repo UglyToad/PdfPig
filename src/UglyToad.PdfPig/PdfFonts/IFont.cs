@@ -18,7 +18,7 @@
 
         CharacterBoundingBox GetBoundingBox(int characterCode);
 
-        bool TryGetPath(int characterCode, out List<PdfSubpath> path);
+        bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path);
 
         TransformationMatrix GetFontMatrix();
     }

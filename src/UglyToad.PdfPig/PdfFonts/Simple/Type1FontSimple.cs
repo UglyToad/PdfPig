@@ -218,10 +218,10 @@
             return fontMatrix;
         }
 
-        public bool TryGetPath(int characterCode, out List<PdfSubpath> path)
+        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
         {
             path = null;
-            var tempPath = new List<PdfSubpath>();
+            IReadOnlyList<PdfSubpath> tempPath = null;
             if (characterCode < firstChar || characterCode > lastChar)
             {
                 return false;
@@ -255,7 +255,7 @@
 
             if (tempPath != null && tempPath.Count > 0)
             {
-                path = new List<PdfSubpath>(tempPath.Count);
+                var pathToReturn = new List<PdfSubpath>(tempPath.Count);
                 foreach (var sp in tempPath)
                 {
                     var current = new PdfSubpath();
@@ -286,9 +286,10 @@
                             current.CloseSubpath();
                         }
                     }
-                    path.Add(current);
+                    pathToReturn.Add(current);
                 }
-   
+
+                path = pathToReturn;
                 return true;
             }
             return false;

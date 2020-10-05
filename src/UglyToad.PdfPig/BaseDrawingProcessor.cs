@@ -827,7 +827,7 @@
         public abstract void DrawLetter(string value, PdfRectangle glyphRectangle, PdfPoint startBaseLine, PdfPoint endBaseLine, double width, double fontSize, FontDetails font, IColor color, double pointSize);
 
         /// <inheritdoc/>
-        public abstract void DrawLetter(List<PdfSubpath> pdfSubpaths, IColor color, TransformationMatrix renderingMatrix, TransformationMatrix textMatrix, TransformationMatrix transformationMatrix);
+        public abstract void DrawLetter(IReadOnlyList<PdfSubpath> pdfSubpaths, IColor color, TransformationMatrix renderingMatrix, TransformationMatrix textMatrix, TransformationMatrix transformationMatrix);
 
         /// <inheritdoc/>
         public abstract void DrawImage(IPdfImage image);

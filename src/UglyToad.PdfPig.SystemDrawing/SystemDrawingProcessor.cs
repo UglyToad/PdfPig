@@ -98,7 +98,7 @@
             graphics.ResetTransform();
         }
 
-        public override void DrawLetter(List<PdfSubpath> pdfSubpaths, IColor color, TransformationMatrix renderingMatrix, TransformationMatrix textMatrix, TransformationMatrix transformationMatrix)
+        public override void DrawLetter(IReadOnlyList<PdfSubpath> pdfSubpaths, IColor color, TransformationMatrix renderingMatrix, TransformationMatrix textMatrix, TransformationMatrix transformationMatrix)
         {
             if (pdfSubpaths == null || pdfSubpaths.Count == 0)
             {

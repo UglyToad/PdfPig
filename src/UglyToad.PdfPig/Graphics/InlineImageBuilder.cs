@@ -68,6 +68,9 @@
 
             var isMask = maskToken?.Data == true;
 
+            // Need to implement Soft mask here
+            //var sMaskToken = GetByKeys<IndirectReferenceToken>(NameToken.Smask, NameToken.Im, false);
+
             var bitsPerComponent = GetByKeys<NumericToken>(NameToken.BitsPerComponent, NameToken.Bpc, !isMask)?.Int ?? 1;
 
             var colorSpace = default(ColorSpace?);

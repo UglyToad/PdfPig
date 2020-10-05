@@ -1,10 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1
 {
+    using CharStrings;
+    using Core;
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using CharStrings;
-    using Core;
     using Tokens;
 
     /// <summary>
@@ -77,7 +77,7 @@
         /// Gets a <see cref="PdfRectangle"/> which entirely contains the geometry of the defined path.
         /// </summary>
         /// <returns>For paths which don't define any geometry this returns <see langword="null"/>.</returns>
-        public PdfRectangle? GetBoundingRectangle(List<PdfSubpath> path)
+        private PdfRectangle? GetBoundingRectangle(List<PdfSubpath> path)
         {
             if (path.Count == 0)
             {
@@ -100,7 +100,7 @@
         /// <summary>
         /// Get the pdfpath for the character with the given name.
         /// </summary>
-        public List<PdfSubpath> GetCharacterPath(string characterName)
+        public IReadOnlyList<PdfSubpath> GetCharacterPath(string characterName)
         {
             if (!CharStrings.TryGenerate(characterName, out var glyph))
             {

@@ -51,7 +51,7 @@ namespace UglyToad.PdfPig
         /// <param name="renderingMatrix"></param>
         /// <param name="textMatrix"></param>
         /// <param name="transformationMatrix"></param>
-        void DrawLetter(List<PdfSubpath> pdfSubpaths, IColor color, TransformationMatrix renderingMatrix, TransformationMatrix textMatrix, TransformationMatrix transformationMatrix);
+        void DrawLetter(IReadOnlyList<PdfSubpath> pdfSubpaths, IColor color, TransformationMatrix renderingMatrix, TransformationMatrix textMatrix, TransformationMatrix transformationMatrix);
 
         /// <summary>
         /// DrawImage

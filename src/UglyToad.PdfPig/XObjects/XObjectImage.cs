@@ -64,7 +64,17 @@
 
         /// <inheritdoc />
         public IReadOnlyList<byte> RawBytes { get; }
-        
+
+        /// <summary>
+        /// IsSoftImageMask
+        /// </summary>
+        public bool IsImageSoftMask { get; internal set; }
+
+        /// <summary>
+        /// SoftImageMask
+        /// </summary>
+        public XObjectImage SoftMaskImage { get; internal set; }
+
         /// <summary>
         /// Creates a new <see cref="XObjectImage"/>.
         /// </summary>
@@ -76,7 +86,7 @@
             bool interpolate,
             IReadOnlyList<decimal> decode,
             DictionaryToken imageDictionary,
-            IReadOnlyList<byte> rawBytes, 
+            IReadOnlyList<byte> rawBytes,
             Lazy<IReadOnlyList<byte>> bytes)
         {
             Bounds = bounds;
