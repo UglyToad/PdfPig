@@ -10,6 +10,7 @@
     using Fonts.Type1;
     using Tokens;
     using Util.JetBrains.Annotations;
+    using static UglyToad.PdfPig.Core.PdfSubpath;
 
     /// <summary>
     /// A font based on the Adobe Type 1 font format.
@@ -183,23 +184,23 @@
             PdfRectangle? rect = null;
             if (fontProgram.TryGetFirst(out var t1Font))
             {
-                 var name = encoding.GetName(characterCode);
-                    rect = t1Font.GetCharacterBoundingBox(name);
+                var name = encoding.GetName(characterCode);
+                rect = t1Font.GetCharacterBoundingBox(name);
             }
             else if (fontProgram.TryGetSecond(out var cffFont))
             {
-                    var first = cffFont.FirstFont;
-                    string characterName;
-                    if (encoding != null)
-                    {
-                        characterName = encoding.GetName(characterCode);
-                    }
-                    else
-                    {
-                        characterName = cffFont.GetCharacterName(characterCode);
-                    }
+                var first = cffFont.FirstFont;
+                string characterName;
+                if (encoding != null)
+                {
+                    characterName = encoding.GetName(characterCode);
+                }
+                else
+                {
+                    characterName = cffFont.GetCharacterName(characterCode);
+                }
 
-                    rect = first.GetCharacterBoundingBox(characterName);
+                rect = first.GetCharacterBoundingBox(characterName);
             }
 
 
@@ -215,6 +216,82 @@
         public TransformationMatrix GetFontMatrix()
         {
             return fontMatrix;
+        }
+
+        public bool TryGetPath(int characterCode, out List<PdfSubpath> path)
+        {
+            path = null;
+            var tempPath = new List<PdfSubpath>();
+            if (characterCode < firstChar || characterCode > lastChar)
+            {
+                return false;
+            }
+
+            if (fontProgram == null)
+            {
+                return false;
+            }
+
+            if (fontProgram.TryGetFirst(out var t1Font))
+            {
+                var name = encoding.GetName(characterCode);
+                tempPath = t1Font.GetCharacterPath(name);
+            }
+            else if (fontProgram.TryGetSecond(out var cffFont))
+            {
+                var first = cffFont.FirstFont;
+                string characterName;
+                if (encoding != null)
+                {
+                    characterName = encoding.GetName(characterCode);
+                }
+                else
+                {
+                    characterName = cffFont.GetCharacterName(characterCode);
+                }
+
+                tempPath = first.GetCharacterPath(characterName);
+            }
+
+            if (tempPath != null && tempPath.Count > 0)
+            {
+                path = new List<PdfSubpath>(tempPath.Count);
+                foreach (var sp in tempPath)
+                {
+                    var current = new PdfSubpath();
+                    foreach (var c in sp.Commands)
+                    {
+                        if (c is Move move)
+                        {
+                            var l = fontMatrix.Transform(move.Location);
+                            current.MoveTo(l.X, l.Y);
+                        }
+                        else if (c is Line line)
+                        {
+                            //var f = fontMatrix.Transform(line.From);
+                            var t = fontMatrix.Transform(line.To);
+
+                            current.LineTo(t.X, t.Y);
+                        }
+                        else if (c is BezierCurve curve)
+                        {
+                            var first = fontMatrix.Transform(curve.FirstControlPoint);
+                            var second = fontMatrix.Transform(curve.SecondControlPoint);
+                            var end = fontMatrix.Transform(curve.EndPoint);
+
+                            current.BezierCurveTo(first.X, first.Y, second.X, second.Y, end.X, end.Y);
+                        }
+                        else if (c is Close)
+                        {
+                            current.CloseSubpath();
+                        }
+                    }
+                    path.Add(current);
+                }
+   
+                return true;
+            }
+            return false;
         }
     }
 }

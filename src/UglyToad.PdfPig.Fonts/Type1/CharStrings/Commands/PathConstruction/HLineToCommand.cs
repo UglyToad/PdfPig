@@ -22,7 +22,7 @@
             var deltaX = context.Stack.PopBottom();
             var x = context.CurrentPosition.X + deltaX;
 
-            context.Path.LineTo(x, context.CurrentPosition.Y);
+            context.Path[context.Path.Count - 1].LineTo(x, context.CurrentPosition.Y);
             context.CurrentPosition = new PdfPoint(x, context.CurrentPosition.Y);
 
             context.Stack.Clear();

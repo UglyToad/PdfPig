@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts
 {
     using Core;
+    using System.Collections.Generic;
     using Tokens;
 
     internal interface IFont
@@ -16,6 +17,8 @@
         bool TryGetUnicode(int characterCode, out string value);
 
         CharacterBoundingBox GetBoundingBox(int characterCode);
+
+        bool TryGetPath(int characterCode, out List<PdfSubpath> path);
 
         TransformationMatrix GetFontMatrix();
     }

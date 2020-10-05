@@ -93,7 +93,8 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 {
                     var dy = ctx.Stack.PopBottom();
 
-                    ctx.Path.MoveTo(ctx.CurrentLocation.X, ctx.CurrentLocation.Y + dy);
+                    ctx.Path.Add(new PdfSubpath());
+                    ctx.Path[ctx.Path.Count - 1].MoveTo(ctx.CurrentLocation.X, ctx.CurrentLocation.Y + dy);
                     ctx.CurrentLocation = ctx.CurrentLocation.MoveY(dy);
 
                     ctx.Stack.Clear();
@@ -253,7 +254,8 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                     var newLocation = new PdfPoint(ctx.CurrentLocation.X + dx,
                         ctx.CurrentLocation.Y + dy);
 
-                    ctx.Path.MoveTo(newLocation.X, newLocation.Y);
+                    ctx.Path.Add(new PdfSubpath());
+                    ctx.Path[ctx.Path.Count - 1].MoveTo(newLocation.X, newLocation.Y);
                     ctx.CurrentLocation = newLocation;
 
                     ctx.Stack.Clear();
@@ -264,7 +266,8 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 {
                     var dx = ctx.Stack.PopBottom();
 
-                    ctx.Path.MoveTo(ctx.CurrentLocation.X + dx, ctx.CurrentLocation.Y);
+                    ctx.Path.Add(new PdfSubpath());
+                    ctx.Path[ctx.Path.Count - 1].MoveTo(ctx.CurrentLocation.X + dx, ctx.CurrentLocation.Y);
                     ctx.CurrentLocation = ctx.CurrentLocation.MoveX(dx);
 
                     ctx.Stack.Clear();

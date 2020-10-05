@@ -75,7 +75,7 @@
             // Apply rotation.
             if (rotation.SwapsAxis)
             {
-                mediaBox = new MediaBox(new PdfRectangle(mediaBox.Bounds.Bottom, 
+                mediaBox = new MediaBox(new PdfRectangle(mediaBox.Bounds.Bottom,
                     mediaBox.Bounds.Left, 
                     mediaBox.Bounds.Top,
                     mediaBox.Bounds.Right));
@@ -137,14 +137,16 @@
                 content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, clipPaths, mediaBox);
             }
 
-            var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, 
+            var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content,
                 new AnnotationProvider(pdfScanner, dictionary),
                 pdfScanner);
 
+            /*
             for (var i = 0; i < stackDepth; i++)
             {
                 resourceStore.UnloadResourceDictionary();
             }
+            */
 
             return page;
         }

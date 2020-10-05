@@ -224,7 +224,7 @@
         /// <summary>
         /// The path of the glyph.
         /// </summary>
-        public PdfSubpath Path { get; }
+        public List<PdfSubpath> Path { get; }
 
         /// <summary>
         /// The width of the glyph as a difference from the nominal width X for the font. Optional.
@@ -234,7 +234,7 @@
         /// <summary>
         /// Create a new <see cref="Type2Glyph"/>.
         /// </summary>
-        public Type2Glyph(PdfSubpath path, double? width)
+        public Type2Glyph(List<PdfSubpath> path, double? width)
         {
             Path = path ?? throw new ArgumentNullException(nameof(path));
             Width = width;

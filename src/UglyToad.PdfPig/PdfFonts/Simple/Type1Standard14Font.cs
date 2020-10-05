@@ -2,6 +2,7 @@
 namespace UglyToad.PdfPig.PdfFonts.Simple
 {
     using System;
+    using System.Collections.Generic;
     using Core;
     using Fonts;
     using Fonts.AdobeFontMetrics;
@@ -92,6 +93,12 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
         public TransformationMatrix GetFontMatrix()
         {
             return fontMatrix;
+        }
+
+        public bool TryGetPath(int characterCode, out List<PdfSubpath> path)
+        {
+            path = new List<PdfSubpath>();
+            return false;
         }
     }
 }

@@ -90,7 +90,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0" />
-    <PackageReference Include="System.Drawing.Common" Version="4.5.0-preview2-26406-04" />
+    <PackageReference Include="System.Drawing.Common" Version="5.0.0-rc.1.20451.14" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.extensibility.execution" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
@@ -103,6 +103,7 @@
     <ProjectReference Include="..\UglyToad.PdfPig.Core\UglyToad.PdfPig.Core.csproj" />
     <ProjectReference Include="..\UglyToad.PdfPig.DocumentLayoutAnalysis\UglyToad.PdfPig.DocumentLayoutAnalysis.csproj" />
     <ProjectReference Include="..\UglyToad.PdfPig.Fonts\UglyToad.PdfPig.Fonts.csproj" />
+    <ProjectReference Include="..\UglyToad.PdfPig.SystemDrawing\UglyToad.PdfPig.SystemDrawing.csproj" />
     <ProjectReference Include="..\UglyToad.PdfPig.Tokenization\UglyToad.PdfPig.Tokenization.csproj" />
     <ProjectReference Include="..\UglyToad.PdfPig.Tokens\UglyToad.PdfPig.Tokens.csproj" />
     <ProjectReference Include="..\UglyToad.PdfPig\UglyToad.PdfPig.csproj" />

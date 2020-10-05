@@ -1,12 +1,13 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using System;
-    using System.Collections.Generic;
     using Core;
     using Filters;
     using Graphics;
     using Graphics.Operations;
+    using System;
+    using System.Collections.Generic;
     using Tokenization.Scanner;
+    using UglyToad.PdfPig.Parser;
     using XObjects;
 
     /// <summary>
@@ -18,11 +19,12 @@
     /// </remarks>
     internal class PageContent
     {
-        private readonly IReadOnlyList<Union<XObjectContentRecord, InlineImage>> images;
-        private readonly IReadOnlyList<MarkedContentElement> markedContents;
-        private readonly IPdfTokenScanner pdfScanner;
-        private readonly IFilterProvider filterProvider;
-        private readonly IResourceStore resourceStore;
+        internal readonly IReadOnlyList<Union<XObjectContentRecord, InlineImage>> images;
+        internal readonly IReadOnlyList<MarkedContentElement> markedContents;
+        internal readonly IPdfTokenScanner pdfScanner;
+        internal readonly IPageContentParser pageContentParser;
+        internal readonly IFilterProvider filterProvider;
+        internal readonly IResourceStore resourceStore;
 
         internal IReadOnlyList<IGraphicsStateOperation> GraphicsStateOperations { get; }
 
@@ -37,6 +39,7 @@
             IReadOnlyList<Union<XObjectContentRecord, InlineImage>> images,
             IReadOnlyList<MarkedContentElement> markedContents,
             IPdfTokenScanner pdfScanner,
+            IPageContentParser pageContentParser,
             IFilterProvider filterProvider,
             IResourceStore resourceStore)
         {
@@ -46,6 +49,7 @@
             this.images = images;
             this.markedContents = markedContents;
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
+            this.pageContentParser = pageContentParser ?? throw new ArgumentNullException(nameof(pageContentParser));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.resourceStore = resourceStore ?? throw new ArgumentNullException(nameof(resourceStore));
         }

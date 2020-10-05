@@ -18,7 +18,7 @@
         /// <summary>
         /// The current path.
         /// </summary>
-        public PdfSubpath Path { get; } = new PdfSubpath();
+        public List<PdfSubpath> Path { get; } = new List<PdfSubpath>();
 
         /// <summary>
         /// The current location of the active point.
@@ -52,7 +52,7 @@
             var x3 = x2 + dx3;
             var y3 = y2 + dy3;
 
-            Path.BezierCurveTo(x1, y1, x2, y2, x3, y3);
+            Path[Path.Count - 1].BezierCurveTo(x1, y1, x2, y2, x3, y3);
             CurrentLocation = new PdfPoint(x3, y3);
         }
 
@@ -60,7 +60,7 @@
         {
             var dest = new PdfPoint(CurrentLocation.X + dx, CurrentLocation.Y + dy);
 
-            Path.LineTo(dest.X, dest.Y);
+            Path[Path.Count - 1].LineTo(dest.X, dest.Y);
             CurrentLocation = dest;
         }
 
