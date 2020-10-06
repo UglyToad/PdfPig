@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.General
 {
-    using System.IO;
     using Core;
+    using System.IO;
 
     /// <inheritdoc />
     /// <summary>
@@ -33,7 +33,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.GetCurrentState().LineDashPattern = Pattern;
+            operationContext.SetLineDashPattern(Pattern);
         }
 
         /// <inheritdoc />

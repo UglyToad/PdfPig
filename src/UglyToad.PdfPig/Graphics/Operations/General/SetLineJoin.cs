@@ -1,8 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.General
 {
+    using Core;
     using System;
     using System.IO;
-    using Core;
 
     /// <inheritdoc />
     public class SetLineJoin : IGraphicsStateOperation
@@ -40,7 +40,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.GetCurrentState().JoinStyle = Join;
+            operationContext.SetLineJoin(Join);
         }
 
         /// <inheritdoc />

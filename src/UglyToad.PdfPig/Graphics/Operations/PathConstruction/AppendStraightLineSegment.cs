@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.PathConstruction
 {
     using System.IO;
-    using PdfPig.Core;
 
     /// <inheritdoc />
     /// <summary>
@@ -41,11 +40,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            if (operationContext.CurrentSubpath == null) return;
-
-            var endPoint = operationContext.CurrentTransformationMatrix.Transform(new PdfPoint(X, Y));
-            operationContext.CurrentSubpath.LineTo(endPoint.X, endPoint.Y);
-            operationContext.CurrentPosition = endPoint;
+            operationContext.LineTo((double)X, (double)Y);
         }
 
         /// <inheritdoc />

@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextState
 {
-    using System.IO;
     using Core;
+    using System.IO;
 
     /// <inheritdoc />
     /// <summary>
@@ -33,9 +33,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var currentState = operationContext.GetCurrentState();
-
-            currentState.FontState.TextRenderingMode = Mode;
+            operationContext.SetTextRenderingMode(Mode);
         }
 
         /// <inheritdoc />

@@ -33,9 +33,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var currentState = operationContext.GetCurrentState();
-
-            currentState.FontState.Leading = (double)Leading;
+            operationContext.SetTextLeading((double)Leading);
         }
 
         /// <inheritdoc />

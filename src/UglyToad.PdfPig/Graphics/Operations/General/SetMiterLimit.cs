@@ -33,9 +33,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var currentState = operationContext.GetCurrentState();
-
-            currentState.MiterLimit = Limit;
+            operationContext.SetMiterLimit(Limit);
         }
 
         /// <inheritdoc />

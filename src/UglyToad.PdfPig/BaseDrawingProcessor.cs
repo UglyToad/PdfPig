@@ -13,6 +13,7 @@
     using UglyToad.PdfPig.Graphics.Colors;
     using UglyToad.PdfPig.Graphics.Core;
     using UglyToad.PdfPig.Graphics.Operations;
+    using UglyToad.PdfPig.Graphics.Operations.TextPositioning;
     using UglyToad.PdfPig.Logging;
     using UglyToad.PdfPig.Parser;
     using UglyToad.PdfPig.PdfFonts;
@@ -749,6 +750,165 @@
 
             TextMatrices.TextMatrix = newMatrix;
         }
+
+        /// <inheritdoc/>
+        public void MoveTo(double x, double y)
+        {
+            BeginSubpath();
+            var point = CurrentTransformationMatrix.Transform(new PdfPoint(x, y));
+            CurrentPosition = point;
+            CurrentSubpath.MoveTo(point.X, point.Y);
+        }
+
+        /// <inheritdoc/>
+        public void BezierCurveTo(double x2, double y2, double x3, double y3)
+        {
+            if (CurrentSubpath == null)
+            {
+                return;
+            }
+
+            var controlPoint2 = CurrentTransformationMatrix.Transform(new PdfPoint(x2, y2));
+            var end = CurrentTransformationMatrix.Transform(new PdfPoint(x3, y3));
+
+            CurrentSubpath.BezierCurveTo(CurrentPosition.X, CurrentPosition.Y, controlPoint2.X, controlPoint2.Y, end.X, end.Y);
+            CurrentPosition = end;
+        }
+
+        /// <inheritdoc/>
+        public void BezierCurveTo(double x1, double y1, double x2, double y2, double x3, double y3)
+        {
+            if (CurrentSubpath == null)
+            {
+                return;
+            }
+
+            var controlPoint1 = CurrentTransformationMatrix.Transform(new PdfPoint(x1, y1));
+            var controlPoint2 = CurrentTransformationMatrix.Transform(new PdfPoint(x2, y2));
+            var end = CurrentTransformationMatrix.Transform(new PdfPoint(x3, y3));
+
+            CurrentSubpath.BezierCurveTo(controlPoint1.X, controlPoint1.Y, controlPoint2.X, controlPoint2.Y, end.X, end.Y);
+            CurrentPosition = end;
+        }
+
+        /// <inheritdoc/>
+        public void LineTo(double x, double y)
+        {
+            if (CurrentSubpath == null)
+            {
+                return;
+            }
+
+            var endPoint = CurrentTransformationMatrix.Transform(new PdfPoint(x, y));
+
+            CurrentSubpath.LineTo(endPoint.X, endPoint.Y);
+            CurrentPosition = endPoint;
+        }
+
+        /// <inheritdoc/>
+        public void Rectangle(double x, double y, double width, double height)
+        {
+            BeginSubpath();
+            var lowerLeft = CurrentTransformationMatrix.Transform(new PdfPoint(x, y));
+            var upperRight = CurrentTransformationMatrix.Transform(new PdfPoint(x + width, y + height));
+
+            CurrentSubpath.Rectangle(lowerLeft.X, lowerLeft.Y, upperRight.X - lowerLeft.X, upperRight.Y - lowerLeft.Y);
+            AddCurrentSubpath();
+        }
+
+        /// <inheritdoc/>
+        public void SetFlatnessTolerance(decimal tolerance)
+        {
+            GetCurrentState().Flatness = tolerance;
+        }
+
+        /// <inheritdoc/>
+        public void SetLineCap(LineCapStyle cap)
+        {
+            GetCurrentState().CapStyle = cap;
+        }
+
+        /// <inheritdoc/>
+        public void SetLineDashPattern(LineDashPattern pattern)
+        {
+            GetCurrentState().LineDashPattern = pattern;
+        }
+
+        /// <inheritdoc/>
+        public void SetLineJoin(LineJoinStyle join)
+        {
+            GetCurrentState().JoinStyle = join;
+        }
+
+        /// <inheritdoc/>
+        public void SetLineWidth(decimal width)
+        {
+            GetCurrentState().LineWidth = width;
+        }
+
+        /// <inheritdoc/>
+        public void SetMiterLimit(decimal limit)
+        {
+            GetCurrentState().MiterLimit = limit;
+        }
+
+        /// <inheritdoc/>
+        public void MoveToNextLineWithOffset()
+        {
+            var tdOperation = new MoveToNextLineWithOffset(0, -1 * (decimal)GetCurrentState().FontState.Leading);
+            tdOperation.Run(this);
+        }
+
+        /// <inheritdoc/>
+        public void SetFontAndSize(NameToken font, double size)
+        {
+            var currentState = GetCurrentState();
+            currentState.FontState.FontSize = size;
+            currentState.FontState.FontName = font;
+        }
+
+        /// <inheritdoc/>
+        public void SetHorizontalScaling(double scale)
+        {
+            GetCurrentState().FontState.HorizontalScaling = scale;
+        }
+
+        /// <inheritdoc/>
+        public void SetTextLeading(double leading)
+        {
+            GetCurrentState().FontState.Leading = leading;
+        }
+
+        /// <inheritdoc/>
+        public void SetTextRenderingMode(TextRenderingMode mode)
+        {
+            GetCurrentState().FontState.TextRenderingMode = mode;
+        }
+
+        /// <inheritdoc/>
+        public void SetTextRise(double rise)
+        {
+            GetCurrentState().FontState.Rise = rise;
+        }
+
+        /// <inheritdoc/>
+        public void SetWordSpacing(double spacing)
+        {
+            GetCurrentState().FontState.WordSpacing = spacing;
+        }
+
+        /// <inheritdoc/>
+        public void ModifyCurrentTransformationMatrix(double[] value)
+        {
+            var ctm = GetCurrentState().CurrentTransformationMatrix;
+            GetCurrentState().CurrentTransformationMatrix = TransformationMatrix.FromArray(value).Multiply(ctm);
+        }
+
+        /// <inheritdoc/>
+        public void SetCharacterSpacing(double spacing)
+        {
+            GetCurrentState().FontState.CharacterSpacing = spacing;
+        }
         #endregion
 
         #region IDrawingSystem
@@ -815,10 +975,8 @@
             return (topLeftX, topLeftY);
         }
 
-
-
-
-
+        /// <inheritdoc/>
+        public abstract void UpdateClipPath();
 
         /// <inheritdoc/>
         public abstract MemoryStream DrawPage(Page page, double scale);
@@ -834,9 +992,6 @@
 
         /// <inheritdoc/>
         public abstract void DrawPath(PdfPath path);
-
-        /// <inheritdoc/>
-        public abstract void UpdateClipPath();
         #endregion
     }
 }

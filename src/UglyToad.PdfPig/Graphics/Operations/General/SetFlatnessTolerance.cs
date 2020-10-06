@@ -4,7 +4,7 @@
 
     /// <inheritdoc />
     /// <summary>
-    /// Set the flatness tolerance in the graphics state. 
+    /// Set the flatness tolerance in the graphics state.
     /// Flatness is a number in the range 0 to 100; a value of 0 specifies the output device’s default flatness tolerance.
     /// </summary>
     public class SetFlatnessTolerance : IGraphicsStateOperation
@@ -35,7 +35,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.GetCurrentState().Flatness = Tolerance;
+            operationContext.SetFlatnessTolerance(Tolerance);
         }
 
         /// <inheritdoc />

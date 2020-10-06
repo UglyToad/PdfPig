@@ -1,8 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.General
 {
+    using Core;
     using System;
     using System.IO;
-    using Core;
 
     /// <inheritdoc />
     /// <summary>
@@ -45,7 +45,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.GetCurrentState().CapStyle = Cap;
+            operationContext.SetLineCap(Cap);
         }
 
         /// <inheritdoc />
