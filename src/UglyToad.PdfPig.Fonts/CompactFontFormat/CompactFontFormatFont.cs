@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using Charsets;
     using CharStrings;
     using Core;
@@ -69,7 +70,7 @@
             }
 
             var glyph = type2CharStrings.Generate(characterName, (double)defaultWidthX, (double)nominalWidthX);
-            var rectangle = glyph.Path.GetBoundingRectangle();
+            var rectangle = GetBoundingRectangle(glyph.Path);
             if (rectangle.HasValue)
             {
                 return rectangle;
@@ -78,6 +79,75 @@
             var defaultBoundingBox = TopDictionary.FontBoundingBox;
             return new PdfRectangle(0, 0, glyph.Width.GetValueOrDefault(), defaultBoundingBox.Height);
 
+        }
+
+        private PdfRectangle? GetBoundingRectangle(List<PdfSubpath> path)
+        {
+            if (path.Count == 0)
+            {
+                return null;
+            }
+
+            var bboxes = path.Select(x => x.GetBoundingRectangle()).Where(x => x.HasValue).Select(x => x.Value).ToList();
+            if (bboxes.Count == 0)
+            {
+                return null;
+            }
+
+            var minX = bboxes.Min(x => x.Left);
+            var minY = bboxes.Min(x => x.Bottom);
+            var maxX = bboxes.Max(x => x.Right);
+            var maxY = bboxes.Max(x => x.Top);
+            return new PdfRectangle(minX, minY, maxX, maxY);
+        }
+
+        /// <summary>
+        /// Get the pdfpath for the character with the given name.
+        /// </summary>
+        /// <param name="characterName"></param>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public bool TryGetPath(string characterName, out List<PdfSubpath> path)
+        {
+            var defaultWidthX = GetDefaultWidthX(characterName);
+            var nominalWidthX = GetNominalWidthX(characterName);
+
+            if (CharStrings.TryGetFirst(out var _))
+            {
+                throw new NotImplementedException("Type 1 CharStrings in a CFF font are currently unsupported.");
+            }
+
+            if (!CharStrings.TryGetSecond(out var type2CharStrings))
+            {
+                path = new List<PdfSubpath>();
+                return false;
+            }
+
+            path = type2CharStrings.Generate(characterName, (double)defaultWidthX, (double)nominalWidthX).Path;
+            return true;
+        }
+
+        /// <summary>
+        /// GetCharacterPath
+        /// </summary>
+        /// <param name="characterName"></param>
+        /// <returns></returns>
+        public List<PdfSubpath> GetCharacterPath(string characterName)
+        {
+            var defaultWidthX = GetDefaultWidthX(characterName);
+            var nominalWidthX = GetNominalWidthX(characterName);
+
+            if (CharStrings.TryGetFirst(out var _))
+            {
+                throw new NotImplementedException("Type 1 CharStrings in a CFF font are currently unsupported.");
+            }
+
+            if (!CharStrings.TryGetSecond(out var type2CharStrings))
+            {
+                return null;
+            }
+
+            return type2CharStrings.Generate(characterName, (double)defaultWidthX, (double)nominalWidthX).Path;
         }
 
         /// <summary>

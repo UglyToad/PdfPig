@@ -5,6 +5,7 @@
     using Core;
     using Fonts;
     using Fonts.Encodings;
+    using System.Collections.Generic;
     using Tokens;
 
     internal class Type3Font : IFont
@@ -88,6 +89,12 @@
         public TransformationMatrix GetFontMatrix()
         {
             return fontMatrix;
+        }
+
+        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        {
+            path = new List<PdfSubpath>();
+            return false;
         }
     }
 }

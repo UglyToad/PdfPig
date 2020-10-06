@@ -1,9 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1
 {
-    using System;
-    using System.Collections.Generic;
     using CharStrings;
     using Core;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using Tokens;
 
     /// <summary>
@@ -67,9 +68,45 @@
                 return null;
             }
 
-            var bbox = glyph.GetBoundingRectangle();
+            var bbox = GetBoundingRectangle(glyph);
 
             return bbox;
+        }
+
+        /// <summary>
+        /// Gets a <see cref="PdfRectangle"/> which entirely contains the geometry of the defined path.
+        /// </summary>
+        /// <returns>For paths which don't define any geometry this returns <see langword="null"/>.</returns>
+        private PdfRectangle? GetBoundingRectangle(List<PdfSubpath> path)
+        {
+            if (path.Count == 0)
+            {
+                return null;
+            }
+
+            var bboxes = path.Select(x => x.GetBoundingRectangle()).Where(x => x.HasValue).Select(x => x.Value).ToList();
+            if (bboxes.Count == 0)
+            {
+                return null;
+            }
+
+            var minX = bboxes.Min(x => x.Left);
+            var minY = bboxes.Min(x => x.Bottom);
+            var maxX = bboxes.Max(x => x.Right);
+            var maxY = bboxes.Max(x => x.Top);
+            return new PdfRectangle(minX, minY, maxX, maxY);
+        }
+
+        /// <summary>
+        /// Get the pdfpath for the character with the given name.
+        /// </summary>
+        public IReadOnlyList<PdfSubpath> GetCharacterPath(string characterName)
+        {
+            if (!CharStrings.TryGenerate(characterName, out var glyph))
+            {
+                return null;
+            }
+            return glyph;
         }
 
         /// <summary>

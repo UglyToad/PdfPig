@@ -9,6 +9,7 @@
     using Graphics.Core;
     using Tokens;
     using Images.Png;
+    using UglyToad.PdfPig.XObjects;
 
     /// <inheritdoc />
     /// <summary>
@@ -50,6 +51,16 @@
 
         /// <inheritdoc />
         public IReadOnlyList<byte> RawBytes { get; }
+
+        /// <summary>
+        /// IsImageSoftMask
+        /// </summary>
+        public bool IsImageSoftMask { get; internal set; }
+
+        /// <summary>
+        /// SoftMaskImage
+        /// </summary>
+        public XObjectImage SoftMaskImage { get; internal set; }
 
         /// <summary>
         /// Create a new <see cref="InlineImage"/>.

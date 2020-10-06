@@ -1,81 +1,68 @@
-﻿namespace UglyToad.PdfPig.Graphics
+﻿namespace UglyToad.PdfPig
 {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.IO;
     using System.Linq;
-    using Colors;
-    using Content;
-    using Core;
-    using Filters;
-    using Geometry;
-    using Logging;
-    using Operations;
-    using Parser;
-    using PdfFonts;
-    using PdfPig.Core;
-    using Tokenization.Scanner;
-    using Tokens;
-    using XObjects;
-    using static PdfPig.Core.PdfSubpath;
+    using UglyToad.PdfPig.Content;
+    using UglyToad.PdfPig.Core;
+    using UglyToad.PdfPig.Filters;
+    using UglyToad.PdfPig.Geometry;
+    using UglyToad.PdfPig.Graphics;
+    using UglyToad.PdfPig.Graphics.Colors;
+    using UglyToad.PdfPig.Graphics.Core;
+    using UglyToad.PdfPig.Graphics.Operations;
+    using UglyToad.PdfPig.Logging;
+    using UglyToad.PdfPig.Parser;
+    using UglyToad.PdfPig.PdfFonts;
+    using UglyToad.PdfPig.Tokenization.Scanner;
+    using UglyToad.PdfPig.Tokens;
+    using UglyToad.PdfPig.XObjects;
+    using static UglyToad.PdfPig.Core.PdfSubpath;
 
-    internal class ContentStreamProcessor : IOperationContext
+    /// <inheritdoc/>
+    public abstract class BaseDrawingProcessor : IOperationContext, IDrawingProcessor
     {
-        /// <summary>
-        /// Stores each letter as it is encountered in the content stream.
-        /// </summary>
-        private readonly List<Letter> letters = new List<Letter>();
-
-        /// <summary>
-        /// Stores each path as it is encountered in the content stream.
-        /// </summary>
-        private readonly List<PdfPath> paths = new List<PdfPath>();
-
-        /// <summary>
-        /// Stores a link to each image (either inline or XObject) as it is encountered in the content stream.
-        /// </summary>
-        private readonly List<Union<XObjectContentRecord, InlineImage>> images = new List<Union<XObjectContentRecord, InlineImage>>();
-
-        /// <summary>
-        /// Stores each marked content as it is encountered in the content stream.
-        /// </summary>
-        private readonly List<MarkedContentElement> markedContents = new List<MarkedContentElement>();
-
-        private readonly IResourceStore resourceStore;
-        private readonly UserSpaceUnit userSpaceUnit;
-        private readonly PageRotationDegrees rotation;
-        private readonly IPdfTokenScanner pdfScanner;
-        private readonly IPageContentParser pageContentParser;
-        private readonly IFilterProvider filterProvider;
-        private readonly ILog log;
-        private readonly bool clipPaths;
-        private readonly PdfVector pageSize;
-        private readonly MarkedContentStack markedContentStack = new MarkedContentStack();
+        #region IOperationContext
+        private IResourceStore resourceStore;
+        private PageRotationDegrees rotation;
+        private IPdfTokenScanner pdfScanner;
+        private IPageContentParser pageContentParser;
+        private  IFilterProvider filterProvider;
+        private ILog log;
+        private  PdfVector pageSize;
 
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
         private IFont activeExtendedGraphicsStateFont;
         private InlineImageBuilder inlineImageBuilder;
         private int pageNumber;
 
-        /// <summary>
-        /// A counter to track individual calls to <see cref="ShowText"/> operations used to determine if letters are likely to be
-        /// in the same word/group. This exposes internal grouping of letters used by the PDF creator which may correspond to the
-        /// intended grouping of letters into words.
-        /// </summary>
-        private int textSequence;
+        /// <inheritdoc/>
+        public BaseDrawingProcessor(ILog log)
+        {
+            this.log = log;
+        }
 
+        /// <inheritdoc/>
         public TextMatrices TextMatrices { get; } = new TextMatrices();
 
+        /// <inheritdoc/>
         public TransformationMatrix CurrentTransformationMatrix => GetCurrentState().CurrentTransformationMatrix;
 
+        /// <inheritdoc/>
         public PdfSubpath CurrentSubpath { get; private set; }
 
+        /// <inheritdoc/>
         public PdfPath CurrentPath { get; private set; }
 
-        public IColorSpaceContext ColorSpaceContext { get; }
+        /// <inheritdoc/>
+        public IColorSpaceContext ColorSpaceContext { get; protected set; }
 
+        /// <inheritdoc/>
         public PdfPoint CurrentPosition { get; set; }
 
+        /// <inheritdoc/>
         public int StackSize => graphicsStack.Count;
 
         private readonly Dictionary<XObjectType, List<XObjectContentRecord>> xObjects = new Dictionary<XObjectType, List<XObjectContentRecord>>
@@ -83,39 +70,6 @@
             {XObjectType.Image, new List<XObjectContentRecord>()},
             {XObjectType.PostScript, new List<XObjectContentRecord>()}
         };
-
-        public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation,
-            IPdfTokenScanner pdfScanner,
-            IPageContentParser pageContentParser,
-            IFilterProvider filterProvider,
-            ILog log,
-            bool clipPaths,
-            PdfVector pageSize)
-        {
-            this.resourceStore = resourceStore;
-            this.userSpaceUnit = userSpaceUnit;
-            this.rotation = rotation;
-            this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
-            this.pageContentParser = pageContentParser ?? throw new ArgumentNullException(nameof(pageContentParser));
-            this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
-            this.log = log;
-            this.clipPaths = clipPaths;
-            this.pageSize = pageSize;
-
-            // initiate CurrentClippingPath to cropBox
-            var clippingSubpath = new PdfSubpath();
-            clippingSubpath.Rectangle(cropBox.BottomLeft.X, cropBox.BottomLeft.Y, cropBox.Width, cropBox.Height);
-            var clippingPath = new PdfPath() { clippingSubpath };
-            clippingPath.SetClipping(FillingRule.EvenOdd);
-
-            graphicsStack.Push(new CurrentGraphicsState()
-            {
-                CurrentTransformationMatrix = GetInitialMatrix(),
-                CurrentClippingPath = clippingPath
-            });
-
-            ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore);
-        }
 
         [System.Diagnostics.Contracts.Pure]
         private TransformationMatrix GetInitialMatrix()
@@ -177,16 +131,6 @@
                 dx, dy, 1);
         }
 
-        public PageContent Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations)
-        {
-            pageNumber = pageNumberCurrent;
-            CloneAllStates();
-
-            ProcessOperations(operations);
-
-            return new PageContent(operations, letters, paths, images, markedContents, pdfScanner, pageContentParser, filterProvider, resourceStore);
-        }
-
         private void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
         {
             foreach (var stateOperation in operations)
@@ -195,31 +139,28 @@
             }
         }
 
-        private Stack<CurrentGraphicsState> CloneAllStates()
-        {
-            var saved = graphicsStack;
-            graphicsStack = new Stack<CurrentGraphicsState>();
-            graphicsStack.Push(saved.Peek().DeepClone());
-            return saved;
-        }
-
+        /// <inheritdoc/>
         [DebuggerStepThrough]
         public CurrentGraphicsState GetCurrentState()
         {
             return graphicsStack.Peek();
         }
 
+        /// <inheritdoc/>
         public void PopState()
         {
             graphicsStack.Pop();
             activeExtendedGraphicsStateFont = null;
+            UpdateClipPath();
         }
 
+        /// <inheritdoc/>
         public void PushState()
         {
             graphicsStack.Push(graphicsStack.Peek().DeepClone());
         }
 
+        /// <inheritdoc/>
         public void ShowText(IInputBytes bytes)
         {
             var currentState = GetCurrentState();
@@ -264,7 +205,7 @@
 
                 if (!foundUnicode || unicode == null)
                 {
-                    log.Warn($"We could not find the corresponding character with code {code} in font {font.Name}.");
+                    log?.Warn($"We could not find the corresponding character with code {code} in font {font.Name}.");
                     // Try casting directly to string as in PDFBox 1.8.
                     unicode = new string((char)code, 1);
                 }
@@ -291,12 +232,6 @@
 
                 var boundingBox = font.GetBoundingBox(code);
 
-                var transformedGlyphBounds = PerformantRectangleTransformer
-                    .Transform(renderingMatrix, textMatrix, transformationMatrix, boundingBox.GlyphBounds);
-
-                var transformedPdfBounds = PerformantRectangleTransformer
-                    .Transform(renderingMatrix, textMatrix, transformationMatrix, new PdfRectangle(0, 0, boundingBox.Width, 0));
-
                 // If the text rendering mode calls for filling, the current nonstroking color in the graphics state is used; 
                 // if it calls for stroking, the current stroking color is used.
                 // In modes that perform both filling and stroking, the effect is as if each glyph outline were filled and then stroked in separate operations.
@@ -305,19 +240,27 @@
                     ? currentState.CurrentNonStrokingColor
                     : currentState.CurrentStrokingColor;
 
-                var letter = new Letter(unicode, transformedGlyphBounds,
-                    transformedPdfBounds.BottomLeft,
-                    transformedPdfBounds.BottomRight,
-                    transformedPdfBounds.Width,
-                    fontSize,
-                    font.Details,
-                    color,
-                    pointSize,
-                    textSequence);
+                if (font.TryGetPath(code, out var path))
+                {
+                    DrawLetter(path, color, renderingMatrix, textMatrix, transformationMatrix);
+                }
+                else
+                {
+                    var transformedGlyphBounds = PerformantRectangleTransformer
+                        .Transform(renderingMatrix, textMatrix, transformationMatrix, boundingBox.GlyphBounds);
 
-                letters.Add(letter);
+                    var transformedPdfBounds = PerformantRectangleTransformer
+                        .Transform(renderingMatrix, textMatrix, transformationMatrix, new PdfRectangle(0, 0, boundingBox.Width, 0));
 
-                markedContentStack.AddLetter(letter);
+                    DrawLetter(unicode, transformedGlyphBounds,
+                        transformedPdfBounds.BottomLeft,
+                        transformedPdfBounds.BottomRight,
+                        transformedPdfBounds.Width,
+                        fontSize,
+                        font.Details,
+                        color,
+                        pointSize);
+                }
 
                 double tx, ty;
                 if (font.IsVertical)
@@ -337,10 +280,9 @@
             }
         }
 
+        /// <inheritdoc/>
         public void ShowPositionedText(IReadOnlyList<IToken> tokens)
         {
-            textSequence++;
-
             var currentState = GetCurrentState();
 
             var textState = currentState.FontState;
@@ -388,6 +330,7 @@
             }
         }
 
+        /// <inheritdoc/>
         public void ApplyXObject(NameToken xObjectName)
         {
             var xObjectStream = resourceStore.GetXObject(xObjectName);
@@ -412,9 +355,15 @@
                 var contentRecord = new XObjectContentRecord(XObjectType.Image, xObjectStream, matrix, state.RenderingIntent,
                     state.CurrentStrokingColor?.ColorSpace ?? ColorSpace.DeviceRGB);
 
-                images.Add(Union<XObjectContentRecord, InlineImage>.One(contentRecord));
-
-                markedContentStack.AddXObject(contentRecord, pdfScanner, filterProvider, resourceStore);
+                var image = Union<XObjectContentRecord, InlineImage>.One(contentRecord);
+                if (image.TryGetFirst(out var xObjectContentRecord)) // always an inline image???
+                {
+                    DrawImage(XObjectFactory.ReadImage(xObjectContentRecord, pdfScanner, filterProvider, resourceStore));
+                }
+                else if (image.TryGetSecond(out var inlineImage))
+                {
+                    DrawImage(inlineImage);
+                }
             }
             else if (subType.Equals(NameToken.Form))
             {
@@ -426,6 +375,7 @@
             }
         }
 
+        /// <inheritdoc/>
         private void ProcessFormXObject(StreamToken formStream)
         {
             /*
@@ -478,6 +428,7 @@
             }
         }
 
+        /// <inheritdoc/>
         public void BeginSubpath()
         {
             if (CurrentPath == null)
@@ -489,6 +440,7 @@
             CurrentSubpath = new PdfSubpath();
         }
 
+        /// <inheritdoc/>
         public PdfPoint? CloseSubpath()
         {
             if (CurrentSubpath == null)
@@ -511,6 +463,7 @@
             return point;
         }
 
+        /// <inheritdoc/>
         public void AddCurrentSubpath()
         {
             if (CurrentSubpath == null)
@@ -522,6 +475,7 @@
             CurrentSubpath = null;
         }
 
+        /// <inheritdoc/>
         public void StrokePath(bool close)
         {
             if (CurrentPath == null)
@@ -539,6 +493,7 @@
             ClosePath();
         }
 
+        /// <inheritdoc/>
         public void FillPath(FillingRule fillingRule, bool close)
         {
             if (CurrentPath == null)
@@ -556,6 +511,7 @@
             ClosePath();
         }
 
+        /// <inheritdoc/>
         public void FillStrokePath(FillingRule fillingRule, bool close)
         {
             if (CurrentPath == null)
@@ -573,7 +529,8 @@
 
             ClosePath();
         }
-        
+
+        /// <inheritdoc/>
         public void EndPath()
         {
             if (CurrentPath == null)
@@ -583,6 +540,7 @@
 
             AddCurrentSubpath();
 
+            /*
             if (CurrentPath.IsClipping)
             {
                 if (!clipPaths)
@@ -597,9 +555,12 @@
 
             paths.Add(CurrentPath);
             markedContentStack.AddPath(CurrentPath);
+            */
+
             CurrentPath = null;
         }
 
+        /// <inheritdoc/>
         public void ClosePath()
         {
             AddCurrentSubpath();
@@ -625,6 +586,9 @@
                 CurrentPath.FillColor = currentState.CurrentNonStrokingColor;
             }
 
+            DrawPath(CurrentPath);
+
+            /*
             if (clipPaths)
             {
                 var clippedPath = currentState.CurrentClippingPath.Clip(CurrentPath, log);
@@ -639,10 +603,12 @@
                 paths.Add(CurrentPath);
                 markedContentStack.AddPath(CurrentPath);
             }
+            */
 
             CurrentPath = null;
         }
 
+        /// <inheritdoc/>
         public void ModifyClippingIntersect(FillingRule clippingRule)
         {
             if (CurrentPath == null)
@@ -653,6 +619,21 @@
             AddCurrentSubpath();
             CurrentPath.SetClipping(clippingRule);
 
+            //var currentClipping = GetCurrentState().CurrentClippingPath;
+            //currentClipping.SetClipping(clippingRule);
+
+            var newClippings = CurrentPath.Clip(GetCurrentState().CurrentClippingPath, log);
+            if (newClippings == null)
+            {
+                log?.Warn("Empty clipping path found. Clipping path not updated.");
+            }
+            else
+            {
+                GetCurrentState().CurrentClippingPath = newClippings;
+                UpdateClipPath();
+            }
+
+            /*
             if (clipPaths)
             {
                 var currentClipping = GetCurrentState().CurrentClippingPath;
@@ -668,8 +649,10 @@
                     GetCurrentState().CurrentClippingPath = newClippings;
                 }
             }
+            */
         }
 
+        /// <inheritdoc/>
         public void SetNamedGraphicsState(NameToken stateName)
         {
             var currentGraphicsState = GetCurrentState();
@@ -700,6 +683,7 @@
             }
         }
 
+        /// <inheritdoc/>
         public void BeginInlineImage()
         {
             if (inlineImageBuilder != null)
@@ -710,6 +694,7 @@
             inlineImageBuilder = new InlineImageBuilder();
         }
 
+        /// <inheritdoc/>
         public void SetInlineImageProperties(IReadOnlyDictionary<NameToken, IToken> properties)
         {
             if (inlineImageBuilder == null)
@@ -721,6 +706,7 @@
             inlineImageBuilder.Properties = properties;
         }
 
+        /// <inheritdoc/>
         public void EndInlineImage(IReadOnlyList<byte> bytes)
         {
             if (inlineImageBuilder == null)
@@ -733,34 +719,28 @@
 
             var image = inlineImageBuilder.CreateInlineImage(CurrentTransformationMatrix, filterProvider, pdfScanner, GetCurrentState().RenderingIntent, resourceStore);
 
-            images.Add(Union<XObjectContentRecord, InlineImage>.Two(image));
+            DrawImage(image);
 
-            markedContentStack.AddImage(image);
+            //images.Add(Union<XObjectContentRecord, InlineImage>.Two(image));
+
+            //markedContentStack.AddImage(image);
 
             inlineImageBuilder = null;
         }
 
+        /// <inheritdoc/>
         public void BeginMarkedContent(NameToken name, NameToken propertyDictionaryName, DictionaryToken properties)
         {
-            if (propertyDictionaryName != null)
-            {
-                var actual = resourceStore.GetMarkedContentPropertiesDictionary(propertyDictionaryName);
-
-                properties = actual ?? properties;
-            }
-
-            markedContentStack.Push(name, properties);
+            // do nothing
         }
 
+        /// <inheritdoc/>
         public void EndMarkedContent()
         {
-            if (markedContentStack.CanPop)
-            {
-                var mc = markedContentStack.Pop(pdfScanner);
-                if (mc != null) markedContents.Add(mc);
-            }
+            // do nothing
         }
 
+        /// <inheritdoc/>
         private void AdjustTextMatrix(double tx, double ty)
         {
             var matrix = TransformationMatrix.GetTranslationMatrix(tx, ty);
@@ -769,5 +749,94 @@
 
             TextMatrices.TextMatrix = newMatrix;
         }
+        #endregion
+
+        #region IDrawingSystem
+        /// <summary>
+        /// init
+        /// </summary>
+        /// <param name="page"></param>
+        public void Init(Page page)
+        {
+            this.resourceStore = page.Content.resourceStore;
+
+            // reload resources, unload after????
+            //if (page.Dictionary.TryGet(NameToken.Resources, pdfScanner, out DictionaryToken resources))
+            //{
+            //    resourceStore.LoadResourceDictionary(resources);
+            //}
+
+            this.rotation = page.Rotation;
+            this.pdfScanner = page.Content.pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
+            this.pageContentParser = page.Content.pageContentParser ?? throw new ArgumentNullException(nameof(pageContentParser));
+            this.filterProvider = page.Content.filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
+            this.pageSize = new PdfVector(page.MediaBox.Bounds.Width, page.MediaBox.Bounds.Height);
+            this.pageNumber = page.Number;
+
+            // initiate CurrentClippingPath to cropBox
+            var clippingSubpath = new PdfSubpath();
+            clippingSubpath.Rectangle(page.CropBox.Bounds.BottomLeft.X, page.CropBox.Bounds.BottomLeft.Y, page.CropBox.Bounds.Width, page.CropBox.Bounds.Height);
+            var clippingPath = new PdfPath() { clippingSubpath };
+            clippingPath.SetClipping(FillingRule.EvenOdd);
+
+            graphicsStack.Push(new CurrentGraphicsState()
+            {
+                CurrentTransformationMatrix = GetInitialMatrix(),
+                CurrentClippingPath = clippingPath
+            });
+
+            ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore);
+        }
+
+        /// <inheritdoc/>
+        public static (double x, double y) TransformPoint(TransformationMatrix first, TransformationMatrix second, TransformationMatrix third, PdfPoint tl)
+        {
+            var topLeftX = tl.X;
+            var topLeftY = tl.Y;
+
+            // First
+            var x = first.A * topLeftX + first.C * topLeftY + first.E;
+            var y = first.B * topLeftX + first.D * topLeftY + first.F;
+            topLeftX = x;
+            topLeftY = y;
+
+            // Second
+            x = second.A * topLeftX + second.C * topLeftY + second.E;
+            y = second.B * topLeftX + second.D * topLeftY + second.F;
+            topLeftX = x;
+            topLeftY = y;
+
+            // Third
+            x = third.A * topLeftX + third.C * topLeftY + third.E;
+            y = third.B * topLeftX + third.D * topLeftY + third.F;
+            topLeftX = x;
+            topLeftY = y;
+
+            return (topLeftX, topLeftY);
+        }
+
+
+
+
+
+
+        /// <inheritdoc/>
+        public abstract MemoryStream DrawPage(Page page, double scale);
+
+        /// <inheritdoc/>
+        public abstract void DrawLetter(string value, PdfRectangle glyphRectangle, PdfPoint startBaseLine, PdfPoint endBaseLine, double width, double fontSize, FontDetails font, IColor color, double pointSize);
+
+        /// <inheritdoc/>
+        public abstract void DrawLetter(IReadOnlyList<PdfSubpath> pdfSubpaths, IColor color, TransformationMatrix renderingMatrix, TransformationMatrix textMatrix, TransformationMatrix transformationMatrix);
+
+        /// <inheritdoc/>
+        public abstract void DrawImage(IPdfImage image);
+
+        /// <inheritdoc/>
+        public abstract void DrawPath(PdfPath path);
+
+        /// <inheritdoc/>
+        public abstract void UpdateClipPath();
+        #endregion
     }
 }

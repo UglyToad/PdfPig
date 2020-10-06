@@ -75,7 +75,7 @@
         public int NumberOfImages => Content.NumberOfImages;
 
         /// <summary>
-        /// The parsed graphics state operations in the content stream for this page. 
+        /// The parsed graphics state operations in the content stream for this page.
         /// </summary>
         public IReadOnlyList<IGraphicsStateOperation> Operations => Content.GraphicsStateOperations;
         
@@ -162,6 +162,16 @@
         /// Gets any marked content on the page.
         /// </summary>
         public IReadOnlyList<MarkedContentElement> GetMarkedContents() => Content.GetMarkedContents();
+
+        /// <summary>
+        /// Convert page to image
+        /// </summary>
+        /// <param name="scale"></param>
+        /// <param name="drawingProcessor"></param>
+        public System.IO.MemoryStream ToImage(double scale, IDrawingProcessor drawingProcessor)
+        {
+            return drawingProcessor.DrawPage(this, scale);
+        }
 
         /// <summary>
         /// Provides access to useful members which will change in future releases.

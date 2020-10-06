@@ -40,6 +40,25 @@ namespace UglyToad.PdfPig.XObjects
             var isImageMask = dictionary.TryGet(NameToken.ImageMask, pdfScanner, out BooleanToken isMaskToken)
                          && isMaskToken.Data;
 
+            // try getting soft-mask
+            XObjectImage softMaskImage = null;
+            if (!isImageMask)
+            {
+                if (dictionary.TryGet<StreamToken>(NameToken.Smask, pdfScanner, out var smaskStreamToken))
+                {
+                    if (smaskStreamToken.StreamDictionary.TryGet<NameToken>(NameToken.ColorSpace, out var cs) &&
+                        Enum.TryParse(cs.Data, out ColorSpace result) &&
+                        result != ColorSpace.DeviceGray)
+                    {
+                        // error
+                    }
+
+                    var maskRecord = new XObjectContentRecord(XObjectType.Image, smaskStreamToken, xObject.AppliedTransformation, RenderingIntent.AbsoluteColorimetric, ColorSpace.DeviceGray); // RenderingIntent is ignored
+                    softMaskImage = ReadImage(maskRecord, pdfScanner, filterProvider, resourceStore);
+                    softMaskImage.IsImageSoftMask = true;
+                }
+            }
+
             var isJpxDecode = dictionary.TryGet(NameToken.Filter, out var token)
                 && token is NameToken filterName
                 && filterName.Equals(NameToken.JpxDecode);
@@ -137,8 +156,14 @@ namespace UglyToad.PdfPig.XObjects
                 }
             }
 
-            return new XObjectImage(bounds, width, height, bitsPerComponent, colorSpace, isJpxDecode, isImageMask, intent, interpolate, decode,
+            var image = new XObjectImage(bounds, width, height, bitsPerComponent, colorSpace, isJpxDecode, isImageMask, intent, interpolate, decode,
                 dictionary, xObject.Stream.Data, decodedBytes);
+
+            if (softMaskImage != null)
+            {
+                image.SoftMaskImage = softMaskImage;
+            }
+            return image;
         }
 
         private static bool TryMapColorSpace(NameToken name, IResourceStore resourceStore, out ColorSpace colorSpaceResult)

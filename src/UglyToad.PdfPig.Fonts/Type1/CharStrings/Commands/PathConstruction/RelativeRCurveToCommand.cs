@@ -37,7 +37,7 @@
             var x3 = x2 + dx3;
             var y3 = y2 + dy3;
 
-            context.Path.BezierCurveTo(x1, y1, x2, y2, x3, y3);
+            context.Path[context.Path.Count - 1].BezierCurveTo(x1, y1, x2, y2, x3, y3);
 
             context.CurrentPosition = new PdfPoint(x3, y3);
 

@@ -321,6 +321,12 @@
 
             return widths[index];
         }
+
+        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        {
+            path = new List<PdfSubpath>();
+            return false;
+        }
     }
 }
 

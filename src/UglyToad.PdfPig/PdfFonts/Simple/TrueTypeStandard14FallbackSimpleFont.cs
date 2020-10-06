@@ -124,6 +124,12 @@
             return DefaultTransformation;
         }
 
+        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        {
+            path = new List<PdfSubpath>();
+            return false;
+        }
+
         public class MetricOverrides
         {
             public int? FirstCharacterCode { get; }
