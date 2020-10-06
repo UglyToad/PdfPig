@@ -162,7 +162,7 @@
         }
         
         /// <summary>
-        /// Adds 4 <see cref="Line"/>s forming a rectangle to the path.
+        /// Add a rectangle following the pdf specification (m, l, l, l, c) path. A new subpath is created.
         /// </summary>
         public void Rectangle(double x, double y, double width, double height)
         {

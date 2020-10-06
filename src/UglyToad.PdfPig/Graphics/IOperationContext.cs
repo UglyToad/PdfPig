@@ -3,25 +3,13 @@
     using PdfPig.Core;
     using System.Collections.Generic;
     using Tokens;
-    using Util.JetBrains.Annotations;
+    using UglyToad.PdfPig.Graphics.Core;
 
     /// <summary>
     /// The current graphics state context when running a PDF content stream.
     /// </summary>
     public interface IOperationContext
     {
-        /// <summary>
-        /// The current subpath being drawn if applicable.
-        /// </summary>
-        [CanBeNull]
-        PdfSubpath CurrentSubpath { get; }
-
-        /// <summary>
-        /// The current path being drawn if applicable.
-        /// </summary>
-        [CanBeNull]
-        PdfPath CurrentPath { get; }
-
         /// <summary>
         /// The active colorspaces for this content stream.
         /// </summary>
@@ -33,20 +21,9 @@
         PdfPoint CurrentPosition { get; set; }
 
         /// <summary>
-        /// Get the currently active <see cref="CurrentGraphicsState"/>. States are stored on a stack structure.
-        /// </summary>
-        /// <returns>The currently active graphics state.</returns>
-        CurrentGraphicsState GetCurrentState();
-
-        /// <summary>
         /// The matrices for the current text state.
         /// </summary>
         TextMatrices TextMatrices { get; }
-
-        /// <summary>
-        /// The current transformation matrix
-        /// </summary>
-        TransformationMatrix CurrentTransformationMatrix { get; }
 
         /// <summary>
         /// The number of graphics states on the stack.
@@ -117,6 +94,46 @@
         void FillStrokePath(FillingRule fillingRule, bool close);
 
         /// <summary>
+        /// Add a move command to the path.
+        /// <para>Points are NOT transformed.</para>
+        /// </summary>
+        void MoveTo(double x, double y);
+
+        /// <summary>
+        /// Add a bezier curve to the current subpath.
+        /// <para>Points are NOT transformed.</para>
+        /// </summary>
+        /// <param name="x1"></param>
+        /// <param name="y1"></param>
+        /// <param name="x2"></param>
+        /// <param name="y2"></param>
+        /// <param name="x3"></param>
+        /// <param name="y3"></param>
+        void BezierCurveTo(double x1, double y1, double x2, double y2, double x3, double y3);
+
+        /// <summary>
+        /// Add a bezier curve to the current subpath.
+        /// <para>Points are NOT transformed.</para>
+        /// </summary>
+        /// <param name="x2"></param>
+        /// <param name="y2"></param>
+        /// <param name="x3"></param>
+        /// <param name="y3"></param>
+        void BezierCurveTo(double x2, double y2, double x3, double y3);
+
+        /// <summary>
+        /// Add a line command to the subpath.
+        /// <para>Points are NOT transformed.</para>
+        /// </summary>
+        void LineTo(double x, double y);
+
+        /// <summary>
+        /// Add a rectangle following the pdf specification (m, l, l, l, c) path. A new subpath will be created.
+        /// <para>Points are NOT transformed.</para>
+        /// </summary>
+        void Rectangle(double x, double y, double width, double height);
+
+        /// <summary>
         /// End the path object without filling or stroking it. This operator shall be a path-painting no-op,
         /// used primarily for the side effect of changing the current clipping path (see 8.5.4, "Clipping Path Operators").
         /// </summary>
@@ -162,5 +179,90 @@
         /// Modify the clipping rule of the current path.
         /// </summary>
         void ModifyClippingIntersect(FillingRule clippingRule);
+
+        /// <summary>
+        /// Set the flatness tolerance in the graphics state.
+        /// Flatness is a number in the range 0 to 100; a value of 0 specifies the output device’s default flatness tolerance.
+        /// </summary>
+        /// <param name="tolerance"></param>
+        void SetFlatnessTolerance(decimal tolerance);
+
+        /// <summary>
+        /// Set the line cap style in the graphics state.
+        /// </summary>
+        void SetLineCap(LineCapStyle cap);
+
+        /// <summary>
+        /// Set the line dash pattern in the graphics state.
+        /// </summary>
+        void SetLineDashPattern(LineDashPattern pattern);
+
+        /// <summary>
+        /// Set the line join style in the graphics state.
+        /// </summary>
+        void SetLineJoin(LineJoinStyle join);
+
+        /// <summary>
+        /// Set the line width in the graphics state.
+        /// </summary>
+        void SetLineWidth(decimal width);
+
+        /// <summary>
+        /// Set the miter limit in the graphics state.
+        /// </summary>
+        void SetMiterLimit(decimal limit);
+
+        /// <summary>
+        /// Move to the start of the next line.
+        /// </summary>
+        /// <remarks>
+        /// This performs this operation: 0 -Tl Td
+        /// The offset is negative leading text (Tl) value, this is incorrect in the specification.
+        /// </remarks>
+        void MoveToNextLineWithOffset();
+
+        /// <summary>
+        /// Set the font and the font size.
+        /// Font is the name of a font resource in the Font subdictionary of the current resource dictionary.
+        /// Size is a number representing a scale factor.
+        /// </summary>
+        void SetFontAndSize(NameToken font, double size);
+
+        /// <summary>
+        /// Set the horizontal scaling.
+        /// </summary>
+        /// <param name="scale"></param>
+        void SetHorizontalScaling(double scale);
+
+        /// <summary>
+        /// Set the text leading.
+        /// </summary>
+        void SetTextLeading(double leading);
+
+        /// <summary>
+        /// Set the text rendering mode.
+        /// </summary>
+        void SetTextRenderingMode(TextRenderingMode mode);
+
+        /// <summary>
+        /// Set text rise.
+        /// </summary>
+        void SetTextRise(double rise);
+
+        /// <summary>
+        /// Sets the word spacing.
+        /// </summary>
+        void SetWordSpacing(double spacing);
+
+        /// <summary>
+        /// Modify the current transformation matrix by concatenating the specified matrix.
+        /// </summary>
+        void ModifyCurrentTransformationMatrix(double[] value);
+
+        /// <summary>
+        /// Set the character spacing to a number expressed in unscaled text space units.
+        /// Initial value: 0.
+        /// </summary>
+        void SetCharacterSpacing(double spacing);
     }
 }

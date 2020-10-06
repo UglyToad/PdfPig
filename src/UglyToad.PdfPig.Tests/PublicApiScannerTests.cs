@@ -1,10 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Tests
 {
+    using PdfPig.Graphics.Operations;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
-    using PdfPig.Graphics.Operations;
     using Xunit;
 
     public class PublicApiScannerTests
@@ -64,6 +64,7 @@
                 "UglyToad.PdfPig.Annotations.AnnotationFlags",
                 "UglyToad.PdfPig.Annotations.AnnotationType",
                 "UglyToad.PdfPig.Annotations.QuadPointsQuadrilateral",
+                "UglyToad.PdfPig.BaseDrawingProcessor",
                 "UglyToad.PdfPig.Content.ArtifactMarkedContentElement",
                 "UglyToad.PdfPig.Content.Catalog",
                 "UglyToad.PdfPig.Content.CropBox",
@@ -186,6 +187,7 @@
                 "UglyToad.PdfPig.Graphics.Operations.TextState.Type3SetGlyphWidth",
                 "UglyToad.PdfPig.Graphics.Operations.TextState.Type3SetGlyphWidthAndBoundingBox",
                 "UglyToad.PdfPig.Graphics.TextMatrices",
+                "UglyToad.PdfPig.IDrawingProcessor",
                 "UglyToad.PdfPig.Logging.ILog",
                 "UglyToad.PdfPig.Outline.Bookmarks",
                 "UglyToad.PdfPig.Outline.BookmarkNode",

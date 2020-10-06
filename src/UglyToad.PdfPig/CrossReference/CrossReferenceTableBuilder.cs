@@ -1,14 +1,14 @@
 ﻿namespace UglyToad.PdfPig.CrossReference
 {
+    using Core;
+    using Logging;
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Core;
-    using Logging;
     using Tokens;
 
     /// <summary>
-    /// 
+    /// Cross reference table builder
     /// </summary>
     /// <remarks>
     /// The table contains a one-line entry for each indirect object, specifying the location of that object within the body of the file. 

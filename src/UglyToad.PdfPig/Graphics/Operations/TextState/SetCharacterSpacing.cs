@@ -5,7 +5,7 @@
     /// <inheritdoc />
     /// <summary>
     /// Set the character spacing to a number expressed in unscaled text space units.
-    /// Initial value: 0. 
+    /// Initial value: 0.
     /// </summary>
     public class SetCharacterSpacing : IGraphicsStateOperation
     {
@@ -34,9 +34,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var currentState = operationContext.GetCurrentState();
-
-            currentState.FontState.CharacterSpacing = (double)Spacing;
+            operationContext.SetCharacterSpacing((double)Spacing);
         }
 
         /// <inheritdoc />

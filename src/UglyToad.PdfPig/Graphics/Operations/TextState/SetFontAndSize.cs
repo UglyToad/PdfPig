@@ -48,10 +48,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var currentState = operationContext.GetCurrentState();
-
-            currentState.FontState.FontSize = (double)Size;
-            currentState.FontState.FontName = Font;
+            operationContext.SetFontAndSize(Font, (double)Size);
         }
 
         /// <inheritdoc />
