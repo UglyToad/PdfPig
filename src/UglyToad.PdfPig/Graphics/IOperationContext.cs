@@ -4,27 +4,12 @@
     using System.Collections.Generic;
     using Tokens;
     using UglyToad.PdfPig.Graphics.Core;
-    //using Util.JetBrains.Annotations;
 
     /// <summary>
     /// The current graphics state context when running a PDF content stream.
     /// </summary>
     public interface IOperationContext
     {
-        /*
-        /// <summary>
-        /// The current subpath being drawn if applicable.
-        /// </summary>
-        [CanBeNull]
-        PdfSubpath CurrentSubpath { get; }
-
-        /// <summary>
-        /// The current path being drawn if applicable.
-        /// </summary>
-        [CanBeNull]
-        PdfPath CurrentPath { get; }
-        */
-
         /// <summary>
         /// The active colorspaces for this content stream.
         /// </summary>
