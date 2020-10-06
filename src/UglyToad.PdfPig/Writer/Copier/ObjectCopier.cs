@@ -98,10 +98,7 @@
 
                 case ObjectToken _:
                     {
-
-                        // This is because, since we don't write token directly to the stream. So we can't know the offset.
-                        // The token would be invalid. Although I don't think the copy of an object token would ever happen
-                        throw new NotSupportedException("Copying a Object token is not supported");
+                        throw new NotSupportedException("Copying a Object Token is not supported");
                     }
             }
 

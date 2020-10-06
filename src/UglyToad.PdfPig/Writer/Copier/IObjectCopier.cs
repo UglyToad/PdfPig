@@ -6,7 +6,7 @@
     /// <summary>
     /// An interface for copying token
     /// </summary>
-    public interface IObjectCopier
+    internal interface IObjectCopier
     {
         /// <summary>
         /// Copy the token to the destination stream
