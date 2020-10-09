@@ -1,0 +1,1169 @@
+﻿namespace UglyToad.PdfPig.SystemDrawing
+{
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Drawing;
+    using System.Drawing.Drawing2D;
+    using System.Drawing.Imaging;
+    using System.Drawing.Text;
+    using System.IO;
+    using System.Linq;
+    using System.Runtime.InteropServices;
+    using UglyToad.PdfPig.Content;
+    using UglyToad.PdfPig.Core;
+    using UglyToad.PdfPig.Graphics;
+    using UglyToad.PdfPig.Graphics.Colors;
+    using UglyToad.PdfPig.Graphics.Core;
+    using UglyToad.PdfPig.PdfFonts;
+    using UglyToad.PdfPig.Tokens;
+    using UglyToad.PdfPig.XObjects;
+
+    public class SystemDrawingProcessorV2 : IOperationContext, IDrawingProcessor
+    {
+        private Graphics currentGraphics;
+
+        private Stack<CurrentSystemGraphicsState> graphicsStack = new Stack<CurrentSystemGraphicsState>();
+        private IFont activeExtendedGraphicsStateFont;
+
+        public GraphicsPath CurrentPath { get; private set; }
+
+        #region State
+        [DebuggerStepThrough]
+        public CurrentSystemGraphicsState GetCurrentState()
+        {
+            return graphicsStack.Peek();
+        }
+
+        public void PopState()
+        {
+            graphicsStack.Pop();
+            currentGraphics.Restore(GetCurrentState().GraphicsState);
+            activeExtendedGraphicsStateFont = null;
+        }
+
+        public void PushState()
+        {
+            graphicsStack.Peek().GraphicsState = currentGraphics.Save();
+            graphicsStack.Push(graphicsStack.Peek().DeepClone());
+        }
+        #endregion
+
+        #region IOperationContext
+        public IColorSpaceContext ColorSpaceContext { get; set; }
+
+        public PdfPoint CurrentPosition { get; set; }
+
+        public Matrix TextMatrix { get; set; }
+
+        public Matrix TextLineMatrix { get; set; }
+        
+        public int StackSize => graphicsStack.Count;
+
+        public void ApplyXObject(NameToken xObjectName)
+        {
+            var xObjectStream = currentPage.ExperimentalAccess.ResourceStore.GetXObject(xObjectName);
+
+            // For now we will determine the type and store the object with the graphics state information preceding it.
+            // Then consumers of the page can request the object(s) to be retrieved by type.
+            var subType = (NameToken)xObjectStream.StreamDictionary.Data[NameToken.Subtype.Data];
+
+            var state = GetCurrentState();
+
+            var matrix = TransformationMatrix.Identity;
+
+            if (subType.Equals(NameToken.Ps))
+            {
+                var contentRecord = new XObjectContentRecord(XObjectType.PostScript, xObjectStream, matrix, state.RenderingIntent,
+                    state.CurrentStrokingColorSpace ?? ColorSpace.DeviceRGB);
+
+                //xObjects[XObjectType.PostScript].Add(contentRecord);
+                // Draw
+            }
+            else if (subType.Equals(NameToken.Image))
+            {
+                var contentRecord = new XObjectContentRecord(XObjectType.Image, xObjectStream, matrix, state.RenderingIntent,
+                    state.CurrentStrokingColorSpace ?? ColorSpace.DeviceRGB);
+
+                DrawImage(XObjectFactory.ReadImage(contentRecord,
+                                                   currentPage.ExperimentalAccess.PdfTokenScanner,
+                                                   currentPage.ExperimentalAccess.FilterProvider,
+                                                   currentPage.ExperimentalAccess.ResourceStore));
+            }
+            else if (subType.Equals(NameToken.Form))
+            {
+                ProcessFormXObject(xObjectStream);
+            }
+            else
+            {
+                throw new InvalidOperationException($"XObject encountered with unexpected SubType {subType}. {xObjectStream.StreamDictionary}.");
+            }
+        }
+
+        private void ProcessFormXObject(StreamToken formStream)
+        {
+            /*
+             * When a form XObject is invoked the following should happen:
+             *
+             * 1. Save the current graphics state, as if by invoking the q operator.
+             * 2. Concatenate the matrix from the form dictionary's Matrix entry with the current transformation matrix.
+             * 3. Clip according to the form dictionary's BBox entry.
+             * 4. Paint the graphics objects specified in the form's content stream.
+             * 5. Restore the saved graphics state, as if by invoking the Q operator.
+             */
+
+            var hasResources = formStream.StreamDictionary.TryGet<DictionaryToken>(NameToken.Resources, currentPage.ExperimentalAccess.PdfTokenScanner, out var formResources);
+            if (hasResources)
+            {
+                currentPage.ExperimentalAccess.ResourceStore.LoadResourceDictionary(formResources);
+            }
+
+            // 1. Save current state.
+            PushState();
+
+            var startState = GetCurrentState();
+
+            // 2. Update current transformation matrix.
+            if (formStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Matrix, currentPage.ExperimentalAccess.PdfTokenScanner, out var formMatrixToken))
+            {
+                ModifyCurrentTransformationMatrix(formMatrixToken.Data.OfType<NumericToken>().Select(x => x.Double).ToArray());
+            }
+
+            var contentStream = formStream.Decode(currentPage.ExperimentalAccess.FilterProvider);
+            var operations = currentPage.ExperimentalAccess.PageContentParser.Parse(currentPage.Number, new ByteArrayInputBytes(contentStream), null);
+
+            // 3. Clip according to the form dictionary's BBox entry.
+            if (formStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Bbox, currentPage.ExperimentalAccess.PdfTokenScanner, out var formBboxToken))
+            {
+                NumericToken left = null;
+                NumericToken bottom = null;
+                NumericToken right = null;
+                NumericToken top = null;
+
+                if (formBboxToken.Length == 4)
+                {
+                    left = formBboxToken[0] as NumericToken;
+                    bottom = formBboxToken[1] as NumericToken;
+                    right = formBboxToken[2] as NumericToken;
+                    top = formBboxToken[3] as NumericToken;
+                }
+                else if (formBboxToken.Length == 6)
+                {
+                    left = formBboxToken[2] as NumericToken;
+                    bottom = formBboxToken[3] as NumericToken;
+                    right = formBboxToken[4] as NumericToken;
+                    top = formBboxToken[5] as NumericToken;
+                }
+
+                if (left != null && bottom != null && right != null && top != null)
+                {
+                    GraphicsPath clip = new GraphicsPath(FillMode.Alternate); // alternate???
+                    clip.StartFigure();
+                    clip.AddLine((float)left.Double, (float)bottom.Double, (float)right.Double, (float)bottom.Double);
+                    clip.AddLine((float)right.Double, (float)bottom.Double, (float)right.Double, (float)top.Double);
+                    clip.AddLine((float)right.Double, (float)top.Double, (float)left.Double, (float)top.Double);
+                    clip.CloseFigure();
+                    currentGraphics.SetClip(clip, CombineMode.Intersect);
+                }
+            }
+
+            // 4. Paint the objects.
+            foreach (var stateOperation in operations)
+            {
+                stateOperation.Run(this);
+            }
+
+            // 5. Restore saved state.
+            PopState();
+
+            if (hasResources)
+            {
+                currentPage.ExperimentalAccess.ResourceStore.UnloadResourceDictionary();
+            }
+        }
+
+        #region InlineImage
+        private InlineImageBuilder inlineImageBuilder;
+        public void BeginInlineImage()
+        {
+            if (inlineImageBuilder != null)
+            {
+                //log?.Error("Begin inline image (BI) command encountered while another inline image was active.");
+            }
+
+            inlineImageBuilder = new InlineImageBuilder();
+        }
+
+        public void EndInlineImage(IReadOnlyList<byte> bytes)
+        {
+            if (inlineImageBuilder == null)
+            {
+                //log?.Error("End inline image (EI) command encountered without a corresponding begin inline image (BI) command.");
+                return;
+            }
+
+            inlineImageBuilder.Bytes = bytes;
+
+            var image = inlineImageBuilder.CreateInlineImage(TransformationMatrix.Identity,
+                currentPage.ExperimentalAccess.FilterProvider,
+                currentPage.ExperimentalAccess.PdfTokenScanner,
+                GetCurrentState().RenderingIntent,
+                currentPage.ExperimentalAccess.ResourceStore);
+
+            DrawImage(image);
+
+            inlineImageBuilder = null;
+        }
+
+        public void SetInlineImageProperties(IReadOnlyDictionary<NameToken, IToken> properties)
+        {
+            if (inlineImageBuilder == null)
+            {
+                //log?.Error("Begin inline image data (ID) command encountered without a corresponding begin inline image (BI) command.");
+                return;
+            }
+
+            inlineImageBuilder.Properties = properties;
+        }
+        #endregion
+
+        #region MarkedContent
+        public void BeginMarkedContent(NameToken name, NameToken propertyDictionaryName, DictionaryToken properties)
+        {
+            // do nothing
+        }
+
+        public void EndMarkedContent()
+        {
+            // do nothing
+        }
+        #endregion
+
+        #region Paths
+        /*
+         * PdfPath is GraphicsPath
+         * PdfSubpath is Figure
+         */
+        public void AddCurrentSubpath()
+        {
+            // do nothing
+        }
+
+        public void BeginSubpath()
+        {
+            if (CurrentPath == null)
+            {
+                CurrentPath = new GraphicsPath();
+            }
+
+            CurrentPath.StartFigure();
+        }
+
+        public void MoveTo(double x, double y)
+        {
+            BeginSubpath();
+            CurrentPosition = new PdfPoint(x, y);
+        }
+
+        public void LineTo(double x, double y)
+        {
+            if (CurrentPath == null)
+            {
+                return;
+            }
+
+            CurrentPath.AddLine((float)CurrentPosition.X, (float)CurrentPosition.Y,
+                                (float)x, (float)y);
+            CurrentPosition = new PdfPoint(x, y);
+        }
+
+        public void BezierCurveTo(double x1, double y1, double x2, double y2, double x3, double y3)
+        {
+            if (CurrentPath == null)
+            {
+                return;
+            }
+
+            CurrentPath.AddBezier((float)CurrentPosition.X, (float)CurrentPosition.Y,
+                                  (float)x1, (float)y1,
+                                  (float)x2, (float)y2,
+                                  (float)x3, (float)y3);
+            CurrentPosition = new PdfPoint(x3, y3);
+        }
+
+        public void BezierCurveTo(double x2, double y2, double x3, double y3)
+        {
+            if (CurrentPath == null)
+            {
+                return;
+            }
+
+            CurrentPath.AddBezier((float)CurrentPosition.X, (float)CurrentPosition.Y,
+                                  (float)CurrentPosition.X, (float)CurrentPosition.Y,
+                                  (float)x2, (float)y2,
+                                  (float)x3, (float)y3);
+            CurrentPosition = new PdfPoint(x3, y3);
+        }
+
+        public void Rectangle(double x, double y, double width, double height)
+        {
+            MoveTo(x, y);                       // x y m
+            LineTo(x + width, y);               // (x + width) y l
+            LineTo(x + width, y + height);      // (x + width) (y + height) l
+            LineTo(x, y + height);              // x (y + height) l
+            CloseSubpath();                     // h
+        }
+
+        /// <summary>
+        /// Do not draw the path
+        /// </summary>
+        public void EndPath()
+        {
+            CurrentPath = null;
+        }
+
+        /// <summary>
+        /// Draw the path
+        /// </summary>
+        public void ClosePath()
+        {
+            CurrentPath = null;
+        }
+
+        public void FillPath(FillingRule fillingRule, bool close)
+        {
+            if (CurrentPath == null)
+            {
+                return;
+            }
+
+            if (close)
+            {
+                CurrentPath.CloseFigure();
+            }
+
+            CurrentPath.FillMode = fillingRule.ToSystemFillMode();
+            using (var brush = new SolidBrush(GetCurrentState().CurrentNonStrokingColor))
+            {
+                currentGraphics.FillPath(brush, CurrentPath);
+            }
+
+            ClosePath();
+        }
+
+        public void StrokePath(bool close)
+        {
+            if (CurrentPath == null)
+            {
+                return;
+            }
+
+            if (close)
+            {
+                CurrentPath.CloseFigure();
+            }
+
+            var currentState = GetCurrentState();
+            try
+            {
+                using (var pen = currentState.CurrentStrokingPen)
+                {
+                    currentGraphics.DrawPath(pen, CurrentPath);
+                }
+            }
+            catch (OutOfMemoryException)
+            {
+                //you will get an OutOfMemoryException if you try to use a LinearGradientBrush to fill a rectangle whose width or height is zero
+                var bounds = CurrentPath.GetBounds();
+                if (bounds.Width >= 1 && bounds.Height >= 1)
+                {
+                    throw;
+                }
+            }
+
+
+            ClosePath();
+        }
+
+        public void FillStrokePath(FillingRule fillingRule, bool close)
+        {
+            if (CurrentPath == null)
+            {
+                return;
+            }
+
+            if (close)
+            {
+                CurrentPath.CloseFigure();
+            }
+
+            var currentState = GetCurrentState();
+
+            // Fill
+            CurrentPath.FillMode = fillingRule.ToSystemFillMode();
+            using (var brush = new SolidBrush(currentState.CurrentNonStrokingColor))
+            {
+                currentGraphics.FillPath(brush, CurrentPath);
+            }
+
+            // Stroke
+            try
+            {
+                using (var pen = currentState.CurrentStrokingPen)
+                {
+                    currentGraphics.DrawPath(pen, CurrentPath);
+                }
+            }
+            catch (OutOfMemoryException)
+            {
+                //you will get an OutOfMemoryException if you try to use a LinearGradientBrush to fill a rectangle whose width or height is zero
+                var bounds = CurrentPath.GetBounds();
+                if (bounds.Width >= 1 && bounds.Height >= 1)
+                {
+                    throw;
+                }
+            }
+
+            ClosePath();
+        }
+
+        public PdfPoint? CloseSubpath()
+        {
+            if (CurrentPath == null)
+            {
+                return null;
+            }
+
+            CurrentPath.CloseFigure();
+            var firstPoint = CurrentPath.PathPoints[0];
+            return new PdfPoint(firstPoint.X, firstPoint.Y); // already top-left coordinate
+        }
+
+        public void ModifyClippingIntersect(FillingRule clippingRule)
+        {
+            if (CurrentPath == null)
+            {
+                return;
+            }
+
+            CurrentPath.FillMode = clippingRule.ToSystemFillMode();
+            currentGraphics.SetClip(CurrentPath, CombineMode.Intersect);
+        }
+
+        #endregion
+
+        #region Lines
+        public void SetLineCap(LineCapStyle cap)
+        {
+            GetCurrentState().LineCap = cap.ToSystemLineCap();
+            GetCurrentState().DashCap = cap.ToSystemDashCap();
+        }
+
+        public void SetLineDashPattern(LineDashPattern lineDashPattern)
+        {
+            // update DashPatternArray
+            /*
+             * https://docs.microsoft.com/en-us/dotnet/api/system.drawing.pen.dashpattern?view=dotnet-plat-ext-3.1
+             * The elements in the dashArray array set the length of each dash and space in the dash pattern. 
+             * The first element sets the length of a dash, the second element sets the length of a space, the
+             * third element sets the length of a dash, and so on. Consequently, each element should be a 
+             * non-zero positive number.
+             */
+            if (lineDashPattern.Array.Count == 1)
+            {
+                List<float> pattern = new List<float>();
+                var v = lineDashPattern.Array[0];
+                pattern.Add((float)((double)v));
+                pattern.Add((float)((double)v));
+                GetCurrentState().DashPatternArray = pattern.ToArray();
+            }
+            else if (lineDashPattern.Array.Count > 0)
+            {
+                List<float> pattern = new List<float>();
+                for (int i = 0; i < lineDashPattern.Array.Count; i++)
+                {
+                    var v = lineDashPattern.Array[i];
+                    if (v == 0)
+                    {
+                        pattern.Add((float)(1.0 / 72.0));
+                    }
+                    else
+                    {
+                        pattern.Add((float)((double)v));
+                    }
+                }
+                GetCurrentState().DashPatternArray = pattern.ToArray();
+            }
+            else
+            {
+                GetCurrentState().DashPatternArray = null;
+            }
+
+            // update DashPatternPhase
+            GetCurrentState().DashPatternPhase = lineDashPattern.Phase;
+        }
+
+        public void SetLineJoin(LineJoinStyle join)
+        {
+            GetCurrentState().JoinStyle = join.ToSystemLineJoin();
+        }
+
+        public void SetLineWidth(decimal width)
+        {
+            GetCurrentState().LineWidth = width;
+        }
+
+        public void SetMiterLimit(decimal limit)
+        {
+            GetCurrentState().MiterLimit = limit;
+        }
+
+        public void SetFlatnessTolerance(decimal tolerance)
+        {
+            GetCurrentState().Flatness = tolerance;
+        }
+        #endregion
+
+        #region Text
+        #region TextMatrix
+        public void BeginText()
+        {
+            TextMatrix = MatrixExtensions.Identity;
+            TextLineMatrix = MatrixExtensions.Identity;
+        }
+
+        public void EndText()
+        {
+            TextMatrix = MatrixExtensions.Identity;
+            TextLineMatrix = MatrixExtensions.Identity;
+        }
+
+        public void SetTextMatrix(double[] value)
+        {
+            using (var newMatrix = MatrixExtensions.FromArray(value))
+            {
+                TextMatrix = newMatrix.Clone();
+                TextLineMatrix = newMatrix.Clone();
+            }
+        }
+
+        private void AdjustTextMatrix(double tx, double ty)
+        {
+            TextMatrix.Translate((float)tx, (float)ty, MatrixOrder.Prepend);
+        }
+
+        public void MoveToNextLineWithOffset(double tx, double ty)
+        {
+            using (var currentTextLineMatrix = TextLineMatrix.Clone())
+            {
+                currentTextLineMatrix.Translate((float)tx, (float)ty, MatrixOrder.Prepend);
+                TextLineMatrix = currentTextLineMatrix.Clone();
+                TextMatrix = currentTextLineMatrix.Clone();
+            }
+        }
+
+        public void MoveToNextLineWithOffset()
+        {
+            MoveToNextLineWithOffset(0, -1 * GetCurrentState().FontState.Leading);
+        }
+        #endregion
+
+        public void SetTextLeading(double leading)
+        {
+            GetCurrentState().FontState.Leading = leading;
+        }
+
+        public void SetTextRenderingMode(TextRenderingMode mode)
+        {
+            GetCurrentState().FontState.TextRenderingMode = mode;
+        }
+
+        public void SetTextRise(double rise)
+        {
+            GetCurrentState().FontState.Rise = rise;
+        }
+
+        public void SetWordSpacing(double spacing)
+        {
+            GetCurrentState().FontState.WordSpacing = spacing;
+        }
+
+        public void ShowPositionedText(IReadOnlyList<IToken> tokens)
+        {
+            var currentState = GetCurrentState();
+
+            var textState = currentState.FontState;
+
+            var fontSize = textState.FontSize;
+            var horizontalScaling = textState.HorizontalScaling / 100.0;
+            var font = currentPage.ExperimentalAccess.ResourceStore.GetFont(textState.FontName);
+
+            var isVertical = font.IsVertical;
+
+            foreach (var token in tokens)
+            {
+                if (token is NumericToken number)
+                {
+                    var positionAdjustment = (double)number.Data;
+
+                    double tx, ty;
+                    if (isVertical)
+                    {
+                        tx = 0;
+                        ty = -positionAdjustment / 1000 * fontSize;
+                    }
+                    else
+                    {
+                        tx = -positionAdjustment / 1000 * fontSize * horizontalScaling;
+                        ty = 0;
+                    }
+
+                    AdjustTextMatrix(tx, ty);
+                }
+                else
+                {
+                    IReadOnlyList<byte> bytes;
+                    if (token is HexToken hex)
+                    {
+                        bytes = hex.Bytes;
+                    }
+                    else
+                    {
+                        bytes = OtherEncodings.StringAsLatin1Bytes(((StringToken)token).Data);
+                    }
+
+                    ShowText(new ByteArrayInputBytes(bytes));
+                }
+            }
+        }
+
+        public void ShowText(IInputBytes bytes)
+        {
+            var currentState = GetCurrentState();
+
+            IFont font = currentState.FontState.FromExtendedGraphicsState ? activeExtendedGraphicsStateFont : currentPage.ExperimentalAccess.ResourceStore.GetFont(currentState.FontState.FontName);
+
+            if (font == null)
+            {
+                throw new InvalidOperationException($"Could not find the font with name {currentState.FontState.FontName} in the resource store. It has not been loaded yet.");
+            }
+
+            var fontSize = currentState.FontState.FontSize;
+            var horizontalScaling = currentState.FontState.HorizontalScaling / 100.0;
+            var characterSpacing = currentState.FontState.CharacterSpacing;
+            var rise = currentState.FontState.Rise;
+
+            using (Matrix renderingMatrix = MatrixExtensions.FromValues(fontSize * horizontalScaling, 0, 0, fontSize, 0, rise))
+            {
+
+                // TODO: this does not seem correct, produces the correct result for now but we need to revisit.
+                // see: https://stackoverflow.com/questions/48010235/pdf-specification-get-font-size-in-points
+                double pointSize = double.NaN;
+                using (var fontSizeMatrix = currentGraphics.Transform.Clone())
+                {
+                    //ReverseFlipYAxisTransform(fontSizeMatrix);
+                    //fontSizeMatrix.Multiply(TextMatrix, MatrixOrder.Append);
+                    //fontSizeMatrix = fontSizeMatrix.Multiply(fontSize);
+
+                    pointSize = Math.Round(TextMatrix.Elements[0] * fontSize, 2); // A
+
+                    // Assume a rotated letter
+                    if (pointSize == 0)
+                    {
+                        pointSize = Math.Round(TextMatrix.Elements[1] * fontSize, 2); // B
+                    }
+                }
+
+                if (pointSize < 0)
+                {
+                    pointSize *= -1;
+                }
+
+                while (bytes.MoveNext())
+                {
+                    var code = font.ReadCharacterCode(bytes, out int codeLength);
+
+                    var foundUnicode = font.TryGetUnicode(code, out var unicode);
+
+                    if (!foundUnicode || unicode == null)
+                    {
+                        //log?.Warn($"We could not find the corresponding character with code {code} in font {font.Name}.");
+                        // Try casting directly to string as in PDFBox 1.8.
+                        unicode = new string((char)code, 1);
+                    }
+
+                    var wordSpacing = 0.0;
+                    if (code == ' ' && codeLength == 1)
+                    {
+                        wordSpacing += GetCurrentState().FontState.WordSpacing;
+                    }
+
+                    var boundingBox = font.GetBoundingBox(code);
+
+                    using (var textMatrix = TextMatrix.Clone())
+                    {
+                        if (font.IsVertical)
+                        {
+                            if (!(font is IVerticalWritingSupported verticalFont))
+                            {
+                                throw new InvalidOperationException($"Font {font.Name} was in vertical writing mode but did not implement {nameof(IVerticalWritingSupported)}.");
+                            }
+
+                            var positionVector = verticalFont.GetPositionVector(code);
+
+                            textMatrix.Translate((float)positionVector.X, (float)positionVector.Y); //  textMatrix = 
+                        }
+
+                        // If the text rendering mode calls for filling, the current nonstroking color in the graphics state is used; 
+                        // if it calls for stroking, the current stroking color is used.
+                        // In modes that perform both filling and stroking, the effect is as if each glyph outline were filled and then stroked in separate operations.
+                        // TODO: expose color as something more advanced
+                        Color color = currentState.FontState.TextRenderingMode != TextRenderingMode.Stroke
+                            ? currentState.CurrentNonStrokingColor
+                            : currentState.CurrentStrokingColor;
+
+                        using (var renderingMatrixCopy = renderingMatrix.Clone())
+                        {
+                            renderingMatrixCopy.Multiply(textMatrix, MatrixOrder.Append);
+
+                            // print fonts that have paths
+                            if (font.TryGetPath(code, out var pdfSubpaths))
+                            {
+                                if (pdfSubpaths == null || pdfSubpaths.Count == 0)
+                                {
+                                    throw new ArgumentException("DrawLetter(): empty path");
+                                }
+
+                                GraphicsPath gp = new GraphicsPath(FillMode.Alternate); // Alternate?
+                                foreach (var subpath in pdfSubpaths)
+                                {
+                                    foreach (var c in subpath.Commands)
+                                    {
+                                        if (c is PdfSubpath.Move move)
+                                        {
+                                            gp.StartFigure();
+                                        }
+                                        else if (c is PdfSubpath.Line line)
+                                        {
+                                            gp.AddLine((float)line.From.X, (float)line.From.Y,
+                                                       (float)line.To.X, (float)line.To.Y);
+                                        }
+                                        else if (c is PdfSubpath.BezierCurve curve)
+                                        {
+                                            gp.AddBezier((float)curve.StartPoint.X, (float)curve.StartPoint.Y,
+                                                         (float)curve.FirstControlPoint.X, (float)curve.FirstControlPoint.Y,
+                                                         (float)curve.SecondControlPoint.X, (float)curve.SecondControlPoint.Y,
+                                                         (float)curve.EndPoint.X, (float)curve.EndPoint.Y);
+                                        }
+                                        else if (c is PdfSubpath.Close)
+                                        {
+                                            gp.CloseFigure();
+                                        }
+                                    }
+                                }
+
+                                gp.Transform(renderingMatrixCopy);
+
+                                using (var fillBrush = color != null ? new SolidBrush(color) : Brushes.Black)
+                                {
+                                    currentGraphics.FillPath(fillBrush, gp);
+                                }
+                            }
+                            else
+                            {
+                                if (unicode != "" && unicode != " ")
+                                {
+                                    FontFamily fontFamily;
+                                    if (font.TryGetDecodedFontBytes(currentPage.ExperimentalAccess.PdfTokenScanner, currentPage.ExperimentalAccess.FilterProvider, out var fontBytes) &&
+                                        TryLoadFontCollection(fontBytes.ToArray(), out PrivateFontCollection fontCollection))
+                                    {
+                                        fontFamily = fontCollection.Families[0];
+                                        //fontFamily.IsStyleAvailable
+                                        Font font1 = new Font(fontFamily, (float)fontSize, FontStyle.Regular);
+                                    }
+                                    else
+                                    {
+                                        fontFamily = new FontFamily("Arial");//CleanFontName(font.Name));
+                                    }
+                                  
+                                    var style = font.Details.IsBold ? FontStyle.Bold : (font.Details.IsItalic ? FontStyle.Italic : FontStyle.Regular);
+
+                                    var bbox = boundingBox.GlyphBounds;
+                                    GraphicsPath gp = new GraphicsPath();
+
+                                    try
+                                    {
+                                        RectangleF charBbox = new RectangleF((float)bbox.BottomLeft.X, (float)bbox.BottomLeft.Y, (float)bbox.Width, (float)bbox.Height);
+                                        //RectangleF charBbox = new RectangleF(0, 0, (float)bbox.Width, (float)(bbox.TopRight.Y - bbox.BottomLeft.Y));
+                                        gp.AddString(unicode, fontFamily, (int)style, (float)fontSize, charBbox, StringFormat.GenericDefault);
+
+                                        using (var inverseYAxis = MatrixExtensions.GetScaleMatrix(1, -1))
+                                        {
+                                            //inverseYAxis.Translate(0, (float)bbox.Height, MatrixOrder.Append);
+                                            gp.Transform(inverseYAxis);
+                                        }
+
+                                    }
+                                    catch (Exception)
+                                    {
+                                        gp.StartFigure();
+                                        gp.AddLine((float)bbox.BottomLeft.X, (float)bbox.BottomLeft.Y, (float)bbox.TopRight.X, (float)bbox.BottomLeft.Y);
+                                        gp.AddLine((float)bbox.TopRight.X, (float)bbox.BottomLeft.Y, (float)bbox.TopRight.X, (float)bbox.TopRight.Y);
+                                        gp.AddLine((float)bbox.TopRight.X, (float)bbox.TopRight.Y, (float)bbox.BottomLeft.X, (float)bbox.TopRight.Y);
+                                        gp.CloseFigure();
+                                    }
+                                                       
+                                    gp.Transform(renderingMatrixCopy);
+
+                                    using (var fillBrush = color != null ? new SolidBrush(color) : Brushes.Black)
+                                    {
+                                        currentGraphics.FillPath(fillBrush, gp);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    double tx, ty;
+                    if (font.IsVertical)
+                    {
+                        var verticalFont = (IVerticalWritingSupported)font;
+                        var displacement = verticalFont.GetDisplacementVector(code);
+                        tx = 0;
+                        ty = (displacement.Y * fontSize) + characterSpacing + wordSpacing;
+                    }
+                    else
+                    {
+                        tx = (boundingBox.Width * fontSize + characterSpacing + wordSpacing) * horizontalScaling;
+                        ty = 0;
+                    }
+
+                    TextMatrix.Translate((float)tx, (float)ty);
+                }
+            }
+        }
+
+        private static bool TryLoadFontCollection(byte[] buffer, out PrivateFontCollection fontCollection)
+        {
+            //https://web.archive.org/web/20170313145219/https://blog.andreloker.de/post/2008/07/03/Load-a-font-from-disk-stream-or-byte-array.aspx
+            fontCollection = null;
+            // pin array so we can get its address
+            var handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+
+            try
+            {
+                var ptr = Marshal.UnsafeAddrOfPinnedArrayElement(buffer, 0);
+                fontCollection = new PrivateFontCollection();
+                fontCollection.AddMemoryFont(ptr, buffer.Length);
+                return fontCollection.Families.Length > 0;
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                // don't forget to unpin the array!
+                handle.Free();
+            }
+        }
+
+        private static string CleanFontName(string font)
+        {
+            if (font.Length > 7 && font[6].Equals('+'))
+            {
+                string subset = font.Substring(0, 6);
+                if (subset.Equals(subset.ToUpper()))
+                {
+                    return font.Split('+')[1];
+                }
+            }
+
+            return font;
+        }
+
+        public void SetCharacterSpacing(double spacing)
+        {
+            GetCurrentState().FontState.CharacterSpacing = spacing;
+        }
+
+        public void SetFontAndSize(NameToken font, double size)
+        {
+            var currentState = GetCurrentState();
+            currentState.FontState.FontSize = size;
+            currentState.FontState.FontName = font;
+        }
+
+        public void SetHorizontalScaling(double scale)
+        {
+            GetCurrentState().FontState.HorizontalScaling = scale;
+        }
+        #endregion
+
+        #region TransformationMatrix
+        /// <summary>
+        /// Flip the matrix to be in system.drawing coordinates
+        /// </summary>
+        /// <param name="matrix"></param>
+        public void FlipYAxisTransform(Matrix matrix)
+        {
+            // flip transform to system.drawing
+            matrix.Translate(0, -pageHeight, MatrixOrder.Append);
+            matrix.Scale(1, -1, MatrixOrder.Append);
+        }
+
+        /// <summary>
+        /// Flip the matrix to be in Pdf coordinates
+        /// </summary>
+        /// <param name="matrix"></param>
+        public void ReverseFlipYAxisTransform(Matrix matrix)
+        {
+            // flip back to pdf coordinate system
+            matrix.Scale(1, -1, MatrixOrder.Append);
+            matrix.Translate(0, pageHeight, MatrixOrder.Append);
+        }
+
+        [System.Diagnostics.Contracts.Pure]
+        private static Matrix GetInitialMatrix(int rotation, MediaBox mediaBox)
+        {
+            // TODO: this is a bit of a hack because I don't understand matrices
+            // TODO: use MediaBox (i.e. pageSize) or CropBox?
+
+            /* 
+             * There should be a single Affine Transform we can apply to any point resulting
+             * from a content stream operation which will rotate the point and translate it back to
+             * a point where the origin is in the page's lower left corner.
+             *
+             * For example this matrix represents a (clockwise) rotation and translation:
+             * [  cos  sin  tx ]
+             * [ -sin  cos  ty ]
+             * [    0    0   1 ]
+             * Warning: rotation is counter-clockwise here
+             * 
+             * The values of tx and ty are those required to move the origin back to the expected origin (lower-left).
+             * The corresponding values should be:
+             * Rotation:  0   90  180  270
+             *       tx:  0    0    w    w
+             *       ty:  0    h    h    0
+             *
+             * Where w and h are the page width and height after rotation.
+            */
+
+            float cos, sin;
+            float dx = 0, dy = 0;
+            switch (rotation)
+            {
+                case 0:
+                    cos = 1;
+                    sin = 0;
+                    break;
+                case 90:
+                    cos = 0;
+                    sin = 1;
+                    dy = (float)mediaBox.Bounds.Height;
+                    break;
+                case 180:
+                    cos = -1;
+                    sin = 0;
+                    dx = (float)mediaBox.Bounds.Width;
+                    dy = (float)mediaBox.Bounds.Height;
+                    break;
+                case 270:
+                    cos = 0;
+                    sin = -1;
+                    dx = (float)mediaBox.Bounds.Width;
+                    break;
+                default:
+                    throw new InvalidOperationException($"Invalid value for page rotation: {rotation}.");
+            }
+
+            return new Matrix(cos, -sin,
+                              sin, cos,
+                              dx, dy);
+        }
+
+
+        public void ModifyCurrentTransformationMatrix(double[] value)
+        {
+            using (Matrix ctm = currentGraphics.Transform.Clone())
+            {
+                // flip back to pdf coordinate system
+                ReverseFlipYAxisTransform(ctm);
+
+                // update pdf matrix
+                ctm.Multiply(MatrixExtensions.FromArray(value), MatrixOrder.Prepend);
+
+                // flip transform to system.drawing
+                FlipYAxisTransform(ctm);
+
+                // update transformation matrix
+                currentGraphics.Transform = ctm;
+            }
+
+        }
+        #endregion
+
+        public void SetNamedGraphicsState(NameToken stateName)
+        {
+            var currentGraphicsState = GetCurrentState();
+
+            var state = currentPage.ExperimentalAccess.ResourceStore.GetExtendedGraphicsStateDictionary(stateName);
+
+            if (state.TryGet(NameToken.Lw, currentPage.ExperimentalAccess.PdfTokenScanner, out NumericToken lwToken))
+            {
+                currentGraphicsState.LineWidth = lwToken.Data;
+            }
+
+            if (state.TryGet(NameToken.Lc, currentPage.ExperimentalAccess.PdfTokenScanner, out NumericToken lcToken))
+            {
+                currentGraphicsState.LineCap = ((LineCapStyle)lcToken.Int).ToSystemLineCap();
+                currentGraphicsState.DashCap = ((LineCapStyle)lcToken.Int).ToSystemDashCap();
+            }
+
+            if (state.TryGet(NameToken.Lj, currentPage.ExperimentalAccess.PdfTokenScanner, out NumericToken ljToken))
+            {
+                currentGraphicsState.JoinStyle = ((LineJoinStyle)ljToken.Int).ToSystemLineJoin();
+            }
+
+            if (state.TryGet(NameToken.Font, currentPage.ExperimentalAccess.PdfTokenScanner, out ArrayToken fontArray) && fontArray.Length == 2
+                && fontArray.Data[0] is IndirectReferenceToken fontReference && fontArray.Data[1] is NumericToken sizeToken)
+            {
+                currentGraphicsState.FontState.FromExtendedGraphicsState = true;
+                currentGraphicsState.FontState.FontSize = (double)sizeToken.Data;
+                activeExtendedGraphicsStateFont = currentPage.ExperimentalAccess.ResourceStore.GetFontDirectly(fontReference);
+            }
+        }
+        #endregion
+
+        #region IDrawingProcessor
+        public void DrawImage(IPdfImage image)
+        {
+            if (image.TryGetPng(out var png))
+            {
+                using (var img = Image.FromStream(new MemoryStream(png)))
+                {
+                    img.RotateFlip(RotateFlipType.RotateNoneFlipY);
+                    currentGraphics.DrawImage(img, new RectangleF(0, 0, 1, 1));
+                }
+            }
+            else
+            {
+                if (image.TryGetBytes(out var bytes))
+                {
+                    try
+                    {
+                        using (var img = Image.FromStream(new MemoryStream(bytes.ToArray())))
+                        {
+                            img.RotateFlip(RotateFlipType.RotateNoneFlipY);
+                            currentGraphics.DrawImage(img, new RectangleF(0, 0, 1, 1));
+                        }
+                        return;
+                    }
+                    catch (Exception)
+                    {
+
+                    }
+                }
+
+                try
+                {
+                    using (var img = Image.FromStream(new MemoryStream(image.RawBytes.ToArray())))
+                    {
+                        img.RotateFlip(RotateFlipType.RotateNoneFlipY);
+                        currentGraphics.DrawImage(img, new RectangleF(0, 0, 1, 1));
+                    }
+                }
+                catch (Exception)
+                {
+                    currentGraphics.FillRectangle(Brushes.HotPink, new RectangleF(0, 0, 1, 1));
+                }
+            }
+        }
+
+        public void DrawLetter(string value, PdfRectangle glyphRectangle, PdfPoint startBaseLine, PdfPoint endBaseLine, double width, double fontSize, FontDetails font, IColor color, double pointSize)
+        {
+
+        }
+
+        public void DrawLetter(IReadOnlyList<PdfSubpath> pdfSubpaths, IColor color, TransformationMatrix renderingMatrix, TransformationMatrix textMatrix, TransformationMatrix transformationMatrix)
+        {
+
+        }
+
+        public void Init(Page page)
+        {
+
+        }
+
+        public void Init(Page page, float scale)
+        {
+            // flip transform
+            //currentGraphics.Transform = GetInitialMatrix(page.Rotation.Value, page.MediaBox);
+            currentGraphics.TranslateTransform(0, -pageHeight, MatrixOrder.Append);
+            currentGraphics.ScaleTransform(1, -1, MatrixOrder.Append);
+
+            //graphics.PageUnit = GraphicsUnit.Point;
+            //graphics.RenderingOrigin = new Point(0, pageHeight);
+
+            // initiate CurrentClippingPath to cropBox
+            GraphicsPath clip = new GraphicsPath(FillMode.Alternate);
+            clip.StartFigure();
+            clip.AddLine((float)page.CropBox.Bounds.BottomLeft.X, (float)page.CropBox.Bounds.BottomLeft.Y, (float)page.CropBox.Bounds.TopRight.X, (float)page.CropBox.Bounds.BottomLeft.Y);
+            clip.AddLine((float)page.CropBox.Bounds.TopRight.X, (float)page.CropBox.Bounds.BottomLeft.Y, (float)page.CropBox.Bounds.TopRight.X, (float)page.CropBox.Bounds.TopRight.Y);
+            clip.AddLine((float)page.CropBox.Bounds.TopRight.X, (float)page.CropBox.Bounds.TopRight.Y, (float)page.CropBox.Bounds.BottomLeft.X, (float)page.CropBox.Bounds.TopRight.Y);
+            clip.CloseFigure();
+            currentGraphics.SetClip(clip, CombineMode.Replace);
+
+            graphicsStack.Push(new CurrentSystemGraphicsState()
+            {
+                GraphicsState = currentGraphics.Save()
+            });
+
+            ColorSpaceContext = new SystemDrawingColorSpaceContext(GetCurrentState, currentPage.ExperimentalAccess.ResourceStore);
+        }
+
+        float pageHeight;
+        Page currentPage;
+
+        public MemoryStream DrawPage(Page page, double scale)
+        {
+            currentPage = page;
+
+            var ms = new MemoryStream();
+
+            pageHeight = (float)page.Height;
+
+            using (var bitmap = new Bitmap((int)Math.Ceiling(page.Width), (int)Math.Ceiling(page.Height)))
+            using (currentGraphics = Graphics.FromImage(bitmap))
+            {
+                currentGraphics.SmoothingMode = SmoothingMode.HighQuality;
+                currentGraphics.CompositingQuality = CompositingQuality.HighQuality;
+                currentGraphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                currentGraphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+                currentGraphics.Clear(Color.White);
+                Init(page, 1f);
+
+                foreach (var stateOperation in page.Operations)
+                {
+                    stateOperation.Run(this);
+                }
+
+                bitmap.Save(ms, ImageFormat.Png);
+            }
+
+            return ms;
+        }
+
+        public void DrawPath(PdfPath path)
+        {
+
+        }
+
+        public void UpdateClipPath()
+        {
+
+        }
+        #endregion
+    }
+}

@@ -40,10 +40,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var newMatrix = TransformationMatrix.FromArray(Value);
-
-            operationContext.TextMatrices.TextMatrix = newMatrix;
-            operationContext.TextMatrices.TextLineMatrix = newMatrix;
+            operationContext.SetTextMatrix(Array.ConvertAll(Value, x => (double)x));
         }
 
         /// <inheritdoc />

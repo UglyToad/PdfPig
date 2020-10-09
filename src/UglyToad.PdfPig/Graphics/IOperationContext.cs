@@ -21,11 +21,6 @@
         PdfPoint CurrentPosition { get; set; }
 
         /// <summary>
-        /// The matrices for the current text state.
-        /// </summary>
-        TextMatrices TextMatrices { get; }
-
-        /// <summary>
         /// The number of graphics states on the stack.
         /// </summary>
         int StackSize { get; }
@@ -264,5 +259,25 @@
         /// Initial value: 0.
         /// </summary>
         void SetCharacterSpacing(double spacing);
+
+        /// <summary>
+        /// Begin a text object, initializing the text matrix and the text line matrix to the identity matrix. Text objects cannot be nested.
+        /// </summary>
+        void BeginText();
+
+        /// <summary>
+        /// End a text object, discarding the text matrix.
+        /// </summary>
+        void EndText();
+
+        /// <summary>
+        /// Set the text matrix and the text line matrix.
+        /// </summary>
+        void SetTextMatrix(double[] value);
+
+        /// <summary>
+        /// Move to the start of the next line offset by Tx Ty.
+        /// </summary>
+        void MoveToNextLineWithOffset(double tx, double ty);
     }
 }

@@ -4,8 +4,15 @@
     using PdfFonts;
     using Tokens;
 
-    internal interface IResourceStore
+    /// <summary>
+    /// ResourceStore interface.
+    /// </summary>
+    public interface IResourceStore
     {
+        /// <summary>
+        /// Load Resource Dictionary.
+        /// </summary>
+        /// <param name="resourceDictionary"></param>
         void LoadResourceDictionary(DictionaryToken resourceDictionary);
 
         /// <summary>
@@ -14,16 +21,47 @@
         /// </summary>
         void UnloadResourceDictionary();
 
+        /// <summary>
+        /// GetFont
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         IFont GetFont(NameToken name);
 
+        /// <summary>
+        /// GetXObject
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         StreamToken GetXObject(NameToken name);
 
+        /// <summary>
+        /// GetExtendedGraphicsStateDictionary
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         DictionaryToken GetExtendedGraphicsStateDictionary(NameToken name);
 
+        /// <summary>
+        /// GetFontDirectly
+        /// </summary>
+        /// <param name="fontReferenceToken"></param>
+        /// <returns></returns>
         IFont GetFontDirectly(IndirectReferenceToken fontReferenceToken);
 
+        /// <summary>
+        /// TryGetNamedColorSpace
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="namedColorSpace"></param>
+        /// <returns></returns>
         bool TryGetNamedColorSpace(NameToken name, out ResourceColorSpace namedColorSpace);
 
+        /// <summary>
+        /// GetMarkedContentPropertiesDictionary
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         DictionaryToken GetMarkedContentPropertiesDictionary(NameToken name);
     }
 }

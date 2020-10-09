@@ -4,17 +4,22 @@
     using System.Drawing;
     using System.Drawing.Drawing2D;
     using UglyToad.PdfPig.Graphics;
+    using UglyToad.PdfPig.Graphics.Colors;
     using UglyToad.PdfPig.Graphics.Core;
 
     /// <summary>
     /// The state of the current graphics control parameters set by operations in the content stream.
-    /// <para>NOT IN USE</para>
     /// </summary>
     /// <remarks>
     /// Initialized per page.
     /// </remarks>
     public class CurrentSystemGraphicsState : IDeepCloneable<CurrentSystemGraphicsState>
     {
+        /// <summary>
+        /// The current graphics state.
+        /// </summary>
+        public GraphicsState GraphicsState { get; set; }
+
         /// <summary>
         /// The current clipping path.
         /// </summary>
@@ -33,7 +38,9 @@
         /// <summary>
         /// Specifies the shape of line ends for open stroked paths.
         /// </summary>
-        public LineCap CapStyle { get; set; } = LineCap.Square; //LineCapStyle.Butt;
+        public LineCap LineCap { get; set; } = LineCap.Square; //LineCapStyle.Butt;
+
+        public DashCap DashCap { get; set; } = DashCap.Flat;
 
         /// <summary>
         /// Specifies the shape of joins between connected stroked path segments.
@@ -46,9 +53,14 @@
         public decimal MiterLimit { get; set; } = 10;
 
         /// <summary>
-        /// The pattern to be used for stroked lines.
+        /// The pattern's array to be used for stroked lines.
         /// </summary>
-        public LineDashPattern LineDashPattern { get; set; } = LineDashPattern.Solid;
+        public float[] DashPatternArray { get; set; } = null;
+
+        /// <summary>
+        /// The pattern's phase to be used for stroked lines.
+        /// </summary>
+        public int DashPatternPhase { get; set; } = 0;
 
         /// <summary>
         /// The rendering intent to use when converting CIE-based colors to device colors.
@@ -69,14 +81,7 @@
         /// Should soft mask and alpha constant values be interpreted as shape (<see langword="true"/>) or opacity (<see langword="false"/>) values?
         /// </summary>
         public bool AlphaSource { get; set; } = false;
-
-        /// <summary>
-        /// Maps positions from user coordinates to device coordinates.
-        /// </summary>
-        public Matrix CurrentTransformationMatrix { get; set; } = MatrixExtensions.Identity;
-
         #region Device Dependent
-
         /// <summary>
         /// Should painting in a colorant set erase (<see langword="false"/>)
         /// or leave unchanged (<see langword="true"/>) areas of other colorant sets?
@@ -105,15 +110,50 @@
         public decimal Smoothness { get; set; } = 0;
 
         /// <summary>
-        /// The current active stroking color for paths.
+        /// The current active stroking pen for paths.
         /// </summary>
-        public Color CurrentStrokingColor { get; set; }
+        public Pen CurrentStrokingPen
+        {
+            get
+            {
+                var pen = new Pen(CurrentStrokingColor, (float)LineWidth)
+                {
+                    LineJoin = JoinStyle,
+                    StartCap = LineCap,
+                    EndCap = LineCap,
+                    DashCap = DashCap,
+                    DashOffset = DashPatternPhase, // to check here
+                    MiterLimit = (float)MiterLimit,
+                };
+
+                if (DashPatternArray != null && DashPatternArray.Length > 0)
+                {
+                    pen.DashPattern = DashPatternArray;
+                }
+
+                return pen;
+            }
+        }
 
         /// <summary>
         /// The current active non-stroking color for text and fill.
         /// </summary>
         public Color CurrentNonStrokingColor { get; set; }
 
+        /// <summary>
+        /// The current active non-stroking color space for text and fill.
+        /// </summary>
+        public ColorSpace? CurrentNonStrokingColorSpace { get; set; }
+
+        /// <summary>
+        /// The current active stroking color for paths.
+        /// </summary>
+        public Color CurrentStrokingColor { get; set; }
+
+        /// <summary>
+        /// The current active stroking color space for paths.
+        /// </summary>
+        public ColorSpace? CurrentStrokingColorSpace { get; set; }
         #endregion
 
         /// <inheritdoc />
@@ -121,14 +161,16 @@
         {
             return new CurrentSystemGraphicsState
             {
+                GraphicsState = GraphicsState,
                 FontState = FontState?.DeepClone(),
                 RenderingIntent = RenderingIntent,
-                LineDashPattern = LineDashPattern,
-                CurrentTransformationMatrix = CurrentTransformationMatrix,
+                DashCap = DashCap,
+                DashPatternArray = DashPatternArray,
+                DashPatternPhase = DashPatternPhase,
                 LineWidth = LineWidth,
                 JoinStyle = JoinStyle,
                 Overprint = Overprint,
-                CapStyle = CapStyle,
+                LineCap = LineCap,
                 MiterLimit = MiterLimit,
                 Flatness = Flatness,
                 AlphaConstant = AlphaConstant,

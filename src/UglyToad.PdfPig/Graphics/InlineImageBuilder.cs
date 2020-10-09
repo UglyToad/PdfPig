@@ -11,12 +11,30 @@
     using Tokenization.Scanner;
     using Tokens;
 
-    internal class InlineImageBuilder
+    /// <summary>
+    /// InlineImageBuilder
+    /// </summary>
+    public class InlineImageBuilder
     {
+        /// <summary>
+        /// Properties
+        /// </summary>
         public IReadOnlyDictionary<NameToken, IToken> Properties { get; set; }
 
+        /// <summary>
+        /// Bytes
+        /// </summary>
         public IReadOnlyList<byte> Bytes { get; set; }
 
+        /// <summary>
+        /// CreateInlineImage
+        /// </summary>
+        /// <param name="transformationMatrix"></param>
+        /// <param name="filterProvider"></param>
+        /// <param name="tokenScanner"></param>
+        /// <param name="defaultRenderingIntent"></param>
+        /// <param name="resourceStore"></param>
+        /// <returns></returns>
         public InlineImage CreateInlineImage(TransformationMatrix transformationMatrix, IFilterProvider filterProvider,
             IPdfTokenScanner tokenScanner,
             RenderingIntent defaultRenderingIntent,

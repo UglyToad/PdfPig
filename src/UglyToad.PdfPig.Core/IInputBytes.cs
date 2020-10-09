@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Core
 {
     using System;
+    using System.Collections.Generic;
 
     /// <inheritdoc />
     /// <summary>
@@ -8,6 +9,11 @@
     /// </summary>
     public interface IInputBytes : IDisposable
     {
+        /// <summary>
+        /// Bytes
+        /// </summary>
+        IReadOnlyList<byte> Bytes { get; }
+
         /// <summary>
         /// The current offset in bytes.
         /// </summary>

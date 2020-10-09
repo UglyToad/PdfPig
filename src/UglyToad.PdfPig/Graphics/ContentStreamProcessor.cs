@@ -909,5 +909,37 @@
         {
             GetCurrentState().FontState.CharacterSpacing = spacing;
         }
+
+        public void BeginText()
+        {
+            TextMatrices.TextMatrix = TransformationMatrix.Identity;
+            TextMatrices.TextLineMatrix = TransformationMatrix.Identity;
+        }
+
+        public void EndText()
+        {
+            TextMatrices.TextMatrix = TransformationMatrix.Identity;
+            TextMatrices.TextLineMatrix = TransformationMatrix.Identity;
+        }
+
+        public void SetTextMatrix(double[] value)
+        {
+            var newMatrix = TransformationMatrix.FromArray(value);
+
+            TextMatrices.TextMatrix = newMatrix;
+            TextMatrices.TextLineMatrix = newMatrix;
+        }
+
+        public void MoveToNextLineWithOffset(double tx, double ty)
+        {
+            var currentTextLineMatrix = TextMatrices.TextLineMatrix;
+
+            var matrix = TransformationMatrix.FromValues(1, 0, 0, 1, (double)tx, (double)ty);
+
+            var transformed = matrix.Multiply(currentTextLineMatrix);
+
+            TextMatrices.TextLineMatrix = transformed;
+            TextMatrices.TextMatrix = transformed;
+        }
     }
 }

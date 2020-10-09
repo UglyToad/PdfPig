@@ -8,7 +8,7 @@ namespace UglyToad.PdfPig.Tests
 {
     public class ExportToImage
     {
-        private const int mult = 3;
+        private const int mult = 2;
 
         private const string ByzantineGenerals = "byz";
         private const string NonLatinAcrobatDistiller = "Single Page Non Latin - from acrobat distiller";
@@ -22,6 +22,9 @@ namespace UglyToad.PdfPig.Tests
         private const string SinglePage180ClockwiseRotation = "SinglePage180ClockwiseRotation - from PdfPig";
         private const string SinglePage270ClockwiseRotation = "SinglePage270ClockwiseRotation - from PdfPig";
         private const string TransparentImage = "Random 2 Columns Lists Images";
+        private const string APISmap1 = "APISmap1";
+        private const string PathExtOddeven = "path_ext_oddeven";
+        private const string ComplexRotated = "complex rotated";
 
         private static string GetFilename(string name)
         {
@@ -33,6 +36,24 @@ namespace UglyToad.PdfPig.Tests
             }
 
             return Path.Combine(documentFolder, name);
+        }
+
+        private static string GetDlaFilename(string name)
+        {
+            var documentFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Dla", "Documents"));
+
+            if (!name.EndsWith(".pdf"))
+            {
+                name += ".pdf";
+            }
+
+            return Path.Combine(documentFolder, name);
+        }
+
+        [Fact]
+        public void ComplexRotatedTest()
+        {
+            RunDla(ComplexRotated, 1);
         }
 
         [Fact]
@@ -113,6 +134,39 @@ namespace UglyToad.PdfPig.Tests
             Run(TransparentImage, 1);
         }
 
+        [Fact]
+        public void APISmap1Test()
+        {
+            Run(APISmap1, 1);
+        }
+
+        [Fact]
+        public void path_ext_oddevenTest()
+        {
+            Run(PathExtOddeven, 1);
+        }
+
+        public static void RunDla(string file, int pageNo)
+        {
+            if (!Directory.Exists("Images"))
+            {
+                Directory.CreateDirectory("Images");
+            }
+
+            var pdfFileName = GetDlaFilename(file);
+            using (var doc = PdfDocument.Open(pdfFileName))
+            {
+                var page = doc.GetPage(pageNo);
+                using (var ms = page.ToImage(mult, new SystemDrawingProcessorV2()))
+                {
+                    var bitmap = Image.FromStream(ms);
+                    var imageName = $"{file}_{pageNo}_system-drawing.jpg";
+                    var savePath = Path.Combine("Images", imageName);
+                    bitmap.Save(savePath);
+                }
+            }
+        }
+
         public static void Run(string file, int pageNo)
         {
             if (!Directory.Exists("Images"))
@@ -124,7 +178,7 @@ namespace UglyToad.PdfPig.Tests
             using (var doc = PdfDocument.Open(pdfFileName))
             {
                 var page = doc.GetPage(pageNo);
-                using (var ms = page.ToImage(mult, new SystemDrawingProcessor()))
+                using (var ms = page.ToImage(mult, new SystemDrawingProcessorV2()))
                 {
                     var bitmap = Image.FromStream(ms);
                     var imageName = $"{file}_{pageNo}_system-drawing.jpg";

@@ -14,8 +14,19 @@ namespace UglyToad.PdfPig.XObjects
     using Tokenization.Scanner;
     using Tokens;
 
-    internal static class XObjectFactory
+    /// <summary>
+    /// XObjectFactory
+    /// </summary>
+    public static class XObjectFactory
     {
+        /// <summary>
+        /// ReadImage
+        /// </summary>
+        /// <param name="xObject"></param>
+        /// <param name="pdfScanner"></param>
+        /// <param name="filterProvider"></param>
+        /// <param name="resourceStore"></param>
+        /// <returns></returns>
         public static XObjectImage ReadImage(XObjectContentRecord xObject, IPdfTokenScanner pdfScanner,
             IFilterProvider filterProvider,
             IResourceStore resourceStore)

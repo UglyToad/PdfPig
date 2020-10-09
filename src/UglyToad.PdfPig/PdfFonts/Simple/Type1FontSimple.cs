@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Simple
 {
-    using System.Collections.Generic;
     using Cmap;
     using Composite;
     using Core;
@@ -8,7 +7,11 @@
     using Fonts.CompactFontFormat;
     using Fonts.Encodings;
     using Fonts.Type1;
+    using System.Collections.Generic;
     using Tokens;
+    using UglyToad.PdfPig.Filters;
+    using UglyToad.PdfPig.Parser.Parts;
+    using UglyToad.PdfPig.Tokenization.Scanner;
     using Util.JetBrains.Annotations;
     using static UglyToad.PdfPig.Core.PdfSubpath;
 
@@ -292,6 +295,19 @@
                 path = pathToReturn;
                 return true;
             }
+            return false;
+        }
+
+        public bool TryGetDecodedFontBytes(IPdfTokenScanner pdfTokenScanner, IFilterProvider filterProvider, out IReadOnlyList<byte> bytes)
+        {
+            bytes = null;
+            if (fontDescriptor?.FontFile?.ObjectKey != null)
+            {
+                var fontFileStream = DirectObjectFinder.Get<StreamToken>(fontDescriptor.FontFile.ObjectKey, pdfTokenScanner);
+                bytes = fontFileStream.Decode(filterProvider);
+                return true;
+            }
+
             return false;
         }
     }

@@ -7,6 +7,8 @@
     using Fonts.Encodings;
     using System.Collections.Generic;
     using Tokens;
+    using UglyToad.PdfPig.Filters;
+    using UglyToad.PdfPig.Tokenization.Scanner;
 
     internal class Type3Font : IFont
     {
@@ -94,6 +96,12 @@
         public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
         {
             path = new List<PdfSubpath>();
+            return false;
+        }
+
+        public bool TryGetDecodedFontBytes(IPdfTokenScanner pdfTokenScanner, IFilterProvider filterProvider, out IReadOnlyList<byte> bytes)
+        {
+            bytes = null;
             return false;
         }
     }

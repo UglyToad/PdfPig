@@ -10,6 +10,8 @@
     using Util.JetBrains.Annotations;
     using Tokenization.Scanner;
     using Graphics;
+    using UglyToad.PdfPig.Filters;
+    using UglyToad.PdfPig.Parser;
 
     /// <summary>
     /// Contains the content and provides access to methods of a single page in the <see cref="PdfDocument"/>.
@@ -35,7 +37,10 @@
         /// </summary>
         public CropBox CropBox { get; }
 
-        internal MediaBox MediaBox { get; }
+        /// <summary>
+        /// MediaBox
+        /// </summary>
+        public MediaBox MediaBox { get; }
 
         internal PageContent Content { get; }
 
@@ -78,7 +83,7 @@
         /// The parsed graphics state operations in the content stream for this page.
         /// </summary>
         public IReadOnlyList<IGraphicsStateOperation> Operations => Content.GraphicsStateOperations;
-        
+
         /// <summary>
         /// Access to members whose future locations within the API will change without warning.
         /// </summary>
@@ -93,7 +98,7 @@
             {
                 throw new ArgumentOutOfRangeException(nameof(number), "Page number cannot be 0 or negative.");
             }
-            
+
             Dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
 
             Number = number;
@@ -185,6 +190,26 @@
             /// The set of <see cref="PdfPath"/>s drawn by the PDF content.
             /// </summary>
             public IReadOnlyList<PdfPath> Paths => page.Content?.Paths ?? new List<PdfPath>();
+
+            /// <summary>
+            /// Gets the resource store.
+            /// </summary>
+            public IResourceStore ResourceStore => page.Content?.resourceStore;
+
+            /// <summary>
+            /// PdfTokenScanner
+            /// </summary>
+            public IPdfTokenScanner PdfTokenScanner => page.Content?.pdfScanner;
+
+            /// <summary>
+            /// Gets the filter provider
+            /// </summary>
+            public IFilterProvider FilterProvider => page.Content?.filterProvider;
+
+            /// <summary>
+            /// PageContentParser
+            /// </summary>
+            public IPageContentParser PageContentParser => page.Content?.pageContentParser;
 
             internal Experimental(Page page, AnnotationProvider annotationProvider)
             {

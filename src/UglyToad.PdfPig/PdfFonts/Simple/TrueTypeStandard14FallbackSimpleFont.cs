@@ -8,6 +8,8 @@
     using Fonts.Encodings;
     using Fonts.TrueType;
     using Tokens;
+    using UglyToad.PdfPig.Filters;
+    using UglyToad.PdfPig.Tokenization.Scanner;
 
     /// <summary>
     /// Some TrueType fonts use both the Standard 14 descriptor and the TrueType font from disk.
@@ -128,6 +130,12 @@
         {
             path = new List<PdfSubpath>();
             return false;
+        }
+
+        public bool TryGetDecodedFontBytes(IPdfTokenScanner pdfTokenScanner, IFilterProvider filterProvider, out IReadOnlyList<byte> bytes)
+        {
+            bytes = font?.FontFileBytes;
+            return bytes != null;
         }
 
         public class MetricOverrides

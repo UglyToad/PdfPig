@@ -12,6 +12,11 @@
     public class TrueTypeFont
     {
         /// <summary>
+        /// FontFileBytes
+        /// </summary>
+        public IReadOnlyList<byte> FontFileBytes { get; }
+
+        /// <summary>
         /// The font version number.
         /// </summary>
         public float Version { get; }
@@ -57,12 +62,13 @@
         /// <summary>
         /// Create a new <see cref="TrueTypeFont"/>.
         /// </summary>
-        internal TrueTypeFont(float version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tableHeaders, TableRegister tableRegister)
+        internal TrueTypeFont(float version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tableHeaders, TableRegister tableRegister, IReadOnlyList<byte> fontFileBytes)
         {
             Version = version;
             TableHeaders = tableHeaders ?? throw new ArgumentNullException(nameof(tableHeaders));
             TableRegister = tableRegister ?? throw new ArgumentNullException(nameof(tableRegister));
             NumberOfTables = tableHeaders.Count;
+            FontFileBytes = fontFileBytes;
 
             if (TableRegister.CMapTable != null)
             {

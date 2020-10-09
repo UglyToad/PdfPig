@@ -15,7 +15,7 @@
         /// <summary>
         /// Try and get the entry with a given name and type or look-up the object if it's an indirect reference.
         /// </summary>
-        internal static bool TryGet<T>(this DictionaryToken dictionary, NameToken name, IPdfTokenScanner tokenScanner, out T token) where T : IToken
+        public static bool TryGet<T>(this DictionaryToken dictionary, NameToken name, IPdfTokenScanner tokenScanner, out T token) where T : IToken
         {
             token = default(T);
             if (!dictionary.TryGet(name, out var t) || !(t is T typedToken))

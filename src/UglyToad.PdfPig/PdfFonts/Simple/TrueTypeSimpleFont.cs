@@ -9,6 +9,9 @@
     using Fonts.Encodings;
     using Fonts.TrueType;
     using Tokens;
+    using UglyToad.PdfPig.Filters;
+    using UglyToad.PdfPig.Parser.Parts;
+    using UglyToad.PdfPig.Tokenization.Scanner;
     using Util.JetBrains.Annotations;
 
     internal class TrueTypeSimpleFont : IFont
@@ -325,6 +328,19 @@
         public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
         {
             path = new List<PdfSubpath>();
+            return false;
+        }
+
+        public bool TryGetDecodedFontBytes(IPdfTokenScanner pdfTokenScanner, IFilterProvider filterProvider, out IReadOnlyList<byte> bytes)
+        {
+            bytes = null;
+            if (descriptor?.FontFile?.ObjectKey != null)
+            {
+                var fontFileStream = DirectObjectFinder.Get<StreamToken>(descriptor.FontFile.ObjectKey, pdfTokenScanner);
+                bytes = fontFileStream.Decode(filterProvider);
+                return true;
+            }
+
             return false;
         }
     }

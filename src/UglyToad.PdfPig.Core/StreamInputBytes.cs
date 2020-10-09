@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Core
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
 
     /// <inheritdoc />
@@ -13,6 +14,11 @@
         private readonly bool shouldDispose;
 
         private bool isAtEnd;
+
+        /// <summary>
+        /// Bytes
+        /// </summary>
+        public IReadOnlyList<byte> Bytes => throw new NotImplementedException();
 
         /// <inheritdoc />
         public long CurrentOffset => stream.Position;

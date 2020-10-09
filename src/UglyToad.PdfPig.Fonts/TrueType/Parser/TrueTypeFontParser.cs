@@ -125,7 +125,7 @@
                 OptionallyParseTables(tables, data, builder);
             }
 
-            return new TrueTypeFont(version, tables, builder.Build());
+            return new TrueTypeFont(version, tables, builder.Build(), data.InputBytes.Bytes);
         }
 
         internal static NameTable GetNameTable(TrueTypeDataBytes data)

@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
+﻿using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Text;
 using UglyToad.PdfPig.Core;
 using UglyToad.PdfPig.Graphics;
 using UglyToad.PdfPig.Graphics.Colors;
+using UglyToad.PdfPig.Graphics.Core;
 using static UglyToad.PdfPig.Core.PdfSubpath;
 
 namespace UglyToad.PdfPig.SystemDrawing
@@ -63,6 +61,67 @@ namespace UglyToad.PdfPig.SystemDrawing
                 return Color.FromArgb((int)(colorRgb.r * 255), (int)(colorRgb.g * 255), (int)(colorRgb.b * 255));
             }
             return Color.Black;
+        }
+
+        public static FillMode ToSystemFillMode(this FillingRule fillingRule)
+        {
+            switch (fillingRule)
+            {
+                case FillingRule.NonZeroWinding:
+                    return FillMode.Winding;
+
+                case FillingRule.EvenOdd:
+                default:
+                    return FillMode.Alternate;
+            }
+        }
+
+        public static LineJoin ToSystemLineJoin(this LineJoinStyle lineJoinStyle)
+        {
+            switch (lineJoinStyle)
+            {
+                case LineJoinStyle.Bevel:
+                    return LineJoin.Bevel;
+
+                case LineJoinStyle.Miter:
+                    return LineJoin.Bevel;
+
+                default:
+                case LineJoinStyle.Round:
+                    return LineJoin.Round;
+            }
+        }
+
+        public static LineCap ToSystemLineCap(this LineCapStyle lineCapStyle)
+        {
+            switch(lineCapStyle)
+            {
+                default:
+                case LineCapStyle.Butt:
+                    return LineCap.Square; //????
+
+                case LineCapStyle.ProjectingSquare:
+                    return LineCap.DiamondAnchor; // ?????????
+
+                case LineCapStyle.Round:
+                    return LineCap.Round;
+            }
+        }
+
+        public static DashCap ToSystemDashCap(this LineCapStyle lineCapStyle)
+        {
+            switch (lineCapStyle)
+            {
+                default:
+                case LineCapStyle.Butt:
+                    return DashCap.Flat; //????
+
+                case LineCapStyle.ProjectingSquare:
+                    return DashCap.Triangle; // ?????????
+
+                case LineCapStyle.Round:
+                    return DashCap.Round;
+            }
         }
     }
 }

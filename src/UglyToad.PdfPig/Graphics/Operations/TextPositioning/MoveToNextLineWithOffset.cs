@@ -47,14 +47,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var currentTextLineMatrix = operationContext.TextMatrices.TextLineMatrix;
-            
-            var matrix = TransformationMatrix.FromValues(1, 0, 0, 1, (double)Tx, (double)Ty);
-
-            var transformed = matrix.Multiply(currentTextLineMatrix);
-
-            operationContext.TextMatrices.TextLineMatrix = transformed;
-            operationContext.TextMatrices.TextMatrix = transformed;
+            operationContext.MoveToNextLineWithOffset((double)Tx, (double)Ty);
         }
 
         /// <inheritdoc />

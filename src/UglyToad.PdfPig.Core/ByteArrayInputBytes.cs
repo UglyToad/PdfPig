@@ -15,6 +15,11 @@
         private readonly byte[] bytes;
 
         /// <summary>
+        /// Bytes
+        /// </summary>
+        public IReadOnlyList<byte> Bytes => bytes;
+
+        /// <summary>
         /// Create a new <see cref="ByteArrayInputBytes"/>.
         /// </summary>
         [DebuggerStepThrough]

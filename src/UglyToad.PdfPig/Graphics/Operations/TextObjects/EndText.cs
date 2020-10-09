@@ -29,8 +29,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.TextMatrices.TextMatrix = TransformationMatrix.Identity;
-            operationContext.TextMatrices.TextLineMatrix = TransformationMatrix.Identity;
+            operationContext.EndText();
         }
 
         /// <inheritdoc />

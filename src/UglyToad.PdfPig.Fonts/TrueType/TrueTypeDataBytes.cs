@@ -14,6 +14,11 @@
         private readonly IInputBytes inputBytes;
 
         /// <summary>
+        /// InputBytes
+        /// </summary>
+        public IInputBytes InputBytes => inputBytes;
+
+        /// <summary>
         /// Create a new <see cref="TrueTypeDataBytes"/>.
         /// </summary>
         public TrueTypeDataBytes(byte[] bytes) : this(new ByteArrayInputBytes(bytes)) { }
