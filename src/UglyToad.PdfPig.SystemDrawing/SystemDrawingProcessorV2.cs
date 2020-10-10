@@ -57,7 +57,7 @@
         public Matrix TextMatrix { get; set; }
 
         public Matrix TextLineMatrix { get; set; }
-        
+
         public int StackSize => graphicsStack.Count;
 
         public void ApplyXObject(NameToken xObjectName)
@@ -637,6 +637,8 @@
             }
         }
 
+        private Dictionary<string, FontFamily> fontFamilies;
+
         public void ShowText(IInputBytes bytes)
         {
             var currentState = GetCurrentState();
@@ -711,7 +713,7 @@
 
                             var positionVector = verticalFont.GetPositionVector(code);
 
-                            textMatrix.Translate((float)positionVector.X, (float)positionVector.Y); //  textMatrix = 
+                            textMatrix.Translate((float)positionVector.X, (float)positionVector.Y);
                         }
 
                         // If the text rendering mode calls for filling, the current nonstroking color in the graphics state is used; 
@@ -774,18 +776,40 @@
                                 if (unicode != "" && unicode != " ")
                                 {
                                     FontFamily fontFamily;
-                                    if (font.TryGetDecodedFontBytes(currentPage.ExperimentalAccess.PdfTokenScanner, currentPage.ExperimentalAccess.FilterProvider, out var fontBytes) &&
-                                        TryLoadFontCollection(fontBytes.ToArray(), out PrivateFontCollection fontCollection))
+                                    if (fontFamilies.ContainsKey(font.Name))
                                     {
-                                        fontFamily = fontCollection.Families[0];
-                                        //fontFamily.IsStyleAvailable
-                                        Font font1 = new Font(fontFamily, (float)fontSize, FontStyle.Regular);
+                                        fontFamily = fontFamilies[font.Name];
                                     }
                                     else
                                     {
-                                        fontFamily = new FontFamily("Arial");//CleanFontName(font.Name));
+                                        if (font.TryGetDecodedFontBytes(currentPage.ExperimentalAccess.PdfTokenScanner, currentPage.ExperimentalAccess.FilterProvider, out var fontBytes) &&
+                                            TryLoadFontCollection(fontBytes.ToArray(), out PrivateFontCollection fontCollection))
+                                        {
+                                            fontFamily = fontCollection.Families[0];
+                                            if (font.Details.IsBold && fontFamily.IsStyleAvailable(FontStyle.Bold))
+                                            {
+
+                                            }
+
+                                            if (font.Details.IsItalic && fontFamily.IsStyleAvailable(FontStyle.Italic))
+                                            {
+
+                                            }
+                                        }
+                                        else
+                                        {
+                                            try
+                                            {
+                                                fontFamily = new FontFamily(CleanFontName(font.Name));
+                                            }
+                                            catch (Exception)
+                                            {
+                                                fontFamily = new FontFamily("Arial");
+                                            }
+                                        }
+                                        fontFamilies[font.Name] = fontFamily;
                                     }
-                                  
+
                                     var style = font.Details.IsBold ? FontStyle.Bold : (font.Details.IsItalic ? FontStyle.Italic : FontStyle.Regular);
 
                                     var bbox = boundingBox.GlyphBounds;
@@ -793,16 +817,24 @@
 
                                     try
                                     {
-                                        RectangleF charBbox = new RectangleF((float)bbox.BottomLeft.X, (float)bbox.BottomLeft.Y, (float)bbox.Width, (float)bbox.Height);
-                                        //RectangleF charBbox = new RectangleF(0, 0, (float)bbox.Width, (float)(bbox.TopRight.Y - bbox.BottomLeft.Y));
-                                        gp.AddString(unicode, fontFamily, (int)style, (float)fontSize, charBbox, StringFormat.GenericDefault);
+                                        gp.AddString(unicode,
+                                            fontFamily,
+                                            (int)style,
+                                            1,
+                                            new RectangleF(0, (float)fontSize, (float)bbox.Width, (float)fontSize),
+                                            StringFormat.GenericDefault);
+
+                                        /*
+                                        var size = currentGraphics.MeasureString(unicode,
+                                            new Font(fontFamily, 1, style),
+                                            new SizeF((float)bbox.Width, (float)fontSize));
+                                        */
 
                                         using (var inverseYAxis = MatrixExtensions.GetScaleMatrix(1, -1))
                                         {
-                                            //inverseYAxis.Translate(0, (float)bbox.Height, MatrixOrder.Append);
+                                            inverseYAxis.Translate(0, (float)fontSize, MatrixOrder.Append);
                                             gp.Transform(inverseYAxis);
                                         }
-
                                     }
                                     catch (Exception)
                                     {
@@ -812,7 +844,7 @@
                                         gp.AddLine((float)bbox.TopRight.X, (float)bbox.TopRight.Y, (float)bbox.BottomLeft.X, (float)bbox.TopRight.Y);
                                         gp.CloseFigure();
                                     }
-                                                       
+
                                     gp.Transform(renderingMatrixCopy);
 
                                     using (var fillBrush = color != null ? new SolidBrush(color) : Brushes.Black)
@@ -902,7 +934,7 @@
 
         #region TransformationMatrix
         /// <summary>
-        /// Flip the matrix to be in system.drawing coordinates
+        /// Flip the matrix to be in system.drawing coordinates system
         /// </summary>
         /// <param name="matrix"></param>
         public void FlipYAxisTransform(Matrix matrix)
@@ -913,7 +945,7 @@
         }
 
         /// <summary>
-        /// Flip the matrix to be in Pdf coordinates
+        /// Flip the matrix to be in Pdf coordinates system
         /// </summary>
         /// <param name="matrix"></param>
         public void ReverseFlipYAxisTransform(Matrix matrix)
@@ -982,7 +1014,6 @@
                               dx, dy);
         }
 
-
         public void ModifyCurrentTransformationMatrix(double[] value)
         {
             using (Matrix ctm = currentGraphics.Transform.Clone())
@@ -997,9 +1028,8 @@
                 FlipYAxisTransform(ctm);
 
                 // update transformation matrix
-                currentGraphics.Transform = ctm;
+                currentGraphics.Transform = ctm.Clone();
             }
-
         }
         #endregion
 
@@ -1080,30 +1110,15 @@
             }
         }
 
-        public void DrawLetter(string value, PdfRectangle glyphRectangle, PdfPoint startBaseLine, PdfPoint endBaseLine, double width, double fontSize, FontDetails font, IColor color, double pointSize)
-        {
-
-        }
-
-        public void DrawLetter(IReadOnlyList<PdfSubpath> pdfSubpaths, IColor color, TransformationMatrix renderingMatrix, TransformationMatrix textMatrix, TransformationMatrix transformationMatrix)
-        {
-
-        }
-
-        public void Init(Page page)
-        {
-
-        }
-
         public void Init(Page page, float scale)
         {
             // flip transform
-            //currentGraphics.Transform = GetInitialMatrix(page.Rotation.Value, page.MediaBox);
+            currentGraphics.Transform = GetInitialMatrix(page.Rotation.Value, page.MediaBox);
             currentGraphics.TranslateTransform(0, -pageHeight, MatrixOrder.Append);
             currentGraphics.ScaleTransform(1, -1, MatrixOrder.Append);
 
             //graphics.PageUnit = GraphicsUnit.Point;
-            //graphics.RenderingOrigin = new Point(0, pageHeight);
+            //currentGraphics.RenderingOrigin = new Point(0, (int)currentPage.Height);
 
             // initiate CurrentClippingPath to cropBox
             GraphicsPath clip = new GraphicsPath(FillMode.Alternate);
@@ -1127,6 +1142,7 @@
 
         public MemoryStream DrawPage(Page page, double scale)
         {
+            fontFamilies = new Dictionary<string, FontFamily>();
             currentPage = page;
 
             var ms = new MemoryStream();
@@ -1150,19 +1166,14 @@
                 }
 
                 bitmap.Save(ms, ImageFormat.Png);
+
+                foreach (var font in fontFamilies)
+                {
+                    font.Value.Dispose();
+                }
             }
 
             return ms;
-        }
-
-        public void DrawPath(PdfPath path)
-        {
-
-        }
-
-        public void UpdateClipPath()
-        {
-
         }
         #endregion
     }
