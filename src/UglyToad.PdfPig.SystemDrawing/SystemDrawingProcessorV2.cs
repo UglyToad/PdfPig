@@ -813,26 +813,42 @@
                                     var style = font.Details.IsBold ? FontStyle.Bold : (font.Details.IsItalic ? FontStyle.Italic : FontStyle.Regular);
 
                                     var bbox = boundingBox.GlyphBounds;
-                                    GraphicsPath gp = new GraphicsPath();
 
+                                    // ************** for debugging purpose - to remove
+                                    //GraphicsPath gpTest = new GraphicsPath(FillMode.Alternate); // Alternate?
+                                    //gpTest.StartFigure();
+                                    //gpTest.AddLine((float)bbox.BottomLeft.X, (float)bbox.BottomLeft.Y, (float)bbox.TopRight.X, (float)bbox.BottomLeft.Y);
+                                    //gpTest.AddLine((float)bbox.TopRight.X, (float)bbox.BottomLeft.Y, (float)bbox.TopRight.X, (float)bbox.TopRight.Y);
+                                    //gpTest.AddLine((float)bbox.TopRight.X, (float)bbox.TopRight.Y, (float)bbox.BottomLeft.X, (float)bbox.TopRight.Y);
+                                    //gpTest.CloseFigure();
+                                    //gpTest.Transform(renderingMatrixCopy);
+                                    //currentGraphics.DrawPath(Pens.Red, gpTest);
+
+                                    //GraphicsPath gpTest2 = new GraphicsPath(FillMode.Alternate); // Alternate?
+                                    //gpTest2.AddRectangle(new RectangleF(0, (float)0, (float)bbox.Width, (float)1));
+                                    //using (var inverseYAxis = MatrixExtensions.GetScaleMatrix(1, -1))
+                                    //{
+                                    //    inverseYAxis.Translate(0, (float)1, MatrixOrder.Append);
+                                    //    gpTest2.Transform(inverseYAxis);
+                                    //}
+                                    //gpTest2.Transform(renderingMatrixCopy);
+                                    //currentGraphics.DrawPath(Pens.GreenYellow, gpTest2);
+                                    // **************** end to remove
+
+                                    GraphicsPath gp = new GraphicsPath();
                                     try
                                     {
                                         gp.AddString(unicode,
                                             fontFamily,
                                             (int)style,
                                             1,
-                                            new RectangleF(0, (float)fontSize, (float)bbox.Width, (float)fontSize),
+                                            new RectangleF(0, 0, (float)bbox.Width, 1),
                                             StringFormat.GenericDefault);
 
-                                        /*
-                                        var size = currentGraphics.MeasureString(unicode,
-                                            new Font(fontFamily, 1, style),
-                                            new SizeF((float)bbox.Width, (float)fontSize));
-                                        */
-
+                                        // flip letter's y-axis
                                         using (var inverseYAxis = MatrixExtensions.GetScaleMatrix(1, -1))
                                         {
-                                            inverseYAxis.Translate(0, (float)fontSize, MatrixOrder.Append);
+                                            inverseYAxis.Translate(0, 1, MatrixOrder.Append);
                                             gp.Transform(inverseYAxis);
                                         }
                                     }
