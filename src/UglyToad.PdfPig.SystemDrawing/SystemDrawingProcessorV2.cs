@@ -459,6 +459,15 @@
             GetCurrentState().DashCap = cap.ToSystemDashCap();
         }
 
+        private float ConvertDashPatterValue(decimal value)
+        {
+            if (value == 0)
+            {
+                return 1f / 72f;
+            }
+            return (float)((double)value / 72.0);
+        }
+
         public void SetLineDashPattern(LineDashPattern lineDashPattern)
         {
             // update DashPatternArray
@@ -471,26 +480,16 @@
              */
             if (lineDashPattern.Array.Count == 1)
             {
-                List<float> pattern = new List<float>();
-                var v = lineDashPattern.Array[0];
-                pattern.Add((float)((double)v));
-                pattern.Add((float)((double)v));
-                GetCurrentState().DashPatternArray = pattern.ToArray();
+                var v = ConvertDashPatterValue(lineDashPattern.Array[0]);
+                GetCurrentState().DashPatternArray = new float[] { v, v };
             }
             else if (lineDashPattern.Array.Count > 0)
             {
                 List<float> pattern = new List<float>();
                 for (int i = 0; i < lineDashPattern.Array.Count; i++)
                 {
-                    var v = lineDashPattern.Array[i];
-                    if (v == 0)
-                    {
-                        pattern.Add((float)(1.0 / 72.0));
-                    }
-                    else
-                    {
-                        pattern.Add((float)((double)v));
-                    }
+                    var v = ConvertDashPatterValue(lineDashPattern.Array[i]);
+                    pattern.Add(v);
                 }
                 GetCurrentState().DashPatternArray = pattern.ToArray();
             }
@@ -500,7 +499,7 @@
             }
 
             // update DashPatternPhase
-            GetCurrentState().DashPatternPhase = lineDashPattern.Phase;
+            GetCurrentState().DashPatternPhase = lineDashPattern.Phase; // divide by 72??
         }
 
         public void SetLineJoin(LineJoinStyle join)
@@ -657,7 +656,7 @@
 
             using (Matrix renderingMatrix = MatrixExtensions.FromValues(fontSize * horizontalScaling, 0, 0, fontSize, 0, rise))
             {
-
+                /*
                 // TODO: this does not seem correct, produces the correct result for now but we need to revisit.
                 // see: https://stackoverflow.com/questions/48010235/pdf-specification-get-font-size-in-points
                 double pointSize = double.NaN;
@@ -680,6 +679,7 @@
                 {
                     pointSize *= -1;
                 }
+                */
 
                 while (bytes.MoveNext())
                 {
@@ -798,6 +798,13 @@
                             {
                                 if (unicode != "" && unicode != " ")
                                 {
+                                    // unstable here: are the PrivateFontCollection dispose by the GC?? we need to avoid that
+
+                                    // https://web.archive.org/web/20170313145219/https://blog.andreloker.de/post/2008/07/03/Load-a-font-from-disk-stream-or-byte-array.aspx
+                                    // It seems that you must not dipose the PrivateFontCollection before you're done with 
+                                    // the fonts within it; otherwise your app my crash. I updated the methods above to return 
+                                    // the PrivateFontCollection instance. The caller has to dispose the collection after /
+                                    // he/she is done using the fonts.
                                     FontFamily fontFamily;
                                     if (fontFamilies.ContainsKey(font.Name))
                                     {
