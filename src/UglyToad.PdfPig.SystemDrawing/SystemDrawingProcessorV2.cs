@@ -736,6 +736,29 @@
                                     throw new ArgumentException("DrawLetter(): empty path");
                                 }
 
+                                var bbox = boundingBox.GlyphBounds;
+
+                                // ************** for debugging purpose - to remove
+                                //GraphicsPath gpTest = new GraphicsPath(FillMode.Alternate); // Alternate?
+                                //gpTest.StartFigure();
+                                //gpTest.AddLine((float)bbox.BottomLeft.X, (float)bbox.BottomLeft.Y, (float)bbox.TopRight.X, (float)bbox.BottomLeft.Y);
+                                //gpTest.AddLine((float)bbox.TopRight.X, (float)bbox.BottomLeft.Y, (float)bbox.TopRight.X, (float)bbox.TopRight.Y);
+                                //gpTest.AddLine((float)bbox.TopRight.X, (float)bbox.TopRight.Y, (float)bbox.BottomLeft.X, (float)bbox.TopRight.Y);
+                                //gpTest.CloseFigure();
+                                //gpTest.Transform(renderingMatrixCopy);
+                                //currentGraphics.DrawPath(Pens.Red, gpTest);
+
+                                //GraphicsPath gpTest2 = new GraphicsPath(FillMode.Alternate); // Alternate?
+                                //gpTest2.AddRectangle(new RectangleF(0, (float)0, (float)bbox.Width, (float)1));
+                                //using (var inverseYAxis = MatrixExtensions.GetScaleMatrix(1, -1))
+                                //{
+                                //    inverseYAxis.Translate(0, (float)1, MatrixOrder.Append);
+                                //    gpTest2.Transform(inverseYAxis);
+                                //}
+                                //gpTest2.Transform(renderingMatrixCopy);
+                                //currentGraphics.DrawPath(Pens.GreenYellow, gpTest2);
+                                // **************** end to remove
+
                                 GraphicsPath gp = new GraphicsPath(FillMode.Alternate); // Alternate?
                                 foreach (var subpath in pdfSubpaths)
                                 {
@@ -766,7 +789,7 @@
 
                                 gp.Transform(renderingMatrixCopy);
 
-                                using (var fillBrush = color != null ? new SolidBrush(color) : Brushes.Black)
+                                using (var fillBrush = new SolidBrush(color))
                                 {
                                     currentGraphics.FillPath(fillBrush, gp);
                                 }
@@ -863,7 +886,7 @@
 
                                     gp.Transform(renderingMatrixCopy);
 
-                                    using (var fillBrush = color != null ? new SolidBrush(color) : Brushes.Black)
+                                    using (var fillBrush = new SolidBrush(color))
                                     {
                                         currentGraphics.FillPath(fillBrush, gp);
                                     }

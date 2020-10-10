@@ -138,7 +138,7 @@
         /// <summary>
         /// The current active non-stroking color for text and fill.
         /// </summary>
-        public Color CurrentNonStrokingColor { get; set; }
+        public Color CurrentNonStrokingColor { get; set; } = Color.Black;
 
         /// <summary>
         /// The current active non-stroking color space for text and fill.
@@ -148,7 +148,7 @@
         /// <summary>
         /// The current active stroking color for paths.
         /// </summary>
-        public Color CurrentStrokingColor { get; set; }
+        public Color CurrentStrokingColor { get; set; } = Color.Black;
 
         /// <summary>
         /// The current active stroking color space for paths.
