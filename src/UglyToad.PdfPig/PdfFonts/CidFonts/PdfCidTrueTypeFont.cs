@@ -17,7 +17,7 @@
 
             var header = font.TableRegister.HeaderTable;
             var isBold = header.MacStyle.HasFlag(HeaderTable.HeaderMacStyle.Bold);
-            Details = new FontDetails(font.Name, isBold,
+            Details = new FontDetails(font.Name, string.Empty, isBold,
                 isBold ? FontDetails.BoldWeight : FontDetails.DefaultWeight,
                 header.MacStyle.HasFlag(HeaderTable.HeaderMacStyle.Italic));
         }

@@ -438,10 +438,16 @@
                 {
                     var shading = PdfShading.Parse(shadingDictionary, currentPage.ExperimentalAccess.PdfTokenScanner);
 
-                    using (var linearGradientBrush = new LinearGradientBrush(new PointF(0, 0), new PointF(1, 1), Color.Green, Color.Red))
+                    if (shading.Background != null)
+                    {
+                        // paint background
+                    }
+
+                    // to implement, using a placeholder for the moment
+                    using (var brush = shading.ToSystemGradientBrush())
                     using (var region = currentGraphics.Clip.Clone())
                     {
-                        currentGraphics.FillRegion(linearGradientBrush, region);
+                        currentGraphics.FillRegion(brush, region);
                     }
                 }
                 else
@@ -838,6 +844,10 @@
                                     {
                                         fontFamily = fontFamilies[font.Name].family;
                                     }
+                                    else if (fontFamilies.ContainsKey(font.Details.FontFamily))
+                                    {
+                                        fontFamily = fontFamilies[font.Details.FontFamily].family;
+                                    }
                                     else
                                     {
                                         if (font.TryGetDecodedFontBytes(currentPage.ExperimentalAccess.PdfTokenScanner, currentPage.ExperimentalAccess.FilterProvider, out var fontBytes) &&
@@ -860,14 +870,14 @@
                                         {
                                             try
                                             {
-                                                fontFamily = new FontFamily(CleanFontName(font.Name));
+                                                fontFamily = new FontFamily(font.Details.FontFamily);
+                                                fontFamilies[font.Details.FontFamily] = (null, fontFamily);
                                             }
                                             catch
                                             {
                                                 fontFamily = new FontFamily("Arial");
+                                                fontFamilies[font.Name] = (null, fontFamily);
                                             }
-
-                                            fontFamilies[font.Name] = (null, fontFamily);
                                         }
                                     }
 

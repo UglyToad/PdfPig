@@ -127,7 +127,7 @@ namespace UglyToad.PdfPig.Graphics.Shading
                 throw new ArgumentException("ColorSpace is Required.");
             }
 
-            if (shadingDictionary.TryGet<ArrayToken>(NameToken.Background, out var background))
+            if (shadingDictionary.TryGet<ArrayToken>(NameToken.Background, pdfTokenScanner, out var background))
             {
                 this.Background = background;
             }
@@ -156,6 +156,7 @@ namespace UglyToad.PdfPig.Graphics.Shading
                 {
                     case ShadingType1:
                         return new PdfShadingType1(shadingDictionary, pdfTokenScanner);
+
                     case ShadingType2:
                         return new PdfShadingType2(shadingDictionary, pdfTokenScanner);
 

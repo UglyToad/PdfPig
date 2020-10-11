@@ -23,7 +23,7 @@
                 return FontDetails.GetDefault();
             }
 
-            FontDetails WithWeightValues(bool isbold, int weight) => new FontDetails(null, isbold, weight, font.ItalicAngle != 0);
+            FontDetails WithWeightValues(bool isbold, int weight) => new FontDetails(null, null, isbold, weight, font.ItalicAngle != 0);
 
             switch (font.Weight?.ToLowerInvariant())
             {

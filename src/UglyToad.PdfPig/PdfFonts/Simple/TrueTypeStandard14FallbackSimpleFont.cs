@@ -38,7 +38,7 @@
             this.font = font;
             this.overrides = overrides;
             Name = name;
-            Details = fontMetrics == null ? FontDetails.GetDefault(Name?.Data) : new FontDetails(Name?.Data,
+            Details = fontMetrics == null ? FontDetails.GetDefault(Name?.Data) : new FontDetails(Name?.Data, null,
                 fontMetrics.Weight == "Bold",
                 fontMetrics.Weight == "Bold" ? 700 : FontDetails.DefaultWeight,
                 fontMetrics.ItalicAngle != 0);

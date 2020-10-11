@@ -4,12 +4,21 @@ using UglyToad.PdfPig.Core;
 using UglyToad.PdfPig.Graphics;
 using UglyToad.PdfPig.Graphics.Colors;
 using UglyToad.PdfPig.Graphics.Core;
+using UglyToad.PdfPig.Graphics.Shading;
 using static UglyToad.PdfPig.Core.PdfSubpath;
 
 namespace UglyToad.PdfPig.SystemDrawing
 {
     public static class SystemDrawingExtensions
     {
+        /// <summary>
+        /// To implement, using a placeholder for the moment
+        /// </summary>
+        public static Brush ToSystemGradientBrush(this PdfShading pdfShading)
+        {
+            return new LinearGradientBrush(new PointF(0, 0), new PointF(1, 1), Color.Green, Color.Red);
+        }
+
         public static GraphicsPath ToGraphicsPath(this PdfPath path, int height, double scale)
         {
             GraphicsPath gp = new GraphicsPath(path.FillingRule == FillingRule.NonZeroWinding ? FillMode.Winding : FillMode.Alternate);

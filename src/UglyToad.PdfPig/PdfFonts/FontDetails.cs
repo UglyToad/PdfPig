@@ -21,6 +21,11 @@
         public string Name { get; }
 
         /// <summary>
+        /// The font family name.
+        /// </summary>
+        public string FontFamily { get; }
+
+        /// <summary>
         /// Whether the font is bold.
         /// </summary>
         public bool IsBold { get; }
@@ -38,21 +43,23 @@
         /// <summary>
         /// Create a new <see cref="FontDetails"/>.
         /// </summary>
-        public FontDetails(string name, bool isBold, int weight, bool isItalic)
+        public FontDetails(string name, string fontFamily, bool isBold, int weight, bool isItalic)
         {
             Name = name ?? string.Empty;
+            FontFamily = fontFamily ?? string.Empty;
             IsBold = isBold;
             Weight = weight;
             IsItalic = isItalic;
         }
 
         internal static FontDetails GetDefault(string name = null) => new FontDetails(name ?? string.Empty,
+            string.Empty,
             false,
             DefaultWeight,
             false);
 
         internal FontDetails WithName(string name) => name != null
-            ? new FontDetails(name, IsBold, Weight, IsItalic)
+            ? new FontDetails(name, string.Empty, IsBold, Weight, IsItalic)
             : this;
 
         /// <inheritdoc />

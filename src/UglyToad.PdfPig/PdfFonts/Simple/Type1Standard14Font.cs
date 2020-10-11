@@ -35,7 +35,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
             Name = NameToken.Create(standardFontMetrics.FontName);
 
             IsVertical = false;
-            Details = new FontDetails(Name.Data,
+            Details = new FontDetails(Name.Data, standardFontMetrics.FamilyName,
                 standardFontMetrics.Weight == "Bold",
                 standardFontMetrics.Weight == "Bold" ? 700 : FontDetails.DefaultWeight,
                 standardFontMetrics.ItalicAngle != 0);

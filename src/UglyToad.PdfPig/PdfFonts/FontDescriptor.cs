@@ -182,6 +182,7 @@
         internal FontDetails ToDetails(string name = null)
         {
             return new FontDetails(name ?? FontName ?? string.Empty,
+                FontFamily,
                 FontWeight > 500,
                 (int)FontWeight,
                 Flags.HasFlag(FontDescriptorFlags.Italic) || ItalicAngle != 0);
