@@ -334,7 +334,13 @@
         public bool TryGetDecodedFontBytes(IPdfTokenScanner pdfTokenScanner, IFilterProvider filterProvider, out IReadOnlyList<byte> bytes)
         {
             bytes = null;
-            if (descriptor?.FontFile?.ObjectKey != null)
+            // not sure if needed
+            if (font?.FontFileBytes != null)
+            {
+                bytes = font.FontFileBytes;
+                return true;
+            }
+            else if (descriptor?.FontFile?.ObjectKey != null)
             {
                 var fontFileStream = DirectObjectFinder.Get<StreamToken>(descriptor.FontFile.ObjectKey, pdfTokenScanner);
                 bytes = fontFileStream.Decode(filterProvider);

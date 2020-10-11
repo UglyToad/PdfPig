@@ -22,7 +22,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.Tokens", "U
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.Tokenization", "UglyToad.PdfPig.Tokenization\UglyToad.PdfPig.Tokenization.csproj", "{FD005C50-CD2C-497E-8F7E-6D791091E9B0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UglyToad.PdfPig.SystemDrawing", "UglyToad.PdfPig.SystemDrawing\UglyToad.PdfPig.SystemDrawing.csproj", "{28B18E02-0C6A-4AB6-83F6-104562FF017B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.SystemDrawing", "UglyToad.PdfPig.SystemDrawing\UglyToad.PdfPig.SystemDrawing.csproj", "{28B18E02-0C6A-4AB6-83F6-104562FF017B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

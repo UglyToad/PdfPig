@@ -24,10 +24,129 @@
     {
         private Graphics currentGraphics;
 
-        private Stack<CurrentSystemGraphicsState> graphicsStack = new Stack<CurrentSystemGraphicsState>();
+        private readonly Stack<CurrentSystemGraphicsState> graphicsStack = new Stack<CurrentSystemGraphicsState>();
         private IFont activeExtendedGraphicsStateFont;
 
         public GraphicsPath CurrentPath { get; private set; }
+
+        #region IDrawingProcessor
+        float pageScale;
+        float pageHeight;
+        Page currentPage;
+
+        public MemoryStream DrawPage(Page page, double scale)
+        {
+            if (Math.Abs(scale) < double.Epsilon)
+            {
+                throw new ArgumentException("The scaling factor must be different from 0.", nameof(scale));
+            }
+
+            fontFamilies = new Dictionary<string, (PrivateFontCollection, FontFamily)>();
+            pageScale = (float)scale;
+            currentPage = page;
+            pageHeight = (float)page.Height;
+
+            var ms = new MemoryStream();
+            using (var bitmap = new Bitmap((int)Math.Ceiling(page.Width * pageScale), (int)Math.Ceiling(page.Height * pageScale)))
+            using (currentGraphics = Graphics.FromImage(bitmap))
+            {
+                currentGraphics.SmoothingMode = SmoothingMode.HighQuality;
+                currentGraphics.CompositingQuality = CompositingQuality.HighQuality;
+                currentGraphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                currentGraphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+                currentGraphics.Clear(Color.White);
+                Init();
+
+                foreach (var stateOperation in page.Operations)
+                {
+                    stateOperation.Run(this);
+                }
+
+                bitmap.Save(ms, ImageFormat.Png);
+
+                foreach (var font in fontFamilies)
+                {
+                    font.Value.family.Dispose();
+                    font.Value.collection?.Dispose();
+                }
+            }
+
+            return ms;
+        }
+
+        public void Init()
+        {
+            // flip transform
+            currentGraphics.Transform = GetInitialMatrix(currentPage.Rotation.Value, currentPage.MediaBox);
+            currentGraphics.TranslateTransform(0, -pageHeight, MatrixOrder.Append);
+            currentGraphics.ScaleTransform(pageScale, -pageScale, MatrixOrder.Append);
+
+            //graphics.PageUnit = GraphicsUnit.Point;
+            //currentGraphics.RenderingOrigin = new Point(0, (int)currentPage.Height);
+
+            // initiate CurrentClippingPath to cropBox
+            GraphicsPath clip = new GraphicsPath(FillMode.Alternate);
+            clip.StartFigure();
+            clip.AddLine((float)currentPage.CropBox.Bounds.BottomLeft.X, (float)currentPage.CropBox.Bounds.BottomLeft.Y, (float)currentPage.CropBox.Bounds.TopRight.X, (float)currentPage.CropBox.Bounds.BottomLeft.Y);
+            clip.AddLine((float)currentPage.CropBox.Bounds.TopRight.X, (float)currentPage.CropBox.Bounds.BottomLeft.Y, (float)currentPage.CropBox.Bounds.TopRight.X, (float)currentPage.CropBox.Bounds.TopRight.Y);
+            clip.AddLine((float)currentPage.CropBox.Bounds.TopRight.X, (float)currentPage.CropBox.Bounds.TopRight.Y, (float)currentPage.CropBox.Bounds.BottomLeft.X, (float)currentPage.CropBox.Bounds.TopRight.Y);
+            clip.CloseFigure();
+            currentGraphics.SetClip(clip, CombineMode.Replace);
+
+            graphicsStack.Push(new CurrentSystemGraphicsState()
+            {
+                GraphicsState = currentGraphics.Save()
+            });
+
+            ColorSpaceContext = new SystemDrawingColorSpaceContext(GetCurrentState, currentPage.ExperimentalAccess.ResourceStore);
+        }
+
+
+        public void DrawImage(IPdfImage image)
+        {
+            if (image.TryGetPng(out var png))
+            {
+                using (var img = Image.FromStream(new MemoryStream(png)))
+                {
+                    img.RotateFlip(RotateFlipType.RotateNoneFlipY);
+                    currentGraphics.DrawImage(img, new RectangleF(0, 0, 1, 1));
+                }
+            }
+            else
+            {
+                if (image.TryGetBytes(out var bytes))
+                {
+                    try
+                    {
+                        using (var img = Image.FromStream(new MemoryStream(bytes.ToArray())))
+                        {
+                            img.RotateFlip(RotateFlipType.RotateNoneFlipY);
+                            currentGraphics.DrawImage(img, new RectangleF(0, 0, 1, 1));
+                        }
+                        return;
+                    }
+                    catch (Exception)
+                    {
+
+                    }
+                }
+
+                try
+                {
+                    using (var img = Image.FromStream(new MemoryStream(image.RawBytes.ToArray())))
+                    {
+                        img.RotateFlip(RotateFlipType.RotateNoneFlipY);
+                        currentGraphics.DrawImage(img, new RectangleF(0, 0, 1, 1));
+                    }
+                }
+                catch (Exception)
+                {
+                    currentGraphics.FillRectangle(Brushes.HotPink, new RectangleF(0, 0, 1, 1));
+                }
+            }
+        }
+        #endregion
 
         #region State
         [DebuggerStepThrough]
@@ -840,6 +959,7 @@
                                     // the PrivateFontCollection instance. The caller has to dispose the collection after /
                                     // he/she is done using the fonts.
                                     FontFamily fontFamily;
+                         
                                     if (fontFamilies.ContainsKey(font.Name))
                                     {
                                         fontFamily = fontFamilies[font.Name].family;
@@ -855,7 +975,7 @@
                                         {
                                             fontFamily = fontCollection.Families[0];
                                             fontFamilies[font.Name] = (fontCollection, fontFamily);
-
+               
                                             if (font.Details.IsBold && fontFamily.IsStyleAvailable(FontStyle.Bold))
                                             {
 
@@ -926,6 +1046,7 @@
                                     catch (Exception ex)
                                     {
                                         Debug.Print(ex.Message);
+
                                         gp.StartFigure();
                                         gp.AddLine((float)bbox.BottomLeft.X, (float)bbox.BottomLeft.Y, (float)bbox.TopRight.X, (float)bbox.BottomLeft.Y);
                                         gp.AddLine((float)bbox.TopRight.X, (float)bbox.BottomLeft.Y, (float)bbox.TopRight.X, (float)bbox.TopRight.Y);
@@ -969,13 +1090,18 @@
             fontCollection = null;
             // pin array so we can get its address
             var handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
-
+            
             try
             {
                 var ptr = Marshal.UnsafeAddrOfPinnedArrayElement(buffer, 0);
                 fontCollection = new PrivateFontCollection();
                 fontCollection.AddMemoryFont(ptr, buffer.Length);
-                return fontCollection.Families.Length > 0;
+                if (fontCollection.Families.Length == 0)
+                {
+                    fontCollection.Dispose();
+                    return false;
+                }
+                return true;
             }
             catch
             {
@@ -986,6 +1112,9 @@
             {
                 // don't forget to unpin the array!
                 handle.Free();
+
+                // might need to do it on close...
+                // https://stackoverflow.com/a/16375217/8621903
             }
         }
 
@@ -1029,8 +1158,9 @@
         public void FlipYAxisTransform(Matrix matrix)
         {
             // flip transform to system.drawing
+
             matrix.Translate(0, -pageHeight, MatrixOrder.Append);
-            matrix.Scale(1, -1, MatrixOrder.Append);
+            matrix.Scale(pageScale, -pageScale, MatrixOrder.Append);
         }
 
         /// <summary>
@@ -1040,7 +1170,7 @@
         public void ReverseFlipYAxisTransform(Matrix matrix)
         {
             // flip back to pdf coordinate system
-            matrix.Scale(1, -1, MatrixOrder.Append);
+            matrix.Scale(1f / pageScale, -1f / pageScale, MatrixOrder.Append);
             matrix.Translate(0, pageHeight, MatrixOrder.Append);
         }
 
@@ -1151,117 +1281,6 @@
                 currentGraphicsState.FontState.FontSize = (double)sizeToken.Data;
                 activeExtendedGraphicsStateFont = currentPage.ExperimentalAccess.ResourceStore.GetFontDirectly(fontReference);
             }
-        }
-        #endregion
-
-        #region IDrawingProcessor
-        public void DrawImage(IPdfImage image)
-        {
-            if (image.TryGetPng(out var png))
-            {
-                using (var img = Image.FromStream(new MemoryStream(png)))
-                {
-                    img.RotateFlip(RotateFlipType.RotateNoneFlipY);
-                    currentGraphics.DrawImage(img, new RectangleF(0, 0, 1, 1));
-                }
-            }
-            else
-            {
-                if (image.TryGetBytes(out var bytes))
-                {
-                    try
-                    {
-                        using (var img = Image.FromStream(new MemoryStream(bytes.ToArray())))
-                        {
-                            img.RotateFlip(RotateFlipType.RotateNoneFlipY);
-                            currentGraphics.DrawImage(img, new RectangleF(0, 0, 1, 1));
-                        }
-                        return;
-                    }
-                    catch (Exception)
-                    {
-
-                    }
-                }
-
-                try
-                {
-                    using (var img = Image.FromStream(new MemoryStream(image.RawBytes.ToArray())))
-                    {
-                        img.RotateFlip(RotateFlipType.RotateNoneFlipY);
-                        currentGraphics.DrawImage(img, new RectangleF(0, 0, 1, 1));
-                    }
-                }
-                catch (Exception)
-                {
-                    currentGraphics.FillRectangle(Brushes.HotPink, new RectangleF(0, 0, 1, 1));
-                }
-            }
-        }
-
-        public void Init(Page page, float scale)
-        {
-            // flip transform
-            currentGraphics.Transform = GetInitialMatrix(page.Rotation.Value, page.MediaBox);
-            currentGraphics.TranslateTransform(0, -pageHeight, MatrixOrder.Append);
-            currentGraphics.ScaleTransform(1, -1, MatrixOrder.Append);
-
-            //graphics.PageUnit = GraphicsUnit.Point;
-            //currentGraphics.RenderingOrigin = new Point(0, (int)currentPage.Height);
-
-            // initiate CurrentClippingPath to cropBox
-            GraphicsPath clip = new GraphicsPath(FillMode.Alternate);
-            clip.StartFigure();
-            clip.AddLine((float)page.CropBox.Bounds.BottomLeft.X, (float)page.CropBox.Bounds.BottomLeft.Y, (float)page.CropBox.Bounds.TopRight.X, (float)page.CropBox.Bounds.BottomLeft.Y);
-            clip.AddLine((float)page.CropBox.Bounds.TopRight.X, (float)page.CropBox.Bounds.BottomLeft.Y, (float)page.CropBox.Bounds.TopRight.X, (float)page.CropBox.Bounds.TopRight.Y);
-            clip.AddLine((float)page.CropBox.Bounds.TopRight.X, (float)page.CropBox.Bounds.TopRight.Y, (float)page.CropBox.Bounds.BottomLeft.X, (float)page.CropBox.Bounds.TopRight.Y);
-            clip.CloseFigure();
-            currentGraphics.SetClip(clip, CombineMode.Replace);
-
-            graphicsStack.Push(new CurrentSystemGraphicsState()
-            {
-                GraphicsState = currentGraphics.Save()
-            });
-
-            ColorSpaceContext = new SystemDrawingColorSpaceContext(GetCurrentState, currentPage.ExperimentalAccess.ResourceStore);
-        }
-
-        float pageHeight;
-        Page currentPage;
-
-        public MemoryStream DrawPage(Page page, double scale)
-        {
-            fontFamilies = new Dictionary<string, (PrivateFontCollection, FontFamily)>();
-            currentPage = page;
-            pageHeight = (float)page.Height;
-
-            var ms = new MemoryStream();
-            using (var bitmap = new Bitmap((int)Math.Ceiling(page.Width), (int)Math.Ceiling(page.Height)))
-            using (currentGraphics = Graphics.FromImage(bitmap))
-            {
-                currentGraphics.SmoothingMode = SmoothingMode.HighQuality;
-                currentGraphics.CompositingQuality = CompositingQuality.HighQuality;
-                currentGraphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                currentGraphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-
-                currentGraphics.Clear(Color.White);
-                Init(page, 1f);
-
-                foreach (var stateOperation in page.Operations)
-                {
-                    stateOperation.Run(this);
-                }
-
-                bitmap.Save(ms, ImageFormat.Png);
-
-                foreach (var font in fontFamilies)
-                {
-                    font.Value.family.Dispose();
-                    font.Value.collection?.Dispose();
-                }
-            }
-
-            return ms;
         }
         #endregion
     }

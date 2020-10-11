@@ -22,7 +22,6 @@
             throw new NotImplementedException();
         }
 
-
         /// <inheritdoc/>
         public override float[] Eval(float[] input)
         {

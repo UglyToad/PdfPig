@@ -8,7 +8,7 @@ namespace UglyToad.PdfPig.Tests
 {
     public class ExportToImage
     {
-        private const int mult = 2;
+        private const double mult = 3;
 
         private const string ByzantineGenerals = "byz";
         private const string NonLatinAcrobatDistiller = "Single Page Non Latin - from acrobat distiller";
