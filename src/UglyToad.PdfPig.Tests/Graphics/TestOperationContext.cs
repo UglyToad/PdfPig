@@ -291,6 +291,11 @@
             throw new System.NotImplementedException();
         }
 
+        public void PaintShading(NameToken Name)
+        {
+            
+        }
+
         private class TestFontFactory : IFontFactory
         {
             public IFont Get(DictionaryToken dictionary)

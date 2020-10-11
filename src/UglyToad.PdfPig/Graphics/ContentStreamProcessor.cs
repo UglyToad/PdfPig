@@ -575,6 +575,11 @@
             ClosePath();
         }
 
+        public void PaintShading(NameToken name)
+        {
+            
+        }
+
         public void MoveTo(double x, double y)
         {
             BeginSubpath();

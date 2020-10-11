@@ -89,6 +89,14 @@
         void FillStrokePath(FillingRule fillingRule, bool close);
 
         /// <summary>
+        /// Paint the shape and color shading described by a shading dictionary, subject to the current clipping path.
+        /// The current color in the graphics state is neither used nor altered.
+        /// The effect is different from that of painting a path using a shading pattern as the current color.
+        /// </summary>
+        /// <param name="name"></param>
+        void PaintShading(NameToken name);
+
+        /// <summary>
         /// Add a move command to the path.
         /// <para>Points are NOT transformed.</para>
         /// </summary>

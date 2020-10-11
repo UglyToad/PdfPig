@@ -15,6 +15,7 @@
     using UglyToad.PdfPig.Graphics;
     using UglyToad.PdfPig.Graphics.Colors;
     using UglyToad.PdfPig.Graphics.Core;
+    using UglyToad.PdfPig.Graphics.Shading;
     using UglyToad.PdfPig.PdfFonts;
     using UglyToad.PdfPig.Tokens;
     using UglyToad.PdfPig.XObjects;
@@ -427,6 +428,29 @@
             ClosePath();
         }
 
+        public void PaintShading(NameToken Name)
+        {
+            if (currentPage.Dictionary.TryGet<DictionaryToken>(NameToken.Resources, out var resources) && 
+                resources.TryGet<DictionaryToken>(NameToken.Shading, currentPage.ExperimentalAccess.PdfTokenScanner, out var shadingResources))
+            {
+                // page 183
+                if (shadingResources.TryGet<DictionaryToken>(Name, currentPage.ExperimentalAccess.PdfTokenScanner, out var shadingDictionary))
+                {
+                    var shading = PdfShading.Parse(shadingDictionary, currentPage.ExperimentalAccess.PdfTokenScanner);
+
+                    using (var linearGradientBrush = new LinearGradientBrush(new PointF(0, 0), new PointF(1, 1), Color.Green, Color.Red))
+                    using (var region = currentGraphics.Clip.Clone())
+                    {
+                        currentGraphics.FillRegion(linearGradientBrush, region);
+                    }
+                }
+                else
+                {
+                    // is it possible??
+                }
+            }
+        }
+
         public PdfPoint? CloseSubpath()
         {
             if (CurrentPath == null)
@@ -435,8 +459,13 @@
             }
 
             CurrentPath.CloseFigure();
-            var firstPoint = CurrentPath.PathPoints[0];
-            return new PdfPoint(firstPoint.X, firstPoint.Y); // already top-left coordinate
+
+            if (CurrentPath.PointCount > 0)
+            {
+                var firstPoint = CurrentPath.PathPoints[0];
+                return new PdfPoint(firstPoint.X, firstPoint.Y);
+            }
+            return null;
         }
 
         public void ModifyClippingIntersect(FillingRule clippingRule)
@@ -449,7 +478,6 @@
             CurrentPath.FillMode = clippingRule.ToSystemFillMode();
             currentGraphics.SetClip(CurrentPath, CombineMode.Intersect);
         }
-
         #endregion
 
         #region Lines
@@ -636,7 +664,7 @@
             }
         }
 
-        private Dictionary<string, FontFamily> fontFamilies;
+        private Dictionary<string, (PrivateFontCollection collection, FontFamily family)> fontFamilies;
 
         public void ShowText(IInputBytes bytes)
         {
@@ -808,7 +836,7 @@
                                     FontFamily fontFamily;
                                     if (fontFamilies.ContainsKey(font.Name))
                                     {
-                                        fontFamily = fontFamilies[font.Name];
+                                        fontFamily = fontFamilies[font.Name].family;
                                     }
                                     else
                                     {
@@ -816,6 +844,8 @@
                                             TryLoadFontCollection(fontBytes.ToArray(), out PrivateFontCollection fontCollection))
                                         {
                                             fontFamily = fontCollection.Families[0];
+                                            fontFamilies[font.Name] = (fontCollection, fontFamily);
+
                                             if (font.Details.IsBold && fontFamily.IsStyleAvailable(FontStyle.Bold))
                                             {
 
@@ -832,12 +862,13 @@
                                             {
                                                 fontFamily = new FontFamily(CleanFontName(font.Name));
                                             }
-                                            catch (Exception)
+                                            catch
                                             {
                                                 fontFamily = new FontFamily("Arial");
                                             }
+
+                                            fontFamilies[font.Name] = (null, fontFamily);
                                         }
-                                        fontFamilies[font.Name] = fontFamily;
                                     }
 
                                     var style = font.Details.IsBold ? FontStyle.Bold : (font.Details.IsItalic ? FontStyle.Italic : FontStyle.Regular);
@@ -937,6 +968,7 @@
             }
             catch
             {
+                fontCollection?.Dispose();
                 return false;
             }
             finally
@@ -1188,13 +1220,11 @@
 
         public MemoryStream DrawPage(Page page, double scale)
         {
-            fontFamilies = new Dictionary<string, FontFamily>();
+            fontFamilies = new Dictionary<string, (PrivateFontCollection, FontFamily)>();
             currentPage = page;
-
-            var ms = new MemoryStream();
-
             pageHeight = (float)page.Height;
 
+            var ms = new MemoryStream();
             using (var bitmap = new Bitmap((int)Math.Ceiling(page.Width), (int)Math.Ceiling(page.Height)))
             using (currentGraphics = Graphics.FromImage(bitmap))
             {
@@ -1215,7 +1245,8 @@
 
                 foreach (var font in fontFamilies)
                 {
-                    font.Value.Dispose();
+                    font.Value.family.Dispose();
+                    font.Value.collection?.Dispose();
                 }
             }
 

@@ -99,6 +99,12 @@ namespace UglyToad.PdfPig.Tests
         }
 
         [Fact]
+        public void Doc68199001ATest()
+        {
+            Run("68-1990-01_A", 7);
+        }
+
+        [Fact]
         public void MotorInsuranceClaimTest()
         {
             Run(MotorInsuranceClaim, 1);
@@ -141,7 +147,19 @@ namespace UglyToad.PdfPig.Tests
         }
 
         [Fact]
-        public void path_ext_oddevenTest()
+        public void JournalPone0196757Test()
+        {
+            Run("journal.pone.0196757", 1);
+        }
+
+        [Fact]
+        public void OldGutnishInternetExplorerTest()
+        {
+            Run("Old Gutnish Internet Explorer", 2);
+        }
+
+        [Fact]
+        public void PathExtOddevenTest()
         {
             Run(PathExtOddeven, 1);
         }

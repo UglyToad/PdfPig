@@ -37,6 +37,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
+            operationContext.PaintShading(Name);
         }
 
         /// <inheritdoc />
