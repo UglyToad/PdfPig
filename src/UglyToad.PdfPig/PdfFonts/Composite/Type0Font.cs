@@ -11,6 +11,7 @@
     using UglyToad.PdfPig.Parser.Parts;
     using UglyToad.PdfPig.Tokenization.Scanner;
     using Util.JetBrains.Annotations;
+    using static UglyToad.PdfPig.PdfFonts.DescriptorFontFile;
 
     /// <summary>
     /// Defines glyphs using a CIDFont
@@ -53,7 +54,7 @@
             CMap = cmap ?? throw new ArgumentNullException(nameof(cmap));
             ToUnicode = new ToUnicodeCMap(toUnicodeCMap);
             Details = cidFont.Details?.WithName(Name.Data)
-                      ?? FontDetails.GetDefault(Name.Data);
+                      ?? FontDetails.GetDefault(Name.Data, CidFont.Descriptor?.FontFamily);
         }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)
@@ -155,9 +156,33 @@
             bytes = null;
             if (CidFont.Descriptor?.FontFile?.ObjectKey != null)
             {
-                var fontFileStream = DirectObjectFinder.Get<StreamToken>(CidFont.Descriptor.FontFile.ObjectKey, pdfTokenScanner);
-                bytes = fontFileStream.Decode(filterProvider);
-                return true;
+                switch (CidFont.Descriptor?.FontFile.FileType)
+                {
+                    case FontFileType.FromSubtype:
+                        var subTypeStream = DirectObjectFinder.Get<StreamToken>(CidFont.Descriptor.FontFile.ObjectKey, pdfTokenScanner);
+                        if (subTypeStream.StreamDictionary.TryGet<NameToken>(NameToken.Subtype, pdfTokenScanner, out var subtype))
+                        {
+                            switch(subtype)
+                            {
+                                case "Type1C":
+                                case "CIDFontType0C":
+                                case "OpenType":
+                                    break;
+                            }
+                            bytes = subTypeStream.Decode(filterProvider);
+                            return true;
+                        }
+                        else
+                        {
+                            bytes = subTypeStream.Decode(filterProvider);
+                            return true;
+                        }
+
+                    default:
+                        var fontFileStream = DirectObjectFinder.Get<StreamToken>(CidFont.Descriptor.FontFile.ObjectKey, pdfTokenScanner);
+                        bytes = fontFileStream.Decode(filterProvider);
+                        return true;
+                }
             }
 
             return false;

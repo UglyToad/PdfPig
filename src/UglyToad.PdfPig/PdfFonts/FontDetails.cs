@@ -52,14 +52,14 @@
             IsItalic = isItalic;
         }
 
-        internal static FontDetails GetDefault(string name = null) => new FontDetails(name ?? string.Empty,
-            string.Empty,
+        internal static FontDetails GetDefault(string name = null, string fontFamily = null) => new FontDetails(name ?? string.Empty,
+            fontFamily ?? string.Empty,
             false,
             DefaultWeight,
             false);
 
         internal FontDetails WithName(string name) => name != null
-            ? new FontDetails(name, string.Empty, IsBold, Weight, IsItalic)
+            ? new FontDetails(name, FontFamily, IsBold, Weight, IsItalic)
             : this;
 
         /// <inheritdoc />

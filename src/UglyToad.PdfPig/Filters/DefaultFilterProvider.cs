@@ -12,7 +12,7 @@
     /// </summary>
     public class DefaultFilterProvider : IFilterProvider
     {
-        private readonly IReadOnlyDictionary<string, IFilter> filterInstances; 
+        private readonly IReadOnlyDictionary<string, IFilter> filterInstances;
 
         /// <summary>
         /// The single instance of this provider.

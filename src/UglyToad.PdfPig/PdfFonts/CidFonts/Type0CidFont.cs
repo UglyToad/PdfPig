@@ -25,8 +25,7 @@
 
         public CharacterIdentifierSystemInfo SystemInfo { get; }
 
-        public FontDetails Details => fontProgram?.Details ?? Descriptor?.ToDetails(BaseFont?.Data) 
-                                      ?? FontDetails.GetDefault(BaseFont?.Data);
+        public FontDetails Details { get; }
 
         public TransformationMatrix FontMatrix { get; }
 
@@ -38,8 +37,8 @@
 
         public Type0CidFont(ICidFontProgram fontProgram, NameToken type, NameToken subType, NameToken baseFont,
             CharacterIdentifierSystemInfo systemInfo,
-            FontDescriptor descriptor, 
-            VerticalWritingMetrics verticalWritingMetrics, 
+            FontDescriptor descriptor,
+            VerticalWritingMetrics verticalWritingMetrics,
             IReadOnlyDictionary<int, double> widths,
             double? defaultWidth)
         {
@@ -54,6 +53,22 @@
             FontMatrix = TransformationMatrix.FromValues(scale, 0, 0, scale, 0, 0);
             Descriptor = descriptor;
             Widths = widths;
+
+            if (fontProgram == null && Descriptor == null)
+            {
+                Details = FontDetails.GetDefault(BaseFont?.Data);
+            }
+            else
+            {
+                // warning:
+                // fontProgram.Details.Weight can be different from Descriptor.ToDetails().Weight
+                string fontName = !string.IsNullOrEmpty(fontProgram?.Details?.Name) ? fontProgram?.Details?.Name : (!string.IsNullOrEmpty(Descriptor?.FontName) ? Descriptor?.FontName : BaseFont?.Data);
+                string fontFamilly = !string.IsNullOrEmpty(fontProgram?.Details?.FontFamily) ? fontProgram?.Details?.FontFamily : Descriptor?.FontFamily;
+                bool isBold = fontProgram?.Details?.IsBold ?? Descriptor?.ToDetails().IsBold ?? false;
+                bool isItalic = fontProgram?.Details?.IsItalic ?? Descriptor?.ToDetails().IsItalic ?? false;
+                var weight = fontProgram?.Details?.Weight ?? Descriptor?.ToDetails().Weight ?? FontDetails.DefaultWeight;
+                Details = new FontDetails(fontName, fontFamilly, isBold, weight, isItalic);
+            }
         }
 
         public double GetWidthFromFont(int characterCode)
