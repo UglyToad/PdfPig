@@ -241,20 +241,7 @@
             var renderingMatrix =
                 TransformationMatrix.FromValues(fontSize * horizontalScaling, 0, 0, fontSize, 0, rise);
 
-            // TODO: this does not seem correct, produces the correct result for now but we need to revisit.
-            // see: https://stackoverflow.com/questions/48010235/pdf-specification-get-font-size-in-points
-            var fontSizeMatrix = transformationMatrix.Multiply(TextMatrices.TextMatrix).Multiply(fontSize);
-            var pointSize = Math.Round(fontSizeMatrix.A, 2);
-            // Assume a rotated letter
-            if (pointSize == 0)
-            {
-                pointSize = Math.Round(fontSizeMatrix.B, 2);
-            }
-
-            if (pointSize < 0)
-            {
-                pointSize *= -1;
-            }
+            var pointSize = Math.Round(transformationMatrix.Multiply(TextMatrices.TextMatrix).Transform(new PdfRectangle(0, 0, 1, fontSize)).Height, 2);
 
             while (bytes.MoveNext())
             {
@@ -292,7 +279,7 @@
                 var boundingBox = font.GetBoundingBox(code);
 
                 var transformedGlyphBounds = PerformantRectangleTransformer
-                    .Transform(renderingMatrix, textMatrix, transformationMatrix, boundingBox.GlyphBounds);
+                      .Transform(renderingMatrix, textMatrix, transformationMatrix, boundingBox.GlyphBounds);
 
                 var transformedPdfBounds = PerformantRectangleTransformer
                     .Transform(renderingMatrix, textMatrix, transformationMatrix, new PdfRectangle(0, 0, boundingBox.Width, 0));
