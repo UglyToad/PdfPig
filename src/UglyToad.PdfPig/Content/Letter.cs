@@ -68,7 +68,6 @@
 
         /// <summary>
         /// The size of the font in points.
-        /// <para>This is considered experimental because the calculated value is incorrect for some documents at present.</para>
         /// </summary>
         public double PointSize { get; }
 
