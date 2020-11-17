@@ -91,7 +91,8 @@
         /// <param name="width">The width of the rectangle.</param>
         /// <param name="height">The height of the rectangle.</param>
         /// <param name="lineWidth">The width of the line border of the rectangle.</param>
-        public void DrawRectangle(PdfPoint position, decimal width, decimal height, decimal lineWidth = 1)
+        /// <param name="fill">Whether to fill with the color set by <see cref="SetTextAndFillColor"/>.</param>
+        public void DrawRectangle(PdfPoint position, decimal width, decimal height, decimal lineWidth = 1, bool fill = false)
         {
             if (lineWidth != 1)
             {
@@ -99,7 +100,15 @@
             }
 
             operations.Add(new AppendRectangle((decimal)position.X, (decimal)position.Y, width, height));
-            operations.Add(StrokePath.Value);
+
+            if (fill)
+            {
+                operations.Add(FillPathEvenOddRuleAndStroke.Value);
+            }
+            else
+            {
+                operations.Add(StrokePath.Value);
+            }
 
             if (lineWidth != 1)
             {

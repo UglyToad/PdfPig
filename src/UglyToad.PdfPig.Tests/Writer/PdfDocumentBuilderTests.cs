@@ -588,6 +588,21 @@
             }
         }
 
+        [Fact]
+        public void CanCreateDocumentWithFilledRectangle()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page = builder.AddPage(PageSize.A4);
+
+            page.SetTextAndFillColor(255, 0, 0);
+            page.SetStrokeColor(0, 0, 255);
+
+            page.DrawRectangle(new PdfPoint(20, 100), 200, 100, 1.5m, true);
+            
+            var file = builder.Build();
+            WriteFile(nameof(CanCreateDocumentWithFilledRectangle), file);
+        }
+
         private static void WriteFile(string name, byte[] bytes, string extension = "pdf")
         {
             try
