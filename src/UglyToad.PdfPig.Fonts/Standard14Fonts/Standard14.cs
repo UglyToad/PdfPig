@@ -76,6 +76,12 @@
             AddAdobeFontMetrics("Times,Italic", "Times-Italic");
             AddAdobeFontMetrics("Times,Bold", "Times-Bold");
             AddAdobeFontMetrics("Times,BoldItalic", "Times-BoldItalic");
+
+            // Additional names for Arial
+            AddAdobeFontMetrics("ArialMT", "Helvetica");
+            AddAdobeFontMetrics("Arial-ItalicMT", "Helvetica-Oblique");
+            AddAdobeFontMetrics("Arial-BoldMT", "Helvetica-Bold");
+            AddAdobeFontMetrics("Arial-BoldItalicMT", "Helvetica-BoldOblique");
         }
 
         private static void AddAdobeFontMetrics(string fontName, Standard14Font? type = null)
@@ -143,7 +149,7 @@
         {
             return Standard14Cache[BuilderTypesToNames[fontType]];
         }
-        
+
         /// <summary>
         /// Determines if a font with this name is a standard 14 font.
         /// </summary>
@@ -159,7 +165,7 @@
         {
             return new HashSet<string>(Standard14Names);
         }
-        
+
         /// <summary>
         /// Get the official Standard 14 name of the actual font which the given font name maps to.
         /// </summary>
