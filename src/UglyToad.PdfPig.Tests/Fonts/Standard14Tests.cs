@@ -10,7 +10,7 @@
         {
             var names = Standard14.GetNames().Count;
 
-            Assert.Equal(34, names);
+            Assert.Equal(38, names);
         }
     }
 }

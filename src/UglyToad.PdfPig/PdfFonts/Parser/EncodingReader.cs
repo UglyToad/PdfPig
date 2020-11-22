@@ -7,7 +7,6 @@
     using PdfPig.Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
-    using Util;
 
     internal class EncodingReader : IEncodingReader
     {
@@ -95,20 +94,17 @@
                 return differences;
             }
 
-            var activeCode = differenceArray.GetNumeric(0).Int;
-
-            for (int i = 1; i < differenceArray.Data.Count; i++)
+            var currentIndex = -1;
+            foreach (var differenceEntry in differenceArray.Data)
             {
-                var entry = differenceArray.Data[i];
-
-                if (entry is NumericToken numeric)
+                if (differenceEntry is NumericToken number)
                 {
-                    activeCode = numeric.Int;
+                    currentIndex = number.Int;
                 }
-                else if (entry is NameToken name)
+                else if (differenceEntry is NameToken name)
                 {
-                    differences.Add((activeCode, name.Data));
-                    activeCode++;
+                    differences.Add((currentIndex, name.Data));
+                    currentIndex++;
                 }
                 else
                 {
