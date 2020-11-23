@@ -88,6 +88,66 @@
 
         }
 
+        public void MoveTo(double x, double y)
+        {
+            BeginSubpath();
+            var point = CurrentTransformationMatrix.Transform(new PdfPoint(x, y));
+            CurrentPosition = point;
+            CurrentSubpath.MoveTo(point.X, point.Y);
+        }
+
+        public void BezierCurveTo(double x2, double y2, double x3, double y3)
+        {
+            if (CurrentSubpath == null)
+            {
+                return;
+            }
+
+            var controlPoint2 = CurrentTransformationMatrix.Transform(new PdfPoint(x2, y2));
+            var end = CurrentTransformationMatrix.Transform(new PdfPoint(x3, y3));
+
+            CurrentSubpath.BezierCurveTo(CurrentPosition.X, CurrentPosition.Y, controlPoint2.X, controlPoint2.Y, end.X, end.Y);
+            CurrentPosition = end;
+        }
+
+        public void BezierCurveTo(double x1, double y1, double x2, double y2, double x3, double y3)
+        {
+            if (CurrentSubpath == null)
+            {
+                return;
+            }
+
+            var controlPoint1 = CurrentTransformationMatrix.Transform(new PdfPoint(x1, y1));
+            var controlPoint2 = CurrentTransformationMatrix.Transform(new PdfPoint(x2, y2));
+            var end = CurrentTransformationMatrix.Transform(new PdfPoint(x3, y3));
+
+            CurrentSubpath.BezierCurveTo(controlPoint1.X, controlPoint1.Y, controlPoint2.X, controlPoint2.Y, end.X, end.Y);
+            CurrentPosition = end;
+        }
+
+        public void LineTo(double x, double y)
+        {
+            if (CurrentSubpath == null)
+            {
+                return;
+            }
+
+            var endPoint = CurrentTransformationMatrix.Transform(new PdfPoint(x, y));
+
+            CurrentSubpath.LineTo(endPoint.X, endPoint.Y);
+            CurrentPosition = endPoint;
+        }
+
+        public void Rectangle(double x, double y, double width, double height)
+        {
+            BeginSubpath();
+            var lowerLeft = CurrentTransformationMatrix.Transform(new PdfPoint(x, y));
+            var upperRight = CurrentTransformationMatrix.Transform(new PdfPoint(x + width, y + height));
+
+            CurrentSubpath.Rectangle(lowerLeft.X, lowerLeft.Y, upperRight.X - lowerLeft.X, upperRight.Y - lowerLeft.Y);
+            AddCurrentSubpath();
+        }
+
         public void EndPath()
         {
         }

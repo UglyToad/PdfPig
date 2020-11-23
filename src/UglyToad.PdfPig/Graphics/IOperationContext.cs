@@ -11,18 +11,6 @@
     public interface IOperationContext
     {
         /// <summary>
-        /// The current subpath being drawn if applicable.
-        /// </summary>
-        [CanBeNull]
-        PdfSubpath CurrentSubpath { get; }
-
-        /// <summary>
-        /// The current path being drawn if applicable.
-        /// </summary>
-        [CanBeNull]
-        PdfPath CurrentPath { get; }
-
-        /// <summary>
         /// The active colorspaces for this content stream.
         /// </summary>
         IColorSpaceContext ColorSpaceContext { get; }
@@ -115,6 +103,46 @@
         /// <param name="fillingRule">The filling rule to use.</param>
         /// <param name="close">Whether to also close the path.</param>
         void FillStrokePath(FillingRule fillingRule, bool close);
+
+        /// <summary>
+        /// Add a move command to the path.
+        /// <para>Should implement matrix transformations.</para>
+        /// </summary>
+        void MoveTo(double x, double y);
+
+        /// <summary>
+        /// Add a bezier curve to the current subpath.
+        /// <para>Should implement matrix transformations.</para>
+        /// </summary>
+        /// <param name="x1"></param>
+        /// <param name="y1"></param>
+        /// <param name="x2"></param>
+        /// <param name="y2"></param>
+        /// <param name="x3"></param>
+        /// <param name="y3"></param>
+        void BezierCurveTo(double x1, double y1, double x2, double y2, double x3, double y3);
+
+        /// <summary>
+        /// Add a bezier curve to the current subpath.
+        /// <para>Should implement matrix transformations.</para>
+        /// </summary>
+        /// <param name="x2"></param>
+        /// <param name="y2"></param>
+        /// <param name="x3"></param>
+        /// <param name="y3"></param>
+        void BezierCurveTo(double x2, double y2, double x3, double y3);
+
+        /// <summary>
+        /// Add a line command to the subpath.
+        /// <para>Should implement matrix transformations.</para>
+        /// </summary>
+        void LineTo(double x, double y);
+
+        /// <summary>
+        /// Add a rectangle following the pdf specification (m, l, l, l, c) path. A new subpath will be created.
+        /// <para>Should implement matrix transformations.</para>
+        /// </summary>
+        void Rectangle(double x, double y, double width, double height);
 
         /// <summary>
         /// End the path object without filling or stroking it. This operator shall be a path-painting no-op,
