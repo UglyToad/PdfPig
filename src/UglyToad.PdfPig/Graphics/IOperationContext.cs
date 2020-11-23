@@ -36,7 +36,7 @@
         void PopState();
 
         /// <summary>
-        /// Saves a copy of the current graphics state on the stack. 
+        /// Saves a copy of the current graphics state on the stack.
         /// </summary>
         void PushState();
 
@@ -62,7 +62,7 @@
         /// Start a new sub-path.
         /// </summary>
         void BeginSubpath();
-        
+
         /// <summary>
         /// Close the current subpath.
         /// </summary>
@@ -103,22 +103,12 @@
         /// Add a bezier curve to the current subpath.
         /// <para>Should implement matrix transformations.</para>
         /// </summary>
-        /// <param name="x1"></param>
-        /// <param name="y1"></param>
-        /// <param name="x2"></param>
-        /// <param name="y2"></param>
-        /// <param name="x3"></param>
-        /// <param name="y3"></param>
         void BezierCurveTo(double x1, double y1, double x2, double y2, double x3, double y3);
 
         /// <summary>
         /// Add a bezier curve to the current subpath.
         /// <para>Should implement matrix transformations.</para>
         /// </summary>
-        /// <param name="x2"></param>
-        /// <param name="y2"></param>
-        /// <param name="x3"></param>
-        /// <param name="y3"></param>
         void BezierCurveTo(double x2, double y2, double x3, double y3);
 
         /// <summary>
