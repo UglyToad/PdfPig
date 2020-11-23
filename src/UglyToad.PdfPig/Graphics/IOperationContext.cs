@@ -26,11 +26,6 @@
         TextMatrices TextMatrices { get; }
 
         /// <summary>
-        /// The current transformation matrix
-        /// </summary>
-        TransformationMatrix CurrentTransformationMatrix { get; }
-
-        /// <summary>
         /// The number of graphics states on the stack.
         /// </summary>
         int StackSize { get; }
