@@ -30,9 +30,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var currentState = operationContext.GetCurrentState();
-
-            currentState.FontState.HorizontalScaling = (double)Scale;
+            operationContext.SetHorizontalScaling((double)Scale);
         }
 
         /// <inheritdoc />

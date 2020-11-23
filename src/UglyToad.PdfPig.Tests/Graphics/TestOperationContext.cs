@@ -7,6 +7,8 @@
     using PdfPig.Tokens;
     using PdfPig.Core;
     using Tokens;
+    using UglyToad.PdfPig.Graphics.Core;
+    using UglyToad.PdfPig.Graphics.Operations.TextPositioning;
 
     internal class TestOperationContext : IOperationContext
     {
@@ -182,6 +184,91 @@
 
         public void ModifyClippingIntersect(FillingRule clippingRule)
         {
+        }
+
+        private void AdjustTextMatrix(double tx, double ty)
+        {
+            var matrix = TransformationMatrix.GetTranslationMatrix(tx, ty);
+            TextMatrices.TextMatrix = matrix.Multiply(TextMatrices.TextMatrix);
+        }
+
+        public void SetFlatnessTolerance(decimal tolerance)
+        {
+            GetCurrentState().Flatness = tolerance;
+        }
+
+        public void SetLineCap(LineCapStyle cap)
+        {
+            GetCurrentState().CapStyle = cap;
+        }
+
+        public void SetLineDashPattern(LineDashPattern pattern)
+        {
+            GetCurrentState().LineDashPattern = pattern;
+        }
+
+        public void SetLineJoin(LineJoinStyle join)
+        {
+            GetCurrentState().JoinStyle = join;
+        }
+
+        public void SetLineWidth(decimal width)
+        {
+            GetCurrentState().LineWidth = width;
+        }
+
+        public void SetMiterLimit(decimal limit)
+        {
+            GetCurrentState().MiterLimit = limit;
+        }
+
+        public void MoveToNextLineWithOffset()
+        {
+            var tdOperation = new MoveToNextLineWithOffset(0, -1 * (decimal)GetCurrentState().FontState.Leading);
+            tdOperation.Run(this);
+        }
+
+        public void SetFontAndSize(NameToken font, double size)
+        {
+            var currentState = GetCurrentState();
+            currentState.FontState.FontSize = size;
+            currentState.FontState.FontName = font;
+        }
+
+        public void SetHorizontalScaling(double scale)
+        {
+            GetCurrentState().FontState.HorizontalScaling = scale;
+        }
+
+        public void SetTextLeading(double leading)
+        {
+            GetCurrentState().FontState.Leading = leading;
+        }
+
+        public void SetTextRenderingMode(TextRenderingMode mode)
+        {
+            GetCurrentState().FontState.TextRenderingMode = mode;
+        }
+
+        public void SetTextRise(double rise)
+        {
+            GetCurrentState().FontState.Rise = rise;
+        }
+
+        public void SetWordSpacing(double spacing)
+        {
+            GetCurrentState().FontState.WordSpacing = spacing;
+        }
+
+        public void ModifyCurrentTransformationMatrix(double[] value)
+        {
+            var ctm = GetCurrentState().CurrentTransformationMatrix;
+            GetCurrentState().CurrentTransformationMatrix = TransformationMatrix.FromArray(value).Multiply(ctm);
+        }
+
+        public void SetCharacterSpacing(double spacing)
+        {
+            GetCurrentState().FontState.CharacterSpacing = spacing;
         }
 
         private class TestFontFactory : IFontFactory

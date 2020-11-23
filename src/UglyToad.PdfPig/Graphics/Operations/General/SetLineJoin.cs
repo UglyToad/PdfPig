@@ -40,7 +40,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.GetCurrentState().JoinStyle = Join;
+            operationContext.SetLineJoin(Join);
         }
 
         /// <inheritdoc />

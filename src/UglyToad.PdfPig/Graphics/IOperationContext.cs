@@ -3,6 +3,7 @@
     using PdfPig.Core;
     using System.Collections.Generic;
     using Tokens;
+    using UglyToad.PdfPig.Graphics.Core;
 
     /// <summary>
     /// The current graphics state context when running a PDF content stream.
@@ -18,12 +19,6 @@
         /// The current position.
         /// </summary>
         PdfPoint CurrentPosition { get; set; }
-
-        /// <summary>
-        /// Get the currently active <see cref="CurrentGraphicsState"/>. States are stored on a stack structure.
-        /// </summary>
-        /// <returns>The currently active graphics state.</returns>
-        CurrentGraphicsState GetCurrentState();
 
         /// <summary>
         /// The matrices for the current text state.
@@ -189,5 +184,90 @@
         /// Modify the clipping rule of the current path.
         /// </summary>
         void ModifyClippingIntersect(FillingRule clippingRule);
+
+        /// <summary>
+        /// Set the flatness tolerance in the graphics state.
+        /// Flatness is a number in the range 0 to 100; a value of 0 specifies the output device’s default flatness tolerance.
+        /// </summary>
+        /// <param name="tolerance"></param>
+        void SetFlatnessTolerance(decimal tolerance);
+
+        /// <summary>
+        /// Set the line cap style in the graphics state.
+        /// </summary>
+        void SetLineCap(LineCapStyle cap);
+
+        /// <summary>
+        /// Set the line dash pattern in the graphics state.
+        /// </summary>
+        void SetLineDashPattern(LineDashPattern pattern);
+
+        /// <summary>
+        /// Set the line join style in the graphics state.
+        /// </summary>
+        void SetLineJoin(LineJoinStyle join);
+
+        /// <summary>
+        /// Set the line width in the graphics state.
+        /// </summary>
+        void SetLineWidth(decimal width);
+
+        /// <summary>
+        /// Set the miter limit in the graphics state.
+        /// </summary>
+        void SetMiterLimit(decimal limit);
+
+        /// <summary>
+        /// Move to the start of the next line.
+        /// </summary>
+        /// <remarks>
+        /// This performs this operation: 0 -Tl Td
+        /// The offset is negative leading text (Tl) value, this is incorrect in the specification.
+        /// </remarks>
+        void MoveToNextLineWithOffset();
+
+        /// <summary>
+        /// Set the font and the font size.
+        /// Font is the name of a font resource in the Font subdictionary of the current resource dictionary.
+        /// Size is a number representing a scale factor.
+        /// </summary>
+        void SetFontAndSize(NameToken font, double size);
+
+        /// <summary>
+        /// Set the horizontal scaling.
+        /// </summary>
+        /// <param name="scale"></param>
+        void SetHorizontalScaling(double scale);
+
+        /// <summary>
+        /// Set the text leading.
+        /// </summary>
+        void SetTextLeading(double leading);
+
+        /// <summary>
+        /// Set the text rendering mode.
+        /// </summary>
+        void SetTextRenderingMode(TextRenderingMode mode);
+
+        /// <summary>
+        /// Set text rise.
+        /// </summary>
+        void SetTextRise(double rise);
+
+        /// <summary>
+        /// Sets the word spacing.
+        /// </summary>
+        void SetWordSpacing(double spacing);
+
+        /// <summary>
+        /// Modify the current transformation matrix by concatenating the specified matrix.
+        /// </summary>
+        void ModifyCurrentTransformationMatrix(double[] value);
+
+        /// <summary>
+        /// Set the character spacing to a number expressed in unscaled text space units.
+        /// Initial value: 0.
+        /// </summary>
+        void SetCharacterSpacing(double spacing);
     }
 }
