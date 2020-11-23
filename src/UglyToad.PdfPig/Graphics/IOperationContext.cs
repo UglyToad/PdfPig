@@ -3,7 +3,6 @@
     using PdfPig.Core;
     using System.Collections.Generic;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// The current graphics state context when running a PDF content stream.
