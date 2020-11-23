@@ -338,6 +338,7 @@
         public static readonly NameToken MarkInfo = new NameToken("MarkInfo");
         public static readonly NameToken Mask = new NameToken("Mask");
         public static readonly NameToken Matrix = new NameToken("Matrix");
+        public static readonly NameToken Matte = new NameToken("Matte");
         public static readonly NameToken MaxLen = new NameToken("MaxLen");
         public static readonly NameToken MaxWidth = new NameToken("MaxWidth");
         public static readonly NameToken Mcid = new NameToken("MCID");
