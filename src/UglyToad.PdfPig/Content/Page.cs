@@ -35,7 +35,10 @@
         /// </summary>
         public CropBox CropBox { get; }
 
-        internal MediaBox MediaBox { get; }
+        /// <summary>
+        /// Defines the boundaries of the physical medium on which the page shall be displayed or printed.
+        /// </summary>
+        public MediaBox MediaBox { get; }
 
         internal PageContent Content { get; }
 
