@@ -46,7 +46,7 @@
 
             do
             {
-                if (loopProtection > 1_000_000)
+                if (loopProtection > 10_000_000)
                 {
                     throw new PdfDocumentFormatException("Failed to brute-force search the file due to an infinite loop.");
                 }
