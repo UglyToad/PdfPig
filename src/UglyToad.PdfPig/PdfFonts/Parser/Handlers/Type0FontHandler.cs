@@ -47,7 +47,7 @@
                 }
                 else
                 {
-                    descendantFontDictionary = (DictionaryToken) descendantObject;
+                    descendantFontDictionary = (DictionaryToken)descendantObject;
                 }
 
                 cidFont = ParseDescendant(descendantFontDictionary);
@@ -107,7 +107,7 @@
             {
                 if (array.Data[0] is IndirectReferenceToken objArr)
                 {
-                descendant = objArr;
+                    descendant = objArr;
                 }
                 else if (array.Data[0] is DictionaryToken dict)
                 {
@@ -140,30 +140,28 @@
         private CMap ReadEncoding(DictionaryToken dictionary, out bool isCMapPredefined)
         {
             isCMapPredefined = false;
-            CMap result = default(CMap);
+            CMap result;
 
-            if (dictionary.TryGet(NameToken.Encoding, out var value))
+            if (dictionary.TryGet(NameToken.Encoding, scanner, out NameToken encodingName))
             {
-                if (value is NameToken encodingName)
-                {
-                    var cmap = CMapCache.Get(encodingName.Data);
+                var cmap = CMapCache.Get(encodingName.Data);
 
-                    result = cmap ?? throw new InvalidOperationException("Missing CMap for " + encodingName.Data);
+                result = cmap ?? throw new InvalidOperationException($"Missing CMap named {encodingName.Data}.");
 
-                    isCMapPredefined = true;
-                }
-                else if (value is StreamToken stream)
-                {
-                    var decoded = stream.Decode(filterProvider);
+                isCMapPredefined = true;
+            }
+            else if (dictionary.TryGet(NameToken.Encoding, scanner, out StreamToken stream))
+            {
+                var decoded = stream.Decode(filterProvider);
 
-                    var cmap = CMapCache.Parse(new ByteArrayInputBytes(decoded));
+                var cmap = CMapCache.Parse(new ByteArrayInputBytes(decoded));
 
-                    result = cmap ?? throw new InvalidOperationException("Could not read CMap for " + dictionary);
-                }
-                else
-                {
-                    throw new InvalidOperationException("Could not read the encoding, expected a name or a stream but got a: " + value.GetType().Name);
-                }
+                result = cmap ?? throw new InvalidOperationException($"Could not read CMap from stream in the dictionary: {dictionary}");
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    $"Could not read the encoding, expected a name or a stream but it was not found in the dictionary: {dictionary}");
             }
 
             return result;
