@@ -32,9 +32,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var tdOperation = new MoveToNextLineWithOffset(0, -1 * (decimal)operationContext.GetCurrentState().FontState.Leading);
-
-            tdOperation.Run(operationContext);
+            operationContext.MoveToNextLineWithOffset();
         }
 
         /// <inheritdoc />

@@ -34,9 +34,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var currentState = operationContext.GetCurrentState();
-
-            currentState.FontState.WordSpacing = (double)Spacing;
+            operationContext.SetWordSpacing((double)Spacing);
         }
 
         /// <inheritdoc />

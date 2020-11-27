@@ -33,7 +33,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.GetCurrentState().LineDashPattern = Pattern;
+            operationContext.SetLineDashPattern(Pattern);
         }
 
         /// <inheritdoc />

@@ -1,9 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.Linq;
     using Colors;
     using Content;
     using Core;
@@ -14,8 +10,13 @@
     using Parser;
     using PdfFonts;
     using PdfPig.Core;
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Linq;
     using Tokenization.Scanner;
     using Tokens;
+    using UglyToad.PdfPig.Graphics.Operations.TextPositioning;
     using XObjects;
     using static PdfPig.Core.PdfSubpath;
 
@@ -560,7 +561,67 @@
 
             ClosePath();
         }
-        
+
+        public void MoveTo(double x, double y)
+        {
+            BeginSubpath();
+            var point = CurrentTransformationMatrix.Transform(new PdfPoint(x, y));
+            CurrentPosition = point;
+            CurrentSubpath.MoveTo(point.X, point.Y);
+        }
+
+        public void BezierCurveTo(double x2, double y2, double x3, double y3)
+        {
+            if (CurrentSubpath == null)
+            {
+                return;
+            }
+
+            var controlPoint2 = CurrentTransformationMatrix.Transform(new PdfPoint(x2, y2));
+            var end = CurrentTransformationMatrix.Transform(new PdfPoint(x3, y3));
+
+            CurrentSubpath.BezierCurveTo(CurrentPosition.X, CurrentPosition.Y, controlPoint2.X, controlPoint2.Y, end.X, end.Y);
+            CurrentPosition = end;
+        }
+
+        public void BezierCurveTo(double x1, double y1, double x2, double y2, double x3, double y3)
+        {
+            if (CurrentSubpath == null)
+            {
+                return;
+            }
+
+            var controlPoint1 = CurrentTransformationMatrix.Transform(new PdfPoint(x1, y1));
+            var controlPoint2 = CurrentTransformationMatrix.Transform(new PdfPoint(x2, y2));
+            var end = CurrentTransformationMatrix.Transform(new PdfPoint(x3, y3));
+
+            CurrentSubpath.BezierCurveTo(controlPoint1.X, controlPoint1.Y, controlPoint2.X, controlPoint2.Y, end.X, end.Y);
+            CurrentPosition = end;
+        }
+
+        public void LineTo(double x, double y)
+        {
+            if (CurrentSubpath == null)
+            {
+                return;
+            }
+
+            var endPoint = CurrentTransformationMatrix.Transform(new PdfPoint(x, y));
+
+            CurrentSubpath.LineTo(endPoint.X, endPoint.Y);
+            CurrentPosition = endPoint;
+        }
+
+        public void Rectangle(double x, double y, double width, double height)
+        {
+            BeginSubpath();
+            var lowerLeft = CurrentTransformationMatrix.Transform(new PdfPoint(x, y));
+            var upperRight = CurrentTransformationMatrix.Transform(new PdfPoint(x + width, y + height));
+
+            CurrentSubpath.Rectangle(lowerLeft.X, lowerLeft.Y, upperRight.X - lowerLeft.X, upperRight.Y - lowerLeft.Y);
+            AddCurrentSubpath();
+        }
+
         public void EndPath()
         {
             if (CurrentPath == null)
@@ -744,7 +805,10 @@
             if (markedContentStack.CanPop)
             {
                 var mc = markedContentStack.Pop(pdfScanner);
-                if (mc != null) markedContents.Add(mc);
+                if (mc != null)
+                {
+                    markedContents.Add(mc);
+                }
             }
         }
 
@@ -752,9 +816,86 @@
         {
             var matrix = TransformationMatrix.GetTranslationMatrix(tx, ty);
 
-            var newMatrix = matrix.Multiply(TextMatrices.TextMatrix);
+            TextMatrices.TextMatrix = matrix.Multiply(TextMatrices.TextMatrix);
+        }
 
-            TextMatrices.TextMatrix = newMatrix;
+        public void SetFlatnessTolerance(decimal tolerance)
+        {
+            GetCurrentState().Flatness = tolerance;
+        }
+
+        public void SetLineCap(LineCapStyle cap)
+        {
+            GetCurrentState().CapStyle = cap;
+        }
+
+        public void SetLineDashPattern(LineDashPattern pattern)
+        {
+            GetCurrentState().LineDashPattern = pattern;
+        }
+
+        public void SetLineJoin(LineJoinStyle join)
+        {
+            GetCurrentState().JoinStyle = join;
+        }
+
+        public void SetLineWidth(decimal width)
+        {
+            GetCurrentState().LineWidth = width;
+        }
+
+        public void SetMiterLimit(decimal limit)
+        {
+            GetCurrentState().MiterLimit = limit;
+        }
+
+        public void MoveToNextLineWithOffset()
+        {
+            var tdOperation = new MoveToNextLineWithOffset(0, -1 * (decimal)GetCurrentState().FontState.Leading);
+            tdOperation.Run(this);
+        }
+
+        public void SetFontAndSize(NameToken font, double size)
+        {
+            var currentState = GetCurrentState();
+            currentState.FontState.FontSize = size;
+            currentState.FontState.FontName = font;
+        }
+
+        public void SetHorizontalScaling(double scale)
+        {
+            GetCurrentState().FontState.HorizontalScaling = scale;
+        }
+
+        public void SetTextLeading(double leading)
+        {
+            GetCurrentState().FontState.Leading = leading;
+        }
+
+        public void SetTextRenderingMode(TextRenderingMode mode)
+        {
+            GetCurrentState().FontState.TextRenderingMode = mode;
+        }
+
+        public void SetTextRise(double rise)
+        {
+            GetCurrentState().FontState.Rise = rise;
+        }
+
+        public void SetWordSpacing(double spacing)
+        {
+            GetCurrentState().FontState.WordSpacing = spacing;
+        }
+
+        public void ModifyCurrentTransformationMatrix(double[] value)
+        {
+            var ctm = GetCurrentState().CurrentTransformationMatrix;
+            GetCurrentState().CurrentTransformationMatrix = TransformationMatrix.FromArray(value).Multiply(ctm);
+        }
+
+        public void SetCharacterSpacing(double spacing)
+        {
+            GetCurrentState().FontState.CharacterSpacing = spacing;
         }
     }
 }

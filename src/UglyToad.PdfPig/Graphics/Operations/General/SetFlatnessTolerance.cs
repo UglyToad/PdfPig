@@ -35,7 +35,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.GetCurrentState().Flatness = Tolerance;
+            operationContext.SetFlatnessTolerance(Tolerance);
         }
 
         /// <inheritdoc />

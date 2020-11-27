@@ -33,9 +33,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var currentState = operationContext.GetCurrentState();
-
-            currentState.FontState.Rise = (double)Rise;
+            operationContext.SetTextRise((double)Rise);
         }
 
         /// <inheritdoc />

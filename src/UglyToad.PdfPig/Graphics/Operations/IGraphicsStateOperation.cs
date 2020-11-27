@@ -20,6 +20,7 @@
 
         /// <summary>
         /// Applies the operation to the current context with the provided resources.
+        /// <para>Matrix transformations should be implemented in <see cref="IOperationContext"/>.</para>
         /// </summary>
         /// <param name="operationContext"></param>
         void Run(IOperationContext operationContext);

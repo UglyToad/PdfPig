@@ -44,13 +44,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var newMatrix = TransformationMatrix.FromArray(Value);
-
-            var ctm = operationContext.GetCurrentState().CurrentTransformationMatrix;
-
-            var newCtm = newMatrix.Multiply(ctm);
-
-            operationContext.GetCurrentState().CurrentTransformationMatrix = newCtm;
+            operationContext.ModifyCurrentTransformationMatrix(Array.ConvertAll(Value, x => (double)x));
         }
 
         /// <inheritdoc />

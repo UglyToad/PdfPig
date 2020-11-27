@@ -45,7 +45,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.GetCurrentState().CapStyle = Cap;
+            operationContext.SetLineCap(Cap);
         }
 
         /// <inheritdoc />
