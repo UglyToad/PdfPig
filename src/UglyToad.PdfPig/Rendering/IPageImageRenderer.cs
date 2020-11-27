@@ -1,5 +1,4 @@
-﻿using System.IO;
-using UglyToad.PdfPig.Content;
+﻿using UglyToad.PdfPig.Content;
 
 namespace UglyToad.PdfPig.Rendering
 {
@@ -15,6 +14,6 @@ namespace UglyToad.PdfPig.Rendering
         /// <param name="scale">The scale to apply to the page (i.e. zoom level).</param>
         /// <param name="imageFormat">The output image format, if supported.</param>
         /// <returns>The image as a memory stream.</returns>
-        MemoryStream Render(Page page, double scale, PdfRendererImageFormat imageFormat);
+        byte[] Render(Page page, double scale, PdfRendererImageFormat imageFormat);
     }
 }
