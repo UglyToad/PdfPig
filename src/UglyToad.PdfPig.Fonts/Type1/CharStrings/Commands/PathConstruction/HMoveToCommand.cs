@@ -19,19 +19,19 @@
 
         public static void Run(Type1BuildCharContext context)
         {
-            var x = context.Stack.PopBottom();
-
-            var actualX = context.CurrentPosition.X + x;
-            var y = context.CurrentPosition.Y;
+            var deltaX = context.Stack.PopBottom();
 
             if (context.IsFlexing)
             {
-                // TODO: flex support
+                // not in the Type 1 spec, but exists in some fonts
+                context.AddFlexPoint(new PdfPoint(deltaX, 0));
             }
             else
             {
-                context.CurrentPosition = new PdfPoint(actualX, y);
-                context.Path.MoveTo(actualX, y);
+                var x = context.CurrentPosition.X + deltaX;
+                var y = context.CurrentPosition.Y;
+                context.CurrentPosition = new PdfPoint(x, y);
+                context.Path.MoveTo(x, y);
             }
 
             context.Stack.Clear();

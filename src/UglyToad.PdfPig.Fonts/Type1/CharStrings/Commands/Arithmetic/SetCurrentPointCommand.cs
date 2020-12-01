@@ -4,6 +4,8 @@
 
     /// <summary>
     /// Sets the current point to (x, y) in absolute character space coordinates without performing a charstring moveto command.
+    /// <para>This establishes the current point for a subsequent relative path building command.
+    /// The 'setcurrentpoint' command is used only in conjunction with results from 'OtherSubrs' procedures.</para>
     /// </summary>
     internal static class SetCurrentPointCommand
     {
@@ -22,8 +24,8 @@
             var x = context.Stack.PopBottom();
             var y = context.Stack.PopBottom();
 
-            context.CurrentPosition = new PdfPoint(x, y);
-
+            //context.CurrentPosition = new PdfPoint(x, y);
+            // TODO: need to investigate why odd behavior when the current point is actualy set.
             context.Stack.Clear();
         }
     }
