@@ -142,21 +142,6 @@
             return referenceToken;
         }
 
-        private IndirectReferenceToken FindToken(IToken token)
-        {
-            foreach (var pair in tokenReferences)
-            {
-                var reference = pair.Key;
-                var storedToken = pair.Value;
-                if (storedToken.Equals(token))
-                {
-                    return reference;
-                }
-            }
-
-            return null;
-        }
-
         private static void WriteString(string text, Stream stream)
         {
             var bytes = OtherEncodings.StringAsLatin1Bytes(text);
