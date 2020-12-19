@@ -308,13 +308,26 @@ namespace UglyToad.PdfPig.Writer
 
                     pageDictionary[NameToken.Resources] = new DictionaryToken(individualResources);
 
-                    if (page.Value.Operations.Count > 0)
+                    if (page.Value.ContentStreams.Count == 1)
                     {
-                        var contentStream = WriteContentStream(page.Value.Operations);
+                        var contentStream = WriteContentStream(page.Value.CurrentStream.Operations);
 
                         var contentStreamObj = context.WriteObject(memory, contentStream);
 
                         pageDictionary[NameToken.Contents] = new IndirectReferenceToken(contentStreamObj.Number);
+                    }
+                    else if (page.Value.ContentStreams.Count > 1)
+                    {
+                        var streamTokens = page.Value.ContentStreams.Select(contentStream =>
+                        {
+                            var streamToken = WriteContentStream(contentStream.Operations);
+
+                            var contentStreamObj = context.WriteObject(memory, streamToken);
+
+                            return new IndirectReferenceToken(contentStreamObj.Number);
+                        }).ToList();
+
+                        pageDictionary[NameToken.Contents] = new ArrayToken(streamTokens);
                     }
 
                     var pageRef = context.WriteObject(memory, new DictionaryToken(pageDictionary));

@@ -27,15 +27,13 @@
     public class PdfPageBuilder
     {
         private readonly PdfDocumentBuilder documentBuilder;
-        private readonly List<IGraphicsStateOperation> operations = new List<IGraphicsStateOperation>();
+        private readonly List<ContentStream> contentStreams;
         private readonly Dictionary<NameToken, IToken> resourcesDictionary = new Dictionary<NameToken, IToken>();
 
         //a sequence number of ShowText operation to determine whether letters belong to same operation or not (letters that belong to different operations have less changes to belong to same word)
         private int textSequence;
 
         private int imageKey = 1;
-
-        internal IReadOnlyList<IGraphicsStateOperation> Operations => operations;
 
         internal IReadOnlyDictionary<NameToken, IToken> Resources => resourcesDictionary;
 
@@ -52,13 +50,59 @@
         /// <summary>
         /// Access to the underlying data structures for advanced use cases.
         /// </summary>
-        public AdvancedEditing Advanced { get; }
+        public ContentStream CurrentStream { get; private set; }
+
+        /// <summary>
+        /// Access to
+        /// </summary>
+        public IReadOnlyList<ContentStream> ContentStreams { get; }
 
         internal PdfPageBuilder(int number, PdfDocumentBuilder documentBuilder)
         {
             this.documentBuilder = documentBuilder ?? throw new ArgumentNullException(nameof(documentBuilder));
             PageNumber = number;
-            Advanced = new AdvancedEditing(operations);
+
+            CurrentStream = new ContentStream();
+            ContentStreams = contentStreams = new List<ContentStream>()
+            {
+                CurrentStream
+            };
+        }
+
+        /// <summary>
+        /// Allow to append a new content stream before the current one and select it
+        /// </summary>
+        public void NewContentStreamBefore()
+        {
+            var index = Math.Max(contentStreams.IndexOf(CurrentStream) - 1, 0);
+
+            CurrentStream = new ContentStream();
+            contentStreams.Insert(index, CurrentStream);
+        }
+
+        /// <summary>
+        /// Allow to append a new content stream after the current one and select it
+        /// </summary>
+        public void NewContentStreamAfter()
+        {
+            var index = Math.Min(contentStreams.IndexOf(CurrentStream) + 1, contentStreams.Count);
+
+            CurrentStream = new ContentStream();
+            contentStreams.Insert(index, CurrentStream);
+        }
+
+        /// <summary>
+        /// Select a content stream from the list, by his index
+        /// </summary>
+        /// <param name="index">index of the content stream to be selected</param>
+        public void SelectContentStream(int index)
+        {
+            if (index < 0 || index >= ContentStreams.Count)
+            {
+                throw new IndexOutOfRangeException(nameof(index));
+            }
+
+            CurrentStream = ContentStreams[index];
         }
 
         /// <summary>
@@ -71,16 +115,16 @@
         {
             if (lineWidth != 1)
             {
-                operations.Add(new SetLineWidth(lineWidth));
+                CurrentStream.Add(new SetLineWidth(lineWidth));
             }
 
-            operations.Add(new BeginNewSubpath((decimal)from.X, (decimal)from.Y));
-            operations.Add(new AppendStraightLineSegment((decimal)to.X, (decimal)to.Y));
-            operations.Add(StrokePath.Value);
+            CurrentStream.Add(new BeginNewSubpath((decimal)from.X, (decimal)from.Y));
+            CurrentStream.Add(new AppendStraightLineSegment((decimal)to.X, (decimal)to.Y));
+            CurrentStream.Add(StrokePath.Value);
 
             if (lineWidth != 1)
             {
-                operations.Add(new SetLineWidth(1));
+                CurrentStream.Add(new SetLineWidth(1));
             }
         }
 
@@ -96,23 +140,23 @@
         {
             if (lineWidth != 1)
             {
-                operations.Add(new SetLineWidth(lineWidth));
+                CurrentStream.Add(new SetLineWidth(lineWidth));
             }
 
-            operations.Add(new AppendRectangle((decimal)position.X, (decimal)position.Y, width, height));
+            CurrentStream.Add(new AppendRectangle((decimal)position.X, (decimal)position.Y, width, height));
 
             if (fill)
             {
-                operations.Add(FillPathEvenOddRuleAndStroke.Value);
+                CurrentStream.Add(FillPathEvenOddRuleAndStroke.Value);
             }
             else
             {
-                operations.Add(StrokePath.Value);
+                CurrentStream.Add(StrokePath.Value);
             }
 
             if (lineWidth != 1)
             {
-                operations.Add(new SetLineWidth(lineWidth));
+                CurrentStream.Add(new SetLineWidth(lineWidth));
             }
         }
 
@@ -124,8 +168,8 @@
         /// <param name="b">Blue - 0 to 255</param>
         public void SetStrokeColor(byte r, byte g, byte b)
         {
-            operations.Add(Push.Value);
-            operations.Add(new SetStrokeColorDeviceRgb(RgbToDecimal(r), RgbToDecimal(g), RgbToDecimal(b)));
+            CurrentStream.Add(Push.Value);
+            CurrentStream.Add(new SetStrokeColorDeviceRgb(RgbToDecimal(r), RgbToDecimal(g), RgbToDecimal(b)));
         }
 
         /// <summary>
@@ -136,8 +180,8 @@
         /// <param name="b">Blue - 0 to 1</param>
         internal void SetStrokeColorExact(decimal r, decimal g, decimal b)
         {
-            operations.Add(Push.Value);
-            operations.Add(new SetStrokeColorDeviceRgb(CheckRgbDecimal(r, nameof(r)),
+            CurrentStream.Add(Push.Value);
+            CurrentStream.Add(new SetStrokeColorDeviceRgb(CheckRgbDecimal(r, nameof(r)),
                 CheckRgbDecimal(g, nameof(g)), CheckRgbDecimal(b, nameof(b))));
         }
 
@@ -149,8 +193,8 @@
         /// <param name="b">Blue - 0 to 255</param>
         public void SetTextAndFillColor(byte r, byte g, byte b)
         {
-            operations.Add(Push.Value);
-            operations.Add(new SetNonStrokeColorDeviceRgb(RgbToDecimal(r), RgbToDecimal(g), RgbToDecimal(b)));
+            CurrentStream.Add(Push.Value);
+            CurrentStream.Add(new SetNonStrokeColorDeviceRgb(RgbToDecimal(r), RgbToDecimal(g), RgbToDecimal(b)));
         }
 
         /// <summary>
@@ -158,7 +202,7 @@
         /// </summary>
         public void ResetColor()
         {
-            operations.Add(Pop.Value);
+            CurrentStream.Add(Pop.Value);
         }
 
         /// <summary>
@@ -244,15 +288,15 @@
 
             var letters = DrawLetters(text, fontProgram, fm, fontSize, textMatrix);
 
-            operations.Add(BeginText.Value);
-            operations.Add(new SetFontAndSize(font.Name, fontSize));
-            operations.Add(new MoveToNextLineWithOffset((decimal)position.X, (decimal)position.Y));
+            CurrentStream.Add(BeginText.Value);
+            CurrentStream.Add(new SetFontAndSize(font.Name, fontSize));
+            CurrentStream.Add(new MoveToNextLineWithOffset((decimal)position.X, (decimal)position.Y));
             var bytesPerShow = new List<byte>();
             foreach (var letter in text)
             {
                 if (char.IsWhiteSpace(letter))
                 {
-                    operations.Add(new ShowText(bytesPerShow.ToArray()));
+                    CurrentStream.Add(new ShowText(bytesPerShow.ToArray()));
                     bytesPerShow.Clear();
                 }
 
@@ -262,10 +306,10 @@
 
             if (bytesPerShow.Count > 0)
             {
-                operations.Add(new ShowText(bytesPerShow.ToArray()));
+                CurrentStream.Add(new ShowText(bytesPerShow.ToArray()));
             }
 
-            operations.Add(EndText.Value);
+            CurrentStream.Add(EndText.Value);
 
             return letters;
         }
@@ -322,16 +366,16 @@
 
             resourcesDictionary[NameToken.Xobject] = xobjects.With(key, new IndirectReferenceToken(reference));
 
-            operations.Add(Push.Value);
+            CurrentStream.Add(Push.Value);
             // This needs to be the placement rectangle.
-            operations.Add(new ModifyCurrentTransformationMatrix(new []
+            CurrentStream.Add(new ModifyCurrentTransformationMatrix(new []
             {
                 (decimal)placementRectangle.Width, 0,
                 0, (decimal)placementRectangle.Height,
                 (decimal)placementRectangle.BottomLeft.X, (decimal)placementRectangle.BottomLeft.Y
             }));
-            operations.Add(new InvokeNamedXObject(key));
-            operations.Add(Pop.Value);
+            CurrentStream.Add(new InvokeNamedXObject(key));
+            CurrentStream.Add(Pop.Value);
 
             return new AddedImage(reference, info.Width, info.Height);
         }
@@ -361,16 +405,16 @@
 
             resourcesDictionary[NameToken.Xobject] = xobjects.With(key, new IndirectReferenceToken(image.Reference));
 
-            operations.Add(Push.Value);
+            CurrentStream.Add(Push.Value);
             // This needs to be the placement rectangle.
-            operations.Add(new ModifyCurrentTransformationMatrix(new[]
+            CurrentStream.Add(new ModifyCurrentTransformationMatrix(new[]
             {
                 (decimal)placementRectangle.Width, 0,
                 0, (decimal)placementRectangle.Height,
                 (decimal)placementRectangle.BottomLeft.X, (decimal)placementRectangle.BottomLeft.Y
             }));
-            operations.Add(new InvokeNamedXObject(key));
-            operations.Add(Pop.Value);
+            CurrentStream.Add(new InvokeNamedXObject(key));
+            CurrentStream.Add(Pop.Value);
         }
 
         /// <summary>
@@ -439,16 +483,16 @@
 
             resourcesDictionary[NameToken.Xobject] = xobjects.With(key, new IndirectReferenceToken(reference));
 
-            operations.Add(Push.Value);
+            CurrentStream.Add(Push.Value);
             // This needs to be the placement rectangle.
-            operations.Add(new ModifyCurrentTransformationMatrix(new[]
+            CurrentStream.Add(new ModifyCurrentTransformationMatrix(new[]
             {
                 (decimal)placementRectangle.Width, 0,
                 0, (decimal)placementRectangle.Height,
                 (decimal)placementRectangle.BottomLeft.X, (decimal)placementRectangle.BottomLeft.Y
             }));
-            operations.Add(new InvokeNamedXObject(key));
-            operations.Add(Pop.Value);
+            CurrentStream.Add(new InvokeNamedXObject(key));
+            CurrentStream.Add(Pop.Value);
 
             return new AddedImage(reference, png.Width, png.Height);
         }
@@ -531,7 +575,7 @@
         /// <summary>
         /// Provides access to the raw page data structures for advanced editing use cases.
         /// </summary>
-        public class AdvancedEditing
+        public class ContentStream
         {
             /// <summary>
             /// The operations making up the page content stream.
@@ -539,11 +583,16 @@
             public List<IGraphicsStateOperation> Operations { get; }
 
             /// <summary>
-            /// Create a new <see cref="AdvancedEditing"/>.
+            /// Create a new <see cref="ContentStream"/>.
             /// </summary>
-            internal AdvancedEditing(List<IGraphicsStateOperation> operations)
+            internal ContentStream()
             {
-                Operations = operations;
+                Operations = new List<IGraphicsStateOperation>();
+            }
+
+            internal void Add(IGraphicsStateOperation newOperation)
+            {
+                Operations.Add(newOperation);
             }
         }
 
