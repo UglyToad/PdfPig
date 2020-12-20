@@ -15,7 +15,9 @@
     using Images;
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
+    using System.Linq;
     using PdfFonts;
     using Tokens;
     using Graphics.Operations.PathPainting;
@@ -228,7 +230,7 @@
                 throw new ArgumentNullException(nameof(text));
             }
 
-            if (!documentBuilder.Fonts.TryGetValue(font.Id, out var fontProgram))
+            if (!documentBuilder.Fonts.TryGetValue(font.Id, out var fontStore))
             {
                 throw new ArgumentException($"No font has been added to the PdfDocumentBuilder with Id: {font.Id}. " +
                                             $"Use {nameof(documentBuilder.AddTrueTypeFont)} to register a font.", nameof(font));
@@ -238,6 +240,8 @@
             {
                 throw new ArgumentOutOfRangeException(nameof(fontSize), "Font size must be greater than 0");
             }
+
+            var fontProgram = fontStore.FontProgram;
 
             var fm = fontProgram.GetFontMatrix();
 
@@ -271,7 +275,7 @@
                 throw new ArgumentNullException(nameof(text));
             }
 
-            if (!documentBuilder.Fonts.TryGetValue(font.Id, out var fontProgram))
+            if (!documentBuilder.Fonts.TryGetValue(font.Id, out var fontStore))
             {
                 throw new ArgumentException($"No font has been added to the PdfDocumentBuilder with Id: {font.Id}. " +
                                             $"Use {nameof(documentBuilder.AddTrueTypeFont)} to register a font.", nameof(font));
@@ -281,6 +285,8 @@
             {
                 throw new ArgumentOutOfRangeException(nameof(fontSize), "Font size must be greater than 0");
             }
+
+            var fontProgram = fontStore.FontProgram;
 
             var fm = fontProgram.GetFontMatrix();
 
@@ -495,6 +501,169 @@
             CurrentStream.Add(Pop.Value);
 
             return new AddedImage(reference, png.Width, png.Height);
+        }
+
+        /// <summary>
+        /// Copy a page from unknown source to this page
+        /// </summary>
+        /// <param name="srcPage">Page to be copied</param>
+        public void CopyFrom(Page srcPage)
+        {
+            ContentStream destinationStream = null;
+            if (CurrentStream.Operations.Count > 0)
+            {
+                NewContentStreamAfter();
+            }
+
+            destinationStream = CurrentStream;
+
+            if (!srcPage.Dictionary.TryGet(NameToken.Resources, srcPage.pdfScanner, out DictionaryToken srcResourceDictionary))
+            {
+                // If the page doesn't have resources, then we copy the entire content stream, since not operation would collide 
+                // with the ones already written
+                destinationStream.Operations.AddRange(srcPage.Operations);
+                return;
+            }
+
+            // TODO: How should we handle any other token in the page dictionary (Eg. LastModified, MediaBox, CropBox, BleedBox, TrimBox, ArtBox,
+            //      BoxColorInfo, Rotate, Group, Thumb, B, Dur, Trans, Annots, AA, Metadata, PieceInfo, StructParents, ID, PZ, SeparationInfo, Tabs,
+            //      TemplateInstantiated, PresSteps, UserUnit, VP)
+
+            var operations = new List<IGraphicsStateOperation>(srcPage.Operations);
+
+            // We need to relocate the resources, and we have to make sure that none of the resources collide with 
+            // the already written operation's resources
+
+            foreach (var set in srcResourceDictionary.Data)
+            {
+                var nameToken = NameToken.Create(set.Key);
+                if (nameToken == NameToken.Font || nameToken == NameToken.Xobject)
+                {
+                    // We have to skip this two because we have a separate dictionary for them
+                    continue;
+                }
+
+                if (!resourcesDictionary.TryGetValue(nameToken, out var currentToken))
+                {
+                    // It means that this type of resources doesn't currently exist in the page, so we can copy it
+                    // with no problem
+                    resourcesDictionary[nameToken] = documentBuilder.CopyToken(set.Value, srcPage.pdfScanner);
+                    continue;
+                }
+
+                // TODO: I need to find a test case
+                // It would have ExtendedGraphics or colorspaces, etc...
+            }
+
+            // Special cases
+            // Since we don't directly add font's to the pages resources, we have to go look at the document's font
+            if(srcResourceDictionary.TryGet(NameToken.Font, srcPage.pdfScanner, out DictionaryToken fontsDictionary))
+            {
+                Dictionary<NameToken, IToken> pageFontsDictionary = null;
+                if (resourcesDictionary.TryGetValue(NameToken.Font, out var pageFontsToken))
+                {
+                    pageFontsDictionary = (pageFontsToken as DictionaryToken)?.Data.ToDictionary(k => NameToken.Create(k.Key), v => v.Value);
+                    Debug.Assert(pageFontsDictionary != null);
+                }
+                else
+                {
+                    pageFontsDictionary = new Dictionary<NameToken, IToken>();
+                }
+
+                foreach (var fontSet in fontsDictionary.Data)
+                {
+                    var fontName = fontSet.Key;
+                    var addedFont = documentBuilder.Fonts.Values.FirstOrDefault(f => f.FontKey.Name.Data == fontName);
+                    if (addedFont != default)
+                    {
+                        // This would mean that the imported font collide with one of the added font. so we have to rename it
+
+                        var newName = $"F{documentBuilder.fontId++}";
+
+                        // Set all the pertinent SetFontAndSize operations with the new name
+                        operations = operations.Select(op =>
+                        {
+                            if (!(op is SetFontAndSize fontAndSizeOperation))
+                            {
+                                return op;
+                            }
+
+                            if (fontAndSizeOperation.Font.Data == fontName)
+                            {
+                                return new SetFontAndSize(NameToken.Create(newName), fontAndSizeOperation.Size);
+                            }
+
+                            return op;
+                        }).ToList();
+
+                        fontName = newName;
+                    }
+
+                    if (!(fontSet.Value is IndirectReferenceToken fontReferenceToken))
+                    {
+                        throw new PdfDocumentFormatException($"Expected a IndirectReferenceToken for the font, got a {fontSet.Value.GetType().Name}");
+                    }
+
+                    pageFontsDictionary.Add(NameToken.Create(fontName), documentBuilder.CopyToken(fontReferenceToken, srcPage.pdfScanner));
+                }
+
+                resourcesDictionary[NameToken.Font] = new DictionaryToken(pageFontsDictionary);
+            }
+
+            // Since we don't directly add xobjects's to the pages resources, we have to go look at the document's xobjects
+            if (srcResourceDictionary.TryGet(NameToken.Xobject, srcPage.pdfScanner, out DictionaryToken xobjectsDictionary))
+            {
+                Dictionary<NameToken, IToken> pageXobjectsDictionary = null;
+                if (resourcesDictionary.TryGetValue(NameToken.Xobject, out var pageXobjectToken))
+                {
+                    pageXobjectsDictionary = (pageXobjectToken as DictionaryToken)?.Data.ToDictionary(k => NameToken.Create(k.Key), v => v.Value);
+                    Debug.Assert(pageXobjectsDictionary != null);
+                }
+                else
+                {
+                    pageXobjectsDictionary = new Dictionary<NameToken, IToken>();
+                }
+
+                var xobjectNamesUsed = Enumerable.Range(0, imageKey).Select(i => $"I{i}");
+                foreach (var xobjectSet in xobjectsDictionary.Data)
+                {
+                    var xobjectName = xobjectSet.Key;
+                    if (xobjectName[0] == 'I' && xobjectNamesUsed.Any(s => s == xobjectName))
+                    {
+                        // This would mean that the imported xobject collide with one of the added image. so we have to rename it
+                        var newName = $"I{imageKey++}";
+
+                        // Set all the pertinent SetFontAndSize operations with the new name
+                        operations = operations.Select(op =>
+                        {
+                            if (!(op is InvokeNamedXObject invokeNamedOperation))
+                            {
+                                return op;
+                            }
+
+                            if (invokeNamedOperation.Name.Data == xobjectName)
+                            {
+                                return new InvokeNamedXObject(NameToken.Create(newName));
+                            }
+
+                            return op;
+                        }).ToList();
+
+                        xobjectName = newName;
+                    }
+
+                    if (!(xobjectSet.Value is IndirectReferenceToken fontReferenceToken))
+                    {
+                        throw new PdfDocumentFormatException($"Expected a IndirectReferenceToken for the XObject, got a {xobjectSet.Value.GetType().Name}");
+                    }
+
+                    pageXobjectsDictionary.Add(NameToken.Create(xobjectName), documentBuilder.CopyToken(fontReferenceToken, srcPage.pdfScanner));
+                }
+
+                resourcesDictionary[NameToken.Xobject] = new DictionaryToken(pageXobjectsDictionary);
+            }
+
+            destinationStream.Operations.AddRange(operations);
         }
 
         private List<Letter> DrawLetters(string text, IWritingFont font, TransformationMatrix fontMatrix, decimal fontSize, TransformationMatrix textMatrix)

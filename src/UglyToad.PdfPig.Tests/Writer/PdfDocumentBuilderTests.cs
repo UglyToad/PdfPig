@@ -644,6 +644,53 @@
             }
         }
 
+        [Fact]
+        public void CanCopyPage()
+        {
+
+            byte[] b;
+            {
+                var builder = new PdfDocumentBuilder();
+
+                var page1 = builder.AddPage(PageSize.A4);
+
+                var file = TrueTypeTestHelper.GetFileBytes("Andada-Regular.ttf");
+
+                var font = builder.AddTrueTypeFont(file);
+
+                page1.AddText("Hello", 12, new PdfPoint(30, 50), font);
+
+                Assert.NotEmpty(page1.CurrentStream.Operations);
+
+
+                using (var readDocument = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("bold-italic.pdf")))
+                {
+                    var rpage = readDocument.GetPage(1);
+
+                    var page2 = builder.AddPage(PageSize.A4);
+                    page2.CopyFrom(rpage);
+                }
+
+                b = builder.Build();
+                Assert.NotEmpty(b);
+            }
+
+            WriteFile(nameof(CanCopyPage), b);
+
+            using (var document = PdfDocument.Open(b))
+            {
+                Assert.Equal( 2, document.NumberOfPages);
+
+                var page1 = document.GetPage(1);
+
+                Assert.Equal("Hello", page1.Text);
+
+                var page2 = document.GetPage(2);
+                
+                Assert.Equal("Lorem ipsum dolor sit amet, consectetur adipiscing elit. ", page2.Text);
+            }
+        }
+
         private static void WriteFile(string name, byte[] bytes, string extension = "pdf")
         {
             try
