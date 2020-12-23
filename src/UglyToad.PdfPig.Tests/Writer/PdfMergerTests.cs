@@ -89,7 +89,7 @@
             using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
             {
                 Assert.Equal(2, document.NumberOfPages);
-                Assert.True(document.Structure.CrossReferenceTable.ObjectOffsets.Count < 24,
+                Assert.True(document.Structure.CrossReferenceTable.ObjectOffsets.Count <= 24,
                     "Expected object count to be lower than 24");
             }
         }

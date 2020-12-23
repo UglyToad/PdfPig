@@ -77,28 +77,19 @@
 
         public IndirectReferenceToken WriteToken(IToken token, int? reservedNumber = null)
         {
-            // if you can't consider deduplicating the token. 
-            // It must be because it's referenced by his child element, so you must have reserved a number before hand
-            // Example /Pages Obj
-            var canBeDuplicated = !reservedNumber.HasValue;
-            if (!canBeDuplicated)
-            {
-                if (!reservedNumbers.Remove(reservedNumber.Value))
-                {
-                    throw new InvalidOperationException("You can't reuse a reserved number");
-                }
-
-                // When we end up writing this token, all of his child would already have been added and checked for duplicate
-                return AddToken(token, reservedNumber.Value);
-            }
-
-            var reference = FindToken(token);
-            if (reference == null)
+            if (!reservedNumber.HasValue)
             {
                 return AddToken(token, CurrentNumber++);
             }
 
-            return reference;
+            if (!reservedNumbers.Remove(reservedNumber.Value))
+            {
+                throw new InvalidOperationException("You can't reuse a reserved number");
+            }
+
+            // When we end up writing this token, all of his child would already have been added and checked for duplicate
+            return AddToken(token, reservedNumber.Value);
+
         }
 
         public int ReserveNumber()
@@ -149,21 +140,6 @@
             var referenceToken = new IndirectReferenceToken(reference);
             tokenReferences.Add(referenceToken, token);
             return referenceToken;
-        }
-
-        private IndirectReferenceToken FindToken(IToken token)
-        {
-            foreach (var pair in tokenReferences)
-            {
-                var reference = pair.Key;
-                var storedToken = pair.Value;
-                if (storedToken.Equals(token))
-                {
-                    return reference;
-                }
-            }
-
-            return null;
         }
 
         private static void WriteString(string text, Stream stream)
