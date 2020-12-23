@@ -16,6 +16,8 @@
     /// </summary>
     public class TokenWriter
     {
+        private static readonly byte Backslash = GetByte("\\");
+
         private static readonly byte ArrayStart = GetByte("[");
         private static readonly byte ArrayEnd = GetByte("]");
 
@@ -374,6 +376,12 @@
                 for (var i = 0; i < stringToken.Data.Length; i++)
                 {
                     var c = stringToken.Data[i];
+
+                    if (c == (char) StringStart || c == (char)StringEnd || c == (char) Backslash)
+                    {
+                        stringToken = new StringToken(stringToken.Data.Insert(i++, "\\"), stringToken.EncodedWith);
+                    }
+
                     // Close enough.
                     if (c > 250)
                     {
