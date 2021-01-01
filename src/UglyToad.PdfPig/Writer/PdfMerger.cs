@@ -31,7 +31,7 @@
         /// <summary>
         /// Merge two PDF documents together with the pages from <paramref name="file1"/> followed by <paramref name="file2"/>.
         /// </summary>
-        public static byte[] Merge(string file1, string file2, IReadOnlyCollection<int> file1Selection = null, IReadOnlyCollection<int> file2Selection = null)
+        public static byte[] Merge(string file1, string file2, IReadOnlyList<int> file1Selection = null, IReadOnlyList<int> file2Selection = null)
         {
             if (file1 == null)
             {
@@ -75,7 +75,7 @@
         /// <summary>
         /// Merge the set of PDF documents.
         /// </summary>
-        public static byte[] Merge(IReadOnlyList<byte[]> files, IReadOnlyList<IReadOnlyCollection<int>> pagesBundle = null)
+        public static byte[] Merge(IReadOnlyList<byte[]> files, IReadOnlyList<IReadOnlyList<int>> pagesBundle = null)
         {
             if (files == null)
             {
@@ -90,7 +90,7 @@
             {
                 var file = files[fileIndex];
 
-                IReadOnlyCollection<int> pages = null;
+                IReadOnlyList<int> pages = null;
                 if (pagesBundle != null && fileIndex < pagesBundle.Count)
                 {
                     pages = pagesBundle[fileIndex];
@@ -160,6 +160,8 @@
         {
             private const decimal DefaultVersion = 1.2m;
 
+            private const int ARTIFICIAL_NODE_LIMIT = 100;
+
             private readonly PdfStreamWriter context = new PdfStreamWriter();
             private readonly List<IndirectReferenceToken> pagesTokenReferences = new List<IndirectReferenceToken>();
             private readonly IndirectReferenceToken rootPagesReference;
@@ -172,7 +174,7 @@
                 rootPagesReference = context.ReserveNumberToken();
             }
 
-            public void AppendDocument(Catalog catalog, decimal version, IPdfTokenScanner tokenScanner, IReadOnlyCollection<int> pages)
+            public void AppendDocument(Catalog catalog, decimal version, IPdfTokenScanner tokenScanner, IReadOnlyList<int> pages)
             {
                 IEnumerable<int> pageIndices;
                 if (pages == null)
@@ -209,15 +211,15 @@
                         var dictionary = node.NodeDictionary;
                         if (dictionary.TryGet(NameToken.Resources, tokenScanner, out DictionaryToken resourcesDictionary))
                         {
-                            var nonCollidingResources = resourcesDictionary.Data.Keys.Except(resources.Keys).ToList();
-                            if (nonCollidingResources.Count != resourcesDictionary.Data.Count)
+                            var nonCollidingResources = resourcesDictionary.Data.Keys.Except(resources.Keys);
+                            if (nonCollidingResources.Count() != resourcesDictionary.Data.Count)
                             {
                                 // This means that at least one of the resources collided
                                 return true;
                             }
                         }
 
-                        /* TODO: How to handle them?
+                        /* TODO: How to handle?
                          *  `Rotate`
                          *  `CropBox`
                          *  `MediaBox`
@@ -245,13 +247,12 @@
                             }
                         }
 
-                        /* TODO: How to handle them?
+                        /* TODO: How to handle?
                          *  `Rotate`
                          *  `CropBox`
                          *  `MediaBox`
                          */
 
-                        // No colliding entry was found, in this node
                         // Keep walking up into the tree
                         node = node.Parent;
                     }
@@ -286,7 +287,7 @@
                 foreach (var pageIndex in pageIndices)
                 {
                     var pageNode = catalog.GetPageNode(pageIndex);
-                    if (DoesAEntryCollide(pageNode))
+                    if (pagesReferences.Count >= ARTIFICIAL_NODE_LIMIT || DoesAEntryCollide(pageNode))
                     {
                         CreateTree();
 
