@@ -40,7 +40,8 @@
                 throw new InvalidOperationException("No file exists at: " + filename);
             }
 
-            return Open(File.ReadAllBytes(filename), options);
+            var input = new StreamInputBytes(File.OpenRead(filename), true);
+            return Open(input, options);
         }
 
         internal static PdfDocument Open(Stream stream, ParsingOptions options)
