@@ -17,6 +17,7 @@
     using Tokens;
     using Exceptions;
     using System.Linq;
+    using UglyToad.PdfPig.Util;
 
     /// <summary>
     /// Merges PDF documents into each other.
@@ -120,12 +121,12 @@
             var documentBuilder = new DocumentMerger(output, version);
             foreach (var context in contexts)
             {
-                documentBuilder.AppendDocument(context.Catalog, context.Scanner);
+                documentBuilder.AppendDocumentPages(context, Enumerable.Range(1, context.TotalPages));
             }
 
             documentBuilder.Build();
         }
-         
+
         private static FileContext[] GetFileContexts(IReadOnlyList<IInputBytes> files)
         {
             const bool isLenientParsing = false;
@@ -162,7 +163,9 @@
                 {
                     Catalog = documentCatalog,
                     Scanner = pdfScanner,
-                    Version = version.Version
+                    Version = version.Version,
+                    TotalPages = documentCatalog.PagesDictionary.GetIntOrDefault(NameToken.Count),
+                    Index = i
                 };
             }
             return result;
@@ -173,6 +176,8 @@
             public Catalog Catalog { get; set; }
             public PdfTokenScanner Scanner { get; set; }
             public decimal Version { get; set; }
+            public int TotalPages { get; set; }
+            public int Index { get; set; }
         }
 
         // This method is a basically a copy of the method UglyToad.PdfPig.Parser.PdfDocumentFactory.ParseTrailer()
@@ -210,24 +215,130 @@
             private readonly IndirectReferenceToken rootPagesReference;
 
             private int pageCount = 0;
-            
-            private readonly Dictionary<IndirectReferenceToken, IndirectReferenceToken> referencesFromDocument =
-                new Dictionary<IndirectReferenceToken, IndirectReferenceToken>();
+
+            private readonly Dictionary<int, Dictionary<IndirectReferenceToken, IndirectReferenceToken>> referencesFromDocumentByIndex
+                 = new Dictionary<int, Dictionary<IndirectReferenceToken, IndirectReferenceToken>>();
 
             public DocumentMerger(Stream baseStream, decimal version)
             {
                 context = new PdfStreamWriter(baseStream, version, false);
                 rootPagesReference = context.ReserveNumberToken();
             }
- 
-            public void AppendDocument(Catalog documentCatalog, IPdfTokenScanner tokenScanner)
-            {
-                var (pagesReference, count) = CopyPagesTree(documentCatalog.PageTree, rootPagesReference, tokenScanner);
-                pageCount += count;
-                pagesTokenReferences.Add(pagesReference);
 
-                referencesFromDocument.Clear();
-                context.Flush();
+            public void AppendDocumentPages(FileContext fileContext, IEnumerable<int> pageIndices)
+            {
+                if (!referencesFromDocumentByIndex.ContainsKey(fileContext.Index))
+                {
+                    referencesFromDocumentByIndex[fileContext.Index] = new Dictionary<IndirectReferenceToken, IndirectReferenceToken>();
+                }
+                var referencesFromDocument = referencesFromDocumentByIndex[fileContext.Index];
+
+                var currentNodeReference = context.ReserveNumberToken();
+                var pagesReferences = new List<IndirectReferenceToken>();
+                var resources = new Dictionary<string, IToken>();
+
+                bool HasCollision(PageTreeNode node)
+                {
+                    while (node != null)
+                    {
+                        var dictionary = node.NodeDictionary;
+                        if (dictionary.TryGet(NameToken.Resources, fileContext.Scanner, out DictionaryToken resourcesDictionary))
+                        {
+                            var nonCollidingResources = resourcesDictionary.Data.Keys.Except(resources.Keys).ToList();
+                            if (nonCollidingResources.Count != resourcesDictionary.Data.Count)
+                            {
+                                // This means that at least one of the resources collided
+                                return true;
+                            }
+                        }
+
+                        /* TODO: How to handle them?
+                         *  `Rotate`
+                         *  `CropBox`
+                         *  `MediaBox`
+                         */
+
+                        // No colliding entry was found, in this node
+                        // Keep walking up into the tree
+                        node = node.Parent;
+                    }
+
+                    return false;
+                }
+
+                void CopyEntries(PageTreeNode node)
+                {
+                    while (node != null)
+                    {
+                        var dictionary = node.NodeDictionary;
+                        if (dictionary.TryGet(NameToken.Resources, fileContext.Scanner, out DictionaryToken resourcesDictionary))
+                        {
+                            foreach (var pair in resourcesDictionary.Data)
+                            {
+                                resources.Add(pair.Key, CopyToken(pair.Value, fileContext.Scanner, referencesFromDocument));
+                            }
+                        }
+
+                        /* TODO: How to handle them?
+                         *  `Rotate`
+                         *  `CropBox`
+                         *  `MediaBox`
+                         */
+
+                        // No colliding entry was found, in this node
+                        // Keep walking up into the tree
+                        node = node.Parent;
+                    }
+                }
+
+                void CreateTree()
+                {
+                    if (pagesReferences.Count < 1)
+                    {
+                        throw new InvalidOperationException("Pages reference should always be more than 1 when executing this function");
+                    }
+
+                    var newPagesNode = new Dictionary<NameToken, IToken>
+                    {
+                        { NameToken.Type, NameToken.Pages },
+                        { NameToken.Kids, new ArrayToken(pagesReferences) },
+                        { NameToken.Count, new NumericToken(pagesReferences.Count) },
+                        { NameToken.Parent, rootPagesReference }
+                    };
+
+                    if (resources.Count > 0)
+                    {
+                        newPagesNode.Add(NameToken.Resources, DictionaryToken.With(resources));
+                    }
+
+                    var pagesDictionary = new DictionaryToken(newPagesNode);
+                    pagesTokenReferences.Add(context.WriteToken(pagesDictionary, (int)currentNodeReference.Data.ObjectNumber));
+
+                    pageCount += pagesReferences.Count;
+                };
+
+                foreach (var pageIndex in pageIndices)
+                {
+                    var pageNode = fileContext.Catalog.GetPageNode(pageIndex);
+                    if (HasCollision(pageNode))
+                    {
+                        CreateTree();
+
+                        currentNodeReference = context.ReserveNumberToken();
+                        pagesReferences = new List<IndirectReferenceToken>();
+                        resources = new Dictionary<string, IToken>();
+                    }
+
+                    CopyEntries(pageNode.Parent);
+                    pagesReferences.Add(CopyPageNode(pageNode, currentNodeReference, fileContext.Scanner, referencesFromDocument));
+                }
+
+                if (pagesReferences.Count < 1)
+                {
+                    throw new InvalidOperationException("Pages reference couldn't be less than 1 because we have reserved a indirect reference token");
+                }
+
+                CreateTree();
             }
 
             public void Build()
@@ -262,10 +373,10 @@
                 context.Dispose();
             }
 
-            private (IndirectReferenceToken, int) CopyPagesTree(PageTreeNode treeNode, IndirectReferenceToken treeParentReference, IPdfTokenScanner tokenScanner)
+            private (IndirectReferenceToken, int) CopyPagesTree(PageTreeNode treeNode, IndirectReferenceToken treeParentReference, IPdfTokenScanner tokenScanner, IDictionary<IndirectReferenceToken, IndirectReferenceToken> referencesFromDocument)
             {
                 Debug.Assert(!treeNode.IsPage);
-                
+
                 var currentNodeReference = context.ReserveNumberToken();
 
                 var pageReferences = new List<IndirectReferenceToken>();
@@ -276,15 +387,15 @@
                     if (!pageNode.IsPage)
                     {
                         var count = 0;
-                        (newEntry, count) = CopyPagesTree(pageNode, currentNodeReference, tokenScanner);
+                        (newEntry, count) = CopyPagesTree(pageNode, currentNodeReference, tokenScanner, referencesFromDocument);
                         nodeCount += count;
                     }
                     else
                     {
-                        newEntry = CopyPageNode(pageNode, currentNodeReference, tokenScanner);
+                        newEntry = CopyPageNode(pageNode, currentNodeReference, tokenScanner, referencesFromDocument);
                         ++nodeCount;
                     }
-                    
+
                     pageReferences.Add(newEntry);
                 }
 
@@ -303,7 +414,7 @@
                         continue;
                     }
 
-                    newPagesNode[NameToken.Create(pair.Key)] = CopyToken(pair.Value, tokenScanner);
+                    newPagesNode[NameToken.Create(pair.Key)] = CopyToken(pair.Value, tokenScanner, referencesFromDocument);
                 }
 
                 var pagesDictionary = new DictionaryToken(newPagesNode);
@@ -311,7 +422,7 @@
                 return (context.WriteToken(pagesDictionary, (int)currentNodeReference.Data.ObjectNumber), nodeCount);
             }
 
-            private IndirectReferenceToken CopyPageNode(PageTreeNode pageNode, IndirectReferenceToken parentPagesObject, IPdfTokenScanner tokenScanner)
+            private IndirectReferenceToken CopyPageNode(PageTreeNode pageNode, IndirectReferenceToken parentPagesObject, IPdfTokenScanner tokenScanner, IDictionary<IndirectReferenceToken, IndirectReferenceToken> referencesFromDocument)
             {
                 Debug.Assert(pageNode.IsPage);
 
@@ -331,20 +442,21 @@
                         continue;
                     }
 
-                    pageDictionary.Add(NameToken.Create(name), CopyToken(token, tokenScanner));
+                    pageDictionary.Add(NameToken.Create(name), CopyToken(token, tokenScanner, referencesFromDocument));
                 }
 
                 return context.WriteToken(new DictionaryToken(pageDictionary));
             }
-            
+
             /// <summary>
             /// The purpose of this method is to resolve indirect reference. That mean copy the reference's content to the new document's stream
             /// and replace the indirect reference with the correct/new one
             /// </summary>
             /// <param name="tokenToCopy">Token to inspect for reference</param>
             /// <param name="tokenScanner">scanner get the content from the original document</param>
+            /// <param name="referencesFromDocument"></param>
             /// <returns>A reference of the token that was copied. With all the reference updated</returns>
-            private IToken CopyToken(IToken tokenToCopy, IPdfTokenScanner tokenScanner)
+            private IToken CopyToken(IToken tokenToCopy, IPdfTokenScanner tokenScanner, IDictionary<IndirectReferenceToken, IndirectReferenceToken> referencesFromDocument)
             {
                 // This token need to be deep copied, because they could contain reference. So we have to update them.
                 switch (tokenToCopy)
@@ -356,7 +468,7 @@
                         {
                             var name = setPair.Key;
                             var token = setPair.Value;
-                            newContent.Add(NameToken.Create(name), CopyToken(token, tokenScanner));
+                            newContent.Add(NameToken.Create(name), CopyToken(token, tokenScanner, referencesFromDocument));
                         }
 
                         return new DictionaryToken(newContent);
@@ -366,7 +478,7 @@
                         var newArray = new List<IToken>(arrayToken.Length);
                         foreach (var token in arrayToken.Data)
                         {
-                            newArray.Add(CopyToken(token, tokenScanner));
+                            newArray.Add(CopyToken(token, tokenScanner, referencesFromDocument));
                         }
 
                         return new ArrayToken(newArray);
@@ -377,27 +489,27 @@
                         {
                             return newReferenceToken;
                         }
-                        
+
                         var tokenObject = DirectObjectFinder.Get<IToken>(referenceToken.Data, tokenScanner);
 
                         Debug.Assert(!(tokenObject is IndirectReferenceToken));
 
-                        var newToken = CopyToken(tokenObject, tokenScanner);
+                        var newToken = CopyToken(tokenObject, tokenScanner, referencesFromDocument);
                         newReferenceToken = context.WriteToken(newToken);
-                        
+
                         referencesFromDocument.Add(referenceToken, newReferenceToken);
-                        
+
                         return newReferenceToken;
                     }
                     case StreamToken streamToken:
                     {
-                        var properties = CopyToken(streamToken.StreamDictionary, tokenScanner) as DictionaryToken;
+                        var properties = CopyToken(streamToken.StreamDictionary, tokenScanner, referencesFromDocument) as DictionaryToken;
                         Debug.Assert(properties != null);
 
                         var bytes = streamToken.Data;
                         return new StreamToken(properties, bytes);
                     }
-                    
+
                     case ObjectToken _:
                     {
                         // Since we don't write token directly to the stream.

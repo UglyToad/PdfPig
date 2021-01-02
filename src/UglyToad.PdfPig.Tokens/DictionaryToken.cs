@@ -114,6 +114,15 @@
             return new DictionaryToken(result);
         }
 
+        /// <summary>
+        /// Create a new <see cref="DictionaryToken"/>.
+        /// </summary>
+        /// <param name="data">The data this dictionary will contain.</param>
+        public static DictionaryToken With(IReadOnlyDictionary<string, IToken> data)
+        {
+            return new DictionaryToken(data ?? throw new ArgumentNullException(nameof(data)));
+        }
+
 
         /// <inheritdoc />
         public bool Equals(IToken obj)
