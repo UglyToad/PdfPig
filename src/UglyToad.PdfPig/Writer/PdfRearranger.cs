@@ -19,20 +19,35 @@
     using System.Linq;
     using UglyToad.PdfPig.Util;
 
+    /// <summary>
+    /// A class able to provides instructions for a pdf rearrangement
+    /// </summary>
+    public interface IPdfArrangement
+    {
+        /// <summary>
+        /// Provides instructions for a pdf rearrangement
+        /// </summary>
+        /// <param name="pagesCountPerFileIndex"></param>
+        /// <returns></returns>
+        IEnumerable<(int FileIndex, IReadOnlyCollection<int> PageIndices)> GetArrangements(Dictionary<int, int> pagesCountPerFileIndex);
+    }
+
     internal static class PdfRearranger
     {
         private static readonly ILog Log = new NoOpLog();
 
         private static readonly IFilterProvider FilterProvider = DefaultFilterProvider.Instance;
 
-        public static void Rearrange(IReadOnlyList<IInputBytes> files, Stream output)
+        public static void Rearrange(IReadOnlyList<IInputBytes> files, IPdfArrangement arrangement, Stream output)
         {
             var contexts = GetFileContexts(files);
             var version = contexts.Max(c => c.Version);
+            var pagesCountPerFile = contexts.ToDictionary(f => f.Index, f => f.TotalPages);
+
             var documentBuilder = new DocumentMerger(output, version);
-            foreach (var context in contexts)
+            foreach (var pageBundle in arrangement.GetArrangements(pagesCountPerFile))
             {
-                documentBuilder.AppendDocumentPages(context, Enumerable.Range(1, context.TotalPages));
+                documentBuilder.AppendDocumentPages(contexts[pageBundle.FileIndex], pageBundle.PageIndices);
             }
 
             documentBuilder.Build();

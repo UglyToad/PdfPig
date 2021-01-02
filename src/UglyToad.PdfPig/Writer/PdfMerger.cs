@@ -44,7 +44,7 @@
 
             using var stream1 = new StreamInputBytes(File.OpenRead(file1));
             using var stream2 = new StreamInputBytes(File.OpenRead(file2));
-            PdfRearranger.Rearrange(new[] { stream1, stream2 }, output);
+            PdfRearranger.Rearrange(new[] { stream1, stream2 }, PdfMerge.Instance, output);
         }
 
         /// <summary>
@@ -71,7 +71,7 @@
                     streams.Add(new StreamInputBytes(File.OpenRead(filePath), true));
                 }
 
-                PdfRearranger.Rearrange(streams, output);
+                PdfRearranger.Rearrange(streams, PdfMerge.Instance, output);
             }
             finally
             {
@@ -90,7 +90,7 @@
             _ = files ?? throw new ArgumentNullException(nameof(files));
 
             using var output = new MemoryStream();
-            PdfRearranger.Rearrange(files.Select(f => new ByteArrayInputBytes(f)).ToArray(), output);
+            PdfRearranger.Rearrange(files.Select(f => new ByteArrayInputBytes(f)).ToArray(), PdfMerge.Instance, output);
             return output.ToArray();
         }
 
@@ -107,7 +107,18 @@
             _ = streams ?? throw new ArgumentNullException(nameof(streams));
             _ = output ?? throw new ArgumentNullException(nameof(output));
 
-            PdfRearranger.Rearrange(streams.Select(f => new StreamInputBytes(f, false)).ToArray(), output);
+            PdfRearranger.Rearrange(streams.Select(f => new StreamInputBytes(f, false)).ToArray(), PdfMerge.Instance, output);
+        }
+
+        class PdfMerge : IPdfArrangement
+        {
+            public static readonly PdfMerge Instance = new PdfMerge();
+            private PdfMerge() { }
+
+            public IEnumerable<(int FileIndex, IReadOnlyCollection<int> PageIndices)> GetArrangements(Dictionary<int, int> pagesCountPerFileIndex)
+                => pagesCountPerFileIndex
+                    .OrderBy(kvp => kvp.Key)
+                    .Select(kvp => (kvp.Key, (IReadOnlyCollection<int>)Enumerable.Range(1, kvp.Value).ToArray()));
         }
     }
 }
