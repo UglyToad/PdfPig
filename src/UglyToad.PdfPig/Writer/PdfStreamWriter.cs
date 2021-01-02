@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Globalization;
     using System.IO;
+    using System.Linq;
     using Core;
     using Graphics.Operations;
     using Tokens;
@@ -16,14 +17,14 @@
         private readonly List<int> reservedNumbers = new List<int>();
 
         private readonly Dictionary<IndirectReferenceToken, IToken> tokenReferences = new Dictionary<IndirectReferenceToken, IToken>();
+        private readonly Dictionary<IndirectReference, long> offsets = new Dictionary<IndirectReference, long>();
 
         public int CurrentNumber { get; private set; } = 1;
 
         public Stream Stream { get; private set; }
-
         public bool DisposeStream { get; set; }
 
-        public PdfStreamWriter(Stream baseStream, bool disposeStream = true)
+        public PdfStreamWriter(Stream baseStream, decimal version, bool disposeStream = true)
         {
             Stream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
             if (!baseStream.CanWrite)
@@ -32,15 +33,11 @@
             }
 
             DisposeStream = disposeStream;
+            WriteHeader(version);
         }
 
-        public void Flush(decimal version, IndirectReferenceToken catalogReference)
+        private void WriteHeader(decimal version)
         {
-            if (catalogReference == null)
-            {
-                throw new ArgumentNullException(nameof(catalogReference));
-            }
-
             WriteString($"%PDF-{version.ToString("0.0", CultureInfo.InvariantCulture)}", Stream);
 
             Stream.WriteText("%");
@@ -49,30 +46,40 @@
             Stream.WriteByte(196);
             Stream.WriteByte(210);
             Stream.WriteNewLine();
+        }
 
-            var offsets = new Dictionary<IndirectReference, long>();
-            ObjectToken catalogToken = null;
+        public void Flush()
+        {
             foreach (var pair in tokenReferences)
             {
-                var referenceToken = pair.Key;
-                var token = pair.Value;
-                var offset = Stream.Position;
-                var obj = new ObjectToken(offset, referenceToken.Data, token);
-
-                TokenWriter.WriteToken(obj, Stream);
-
-                offsets.Add(referenceToken.Data, offset);
-
-                if (catalogToken == null && referenceToken == catalogReference)
-                {
-                    catalogToken = obj;
-                }
+                FlushToken(pair.Key, pair.Value);
             }
 
-            if (catalogToken == null)
+            tokenReferences.Clear();
+        }
+
+        private ObjectToken FlushToken(IndirectReferenceToken referenceToken, IToken token)
+        {
+            var offset = Stream.Position;
+            var obj = new ObjectToken(offset, referenceToken.Data, token);
+
+            TokenWriter.WriteToken(obj, Stream);
+            offsets.Add(referenceToken.Data, offset);
+            return obj;
+        }
+
+        public void Close(DictionaryToken catalogReference)
+        {
+            if (catalogReference == null)
             {
-                throw new Exception("Catalog object wasn't found");
+                throw new ArgumentNullException(nameof(catalogReference));
             }
+
+            Flush();
+
+            WriteToken(catalogReference);
+            var catalogTokenReference = tokenReferences.First();
+            var catalogToken = FlushToken(catalogTokenReference.Key, catalogTokenReference.Value);
 
             // TODO: Support document information
             TokenWriter.WriteCrossReferenceTable(offsets, catalogToken, Stream, null);
@@ -92,7 +99,6 @@
 
             // When we end up writing this token, all of his child would already have been added and checked for duplicate
             return AddToken(token, reservedNumber.Value);
-
         }
 
         public int ReserveNumber()
