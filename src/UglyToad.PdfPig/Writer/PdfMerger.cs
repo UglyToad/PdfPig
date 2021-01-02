@@ -32,19 +32,22 @@
         /// </summary>
         public static byte[] Merge(string file1, string file2)
         {
-            if (file1 == null)
-            {
-                throw new ArgumentNullException(nameof(file1));
-            }
+            using var output = new MemoryStream();
+            Merge(file1, file2, output);
+            return output.ToArray();
+        }
 
-            if (file2 == null)
-            {
-                throw new ArgumentNullException(nameof(file2));
-            }
+        /// <summary>
+        /// Merge two PDF documents together with the pages from <paramref name="file1"/> followed by <paramref name="file2"/> into the output stream.
+        /// </summary>
+        public static void Merge(string file1, string file2, Stream output)
+        {
+            _ = file1 ?? throw new ArgumentNullException(nameof(file1));
+            _ = file2 ?? throw new ArgumentNullException(nameof(file2));
 
             using var stream1 = new StreamInputBytes(File.OpenRead(file1));
             using var stream2 = new StreamInputBytes(File.OpenRead(file2));
-            return Merge(new[] { stream1, stream2 });
+            Merge(new[] { stream1, stream2 }, output);
         }
 
         /// <summary>
@@ -52,26 +55,30 @@
         /// </summary>
         public static byte[] Merge(params string[] filePaths)
         {
-            var bytes = new List<StreamInputBytes>(filePaths.Length);
+            using var output = new MemoryStream();
+            Merge(output, filePaths);
+            return output.ToArray();
+        }
 
+        /// <summary>
+        /// Merge multiple PDF documents together with the pages in the order the file paths are provided into the output stream
+        /// </summary>
+        public static void Merge(Stream output, params string[] filePaths)
+        {
+            var streams = new List<StreamInputBytes>(filePaths.Length);
             try
             {
                 for (var i = 0; i < filePaths.Length; i++)
                 {
-                    var filePath = filePaths[i];
-                    if (filePath == null)
-                    {
-                        throw new ArgumentNullException(nameof(filePaths), $"Null filepath at index {i}.");
-                    }
-
-                    bytes.Add(new StreamInputBytes(File.OpenRead(filePath), true));
+                    var filePath = filePaths[i] ?? throw new ArgumentNullException(nameof(filePaths), $"Null filepath at index {i}.");
+                    streams.Add(new StreamInputBytes(File.OpenRead(filePath), true));
                 }
 
-                return Merge(bytes);
+                Merge(streams, output);
             }
             finally
             {
-                foreach (var stream in bytes)
+                foreach (var stream in streams)
                 {
                     stream.Dispose();
                 }
@@ -83,34 +90,34 @@
         /// </summary>
         public static byte[] Merge(IReadOnlyList<byte[]> files)
         {
-            if (files == null)
-            {
-                throw new ArgumentNullException(nameof(files));
-            }
-            return Merge(files.Select(f => new ByteArrayInputBytes(f)).ToArray());
+            _ = files ?? throw new ArgumentNullException(nameof(files));
+
+            using var output = new MemoryStream();
+            Merge(files.Select(f => new ByteArrayInputBytes(f)).ToArray(), output);
+            return output.ToArray();
         }
 
         /// <summary>
-        /// Merge the set of PDF documents.
+        /// Merge the set of PDF documents into the output stream
         /// The caller must manage disposing the stream. The created PdfDocument will not dispose the stream.
         /// <param name="streams">
         /// A list of streams for the file contents, this must support reading and seeking.
         /// </param>
+        /// <param name="output">Must be writable</param>
         /// </summary>
-        public static byte[] Merge(IReadOnlyList<Stream> streams)
+        public static void Merge(IReadOnlyList<Stream> streams, Stream output)
         {
-            if (streams == null)
-            {
-                throw new ArgumentNullException(nameof(streams));
-            }
-            return Merge(streams.Select(f => new StreamInputBytes(f, false)).ToArray());
+            _ = streams ?? throw new ArgumentNullException(nameof(streams));
+            _ = output ?? throw new ArgumentNullException(nameof(output));
+
+            Merge(streams.Select(f => new StreamInputBytes(f, false)).ToArray(), output);
         }
 
-        private static byte[] Merge(IReadOnlyList<IInputBytes> files)
+        private static void Merge(IReadOnlyList<IInputBytes> files, Stream output)
         {
             const bool isLenientParsing = false;
 
-            var documentBuilder = new DocumentMerger();
+            var documentBuilder = new DocumentMerger(output);
 
             foreach (var inputBytes in files)
             {
@@ -142,7 +149,7 @@
                 documentBuilder.AppendDocument(documentCatalog, version.Version, pdfScanner);
             }
 
-            return documentBuilder.Build();
+            documentBuilder.Build();
         }
 
         // This method is a basically a copy of the method UglyToad.PdfPig.Parser.PdfDocumentFactory.ParseTrailer()
@@ -176,8 +183,8 @@
         private class DocumentMerger
         {
             private const decimal DefaultVersion = 1.2m;
-            
-            private readonly PdfStreamWriter context = new PdfStreamWriter();
+
+            private readonly PdfStreamWriter context;
             private readonly List<IndirectReferenceToken> pagesTokenReferences = new List<IndirectReferenceToken>();
             private readonly IndirectReferenceToken rootPagesReference;
 
@@ -187,8 +194,9 @@
             private readonly Dictionary<IndirectReferenceToken, IndirectReferenceToken> referencesFromDocument =
                 new Dictionary<IndirectReferenceToken, IndirectReferenceToken>();
 
-            public DocumentMerger()
+            public DocumentMerger(Stream baseStream)
             {
+                context = new PdfStreamWriter(baseStream, false);
                 rootPagesReference = context.ReserveNumberToken();
             }
  
@@ -203,7 +211,7 @@
                 referencesFromDocument.Clear();
             }
 
-            public byte[] Build()
+            public void Build()
             {
                 if (pagesTokenReferences.Count < 1)
                 {
@@ -228,12 +236,8 @@
                 var catalogRef = context.WriteToken(catalog);
                 
                 context.Flush(currentVersion, catalogRef);
-                
-                var bytes = context.ToArray();
 
                 Close();
-
-                return bytes;
             }
 
             public void Close()
