@@ -40,17 +40,29 @@
 
         public static void Rearrange(IReadOnlyList<IInputBytes> files, IPdfArrangement arrangement, Stream output)
         {
+            RearrangeMany(files, new[] { (arrangement, output) });
+        }
+
+        public static void RearrangeMany(IReadOnlyList<IInputBytes> files, IEnumerable<(IPdfArrangement Arrangement, Stream Output)> rearrangements)
+        {
             var contexts = GetFileContexts(files);
             var version = contexts.Max(c => c.Version);
             var pagesCountPerFile = contexts.ToDictionary(f => f.Index, f => f.TotalPages);
 
-            var documentBuilder = new DocumentMerger(output, version);
-            foreach (var pageBundle in arrangement.GetArrangements(pagesCountPerFile))
+            foreach (var (arrangement, output) in rearrangements)
             {
-                documentBuilder.AppendDocumentPages(contexts[pageBundle.FileIndex], pageBundle.PageIndices);
-            }
+                var documentBuilder = new DocumentMerger(output, version);
+                foreach (var pageBundle in arrangement.GetArrangements(pagesCountPerFile))
+                {
+                    if (pageBundle.PageIndices.Count == 0)
+                    {
+                        continue;
+                    }
+                    documentBuilder.AppendDocumentPages(contexts[pageBundle.FileIndex], pageBundle.PageIndices);
+                }
 
-            documentBuilder.Build();
+                documentBuilder.Build();
+            }
         }
 
         private static FileContext[] GetFileContexts(IReadOnlyList<IInputBytes> files)

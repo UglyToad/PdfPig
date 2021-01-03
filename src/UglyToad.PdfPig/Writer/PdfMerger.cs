@@ -1,23 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Writer
 {
+    using Core;
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.IO;
-    using Content;
-    using Core;
-    using CrossReference;
-    using Encryption;
-    using Filters;
-    using Logging;
-    using Parser;
-    using Parser.FileStructure;
-    using Parser.Parts;
-    using Tokenization.Scanner;
-    using Tokens;
-    using Exceptions;
     using System.Linq;
-    using UglyToad.PdfPig.Util;
 
     /// <summary>
     /// Merges PDF documents into each other.
