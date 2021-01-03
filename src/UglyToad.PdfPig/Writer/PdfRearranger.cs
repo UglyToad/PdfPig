@@ -394,7 +394,15 @@
                         {
                             var name = setPair.Key;
                             var token = setPair.Value;
-                            newContent.Add(NameToken.Create(name), CopyToken(token, tokenScanner, referencesFromDocument));
+                            if (name == NameToken.Parent && token is IndirectReferenceToken)
+                            {
+                                // Skip Parent token, or stackoverflow
+                                continue;
+                            }
+                            else
+                            {
+                                newContent.Add(NameToken.Create(name), CopyToken(token, tokenScanner, referencesFromDocument));
+                            }
                         }
 
                         return new DictionaryToken(newContent);
