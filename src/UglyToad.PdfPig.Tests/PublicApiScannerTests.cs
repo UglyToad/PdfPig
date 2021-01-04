@@ -210,6 +210,8 @@
                 "UglyToad.PdfPig.Writer.PdfAStandard",
                 "UglyToad.PdfPig.Writer.PdfDocumentBuilder",
                 "UglyToad.PdfPig.Writer.PdfMerger",
+                "UglyToad.PdfPig.Writer.PdfRearranger",
+                "UglyToad.PdfPig.Writer.PdfSplitter",
                 "UglyToad.PdfPig.Writer.PdfPageBuilder",
                 "UglyToad.PdfPig.Writer.TokenWriter",
                 "UglyToad.PdfPig.XObjects.XObjectImage"

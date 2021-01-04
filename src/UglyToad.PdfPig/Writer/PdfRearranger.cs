@@ -32,17 +32,31 @@
         IEnumerable<(int FileIndex, IReadOnlyCollection<int> PageIndices)> GetArrangements(Dictionary<int, int> pagesCountPerFileIndex);
     }
 
-    internal static class PdfRearranger
+    /// <summary>
+    /// Rearrange one or many pdfs from different pdf with specific ordering
+    /// </summary>
+    public static class PdfRearranger
     {
         private static readonly ILog Log = new NoOpLog();
 
         private static readonly IFilterProvider FilterProvider = DefaultFilterProvider.Instance;
 
+        /// <summary>
+        /// Write a new pdf file into the output stream containing the pages from the files requested in the <paramref name="arrangement"/>
+        /// </summary>
+        /// <param name="files"></param>
+        /// <param name="arrangement"></param>
+        /// <param name="output"></param>
         public static void Rearrange(IReadOnlyList<IInputBytes> files, IPdfArrangement arrangement, Stream output)
         {
             RearrangeMany(files, new[] { (arrangement, output) });
         }
 
+        /// <summary>
+        /// Write new pdf files into output streams containing the pages from the files requested in the arrangement
+        /// </summary>
+        /// <param name="files"></param>
+        /// <param name="rearrangements"></param>
         public static void RearrangeMany(IReadOnlyList<IInputBytes> files, IEnumerable<(IPdfArrangement Arrangement, Stream Output)> rearrangements)
         {
             var contexts = GetFileContexts(files);
