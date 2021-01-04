@@ -14,8 +14,10 @@
             var one = IntegrationHelpers.GetDocumentPath("68-1990-01_A.pdf");
 
             var outputStreams = Enumerable.Range(0, 9).Select(r => new MemoryStream()).ToList();
-            using var input = File.OpenRead(one);
-            PdfSplitter.SplitEveryPage(input, outputStreams, 5);
+            using (var input = File.OpenRead(one))
+            {
+                PdfSplitter.SplitEveryPage(input, outputStreams, 5);
+            }
 
             foreach (var outputStream in outputStreams)
             {
@@ -31,18 +33,24 @@
         {
             var one = IntegrationHelpers.GetDocumentPath("Pig Production Handbook.pdf");
 
-            var output1 = new MemoryStream();
-            var output2 = new MemoryStream();
-            using var input = File.OpenRead(one);
-            PdfSplitter.SplitTwoParts(input, 7, output1, output2);
+            using (var output1 = new MemoryStream())
+            {
+                using (var output2 = new MemoryStream())
+                {
+                    using (var input = File.OpenRead(one))
+                    {
+                        PdfSplitter.SplitTwoParts(input, 7, output1, output2);
+                    }
 
-            output1.Position = 0;
-            var document1 = PdfDocument.Open(output1);
-            Assert.Equal(6, document1.NumberOfPages);
+                    output1.Position = 0;
+                    var document1 = PdfDocument.Open(output1);
+                    Assert.Equal(6, document1.NumberOfPages);
 
-            output2.Position = 0;
-            var document2 = PdfDocument.Open(output2);
-            Assert.Equal(80, document2.NumberOfPages);
+                    output2.Position = 0;
+                    var document2 = PdfDocument.Open(output2);
+                    Assert.Equal(80, document2.NumberOfPages);
+                }
+            }
         }
     }
 }

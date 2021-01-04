@@ -45,19 +45,21 @@
             _ = file ?? throw new ArgumentNullException(nameof(file));
             _ = output ?? throw new ArgumentNullException(nameof(output));
 
-            using var stream = new StreamInputBytes(file);
-            if (removedPagesOutput is null)
+            using (var stream = new StreamInputBytes(file))
             {
-                PdfRearranger.Rearrange(new[] { stream }, new PdfPageRemover(removedPages), output);
-            }
-            else
-            {
-                var rearrangments = new[]
+                if (removedPagesOutput is null)
                 {
+                    PdfRearranger.Rearrange(new[] { stream }, new PdfPageRemover(removedPages), output);
+                }
+                else
+                {
+                    var rearrangments = new[]
+                    {
                     ((IPdfArrangement)new PdfPageRemover(removedPages), output),
                     (new PdfPick(removedPages), removedPagesOutput),
                 };
-                PdfRearranger.RearrangeMany(new[] { stream }, rearrangments);
+                    PdfRearranger.RearrangeMany(new[] { stream }, rearrangments);
+                }
             }
         }
 
@@ -86,8 +88,10 @@
             _ = file ?? throw new ArgumentNullException(nameof(file));
             _ = outputs ?? throw new ArgumentNullException(nameof(outputs));
 
-            using var stream = new StreamInputBytes(file);
-            PdfRearranger.RearrangeMany(new[] { stream }, SplitEveryXPage(pageCountPerFile, outputs));
+            using (var stream = new StreamInputBytes(file))
+            {
+                PdfRearranger.RearrangeMany(new[] { stream }, SplitEveryXPage(pageCountPerFile, outputs));
+            }
         }
 
         static IEnumerable<(IPdfArrangement Arrangement, Stream Output)> SplitEveryXPage(int pageCountPerFile, IEnumerable<Stream> output)
@@ -112,8 +116,10 @@
             _ = file ?? throw new ArgumentNullException(nameof(file));
             var arrangements = pageBundles.Select(t => ((IPdfArrangement)new PdfPick(t.Pages), t.output)).ToArray();
 
-            using var stream = new StreamInputBytes(file);
-            PdfRearranger.RearrangeMany(new[] { stream }, arrangements);
+            using (var stream = new StreamInputBytes(file))
+            {
+                PdfRearranger.RearrangeMany(new[] { stream }, arrangements);
+            }
         }
 
         class PdfPick : IPdfArrangement

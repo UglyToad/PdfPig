@@ -16,9 +16,11 @@
         /// </summary>
         public static byte[] Merge(string file1, string file2)
         {
-            using var output = new MemoryStream();
-            Merge(file1, file2, output);
-            return output.ToArray();
+            using (var output = new MemoryStream())
+            {
+                Merge(file1, file2, output);
+                return output.ToArray();
+            }
         }
 
         /// <summary>
@@ -29,9 +31,13 @@
             _ = file1 ?? throw new ArgumentNullException(nameof(file1));
             _ = file2 ?? throw new ArgumentNullException(nameof(file2));
 
-            using var stream1 = new StreamInputBytes(File.OpenRead(file1));
-            using var stream2 = new StreamInputBytes(File.OpenRead(file2));
-            PdfRearranger.Rearrange(new[] { stream1, stream2 }, PdfMerge.Instance, output);
+            using (var stream1 = new StreamInputBytes(File.OpenRead(file1)))
+            {
+                using (var stream2 = new StreamInputBytes(File.OpenRead(file2)))
+                {
+                    PdfRearranger.Rearrange(new[] { stream1, stream2 }, PdfMerge.Instance, output);
+                }
+            }
         }
 
         /// <summary>
@@ -39,9 +45,11 @@
         /// </summary>
         public static byte[] Merge(params string[] filePaths)
         {
-            using var output = new MemoryStream();
-            Merge(output, filePaths);
-            return output.ToArray();
+            using (var output = new MemoryStream())
+            {
+                Merge(output, filePaths);
+                return output.ToArray();
+            }
         }
 
         /// <summary>
@@ -76,9 +84,11 @@
         {
             _ = files ?? throw new ArgumentNullException(nameof(files));
 
-            using var output = new MemoryStream();
-            PdfRearranger.Rearrange(files.Select(f => new ByteArrayInputBytes(f)).ToArray(), PdfMerge.Instance, output);
-            return output.ToArray();
+            using (var output = new MemoryStream())
+            {
+                PdfRearranger.Rearrange(files.Select(f => new ByteArrayInputBytes(f)).ToArray(), PdfMerge.Instance, output);
+                return output.ToArray();
+            }
         }
 
         /// <summary>

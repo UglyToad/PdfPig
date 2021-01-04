@@ -23,14 +23,16 @@
             var one = IntegrationHelpers.GetDocumentPath("Single Page Simple - from inkscape.pdf");
             var two = IntegrationHelpers.GetDocumentPath("Single Page Simple - from open office.pdf");
 
-            using var outputStream = GetSelfDestructingNewFileStream("merge2");
-            if (outputStream is null)
+            using (var outputStream = GetSelfDestructingNewFileStream("merge2"))
             {
-                return;//we can't create a file in this test session
-            }
+                if (outputStream is null)
+                {
+                    return;//we can't create a file in this test session
+                }
 
-            PdfMerger.Merge(one, two, outputStream);
-            CanMerge2SimpleDocumentsAssertions(outputStream, "Write something inInkscape", "I am a simple pdf.");
+                PdfMerger.Merge(one, two, outputStream);
+                CanMerge2SimpleDocumentsAssertions(outputStream, "Write something inInkscape", "I am a simple pdf.");
+            }
         }
 
         [Fact]
