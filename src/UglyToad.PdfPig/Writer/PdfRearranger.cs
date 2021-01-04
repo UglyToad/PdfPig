@@ -162,6 +162,8 @@
 
         private class DocumentMerger
         {
+            private const int ARTIFICIAL_NODE_LIMIT = 100;
+
             private readonly PdfStreamWriter context;
             private readonly List<IndirectReferenceToken> pagesTokenReferences = new List<IndirectReferenceToken>();
             private readonly IndirectReferenceToken rootPagesReference;
@@ -196,15 +198,15 @@
                         var dictionary = node.NodeDictionary;
                         if (dictionary.TryGet(NameToken.Resources, fileContext.Scanner, out DictionaryToken resourcesDictionary))
                         {
-                            var nonCollidingResources = resourcesDictionary.Data.Keys.Except(resources.Keys).ToList();
-                            if (nonCollidingResources.Count != resourcesDictionary.Data.Count)
+                            var nonCollidingResources = resourcesDictionary.Data.Keys.Except(resources.Keys);
+                            if (nonCollidingResources.Count() != resourcesDictionary.Data.Count)
                             {
                                 // This means that at least one of the resources collided
                                 return true;
                             }
                         }
 
-                        /* TODO: How to handle them?
+                        /* TODO: How to handle?
                          *  `Rotate`
                          *  `CropBox`
                          *  `MediaBox`
@@ -231,7 +233,7 @@
                             }
                         }
 
-                        /* TODO: How to handle them?
+                        /* TODO: How to handle?
                          *  `Rotate`
                          *  `CropBox`
                          *  `MediaBox`
@@ -272,7 +274,7 @@
                 foreach (var pageIndex in pageIndices)
                 {
                     var pageNode = fileContext.Catalog.GetPageNode(pageIndex);
-                    if (HasCollision(pageNode))
+                    if (pagesReferences.Count >= ARTIFICIAL_NODE_LIMIT || HasCollision(pageNode))
                     {
                         CreateTree();
 
