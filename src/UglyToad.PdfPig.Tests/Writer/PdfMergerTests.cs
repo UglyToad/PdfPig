@@ -115,6 +115,45 @@
             }
         }
 
+        [Fact]
+        public void CanMergeWithSelection()
+        {
+            var first = IntegrationHelpers.GetDocumentPath("Multiple Page - from Mortality Statistics.pdf");
+            var result = PdfMerger.Merge(new [] { File.ReadAllBytes(first) }, new [] { new[] {2, 1, 4, 3, 6, 5} });
+
+            WriteFile(nameof(CanMergeWithSelection), result);
+
+            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            {
+                Assert.Equal(6, document.NumberOfPages);
+
+                foreach (var page in document.GetPages())
+                {
+                    Assert.NotNull(page.Text);
+                }
+            }
+        }
+
+        [Fact]
+        public void CanMergeMultipleWithSelection()
+        {
+            var first = IntegrationHelpers.GetDocumentPath("Multiple Page - from Mortality Statistics.pdf");
+            var second = IntegrationHelpers.GetDocumentPath("Old Gutnish Internet Explorer.pdf");
+            var result = PdfMerger.Merge(new[] { File.ReadAllBytes(first), File.ReadAllBytes(second) }, new[] { new[] { 2, 1, 4, 3, 6, 5 }, new []{ 3, 2, 1 } });
+
+            WriteFile(nameof(CanMergeMultipleWithSelection), result);
+
+            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            {
+                Assert.Equal(9, document.NumberOfPages);
+
+                foreach (var page in document.GetPages())
+                {
+                    Assert.NotNull(page.Text);
+                }
+            }
+        }
+
         private static void WriteFile(string name, byte[] bytes)
         {
             try
