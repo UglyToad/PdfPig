@@ -43,11 +43,9 @@
                 throw new ArgumentNullException(nameof(file2));
             }
 
-            return Merge(new[]
-            {
-                File.ReadAllBytes(file1),
-                File.ReadAllBytes(file2)
-            }, new [] { file1Selection, file2Selection });
+            using var stream1 = new StreamInputBytes(File.OpenRead(file1));
+            using var stream2 = new StreamInputBytes(File.OpenRead(file2));
+            return Merge(new[] { stream1, stream2 }, new [] { file1Selection, file2Selection });
         }
 
         /// <summary>
@@ -55,21 +53,30 @@
         /// </summary>
         public static byte[] Merge(params string[] filePaths)
         {
-            var bytes = new List<byte[]>(filePaths.Length);
+            var bytes = new List<StreamInputBytes>(filePaths.Length);
 
-            for (var i = 0; i < filePaths.Length; i++)
+            try
             {
-                var filePath = filePaths[i];
-
-                if (filePath == null)
+                for (var i = 0; i < filePaths.Length; i++)
                 {
-                    throw new ArgumentNullException(nameof(filePaths), $"Null filepath at index {i}.");
+                    var filePath = filePaths[i];
+                    if (filePath == null)
+                    {
+                        throw new ArgumentNullException(nameof(filePaths), $"Null filepath at index {i}.");
+                    }
+
+                    bytes.Add(new StreamInputBytes(File.OpenRead(filePath), true));
                 }
 
-                bytes.Add(File.ReadAllBytes(filePath));
+                return Merge(bytes, null);
             }
-
-            return Merge(bytes, null);
+            finally
+            {
+                foreach (var stream in bytes)
+                {
+                    stream.Dispose();
+                }
+            }
         }
 
         /// <summary>
@@ -82,21 +89,42 @@
                 throw new ArgumentNullException(nameof(files));
             }
 
+            return Merge(files.Select(f => new ByteArrayInputBytes(f)).ToArray(), pagesBundle);
+        }
+
+        /// <summary>
+        /// Merge the set of PDF documents.
+        /// The caller must manage disposing the stream. The created PdfDocument will not dispose the stream.
+        /// <param name="streams">
+        /// A list of streams for the files contents, this must support reading and seeking.
+        /// </param>
+        /// <param name="pagesBundle"></param>
+        /// </summary>
+        public static byte[] Merge(IReadOnlyList<Stream> streams, IReadOnlyList<IReadOnlyList<int>> pagesBundle = null)
+        {
+            if (streams == null)
+            {
+                throw new ArgumentNullException(nameof(streams));
+            }
+
+            return Merge(streams.Select(f => new StreamInputBytes(f, false)).ToArray(), pagesBundle);
+        }
+
+        private static byte[] Merge(IReadOnlyList<IInputBytes> files, IReadOnlyList<IReadOnlyList<int>> pagesBundle = null)
+        {
             const bool isLenientParsing = false;
 
             var documentBuilder = new DocumentMerger();
 
             foreach (var fileIndex in Enumerable.Range(0, files.Count))
             {
-                var file = files[fileIndex];
-
                 IReadOnlyList<int> pages = null;
                 if (pagesBundle != null && fileIndex < pagesBundle.Count)
                 {
                     pages = pagesBundle[fileIndex];
                 }
 
-                var inputBytes = new ByteArrayInputBytes(file);
+                var inputBytes = files[fileIndex];
                 var coreScanner = new CoreTokenScanner(inputBytes);
 
                 var version = FileHeaderParser.Parse(coreScanner, isLenientParsing, Log);
