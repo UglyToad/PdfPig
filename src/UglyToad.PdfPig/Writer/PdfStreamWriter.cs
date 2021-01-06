@@ -23,11 +23,14 @@
 
         public bool DisposeStream { get; set; }
 
-        public PdfStreamWriter() : this(new MemoryStream()) { }
-
         public PdfStreamWriter(Stream baseStream, bool disposeStream = true)
         {
             Stream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
+            if (!baseStream.CanWrite)
+            {
+                throw new ArgumentException("Output stream must be writable");
+            }
+
             DisposeStream = disposeStream;
         }
 
@@ -107,23 +110,6 @@
         public IndirectReferenceToken ReserveNumberToken()
         {
             return new IndirectReferenceToken(new IndirectReference(ReserveNumber(), 0));
-        }
-
-        public byte[] ToArray()
-        {
-            var currentPosition = Stream.Position;
-            Stream.Seek(0, SeekOrigin.Begin);
-
-            var bytes = new byte[Stream.Length];
-
-            if (Stream.Read(bytes, 0, bytes.Length) != bytes.Length)
-            {
-                throw new Exception("Unable to read all the bytes from stream");
-            }
-
-            Stream.Seek(currentPosition, SeekOrigin.Begin);
-
-            return bytes;
         }
 
         public void Dispose()
