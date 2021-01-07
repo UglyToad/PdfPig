@@ -23,7 +23,18 @@
 
             for (var i = 0; i < numeric.Int; i++)
             {
-                if (!tokenScanner.MoveNext() || !(tokenScanner.CurrentToken is HexToken start))
+                if (!tokenScanner.MoveNext())
+                {
+                    throw new InvalidOperationException("Codespace range have reach an unexpected end");
+                }
+
+                if (tokenScanner.CurrentToken is OperatorToken operatorToken && operatorToken.Data == "endcodespacerange")
+                {
+                    // Don't add this code space range
+                    break;
+                }
+
+                if (!(tokenScanner.CurrentToken is HexToken start))
                 {
                     throw new InvalidOperationException("Codespace range contains an unexpected token: " + tokenScanner.CurrentToken);
                 }

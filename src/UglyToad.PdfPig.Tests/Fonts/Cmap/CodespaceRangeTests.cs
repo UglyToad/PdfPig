@@ -4,6 +4,9 @@
     using System.Linq;
     using PdfFonts.Cmap;
     using PdfPig.Tokens;
+    using UglyToad.PdfPig.Core;
+    using UglyToad.PdfPig.PdfFonts.Parser.Parts;
+    using UglyToad.PdfPig.Tokenization.Scanner;
     using Xunit;
 
     public class CodespaceRangeTests
@@ -98,6 +101,29 @@
             var matches = codespace.Matches(GetHexBytes('5', 'A'));
 
             Assert.True(matches);
+        }
+
+        [Fact]
+        public void ColorspaceParserError()
+        {
+            var parser = new CodespaceRangeParser();
+            var byteArrayInput = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes("1 begincodespacerange\nendcodespacerange"));
+            var tokenScanner = new CoreTokenScanner(byteArrayInput);
+
+            Assert.True(tokenScanner.MoveNext());
+            Assert.True(tokenScanner.CurrentToken is NumericToken);
+            var numeric = (NumericToken) tokenScanner.CurrentToken;
+
+            Assert.True(tokenScanner.MoveNext());
+            Assert.True(tokenScanner.CurrentToken is OperatorToken);
+            var opToken = (OperatorToken)tokenScanner.CurrentToken;
+            Assert.Equal("begincodespacerange", opToken.Data);
+
+            var cmapBuilder = new CharacterMapBuilder();
+
+            parser.Parse(numeric, tokenScanner, cmapBuilder);
+
+            Assert.Empty(cmapBuilder.CodespaceRanges);
         }
 
         private static byte[] GetHexBytes(params char[] characters)
