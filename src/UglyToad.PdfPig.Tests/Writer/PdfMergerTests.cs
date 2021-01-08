@@ -2,6 +2,7 @@
 {
     using Integration;
     using PdfPig.Writer;
+    using System;
     using System.IO;
     using Xunit;
 
@@ -170,6 +171,23 @@
             catch
             {
                 // ignored.
+            }
+        }
+
+        [Fact]
+        public void NoStackoverflow()
+        {
+            try
+            {
+                var bytes = PdfMerger.Merge(IntegrationHelpers.GetDocumentPath("68-1990-01_A.pdf"));
+                using (var document = PdfDocument.Open(bytes, ParsingOptions.LenientParsingOff))
+                {
+                    Assert.Equal(45, document.NumberOfPages);
+                }
+            }
+            catch (StackOverflowException)
+            {
+                Assert.True(false);
             }
         }
     }

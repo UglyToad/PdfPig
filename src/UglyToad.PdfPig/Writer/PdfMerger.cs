@@ -415,15 +415,15 @@
                                 return newReferenceToken;
                             }
 
-                            var tokenObject = DirectObjectFinder.Get<IToken>(referenceToken.Data, tokenScanner);
+                            //we add the token to referencesFromDocument to prevent stackoverflow on references cycles 
+                            newReferenceToken = context.ReserveNumberToken();
+                            referencesFromDocument.Add(referenceToken, newReferenceToken);
 
+                            var tokenObject = DirectObjectFinder.Get<IToken>(referenceToken.Data, tokenScanner);
                             Debug.Assert(!(tokenObject is IndirectReferenceToken));
 
                             var newToken = CopyToken(tokenObject, tokenScanner, referencesFromDocument);
-                            newReferenceToken = context.WriteToken(newToken);
-
-                            referencesFromDocument.Add(referenceToken, newReferenceToken);
-
+                            context.WriteToken(newReferenceToken, newToken);
                             return newReferenceToken;
                         }
                     case StreamToken streamToken:
