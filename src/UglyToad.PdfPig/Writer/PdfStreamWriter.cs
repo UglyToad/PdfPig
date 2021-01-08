@@ -89,7 +89,11 @@
 
             // When we end up writing this token, all of his child would already have been added and checked for duplicate
             return AddToken(token, reservedNumber.Value);
+        }
 
+        public void WriteToken(IndirectReferenceToken referenceToken, IToken token)
+        {
+            tokenReferences.Add(referenceToken, token);
         }
 
         public int ReserveNumber()
