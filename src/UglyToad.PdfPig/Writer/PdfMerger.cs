@@ -134,7 +134,7 @@
             {
                 var context = contexts[i];
                 var pages = pagesBundle[i];
-                documentBuilder.AppendDocument(context.Catalog, context.Scanner, pages);
+                documentBuilder.AppendDocument(context, pages);
             }
 
             documentBuilder.Build();
@@ -172,7 +172,7 @@
                 }
 
                 var documentCatalog = CatalogFactory.Create(crossReference.Trailer.Root, catalogDictionaryToken, pdfScanner, isLenientParsing);
-                result[i] = new FileContext(documentCatalog, pdfScanner, version.Version);
+                result[i] = new FileContext(documentCatalog, pdfScanner, version.Version, i);
             }
             return result;
         }
@@ -182,12 +182,16 @@
             public Catalog Catalog { get; }
             public PdfTokenScanner Scanner { get; }
             public decimal Version { get; }
+            public int TotalPages { get; }
+            public int Index { get; }
 
-            public FileContext(Catalog catalog, PdfTokenScanner scanner, decimal version)
+            public FileContext(Catalog catalog, PdfTokenScanner scanner, decimal version, int index)
             {
                 Catalog = catalog;
                 Scanner = scanner;
                 Version = version;
+                TotalPages = catalog.PagesDictionary.GetIntOrDefault(NameToken.Count);
+                Index = index;
             }
         }
 
@@ -229,24 +233,26 @@
 
             private int pageCount = 0;
 
+            private readonly Dictionary<int, Dictionary<IndirectReference, IndirectReferenceToken>> referencesFromDocumentByIndex
+                 = new Dictionary<int, Dictionary<IndirectReference, IndirectReferenceToken>>();
+
             public DocumentMerger(Stream baseStream, decimal version)
             {
                 context = new PdfStreamWriter(baseStream, version, false);
                 rootPagesReference = context.ReserveNumberToken();
             }
 
-            public void AppendDocument(Catalog catalog, IPdfTokenScanner tokenScanner, IReadOnlyList<int> pages)
+            public void AppendDocument(FileContext fileContext, IReadOnlyList<int> pages)
             {
                 IEnumerable<int> pageIndices;
                 if (pages == null)
                 {
-                    var pagesCount = catalog.PagesDictionary.GetIntOrDefault(NameToken.Count);
-                    if (pagesCount < 1)
+                    if (fileContext.TotalPages < 1)
                     {
                         return;
                     }
 
-                    pageIndices = Enumerable.Range(1, pagesCount);
+                    pageIndices = Enumerable.Range(1, fileContext.TotalPages);
                 }
                 else if (pages.Count < 1)
                 {
@@ -257,7 +263,11 @@
                     pageIndices = pages;
                 }
 
-                var referencesFromDocument = new Dictionary<IndirectReference, IndirectReferenceToken>();
+                if (!referencesFromDocumentByIndex.ContainsKey(fileContext.Index))
+                {
+                    referencesFromDocumentByIndex[fileContext.Index] = new Dictionary<IndirectReference, IndirectReferenceToken>();
+                }
+                var referencesFromDocument = referencesFromDocumentByIndex[fileContext.Index];
 
                 var currentNodeReference = context.ReserveNumberToken();
                 var pagesReferences = new List<IndirectReferenceToken>();
@@ -268,7 +278,7 @@
                     while (node != null)
                     {
                         var dictionary = node.NodeDictionary;
-                        if (dictionary.TryGet(NameToken.Resources, tokenScanner, out DictionaryToken resourcesDictionary))
+                        if (dictionary.TryGet(NameToken.Resources, fileContext.Scanner, out DictionaryToken resourcesDictionary))
                         {
                             var nonCollidingResources = resourcesDictionary.Data.Keys.Except(resources.Keys);
                             if (nonCollidingResources.Count() != resourcesDictionary.Data.Count)
@@ -298,11 +308,11 @@
                     while (node != null)
                     {
                         var dictionary = node.NodeDictionary;
-                        if (dictionary.TryGet(NameToken.Resources, tokenScanner, out DictionaryToken resourcesDictionary))
+                        if (dictionary.TryGet(NameToken.Resources, fileContext.Scanner, out DictionaryToken resourcesDictionary))
                         {
                             foreach (var pair in resourcesDictionary.Data)
                             {
-                                resources.Add(pair.Key, CopyToken(pair.Value, tokenScanner, referencesFromDocument));
+                                resources.Add(pair.Key, CopyToken(pair.Value, fileContext.Scanner, referencesFromDocument));
                             }
                         }
 
@@ -345,7 +355,7 @@
 
                 foreach (var pageIndex in pageIndices)
                 {
-                    var pageNode = catalog.GetPageNode(pageIndex);
+                    var pageNode = fileContext.Catalog.GetPageNode(pageIndex);
                     if (pagesReferences.Count >= ARTIFICIAL_NODE_LIMIT || DoesAEntryCollide(pageNode))
                     {
                         CreateTree();
@@ -356,7 +366,7 @@
                     }
 
                     CopyEntries(pageNode.Parent);
-                    pagesReferences.Add(CopyPageNode(pageNode, currentNodeReference, tokenScanner, referencesFromDocument));
+                    pagesReferences.Add(CopyPageNode(pageNode, currentNodeReference, fileContext.Scanner, referencesFromDocument));
                 }
 
                 if (pagesReferences.Count < 1)
