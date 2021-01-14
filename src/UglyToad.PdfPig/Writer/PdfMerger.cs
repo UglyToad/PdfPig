@@ -127,19 +127,27 @@
 
         private static void Merge(IReadOnlyList<IInputBytes> files, Stream output, IReadOnlyList<IReadOnlyList<int>> pagesBundle)
         {
+            var contexts = GetFileContexts(files);
+            var version = contexts.Max(c => c.Version);
+            var documentBuilder = new DocumentMerger(output, version);
+            for (var i = 0; i < contexts.Length; i++)
+            {
+                var context = contexts[i];
+                var pages = pagesBundle[i];
+                documentBuilder.AppendDocument(context.Catalog, context.Scanner, pages);
+            }
+
+            documentBuilder.Build();
+        }
+
+        private static FileContext[] GetFileContexts(IReadOnlyList<IInputBytes> files)
+        {
             const bool isLenientParsing = false;
 
-            var documentBuilder = new DocumentMerger(output);
-
-            foreach (var fileIndex in Enumerable.Range(0, files.Count))
+            var result = new FileContext[files.Count];
+            for (var i = 0; i < files.Count; i++)
             {
-                IReadOnlyList<int> pages = null;
-                if (pagesBundle != null && fileIndex < pagesBundle.Count)
-                {
-                    pages = pagesBundle[fileIndex];
-                }
-
-                var inputBytes = files[fileIndex];
+                var inputBytes = files[i];
                 var coreScanner = new CoreTokenScanner(inputBytes);
 
                 var version = FileHeaderParser.Parse(coreScanner, isLenientParsing, Log);
@@ -164,11 +172,23 @@
                 }
 
                 var documentCatalog = CatalogFactory.Create(crossReference.Trailer.Root, catalogDictionaryToken, pdfScanner, isLenientParsing);
-
-                documentBuilder.AppendDocument(documentCatalog, version.Version, pdfScanner, pages);
+                result[i] = new FileContext(documentCatalog, pdfScanner, version.Version);
             }
+            return result;
+        }
 
-            documentBuilder.Build();
+        class FileContext
+        {
+            public Catalog Catalog { get; }
+            public PdfTokenScanner Scanner { get; }
+            public decimal Version { get; }
+
+            public FileContext(Catalog catalog, PdfTokenScanner scanner, decimal version)
+            {
+                Catalog = catalog;
+                Scanner = scanner;
+                Version = version;
+            }
         }
 
         // This method is a basically a copy of the method UglyToad.PdfPig.Parser.PdfDocumentFactory.ParseTrailer()
@@ -201,24 +221,21 @@
 
         private class DocumentMerger
         {
-            private const decimal DefaultVersion = 1.2m;
-
             private const int ARTIFICIAL_NODE_LIMIT = 100;
 
             private readonly PdfStreamWriter context;
             private readonly List<IndirectReferenceToken> pagesTokenReferences = new List<IndirectReferenceToken>();
             private readonly IndirectReferenceToken rootPagesReference;
 
-            private decimal currentVersion = DefaultVersion;
             private int pageCount = 0;
 
-            public DocumentMerger(Stream baseStream)
+            public DocumentMerger(Stream baseStream, decimal version)
             {
-                context = new PdfStreamWriter(baseStream, false);
+                context = new PdfStreamWriter(baseStream, version, false);
                 rootPagesReference = context.ReserveNumberToken();
             }
 
-            public void AppendDocument(Catalog catalog, decimal version, IPdfTokenScanner tokenScanner, IReadOnlyList<int> pages)
+            public void AppendDocument(Catalog catalog, IPdfTokenScanner tokenScanner, IReadOnlyList<int> pages)
             {
                 IEnumerable<int> pageIndices;
                 if (pages == null)
@@ -239,8 +256,6 @@
                 {
                     pageIndices = pages;
                 }
-
-                currentVersion = Math.Max(version, currentVersion);
 
                 var referencesFromDocument = new Dictionary<IndirectReference, IndirectReferenceToken>();
 
@@ -376,7 +391,7 @@
 
                 var catalogRef = context.WriteToken(catalog);
 
-                context.Flush(currentVersion, catalogRef);
+                context.Flush(catalogRef);
 
                 Close();
             }

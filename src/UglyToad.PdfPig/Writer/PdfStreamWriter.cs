@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Globalization;
     using System.IO;
+    using System.Linq;
     using Core;
     using Graphics.Operations;
     using Tokens;
@@ -13,6 +14,8 @@
     /// </summary>
     internal class PdfStreamWriter : IDisposable
     {
+        private const decimal MinimumVersion = 1.2m;
+
         private readonly List<int> reservedNumbers = new List<int>();
 
         private readonly Dictionary<IndirectReferenceToken, IToken> tokenReferences = new Dictionary<IndirectReferenceToken, IToken>();
@@ -23,7 +26,7 @@
 
         public bool DisposeStream { get; set; }
 
-        public PdfStreamWriter(Stream baseStream, bool disposeStream = true)
+        public PdfStreamWriter(Stream baseStream, decimal version, bool disposeStream = true)
         {
             Stream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
             if (!baseStream.CanWrite)
@@ -32,15 +35,11 @@
             }
 
             DisposeStream = disposeStream;
+            WriteHeader(Math.Max(MinimumVersion, version));
         }
 
-        public void Flush(decimal version, IndirectReferenceToken catalogReference)
+        private void WriteHeader(decimal version)
         {
-            if (catalogReference == null)
-            {
-                throw new ArgumentNullException(nameof(catalogReference));
-            }
-
             WriteString($"%PDF-{version.ToString("0.0", CultureInfo.InvariantCulture)}", Stream);
 
             Stream.WriteText("%");
@@ -49,6 +48,14 @@
             Stream.WriteByte(196);
             Stream.WriteByte(210);
             Stream.WriteNewLine();
+        }
+
+        public void Flush(IndirectReferenceToken catalogReference)
+        {
+            if (catalogReference == null)
+            {
+                throw new ArgumentNullException(nameof(catalogReference));
+            }
 
             var offsets = new Dictionary<IndirectReference, long>();
             ObjectToken catalogToken = null;
