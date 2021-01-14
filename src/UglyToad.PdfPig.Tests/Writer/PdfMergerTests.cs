@@ -3,6 +3,7 @@
     using Integration;
     using PdfPig.Writer;
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using Xunit;
 
@@ -92,6 +93,21 @@
                 Assert.Equal(2, document.NumberOfPages);
                 Assert.True(document.Structure.CrossReferenceTable.ObjectOffsets.Count <= 24,
                     "Expected object count to be lower than 24");
+            }
+        }
+
+        [Fact]
+        public void DedupsObjectsFromSameDoc()
+        {
+            var one = IntegrationHelpers.GetDocumentPath("Multiple Page - from Mortality Statistics.pdf");
+
+            var result = PdfMerger.Merge(new List<byte[]> { File.ReadAllBytes(one) }, new List<IReadOnlyList<int>> { new List<int> { 1, 2}  });
+
+            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            {
+                Assert.Equal(2, document.NumberOfPages);
+                Assert.True(document.Structure.CrossReferenceTable.ObjectOffsets.Count <= 29,
+                    "Expected object count to be lower than 30"); // 45 objects with duplicates, 29 with correct re-use
             }
         }
 

@@ -198,7 +198,7 @@
 
                 currentVersion = Math.Max(version, currentVersion);
 
-                var referencesFromDocument = new Dictionary<IndirectReferenceToken, IndirectReferenceToken>();
+                var referencesFromDocument = new Dictionary<IndirectReference, IndirectReferenceToken>();
 
                 var currentNodeReference = context.ReserveNumberToken();
                 var pagesReferences = new List<IndirectReferenceToken>();
@@ -347,7 +347,7 @@
             }
 
             private IndirectReferenceToken CopyPageNode(PageTreeNode pageNode, IndirectReferenceToken parentPagesObject, IPdfTokenScanner tokenScanner, 
-                IDictionary<IndirectReferenceToken, IndirectReferenceToken> referencesFromDocument)
+                IDictionary<IndirectReference, IndirectReferenceToken> referencesFromDocument)
             {
                 Debug.Assert(pageNode.IsPage);
 
@@ -381,7 +381,7 @@
             /// <param name="tokenScanner">scanner get the content from the original document</param>
             /// <param name="referencesFromDocument">Map of previously copied</param>
             /// <returns>A reference of the token that was copied. With all the reference updated</returns>
-            private IToken CopyToken(IToken tokenToCopy, IPdfTokenScanner tokenScanner, IDictionary<IndirectReferenceToken, IndirectReferenceToken> referencesFromDocument)
+            private IToken CopyToken(IToken tokenToCopy, IPdfTokenScanner tokenScanner, IDictionary<IndirectReference, IndirectReferenceToken> referencesFromDocument)
             {
                 // This token need to be deep copied, because they could contain reference. So we have to update them.
                 switch (tokenToCopy)
@@ -410,14 +410,14 @@
                         }
                     case IndirectReferenceToken referenceToken:
                         {
-                            if (referencesFromDocument.TryGetValue(referenceToken, out var newReferenceToken))
+                            if (referencesFromDocument.TryGetValue(referenceToken.Data, out var newReferenceToken))
                             {
                                 return newReferenceToken;
                             }
 
                             //we add the token to referencesFromDocument to prevent stackoverflow on references cycles 
                             newReferenceToken = context.ReserveNumberToken();
-                            referencesFromDocument.Add(referenceToken, newReferenceToken);
+                            referencesFromDocument.Add(referenceToken.Data, newReferenceToken);
 
                             var tokenObject = DirectObjectFinder.Get<IToken>(referenceToken.Data, tokenScanner);
                             Debug.Assert(!(tokenObject is IndirectReferenceToken));
