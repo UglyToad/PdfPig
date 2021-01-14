@@ -20,6 +20,8 @@
 
         private readonly Dictionary<IndirectReferenceToken, IToken> tokenReferences = new Dictionary<IndirectReferenceToken, IToken>();
 
+        private readonly Dictionary<IndirectReference, long> offsets = new Dictionary<IndirectReference, long>();
+
         public int CurrentNumber { get; private set; } = 1;
 
         public Stream Stream { get; private set; }
@@ -50,36 +52,37 @@
             Stream.WriteNewLine();
         }
 
-        public void Flush(IndirectReferenceToken catalogReference)
+        public void Flush()
+        {
+            foreach (var pair in tokenReferences)
+            {
+                FlushToken(pair.Key, pair.Value);
+            }
+
+            tokenReferences.Clear();
+        }
+
+        private ObjectToken FlushToken(IndirectReferenceToken referenceToken, IToken token)
+        {
+            var offset = Stream.Position;
+            var obj = new ObjectToken(offset, referenceToken.Data, token);
+
+            TokenWriter.WriteToken(obj, Stream);
+            offsets.Add(referenceToken.Data, offset);
+            return obj;
+        }
+
+        public void Close(DictionaryToken catalogReference)
         {
             if (catalogReference == null)
             {
                 throw new ArgumentNullException(nameof(catalogReference));
             }
 
-            var offsets = new Dictionary<IndirectReference, long>();
-            ObjectToken catalogToken = null;
-            foreach (var pair in tokenReferences)
-            {
-                var referenceToken = pair.Key;
-                var token = pair.Value;
-                var offset = Stream.Position;
-                var obj = new ObjectToken(offset, referenceToken.Data, token);
+            Flush();
 
-                TokenWriter.WriteToken(obj, Stream);
-
-                offsets.Add(referenceToken.Data, offset);
-
-                if (catalogToken == null && referenceToken == catalogReference)
-                {
-                    catalogToken = obj;
-                }
-            }
-
-            if (catalogToken == null)
-            {
-                throw new Exception("Catalog object wasn't found");
-            }
+            var catalogTokenReference = WriteToken(catalogReference);
+            var catalogToken = FlushToken(catalogTokenReference, catalogReference);
 
             // TODO: Support document information
             TokenWriter.WriteCrossReferenceTable(offsets, catalogToken, Stream, null);

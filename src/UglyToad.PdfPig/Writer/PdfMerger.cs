@@ -365,6 +365,7 @@
                 }
 
                 CreateTree();
+                context.Flush();
             }
 
             public void Build()
@@ -389,11 +390,7 @@
                     { NameToken.Pages, pagesRef }
                 });
 
-                var catalogRef = context.WriteToken(catalog);
-
-                context.Flush(catalogRef);
-
-                Close();
+                context.Close(catalog);
             }
 
             public void Close()
