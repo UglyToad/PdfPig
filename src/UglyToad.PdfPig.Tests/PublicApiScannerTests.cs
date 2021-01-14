@@ -211,6 +211,7 @@
                 "UglyToad.PdfPig.Writer.PdfMerger",
                 "UglyToad.PdfPig.Writer.PdfPageBuilder",
                 "UglyToad.PdfPig.Writer.TokenWriter",
+                "UglyToad.PdfPig.Writer.IPdfArrangement",
                 "UglyToad.PdfPig.XObjects.XObjectImage"
             };
 

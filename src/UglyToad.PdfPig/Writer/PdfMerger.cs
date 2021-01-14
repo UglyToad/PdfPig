@@ -1,22 +1,23 @@
 ﻿namespace UglyToad.PdfPig.Writer
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.IO;
     using Content;
     using Core;
     using CrossReference;
     using Encryption;
+    using Exceptions;
     using Filters;
     using Logging;
     using Parser;
     using Parser.FileStructure;
     using Parser.Parts;
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.IO;
+    using System.Linq;
     using Tokenization.Scanner;
     using Tokens;
-    using Exceptions;
-    using System.Linq;
+    using UglyToad.PdfPig.Writer.PageArrangements;
     using Util;
 
     /// <summary>
@@ -52,7 +53,7 @@
             {
                 using (var stream2 = new StreamInputBytes(File.OpenRead(file2)))
                 {
-                    Merge(new[] { stream1, stream2 }, output, new[] { file1Selection, file2Selection });
+                    Merge(new[] { stream1, stream2 }, output, new PdfMerge(new[] { file1Selection, file2Selection }));
                 }
             }
         }
@@ -83,7 +84,7 @@
                     streams.Add(new StreamInputBytes(File.OpenRead(filePath), true));
                 }
 
-                Merge(streams, output, null);
+                Merge(streams, output, new PdfMerge(null));
             }
             finally
             {
@@ -103,7 +104,7 @@
 
             using (var output = new MemoryStream())
             {
-                Merge(files.Select(f => new ByteArrayInputBytes(f)).ToArray(), output, pagesBundle);
+                Merge(files.Select(f => new ByteArrayInputBytes(f)).ToArray(), output, new PdfMerge(pagesBundle));
                 return output.ToArray();
             }
         }
@@ -122,18 +123,37 @@
             _ = streams ?? throw new ArgumentNullException(nameof(streams));
             _ = output ?? throw new ArgumentNullException(nameof(output));
 
-            Merge(streams.Select(f => new StreamInputBytes(f, false)).ToArray(), output, pagesBundle);
+            Merge(streams.Select(f => new StreamInputBytes(f, false)).ToArray(), output, new PdfMerge(pagesBundle));
         }
 
-        private static void Merge(IReadOnlyList<IInputBytes> files, Stream output, IReadOnlyList<IReadOnlyList<int>> pagesBundle)
+        /// <summary>
+        /// Merge the set of PDF documents into the output stream
+        /// The caller must manage disposing the stream. The created PdfDocument will not dispose the stream.
+        /// <param name="streams">
+        /// A list of streams for the files contents, this must support reading and seeking.
+        /// </param>
+        /// <param name="output">Must be writable</param>
+        /// <param name="pageArrangment">should describe the way the pages are to be rearranged</param>
+        /// </summary>
+        public static void Merge(IReadOnlyList<Stream> streams, Stream output, IPdfArrangement pageArrangment)
+        {
+            _ = streams ?? throw new ArgumentNullException(nameof(streams));
+            _ = output ?? throw new ArgumentNullException(nameof(output));
+
+            Merge(streams.Select(f => new StreamInputBytes(f, false)).ToArray(), output, pageArrangment);
+        }
+
+        private static void Merge(IReadOnlyList<IInputBytes> files, Stream output, IPdfArrangement pageArrangment)
         {
             var contexts = GetFileContexts(files);
             var version = contexts.Max(c => c.Version);
+            var pagesCountPerFile = contexts.ToDictionary(f => f.Index, f => f.TotalPages);
+
             var documentBuilder = new DocumentMerger(output, version);
-            for (var i = 0; i < contexts.Length; i++)
+            foreach (var bundle in pageArrangment.GetArrangements(pagesCountPerFile))
             {
-                var context = contexts[i];
-                var pages = pagesBundle[i];
+                var context = contexts[bundle.FileIndex];
+                var pages = bundle.PageIndices;
                 documentBuilder.AppendDocument(context, pages);
             }
 
@@ -242,25 +262,16 @@
                 rootPagesReference = context.ReserveNumberToken();
             }
 
-            public void AppendDocument(FileContext fileContext, IReadOnlyList<int> pages)
+            public void AppendDocument(FileContext fileContext, IReadOnlyCollection<int> pages)
             {
-                IEnumerable<int> pageIndices;
                 if (pages == null)
                 {
-                    if (fileContext.TotalPages < 1)
-                    {
-                        return;
-                    }
-
-                    pageIndices = Enumerable.Range(1, fileContext.TotalPages);
+                    throw new ArgumentNullException(nameof(pages));
                 }
-                else if (pages.Count < 1)
+
+                if (pages.Count < 1)
                 {
                     return;
-                }
-                else
-                {
-                    pageIndices = pages;
                 }
 
                 if (!referencesFromDocumentByIndex.ContainsKey(fileContext.Index))
@@ -353,7 +364,7 @@
                     pageCount += pagesReferences.Count;
                 };
 
-                foreach (var pageIndex in pageIndices)
+                foreach (var pageIndex in pages)
                 {
                     var pageNode = fileContext.Catalog.GetPageNode(pageIndex);
                     if (pagesReferences.Count >= ARTIFICIAL_NODE_LIMIT || DoesAEntryCollide(pageNode))
