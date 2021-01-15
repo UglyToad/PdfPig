@@ -15,20 +15,24 @@
             var two = IntegrationHelpers.GetDocumentPath("Single Page Simple - from open office.pdf");
 
             var result = PdfMerger.Merge(one, two);
+            CanMerge2SimpleDocumentsAssertions(new MemoryStream(result), "Write something inInkscape", "I am a simple pdf.");
+        }
 
-            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+        [Fact]
+        public void CanMerge2SimpleDocumentsIntoStream()
+        {
+            var one = IntegrationHelpers.GetDocumentPath("Single Page Simple - from inkscape.pdf");
+            var two = IntegrationHelpers.GetDocumentPath("Single Page Simple - from open office.pdf");
+
+            using (var outputStream = GetSelfDestructingNewFileStream("merge2"))
             {
-                Assert.Equal(2, document.NumberOfPages);
+                if (outputStream is null)
+                {
+                    return;//we can't create a file in this test session
+                }
 
-                Assert.Equal(1.5m, document.Version);
-
-                var page1 = document.GetPage(1);
-
-                Assert.Equal("Write something inInkscape", page1.Text);
-
-                var page2 = document.GetPage(2);
-
-                Assert.Equal("I am a simple pdf.", page2.Text);
+                PdfMerger.Merge(one, two, outputStream);
+                CanMerge2SimpleDocumentsAssertions(outputStream, "Write something inInkscape", "I am a simple pdf.");
             }
         }
 
@@ -39,20 +43,22 @@
             var two = IntegrationHelpers.GetDocumentPath("Single Page Simple - from inkscape.pdf");
 
             var result = PdfMerger.Merge(one, two);
-            
-            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            CanMerge2SimpleDocumentsAssertions(new MemoryStream(result), "I am a simple pdf.", "Write something inInkscape");
+        }
+
+        private void CanMerge2SimpleDocumentsAssertions(Stream stream, string page1Text, string page2Text)
+        {
+            stream.Position = 0;
+            using (var document = PdfDocument.Open(stream, ParsingOptions.LenientParsingOff))
             {
                 Assert.Equal(2, document.NumberOfPages);
-
                 Assert.Equal(1.5m, document.Version);
 
                 var page1 = document.GetPage(1);
-
-                Assert.Equal("I am a simple pdf.", page1.Text);
+                Assert.Equal(page1Text, page1.Text);
 
                 var page2 = document.GetPage(2);
-
-                Assert.Equal("Write something inInkscape", page2.Text);
+                Assert.Equal(page2Text, page2.Text);
             }
         }
 
@@ -171,6 +177,24 @@
             catch
             {
                 // ignored.
+            }
+        }
+
+        private static FileStream GetSelfDestructingNewFileStream(string name)
+        {
+            try
+            {
+                if (!Directory.Exists("Merger"))
+                {
+                    Directory.CreateDirectory("Merger");
+                }
+
+                var output = Path.Combine("Merger", $"{name}.pdf");
+                return File.Create(output, 4096, FileOptions.DeleteOnClose);
+            }
+            catch
+            {
+                return null;
             }
         }
 
