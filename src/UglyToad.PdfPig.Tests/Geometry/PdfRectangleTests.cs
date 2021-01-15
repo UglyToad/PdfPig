@@ -1682,5 +1682,17 @@
             Assert.Equal(expected[2], rectR.TopLeft, PointComparer);
             Assert.Equal(expected[3], rectR.BottomLeft, PointComparer);
         }
+
+        [Fact]
+        public void Issue261()
+        {
+            // Some points have negative coordinates after rotation, resulting in negative Height
+            PdfRectangle rect = new PdfRectangle(new PdfPoint(401.51, 461.803424),
+                new PdfPoint(300.17322363281249, 461.803424),
+                new PdfPoint(401.51, 291.45),
+                new PdfPoint(300.17322363281249, 291.45));
+
+            Assert.True(rect.Height > 0);
+        }
     }
 }

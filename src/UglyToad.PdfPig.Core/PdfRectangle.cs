@@ -49,6 +49,7 @@
         private double width;
         /// <summary>
         /// Width of the rectangle.
+        /// <para>A positive number.</para>
         /// </summary>
         public double Width
         {
@@ -66,6 +67,7 @@
         private double height;
         /// <summary>
         /// Height of the rectangle.
+        /// <para>A positive number.</para>
         /// </summary>
         public double Height
         {
@@ -197,13 +199,16 @@
             var cos = Math.Cos(t);
             var sin = Math.Sin(t);
 
-            var inverseRotation = new TransformationMatrix(          
+            var inverseRotation = new TransformationMatrix(
                 cos, -sin, 0,
                 sin, cos, 0,
                 0, 0, 1);
 
-            width = inverseRotation.Transform(BottomRight).X - inverseRotation.Transform(BottomLeft).X;
-            height = inverseRotation.Transform(TopLeft).Y - inverseRotation.Transform(BottomLeft).Y;
+            // Using Abs as a proxy for Euclidean distance in 1D 
+            // as it might happen that points have negative coordinates.
+            var bl = inverseRotation.Transform(BottomLeft);
+            width = Math.Abs(inverseRotation.Transform(BottomRight).X - bl.X);
+            height = Math.Abs(inverseRotation.Transform(TopLeft).Y - bl.Y);
         }
 
         /// <inheritdoc />
