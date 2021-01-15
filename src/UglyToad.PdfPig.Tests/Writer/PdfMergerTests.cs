@@ -5,6 +5,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using Xunit;
 
     public class PdfMergerTests
@@ -228,6 +229,78 @@
             catch (StackOverflowException)
             {
                 Assert.True(false);
+            }
+        }
+
+        [Fact]
+        public void CanSplitDocumentsInPages()
+        {
+            var one = IntegrationHelpers.GetDocumentPath("68-1990-01_A.pdf");
+
+            var outputStreams = Enumerable.Range(1, 45).Select(r => ((Stream)new MemoryStream(), (IPdfArrangement)new PdfPick { Index = r })).ToList();
+            using (var input = File.OpenRead(one))
+            {
+                PdfMerger.MergeMany(new[] { input }, outputStreams);
+
+                foreach (var (output, _) in outputStreams)
+                {
+                    output.Position = 0;
+                    var document = PdfDocument.Open(output);
+
+                    Assert.Equal(1, document.NumberOfPages);
+                }
+            }
+        }
+
+        class PdfPick : IPdfArrangement
+        {
+            public int Index { get; set; }
+
+            public IEnumerable<(int FileIndex, IReadOnlyCollection<int> PageIndices)> GetArrangements(Dictionary<int, int> pagesCountPerFileIndex)
+            {
+                return new[] { (FileIndex: 0, PageIndices: (IReadOnlyCollection<int>)new[] { Index }) };
+            }
+        }
+
+        class PdfRange : IPdfArrangement
+        {
+            /// <summary>
+            /// Included
+            /// </summary>
+            public int? StartIndex { get; set; }
+
+            /// <summary>
+            /// Excluded
+            /// </summary>
+            public int? EndIndex { get; set; }
+
+            public IEnumerable<(int FileIndex, IReadOnlyCollection<int> PageIndices)> GetArrangements(Dictionary<int, int> pagesCountPerFileIndex)
+            {
+                var start = StartIndex ?? 1;
+                var end = EndIndex ?? (pagesCountPerFileIndex[0] + 1);
+                var count = end - start;
+                return new[] { (FileIndex: 0, PageIndices: (IReadOnlyCollection<int>)Enumerable.Range(start, count).ToArray()) };
+            }
+        }
+
+        [Fact]
+        public void CanSplitDocumentsInTwo()
+        {
+            var one = IntegrationHelpers.GetDocumentPath("Pig Production Handbook.pdf");
+
+            var output1 = new MemoryStream();
+            var output2 = new MemoryStream();
+            using (var input = File.OpenRead(one))
+            {
+                PdfMerger.MergeMany(new[] { input }, new[] { ((Stream)output1, (IPdfArrangement)new PdfRange { EndIndex = 7 }), (output2, new PdfRange { StartIndex = 7 }) });
+
+                output1.Position = 0;
+                var document1 = PdfDocument.Open(output1);
+                Assert.Equal(6, document1.NumberOfPages);
+
+                output2.Position = 0;
+                var document2 = PdfDocument.Open(output2);
+                Assert.Equal(80, document2.NumberOfPages);
             }
         }
     }

@@ -143,21 +143,45 @@
             Merge(streams.Select(f => new StreamInputBytes(f, false)).ToArray(), output, pageArrangment);
         }
 
-        private static void Merge(IReadOnlyList<IInputBytes> files, Stream output, IPdfArrangement pageArrangment)
+        /// <summary>
+        /// Merge the set of PDF documents into multiple output streams
+        /// The caller must manage disposing the streams. The created PdfDocuments will not dispose the stream.
+        /// <param name="streams">
+        /// A list of streams for the files contents, this must support reading and seeking.
+        /// </param>
+        /// <param name="exports">A collection of output stream and page arrangment to describe the expected pdfs</param>
+        /// </summary>
+        public static void MergeMany(IReadOnlyList<Stream> streams, IReadOnlyCollection<(Stream Output, IPdfArrangement PageArrangments)> exports)
+        {
+            _ = streams ?? throw new ArgumentNullException(nameof(streams));
+            _ = exports ?? throw new ArgumentNullException(nameof(exports));
+
+            MergeMany(streams.Select(f => new StreamInputBytes(f, false)).ToArray(), exports);
+        }
+
+        private static void Merge(IReadOnlyList<IInputBytes> files, Stream output, IPdfArrangement pageArrangments)
+        {
+            MergeMany(files, new[] { (output, pageArrangments) });
+        }
+
+        private static void MergeMany(IReadOnlyList<IInputBytes> files, IReadOnlyCollection<(Stream Output, IPdfArrangement PageArrangments)> exports)
         {
             var contexts = GetFileContexts(files);
             var version = contexts.Max(c => c.Version);
             var pagesCountPerFile = contexts.ToDictionary(f => f.Index, f => f.TotalPages);
 
-            var documentBuilder = new DocumentMerger(output, version);
-            foreach (var bundle in pageArrangment.GetArrangements(pagesCountPerFile))
+            foreach (var (output, pageArrangment) in exports)
             {
-                var context = contexts[bundle.FileIndex];
-                var pages = bundle.PageIndices;
-                documentBuilder.AppendDocument(context, pages);
-            }
+                var documentBuilder = new DocumentMerger(output, version);
+                foreach (var bundle in pageArrangment.GetArrangements(pagesCountPerFile))
+                {
+                    var context = contexts[bundle.FileIndex];
+                    var pages = bundle.PageIndices;
+                    documentBuilder.AppendDocument(context, pages);
+                }
 
-            documentBuilder.Build();
+                documentBuilder.Build();
+            }
         }
 
         private static FileContext[] GetFileContexts(IReadOnlyList<IInputBytes> files)
