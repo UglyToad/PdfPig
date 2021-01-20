@@ -17,6 +17,8 @@
         private static readonly NameTokenizer NameTokenizer = new NameTokenizer();
         private static readonly PlainTokenizer PlainTokenizer = new PlainTokenizer();
 
+        // NOTE: these are not thread safe so should not be static. Each instance includes a
+        // StringBuilder it re-uses.
         private readonly NumericTokenizer NumericTokenizer = new NumericTokenizer();
         private readonly StringTokenizer StringTokenizer = new StringTokenizer();
 
