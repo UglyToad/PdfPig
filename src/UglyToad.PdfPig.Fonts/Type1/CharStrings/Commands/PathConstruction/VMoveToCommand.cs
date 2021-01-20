@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.CharStrings.Commands.PathConstruction
 {
     using Core;
+    using System;
 
     /// <summary>
     /// Vertical move to. Moves relative to the current point.
@@ -23,7 +24,8 @@
 
             if (context.IsFlexing)
             {
-                // TODO: flex commands
+                // not in the Type 1 spec, but exists in some fonts
+                context.AddFlexPoint(new PdfPoint(0, deltaY));
             }
             else
             {
