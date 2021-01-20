@@ -6,7 +6,7 @@
 
     internal class PlainTokenizer : ITokenizer
     {
-        private readonly StringBuilder stringBuilder = new();
+        private readonly StringBuilder stringBuilder = new StringBuilder();
 
         public bool ReadsNextByte { get; } = true;
 

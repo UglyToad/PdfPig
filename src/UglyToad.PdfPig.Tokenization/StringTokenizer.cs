@@ -6,7 +6,7 @@
 
     internal class StringTokenizer : ITokenizer
     {
-        private readonly StringBuilder stringBuilder = new();
+        private readonly StringBuilder stringBuilder = new StringBuilder();
         public bool ReadsNextByte { get; } = false;
 
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)

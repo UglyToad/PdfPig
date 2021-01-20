@@ -8,7 +8,7 @@
 
     internal class NumericTokenizer : ITokenizer
     {
-        private readonly StringBuilder stringBuilder = new();
+        private readonly StringBuilder stringBuilder = new StringBuilder();
 
         private const byte Zero = 48;
         private const byte Nine = 57;
