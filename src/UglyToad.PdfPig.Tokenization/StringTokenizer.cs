@@ -6,7 +6,7 @@
 
     internal class StringTokenizer : ITokenizer
     {
-        private static readonly StringBuilderPool StringBuilderPool = new StringBuilderPool(16);
+        private readonly StringBuilder stringBuilder = new();
         public bool ReadsNextByte { get; } = false;
 
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
@@ -23,7 +23,7 @@
                 return false;
             }
 
-            var builder = StringBuilderPool.Borrow();
+            var builder = stringBuilder;
             var numberOfBrackets = 1;
             var isEscapeActive = false;
             var isLineBreaking = false;
@@ -178,7 +178,7 @@
                 encodedWith = StringToken.Encoding.Iso88591;
             }
 
-            StringBuilderPool.Return(builder);
+            builder.Clear();
 
             token = new StringToken(tokenStr, encodedWith);
 
