@@ -6,7 +6,7 @@
     /// Sets left sidebearing and the character width vector.
     /// This command also sets the current point to(sbx, sby), but does not place the point in the character path.
     /// </summary>
-    internal class SbwCommand
+    internal static class SbwCommand
     {
         public const string Name = "sbw";
 

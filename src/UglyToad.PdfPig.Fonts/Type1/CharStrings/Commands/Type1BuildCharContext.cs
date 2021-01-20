@@ -28,7 +28,7 @@
 
         public CharStringStack PostscriptStack { get; } = new CharStringStack();
 
-        public IReadOnlyList<PdfPoint> FlexPoints { get; }
+        public List<PdfPoint> FlexPoints { get; } = new List<PdfPoint>();
 
         public Type1BuildCharContext(IReadOnlyDictionary<int, Type1CharStrings.CommandSequence> subroutines,
             Func<int, PdfSubpath> characterByIndexFactory,
@@ -41,7 +41,7 @@
 
         public void AddFlexPoint(PdfPoint point)
         {
-
+            FlexPoints.Add(point);
         }
 
         public PdfSubpath GetCharacter(int characterCode)
@@ -61,7 +61,7 @@
 
         public void ClearFlexPoints()
         {
-
+            FlexPoints.Clear();
         }
     }
 }

@@ -30,7 +30,7 @@
 
             if (context.IsFlexing)
             {
-                
+                context.AddFlexPoint(new PdfPoint(deltaX, deltaY));
             }
             else
             {
