@@ -29,6 +29,9 @@
         private bool isDisposed;
         private bool isBruteForcing;
 
+        private readonly Dictionary<IndirectReference, ObjectToken> overwrittenTokens =
+            new Dictionary<IndirectReference, ObjectToken>();
+
         /// <summary>
         /// Stores tokens encountered between obj - endobj markers for each <see cref="MoveNext"/> call.
         /// Cleared after each operation.
@@ -670,6 +673,11 @@
                 throw new ObjectDisposedException(nameof(PdfTokenScanner));
             }
 
+            if (overwrittenTokens.TryGetValue(reference, out var value))
+            {
+                return value;
+            }
+
             if (objectLocationProvider.TryGetCached(reference, out var objectToken))
             {
                 return objectToken;
@@ -703,6 +711,10 @@
             }
 
             return BruteForceFileToFindReference(reference);
+        }
+        public void ReplaceToken(IndirectReference reference, IToken token)
+        {
+            overwrittenTokens[reference] = new ObjectToken(0, reference, token);
         }
 
         private ObjectToken BruteForceFileToFindReference(IndirectReference reference)

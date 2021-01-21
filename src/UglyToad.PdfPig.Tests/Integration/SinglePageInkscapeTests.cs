@@ -1,5 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
+    using PdfPig.Core;
+    using PdfPig.Tokens;
+    using PdfPig.Util;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -17,6 +20,27 @@
         {
             using (var document = PdfDocument.Open(GetFilename()))
             {
+                var page = document.GetPage(1);
+
+                var letters = page.Letters;
+                var positions = GetPdfBoxData();
+
+                for (int i = 0; i < letters.Count; i++)
+                {
+                    var letter = letters[i];
+                    var position = positions[i];
+                    position.AssertWithinTolerance(letter, page, false);
+                }
+            }
+        }
+
+        [Fact]
+        public void LettersHaveCorrectPositionsPdfBoxWithTrimming()
+        {
+            using (var document = PdfDocument.Open(GetFilename()))
+            {
+                var streamRef = new IndirectReference(3, 0);
+                document.Advanced.ReplaceIndirectObject(streamRef, token => (token as StreamToken).StripNonText());
                 var page = document.GetPage(1);
 
                 var letters = page.Letters;

@@ -45,6 +45,11 @@ namespace UglyToad.PdfPig.Tests.Tokens
             return Objects[reference];
         }
 
+        public void ReplaceToken(IndirectReference reference, IToken token)
+        {
+            Objects[reference] = new ObjectToken(0, reference, token);
+        }
+
         public void Dispose()
         {
         }

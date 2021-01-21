@@ -16,5 +16,13 @@
         /// <param name="reference">The object number for the object to tokenize.</param>
         /// <returns>The tokenized object.</returns>
         ObjectToken Get(IndirectReference reference);
+
+        /// <summary>
+        /// Adds the token to an internal cache that will be returned instead of
+        /// scanning the source PDF data.
+        /// </summary>
+        /// <param name="reference">The object number for the object to replace.</param>
+        /// <param name="token">The token to replace the existing data.</param>
+        void ReplaceToken(IndirectReference reference, IToken token);
     }
 }

@@ -219,7 +219,11 @@
             }
 
             bookmarks = bookmarksProvider.GetBookmarks(Structure.Catalog);
-            if (bookmarks != null) return true;
+            if (bookmarks != null)
+            {
+                return true;
+            }
+
             return false;
         }
 
