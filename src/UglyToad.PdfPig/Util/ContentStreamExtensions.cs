@@ -16,14 +16,17 @@
     {
         /// <summary>
         /// EXPERIMENTAL
-        /// Strips all non-text content from the  content stream.
+        /// Strips all non-text content from the content stream.
         /// </summary>
         /// <param name="token">Input stream</param>
         /// <param name="provider">optional providers</param>
         /// <returns></returns>
         public static StreamToken StripNonText(this StreamToken token, IFilterProvider provider=null)
         {
-            provider ??= DefaultFilterProvider.Instance;
+            if (provider == null)
+            {
+                provider = DefaultFilterProvider.Instance;
+            }
 
             // create copy without filter
             var copy = token.StreamDictionary.Data

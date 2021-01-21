@@ -111,7 +111,7 @@
         /// <summary>
         /// EXPERIMENTAL
         /// Strips all non-text content from  PDF content streams.
-        /// Can significantly improve text extraction performance is PDF includes large
+        /// Can significantly improve text extraction performance if PDF includes large
         /// amounts of graphics operations.
         /// NOTE: All content stream will be loaded in memory uncompressed.
         /// </summary>
@@ -169,7 +169,11 @@
 
         internal static IEnumerable<(DictionaryToken, List<DictionaryToken>)> WalkTree(PageTreeNode node, List<DictionaryToken> parents=null)
         {
-            parents ??= new List<DictionaryToken>();
+            if (parents == null)
+            {
+                parents = new List<DictionaryToken>();
+            }
+            
             if (node.IsPage)
             {
                 yield return (node.NodeDictionary, parents);
