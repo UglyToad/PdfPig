@@ -47,7 +47,6 @@
         private static IReadOnlyList<byte> TrimNonTextBytes(IReadOnlyList<byte> data)
         {
             var input = data.ToArray();
-            var inputTxt = System.Text.Encoding.ASCII.GetString(input);
             // Op - Previous tokens needed
             // q 0
             // Q 0
@@ -98,7 +97,6 @@
                     }
                 }
             }
-            var outputTxt = System.Text.Encoding.ASCII.GetString(output);
             return new ArraySegment<byte>(output, 0, curPos);
 
             bool IsEndOfToken(int pos)
