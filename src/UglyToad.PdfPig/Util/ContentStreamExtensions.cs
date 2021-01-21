@@ -12,7 +12,7 @@
     /// <summary>
     /// Experimental
     /// </summary>
-    public static class ContentStreamExtensions
+    internal static class ContentStreamExtensions
     {
         /// <summary>
         /// EXPERIMENTAL
@@ -21,7 +21,7 @@
         /// <param name="token">Input stream</param>
         /// <param name="provider">optional providers</param>
         /// <returns></returns>
-        public static StreamToken StripNonText(this StreamToken token, IFilterProvider provider=null)
+        internal static StreamToken StripNonText(this StreamToken token, IFilterProvider provider=null)
         {
             if (provider == null)
             {
@@ -36,6 +36,14 @@
             return new StreamToken(dict, TrimNonTextBytes(token.Decode(provider)));
         }
 
+        /// <summary>
+        /// This iterates over the uncompressed input stream and returns the text only operations.
+        /// This is a very quick process that ends up reducing page processing time significantly if all
+        /// you want to do is extract text and there can be tens of thousands of painting operations that
+        /// don't affect text at all.
+        /// </summary>
+        /// <param name="input">Uncompressed stream content</param>
+        /// <returns>Uncompressed text only stream content</returns>
         private static IReadOnlyList<byte> TrimNonTextBytes(IReadOnlyList<byte> input)
         {
             // Op - Previous tokens needed
@@ -55,26 +63,25 @@
                 } else if (input[i] == ')' && !IsEscaped(i))
                 {
                     depth--;
-                } else if (depth == 0 && IsEndOfToken(i))
+                } else if (depth == 0 )
                 {
-                    if (input[i] == 'q' || input[i] == 'Q')
+                    if ((input[i] == 'q' || input[i] == 'Q') && IsEndOfToken(i))
                     {
                         output.Add(input[i]);
                         output.Add((byte)'\n');
                     }
                     else if (i > 0)
                     {
-                        if (
-                            (input[i-1] == 'D' && input[i] == 'o')
-                         || (input[i-1] == 'g' && input[i] == 's')
+                        if (((input[i-1] == 'D' && input[i] == 'o') || (input[i-1] == 'g' && input[i] == 's')) 
+                             && IsEndOfToken(i)
                             )
                         {
                             AddTokens(i, 2);
 
-                        } else if (input[i-1] == 'c' && input[i] == 'm')
+                        } else if ((input[i-1] == 'c' && input[i] == 'm') && IsEndOfToken(i))
                         {
                             AddTokens(i, 7);
-                        } else if (input[i - 1] == 'B' && input[i] == 'T')
+                        } else if ((input[i - 1] == 'B' && input[i] == 'T') && IsEndOfToken(i))
                         {
                             i = CopyTillEt(i-1); // include BT in copy
                             if (i == -1)
