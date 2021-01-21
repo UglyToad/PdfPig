@@ -47,6 +47,7 @@
         private static IReadOnlyList<byte> TrimNonTextBytes(IReadOnlyList<byte> data)
         {
             var input = data.ToArray();
+            var inputTxt = System.Text.Encoding.ASCII.GetString(input);
             // Op - Previous tokens needed
             // q 0
             // Q 0
@@ -97,6 +98,7 @@
                     }
                 }
             }
+            var outputTxt = System.Text.Encoding.ASCII.GetString(output);
             return new ArraySegment<byte>(output, 0, curPos);
 
             bool IsEndOfToken(int pos)
@@ -109,7 +111,7 @@
             {
                 var etDepth = 0;
                 var end = -1;
-                for (var i = init; i < input.Length; i++)
+                for (var i = init+2; i < input.Length; i++)
                 {
                     var cc = input[i];
                     if (cc == '(' && !IsEscaped(i))
@@ -120,7 +122,7 @@
                         etDepth--;
                     } else if (etDepth == 0)
                     {
-                        if (input[i - 1] == 'E' && cc == 'T')
+                        if (input[i - 1] == 'E' && cc == 'T' && IsEndOfToken(i))
                         {
                             CopyData(init, i);
                             end = i;
