@@ -110,15 +110,48 @@
 
         /// <summary>
         /// EXPERIMENTAL
-        /// Strips all non-text content from the PDF content streams (including Xforms).
+        /// Strips all non-text content from  PDF content streams.
         /// Can significantly improve text extraction performance is PDF includes large
         /// amounts of graphics operations.
+        /// NOTE: All content stream will be loaded in memory uncompressed.
         /// </summary>
-        public void StripNonText()
+        /// <param name="pages">If page content streams should be stripped.</param>
+        /// <param name="forms">If Xform content stream should be stripped</param>
+        public void StripNonText(bool pages=true, bool forms=true)
         {
             var replaced = new HashSet<IndirectReference>();
             foreach (var page in WalkTree(catalog.PageTree))
             {
+                if (pages && page.Item1.TryGet(NameToken.Contents, out IToken contents))
+                {
+                    switch (contents)
+                    {
+                        case IndirectReferenceToken refResult:
+                            var stream = pdfScanner.Get(refResult.Data).Data as StreamToken;
+                            ReplaceIndirectObject(refResult.Data, stream.StripNonText());
+                            replaced.Add(refResult.Data);
+                            break;
+                        case ArrayToken array:
+                            foreach (var ir in array.Data)
+                            {
+                                var refToken = ir as IndirectReferenceToken;
+                                if (refToken == null)
+                                {
+                                    continue;
+                                }
+                                replaced.Add(refToken.Data);
+                                var currentStream = pdfScanner.Get(refToken.Data).Data as StreamToken;
+                                ReplaceIndirectObject(refToken.Data, currentStream.StripNonText());
+                            }
+                            break;
+                    }
+                }
+
+                if (!forms)
+                {
+                    continue;
+                }
+
                 if (GetDict(page.Item1, NameToken.Resources, out DictionaryToken res))
                 {
                     TrimContentStreams(res, replaced);
@@ -168,11 +201,13 @@
                     {
                         continue;
                     }
+
                     var xobjData = pdfScanner.Get(xobjRef.Data).Data as StreamToken;
                     if (xobjData == null) // ??
                     {
                         continue;
                     }
+
                     var xobj = (xobjData).StreamDictionary;
                     if (xobj.TryGet(NameToken.Subtype, out NameToken value) && value.Data == "Form")
                     {
@@ -180,13 +215,14 @@
                         {
                             TrimContentStreams(resDict, replaced);
                         }
-                    }
 
-                    ReplaceIndirectObject(xobjRef.Data, xobjData.StripNonText());
+                        ReplaceIndirectObject(xobjRef.Data, xobjData.StripNonText());
+                    }
                     replaced.Add(xobjRef.Data);
                 }
             }
         }
+
 
         private bool GetDict(DictionaryToken dict, NameToken name, out DictionaryToken result)
         {
