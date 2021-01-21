@@ -8,6 +8,7 @@
     using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
+    using Util;
 
     /// <inheritdoc />
     /// <summary>
@@ -94,6 +95,115 @@
             var obj = pdfScanner.Get(reference);
             var replacement = replacer(obj.Data);
             pdfScanner.ReplaceToken(reference, replacement);
+        }
+
+        /// <summary>
+        /// Replaces the token in an internal cache that will be returned instead of
+        /// scanning the source PDF data for future requests.
+        /// </summary>
+        /// <param name="reference">The object number for the object to replace.</param>
+        /// <param name="replacement">Replacement token to use.</param>
+        public void ReplaceIndirectObject(IndirectReference reference, IToken replacement)
+        {
+            pdfScanner.ReplaceToken(reference, replacement);
+        }
+
+        /// <summary>
+        /// EXPERIMENTAL
+        /// Strips all non-text content from the PDF content streams (including Xforms).
+        /// Can significantly improve text extraction performance is PDF includes large
+        /// amounts of graphics operations.
+        /// </summary>
+        public void StripNonText()
+        {
+            var replaced = new HashSet<IndirectReference>();
+            foreach (var page in WalkTree(catalog.PageTree))
+            {
+                if (GetDict(page.Item1, NameToken.Resources, out DictionaryToken res))
+                {
+                    TrimContentStreams(res, replaced);
+                }
+            
+                foreach (var parent in page.Item2)
+                {
+                    if (GetDict( parent, NameToken.Resources, out DictionaryToken parentRes))
+                    {
+                        TrimContentStreams(res, replaced);
+                    }
+                }
+            }
+        }
+
+        internal static IEnumerable<(DictionaryToken, List<DictionaryToken>)> WalkTree(PageTreeNode node, List<DictionaryToken> parents=null)
+        {
+            parents ??= new();
+            if (node.IsPage)
+            {
+                yield return (node.NodeDictionary, parents);
+                yield break;
+            }
+
+            foreach (var child in node.Children)
+            {
+                parents.Add(node.NodeDictionary);
+                foreach (var item in WalkTree(child, parents))
+                {
+                    yield return item;
+                }
+            }
+        }
+
+        private void TrimContentStreams(DictionaryToken resources, HashSet<IndirectReference> replaced)
+        {
+            if (resources.TryGet(NameToken.Xobject, out DictionaryToken formDict))
+            {
+                foreach (var item in formDict.Data)
+                {
+                    var xobjRef = item.Value as IndirectReferenceToken;
+                    if (xobjRef == null)
+                    {
+                        continue;
+                    }
+                    if (replaced.Contains(xobjRef.Data))
+                    {
+                        continue;
+                    }
+                    var xobjData = pdfScanner.Get(xobjRef.Data).Data as StreamToken;
+                    if (xobjData == null) // ??
+                    {
+                        continue;
+                    }
+                    var xobj = (xobjData).StreamDictionary;
+                    if (xobj.TryGet(NameToken.Subtype, out NameToken value) && value.Data == "Form")
+                    {
+                        if (xobj.TryGet(NameToken.Resources, out DictionaryToken resDict))
+                        {
+                            TrimContentStreams(resDict, replaced);
+                        }
+                    }
+
+                    ReplaceIndirectObject(xobjRef.Data, xobjData.StripNonText());
+                    replaced.Add(xobjRef.Data);
+                }
+            }
+        }
+
+        private bool GetDict(DictionaryToken dict, NameToken name, out DictionaryToken result)
+        {
+            if (dict.TryGet(name, out IToken token))
+            {
+                switch (token)
+                {
+                    case DictionaryToken dictResult:
+                        result = dictResult;
+                        return true;
+                    case IndirectReferenceToken irResult:
+                        result = pdfScanner.Get(irResult.Data).Data as DictionaryToken;
+                        return true;
+                }
+            }
+            result = null;
+            return false;
         }
             
 

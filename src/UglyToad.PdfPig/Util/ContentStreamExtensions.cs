@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Util
 {
+    using Content;
+    using Core;
     using Filters;
     using System;
     using System.Collections.Generic;
@@ -13,7 +15,8 @@
     public static class ContentStreamExtensions
     {
         /// <summary>
-        /// Experimental
+        /// EXPERIMENTAL
+        /// Strips all non-text content from the  content stream.
         /// </summary>
         /// <param name="token">Input stream</param>
         /// <param name="provider">optional providers</param>
@@ -21,25 +24,24 @@
         public static StreamToken StripNonText(this StreamToken token, IFilterProvider provider=null)
         {
             provider ??= DefaultFilterProvider.Instance;
-            // trim
-            var contents = TrimNonTextBytes(token.Decode(provider));
 
             // create copy without filter
             var copy = token.StreamDictionary.Data
                 .Where(x => x.Key != NameToken.Filter)
                 .ToDictionary(k => NameToken.Create(k.Key), v => v.Value);
             var dict = new DictionaryToken(copy);
-            return new StreamToken(dict, contents);
+            return new StreamToken(dict, TrimNonTextBytes(token.Decode(provider)));
         }
 
         private static IReadOnlyList<byte> TrimNonTextBytes(IReadOnlyList<byte> input)
         {
+            // Op - Previous tokens needed
             // q 0
             // Q 0
             // gs 1
             // Do 1
             // cm 6
-            // BT
+            // BT -> ET
             var depth = 0;
             var output = new List<byte>();
             for (var i = 0; i < input.Count; i++)
@@ -50,7 +52,7 @@
                 } else if (input[i] == ')' && !IsEscaped(i))
                 {
                     depth--;
-                } else if (depth == 0)
+                } else if (depth == 0 && IsEndOfToken(i))
                 {
                     if (input[i] == 'q' || input[i] == 'Q')
                     {
@@ -82,6 +84,12 @@
             }
             return output;
 
+            bool IsEndOfToken(int pos)
+            {
+                var next = pos + 1;
+                return next >= input.Count || IsWhiteSpace(next);
+            }
+
             int CopyTillEt(int init)
             {
                 var etDepth = 0;
@@ -99,7 +107,7 @@
                         if (input[i - 1] == 'E' && input[i] == 'T')
                         {
                             for (var p = init; p <= i; p++) { output.Add(input[p]); }
-
+                            output.Add((byte)'\n');
                             end = i;
                             break;
                         }
@@ -133,13 +141,12 @@
 
                     if (whiteCount == count)
                     {
-                        for (var p = i; p <= pos; p++) { output.Add(input[p]); }
+                        for (var p = i+1; p <= pos; p++) { output.Add(input[p]); }
                         break;
                     }
                 }
                 output.Add((byte)'\n');
             }
-
             bool IsWhiteSpace(int pos)
             {
                 var ch = input[pos];
