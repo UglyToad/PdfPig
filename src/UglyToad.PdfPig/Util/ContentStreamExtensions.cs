@@ -42,10 +42,11 @@
         /// you want to do is extract text and there can be tens of thousands of painting operations that
         /// don't affect text at all.
         /// </summary>
-        /// <param name="input">Uncompressed stream content</param>
+        /// <param name="data">Uncompressed stream content</param>
         /// <returns>Uncompressed text only stream content</returns>
-        private static IReadOnlyList<byte> TrimNonTextBytes(IReadOnlyList<byte> input)
+        private static IReadOnlyList<byte> TrimNonTextBytes(IReadOnlyList<byte> data)
         {
+            var input = data.ToArray();
             // Op - Previous tokens needed
             // q 0
             // Q 0
@@ -54,34 +55,38 @@
             // cm 6
             // BT -> ET
             var depth = 0;
-            var output = new List<byte>();
-            for (var i = 0; i < input.Count; i++)
+            var output = new byte[input.Length];
+            var curPos = 0;
+            for (var i = 0; i < input.Length; i++)
             {
-                if (input[i] == '(' && !IsEscaped(i))
+                var cc = input[i];
+                if (cc == '(' && !IsEscaped(i))
                 {
                     depth++;
-                } else if (input[i] == ')' && !IsEscaped(i))
+                } else if (cc == ')' && !IsEscaped(i))
                 {
                     depth--;
                 } else if (depth == 0 )
                 {
-                    if ((input[i] == 'q' || input[i] == 'Q') && IsEndOfToken(i))
+
+                    if ((cc == 'q' || cc == 'Q') && IsEndOfToken(i))
                     {
-                        output.Add(input[i]);
-                        output.Add((byte)'\n');
+                        output[curPos++] = cc;
+                        output[curPos++] = (byte)'\n';
                     }
                     else if (i > 0)
                     {
-                        if (((input[i-1] == 'D' && input[i] == 'o') || (input[i-1] == 'g' && input[i] == 's')) 
+                        var pc = input[i-1];
+                        if (((pc == 'D' && cc == 'o') || (pc == 'g' && cc == 's')) 
                              && IsEndOfToken(i)
                             )
                         {
                             AddTokens(i, 2);
 
-                        } else if ((input[i-1] == 'c' && input[i] == 'm') && IsEndOfToken(i))
+                        } else if ((pc == 'c' && cc == 'm') && IsEndOfToken(i))
                         {
                             AddTokens(i, 7);
-                        } else if ((input[i - 1] == 'B' && input[i] == 'T') && IsEndOfToken(i))
+                        } else if ((pc == 'B' && cc == 'T') && IsEndOfToken(i))
                         {
                             i = CopyTillEt(i-1); // include BT in copy
                             if (i == -1)
@@ -92,32 +97,32 @@
                     }
                 }
             }
-            return output;
+            return new ArraySegment<byte>(output, 0, curPos);
 
             bool IsEndOfToken(int pos)
             {
                 var next = pos + 1;
-                return next >= input.Count || IsWhiteSpace(next);
+                return next >= input.Length || IsWhiteSpace(next);
             }
 
             int CopyTillEt(int init)
             {
                 var etDepth = 0;
                 var end = -1;
-                for (var i = init; i < input.Count; i++)
+                for (var i = init; i < input.Length; i++)
                 {
-                    if (input[i] == '(' && !IsEscaped(i))
+                    var cc = input[i];
+                    if (cc == '(' && !IsEscaped(i))
                     {
                         etDepth++;
-                    } else if (input[i] == ')' && !IsEscaped(i))
+                    } else if (cc == ')' && !IsEscaped(i))
                     {
                         etDepth--;
                     } else if (etDepth == 0)
                     {
-                        if (input[i - 1] == 'E' && input[i] == 'T')
+                        if (input[i - 1] == 'E' && cc == 'T')
                         {
-                            for (var p = init; p <= i; p++) { output.Add(input[p]); }
-                            output.Add((byte)'\n');
+                            CopyData(init, i);
                             end = i;
                             break;
                         }
@@ -125,6 +130,14 @@
                 }
 
                 return end;
+            }
+
+            void CopyData(int start, int end)
+            {
+                var len = end - start + 1;
+                Array.Copy(input, start, output, curPos, len);
+                curPos += len;
+                output[curPos++] = (byte) '\n';
             }
 
             void AddTokens(int pos, int count)
@@ -135,7 +148,7 @@
                 {
                     if (i == 0)
                     {
-                        for (var p = i; p <= pos; p++) { output.Add(input[p]); }
+                        CopyData(i, pos);
                         break;
                     }
 
@@ -151,12 +164,12 @@
 
                     if (whiteCount == count)
                     {
-                        for (var p = i+1; p <= pos; p++) { output.Add(input[p]); }
+                        CopyData(i+1, pos);
                         break;
                     }
                 }
-                output.Add((byte)'\n');
             }
+
             bool IsWhiteSpace(int pos)
             {
                 var ch = input[pos];
