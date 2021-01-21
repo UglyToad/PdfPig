@@ -714,6 +714,8 @@
         }
         public void ReplaceToken(IndirectReference reference, IToken token)
         {
+            // Using 0 position as it isn't written to stream and this value doesn't
+            // seem to be used by any callers. In future may need to revisit this.
             overwrittenTokens[reference] = new ObjectToken(0, reference, token);
         }
 

@@ -136,7 +136,7 @@
 
         internal static IEnumerable<(DictionaryToken, List<DictionaryToken>)> WalkTree(PageTreeNode node, List<DictionaryToken> parents=null)
         {
-            parents ??= new();
+            parents ??= new List<DictionaryToken>();
             if (node.IsPage)
             {
                 yield return (node.NodeDictionary, parents);
