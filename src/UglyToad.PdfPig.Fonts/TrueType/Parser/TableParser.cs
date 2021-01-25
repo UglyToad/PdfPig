@@ -13,6 +13,20 @@
 
         public static T Parse<T>(TrueTypeHeaderTable table, TrueTypeDataBytes data, TableRegister.Builder register) where T : ITrueTypeTable
         {
+            //checksum https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6.html
+            uint sum = 0;
+            var nLongs = (table.Length + 3) / 4;
+            data.Seek(table.Offset);
+            while (nLongs-- > 0)
+            {
+                sum += (uint)data.ReadSignedInt();
+            }
+
+            if (sum != table.CheckSum)
+            {
+                return default;
+            }
+
             if (typeof(T) == typeof(CMapTable))
             {
                 return (T) (object) CMapTableParser.Parse(table, data, register);
