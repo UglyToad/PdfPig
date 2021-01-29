@@ -46,6 +46,7 @@
         /// <returns>Uncompressed text only stream content</returns>
         private static IReadOnlyList<byte> TrimNonTextBytes(IReadOnlyList<byte> data)
         {
+            const byte lastPlainText = 127;
             var input = data.ToArray();
             // Op - Previous tokens needed
             // q 0
@@ -69,7 +70,7 @@
                 } else if (depth == 0 )
                 {
 
-                    if ((cc == 'q' || cc == 'Q') && IsEndOfToken(i))
+                    if ((cc == 'q' || cc == 'Q') && IsEndOfToken(i) && IsStartOfToken(i))
                     {
                         output[curPos++] = cc;
                         output[curPos++] = (byte)'\n';
@@ -78,21 +79,52 @@
                     {
                         var pc = input[i-1];
                         if (((pc == 'D' && cc == 'o') || (pc == 'g' && cc == 's')) 
-                             && IsEndOfToken(i)
+                             && IsEndOfToken(i) && IsStartOfToken(i-1)
                             )
                         {
                             AddTokens(i, 2);
 
-                        } else if ((pc == 'c' && cc == 'm') && IsEndOfToken(i))
+                        } else if ((pc == 'c' && cc == 'm') && IsEndOfToken(i) && IsStartOfToken(i-1))
                         {
                             AddTokens(i, 7);
-                        } else if ((pc == 'B' && cc == 'T') && IsEndOfToken(i))
+                        } else if ((pc == 'B' && cc == 'T') && IsEndOfToken(i) && IsStartOfToken(i-1))
                         {
                             i = CopyTillEt(i-1); // include BT in copy
                             if (i == -1)
                             {
                                 return input;
                             }
+                        } else if ((pc == 'B' && cc == 'I') && IsEndOfToken(i) && IsStartOfToken(i-1))
+                        {
+                            // scan till EI ... may be a little naive here, should use tokenscanner here?
+                            var start = i - 1;
+                            var happy = false;
+                            bool binStarted = false;
+                            while (true)
+                            {
+                                i++;
+                                if (i >= input.Length)
+                                {
+                                    break;
+                                }
+                                if (!binStarted && (input[i-1] == 'I' && input[i] == 'D') && IsEndOfToken(i) && IsStartOfToken(i - 1))
+                                {
+                                    binStarted = true;
+                                }
+
+                                if (binStarted && (input[i-1] == 'E' && input[i] == 'I') && IsEndOfToken(i) && NoBinaryData(i+1, 5))
+                                {
+                                    happy = true;
+                                    break;
+                                }
+                            }
+
+                            if (!happy)
+                            {
+                                // fallback copy data
+                                CopyData(start, i);
+                            }
+                            
                         }
                     }
                 }
@@ -103,6 +135,31 @@
             {
                 var next = pos + 1;
                 return next >= input.Length || IsWhiteSpace(next);
+            }
+
+            
+            bool NoBinaryData(int pos, int length)
+            {
+                var end = pos + length;
+                if (end > input.Length)
+                {
+                    end = input.Length;
+                }
+                for (var i = pos; i < end; i++)
+                {
+                    if (input[i] > lastPlainText)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            bool IsStartOfToken(int pos)
+            {
+                var prev = pos - 1;
+                return prev < 0 || IsWhiteSpace(prev);
             }
 
             int CopyTillEt(int init)

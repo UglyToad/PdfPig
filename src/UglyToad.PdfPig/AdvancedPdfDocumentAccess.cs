@@ -6,6 +6,7 @@
     using Core;
     using Filters;
     using Parser.Parts;
+    using System.Linq;
     using Tokenization.Scanner;
     using Tokens;
     using Util;
@@ -180,9 +181,10 @@
                 yield break;
             }
 
+            parents = parents.ToList();
+            parents.Add(node.NodeDictionary);
             foreach (var child in node.Children)
             {
-                parents.Add(node.NodeDictionary);
                 foreach (var item in WalkTree(child, parents))
                 {
                     yield return item;
