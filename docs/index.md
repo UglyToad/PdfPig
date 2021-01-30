@@ -193,7 +193,7 @@ PdfPig also comes with some tools for document layout analysis such as the Recur
 
 An example of the output of the Recursive XY Cut algorithm viewed in an external viewer such as [LayoutEvalGUI](https://www.primaresearch.org/tools/PerformanceEvaluation) is shown below:
 
-![Output is a single page with two columns and some bulleted lists. The page has been divided into regions bounded in blue and words bounded in red.](https://raw.githubusercontent.com/UglyToad/PdfPig/master/documentation/Document%20Layout%20Analysis/recursive%20xy%20cut%20example.png)
+![Output is a single page with two columns and some bulleted lists. The page has been divided into regions bounded in blue and words bounded in red.](https://raw.githubusercontent.com/UglyToad/PdfPig/master/documentation/Document%20Layout%20Analysis/rxyc%20example.png)
 
 See the [document layout analysis](https://github.com/UglyToad/PdfPig/wiki/Document-Layout-Analysis) page on the wiki for full details.
 
