@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using Content;
+    using Core;
     using Filters;
     using Parser.Parts;
     using Tokenization.Scanner;
@@ -80,6 +81,30 @@
             embeddedFiles = result;
 
             return embeddedFiles.Count > 0;
+        }
+
+        /// <summary>
+        /// Replaces the token in an internal cache that will be returned instead of
+        /// scanning the source PDF data for future requests.
+        /// </summary>
+        /// <param name="reference">The object number for the object to replace.</param>
+        /// <param name="replacer">Func that takes existing token as input and return new token.</param>
+        public void ReplaceIndirectObject(IndirectReference reference, Func<IToken, IToken> replacer)
+        {
+            var obj = pdfScanner.Get(reference);
+            var replacement = replacer(obj.Data);
+            pdfScanner.ReplaceToken(reference, replacement);
+        }
+
+        /// <summary>
+        /// Replaces the token in an internal cache that will be returned instead of
+        /// scanning the source PDF data for future requests.
+        /// </summary>
+        /// <param name="reference">The object number for the object to replace.</param>
+        /// <param name="replacement">Replacement token to use.</param>
+        public void ReplaceIndirectObject(IndirectReference reference, IToken replacement)
+        {
+            pdfScanner.ReplaceToken(reference, replacement);
         }
 
         private void GuardDisposed()

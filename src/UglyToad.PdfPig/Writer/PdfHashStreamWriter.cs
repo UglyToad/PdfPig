@@ -17,8 +17,7 @@
         private bool DisposeStream { get; set; }
         private const decimal DefaultVersion = 1.2m;
         private bool Initialized { get; set; }
-        private Dictionary<IndirectReference, long> offsets = new Dictionary<IndirectReference, long>();
-        private readonly Dictionary<IndirectReference, byte[]> tokens = new Dictionary<IndirectReference, byte[]>();
+        private readonly Dictionary<IndirectReference, long> offsets = new Dictionary<IndirectReference, long>();
         private readonly Dictionary<byte[], IndirectReferenceToken> hashes = new (new FNVByteComparison());
 
         public PdfHashStreamWriter(Stream stream, bool dispose)
@@ -44,7 +43,6 @@
             }
 
             var ir = ReserveObjectNumber();
-            tokens.Add(ir.Data, contents);
             hashes.Add(contents, ir);
 
             offsets.Add(ir.Data, Stream.Position);
@@ -64,7 +62,6 @@
             TokenWriter.WriteToken(token, ms);
             var contents = ms.ToArray();
 
-            tokens.Add(indirectReference.Data, contents);
             hashes.Add(contents, indirectReference);
             offsets.Add(indirectReference.Data, Stream.Position);
             TokenWriter.WriteObject(indirectReference.Data.ObjectNumber, indirectReference.Data.Generation, contents, Stream);
@@ -108,7 +105,7 @@
             {
                 Stream.Dispose();
             }
-            tokens.Clear();
+
             hashes.Clear();
         }
 

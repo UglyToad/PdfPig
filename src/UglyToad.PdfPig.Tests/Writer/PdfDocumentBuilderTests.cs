@@ -113,7 +113,7 @@
                 Assert.Equal(new[] {"Hello", "World!"}, page1.GetWords().Select(x => x.Text));
             }
         }
-
+        
         [Fact]
         public void CanWriteSinglePageHelloWorld()
         {
@@ -161,6 +161,67 @@
                 for (int i = 0; i < page1.Letters.Count; i++)
                 {
                     var readerLetter = page1.Letters[i];
+                    var writerLetter = letters[i];
+
+                    Assert.Equal(readerLetter.Value, writerLetter.Value);
+                    Assert.Equal(readerLetter.Location, writerLetter.Location, pointComparer);
+                    Assert.Equal(readerLetter.FontSize, writerLetter.FontSize, comparer);
+                    Assert.Equal(readerLetter.GlyphRectangle.Width, writerLetter.GlyphRectangle.Width, comparer);
+                    Assert.Equal(readerLetter.GlyphRectangle.Height, writerLetter.GlyphRectangle.Height, comparer);
+                    Assert.Equal(readerLetter.GlyphRectangle.BottomLeft, writerLetter.GlyphRectangle.BottomLeft, pointComparer);
+                }
+            }
+        }
+
+        [Fact]
+        public void CanAddHelloWorldToSimplePage()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("Single Page Simple - from open office.pdf");
+            var doc = PdfDocument.Open(path);
+            var builder = new PdfDocumentBuilder();
+
+            var page = builder.AddPage(doc, 1);
+
+            page.DrawLine(new PdfPoint(30, 520), new PdfPoint(360, 520));
+            page.DrawLine(new PdfPoint(360, 520), new PdfPoint(360, 250));
+
+            page.SetStrokeColor(250, 132, 131);
+            page.DrawLine(new PdfPoint(25, 70), new PdfPoint(100, 70), 3);
+            page.ResetColor();
+            page.DrawRectangle(new PdfPoint(30, 200), 250, 100, 0.5m);
+            page.DrawRectangle(new PdfPoint(30, 100), 250, 100, 0.5m);
+
+            var file = TrueTypeTestHelper.GetFileBytes("Andada-Regular.ttf");
+
+            var font = builder.AddTrueTypeFont(file);
+
+            var letters = page.AddText("Hello World!", 12, new PdfPoint(30, 50), font);
+
+            Assert.NotEmpty(page.Operations);
+
+            var b = builder.Build();
+
+            WriteFile(nameof(CanWriteSinglePageHelloWorld), b);
+
+            Assert.NotEmpty(b);
+
+            using (var document = PdfDocument.Open(b))
+            {
+                var page1 = document.GetPage(1);
+
+                Assert.Equal("I am a simple pdf.Hello World!", page1.Text);
+
+                var h = page1.Letters[18];
+
+                Assert.Equal("H", h.Value);
+                Assert.Equal("Andada-Regular", h.FontName);
+
+                var comparer = new DoubleComparer(0.01);
+                var pointComparer = new PointComparer(comparer);
+
+                for (int i = 0; i < letters.Count; i++)
+                {
+                    var readerLetter = page1.Letters[i+18];
                     var writerLetter = letters[i];
 
                     Assert.Equal(readerLetter.Value, writerLetter.Value);
@@ -601,6 +662,125 @@
             
             var file = builder.Build();
             WriteFile(nameof(CanCreateDocumentWithFilledRectangle), file);
+        }
+
+        [Fact]
+        public void CanMerge2SimpleDocumentsReversed_Builder()
+        {
+            var one = IntegrationHelpers.GetDocumentPath("Single Page Simple - from open office.pdf");
+            var two = IntegrationHelpers.GetDocumentPath("Single Page Simple - from inkscape.pdf");
+
+            using var docOne = PdfDocument.Open(one);
+            using var docTwo = PdfDocument.Open(two);
+            var builder = new PdfDocumentBuilder();
+            builder.AddPage(docOne, 1);
+            builder.AddPage(docTwo, 1);
+            var result = builder.Build();
+            PdfMergerTests.CanMerge2SimpleDocumentsAssertions(new MemoryStream(result), "I am a simple pdf.", "Write something inInkscape", false);
+        }
+
+        [Fact]
+        public void CanMerge2SimpleDocuments_Builder()
+        {
+            var one = IntegrationHelpers.GetDocumentPath("Single Page Simple - from inkscape.pdf");
+            var two = IntegrationHelpers.GetDocumentPath("Single Page Simple - from open office.pdf");
+
+            using var docOne = PdfDocument.Open(one);
+            using var docTwo = PdfDocument.Open(two);
+            var builder = new PdfDocumentBuilder();
+            builder.AddPage(docOne, 1);
+            builder.AddPage(docTwo, 1);
+            var result = builder.Build();
+            PdfMergerTests.CanMerge2SimpleDocumentsAssertions(new MemoryStream(result), "Write something inInkscape", "I am a simple pdf.", false);
+        }
+
+        [Fact]
+        public void DedupsObjectsFromSameDoc_Builder()
+        {
+            var one = IntegrationHelpers.GetDocumentPath("Multiple Page - from Mortality Statistics.pdf");
+
+            using var doc = PdfDocument.Open(one);
+
+            using var builder = new PdfDocumentBuilder();
+            builder.AddPage(doc, 1);
+            builder.AddPage(doc, 1);
+
+            var result = builder.Build();
+
+            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            {
+                Assert.Equal(2, document.NumberOfPages);
+                Assert.True(document.Structure.CrossReferenceTable.ObjectOffsets.Count <= 29,
+                    "Expected object count to be lower than 30"); // 45 objects with duplicates, 29 with correct re-use
+            }
+        }
+
+        [Fact]
+        public void DedupsObjectsFromDifferentDoc_HashBuilder()
+        {
+            var one = IntegrationHelpers.GetDocumentPath("Multiple Page - from Mortality Statistics.pdf");
+
+            using var doc = PdfDocument.Open(one);
+            using var doc2 = PdfDocument.Open(one);
+
+            using var builder = new PdfDocumentBuilder(new MemoryStream(), true, PdfWriter.ObjectInMemoryDedup);
+            builder.AddPage(doc, 1);
+            builder.AddPage(doc2, 1);
+
+            var result = builder.Build();
+
+            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            {
+                Assert.Equal(2, document.NumberOfPages);
+                Assert.True(document.Structure.CrossReferenceTable.ObjectOffsets.Count <= 29,
+                    "Expected object count to be lower than 30"); // 45 objects with duplicates, 29 with correct re-use
+            }
+        }
+
+        [InlineData("Single Page Simple - from google drive.pdf")]
+        [InlineData("Old Gutnish Internet Explorer.pdf")]
+        [InlineData("68-1990-01_A.pdf")]
+        [InlineData("Multiple Page - from Mortality Statistics.pdf")]
+        [Theory]
+        public void CopiedPagesResultInSameData(string name)
+        {
+            var docPath = IntegrationHelpers.GetDocumentPath(name);
+
+            using var doc = PdfDocument.Open(docPath, ParsingOptions.LenientParsingOff);
+            var count1 = GetCounts(doc);
+
+            using var builder = new PdfDocumentBuilder();
+            for (var i = 1; i <= doc.NumberOfPages; i++)
+            {
+                builder.AddPage(doc, i);
+            }
+            var result = builder.Build();
+
+            using (var doc2 = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            {
+                var count2 = GetCounts(doc2);
+                Assert.Equal(count1.Item1, count2.Item1);
+                Assert.Equal(count1.Item2, count2.Item2);
+            }
+
+            (int, double) GetCounts(PdfDocument toCount)
+            {
+                int letters = 0;
+                double location = 0;
+                foreach (var page in toCount.GetPages())
+                {
+                    foreach (var letter in page.Letters)
+                    {
+                        unchecked { letters += 1; }
+                        unchecked { 
+                            location += letter.Location.X;
+                            location += letter.Location.Y;
+                        }
+                    }
+                }
+
+                return (letters, location);
+            }
         }
 
         private static void WriteFile(string name, byte[] bytes, string extension = "pdf")

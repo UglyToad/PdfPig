@@ -13,6 +13,7 @@ namespace UglyToad.PdfPig.Writer
     using PdfPig.Fonts.Standard14Fonts;
     using PdfPig.Fonts.TrueType.Parser;
     using Tokens;
+    using System.Runtime.CompilerServices;
 
     using Util.JetBrains.Annotations;
 
@@ -58,6 +59,26 @@ namespace UglyToad.PdfPig.Writer
         public PdfDocumentBuilder()
         {
             context = new PdfStreamWriter(new MemoryStream(), true);
+            context.InitializePdf(1.7m);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="disposeStream"></param>
+        /// <param name="type"></param>
+        public PdfDocumentBuilder(Stream stream, bool disposeStream=false, PdfWriter type=PdfWriter.Default)
+        {
+            switch (type)
+            {
+                case PdfWriter.ObjectInMemoryDedup:
+                    context = new PdfHashStreamWriter(stream, false);
+                    break;
+                default:
+                    context = new PdfStreamWriter(stream, false);
+                    break;
+            }
             context.InitializePdf(1.7m);
         }
 
@@ -228,9 +249,9 @@ namespace UglyToad.PdfPig.Writer
 
             return AddPage(rectangle.Width, rectangle.Height);
         }
+        private readonly ConditionalWeakTable<PdfDocument, Dictionary<IndirectReference, IndirectReferenceToken>> existingCopies = 
+            new ConditionalWeakTable<PdfDocument, Dictionary<IndirectReference, IndirectReferenceToken>>();
 
-        private List<(PdfDocument Doc, Dictionary<IndirectReference, IndirectReferenceToken> Refs)> ExistingCopies =
-            new List<(PdfDocument Doc, Dictionary<IndirectReference, IndirectReferenceToken> Refs)>();
         /// <summary>
         /// Add a new page with the specified size, this page will be included in the output when <see cref="Build"/> is called.
         /// </summary>
@@ -239,23 +260,18 @@ namespace UglyToad.PdfPig.Writer
         /// <returns>A builder for editing the page.</returns>
         public PdfPageBuilder AddPage(PdfDocument document, int pageNumber)
         {
-            Dictionary<IndirectReference, IndirectReferenceToken> refs = null;
-            foreach (var item in ExistingCopies)
+            if (!existingCopies.TryGetValue(document, out var refs))
             {
-                if (Object.ReferenceEquals(item.Doc, document))
-                {
-                    refs = item.Refs;
-                }
+                refs = new Dictionary<IndirectReference, IndirectReferenceToken>();
+                existingCopies.Add(document, refs);
             }
-
-            refs ??= new Dictionary<IndirectReference, IndirectReferenceToken>();
 
             int i = 1;
             foreach (var (pageDict, parents) in WriterUtil.WalkTree(document.Structure.Catalog.PageTree))
             {
                 if (i == pageNumber)
                 {
-
+                    // copy content streams
                     var streams = new List<PdfPageBuilder.CopiedContentStream>();
                     if (pageDict.ContainsKey(NameToken.Contents))
                     {
@@ -271,18 +287,19 @@ namespace UglyToad.PdfPig.Writer
                                 }
 
                             }
-                        } else if (token is IndirectReferenceToken ir)
+                        }
+                        else if (token is IndirectReferenceToken ir)
                         {
                             streams.Add(new PdfPageBuilder.CopiedContentStream(
                                 WriterUtil.CopyToken(context, ir, document.Structure.TokenScanner, refs) as IndirectReferenceToken));
                         }
                     }
 
-                    // copy modified dict
-                    var copied = new Dictionary<NameToken, IToken>();
+                    // manually copy page dict / resources as we need to modify some
+                    var copiedPageDict = new Dictionary<NameToken, IToken>();
                     Dictionary<NameToken, IToken> resources = new Dictionary<NameToken, IToken>();
 
-
+                    // just put all parent resources into new page
                     foreach (var dict in parents)
                     {
                         if (dict.TryGet(NameToken.Resources, out var token))
@@ -305,23 +322,13 @@ namespace UglyToad.PdfPig.Writer
                             continue;
                         }
 
-                        copied[NameToken.Create(kvp.Key)] =
+                        copiedPageDict[NameToken.Create(kvp.Key)] =
                             WriterUtil.CopyToken(context, kvp.Value, document.Structure.TokenScanner, refs);
                     }
 
-                    if (copied.ContainsKey(NameToken.Resources))
-                    {
-                        var tk = copied[NameToken.Resources] as DictionaryToken;
-                        foreach (var item in tk.Data)
-                        {
-                            resources[NameToken.Create(item.Key)] = item.Value;
-                        }
-                    }
-
-                    var builder = new PdfPageBuilder(pages.Count + 1, this, streams, resources);
+                    var builder = new PdfPageBuilder(pages.Count + 1, this, streams, resources, copiedPageDict);
                     pages[builder.PageNumber] = builder;
                     return builder;
-
                 }
 
                 i++;
@@ -344,11 +351,12 @@ namespace UglyToad.PdfPig.Writer
                         if (item.Value is IndirectReferenceToken ir)
                         {
                             destinationDict[NameToken.Create(item.Key)] = WriterUtil.CopyToken(context, document.Structure.TokenScanner.Get(ir.Data).Data, document.Structure.TokenScanner, refs);
-                        } else
+                        }
+                        else
                         {
                             destinationDict[NameToken.Create(item.Key)] = WriterUtil.CopyToken(context, item.Value, document.Structure.TokenScanner, refs);
                         }
-                        
+
                         continue;
                     }
 
@@ -385,11 +393,8 @@ namespace UglyToad.PdfPig.Writer
             }
         }
 
-        /// <summary>
-        /// Builds a PDF document from the current content of this builder and its pages.
-        /// </summary>
-        /// <returns>The bytes of the resulting PDF document.</returns>
-        public byte[] Build() 
+
+        private void CompleteDocument()
         {
             var fontsWritten = new Dictionary<Guid, IndirectReferenceToken>();
 
@@ -429,24 +434,15 @@ namespace UglyToad.PdfPig.Writer
             var pageReferences = new List<IndirectReferenceToken>();
             foreach (var page in pages)
             {
-                var individualResources = new Dictionary<NameToken, IToken>(resources); 
-                var pageDictionary = new Dictionary<NameToken, IToken>
+                var pageDictionary = page.Value.pageProperties;
+                pageDictionary[NameToken.Type] = NameToken.Page;
+                pageDictionary[NameToken.Parent] = parentIndirect;
+                if (!pageDictionary.ContainsKey(NameToken.MediaBox))
                 {
-                    {NameToken.Type, NameToken.Page},
-                    {NameToken.MediaBox, RectangleToArray(page.Value.PageSize)},
-                    {NameToken.Parent, parentIndirect}
-                };
-
-                if (page.Value.Resources.Count > 0)
-                {
-                    foreach (var kvp in page.Value.Resources)
-                    {
-                        // TODO: combine resources if value is dictionary or array, otherwise overwrite.
-                        individualResources[kvp.Key] = kvp.Value;
-                    }
+                    pageDictionary[NameToken.MediaBox] = RectangleToArray(page.Value.PageSize);
                 }
 
-                pageDictionary[NameToken.Resources] = new DictionaryToken(individualResources);
+                pageDictionary[NameToken.Resources] = new DictionaryToken(page.Value.Resources);
 
                 if (page.Value.ContentStreams.Count == 1)
                 {
@@ -473,6 +469,7 @@ namespace UglyToad.PdfPig.Writer
             {
                 {NameToken.Type, NameToken.Pages},
                 {NameToken.Kids, new ArrayToken(pageReferences)},
+                {NameToken.Resources, new DictionaryToken(resources)},
                 {NameToken.Count, new NumericToken(pageReferences.Count)}
             };
             
@@ -521,6 +518,15 @@ namespace UglyToad.PdfPig.Writer
             }
 
             context.CompletePdf(catalogRef, informationReference);
+        }
+
+        /// <summary>
+        /// Builds a PDF document from the current content of this builder and its pages.
+        /// </summary>
+        /// <returns>The bytes of the resulting PDF document.</returns>
+        public byte[] Build() 
+        {
+            CompleteDocument();
 
             if (context.Stream is MemoryStream ms)
             {
@@ -690,6 +696,7 @@ namespace UglyToad.PdfPig.Writer
         /// </summary>
         public void Dispose()
         {
+            CompleteDocument();
             context.Dispose();
         }
     }

@@ -27,6 +27,9 @@
     /// </summary>
     public class PdfPageBuilder
     {
+
+
+
         private readonly PdfDocumentBuilder documentBuilder;
 
         private readonly Dictionary<NameToken, IToken> resourcesDictionary = new Dictionary<NameToken, IToken>();
@@ -37,10 +40,9 @@
         private int imageKey = 1;
 
         internal IReadOnlyList<IGraphicsStateOperation> Operations => ContentStreams.Last().GetOperations();
-        internal readonly List<IPageContentStream> ContentStreams = new List<IPageContentStream>();
-        internal IPageContentStream CurrentContentStream;
-        private readonly Dictionary<NameToken, IToken> AdditonalPageProperties = new Dictionary<NameToken, IToken>();
-
+        internal readonly Dictionary<NameToken, IToken> pageProperties = new Dictionary<NameToken, IToken>();
+        internal List<IPageContentStream> ContentStreams { get; } = new List<IPageContentStream>();
+        internal IPageContentStream CurrentContentStream { get; set;}
         internal IReadOnlyDictionary<NameToken, IToken> Resources => resourcesDictionary;
 
         /// <summary>
@@ -68,13 +70,14 @@
         }
 
         internal PdfPageBuilder(int number, PdfDocumentBuilder documentBuilder, IEnumerable<CopiedContentStream> copied,
-            Dictionary<NameToken, IToken> existingResources)
+            Dictionary<NameToken, IToken> existingResources, Dictionary<NameToken, IToken> pageDict)
         {
             this.documentBuilder = documentBuilder ?? throw new ArgumentNullException(nameof(documentBuilder));
             foreach (var stream in copied)
             {
                 ContentStreams.Add(stream);
             }
+            pageProperties=pageDict ?? new Dictionary<NameToken, IToken>();
             CurrentContentStream = new DefaultContentStream(new List<IGraphicsStateOperation>());
             ContentStreams.Add(CurrentContentStream);
             PageNumber = number;
@@ -623,7 +626,7 @@
             {
                 this.operations = operations;
             }
-            public bool ReadOnly => true;
+            public bool ReadOnly => false;
             public IndirectReferenceToken Write(IPdfStreamWriter writer)
             {
                 using (var memoryStream = new MemoryStream())
@@ -675,6 +678,12 @@
             {
                 throw new NotSupportedException("Reading raw operations is not supported from a copied content stream.");
             }
+        }
+
+        internal class MutablePdfPage
+        {
+            public Dictionary<NameToken, IToken> Resources { get; set; }
+            public Dictionary<NameToken, IToken> AdditionalProperties { get;set; }
         }
     }
 }
