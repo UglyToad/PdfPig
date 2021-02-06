@@ -1,6 +1,4 @@
-﻿using UglyToad.PdfPig.Parser.Parts;
-
-namespace UglyToad.PdfPig.XObjects
+﻿namespace UglyToad.PdfPig.XObjects
 {
     using System;
     using System.Collections.Generic;
@@ -11,8 +9,10 @@ namespace UglyToad.PdfPig.XObjects
     using Graphics;
     using Graphics.Colors;
     using Graphics.Core;
+    using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
+    using Util;
 
     internal static class XObjectFactory
     {
@@ -137,9 +137,26 @@ namespace UglyToad.PdfPig.XObjects
                 }
             }
 
-            return new XObjectImage(bounds, width, height, bitsPerComponent, colorSpace, isJpxDecode, isImageMask, intent, interpolate, decode,
-                dictionary, xObject.Stream.Data, decodedBytes);
+            var details = ColorSpaceDetailsParser.GetColorSpaceDetails(colorSpace, dictionary, pdfScanner, resourceStore, filterProvider);
+
+            return new XObjectImage(
+                bounds,
+                width,
+                height,
+                bitsPerComponent,
+                colorSpace,
+                isJpxDecode,
+                isImageMask,
+                intent,
+                interpolate,
+                decode,
+                dictionary,
+                xObject.Stream.Data,
+                decodedBytes,
+                details);
         }
+
+        
 
         private static bool TryMapColorSpace(NameToken name, IResourceStore resourceStore, out ColorSpace colorSpaceResult)
         {

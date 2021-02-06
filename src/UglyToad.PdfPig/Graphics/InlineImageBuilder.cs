@@ -10,6 +10,7 @@
     using PdfPig.Core;
     using Tokenization.Scanner;
     using Tokens;
+    using Util;
 
     internal class InlineImageBuilder
     {
@@ -27,35 +28,7 @@
                 throw new InvalidOperationException($"Inline image builder not completely defined before calling {nameof(CreateInlineImage)}.");
             }
 
-            bool TryMapColorSpace(NameToken name, out ColorSpace colorSpaceResult)
-            {
-                if (name.TryMapToColorSpace(out colorSpaceResult))
-                {
-                    return true;
-                }
 
-                if (TryExtendedColorSpaceNameMapping(name, out colorSpaceResult))
-                {
-                    return true;
-                }
-
-                if (!resourceStore.TryGetNamedColorSpace(name, out var colorSpaceNamedToken))
-                {
-                    return false;
-                }
-
-                if (colorSpaceNamedToken.Name.TryMapToColorSpace(out colorSpaceResult))
-                {
-                    return true;
-                }
-
-                if (TryExtendedColorSpaceNameMapping(colorSpaceNamedToken.Name, out colorSpaceResult))
-                {
-                    return true;
-                }
-
-                return false;
-            }
             
             var bounds = transformationMatrix.Transform(new PdfRectangle(new PdfPoint(1, 1),
                 new PdfPoint(0, 0)));
@@ -90,7 +63,7 @@
                         throw new PdfDocumentFormatException($"Invalid ColorSpace array defined for inline image: {colorSpaceArray}.");
                     }
 
-                    if (!TryMapColorSpace(firstColorSpaceName, out var colorSpaceMapped))
+                    if (!ColorSpaceMapper.TryMap(firstColorSpaceName, resourceStore, out var colorSpaceMapped))
                     {
                         throw new PdfDocumentFormatException($"Invalid ColorSpace defined for inline image: {firstColorSpaceName}.");
                     }
@@ -99,7 +72,7 @@
                 }
                 else
                 {
-                    if (!TryMapColorSpace(colorSpaceName, out var colorSpaceMapped))
+                    if (!ColorSpaceMapper.TryMap(colorSpaceName, resourceStore, out var colorSpaceMapped))
                     {
                         throw new PdfDocumentFormatException($"Invalid ColorSpace defined for inline image: {colorSpaceName}.");
                     }
@@ -107,6 +80,15 @@
                     colorSpace = colorSpaceMapped;
                 }
             }
+
+            var imgDic = new DictionaryToken(Properties ?? new Dictionary<NameToken, IToken>());
+
+            var details = ColorSpaceDetailsParser.GetColorSpaceDetails(
+                colorSpace,
+                imgDic,
+                tokenScanner,
+                resourceStore,
+                filterProvider);
 
             var renderingIntent = GetByKeys<NameToken>(NameToken.Intent, null, false)?.Data?.ToRenderingIntent() ?? defaultRenderingIntent;
 
@@ -157,30 +139,8 @@
 
             return new InlineImage(bounds, width, height, bitsPerComponent, isMask, renderingIntent, interpolate, colorSpace, decode, Bytes,
                 filters,
-                streamDictionary);
-        }
-
-        private static bool TryExtendedColorSpaceNameMapping(NameToken name, out ColorSpace result)
-        {
-            result = ColorSpace.DeviceGray;
-
-            switch (name.Data)
-            {
-                case "G":
-                    result = ColorSpace.DeviceGray;
-                    return true;
-                case "RGB":
-                    result = ColorSpace.DeviceRGB;
-                    return true;
-                case "CMYK":
-                    result = ColorSpace.DeviceCMYK;
-                    return true;
-                case "I":
-                    result = ColorSpace.Indexed;
-                    return true;
-            }
-
-            return false;
+                streamDictionary,
+                details);
         }
 
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
