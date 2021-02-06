@@ -7,7 +7,6 @@
     using Filters;
     using Graphics.Colors;
     using Graphics.Core;
-    using Images;
     using Tokens;
     using Images.Png;
 
@@ -112,6 +111,8 @@
             {
                 return false;
             }
+
+            bytes = bytesFactory.Value;
 
             return true;
         }
