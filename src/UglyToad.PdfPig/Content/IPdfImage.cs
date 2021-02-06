@@ -85,6 +85,11 @@
         bool IsInlineImage { get; }
 
         /// <summary>
+        /// Full details for the <see cref="ColorSpace"/> with any associated data.
+        /// </summary>
+        ColorSpaceDetails ColorSpaceDetails { get; }
+
+        /// <summary>
         /// Get the decoded bytes of the image if applicable. For JPEG images and some other types the
         /// <see cref="RawBytes"/> should be used directly.
         /// </summary>

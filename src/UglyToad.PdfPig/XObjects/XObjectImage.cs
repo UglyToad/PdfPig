@@ -6,6 +6,7 @@
     using Core;
     using Graphics.Colors;
     using Graphics.Core;
+    using Images;
     using Images.Png;
     using Tokens;
     using Util.JetBrains.Annotations;
@@ -64,11 +65,17 @@
 
         /// <inheritdoc />
         public IReadOnlyList<byte> RawBytes { get; }
-        
+
+        /// <inheritdoc />
+        public ColorSpaceDetails ColorSpaceDetails { get; }
+
         /// <summary>
         /// Creates a new <see cref="XObjectImage"/>.
         /// </summary>
-        internal XObjectImage(PdfRectangle bounds, int widthInSamples, int heightInSamples, int bitsPerComponent,
+        internal XObjectImage(PdfRectangle bounds,
+            int widthInSamples,
+            int heightInSamples,
+            int bitsPerComponent,
             ColorSpace? colorSpace,
             bool isJpxEncoded,
             bool isImageMask,
@@ -76,8 +83,9 @@
             bool interpolate,
             IReadOnlyList<decimal> decode,
             DictionaryToken imageDictionary,
-            IReadOnlyList<byte> rawBytes, 
-            Lazy<IReadOnlyList<byte>> bytes)
+            IReadOnlyList<byte> rawBytes,
+            Lazy<IReadOnlyList<byte>> bytes,
+            ColorSpaceDetails colorSpaceDetails)
         {
             Bounds = bounds;
             WidthInSamples = widthInSamples;
@@ -91,6 +99,7 @@
             Decode = decode;
             ImageDictionary = imageDictionary ?? throw new ArgumentNullException(nameof(imageDictionary));
             RawBytes = rawBytes;
+            ColorSpaceDetails = colorSpaceDetails;
             bytesFactory = bytes;
         }
 

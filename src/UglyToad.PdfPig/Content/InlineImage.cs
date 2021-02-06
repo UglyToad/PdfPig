@@ -7,6 +7,7 @@
     using Filters;
     using Graphics.Colors;
     using Graphics.Core;
+    using Images;
     using Tokens;
     using Images.Png;
 
@@ -51,6 +52,9 @@
         /// <inheritdoc />
         public IReadOnlyList<byte> RawBytes { get; }
 
+        /// <inheritdoc />
+        public ColorSpaceDetails ColorSpaceDetails { get; }
+
         /// <summary>
         /// Create a new <see cref="InlineImage"/>.
         /// </summary>
@@ -61,7 +65,8 @@
             IReadOnlyList<decimal> decode,
             IReadOnlyList<byte> bytes,
             IReadOnlyList<IFilter> filters,
-            DictionaryToken streamDictionary)
+            DictionaryToken streamDictionary,
+            ColorSpaceDetails colorSpaceDetails)
         {
             Bounds = bounds;
             WidthInSamples = widthInSamples;
@@ -74,6 +79,7 @@
             Interpolate = interpolate;
 
             RawBytes = bytes;
+            ColorSpaceDetails = colorSpaceDetails;
 
             var supportsFilters = true;
             foreach (var filter in filters)
@@ -106,8 +112,6 @@
             {
                 return false;
             }
-
-            bytes = bytesFactory.Value;
 
             return true;
         }
