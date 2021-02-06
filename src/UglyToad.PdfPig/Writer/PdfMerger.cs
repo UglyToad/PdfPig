@@ -129,46 +129,60 @@
         {
             const bool isLenientParsing = false;
 
-            var documentBuilder = new DocumentMerger(output);
-
-            foreach (var fileIndex in Enumerable.Range(0, files.Count))
+            using (var writer = new PdfHashStreamWriter(output, false)) 
             {
-                IReadOnlyList<int> pages = null;
-                if (pagesBundle != null && fileIndex < pagesBundle.Count)
+                var documentBuilder = new DocumentMerger(writer);
+
+                var maxVersion = 1.2m;
+                var infos = new List<(CoreTokenScanner CoreScanner, HeaderVersion Version)>();
+                foreach (var fileIndex in Enumerable.Range(0, files.Count))
                 {
-                    pages = pagesBundle[fileIndex];
+                    var inputBytes = files[fileIndex];
+                    var coreScanner = new CoreTokenScanner(inputBytes);
+
+                    var version = FileHeaderParser.Parse(coreScanner, isLenientParsing, Log);
+                    maxVersion = Math.Max(maxVersion, version.Version);
+                    infos.Add((coreScanner, version));
+                }
+                writer.InitializePdf(maxVersion);
+
+                foreach (var fileIndex in Enumerable.Range(0, files.Count))
+                {
+                    IReadOnlyList<int> pages = null;
+                    if (pagesBundle != null && fileIndex < pagesBundle.Count)
+                    {
+                        pages = pagesBundle[fileIndex];
+                    }
+
+                    var inputBytes = files[fileIndex];
+                    var (coreScanner, version) = infos[fileIndex];
+
+                    var crossReferenceParser = new CrossReferenceParser(Log, new XrefOffsetValidator(Log),
+                        new Parser.Parts.CrossReference.CrossReferenceStreamParser(FilterProvider));
+
+                    CrossReferenceTable crossReference = null;
+
+                    // ReSharper disable once AccessToModifiedClosure
+                    var locationProvider = new ObjectLocationProvider(() => crossReference, inputBytes);
+
+                    var pdfScanner = new PdfTokenScanner(inputBytes, locationProvider, FilterProvider, NoOpEncryptionHandler.Instance);
+
+                    var crossReferenceOffset = FileTrailerParser.GetFirstCrossReferenceOffset(inputBytes, coreScanner, isLenientParsing);
+                    crossReference = crossReferenceParser.Parse(inputBytes, isLenientParsing, crossReferenceOffset, version.OffsetInFile, pdfScanner, coreScanner);
+
+                    var catalogDictionaryToken = ParseCatalog(crossReference, pdfScanner, out var encryptionDictionary);
+                    if (encryptionDictionary != null)
+                    {
+                        throw new PdfDocumentEncryptedException("Unable to merge document with password");
+                    }
+
+                    var documentCatalog = CatalogFactory.Create(crossReference.Trailer.Root, catalogDictionaryToken, pdfScanner, isLenientParsing);
+
+                    documentBuilder.AppendDocument(documentCatalog, version.Version, pdfScanner, pages);
                 }
 
-                var inputBytes = files[fileIndex];
-                var coreScanner = new CoreTokenScanner(inputBytes);
-
-                var version = FileHeaderParser.Parse(coreScanner, isLenientParsing, Log);
-
-                var crossReferenceParser = new CrossReferenceParser(Log, new XrefOffsetValidator(Log),
-                    new Parser.Parts.CrossReference.CrossReferenceStreamParser(FilterProvider));
-
-                CrossReferenceTable crossReference = null;
-
-                // ReSharper disable once AccessToModifiedClosure
-                var locationProvider = new ObjectLocationProvider(() => crossReference, inputBytes);
-
-                var pdfScanner = new PdfTokenScanner(inputBytes, locationProvider, FilterProvider, NoOpEncryptionHandler.Instance);
-
-                var crossReferenceOffset = FileTrailerParser.GetFirstCrossReferenceOffset(inputBytes, coreScanner, isLenientParsing);
-                crossReference = crossReferenceParser.Parse(inputBytes, isLenientParsing, crossReferenceOffset, version.OffsetInFile, pdfScanner, coreScanner);
-
-                var catalogDictionaryToken = ParseCatalog(crossReference, pdfScanner, out var encryptionDictionary);
-                if (encryptionDictionary != null)
-                {
-                    throw new PdfDocumentEncryptedException("Unable to merge document with password");
-                }
-
-                var documentCatalog = CatalogFactory.Create(crossReference.Trailer.Root, catalogDictionaryToken, pdfScanner, isLenientParsing);
-
-                documentBuilder.AppendDocument(documentCatalog, version.Version, pdfScanner, pages);
+                documentBuilder.Build();
             }
-
-            documentBuilder.Build();
         }
 
         // This method is a basically a copy of the method UglyToad.PdfPig.Parser.PdfDocumentFactory.ParseTrailer()
@@ -201,21 +215,18 @@
 
         private class DocumentMerger
         {
-            private const decimal DefaultVersion = 1.2m;
-
             private const int ARTIFICIAL_NODE_LIMIT = 100;
 
-            private readonly PdfStreamWriter context;
+            private readonly IPdfStreamWriter context;
             private readonly List<IndirectReferenceToken> pagesTokenReferences = new List<IndirectReferenceToken>();
             private readonly IndirectReferenceToken rootPagesReference;
 
-            private decimal currentVersion = DefaultVersion;
             private int pageCount = 0;
 
-            public DocumentMerger(Stream baseStream)
+            public DocumentMerger(IPdfStreamWriter writer)
             {
-                context = new PdfStreamWriter(baseStream, false);
-                rootPagesReference = context.ReserveNumberToken();
+                context = writer;
+                rootPagesReference = context.ReserveObjectNumber();
             }
 
             public void AppendDocument(Catalog catalog, decimal version, IPdfTokenScanner tokenScanner, IReadOnlyList<int> pages)
@@ -240,11 +251,9 @@
                     pageIndices = pages;
                 }
 
-                currentVersion = Math.Max(version, currentVersion);
-
                 var referencesFromDocument = new Dictionary<IndirectReference, IndirectReferenceToken>();
 
-                var currentNodeReference = context.ReserveNumberToken();
+                var currentNodeReference = context.ReserveObjectNumber();
                 var pagesReferences = new List<IndirectReferenceToken>();
                 var resources = new Dictionary<string, IToken>();
 
@@ -323,7 +332,8 @@
                     }
                     
                     var pagesDictionary = new DictionaryToken(newPagesNode);
-                    pagesTokenReferences.Add(context.WriteToken(pagesDictionary, (int)currentNodeReference.Data.ObjectNumber));
+                    context.WriteToken(pagesDictionary, currentNodeReference);
+                    pagesTokenReferences.Add(currentNodeReference);
 
                     pageCount += pagesReferences.Count;
                 };
@@ -335,7 +345,7 @@
                     {
                         CreateTree();
 
-                        currentNodeReference = context.ReserveNumberToken();
+                        currentNodeReference = context.ReserveObjectNumber();
                         pagesReferences = new List<IndirectReferenceToken>();
                         resources = new Dictionary<string, IToken>();
                     }
@@ -366,17 +376,17 @@
                     { NameToken.Count, new NumericToken(pageCount) }
                 });
 
-                var pagesRef = context.WriteToken(pagesDictionary, (int)rootPagesReference.Data.ObjectNumber);
+                context.WriteToken(pagesDictionary, rootPagesReference);
 
                 var catalog = new DictionaryToken(new Dictionary<NameToken, IToken>
                 {
                     { NameToken.Type, NameToken.Catalog },
-                    { NameToken.Pages, pagesRef }
+                    { NameToken.Pages, rootPagesReference }
                 });
 
                 var catalogRef = context.WriteToken(catalog);
 
-                context.Flush(currentVersion, catalogRef);
+                context.CompletePdf(catalogRef);
 
                 Close();
             }
@@ -423,67 +433,7 @@
             /// <returns>A reference of the token that was copied. With all the reference updated</returns>
             private IToken CopyToken(IToken tokenToCopy, IPdfTokenScanner tokenScanner, IDictionary<IndirectReference, IndirectReferenceToken> referencesFromDocument)
             {
-                // This token need to be deep copied, because they could contain reference. So we have to update them.
-                switch (tokenToCopy)
-                {
-                    case DictionaryToken dictionaryToken:
-                        {
-                            var newContent = new Dictionary<NameToken, IToken>();
-                            foreach (var setPair in dictionaryToken.Data)
-                            {
-                                var name = setPair.Key;
-                                var token = setPair.Value;
-                                newContent.Add(NameToken.Create(name), CopyToken(token, tokenScanner, referencesFromDocument));
-                            }
-
-                            return new DictionaryToken(newContent);
-                        }
-                    case ArrayToken arrayToken:
-                        {
-                            var newArray = new List<IToken>(arrayToken.Length);
-                            foreach (var token in arrayToken.Data)
-                            {
-                                newArray.Add(CopyToken(token, tokenScanner, referencesFromDocument));
-                            }
-
-                            return new ArrayToken(newArray);
-                        }
-                    case IndirectReferenceToken referenceToken:
-                        {
-                            if (referencesFromDocument.TryGetValue(referenceToken.Data, out var newReferenceToken))
-                            {
-                                return newReferenceToken;
-                            }
-
-                            //we add the token to referencesFromDocument to prevent stackoverflow on references cycles 
-                            newReferenceToken = context.ReserveNumberToken();
-                            referencesFromDocument.Add(referenceToken.Data, newReferenceToken);
-
-                            var tokenObject = DirectObjectFinder.Get<IToken>(referenceToken.Data, tokenScanner);
-                            Debug.Assert(!(tokenObject is IndirectReferenceToken));
-
-                            var newToken = CopyToken(tokenObject, tokenScanner, referencesFromDocument);
-                            context.WriteToken(newReferenceToken, newToken);
-                            return newReferenceToken;
-                        }
-                    case StreamToken streamToken:
-                        {
-                            var properties = CopyToken(streamToken.StreamDictionary, tokenScanner, referencesFromDocument) as DictionaryToken;
-                            Debug.Assert(properties != null);
-
-                            var bytes = streamToken.Data;
-                            return new StreamToken(properties, bytes);
-                        }
-
-                    case ObjectToken _:
-                        {
-                            // Since we don't write token directly to the stream.
-                            // We can't know the offset. Therefore the token would be invalid
-                            throw new NotSupportedException("Copying a Object token is not supported");
-                        }
-                }
-
-                return tokenToCopy;
+                return WriterUtil.CopyToken(context, tokenToCopy, tokenScanner, referencesFromDocument);
             }
         }
     }

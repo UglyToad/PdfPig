@@ -8,14 +8,14 @@ namespace UglyToad.PdfPig.Writer
 {
     internal static class PdfABaselineRuleBuilder
     {
-        public static void Obey(Dictionary<NameToken, IToken> catalog, Func<IToken, ObjectToken> writerFunc,
+        public static void Obey(Dictionary<NameToken, IToken> catalog, Func<IToken, IndirectReferenceToken> writerFunc,
             PdfDocumentBuilder.DocumentInformationBuilder documentInformationBuilder,
             PdfAStandard archiveStandard)
         {
             catalog[NameToken.OutputIntents] = OutputIntentsFactory.GetOutputIntentsArray(writerFunc);
             var xmpStream = XmpWriter.GenerateXmpStream(documentInformationBuilder, 1.7m, archiveStandard);
             var xmpObj = writerFunc(xmpStream);
-            catalog[NameToken.Metadata] = new IndirectReferenceToken(xmpObj.Number);
+            catalog[NameToken.Metadata] = xmpObj;
         }
     }
 }

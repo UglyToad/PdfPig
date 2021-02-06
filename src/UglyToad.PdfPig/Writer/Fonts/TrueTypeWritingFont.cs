@@ -47,6 +47,92 @@
             return TransformationMatrix.FromValues(1.0 / unitsPerEm, 0, 0, 1.0 / unitsPerEm, 0, 0);
         }
 
+        public IndirectReferenceToken WriteFont(IPdfStreamWriter writer, NameToken fontKeyName)
+        {
+            var newEncoding = new TrueTypeSubsetEncoding(characterMapping.Keys.ToList());
+            var subsetBytes = TrueTypeSubsetter.Subset(fontFileBytes.ToArray(), newEncoding);
+
+            var embeddedFile = DataCompresser.CompressToStream(subsetBytes);
+
+            var fileRef = writer.WriteToken(embeddedFile);
+
+            var baseFont = NameToken.Create(font.TableRegister.NameTable.GetPostscriptName());
+
+            var postscript = font.TableRegister.PostScriptTable;
+            var hhead = font.TableRegister.HorizontalHeaderTable;
+
+            var bbox = font.TableRegister.HeaderTable.Bounds;
+
+            var scaling = 1000m / font.TableRegister.HeaderTable.UnitsPerEm;
+            var descriptorDictionary = new Dictionary<NameToken, IToken>
+            {
+                { NameToken.Type, NameToken.FontDescriptor },
+                { NameToken.FontName, baseFont },
+                // TODO: get flags TrueTypeEmbedder.java
+                { NameToken.Flags, new NumericToken((int)FontDescriptorFlags.Symbolic) },
+                { NameToken.FontBbox, GetBoundingBox(bbox, scaling) },
+                { NameToken.ItalicAngle, new NumericToken((decimal)postscript.ItalicAngle) },
+                { NameToken.Ascent, new NumericToken(Math.Round(hhead.Ascent * scaling, 2)) },
+                { NameToken.Descent, new NumericToken(Math.Round(hhead.Descent * scaling, 2)) },
+                { NameToken.CapHeight, new NumericToken(90) },
+                { NameToken.StemV, new NumericToken(90) },
+                { NameToken.FontFile2, fileRef }
+            };
+
+            var os2 = font.TableRegister.Os2Table;
+            if (os2 == null)
+            {
+                throw new InvalidFontFormatException("Embedding TrueType font requires OS/2 table.");
+            }
+
+            if (os2 is Os2Version2To4OpenTypeTable twoPlus)
+            {
+                descriptorDictionary[NameToken.CapHeight] = new NumericToken(twoPlus.CapHeight);
+                descriptorDictionary[NameToken.Xheight] = new NumericToken(twoPlus.XHeight);
+            }
+
+            descriptorDictionary[NameToken.StemV] = new NumericToken(((decimal)bbox.Width) * scaling * 0.13m);
+
+            var lastCharacter = 0;
+            var widths = new List<NumericToken> { NumericToken.Zero };
+            foreach (var kvp in characterMapping)
+            {
+                if (kvp.Value > lastCharacter)
+                {
+                    lastCharacter = kvp.Value;
+                }
+
+                var glyphId = font.WindowsUnicodeCMap.CharacterCodeToGlyphIndex(kvp.Key);
+                var width = decimal.Round(font.TableRegister.HorizontalMetricsTable.GetAdvanceWidth(glyphId) * scaling, 2);
+
+                widths.Add(new NumericToken(width));
+            }
+
+            var descriptor = writer.WriteToken(new DictionaryToken(descriptorDictionary));
+
+            var toUnicodeCMap = ToUnicodeCMapBuilder.ConvertToCMapStream(characterMapping);
+            var toUnicodeStream = DataCompresser.CompressToStream(toUnicodeCMap);
+            var toUnicode = writer.WriteToken(toUnicodeStream);
+
+            var dictionary = new Dictionary<NameToken, IToken>
+            {
+                { NameToken.Type, NameToken.Font },
+                { NameToken.Subtype, NameToken.TrueType },
+                { NameToken.BaseFont, baseFont },
+                { NameToken.FontDescriptor, descriptor },
+                { NameToken.FirstChar, new NumericToken(0) },
+                { NameToken.LastChar, new NumericToken(lastCharacter) },
+                { NameToken.Widths, new ArrayToken(widths) },
+                {NameToken.ToUnicode, toUnicode }
+            };
+
+            var token = new DictionaryToken(dictionary);
+
+            var result = writer.WriteToken(token);
+
+            return result;
+        }
+
         public ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context)
         {
             var newEncoding = new TrueTypeSubsetEncoding(characterMapping.Keys.ToList());

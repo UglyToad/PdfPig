@@ -73,6 +73,24 @@
             return result;
         }
 
+        public IndirectReferenceToken WriteFont(IPdfStreamWriter writer, NameToken fontKeyName)
+        {
+            var dictionary = new Dictionary<NameToken, IToken>
+            {
+                { NameToken.Type, NameToken.Font },
+                { NameToken.Subtype, NameToken.Type1  },
+                { NameToken.BaseFont, NameToken.Create(metrics.FontName) },
+                { NameToken.Encoding, NameToken.MacRomanEncoding },
+                { NameToken.Name, fontKeyName }
+            };
+
+            var token = new DictionaryToken(dictionary);
+
+            var result = writer.WriteToken(token);
+
+            return result;
+        }
+
         public byte GetValueForCharacter(char character)
         {
             var name = GlyphList.AdobeGlyphList.UnicodeCodePointToName(character);

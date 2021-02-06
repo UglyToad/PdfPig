@@ -17,6 +17,7 @@
         TransformationMatrix GetFontMatrix();
 
         ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context);
+        IndirectReferenceToken WriteFont(IPdfStreamWriter writer, NameToken fontKeyName);
 
         byte GetValueForCharacter(char character);
     }
