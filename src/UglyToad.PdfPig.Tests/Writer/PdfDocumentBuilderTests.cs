@@ -136,7 +136,7 @@
 
             var letters = page.AddText("Hello World!", 12, new PdfPoint(30, 50), font);
 
-            Assert.NotEmpty(page.Operations);
+            Assert.NotEmpty(page.CurrentStream.Operations);
 
             var b = builder.Build();
 
@@ -186,7 +186,7 @@
 
             page.AddText("eé", 12, new PdfPoint(30, 520), font);
 
-            Assert.NotEmpty(page.Operations);
+            Assert.NotEmpty(page.CurrentStream.Operations);
 
             var b = builder.Build();
 
@@ -232,7 +232,7 @@
 
             page.AddText("eé", 12, new PdfPoint(30, 520), font);
 
-            Assert.NotEmpty(page.Operations);
+            Assert.NotEmpty(page.CurrentStream.Operations);
 
             var b = builder.Build();
 
@@ -279,7 +279,7 @@
             var letters = page.AddText("Hello World!", 16, new PdfPoint(30, 520), font);
             page.AddText("This is some further text continuing to write", 12, new PdfPoint(30, 500), font);
 
-            Assert.NotEmpty(page.Operations);
+            Assert.NotEmpty(page.CurrentStream.Operations);
 
             var b = builder.Build();
 
@@ -601,6 +601,94 @@
             
             var file = builder.Build();
             WriteFile(nameof(CanCreateDocumentWithFilledRectangle), file);
+        }
+
+        [Fact]
+        public void CanGeneratePageWithMultipleStream()
+        {
+            var builder = new PdfDocumentBuilder();
+
+            var page = builder.AddPage(PageSize.A4);
+
+            var file = TrueTypeTestHelper.GetFileBytes("Andada-Regular.ttf");
+
+            var font = builder.AddTrueTypeFont(file);
+
+            var letters = page.AddText("Hello", 12, new PdfPoint(30, 50), font);
+
+            Assert.NotEmpty(page.CurrentStream.Operations);
+
+            page.NewContentStreamAfter();
+
+            page.AddText("World!", 12, new PdfPoint(50, 50), font);
+
+            Assert.NotEmpty(page.CurrentStream.Operations);
+
+
+            var b = builder.Build();
+
+            WriteFile(nameof(CanGeneratePageWithMultipleStream), b);
+
+            Assert.NotEmpty(b);
+
+            using (var document = PdfDocument.Open(b))
+            {
+                var page1 = document.GetPage(1);
+
+                Assert.Equal("HelloWorld!", page1.Text);
+
+                var h = page1.Letters[0];
+
+                Assert.Equal("H", h.Value);
+                Assert.Equal("Andada-Regular", h.FontName);
+            }
+        }
+
+        [Fact]
+        public void CanCopyPage()
+        {
+
+            byte[] b;
+            {
+                var builder = new PdfDocumentBuilder();
+
+                var page1 = builder.AddPage(PageSize.A4);
+
+                var file = TrueTypeTestHelper.GetFileBytes("Andada-Regular.ttf");
+
+                var font = builder.AddTrueTypeFont(file);
+
+                page1.AddText("Hello", 12, new PdfPoint(30, 50), font);
+
+                Assert.NotEmpty(page1.CurrentStream.Operations);
+
+
+                using (var readDocument = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("bold-italic.pdf")))
+                {
+                    var rpage = readDocument.GetPage(1);
+
+                    var page2 = builder.AddPage(PageSize.A4);
+                    page2.CopyFrom(rpage);
+                }
+
+                b = builder.Build();
+                Assert.NotEmpty(b);
+            }
+
+            WriteFile(nameof(CanCopyPage), b);
+
+            using (var document = PdfDocument.Open(b))
+            {
+                Assert.Equal( 2, document.NumberOfPages);
+
+                var page1 = document.GetPage(1);
+
+                Assert.Equal("Hello", page1.Text);
+
+                var page2 = document.GetPage(2);
+                
+                Assert.Equal("Lorem ipsum dolor sit amet, consectetur adipiscing elit. ", page2.Text);
+            }
         }
 
         private static void WriteFile(string name, byte[] bytes, string extension = "pdf")

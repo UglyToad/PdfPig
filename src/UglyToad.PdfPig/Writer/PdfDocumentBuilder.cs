@@ -3,6 +3,7 @@ namespace UglyToad.PdfPig.Writer
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using Content;
@@ -10,8 +11,10 @@ namespace UglyToad.PdfPig.Writer
     using Fonts;
     using PdfPig.Fonts.TrueType;
     using Graphics.Operations;
+    using Parser.Parts;
     using PdfPig.Fonts.Standard14Fonts;
     using PdfPig.Fonts.TrueType.Parser;
+    using Tokenization.Scanner;
     using Tokens;
 
     using Util.JetBrains.Annotations;
@@ -25,6 +28,9 @@ namespace UglyToad.PdfPig.Writer
         private readonly Dictionary<int, PdfPageBuilder> pages = new Dictionary<int, PdfPageBuilder>();
         private readonly Dictionary<Guid, FontStored> fonts = new Dictionary<Guid, FontStored>();
         private readonly Dictionary<Guid, ImageStored> images = new Dictionary<Guid, ImageStored>();
+        private readonly Dictionary<IndirectReferenceToken, IToken> unwrittenTokens = new Dictionary<IndirectReferenceToken, IToken>();
+
+        internal int fontId = 0;
 
         /// <summary>
         /// The standard of PDF/A compliance of the generated document. Defaults to <see cref="PdfAStandard.None"/>.
@@ -50,7 +56,12 @@ namespace UglyToad.PdfPig.Writer
         /// <summary>
         /// The fonts currently available in the document builder added via <see cref="AddTrueTypeFont"/> or <see cref="AddStandard14Font"/>. Keyed by id for internal purposes.
         /// </summary>
-        internal IReadOnlyDictionary<Guid, IWritingFont> Fonts => fonts.ToDictionary(x => x.Key, x => x.Value.FontProgram);
+        internal IReadOnlyDictionary<Guid, FontStored> Fonts => fonts;
+
+        /// <summary>
+        /// The images currently available in the document builder added via <see cref="AddImage"/>. Keyed by id for internal purposes.
+        /// </summary>
+        internal IReadOnlyDictionary<Guid, ImageStored> Images => images;
 
         /// <summary>
         /// Determines whether the bytes of the TrueType font file provided can be used in a PDF document.
@@ -116,8 +127,7 @@ namespace UglyToad.PdfPig.Writer
             {
                 var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFileBytes)));
                 var id = Guid.NewGuid();
-                var i = fonts.Count;
-                var added = new AddedFont(id, NameToken.Create($"F{i}"));
+                var added = new AddedFont(id, NameToken.Create($"F{fontId++}"));
                 fonts[id] = new FontStored(added, new TrueTypeWritingFont(font, fontFileBytes));
 
                 return added;
@@ -141,7 +151,7 @@ namespace UglyToad.PdfPig.Writer
             }
 
             var id = Guid.NewGuid();
-            var name = NameToken.Create($"F{fonts.Count}");
+            var name = NameToken.Create($"F{fontId++}");
             var added = new AddedFont(id, name);
             fonts[id] = new FontStored(added, new Standard14WritingFont(Standard14.GetAdobeFontMetrics(type)));
 
@@ -259,6 +269,11 @@ namespace UglyToad.PdfPig.Writer
                     context.WriteObject(memory, streamToken, image.Value.ObjectNumber);
                 }
 
+                foreach (var tokenSet in unwrittenTokens)
+                {
+                    context.WriteObject(memory, tokenSet.Value, (int)tokenSet.Key.Data.ObjectNumber);
+                }
+
                 var procSet = new List<NameToken>
                 {
                     NameToken.Create("PDF"),
@@ -278,9 +293,7 @@ namespace UglyToad.PdfPig.Writer
                     var fontsDictionary = new DictionaryToken(fontsWritten.Select(x => (fonts[x.Key].FontKey.Name, (IToken)new IndirectReferenceToken(x.Value.Number)))
                         .ToDictionary(x => x.Item1, x => x.Item2));
 
-                    var fontsDictionaryRef = context.WriteObject(memory, fontsDictionary);
-
-                    resources.Add(NameToken.Font, new IndirectReferenceToken(fontsDictionaryRef.Number));
+                    resources.Add(NameToken.Font, fontsDictionary);
                 }
 
                 var reserved = context.ReserveNumber();
@@ -301,20 +314,49 @@ namespace UglyToad.PdfPig.Writer
                     {
                         foreach (var kvp in page.Value.Resources)
                         {
-                            // TODO: combine resources if value is dictionary or array, otherwise overwrite.
-                            individualResources[kvp.Key] = kvp.Value;
+                            var value = kvp.Value;
+                            if (individualResources.TryGetValue(kvp.Key, out var pageToken))
+                            {
+                                if (pageToken is DictionaryToken leftDictionary && value is DictionaryToken rightDictionary)
+                                {
+                                    var merged = leftDictionary.Data.ToDictionary(k => NameToken.Create(k.Key), v => v.Value);
+                                    foreach (var set in rightDictionary.Data)
+                                    {
+                                        merged[NameToken.Create(set.Key)] = set.Value;
+                                    }
+
+                                    value = new DictionaryToken(merged);
+
+                                }
+                                // Else override
+                            }
+
+                            individualResources[kvp.Key] = value;
                         }
                     }
 
                     pageDictionary[NameToken.Resources] = new DictionaryToken(individualResources);
 
-                    if (page.Value.Operations.Count > 0)
+                    if (page.Value.ContentStreams.Count == 1)
                     {
-                        var contentStream = WriteContentStream(page.Value.Operations);
+                        var contentStream = WriteContentStream(page.Value.CurrentStream.Operations);
 
                         var contentStreamObj = context.WriteObject(memory, contentStream);
 
                         pageDictionary[NameToken.Contents] = new IndirectReferenceToken(contentStreamObj.Number);
+                    }
+                    else if (page.Value.ContentStreams.Count > 1)
+                    {
+                        var streamTokens = page.Value.ContentStreams.Select(contentStream =>
+                        {
+                            var streamToken = WriteContentStream(contentStream.Operations);
+
+                            var contentStreamObj = context.WriteObject(memory, streamToken);
+
+                            return new IndirectReferenceToken(contentStreamObj.Number);
+                        }).ToList();
+
+                        pageDictionary[NameToken.Contents] = new ArrayToken(streamTokens);
                     }
 
                     var pageRef = context.WriteObject(memory, new DictionaryToken(pageDictionary));
@@ -377,6 +419,75 @@ namespace UglyToad.PdfPig.Writer
 
                 return memory.ToArray();
             }
+        }
+
+        /// <summary>
+        /// The purpose of this method is to resolve indirect reference. That mean copy the reference's content to the new document's stream
+        /// and replace the indirect reference with the correct/new one
+        /// </summary>
+        /// <param name="tokenToCopy">Token to inspect for reference</param>
+        /// <param name="tokenScanner">scanner get the content from the original document</param>
+        /// <returns>A reference of the token that was copied. With all the reference updated</returns>
+        internal IToken CopyToken(IToken tokenToCopy, IPdfTokenScanner tokenScanner)
+        {
+            // This token need to be deep copied, because they could contain reference. So we have to update them.
+            switch (tokenToCopy)
+            {
+                case DictionaryToken dictionaryToken:
+                    {
+                        var newContent = new Dictionary<NameToken, IToken>();
+                        foreach (var setPair in dictionaryToken.Data)
+                        {
+                            var name = setPair.Key;
+                            var token = setPair.Value;
+                            newContent.Add(NameToken.Create(name), CopyToken(token, tokenScanner));
+                        }
+
+                        return new DictionaryToken(newContent);
+                    }
+                case ArrayToken arrayToken:
+                    {
+                        var newArray = new List<IToken>(arrayToken.Length);
+                        foreach (var token in arrayToken.Data)
+                        {
+                            newArray.Add(CopyToken(token, tokenScanner));
+                        }
+
+                        return new ArrayToken(newArray);
+                    }
+                case IndirectReferenceToken referenceToken:
+                    {
+                        var tokenObject = DirectObjectFinder.Get<IToken>(referenceToken.Data, tokenScanner);
+
+                        Debug.Assert(!(tokenObject is IndirectReferenceToken));
+
+                        var newToken = CopyToken(tokenObject, tokenScanner);
+
+                        var reserved = context.ReserveNumber();
+                        var newReference = new IndirectReferenceToken(new IndirectReference(reserved, 0));
+
+                        unwrittenTokens.Add(newReference, newToken);
+
+                        return newReference;
+                    }
+                case StreamToken streamToken:
+                    {
+                        var properties = CopyToken(streamToken.StreamDictionary, tokenScanner) as DictionaryToken;
+                        Debug.Assert(properties != null);
+
+                        var bytes = streamToken.Data;
+                        return new StreamToken(properties, bytes);
+                    }
+
+                case ObjectToken _:
+                    {
+                        // Since we don't write token directly to the stream.
+                        // We can't know the offset. Therefore the token would be invalid
+                        throw new NotSupportedException("Copying a Object token is not supported");
+                    }
+            }
+
+            return tokenToCopy;
         }
 
         private static StreamToken WriteContentStream(IReadOnlyList<IGraphicsStateOperation> content)

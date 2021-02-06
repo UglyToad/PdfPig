@@ -17,7 +17,7 @@
     public class Page
     {
         private readonly AnnotationProvider annotationProvider;
-        private readonly IPdfTokenScanner pdfScanner;
+        internal readonly IPdfTokenScanner pdfScanner;
         private readonly Lazy<string> textLazy;
 
         /// <summary>

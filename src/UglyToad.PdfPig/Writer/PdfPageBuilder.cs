@@ -15,7 +15,9 @@
     using Images;
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
+    using System.Linq;
     using PdfFonts;
     using Tokens;
     using Graphics.Operations.PathPainting;
@@ -27,15 +29,13 @@
     public class PdfPageBuilder
     {
         private readonly PdfDocumentBuilder documentBuilder;
-        private readonly List<IGraphicsStateOperation> operations = new List<IGraphicsStateOperation>();
+        private readonly List<ContentStream> contentStreams;
         private readonly Dictionary<NameToken, IToken> resourcesDictionary = new Dictionary<NameToken, IToken>();
 
         //a sequence number of ShowText operation to determine whether letters belong to same operation or not (letters that belong to different operations have less changes to belong to same word)
         private int textSequence;
 
         private int imageKey = 1;
-
-        internal IReadOnlyList<IGraphicsStateOperation> Operations => operations;
 
         internal IReadOnlyDictionary<NameToken, IToken> Resources => resourcesDictionary;
 
@@ -52,13 +52,59 @@
         /// <summary>
         /// Access to the underlying data structures for advanced use cases.
         /// </summary>
-        public AdvancedEditing Advanced { get; }
+        public ContentStream CurrentStream { get; private set; }
+
+        /// <summary>
+        /// Access to
+        /// </summary>
+        public IReadOnlyList<ContentStream> ContentStreams { get; }
 
         internal PdfPageBuilder(int number, PdfDocumentBuilder documentBuilder)
         {
             this.documentBuilder = documentBuilder ?? throw new ArgumentNullException(nameof(documentBuilder));
             PageNumber = number;
-            Advanced = new AdvancedEditing(operations);
+
+            CurrentStream = new ContentStream();
+            ContentStreams = contentStreams = new List<ContentStream>()
+            {
+                CurrentStream
+            };
+        }
+
+        /// <summary>
+        /// Allow to append a new content stream before the current one and select it
+        /// </summary>
+        public void NewContentStreamBefore()
+        {
+            var index = Math.Max(contentStreams.IndexOf(CurrentStream) - 1, 0);
+
+            CurrentStream = new ContentStream();
+            contentStreams.Insert(index, CurrentStream);
+        }
+
+        /// <summary>
+        /// Allow to append a new content stream after the current one and select it
+        /// </summary>
+        public void NewContentStreamAfter()
+        {
+            var index = Math.Min(contentStreams.IndexOf(CurrentStream) + 1, contentStreams.Count);
+
+            CurrentStream = new ContentStream();
+            contentStreams.Insert(index, CurrentStream);
+        }
+
+        /// <summary>
+        /// Select a content stream from the list, by his index
+        /// </summary>
+        /// <param name="index">index of the content stream to be selected</param>
+        public void SelectContentStream(int index)
+        {
+            if (index < 0 || index >= ContentStreams.Count)
+            {
+                throw new IndexOutOfRangeException(nameof(index));
+            }
+
+            CurrentStream = ContentStreams[index];
         }
 
         /// <summary>
@@ -71,16 +117,16 @@
         {
             if (lineWidth != 1)
             {
-                operations.Add(new SetLineWidth(lineWidth));
+                CurrentStream.Add(new SetLineWidth(lineWidth));
             }
 
-            operations.Add(new BeginNewSubpath((decimal)from.X, (decimal)from.Y));
-            operations.Add(new AppendStraightLineSegment((decimal)to.X, (decimal)to.Y));
-            operations.Add(StrokePath.Value);
+            CurrentStream.Add(new BeginNewSubpath((decimal)from.X, (decimal)from.Y));
+            CurrentStream.Add(new AppendStraightLineSegment((decimal)to.X, (decimal)to.Y));
+            CurrentStream.Add(StrokePath.Value);
 
             if (lineWidth != 1)
             {
-                operations.Add(new SetLineWidth(1));
+                CurrentStream.Add(new SetLineWidth(1));
             }
         }
 
@@ -96,23 +142,23 @@
         {
             if (lineWidth != 1)
             {
-                operations.Add(new SetLineWidth(lineWidth));
+                CurrentStream.Add(new SetLineWidth(lineWidth));
             }
 
-            operations.Add(new AppendRectangle((decimal)position.X, (decimal)position.Y, width, height));
+            CurrentStream.Add(new AppendRectangle((decimal)position.X, (decimal)position.Y, width, height));
 
             if (fill)
             {
-                operations.Add(FillPathEvenOddRuleAndStroke.Value);
+                CurrentStream.Add(FillPathEvenOddRuleAndStroke.Value);
             }
             else
             {
-                operations.Add(StrokePath.Value);
+                CurrentStream.Add(StrokePath.Value);
             }
 
             if (lineWidth != 1)
             {
-                operations.Add(new SetLineWidth(lineWidth));
+                CurrentStream.Add(new SetLineWidth(lineWidth));
             }
         }
 
@@ -124,8 +170,8 @@
         /// <param name="b">Blue - 0 to 255</param>
         public void SetStrokeColor(byte r, byte g, byte b)
         {
-            operations.Add(Push.Value);
-            operations.Add(new SetStrokeColorDeviceRgb(RgbToDecimal(r), RgbToDecimal(g), RgbToDecimal(b)));
+            CurrentStream.Add(Push.Value);
+            CurrentStream.Add(new SetStrokeColorDeviceRgb(RgbToDecimal(r), RgbToDecimal(g), RgbToDecimal(b)));
         }
 
         /// <summary>
@@ -136,8 +182,8 @@
         /// <param name="b">Blue - 0 to 1</param>
         internal void SetStrokeColorExact(decimal r, decimal g, decimal b)
         {
-            operations.Add(Push.Value);
-            operations.Add(new SetStrokeColorDeviceRgb(CheckRgbDecimal(r, nameof(r)),
+            CurrentStream.Add(Push.Value);
+            CurrentStream.Add(new SetStrokeColorDeviceRgb(CheckRgbDecimal(r, nameof(r)),
                 CheckRgbDecimal(g, nameof(g)), CheckRgbDecimal(b, nameof(b))));
         }
 
@@ -149,8 +195,8 @@
         /// <param name="b">Blue - 0 to 255</param>
         public void SetTextAndFillColor(byte r, byte g, byte b)
         {
-            operations.Add(Push.Value);
-            operations.Add(new SetNonStrokeColorDeviceRgb(RgbToDecimal(r), RgbToDecimal(g), RgbToDecimal(b)));
+            CurrentStream.Add(Push.Value);
+            CurrentStream.Add(new SetNonStrokeColorDeviceRgb(RgbToDecimal(r), RgbToDecimal(g), RgbToDecimal(b)));
         }
 
         /// <summary>
@@ -158,7 +204,7 @@
         /// </summary>
         public void ResetColor()
         {
-            operations.Add(Pop.Value);
+            CurrentStream.Add(Pop.Value);
         }
 
         /// <summary>
@@ -184,7 +230,7 @@
                 throw new ArgumentNullException(nameof(text));
             }
 
-            if (!documentBuilder.Fonts.TryGetValue(font.Id, out var fontProgram))
+            if (!documentBuilder.Fonts.TryGetValue(font.Id, out var fontStore))
             {
                 throw new ArgumentException($"No font has been added to the PdfDocumentBuilder with Id: {font.Id}. " +
                                             $"Use {nameof(documentBuilder.AddTrueTypeFont)} to register a font.", nameof(font));
@@ -194,6 +240,8 @@
             {
                 throw new ArgumentOutOfRangeException(nameof(fontSize), "Font size must be greater than 0");
             }
+
+            var fontProgram = fontStore.FontProgram;
 
             var fm = fontProgram.GetFontMatrix();
 
@@ -227,7 +275,7 @@
                 throw new ArgumentNullException(nameof(text));
             }
 
-            if (!documentBuilder.Fonts.TryGetValue(font.Id, out var fontProgram))
+            if (!documentBuilder.Fonts.TryGetValue(font.Id, out var fontStore))
             {
                 throw new ArgumentException($"No font has been added to the PdfDocumentBuilder with Id: {font.Id}. " +
                                             $"Use {nameof(documentBuilder.AddTrueTypeFont)} to register a font.", nameof(font));
@@ -238,21 +286,23 @@
                 throw new ArgumentOutOfRangeException(nameof(fontSize), "Font size must be greater than 0");
             }
 
+            var fontProgram = fontStore.FontProgram;
+
             var fm = fontProgram.GetFontMatrix();
 
             var textMatrix = TransformationMatrix.FromValues(1, 0, 0, 1, position.X, position.Y);
 
             var letters = DrawLetters(text, fontProgram, fm, fontSize, textMatrix);
 
-            operations.Add(BeginText.Value);
-            operations.Add(new SetFontAndSize(font.Name, fontSize));
-            operations.Add(new MoveToNextLineWithOffset((decimal)position.X, (decimal)position.Y));
+            CurrentStream.Add(BeginText.Value);
+            CurrentStream.Add(new SetFontAndSize(font.Name, fontSize));
+            CurrentStream.Add(new MoveToNextLineWithOffset((decimal)position.X, (decimal)position.Y));
             var bytesPerShow = new List<byte>();
             foreach (var letter in text)
             {
                 if (char.IsWhiteSpace(letter))
                 {
-                    operations.Add(new ShowText(bytesPerShow.ToArray()));
+                    CurrentStream.Add(new ShowText(bytesPerShow.ToArray()));
                     bytesPerShow.Clear();
                 }
 
@@ -262,10 +312,10 @@
 
             if (bytesPerShow.Count > 0)
             {
-                operations.Add(new ShowText(bytesPerShow.ToArray()));
+                CurrentStream.Add(new ShowText(bytesPerShow.ToArray()));
             }
 
-            operations.Add(EndText.Value);
+            CurrentStream.Add(EndText.Value);
 
             return letters;
         }
@@ -322,16 +372,16 @@
 
             resourcesDictionary[NameToken.Xobject] = xobjects.With(key, new IndirectReferenceToken(reference));
 
-            operations.Add(Push.Value);
+            CurrentStream.Add(Push.Value);
             // This needs to be the placement rectangle.
-            operations.Add(new ModifyCurrentTransformationMatrix(new []
+            CurrentStream.Add(new ModifyCurrentTransformationMatrix(new []
             {
                 (decimal)placementRectangle.Width, 0,
                 0, (decimal)placementRectangle.Height,
                 (decimal)placementRectangle.BottomLeft.X, (decimal)placementRectangle.BottomLeft.Y
             }));
-            operations.Add(new InvokeNamedXObject(key));
-            operations.Add(Pop.Value);
+            CurrentStream.Add(new InvokeNamedXObject(key));
+            CurrentStream.Add(Pop.Value);
 
             return new AddedImage(reference, info.Width, info.Height);
         }
@@ -361,16 +411,16 @@
 
             resourcesDictionary[NameToken.Xobject] = xobjects.With(key, new IndirectReferenceToken(image.Reference));
 
-            operations.Add(Push.Value);
+            CurrentStream.Add(Push.Value);
             // This needs to be the placement rectangle.
-            operations.Add(new ModifyCurrentTransformationMatrix(new[]
+            CurrentStream.Add(new ModifyCurrentTransformationMatrix(new[]
             {
                 (decimal)placementRectangle.Width, 0,
                 0, (decimal)placementRectangle.Height,
                 (decimal)placementRectangle.BottomLeft.X, (decimal)placementRectangle.BottomLeft.Y
             }));
-            operations.Add(new InvokeNamedXObject(key));
-            operations.Add(Pop.Value);
+            CurrentStream.Add(new InvokeNamedXObject(key));
+            CurrentStream.Add(Pop.Value);
         }
 
         /// <summary>
@@ -439,18 +489,181 @@
 
             resourcesDictionary[NameToken.Xobject] = xobjects.With(key, new IndirectReferenceToken(reference));
 
-            operations.Add(Push.Value);
+            CurrentStream.Add(Push.Value);
             // This needs to be the placement rectangle.
-            operations.Add(new ModifyCurrentTransformationMatrix(new[]
+            CurrentStream.Add(new ModifyCurrentTransformationMatrix(new[]
             {
                 (decimal)placementRectangle.Width, 0,
                 0, (decimal)placementRectangle.Height,
                 (decimal)placementRectangle.BottomLeft.X, (decimal)placementRectangle.BottomLeft.Y
             }));
-            operations.Add(new InvokeNamedXObject(key));
-            operations.Add(Pop.Value);
+            CurrentStream.Add(new InvokeNamedXObject(key));
+            CurrentStream.Add(Pop.Value);
 
             return new AddedImage(reference, png.Width, png.Height);
+        }
+
+        /// <summary>
+        /// Copy a page from unknown source to this page
+        /// </summary>
+        /// <param name="srcPage">Page to be copied</param>
+        public void CopyFrom(Page srcPage)
+        {
+            ContentStream destinationStream = null;
+            if (CurrentStream.Operations.Count > 0)
+            {
+                NewContentStreamAfter();
+            }
+
+            destinationStream = CurrentStream;
+
+            if (!srcPage.Dictionary.TryGet(NameToken.Resources, srcPage.pdfScanner, out DictionaryToken srcResourceDictionary))
+            {
+                // If the page doesn't have resources, then we copy the entire content stream, since not operation would collide 
+                // with the ones already written
+                destinationStream.Operations.AddRange(srcPage.Operations);
+                return;
+            }
+
+            // TODO: How should we handle any other token in the page dictionary (Eg. LastModified, MediaBox, CropBox, BleedBox, TrimBox, ArtBox,
+            //      BoxColorInfo, Rotate, Group, Thumb, B, Dur, Trans, Annots, AA, Metadata, PieceInfo, StructParents, ID, PZ, SeparationInfo, Tabs,
+            //      TemplateInstantiated, PresSteps, UserUnit, VP)
+
+            var operations = new List<IGraphicsStateOperation>(srcPage.Operations);
+
+            // We need to relocate the resources, and we have to make sure that none of the resources collide with 
+            // the already written operation's resources
+
+            foreach (var set in srcResourceDictionary.Data)
+            {
+                var nameToken = NameToken.Create(set.Key);
+                if (nameToken == NameToken.Font || nameToken == NameToken.Xobject)
+                {
+                    // We have to skip this two because we have a separate dictionary for them
+                    continue;
+                }
+
+                if (!resourcesDictionary.TryGetValue(nameToken, out var currentToken))
+                {
+                    // It means that this type of resources doesn't currently exist in the page, so we can copy it
+                    // with no problem
+                    resourcesDictionary[nameToken] = documentBuilder.CopyToken(set.Value, srcPage.pdfScanner);
+                    continue;
+                }
+
+                // TODO: I need to find a test case
+                // It would have ExtendedGraphics or colorspaces, etc...
+            }
+
+            // Special cases
+            // Since we don't directly add font's to the pages resources, we have to go look at the document's font
+            if(srcResourceDictionary.TryGet(NameToken.Font, srcPage.pdfScanner, out DictionaryToken fontsDictionary))
+            {
+                Dictionary<NameToken, IToken> pageFontsDictionary = null;
+                if (resourcesDictionary.TryGetValue(NameToken.Font, out var pageFontsToken))
+                {
+                    pageFontsDictionary = (pageFontsToken as DictionaryToken)?.Data.ToDictionary(k => NameToken.Create(k.Key), v => v.Value);
+                    Debug.Assert(pageFontsDictionary != null);
+                }
+                else
+                {
+                    pageFontsDictionary = new Dictionary<NameToken, IToken>();
+                }
+
+                foreach (var fontSet in fontsDictionary.Data)
+                {
+                    var fontName = fontSet.Key;
+                    var addedFont = documentBuilder.Fonts.Values.FirstOrDefault(f => f.FontKey.Name.Data == fontName);
+                    if (addedFont != default)
+                    {
+                        // This would mean that the imported font collide with one of the added font. so we have to rename it
+
+                        var newName = $"F{documentBuilder.fontId++}";
+
+                        // Set all the pertinent SetFontAndSize operations with the new name
+                        operations = operations.Select(op =>
+                        {
+                            if (!(op is SetFontAndSize fontAndSizeOperation))
+                            {
+                                return op;
+                            }
+
+                            if (fontAndSizeOperation.Font.Data == fontName)
+                            {
+                                return new SetFontAndSize(NameToken.Create(newName), fontAndSizeOperation.Size);
+                            }
+
+                            return op;
+                        }).ToList();
+
+                        fontName = newName;
+                    }
+
+                    if (!(fontSet.Value is IndirectReferenceToken fontReferenceToken))
+                    {
+                        throw new PdfDocumentFormatException($"Expected a IndirectReferenceToken for the font, got a {fontSet.Value.GetType().Name}");
+                    }
+
+                    pageFontsDictionary.Add(NameToken.Create(fontName), documentBuilder.CopyToken(fontReferenceToken, srcPage.pdfScanner));
+                }
+
+                resourcesDictionary[NameToken.Font] = new DictionaryToken(pageFontsDictionary);
+            }
+
+            // Since we don't directly add xobjects's to the pages resources, we have to go look at the document's xobjects
+            if (srcResourceDictionary.TryGet(NameToken.Xobject, srcPage.pdfScanner, out DictionaryToken xobjectsDictionary))
+            {
+                Dictionary<NameToken, IToken> pageXobjectsDictionary = null;
+                if (resourcesDictionary.TryGetValue(NameToken.Xobject, out var pageXobjectToken))
+                {
+                    pageXobjectsDictionary = (pageXobjectToken as DictionaryToken)?.Data.ToDictionary(k => NameToken.Create(k.Key), v => v.Value);
+                    Debug.Assert(pageXobjectsDictionary != null);
+                }
+                else
+                {
+                    pageXobjectsDictionary = new Dictionary<NameToken, IToken>();
+                }
+
+                var xobjectNamesUsed = Enumerable.Range(0, imageKey).Select(i => $"I{i}");
+                foreach (var xobjectSet in xobjectsDictionary.Data)
+                {
+                    var xobjectName = xobjectSet.Key;
+                    if (xobjectName[0] == 'I' && xobjectNamesUsed.Any(s => s == xobjectName))
+                    {
+                        // This would mean that the imported xobject collide with one of the added image. so we have to rename it
+                        var newName = $"I{imageKey++}";
+
+                        // Set all the pertinent SetFontAndSize operations with the new name
+                        operations = operations.Select(op =>
+                        {
+                            if (!(op is InvokeNamedXObject invokeNamedOperation))
+                            {
+                                return op;
+                            }
+
+                            if (invokeNamedOperation.Name.Data == xobjectName)
+                            {
+                                return new InvokeNamedXObject(NameToken.Create(newName));
+                            }
+
+                            return op;
+                        }).ToList();
+
+                        xobjectName = newName;
+                    }
+
+                    if (!(xobjectSet.Value is IndirectReferenceToken fontReferenceToken))
+                    {
+                        throw new PdfDocumentFormatException($"Expected a IndirectReferenceToken for the XObject, got a {xobjectSet.Value.GetType().Name}");
+                    }
+
+                    pageXobjectsDictionary.Add(NameToken.Create(xobjectName), documentBuilder.CopyToken(fontReferenceToken, srcPage.pdfScanner));
+                }
+
+                resourcesDictionary[NameToken.Xobject] = new DictionaryToken(pageXobjectsDictionary);
+            }
+
+            destinationStream.Operations.AddRange(operations);
         }
 
         private List<Letter> DrawLetters(string text, IWritingFont font, TransformationMatrix fontMatrix, decimal fontSize, TransformationMatrix textMatrix)
@@ -531,7 +744,7 @@
         /// <summary>
         /// Provides access to the raw page data structures for advanced editing use cases.
         /// </summary>
-        public class AdvancedEditing
+        public class ContentStream
         {
             /// <summary>
             /// The operations making up the page content stream.
@@ -539,11 +752,16 @@
             public List<IGraphicsStateOperation> Operations { get; }
 
             /// <summary>
-            /// Create a new <see cref="AdvancedEditing"/>.
+            /// Create a new <see cref="ContentStream"/>.
             /// </summary>
-            internal AdvancedEditing(List<IGraphicsStateOperation> operations)
+            internal ContentStream()
             {
-                Operations = operations;
+                Operations = new List<IGraphicsStateOperation>();
+            }
+
+            internal void Add(IGraphicsStateOperation newOperation)
+            {
+                Operations.Add(newOperation);
             }
         }
 
