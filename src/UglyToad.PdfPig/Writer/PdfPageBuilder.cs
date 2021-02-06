@@ -29,7 +29,9 @@
     public class PdfPageBuilder
     {
         private readonly PdfDocumentBuilder documentBuilder;
-        private readonly List<ContentStream> contentStreams;
+        private IPageContentStream currentStream;
+        internal readonly List<IPageContentStream> contentStreams;
+        internal readonly Dictionary<NameToken, IToken> additionalPageProperties = new Dictionary<NameToken, IToken>();
         private readonly Dictionary<NameToken, IToken> resourcesDictionary = new Dictionary<NameToken, IToken>();
 
         //a sequence number of ShowText operation to determine whether letters belong to same operation or not (letters that belong to different operations have less changes to belong to same word)
@@ -52,34 +54,44 @@
         /// <summary>
         /// Access to the underlying data structures for advanced use cases.
         /// </summary>
-        public ContentStream CurrentStream { get; private set; }
+        public IContentStream CurrentStream => currentStream;
 
         /// <summary>
         /// Access to
         /// </summary>
-        public IReadOnlyList<ContentStream> ContentStreams { get; }
+        public IReadOnlyList<IContentStream> ContentStreams => contentStreams;
 
         internal PdfPageBuilder(int number, PdfDocumentBuilder documentBuilder)
         {
             this.documentBuilder = documentBuilder ?? throw new ArgumentNullException(nameof(documentBuilder));
             PageNumber = number;
 
-            CurrentStream = new ContentStream();
-            ContentStreams = contentStreams = new List<ContentStream>()
-            {
-                CurrentStream
-            };
+            currentStream = new DefaultContentStream();
+            contentStreams = new List<IPageContentStream>() {currentStream};
         }
+
+        internal PdfPageBuilder(int number, PdfDocumentBuilder documentBuilder, IEnumerable<CopiedContentStream> copied,
+            Dictionary<NameToken, IToken> existingResources, Dictionary<NameToken, IToken> pageDict)
+        {
+            this.documentBuilder = documentBuilder ?? throw new ArgumentNullException(nameof(documentBuilder));
+            PageNumber = number;
+            contentStreams = new List<IPageContentStream>();
+            contentStreams.AddRange(copied);
+            currentStream = new DefaultContentStream();
+            contentStreams.Add(currentStream);
+            additionalPageProperties =pageDict ?? new Dictionary<NameToken, IToken>();
+            resourcesDictionary = existingResources;
+        }	        
 
         /// <summary>
         /// Allow to append a new content stream before the current one and select it
         /// </summary>
         public void NewContentStreamBefore()
         {
-            var index = Math.Max(contentStreams.IndexOf(CurrentStream) - 1, 0);
+            var index = Math.Max(contentStreams.IndexOf(currentStream) - 1, 0);
 
-            CurrentStream = new ContentStream();
-            contentStreams.Insert(index, CurrentStream);
+            currentStream = new DefaultContentStream();
+            contentStreams.Insert(index, currentStream);
         }
 
         /// <summary>
@@ -87,10 +99,10 @@
         /// </summary>
         public void NewContentStreamAfter()
         {
-            var index = Math.Min(contentStreams.IndexOf(CurrentStream) + 1, contentStreams.Count);
+            var index = Math.Min(contentStreams.IndexOf(currentStream) + 1, contentStreams.Count);
 
-            CurrentStream = new ContentStream();
-            contentStreams.Insert(index, CurrentStream);
+            currentStream = new DefaultContentStream();
+            contentStreams.Insert(index, currentStream);
         }
 
         /// <summary>
@@ -99,12 +111,12 @@
         /// <param name="index">index of the content stream to be selected</param>
         public void SelectContentStream(int index)
         {
-            if (index < 0 || index >= ContentStreams.Count)
+            if (index < 0 || index >= contentStreams.Count)
             {
                 throw new IndexOutOfRangeException(nameof(index));
             }
 
-            CurrentStream = ContentStreams[index];
+            currentStream = contentStreams[index];
         }
 
         /// <summary>
@@ -117,16 +129,16 @@
         {
             if (lineWidth != 1)
             {
-                CurrentStream.Add(new SetLineWidth(lineWidth));
+                currentStream.Add(new SetLineWidth(lineWidth));
             }
 
-            CurrentStream.Add(new BeginNewSubpath((decimal)from.X, (decimal)from.Y));
-            CurrentStream.Add(new AppendStraightLineSegment((decimal)to.X, (decimal)to.Y));
-            CurrentStream.Add(StrokePath.Value);
+            currentStream.Add(new BeginNewSubpath((decimal)from.X, (decimal)from.Y));
+            currentStream.Add(new AppendStraightLineSegment((decimal)to.X, (decimal)to.Y));
+            currentStream.Add(StrokePath.Value);
 
             if (lineWidth != 1)
             {
-                CurrentStream.Add(new SetLineWidth(1));
+                currentStream.Add(new SetLineWidth(1));
             }
         }
 
@@ -142,23 +154,23 @@
         {
             if (lineWidth != 1)
             {
-                CurrentStream.Add(new SetLineWidth(lineWidth));
+                currentStream.Add(new SetLineWidth(lineWidth));
             }
 
-            CurrentStream.Add(new AppendRectangle((decimal)position.X, (decimal)position.Y, width, height));
+            currentStream.Add(new AppendRectangle((decimal)position.X, (decimal)position.Y, width, height));
 
             if (fill)
             {
-                CurrentStream.Add(FillPathEvenOddRuleAndStroke.Value);
+                currentStream.Add(FillPathEvenOddRuleAndStroke.Value);
             }
             else
             {
-                CurrentStream.Add(StrokePath.Value);
+                currentStream.Add(StrokePath.Value);
             }
 
             if (lineWidth != 1)
             {
-                CurrentStream.Add(new SetLineWidth(lineWidth));
+                currentStream.Add(new SetLineWidth(lineWidth));
             }
         }
 
@@ -170,8 +182,8 @@
         /// <param name="b">Blue - 0 to 255</param>
         public void SetStrokeColor(byte r, byte g, byte b)
         {
-            CurrentStream.Add(Push.Value);
-            CurrentStream.Add(new SetStrokeColorDeviceRgb(RgbToDecimal(r), RgbToDecimal(g), RgbToDecimal(b)));
+            currentStream.Add(Push.Value);
+            currentStream.Add(new SetStrokeColorDeviceRgb(RgbToDecimal(r), RgbToDecimal(g), RgbToDecimal(b)));
         }
 
         /// <summary>
@@ -182,8 +194,8 @@
         /// <param name="b">Blue - 0 to 1</param>
         internal void SetStrokeColorExact(decimal r, decimal g, decimal b)
         {
-            CurrentStream.Add(Push.Value);
-            CurrentStream.Add(new SetStrokeColorDeviceRgb(CheckRgbDecimal(r, nameof(r)),
+            currentStream.Add(Push.Value);
+            currentStream.Add(new SetStrokeColorDeviceRgb(CheckRgbDecimal(r, nameof(r)),
                 CheckRgbDecimal(g, nameof(g)), CheckRgbDecimal(b, nameof(b))));
         }
 
@@ -195,8 +207,8 @@
         /// <param name="b">Blue - 0 to 255</param>
         public void SetTextAndFillColor(byte r, byte g, byte b)
         {
-            CurrentStream.Add(Push.Value);
-            CurrentStream.Add(new SetNonStrokeColorDeviceRgb(RgbToDecimal(r), RgbToDecimal(g), RgbToDecimal(b)));
+            currentStream.Add(Push.Value);
+            currentStream.Add(new SetNonStrokeColorDeviceRgb(RgbToDecimal(r), RgbToDecimal(g), RgbToDecimal(b)));
         }
 
         /// <summary>
@@ -204,7 +216,7 @@
         /// </summary>
         public void ResetColor()
         {
-            CurrentStream.Add(Pop.Value);
+            currentStream.Add(Pop.Value);
         }
 
         /// <summary>
@@ -294,15 +306,15 @@
 
             var letters = DrawLetters(text, fontProgram, fm, fontSize, textMatrix);
 
-            CurrentStream.Add(BeginText.Value);
-            CurrentStream.Add(new SetFontAndSize(font.Name, fontSize));
-            CurrentStream.Add(new MoveToNextLineWithOffset((decimal)position.X, (decimal)position.Y));
+            currentStream.Add(BeginText.Value);
+            currentStream.Add(new SetFontAndSize(font.Name, fontSize));
+            currentStream.Add(new MoveToNextLineWithOffset((decimal)position.X, (decimal)position.Y));
             var bytesPerShow = new List<byte>();
             foreach (var letter in text)
             {
                 if (char.IsWhiteSpace(letter))
                 {
-                    CurrentStream.Add(new ShowText(bytesPerShow.ToArray()));
+                    currentStream.Add(new ShowText(bytesPerShow.ToArray()));
                     bytesPerShow.Clear();
                 }
 
@@ -312,10 +324,10 @@
 
             if (bytesPerShow.Count > 0)
             {
-                CurrentStream.Add(new ShowText(bytesPerShow.ToArray()));
+                currentStream.Add(new ShowText(bytesPerShow.ToArray()));
             }
 
-            CurrentStream.Add(EndText.Value);
+            currentStream.Add(EndText.Value);
 
             return letters;
         }
@@ -370,20 +382,20 @@
 
             var key = NameToken.Create($"I{imageKey++}");
 
-            resourcesDictionary[NameToken.Xobject] = xobjects.With(key, new IndirectReferenceToken(reference));
+            resourcesDictionary[NameToken.Xobject] = xobjects.With(key, reference);
 
-            CurrentStream.Add(Push.Value);
+            currentStream.Add(Push.Value);
             // This needs to be the placement rectangle.
-            CurrentStream.Add(new ModifyCurrentTransformationMatrix(new []
+            currentStream.Add(new ModifyCurrentTransformationMatrix(new []
             {
                 (decimal)placementRectangle.Width, 0,
                 0, (decimal)placementRectangle.Height,
                 (decimal)placementRectangle.BottomLeft.X, (decimal)placementRectangle.BottomLeft.Y
             }));
-            CurrentStream.Add(new InvokeNamedXObject(key));
-            CurrentStream.Add(Pop.Value);
+            currentStream.Add(new InvokeNamedXObject(key));
+            currentStream.Add(Pop.Value);
 
-            return new AddedImage(reference, info.Width, info.Height);
+            return new AddedImage(reference.Data, info.Width, info.Height);
         }
 
         /// <summary>
@@ -411,16 +423,16 @@
 
             resourcesDictionary[NameToken.Xobject] = xobjects.With(key, new IndirectReferenceToken(image.Reference));
 
-            CurrentStream.Add(Push.Value);
+            currentStream.Add(Push.Value);
             // This needs to be the placement rectangle.
-            CurrentStream.Add(new ModifyCurrentTransformationMatrix(new[]
+            currentStream.Add(new ModifyCurrentTransformationMatrix(new[]
             {
                 (decimal)placementRectangle.Width, 0,
                 0, (decimal)placementRectangle.Height,
                 (decimal)placementRectangle.BottomLeft.X, (decimal)placementRectangle.BottomLeft.Y
             }));
-            CurrentStream.Add(new InvokeNamedXObject(key));
-            CurrentStream.Add(Pop.Value);
+            currentStream.Add(new InvokeNamedXObject(key));
+            currentStream.Add(Pop.Value);
         }
 
         /// <summary>
@@ -487,20 +499,20 @@
 
             var key = NameToken.Create($"I{imageKey++}");
 
-            resourcesDictionary[NameToken.Xobject] = xobjects.With(key, new IndirectReferenceToken(reference));
+            resourcesDictionary[NameToken.Xobject] = xobjects.With(key, reference);
 
-            CurrentStream.Add(Push.Value);
+            currentStream.Add(Push.Value);
             // This needs to be the placement rectangle.
-            CurrentStream.Add(new ModifyCurrentTransformationMatrix(new[]
+            currentStream.Add(new ModifyCurrentTransformationMatrix(new[]
             {
                 (decimal)placementRectangle.Width, 0,
                 0, (decimal)placementRectangle.Height,
                 (decimal)placementRectangle.BottomLeft.X, (decimal)placementRectangle.BottomLeft.Y
             }));
-            CurrentStream.Add(new InvokeNamedXObject(key));
-            CurrentStream.Add(Pop.Value);
+            currentStream.Add(new InvokeNamedXObject(key));
+            currentStream.Add(Pop.Value);
 
-            return new AddedImage(reference, png.Width, png.Height);
+            return new AddedImage(reference.Data, png.Width, png.Height);
         }
 
         /// <summary>
@@ -509,13 +521,12 @@
         /// <param name="srcPage">Page to be copied</param>
         public void CopyFrom(Page srcPage)
         {
-            ContentStream destinationStream = null;
-            if (CurrentStream.Operations.Count > 0)
+            if (currentStream.Operations.Count > 0)
             {
                 NewContentStreamAfter();
             }
 
-            destinationStream = CurrentStream;
+            var destinationStream = currentStream;
 
             if (!srcPage.Dictionary.TryGet(NameToken.Resources, srcPage.pdfScanner, out DictionaryToken srcResourceDictionary))
             {
@@ -547,7 +558,7 @@
                 {
                     // It means that this type of resources doesn't currently exist in the page, so we can copy it
                     // with no problem
-                    resourcesDictionary[nameToken] = documentBuilder.CopyToken(set.Value, srcPage.pdfScanner);
+                    resourcesDictionary[nameToken] = documentBuilder.CopyToken(srcPage.pdfScanner, set.Value);
                     continue;
                 }
 
@@ -604,7 +615,7 @@
                         throw new PdfDocumentFormatException($"Expected a IndirectReferenceToken for the font, got a {fontSet.Value.GetType().Name}");
                     }
 
-                    pageFontsDictionary.Add(NameToken.Create(fontName), documentBuilder.CopyToken(fontReferenceToken, srcPage.pdfScanner));
+                    pageFontsDictionary.Add(NameToken.Create(fontName), documentBuilder.CopyToken(srcPage.pdfScanner, fontReferenceToken));
                 }
 
                 resourcesDictionary[NameToken.Font] = new DictionaryToken(pageFontsDictionary);
@@ -657,7 +668,7 @@
                         throw new PdfDocumentFormatException($"Expected a IndirectReferenceToken for the XObject, got a {xobjectSet.Value.GetType().Name}");
                     }
 
-                    pageXobjectsDictionary.Add(NameToken.Create(xobjectName), documentBuilder.CopyToken(fontReferenceToken, srcPage.pdfScanner));
+                    pageXobjectsDictionary.Add(NameToken.Create(xobjectName), documentBuilder.CopyToken(srcPage.pdfScanner, fontReferenceToken));
                 }
 
                 resourcesDictionary[NameToken.Xobject] = new DictionaryToken(pageXobjectsDictionary);
@@ -741,29 +752,89 @@
             return value;
         }
 
+        internal interface IPageContentStream : IContentStream
+        {
+            bool ReadOnly { get; }
+            void Add(IGraphicsStateOperation operation);
+            IndirectReferenceToken Write(IPdfStreamWriter writer);
+        }
+
         /// <summary>
         /// Provides access to the raw page data structures for advanced editing use cases.
         /// </summary>
-        public class ContentStream
+        public interface IContentStream
         {
             /// <summary>
             /// The operations making up the page content stream.
             /// </summary>
-            public List<IGraphicsStateOperation> Operations { get; }
+            List<IGraphicsStateOperation> Operations { get; }
+        }
 
-            /// <summary>
-            /// Create a new <see cref="ContentStream"/>.
-            /// </summary>
-            internal ContentStream()
+        internal class DefaultContentStream : IPageContentStream
+        {
+            private readonly List<IGraphicsStateOperation> operations;
+
+            public DefaultContentStream() : this(new List<IGraphicsStateOperation>())
             {
-                Operations = new List<IGraphicsStateOperation>();
+                
+            }
+            public DefaultContentStream(List<IGraphicsStateOperation> operations)
+            {
+                this.operations = operations;
             }
 
-            internal void Add(IGraphicsStateOperation newOperation)
+            public bool ReadOnly => false;
+
+            public void Add(IGraphicsStateOperation operation)
             {
-                Operations.Add(newOperation);
+                operations.Add(operation);
+            }
+
+            public List<IGraphicsStateOperation> Operations => operations;
+
+            public IndirectReferenceToken Write(IPdfStreamWriter writer)
+            {
+                using (var memoryStream = new MemoryStream())
+                {
+                    foreach (var operation in operations)
+                    {
+                        operation.Write(memoryStream);
+                    }
+
+                    var bytes = memoryStream.ToArray();
+
+                    var stream = DataCompresser.CompressToStream(bytes);
+
+                    return writer.WriteToken(stream);
+                }
+
             }
         }
+
+        internal class CopiedContentStream : IPageContentStream
+        {
+            private readonly IndirectReferenceToken token;
+            public CopiedContentStream(IndirectReferenceToken indirectReferenceToken)
+            {
+                token = indirectReferenceToken;
+            }
+            public bool ReadOnly => true;
+
+
+            public IndirectReferenceToken Write(IPdfStreamWriter writer)
+            {
+                return token;
+            }
+
+            public void Add(IGraphicsStateOperation operation)
+            {
+                throw new NotSupportedException("Writing to a copied content stream is not supported.");
+            }
+
+            public List<IGraphicsStateOperation> Operations => 
+                throw new NotSupportedException("Reading raw operations is not supported from a copied content stream.");
+        }
+
 
         /// <summary>
         /// A key representing an image available to use for the current document builder.

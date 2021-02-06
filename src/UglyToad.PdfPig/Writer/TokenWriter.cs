@@ -131,7 +131,7 @@
         /// <param name="outputStream">The output stream to write to.</param>
         /// <param name="documentInformationReference">The object reference for the document information dictionary if present.</param>
         internal static void WriteCrossReferenceTable(IReadOnlyDictionary<IndirectReference, long> objectOffsets,
-            ObjectToken catalogToken,
+            IndirectReference catalogToken,
             Stream outputStream,
             IndirectReference? documentInformationReference)
         {
@@ -201,7 +201,7 @@
             {
                 // 1 for the free entry.
                 {NameToken.Size, new NumericToken(objectOffsets.Count + 1)},
-                {NameToken.Root, new IndirectReferenceToken(catalogToken.Number)},
+                {NameToken.Root, new IndirectReferenceToken(catalogToken)},
                 {NameToken.Id, identifier}
             };
 
@@ -223,6 +223,32 @@
 
             // Complete!
             outputStream.Write(Eof, 0, Eof.Length);
+        }
+
+        /// <summary>
+        /// Writes pre-serialized token as an object token to the output stream.
+        /// </summary>
+        /// <param name="objectNumber">Object number of the indirect object.</param>
+        /// <param name="generation">Generation of the indirect object.</param>
+        /// <param name="data">Pre-serialized object contents.</param>
+        /// <param name="outputStream">The stream to write the token to.</param>
+        internal static void WriteObject(long objectNumber, int generation, byte[] data, Stream outputStream)
+        {
+            WriteLong(objectNumber, outputStream);
+            WriteWhitespace(outputStream);
+
+            WriteInt(generation, outputStream);
+            WriteWhitespace(outputStream);
+
+            outputStream.Write(ObjStart, 0, ObjStart.Length);
+            WriteLineBreak(outputStream);
+
+            outputStream.Write(data, 0, data.Length);
+
+            WriteLineBreak(outputStream);
+            outputStream.Write(ObjEnd, 0, ObjEnd.Length);
+
+            WriteLineBreak(outputStream);
         }
 
         private static void WriteHex(HexToken hex, Stream stream)

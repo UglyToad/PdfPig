@@ -47,13 +47,16 @@
             CanMerge2SimpleDocumentsAssertions(new MemoryStream(result), "I am a simple pdf.", "Write something inInkscape");
         }
 
-        private void CanMerge2SimpleDocumentsAssertions(Stream stream, string page1Text, string page2Text)
+        internal static void CanMerge2SimpleDocumentsAssertions(Stream stream, string page1Text, string page2Text, bool checkVersion=true)
         {
             stream.Position = 0;
             using (var document = PdfDocument.Open(stream, ParsingOptions.LenientParsingOff))
             {
                 Assert.Equal(2, document.NumberOfPages);
-                Assert.Equal(1.5m, document.Version);
+                if (checkVersion)
+                {
+                    Assert.Equal(1.5m, document.Version);
+                }
 
                 var page1 = document.GetPage(1);
                 Assert.Equal(page1Text, page1.Text);

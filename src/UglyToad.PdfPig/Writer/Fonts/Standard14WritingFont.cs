@@ -55,7 +55,7 @@
             return TransformationMatrix.FromValues(1/1000.0, 0, 0, 1/1000.0, 0, 0);
         }
 
-        public ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context)
+        public IndirectReferenceToken WriteFont(IPdfStreamWriter writer, NameToken fontKeyName)
         {
             var dictionary = new Dictionary<NameToken, IToken>
             {
@@ -68,7 +68,7 @@
 
             var token = new DictionaryToken(dictionary);
 
-            var result = context.WriteObject(outputStream, token);
+            var result = writer.WriteToken(token);
 
             return result;
         }
@@ -92,46 +92,5 @@
             return result;
         }
     }
-
-    internal class BuilderContext
-    {
-        private readonly List<int> reservedNumbers = new List<int>();
-
-        public int CurrentNumber { get; private set; } = 1;
-
-        private readonly Dictionary<IndirectReference, long> objectOffsets = new Dictionary<IndirectReference, long>();
-        public IReadOnlyDictionary<IndirectReference, long> ObjectOffsets => objectOffsets;
-
-        public ObjectToken WriteObject(Stream stream, IToken token, int? reservedNumber = null)
-        {
-            int number;
-            if (reservedNumber.HasValue)
-            {
-                if (!reservedNumbers.Remove(reservedNumber.Value))
-                {
-                    throw new InvalidOperationException();
-                }
-
-                number = reservedNumber.Value;
-            }
-            else
-            {
-                number = CurrentNumber++;
-            }
-
-            var reference = new IndirectReference(number, 0);
-            var obj = new ObjectToken(stream.Position, reference, token);
-            objectOffsets.Add(reference, obj.Position);
-            TokenWriter.WriteToken(obj, stream);
-            return obj;
-        }
-
-        public int ReserveNumber()
-        {
-            var reserved = CurrentNumber;
-            reservedNumbers.Add(reserved);
-            CurrentNumber++;
-            return reserved;
-        }
-    }
+    
 }

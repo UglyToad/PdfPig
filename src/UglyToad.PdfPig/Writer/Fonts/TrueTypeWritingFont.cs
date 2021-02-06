@@ -47,14 +47,14 @@
             return TransformationMatrix.FromValues(1.0 / unitsPerEm, 0, 0, 1.0 / unitsPerEm, 0, 0);
         }
 
-        public ObjectToken WriteFont(NameToken fontKeyName, Stream outputStream, BuilderContext context)
+        public IndirectReferenceToken  WriteFont(IPdfStreamWriter writer, NameToken fontKeyName)
         {
             var newEncoding = new TrueTypeSubsetEncoding(characterMapping.Keys.ToList());
             var subsetBytes = TrueTypeSubsetter.Subset(fontFileBytes.ToArray(), newEncoding);
 
             var embeddedFile = DataCompresser.CompressToStream(subsetBytes);
 
-            var fileRef = context.WriteObject(outputStream, embeddedFile);
+            var fileRef = writer.WriteToken(embeddedFile);
 
             var baseFont = NameToken.Create(font.TableRegister.NameTable.GetPostscriptName());
 
@@ -76,7 +76,7 @@
                 { NameToken.Descent, new NumericToken(Math.Round(hhead.Descent * scaling, 2)) },
                 { NameToken.CapHeight, new NumericToken(90) },
                 { NameToken.StemV, new NumericToken(90) },
-                { NameToken.FontFile2, new IndirectReferenceToken(fileRef.Number) }
+                { NameToken.FontFile2, fileRef }
             };
 
             var os2 = font.TableRegister.Os2Table;
@@ -108,27 +108,27 @@
                 widths.Add(new NumericToken(width));
             }
 
-            var descriptor = context.WriteObject(outputStream, new DictionaryToken(descriptorDictionary));
+            var descriptor = writer.WriteToken(new DictionaryToken(descriptorDictionary));
 
             var toUnicodeCMap = ToUnicodeCMapBuilder.ConvertToCMapStream(characterMapping);
             var toUnicodeStream = DataCompresser.CompressToStream(toUnicodeCMap);
-            var toUnicode = context.WriteObject(outputStream, toUnicodeStream);
+            var toUnicode = writer.WriteToken(toUnicodeStream);
 
             var dictionary = new Dictionary<NameToken, IToken>
             {
                 { NameToken.Type, NameToken.Font },
                 { NameToken.Subtype, NameToken.TrueType },
                 { NameToken.BaseFont, baseFont },
-                { NameToken.FontDescriptor, new IndirectReferenceToken(descriptor.Number) },
+                { NameToken.FontDescriptor, descriptor },
                 { NameToken.FirstChar, new NumericToken(0) },
                 { NameToken.LastChar, new NumericToken(lastCharacter) },
                 { NameToken.Widths, new ArrayToken(widths) },
-                {NameToken.ToUnicode, new IndirectReferenceToken(toUnicode.Number) }
+                {NameToken.ToUnicode, toUnicode }
             };
 
             var token = new DictionaryToken(dictionary);
 
-            var result = context.WriteObject(outputStream, token);
+            var result = writer.WriteToken(token);
 
             return result;
         }
