@@ -3,6 +3,7 @@
     using System.IO;
     using Core;
     using Tokens;
+    using Util.JetBrains.Annotations;
 
     internal interface IWritingFont
     {
@@ -16,7 +17,7 @@
 
         TransformationMatrix GetFontMatrix();
 
-        IndirectReferenceToken WriteFont(IPdfStreamWriter writer, NameToken fontKeyName);
+        IndirectReferenceToken WriteFont(IPdfStreamWriter writer, [CanBeNull]IndirectReferenceToken reservedIndirect=null);
 
         byte GetValueForCharacter(char character);
     }

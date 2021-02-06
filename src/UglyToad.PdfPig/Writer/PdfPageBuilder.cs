@@ -33,6 +33,10 @@
         internal readonly List<IPageContentStream> contentStreams;
         internal readonly Dictionary<NameToken, IToken> additionalPageProperties = new Dictionary<NameToken, IToken>();
         private readonly Dictionary<NameToken, IToken> resourcesDictionary = new Dictionary<NameToken, IToken>();
+        internal Dictionary<NameToken, IToken> fontDictionary = new Dictionary<NameToken, IToken>();
+        internal int nextFontId = 1;
+        private readonly Dictionary<Guid, NameToken> documentFonts = new Dictionary<Guid, NameToken>();
+        
 
         //a sequence number of ShowText operation to determine whether letters belong to same operation or not (letters that belong to different operations have less changes to belong to same word)
         private int textSequence;
@@ -259,7 +263,7 @@
 
             var textMatrix = TransformationMatrix.FromValues(1, 0, 0, 1, position.X, position.Y);
 
-            var letters = DrawLetters(text, fontProgram, fm, fontSize, textMatrix);
+            var letters = DrawLetters(null, text, fontProgram, fm, fontSize, textMatrix);
 
             return letters;
         }
@@ -298,16 +302,18 @@
                 throw new ArgumentOutOfRangeException(nameof(fontSize), "Font size must be greater than 0");
             }
 
+            var fontName = GetAddedFont(font);
+
             var fontProgram = fontStore.FontProgram;
 
             var fm = fontProgram.GetFontMatrix();
 
             var textMatrix = TransformationMatrix.FromValues(1, 0, 0, 1, position.X, position.Y);
 
-            var letters = DrawLetters(text, fontProgram, fm, fontSize, textMatrix);
+            var letters = DrawLetters(fontName, text, fontProgram, fm, fontSize, textMatrix);
 
             currentStream.Add(BeginText.Value);
-            currentStream.Add(new SetFontAndSize(font.Name, fontSize));
+            currentStream.Add(new SetFontAndSize(fontName, fontSize));
             currentStream.Add(new MoveToNextLineWithOffset((decimal)position.X, (decimal)position.Y));
             var bytesPerShow = new List<byte>();
             foreach (var letter in text)
@@ -330,6 +336,23 @@
             currentStream.Add(EndText.Value);
 
             return letters;
+        }
+
+        private NameToken GetAddedFont(PdfDocumentBuilder.AddedFont font)
+        {
+            if (!documentFonts.TryGetValue(font.Id, out NameToken value))
+            {
+                value = NameToken.Create($"F{nextFontId++}");
+                while (fontDictionary.ContainsKey(value))
+                {
+                    value = NameToken.Create($"F{nextFontId++}");
+                }
+
+                documentFonts[font.Id] = value;
+                fontDictionary[value] = font.Reference;
+            }
+
+            return value;
         }
 
         /// <summary>
@@ -583,13 +606,15 @@
 
                 foreach (var fontSet in fontsDictionary.Data)
                 {
-                    var fontName = fontSet.Key;
-                    var addedFont = documentBuilder.Fonts.Values.FirstOrDefault(f => f.FontKey.Name.Data == fontName);
-                    if (addedFont != default)
+                    var fontName = NameToken.Create(fontSet.Key);
+                    if (fontDictionary.ContainsKey(fontName))
                     {
                         // This would mean that the imported font collide with one of the added font. so we have to rename it
-
-                        var newName = $"F{documentBuilder.fontId++}";
+                        var newName = NameToken.Create($"F{nextFontId++}");
+                        while (fontDictionary.ContainsKey(newName))
+                        {
+                            newName = NameToken.Create($"F{nextFontId++}");
+                        }
 
                         // Set all the pertinent SetFontAndSize operations with the new name
                         operations = operations.Select(op =>
@@ -601,7 +626,7 @@
 
                             if (fontAndSizeOperation.Font.Data == fontName)
                             {
-                                return new SetFontAndSize(NameToken.Create(newName), fontAndSizeOperation.Size);
+                                return new SetFontAndSize(newName, fontAndSizeOperation.Size);
                             }
 
                             return op;
@@ -615,10 +640,13 @@
                         throw new PdfDocumentFormatException($"Expected a IndirectReferenceToken for the font, got a {fontSet.Value.GetType().Name}");
                     }
 
-                    pageFontsDictionary.Add(NameToken.Create(fontName), documentBuilder.CopyToken(srcPage.pdfScanner, fontReferenceToken));
+                    pageFontsDictionary.Add(fontName, documentBuilder.CopyToken(srcPage.pdfScanner, fontReferenceToken));
                 }
 
-                resourcesDictionary[NameToken.Font] = new DictionaryToken(pageFontsDictionary);
+                foreach (var item in pageFontsDictionary)
+                {
+                    fontDictionary[item.Key] = item.Value;
+                }
             }
 
             // Since we don't directly add xobjects's to the pages resources, we have to go look at the document's xobjects
@@ -677,7 +705,7 @@
             destinationStream.Operations.AddRange(operations);
         }
 
-        private List<Letter> DrawLetters(string text, IWritingFont font, TransformationMatrix fontMatrix, decimal fontSize, TransformationMatrix textMatrix)
+        private List<Letter> DrawLetters(NameToken name, string text, IWritingFont font, TransformationMatrix fontMatrix, decimal fontSize, TransformationMatrix textMatrix)
         {
             var horizontalScaling = 1;
             var rise = 0;
@@ -709,7 +737,7 @@
 
                 var documentSpace = textMatrix.Transform(renderingMatrix.Transform(fontMatrix.Transform(rect)));
 
-                var letter = new Letter(c.ToString(), documentSpace, advanceRect.BottomLeft, advanceRect.BottomRight, width, (double)fontSize, FontDetails.GetDefault(font.Name),
+                var letter = new Letter(c.ToString(), documentSpace, advanceRect.BottomLeft, advanceRect.BottomRight, width, (double)fontSize, FontDetails.GetDefault(name),
                     GrayColor.Black,
                     (double)fontSize,
                     textSequence);

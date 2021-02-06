@@ -8,6 +8,7 @@
     using PdfPig.Fonts.AdobeFontMetrics;
     using PdfPig.Fonts.Encodings;
     using Tokens;
+    using Util.JetBrains.Annotations;
 
     internal class Standard14WritingFont : IWritingFont
     {
@@ -55,18 +56,22 @@
             return TransformationMatrix.FromValues(1/1000.0, 0, 0, 1/1000.0, 0, 0);
         }
 
-        public IndirectReferenceToken WriteFont(IPdfStreamWriter writer, NameToken fontKeyName)
+        public IndirectReferenceToken WriteFont(IPdfStreamWriter writer, IndirectReferenceToken reservedIndirect=null)
         {
             var dictionary = new Dictionary<NameToken, IToken>
             {
                 { NameToken.Type, NameToken.Font },
                 { NameToken.Subtype, NameToken.Type1  },
                 { NameToken.BaseFont, NameToken.Create(metrics.FontName) },
-                { NameToken.Encoding, NameToken.MacRomanEncoding },
-                { NameToken.Name, fontKeyName }
+                { NameToken.Encoding, NameToken.MacRomanEncoding }
             };
 
             var token = new DictionaryToken(dictionary);
+
+            if (reservedIndirect != null)
+            {
+                return writer.WriteToken(token, reservedIndirect);
+            }
 
             var result = writer.WriteToken(token);
 

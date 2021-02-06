@@ -25,8 +25,12 @@
             public static IToken CopyToken(IPdfStreamWriter writer, IToken tokenToCopy, IPdfTokenScanner tokenScanner,
                 IDictionary<IndirectReference, IndirectReferenceToken> referencesFromDocument, Dictionary<IndirectReference, IndirectReferenceToken> callstack=null)
             {
-                callstack ??= new Dictionary<IndirectReference, IndirectReferenceToken>();
-                 // This token need to be deep copied, because they could contain reference. So we have to update them.
+                if (callstack == null)
+                {
+                    callstack = new Dictionary<IndirectReference, IndirectReferenceToken>();
+                }
+
+                // This token need to be deep copied, because they could contain reference. So we have to update them.
                 switch (tokenToCopy)
                 {
                     case DictionaryToken dictionaryToken:

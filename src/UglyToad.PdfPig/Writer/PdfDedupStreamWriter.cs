@@ -18,7 +18,7 @@ using Core;
         private const decimal DefaultVersion = 1.2m;
         private bool Initialized { get; set; }
         private readonly Dictionary<IndirectReference, long> offsets = new Dictionary<IndirectReference, long>();
-        private readonly Dictionary<byte[], IndirectReferenceToken> hashes = new (new FNVByteComparison());
+        private readonly Dictionary<byte[], IndirectReferenceToken> hashes = new Dictionary<byte[], IndirectReferenceToken>(new FNVByteComparison());
 
         public PdfDedupStreamWriter(Stream stream, bool dispose)
         {

@@ -158,9 +158,8 @@ namespace UglyToad.PdfPig.Writer
             {
                 var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFileBytes)));
                 var id = Guid.NewGuid();
-                var added = new AddedFont(id, NameToken.Create($"F{fontId++}"));
+                var added = new AddedFont(id, context.ReserveObjectNumber());
                 fonts[id] = new FontStored(added, new TrueTypeWritingFont(font, fontFileBytes));
-
                 return added;
             }
             catch (Exception ex)
@@ -183,9 +182,8 @@ namespace UglyToad.PdfPig.Writer
 
             var id = Guid.NewGuid();
             var name = NameToken.Create($"F{fontId++}");
-            var added = new AddedFont(id, name);
+            var added = new AddedFont(id, context.ReserveObjectNumber());
             fonts[id] = new FontStored(added, new Standard14WritingFont(Standard14.GetAdobeFontMetrics(type)));
-
             return added;
         }
 
@@ -350,6 +348,18 @@ namespace UglyToad.PdfPig.Writer
                     }
 
                     var builder = new PdfPageBuilder(pages.Count + 1, this, streams, resources, copiedPageDict);
+                    if (resources.TryGetValue(NameToken.Font, out var fonts))
+                    {
+                        var existingFontDict = fonts as DictionaryToken;
+                        foreach (var item in existingFontDict.Data)
+                        {
+                            var key = NameToken.Create(item.Key);
+                            builder.fontDictionary[key] = item.Value;
+                        }
+
+                        resources.Remove(NameToken.Font);
+                    }
+
                     pages[builder.PageNumber] = builder;
                     return builder;
                 }
@@ -422,7 +432,7 @@ namespace UglyToad.PdfPig.Writer
 
             foreach (var font in fonts)
             {
-                var fontObj = font.Value.FontProgram.WriteFont(context, font.Value.FontKey.Name);
+                var fontObj = font.Value.FontProgram.WriteFont(context, font.Value.FontKey.Reference);
                 fontsWritten.Add(font.Key, fontObj);
             }
 
@@ -440,16 +450,20 @@ namespace UglyToad.PdfPig.Writer
                 { NameToken.ProcSet, new ArrayToken(procSet) }
             };
 
-            if (fontsWritten.Count > 0)
-            {
-                var fontsDictionary = new DictionaryToken(fontsWritten.Select(x =>
-                        (fonts[x.Key].FontKey.Name, (IToken)x.Value))
-                    .ToDictionary(x => x.Item1, x => x.Item2));
-
-                var fontsDictionaryRef = context.WriteToken(fontsDictionary);
-
-                resources.Add(NameToken.Font, fontsDictionaryRef);
-            }
+            // var fontDictionary = new DictionaryToken(fontsWritten.Select(x =>
+            //         (fonts[x.Key].FontKey.Name, (IToken)x.Value))
+            //     .ToDictionary(x => x.Item1, x => x.Item2));
+            // var fontsDictionaryRef = context.WriteToken(fontDictionary);
+            // if (fontsWritten.Count > 0)
+            // {
+            //     var fontsDictionary = new DictionaryToken(fontsWritten.Select(x =>
+            //             (fonts[x.Key].FontKey.Name, (IToken)x.Value))
+            //         .ToDictionary(x => x.Item1, x => x.Item2));
+            // 
+            //     var fontsDictionaryRef = context.WriteToken(fontsDictionary);
+            // 
+            //     resources.Add(NameToken.Font, fontsDictionaryRef);
+            // }
 
             var parentIndirect = context.ReserveObjectNumber();
 
@@ -459,12 +473,22 @@ namespace UglyToad.PdfPig.Writer
                 var pageDictionary = page.Value.additionalPageProperties;
                 pageDictionary[NameToken.Type] = NameToken.Page;
                 pageDictionary[NameToken.Parent] = parentIndirect;
+                pageDictionary[NameToken.ProcSet] = new ArrayToken(procSet);
                 if (!pageDictionary.ContainsKey(NameToken.MediaBox))
                 {
                     pageDictionary[NameToken.MediaBox] = RectangleToArray(page.Value.PageSize);
                 }
 
-                pageDictionary[NameToken.Resources] = new DictionaryToken(page.Value.Resources);
+
+                // combine existing resources (if any) with added
+                var pageResources = new Dictionary<NameToken, IToken>();
+                foreach (var existing in page.Value.Resources)
+                {
+                    pageResources[existing.Key] = existing.Value;
+                }
+
+                pageResources[NameToken.Font] = new DictionaryToken(page.Value.fontDictionary);
+                pageDictionary[NameToken.Resources] = new DictionaryToken(pageResources);
 
                 if (page.Value.contentStreams.Count == 1)
                 {
@@ -579,15 +603,6 @@ namespace UglyToad.PdfPig.Writer
             });
         }
 
-        private static void WriteString(string text, MemoryStream stream, bool appendBreak = true)
-        {
-            var bytes = OtherEncodings.StringAsLatin1Bytes(text);
-            stream.Write(bytes, 0, bytes.Length);
-            if (appendBreak)
-            {
-                stream.WriteNewLine();
-            }
-        }
 
         internal class FontStored
         {
@@ -635,17 +650,17 @@ namespace UglyToad.PdfPig.Writer
             internal Guid Id { get; }
 
             /// <summary>
-            /// The name of this font.
+            /// Reference to the added font.
             /// </summary>
-            public NameToken Name { get; }
+            internal IndirectReferenceToken Reference { get; }
 
             /// <summary>
             /// Create a new <see cref="AddedFont"/>.
             /// </summary>
-            internal AddedFont(Guid id, NameToken name)
+            internal AddedFont(Guid id, IndirectReferenceToken reference)
             {
                 Id = id;
-                Name = name ?? throw new ArgumentNullException(nameof(name));
+                Reference = reference;
             }
         }
 

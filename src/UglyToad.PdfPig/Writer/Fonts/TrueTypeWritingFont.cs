@@ -47,7 +47,7 @@
             return TransformationMatrix.FromValues(1.0 / unitsPerEm, 0, 0, 1.0 / unitsPerEm, 0, 0);
         }
 
-        public IndirectReferenceToken  WriteFont(IPdfStreamWriter writer, NameToken fontKeyName)
+        public IndirectReferenceToken  WriteFont(IPdfStreamWriter writer, IndirectReferenceToken reservedIndirect=null)
         {
             var newEncoding = new TrueTypeSubsetEncoding(characterMapping.Keys.ToList());
             var subsetBytes = TrueTypeSubsetter.Subset(fontFileBytes.ToArray(), newEncoding);
@@ -128,9 +128,12 @@
 
             var token = new DictionaryToken(dictionary);
 
-            var result = writer.WriteToken(token);
+            if (reservedIndirect != null)
+            {
+                return writer.WriteToken(token, reservedIndirect);
+            }
 
-            return result;
+            return writer.WriteToken(token);
         }
 
         public byte GetValueForCharacter(char character)

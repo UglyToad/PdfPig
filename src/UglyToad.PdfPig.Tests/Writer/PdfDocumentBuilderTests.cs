@@ -719,7 +719,7 @@
 
             var b = builder.Build();
 
-            WriteFile(nameof(CanWriteSinglePageHelloWorld), b);
+            WriteFile(nameof(CanAddHelloWorldToSimplePage), b);
 
             Assert.NotEmpty(b);
 
@@ -859,10 +859,12 @@
                 {
                     foreach (var letter in page.Letters)
                     {
+                        
                         unchecked { letters += 1; }
                         unchecked { 
                             location += letter.Location.X;
                             location += letter.Location.Y;
+                            location += letter.Font.Name.Length;
                         }
                     }
                 }
