@@ -758,13 +758,16 @@
             var one = IntegrationHelpers.GetDocumentPath("Single Page Simple - from open office.pdf");
             var two = IntegrationHelpers.GetDocumentPath("Single Page Simple - from inkscape.pdf");
 
-            using var docOne = PdfDocument.Open(one);
-            using var docTwo = PdfDocument.Open(two);
-            var builder = new PdfDocumentBuilder();
-            builder.AddPage(docOne, 1);
-            builder.AddPage(docTwo, 1);
-            var result = builder.Build();
-            PdfMergerTests.CanMerge2SimpleDocumentsAssertions(new MemoryStream(result), "I am a simple pdf.", "Write something inInkscape", false);
+
+            using (var docOne = PdfDocument.Open(one)) 
+            using (var docTwo = PdfDocument.Open(two))
+            {
+                var builder = new PdfDocumentBuilder();
+                builder.AddPage(docOne, 1);
+                builder.AddPage(docTwo, 1);
+                var result = builder.Build();
+                PdfMergerTests.CanMerge2SimpleDocumentsAssertions(new MemoryStream(result), "I am a simple pdf.", "Write something inInkscape", false);
+            }
         }
 
         [Fact]
@@ -773,13 +776,18 @@
             var one = IntegrationHelpers.GetDocumentPath("Single Page Simple - from inkscape.pdf");
             var two = IntegrationHelpers.GetDocumentPath("Single Page Simple - from open office.pdf");
 
-            using var docOne = PdfDocument.Open(one);
-            using var docTwo = PdfDocument.Open(two);
-            var builder = new PdfDocumentBuilder();
-            builder.AddPage(docOne, 1);
-            builder.AddPage(docTwo, 1);
-            var result = builder.Build();
-            PdfMergerTests.CanMerge2SimpleDocumentsAssertions(new MemoryStream(result), "Write something inInkscape", "I am a simple pdf.", false);
+            using (var docOne = PdfDocument.Open(one))
+            using (var docTwo = PdfDocument.Open(two))
+            using (var builder = new PdfDocumentBuilder())
+            {
+                
+                builder.AddPage(docOne, 1);
+                builder.AddPage(docTwo, 1);
+                var result = builder.Build();
+                PdfMergerTests.CanMerge2SimpleDocumentsAssertions(new MemoryStream(result), "Write something inInkscape", "I am a simple pdf.", false);
+            }
+
+            
         }
 
         [Fact]
@@ -787,19 +795,20 @@
         {
             var one = IntegrationHelpers.GetDocumentPath("Multiple Page - from Mortality Statistics.pdf");
 
-            using var doc = PdfDocument.Open(one);
-
-            using var builder = new PdfDocumentBuilder();
-            builder.AddPage(doc, 1);
-            builder.AddPage(doc, 1);
-
-            var result = builder.Build();
-
-            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            using (var doc = PdfDocument.Open(one))
             {
-                Assert.Equal(2, document.NumberOfPages);
-                Assert.True(document.Structure.CrossReferenceTable.ObjectOffsets.Count <= 29,
-                    "Expected object count to be lower than 30"); // 45 objects with duplicates, 29 with correct re-use
+                var builder = new PdfDocumentBuilder();
+                builder.AddPage(doc, 1);
+                builder.AddPage(doc, 1);
+
+                var result = builder.Build();
+
+                using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+                {
+                    Assert.Equal(2, document.NumberOfPages);
+                    Assert.True(document.Structure.CrossReferenceTable.ObjectOffsets.Count <= 29,
+                        "Expected object count to be lower than 30"); // 45 objects with duplicates, 29 with correct re-use
+                }
             }
         }
 
@@ -807,21 +816,21 @@
         public void CanDedupObjectsFromDifferentDoc_HashBuilder()
         {
             var one = IntegrationHelpers.GetDocumentPath("Multiple Page - from Mortality Statistics.pdf");
-
-            using var doc = PdfDocument.Open(one);
-            using var doc2 = PdfDocument.Open(one);
-
-            using var builder = new PdfDocumentBuilder(new MemoryStream(), true, PdfWriterType.ObjectInMemoryDedup);
-            builder.AddPage(doc, 1);
-            builder.AddPage(doc2, 1);
-
-            var result = builder.Build();
-
-            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            using (var doc = PdfDocument.Open(one))
+            using (var doc2 = PdfDocument.Open(one))
+            using (var builder = new PdfDocumentBuilder(new MemoryStream(), true, PdfWriterType.ObjectInMemoryDedup))
             {
-                Assert.Equal(2, document.NumberOfPages);
-                Assert.True(document.Structure.CrossReferenceTable.ObjectOffsets.Count <= 29,
-                    "Expected object count to be lower than 30"); // 45 objects with duplicates, 29 with correct re-use
+                builder.AddPage(doc, 1);
+                builder.AddPage(doc2, 1);
+
+                var result = builder.Build();
+
+                using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+                {
+                    Assert.Equal(2, document.NumberOfPages);
+                    Assert.True(document.Structure.CrossReferenceTable.ObjectOffsets.Count <= 29,
+                        "Expected object count to be lower than 30"); // 45 objects with duplicates, 29 with correct re-use
+                }
             }
         }
 
@@ -834,22 +843,25 @@
         {
             var docPath = IntegrationHelpers.GetDocumentPath(name);
 
-            using var doc = PdfDocument.Open(docPath, ParsingOptions.LenientParsingOff);
-            var count1 = GetCounts(doc);
-
-            using var builder = new PdfDocumentBuilder();
-            for (var i = 1; i <= doc.NumberOfPages; i++)
+            using (var doc = PdfDocument.Open(docPath, ParsingOptions.LenientParsingOff))
+            using (var builder = new PdfDocumentBuilder())
             {
-                builder.AddPage(doc, i);
-            }
-            var result = builder.Build();
+                var count1 = GetCounts(doc);
 
-            using (var doc2 = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
-            {
-                var count2 = GetCounts(doc2);
-                Assert.Equal(count1.Item1, count2.Item1);
-                Assert.Equal(count1.Item2, count2.Item2);
+                for (var i = 1; i <= doc.NumberOfPages; i++)
+                {
+                    builder.AddPage(doc, i);
+                }
+                var result = builder.Build();
+
+                using (var doc2 = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+                {
+                    var count2 = GetCounts(doc2);
+                    Assert.Equal(count1.Item1, count2.Item1);
+                    Assert.Equal(count1.Item2, count2.Item2);
+                }
             }
+
 
             (int, double) GetCounts(PdfDocument toCount)
             {
