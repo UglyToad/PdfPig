@@ -167,6 +167,11 @@
         public IReadOnlyList<MarkedContentElement> GetMarkedContents() => Content.GetMarkedContents();
 
         /// <summary>
+        /// Gets any optional content on the page.
+        /// </summary>
+        public IDictionary<string, IReadOnlyList<OptionalContentGroupElement>> GetOptionalContents() => Content.GetOptionalContents();
+
+        /// <summary>
         /// Provides access to useful members which will change in future releases.
         /// </summary>
         public class Experimental
