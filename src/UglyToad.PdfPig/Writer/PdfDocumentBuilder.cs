@@ -492,7 +492,6 @@ namespace UglyToad.PdfPig.Writer
                     pageDictionary[NameToken.MediaBox] = RectangleToArray(page.Value.PageSize);
                 }
 
-
                 // combine existing resources (if any) with added
                 var pageResources = new Dictionary<NameToken, IToken>();
                 foreach (var existing in page.Value.Resources)
@@ -503,18 +502,25 @@ namespace UglyToad.PdfPig.Writer
                 pageResources[NameToken.Font] = new DictionaryToken(page.Value.fontDictionary);
                 pageDictionary[NameToken.Resources] = new DictionaryToken(pageResources);
 
-                if (page.Value.contentStreams.Count == 1)
+                var toWrite = page.Value.contentStreams.Where(x => x.HasContent).ToList();
+                if (toWrite.Count == 0)
                 {
-                    pageDictionary[NameToken.Contents] = page.Value.contentStreams[0].Write(context);
+                    // write empty
+                    pageDictionary[NameToken.Contents] = new PdfPageBuilder.DefaultContentStream().Write(context);
+                }
+                else if (toWrite.Count == 1)
+                {
+                    // write single
+                    pageDictionary[NameToken.Contents] = toWrite[0].Write(context);
                 }
                 else
                 {
+                    // write array
                     var streams = new List<IToken>();
-                    foreach (var stream in page.Value.contentStreams)
+                    foreach (var stream in toWrite)
                     {
                         streams.Add(stream.Write(context));
                     }
-
                     pageDictionary[NameToken.Contents] = new ArrayToken(streams);
                 }
 

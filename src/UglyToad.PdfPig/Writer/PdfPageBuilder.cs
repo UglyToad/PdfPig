@@ -783,8 +783,10 @@
         internal interface IPageContentStream : IContentStream
         {
             bool ReadOnly { get; }
+            bool HasContent { get; }
             void Add(IGraphicsStateOperation operation);
             IndirectReferenceToken Write(IPdfStreamWriter writer);
+
         }
 
         /// <summary>
@@ -812,6 +814,7 @@
             }
 
             public bool ReadOnly => false;
+            public bool HasContent => operations.Any();
 
             public void Add(IGraphicsStateOperation operation)
             {
@@ -842,12 +845,13 @@
         internal class CopiedContentStream : IPageContentStream
         {
             private readonly IndirectReferenceToken token;
+            public bool ReadOnly => true;
+            public bool HasContent => true;
+            
             public CopiedContentStream(IndirectReferenceToken indirectReferenceToken)
             {
                 token = indirectReferenceToken;
             }
-            public bool ReadOnly => true;
-
 
             public IndirectReferenceToken Write(IPdfStreamWriter writer)
             {

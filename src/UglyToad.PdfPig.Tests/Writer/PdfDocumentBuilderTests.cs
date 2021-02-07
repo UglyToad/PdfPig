@@ -6,6 +6,7 @@
     using Integration;
     using PdfPig.Core;
     using PdfPig.Fonts.Standard14Fonts;
+    using PdfPig.Tokens;
     using PdfPig.Writer;
     using Tests.Fonts.TrueType;
     using Xunit;
@@ -850,6 +851,82 @@
                 using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
                 {
                     Assert.Equal(count, document.NumberOfPages);
+                }
+            }
+        }
+
+        [Fact]
+        public void CanWriteEmptyContentStream()
+        {
+            using (var builder = new PdfDocumentBuilder())
+            {
+                builder.AddPage(PageSize.A4);
+                var result = builder.Build();
+                using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+                {
+                    Assert.Equal(1, document.NumberOfPages);
+                    var pg = document.GetPage(1);
+                    // single empty page should result in single content stream
+                    Assert.NotNull(pg.Dictionary.Data[NameToken.Contents] as IndirectReferenceToken);
+                }
+            }
+        }
+
+        [Fact]
+        public void CanWriteSingleContentStream()
+        {
+            using (var builder = new PdfDocumentBuilder())
+            {
+                var pb = builder.AddPage(PageSize.A4);
+                pb.DrawLine(new PdfPoint(1, 1), new PdfPoint(2, 2));
+                var result = builder.Build();
+                using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+                {
+                    Assert.Equal(1, document.NumberOfPages);
+                    var pg = document.GetPage(1);
+                    // single empty page should result in single content stream
+                    Assert.NotNull(pg.Dictionary.Data[NameToken.Contents] as IndirectReferenceToken);
+                }
+            }
+        }
+
+        [Fact]
+        public void CanWriteAndIgnoreEmptyContentStream()
+        {
+            using (var builder = new PdfDocumentBuilder())
+            {
+                var pb = builder.AddPage(PageSize.A4);
+                pb.DrawLine(new PdfPoint(1, 1), new PdfPoint(2, 2));
+                pb.NewContentStreamAfter();
+                var result = builder.Build();
+                using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+                {
+                    Assert.Equal(1, document.NumberOfPages);
+                    var pg = document.GetPage(1);
+                    // empty stream should be ignored and resulting single stream should be written
+                    Assert.NotNull(pg.Dictionary.Data[NameToken.Contents] as IndirectReferenceToken);
+                }
+            }
+        }
+
+        [Fact]
+        public void CanWriteMultipleContentStream()
+        {
+            using (var builder = new PdfDocumentBuilder())
+            {
+                var pb = builder.AddPage(PageSize.A4);
+                pb.DrawLine(new PdfPoint(1, 1), new PdfPoint(2, 2));
+                pb.NewContentStreamAfter();
+                pb.DrawLine(new PdfPoint(1, 1), new PdfPoint(2, 2));
+                var result = builder.Build();
+                using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+                {
+                    Assert.Equal(1, document.NumberOfPages);
+                    var pg = document.GetPage(1);
+                    // multiple streams should be written to array
+                    var streams = pg.Dictionary.Data[NameToken.Contents] as ArrayToken;
+                    Assert.NotNull(streams);
+                    Assert.Equal(2, streams.Length);
                 }
             }
         }
