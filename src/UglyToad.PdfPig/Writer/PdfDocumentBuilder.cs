@@ -271,8 +271,15 @@ namespace UglyToad.PdfPig.Writer
             return WriterUtil.CopyToken(context, token, source, refs);
         }
 
+        internal class PageInfo
+        {
+            public DictionaryToken Page { get; set; }
+            public List<DictionaryToken> Parents { get; set; }
+        }
         private readonly ConditionalWeakTable<IPdfTokenScanner, Dictionary<IndirectReference, IndirectReferenceToken>> existingCopies = 
             new ConditionalWeakTable<IPdfTokenScanner, Dictionary<IndirectReference, IndirectReferenceToken>>();
+        private readonly ConditionalWeakTable<PdfDocument, Dictionary<int, PageInfo>> existingTrees = 
+            new ConditionalWeakTable<PdfDocument,  Dictionary<int, PageInfo>>();
         /// <summary>
         /// Add a new page with the specified size, this page will be included in the output when <see cref="Build"/> is called.
         /// </summary>
@@ -287,87 +294,100 @@ namespace UglyToad.PdfPig.Writer
                 existingCopies.Add(document.Structure.TokenScanner, refs);
             }
 
-            int i = 1;
-            foreach (var (pageDict, parents) in WriterUtil.WalkTree(document.Structure.Catalog.PageTree))
+            if (!existingTrees.TryGetValue(document, out var pagesInfos))
             {
-                if (i == pageNumber)
+                pagesInfos = new Dictionary<int, PageInfo>();
+                int i = 1;
+                foreach (var (pageDict, parents) in WriterUtil.WalkTree(document.Structure.Catalog.PageTree))
                 {
-                    // copy content streams
-                    var streams = new List<PdfPageBuilder.CopiedContentStream>();
-                    if (pageDict.ContainsKey(NameToken.Contents))
+                    pagesInfos[i] = new PageInfo
                     {
-                        var token = pageDict.Data[NameToken.Contents];
-                        if (token is ArrayToken array)
-                        {
-                            foreach (var item in array.Data)
-                            {
-                                if (item is IndirectReferenceToken ir)
-                                {
-                                    streams.Add(new PdfPageBuilder.CopiedContentStream(
-                                        WriterUtil.CopyToken(context, ir, document.Structure.TokenScanner, refs) as IndirectReferenceToken));
-                                }
+                        Page = pageDict, Parents = parents
+                    };
+                    i++;
+                }
 
-                            }
-                        }
-                        else if (token is IndirectReferenceToken ir)
+                existingTrees.Add(document, pagesInfos);
+            }
+
+            if (!pagesInfos.ContainsKey(pageNumber))
+            {
+                throw new KeyNotFoundException($"Page {pageNumber} was not found in the source document.");
+            }
+
+            var pageInfo = pagesInfos[pageNumber];
+
+            // copy content streams
+            var streams = new List<PdfPageBuilder.CopiedContentStream>();
+            if (pageInfo.Page.ContainsKey(NameToken.Contents))
+            {
+                var token = pageInfo.Page.Data[NameToken.Contents];
+                if (token is ArrayToken array)
+                {
+                    foreach (var item in array.Data)
+                    {
+                        if (item is IndirectReferenceToken ir)
                         {
                             streams.Add(new PdfPageBuilder.CopiedContentStream(
                                 WriterUtil.CopyToken(context, ir, document.Structure.TokenScanner, refs) as IndirectReferenceToken));
                         }
+
                     }
-
-                    // manually copy page dict / resources as we need to modify some
-                    var copiedPageDict = new Dictionary<NameToken, IToken>();
-                    Dictionary<NameToken, IToken> resources = new Dictionary<NameToken, IToken>();
-
-                    // just put all parent resources into new page
-                    foreach (var dict in parents)
-                    {
-                        if (dict.TryGet(NameToken.Resources, out var token))
-                        {
-                            CopyResourceDict(token, resources);
-                        }
-                    }
-
-
-                    foreach (var kvp in pageDict.Data)
-                    {
-                        if (kvp.Key == NameToken.Contents || kvp.Key == NameToken.Parent || kvp.Key == NameToken.Type)
-                        {
-                            continue;
-                        }
-
-                        if (kvp.Key == NameToken.Resources)
-                        {
-                            CopyResourceDict(kvp.Value, resources);
-                            continue;
-                        }
-
-                        copiedPageDict[NameToken.Create(kvp.Key)] =
-                            WriterUtil.CopyToken(context, kvp.Value, document.Structure.TokenScanner, refs);
-                    }
-
-                    var builder = new PdfPageBuilder(pages.Count + 1, this, streams, resources, copiedPageDict);
-                    if (resources.TryGetValue(NameToken.Font, out var fonts))
-                    {
-                        var existingFontDict = fonts as DictionaryToken;
-                        foreach (var item in existingFontDict.Data)
-                        {
-                            var key = NameToken.Create(item.Key);
-                            builder.fontDictionary[key] = item.Value;
-                        }
-
-                        resources.Remove(NameToken.Font);
-                    }
-
-                    pages[builder.PageNumber] = builder;
-                    return builder;
                 }
-
-                i++;
+                else if (token is IndirectReferenceToken ir)
+                {
+                    streams.Add(new PdfPageBuilder.CopiedContentStream(
+                        WriterUtil.CopyToken(context, ir, document.Structure.TokenScanner, refs) as IndirectReferenceToken));
+                }
             }
 
-            throw new KeyNotFoundException($"Page {pageNumber} was not found in the source document.");
+            // manually copy page dict / resources as we need to modify some
+            var copiedPageDict = new Dictionary<NameToken, IToken>();
+            Dictionary<NameToken, IToken> resources = new Dictionary<NameToken, IToken>();
+
+            // just put all parent resources into new page
+            foreach (var dict in pageInfo.Parents)
+            {
+                if (dict.TryGet(NameToken.Resources, out var token))
+                {
+                    CopyResourceDict(token, resources);
+                }
+            }
+
+
+            foreach (var kvp in pageInfo.Page.Data)
+            {
+                if (kvp.Key == NameToken.Contents || kvp.Key == NameToken.Parent || kvp.Key == NameToken.Type)
+                {
+                    continue;
+                }
+
+                if (kvp.Key == NameToken.Resources)
+                {
+                    CopyResourceDict(kvp.Value, resources);
+                    continue;
+                }
+
+                copiedPageDict[NameToken.Create(kvp.Key)] =
+                    WriterUtil.CopyToken(context, kvp.Value, document.Structure.TokenScanner, refs);
+            }
+
+            var builder = new PdfPageBuilder(pages.Count + 1, this, streams, resources, copiedPageDict);
+            if (resources.TryGetValue(NameToken.Font, out var fonts))
+            {
+                var existingFontDict = fonts as DictionaryToken;
+                foreach (var item in existingFontDict.Data)
+                {
+                    var key = NameToken.Create(item.Key);
+                    builder.fontDictionary[key] = item.Value;
+                }
+
+                resources.Remove(NameToken.Font);
+            }
+
+            pages[builder.PageNumber] = builder;
+            return builder;
+
 
             void CopyResourceDict(IToken token, Dictionary<NameToken, IToken> destinationDict)
             {
