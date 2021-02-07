@@ -8,6 +8,7 @@
     using Filters;
     using Geometry;
     using Graphics;
+    using Graphics.Operations;
     using Logging;
     using Parts;
     using Tokenization.Scanner;
@@ -87,10 +88,18 @@
             
             UserSpaceUnit userSpaceUnit = GetUserSpaceUnits(dictionary);
 
-            PageContent content = default(PageContent);
+            PageContent content;
 
             if (!dictionary.TryGet(NameToken.Contents, out var contents))
             {
+                content = new PageContent(EmptyArray<IGraphicsStateOperation>.Instance,
+                    EmptyArray<Letter>.Instance,
+                    EmptyArray<PdfPath>.Instance,
+                    EmptyArray<Union<XObjectContentRecord, InlineImage>>.Instance,
+                    EmptyArray<MarkedContentElement>.Instance,
+                    pdfScanner,
+                    filterProvider,
+                    resourceStore);
                  // ignored for now, is it possible? check the spec...
             }
             else if (DirectObjectFinder.TryGet<ArrayToken>(contents, pdfScanner, out var array))
