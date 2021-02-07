@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Parser
 {
     using System;
+    using System.Diagnostics;
     using Tables;
 
     internal static class TableParser
@@ -24,7 +25,7 @@
 
             if (sum != table.CheckSum)
             {
-                return default;
+                Trace.TraceWarning("Table with invalid checksum found in TrueType font file.");
             }
 
             if (typeof(T) == typeof(CMapTable))

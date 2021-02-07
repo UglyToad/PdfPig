@@ -73,6 +73,11 @@
 
                 var position = offset + nameRecord.Offset;
 
+                if (position >= data.Length)
+                {
+                    return null;
+                }
+
                 data.Seek(position);
 
                 var str = data.ReadString(nameRecord.Length, encoding);
