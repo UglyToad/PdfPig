@@ -43,6 +43,7 @@
             Stream.WriteByte(196);
             Stream.WriteByte(210);
             Stream.WriteNewLine();
+            Initialized = true;
         }
 
         public void Dispose()
