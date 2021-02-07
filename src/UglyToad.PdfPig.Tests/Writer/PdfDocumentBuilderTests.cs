@@ -834,6 +834,26 @@
             }
         }
 
+        [Fact]
+        public void CanCreatePageTree()
+        {
+            var count = 25 * 25 * 25 + 1;
+            using (var builder = new PdfDocumentBuilder())
+            {
+                for (var i = 0; i < count;i++)
+                {
+                    builder.AddPage(PageSize.A4);
+                }
+                var result = builder.Build();
+                WriteFile(nameof(CanCreatePageTree), result);
+
+                using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+                {
+                    Assert.Equal(count, document.NumberOfPages);
+                }
+            }
+        }
+
         [InlineData("Single Page Simple - from google drive.pdf")]
         [InlineData("Old Gutnish Internet Explorer.pdf")]
         [InlineData("68-1990-01_A.pdf")]
@@ -853,6 +873,7 @@
                     builder.AddPage(doc, i);
                 }
                 var result = builder.Build();
+                WriteFile(nameof(CopiedPagesResultInSameData) + "_" + name, result);
 
                 using (var doc2 = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
                 {

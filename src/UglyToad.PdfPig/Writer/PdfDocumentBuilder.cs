@@ -445,15 +445,12 @@ namespace UglyToad.PdfPig.Writer
                 return dict;
             }
         }
-
-         private void CompleteDocument()
+        private void CompleteDocument()
         {
-            var fontsWritten = new Dictionary<Guid, IndirectReferenceToken>();
-
+            // write fonts to reserved object numbers
             foreach (var font in fonts)
             {
-                var fontObj = font.Value.FontProgram.WriteFont(context, font.Value.FontKey.Reference);
-                fontsWritten.Add(font.Key, fontObj);
+                font.Value.FontProgram.WriteFont(context, font.Value.FontKey.Reference);
             }
 
             var procSet = new List<NameToken>
@@ -465,34 +462,30 @@ namespace UglyToad.PdfPig.Writer
                 NameToken.ImageI
             };
             
-            var resources = new Dictionary<NameToken, IToken>
+
+            int desiredLeafSize = 25;
+            var numLeafs = (int) Math.Ceiling(Decimal.Divide(Pages.Count, desiredLeafSize));
+
+            var leafRefs = new List<IndirectReferenceToken>();
+            var leafChildren = new List<List<IndirectReferenceToken>>();
+            var leafs = new List<Dictionary<NameToken, IToken>>();
+            for (var i = 0; i < numLeafs; i++)
             {
-                { NameToken.ProcSet, new ArrayToken(procSet) }
-            };
+                leafs.Add(new Dictionary<NameToken, IToken>()
+                {
+                    {NameToken.Type, NameToken.Pages},
+                });
+                leafChildren.Add(new List<IndirectReferenceToken>());
+                leafRefs.Add(context.ReserveObjectNumber());
+            }
 
-            // var fontDictionary = new DictionaryToken(fontsWritten.Select(x =>
-            //         (fonts[x.Key].FontKey.Name, (IToken)x.Value))
-            //     .ToDictionary(x => x.Item1, x => x.Item2));
-            // var fontsDictionaryRef = context.WriteToken(fontDictionary);
-            // if (fontsWritten.Count > 0)
-            // {
-            //     var fontsDictionary = new DictionaryToken(fontsWritten.Select(x =>
-            //             (fonts[x.Key].FontKey.Name, (IToken)x.Value))
-            //         .ToDictionary(x => x.Item1, x => x.Item2));
-            // 
-            //     var fontsDictionaryRef = context.WriteToken(fontsDictionary);
-            // 
-            //     resources.Add(NameToken.Font, fontsDictionaryRef);
-            // }
+            int leafNum = 0;
 
-            var parentIndirect = context.ReserveObjectNumber();
-
-            var pageReferences = new List<IndirectReferenceToken>();
             foreach (var page in pages)
             {
                 var pageDictionary = page.Value.additionalPageProperties;
                 pageDictionary[NameToken.Type] = NameToken.Page;
-                pageDictionary[NameToken.Parent] = parentIndirect;
+                pageDictionary[NameToken.Parent] = leafRefs[leafNum];
                 pageDictionary[NameToken.ProcSet] = new ArrayToken(procSet);
                 if (!pageDictionary.ContainsKey(NameToken.MediaBox))
                 {
@@ -526,28 +519,38 @@ namespace UglyToad.PdfPig.Writer
                 }
 
 
-                var pageRef = context.WriteToken( new DictionaryToken(pageDictionary));
+                leafChildren[leafNum].Add(context.WriteToken(new DictionaryToken(pageDictionary)));
 
-                pageReferences.Add(pageRef);
+                if (leafChildren[leafNum].Count >= desiredLeafSize)
+                {
+                    leafNum += 1;
+                }
             }
 
-            var pagesDictionaryData = new Dictionary<NameToken, IToken>
+            var dummyName = NameToken.Create("ObjIdToUse");
+            for (var i = 0; i < leafs.Count; i++)
             {
-                {NameToken.Type, NameToken.Pages},
-                {NameToken.Kids, new ArrayToken(pageReferences)},
-                {NameToken.Resources, new DictionaryToken(resources)},
-                {NameToken.Count, new NumericToken(pageReferences.Count)}
-            };
-            
-            var pagesDictionary = new DictionaryToken(pagesDictionaryData);
-
-            var pagesRef = context.WriteToken(pagesDictionary, parentIndirect);
+                leafs[i][NameToken.Kids] = new ArrayToken(leafChildren[i]);
+                leafs[i][NameToken.Count] = new NumericToken(leafChildren[i].Count);
+                leafs[i][dummyName] = leafRefs[i];
+            }
 
             var catalogDictionary = new Dictionary<NameToken, IToken>
             {
                 {NameToken.Type, NameToken.Catalog},
-                {NameToken.Pages, pagesRef}
             };
+            if (leafs.Count == 1)
+            {
+                var leaf = leafs[0];
+                var id = leaf[dummyName] as IndirectReferenceToken;
+                leaf.Remove(dummyName);
+                catalogDictionary[NameToken.Pages] = context.WriteToken(new DictionaryToken(leaf), id);
+            }
+            else
+            {
+                var rootPageInfo = CreatePageTree(leafs, null);
+                catalogDictionary[NameToken.Pages] = rootPageInfo.Ref;
+            }
 
             if (ArchiveStandard != PdfAStandard.None)
             {
@@ -584,6 +587,51 @@ namespace UglyToad.PdfPig.Writer
             }
 
             context.CompletePdf(catalogRef, informationReference);
+
+            (int Count, IndirectReferenceToken Ref) CreatePageTree(List<Dictionary<NameToken, IToken>> pagesNodes, IndirectReferenceToken parent)
+            {
+                // TODO shorten page tree when there is a single or small number of pages left in a branch
+                var count = 0;
+                var thisObj = context.ReserveObjectNumber();
+                
+                var children = new List<IndirectReferenceToken>();
+                if (pagesNodes.Count > desiredLeafSize)
+                {
+                    var currentTreeDepth = (int) Math.Ceiling(Math.Log(pagesNodes.Count, desiredLeafSize));
+                    var perBranch = (int) Math.Ceiling(Math.Pow(desiredLeafSize, currentTreeDepth - 1));
+                    var branches = (int)Math.Ceiling(decimal.Divide(pagesNodes.Count, (decimal)perBranch));
+                    for (var i = 0; i < branches; i++)
+                    {
+                        var part = pagesNodes.Skip(i*perBranch).Take(perBranch).ToList();
+                        var result = CreatePageTree(part, thisObj);
+                        count += result.Count;
+                        children.Add(result.Ref);
+                    }
+                }
+                else
+                {
+                    foreach (var page in pagesNodes)
+                    {
+                        page[NameToken.Parent] = thisObj;
+                        var id = page[dummyName] as IndirectReferenceToken;
+                        page.Remove(dummyName);
+                        count += (page[NameToken.Count] as NumericToken).Int;
+                        children.Add(context.WriteToken(new DictionaryToken(page), id));
+                    }
+                }
+
+                var node = new Dictionary<NameToken, IToken>
+                {
+                    {NameToken.Type, NameToken.Pages},
+                    {NameToken.Kids, new ArrayToken(children)},
+                    {NameToken.Count, new NumericToken(count)}
+                };
+                if (parent != null)
+                {
+                    node[NameToken.Parent] = parent;
+                }
+                return (count, context.WriteToken(new DictionaryToken(node), thisObj));
+            }
         }
 
         /// <summary>
