@@ -210,6 +210,20 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
                 Assert.Equal(points, glyph.Points.Length);
             }
         }
+
+        [Fact]
+        public void ParseIssue258CorruptNameTable()
+        {
+            var bytes = TrueTypeTestHelper.GetFileBytes("issue-258-corrupt-name-table");
+
+            var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
+
+            var font = TrueTypeFontParser.Parse(input);
+
+            Assert.NotNull(font);
+            Assert.NotNull(font.TableRegister.NameTable);
+            Assert.NotEmpty(font.TableRegister.NameTable.NameRecords);
+        }
     }
 }
 

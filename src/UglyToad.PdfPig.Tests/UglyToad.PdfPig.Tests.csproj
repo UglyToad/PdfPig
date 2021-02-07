@@ -39,6 +39,7 @@
   <ItemGroup>
     <EmbeddedResource Remove="Fonts\TrueType\Andada-Regular.ttf" />
     <EmbeddedResource Remove="Fonts\TrueType\google-simple-doc.ttf" />
+    <EmbeddedResource Remove="Fonts\TrueType\issue-258-corrupt-name-table.ttf" />
     <EmbeddedResource Remove="Fonts\TrueType\PMingLiU.ttf" />
     <EmbeddedResource Remove="Fonts\TrueType\Roboto-Regular.ttf" />
     <EmbeddedResource Remove="Fonts\Type1\AdobeUtopia.pfa" />
@@ -62,6 +63,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Fonts\TrueType\google-simple-doc.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Fonts\TrueType\issue-258-corrupt-name-table.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Fonts\TrueType\PMingLiU.ttf">
