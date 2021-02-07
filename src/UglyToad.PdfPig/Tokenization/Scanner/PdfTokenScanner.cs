@@ -688,6 +688,11 @@
                 return result;
             }
 
+            if (offset == 0 && reference.Generation > ushort.MaxValue)
+            {
+                return new ObjectToken(offset, reference, NullToken.Instance);
+            }
+
             Seek(offset);
 
             if (!MoveNext())

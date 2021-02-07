@@ -61,7 +61,7 @@
             string any = null;
             foreach (var nameRecord in NameRecords)
             {
-                if (nameRecord.NameId != 6)
+                if (nameRecord is null || nameRecord.NameId != 6)
                 {
                     continue;
                 }
