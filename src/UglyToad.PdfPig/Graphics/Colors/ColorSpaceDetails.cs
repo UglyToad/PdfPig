@@ -2,6 +2,8 @@
 {
     using System;
     using System.Collections.Generic;
+    using PdfPig.Core;
+    using Tokens;
 
     /// <summary>
     /// Contains more document-specific information about the <see cref="ColorSpace"/>.
@@ -109,6 +111,59 @@
             HiVal = hiVal;
             ColorTable = colorTable;
             BaseType = baseColorSpaceDetails.BaseType;
+        }
+    }
+
+    /// <summary>
+    /// A Separation color space provides a means for specifying the use of additional colorants or
+    /// for isolating the control of individual color components of a device color space for a subtractive device.
+    /// When such a space is the current color space, the current color is a single-component value, called a tint,
+    /// that controls the application of the given colorant or color components only.
+    /// </summary>
+    public class SeparationColorSpaceDetails : ColorSpaceDetails
+    {
+        /// <summary>
+        /// Specifies the name of the colorant that this Separation color space is intended to represent.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The special colorant name All refers collectively to all colorants available on an output device,
+        /// including those for the standard process colorants.
+        /// </para>
+        /// <para>
+        /// The special colorant name None never produces any visible output.
+        /// Painting operations in a Separation space with this colorant name have no effect on the current page.
+        /// </para>
+        /// </remarks>
+        public NameToken Name { get; }
+
+        /// <summary>
+        /// If the colorant name associated with a Separation color space does not correspond to a colorant available on the device,
+        /// the application arranges for subsequent painting operations to be performed in an alternate color space.
+        /// The intended colors can be approximated by colors in a device or CIE-based color space
+        /// which are then rendered with the usual primary or process colorants.
+        /// </summary>
+        public ColorSpaceDetails AlternateColorSpaceDetails { get; }
+
+        /// <summary>
+        /// During subsequent painting operations, an application calls this function to transform a tint value into
+        /// color component values in the alternate color space.
+        /// The function is called with the tint value and must return the corresponding color component values.
+        /// That is, the number of components and the interpretation of their values depend on the <see cref="AlternateColorSpaceDetails"/>.
+        /// </summary>
+        public Union<DictionaryToken, StreamToken> TintFunction { get; }
+
+        /// <summary>
+        /// Create a new <see cref="SeparationColorSpaceDetails"/>.
+        /// </summary>
+        public SeparationColorSpaceDetails(NameToken name,
+            ColorSpaceDetails alternateColorSpaceDetails,
+            Union<DictionaryToken, StreamToken> tintFunction)
+            : base(ColorSpace.Separation)
+        {
+            Name = name;
+            AlternateColorSpaceDetails = alternateColorSpaceDetails;
+            TintFunction = tintFunction;
         }
     }
 
