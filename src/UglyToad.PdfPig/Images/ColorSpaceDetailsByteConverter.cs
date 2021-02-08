@@ -30,7 +30,7 @@
                         var r = new byte[3];
                         for (var i = 0; i < 3; i++)
                         {
-                            r[i] = indexed.ColorTable[x + i];
+                            r[i] = indexed.ColorTable[x * 3 + i];
                         }
 
                         return r;
@@ -43,7 +43,7 @@
                         var r = new byte[4];
                         for (int i = 0; i < 4; i++)
                         {
-                            r[i] = indexed.ColorTable[x + i];
+                            r[i] = indexed.ColorTable[x * 4 + i];
                         }
 
                         return r;
