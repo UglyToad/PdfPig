@@ -14,7 +14,8 @@
             var actualColorSpace = hasValidDetails ? image.ColorSpaceDetails.BaseType : image.ColorSpace;
 
             var isColorSpaceSupported =
-                actualColorSpace == ColorSpace.DeviceGray || actualColorSpace == ColorSpace.DeviceRGB;
+                actualColorSpace == ColorSpace.DeviceGray || actualColorSpace == ColorSpace.DeviceRGB
+                || actualColorSpace == ColorSpace.DeviceCMYK;
 
             if (!isColorSpaceSupported || !image.TryGetBytes(out var bytesPure))
             {
@@ -25,7 +26,7 @@
 
             try
             {
-                var is3Byte = actualColorSpace == ColorSpace.DeviceRGB;
+                var is3Byte = actualColorSpace == ColorSpace.DeviceRGB || actualColorSpace == ColorSpace.DeviceCMYK;
                 var multiplier = is3Byte ? 3 : 1;
 
                 var builder = PngBuilder.Create(image.WidthInSamples, image.HeightInSamples, false);
@@ -38,18 +39,37 @@
                 }
 
                 var i = 0;
-                for (var y = 0; y < image.HeightInSamples; y++)
+                for (var col = 0; col < image.HeightInSamples; col++)
                 {
-                    for (var x = 0; x < image.WidthInSamples; x++)
+                    for (var row = 0; row < image.WidthInSamples; row++)
                     {
-                        if (is3Byte)
+                        if (actualColorSpace == ColorSpace.DeviceCMYK)
                         {
-                            builder.SetPixel(bytesPure[i++], bytesPure[i++], bytesPure[i++], x, y);
+                            /*
+                             * Where CMYK in 0..1
+                             * R = 255 × (1-C) × (1-K)
+                             * G = 255 × (1-M) × (1-K)
+                             * B = 255 × (1-Y) × (1-K)
+                             */
+
+                            var c = (bytesPure[i++]/255d);
+                            var m = (bytesPure[i++]/255d);
+                            var y = (bytesPure[i++]/255d);
+                            var k = (bytesPure[i++]/255d);
+                            var r = (byte)(255 * (1 - c) * (1 - k));
+                            var g = (byte)(255 * (1 - m) * (1 - k));
+                            var b = (byte)(255 * (1 - y) * (1 - k));
+
+                            builder.SetPixel(r, g, b, row, col);
+                        }
+                        else if (is3Byte)
+                        {
+                            builder.SetPixel(bytesPure[i++], bytesPure[i++], bytesPure[i++], row, col);
                         }
                         else
                         {
                             var pixel = bytesPure[i++];
-                            builder.SetPixel(pixel, pixel, pixel, x, y);
+                            builder.SetPixel(pixel, pixel, pixel, row, col);
                         }
                     }
                 }
