@@ -75,12 +75,23 @@ namespace UglyToad.PdfPig.Writer
         }
 
         /// <summary>
+        /// Creates a document builder keeping resources in memory.
+        /// </summary>
+        /// <param name="version">Pdf version to use in header.</param>
+        public PdfDocumentBuilder(decimal version)
+        {
+            context = new PdfStreamWriter(new MemoryStream(), true);
+            context.InitializePdf(version);
+        }
+
+        /// <summary>
         /// Creates a document builder using the supplied stream.
         /// </summary>
         /// <param name="stream">Steam to write pdf to.</param>
         /// <param name="disposeStream">If stream should be disposed when builder is.</param>
         /// <param name="type">Type of pdf stream writer to use</param>
-        public PdfDocumentBuilder(Stream stream, bool disposeStream=false, PdfWriterType type=PdfWriterType.Default)
+        /// <param name="version">Pdf version to use in header.</param>
+        public PdfDocumentBuilder(Stream stream, bool disposeStream=false, PdfWriterType type=PdfWriterType.Default, decimal version=1.7m)
         {
             switch (type)
             {
@@ -91,7 +102,7 @@ namespace UglyToad.PdfPig.Writer
                     context = new PdfStreamWriter(stream, disposeStream);
                     break;
             }
-            context.InitializePdf(1.7m);
+            context.InitializePdf(version);
         }
 
         /// <summary>
@@ -372,22 +383,11 @@ namespace UglyToad.PdfPig.Writer
                     WriterUtil.CopyToken(context, kvp.Value, document.Structure.TokenScanner, refs);
             }
 
-            var builder = new PdfPageBuilder(pages.Count + 1, this, streams, resources, copiedPageDict);
-            if (resources.TryGetValue(NameToken.Font, out var fonts))
-            {
-                var existingFontDict = fonts as DictionaryToken;
-                foreach (var item in existingFontDict.Data)
-                {
-                    var key = NameToken.Create(item.Key);
-                    builder.fontDictionary[key] = item.Value;
-                }
+            copiedPageDict[NameToken.Resources] = new DictionaryToken(resources);
 
-                resources.Remove(NameToken.Font);
-            }
-
+            var builder = new PdfPageBuilder(pages.Count + 1, this, streams, copiedPageDict);
             pages[builder.PageNumber] = builder;
             return builder;
-
 
             void CopyResourceDict(IToken token, Dictionary<NameToken, IToken> destinationDict)
             {
@@ -483,7 +483,7 @@ namespace UglyToad.PdfPig.Writer
 
             foreach (var page in pages)
             {
-                var pageDictionary = page.Value.additionalPageProperties;
+                var pageDictionary = page.Value.pageDictionary;
                 pageDictionary[NameToken.Type] = NameToken.Page;
                 pageDictionary[NameToken.Parent] = leafRefs[leafNum];
                 pageDictionary[NameToken.ProcSet] = new ArrayToken(procSet);
@@ -491,16 +491,6 @@ namespace UglyToad.PdfPig.Writer
                 {
                     pageDictionary[NameToken.MediaBox] = RectangleToArray(page.Value.PageSize);
                 }
-
-                // combine existing resources (if any) with added
-                var pageResources = new Dictionary<NameToken, IToken>();
-                foreach (var existing in page.Value.Resources)
-                {
-                    pageResources[existing.Key] = existing.Value;
-                }
-
-                pageResources[NameToken.Font] = new DictionaryToken(page.Value.fontDictionary);
-                pageDictionary[NameToken.Resources] = new DictionaryToken(pageResources);
 
                 var toWrite = page.Value.contentStreams.Where(x => x.HasContent).ToList();
                 if (toWrite.Count == 0)

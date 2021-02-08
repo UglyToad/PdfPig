@@ -28,22 +28,26 @@
     /// </summary>
     public class PdfPageBuilder
     {
+        // parent
         private readonly PdfDocumentBuilder documentBuilder;
-        private IPageContentStream currentStream;
-        internal readonly List<IPageContentStream> contentStreams;
-        internal readonly Dictionary<NameToken, IToken> additionalPageProperties = new Dictionary<NameToken, IToken>();
-        private readonly Dictionary<NameToken, IToken> resourcesDictionary = new Dictionary<NameToken, IToken>();
-        internal Dictionary<NameToken, IToken> fontDictionary = new Dictionary<NameToken, IToken>();
-        internal int nextFontId = 1;
-        private readonly Dictionary<Guid, NameToken> documentFonts = new Dictionary<Guid, NameToken>();
+
+        // all page data other than content streams
+        internal readonly Dictionary<NameToken, IToken> pageDictionary = new Dictionary<NameToken, IToken>();
         
+        // streams
+        internal readonly List<IPageContentStream> contentStreams;
+        private IPageContentStream currentStream;
+        
+        // maps fonts added using PdfDocumentBuilder to page font names
+        private readonly Dictionary<Guid, NameToken> documentFonts = new Dictionary<Guid, NameToken>();
+        internal int nextFontId = 1;
 
         //a sequence number of ShowText operation to determine whether letters belong to same operation or not (letters that belong to different operations have less changes to belong to same word)
         private int textSequence;
 
         private int imageKey = 1;
 
-        internal IReadOnlyDictionary<NameToken, IToken> Resources => resourcesDictionary;
+        internal IReadOnlyDictionary<string, IToken> Resources => pageDictionary.GetOrCreateDict(NameToken.Resources);
 
         /// <summary>
         /// The number of this page, 1-indexed.
@@ -75,16 +79,15 @@
         }
 
         internal PdfPageBuilder(int number, PdfDocumentBuilder documentBuilder, IEnumerable<CopiedContentStream> copied,
-            Dictionary<NameToken, IToken> existingResources, Dictionary<NameToken, IToken> pageDict)
+            Dictionary<NameToken, IToken> pageDict)
         {
             this.documentBuilder = documentBuilder ?? throw new ArgumentNullException(nameof(documentBuilder));
             PageNumber = number;
+            pageDictionary = pageDict;
             contentStreams = new List<IPageContentStream>();
             contentStreams.AddRange(copied);
             currentStream = new DefaultContentStream();
             contentStreams.Add(currentStream);
-            additionalPageProperties =pageDict ?? new Dictionary<NameToken, IToken>();
-            resourcesDictionary = existingResources;
         }	        
 
         /// <summary>
@@ -343,13 +346,15 @@
             if (!documentFonts.TryGetValue(font.Id, out NameToken value))
             {
                 value = NameToken.Create($"F{nextFontId++}");
-                while (fontDictionary.ContainsKey(value))
+                var resources = pageDictionary.GetOrCreateDict(NameToken.Resources);
+                var fonts  = resources.GetOrCreateDict(NameToken.Font);
+                while (fonts.ContainsKey(value))
                 {
                     value = NameToken.Create($"F{nextFontId++}");
                 }
 
                 documentFonts[font.Id] = value;
-                fontDictionary[value] = font.Reference;
+                fonts[value] = font.Reference;
             }
 
             return value;
@@ -395,17 +400,11 @@
             };
 
             var reference = documentBuilder.AddImage(new DictionaryToken(imgDictionary), data);
-
-            if (!resourcesDictionary.TryGetValue(NameToken.Xobject, out var xobjectsDict) 
-                || !(xobjectsDict is DictionaryToken xobjects))
-            {
-                xobjects = new DictionaryToken(new Dictionary<NameToken, IToken>());
-                resourcesDictionary[NameToken.Xobject] = xobjects;
-            }
+            var resources = pageDictionary.GetOrCreateDict(NameToken.Resources);
+            var xObjects = resources.GetOrCreateDict(NameToken.Xobject);
 
             var key = NameToken.Create($"I{imageKey++}");
-
-            resourcesDictionary[NameToken.Xobject] = xobjects.With(key, reference);
+            xObjects[key] = reference;
 
             currentStream.Add(Push.Value);
             // This needs to be the placement rectangle.
@@ -435,16 +434,11 @@
         /// </summary>
         public void AddImage(AddedImage image, PdfRectangle placementRectangle)
         {
-            if (!resourcesDictionary.TryGetValue(NameToken.Xobject, out var xobjectsDict) 
-                || !(xobjectsDict is DictionaryToken xobjects))
-            {
-                xobjects = new DictionaryToken(new Dictionary<NameToken, IToken>());
-                resourcesDictionary[NameToken.Xobject] = xobjects;
-            }
+            var resources = pageDictionary.GetOrCreateDict(NameToken.Resources);
+            var xObjects = resources.GetOrCreateDict(NameToken.Xobject);
 
             var key = NameToken.Create($"I{imageKey++}");
-
-            resourcesDictionary[NameToken.Xobject] = xobjects.With(key, new IndirectReferenceToken(image.Reference));
+            xObjects[key] = new IndirectReferenceToken(image.Reference);
 
             currentStream.Add(Push.Value);
             // This needs to be the placement rectangle.
@@ -513,16 +507,12 @@
             
             var reference = documentBuilder.AddImage(new DictionaryToken(imgDictionary), compressed);
 
-            if (!resourcesDictionary.TryGetValue(NameToken.Xobject, out var xobjectsDict)
-                || !(xobjectsDict is DictionaryToken xobjects))
-            {
-                xobjects = new DictionaryToken(new Dictionary<NameToken, IToken>());
-                resourcesDictionary[NameToken.Xobject] = xobjects;
-            }
+            var resources = pageDictionary.GetOrCreateDict(NameToken.Resources);
+            var xObjects = resources.GetOrCreateDict(NameToken.Xobject);
 
             var key = NameToken.Create($"I{imageKey++}");
 
-            resourcesDictionary[NameToken.Xobject] = xobjects.With(key, reference);
+            xObjects[key] = reference;
 
             currentStream.Add(Push.Value);
             // This needs to be the placement rectangle.
@@ -568,6 +558,8 @@
             // We need to relocate the resources, and we have to make sure that none of the resources collide with 
             // the already written operation's resources
 
+            var resources = pageDictionary.GetOrCreateDict(NameToken.Resources);
+
             foreach (var set in srcResourceDictionary.Data)
             {
                 var nameToken = NameToken.Create(set.Key);
@@ -577,11 +569,11 @@
                     continue;
                 }
 
-                if (!resourcesDictionary.TryGetValue(nameToken, out var currentToken))
+                if (!resources.ContainsKey(nameToken))
                 {
                     // It means that this type of resources doesn't currently exist in the page, so we can copy it
                     // with no problem
-                    resourcesDictionary[nameToken] = documentBuilder.CopyToken(srcPage.pdfScanner, set.Value);
+                    resources[nameToken] = documentBuilder.CopyToken(srcPage.pdfScanner, set.Value);
                     continue;
                 }
 
@@ -593,25 +585,16 @@
             // Since we don't directly add font's to the pages resources, we have to go look at the document's font
             if(srcResourceDictionary.TryGet(NameToken.Font, srcPage.pdfScanner, out DictionaryToken fontsDictionary))
             {
-                Dictionary<NameToken, IToken> pageFontsDictionary = null;
-                if (resourcesDictionary.TryGetValue(NameToken.Font, out var pageFontsToken))
-                {
-                    pageFontsDictionary = (pageFontsToken as DictionaryToken)?.Data.ToDictionary(k => NameToken.Create(k.Key), v => v.Value);
-                    Debug.Assert(pageFontsDictionary != null);
-                }
-                else
-                {
-                    pageFontsDictionary = new Dictionary<NameToken, IToken>();
-                }
+                var pageFontsDictionary = resources.GetOrCreateDict(NameToken.Font);
 
                 foreach (var fontSet in fontsDictionary.Data)
                 {
                     var fontName = NameToken.Create(fontSet.Key);
-                    if (fontDictionary.ContainsKey(fontName))
+                    if (pageFontsDictionary.ContainsKey(fontName))
                     {
                         // This would mean that the imported font collide with one of the added font. so we have to rename it
                         var newName = NameToken.Create($"F{nextFontId++}");
-                        while (fontDictionary.ContainsKey(newName))
+                        while (pageFontsDictionary.ContainsKey(newName))
                         {
                             newName = NameToken.Create($"F{nextFontId++}");
                         }
@@ -642,26 +625,12 @@
 
                     pageFontsDictionary.Add(fontName, documentBuilder.CopyToken(srcPage.pdfScanner, fontReferenceToken));
                 }
-
-                foreach (var item in pageFontsDictionary)
-                {
-                    fontDictionary[item.Key] = item.Value;
-                }
             }
 
             // Since we don't directly add xobjects's to the pages resources, we have to go look at the document's xobjects
             if (srcResourceDictionary.TryGet(NameToken.Xobject, srcPage.pdfScanner, out DictionaryToken xobjectsDictionary))
             {
-                Dictionary<NameToken, IToken> pageXobjectsDictionary = null;
-                if (resourcesDictionary.TryGetValue(NameToken.Xobject, out var pageXobjectToken))
-                {
-                    pageXobjectsDictionary = (pageXobjectToken as DictionaryToken)?.Data.ToDictionary(k => NameToken.Create(k.Key), v => v.Value);
-                    Debug.Assert(pageXobjectsDictionary != null);
-                }
-                else
-                {
-                    pageXobjectsDictionary = new Dictionary<NameToken, IToken>();
-                }
+                var pageXobjectsDictionary = resources.GetOrCreateDict(NameToken.Xobject);
 
                 var xobjectNamesUsed = Enumerable.Range(0, imageKey).Select(i => $"I{i}");
                 foreach (var xobjectSet in xobjectsDictionary.Data)
@@ -696,10 +665,8 @@
                         throw new PdfDocumentFormatException($"Expected a IndirectReferenceToken for the XObject, got a {xobjectSet.Value.GetType().Name}");
                     }
 
-                    pageXobjectsDictionary.Add(NameToken.Create(xobjectName), documentBuilder.CopyToken(srcPage.pdfScanner, fontReferenceToken));
+                    pageXobjectsDictionary[xobjectName] = documentBuilder.CopyToken(srcPage.pdfScanner, fontReferenceToken);
                 }
-
-                resourcesDictionary[NameToken.Xobject] = new DictionaryToken(pageXobjectsDictionary);
             }
 
             destinationStream.Operations.AddRange(operations);
@@ -905,5 +872,7 @@
                 Height = height;
             }
         }
+
+        
     }
 }
