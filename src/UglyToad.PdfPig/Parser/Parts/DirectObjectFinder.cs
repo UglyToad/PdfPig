@@ -46,7 +46,7 @@
         public static T Get<T>(IndirectReference reference, IPdfTokenScanner scanner) where T : class, IToken
         {
             var temp = scanner.Get(reference);
-            if (temp is null)
+            if (temp is null || temp.Data is NullToken)
             {
                 return null;
             }
