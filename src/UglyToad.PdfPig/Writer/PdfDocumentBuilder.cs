@@ -30,7 +30,7 @@ namespace UglyToad.PdfPig.Writer
         private readonly Dictionary<Guid, FontStored> fonts = new Dictionary<Guid, FontStored>();
         private readonly Dictionary<Guid, ImageStored> images = new Dictionary<Guid, ImageStored>();
         private readonly Dictionary<IndirectReferenceToken, IToken> unwrittenTokens = new Dictionary<IndirectReferenceToken, IToken>();
-
+        private bool completed = false;
         internal int fontId = 0;
 
         /// <summary>
@@ -445,6 +445,7 @@ namespace UglyToad.PdfPig.Writer
                 return dict;
             }
         }
+
         private void CompleteDocument()
         {
             // write fonts to reserved object numbers
@@ -583,6 +584,8 @@ namespace UglyToad.PdfPig.Writer
             }
 
             context.CompletePdf(catalogRef, informationReference);
+
+            completed = true;
 
             (int Count, IndirectReferenceToken Ref) CreatePageTree(List<Dictionary<NameToken, IToken>> pagesNodes, IndirectReferenceToken parent)
             {
@@ -807,6 +810,11 @@ namespace UglyToad.PdfPig.Writer
         /// </summary>
         public void Dispose()
         {
+            if (!completed)
+            {
+                CompleteDocument();
+            }
+            
             context.Dispose();
         }
     }
