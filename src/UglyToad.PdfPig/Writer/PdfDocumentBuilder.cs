@@ -10,8 +10,6 @@ namespace UglyToad.PdfPig.Writer
     using Core;
     using Fonts;
     using PdfPig.Fonts.TrueType;
-    using Graphics.Operations;
-    using Parser.Parts;
     using PdfPig.Fonts.Standard14Fonts;
     using PdfPig.Fonts.TrueType.Parser;
     using System.Runtime.CompilerServices;
@@ -28,10 +26,17 @@ namespace UglyToad.PdfPig.Writer
         private readonly IPdfStreamWriter context;
         private readonly Dictionary<int, PdfPageBuilder> pages = new Dictionary<int, PdfPageBuilder>();
         private readonly Dictionary<Guid, FontStored> fonts = new Dictionary<Guid, FontStored>();
-        private readonly Dictionary<Guid, ImageStored> images = new Dictionary<Guid, ImageStored>();
-        private readonly Dictionary<IndirectReferenceToken, IToken> unwrittenTokens = new Dictionary<IndirectReferenceToken, IToken>();
         private bool completed = false;
         internal int fontId = 0;
+
+        private readonly static ArrayToken DefaultProcSet = new ArrayToken(new List<NameToken>
+        {
+            NameToken.Create("PDF"),
+            NameToken.Text,
+            NameToken.ImageB,
+            NameToken.ImageC,
+            NameToken.ImageI
+        });
 
         /// <summary>
         /// The standard of PDF/A compliance of the generated document. Defaults to <see cref="PdfAStandard.None"/>.
@@ -59,12 +64,6 @@ namespace UglyToad.PdfPig.Writer
         /// </summary>
         internal IReadOnlyDictionary<Guid, FontStored> Fonts => fonts;
 
-        /// <summary>
-        /// The images currently available in the document builder added via <see cref="AddImage"/>. Keyed by id for internal purposes.
-        /// </summary>
-        internal IReadOnlyDictionary<Guid, ImageStored> Images => images;
-
-        
         /// <summary>
         /// Creates a document builder keeping resources in memory.
         /// </summary>
@@ -454,16 +453,6 @@ namespace UglyToad.PdfPig.Writer
                 font.Value.FontProgram.WriteFont(context, font.Value.FontKey.Reference);
             }
 
-            var procSet = new List<NameToken>
-            {
-                NameToken.Create("PDF"),
-                NameToken.Text,
-                NameToken.ImageB,
-                NameToken.ImageC,
-                NameToken.ImageI
-            };
-            
-
             int desiredLeafSize = 25;
             var numLeafs = (int) Math.Ceiling(Decimal.Divide(Pages.Count, desiredLeafSize));
 
@@ -487,7 +476,7 @@ namespace UglyToad.PdfPig.Writer
                 var pageDictionary = page.Value.pageDictionary;
                 pageDictionary[NameToken.Type] = NameToken.Page;
                 pageDictionary[NameToken.Parent] = leafRefs[leafNum];
-                pageDictionary[NameToken.ProcSet] = new ArrayToken(procSet);
+                pageDictionary[NameToken.ProcSet] = DefaultProcSet;
                 if (!pageDictionary.ContainsKey(NameToken.MediaBox))
                 {
                     pageDictionary[NameToken.MediaBox] = RectangleToArray(page.Value.PageSize);
@@ -683,25 +672,6 @@ namespace UglyToad.PdfPig.Writer
             {
                 FontKey = fontKey ?? throw new ArgumentNullException(nameof(fontKey));
                 FontProgram = fontProgram ?? throw new ArgumentNullException(nameof(fontProgram));
-            }
-        }
-
-        internal class ImageStored
-        {
-            public Guid Id { get; }
-
-            public DictionaryToken StreamDictionary { get; }
-
-            public byte[] StreamData { get; }
-
-            public int ObjectNumber { get; }
-
-            public ImageStored(DictionaryToken streamDictionary, byte[] streamData, int objectNumber)
-            {
-                Id = Guid.NewGuid();
-                StreamDictionary = streamDictionary;
-                StreamData = streamData;
-                ObjectNumber = objectNumber;
             }
         }
 

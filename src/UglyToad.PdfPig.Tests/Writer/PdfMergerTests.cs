@@ -145,20 +145,28 @@
         public void CanMergeWithSelection()
         {
             var first = IntegrationHelpers.GetDocumentPath("Multiple Page - from Mortality Statistics.pdf");
-            var result = PdfMerger.Merge(new [] { File.ReadAllBytes(first) }, new [] { new[] {2, 1, 4, 3, 6, 5} });
+            var contents = File.ReadAllBytes(first);
+
+            var toCopy = new[] {2, 1, 4, 3, 6, 5};
+            var result = PdfMerger.Merge(new [] { contents }, new [] { toCopy });
 
             WriteFile(nameof(CanMergeWithSelection), result);
 
-            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            using (var existing = PdfDocument.Open(contents, ParsingOptions.LenientParsingOff))
+            using (var merged = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
             {
-                Assert.Equal(6, document.NumberOfPages);
+                Assert.Equal(6, merged.NumberOfPages);
 
-                foreach (var page in document.GetPages())
+                for (var i =1;i<merged.NumberOfPages;i++)
                 {
-                    Assert.NotNull(page.Text);
+                    Assert.Equal(
+                        existing.GetPage(toCopy[i-1]).Text,
+                        merged.GetPage(i).Text
+                        );
                 }
             }
         }
+
 
         [Fact]
         public void CanMergeMultipleWithSelection()

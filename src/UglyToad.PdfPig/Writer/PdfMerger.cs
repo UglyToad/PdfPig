@@ -131,13 +131,13 @@
                     {
                         for (var i = 1; i <= existing.NumberOfPages; i++)
                         {
-                            document.AddPage(existing, 1);
+                            document.AddPage(existing, i);
                         }
                     } else
                     {
                         foreach (var i in pages)
                         {
-                            document.AddPage(existing, 1);
+                            document.AddPage(existing, i);
                         }
                     }
                 }
