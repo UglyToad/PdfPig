@@ -13,16 +13,13 @@
     /// </summary>
     internal class PdfStreamWriter : IPdfStreamWriter
     {
-        private Dictionary<IndirectReference, long> offsets = new Dictionary<IndirectReference, long>();
-        private const decimal DefaultVersion = 1.2m;
-        private bool Initialized { get; set; }
-        private int CurrentNumber { get; set; } = 1;
+        protected const decimal DefaultVersion = 1.2m;
+        protected Dictionary<IndirectReference, long> offsets = new Dictionary<IndirectReference, long>();
+        protected bool DisposeStream { get; set; }
+        protected bool Initialized { get; set; }
+        protected int CurrentNumber { get; set; } = 1;
 
-        public Stream Stream { get; set; }
-
-        private bool DisposeStream { get; set; }
-
-        public PdfStreamWriter(Stream baseStream, bool disposeStream = true)
+        internal PdfStreamWriter(Stream baseStream, bool disposeStream = true)
         {
             Stream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
             if (!baseStream.CanWrite)
@@ -33,40 +30,9 @@
             DisposeStream = disposeStream;
         }
 
-        public void InitializePdf(decimal version)
-        {
-            WriteString($"%PDF-{version.ToString("0.0", CultureInfo.InvariantCulture)}", Stream);
+        public Stream Stream { get; protected set; }
 
-            Stream.WriteText("%");
-            Stream.WriteByte(169);
-            Stream.WriteByte(205);
-            Stream.WriteByte(196);
-            Stream.WriteByte(210);
-            Stream.WriteNewLine();
-            Initialized = true;
-        }
-
-        public void Dispose()
-        {
-            if (!DisposeStream)
-            {
-                Stream = null;
-                return;
-            }
-
-            Stream?.Dispose();
-            Stream = null;
-        }
-
-
-        private static void WriteString(string text, Stream stream)
-        {
-            var bytes = OtherEncodings.StringAsLatin1Bytes(text);
-            stream.Write(bytes, 0, bytes.Length);
-            stream.WriteNewLine();
-        }
-
-        public IndirectReferenceToken WriteToken(IToken token)
+        public virtual IndirectReferenceToken WriteToken(IToken token)
         {
             if (!Initialized)
             {
@@ -80,7 +46,7 @@
             return ir;
         }
 
-        public IndirectReferenceToken WriteToken(IToken token, IndirectReferenceToken indirectReference)
+        public virtual IndirectReferenceToken WriteToken(IToken token, IndirectReferenceToken indirectReference)
         {
             if (!Initialized)
             {
@@ -98,10 +64,39 @@
             return new IndirectReferenceToken(new IndirectReference(CurrentNumber++, 0));
         }
 
+        public void InitializePdf(decimal version)
+        {
+            WriteString($"%PDF-{version.ToString("0.0", CultureInfo.InvariantCulture)}", Stream);
 
-        public void CompletePdf(IndirectReferenceToken catalogReference, IndirectReferenceToken documentInformationReference=null)
+            Stream.WriteText("%");
+            Stream.WriteByte(169);
+            Stream.WriteByte(205);
+            Stream.WriteByte(196);
+            Stream.WriteByte(210);
+            Stream.WriteNewLine();
+            Initialized = true;
+        }
+
+        public void CompletePdf(IndirectReferenceToken catalogReference, IndirectReferenceToken documentInformationReference = null)
         {
             TokenWriter.WriteCrossReferenceTable(offsets, catalogReference.Data, Stream, documentInformationReference?.Data);
+        }
+
+        private static void WriteString(string text, Stream stream)
+        {
+            var bytes = OtherEncodings.StringAsLatin1Bytes(text);
+            stream.Write(bytes, 0, bytes.Length);
+            stream.WriteNewLine();
+        }
+
+        public void Dispose()
+        {
+            if (DisposeStream)
+            {
+                Stream?.Dispose();
+            }
+            
+            Stream = null;
         }
     }
 }

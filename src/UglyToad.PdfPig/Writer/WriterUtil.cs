@@ -14,9 +14,8 @@
     {
         public static Dictionary<string, IToken> GetOrCreateDict(this Dictionary<NameToken, IToken> dict,  NameToken key)
         {
-            if (dict.ContainsKey(key))
+            if (dict.TryGetValue(key, out var item))
             {
-                var item = dict[key];
                 if (!(item is DictionaryToken dt))
                 {
                     throw new ApplicationException("Expected dictionary token, got " + item.GetType());
@@ -40,9 +39,8 @@
 
         public static Dictionary<string, IToken> GetOrCreateDict(this Dictionary<string, IToken> dict,  string key)
         {
-            if (dict.ContainsKey(key))
+            if (dict.TryGetValue(key, out var item))
             {
-                var item = dict[key];
                 if (!(item is DictionaryToken dt))
                 {
                     throw new ApplicationException("Expected dictionary token, got " + item.GetType());
@@ -161,7 +159,7 @@
             return tokenToCopy;
         }
 
-        internal static IEnumerable<(DictionaryToken, List<DictionaryToken>)> WalkTree(PageTreeNode node, List<DictionaryToken> parents=null)
+        internal static IEnumerable<(DictionaryToken, IReadOnlyList<DictionaryToken>)> WalkTree(PageTreeNode node, List<DictionaryToken> parents=null)
         {
             if (parents == null)
             {

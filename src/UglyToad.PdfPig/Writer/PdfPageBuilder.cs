@@ -747,15 +747,6 @@
             return value;
         }
 
-        internal interface IPageContentStream : IContentStream
-        {
-            bool ReadOnly { get; }
-            bool HasContent { get; }
-            void Add(IGraphicsStateOperation operation);
-            IndirectReferenceToken Write(IPdfStreamWriter writer);
-
-        }
-
         /// <summary>
         /// Provides access to the raw page data structures for advanced editing use cases.
         /// </summary>
@@ -765,6 +756,15 @@
             /// The operations making up the page content stream.
             /// </summary>
             List<IGraphicsStateOperation> Operations { get; }
+        }
+
+        internal interface IPageContentStream : IContentStream
+        {
+            bool ReadOnly { get; }
+            bool HasContent { get; }
+            void Add(IGraphicsStateOperation operation);
+            IndirectReferenceToken Write(IPdfStreamWriter writer);
+
         }
 
         internal class DefaultContentStream : IPageContentStream

@@ -284,7 +284,7 @@ namespace UglyToad.PdfPig.Writer
         internal class PageInfo
         {
             public DictionaryToken Page { get; set; }
-            public List<DictionaryToken> Parents { get; set; }
+            public IReadOnlyList<DictionaryToken> Parents { get; set; }
         }
         private readonly ConditionalWeakTable<IPdfTokenScanner, Dictionary<IndirectReference, IndirectReferenceToken>> existingCopies = 
             new ConditionalWeakTable<IPdfTokenScanner, Dictionary<IndirectReference, IndirectReferenceToken>>();
@@ -320,18 +320,15 @@ namespace UglyToad.PdfPig.Writer
                 existingTrees.Add(document, pagesInfos);
             }
 
-            if (!pagesInfos.ContainsKey(pageNumber))
+            if (!pagesInfos.TryGetValue(pageNumber, out PageInfo pageInfo))
             {
                 throw new KeyNotFoundException($"Page {pageNumber} was not found in the source document.");
             }
 
-            var pageInfo = pagesInfos[pageNumber];
-
             // copy content streams
             var streams = new List<PdfPageBuilder.CopiedContentStream>();
-            if (pageInfo.Page.ContainsKey(NameToken.Contents))
+            if (pageInfo.Page.TryGet(NameToken.Contents, out IToken token))
             {
-                var token = pageInfo.Page.Data[NameToken.Contents];
                 if (token is ArrayToken array)
                 {
                     foreach (var item in array.Data)
@@ -358,9 +355,9 @@ namespace UglyToad.PdfPig.Writer
             // just put all parent resources into new page
             foreach (var dict in pageInfo.Parents)
             {
-                if (dict.TryGet(NameToken.Resources, out var token))
+                if (dict.TryGet(NameToken.Resources, out var resourceToken))
                 {
-                    CopyResourceDict(token, resources);
+                    CopyResourceDict(resourceToken, resources);
                 }
             }
 
@@ -381,6 +378,8 @@ namespace UglyToad.PdfPig.Writer
                 copiedPageDict[NameToken.Create(kvp.Key)] =
                     WriterUtil.CopyToken(context, kvp.Value, document.Structure.TokenScanner, refs);
             }
+
+            // LocalizeFontAndXObject(resources); TODO work in progress
 
             copiedPageDict[NameToken.Resources] = new DictionaryToken(resources);
 
@@ -453,7 +452,7 @@ namespace UglyToad.PdfPig.Writer
                 font.Value.FontProgram.WriteFont(context, font.Value.FontKey.Reference);
             }
 
-            int desiredLeafSize = 25;
+            const int desiredLeafSize = 25; // allow customization at some point?
             var numLeafs = (int) Math.Ceiling(Decimal.Divide(Pages.Count, desiredLeafSize));
 
             var leafRefs = new List<IndirectReferenceToken>();

@@ -1,33 +1,19 @@
 ﻿namespace UglyToad.PdfPig.Writer
 {
-using Core;
-    using Graphics.Operations;
-    using System;
     using System.Collections.Generic;
-    using System.Globalization;
     using System.IO;
-    using System.Text;
     using Tokens;
 
-    internal class PdfDedupStreamWriter : IPdfStreamWriter
+    internal class PdfDedupStreamWriter : PdfStreamWriter
     {
-
-        public Stream Stream { get; }
-        private int CurrentNumber { get; set; } = 1;
-        private bool DisposeStream { get; set; }
-        private const decimal DefaultVersion = 1.2m;
-        private bool Initialized { get; set; }
-        private readonly Dictionary<IndirectReference, long> offsets = new Dictionary<IndirectReference, long>();
         private readonly Dictionary<byte[], IndirectReferenceToken> hashes = new Dictionary<byte[], IndirectReferenceToken>(new FNVByteComparison());
 
-        public PdfDedupStreamWriter(Stream stream, bool dispose)
+        public PdfDedupStreamWriter(Stream stream, bool dispose) : base(stream, dispose)
         {
-            Stream = stream;
-            DisposeStream = dispose;
         }
 
-        private MemoryStream ms = new MemoryStream();
-        public IndirectReferenceToken WriteToken(IToken token)
+        private readonly MemoryStream ms = new MemoryStream();
+        public override IndirectReferenceToken WriteToken(IToken token)
         {
             if (!Initialized)
             {
@@ -51,7 +37,7 @@ using Core;
             return ir;
         }
 
-        public IndirectReferenceToken WriteToken(IToken token, IndirectReferenceToken indirectReference)
+        public override IndirectReferenceToken WriteToken(IToken token, IndirectReferenceToken indirectReference)
         {
             if (!Initialized)
             {
@@ -68,45 +54,10 @@ using Core;
             return indirectReference;
         }
 
-        public IndirectReferenceToken ReserveObjectNumber()
+        public new void Dispose()
         {
-            return new IndirectReferenceToken(new IndirectReference(CurrentNumber++, 0));
-        }
-
-        public void InitializePdf(decimal version)
-        {
-            WriteString($"%PDF-{version.ToString("0.0", CultureInfo.InvariantCulture)}", Stream);
-
-            Stream.WriteText("%");
-            Stream.WriteByte(169);
-            Stream.WriteByte(205);
-            Stream.WriteByte(196);
-            Stream.WriteByte(210);
-            Stream.WriteNewLine();
-
-            Initialized = true;
-        }
-
-        public void CompletePdf(IndirectReferenceToken catalogReference, IndirectReferenceToken documentInformationReference=null)
-        {
-            TokenWriter.WriteCrossReferenceTable(offsets, catalogReference.Data, Stream, documentInformationReference?.Data);
-        }
-
-        private static void WriteString(string text, Stream stream)
-        {
-            var bytes = OtherEncodings.StringAsLatin1Bytes(text);
-            stream.Write(bytes, 0, bytes.Length);
-            stream.WriteNewLine();
-        }
-
-        public void Dispose()
-        {
-            if (DisposeStream)
-            {
-                Stream.Dispose();
-            }
-
             hashes.Clear();
+            base.Dispose();
         }
 
         class FNVByteComparison : IEqualityComparer<byte[]>
