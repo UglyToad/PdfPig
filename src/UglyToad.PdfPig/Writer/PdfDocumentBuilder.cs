@@ -327,9 +327,9 @@ namespace UglyToad.PdfPig.Writer
 
             // copy content streams
             var streams = new List<PdfPageBuilder.CopiedContentStream>();
-            if (pageInfo.Page.TryGet(NameToken.Contents, out IToken token))
+            if (pageInfo.Page.TryGet(NameToken.Contents, out IToken contentsToken))
             {
-                if (token is ArrayToken array)
+                if (contentsToken is ArrayToken array)
                 {
                     foreach (var item in array.Data)
                     {
@@ -341,7 +341,7 @@ namespace UglyToad.PdfPig.Writer
 
                     }
                 }
-                else if (token is IndirectReferenceToken ir)
+                else if (contentsToken is IndirectReferenceToken ir)
                 {
                     streams.Add(new PdfPageBuilder.CopiedContentStream(
                         WriterUtil.CopyToken(context, ir, document.Structure.TokenScanner, refs) as IndirectReferenceToken));
@@ -379,8 +379,6 @@ namespace UglyToad.PdfPig.Writer
                     WriterUtil.CopyToken(context, kvp.Value, document.Structure.TokenScanner, refs);
             }
 
-            // LocalizeFontAndXObject(resources); TODO work in progress
-
             copiedPageDict[NameToken.Resources] = new DictionaryToken(resources);
 
             var builder = new PdfPageBuilder(pages.Count + 1, this, streams, copiedPageDict);
@@ -396,11 +394,11 @@ namespace UglyToad.PdfPig.Writer
                 }
                 foreach (var item in dict.Data)
                 {
-
                     if (!destinationDict.ContainsKey(NameToken.Create(item.Key)))
                     {
                         if (item.Value is IndirectReferenceToken ir)
                         {
+                            // convert indirect to direct as PdfPageBuilder needs to modify resource entries
                             destinationDict[NameToken.Create(item.Key)] = WriterUtil.CopyToken(context, document.Structure.TokenScanner.Get(ir.Data).Data, document.Structure.TokenScanner, refs);
                         }
                         else
@@ -411,13 +409,20 @@ namespace UglyToad.PdfPig.Writer
                         continue;
                     }
 
-
                     var subDict = GetRemoteDict(item.Value);
                     var destSubDict = destinationDict[NameToken.Create(item.Key)] as DictionaryToken;
                     if (destSubDict == null || subDict == null)
                     {
                         // not a dict.. just overwrite with more important one? should maybe check arrays?
-                        destinationDict[NameToken.Create(item.Key)] = WriterUtil.CopyToken(context, item.Value, document.Structure.TokenScanner, refs);
+                        if (item.Value is IndirectReferenceToken ir)
+                        {
+                            // convert indirect to direct as PdfPageBuilder needs to modify resource entries
+                            destinationDict[NameToken.Create(item.Key)] = WriterUtil.CopyToken(context, document.Structure.TokenScanner.Get(ir.Data).Data, document.Structure.TokenScanner, refs);
+                        }
+                        else
+                        {
+                            destinationDict[NameToken.Create(item.Key)] = WriterUtil.CopyToken(context, item.Value, document.Structure.TokenScanner, refs);
+                        }
                         continue;
                     }
                     foreach (var subItem in subDict.Data)
