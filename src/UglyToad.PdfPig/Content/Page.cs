@@ -10,6 +10,7 @@
     using Util.JetBrains.Annotations;
     using Tokenization.Scanner;
     using Graphics;
+    using System.Linq;
 
     /// <summary>
     /// Contains the content and provides access to methods of a single page in the <see cref="PdfDocument"/>.
@@ -167,11 +168,6 @@
         public IReadOnlyList<MarkedContentElement> GetMarkedContents() => Content.GetMarkedContents();
 
         /// <summary>
-        /// Gets any optional content on the page.
-        /// </summary>
-        public IDictionary<string, IReadOnlyList<OptionalContentGroupElement>> GetOptionalContents() => Content.GetOptionalContents();
-
-        /// <summary>
         /// Provides access to useful members which will change in future releases.
         /// </summary>
         public class Experimental
@@ -197,6 +193,42 @@
             public IEnumerable<Annotation> GetAnnotations()
             {
                 return annotationProvider.GetAnnotations();
+            }
+
+            /// <summary>
+            /// Gets any optional content on the page.
+            /// <para>Does not handle XObjects and annotations for the time being.</para>
+            /// </summary>
+            public IDictionary<string, IReadOnlyList<OptionalContentGroupElement>> GetOptionalContents()
+            {
+                // 4.10.2
+                // Optional content in content stream
+                var mc = page.Content?.GetMarkedContents();
+
+                List<OptionalContentGroupElement> mcesOptional = new List<OptionalContentGroupElement>();
+                GetOptionalContentsRecursively(mc, ref mcesOptional);
+
+                // Optional content in XObjects and annotations
+                // TO DO
+                //var annots = GetAnnotations().ToList();
+
+                return mcesOptional.GroupBy(oc => oc.Name).ToDictionary(g => g.Key, g => g.ToList() as IReadOnlyList<OptionalContentGroupElement>);
+            }
+
+            private void GetOptionalContentsRecursively(IReadOnlyList<MarkedContentElement> markedContentElements, ref List<OptionalContentGroupElement> mcesOptional)
+            {
+                foreach (var mce in markedContentElements)
+                {
+                    if (mce.Tag == "OC")
+                    {
+                        mcesOptional.Add(new OptionalContentGroupElement(mce));
+                        // we don't recurse
+                    }
+                    else if (mce.Children?.Count > 0)
+                    {
+                        GetOptionalContentsRecursively(mce.Children, ref mcesOptional);
+                    }
+                }
             }
         }
     }

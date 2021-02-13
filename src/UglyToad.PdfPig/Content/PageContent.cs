@@ -67,24 +67,5 @@
         }
 
         public IReadOnlyList<MarkedContentElement> GetMarkedContents() => markedContents;
-
-        public IDictionary<string, IReadOnlyList<OptionalContentGroupElement>> GetOptionalContents()
-        {
-            const string ocTag = "OC";
-
-            List<OptionalContentGroupElement> optionalContent = new List<OptionalContentGroupElement>();
-
-            // 4.10.2
-            // Optional content in content stream
-            foreach (var omc in GetMarkedContents().Where(mc => mc.Tag == ocTag))
-            {
-                optionalContent.Add(new OptionalContentGroupElement(omc));
-            }
-
-            // Optional content in XObjects and annotations
-            // TO DO
-
-            return optionalContent.GroupBy(oc => oc.Name).ToDictionary(g => g.Key, g => g.ToList() as IReadOnlyList<OptionalContentGroupElement>);
-        }
     }
 }

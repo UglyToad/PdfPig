@@ -30,7 +30,7 @@ namespace UglyToad.PdfPig.Content
         /// <summary>
         /// A usage dictionary describing the nature of the content controlled by the group.
         /// </summary>
-        public IDictionary<string, object> Usage { get; }
+        public IReadOnlyDictionary<string, IToken> Usage { get; }
 
         /// <summary>
         /// Underlying <see cref="MarkedContentElement"/>.
@@ -110,7 +110,7 @@ namespace UglyToad.PdfPig.Content
                     // Usage - Optional
                     if (markedContentElement.Properties.TryGet(NameToken.Usage, out DictionaryToken usage))
                     {
-                        throw new NotImplementedException();
+                        this.Usage = usage.Data;
                     }
                     break;
 
@@ -119,29 +119,29 @@ namespace UglyToad.PdfPig.Content
                     if (markedContentElement.Properties.TryGet(NameToken.Ocgs, out DictionaryToken ocgsD))
                     {
                         // dictionary or array
-                        throw new NotImplementedException();
+                        throw new NotImplementedException($"{NameToken.Ocgs}");
                     }
                     else if (markedContentElement.Properties.TryGet(NameToken.Ocgs, out ArrayToken ocgsA))
                     {
                         // dictionary or array
-                        throw new NotImplementedException();
+                        throw new NotImplementedException($"{NameToken.Ocgs}");
                     }
 
                     // P - Optional
                     if (markedContentElement.Properties.TryGet(NameToken.P, out NameToken p))
                     {
-                        throw new NotImplementedException();
+                        throw new NotImplementedException($"{NameToken.P}");
                     }
 
                     // VE - Optional
                     if (markedContentElement.Properties.TryGet(NameToken.VE, out ArrayToken ve))
                     {
-                        throw new NotImplementedException();
+                        throw new NotImplementedException($"{NameToken.VE}");
                     }
                     break;
 
                 default:
-                    throw new ArgumentException($"Unknown Optional Content of type '{Type}'.", nameof(Type));
+                    throw new ArgumentException($"Unknown Optional Content of type '{Type}' not known.", nameof(Type));
             }
         }
 
