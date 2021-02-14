@@ -9,7 +9,7 @@
         private const string SrgbIec61966OutputCondition = "sRGB IEC61966-2.1";
         private const string RegistryName = "http://www.color.org";
 
-        public static ArrayToken GetOutputIntentsArray(Func<IToken, ObjectToken> objectWriter)
+        public static ArrayToken GetOutputIntentsArray(Func<IToken, IndirectReferenceToken> objectWriter)
         {
             var rgbColorCondition = new StringToken(SrgbIec61966OutputCondition);
 
@@ -38,7 +38,7 @@
                     {NameToken.OutputConditionIdentifier, rgbColorCondition},
                     {NameToken.RegistryName, new StringToken(RegistryName)},
                     {NameToken.Info, rgbColorCondition},
-                    {NameToken.DestOutputProfile, new IndirectReferenceToken(written.Number)}
+                    {NameToken.DestOutputProfile, written}
                 }), 
             });
         }

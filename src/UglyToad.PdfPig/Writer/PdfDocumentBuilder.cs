@@ -10,10 +10,9 @@ namespace UglyToad.PdfPig.Writer
     using Core;
     using Fonts;
     using PdfPig.Fonts.TrueType;
-    using Graphics.Operations;
-    using Parser.Parts;
     using PdfPig.Fonts.Standard14Fonts;
     using PdfPig.Fonts.TrueType.Parser;
+    using System.Runtime.CompilerServices;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -22,15 +21,22 @@ namespace UglyToad.PdfPig.Writer
     /// <summary>
     /// Provides methods to construct new PDF documents.
     /// </summary>
-    public class PdfDocumentBuilder
+    public class PdfDocumentBuilder : IDisposable
     {
-        private readonly BuilderContext context = new BuilderContext();
+        private readonly IPdfStreamWriter context;
         private readonly Dictionary<int, PdfPageBuilder> pages = new Dictionary<int, PdfPageBuilder>();
         private readonly Dictionary<Guid, FontStored> fonts = new Dictionary<Guid, FontStored>();
-        private readonly Dictionary<Guid, ImageStored> images = new Dictionary<Guid, ImageStored>();
-        private readonly Dictionary<IndirectReferenceToken, IToken> unwrittenTokens = new Dictionary<IndirectReferenceToken, IToken>();
-
+        private bool completed = false;
         internal int fontId = 0;
+
+        private readonly static ArrayToken DefaultProcSet = new ArrayToken(new List<NameToken>
+        {
+            NameToken.Create("PDF"),
+            NameToken.Text,
+            NameToken.ImageB,
+            NameToken.ImageC,
+            NameToken.ImageI
+        });
 
         /// <summary>
         /// The standard of PDF/A compliance of the generated document. Defaults to <see cref="PdfAStandard.None"/>.
@@ -59,9 +65,44 @@ namespace UglyToad.PdfPig.Writer
         internal IReadOnlyDictionary<Guid, FontStored> Fonts => fonts;
 
         /// <summary>
-        /// The images currently available in the document builder added via <see cref="AddImage"/>. Keyed by id for internal purposes.
+        /// Creates a document builder keeping resources in memory.
         /// </summary>
-        internal IReadOnlyDictionary<Guid, ImageStored> Images => images;
+        public PdfDocumentBuilder()
+        {
+            context = new PdfStreamWriter(new MemoryStream(), true);
+            context.InitializePdf(1.7m);
+        }
+
+        /// <summary>
+        /// Creates a document builder keeping resources in memory.
+        /// </summary>
+        /// <param name="version">Pdf version to use in header.</param>
+        public PdfDocumentBuilder(decimal version)
+        {
+            context = new PdfStreamWriter(new MemoryStream(), true);
+            context.InitializePdf(version);
+        }
+
+        /// <summary>
+        /// Creates a document builder using the supplied stream.
+        /// </summary>
+        /// <param name="stream">Steam to write pdf to.</param>
+        /// <param name="disposeStream">If stream should be disposed when builder is.</param>
+        /// <param name="type">Type of pdf stream writer to use</param>
+        /// <param name="version">Pdf version to use in header.</param>
+        public PdfDocumentBuilder(Stream stream, bool disposeStream=false, PdfWriterType type=PdfWriterType.Default, decimal version=1.7m)
+        {
+            switch (type)
+            {
+                case PdfWriterType.ObjectInMemoryDedup:
+                    context = new PdfDedupStreamWriter(stream, disposeStream);
+                    break;
+                default:
+                    context = new PdfStreamWriter(stream, disposeStream);
+                    break;
+            }
+            context.InitializePdf(version);
+        }
 
         /// <summary>
         /// Determines whether the bytes of the TrueType font file provided can be used in a PDF document.
@@ -127,9 +168,8 @@ namespace UglyToad.PdfPig.Writer
             {
                 var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFileBytes)));
                 var id = Guid.NewGuid();
-                var added = new AddedFont(id, NameToken.Create($"F{fontId++}"));
+                var added = new AddedFont(id, context.ReserveObjectNumber());
                 fonts[id] = new FontStored(added, new TrueTypeWritingFont(font, fontFileBytes));
-
                 return added;
             }
             catch (Exception ex)
@@ -152,21 +192,15 @@ namespace UglyToad.PdfPig.Writer
 
             var id = Guid.NewGuid();
             var name = NameToken.Create($"F{fontId++}");
-            var added = new AddedFont(id, name);
+            var added = new AddedFont(id, context.ReserveObjectNumber());
             fonts[id] = new FontStored(added, new Standard14WritingFont(Standard14.GetAdobeFontMetrics(type)));
-
             return added;
         }
 
-        internal IndirectReference AddImage(DictionaryToken dictionary, byte[] bytes)
+        internal IndirectReferenceToken AddImage(DictionaryToken dictionary, byte[] bytes)
         {
-            var reserved = context.ReserveNumber();
-
-            var stored = new ImageStored(dictionary, bytes, reserved);
-
-            images[stored.Id] = stored;
-
-            return new IndirectReference(reserved, 0);
+            var streamToken = new StreamToken(dictionary, bytes);
+            return context.WriteToken(streamToken);
         }
 
         /// <summary>
@@ -235,275 +269,386 @@ namespace UglyToad.PdfPig.Writer
             return AddPage(rectangle.Width, rectangle.Height);
         }
 
+
+        internal IToken CopyToken(IPdfTokenScanner source, IToken token)
+        {
+            if (!existingCopies.TryGetValue(source, out var refs))
+            {
+                refs = new Dictionary<IndirectReference, IndirectReferenceToken>();
+                existingCopies.Add(source, refs);
+            }
+
+            return WriterUtil.CopyToken(context, token, source, refs);
+        }
+
+        internal class PageInfo
+        {
+            public DictionaryToken Page { get; set; }
+            public IReadOnlyList<DictionaryToken> Parents { get; set; }
+        }
+        private readonly ConditionalWeakTable<IPdfTokenScanner, Dictionary<IndirectReference, IndirectReferenceToken>> existingCopies = 
+            new ConditionalWeakTable<IPdfTokenScanner, Dictionary<IndirectReference, IndirectReferenceToken>>();
+        private readonly ConditionalWeakTable<PdfDocument, Dictionary<int, PageInfo>> existingTrees = 
+            new ConditionalWeakTable<PdfDocument,  Dictionary<int, PageInfo>>();
+        /// <summary>
+        /// Add a new page with the specified size, this page will be included in the output when <see cref="Build"/> is called.
+        /// </summary>
+        /// <param name="document">Source document.</param>
+        /// <param name="pageNumber">Page to copy.</param>
+        /// <returns>A builder for editing the page.</returns>
+        public PdfPageBuilder AddPage(PdfDocument document, int pageNumber)
+        {
+            if (!existingCopies.TryGetValue(document.Structure.TokenScanner, out var refs))
+            {
+                refs = new Dictionary<IndirectReference, IndirectReferenceToken>();
+                existingCopies.Add(document.Structure.TokenScanner, refs);
+            }
+
+            if (!existingTrees.TryGetValue(document, out var pagesInfos))
+            {
+                pagesInfos = new Dictionary<int, PageInfo>();
+                int i = 1;
+                foreach (var (pageDict, parents) in WriterUtil.WalkTree(document.Structure.Catalog.PageTree))
+                {
+                    pagesInfos[i] = new PageInfo
+                    {
+                        Page = pageDict, Parents = parents
+                    };
+                    i++;
+                }
+
+                existingTrees.Add(document, pagesInfos);
+            }
+
+            if (!pagesInfos.TryGetValue(pageNumber, out PageInfo pageInfo))
+            {
+                throw new KeyNotFoundException($"Page {pageNumber} was not found in the source document.");
+            }
+
+            // copy content streams
+            var streams = new List<PdfPageBuilder.CopiedContentStream>();
+            if (pageInfo.Page.TryGet(NameToken.Contents, out IToken contentsToken))
+            {
+                if (contentsToken is ArrayToken array)
+                {
+                    foreach (var item in array.Data)
+                    {
+                        if (item is IndirectReferenceToken ir)
+                        {
+                            streams.Add(new PdfPageBuilder.CopiedContentStream(
+                                WriterUtil.CopyToken(context, ir, document.Structure.TokenScanner, refs) as IndirectReferenceToken));
+                        }
+
+                    }
+                }
+                else if (contentsToken is IndirectReferenceToken ir)
+                {
+                    streams.Add(new PdfPageBuilder.CopiedContentStream(
+                        WriterUtil.CopyToken(context, ir, document.Structure.TokenScanner, refs) as IndirectReferenceToken));
+                }
+            }
+
+            // manually copy page dict / resources as we need to modify some
+            var copiedPageDict = new Dictionary<NameToken, IToken>();
+            Dictionary<NameToken, IToken> resources = new Dictionary<NameToken, IToken>();
+
+            // just put all parent resources into new page
+            foreach (var dict in pageInfo.Parents)
+            {
+                if (dict.TryGet(NameToken.Resources, out var resourceToken))
+                {
+                    CopyResourceDict(resourceToken, resources);
+                }
+            }
+
+
+            foreach (var kvp in pageInfo.Page.Data)
+            {
+                if (kvp.Key == NameToken.Contents || kvp.Key == NameToken.Parent || kvp.Key == NameToken.Type)
+                {
+                    continue;
+                }
+
+                if (kvp.Key == NameToken.Resources)
+                {
+                    CopyResourceDict(kvp.Value, resources);
+                    continue;
+                }
+
+                copiedPageDict[NameToken.Create(kvp.Key)] =
+                    WriterUtil.CopyToken(context, kvp.Value, document.Structure.TokenScanner, refs);
+            }
+
+            copiedPageDict[NameToken.Resources] = new DictionaryToken(resources);
+
+            var builder = new PdfPageBuilder(pages.Count + 1, this, streams, copiedPageDict);
+            pages[builder.PageNumber] = builder;
+            return builder;
+
+            void CopyResourceDict(IToken token, Dictionary<NameToken, IToken> destinationDict)
+            {
+                DictionaryToken dict = GetRemoteDict(token);
+                if (dict == null)
+                {
+                    return;
+                }
+                foreach (var item in dict.Data)
+                {
+                    if (!destinationDict.ContainsKey(NameToken.Create(item.Key)))
+                    {
+                        if (item.Value is IndirectReferenceToken ir)
+                        {
+                            // convert indirect to direct as PdfPageBuilder needs to modify resource entries
+                            destinationDict[NameToken.Create(item.Key)] = WriterUtil.CopyToken(context, document.Structure.TokenScanner.Get(ir.Data).Data, document.Structure.TokenScanner, refs);
+                        }
+                        else
+                        {
+                            destinationDict[NameToken.Create(item.Key)] = WriterUtil.CopyToken(context, item.Value, document.Structure.TokenScanner, refs);
+                        }
+
+                        continue;
+                    }
+
+                    var subDict = GetRemoteDict(item.Value);
+                    var destSubDict = destinationDict[NameToken.Create(item.Key)] as DictionaryToken;
+                    if (destSubDict == null || subDict == null)
+                    {
+                        // not a dict.. just overwrite with more important one? should maybe check arrays?
+                        if (item.Value is IndirectReferenceToken ir)
+                        {
+                            // convert indirect to direct as PdfPageBuilder needs to modify resource entries
+                            destinationDict[NameToken.Create(item.Key)] = WriterUtil.CopyToken(context, document.Structure.TokenScanner.Get(ir.Data).Data, document.Structure.TokenScanner, refs);
+                        }
+                        else
+                        {
+                            destinationDict[NameToken.Create(item.Key)] = WriterUtil.CopyToken(context, item.Value, document.Structure.TokenScanner, refs);
+                        }
+                        continue;
+                    }
+                    foreach (var subItem in subDict.Data)
+                    {
+                        // last copied most important important
+                        destinationDict[NameToken.Create(subItem.Key)] = WriterUtil.CopyToken(context, subItem.Value,
+                            document.Structure.TokenScanner, refs);
+                    }
+                }
+            }
+
+            DictionaryToken GetRemoteDict(IToken token)
+            {
+                DictionaryToken dict = null;
+                if (token is IndirectReferenceToken ir)
+                {
+                    dict = document.Structure.TokenScanner.Get(ir.Data).Data as DictionaryToken;
+                }
+                else if (token is DictionaryToken dt)
+                {
+                    dict = dt;
+                }
+                return dict;
+            }
+        }
+
+        private void CompleteDocument()
+        {
+            // write fonts to reserved object numbers
+            foreach (var font in fonts)
+            {
+                font.Value.FontProgram.WriteFont(context, font.Value.FontKey.Reference);
+            }
+
+            const int desiredLeafSize = 25; // allow customization at some point?
+            var numLeafs = (int) Math.Ceiling(Decimal.Divide(Pages.Count, desiredLeafSize));
+
+            var leafRefs = new List<IndirectReferenceToken>();
+            var leafChildren = new List<List<IndirectReferenceToken>>();
+            var leafs = new List<Dictionary<NameToken, IToken>>();
+            for (var i = 0; i < numLeafs; i++)
+            {
+                leafs.Add(new Dictionary<NameToken, IToken>()
+                {
+                    {NameToken.Type, NameToken.Pages},
+                });
+                leafChildren.Add(new List<IndirectReferenceToken>());
+                leafRefs.Add(context.ReserveObjectNumber());
+            }
+
+            int leafNum = 0;
+
+            foreach (var page in pages)
+            {
+                var pageDictionary = page.Value.pageDictionary;
+                pageDictionary[NameToken.Type] = NameToken.Page;
+                pageDictionary[NameToken.Parent] = leafRefs[leafNum];
+                pageDictionary[NameToken.ProcSet] = DefaultProcSet;
+                if (!pageDictionary.ContainsKey(NameToken.MediaBox))
+                {
+                    pageDictionary[NameToken.MediaBox] = RectangleToArray(page.Value.PageSize);
+                }
+
+                var toWrite = page.Value.contentStreams.Where(x => x.HasContent).ToList();
+                if (toWrite.Count == 0)
+                {
+                    // write empty
+                    pageDictionary[NameToken.Contents] = new PdfPageBuilder.DefaultContentStream().Write(context);
+                }
+                else if (toWrite.Count == 1)
+                {
+                    // write single
+                    pageDictionary[NameToken.Contents] = toWrite[0].Write(context);
+                }
+                else
+                {
+                    // write array
+                    var streams = new List<IToken>();
+                    foreach (var stream in toWrite)
+                    {
+                        streams.Add(stream.Write(context));
+                    }
+                    pageDictionary[NameToken.Contents] = new ArrayToken(streams);
+                }
+
+
+                leafChildren[leafNum].Add(context.WriteToken(new DictionaryToken(pageDictionary)));
+
+                if (leafChildren[leafNum].Count >= desiredLeafSize)
+                {
+                    leafNum += 1;
+                }
+            }
+
+            var dummyName = NameToken.Create("ObjIdToUse");
+            for (var i = 0; i < leafs.Count; i++)
+            {
+                leafs[i][NameToken.Kids] = new ArrayToken(leafChildren[i]);
+                leafs[i][NameToken.Count] = new NumericToken(leafChildren[i].Count);
+                leafs[i][dummyName] = leafRefs[i];
+            }
+
+            var catalogDictionary = new Dictionary<NameToken, IToken>
+            {
+                {NameToken.Type, NameToken.Catalog},
+            };
+            if (leafs.Count == 1)
+            {
+                var leaf = leafs[0];
+                var id = leaf[dummyName] as IndirectReferenceToken;
+                leaf.Remove(dummyName);
+                catalogDictionary[NameToken.Pages] = context.WriteToken(new DictionaryToken(leaf), id);
+            }
+            else
+            {
+                var rootPageInfo = CreatePageTree(leafs, null);
+                catalogDictionary[NameToken.Pages] = rootPageInfo.Ref;
+            }
+
+            if (ArchiveStandard != PdfAStandard.None)
+            {
+                Func<IToken, IndirectReferenceToken> writerFunc = x => context.WriteToken(x);
+
+                PdfABaselineRuleBuilder.Obey(catalogDictionary, writerFunc, DocumentInformation, ArchiveStandard);
+
+                switch (ArchiveStandard)
+                {
+                    case PdfAStandard.A1A:
+                        PdfA1ARuleBuilder.Obey(catalogDictionary);
+                        break;
+                    case PdfAStandard.A2B:
+                        break;
+                    case PdfAStandard.A2A:
+                        PdfA1ARuleBuilder.Obey(catalogDictionary);
+                        break;
+                }
+            }
+
+            var catalog = new DictionaryToken(catalogDictionary);
+
+            var catalogRef = context.WriteToken(catalog);
+
+            var informationReference = default(IndirectReferenceToken);
+            if (IncludeDocumentInformation)
+            {
+                var informationDictionary = DocumentInformation.ToDictionary();
+                if (informationDictionary.Count > 0)
+                {
+                    var dictionary = new DictionaryToken(informationDictionary);
+                    informationReference = context.WriteToken(dictionary);
+                }
+            }
+
+            context.CompletePdf(catalogRef, informationReference);
+
+            completed = true;
+
+            (int Count, IndirectReferenceToken Ref) CreatePageTree(List<Dictionary<NameToken, IToken>> pagesNodes, IndirectReferenceToken parent)
+            {
+                // TODO shorten page tree when there is a single or small number of pages left in a branch
+                var count = 0;
+                var thisObj = context.ReserveObjectNumber();
+                
+                var children = new List<IndirectReferenceToken>();
+                if (pagesNodes.Count > desiredLeafSize)
+                {
+                    var currentTreeDepth = (int) Math.Ceiling(Math.Log(pagesNodes.Count, desiredLeafSize));
+                    var perBranch = (int) Math.Ceiling(Math.Pow(desiredLeafSize, currentTreeDepth - 1));
+                    var branches = (int)Math.Ceiling(decimal.Divide(pagesNodes.Count, (decimal)perBranch));
+                    for (var i = 0; i < branches; i++)
+                    {
+                        var part = pagesNodes.Skip(i*perBranch).Take(perBranch).ToList();
+                        var result = CreatePageTree(part, thisObj);
+                        count += result.Count;
+                        children.Add(result.Ref);
+                    }
+                }
+                else
+                {
+                    foreach (var page in pagesNodes)
+                    {
+                        page[NameToken.Parent] = thisObj;
+                        var id = page[dummyName] as IndirectReferenceToken;
+                        page.Remove(dummyName);
+                        count += (page[NameToken.Count] as NumericToken).Int;
+                        children.Add(context.WriteToken(new DictionaryToken(page), id));
+                    }
+                }
+
+                var node = new Dictionary<NameToken, IToken>
+                {
+                    {NameToken.Type, NameToken.Pages},
+                    {NameToken.Kids, new ArrayToken(children)},
+                    {NameToken.Count, new NumericToken(count)}
+                };
+                if (parent != null)
+                {
+                    node[NameToken.Parent] = parent;
+                }
+                return (count, context.WriteToken(new DictionaryToken(node), thisObj));
+            }
+        }
+
         /// <summary>
         /// Builds a PDF document from the current content of this builder and its pages.
         /// </summary>
         /// <returns>The bytes of the resulting PDF document.</returns>
         public byte[] Build()
         {
-            var fontsWritten = new Dictionary<Guid, ObjectToken>();
-            using (var memory = new MemoryStream())
+            CompleteDocument();
+
+            if (context.Stream is MemoryStream ms)
             {
-                // Header
-                WriteString("%PDF-1.7", memory);
-
-                // Files with binary data should contain a 2nd comment line followed by 4 bytes with values > 127
-                memory.WriteText("%");
-                memory.WriteByte(169);
-                memory.WriteByte(205);
-                memory.WriteByte(196);
-                memory.WriteByte(210);
-                memory.WriteNewLine();
-
-                // Body
-                foreach (var font in fonts)
-                {
-                    var fontObj = font.Value.FontProgram.WriteFont(font.Value.FontKey.Name, memory, context);
-                    fontsWritten.Add(font.Key, fontObj);
-                }
-
-                foreach (var image in images)
-                {
-                    var streamToken = new StreamToken(image.Value.StreamDictionary, image.Value.StreamData);
-
-                    context.WriteObject(memory, streamToken, image.Value.ObjectNumber);
-                }
-
-                foreach (var tokenSet in unwrittenTokens)
-                {
-                    context.WriteObject(memory, tokenSet.Value, (int)tokenSet.Key.Data.ObjectNumber);
-                }
-
-                var procSet = new List<NameToken>
-                {
-                    NameToken.Create("PDF"),
-                    NameToken.Text,
-                    NameToken.ImageB,
-                    NameToken.ImageC,
-                    NameToken.ImageI
-                };
-                
-                var resources = new Dictionary<NameToken, IToken>
-                {
-                    { NameToken.ProcSet, new ArrayToken(procSet) }
-                };
-
-                if (fontsWritten.Count > 0)
-                {
-                    var fontsDictionary = new DictionaryToken(fontsWritten.Select(x => (fonts[x.Key].FontKey.Name, (IToken)new IndirectReferenceToken(x.Value.Number)))
-                        .ToDictionary(x => x.Item1, x => x.Item2));
-
-                    resources.Add(NameToken.Font, fontsDictionary);
-                }
-
-                var reserved = context.ReserveNumber();
-                var parentIndirect = new IndirectReferenceToken(new IndirectReference(reserved, 0));
-
-                var pageReferences = new List<IndirectReferenceToken>();
-                foreach (var page in pages)
-                {
-                    var individualResources = new Dictionary<NameToken, IToken>(resources); 
-                    var pageDictionary = new Dictionary<NameToken, IToken>
-                    {
-                        {NameToken.Type, NameToken.Page},
-                        {NameToken.MediaBox, RectangleToArray(page.Value.PageSize)},
-                        {NameToken.Parent, parentIndirect}
-                    };
-
-                    if (page.Value.Resources.Count > 0)
-                    {
-                        foreach (var kvp in page.Value.Resources)
-                        {
-                            var value = kvp.Value;
-                            if (individualResources.TryGetValue(kvp.Key, out var pageToken))
-                            {
-                                if (pageToken is DictionaryToken leftDictionary && value is DictionaryToken rightDictionary)
-                                {
-                                    var merged = leftDictionary.Data.ToDictionary(k => NameToken.Create(k.Key), v => v.Value);
-                                    foreach (var set in rightDictionary.Data)
-                                    {
-                                        merged[NameToken.Create(set.Key)] = set.Value;
-                                    }
-
-                                    value = new DictionaryToken(merged);
-
-                                }
-                                // Else override
-                            }
-
-                            individualResources[kvp.Key] = value;
-                        }
-                    }
-
-                    pageDictionary[NameToken.Resources] = new DictionaryToken(individualResources);
-
-                    if (page.Value.ContentStreams.Count == 1)
-                    {
-                        var contentStream = WriteContentStream(page.Value.CurrentStream.Operations);
-
-                        var contentStreamObj = context.WriteObject(memory, contentStream);
-
-                        pageDictionary[NameToken.Contents] = new IndirectReferenceToken(contentStreamObj.Number);
-                    }
-                    else if (page.Value.ContentStreams.Count > 1)
-                    {
-                        var streamTokens = page.Value.ContentStreams.Select(contentStream =>
-                        {
-                            var streamToken = WriteContentStream(contentStream.Operations);
-
-                            var contentStreamObj = context.WriteObject(memory, streamToken);
-
-                            return new IndirectReferenceToken(contentStreamObj.Number);
-                        }).ToList();
-
-                        pageDictionary[NameToken.Contents] = new ArrayToken(streamTokens);
-                    }
-
-                    var pageRef = context.WriteObject(memory, new DictionaryToken(pageDictionary));
-
-                    pageReferences.Add(new IndirectReferenceToken(pageRef.Number));
-                }
-
-                var pagesDictionaryData = new Dictionary<NameToken, IToken>
-                {
-                    {NameToken.Type, NameToken.Pages},
-                    {NameToken.Kids, new ArrayToken(pageReferences)},
-                    {NameToken.Count, new NumericToken(pageReferences.Count)}
-                };
-                
-                var pagesDictionary = new DictionaryToken(pagesDictionaryData);
-
-                var pagesRef = context.WriteObject(memory, pagesDictionary, reserved);
-
-                var catalogDictionary = new Dictionary<NameToken, IToken>
-                {
-                    {NameToken.Type, NameToken.Catalog},
-                    {NameToken.Pages, new IndirectReferenceToken(pagesRef.Number)}
-                };
-
-                if (ArchiveStandard != PdfAStandard.None)
-                {
-                    Func<IToken, ObjectToken> writerFunc = x => context.WriteObject(memory, x);
-
-                    PdfABaselineRuleBuilder.Obey(catalogDictionary, writerFunc, DocumentInformation, ArchiveStandard);
-
-                    switch (ArchiveStandard)
-                    {
-                        case PdfAStandard.A1A:
-                            PdfA1ARuleBuilder.Obey(catalogDictionary);
-                            break;
-                        case PdfAStandard.A2B:
-                            break;
-                        case PdfAStandard.A2A:
-                            PdfA1ARuleBuilder.Obey(catalogDictionary);
-                            break;
-                    }
-                }
-
-                var catalog = new DictionaryToken(catalogDictionary);
-
-                var catalogRef = context.WriteObject(memory, catalog);
-
-                var informationReference = default(IndirectReference?);
-                if (IncludeDocumentInformation)
-                {
-                    var informationDictionary = DocumentInformation.ToDictionary();
-                    if (informationDictionary.Count > 0)
-                    {
-                        var dictionary = new DictionaryToken(informationDictionary);
-                        informationReference = context.WriteObject(memory, dictionary).Number;
-                    }
-                }
-                
-                TokenWriter.WriteCrossReferenceTable(context.ObjectOffsets, catalogRef, memory, informationReference);
-
-                return memory.ToArray();
-            }
-        }
-
-        /// <summary>
-        /// The purpose of this method is to resolve indirect reference. That mean copy the reference's content to the new document's stream
-        /// and replace the indirect reference with the correct/new one
-        /// </summary>
-        /// <param name="tokenToCopy">Token to inspect for reference</param>
-        /// <param name="tokenScanner">scanner get the content from the original document</param>
-        /// <returns>A reference of the token that was copied. With all the reference updated</returns>
-        internal IToken CopyToken(IToken tokenToCopy, IPdfTokenScanner tokenScanner)
-        {
-            // This token need to be deep copied, because they could contain reference. So we have to update them.
-            switch (tokenToCopy)
-            {
-                case DictionaryToken dictionaryToken:
-                    {
-                        var newContent = new Dictionary<NameToken, IToken>();
-                        foreach (var setPair in dictionaryToken.Data)
-                        {
-                            var name = setPair.Key;
-                            var token = setPair.Value;
-                            newContent.Add(NameToken.Create(name), CopyToken(token, tokenScanner));
-                        }
-
-                        return new DictionaryToken(newContent);
-                    }
-                case ArrayToken arrayToken:
-                    {
-                        var newArray = new List<IToken>(arrayToken.Length);
-                        foreach (var token in arrayToken.Data)
-                        {
-                            newArray.Add(CopyToken(token, tokenScanner));
-                        }
-
-                        return new ArrayToken(newArray);
-                    }
-                case IndirectReferenceToken referenceToken:
-                    {
-                        var tokenObject = DirectObjectFinder.Get<IToken>(referenceToken.Data, tokenScanner);
-
-                        Debug.Assert(!(tokenObject is IndirectReferenceToken));
-
-                        var newToken = CopyToken(tokenObject, tokenScanner);
-
-                        var reserved = context.ReserveNumber();
-                        var newReference = new IndirectReferenceToken(new IndirectReference(reserved, 0));
-
-                        unwrittenTokens.Add(newReference, newToken);
-
-                        return newReference;
-                    }
-                case StreamToken streamToken:
-                    {
-                        var properties = CopyToken(streamToken.StreamDictionary, tokenScanner) as DictionaryToken;
-                        Debug.Assert(properties != null);
-
-                        var bytes = streamToken.Data;
-                        return new StreamToken(properties, bytes);
-                    }
-
-                case ObjectToken _:
-                    {
-                        // Since we don't write token directly to the stream.
-                        // We can't know the offset. Therefore the token would be invalid
-                        throw new NotSupportedException("Copying a Object token is not supported");
-                    }
+                return ms.ToArray();
             }
 
-            return tokenToCopy;
-        }
-
-        private static StreamToken WriteContentStream(IReadOnlyList<IGraphicsStateOperation> content)
-        {
-            using (var memoryStream = new MemoryStream())
+            if (!context.Stream.CanSeek)
             {
-                foreach (var operation in content)
-                {
-                    operation.Write(memoryStream);
-                }
+                throw new InvalidOperationException("PdfDocument.Build() called with non-seekable stream.");
+            }
 
-                var bytes = memoryStream.ToArray();
-
-                var stream = DataCompresser.CompressToStream(bytes);
-                
-                return stream;
+            using (var temp = new MemoryStream())
+            {
+                context.Stream.Seek(0, SeekOrigin.Begin);
+                context.Stream.CopyTo(temp);
+                return temp.ToArray();
             }
         }
 
@@ -518,15 +663,6 @@ namespace UglyToad.PdfPig.Writer
             });
         }
 
-        private static void WriteString(string text, MemoryStream stream, bool appendBreak = true)
-        {
-            var bytes = OtherEncodings.StringAsLatin1Bytes(text);
-            stream.Write(bytes, 0, bytes.Length);
-            if (appendBreak)
-            {
-                stream.WriteNewLine();
-            }
-        }
 
         internal class FontStored
         {
@@ -543,25 +679,6 @@ namespace UglyToad.PdfPig.Writer
             }
         }
 
-        internal class ImageStored
-        {
-            public Guid Id { get; }
-
-            public DictionaryToken StreamDictionary { get; }
-
-            public byte[] StreamData { get; }
-
-            public int ObjectNumber { get; }
-
-            public ImageStored(DictionaryToken streamDictionary, byte[] streamData, int objectNumber)
-            {
-                Id = Guid.NewGuid();
-                StreamDictionary = streamDictionary;
-                StreamData = streamData;
-                ObjectNumber = objectNumber;
-            }
-        }
-
         /// <summary>
         /// A key representing a font available to use on the current document builder. Create by adding a font to a document using either
         /// <see cref="AddStandard14Font"/> or <see cref="AddTrueTypeFont"/>.
@@ -574,17 +691,17 @@ namespace UglyToad.PdfPig.Writer
             internal Guid Id { get; }
 
             /// <summary>
-            /// The name of this font.
+            /// Reference to the added font.
             /// </summary>
-            public NameToken Name { get; }
+            internal IndirectReferenceToken Reference { get; }
 
             /// <summary>
             /// Create a new <see cref="AddedFont"/>.
             /// </summary>
-            internal AddedFont(Guid id, NameToken name)
+            internal AddedFont(Guid id, IndirectReferenceToken reference)
             {
                 Id = id;
-                Name = name ?? throw new ArgumentNullException(nameof(name));
+                Reference = reference;
             }
         }
 
@@ -660,6 +777,19 @@ namespace UglyToad.PdfPig.Writer
 
                 return result;
             }
+        }
+
+        /// <summary>
+        /// Disposes underlying stream if set to do so.
+        /// </summary>
+        public void Dispose()
+        {
+            if (!completed)
+            {
+                CompleteDocument();
+            }
+            
+            context.Dispose();
         }
     }
 }

@@ -47,13 +47,16 @@
             CanMerge2SimpleDocumentsAssertions(new MemoryStream(result), "I am a simple pdf.", "Write something inInkscape");
         }
 
-        private void CanMerge2SimpleDocumentsAssertions(Stream stream, string page1Text, string page2Text)
+        internal static void CanMerge2SimpleDocumentsAssertions(Stream stream, string page1Text, string page2Text, bool checkVersion=true)
         {
             stream.Position = 0;
             using (var document = PdfDocument.Open(stream, ParsingOptions.LenientParsingOff))
             {
                 Assert.Equal(2, document.NumberOfPages);
-                Assert.Equal(1.5m, document.Version);
+                if (checkVersion)
+                {
+                    Assert.Equal(1.5m, document.Version);
+                }
 
                 var page1 = document.GetPage(1);
                 Assert.Equal(page1Text, page1.Text);
@@ -142,20 +145,28 @@
         public void CanMergeWithSelection()
         {
             var first = IntegrationHelpers.GetDocumentPath("Multiple Page - from Mortality Statistics.pdf");
-            var result = PdfMerger.Merge(new [] { File.ReadAllBytes(first) }, new [] { new[] {2, 1, 4, 3, 6, 5} });
+            var contents = File.ReadAllBytes(first);
+
+            var toCopy = new[] {2, 1, 4, 3, 6, 5};
+            var result = PdfMerger.Merge(new [] { contents }, new [] { toCopy });
 
             WriteFile(nameof(CanMergeWithSelection), result);
 
-            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            using (var existing = PdfDocument.Open(contents, ParsingOptions.LenientParsingOff))
+            using (var merged = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
             {
-                Assert.Equal(6, document.NumberOfPages);
+                Assert.Equal(6, merged.NumberOfPages);
 
-                foreach (var page in document.GetPages())
+                for (var i =1;i<merged.NumberOfPages;i++)
                 {
-                    Assert.NotNull(page.Text);
+                    Assert.Equal(
+                        existing.GetPage(toCopy[i-1]).Text,
+                        merged.GetPage(i).Text
+                        );
                 }
             }
         }
+
 
         [Fact]
         public void CanMergeMultipleWithSelection()
