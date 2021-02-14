@@ -199,14 +199,13 @@
             /// Gets any optional content on the page.
             /// <para>Does not handle XObjects and annotations for the time being.</para>
             /// </summary>
-            public IDictionary<string, IReadOnlyList<OptionalContentGroupElement>> GetOptionalContents()
+            public IReadOnlyDictionary<string, IReadOnlyList<OptionalContentGroupElement>> GetOptionalContents()
             {
+                List<OptionalContentGroupElement> mcesOptional = new List<OptionalContentGroupElement>();
+
                 // 4.10.2
                 // Optional content in content stream
-                var mc = page.Content?.GetMarkedContents();
-
-                List<OptionalContentGroupElement> mcesOptional = new List<OptionalContentGroupElement>();
-                GetOptionalContentsRecursively(mc, ref mcesOptional);
+                GetOptionalContentsRecursively(page.Content?.GetMarkedContents(), ref mcesOptional);
 
                 // Optional content in XObjects and annotations
                 // TO DO
@@ -217,11 +216,16 @@
 
             private void GetOptionalContentsRecursively(IReadOnlyList<MarkedContentElement> markedContentElements, ref List<OptionalContentGroupElement> mcesOptional)
             {
+                if (markedContentElements.Count == 0)
+                {
+                    return;
+                }
+
                 foreach (var mce in markedContentElements)
                 {
                     if (mce.Tag == "OC")
                     {
-                        mcesOptional.Add(new OptionalContentGroupElement(mce));
+                        mcesOptional.Add(new OptionalContentGroupElement(mce, page.pdfScanner));
                         // we don't recurse
                     }
                     else if (mce.Children?.Count > 0)

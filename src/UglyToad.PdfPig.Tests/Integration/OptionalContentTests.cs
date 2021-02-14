@@ -7,6 +7,18 @@ namespace UglyToad.PdfPig.Tests.Integration
     public class OptionalContentTests
     {
         [Fact]
+        public void NoMarkedOptionalContent()
+        {
+            using (var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("AcroFormsBasicFields.pdf")))
+            {
+                var page = document.GetPage(1);
+                var oc = page.ExperimentalAccess.GetOptionalContents();
+
+                Assert.Equal(0, oc.Count);
+            }
+        }
+
+        [Fact]
         public void MarkedOptionalContent()
         {
             using (var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("odwriteex.pdf")))

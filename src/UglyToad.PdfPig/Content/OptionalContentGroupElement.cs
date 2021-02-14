@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UglyToad.PdfPig.Tokenization.Scanner;
 using UglyToad.PdfPig.Tokens;
 
 namespace UglyToad.PdfPig.Content
@@ -37,16 +38,16 @@ namespace UglyToad.PdfPig.Content
         /// </summary>
         public MarkedContentElement MarkedContent { get; }
 
-        internal OptionalContentGroupElement(MarkedContentElement markedContentElement)
+        internal OptionalContentGroupElement(MarkedContentElement markedContentElement, IPdfTokenScanner  pdfTokenScanner)
         {
             MarkedContent = markedContentElement;
 
             // Type - Required
-            if (markedContentElement.Properties.TryGet(NameToken.Type, out NameToken type))
+            if (markedContentElement.Properties.TryGet(NameToken.Type, pdfTokenScanner, out NameToken type))
             {
                 Type = type.Data;
             }
-            else if (markedContentElement.Properties.TryGet(NameToken.Type, out StringToken typeStr))
+            else if (markedContentElement.Properties.TryGet(NameToken.Type, pdfTokenScanner, out StringToken typeStr))
             {
                 Type = typeStr.Data;
             }
@@ -59,11 +60,11 @@ namespace UglyToad.PdfPig.Content
             {
                 case "OCG": // Optional content group dictionary
                     // Name - Required
-                    if (markedContentElement.Properties.TryGet(NameToken.Name, out NameToken name))
+                    if (markedContentElement.Properties.TryGet(NameToken.Name, pdfTokenScanner, out NameToken name))
                     {
                         Name = name.Data;
                     }
-                    else if (markedContentElement.Properties.TryGet(NameToken.Name, out StringToken nameStr))
+                    else if (markedContentElement.Properties.TryGet(NameToken.Name, pdfTokenScanner, out StringToken nameStr))
                     {
                         Name = nameStr.Data;
                     }
@@ -73,15 +74,15 @@ namespace UglyToad.PdfPig.Content
                     }
 
                     // Intent - Optional
-                    if (markedContentElement.Properties.TryGet(NameToken.Intent, out NameToken intentName))
+                    if (markedContentElement.Properties.TryGet(NameToken.Intent, pdfTokenScanner, out NameToken intentName))
                     {
                         Intent = new string[] { intentName.Data };
                     }
-                    else if (markedContentElement.Properties.TryGet(NameToken.Intent, out StringToken intentStr))
+                    else if (markedContentElement.Properties.TryGet(NameToken.Intent, pdfTokenScanner, out StringToken intentStr))
                     {
                         Intent = new string[] { intentStr.Data };
                     }
-                    else if (markedContentElement.Properties.TryGet(NameToken.Intent, out ArrayToken intentArray))
+                    else if (markedContentElement.Properties.TryGet(NameToken.Intent, pdfTokenScanner, out ArrayToken intentArray))
                     {
                         List<string> intentList = new List<string>();
                         foreach (var token in intentArray.Data)
@@ -108,7 +109,7 @@ namespace UglyToad.PdfPig.Content
                     }
 
                     // Usage - Optional
-                    if (markedContentElement.Properties.TryGet(NameToken.Usage, out DictionaryToken usage))
+                    if (markedContentElement.Properties.TryGet(NameToken.Usage, pdfTokenScanner, out DictionaryToken usage))
                     {
                         this.Usage = usage.Data;
                     }
@@ -116,25 +117,25 @@ namespace UglyToad.PdfPig.Content
 
                 case "OCMD":
                     // OCGs - Optional
-                    if (markedContentElement.Properties.TryGet(NameToken.Ocgs, out DictionaryToken ocgsD))
+                    if (markedContentElement.Properties.TryGet(NameToken.Ocgs, pdfTokenScanner, out DictionaryToken ocgsD))
                     {
                         // dictionary or array
                         throw new NotImplementedException($"{NameToken.Ocgs}");
                     }
-                    else if (markedContentElement.Properties.TryGet(NameToken.Ocgs, out ArrayToken ocgsA))
+                    else if (markedContentElement.Properties.TryGet(NameToken.Ocgs, pdfTokenScanner, out ArrayToken ocgsA))
                     {
                         // dictionary or array
                         throw new NotImplementedException($"{NameToken.Ocgs}");
                     }
 
                     // P - Optional
-                    if (markedContentElement.Properties.TryGet(NameToken.P, out NameToken p))
+                    if (markedContentElement.Properties.TryGet(NameToken.P, pdfTokenScanner, out NameToken p))
                     {
                         throw new NotImplementedException($"{NameToken.P}");
                     }
 
                     // VE - Optional
-                    if (markedContentElement.Properties.TryGet(NameToken.VE, out ArrayToken ve))
+                    if (markedContentElement.Properties.TryGet(NameToken.VE, pdfTokenScanner, out ArrayToken ve))
                     {
                         throw new NotImplementedException($"{NameToken.VE}");
                     }

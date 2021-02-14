@@ -1,12 +1,11 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using Core;
     using Filters;
     using Graphics;
     using Graphics.Operations;
+    using System;
+    using System.Collections.Generic;
     using Tokenization.Scanner;
     using XObjects;
 
