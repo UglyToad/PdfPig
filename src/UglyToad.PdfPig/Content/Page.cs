@@ -10,6 +10,7 @@
     using Util.JetBrains.Annotations;
     using Tokenization.Scanner;
     using Graphics;
+    using System.Linq;
 
     /// <summary>
     /// Contains the content and provides access to methods of a single page in the <see cref="PdfDocument"/>.
@@ -192,6 +193,46 @@
             public IEnumerable<Annotation> GetAnnotations()
             {
                 return annotationProvider.GetAnnotations();
+            }
+
+            /// <summary>
+            /// Gets any optional content on the page.
+            /// <para>Does not handle XObjects and annotations for the time being.</para>
+            /// </summary>
+            public IReadOnlyDictionary<string, IReadOnlyList<OptionalContentGroupElement>> GetOptionalContents()
+            {
+                List<OptionalContentGroupElement> mcesOptional = new List<OptionalContentGroupElement>();
+
+                // 4.10.2
+                // Optional content in content stream
+                GetOptionalContentsRecursively(page.Content?.GetMarkedContents(), ref mcesOptional);
+
+                // Optional content in XObjects and annotations
+                // TO DO
+                //var annots = GetAnnotations().ToList();
+
+                return mcesOptional.GroupBy(oc => oc.Name).ToDictionary(g => g.Key, g => g.ToList() as IReadOnlyList<OptionalContentGroupElement>);
+            }
+
+            private void GetOptionalContentsRecursively(IReadOnlyList<MarkedContentElement> markedContentElements, ref List<OptionalContentGroupElement> mcesOptional)
+            {
+                if (markedContentElements.Count == 0)
+                {
+                    return;
+                }
+
+                foreach (var mce in markedContentElements)
+                {
+                    if (mce.Tag == "OC")
+                    {
+                        mcesOptional.Add(new OptionalContentGroupElement(mce, page.pdfScanner));
+                        // we don't recurse
+                    }
+                    else if (mce.Children?.Count > 0)
+                    {
+                        GetOptionalContentsRecursively(mce.Children, ref mcesOptional);
+                    }
+                }
             }
         }
     }
