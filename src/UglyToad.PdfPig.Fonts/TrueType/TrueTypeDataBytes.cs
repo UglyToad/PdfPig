@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType
 {
     using System;
-    using System.IO;
     using System.Text;
     using Core;
 
@@ -81,22 +80,33 @@
         /// </summary>
         public string ReadTag()
         {
-            return ReadString(4, Encoding.UTF8);
+            if (TryReadString(4, Encoding.UTF8, out var result))
+            {
+                return result;
+            }
+
+            throw new InvalidOperationException($"Could not read Tag from TrueType file at {inputBytes.CurrentOffset}.");
         }
 
         /// <summary>
         /// Read a <see langword="string"/> of the given number of bytes in length with the specified encoding.
         /// </summary>
-        public string ReadString(int bytesToRead, Encoding encoding)
+        public bool TryReadString(int bytesToRead, Encoding encoding, out string result)
         {
+            result = null;
             if (encoding == null)
             {
-                throw new ArgumentNullException(nameof(encoding));
+                return false;
             }
 
             byte[] data = new byte[bytesToRead];
-            ReadBuffered(data, bytesToRead);
-            return encoding.GetString(data, 0, data.Length);
+            if (ReadBuffered(data, bytesToRead))
+            {
+                result = encoding.GetString(data, 0, data.Length);
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -234,13 +244,15 @@
             return $"@: {Position} of {inputBytes.Length} bytes.";
         }
 
-        private void ReadBuffered(byte[] buffer, int length)
+        private bool ReadBuffered(byte[] buffer, int length)
         {
             var read = inputBytes.Read(buffer, length);
             if (read < length)
             {
-                throw new EndOfStreamException($"Could not read a buffer of {length} bytes.");
+                return false;
             }
+
+            return true;
         }
     }
 }

@@ -80,9 +80,13 @@
 
                 data.Seek(position);
 
-                var str = data.ReadString(nameRecord.Length, encoding);
+                if (data.TryReadString(nameRecord.Length, encoding, out var str))
+                { 
+                    return nameRecord.ToNameRecord(str);
+                }
 
-                return nameRecord.ToNameRecord(str);
+                // Damaged font
+                return null;
             }
             catch
             {

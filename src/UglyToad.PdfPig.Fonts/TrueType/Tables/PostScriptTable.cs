@@ -203,7 +203,10 @@
                 for (var i = 0; i < namesLength; i++)
                 {
                     var numberOfCharacters = data.ReadByte();
-                    nameArray[i] = data.ReadString(numberOfCharacters, Encoding.UTF8);
+                    if (data.TryReadString(numberOfCharacters, Encoding.UTF8, out var str))
+                    {
+                        nameArray[i] = str;
+                    }
                 }
             }
 
