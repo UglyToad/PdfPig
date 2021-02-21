@@ -23,6 +23,8 @@
             {
                 return true;
             }
+
+            var builderOffsets = new Dictionary<IndirectReference, long>();
             
             var bruteForceOffsets = BruteForceSearcher.GetObjectLocations(bytes);
             if (bruteForceOffsets.Count > 0)
@@ -77,10 +79,11 @@
 
                     foreach (var item in bruteForceOffsets)
                     {
-                        //xrefOffset[item.Key] = item.Value;
+                        builderOffsets[item.Key] = item.Value;
                     }
-
                 }
+
+                actualOffsets = builderOffsets;
             }
 
             return false;
@@ -131,6 +134,12 @@
 
             try
             {
+                if (offset >= bytes.Length)
+                {
+                    bytes.Seek(originOffset);
+                    return false;
+                }
+
                 bytes.Seek(offset);
 
                 if (ReadHelper.IsWhitespace(bytes.CurrentByte))

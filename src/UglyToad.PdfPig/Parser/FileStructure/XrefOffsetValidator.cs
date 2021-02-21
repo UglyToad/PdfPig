@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using Core;
     using Logging;
-    using Parts;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -28,6 +27,11 @@
             if (!isLenientParsing)
             {
                 return startXRefOffset;
+            }
+
+            if (startXRefOffset >= inputBytes.Length)
+            {
+                return CalculateXRefFixedOffset(startXRefOffset, scanner, inputBytes);
             }
 
             scanner.Seek(startXRefOffset);
