@@ -55,6 +55,13 @@
                     int offset = 0;
                     while (offset < rowlength && ((i = input.Read(actline, offset, rowlength - offset)) != -1))
                     {
+                        if (i == 0)
+                        {
+                            // TODO: #291, this indicates a bug in reading logic.
+                            // This only avoids the infinite loop it does not fix the logic bug.
+                            break;
+                        }
+
                         offset += i;
                     }
 
