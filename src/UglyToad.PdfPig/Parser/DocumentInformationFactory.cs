@@ -38,6 +38,11 @@
 
         private static string GetEntryOrDefault(DictionaryToken infoDictionary, NameToken key)
         {
+            if (infoDictionary == null)
+            {
+                return null;
+            }
+
             if (!infoDictionary.TryGet(key, out var value))
             {
                 return null;
