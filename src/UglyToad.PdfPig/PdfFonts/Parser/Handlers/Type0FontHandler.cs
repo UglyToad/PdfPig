@@ -73,9 +73,9 @@
                         toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap));
                     }
                 }
-                else if (DirectObjectFinder.TryGet<NameToken>(toUnicodeValue, scanner, out var toUnicodeName))
+                else if (DirectObjectFinder.TryGet<NameToken>(toUnicodeValue, scanner, out var toUnicodeName)
+                && CMapCache.TryGet(toUnicodeName.Data, out toUnicodeCMap))
                 {
-                    toUnicodeCMap = CMapCache.Get(toUnicodeName.Data);
                 }
                 else
                 {
@@ -144,8 +144,11 @@
 
             if (dictionary.TryGet(NameToken.Encoding, scanner, out NameToken encodingName))
             {
-                var cmap = CMapCache.Get(encodingName.Data);
-
+                if (!CMapCache.TryGet(encodingName.Data, out var cmap))
+                {
+                    throw new InvalidOperationException($"Missing CMap named {encodingName.Data}.");
+                }
+                
                 result = cmap ?? throw new InvalidOperationException($"Missing CMap named {encodingName.Data}.");
 
                 isCMapPredefined = true;
@@ -210,16 +213,28 @@
             }
 
             var fullCmapName = cidFont.SystemInfo.ToString();
-            var nonUnicodeCMap = CMapCache.Get(fullCmapName);
 
-            if (nonUnicodeCMap == null)
+            string registry;
+            string ordering;
+            if (CMapCache.TryGet(fullCmapName, out var nonUnicodeCMap))
             {
-                return (null, true);
+                registry = nonUnicodeCMap.Info.Registry;
+                ordering = nonUnicodeCMap.Info.Ordering;
+            }
+            else
+            {
+                registry = cidFont.SystemInfo.Registry;
+                ordering = cidFont.SystemInfo.Ordering;
+            }
+            
+            var unicodeCMapName = $"{registry}-{ordering}-UCS2";
+
+            if (!CMapCache.TryGet(unicodeCMapName, out var unicodeCMap))
+            {
+                throw new InvalidFontFormatException($"Could not locate CMap by name: {nonUnicodeCMap}.");
             }
 
-            var unicodeCMapName = $"{nonUnicodeCMap.Info.Registry}-{nonUnicodeCMap.Info.Ordering}-UCS2";
-
-            return (CMapCache.Get(unicodeCMapName), true);
+            return (unicodeCMap, true);
         }
     }
 }

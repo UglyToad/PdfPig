@@ -35,10 +35,8 @@
                     {
                         case "usecmap":
                             {
-                                if (previousToken is NameToken name)
+                                if (previousToken is NameToken name && TryParseExternal(name.Data, out var external))
                                 {
-                                    var external = ParseExternal(name.Data);
-
                                     builder.UseCMap(external);
                                 }
                                 else
@@ -120,8 +118,10 @@
             return builder.Build();
         }
 
-        public CMap ParseExternal(string name)
+        public bool TryParseExternal(string name, out CMap result)
         {
+            result = null;
+
             var resources = typeof(CMapParser).Assembly.GetManifestResourceNames();
 
             var resource = resources.FirstOrDefault(x =>
@@ -129,19 +129,28 @@
 
             if (resource == null)
             {
-                throw new InvalidOperationException("Could not find the referenced CMap: " + name);
+                return false;
             }
 
             byte[] bytes;
             using (var stream = typeof(CMapParser).Assembly.GetManifestResourceStream(resource))
-            using (var memoryStream = new MemoryStream())
             {
-                stream.CopyTo(memoryStream);
+                if (stream == null)
+                {
+                    return false;
+                }
 
-                bytes = memoryStream.ToArray();
+                using (var memoryStream = new MemoryStream())
+                {
+                    stream.CopyTo(memoryStream);
+
+                    bytes = memoryStream.ToArray();
+                }
             }
 
-            return Parse(new ByteArrayInputBytes(bytes));
+            result = Parse(new ByteArrayInputBytes(bytes));
+
+            return true;
         }
     }
 }
