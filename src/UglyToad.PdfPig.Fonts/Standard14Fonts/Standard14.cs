@@ -81,6 +81,7 @@
             AddAdobeFontMetrics("ArialMT", "Helvetica");
             AddAdobeFontMetrics("Arial-ItalicMT", "Helvetica-Oblique");
             AddAdobeFontMetrics("Arial-BoldMT", "Helvetica-Bold");
+            AddAdobeFontMetrics("Arial-BoldMT,Bold", "Helvetica-Bold");
             AddAdobeFontMetrics("Arial-BoldItalicMT", "Helvetica-BoldOblique");
         }
 
