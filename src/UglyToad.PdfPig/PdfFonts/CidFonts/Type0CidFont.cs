@@ -16,6 +16,7 @@
         private readonly ICidFontProgram fontProgram;
         private readonly VerticalWritingMetrics verticalWritingMetrics;
         private readonly double? defaultWidth;
+        private readonly double scale;
 
         public NameToken Type { get; }
 
@@ -46,11 +47,13 @@
             this.fontProgram = fontProgram;
             this.verticalWritingMetrics = verticalWritingMetrics;
             this.defaultWidth = defaultWidth;
+
+            scale = 1 / (double)(fontProgram?.GetFontMatrixMultiplier() ?? 1000);
+
             Type = type;
             SubType = subType;
             BaseFont = baseFont;
             SystemInfo = systemInfo;
-            var scale = 1 / (double)(fontProgram?.GetFontMatrixMultiplier() ?? 1000);
             FontMatrix = TransformationMatrix.FromValues(scale, 0, 0, scale, 0, 0);
             Descriptor = descriptor;
             Widths = widths;
@@ -96,9 +99,9 @@
 
             if (fontProgram == null)
             {
-                return Descriptor?.BoundingBox ?? new PdfRectangle(0, 0, 1000, 0);
+                return Descriptor?.BoundingBox ?? new PdfRectangle(0, 0, 1000, 1.0 / scale);
             }
-            
+
             if (fontProgram.TryGetBoundingBox(characterIdentifier, out var boundingBox))
             {
                 return boundingBox;
@@ -106,15 +109,15 @@
 
             if (Widths.TryGetValue(characterIdentifier, out var width))
             {
-                return new PdfRectangle(0, 0, width, 0);
+                return new PdfRectangle(0, 0, width, 1.0 / scale);
             }
 
             if (defaultWidth.HasValue)
             {
-                return new PdfRectangle(0, 0, defaultWidth.Value, 0);
+                return new PdfRectangle(0, 0, defaultWidth.Value, 1.0 / scale);
             }
 
-            return new PdfRectangle(0, 0, 1000, 0);
+            return new PdfRectangle(0, 0, 1000, 1.0 / scale);
         }
 
         public PdfVector GetPositionVector(int characterIdentifier)
