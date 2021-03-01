@@ -29,52 +29,15 @@
             var bruteForceOffsets = BruteForceSearcher.GetObjectLocations(bytes);
             if (bruteForceOffsets.Count > 0)
             {
-                var objStreams = new List<IndirectReference>();
-
                 // find all object streams
                 foreach (var entry in crossReferenceTable.ObjectOffsets)
                 {
                     var offset = entry.Value;
                     if (offset < 0)
                     {
-                        var objStream = new IndirectReference(-offset, 0);
-                        if (!objStreams.Contains(objStream))
-                        {
-                            objStreams.Add(new IndirectReference(-offset, 0));
-                        }
-                    }
-
-                    // remove all found object streams
-                    if (objStreams.Count > 0)
-                    {
-                        foreach (var key in objStreams)
-                        {
-                            if (bruteForceOffsets.ContainsKey(key))
-                            {
-                                // remove all parsed objects which are part of an object stream
-                                //ISet<long> objects = xrefTrailerResolver
-                                //    .getContainedObjectNumbers((int)(key.Number));
-                                //foreach (long objNr in objects)
-                                //{
-                                //    CosObjectKey streamObjectKey = new CosObjectKey(objNr, 0);
-
-                                //    if (bfCOSObjectKeyOffsets.TryGetValue(streamObjectKey, out long streamObjectOffset) && streamObjectOffset > 0)
-                                //    {
-                                //        bfCOSObjectKeyOffsets.Remove(streamObjectKey);
-                                //    }
-                                //}
-                            }
-                            else
-                            {
-                                // remove all objects which are part of an object stream which wasn't found
-                                //ISet<long> objects = xrefTrailerResolver
-                                //    .getContainedObjectNumbers((int)(key.Number));
-                                //foreach (long objNr in objects)
-                                //{
-                                //    xrefOffset.Remove(new CosObjectKey(objNr, 0));
-                                //}
-                            }
-                        }
+                        // Trust stream offsets for now.
+                        // TODO: more validation of streams.
+                        builderOffsets[entry.Key] = entry.Value;
                     }
 
                     foreach (var item in bruteForceOffsets)
