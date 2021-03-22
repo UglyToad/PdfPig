@@ -29,7 +29,7 @@
             {
                 return false;
             }
-            if(!image.TryGetBytes(out var lazyBytes))
+            if (!image.TryGetBytes(out var lazyBytes))
             {
                 lazyBytes = image.RawBytes;
             }
@@ -52,9 +52,18 @@
                 WriteTiffTag(buffer, TiffTag.IMAGEWIDTH, TiffType.LONG, 1, (uint)xImage.ImageDictionary.GetInt(NameToken.Width));
                 WriteTiffTag(buffer, TiffTag.IMAGELENGTH, TiffType.LONG, 1, (uint)xImage.ImageDictionary.GetInt(NameToken.Height));
                 WriteTiffTag(buffer, TiffTag.BITSPERSAMPLE, TiffType.SHORT, 1, (uint)xImage.ImageDictionary.GetInt(NameToken.BitsPerComponent));
-
-                // CCITT Group 4 fax encoding.
-                WriteTiffTag(buffer, TiffTag.COMPRESSION, TiffType.SHORT, 1, (uint)4);
+                
+                var kParam = parameters.GetInt(NameToken.K);
+                if (kParam < 0)
+                {
+                    // CCITT Group 4 fax encoding.
+                    WriteTiffTag(buffer, TiffTag.COMPRESSION, TiffType.SHORT, 1, (uint)Compression.CCITTFAX4);
+                }
+                else
+                {
+                    // CCITT Group 3 fax encoding.
+                    WriteTiffTag(buffer, TiffTag.COMPRESSION, TiffType.SHORT, 1, (uint)Compression.CCITTFAX3);
+                }
 
                 var blackIs1 = false;
                 if (parameters.TryGet(NameToken.BlackIs1, out BooleanToken blackIs1Token))
@@ -155,6 +164,19 @@
             /// 32-bit unsigned integer.
             /// </summary>
             LONG = 4
+        }
+
+        private enum Compression
+        {
+            /// <summary>
+            /// CCITT Group 3 fax encoding.
+            /// </summary>
+            CCITTFAX3 = 3,
+
+            /// <summary>
+            /// CCITT Group 4 fax encoding.
+            /// </summary>
+            CCITTFAX4 = 4,
         }
     }
 }
