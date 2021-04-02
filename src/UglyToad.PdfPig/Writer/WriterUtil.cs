@@ -127,6 +127,11 @@
                         // referencesFromDocument.Add(referenceToken.Data, newReferenceToken);
                         // 
                         var tokenObject = DirectObjectFinder.Get<IToken>(referenceToken.Data, tokenScanner);
+                        if (tokenObject is null) //NullToken allowed
+                        {
+                            return null;
+                        }
+
                         Debug.Assert(!(tokenObject is IndirectReferenceToken));
                         var result = CopyToken(writer, tokenObject, tokenScanner, referencesFromDocument, callstack);
 
