@@ -16,10 +16,10 @@
     internal class Type0FontHandler : IFontHandler
     {
         private readonly CidFontFactory cidFontFactory;
-        private readonly IFilterProvider filterProvider;
+        private readonly ILookupFilterProvider filterProvider;
         private readonly IPdfTokenScanner scanner;
 
-        public Type0FontHandler(CidFontFactory cidFontFactory, IFilterProvider filterProvider,
+        public Type0FontHandler(CidFontFactory cidFontFactory, ILookupFilterProvider filterProvider,
             IPdfTokenScanner scanner)
         {
             this.cidFontFactory = cidFontFactory;
@@ -66,7 +66,7 @@
 
                 if (DirectObjectFinder.TryGet<StreamToken>(toUnicodeValue, scanner, out var toUnicodeStream))
                 {
-                    var decodedUnicodeCMap = toUnicodeStream?.Decode(filterProvider);
+                    var decodedUnicodeCMap = toUnicodeStream?.Decode(filterProvider, scanner);
 
                     if (decodedUnicodeCMap != null)
                     {
@@ -155,7 +155,7 @@
             }
             else if (dictionary.TryGet(NameToken.Encoding, scanner, out StreamToken stream))
             {
-                var decoded = stream.Decode(filterProvider);
+                var decoded = stream.Decode(filterProvider, scanner);
 
                 var cmap = CMapCache.Parse(new ByteArrayInputBytes(decoded));
 

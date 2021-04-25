@@ -2,9 +2,10 @@
 {
     using System.Collections.Generic;
     using PdfPig.Filters;
+    using PdfPig.Tokenization.Scanner;
     using PdfPig.Tokens;
 
-    internal class TestFilterProvider : IFilterProvider
+    internal class TestFilterProvider : ILookupFilterProvider
     {
         public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary)
         {
@@ -17,6 +18,11 @@
         }
 
         public IReadOnlyList<IFilter> GetAllFilters()
+        {
+            return new List<IFilter>();
+        }
+
+        public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary, IPdfTokenScanner scanner)
         {
             return new List<IFilter>();
         }

@@ -6,6 +6,7 @@
     using System.Xml.Linq;
     using Core;
     using Filters;
+    using Tokenization.Scanner;
     using Tokens;
     using Util.JetBrains.Annotations;
 
@@ -15,7 +16,8 @@
     /// </summary>
     public class XmpMetadata
     {
-        private readonly IFilterProvider filterProvider;
+        private readonly ILookupFilterProvider filterProvider;
+        private readonly IPdfTokenScanner pdfTokenScanner;
 
         /// <summary>
         /// The underlying <see cref="StreamToken"/> for this metadata.
@@ -23,9 +25,10 @@
         [NotNull]
         public StreamToken MetadataStreamToken { get; }
 
-        internal XmpMetadata(StreamToken stream, IFilterProvider filterProvider)
+        internal XmpMetadata(StreamToken stream, ILookupFilterProvider filterProvider, IPdfTokenScanner pdfTokenScanner)
         {
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
+            this.pdfTokenScanner = pdfTokenScanner;
             MetadataStreamToken = stream ?? throw new ArgumentNullException(nameof(stream));
         }
 
@@ -35,7 +38,7 @@
         /// <returns>The bytes for the metadata object with any filters removed.</returns>
         public IReadOnlyList<byte> GetXmlBytes()
         {
-            return MetadataStreamToken.Decode(filterProvider);
+            return MetadataStreamToken.Decode(filterProvider, pdfTokenScanner);
         }
 
         /// <summary>

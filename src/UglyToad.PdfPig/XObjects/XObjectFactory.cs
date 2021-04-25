@@ -9,7 +9,6 @@
     using Graphics;
     using Graphics.Colors;
     using Graphics.Core;
-    using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
     using Util;
@@ -17,7 +16,7 @@
     internal static class XObjectFactory
     {
         public static XObjectImage ReadImage(XObjectContentRecord xObject, IPdfTokenScanner pdfScanner,
-            IFilterProvider filterProvider,
+            ILookupFilterProvider filterProvider,
             IResourceStore resourceStore)
         {
             if (xObject == null)
@@ -89,7 +88,7 @@
             var supportsFilters = filterDictionary != null;
             if (filterDictionary != null)
             {
-                var filters = filterProvider.GetFilters(filterDictionary);
+                var filters = filterProvider.GetFilters(filterDictionary, pdfScanner);
                 foreach (var filter in filters)
                 {
                     if (!filter.IsSupported)
@@ -100,7 +99,7 @@
                 }
             }
 
-            var decodedBytes = supportsFilters ? new Lazy<IReadOnlyList<byte>>(() => xObject.Stream.Decode(filterProvider))
+            var decodedBytes = supportsFilters ? new Lazy<IReadOnlyList<byte>>(() => xObject.Stream.Decode(filterProvider, pdfScanner))
                 : null;
 
             var decode = EmptyArray<decimal>.Instance;

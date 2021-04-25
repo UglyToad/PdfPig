@@ -69,7 +69,7 @@
 
         public void AddXObject(XObjectContentRecord xObject,
             IPdfTokenScanner scanner,
-            IFilterProvider filterProvider,
+            ILookupFilterProvider filterProvider,
             IResourceStore resourceStore)
         {
             if (top != null && xObject.Type == XObjectType.Image)

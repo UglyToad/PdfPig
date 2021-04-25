@@ -17,10 +17,10 @@
     internal class Type1FontHandler : IFontHandler
     {
         private readonly IPdfTokenScanner pdfScanner;
-        private readonly IFilterProvider filterProvider;
+        private readonly ILookupFilterProvider filterProvider;
         private readonly IEncodingReader encodingReader;
 
-        public Type1FontHandler(IPdfTokenScanner pdfScanner, IFilterProvider filterProvider,
+        public Type1FontHandler(IPdfTokenScanner pdfScanner, ILookupFilterProvider filterProvider,
             IEncodingReader encodingReader)
         {
             this.pdfScanner = pdfScanner;
@@ -92,7 +92,7 @@
             {
                 var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, pdfScanner);
 
-                var decodedUnicodeCMap = toUnicode?.Decode(filterProvider);
+                var decodedUnicodeCMap = toUnicode?.Decode(filterProvider, pdfScanner);
 
                 if (decodedUnicodeCMap != null)
                 {
@@ -143,7 +143,7 @@
                     return null;
                 }
 
-                var bytes = stream.Decode(filterProvider);
+                var bytes = stream.Decode(filterProvider, pdfScanner);
 
                 // We have a Compact Font Format font rather than an Adobe Type 1 Font.
                 if (stream.StreamDictionary.TryGet(NameToken.Subtype, out NameToken subTypeName)

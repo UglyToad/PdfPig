@@ -71,7 +71,7 @@
             DictionaryToken imageDictionary,
             IPdfTokenScanner scanner,
             IResourceStore resourceStore,
-            IFilterProvider filterProvider,
+            ILookupFilterProvider filterProvider,
             bool cannotRecurse = false)
         {
             if (!colorSpace.HasValue)
@@ -179,7 +179,7 @@
                         }
                         else if (DirectObjectFinder.TryGet(fourth, scanner, out StreamToken tableStreamToken))
                         {
-                            tableBytes = tableStreamToken.Decode(filterProvider);
+                            tableBytes = tableStreamToken.Decode(filterProvider, scanner);
                         }
                         else
                         {

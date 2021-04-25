@@ -18,7 +18,7 @@
 
         public IReadOnlyList<byte> Bytes { get; set; }
 
-        public InlineImage CreateInlineImage(TransformationMatrix transformationMatrix, IFilterProvider filterProvider,
+        public InlineImage CreateInlineImage(TransformationMatrix transformationMatrix, ILookupFilterProvider filterProvider,
             IPdfTokenScanner tokenScanner,
             RenderingIntent defaultRenderingIntent,
             IResourceStore resourceStore)
@@ -28,8 +28,6 @@
                 throw new InvalidOperationException($"Inline image builder not completely defined before calling {nameof(CreateInlineImage)}.");
             }
 
-
-            
             var bounds = transformationMatrix.Transform(new PdfRectangle(new PdfPoint(1, 1),
                 new PdfPoint(0, 0)));
 

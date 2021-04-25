@@ -16,7 +16,7 @@
     using System.Linq;
     using Tokenization.Scanner;
     using Tokens;
-    using UglyToad.PdfPig.Graphics.Operations.TextPositioning;
+    using Operations.TextPositioning;
     using XObjects;
     using static PdfPig.Core.PdfSubpath;
 
@@ -47,7 +47,7 @@
         private readonly PageRotationDegrees rotation;
         private readonly IPdfTokenScanner pdfScanner;
         private readonly IPageContentParser pageContentParser;
-        private readonly IFilterProvider filterProvider;
+        private readonly ILookupFilterProvider filterProvider;
         private readonly ILog log;
         private readonly bool clipPaths;
         private readonly PdfVector pageSize;
@@ -88,7 +88,7 @@
         public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation,
             IPdfTokenScanner pdfScanner,
             IPageContentParser pageContentParser,
-            IFilterProvider filterProvider,
+            ILookupFilterProvider filterProvider,
             ILog log,
             bool clipPaths,
             PdfVector pageSize)
@@ -448,7 +448,7 @@
 
             startState.CurrentTransformationMatrix = resultingTransformationMatrix;
 
-            var contentStream = formStream.Decode(filterProvider);
+            var contentStream = formStream.Decode(filterProvider, pdfScanner);
 
             var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentStream), log);
 

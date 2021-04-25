@@ -44,7 +44,7 @@
         [NotNull]
         private readonly IPdfTokenScanner pdfScanner;
 
-        private readonly IFilterProvider filterProvider;
+        private readonly ILookupFilterProvider filterProvider;
         private readonly BookmarksProvider bookmarksProvider;
 
         [NotNull]
@@ -92,7 +92,7 @@
             DocumentInformation information, 
             EncryptionDictionary encryptionDictionary,
             IPdfTokenScanner pdfScanner,
-            IFilterProvider filterProvider,
+            ILookupFilterProvider filterProvider,
             AcroFormFactory acroFormFactory,
             BookmarksProvider bookmarksProvider,
             bool clipPaths)
@@ -202,7 +202,7 @@
                 return false;
             }
 
-            metadata = new XmpMetadata(xmpStreamToken, filterProvider);
+            metadata = new XmpMetadata(xmpStreamToken, filterProvider, pdfScanner);
 
             return true;
         }
@@ -219,7 +219,11 @@
             }
 
             bookmarks = bookmarksProvider.GetBookmarks(Structure.Catalog);
-            if (bookmarks != null) return true;
+            if (bookmarks != null)
+            {
+                return true;
+            }
+
             return false;
         }
 

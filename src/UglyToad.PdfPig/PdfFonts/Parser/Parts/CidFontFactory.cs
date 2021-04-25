@@ -17,10 +17,10 @@
 
     internal class CidFontFactory
     {
-        private readonly IFilterProvider filterProvider;
+        private readonly ILookupFilterProvider filterProvider;
         private readonly IPdfTokenScanner pdfScanner;
 
-        public CidFontFactory(IPdfTokenScanner pdfScanner, IFilterProvider filterProvider)
+        public CidFontFactory(IPdfTokenScanner pdfScanner, ILookupFilterProvider filterProvider)
         {
             this.pdfScanner = pdfScanner;
             this.filterProvider = filterProvider;
@@ -109,7 +109,7 @@
                 return null;
             }
 
-            var fontFile = fontFileStream.Decode(filterProvider);
+            var fontFile = fontFileStream.Decode(filterProvider, pdfScanner);
 
             switch (descriptor.FontFile.FileType)
             {
@@ -134,14 +134,14 @@
                         if (subtypeName == NameToken.CidFontType0C
                             || subtypeName == NameToken.Type1C)
                         {
-                            var bytes = str.Decode(filterProvider);
+                            var bytes = str.Decode(filterProvider, pdfScanner);
                             var font = CompactFontFormatParser.Parse(new CompactFontFormatData(bytes));
                             return new PdfCidCompactFontFormatFont(font);
                         }
 
                         if (subtypeName == NameToken.OpenType)
                         {
-                            var bytes = str.Decode(filterProvider);
+                            var bytes = str.Decode(filterProvider, pdfScanner);
                             var ttf = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(bytes)));
                             return new PdfCidTrueTypeFont(ttf);
                         }
@@ -301,7 +301,7 @@
                 throw new PdfDocumentFormatException($"No stream or name token found for /CIDToGIDMap in dictionary: {dictionary}.");
             }
 
-            var bytes = stream.Decode(filterProvider);
+            var bytes = stream.Decode(filterProvider, pdfScanner);
 
             return new CharacterIdentifierToGlyphIndexMap(bytes);
         }

@@ -62,5 +62,18 @@
 
             return transform;
         }
+
+        internal static IReadOnlyList<byte> Decode(this StreamToken stream, ILookupFilterProvider filterProvider, IPdfTokenScanner scanner)
+        {
+            var filters = filterProvider.GetFilters(stream.StreamDictionary, scanner);
+
+            var transform = stream.Data;
+            for (var i = 0; i < filters.Count; i++)
+            {
+                transform = filters[i].Decode(transform, stream.StreamDictionary, i);
+            }
+
+            return transform;
+        }
     }
 }

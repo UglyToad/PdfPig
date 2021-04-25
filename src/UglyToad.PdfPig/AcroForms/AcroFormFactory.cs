@@ -6,7 +6,6 @@
     using Content;
     using Core;
     using CrossReference;
-    using Exceptions;
     using Fields;
     using Filters;
     using Parser.Parts;
@@ -30,10 +29,10 @@
         };
 
         private readonly IPdfTokenScanner tokenScanner;
-        private readonly IFilterProvider filterProvider;
+        private readonly ILookupFilterProvider filterProvider;
         private readonly CrossReferenceTable crossReferenceTable;
 
-        public AcroFormFactory(IPdfTokenScanner tokenScanner, IFilterProvider filterProvider, CrossReferenceTable crossReferenceTable)
+        public AcroFormFactory(IPdfTokenScanner tokenScanner, ILookupFilterProvider filterProvider, CrossReferenceTable crossReferenceTable)
         {
             this.tokenScanner = tokenScanner ?? throw new ArgumentNullException(nameof(tokenScanner));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
@@ -314,7 +313,7 @@
                 }
                 else if (DirectObjectFinder.TryGet(textValueToken, tokenScanner, out StreamToken valueStreamToken))
                 {
-                    textValue = OtherEncodings.BytesAsLatin1String(valueStreamToken.Decode(filterProvider).ToArray());
+                    textValue = OtherEncodings.BytesAsLatin1String(valueStreamToken.Decode(filterProvider, tokenScanner).ToArray());
                 }
             }
 

@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
     using System.Collections.Generic;
+    using Tokenization.Scanner;
     using Tokens;
 
     /// <summary>
@@ -22,5 +23,10 @@
         /// Get all available filters in this library.
         /// </summary>
         IReadOnlyList<IFilter> GetAllFilters();
+    }
+
+    internal interface ILookupFilterProvider : IFilterProvider
+    {
+        IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary, IPdfTokenScanner scanner);
     }
 }

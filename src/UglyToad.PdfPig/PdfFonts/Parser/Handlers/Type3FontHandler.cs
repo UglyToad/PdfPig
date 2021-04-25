@@ -13,11 +13,11 @@
 
     internal class Type3FontHandler : IFontHandler
     {
-        private readonly IFilterProvider filterProvider;
+        private readonly ILookupFilterProvider filterProvider;
         private readonly IEncodingReader encodingReader;
         private readonly IPdfTokenScanner scanner;
 
-        public Type3FontHandler(IPdfTokenScanner scanner, IFilterProvider filterProvider,
+        public Type3FontHandler(IPdfTokenScanner scanner, ILookupFilterProvider filterProvider,
             IEncodingReader encodingReader)
         {
             this.filterProvider = filterProvider;
@@ -42,7 +42,7 @@
             {
                 var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, scanner);
 
-                var decodedUnicodeCMap = toUnicode?.Decode(filterProvider);
+                var decodedUnicodeCMap = toUnicode?.Decode(filterProvider, scanner);
 
                 if (decodedUnicodeCMap != null)
                 {

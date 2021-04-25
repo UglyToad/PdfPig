@@ -19,11 +19,11 @@
     {
         private readonly IPdfTokenScanner pdfScanner;
         private readonly IResourceStore resourceStore;
-        private readonly IFilterProvider filterProvider;
+        private readonly ILookupFilterProvider filterProvider;
         private readonly IPageContentParser pageContentParser;
         private readonly ILog log;
 
-        public PageFactory(IPdfTokenScanner pdfScanner, IResourceStore resourceStore, IFilterProvider filterProvider,
+        public PageFactory(IPdfTokenScanner pdfScanner, IResourceStore resourceStore, ILookupFilterProvider filterProvider,
             IPageContentParser pageContentParser,
             ILog log)
         {
@@ -122,7 +122,7 @@
                         throw new InvalidOperationException($"Could not find the contents for object {obj}.");
                     }
 
-                    bytes.AddRange(contentStream.Decode(filterProvider));
+                    bytes.AddRange(contentStream.Decode(filterProvider, pdfScanner));
 
                     if (i < array.Data.Count - 1)
                     {
@@ -141,7 +141,7 @@
                     throw new InvalidOperationException("Failed to parse the content for the page: " + number);
                 }
 
-                var bytes = contentStream.Decode(filterProvider);
+                var bytes = contentStream.Decode(filterProvider, pdfScanner);
 
                 content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, clipPaths, mediaBox);
             }

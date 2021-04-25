@@ -16,13 +16,13 @@
     public class AdvancedPdfDocumentAccess : IDisposable
     {
         private readonly IPdfTokenScanner pdfScanner;
-        private readonly IFilterProvider filterProvider;
+        private readonly ILookupFilterProvider filterProvider;
         private readonly Catalog catalog;
 
         private bool isDisposed;
 
         internal AdvancedPdfDocumentAccess(IPdfTokenScanner pdfScanner,
-            IFilterProvider filterProvider,
+            ILookupFilterProvider filterProvider,
             Catalog catalog)
         {
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
@@ -73,7 +73,7 @@
                     fileSpecification = fileSpecificationToken.Data;
                 }
 
-                var fileBytes = fileStreamToken.Decode(filterProvider);
+                var fileBytes = fileStreamToken.Decode(filterProvider, pdfScanner);
 
                 result.Add(new EmbeddedFile(keyValuePair.Key, fileSpecification, fileBytes, fileStreamToken));
             }

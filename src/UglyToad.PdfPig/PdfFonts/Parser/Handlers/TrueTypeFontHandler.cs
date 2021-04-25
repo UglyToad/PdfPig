@@ -25,12 +25,12 @@
     {
         private readonly ILog log;
         private readonly IPdfTokenScanner pdfScanner;
-        private readonly IFilterProvider filterProvider;
+        private readonly ILookupFilterProvider filterProvider;
         private readonly IEncodingReader encodingReader;
         private readonly ISystemFontFinder systemFontFinder;
         private readonly IFontHandler type1FontHandler;
 
-        public TrueTypeFontHandler(ILog log, IPdfTokenScanner pdfScanner, IFilterProvider filterProvider,
+        public TrueTypeFontHandler(ILog log, IPdfTokenScanner pdfScanner, ILookupFilterProvider filterProvider,
             IEncodingReader encodingReader,
             ISystemFontFinder systemFontFinder,
             IFontHandler type1FontHandler)
@@ -109,7 +109,7 @@
             {
                 var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, pdfScanner);
 
-                var decodedUnicodeCMap = toUnicode.Decode(filterProvider);
+                var decodedUnicodeCMap = toUnicode.Decode(filterProvider, pdfScanner);
 
                 if (decodedUnicodeCMap != null)
                 {
@@ -173,7 +173,7 @@
             {
                 var fontFileStream = DirectObjectFinder.Get<StreamToken>(descriptor.FontFile.ObjectKey, pdfScanner);
 
-                var fontFile = fontFileStream.Decode(filterProvider);
+                var fontFile = fontFileStream.Decode(filterProvider, pdfScanner);
 
                 if (descriptor.FontFile.FileType == DescriptorFontFile.FontFileType.FromSubtype)
                 {

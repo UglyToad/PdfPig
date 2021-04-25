@@ -22,7 +22,7 @@
 
         private readonly IInputBytes inputBytes;
         private readonly IObjectLocationProvider objectLocationProvider;
-        private readonly IFilterProvider filterProvider;
+        private readonly ILookupFilterProvider filterProvider;
         private readonly CoreTokenScanner coreTokenScanner;
 
         private IEncryptionHandler encryptionHandler;
@@ -50,7 +50,7 @@
 
         public long Length => coreTokenScanner.Length;
 
-        public PdfTokenScanner(IInputBytes inputBytes, IObjectLocationProvider objectLocationProvider, IFilterProvider filterProvider,
+        public PdfTokenScanner(IInputBytes inputBytes, IObjectLocationProvider objectLocationProvider, ILookupFilterProvider filterProvider,
             IEncryptionHandler encryptionHandler)
         {
             this.inputBytes = inputBytes;
@@ -794,7 +794,7 @@
             }
 
             // Read the N integers
-            var bytes = new ByteArrayInputBytes(stream.Decode(filterProvider));
+            var bytes = new ByteArrayInputBytes(stream.Decode(filterProvider, this));
 
             var scanner = new CoreTokenScanner(bytes);
 

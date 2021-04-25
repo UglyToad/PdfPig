@@ -21,7 +21,7 @@
         private readonly IReadOnlyList<Union<XObjectContentRecord, InlineImage>> images;
         private readonly IReadOnlyList<MarkedContentElement> markedContents;
         private readonly IPdfTokenScanner pdfScanner;
-        private readonly IFilterProvider filterProvider;
+        private readonly ILookupFilterProvider filterProvider;
         private readonly IResourceStore resourceStore;
 
         internal IReadOnlyList<IGraphicsStateOperation> GraphicsStateOperations { get; }
@@ -37,7 +37,7 @@
             IReadOnlyList<Union<XObjectContentRecord, InlineImage>> images,
             IReadOnlyList<MarkedContentElement> markedContents,
             IPdfTokenScanner pdfScanner,
-            IFilterProvider filterProvider,
+            ILookupFilterProvider filterProvider,
             IResourceStore resourceStore)
         {
             GraphicsStateOperations = graphicsStateOperations;

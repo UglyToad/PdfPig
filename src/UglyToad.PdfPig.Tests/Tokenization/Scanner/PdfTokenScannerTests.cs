@@ -15,7 +15,9 @@
         [Fact]
         public void ReadsSimpleObject()
         {
-            const string s = @"294 0 obj/WDKAAR+CMBX12 endobj";
+            const string s = @"294 0 obj
+/WDKAAR+CMBX12 
+endobj";
 
             var pdfScanner = GetScanner(s); 
 
@@ -116,7 +118,15 @@ endobj
         [Fact]
         public void ReadsArrayObject()
         {
-            const string s = @"endobj295 0 obj[ 676 938 875 787 750 880 813 875 813 875 813 656 625 625 938 938 313 344 563 563 563 563 563 850 500 574 813 875 563 1019 1144 875 313]endobj";
+            const string s = @"
+endobj
+
+295 0 obj
+[ 
+676 938 875 787 750 880 813 875 813 875 813 656 625 625 938 938 313 
+344 563 563 563 563 563 850 500 574 813 875 563 1019 1144 875 313
+]
+endobj";
 
             var pdfScanner = GetScanner(s);
 
@@ -143,8 +153,29 @@ endobj
         {
             const string s = @"
 
-274 0 obj<< /Type /Pages /Count 2 /Parent 275 0 R /Kids [ 121 0 R 125 0 R ] >> endobj
-%Other parts...310 0 obj/WPXNWT+CMR9 endobj 311 0 obj<< /Type /Font /Subtype /Type1 /FirstChar 0 /LastChar 127 /Widths 313 0 R /BaseFont 310 0 R /FontDescriptor 312 0 R >> endobj";
+274 0 obj
+<< 
+/Type /Pages 
+/Count 2 
+/Parent 275 0 R 
+/Kids [ 121 0 R 125 0 R ] 
+>> 
+endobj
+
+%Other parts...
+
+310 0 obj
+/WPXNWT+CMR9 
+endobj 311 0 obj
+<< 
+/Type /Font 
+/Subtype /Type1 
+/FirstChar 0 
+/LastChar 127 
+/Widths 313 0 R 
+/BaseFont 310 0 R /FontDescriptor 312 0 R 
+>> 
+endobj";
 
             var scanner = GetScanner(s);
 
@@ -191,11 +222,16 @@ endobj
         public void ReadsStreamObject()
         {
             const string s = @"
-352 0 obj<< /S 1273 /Filter /FlateDecode /Length 353 0 R >> stream
+352 0 obj
+<< /S 1273 /Filter /FlateDecode /Length 353 0 R >> 
+stream
 H‰œUkLSgþÚh¹IÝÅlK(%[ÈÅ©+ƒåê©ŠèæÇtnZ)Z¹¨Oå~9ŠÊµo”[éiK)÷B¹´
 É² ©¸˜ n±º×dKöcÏ÷ãœç{ßï}¾÷ÍÉs   Ô;€
-À»—ÀF`ÇF@ƒ4˜ï	@¥T¨³fY: žwÌµ;’’Îq®]cƒÿdp¨ÛI3F#G©#œ)TÇqW£NÚÑ¬gOKbü‡µ#á¡£Þaîtƒƒ›ß–¾“S>}µuÕõ5M±¢ª†»øÞû•q÷îÜ~¬PòžÞ~•¬ëÉƒGÅ-Ñ­ím·°gêêb,/,£P§õ^v¾ãÁô¿¿ŠTE]²±{šuwÔ`LG³DªìTÈA¡¬àð‰É©ˆ°‘¼›‚%¥×s³®í»š}%§X{{tøNåÝž¶ö¢ÖÞ¾–~´¼¬°À“Éððr¥8»P£ØêÁi½®Û(éhŽ‘ú;x#dÃÄ$m
-+))†…±n
+À»—ÀF`ÇF@ƒ4˜ï	@¥T¨³fY: žwÌµ;’’Îq®]cƒÿdp¨ÛI3F#G©#œ)TÇqW£NÚÑ¬gOKbü‡µ#á¡£Þaîtƒƒ›ß–
+¾“S>}µuÕõ5M±¢ª†»øÞû•q÷îÜ~¬PòžÞ~•¬ëÉƒGÅ-Ñ­ím·°gêêb,/,£P§õ^v¾ãÁô¿¿ŠTE]²±{šuwÔ`LG³DªìTÈ
+A¡¬àð‰É©ˆ°‘¼›‚%¥×s³®í»š}%§X{{tøNåÝž¶ö¢ÖÞ¾–~´¼¬°À“Éððr¥8»P£ØêÁi½®Û(éhŽ‘ú;x#dÃÄ$m
++)
+)†…±n
 9ùyŽA·n\ï»t!=3£½¡:®­µåâ¹Ô³ø¼ËiûSÎsë;•Dt—ö$WÉ4U‘¢ºÚšñá1íÐèÔó‚svõ(/(+D²#mZÏ6êüÝ7x‡—†”‡E„²‚|ê«êªDµ5q°šR¦RÈ£n¾[è~“}ýƒÝ½Sêž¦'æQŽzÝ‚mæ
 óF+Õ%ù‡ƒß9SË†ŒÓãšH¶~L-#T]êîÁ©ÎkbjÒp½¸$¤´(4<,""øfvÎ•< VÐ«#4'2l'Ð1ñðn?sìûãI'OŸøñçŸN5(äÊ'âÎÑ¾ÞþíðƒQmu}]Õ£‡c›©.Œòµ9zz0Ñ²‚B¢«#š-3ªà<cš¥’¡È¨qµ¦{pìÛ„Ã‡ŽŠ/íO»|áIclSCuo_Oœ\\ï!ª©«­ªƒTþ5Ó‹™Ü”óî_9|ýÍ7ø!Ñý|2Goÿ€Î¶Öö…<ðáƒGéGá½G´Ã.®TŠóî=_|þ™‡ƒééFwßà 0æîc_Óë¦³|ý|¶®æ„…†G8Òüï€l…\¦RFº:‰	VPð•S“Û¶ï V—ø/¿¾Xæ+«««ÖŽ4>ŸŸ¦Pà8®Ó…¼æ¢BaÅÐkëÊŠukÈÊÖL£­ivvv…k2=µZMØ|Úl(ŠZ­V›ÍbI>Ÿl¹œ(â±Äb­ø”Uªñeü©U*‹’“Oð,„E+¶Êà>ŽU”ÎÌõçlºFÃ_ÃÙl?¶=>>!>þC¿-×à©©©x¾€¢ŠÊåòtÃ0‹Æôz“‰ NÊ,¬‚kÀ°F‚XÛ4&“ÉfÃñÅæûæy=ÆãIðE_¾Èårår/XÞ„/·qò›m¶ìÖ|†óx8Wð¹hºÜÂÕalÎü’˜Ã0^Òòòü¼yÞ¶´´DX
                 )¨ÇM8lüM…Oúý| 1Ïãk»:t<…ÂÚl¶e¾†” éKÜl6c¹¸É„› ”)‰'3¤œ\–™ËN–™ÿe^Ð² y÷ð¹f`3ëž´	¸“$d:e†)!%2ºdvË@½N¼ªŠ Ùná¹ ¼¿@€Ã.èšs ì÷ûM€2(E4_ | FÑ.@v@÷¤ÃÅ0È Pž~,€:»H¤k¾hT	Œ	€ êÇV:Ô…©@@oH¯(3T‰{""C½SñŠœþtz3€•ƒ ñf.¬SÐøzWþ*$9gj=~Ì·QD E6o¥Ûi/Â`1ígGMq,;}Ž¼sÔ×®kDü˜J{e5‚²ìÉ~Y)}fA>:˜ù–""Yò	ç¹=ù²yÛ¡¿i	aœ‘ØÏºþÇoäO ôkÆ)
@@ -339,7 +375,31 @@ endobj";
         [Fact]
         public void ReadsStringsWithMissingEndBracket()
         {
-            const string input = @"5 0 obj<</Kids [4 0 R 12 0 R 17 0 R 20 0 R 25 0 R 28 0 R ]/Count 6/Type /Pages/MediaBox [ 0 0 612 792 ]>>endobj1 0 obj<</Creator (Corel WordPerfect - [D:\Wpdocs\WEBSITE\PROC&POL.WP6 (unmodified)/CreationDate (D:19980224130723)/Title (Proc&Pol.pdf)/Author (J. L. Swezey)/Producer (Acrobat PDFWriter 3.03 for Windows NT)/Keywords (Budapest Treaty; Patent deposits; IDA)/Subject (Patent Collection Procedures and Policies)>>endobj3 0 obj<</Pages 5 0 R/Type /Catalog>>endobj";
+            const string input = @"5 0 obj
+<<
+/Kids [4 0 R 12 0 R 17 0 R 20 0 R 25 0 R 28 0 R ]
+/Count 6
+/Type /Pages
+/MediaBox [ 0 0 612 792 ]
+>>
+endobj
+1 0 obj
+<<
+/Creator (Corel WordPerfect - [D:\Wpdocs\WEBSITE\PROC&POL.WP6 (unmodified)
+/CreationDate (D:19980224130723)
+/Title (Proc&Pol.pdf)
+/Author (J. L. Swezey)
+/Producer (Acrobat PDFWriter 3.03 for Windows NT)
+/Keywords (Budapest Treaty; Patent deposits; IDA)
+/Subject (Patent Collection Procedures and Policies)
+>>
+endobj
+3 0 obj
+<<
+/Pages 5 0 R
+/Type /Catalog
+>>
+endobj";
 
             var scanner = GetScanner(input);
 

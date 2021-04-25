@@ -83,7 +83,7 @@
         private static PdfDocument OpenDocument(IInputBytes inputBytes, ISeekableTokenScanner scanner, ILog log, bool isLenientParsing, 
             IReadOnlyList<string> passwords, bool clipPaths)
         {
-            var filterProvider = DefaultFilterProvider.Instance;
+            var filterProvider = new FilterProviderWithLookup(DefaultFilterProvider.Instance);
 
             CrossReferenceTable crossReferenceTable = null;
 
