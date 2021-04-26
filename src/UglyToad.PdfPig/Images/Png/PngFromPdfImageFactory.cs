@@ -26,12 +26,12 @@
 
             try
             {
-                var is3Byte = actualColorSpace == ColorSpace.DeviceRGB || actualColorSpace == ColorSpace.DeviceCMYK;
-                var multiplier = is3Byte ? 3 : 1;
-
+                var numberOfComponents = actualColorSpace == ColorSpace.DeviceCMYK ? 4 : actualColorSpace == ColorSpace.DeviceRGB ? 3 : 1;
+                var is3Byte = numberOfComponents == 3;
+                
                 var builder = PngBuilder.Create(image.WidthInSamples, image.HeightInSamples, false);
 
-                var isCorrectlySized = bytesPure.Count == (image.WidthInSamples * image.HeightInSamples * (image.BitsPerComponent / 8) * multiplier);
+                var isCorrectlySized = bytesPure.Count == (image.WidthInSamples * image.HeightInSamples * (image.BitsPerComponent / 8) * numberOfComponents);
 
                 if (!isCorrectlySized)
                 {
