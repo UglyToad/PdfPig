@@ -181,6 +181,10 @@
                         {
                             tableBytes = tableStreamToken.Decode(filterProvider, scanner);
                         }
+                        else if (DirectObjectFinder.TryGet(fourth, scanner, out StringToken stringToken))
+                        {
+                            tableBytes = stringToken.GetBytes();
+                        }
                         else
                         {
                             return UnsupportedColorSpaceDetails.Instance;
