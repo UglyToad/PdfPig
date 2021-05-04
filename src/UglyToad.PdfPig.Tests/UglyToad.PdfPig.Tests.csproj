@@ -133,4 +133,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Images\" />
+    <Folder Include="Images\Files\" />
+  </ItemGroup>
 </Project>

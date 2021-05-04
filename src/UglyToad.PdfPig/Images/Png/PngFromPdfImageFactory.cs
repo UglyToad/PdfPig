@@ -22,16 +22,17 @@
                 return false;
             }
 
-            bytesPure = ColorSpaceDetailsByteConverter.Convert(image.ColorSpaceDetails, bytesPure);
-
             try
             {
+                bytesPure = ColorSpaceDetailsByteConverter.Convert(image.ColorSpaceDetails, bytesPure,
+                    image.BitsPerComponent, image.WidthInSamples, image.HeightInSamples);
+
                 var numberOfComponents = actualColorSpace == ColorSpace.DeviceCMYK ? 4 : actualColorSpace == ColorSpace.DeviceRGB ? 3 : 1;
                 var is3Byte = numberOfComponents == 3;
-                
+
                 var builder = PngBuilder.Create(image.WidthInSamples, image.HeightInSamples, false);
 
-                var isCorrectlySized = bytesPure.Count == (image.WidthInSamples * image.HeightInSamples * (image.BitsPerComponent / 8) * numberOfComponents);
+                var isCorrectlySized = bytesPure.Count == (image.WidthInSamples * image.HeightInSamples * numberOfComponents);
 
                 if (!isCorrectlySized)
                 {
@@ -75,7 +76,6 @@
                 }
 
                 bytes = builder.Save();
-
                 return true;
             }
             catch
