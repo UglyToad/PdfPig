@@ -18,7 +18,7 @@
         /// change the data but for <see cref="ColorSpace.Indexed"/> it will convert the bytes which are indexes into the
         /// real pixel data into the real pixel data.
         /// </summary>
-        public static byte[] Convert(ColorSpaceDetails details, IReadOnlyList<byte> decoded)
+        public static byte[] Convert(ColorSpaceDetails details, IReadOnlyList<byte> decoded, int bitsPerComponent, int imageWidth, int imageHeight)
         {
             if (decoded == null)
             {
@@ -33,10 +33,51 @@
             switch (details)
             {
                 case IndexedColorSpaceDetails indexed:
+                    if (bitsPerComponent != 8)
+                    {
+                        // To ease unwrapping further below the indices are unpacked to occupy a single byte each
+                        decoded = UnpackIndices(decoded, bitsPerComponent);
+
+                        // Remove padding bytes when the stride width differs from the image width
+                        var stride = (imageWidth * bitsPerComponent + 7) / 8;
+                        var strideWidth = stride * (8 / bitsPerComponent);
+                        if (strideWidth != imageWidth)
+                        {
+                            decoded = RemoveStridePadding(decoded.ToArray(), strideWidth, imageWidth, imageHeight);
+                        }
+                    }
+
                     return UnwrapIndexedColorSpaceBytes(indexed, decoded);
             }
 
             return decoded.ToArray();
+        }
+
+        private static byte[] UnpackIndices(IReadOnlyList<byte> input, int bitsPerComponent)
+        {
+                IEnumerable<byte> Unpack(byte b)
+                {
+                    // Enumerate bits in bitsPerComponent-sized chunks from MSB to LSB, masking on the appropriate bits
+                    for (int i = 8 - bitsPerComponent; i >= 0; i -= bitsPerComponent)
+                    {
+                        yield return (byte)((b >> i) & ((int)Math.Pow(2, bitsPerComponent) - 1));
+                    }
+                }
+               
+                return input.SelectMany(b => Unpack(b)).ToArray();
+        }
+
+        private static byte[] RemoveStridePadding(byte[] input, int strideWidth, int imageWidth, int imageHeight)
+        {
+            var result = new byte[imageWidth * imageHeight];
+            for (int y = 0; y < imageHeight; y++)
+            {
+                int sourceIndex = y * strideWidth;
+                int targetIndex = y * imageWidth;
+                Array.Copy(input, sourceIndex, result, targetIndex, imageWidth);
+            }
+
+            return result;
         }
 
         private static byte[] UnwrapIndexedColorSpaceBytes(IndexedColorSpaceDetails indexed, IReadOnlyList<byte> input)

@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
     using Content;
-    using Images.Png;
+    using UglyToad.PdfPig.Images.Png;
     using Xunit;
 
     public class SwedishTouringCarChampionshipTests
