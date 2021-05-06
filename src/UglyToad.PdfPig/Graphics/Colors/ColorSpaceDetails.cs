@@ -85,6 +85,14 @@
     public class IndexedColorSpaceDetails : ColorSpaceDetails
     {
         /// <summary>
+        /// The lossless CCITT compression schemes are used for bitonal black and white images.
+        /// This is equivalent to an IndexedColorSpaceDetails with a black and white palette.
+        /// Index 0 is white and index 1 is black.
+        /// </summary>
+        internal static readonly IndexedColorSpaceDetails CCITTFaxColorSpaceDetails
+            = new IndexedColorSpaceDetails(DeviceGrayColorSpaceDetails.Instance, 1, new byte[] { 255, 0 });
+
+        /// <summary>
         /// The base color space in which the values in the color table are to be interpreted.
         /// It can be any device or CIE-based color space or(in PDF 1.3) a Separation or DeviceN space,
         /// but not a Pattern space or another Indexed space.

@@ -18,9 +18,9 @@
                 throw new ArgumentOutOfRangeException(nameof(index), "Index must be 0 or greater");
             }
 
-            var filter = GetDictionaryObject(streamDictionary, NameToken.Filter, NameToken.F);
+            var filter = streamDictionary.GetDictionaryObject(NameToken.Filter, NameToken.F);
 
-            var parameters = GetDictionaryObject(streamDictionary, NameToken.DecodeParms, NameToken.Dp);
+            var parameters = streamDictionary.GetDictionaryObject(NameToken.DecodeParms, NameToken.Dp);
 
             switch (filter)
             {
@@ -44,21 +44,6 @@
             }
 
             return new DictionaryToken(new Dictionary<NameToken, IToken>());
-        }
-
-        private static IToken GetDictionaryObject(DictionaryToken dictionary, NameToken first, NameToken second)
-        {
-            if (dictionary.TryGet(first, out var token))
-            {
-                return token;
-            }
-
-            if (dictionary.TryGet(second, out token))
-            {
-                return token;
-            }
-
-            return null;
         }
     }
 }

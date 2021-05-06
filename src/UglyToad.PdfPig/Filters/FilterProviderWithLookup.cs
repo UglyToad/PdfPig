@@ -33,7 +33,8 @@
                 throw new ArgumentNullException(nameof(dictionary));
             }
 
-            if (!dictionary.TryGet(NameToken.Filter, out var token))
+            var token = dictionary.GetDictionaryObject(NameToken.Filter, NameToken.F);
+            if (token == null)
             {
                 return EmptyArray<IFilter>.Instance;
             }
