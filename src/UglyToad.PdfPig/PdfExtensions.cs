@@ -47,49 +47,6 @@
             return typedToken;
         }
 
-        internal static IToken GetDictionaryObject(this DictionaryToken dictionary, NameToken name)
-        {
-            if (dictionary.TryGet(name, out var token))
-            {
-                return token;
-            }
-
-            return null;
-        }
-
-        internal static IToken GetDictionaryObject(this DictionaryToken dictionary, NameToken first, NameToken second)
-        {
-            if (dictionary.TryGet(first, out var token))
-            {
-                return token;
-            }
-
-            if (dictionary.TryGet(second, out token))
-            {
-                return token;
-            }
-
-            return null;
-        }
-
-        internal static int GetInt(this DictionaryToken dictionary, NameToken name, int defaultValue)
-        {
-            var numericToken = dictionary.GetDictionaryObject(name) as NumericToken;
-            return numericToken?.Int ?? defaultValue;
-        }
-
-        internal static int GetInt(this DictionaryToken dictionary, NameToken first, NameToken second, int defaultValue)
-        {
-            var numericToken = dictionary.GetDictionaryObject(first, second) as NumericToken;
-            return numericToken?.Int ?? defaultValue;
-        }
-
-        internal static bool GetBoolean(this DictionaryToken dictionary, NameToken name, bool defaultValue)
-        {
-            var booleanToken = dictionary.GetDictionaryObject(name) as BooleanToken;
-            return booleanToken?.Data ?? defaultValue;
-        }
-
         /// <summary>
         /// Get the decoded data from this stream.
         /// </summary>

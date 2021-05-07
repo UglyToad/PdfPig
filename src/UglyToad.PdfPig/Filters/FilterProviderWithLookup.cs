@@ -7,6 +7,7 @@
     using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
+    using UglyToad.PdfPig.Util;
 
     internal class FilterProviderWithLookup : ILookupFilterProvider
     {
@@ -33,7 +34,7 @@
                 throw new ArgumentNullException(nameof(dictionary));
             }
 
-            var token = dictionary.GetDictionaryObject(NameToken.Filter, NameToken.F);
+            var token = dictionary.GetObjectOrDefault(NameToken.Filter, NameToken.F);
             if (token == null)
             {
                 return EmptyArray<IFilter>.Instance;

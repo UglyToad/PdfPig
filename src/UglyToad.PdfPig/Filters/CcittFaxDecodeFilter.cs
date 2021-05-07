@@ -5,6 +5,7 @@
     using System.IO;
     using System.Linq;
     using Tokens;
+    using UglyToad.PdfPig.Util;
 
     /// <summary>
     /// Decodes image data that has been encoded using either Group 3 or Group 4.
@@ -21,9 +22,9 @@
         {
             var decodeParms = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
-            var cols = decodeParms.GetInt(NameToken.Columns, 1728);
-            var rows = decodeParms.GetInt(NameToken.Rows, 0);
-            var height = streamDictionary.GetInt(NameToken.Height, NameToken.H, 0);
+            var cols = decodeParms.GetIntOrDefault(NameToken.Columns, 1728);
+            var rows = decodeParms.GetIntOrDefault(NameToken.Rows, 0);
+            var height = streamDictionary.GetIntOrDefault(NameToken.Height, NameToken.H, 0);
             if (rows > 0 && height > 0)
             {
                 // PDFBOX-771, PDFBOX-3727: rows in DecodeParms sometimes contains an incorrect value
@@ -35,8 +36,8 @@
                 rows = Math.Max(rows, height);
             }
 
-            var k = decodeParms.GetInt(NameToken.K, 0);
-            var encodedByteAlign = decodeParms.GetBoolean(NameToken.EncodedByteAlign, false);
+            var k = decodeParms.GetIntOrDefault(NameToken.K, 0);
+            var encodedByteAlign = decodeParms.GetBooleanOrDefault(NameToken.EncodedByteAlign, false);
             var compressionType = DetermineCompressionType(input, k);
             using (var stream = new CcittFaxDecoderStream(new MemoryStream(input.ToArray()), cols, compressionType, encodedByteAlign))
             {
@@ -45,7 +46,7 @@
                 ReadFromDecoderStream(stream, decompressed);
 
                 // we expect black to be 1, if not invert the bitmap 
-                var blackIsOne = decodeParms.GetBoolean(NameToken.BlackIs1, false);
+                var blackIsOne = decodeParms.GetBooleanOrDefault(NameToken.BlackIs1, false);
                 if (!blackIsOne)
                 {
                     InvertBitmap(decompressed);

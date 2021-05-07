@@ -9,6 +9,33 @@
 
     internal static class DictionaryTokenExtensions
     {
+        [CanBeNull]
+        public static IToken GetObjectOrDefault(this DictionaryToken token, NameToken name)
+        {
+            if (token.TryGet(name, out var obj))
+            {
+                return obj;
+            }
+
+            return null;
+        }
+
+        [CanBeNull]
+        public static IToken GetObjectOrDefault(this DictionaryToken token, NameToken first, NameToken second)
+        {
+            if (token.TryGet(first, out var obj))
+            {
+                return obj;
+            }
+
+            if (token.TryGet(second, out obj))
+            {
+                return obj;
+            }
+
+            return null;
+        }
+
         public static int GetInt(this DictionaryToken token, NameToken name)
         {
             if (token == null)
@@ -16,12 +43,9 @@
                 throw new ArgumentNullException(nameof(token));
             }
 
-            if (!token.TryGet(name, out var keyedToken) || !(keyedToken is NumericToken numeric))
-            {
-                throw new PdfDocumentFormatException($"The dictionary did not contain a number with the key {name}. Dictionary way: {token}.");
-            }
+            var numeric = token.GetObjectOrDefault(name) as NumericToken;
 
-            return numeric.Int;
+            return numeric?.Int ?? throw new PdfDocumentFormatException($"The dictionary did not contain a number with the key {name}. Dictionary way: {token}.");
         }
 
         public static int GetIntOrDefault(this DictionaryToken token, NameToken name, int defaultValue = 0)
@@ -31,12 +55,21 @@
                 throw new ArgumentNullException(nameof(token));
             }
 
-            if (!token.TryGet(name, out var keyedToken) || !(keyedToken is NumericToken numeric))
+            var numeric = token.GetObjectOrDefault(name) as NumericToken;
+
+            return numeric?.Int ?? defaultValue;
+        }
+
+        public static int GetIntOrDefault(this DictionaryToken token, NameToken first, NameToken second, int defaultValue = 0)
+        {
+            if (token == null)
             {
-                return defaultValue;
+                throw new ArgumentNullException(nameof(token));
             }
 
-            return numeric.Int;
+            var numeric = token.GetObjectOrDefault(first, second) as NumericToken;
+
+            return numeric?.Int ?? default;
         }
 
         public static long? GetLongOrDefault(this DictionaryToken token, NameToken name)
@@ -46,12 +79,21 @@
                 throw new ArgumentNullException(nameof(token));
             }
 
-            if (!token.TryGet(name, out var keyedToken) || !(keyedToken is NumericToken numeric))
+            var numeric = token.GetObjectOrDefault(name) as NumericToken;
+
+            return numeric?.Long;
+        }
+
+        public static bool GetBooleanOrDefault(this DictionaryToken token, NameToken name, bool defaultValue)
+        {
+            if (token == null)
             {
-                return null;
+                throw new ArgumentNullException(nameof(token));
             }
 
-            return numeric.Long;
+            var boolean = token.GetObjectOrDefault(name) as BooleanToken;
+
+            return boolean?.Data ?? defaultValue;
         }
 
         [CanBeNull]
@@ -62,12 +104,7 @@
                 throw new ArgumentNullException(nameof(token));
             }
 
-            if (!token.TryGet(name, out var nameToken) || !(nameToken is NameToken result))
-            {
-                return null;
-            }
-
-            return result;
+            return token.GetObjectOrDefault(name) as NameToken;
         }
 
         public static bool TryGetOptionalTokenDirect<T>(this DictionaryToken token, NameToken name, IPdfTokenScanner scanner, out T result) where T : IToken

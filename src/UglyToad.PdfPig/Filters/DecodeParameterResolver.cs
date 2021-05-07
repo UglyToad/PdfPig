@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using Tokens;
+    using UglyToad.PdfPig.Util;
 
     internal static class DecodeParameterResolver
     {
@@ -18,9 +19,9 @@
                 throw new ArgumentOutOfRangeException(nameof(index), "Index must be 0 or greater");
             }
 
-            var filter = streamDictionary.GetDictionaryObject(NameToken.Filter, NameToken.F);
+            var filter = streamDictionary.GetObjectOrDefault(NameToken.Filter, NameToken.F);
 
-            var parameters = streamDictionary.GetDictionaryObject(NameToken.DecodeParms, NameToken.Dp);
+            var parameters = streamDictionary.GetObjectOrDefault(NameToken.DecodeParms, NameToken.Dp);
 
             switch (filter)
             {

@@ -75,9 +75,9 @@
             ILookupFilterProvider filterProvider,
             bool cannotRecurse = false)
         {
-            if (imageDictionary.GetDictionaryObject(NameToken.ImageMask, NameToken.Im) != null)
+            if (imageDictionary.GetObjectOrDefault(NameToken.ImageMask, NameToken.Im) != null)
             {
-                var decodeRaw = imageDictionary.GetDictionaryObject(NameToken.Decode, NameToken.D) as ArrayToken
+                var decodeRaw = imageDictionary.GetObjectOrDefault(NameToken.Decode, NameToken.D) as ArrayToken
                     ?? new ArrayToken(EmptyArray<IToken>.Instance);
                 var decode = decodeRaw.Data.OfType<NumericToken>().Select(x => x.Data).ToArray();
                 return IndexedColorSpaceDetails.Stencil(decode);
