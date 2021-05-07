@@ -75,7 +75,8 @@
             ILookupFilterProvider filterProvider,
             bool cannotRecurse = false)
         {
-            if (imageDictionary.GetObjectOrDefault(NameToken.ImageMask, NameToken.Im) != null)
+            if (imageDictionary.GetObjectOrDefault(NameToken.ImageMask, NameToken.Im) != null ||
+                filterProvider.GetFilters(imageDictionary, scanner).OfType<CcittFaxDecodeFilter>().Any())
             {
                 var decodeRaw = imageDictionary.GetObjectOrDefault(NameToken.Decode, NameToken.D) as ArrayToken
                     ?? new ArrayToken(EmptyArray<IToken>.Instance);
