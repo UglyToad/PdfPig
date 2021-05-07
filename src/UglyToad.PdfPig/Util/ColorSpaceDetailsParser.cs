@@ -75,9 +75,12 @@
             ILookupFilterProvider filterProvider,
             bool cannotRecurse = false)
         {
-            if (filterProvider.GetFilters(imageDictionary).OfType<CcittFaxDecodeFilter>().Any())
+            if (imageDictionary.GetDictionaryObject(NameToken.ImageMask, NameToken.Im) != null)
             {
-                return IndexedColorSpaceDetails.CCITTFaxColorSpaceDetails;
+                var decodeRaw = imageDictionary.GetDictionaryObject(NameToken.Decode, NameToken.D) as ArrayToken
+                    ?? new ArrayToken(EmptyArray<IToken>.Instance);
+                var decode = decodeRaw.Data.OfType<NumericToken>().Select(x => x.Data).ToArray();
+                return IndexedColorSpaceDetails.Stencil(decode);
             }
 
             if (!colorSpace.HasValue)

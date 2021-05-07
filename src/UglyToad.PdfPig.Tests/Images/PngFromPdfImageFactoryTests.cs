@@ -150,7 +150,7 @@
             var decodedBytes = ImageHelpers.LoadFileBytes("ccittfax-decoded.bin");
             var image = new TestPdfImage
             {
-                ColorSpaceDetails = IndexedColorSpaceDetails.CCITTFaxColorSpaceDetails,
+                ColorSpaceDetails = IndexedColorSpaceDetails.StencilBlackIs1,
                 DecodedBytes = decodedBytes,
                 WidthInSamples = 1800,
                 HeightInSamples = 3113,
