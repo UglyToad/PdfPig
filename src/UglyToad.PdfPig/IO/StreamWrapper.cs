@@ -36,39 +36,24 @@
             Stream.Write(buffer, offset, count);
         }
 
-        public override bool CanRead
-        {
-            get { return Stream.CanRead; }
-        }
+        public override bool CanRead => Stream.CanRead;
 
-        public override bool CanSeek
-        {
-            get { return Stream.CanSeek; }
-        }
+        public override bool CanSeek => Stream.CanSeek;
 
-        public override bool CanWrite
-        {
-            get { return Stream.CanWrite; }
-        }
+        public override bool CanWrite => Stream.CanWrite;
 
-        public override long Length
-        {
-            get { return Stream.Length; }
-        }
+        public override long Length => Stream.Length;
 
         public override long Position
         {
-            get { return Stream.Position; }
-            set { Stream.Position = value; }
+            get => Stream.Position;
+            set => Stream.Position = value;
         }
 
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            // dispose stream
-            using (Stream)
-            {
-            }
+            Stream?.Dispose();
         }
     }
 }

@@ -2,8 +2,8 @@
 {
     using System;
     using System.IO;
-    using UglyToad.PdfPig.IO;
-    using UglyToad.PdfPig.Util;
+    using IO;
+    using Util;
 
     /// <summary>
     /// CCITT Modified Huffman RLE, Group 3 (T4) and Group 4 (T6) fax compression.
@@ -30,7 +30,7 @@
         private int changesReferenceRowCount;
         private int changesCurrentRowCount;
 
-        private int lastChangingElement = 0;
+        private int lastChangingElement;
 
         private int buffer = -1;
         private int bufferPos = -1;
@@ -78,7 +78,7 @@
                 {
                     DecodeRow();
                 }
-                catch (IOException)
+                catch (InvalidOperationException)
                 {
                     if (decodedLength != 0)
                     {
@@ -344,7 +344,7 @@
 
             if (index != columns)
             {
-                throw new IOException("Sum of run-lengths does not equal scan line width: " + index + " > " + columns);
+                throw new InvalidOperationException("Sum of run-lengths does not equal scan line width: " + index + " > " + columns);
             }
 
             decodedLength = (index + 7) / 8;
@@ -363,7 +363,7 @@
 
                 if (node == null)
                 {
-                    throw new IOException("Unknown code in Huffman RLE stream");
+                    throw new InvalidOperationException("Unknown code in Huffman RLE stream");
                 }
 
                 if (node.IsLeaf)
@@ -398,7 +398,7 @@
 
                 if (buffer == -1)
                 {
-                    throw new IOException("Unexpected end of Huffman RLE stream");
+                    throw new InvalidOperationException("Unexpected end of Huffman RLE stream");
                 }
 
                 bufferPos = 0;
@@ -528,7 +528,7 @@
                     }
                     else if (next.IsLeaf)
                     {
-                        throw new IOException("node is leaf, no other following");
+                        throw new InvalidOperationException("node is leaf, no other following");
                     }
 
                     current = next;
@@ -565,7 +565,7 @@
                     }
                     else if (next.IsLeaf)
                     {
-                        throw new IOException("node is leaf, no other following");
+                        throw new InvalidOperationException("node is leaf, no other following");
                     }
 
                     current = next;

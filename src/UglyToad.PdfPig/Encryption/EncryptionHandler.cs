@@ -467,18 +467,21 @@
 
         private static StringToken GetStringTokenFromDecryptedData(byte[] data)
         {
-            if (data[0] == 0xFE && data[1] == 0xFF)
+            if (data.Length >= 2)
             {
-                var str  = Encoding.BigEndianUnicode.GetString(data).Substring(1);
+                if (data[0] == 0xFE && data[1] == 0xFF)
+                {
+                    var str = Encoding.BigEndianUnicode.GetString(data).Substring(1);
 
-                return new StringToken(str, StringToken.Encoding.Utf16BE);
-            }
-            
-            if (data[0] == 0xFF && data[1] == 0xFE)
-            {
-                var str = Encoding.Unicode.GetString(data).Substring(1);
+                    return new StringToken(str, StringToken.Encoding.Utf16BE);
+                }
 
-                return new StringToken(str, StringToken.Encoding.Utf16);
+                if (data[0] == 0xFF && data[1] == 0xFE)
+                {
+                    var str = Encoding.Unicode.GetString(data).Substring(1);
+
+                    return new StringToken(str, StringToken.Encoding.Utf16);
+                }
             }
 
             return new StringToken(OtherEncodings.BytesAsLatin1String(data), StringToken.Encoding.Iso88591);
