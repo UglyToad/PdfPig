@@ -46,7 +46,7 @@
 
             return typedToken;
         }
-        
+
         /// <summary>
         /// Get the decoded data from this stream.
         /// </summary>

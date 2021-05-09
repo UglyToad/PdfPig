@@ -5,6 +5,7 @@
     using System.Linq;
     using Core;
     using Tokens;
+    using UglyToad.PdfPig.Util;
 
     /// <inheritdoc />
     /// <summary>
@@ -60,7 +61,8 @@
                 throw new ArgumentNullException(nameof(dictionary));
             }
 
-            if (!dictionary.TryGet(NameToken.Filter, out var token))
+            var token = dictionary.GetObjectOrDefault(NameToken.Filter, NameToken.F);
+            if (token == null)
             {
                 return EmptyArray<IFilter>.Instance;
             }

@@ -85,6 +85,26 @@
     public class IndexedColorSpaceDetails : ColorSpaceDetails
     {
         /// <summary>
+        /// A color space useful for extracting stencil masks as black-and-white images.  
+        /// Index 0 is black and index 1 is white.
+        /// </summary>
+        internal static readonly IndexedColorSpaceDetails StencilBlackIs0
+            = new IndexedColorSpaceDetails(DeviceGrayColorSpaceDetails.Instance, 1, new byte[] { 0, 255 });
+
+        /// <summary>
+        /// A color space useful for extracting stencil masks as black-and-white images.  
+        /// Index 0 is white and index 1 is black.
+        /// </summary>
+        internal static readonly IndexedColorSpaceDetails StencilBlackIs1
+            = new IndexedColorSpaceDetails(DeviceGrayColorSpaceDetails.Instance, 1, new byte[] { 255, 0 });
+
+        internal static ColorSpaceDetails Stencil(decimal[] decode)
+        {
+            return decode.Length >= 2 && decode[0] == 1 && decode[1] == 0 ?
+                StencilBlackIs1 : StencilBlackIs0 /* default */; 
+        }
+
+        /// <summary>
         /// The base color space in which the values in the color table are to be interpreted.
         /// It can be any device or CIE-based color space or(in PDF 1.3) a Separation or DeviceN space,
         /// but not a Pattern space or another Indexed space.

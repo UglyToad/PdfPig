@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Util
 {
     using System.Collections.Generic;
+    using System.Linq;
     using Content;
     using Core;
     using Filters;
@@ -74,6 +75,15 @@
             ILookupFilterProvider filterProvider,
             bool cannotRecurse = false)
         {
+            if (imageDictionary.GetObjectOrDefault(NameToken.ImageMask, NameToken.Im) != null ||
+                filterProvider.GetFilters(imageDictionary, scanner).OfType<CcittFaxDecodeFilter>().Any())
+            {
+                var decodeRaw = imageDictionary.GetObjectOrDefault(NameToken.Decode, NameToken.D) as ArrayToken
+                    ?? new ArrayToken(EmptyArray<IToken>.Instance);
+                var decode = decodeRaw.Data.OfType<NumericToken>().Select(x => x.Data).ToArray();
+                return IndexedColorSpaceDetails.Stencil(decode);
+            }
+
             if (!colorSpace.HasValue)
             {
                 return UnsupportedColorSpaceDetails.Instance;

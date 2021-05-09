@@ -114,30 +114,11 @@
 
             var decode = decodeRaw.Data.OfType<NumericToken>().Select(x => x.Data).ToArray();
 
-            var filterDictionaryEntries = new Dictionary<NameToken, IToken>();
-            var decodeParamsDict = GetByKeys<DictionaryToken>(NameToken.DecodeParms, NameToken.Dp, false);
-
-            if (decodeParamsDict == null)
-            {
-                var decodeParamsArray = GetByKeys<ArrayToken>(NameToken.DecodeParms, NameToken.Dp, false);
-
-                if (decodeParamsArray != null)
-                {
-                    filterDictionaryEntries[NameToken.DecodeParms] = decodeParamsArray;
-                }
-            }
-            else
-            {
-                filterDictionaryEntries[NameToken.DecodeParms] = decodeParamsDict;
-            }
-
-            var streamDictionary = new DictionaryToken(filterDictionaryEntries);
-
             var interpolate = GetByKeys<BooleanToken>(NameToken.Interpolate, NameToken.I, false)?.Data ?? false;
 
             return new InlineImage(bounds, width, height, bitsPerComponent, isMask, renderingIntent, interpolate, colorSpace, decode, Bytes,
                 filters,
-                streamDictionary,
+                imgDic,
                 details);
         }
 

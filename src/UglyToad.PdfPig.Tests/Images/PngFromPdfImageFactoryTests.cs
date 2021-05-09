@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Images
 {
-    using System;
-    using System.IO;
     using System.Linq;
     using UglyToad.PdfPig.Graphics.Colors;
     using UglyToad.PdfPig.Images.Png;
@@ -38,7 +36,7 @@
             };
 
             Assert.True(PngFromPdfImageFactory.TryGenerate(image, out var bytes));
-            Assert.Equal(LoadImage("3x3.png"), bytes);
+            Assert.True(ImageHelpers.ImagesAreEqual(LoadImage("3x3.png"), bytes));
         }
 
         [Fact]
@@ -60,7 +58,7 @@
             };
 
             Assert.True(PngFromPdfImageFactory.TryGenerate(image, out var bytes));
-            Assert.Equal(LoadImage("3x3.png"), bytes);
+            Assert.True(ImageHelpers.ImagesAreEqual(LoadImage("3x3.png"), bytes));
         }
 
         [Fact]
@@ -82,7 +80,7 @@
             };
 
             Assert.True(PngFromPdfImageFactory.TryGenerate(image, out var bytes));
-            Assert.Equal(LoadImage("3x3.png"), bytes);
+            Assert.True(ImageHelpers.ImagesAreEqual(LoadImage("3x3.png"), bytes));
         }
 
         [Fact]
@@ -104,7 +102,7 @@
             };
 
             Assert.True(PngFromPdfImageFactory.TryGenerate(image, out var bytes));
-            Assert.Equal(LoadImage("3x3.png"), bytes);
+            Assert.True(ImageHelpers.ImagesAreEqual(LoadImage("3x3.png"), bytes));
         }
 
         [Fact]
@@ -143,13 +141,29 @@
             };
 
             Assert.True(PngFromPdfImageFactory.TryGenerate(image, out var bytes));
-            Assert.Equal(LoadImage("3x3.png"), bytes);
+            Assert.True(ImageHelpers.ImagesAreEqual(LoadImage("3x3.png"), bytes));
+        }
+
+        [Fact]
+        public void CanGeneratePngFromCcittFaxDecodedImageData()
+        {
+            var decodedBytes = ImageHelpers.LoadFileBytes("ccittfax-decoded.bin");
+            var image = new TestPdfImage
+            {
+                ColorSpaceDetails = IndexedColorSpaceDetails.StencilBlackIs1,
+                DecodedBytes = decodedBytes,
+                WidthInSamples = 1800,
+                HeightInSamples = 3113,
+                BitsPerComponent = 1
+            };
+
+            Assert.True(PngFromPdfImageFactory.TryGenerate(image, out var bytes));
+            Assert.True(ImageHelpers.ImagesAreEqual(LoadImage("ccittfax.png"), bytes));
         }
 
         private static byte[] LoadImage(string name)
         {
-            var folder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Images", "Files"));
-            return File.ReadAllBytes(Path.Combine(folder, name));
+            return ImageHelpers.LoadFileBytes(name);
         }
     }
 }
