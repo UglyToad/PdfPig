@@ -34,7 +34,7 @@
                 case ArrayToken array:
                     if (parameters is ArrayToken arr)
                     {
-                        if (index < arr.Data.Count && array.Data[index] is DictionaryToken dictionary)
+                        if (index < arr.Data.Count && arr.Data[index] is DictionaryToken dictionary)
                         {
                             return dictionary;
                         }
