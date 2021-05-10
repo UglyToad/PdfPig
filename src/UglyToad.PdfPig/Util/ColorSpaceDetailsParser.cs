@@ -64,6 +64,7 @@
 
             return false;
         }
+
     }
 
     internal static class ColorSpaceDetailsParser
@@ -112,9 +113,8 @@
                             return UnsupportedColorSpaceDetails.Instance;
                         }
 
-                        if ((!imageDictionary.TryGet(NameToken.ColorSpace, scanner, out ArrayToken colorSpaceArray) &&
-                             !imageDictionary.TryGet(NameToken.Cs, scanner, out colorSpaceArray))
-                        || colorSpaceArray.Length != 4)
+                        if (!TryGetColorSpaceArray(imageDictionary, resourceStore, scanner, out var colorSpaceArray)
+                            || colorSpaceArray.Length != 4)
                         {
                             // Error instead?
                             return UnsupportedColorSpaceDetails.Instance;
@@ -123,7 +123,7 @@
                         var first = colorSpaceArray[0] as NameToken;
 
                         if (first == null || !ColorSpaceMapper.TryMap(first, resourceStore, out var innerColorSpace)
-                        || innerColorSpace != ColorSpace.Indexed)
+                            || innerColorSpace != ColorSpace.Indexed)
                         {
                             return UnsupportedColorSpaceDetails.Instance;
                         }
@@ -207,8 +207,7 @@
                     return UnsupportedColorSpaceDetails.Instance;
                 case ColorSpace.Separation:
                     {
-                        if ((!imageDictionary.TryGet(NameToken.ColorSpace, scanner, out ArrayToken colorSpaceArray) &&
-                             !imageDictionary.TryGet(NameToken.Cs, scanner, out colorSpaceArray))
+                        if (!TryGetColorSpaceArray(imageDictionary, resourceStore, scanner, out var colorSpaceArray)
                              || colorSpaceArray.Length != 4)
                         {
                             // Error instead?
@@ -285,6 +284,22 @@
                 default:
                     return UnsupportedColorSpaceDetails.Instance;
             }
+        }
+
+        private static bool TryGetColorSpaceArray(DictionaryToken imageDictionary, IResourceStore resourceStore,
+            IPdfTokenScanner scanner,
+            out ArrayToken colorSpaceArray)
+        {
+            var colorSpace = imageDictionary.GetObjectOrDefault(NameToken.ColorSpace, NameToken.Cs);
+
+            if (!DirectObjectFinder.TryGet(colorSpace, scanner, out colorSpaceArray)
+                && DirectObjectFinder.TryGet(colorSpace, scanner, out NameToken colorSpaceName) &&
+                resourceStore.TryGetNamedColorSpace(colorSpaceName, out var colorSpaceNamedToken))
+            {
+                colorSpaceArray = colorSpaceNamedToken.Data as ArrayToken;
+            }
+
+            return colorSpaceArray != null;
         }
     }
 }
