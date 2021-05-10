@@ -11,6 +11,7 @@
     using Graphics.Core;
     using Tokenization.Scanner;
     using Tokens;
+    using UglyToad.PdfPig.Parser.Parts;
     using Util;
 
     internal static class XObjectFactory
@@ -99,7 +100,15 @@
                 }
             }
 
-            var decodedBytes = supportsFilters ? new Lazy<IReadOnlyList<byte>>(() => xObject.Stream.Decode(filterProvider, pdfScanner))
+            var decodeParams = dictionary.GetObjectOrDefault(NameToken.DecodeParms, NameToken.Dp);
+            if (decodeParams is IndirectReferenceToken refToken)
+            {
+                dictionary = dictionary.With(NameToken.DecodeParms, pdfScanner.Get(refToken.Data).Data);
+            }
+
+            var streamToken = new StreamToken(dictionary, xObject.Stream.Data);
+            
+            var decodedBytes = supportsFilters ? new Lazy<IReadOnlyList<byte>>(() => streamToken.Decode(filterProvider, pdfScanner))
                 : null;
 
             var decode = EmptyArray<decimal>.Instance;
