@@ -112,7 +112,8 @@
                             return UnsupportedColorSpaceDetails.Instance;
                         }
 
-                        if (!imageDictionary.TryGet(NameToken.ColorSpace, scanner, out ArrayToken colorSpaceArray)
+                        if ((!imageDictionary.TryGet(NameToken.ColorSpace, scanner, out ArrayToken colorSpaceArray) &&
+                             !imageDictionary.TryGet(NameToken.Cs, scanner, out colorSpaceArray))
                         || colorSpaceArray.Length != 4)
                         {
                             // Error instead?
@@ -206,8 +207,9 @@
                     return UnsupportedColorSpaceDetails.Instance;
                 case ColorSpace.Separation:
                     {
-                        if (!imageDictionary.TryGet(NameToken.ColorSpace, scanner, out ArrayToken colorSpaceArray)
-                            || colorSpaceArray.Length != 4)
+                        if ((!imageDictionary.TryGet(NameToken.ColorSpace, scanner, out ArrayToken colorSpaceArray) &&
+                             !imageDictionary.TryGet(NameToken.Cs, scanner, out colorSpaceArray))
+                             || colorSpaceArray.Length != 4)
                         {
                             // Error instead?
                             return UnsupportedColorSpaceDetails.Instance;
