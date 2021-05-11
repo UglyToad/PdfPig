@@ -30,46 +30,62 @@
                 return decoded.ToArray();
             }
 
-            switch (details)
+            if (bitsPerComponent != 8)
             {
-                case IndexedColorSpaceDetails indexed:
-                    if (bitsPerComponent != 8)
-                    {
-                        // To ease unwrapping further below the indices are unpacked to occupy a single byte each
-                        decoded = UnpackIndices(decoded, bitsPerComponent);
+                // Unpack components such that they occupy one byte each
+                decoded = UnpackComponents(decoded, bitsPerComponent);
+            }
 
-                        // Remove padding bytes when the stride width differs from the image width
-                        var stride = (imageWidth * bitsPerComponent + 7) / 8;
-                        var strideWidth = stride * (8 / bitsPerComponent);
-                        if (strideWidth != imageWidth)
-                        {
-                            decoded = RemoveStridePadding(decoded.ToArray(), strideWidth, imageWidth, imageHeight);
-                        }
-                    }
+            // Remove padding bytes when the stride width differs from the image width
+            var bytesPerPixel = details is IndexedColorSpaceDetails ? 1 : GetBytesPerPixel(details);
+            var strideWidth = decoded.Count / imageHeight / bytesPerPixel;
+            if (strideWidth != imageWidth)
+            {
+                decoded = RemoveStridePadding(decoded.ToArray(), strideWidth, imageWidth, imageHeight, bytesPerPixel);
+            }
 
-                    return UnwrapIndexedColorSpaceBytes(indexed, decoded);
+            // In case of indexed color space images, unwrap indices to actual pixel component values
+            if (details is IndexedColorSpaceDetails indexed)
+            {
+                decoded = UnwrapIndexedColorSpaceBytes(indexed, decoded);
             }
 
             return decoded.ToArray();
         }
 
-        private static byte[] UnpackIndices(IReadOnlyList<byte> input, int bitsPerComponent)
+        private static int GetBytesPerPixel(ColorSpaceDetails details)
         {
-                IEnumerable<byte> Unpack(byte b)
-                {
-                    // Enumerate bits in bitsPerComponent-sized chunks from MSB to LSB, masking on the appropriate bits
-                    for (int i = 8 - bitsPerComponent; i >= 0; i -= bitsPerComponent)
-                    {
-                        yield return (byte)((b >> i) & ((int)Math.Pow(2, bitsPerComponent) - 1));
-                    }
-                }
-               
-                return input.SelectMany(b => Unpack(b)).ToArray();
+            var colorSpace = (details is IndexedColorSpaceDetails indexed) ? indexed.BaseColorSpaceDetails.Type : details.Type;
+            switch (colorSpace)
+            {
+                case ColorSpace.DeviceRGB:
+                    return 3;
+
+                case ColorSpace.DeviceCMYK:
+                    return 4;
+
+                default:
+                    return 1;
+            }
         }
 
-        private static byte[] RemoveStridePadding(byte[] input, int strideWidth, int imageWidth, int imageHeight)
+        private static byte[] UnpackComponents(IReadOnlyList<byte> input, int bitsPerComponent)
         {
-            var result = new byte[imageWidth * imageHeight];
+            IEnumerable<byte> Unpack(byte b)
+            {
+                // Enumerate bits in bitsPerComponent-sized chunks from MSB to LSB, masking on the appropriate bits
+                for (int i = 8 - bitsPerComponent; i >= 0; i -= bitsPerComponent)
+                {
+                    yield return (byte)((b >> i) & ((int)Math.Pow(2, bitsPerComponent) - 1));
+                }
+            }
+
+            return input.SelectMany(b => Unpack(b)).ToArray();
+        }
+
+        private static byte[] RemoveStridePadding(byte[] input, int strideWidth, int imageWidth, int imageHeight, int multiplier)
+        {
+            var result = new byte[imageWidth * imageHeight * multiplier];
             for (int y = 0; y < imageHeight; y++)
             {
                 int sourceIndex = y * strideWidth;

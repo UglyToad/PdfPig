@@ -2,7 +2,6 @@
 {
     using Content;
     using Graphics.Colors;
-    using System.Collections.Generic;
     using UglyToad.PdfPig.Core;
 
     internal static class PngFromPdfImageFactory
