@@ -105,7 +105,51 @@
                 case ColorSpace.Lab:
                     return UnsupportedColorSpaceDetails.Instance;
                 case ColorSpace.ICCBased:
-                    return UnsupportedColorSpaceDetails.Instance;
+                    {
+                        if (!TryGetColorSpaceArray(imageDictionary, resourceStore, scanner, out var colorSpaceArray)
+                            || colorSpaceArray.Length != 2)
+                        {
+                            return UnsupportedColorSpaceDetails.Instance;
+                        }
+
+                        var first = colorSpaceArray[0] as NameToken;
+
+                        if (first == null || !ColorSpaceMapper.TryMap(first, resourceStore, out var innerColorSpace)
+                            || innerColorSpace != ColorSpace.ICCBased)
+                        {
+                            return UnsupportedColorSpaceDetails.Instance;
+                        }
+
+                        var second = colorSpaceArray[1];
+
+                        if (!DirectObjectFinder.TryGet(second, scanner, out StreamToken streamToken) ||
+                            !streamToken.StreamDictionary.TryGet(NameToken.N, out NumericToken numeric))
+                        {
+                            return UnsupportedColorSpaceDetails.Instance;
+                        }
+
+                        ColorSpaceDetails alternateColorSpaceDetails = null;
+                        if (streamToken.StreamDictionary.TryGet(NameToken.Alternate, out NameToken alternateColorSpaceNameToken) &&
+                            ColorSpaceMapper.TryMap(alternateColorSpaceNameToken, resourceStore, out var alternateColorSpace))
+                        {
+                            alternateColorSpaceDetails =
+                                GetColorSpaceDetails(alternateColorSpace, imageDictionary, scanner, resourceStore, filterProvider, true);
+                        }
+
+                        IReadOnlyList<decimal> range = null;
+                        if (streamToken.StreamDictionary.TryGet(NameToken.Range, out ArrayToken arrayToken))
+                        {
+                            range = arrayToken.Data.OfType<NumericToken>().Select(x => x.Data).ToList();
+                        }
+
+                        XmpMetadata metadata = null;
+                        if (streamToken.StreamDictionary.TryGet(NameToken.Metadata, out StreamToken metadataStream))
+                        {
+                            metadata = new XmpMetadata(metadataStream, filterProvider, scanner);
+                        }
+
+                        return new ICCBasedColorSpaceDetails(numeric.Int, alternateColorSpaceDetails, range, metadata);
+                    }
                 case ColorSpace.Indexed:
                     {
                         if (cannotRecurse)

@@ -108,6 +108,7 @@
                 "UglyToad.PdfPig.Graphics.Colors.DeviceGrayColorSpaceDetails",
                 "UglyToad.PdfPig.Graphics.Colors.DeviceRgbColorSpaceDetails",
                 "UglyToad.PdfPig.Graphics.Colors.DeviceCmykColorSpaceDetails",
+                "UglyToad.PdfPig.Graphics.Colors.ICCBasedColorSpaceDetails",
                 "UglyToad.PdfPig.Graphics.Colors.IndexedColorSpaceDetails",
                 "UglyToad.PdfPig.Graphics.Colors.SeparationColorSpaceDetails",
                 "UglyToad.PdfPig.Graphics.Colors.UnsupportedColorSpaceDetails",

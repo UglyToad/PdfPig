@@ -55,14 +55,23 @@
 
         private static int GetBytesPerPixel(ColorSpaceDetails details)
         {
-            var colorSpace = (details is IndexedColorSpaceDetails indexed) ? indexed.BaseColorSpaceDetails.Type : details.Type;
-            switch (colorSpace)
+            switch (details)
             {
-                case ColorSpace.DeviceRGB:
+                case DeviceGrayColorSpaceDetails:
+                    return 1;
+
+                case DeviceRgbColorSpaceDetails:
                     return 3;
 
-                case ColorSpace.DeviceCMYK:
+                case DeviceCmykColorSpaceDetails:
                     return 4;
+
+                case IndexedColorSpaceDetails indexed:
+                    return GetBytesPerPixel(indexed.BaseColorSpaceDetails);
+
+                case ICCBasedColorSpaceDetails iccBased:
+                    // Currently PdfPig only supports the 'Alternate' color space of ICCBasedColorSpaceDetails
+                    return GetBytesPerPixel(iccBased.AlternateColorSpaceDetails);
 
                 default:
                     return 1;
@@ -100,7 +109,7 @@
         {
             var multiplier = 1;
             Func<byte, IEnumerable<byte>> transformer = null;
-            switch (indexed.BaseColorSpaceDetails.Type)
+            switch (indexed.BaseType)
             {
                 case ColorSpace.DeviceRGB:
                     transformer = x =>
