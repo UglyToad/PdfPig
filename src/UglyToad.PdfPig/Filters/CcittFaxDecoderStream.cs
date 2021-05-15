@@ -17,7 +17,6 @@
         private readonly int columns;
         private readonly byte[] decodedRow;
 
-        private readonly bool optionG32D;
         private readonly bool optionByteAligned;
         
         private readonly CcittFaxCompressionType type;
@@ -52,20 +51,6 @@
             changesCurrentRow = new int[columns + 2];
 
             optionByteAligned = byteAligned;
-            switch (type)
-            {
-                case CcittFaxCompressionType.ModifiedHuffman:
-                    optionG32D = false;
-                    break;
-                case CcittFaxCompressionType.T4:
-                    optionG32D = true;
-                    break;
-                case CcittFaxCompressionType.T6:
-                    optionG32D = false;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(type), type, "Illegal parameter");
-            }
         }
 
         private void Fetch()
@@ -252,7 +237,7 @@
             }
 
         done:
-            if (!optionG32D || ReadBit())
+            if (type == CcittFaxCompressionType.Group3_1D || ReadBit())
             {
                 Decode1D();
             }
@@ -279,10 +264,11 @@
                 case CcittFaxCompressionType.ModifiedHuffman:
                     DecodeRowType2();
                     break;
-                case CcittFaxCompressionType.T4:
+                case CcittFaxCompressionType.Group3_1D:
+                case CcittFaxCompressionType.Group3_2D:
                     DecodeRowType4();
                     break;
-                case CcittFaxCompressionType.T6:
+                case CcittFaxCompressionType.Group4_2D:
                     DecodeRowType6();
                     break;
                 default:

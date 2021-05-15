@@ -60,7 +60,7 @@
         {
             if (k == 0)
             {
-                var compressionType = CcittFaxCompressionType.T4; // Group 3 1D
+                var compressionType = CcittFaxCompressionType.Group3_1D; // Group 3 1D
 
                 if (input.Count < 20)
                 {
@@ -78,7 +78,7 @@
                         b = (short)((b << 1) + ((input[(i / 8)] >> (7 - (i % 8))) & 0x01));
                         if ((b & 0xFFF) == 1)
                         {
-                            return CcittFaxCompressionType.T4;
+                            return CcittFaxCompressionType.Group3_1D;
                         }
                     }
                 }
@@ -88,11 +88,11 @@
             else if (k > 0)
             {
                 // Group 3 2D
-                return CcittFaxCompressionType.T4;
+                return CcittFaxCompressionType.Group3_2D;
             }
             else
             {
-                return CcittFaxCompressionType.T6;
+                return CcittFaxCompressionType.Group4_2D;
             }
         }
 
