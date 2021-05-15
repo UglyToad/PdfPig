@@ -57,6 +57,11 @@
 
         private Encoding ReadEncodingDictionary(DictionaryToken encodingDictionary, Encoding fontEncoding)
         {
+            if (encodingDictionary == null)
+            {
+                return null;
+            }
+            
             Encoding baseEncoding;
             if (encodingDictionary.TryGet(NameToken.BaseEncoding, out var baseEncodingToken) && baseEncodingToken is NameToken baseEncodingName)
             {
