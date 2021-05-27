@@ -88,7 +88,7 @@
         /// <summary>
         /// The full dictionary for this image object.
         /// </summary>
-        public DictionaryToken ImageDictionary { get; }
+        DictionaryToken ImageDictionary { get; }
 
         /// <summary>
         /// Full details for the <see cref="ColorSpace"/> with any associated data.

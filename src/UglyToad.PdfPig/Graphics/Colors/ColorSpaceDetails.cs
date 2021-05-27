@@ -1,11 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
+    using PdfPig.Core;
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using PdfPig.Core;
     using Tokens;
     using UglyToad.PdfPig.Content;
+    using UglyToad.PdfPig.Util;
     using UglyToad.PdfPig.Util.JetBrains.Annotations;
 
     /// <summary>
@@ -88,23 +89,15 @@
     public class IndexedColorSpaceDetails : ColorSpaceDetails
     {
         /// <summary>
-        /// A color space useful for extracting stencil masks as black-and-white images.  
-        /// Index 0 is black and index 1 is white.
+        /// Creates a indexed color space useful for exracting stencil masks as black-and-white images,
+        /// i.e. with a color palette of two colors (black and white). If the decode parameter array is
+        /// [0, 1] it indicates that black is at index 0 in the color palette, whereas [1, 0] indicates
+        /// that the black color is at index 1.
         /// </summary>
-        internal static readonly IndexedColorSpaceDetails StencilBlackIs0
-            = new IndexedColorSpaceDetails(DeviceGrayColorSpaceDetails.Instance, 1, new byte[] { 0, 255 });
-
-        /// <summary>
-        /// A color space useful for extracting stencil masks as black-and-white images.  
-        /// Index 0 is white and index 1 is black.
-        /// </summary>
-        internal static readonly IndexedColorSpaceDetails StencilBlackIs1
-            = new IndexedColorSpaceDetails(DeviceGrayColorSpaceDetails.Instance, 1, new byte[] { 255, 0 });
-
-        internal static ColorSpaceDetails Stencil(decimal[] decode)
+        internal static ColorSpaceDetails Stencil(ColorSpaceDetails colorSpaceDetails, decimal[] decode)
         {
-            return decode.Length >= 2 && decode[0] == 1 && decode[1] == 0 ?
-                StencilBlackIs1 : StencilBlackIs0 /* default */; 
+            var blackIsOne = decode.Length >= 2 && decode[0] == 1 && decode[1] == 0;
+            return new IndexedColorSpaceDetails(colorSpaceDetails, 1, blackIsOne ? new byte[] { 255, 0 } : new byte[] { 0, 255 });
         }
 
         /// <summary>
@@ -191,12 +184,178 @@
     }
 
     /// <summary>
+    /// CIE (Commission Internationale de l'Éclairage) colorspace.
+    /// Specifies color related to human visual perception with the aim of producing consistent color on different output devices.
+    /// CalGray - A CIE A color space with a single transformation.
+    /// A represents the gray component of a calibrated gray space. The component must be in the range 0.0 to 1.0.
+    /// </summary>
+    public class CalGrayColorSpaceDetails : ColorSpaceDetails
+    {
+        private readonly CIEBasedColorSpaceTransformer colorSpaceTransformer;
+        /// <summary>
+        /// An array of three numbers [XW  YW  ZW] specifying the tristimulus value, in the CIE 1931 XYZ space of the
+        /// diffuse white point. The numbers XW and ZW shall be positive, and YW shall be equal to 1.0.
+        /// </summary>
+        public IReadOnlyList<decimal> WhitePoint { get; }
+
+        /// <summary>
+        /// An array of three numbers [XB  YB  ZB] specifying the tristimulus value, in the CIE 1931 XYZ space of the
+        /// diffuse black point. All three numbers must be non-negative. Default value: [0.0  0.0  0.0].
+        /// </summary>
+        public IReadOnlyList<decimal> BlackPoint { get; }
+
+        /// <summary>
+        /// A number defining defining the gamma for the gray (A) component. Gamma must be positive and is generally
+        /// greater than or equal to 1. Default value: 1.
+        /// </summary>
+        public decimal Gamma { get; }
+
+        /// <summary>
+        /// Create a new <see cref="CalGrayColorSpaceDetails"/>.
+        /// </summary>
+        public CalGrayColorSpaceDetails([NotNull] IReadOnlyList<decimal> whitePoint, [CanBeNull] IReadOnlyList<decimal> blackPoint, decimal? gamma)
+            : base(ColorSpace.CalGray)
+        {
+            WhitePoint = whitePoint ?? throw new ArgumentNullException(nameof(whitePoint));
+            if (WhitePoint.Count != 3)
+            {
+                throw new ArgumentOutOfRangeException(nameof(whitePoint), whitePoint, $"Must consist of exactly three numbers, but was passed {whitePoint.Count}.");
+            }
+
+            BlackPoint = blackPoint ?? new[] { 0m, 0, 0 }.ToList();
+            if (BlackPoint.Count != 3)
+            {
+                throw new ArgumentOutOfRangeException(nameof(blackPoint), blackPoint, $"Must consist of exactly three numbers, but was passed {blackPoint.Count}.");
+            }
+
+            Gamma = gamma ?? 1m;
+
+            colorSpaceTransformer =
+                new CIEBasedColorSpaceTransformer(((double)WhitePoint[0], (double)WhitePoint[1], (double)WhitePoint[2]), RGBWorkingSpace.sRGB)
+                {
+                    DecoderABC = color => (
+                    Math.Pow(color.A, (double)Gamma),
+                    Math.Pow(color.B, (double)Gamma),
+                    Math.Pow(color.C, (double)Gamma)),
+
+                    MatrixABC = new Matrix3x3(
+                    (double)WhitePoint[0], 0, 0,
+                    0, (double)WhitePoint[1], 0,
+                    0, 0, (double)WhitePoint[2])
+                };
+        }
+
+        /// <summary>
+        /// Transforms the supplied A color to grayscale RGB (sRGB) using the propties of this
+        /// <see cref="CalGrayColorSpaceDetails"/> in the transformation process.
+        /// A represents the gray component of a calibrated gray space. The component must be in the range 0.0 to 1.0. 
+        /// </summary>
+        internal RGBColor TransformToRGB(decimal colorA)
+        {
+            var colorRgb = colorSpaceTransformer.TransformToRGB(((double)colorA, (double)colorA, (double)colorA));
+            return new RGBColor((decimal)colorRgb.R, (decimal)colorRgb.G, (decimal)colorRgb.B);
+        }
+    }
+
+    /// <summary>
+    /// CIE (Commission Internationale de l'Éclairage) colorspace.
+    /// Specifies color related to human visual perception with the aim of producing consistent color on different output devices.
+    /// CalRGB - A CIE ABC color space with a single transformation.
+    /// A, B and C represent red, green and blue color values in the range 0.0 to 1.0. 
+    /// </summary>
+    public class CalRGBColorSpaceDetails : ColorSpaceDetails
+    {
+        private readonly CIEBasedColorSpaceTransformer colorSpaceTransformer;
+
+        /// <summary>
+        /// An array of three numbers [XW  YW  ZW] specifying the tristimulus value, in the CIE 1931 XYZ space of the
+        /// diffuse white point. The numbers XW and ZW shall be positive, and YW shall be equal to 1.0.
+        /// </summary>
+        public IReadOnlyList<decimal> WhitePoint { get; }
+
+        /// <summary>
+        /// An array of three numbers [XB  YB  ZB] specifying the tristimulus value, in the CIE 1931 XYZ space of the
+        /// diffuse black point. All three numbers must be non-negative. Default value: [0.0  0.0  0.0].
+        /// </summary>
+        public IReadOnlyList<decimal> BlackPoint { get; }
+
+        /// <summary>
+        /// An array of three numbers [GR  GG  GB] specifying the gamma for the red, green and blue (A, B, C) components
+        /// of the color space. Default value: [1.0  1.0  1.0].
+        /// </summary>
+        public IReadOnlyList<decimal> Gamma { get; }
+
+        /// <summary>
+        /// An array of nine numbers [XA  YA  ZA  XB  YB  ZB  XC  YC  ZC] specifying the linear interpretation of the
+        /// decoded A, B, C components of the color space with respect to the final XYZ representation. Default value:
+        /// [1  0  0  0  1  0  0  0  1].
+        /// </summary>
+        public IReadOnlyList<decimal> Matrix { get; }
+
+        /// <summary>
+        /// Create a new <see cref="CalRGBColorSpaceDetails"/>.
+        /// </summary>
+        public CalRGBColorSpaceDetails([NotNull] IReadOnlyList<decimal> whitePoint, [CanBeNull] IReadOnlyList<decimal> blackPoint, [CanBeNull] IReadOnlyList<decimal> gamma, [CanBeNull] IReadOnlyList<decimal> matrix)
+            : base(ColorSpace.CalRGB)
+        {
+            WhitePoint = whitePoint ?? throw new ArgumentNullException(nameof(whitePoint));
+            if (WhitePoint.Count != 3)
+            {
+                throw new ArgumentOutOfRangeException(nameof(whitePoint), whitePoint, $"Must consist of exactly three numbers, but was passed {whitePoint.Count}.");
+            }
+
+            BlackPoint = blackPoint ?? new[] { 0m, 0, 0 }.ToList();
+            if (BlackPoint.Count != 3)
+            {
+                throw new ArgumentOutOfRangeException(nameof(blackPoint), blackPoint, $"Must consist of exactly three numbers, but was passed {blackPoint.Count}.");
+            }
+
+            Gamma = gamma ?? new[] { 1m, 1, 1 }.ToList();
+            if (Gamma.Count != 3)
+            {
+                throw new ArgumentOutOfRangeException(nameof(gamma), gamma, $"Must consist of exactly three numbers, but was passed {gamma.Count}.");
+            }
+
+            Matrix = matrix ?? new[] { 1m, 0, 0, 0, 1, 0, 0, 0, 1 }.ToList();
+            if (Matrix.Count != 9)
+            {
+                throw new ArgumentOutOfRangeException(nameof(matrix), matrix, $"Must consist of exactly nine numbers, but was passed {matrix.Count}.");
+            }
+           
+            colorSpaceTransformer =
+                new CIEBasedColorSpaceTransformer(((double)WhitePoint[0], (double)WhitePoint[1], (double)WhitePoint[2]), RGBWorkingSpace.sRGB)
+                {
+                    DecoderABC = color => (
+                    Math.Pow(color.A, (double)Gamma[0]),
+                    Math.Pow(color.B, (double)Gamma[1]),
+                    Math.Pow(color.C, (double)Gamma[2])),
+
+                    MatrixABC = new Matrix3x3(
+                    (double)Matrix[0], (double)Matrix[3], (double)Matrix[6],
+                    (double)Matrix[1], (double)Matrix[4], (double)Matrix[7],
+                    (double)Matrix[2], (double)Matrix[5], (double)Matrix[8])
+                };
+        }
+
+        /// <summary>
+        /// Transforms the supplied ABC color to RGB (sRGB) using the propties of this <see cref="CalRGBColorSpaceDetails"/>
+        /// in the transformation process.
+        /// A, B and C represent red, green and blue calibrated color values in the range 0.0 to 1.0. 
+        /// </summary>
+        internal RGBColor TransformToRGB((decimal A, decimal B, decimal C) colorAbc)
+        {
+            var colorRgb = colorSpaceTransformer.TransformToRGB(((double)colorAbc.A, (double)colorAbc.B, (double)colorAbc.C));
+            return new RGBColor((decimal)colorRgb.R, (decimal) colorRgb.G, (decimal) colorRgb.B);
+        }
+    }
+
+    /// <summary>
     /// The ICCBased color space is one of the CIE-based color spaces supported in PDFs. These color spaces
     /// enable a page description to specify color values in a way that is related to human visual perception.
     /// The goal is for the same color specification to produce consistent results on different output devices,
     /// within the limitations of each device.
     ///
-    /// Currently support for this color space is limited in PdfPig, as calculations will only be based on
+    /// Currently support for this color space is limited in PdfPig. Calculations will only be based on
     /// the color space of <see cref="AlternateColorSpaceDetails"/>.
     /// </summary>
     public class ICCBasedColorSpaceDetails : ColorSpaceDetails
@@ -251,12 +410,17 @@
 
             NumberOfColorComponents = numberOfColorComponents;
             AlternateColorSpaceDetails = alternateColorSpaceDetails ??
-                (NumberOfColorComponents == 1 ? DeviceGrayColorSpaceDetails.Instance :
-                NumberOfColorComponents == 3 ? DeviceRgbColorSpaceDetails.Instance : DeviceCmykColorSpaceDetails.Instance);
+                (NumberOfColorComponents == 1 ? (ColorSpaceDetails) DeviceGrayColorSpaceDetails.Instance :
+                NumberOfColorComponents == 3 ? (ColorSpaceDetails) DeviceRgbColorSpaceDetails.Instance : (ColorSpaceDetails) DeviceCmykColorSpaceDetails.Instance);
 
             BaseType = AlternateColorSpaceDetails.BaseType;
             Range = range ??
                 Enumerable.Range(0, numberOfColorComponents).Select(x => new[] { 0.0m, 1.0m }).SelectMany(x => x).ToList();
+            if (Range.Count != 2 * numberOfColorComponents)
+            {
+                throw new ArgumentOutOfRangeException(nameof(range), range,
+                    $"Must consist of exactly {2 * numberOfColorComponents } (2 x NumberOfColorComponents), but was passed {range.Count }");
+            }
             Metadata = metadata;
         }
     }

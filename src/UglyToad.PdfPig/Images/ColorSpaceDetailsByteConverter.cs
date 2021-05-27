@@ -48,6 +48,19 @@
             if (details is IndexedColorSpaceDetails indexed)
             {
                 decoded = UnwrapIndexedColorSpaceBytes(indexed, decoded);
+
+                // Use the base color space in potential further decoding
+                details = indexed.BaseColorSpaceDetails;
+            }
+
+            if (details is CalRGBColorSpaceDetails calRgb)
+            {
+                decoded = TransformToRGB(calRgb, decoded);
+            }
+
+            if (details is CalGrayColorSpaceDetails calGray)
+            {
+                decoded = TransformToRgbGrayScale(calGray, decoded);
             }
 
             return decoded.ToArray();
@@ -57,13 +70,19 @@
         {
             switch (details)
             {
-                case DeviceGrayColorSpaceDetails:
+                case DeviceGrayColorSpaceDetails deviceGray:
                     return 1;
 
-                case DeviceRgbColorSpaceDetails:
+                case CalGrayColorSpaceDetails calGray:
+                    return 1;
+
+                case DeviceRgbColorSpaceDetails deviceRgb:
                     return 3;
 
-                case DeviceCmykColorSpaceDetails:
+                case CalRGBColorSpaceDetails calRgb:
+                    return 3;
+
+                case DeviceCmykColorSpaceDetails deviceCmyk:
                     return 4;
 
                 case IndexedColorSpaceDetails indexed:
@@ -105,6 +124,34 @@
             return result;
         }
 
+        private static IReadOnlyList<byte> TransformToRgbGrayScale(CalGrayColorSpaceDetails calGray, IReadOnlyList<byte> decoded)
+        {
+            var transformed = new List<byte>();
+            for (var i = 0; i < decoded.Count; i++)
+            {
+                var component = decoded[i] / 255m;
+                var rgbPixel = calGray.TransformToRGB(component);
+                // We only need one component here 
+                transformed.Add(ConvertToByte(rgbPixel.R));
+            }
+
+            return transformed;
+        }
+
+        private static IReadOnlyList<byte> TransformToRGB(CalRGBColorSpaceDetails calRgb, IReadOnlyList<byte> decoded)
+        {
+            var transformed = new List<byte>();
+            for (var i = 0; i < decoded.Count; i += 3)
+            {
+                var rgbPixel = calRgb.TransformToRGB((decoded[i] / 255m, decoded[i + 1] / 255m, decoded[i + 2] / 255m));
+                transformed.Add(ConvertToByte(rgbPixel.R));
+                transformed.Add(ConvertToByte(rgbPixel.G));
+                transformed.Add(ConvertToByte(rgbPixel.B));
+            }
+
+            return transformed;
+        }
+
         private static byte[] UnwrapIndexedColorSpaceBytes(IndexedColorSpaceDetails indexed, IReadOnlyList<byte> input)
         {
             var multiplier = 1;
@@ -112,6 +159,7 @@
             switch (indexed.BaseType)
             {
                 case ColorSpace.DeviceRGB:
+                case ColorSpace.CalRGB:
                     transformer = x =>
                     {
                         var r = new byte[3];
@@ -139,6 +187,7 @@
                     multiplier = 4;
                     break;
                 case ColorSpace.DeviceGray:
+                case ColorSpace.CalGray:
                     transformer = x => new[] { indexed.ColorTable[x] };
                     multiplier = 1;
                     break;
@@ -160,6 +209,12 @@
             }
 
             return input.ToArray();
+        }
+
+        private static byte ConvertToByte(decimal componentValue)
+        {
+            var rounded = Math.Round(componentValue * 255, MidpointRounding.AwayFromZero);
+            return (byte)rounded;
         }
     }
 }

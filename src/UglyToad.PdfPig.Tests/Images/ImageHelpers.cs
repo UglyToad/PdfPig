@@ -2,15 +2,28 @@
 {
     using System;
     using System.IO;
+    using System.IO.Compression;
     using UglyToad.PdfPig.Images.Png;
 
     public static class ImageHelpers
     {
         private static readonly string FilesFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Images", "Files"));
 
-        public static byte[] LoadFileBytes(string filename)
+        public static byte[] LoadFileBytes(string filename, bool isCompressed = false)
         {
-            return File.ReadAllBytes(Path.Combine(FilesFolder, filename));
+            var filePath = Path.Combine(FilesFolder, filename);
+            var memoryStream = new MemoryStream();
+            if (isCompressed)
+            {
+                using (var deflateStream = new DeflateStream(File.OpenRead(filePath), CompressionMode.Decompress))
+                {
+                    deflateStream.CopyTo(memoryStream);
+                }
+
+                return memoryStream.ToArray();
+            }
+
+            return File.ReadAllBytes(filePath);
         }
 
         public static bool ImagesAreEqual(byte[] first, byte[] second)

@@ -105,6 +105,8 @@
                 "UglyToad.PdfPig.Graphics.Colors.IColor",
                 "UglyToad.PdfPig.Graphics.Colors.RGBColor",
                 "UglyToad.PdfPig.Graphics.Colors.ColorSpaceDetails",
+                "UglyToad.PdfPig.Graphics.Colors.CalGrayColorSpaceDetails",
+                "UglyToad.PdfPig.Graphics.Colors.CalRGBColorSpaceDetails",
                 "UglyToad.PdfPig.Graphics.Colors.DeviceGrayColorSpaceDetails",
                 "UglyToad.PdfPig.Graphics.Colors.DeviceRgbColorSpaceDetails",
                 "UglyToad.PdfPig.Graphics.Colors.DeviceCmykColorSpaceDetails",

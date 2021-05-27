@@ -16,7 +16,8 @@
 
             var isColorSpaceSupported =
                 actualColorSpace == ColorSpace.DeviceGray || actualColorSpace == ColorSpace.DeviceRGB
-                || actualColorSpace == ColorSpace.DeviceCMYK;
+                || actualColorSpace == ColorSpace.DeviceCMYK || actualColorSpace == ColorSpace.CalGray 
+                || actualColorSpace == ColorSpace.CalRGB;
 
             if (!isColorSpaceSupported || !image.TryGetBytes(out var bytesPure))
             {
@@ -28,7 +29,11 @@
                 bytesPure = ColorSpaceDetailsByteConverter.Convert(image.ColorSpaceDetails, bytesPure,
                     image.BitsPerComponent, image.WidthInSamples, image.HeightInSamples);
 
-                var numberOfComponents = actualColorSpace == ColorSpace.DeviceCMYK ? 4 : actualColorSpace == ColorSpace.DeviceRGB ? 3 : 1;
+                var numberOfComponents =
+                    actualColorSpace == ColorSpace.DeviceCMYK ? 4 :
+                    actualColorSpace == ColorSpace.DeviceRGB ? 3 :
+                    actualColorSpace == ColorSpace.CalRGB ? 3 : 1;
+
                 var is3Byte = numberOfComponents == 3;
 
                 var builder = PngBuilder.Create(image.WidthInSamples, image.HeightInSamples, false);
