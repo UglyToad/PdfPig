@@ -8,7 +8,7 @@
     /// A dictionary object is an associative table containing pairs of objects, known as the dictionary's entries. 
     /// The key must be a <see cref="NameToken"/> and the value may be an kind of <see cref="IToken"/>.
     /// </summary>
-    public class DictionaryToken : IDataToken<IReadOnlyDictionary<string, IToken>>
+    public class DictionaryToken : IDataToken<IReadOnlyDictionary<string, IToken>>, IEquatable<DictionaryToken>
     {
         /// <summary>
         /// The key value pairs in this dictionary.
@@ -123,18 +123,23 @@
             return new DictionaryToken(data ?? throw new ArgumentNullException(nameof(data)));
         }
 
-
         /// <inheritdoc />
         public bool Equals(IToken obj)
         {
-            if (ReferenceEquals(this, obj))
-            {
-                return true;
+            return Equals(obj as DictionaryToken);
+        }
+
+        /// <inheritdoc />
+        public bool Equals(DictionaryToken other)
+        {
+            if (other == null)
+            { 
+                return false;
             }
 
-            if (!(obj is DictionaryToken other))
+            if (ReferenceEquals(this, other))
             {
-                return false;
+                return true;
             }
 
             if (Data.Count != other.Data.Count)
@@ -158,5 +163,6 @@
         {
             return string.Join(", ", Data.Select(x => $"<{x.Key}, {x.Value}>"));
         }
+       
     }
 }
