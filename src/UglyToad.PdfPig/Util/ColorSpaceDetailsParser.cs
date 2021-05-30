@@ -126,7 +126,7 @@
 
                         // WhitePoint is required
                         if (!DirectObjectFinder.TryGet(second, scanner, out DictionaryToken dictionaryToken) ||
-                            !dictionaryToken.TryGet(NameToken.WhitePoint, out ArrayToken whitePointToken))
+                            !dictionaryToken.TryGet(NameToken.WhitePoint, scanner, out ArrayToken whitePointToken))
                         {
                             return UnsupportedColorSpaceDetails.Instance;
                         }
@@ -135,14 +135,14 @@
 
                         // BlackPoint is optional
                         IReadOnlyList<decimal> blackPoint = null;
-                        if (dictionaryToken.TryGet(NameToken.BlackPoint, out ArrayToken blackPointToken))
+                        if (dictionaryToken.TryGet(NameToken.BlackPoint, scanner, out ArrayToken blackPointToken))
                         {
                             blackPoint = blackPointToken.Data.OfType<NumericToken>().Select(x => x.Data).ToList();
                         }
 
                         // Gamma is optional
                         decimal? gamma = null;
-                        if (dictionaryToken.TryGet(NameToken.Gamma, out NumericToken gammaToken))
+                        if (dictionaryToken.TryGet(NameToken.Gamma, scanner, out NumericToken gammaToken))
                         {
                             gamma = gammaToken.Data;
                         }
@@ -169,7 +169,7 @@
 
                         // WhitePoint is required
                         if (!DirectObjectFinder.TryGet(second, scanner, out DictionaryToken dictionaryToken) ||
-                            !dictionaryToken.TryGet(NameToken.WhitePoint, out ArrayToken whitePointToken))
+                            !dictionaryToken.TryGet(NameToken.WhitePoint, scanner, out ArrayToken whitePointToken))
                         {
                             return UnsupportedColorSpaceDetails.Instance;
                         }
@@ -178,21 +178,21 @@
 
                         // BlackPoint is optional
                         IReadOnlyList<decimal> blackPoint = null;
-                        if (dictionaryToken.TryGet(NameToken.BlackPoint, out ArrayToken blackPointToken))
+                        if (dictionaryToken.TryGet(NameToken.BlackPoint, scanner, out ArrayToken blackPointToken))
                         {
                             blackPoint = blackPointToken.Data.OfType<NumericToken>().Select(x => x.Data).ToList();
                         }
 
                         // Gamma is optional
                         IReadOnlyList<decimal> gamma = null;
-                        if (dictionaryToken.TryGet(NameToken.Gamma, out ArrayToken gammaToken))
+                        if (dictionaryToken.TryGet(NameToken.Gamma, scanner, out ArrayToken gammaToken))
                         {
                             gamma = gammaToken.Data.OfType<NumericToken>().Select(x => x.Data).ToList();
                         }
 
                         // Matrix is optional
                         IReadOnlyList<decimal> matrix = null;
-                        if (dictionaryToken.TryGet(NameToken.Matrix, out ArrayToken matrixToken))
+                        if (dictionaryToken.TryGet(NameToken.Matrix, scanner, out ArrayToken matrixToken))
                         {
                             matrix = matrixToken.Data.OfType<NumericToken>().Select(x => x.Data).ToList();
                         }
@@ -221,7 +221,7 @@
 
                         // N is required
                         if (!DirectObjectFinder.TryGet(second, scanner, out StreamToken streamToken) ||
-                            !streamToken.StreamDictionary.TryGet(NameToken.N, out NumericToken numeric))
+                            !streamToken.StreamDictionary.TryGet(NameToken.N, scanner, out NumericToken numeric))
                         {
                             return UnsupportedColorSpaceDetails.Instance;
                         }
@@ -237,14 +237,14 @@
 
                         // Range is optional
                         IReadOnlyList<decimal> range = null;
-                        if (streamToken.StreamDictionary.TryGet(NameToken.Range, out ArrayToken arrayToken))
+                        if (streamToken.StreamDictionary.TryGet(NameToken.Range, scanner, out ArrayToken arrayToken))
                         {
                             range = arrayToken.Data.OfType<NumericToken>().Select(x => x.Data).ToList();
                         }
 
                         // Metadata is optional
                         XmpMetadata metadata = null;
-                        if (streamToken.StreamDictionary.TryGet(NameToken.Metadata, out StreamToken metadataStream))
+                        if (streamToken.StreamDictionary.TryGet(NameToken.Metadata, scanner, out StreamToken metadataStream))
                         {
                             metadata = new XmpMetadata(metadataStream, filterProvider, scanner);
                         }
