@@ -9,6 +9,7 @@
     using Graphics.Core;
     using Tokens;
     using Images.Png;
+    using UglyToad.PdfPig.Util.JetBrains.Annotations;
 
     /// <inheritdoc />
     /// <summary>
@@ -41,6 +42,10 @@
 
         /// <inheritdoc />
         public bool IsInlineImage { get; } = true;
+
+        /// <inheritdoc />
+        [NotNull]
+        public DictionaryToken ImageDictionary { get; }
 
         /// <inheritdoc />
         public RenderingIntent RenderingIntent { get; }
@@ -76,6 +81,7 @@
             IsImageMask = isImageMask;
             RenderingIntent = renderingIntent;
             Interpolate = interpolate;
+            ImageDictionary = streamDictionary;
 
             RawBytes = bytes;
             ColorSpaceDetails = colorSpaceDetails;

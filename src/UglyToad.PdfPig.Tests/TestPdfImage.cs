@@ -6,6 +6,7 @@
     using UglyToad.PdfPig.Graphics.Colors;
     using UglyToad.PdfPig.Graphics.Core;
     using UglyToad.PdfPig.Images.Png;
+    using UglyToad.PdfPig.Tokens;
 
     public class TestPdfImage : IPdfImage
     {
@@ -30,6 +31,8 @@
         public bool Interpolate { get; set; }
 
         public bool IsInlineImage { get; set; }
+
+        public DictionaryToken ImageDictionary { get; set; }
 
         public ColorSpaceDetails ColorSpaceDetails { get; set; }
 

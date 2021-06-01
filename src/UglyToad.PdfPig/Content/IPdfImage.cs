@@ -4,6 +4,7 @@
     using Core;
     using Graphics.Colors;
     using Graphics.Core;
+    using UglyToad.PdfPig.Tokens;
     using XObjects;
 
     /// <summary>
@@ -83,6 +84,11 @@
         /// Whether this image is an <see cref="InlineImage"/> or a <see cref="XObjectImage"/>.
         /// </summary>
         bool IsInlineImage { get; }
+
+        /// <summary>
+        /// The full dictionary for this image object.
+        /// </summary>
+        DictionaryToken ImageDictionary { get; }
 
         /// <summary>
         /// Full details for the <see cref="ColorSpace"/> with any associated data.

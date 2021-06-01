@@ -102,6 +102,16 @@
         /// <returns>A new <see cref="DictionaryToken"/> with the entry created or modified.</returns>
         public DictionaryToken With(string key, IToken value)
         {
+            if (key == null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            if (value == null)
+            {
+                throw new ArgumentNullException(nameof(value));
+            }
+
             var result = new Dictionary<string, IToken>(Data.Count + 1);
 
             foreach (var keyValuePair in Data)
@@ -110,6 +120,35 @@
             }
 
             result[key] = value;
+
+            return new DictionaryToken(result);
+        }
+
+        /// <summary>
+        /// Creates a copy of this dictionary with the entry with the specified key removed (if it exists).
+        /// </summary>
+        /// <param name="key">The key of the entry to remove.</param>
+        /// <returns>A new <see cref="DictionaryToken"/> with the entry removed.</returns>
+        public DictionaryToken Without(NameToken key) => Without(key.Data);
+
+        /// <summary>
+        /// Creates a copy of this dictionary with the entry with the specified key removed (if it exists).
+        /// </summary>
+        /// <param name="key">The key of the entry to remove.</param>
+        /// <returns>A new <see cref="DictionaryToken"/> with the entry removed.</returns>
+        public DictionaryToken Without(string key)
+        {
+            if (key == null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            var result = new Dictionary<string, IToken>(Data.ContainsKey(key) ? Data.Count - 1 : Data.Count);
+
+            foreach (var keyValuePair in Data.Where(x => !x.Key.Equals(key)))
+            {
+                result[keyValuePair.Key] = keyValuePair.Value;
+            }
 
             return new DictionaryToken(result);
         }

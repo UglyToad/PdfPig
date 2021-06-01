@@ -6,7 +6,6 @@
     using Core;
     using Graphics.Colors;
     using Graphics.Core;
-    using Images;
     using Images.Png;
     using Tokens;
     using Util.JetBrains.Annotations;
@@ -57,9 +56,7 @@
         /// <inheritdoc />
         public bool IsInlineImage { get; } = false;
 
-        /// <summary>
-        /// The full dictionary for this Image XObject.
-        /// </summary>
+        /// <inheritdoc />
         [NotNull]
         public DictionaryToken ImageDictionary { get; }
 

@@ -64,6 +64,7 @@
 
             return false;
         }
+
     }
 
     internal static class ColorSpaceDetailsParser
@@ -78,10 +79,18 @@
             if (imageDictionary.GetObjectOrDefault(NameToken.ImageMask, NameToken.Im) != null ||
                 filterProvider.GetFilters(imageDictionary, scanner).OfType<CcittFaxDecodeFilter>().Any())
             {
+                if (cannotRecurse)
+                {
+                    return UnsupportedColorSpaceDetails.Instance;
+                }
+
+                var colorSpaceDetails = GetColorSpaceDetails(colorSpace, imageDictionary.Without(NameToken.Filter).Without(NameToken.F), scanner, resourceStore, filterProvider, true);
+                
                 var decodeRaw = imageDictionary.GetObjectOrDefault(NameToken.Decode, NameToken.D) as ArrayToken
                     ?? new ArrayToken(EmptyArray<IToken>.Instance);
                 var decode = decodeRaw.Data.OfType<NumericToken>().Select(x => x.Data).ToArray();
-                return IndexedColorSpaceDetails.Stencil(decode);
+
+                return IndexedColorSpaceDetails.Stencil(colorSpaceDetails, decode);
             }
 
             if (!colorSpace.HasValue)
@@ -98,13 +107,150 @@
                 case ColorSpace.DeviceCMYK:
                     return DeviceCmykColorSpaceDetails.Instance;
                 case ColorSpace.CalGray:
-                    return UnsupportedColorSpaceDetails.Instance;
+                    {
+                        if (!TryGetColorSpaceArray(imageDictionary, resourceStore, scanner, out var colorSpaceArray)
+                                || colorSpaceArray.Length != 2)
+                        {
+                            return UnsupportedColorSpaceDetails.Instance;
+                        }
+
+                        var first = colorSpaceArray[0] as NameToken;
+
+                        if (first == null || !ColorSpaceMapper.TryMap(first, resourceStore, out var innerColorSpace)
+                            || innerColorSpace != ColorSpace.CalGray)
+                        {
+                            return UnsupportedColorSpaceDetails.Instance;
+                        }
+
+                        var second = colorSpaceArray[1];
+
+                        // WhitePoint is required
+                        if (!DirectObjectFinder.TryGet(second, scanner, out DictionaryToken dictionaryToken) ||
+                            !dictionaryToken.TryGet(NameToken.WhitePoint, scanner, out ArrayToken whitePointToken))
+                        {
+                            return UnsupportedColorSpaceDetails.Instance;
+                        }
+
+                        var whitePoint = whitePointToken.Data.OfType<NumericToken>().Select(x => x.Data).ToList();
+
+                        // BlackPoint is optional
+                        IReadOnlyList<decimal> blackPoint = null;
+                        if (dictionaryToken.TryGet(NameToken.BlackPoint, scanner, out ArrayToken blackPointToken))
+                        {
+                            blackPoint = blackPointToken.Data.OfType<NumericToken>().Select(x => x.Data).ToList();
+                        }
+
+                        // Gamma is optional
+                        decimal? gamma = null;
+                        if (dictionaryToken.TryGet(NameToken.Gamma, scanner, out NumericToken gammaToken))
+                        {
+                            gamma = gammaToken.Data;
+                        }
+
+                        return new CalGrayColorSpaceDetails(whitePoint, blackPoint, gamma);
+                    }
                 case ColorSpace.CalRGB:
-                    return UnsupportedColorSpaceDetails.Instance;
+                    {
+                        if (!TryGetColorSpaceArray(imageDictionary, resourceStore, scanner, out var colorSpaceArray)
+                            || colorSpaceArray.Length != 2)
+                        {
+                            return UnsupportedColorSpaceDetails.Instance;
+                        }
+
+                        var first = colorSpaceArray[0] as NameToken;
+
+                        if (first == null || !ColorSpaceMapper.TryMap(first, resourceStore, out var innerColorSpace)
+                            || innerColorSpace != ColorSpace.CalRGB)
+                        {
+                            return UnsupportedColorSpaceDetails.Instance;
+                        }
+
+                        var second = colorSpaceArray[1];
+
+                        // WhitePoint is required
+                        if (!DirectObjectFinder.TryGet(second, scanner, out DictionaryToken dictionaryToken) ||
+                            !dictionaryToken.TryGet(NameToken.WhitePoint, scanner, out ArrayToken whitePointToken))
+                        {
+                            return UnsupportedColorSpaceDetails.Instance;
+                        }
+
+                        var whitePoint = whitePointToken.Data.OfType<NumericToken>().Select(x => x.Data).ToList();
+
+                        // BlackPoint is optional
+                        IReadOnlyList<decimal> blackPoint = null;
+                        if (dictionaryToken.TryGet(NameToken.BlackPoint, scanner, out ArrayToken blackPointToken))
+                        {
+                            blackPoint = blackPointToken.Data.OfType<NumericToken>().Select(x => x.Data).ToList();
+                        }
+
+                        // Gamma is optional
+                        IReadOnlyList<decimal> gamma = null;
+                        if (dictionaryToken.TryGet(NameToken.Gamma, scanner, out ArrayToken gammaToken))
+                        {
+                            gamma = gammaToken.Data.OfType<NumericToken>().Select(x => x.Data).ToList();
+                        }
+
+                        // Matrix is optional
+                        IReadOnlyList<decimal> matrix = null;
+                        if (dictionaryToken.TryGet(NameToken.Matrix, scanner, out ArrayToken matrixToken))
+                        {
+                            matrix = matrixToken.Data.OfType<NumericToken>().Select(x => x.Data).ToList();
+                        }
+
+                        return new CalRGBColorSpaceDetails(whitePoint, blackPoint, gamma, matrix);
+                    }
                 case ColorSpace.Lab:
                     return UnsupportedColorSpaceDetails.Instance;
                 case ColorSpace.ICCBased:
-                    return UnsupportedColorSpaceDetails.Instance;
+                    {
+                        if (!TryGetColorSpaceArray(imageDictionary, resourceStore, scanner, out var colorSpaceArray)
+                            || colorSpaceArray.Length != 2)
+                        {
+                            return UnsupportedColorSpaceDetails.Instance;
+                        }
+
+                        var first = colorSpaceArray[0] as NameToken;
+
+                        if (first == null || !ColorSpaceMapper.TryMap(first, resourceStore, out var innerColorSpace)
+                            || innerColorSpace != ColorSpace.ICCBased)
+                        {
+                            return UnsupportedColorSpaceDetails.Instance;
+                        }
+
+                        var second = colorSpaceArray[1];
+
+                        // N is required
+                        if (!DirectObjectFinder.TryGet(second, scanner, out StreamToken streamToken) ||
+                            !streamToken.StreamDictionary.TryGet(NameToken.N, scanner, out NumericToken numeric))
+                        {
+                            return UnsupportedColorSpaceDetails.Instance;
+                        }
+
+                        // Alternate is optional
+                        ColorSpaceDetails alternateColorSpaceDetails = null;
+                        if (streamToken.StreamDictionary.TryGet(NameToken.Alternate, out NameToken alternateColorSpaceNameToken) &&
+                            ColorSpaceMapper.TryMap(alternateColorSpaceNameToken, resourceStore, out var alternateColorSpace))
+                        {
+                            alternateColorSpaceDetails =
+                                GetColorSpaceDetails(alternateColorSpace, imageDictionary, scanner, resourceStore, filterProvider, true);
+                        }
+
+                        // Range is optional
+                        IReadOnlyList<decimal> range = null;
+                        if (streamToken.StreamDictionary.TryGet(NameToken.Range, scanner, out ArrayToken arrayToken))
+                        {
+                            range = arrayToken.Data.OfType<NumericToken>().Select(x => x.Data).ToList();
+                        }
+
+                        // Metadata is optional
+                        XmpMetadata metadata = null;
+                        if (streamToken.StreamDictionary.TryGet(NameToken.Metadata, scanner, out StreamToken metadataStream))
+                        {
+                            metadata = new XmpMetadata(metadataStream, filterProvider, scanner);
+                        }
+
+                        return new ICCBasedColorSpaceDetails(numeric.Int, alternateColorSpaceDetails, range, metadata);
+                    }
                 case ColorSpace.Indexed:
                     {
                         if (cannotRecurse)
@@ -112,8 +258,8 @@
                             return UnsupportedColorSpaceDetails.Instance;
                         }
 
-                        if (!imageDictionary.TryGet(NameToken.ColorSpace, scanner, out ArrayToken colorSpaceArray)
-                        || colorSpaceArray.Length != 4)
+                        if (!TryGetColorSpaceArray(imageDictionary, resourceStore, scanner, out var colorSpaceArray)
+                            || colorSpaceArray.Length != 4)
                         {
                             // Error instead?
                             return UnsupportedColorSpaceDetails.Instance;
@@ -122,7 +268,7 @@
                         var first = colorSpaceArray[0] as NameToken;
 
                         if (first == null || !ColorSpaceMapper.TryMap(first, resourceStore, out var innerColorSpace)
-                        || innerColorSpace != ColorSpace.Indexed)
+                            || innerColorSpace != ColorSpace.Indexed)
                         {
                             return UnsupportedColorSpaceDetails.Instance;
                         }
@@ -206,8 +352,8 @@
                     return UnsupportedColorSpaceDetails.Instance;
                 case ColorSpace.Separation:
                     {
-                        if (!imageDictionary.TryGet(NameToken.ColorSpace, scanner, out ArrayToken colorSpaceArray)
-                            || colorSpaceArray.Length != 4)
+                        if (!TryGetColorSpaceArray(imageDictionary, resourceStore, scanner, out var colorSpaceArray)
+                             || colorSpaceArray.Length != 4)
                         {
                             // Error instead?
                             return UnsupportedColorSpaceDetails.Instance;
@@ -283,6 +429,22 @@
                 default:
                     return UnsupportedColorSpaceDetails.Instance;
             }
+        }
+
+        private static bool TryGetColorSpaceArray(DictionaryToken imageDictionary, IResourceStore resourceStore,
+            IPdfTokenScanner scanner,
+            out ArrayToken colorSpaceArray)
+        {
+            var colorSpace = imageDictionary.GetObjectOrDefault(NameToken.ColorSpace, NameToken.Cs);
+
+            if (!DirectObjectFinder.TryGet(colorSpace, scanner, out colorSpaceArray)
+                && DirectObjectFinder.TryGet(colorSpace, scanner, out NameToken colorSpaceName) &&
+                resourceStore.TryGetNamedColorSpace(colorSpaceName, out var colorSpaceNamedToken))
+            {
+                colorSpaceArray = colorSpaceNamedToken.Data as ArrayToken;
+            }
+
+            return colorSpaceArray != null;
         }
     }
 }
