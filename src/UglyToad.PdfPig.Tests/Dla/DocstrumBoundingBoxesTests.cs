@@ -4,6 +4,7 @@
     using System.Linq;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
+    using UglyToad.PdfPig.Fonts.SystemFonts;
     using Xunit;
 
     public class DocstrumBoundingBoxesTests
@@ -70,10 +71,18 @@
             }
         };
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(DataExtract))]
         public void GetBlocks(string name, string[] expected)
         {
+            if (name == "90 180 270 rotated.pdf")
+            {
+                // The 'TimesNewRomanPSMT' font is used by this particular document. Thus, results cannot be trusted on
+                // platforms where this font isn't generally available (e.g. OSX, Linux, etc.), so we skip it!
+                var font = SystemFontFinder.Instance.GetTrueTypeFont("TimesNewRomanPSMT");
+                Skip.If(font == null, "Skipped because the font TimesNewRomanPSMT could not be found in the execution environment.");
+            }
+
             var options = new DocstrumBoundingBoxes.DocstrumBoundingBoxesOptions() { LineSeparator = " " };
             using (var document = PdfDocument.Open(DlaHelper.GetDocumentPath(name)))
             {

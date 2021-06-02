@@ -48,7 +48,7 @@
             var result = FileHeaderParser.Parse(scanner, false, log);
 
             Assert.Equal(1.2m, result.Version);
-            Assert.Equal(9, result.OffsetInFile);
+            Assert.Equal(TestEnvironment.IsUnixPlatform ? 7 : 9, result.OffsetInFile);
         }
 
         [Fact]
@@ -70,7 +70,7 @@
             var result = FileHeaderParser.Parse(scanner, false, log);
 
             Assert.Equal(1.2m, result.Version);
-            Assert.Equal(13, result.OffsetInFile);
+            Assert.Equal(TestEnvironment.IsUnixPlatform ? 12 : 13, result.OffsetInFile);
         }
 
         [Fact]
@@ -82,7 +82,7 @@
             var result = FileHeaderParser.Parse(scanner, true, log);
 
             Assert.Equal(1.7m, result.Version);
-            Assert.Equal(13, result.OffsetInFile);
+            Assert.Equal(TestEnvironment.IsUnixPlatform ? 12 : 13, result.OffsetInFile);
         }
 
         [Fact]
@@ -94,7 +94,7 @@ three %PDF-1.6");
             var result = FileHeaderParser.Parse(scanner, true, log);
 
             Assert.Equal(1.6m, result.Version);
-            Assert.Equal(15, result.OffsetInFile);
+            Assert.Equal(TestEnvironment.IsUnixPlatform ? 14 : 15, result.OffsetInFile);
         }
 
         [Fact]
