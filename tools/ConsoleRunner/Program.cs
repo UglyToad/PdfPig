@@ -9,9 +9,9 @@ namespace UglyToad.PdfPig.ConsoleRunner
     {
         public static int Main(string[] args)
         {
-            if (args.Length != 1)
+            if (args.Length == 0)
             {
-                Console.WriteLine("Only 1 argument, path to test file directory, may be provided.");
+                Console.WriteLine("At least 1 argument, path to test file directory, may be provided.");
                 return 7;
             }
 
@@ -23,12 +23,25 @@ namespace UglyToad.PdfPig.ConsoleRunner
                 return 7;
             }
 
+            var maxCount = default(int?);
+
+            if (args.Length > 1 && int.TryParse(args[1], out var countIn))
+            {
+                maxCount = countIn;
+            }
+
             var hasError = false;
             var errorBuilder = new StringBuilder();
             var fileList = Directory.GetFiles(path, "*.pdf");
+            var runningCount = 0;
             
             foreach (var file in fileList)
             {
+                if (maxCount.HasValue && runningCount >= maxCount)
+                {
+                    break;
+                }
+
                 try
                 {
                     var numWords = 0;
@@ -57,6 +70,8 @@ namespace UglyToad.PdfPig.ConsoleRunner
                         .Append(ex)
                         .AppendLine();
                 }
+
+                runningCount++;
             }
 
             if (hasError)
