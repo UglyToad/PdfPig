@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UglyToad.PdfPig.Fonts.SystemFonts;
 using UglyToad.PdfPig.Tests.Dla;
 using Xunit;
 
@@ -21,11 +22,15 @@ namespace UglyToad.PdfPig.Tests.Fonts.SystemFonts
             },
         };
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(DataExtract))]
         public void GetCorrectBBoxLinux(string name, object[][] expected)
         {
             // success on Windows but LinuxSystemFontLister cannot find the 'TimesNewRomanPSMT' font
+            var font = SystemFontFinder.Instance.GetTrueTypeFont("TimesNewRomanPSMT");
+
+            Skip.If(font == null, "Skipped because the font TimesNewRomanPSMT could not be found in the execution environment.");
+            
             using (var document = PdfDocument.Open(DlaHelper.GetDocumentPath(name)))
             {
                 var page = document.GetPage(1);
