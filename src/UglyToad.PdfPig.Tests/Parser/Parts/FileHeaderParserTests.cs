@@ -4,6 +4,7 @@
     using Logging;
     using PdfPig.Core;
     using PdfPig.Parser.FileStructure;
+    using PdfPig.Tokenization.Scanner;
     using Xunit;
 
     public class FileHeaderParserTests
@@ -136,6 +137,18 @@ three %PDF-1.6");
 
             Assert.Equal(0, scanner.CurrentPosition);
             Assert.Equal(0, result.OffsetInFile);
+        }
+
+        [Fact]
+        public void Issue334()
+        {
+            var input = OtherEncodings.StringAsLatin1Bytes("%PDF-1.7\r\n%âãÏÓ\r\n1 0 obj\r\n<</Lang(en-US)>>\r\nendobj");
+
+            var scanner = new CoreTokenScanner(new ByteArrayInputBytes(input), ScannerScope.None);
+
+            var result = FileHeaderParser.Parse(scanner, false, log);
+
+            Assert.Equal(1.7m, result.Version);
         }
     }
 }
