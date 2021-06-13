@@ -76,7 +76,7 @@
                 }
             }
 
-            throw new PdfDocumentFormatException($"Could not find the object number {reference} with type {typeof(T).Name}.");
+            throw new PdfDocumentFormatException($"Could not find the object number {reference} with type {typeof(T).Name} instead, it was found with type {temp.GetType().Name}.");
         }
 
         public static T Get<T>(IToken token, IPdfTokenScanner scanner) where T : class, IToken
@@ -91,7 +91,7 @@
                 return Get<T>(reference.Data, scanner);
             }
 
-            throw new PdfDocumentFormatException($"Could not find the object {token} with type {typeof(T).Name}.");
+            throw new PdfDocumentFormatException($"Could not find the object {token} with type {typeof(T).Name} instead, it was found with type {token.GetType().Name}.");
         }
     }
 }
