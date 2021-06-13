@@ -256,35 +256,20 @@
 
             // Verify again that we start with "stream"
             var hasStartStreamToken = ReadStreamTokenStart(inputBytes, startStreamTokenOffset);
-
             if (!hasStartStreamToken)
             {
                 return false;
             }
 
             // From the specification: The stream operator should be followed by \r\n or \n, not just \r.
-            if (!inputBytes.MoveNext())
+            // While the specification demands a \n we have seen files with `garbage` before the actual data
+            do
             {
-                return false;
-            }
-
-            // While the specification demands a \n we have seen files with \r only in the wild.
-            var hadWhiteSpace = false;
-            if (inputBytes.CurrentByte == '\r')
-            {
-                hadWhiteSpace = true;
-                inputBytes.MoveNext();
-            }
-
-            if (inputBytes.CurrentByte != '\n')
-            {
-                if (!hadWhiteSpace)
+                if (!inputBytes.MoveNext())
                 {
                     return false;
                 }
-
-                inputBytes.Seek(inputBytes.CurrentOffset - 1);
-            }
+            } while ((char)inputBytes.CurrentByte != '\n');
 
             // Store where we started reading the first byte of data.
             long startDataOffset = inputBytes.CurrentOffset;
