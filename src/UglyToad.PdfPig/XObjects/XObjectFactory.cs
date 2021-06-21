@@ -11,7 +11,6 @@
     using Graphics.Core;
     using Tokenization.Scanner;
     using Tokens;
-    using UglyToad.PdfPig.Parser.Parts;
     using Util;
 
     internal static class XObjectFactory
@@ -30,15 +29,15 @@
                 throw new InvalidOperationException($"Cannot create an image from an XObject with type: {xObject.Type}.");
             }
 
-            var dictionary = xObject.Stream.StreamDictionary;
+            var dictionary = xObject.Stream.StreamDictionary.Resolve(pdfScanner);
 
             var bounds = xObject.AppliedTransformation.Transform(new PdfRectangle(new PdfPoint(0, 0), new PdfPoint(1, 1)));
 
-            var width = dictionary.Get<NumericToken>(NameToken.Width, pdfScanner).Int;
-            var height = dictionary.Get<NumericToken>(NameToken.Height, pdfScanner).Int;
+            var width = dictionary.Get<NumericToken>(NameToken.Width).Int;
+            var height = dictionary.Get<NumericToken>(NameToken.Height).Int;
 
-            var isImageMask = dictionary.TryGet(NameToken.ImageMask, pdfScanner, out BooleanToken isMaskToken)
-                         && isMaskToken.Data;
+            var isImageMask = dictionary.TryGet(NameToken.ImageMask, out BooleanToken isMaskToken)
+                && isMaskToken.Data;
 
             var isJpxDecode = dictionary.TryGet(NameToken.Filter, out var token)
                 && token is NameToken filterName
@@ -47,7 +46,7 @@
             int bitsPerComponent = 0;
             if (!isImageMask && !isJpxDecode)
             {
-                if (!dictionary.TryGet(NameToken.BitsPerComponent, pdfScanner, out NumericToken bitsPerComponentToken))
+                if (!dictionary.TryGet(NameToken.BitsPerComponent, out NumericToken bitsPerComponentToken))
                 {
                     throw new PdfDocumentFormatException($"No bits per component defined for image: {dictionary}.");
                 }
@@ -65,45 +64,20 @@
                 intent = renderingIntentToken.Data.ToRenderingIntent();
             }
 
-            var interpolate = dictionary.TryGet(NameToken.Interpolate, pdfScanner, out BooleanToken interpolateToken)
+            var interpolate = dictionary.TryGet(NameToken.Interpolate, out BooleanToken interpolateToken)
                               && interpolateToken.Data;
 
-            DictionaryToken filterDictionary = xObject.Stream.StreamDictionary;
-            if (xObject.Stream.StreamDictionary.TryGet(NameToken.Filter, out var filterToken)
-                && filterToken is IndirectReferenceToken)
-            {
-                if (filterDictionary.TryGet(NameToken.Filter, pdfScanner, out ArrayToken filterArray))
-                {
-                    filterDictionary = filterDictionary.With(NameToken.Filter, filterArray);
-                }
-                else if (filterDictionary.TryGet(NameToken.Filter, pdfScanner, out NameToken filterNameToken))
-                {
-                    filterDictionary = filterDictionary.With(NameToken.Filter, filterNameToken);
-                }
-                else
-                {
-                    filterDictionary = null;
-                }
-            }
 
-            var supportsFilters = filterDictionary != null;
-            if (filterDictionary != null)
-            {
-                var filters = filterProvider.GetFilters(filterDictionary, pdfScanner);
-                foreach (var filter in filters)
-                {
-                    if (!filter.IsSupported)
-                    {
-                        supportsFilters = false;
-                        break;
-                    }
-                }
-            }
+            var supportsFilters = true;
 
-            var decodeParams = dictionary.GetObjectOrDefault(NameToken.DecodeParms, NameToken.Dp);
-            if (decodeParams is IndirectReferenceToken refToken)
+            var filters = filterProvider.GetFilters(dictionary, pdfScanner);
+            foreach (var filter in filters)
             {
-                dictionary = dictionary.With(NameToken.DecodeParms, pdfScanner.Get(refToken.Data).Data);
+                if (!filter.IsSupported)
+                {
+                    supportsFilters = false;
+                    break;
+                }
             }
 
             var streamToken = new StreamToken(dictionary, xObject.Stream.Data);
@@ -124,12 +98,12 @@
 
             if (!isImageMask)
             {
-                if (dictionary.TryGet(NameToken.ColorSpace, pdfScanner, out NameToken colorSpaceNameToken)
+                if (dictionary.TryGet(NameToken.ColorSpace, out NameToken colorSpaceNameToken)
                     && TryMapColorSpace(colorSpaceNameToken, resourceStore, out var colorSpaceResult))
                 {
                     colorSpace = colorSpaceResult;
                 }
-                else if (dictionary.TryGet(NameToken.ColorSpace, pdfScanner, out ArrayToken colorSpaceArrayToken)
+                else if (dictionary.TryGet(NameToken.ColorSpace, out ArrayToken colorSpaceArrayToken)
                 && colorSpaceArrayToken.Length > 0)
                 {
                     var first = colorSpaceArrayToken.Data[0];
@@ -163,8 +137,6 @@
                 decodedBytes,
                 details);
         }
-
-        
 
         private static bool TryMapColorSpace(NameToken name, IResourceStore resourceStore, out ColorSpace colorSpaceResult)
         {
