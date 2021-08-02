@@ -56,6 +56,53 @@
         }
 
         [Fact]
+        public void CanFastAddPageAndInheritProps()
+        {
+            var first = IntegrationHelpers.GetDocumentPath("inherited_mediabox.pdf");
+            var contents = File.ReadAllBytes(first);
+
+
+            byte[] results = null;
+            using (var existing = PdfDocument.Open(contents, ParsingOptions.LenientParsingOff))
+            using (var output = new PdfDocumentBuilder())
+            {
+                output.AddPage(existing, 1);
+                results = output.Build();
+            }
+
+            using (var rewritted = PdfDocument.Open(results, ParsingOptions.LenientParsingOff))
+            {
+                var pg = rewritted.GetPage(1);
+                Assert.Equal(200, pg.MediaBox.Bounds.Width);
+                Assert.Equal(100, pg.MediaBox.Bounds.Height);
+            }
+        }
+
+        [Fact]
+        public void CanFastAddPageWithStreamSubtype()
+        {
+            var first = IntegrationHelpers.GetDocumentPath("steam_in_page_dict.pdf");
+            var contents = File.ReadAllBytes(first);
+
+
+            byte[] results = null;
+            using (var existing = PdfDocument.Open(contents, ParsingOptions.LenientParsingOff))
+            using (var output = new PdfDocumentBuilder())
+            {
+                output.AddPage(existing, 1);
+                results = output.Build();
+            }
+
+            using (var rewritted = PdfDocument.Open(results, ParsingOptions.LenientParsingOff))
+            {
+                // really just checking for no exception...
+                var pg = rewritted.GetPage(1);
+                Assert.NotNull(pg.Content);
+            }
+        }
+
+
+        [Fact]
         public void CanReadSingleBlankPage()
         {
             var result = CreateSingleBlankPage();
@@ -100,7 +147,7 @@
             PdfPageBuilder page = builder.AddPage(PageSize.A4);
 
             PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
-            
+
             page.AddText("Hello World!", 12, new PdfPoint(25, 520), font);
 
             var b = builder.Build();
@@ -111,7 +158,7 @@
             {
                 var page1 = document.GetPage(1);
 
-                Assert.Equal(new[] {"Hello", "World!"}, page1.GetWords().Select(x => x.Text));
+                Assert.Equal(new[] { "Hello", "World!" }, page1.GetWords().Select(x => x.Text));
             }
         }
 
@@ -182,7 +229,7 @@
             builder.DocumentInformation.Title = "Hello Roboto!";
 
             var page = builder.AddPage(PageSize.A4);
-            
+
             var font = builder.AddTrueTypeFont(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf"));
 
             page.AddText("eé", 12, new PdfPoint(30, 520), font);
@@ -322,12 +369,12 @@
         {
             var builder = new PdfDocumentBuilder();
             var page = builder.AddPage(PageSize.A4);
-            
+
             var file = TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf");
 
             var font = builder.AddTrueTypeFont(file);
 
-            page.AddText("é (lower case, upper case É).", 9, 
+            page.AddText("é (lower case, upper case É).", 9,
                 new PdfPoint(30, page.PageSize.Height - 50), font);
 
             var bytes = builder.Build();
@@ -347,7 +394,7 @@
             var builder = new PdfDocumentBuilder();
             var page1 = builder.AddPage(PageSize.A4);
             var page2 = builder.AddPage(PageSize.A4);
-            
+
             var font = builder.AddTrueTypeFont(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf"));
 
             var topLine = new PdfPoint(30, page1.PageSize.Height - 60);
@@ -376,13 +423,13 @@
                 Assert.StartsWith("The very hungry caterpillar", page2Out.Text);
             }
         }
-        
+
         [Fact]
         public void CanWriteSinglePageWithCzechCharacters()
         {
             var builder = new PdfDocumentBuilder();
             var page = builder.AddPage(PageSize.A4);
-            
+
             var font = builder.AddTrueTypeFont(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.ttf"));
 
             page.AddText("Hello: řó", 9,
@@ -416,7 +463,7 @@
             var imageBytes = File.ReadAllBytes(img);
 
             page.AddJpeg(imageBytes, expectedBounds);
-            
+
             var bytes = builder.Build();
             WriteFile(nameof(CanWriteSinglePageWithJpeg), bytes);
 
@@ -599,7 +646,7 @@
             page.SetStrokeColor(0, 0, 255);
 
             page.DrawRectangle(new PdfPoint(20, 100), 200, 100, 1.5m, true);
-            
+
             var file = builder.Build();
             WriteFile(nameof(CanCreateDocumentWithFilledRectangle), file);
         }
@@ -680,14 +727,14 @@
 
             using (var document = PdfDocument.Open(b))
             {
-                Assert.Equal( 2, document.NumberOfPages);
+                Assert.Equal(2, document.NumberOfPages);
 
                 var page1 = document.GetPage(1);
 
                 Assert.Equal("Hello", page1.Text);
 
                 var page2 = document.GetPage(2);
-                
+
                 Assert.Equal("Lorem ipsum dolor sit amet, consectetur adipiscing elit. ", page2.Text);
             }
         }
@@ -740,7 +787,7 @@
 
                 for (int i = 0; i < letters.Count; i++)
                 {
-                    var readerLetter = page1.Letters[i+18];
+                    var readerLetter = page1.Letters[i + 18];
                     var writerLetter = letters[i];
 
                     Assert.Equal(readerLetter.Value, writerLetter.Value);
@@ -760,7 +807,7 @@
             var two = IntegrationHelpers.GetDocumentPath("Single Page Simple - from inkscape.pdf");
 
 
-            using (var docOne = PdfDocument.Open(one)) 
+            using (var docOne = PdfDocument.Open(one))
             using (var docTwo = PdfDocument.Open(two))
             {
                 var builder = new PdfDocumentBuilder();
@@ -781,14 +828,14 @@
             using (var docTwo = PdfDocument.Open(two))
             using (var builder = new PdfDocumentBuilder())
             {
-                
+
                 builder.AddPage(docOne, 1);
                 builder.AddPage(docTwo, 1);
                 var result = builder.Build();
                 PdfMergerTests.CanMerge2SimpleDocumentsAssertions(new MemoryStream(result), "Write something inInkscape", "I am a simple pdf.", false);
             }
 
-            
+
         }
 
         [Fact]
@@ -841,7 +888,7 @@
             var count = 25 * 25 * 25 + 1;
             using (var builder = new PdfDocumentBuilder())
             {
-                for (var i = 0; i < count;i++)
+                for (var i = 0; i < count; i++)
                 {
                     builder.AddPage(PageSize.A4);
                 }
@@ -969,9 +1016,10 @@
                 {
                     foreach (var letter in page.Letters)
                     {
-                        
+
                         unchecked { letters += 1; }
-                        unchecked { 
+                        unchecked
+                        {
                             location += letter.Location.X;
                             location += letter.Location.Y;
                             location += letter.Font.Name.Length;

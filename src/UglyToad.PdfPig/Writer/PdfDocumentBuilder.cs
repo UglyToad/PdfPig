@@ -90,7 +90,7 @@ namespace UglyToad.PdfPig.Writer
         /// <param name="disposeStream">If stream should be disposed when builder is.</param>
         /// <param name="type">Type of pdf stream writer to use</param>
         /// <param name="version">Pdf version to use in header.</param>
-        public PdfDocumentBuilder(Stream stream, bool disposeStream=false, PdfWriterType type=PdfWriterType.Default, decimal version=1.7m)
+        public PdfDocumentBuilder(Stream stream, bool disposeStream = false, PdfWriterType type = PdfWriterType.Default, decimal version = 1.7m)
         {
             switch (type)
             {
@@ -286,10 +286,10 @@ namespace UglyToad.PdfPig.Writer
             public DictionaryToken Page { get; set; }
             public IReadOnlyList<DictionaryToken> Parents { get; set; }
         }
-        private readonly ConditionalWeakTable<IPdfTokenScanner, Dictionary<IndirectReference, IndirectReferenceToken>> existingCopies = 
+        private readonly ConditionalWeakTable<IPdfTokenScanner, Dictionary<IndirectReference, IndirectReferenceToken>> existingCopies =
             new ConditionalWeakTable<IPdfTokenScanner, Dictionary<IndirectReference, IndirectReferenceToken>>();
-        private readonly ConditionalWeakTable<PdfDocument, Dictionary<int, PageInfo>> existingTrees = 
-            new ConditionalWeakTable<PdfDocument,  Dictionary<int, PageInfo>>();
+        private readonly ConditionalWeakTable<PdfDocument, Dictionary<int, PageInfo>> existingTrees =
+            new ConditionalWeakTable<PdfDocument, Dictionary<int, PageInfo>>();
         /// <summary>
         /// Add a new page with the specified size, this page will be included in the output when <see cref="Build"/> is called.
         /// </summary>
@@ -312,7 +312,8 @@ namespace UglyToad.PdfPig.Writer
                 {
                     pagesInfos[i] = new PageInfo
                     {
-                        Page = pageDict, Parents = parents
+                        Page = pageDict,
+                        Parents = parents
                     };
                     i++;
                 }
@@ -359,6 +360,18 @@ namespace UglyToad.PdfPig.Writer
                 {
                     CopyResourceDict(resourceToken, resources);
                 }
+                if (dict.TryGet(NameToken.MediaBox, out var mb))
+                {
+                    copiedPageDict[NameToken.MediaBox] = WriterUtil.CopyToken(context, mb, document.Structure.TokenScanner, refs);
+                }
+                if (dict.TryGet(NameToken.CropBox, out var cb))
+                {
+                    copiedPageDict[NameToken.CropBox] = WriterUtil.CopyToken(context, cb, document.Structure.TokenScanner, refs);
+                }
+                if (dict.TryGet(NameToken.Rotate, out var rt))
+                {
+                    copiedPageDict[NameToken.Rotate] = WriterUtil.CopyToken(context, rt, document.Structure.TokenScanner, refs);
+                }
             }
 
 
@@ -399,7 +412,16 @@ namespace UglyToad.PdfPig.Writer
                         if (item.Value is IndirectReferenceToken ir)
                         {
                             // convert indirect to direct as PdfPageBuilder needs to modify resource entries
-                            destinationDict[NameToken.Create(item.Key)] = WriterUtil.CopyToken(context, document.Structure.TokenScanner.Get(ir.Data).Data, document.Structure.TokenScanner, refs);
+                            var obj = document.Structure.TokenScanner.Get(ir.Data);
+                            if (obj.Data is StreamToken)
+                            {
+                                // rare case, have seen /SubType as stream token, can't make direct
+                                destinationDict[NameToken.Create(item.Key)] = WriterUtil.CopyToken(context, item.Value, document.Structure.TokenScanner, refs);
+                            }
+                            else
+                            {
+                                destinationDict[NameToken.Create(item.Key)] = WriterUtil.CopyToken(context, obj.Data, document.Structure.TokenScanner, refs);
+                            }
                         }
                         else
                         {
@@ -458,7 +480,7 @@ namespace UglyToad.PdfPig.Writer
             }
 
             const int desiredLeafSize = 25; // allow customization at some point?
-            var numLeafs = (int) Math.Ceiling(Decimal.Divide(Pages.Count, desiredLeafSize));
+            var numLeafs = (int)Math.Ceiling(Decimal.Divide(Pages.Count, desiredLeafSize));
 
             var leafRefs = new List<IndirectReferenceToken>();
             var leafChildren = new List<List<IndirectReferenceToken>>();
@@ -585,16 +607,16 @@ namespace UglyToad.PdfPig.Writer
                 // TODO shorten page tree when there is a single or small number of pages left in a branch
                 var count = 0;
                 var thisObj = context.ReserveObjectNumber();
-                
+
                 var children = new List<IndirectReferenceToken>();
                 if (pagesNodes.Count > desiredLeafSize)
                 {
-                    var currentTreeDepth = (int) Math.Ceiling(Math.Log(pagesNodes.Count, desiredLeafSize));
-                    var perBranch = (int) Math.Ceiling(Math.Pow(desiredLeafSize, currentTreeDepth - 1));
+                    var currentTreeDepth = (int)Math.Ceiling(Math.Log(pagesNodes.Count, desiredLeafSize));
+                    var perBranch = (int)Math.Ceiling(Math.Pow(desiredLeafSize, currentTreeDepth - 1));
                     var branches = (int)Math.Ceiling(decimal.Divide(pagesNodes.Count, (decimal)perBranch));
                     for (var i = 0; i < branches; i++)
                     {
-                        var part = pagesNodes.Skip(i*perBranch).Take(perBranch).ToList();
+                        var part = pagesNodes.Skip(i * perBranch).Take(perBranch).ToList();
                         var result = CreatePageTree(part, thisObj);
                         count += result.Count;
                         children.Add(result.Ref);
@@ -788,7 +810,7 @@ namespace UglyToad.PdfPig.Writer
             {
                 CompleteDocument();
             }
-            
+
             context.Dispose();
         }
     }
