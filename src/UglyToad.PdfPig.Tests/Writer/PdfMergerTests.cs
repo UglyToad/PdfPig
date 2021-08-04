@@ -167,7 +167,6 @@
             }
         }
 
-
         [Fact]
         public void CanMergeMultipleWithSelection()
         {
