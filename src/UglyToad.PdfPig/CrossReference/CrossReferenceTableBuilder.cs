@@ -28,7 +28,7 @@
             parts.Add(part);
         }
 
-        public CrossReferenceTable Build(long firstCrossReferenceOffset, ILog log)
+        public CrossReferenceTable Build(long firstCrossReferenceOffset, long offsetCorrection, ILog log)
         {
             CrossReferenceType type = CrossReferenceType.Table;
             DictionaryToken trailerDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>());
@@ -65,7 +65,7 @@
                         break;
                     }
 
-                    currentPart = parts.FirstOrDefault(x => x.Offset == prevBytePos);
+                    currentPart = parts.FirstOrDefault(x => x.Offset == prevBytePos || x.Offset == prevBytePos + offsetCorrection);
                     if (currentPart == null)
                     {
                         log.Warn("Did not found XRef object pointed to by 'Prev' key at position " + prevBytePos);
@@ -88,7 +88,7 @@
             // merge used and sorted XRef/trailer
             foreach (long bPos in xrefSeqBytePos)
             {
-                var currentObject = parts.First(x => x.Offset == bPos);
+                var currentObject = parts.First(x => x.Offset == bPos || x.Offset == bPos + offsetCorrection);
                 if (currentObject.Dictionary != null)
                 {
                     foreach (var entry in currentObject.Dictionary.Data)

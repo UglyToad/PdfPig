@@ -207,7 +207,7 @@
                 throw new PdfDocumentFormatException("The cross reference was not found.");
             }
 
-            var resolved = table.Build(crossReferenceLocation, log);
+            var resolved = table.Build(crossReferenceLocation, offsetCorrection, log);
             
             // check the offsets of all referenced objects
             if (!CrossReferenceObjectOffsetValidator.ValidateCrossReferenceOffsets(bytes, resolved, log, out var actualOffsets))
