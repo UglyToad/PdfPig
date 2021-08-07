@@ -15,7 +15,6 @@
     using Images;
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using PdfFonts;
@@ -491,19 +490,62 @@
                 data = memoryStream.ToArray();
             }
 
+            var widthToken = new NumericToken(png.Width);
+            var heightToken = new NumericToken(png.Height);
+
+            IndirectReferenceToken smaskReference = null;
+
+            if (png.HasAlphaChannel)
+            {
+                var smaskData = new byte[data.Length / 3];
+                for (var rowIndex = 0; rowIndex < png.Height; rowIndex++)
+                {
+                    for (var colIndex = 0; colIndex < png.Width; colIndex++)
+                    {
+                        var pixel = png.GetPixel(colIndex, rowIndex);
+
+                        var index = rowIndex * png.Width + colIndex;
+                        smaskData[index] = pixel.A;
+                    }
+                }
+
+                var compressedSmask = DataCompresser.CompressBytes(smaskData);
+
+                // Create a soft-mask.
+                var smaskDictionary = new Dictionary<NameToken, IToken>
+                {
+                    {NameToken.Type, NameToken.Xobject},
+                    {NameToken.Subtype, NameToken.Image},
+                    {NameToken.Width, widthToken},
+                    {NameToken.Height, heightToken},
+                    {NameToken.ColorSpace, NameToken.Devicegray},
+                    {NameToken.BitsPerComponent, new NumericToken(png.Header.BitDepth)},
+                    {NameToken.Decode, new ArrayToken(new IToken[] { new NumericToken(0), new NumericToken(1) })},
+                    {NameToken.Length, new NumericToken(compressedSmask.Length)},
+                    {NameToken.Filter, NameToken.FlateDecode}
+                };
+
+                smaskReference = documentBuilder.AddImage(new DictionaryToken(smaskDictionary), compressedSmask);
+            }
+
             var compressed = DataCompresser.CompressBytes(data);
 
             var imgDictionary = new Dictionary<NameToken, IToken>
             {
-                {NameToken.Type, NameToken.Xobject },
-                {NameToken.Subtype, NameToken.Image },
-                {NameToken.Width, new NumericToken(png.Width) },
-                {NameToken.Height, new NumericToken(png.Height) },
+                {NameToken.Type, NameToken.Xobject},
+                {NameToken.Subtype, NameToken.Image},
+                {NameToken.Width, widthToken},
+                {NameToken.Height, heightToken},
                 {NameToken.BitsPerComponent, new NumericToken(png.Header.BitDepth)},
                 {NameToken.ColorSpace, NameToken.Devicergb},
                 {NameToken.Filter, NameToken.FlateDecode},
                 {NameToken.Length, new NumericToken(compressed.Length)}
             };
+
+            if (smaskReference != null)
+            {
+                imgDictionary.Add(NameToken.Smask, smaskReference);
+            }
             
             var reference = documentBuilder.AddImage(new DictionaryToken(imgDictionary), compressed);
 
