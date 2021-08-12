@@ -5,7 +5,7 @@
     using System.IO;
     using System.Linq;
     using Tokens;
-    using UglyToad.PdfPig.Util;
+    using Util;
 
     /// <summary>
     /// Decodes image data that has been encoded using either Group 3 or Group 4.
@@ -85,20 +85,19 @@
 
                 return compressionType;
             }
-            else if (k > 0)
+            
+            if (k > 0)
             {
                 // Group 3 2D
                 return CcittFaxCompressionType.Group3_2D;
             }
-            else
-            {
-                return CcittFaxCompressionType.Group4_2D;
-            }
+
+            return CcittFaxCompressionType.Group4_2D;
         }
 
         private static void ReadFromDecoderStream(CcittFaxDecoderStream decoderStream, byte[] result)
         {
-            int pos = 0;
+            var pos = 0;
             int read;
             while ((read = decoderStream.Read(result, pos, result.Length - pos)) > -1)
             {
