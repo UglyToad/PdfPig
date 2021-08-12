@@ -97,6 +97,18 @@
         }
 
         [Fact]
+        public void HandleDoubleDashedNumber()
+        {
+            // This is a really weird format but seen in the wild. PDF, shine on, you crazy diamond.
+            var input = StringBytesTestConverter.Convert("--10.25");
+
+            var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
+
+            Assert.True(result);
+            Assert.Equal(-10.25m, AssertNumericToken(token).Data);
+        }
+
+        [Fact]
         public void HandlesDot()
         {
             var input = StringBytesTestConverter.Convert(".");

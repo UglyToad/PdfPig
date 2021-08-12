@@ -169,7 +169,33 @@ endobj";
             AssertCorrectToken<OperatorToken, string>(tokens[2], "Tj");
             AssertCorrectToken<NumericToken, decimal>(tokens[3], -91);
         }
-        
+
+        [Fact]
+        public void ScansStringWithWeirdWeirdDoubleSymbolNumerics()
+        {
+            const string content = @"
+                0.00 --21.72 TD
+                /F1 8.00 Tf";
+
+            var tokens = new List<IToken>();
+
+            var scanner = scannerFactory(StringBytesTestConverter.Convert(content, false).Bytes);
+
+            while (scanner.MoveNext())
+            {
+                tokens.Add(scanner.CurrentToken);
+            }
+
+            Assert.Equal(6, tokens.Count);
+
+            AssertCorrectToken<NumericToken, decimal>(tokens[0], 0m);
+            AssertCorrectToken<NumericToken, decimal>(tokens[1], -21.72m);
+            AssertCorrectToken<OperatorToken, string>(tokens[2], "TD");
+            AssertCorrectToken<NameToken, string>(tokens[3], "F1");
+            AssertCorrectToken<NumericToken, decimal>(tokens[4], 8m);
+            AssertCorrectToken<OperatorToken, string>(tokens[5], "Tf");
+
+        }
         private static void AssertCorrectToken<T, TData>(IToken token, TData expected) where T : IDataToken<TData>
         {
             var cast = Assert.IsType<T>(token);

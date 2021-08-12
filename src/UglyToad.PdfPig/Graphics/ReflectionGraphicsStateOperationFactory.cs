@@ -271,18 +271,8 @@ namespace UglyToad.PdfPig.Graphics
                         throw new InvalidOperationException($"Tried to create a move to next line and show text operation with operand type: {operands[0]?.GetType().Name ?? "null"}");
                     }
                 case MoveToNextLineWithOffset.Symbol:
-                    if (operands.Count < 2)
-                    {
-                        return null;
-                    }
-
                     return new MoveToNextLineWithOffset(OperandToDecimal(operands[0]), OperandToDecimal(operands[1]));
                 case MoveToNextLineWithOffsetSetLeading.Symbol:
-                    if (operands.Count < 2)
-                    {
-                        return null;
-                    }
-
                     return new MoveToNextLineWithOffsetSetLeading(OperandToDecimal(operands[0]), OperandToDecimal(operands[1]));
                 case PaintShading.Symbol:
                     return new PaintShading((NameToken)operands[0]);

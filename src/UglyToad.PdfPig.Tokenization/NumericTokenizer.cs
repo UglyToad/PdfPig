@@ -20,28 +20,45 @@
             token = null;
 
             StringBuilder characters;
+            var initialSymbol = currentByte == '-' || currentByte == '+';
 
-            if ((currentByte >= Zero && currentByte <= Nine) || currentByte == '-' || currentByte == '+' || currentByte == '.')
+            if ((currentByte >= Zero && currentByte <= Nine) || currentByte == '.')
             {
                 characters = stringBuilder;
                 characters.Append((char)currentByte);
+            }
+            else if (initialSymbol)
+            {
+                characters = stringBuilder;
+                characters.Append((char) currentByte);
             }
             else
             {
                 return false;
             }
 
+            var previousSymbol = initialSymbol;
+
             while (inputBytes.MoveNext())
             {
                 var b = inputBytes.CurrentByte;
 
-                if ((b >= Zero && b <= Nine) ||
-                    b == '-' ||
-                    b == '+' ||
-                    b == '.' ||
-                    b == 'E' ||
-                    b == 'e')
+                if (b == '+' || b == '-')
                 {
+                    if (previousSymbol)
+                    {
+                        continue;
+                    }
+
+                    characters.Append((char) b);
+                    previousSymbol = true;
+                }
+                else if ((b >= Zero && b <= Nine) ||
+                         b == '.' ||
+                         b == 'E' ||
+                         b == 'e')
+                {
+                    previousSymbol = false;
                     characters.Append((char)b);
                 }
                 else
