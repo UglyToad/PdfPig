@@ -1,0 +1,37 @@
+name: Nightly Release
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs: 
+  build_and_publish_nightly:
+    needs: check_date
+    if: ${{ needs.check_date.outputs.should_run != 'false' }}
+    runs-on: windows-latest
+    name: build_and_publish_nightly
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Set up dotnet core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "2.1.x"
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.2
+
+      - name: Write nightly version to projects
+        run: |
+          $newVer = .\tools\generate-nightly-version.ps1; .\tools\set-version.ps1 $newVer
+
+      - name: Restore packages
+        run: dotnet restore tools/UglyToad.PdfPig.Package/UglyToad.PdfPig.Package.sln
+    
+      - name: Build package
+        run: dotnet pack -c Release -o package tools/UglyToad.PdfPig.Package/UglyToad.PdfPig.Package.sln
+
+      - name: Publish Nuget to GitHub registry
+        run: dotnet nuget push ./package/*.nupkg --api-key ${NUGET_API_KEY} --source https://api.nuget.org/v3/index.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

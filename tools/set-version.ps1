@@ -1,5 +1,5 @@
 param (
-  [Parameter(Position=0,mandatory=$true)]
+  [Parameter(Position = 0, mandatory = $true)]
   [string]$version
 )
 
@@ -12,4 +12,11 @@ $projs | ForEach-Object {
   $xml.Project.PropertyGroup[0].Version = $version
   $xml.Save($_.FullName)
 }
+
+$packageProjectPath = "$root/UglyToad.PdfPig.Package/UglyToad.PdfPig.Package.csproj"
+$xml = New-Object XML
+$xml.Load($packageProjectPath)
+$xml.Project.PropertyGroup[0].Version = $version
+$xml.Save($packageProjectPath)
+
 Write-Host $projs.Length
