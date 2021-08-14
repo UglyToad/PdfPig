@@ -9,6 +9,7 @@
     internal class Png
     {
         private readonly RawPngData data;
+        private readonly bool hasTransparencyChunk;
 
         /// <summary>
         /// The header data from the PNG image.
@@ -28,12 +29,13 @@
         /// <summary>
         /// Whether the image has an alpha (transparency) layer.
         /// </summary>
-        public bool HasAlphaChannel => (Header.ColorType & ColorType.AlphaChannelUsed) != 0;
+        public bool HasAlphaChannel => (Header.ColorType & ColorType.AlphaChannelUsed) != 0 || hasTransparencyChunk;
 
-        internal Png(ImageHeader header, RawPngData data)
+        internal Png(ImageHeader header, RawPngData data, bool hasTransparencyChunk)
         {
             Header = header;
             this.data = data ?? throw new ArgumentNullException(nameof(data));
+            this.hasTransparencyChunk = hasTransparencyChunk;
         }
 
         /// <summary>
