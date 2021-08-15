@@ -2,24 +2,24 @@ name: Nightly Release
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: "0 0 * * *"
 
 jobs:
   check_date:
-      runs-on: ubuntu-latest
-      name: Check latest commit
-      outputs:
-        should_run: ${{ steps.should_run.outputs.should_run }}
-      steps:
-        - uses: actions/checkout@v2
-        - name: print latest_commit
-          run: echo ${{ github.sha }}
+    runs-on: ubuntu-latest
+    name: Check latest commit
+    outputs:
+      should_run: ${{ steps.should_run.outputs.should_run }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: print latest_commit
+        run: echo ${{ github.sha }}
 
-        - id: should_run
-          continue-on-error: true
-          name: check latest commit is less than a day ago
-          if: ${{ github.event_name == 'schedule' }}
-          run: test -z $(git rev-list  --after="24 hours"  ${{ github.sha }}) && echo "::set-output name=should_run::false"
+      - id: should_run
+        continue-on-error: true
+        name: check latest commit is less than a day ago
+        if: ${{ github.event_name == 'schedule' }}
+        run: test -z $(git rev-list  --after="24 hours"  ${{ github.sha }}) && echo "::set-output name=should_run::false"
   build_and_publish_nightly:
     needs: check_date
     if: ${{ needs.check_date.outputs.should_run != 'false' }}
@@ -41,10 +41,10 @@ jobs:
           $newVer = .\tools\generate-nightly-version.ps1; .\tools\set-version.ps1 $newVer
 
       - name: Restore packages
-        run: dotnet restore tools/UglyToad.PdfPig.Package/UglyToad.PdfPig.Package.sln
-    
+        run: dotnet restore tools/UglyToad.PdfPig.Package/UglyToad.PdfPig.Package.csproj
+
       - name: Build package
-        run: dotnet pack -c Release -o package tools/UglyToad.PdfPig.Package/UglyToad.PdfPig.Package.sln
+        run: dotnet pack -c Release -o package tools/UglyToad.PdfPig.Package/UglyToad.PdfPig.Package.csproj
 
       - name: Publish Nuget to GitHub registry
         run: dotnet nuget push ./package/*.nupkg --api-key ${{secrets.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json
