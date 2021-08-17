@@ -262,6 +262,7 @@
             }
 
             // From the specification: The stream operator should be followed by \r\n or \n, not just \r.
+            // While the specification demands a \n we have seen files with \r only in the wild.
             // While the specification demands a \n we have seen files with `garbage` before the actual data
             do
             {
@@ -269,6 +270,21 @@
                 {
                     return false;
                 }
+
+                if ((char)inputBytes.CurrentByte == '\r')
+                {
+                    if (!inputBytes.MoveNext())
+                    {
+                        return false;
+                    }
+
+                    if ((char)inputBytes.CurrentByte != '\n')
+                    {
+                        inputBytes.Seek(inputBytes.CurrentOffset - 1);
+                    }
+                    break;
+                }
+
             } while ((char)inputBytes.CurrentByte != '\n');
 
             // Store where we started reading the first byte of data.
