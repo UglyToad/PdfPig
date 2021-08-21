@@ -6,13 +6,12 @@ on:
 
 jobs:
   check_date:
-    if: ${{ 'true' == 'false' }} # prevent run since it is a dependent job.
     runs-on: ubuntu-latest
     name: Check latest commit
     outputs:
       should_run: ${{ steps.should_run.outputs.should_run }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@master
       - name: print latest_commit
         run: echo ${{ github.sha }}
 
