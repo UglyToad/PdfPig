@@ -81,6 +81,10 @@
         /// <param name="outputStream">The stream to write the token to.</param>
         public static void WriteToken(IToken token, Stream outputStream)
         {
+            if (token == null)
+            {
+                throw new ArgumentNullException(nameof(token));
+            }
             switch (token)
             {
                 case ArrayToken array:
@@ -120,6 +124,8 @@
                 case StringToken stringToken:
                     WriteString(stringToken, outputStream);
                     break;
+                default:
+                    throw new PdfDocumentFormatException($"Attempted to write token type of {token.GetType()} but was not known.");
             }
         }
 
@@ -295,7 +301,15 @@
             foreach (var pair in dictionary.Data)
             {
                 WriteName(pair.Key, outputStream);
-                WriteToken(pair.Value, outputStream);
+
+                // handle scenario where PdfPig has a null value under some circumstances
+                if (pair.Value == null)
+                {
+                    WriteToken(NullToken.Instance, outputStream);
+                } else
+                {
+                    WriteToken(pair.Value, outputStream);
+                }
             }
 
             outputStream.Write(DictionaryEnd, 0, DictionaryEnd.Length);

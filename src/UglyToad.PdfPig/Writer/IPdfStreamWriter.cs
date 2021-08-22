@@ -9,6 +9,13 @@
     internal interface IPdfStreamWriter : IDisposable
     {
         /// <summary>
+        /// Sets if the stream writer should attempt to deduplicate objects.
+        /// May not have any affect if <see cref="IPdfStreamWriter"/> does not
+        /// support deduplication.
+        /// </summary>
+        bool AttemptDeduplication { get; set; }
+
+        /// <summary>
         /// The underlying stream used by the writer.
         /// </summary>
         Stream Stream { get; }
