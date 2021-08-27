@@ -330,6 +330,10 @@ namespace UglyToad.PdfPig.Writer
             var streams = new List<PdfPageBuilder.CopiedContentStream>();
             if (pageInfo.Page.TryGet(NameToken.Contents, out IToken contentsToken))
             {
+                // Adobe Acrobat errors if content streams ref'd by multiple pages, turn off
+                // dedup if on to avoid issues
+                var prev = context.AttemptDeduplication;
+                context.AttemptDeduplication = false;
                 if (contentsToken is ArrayToken array)
                 {
                     foreach (var item in array.Data)
@@ -347,6 +351,7 @@ namespace UglyToad.PdfPig.Writer
                     streams.Add(new PdfPageBuilder.CopiedContentStream(
                         WriterUtil.CopyToken(context, ir, document.Structure.TokenScanner, refs) as IndirectReferenceToken));
                 }
+                context.AttemptDeduplication = prev;
             }
 
             // manually copy page dict / resources as we need to modify some
@@ -379,12 +384,52 @@ namespace UglyToad.PdfPig.Writer
             {
                 if (kvp.Key == NameToken.Contents || kvp.Key == NameToken.Parent || kvp.Key == NameToken.Type)
                 {
+                    // don't copy these as they'll be handled during page tree writing
                     continue;
                 }
 
                 if (kvp.Key == NameToken.Resources)
                 {
+                    // merge parent resources into child
                     CopyResourceDict(kvp.Value, resources);
+                    continue;
+                }
+
+                if (kvp.Key == NameToken.Annots)
+                {
+                    var val = kvp.Value;
+                    if (kvp.Value is IndirectReferenceToken ir)
+                    {
+                        val = document.Structure.TokenScanner.Get(ir.Data).Data;
+                    }
+                                                    
+                    if (!(val is ArrayToken arr))
+                    {
+                        // should be array... ignore and remove bad dict
+                        continue;
+                    }
+
+                    // -> ignore links to resolve issues with refencing non-existing pages
+                    // at some point should add support for copying the links if the
+                    // pages are copied as well but for now just fix corruption
+                    var toAdd = new List<IToken>();
+                    foreach (var annot in arr.Data)
+                    {
+                        DictionaryToken tk = GetRemoteDict(annot);
+                        if (tk == null)
+                        {
+                            // malformed
+                            continue;
+                        }
+                        if (tk.TryGet(NameToken.Subtype, out var st) && st is NameToken nm && nm == NameToken.Link)
+                        {
+                            // link -> ignore
+                            continue;
+                        }
+                        toAdd.Add(WriterUtil.CopyToken(context, tk, document.Structure.TokenScanner, refs));
+                    }
+                    // copy rest
+                    copiedPageDict[NameToken.Annots] = new ArrayToken(toAdd);
                     continue;
                 }
 
@@ -508,10 +553,14 @@ namespace UglyToad.PdfPig.Writer
                     pageDictionary[NameToken.MediaBox] = RectangleToArray(page.Value.PageSize);
                 }
 
+                // Adobe Acrobat errors if content streams ref'd by multiple pages, turn off
+                // dedup if on to avoid issues
+                var prev = context.AttemptDeduplication;
+                context.AttemptDeduplication = false;
+
                 var toWrite = page.Value.contentStreams.Where(x => x.HasContent).ToList();
                 if (toWrite.Count == 0)
                 {
-                    // write empty
                     pageDictionary[NameToken.Contents] = new PdfPageBuilder.DefaultContentStream().Write(context);
                 }
                 else if (toWrite.Count == 1)
@@ -529,7 +578,7 @@ namespace UglyToad.PdfPig.Writer
                     }
                     pageDictionary[NameToken.Contents] = new ArrayToken(streams);
                 }
-
+                context.AttemptDeduplication = prev;;
 
                 leafChildren[leafNum].Add(context.WriteToken(new DictionaryToken(pageDictionary)));
 

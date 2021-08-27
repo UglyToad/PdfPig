@@ -31,6 +31,7 @@
         }
 
         public Stream Stream { get; protected set; }
+        public bool AttemptDeduplication { get; set; } = true;
 
         public virtual IndirectReferenceToken WriteToken(IToken token)
         {

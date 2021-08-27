@@ -23,13 +23,16 @@
             ms.SetLength(0);
             TokenWriter.WriteToken(token, ms);
             var contents = ms.ToArray();
-            if (hashes.TryGetValue(contents, out var value))
+            if (AttemptDeduplication && hashes.TryGetValue(contents, out var value))
             {
                 return value;
             }
 
             var ir = ReserveObjectNumber();
-            hashes.Add(contents, ir);
+            if (AttemptDeduplication)
+            {
+                hashes.Add(contents, ir);
+            }
 
             offsets.Add(ir.Data, Stream.Position);
             TokenWriter.WriteObject(ir.Data.ObjectNumber, ir.Data.Generation, contents, Stream);
