@@ -495,7 +495,7 @@
 
             IndirectReferenceToken smaskReference = null;
 
-            if (png.HasAlphaChannel)
+            if (png.HasAlphaChannel && documentBuilder.ArchiveStandard != PdfAStandard.A1B && documentBuilder.ArchiveStandard != PdfAStandard.A1A)
             {
                 var smaskData = new byte[data.Length / 3];
                 for (var rowIndex = 0; rowIndex < png.Height; rowIndex++)
