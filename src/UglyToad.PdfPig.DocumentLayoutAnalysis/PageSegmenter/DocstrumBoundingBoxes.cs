@@ -76,8 +76,8 @@
         /// <param name="blBinSize">The bin size used when building the between-line distances distribution.</param>
         /// <param name="angularDifferenceBounds">The angular difference bounds between two lines to be considered in the same block. This defines if two lines are parallel enough.</param>
         /// <param name="epsilon">Precision when testing equalities.</param>
-        /// <param name="wordSeparator"></param>
-        /// <param name="lineSeparator"></param>
+        /// <param name="wordSeparator">Separator used between words when building lines.</param>
+        /// <param name="lineSeparator">Separator used between lines when building paragraphs.</param>
         /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled.
         /// <para>A positive property value limits the number of concurrent operations to the set value.
         /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
@@ -102,12 +102,19 @@
                 maxDegreeOfParallelism,
                 out double withinLineDistance, out double betweenLineDistance))
             {
-                if (double.IsNaN(withinLineDistance)) withinLineDistance = 0;
-                if (double.IsNaN(betweenLineDistance)) betweenLineDistance = 0;
+                if (double.IsNaN(withinLineDistance))
+                {
+                    withinLineDistance = 0;
+                }
+
+                if (double.IsNaN(betweenLineDistance))
+                {
+                    betweenLineDistance = 0;
+                }
             }
 
             // 2. Determination of Text Lines
-            double maxWithinLineDistance = wlMultiplier * withinLineDistance; //Math.Min(3 * withinLineDistance.Value, 1.4142 * betweenLineDistance.Value);
+            double maxWithinLineDistance = wlMultiplier * withinLineDistance;
             var lines = GetLines(words, maxWithinLineDistance, wlBounds, wordSeparator, maxDegreeOfParallelism).ToArray();
 
             // 3. Structural Block Determination
@@ -118,9 +125,20 @@
         #region Spacing Estimation
         /// <summary>
         /// Estimation of within-line and between-line spacing.
+        /// <para>This is the Docstrum algorithm's 1st step.</para>
         /// </summary>
-        /// <returns>False if either 'withinLineDistance' or 'betweenLineDistance' is NaN.</returns>
-        private static bool GetSpacingEstimation(IReadOnlyList<Word> words,
+        /// <param name="words">The list of words.</param>
+        /// <param name="wlBounds">Angle bounds for words to be considered as neighbours on the same line.</param>
+        /// <param name="wlBinSize">The bin size used when building the within-line distances distribution.</param>
+        /// <param name="blBounds">Angle bounds for words to be considered as neighbours on separate lines.</param>
+        /// <param name="blBinSize">The bin size used when building the between-line distances distribution.</param>
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled.
+        /// <para>A positive property value limits the number of concurrent operations to the set value.
+        /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
+        /// <param name="withinLineDistance">The estimated within-line distance. Computed as the average peak value of distribution.</param>
+        /// <param name="betweenLineDistance">The estimated between-line distance. Computed as the average peak value of distribution.</param>
+        /// <returns>False if either 'withinLineDistance' or 'betweenLineDistance' is <see cref="double.NaN"/>.</returns>
+        public static bool GetSpacingEstimation(IReadOnlyList<Word> words,
             AngleBounds wlBounds, int wlBinSize,
             AngleBounds blBounds, int blBinSize,
             int maxDegreeOfParallelism,
@@ -172,7 +190,10 @@
 
                         // The perpendicular distance can be negative because of the subtractions.
                         // Could occur when words are overlapping, we ignore that.
-                        if (dist >= 0) betweenLineDistList.Add(dist);
+                        if (dist >= 0)
+                        {
+                            betweenLineDistList.Add(dist);
+                        }
                     }
                 }
             });
@@ -242,7 +263,19 @@
         #endregion
 
         #region Text Lines
-        private static IEnumerable<TextLine> GetLines(IReadOnlyList<Word> words, double maxWLDistance, AngleBounds withinLine,
+        /// <summary>
+        /// Get the <see cref="TextLine"/>s by grouping words using nearest neighbours.
+        /// <para>This is the Docstrum algorithm's 2nd step.</para>
+        /// </summary>
+        /// <param name="words">The words to segment into <see cref="TextLine"/>s.</param>
+        /// <param name="maxWLDistance">The maximum within-line distance. Computed as the estimated within-line spacing times the within-line multiplier in the default implementation.</param>
+        /// <param name="wlBounds">Angle bounds for words to be considered as neighbours on the same line.</param>
+        /// <param name="wordSeparator">Separator used between words when building lines.</param>
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled.
+        /// <para>A positive property value limits the number of concurrent operations to the set value.
+        /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
+        /// <returns>The <see cref="TextLine"/>s built.</returns>
+        public static IEnumerable<TextLine> GetLines(IReadOnlyList<Word> words, double maxWLDistance, AngleBounds wlBounds,
             string wordSeparator, int maxDegreeOfParallelism)
         {
             var groupedWords = Clustering.NearestNeighbours(words,
@@ -252,7 +285,7 @@
                 pivot => pivot.BoundingBox.BottomRight,
                 candidate => candidate.BoundingBox.BottomLeft,
                 _ => true,
-                (pivot, candidate) => withinLine.Contains(AngleWL(pivot, candidate)),
+                (pivot, candidate) => wlBounds.Contains(AngleWL(pivot, candidate)),
                 maxDegreeOfParallelism).ToList();
 
             foreach (var g in groupedWords)
@@ -285,8 +318,28 @@
         #endregion
 
         #region Blocking
-        private static IEnumerable<TextBlock> GetStructuralBlocks(IReadOnlyList<TextLine> lines,
-            double maxBLDistance, AngleBounds angularDifference, double epsilon, string lineSeparator, int maxDegreeOfParallelism)
+        /// <summary>
+        /// Get the <see cref="TextBlock"/>s.
+        /// <para>This is the Docstrum algorithm's 3rd and final step.</para>
+        /// <para>
+        /// Method: We want to measure the distance between two lines using the following method:
+        /// <br>- We check if two lines are overlapping horizontally and compute the perpendicular distance.</br>
+        /// <br>- We check if the angle between the two line is within 'angularDifference'.</br>
+        /// <br>- If the two lines are not overlapping or the angle is too wide, the distance is set to the infinity.</br>
+        /// <para>If two text lines are approximately parallel, close in perpendicular distance, and they either overlap to some specified degree or are separated by only a small distance in parallel distance, then they are said to meet the criteria to belong to the same structural block.</para>
+        /// </para>
+        /// </summary>
+        /// <param name="lines">The lines to segment into <see cref="TextBlock"/>s.</param>
+        /// <param name="maxBLDistance">The maximum between-line distance. Computed as the estimated between-line spacing times the between-line multiplier in the default implementation.</param>
+        /// <param name="angularDifferenceBounds">The angular difference bounds between two lines to be considered in the same block. This defines if two lines are parallel enough.</param>
+        /// <param name="epsilon">Precision when testing equalities.</param>
+        /// <param name="lineSeparator">Separator used between lines when building paragraphs.</param>
+        /// <param name="maxDegreeOfParallelism">Sets the maximum number of concurrent tasks enabled.
+        /// <para>A positive property value limits the number of concurrent operations to the set value.
+        /// If it is -1, there is no limit on the number of concurrently running operations.</para></param>
+        /// <returns>The <see cref="TextBlock"/>s built.</returns>
+        public static IEnumerable<TextBlock> GetStructuralBlocks(IReadOnlyList<TextLine> lines,
+            double maxBLDistance, AngleBounds angularDifferenceBounds, double epsilon, string lineSeparator, int maxDegreeOfParallelism)
         {
             /******************************************************************************************************
              * We want to measure the distance between two lines using the following method:
@@ -301,7 +354,7 @@
 
             var groupedLines = Clustering.NearestNeighbours(
                 lines,
-                (l1, l2) => PerpendicularOverlappingDistance(l1, l2, angularDifference, epsilon),
+                (l1, l2) => PerpendicularOverlappingDistance(l1, l2, angularDifferenceBounds, epsilon),
                 (_, __) => maxBLDistance,
                 pivot => new PdfLine(pivot.BoundingBox.BottomLeft, pivot.BoundingBox.BottomRight),
                 candidate => new PdfLine(candidate.BoundingBox.TopLeft, candidate.BoundingBox.TopRight),
@@ -460,7 +513,6 @@
             }
             else // If dXj = 0, then yAj is calculated first, and xAj is calculated from that.
             {
-                // TODO: check that
                 yAj = (yPi * dYidYj + yPj * dXidXj + dYj * dXi * (xPi - xPj)) / denominator;
                 xAj = xPj;
             }
@@ -483,9 +535,7 @@
             double by = pl2.Y - pl1.Y;
 
             double dotProd1 = ax * bx + ay * by;
-            if (dotProd1 < 0) return false;
-
-            return dotProd1 <= (bx * bx + by * by);
+            return dotProd1 >= 0 && dotProd1 <= (bx * bx + by * by);
         }
 
         /// <summary>
