@@ -100,5 +100,74 @@
                 }
             }
         }
+
+        [SkippableTheory]
+        [MemberData(nameof(DataExtract))]
+        public void GetBlocksStatic(string name, string[] expected)
+        {
+            if (name == "90 180 270 rotated.pdf")
+            {
+                // The 'TimesNewRomanPSMT' font is used by this particular document. Thus, results cannot be trusted on
+                // platforms where this font isn't generally available (e.g. OSX, Linux, etc.), so we skip it!
+                var font = SystemFontFinder.Instance.GetTrueTypeFont("TimesNewRomanPSMT");
+                Skip.If(font == null, "Skipped because the font TimesNewRomanPSMT could not be found in the execution environment.");
+            }
+
+            var options = new DocstrumBoundingBoxes.DocstrumBoundingBoxesOptions() { LineSeparator = " " };
+            using (var document = PdfDocument.Open(DlaHelper.GetDocumentPath(name)))
+            {
+                var page = document.GetPage(1);
+                var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters).ToList();
+
+                // Docstrum using static methods
+                // Filter out white spaces
+                words = words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).ToList();
+
+                var wlBounds = options.WithinLineBounds;
+                var wlBinSize = options.WithinLineBinSize;
+                var wlMultiplier = options.WithinLineMultiplier;
+                var blBounds = options.BetweenLineBounds;
+                var blBinSize = options.BetweenLineBinSize;
+                var blMultiplier = options.BetweenLineMultiplier;
+                var maxDegreeOfParallelism = options.MaxDegreeOfParallelism;
+                var angularDifferenceBounds = options.AngularDifferenceBounds;
+                var wordSeparator = options.WordSeparator;
+                var lineSeparator = options.LineSeparator;
+                var epsilon = options.Epsilon;
+
+                // 1. Estimate within line and between line spacing
+                if (!DocstrumBoundingBoxes.GetSpacingEstimation(words, wlBounds, wlBinSize, blBounds, blBinSize,
+                    maxDegreeOfParallelism,
+                    out double withinLineDistance, out double betweenLineDistance))
+                {
+                    if (double.IsNaN(withinLineDistance))
+                    {
+                        withinLineDistance = 0;
+                    }
+
+                    if (double.IsNaN(betweenLineDistance))
+                    {
+                        betweenLineDistance = 0;
+                    }
+                }
+
+                // 2. Determination of Text Lines
+                double maxWithinLineDistance = wlMultiplier * withinLineDistance;
+                var lines = DocstrumBoundingBoxes.GetLines(words, maxWithinLineDistance, wlBounds, wordSeparator, maxDegreeOfParallelism).ToArray();
+
+                // 3. Structural Block Determination
+                double maxBetweenLineDistance = blMultiplier * betweenLineDistance;
+                var blocks = DocstrumBoundingBoxes.GetStructuralBlocks(lines, maxBetweenLineDistance, angularDifferenceBounds, epsilon, lineSeparator, maxDegreeOfParallelism).ToList();
+
+                Assert.Equal(expected.Length, blocks.Count);
+                var orderedBlocks = blocks.OrderBy(b => b.BoundingBox.BottomLeft.X)
+                                          .ThenByDescending(b => b.BoundingBox.BottomLeft.Y).ToList();
+
+                for (int i = 0; i < orderedBlocks.Count; i++)
+                {
+                    Assert.Equal(expected[i], orderedBlocks[i].Text);
+                }
+            }
+        }
     }
 }
