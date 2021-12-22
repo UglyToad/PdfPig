@@ -423,7 +423,7 @@
 
             if (stringToken.EncodedWith == StringToken.Encoding.Iso88591)
             {
-                // iso 88591 (or really PdfDocEncoding non-contentstream circumstances0 shouldn't
+                // iso 88591 (or really PdfDocEncoding in non-contentstream circumstances shouldn't
                 // have these chars but seems like internally this isn't obeyed (see:
                 // CanCreateDocumentInformationDictionaryWithNonAsciiCharacters test) and it may
                 // happen during parsing as well -> switch to unicode
