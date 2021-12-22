@@ -306,7 +306,8 @@
                 if (pair.Value == null)
                 {
                     WriteToken(NullToken.Instance, outputStream);
-                } else
+                }
+                else
                 {
                     WriteToken(pair.Value, outputStream);
                 }
@@ -408,39 +409,69 @@
             outputStream.Write(StreamEnd, 0, StreamEnd.Length);
         }
 
+        private static int[] EscapeNeeded = new int[]
+        {
+            '\r', '\n', '\t', '\b', '\f', '\\'
+        };
+        private static int[] Escaped = new int[]
+        {
+            'r', 'n', 't', 'b', 'f', '\\'
+        };
         private static void WriteString(StringToken stringToken, Stream outputStream)
         {
+            outputStream.WriteByte(StringStart);
+
             if (stringToken.EncodedWith == StringToken.Encoding.Iso88591)
             {
-                var isUtf16 = false;
-                for (var i = 0; i < stringToken.Data.Length; i++)
+                // iso 88591 (or really PdfDocEncoding non-contentstream circumstances0 shouldn't
+                // have these chars but seems like internally this isn't obeyed (see:
+                // CanCreateDocumentInformationDictionaryWithNonAsciiCharacters test) and it may
+                // happen during parsing as well -> switch to unicode
+                if (stringToken.Data.Any(x => x > 255))
                 {
-                    var c = stringToken.Data[i];
-
-                    if (c == (char) StringStart || c == (char)StringEnd || c == (char) Backslash)
-                    {
-                        stringToken = new StringToken(stringToken.Data.Insert(i++, "\\"), stringToken.EncodedWith);
-                    }
-
-                    // Close enough.
-                    if (c > 250)
-                    {
-                        isUtf16 = true;
-                        break;
-                    }
+                    var data = new StringToken(stringToken.Data, StringToken.Encoding.Utf16BE).GetBytes();
+                    outputStream.Write(data, 0, data.Length);
                 }
-
-                if (isUtf16)
+                else
                 {
-                    stringToken = new StringToken(stringToken.Data, StringToken.Encoding.Utf16BE);
+                    int ei;
+                    for (var i = 0; i < stringToken.Data.Length; i++)
+                    {
+                        var c = (int)stringToken.Data[i];
+                        if (c == (int)'(' || c == (int)')') // wastes a little space if escaping not needed but better than forward searching
+                        {
+                            outputStream.WriteByte((byte)'\\');
+                            outputStream.WriteByte((byte)c);
+                        }
+                        else if ((ei = Array.IndexOf(EscapeNeeded, c)) > -1)
+                        {
+                            outputStream.WriteByte((byte)'\\');
+                            outputStream.WriteByte((byte)Escaped[ei]);
+                        }
+                        else if (c < 32 || c > 127) // non printable
+                        {
+                            var b3 = c / 64;
+                            var b2 = (c - b3 * 64) / 8;
+                            var b1 = c % 8;
+                            outputStream.WriteByte((byte)'\\');
+                            outputStream.WriteByte((byte)(b3 + '0'));
+                            outputStream.WriteByte((byte)(b2 + '0'));
+                            outputStream.WriteByte((byte)(b1 + '0'));
+                        }
+                        else
+                        {
+                            outputStream.WriteByte((byte)c);
+                        }
+                    }
                 }
             }
+            else
+            {
+                var bytes = stringToken.GetBytes();
+                outputStream.Write(bytes, 0, bytes.Length);
+            }
 
-            outputStream.WriteByte(StringStart);
-            var bytes = stringToken.GetBytes();
-            outputStream.Write(bytes, 0, bytes.Length);
             outputStream.WriteByte(StringEnd);
-
             WriteWhitespace(outputStream);
         }
 
