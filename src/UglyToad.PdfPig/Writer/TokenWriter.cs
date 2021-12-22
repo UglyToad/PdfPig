@@ -448,7 +448,7 @@
                             outputStream.WriteByte((byte)'\\');
                             outputStream.WriteByte((byte)Escaped[ei]);
                         }
-                        else if (c < 32 || c > 127) // non printable
+                        else if (c < 32 || c > 126) // non printable
                         {
                             var b3 = c / 64;
                             var b2 = (c - b3 * 64) / 8;
