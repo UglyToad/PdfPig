@@ -104,28 +104,44 @@
             return Serialize(pageXmlDocument);
         }
 
-        private string PointToString(PdfPoint point, double height)
+        /// <summary>
+        /// Converts a point to a string
+        /// </summary>
+        /// <param name="point"></param>
+        /// <param name="pageWidth">The width of the page where the pdf point is located on</param>
+        /// <param name="pageHeight">The height of the page where the pdf point is located on</param>
+        /// <param name="scaleToApply"></param>
+        /// <returns></returns>
+        public static string PointToString(PdfPoint point, double pageWidth, double pageHeight, double scaleToApply = 1.0)
         {
-            double x = Math.Round(point.X * scale);
-            double y = Math.Round((height - point.Y) * scale);
-            return (x > 0 ? x : 0).ToString("0") + "," + (y > 0 ? y : 0).ToString("0");
+            double x = Math.Round(point.X * scaleToApply);
+            double y = Math.Round((pageHeight - point.Y) * scaleToApply);
+
+            // move away from borders
+            x = x > 1 ? x : 1;
+            y = y > 1 ? y : 1;
+
+            x = x < (pageWidth - 1) ? x : pageWidth - 1;
+            y = y < (pageHeight - 1) ? y : pageHeight - 1;
+
+            return x.ToString("0") + "," + y.ToString("0");
         }
 
-        private string ToPoints(IEnumerable<PdfPoint> points, double height)
+        private string ToPoints(IEnumerable<PdfPoint> points, double pageWidth, double pageHeight)
         {
-            return string.Join(" ", points.Select(p => PointToString(p, height)));
+            return string.Join(" ", points.Select(p => PointToString(p, pageWidth, pageHeight, this.scale)));
         }
 
-        private string ToPoints(PdfRectangle pdfRectangle, double height)
+        private string ToPoints(PdfRectangle pdfRectangle, double pageWidth, double pageHeight)
         {
-            return ToPoints(new[] { pdfRectangle.BottomLeft, pdfRectangle.TopLeft, pdfRectangle.TopRight, pdfRectangle.BottomRight }, height);
+            return ToPoints(new[] { pdfRectangle.BottomLeft, pdfRectangle.TopLeft, pdfRectangle.TopRight, pdfRectangle.BottomRight }, pageWidth, pageHeight);
         }
 
-        private PageXmlDocument.PageXmlCoords ToCoords(PdfRectangle pdfRectangle, double height)
+        private PageXmlDocument.PageXmlCoords ToCoords(PdfRectangle pdfRectangle, double pageWidth, double pageHeight)
         {
             return new PageXmlDocument.PageXmlCoords()
             {
-                Points = ToPoints(pdfRectangle, height)
+                Points = ToPoints(pdfRectangle, pageWidth, pageHeight)
             };
         }
 
@@ -166,7 +182,7 @@
                     blocks = readingOrderDetector.Get(blocks).ToList();
                 }
 
-                regions.AddRange(blocks.Select(b => ToPageXmlTextRegion(b, page.Height)));
+                regions.AddRange(blocks.Select(b => ToPageXmlTextRegion(b, page.Width, page.Height)));
 
                 if (orderedRegions.Any())
                 {
@@ -184,12 +200,12 @@
             var images = page.GetImages().ToList();
             if (images.Count > 0)
             {
-                regions.AddRange(images.Select(i => ToPageXmlImageRegion(i, page.Height)));
+                regions.AddRange(images.Select(i => ToPageXmlImageRegion(i, page.Width, page.Height)));
             }
 
             if (includePaths)
             {
-                var graphicalElements = page.ExperimentalAccess.Paths.Select(p => ToPageXmlLineDrawingRegion(p, page.Height));
+                var graphicalElements = page.ExperimentalAccess.Paths.Select(p => ToPageXmlLineDrawingRegion(p, page.Width, page.Height));
                 if (graphicalElements.Where(g => g != null).Count() > 0)
                 {
                     regions.AddRange(graphicalElements.Where(g => g != null));
@@ -200,7 +216,7 @@
             return pageXmlPage;
         }
 
-        private PageXmlDocument.PageXmlLineDrawingRegion ToPageXmlLineDrawingRegion(PdfPath pdfPath, double height)
+        private PageXmlDocument.PageXmlLineDrawingRegion ToPageXmlLineDrawingRegion(PdfPath pdfPath, double pageWidth, double pageHeight)
         {
             var bbox = pdfPath.GetBoundingRectangle();
             if (bbox.HasValue)
@@ -208,25 +224,25 @@
                 regionCount++;
                 return new PageXmlDocument.PageXmlLineDrawingRegion()
                 {
-                    Coords = ToCoords(bbox.Value, height),
+                    Coords = ToCoords(bbox.Value, pageWidth, pageHeight),
                     Id = "r" + regionCount
                 };
             }
             return null;
         }
 
-        private PageXmlDocument.PageXmlImageRegion ToPageXmlImageRegion(IPdfImage pdfImage, double height)
+        private PageXmlDocument.PageXmlImageRegion ToPageXmlImageRegion(IPdfImage pdfImage, double pageWidth, double pageHeight)
         {
             regionCount++;
             var bbox = pdfImage.Bounds;
             return new PageXmlDocument.PageXmlImageRegion()
             {
-                Coords = ToCoords(bbox, height),
+                Coords = ToCoords(bbox, pageWidth, pageHeight),
                 Id = "r" + regionCount
             };
         }
 
-        private PageXmlDocument.PageXmlTextRegion ToPageXmlTextRegion(TextBlock textBlock, double height)
+        private PageXmlDocument.PageXmlTextRegion ToPageXmlTextRegion(TextBlock textBlock, double pageWidth, double pageHeight)
         {
             regionCount++;
             string regionId = "r" + regionCount;
@@ -242,45 +258,45 @@
 
             return new PageXmlDocument.PageXmlTextRegion()
             {
-                Coords = ToCoords(textBlock.BoundingBox, height),
+                Coords = ToCoords(textBlock.BoundingBox, pageWidth, pageHeight),
                 Type = PageXmlDocument.PageXmlTextSimpleType.Paragraph,
-                TextLines = textBlock.TextLines.Select(l => ToPageXmlTextLine(l, height)).ToArray(),
+                TextLines = textBlock.TextLines.Select(l => ToPageXmlTextLine(l, pageWidth, pageHeight)).ToArray(),
                 TextEquivs = new[] { new PageXmlDocument.PageXmlTextEquiv() { Unicode = textBlock.Text } },
                 Id = regionId
             };
         }
 
-        private PageXmlDocument.PageXmlTextLine ToPageXmlTextLine(TextLine textLine, double height)
+        private PageXmlDocument.PageXmlTextLine ToPageXmlTextLine(TextLine textLine, double pageWidth, double pageHeight)
         {
             lineCount++;
             return new PageXmlDocument.PageXmlTextLine()
             {
-                Coords = ToCoords(textLine.BoundingBox, height),
+                Coords = ToCoords(textLine.BoundingBox, pageWidth, pageHeight),
                 Production = PageXmlDocument.PageXmlProductionSimpleType.Printed,
-                Words = textLine.Words.Select(w => ToPageXmlWord(w, height)).ToArray(),
+                Words = textLine.Words.Select(w => ToPageXmlWord(w, pageWidth, pageHeight)).ToArray(),
                 TextEquivs = new[] { new PageXmlDocument.PageXmlTextEquiv() { Unicode = textLine.Text } },
                 Id = "l" + lineCount
             };
         }
 
-        private PageXmlDocument.PageXmlWord ToPageXmlWord(Word word, double height)
+        private PageXmlDocument.PageXmlWord ToPageXmlWord(Word word, double pageWidth, double pageHeight)
         {
             wordCount++;
             return new PageXmlDocument.PageXmlWord()
             {
-                Coords = ToCoords(word.BoundingBox, height),
-                Glyphs = word.Letters.Select(l => ToPageXmlGlyph(l, height)).ToArray(),
+                Coords = ToCoords(word.BoundingBox, pageWidth, pageHeight),
+                Glyphs = word.Letters.Select(l => ToPageXmlGlyph(l, pageWidth, pageHeight)).ToArray(),
                 TextEquivs = new[] { new PageXmlDocument.PageXmlTextEquiv() { Unicode = word.Text } },
                 Id = "w" + wordCount
             };
         }
 
-        private PageXmlDocument.PageXmlGlyph ToPageXmlGlyph(Letter letter, double height)
+        private PageXmlDocument.PageXmlGlyph ToPageXmlGlyph(Letter letter, double pageWidth, double pageHeight)
         {
             glyphCount++;
             return new PageXmlDocument.PageXmlGlyph()
             {
-                Coords = ToCoords(letter.GlyphRectangle, height),
+                Coords = ToCoords(letter.GlyphRectangle, pageWidth, pageHeight),
                 Ligature = false,
                 Production = PageXmlDocument.PageXmlProductionSimpleType.Printed,
                 TextStyle = new PageXmlDocument.PageXmlTextStyle()
