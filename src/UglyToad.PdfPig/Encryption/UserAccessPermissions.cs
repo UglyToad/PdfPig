@@ -3,7 +3,7 @@
     using System;
 
     [Flags]
-    internal enum UserAccessPermissions
+    internal enum UserAccessPermissions : long
     {
         /// <summary>
         /// (Revision 2) Print the document.

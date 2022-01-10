@@ -68,7 +68,8 @@
 
             if (encryptionDictionary.TryGetOptionalTokenDirect(NameToken.P, tokenScanner, out NumericToken accessToken))
             {
-                access = (UserAccessPermissions) accessToken.Int;
+                // This can be bigger than an integer.
+                access = (UserAccessPermissions) accessToken.Long;
             }
 
             byte[] userEncryptionBytes = null, ownerEncryptionBytes = null;
