@@ -1,0 +1,20 @@
+name: Run Integration Tests
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up dotnet core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "2.1.x"
+
+      - name: Download the archive
+        run: mkdir archive && wget http://eliot-jones.com:8081/part2-archive.7z -P archive/ && ls archive
