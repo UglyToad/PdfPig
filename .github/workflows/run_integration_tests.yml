@@ -16,6 +16,13 @@ jobs:
         with:
           dotnet-version: "2.1.x"
 
+      - name: Restore cached part 1
+        id: restore-cache-p1
+        uses: actions/cache@v2
+        with:
+          path: archive/part1-archive.7z
+          key: ${{ runner.os }}-part-1
+
       - name: Restore cached part 2
         id: restore-cache-p2
         uses: actions/cache@v2
@@ -23,9 +30,16 @@ jobs:
           path: archive/part2-archive.7z
           key: ${{ runner.os }}-part-2
 
-      - name: Download the archive
+      - name: Download the archive part 1
+        if: steps.restore-cache-p1.outputs.cache-hit != 'true'
+        run: mkdir archive && wget http://eliot-jones.com:8081/part1-archive.7z -nv -P archive/ && ls archive
+
+      - name: Download the archive part 2
         if: steps.restore-cache-p2.outputs.cache-hit != 'true'
         run: mkdir archive && wget http://eliot-jones.com:8081/part2-archive.7z -nv -P archive/ && ls archive
 
-      - name: Print output size
+      - name: Print output size part 1
+        run: stat --printf="%s" archive/part1-archive.7z
+
+      - name: Print output size part 2
         run: stat --printf="%s" archive/part2-archive.7z
