@@ -42,10 +42,10 @@ jobs:
         run: stat --printf="%s" archive/part1-archive.7z
 
       - name: Print output size part 2
-        run: stat --printf="%s" archive/part2-archive.7
+        run: stat --printf="%s" archive/part2-archive.7z
 
       - name: Unzip archives
-        run: sudo apt-get install p7zip-full && cd archive && 7z x part1-archive.7x && 7z x part2-archive.7z
+        run: sudo apt-get install p7zip-full && cd archive && 7z x part1-archive.7z && 7z x part2-archive.7z
 
       - name: List Unzipped
         run: ls archive
