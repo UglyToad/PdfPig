@@ -417,6 +417,35 @@ endobj";
             Assert.Equal(3, third.Number.ObjectNumber);
         }
 
+        [Fact]
+        public void ReadsDictionaryContainingNull()
+        {
+            const string input = @"14224 0 obj
+<</Type /XRef
+/Root 8 0 R
+/Prev 116
+/Length 84
+/Size 35
+/W [1 3 2]
+/Index [0 1 6 1 8 2 25 10]
+/ID [ (ù¸7�ãA×�žòÜ4��Š•)]
+/Info 6 0 R
+/Encrypt null>>
+endobj";
+
+            var scanner = GetScanner(input);
+
+            var tokens = ReadToEnd(scanner);
+
+            var dictionaryToken = tokens[0].Data as DictionaryToken;
+
+            Assert.NotNull(dictionaryToken);
+
+            var encryptValue = dictionaryToken.Data["Encrypt"];
+
+            Assert.IsType<NullToken>(encryptValue);
+        }
+
         private static PdfTokenScanner GetScanner(string s, TestObjectLocationProvider locationProvider = null)
         {
             var input = StringBytesTestConverter.Convert(s, false);
