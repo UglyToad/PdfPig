@@ -30,6 +30,13 @@ jobs:
           path: archive/part2-archive.7z
           key: ${{ runner.os }}-part-2
 
+      - name: Restore cached part 3
+        id: restore-cache-p3
+        uses: actions/cache@v2
+        with:
+          path: archive/part3-archive.7z
+          key: ${{ runner.os }}-part-3
+
       - name: Download the archive part 1
         if: steps.restore-cache-p1.outputs.cache-hit != 'true'
         run: wget http://eliot-jones.com:8081/part1-archive.7z -nv -P archive/ && ls archive
@@ -38,14 +45,12 @@ jobs:
         if: steps.restore-cache-p2.outputs.cache-hit != 'true'
         run: wget http://eliot-jones.com:8081/part2-archive.7z -nv -P archive/ && ls archive
 
-      - name: Print output size part 1
-        run: stat --printf="%s" archive/part1-archive.7z
-
-      - name: Print output size part 2
-        run: stat --printf="%s" archive/part2-archive.7z
+      - name: Download the archive part 3
+        if: steps.restore-cache-p3.outputs.cache-hit != 'true'
+        run: wget http://eliot-jones.com:8081/part3-archive.7z -nv -P archive/ && ls archive
 
       - name: Unzip archives
-        run: sudo apt-get install p7zip-full && cd archive && 7z x part1-archive.7z && 7z x part2-archive.7z
+        run: sudo apt-get install p7zip-full && cd archive && 7z x part1-archive.7z && 7z x part2-archive.7z && 7z x part3-archive.7z
 
       - name: Run tests
         run: dotnet run --project tools/UglyToad.PdfPig.ConsoleRunner/UglyToad.PdfPig.ConsoleRunner.csproj "archive/"
