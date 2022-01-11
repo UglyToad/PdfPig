@@ -11,7 +11,7 @@ namespace UglyToad.PdfPig.ConsoleRunner
         {
             if (args.Length == 0)
             {
-                Console.WriteLine("At least 1 argument, path to test file directory, may be provided.");
+                Console.WriteLine("At least 1 argument, path to test file directory, must be provided.");
                 return 7;
             }
 
@@ -32,9 +32,13 @@ namespace UglyToad.PdfPig.ConsoleRunner
 
             var hasError = false;
             var errorBuilder = new StringBuilder();
-            var fileList = Directory.GetFiles(path, "*.pdf");
+            var fileList = Directory.GetFiles(path, "*.pdf", SearchOption.AllDirectories);
             var runningCount = 0;
-            
+
+            Console.WriteLine($"Found {fileList.Length} files.");
+
+            Console.WriteLine($"{GetCleanFilename("File")}| Size\t| Words\t| Pages");
+
             foreach (var file in fileList)
             {
                 if (maxCount.HasValue && runningCount >= maxCount)
@@ -61,7 +65,11 @@ namespace UglyToad.PdfPig.ConsoleRunner
                         }
                     }
 
-                    Console.WriteLine($"Read {numWords} words on {numPages} pages in document {file}.");
+                    var filename = Path.GetFileName(file);
+
+                    var size = new FileInfo(file);
+
+                    Console.WriteLine($"{GetCleanFilename(filename)}| {size.Length}\t| {numWords}\t| {numPages}");
                 }
                 catch (Exception ex)
                 {
@@ -83,6 +91,18 @@ namespace UglyToad.PdfPig.ConsoleRunner
             Console.WriteLine("Complete! :)");
 
             return 0;
+        }
+
+        private static string GetCleanFilename(string name, int maxLength = 30)
+        {
+            if (name.Length <= maxLength)
+            {
+                var fillLength = maxLength - name.Length;
+
+                return name + new string(' ', fillLength);
+            }
+
+            return name.Substring(0, maxLength);
         }
     }
 }

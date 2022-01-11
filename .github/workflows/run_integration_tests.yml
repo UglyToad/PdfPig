@@ -47,5 +47,5 @@ jobs:
       - name: Unzip archives
         run: sudo apt-get install p7zip-full && cd archive && 7z x part1-archive.7z && 7z x part2-archive.7z
 
-      - name: List Unzipped
-        run: ls archive
+      - name: Run tests
+        run: dotnet run --project tools/UglyToad.PdfPig.ConsoleRunner/UglyToad.PdfPig.ConsoleRunner.csproj "archive/"
