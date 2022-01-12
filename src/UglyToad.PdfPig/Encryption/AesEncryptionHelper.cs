@@ -13,6 +13,11 @@
 
         public static byte[] Decrypt(byte[] data, byte[] finalKey)
         {
+            if (data.Length == 0)
+            {
+                return data;
+            }
+
             var iv = new byte[16];
             Array.Copy(data, iv, iv.Length);
             
