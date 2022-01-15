@@ -82,7 +82,15 @@
 
                 if (overrides?.TryGetWidth(characterCode, out width) != true)
                 {
-                    width = bounds.Width;
+                    var encodedName = encoding.GetName(characterCode);
+                    if (fontMetrics.CharacterMetrics.TryGetValue(encodedName, out var fontMetricsForGlyph))
+                    {
+                        width = DefaultTransformation.TransformX(fontMetricsForGlyph.Width.X);
+                    }
+                    else
+                    {
+                        width = bounds.Width;
+                    }
                 }
                 else
                 {
