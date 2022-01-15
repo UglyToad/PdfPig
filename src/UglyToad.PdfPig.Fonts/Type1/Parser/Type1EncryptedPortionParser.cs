@@ -31,7 +31,7 @@
                     new Dictionary<int, Type1CharStrings.CommandSequence>());
                 return (defaultPrivateDictionary, defaultCharstrings);
             }
-            
+
             var tokenizer = new Type1Tokenizer(new ByteArrayInputBytes(decrypted));
 
             /*
@@ -58,7 +58,7 @@
 
             var length = next.AsInt();
             ReadExpected(tokenizer, Type1Token.TokenType.Name, "dict");
-            
+
             // Could also be "/Private 10 dict def Private begin" instead of the "dup"
             ReadExpectedAfterOptional(tokenizer, Type1Token.TokenType.Name, "def", Type1Token.TokenType.Name, "dup");
             ReadExpected(tokenizer, Type1Token.TokenType.Name, "begin");
@@ -74,7 +74,7 @@
             for (var i = 0; i < length; i++)
             {
                 var token = tokenizer.GetNext();
-                
+
                 // premature end
                 if (token == null || token.Type != Type1Token.TokenType.Literal)
                 {
@@ -88,7 +88,7 @@
                     case Type1Symbols.RdProcedure:
                     case Type1Symbols.RdProcedureAlt:
                         {
-                            var procedureTokens = ReadProcedure(tokenizer);
+                            var procedureTokens = ReadProcedure(tokenizer, false);
                             builder.Rd = procedureTokens;
                             ReadTillDef(tokenizer);
                             break;
@@ -96,7 +96,7 @@
                     case Type1Symbols.NoAccessDef:
                     case Type1Symbols.NoAccessDefAlt:
                         {
-                            var procedureTokens = ReadProcedure(tokenizer);
+                            var procedureTokens = ReadProcedure(tokenizer, false);
                             builder.NoAccessDef = procedureTokens;
                             ReadTillDef(tokenizer);
                             break;
@@ -104,7 +104,7 @@
                     case Type1Symbols.NoAccessPut:
                     case Type1Symbols.NoAccessPutAlt:
                         {
-                            var procedureTokens = ReadProcedure(tokenizer);
+                            var procedureTokens = ReadProcedure(tokenizer, false);
                             builder.NoAccessPut = procedureTokens;
                             ReadTillDef(tokenizer);
                             break;
@@ -161,9 +161,27 @@
                         }
                     case Type1Symbols.MinFeature:
                         {
-                            var procedureTokens = ReadProcedure(tokenizer);
+                            try
+                            {
+                                var startToken = tokenizer.GetNext();
 
-                            builder.MinFeature = new MinFeature(procedureTokens[0].AsInt(), procedureTokens[1].AsInt());
+                                if (startToken.Type == Type1Token.TokenType.StartArray)
+                                {
+                                    var arrayTokens = ReadArrayValues(tokenizer, x => x.AsInt(), true);
+
+                                    builder.MinFeature = new MinFeature(arrayTokens[0], arrayTokens[1]);
+                                }
+                                else if (startToken.Type == Type1Token.TokenType.StartProc)
+                                {
+                                    var procedureTokens = ReadProcedure(tokenizer, true);
+
+                                    builder.MinFeature = new MinFeature(procedureTokens[0].AsInt(), procedureTokens[1].AsInt());
+                                }
+                            }
+                            catch
+                            {
+                                // Ignored.
+                            }
 
                             ReadTillDef(tokenizer);
 
@@ -433,10 +451,10 @@
             throw new InvalidOperationException($"Found invalid token {token} when type {type} with text {text} was expected.");
         }
 
-        private static IReadOnlyList<Type1Token> ReadProcedure(Type1Tokenizer tokenizer)
+        private static IReadOnlyList<Type1Token> ReadProcedure(Type1Tokenizer tokenizer, bool hasReadStartProc)
         {
             var tokens = new List<Type1Token>();
-            var depth = -1;
+            var depth = hasReadStartProc ? 1 : -1;
             ReadProcedure(tokenizer, tokens, ref depth);
             return tokens;
         }
