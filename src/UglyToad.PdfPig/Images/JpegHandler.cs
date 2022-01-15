@@ -29,17 +29,37 @@
                 switch (marker)
                 {
                     case JpegMarker.StartOfBaselineDctFrame:
-                    {
-                        // ReSharper disable once UnusedVariable
-                        var length = ReadShort(stream, shortBuffer);
-                        var bpp = stream.ReadByte();
-                        var height = ReadShort(stream, shortBuffer);
-                        var width = ReadShort(stream, shortBuffer);
-
-                        return new JpegInformation(width, height, bpp);
-                    }
                     case JpegMarker.StartOfProgressiveDctFrame:
-                        break;
+                        {
+                            // ReSharper disable once UnusedVariable
+                            var length = ReadShort(stream, shortBuffer);
+                            var bpp = stream.ReadByte();
+                            var height = ReadShort(stream, shortBuffer);
+                            var width = ReadShort(stream, shortBuffer);
+
+                            return new JpegInformation(width, height, bpp);
+                        }
+                    case JpegMarker.ApplicationSpecific0:
+                    case JpegMarker.ApplicationSpecific1:
+                    case JpegMarker.ApplicationSpecific2:
+                    case JpegMarker.ApplicationSpecific3:
+                    case JpegMarker.ApplicationSpecific4:
+                    case JpegMarker.ApplicationSpecific5:
+                    case JpegMarker.ApplicationSpecific6:
+                    case JpegMarker.ApplicationSpecific7:
+                    case JpegMarker.ApplicationSpecific8:
+                    case JpegMarker.ApplicationSpecific9:
+                    case JpegMarker.ApplicationSpecific10:
+                    case JpegMarker.ApplicationSpecific11:
+                    case JpegMarker.ApplicationSpecific12:
+                    case JpegMarker.ApplicationSpecific13:
+                    case JpegMarker.ApplicationSpecific14:
+                    case JpegMarker.ApplicationSpecific15:
+                        {
+                            var length = ReadShort(stream, shortBuffer);
+                            stream.Seek(length - 2, SeekOrigin.Current);
+                            break;
+                        }
                 }
 
                 marker = (JpegMarker)ReadSegmentMarker(stream, true);
@@ -104,7 +124,7 @@
                 throw new InvalidOperationException("Failed to read a short where expected in the JPEG stream.");
             }
 
-            return (short) ((buffer[0] << 8) + buffer[1]);
+            return (short)((buffer[0] << 8) + buffer[1]);
         }
     }
 }

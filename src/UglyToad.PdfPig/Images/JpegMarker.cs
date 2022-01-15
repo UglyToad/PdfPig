@@ -78,6 +78,12 @@
         ApplicationSpecific7 = 0xE7,
         ApplicationSpecific8 = 0xE8,
         ApplicationSpecific9 = 0xE9,
+        ApplicationSpecific10 = 0xEA,
+        ApplicationSpecific11 = 0xEB,
+        ApplicationSpecific12 = 0xEC,
+        ApplicationSpecific13 = 0xED,
+        ApplicationSpecific14 = 0xEE,
+        ApplicationSpecific15 = 0xEF,
         /// <summary>
         /// Marks a text comment.
         /// </summary>
