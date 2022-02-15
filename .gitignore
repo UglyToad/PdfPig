@@ -245,3 +245,5 @@ _Pvt_Extensions
 /src/test-results.xml
 /tools/benchmark
 /tools/ConsoleRunner/Properties/launchSettings.json
+
+/docs/doxygen
