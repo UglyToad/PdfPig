@@ -340,6 +340,17 @@
             return letters;
         }
 
+        /// <summary>
+        /// Set the text rendering mode. This will apply to all future calls to AddText until called again.
+        ///
+        /// To insert invisible text, for example output of OCR, use <c>TextRenderingMode.Neither</c>.
+        /// </summary>
+        /// <param name="mode">Text rendering mode to set.</param>
+        public void SetTextRenderingMode(TextRenderingMode mode)
+        {
+            currentStream.Add(new SetTextRenderingMode(mode));
+        }
+
         private NameToken GetAddedFont(PdfDocumentBuilder.AddedFont font)
         {
             if (!documentFonts.TryGetValue(font.Id, out NameToken value))

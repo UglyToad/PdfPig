@@ -190,6 +190,62 @@
         }
 
         [Fact]
+        public void CanWriteSinglePageInvisibleHelloWorld()
+        {
+            var builder = new PdfDocumentBuilder();
+
+            PdfPageBuilder page = builder.AddPage(PageSize.A4);
+
+            PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
+
+            page.SetTextRenderingMode(TextRenderingMode.Neither);
+
+            page.AddText("Hello World!", 12, new PdfPoint(25, 520), font);
+
+            var b = builder.Build();
+
+            WriteFile(nameof(CanWriteSinglePageInvisibleHelloWorld), b);
+
+            using (var document = PdfDocument.Open(b))
+            {
+                var page1 = document.GetPage(1);
+
+                Assert.Equal(new[] { "Hello", "World!" }, page1.GetWords().Select(x => x.Text));
+            }
+        }
+
+        [Fact]
+        public void CanWriteSinglePageMixedRenderingMode()
+        {
+            var builder = new PdfDocumentBuilder();
+
+            PdfPageBuilder page = builder.AddPage(PageSize.A4);
+
+            PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
+
+            page.AddText("Hello World!", 12, new PdfPoint(25, 520), font);
+
+            page.SetTextRenderingMode(TextRenderingMode.Neither);
+
+            page.AddText("Invisible!", 12, new PdfPoint(25, 500), font);
+
+            page.SetTextRenderingMode(TextRenderingMode.Fill);
+
+            page.AddText("Filled again!", 12, new PdfPoint(25, 480), font);
+
+            var b = builder.Build();
+
+            WriteFile(nameof(CanWriteSinglePageMixedRenderingMode), b);
+
+            using (var document = PdfDocument.Open(b))
+            {
+                var page1 = document.GetPage(1);
+
+                Assert.Equal(new[] { "Hello", "World!", "Invisible!", "Filled", "again!" }, page1.GetWords().Select(x => x.Text));
+            }
+        }
+
+        [Fact]
         public void CanWriteSinglePageHelloWorld()
         {
             var builder = new PdfDocumentBuilder();
