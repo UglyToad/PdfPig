@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Graphics.Core
+﻿namespace UglyToad.PdfPig.Core
 {
     /// <summary>
     /// The text rendering mode determines whether showing text causes glyph outlines to be stroked, filled, used as a clipping boundary,

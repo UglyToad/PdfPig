@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Core
 {
+    using UglyToad.PdfPig.Core;
+
     internal static class RenderingModeExtensions
     {
         public static bool IsFill(this TextRenderingMode mode)

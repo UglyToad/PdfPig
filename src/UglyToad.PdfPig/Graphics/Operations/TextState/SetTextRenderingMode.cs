@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextState
 {
     using System.IO;
+    using PdfPig.Core;
     using Core;
 
     /// <inheritdoc />
@@ -21,6 +22,14 @@
         /// The text rendering mode to set.
         /// </summary>
         public TextRenderingMode Mode { get; }
+
+        /// <summary>
+        /// Create a new <see cref="SetTextRenderingMode"/>.
+        /// </summary>
+        public SetTextRenderingMode(TextRenderingMode mode)
+        {
+            Mode = mode;
+        }
 
         /// <summary>
         /// Create a new <see cref="SetTextRenderingMode"/>.
