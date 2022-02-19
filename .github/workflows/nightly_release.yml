@@ -24,7 +24,7 @@ jobs:
   build_and_publish_nightly:
     needs: check_date
     if: ${{ needs.check_date.outputs.should_run != 'false' }}
-    runs-on: windows-latest
+    runs-on: windows-2019
     name: build_and_publish_nightly
     steps:
       - uses: actions/checkout@master
