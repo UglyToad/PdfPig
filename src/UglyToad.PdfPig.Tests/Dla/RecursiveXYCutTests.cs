@@ -40,7 +40,7 @@
                 var page = document.GetPage(1);
                 var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
                 var options = new RecursiveXYCut.RecursiveXYCutOptions() { MinimumWidth = page.Width / 3.0, LineSeparator = " " };
-                var blocks = RecursiveXYCut.Instance.GetBlocks(words, options);
+                var blocks = new RecursiveXYCut(options).GetBlocks(words);
 
                 Assert.Equal(expected.Length, blocks.Count);
                 var orderedBlocks = blocks.OrderBy(b => b.BoundingBox.BottomLeft.X)

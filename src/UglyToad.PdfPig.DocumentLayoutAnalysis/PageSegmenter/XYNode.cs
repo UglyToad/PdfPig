@@ -31,7 +31,6 @@
         public XYNode(params XYNode[] children)
             : this(children?.ToList())
         {
-
         }
 
         /// <summary>
@@ -40,12 +39,12 @@
         /// <param name="children">The node's children.</param>
         public XYNode(IEnumerable<XYNode> children)
         {
-            if (children != null && children.Count() != 0)
+            if (children?.Any() == true)
             {
                 Children = children.ToArray();
-                BoundingBox = new PdfRectangle(children.Min(b => b.BoundingBox.Left), 
-                                               children.Min(b => b.BoundingBox.Bottom), 
-                                               children.Max(b => b.BoundingBox.Right), 
+                BoundingBox = new PdfRectangle(children.Min(b => b.BoundingBox.Left),
+                                               children.Min(b => b.BoundingBox.Bottom),
+                                               children.Max(b => b.BoundingBox.Right),
                                                children.Max(b => b.BoundingBox.Top));
             }
             else
@@ -87,7 +86,11 @@
 
         private void RecursiveCount(IEnumerable<XYNode> children, ref int count)
         {
-            if (children.Count() == 0) return;
+            if (!children.Any())
+            {
+                return;
+            }
+
             foreach (XYNode node in children.Where(x => x.IsLeaf))
             {
                 count += node.CountWords();
@@ -101,7 +104,11 @@
 
         private void RecursiveGetLeaves(IEnumerable<XYNode> children, ref List<XYLeaf> leaves, int level)
         {
-            if (children.Count() == 0) return;
+            if (!children.Any())
+            {
+                return;
+            }
+
             bool isVerticalCut = level % 2 == 0;
 
             foreach (XYLeaf node in children.Where(x => x.IsLeaf))

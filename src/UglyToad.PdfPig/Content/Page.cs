@@ -79,10 +79,10 @@
         public int NumberOfImages => Content.NumberOfImages;
 
         /// <summary>
-        /// The parsed graphics state operations in the content stream for this page. 
+        /// The parsed graphics state operations in the content stream for this page.
         /// </summary>
         public IReadOnlyList<IGraphicsStateOperation> Operations => Content.GraphicsStateOperations;
-        
+
         /// <summary>
         /// Access to members whose future locations within the API will change without warning.
         /// </summary>
@@ -97,7 +97,7 @@
             {
                 throw new ArgumentOutOfRangeException(nameof(number), "Page number cannot be 0 or negative.");
             }
-            
+
             Dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
 
             Number = number;

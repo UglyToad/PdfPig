@@ -2,7 +2,6 @@
 {
     using Alto;
     using Content;
-    using Core;
     using DocumentLayoutAnalysis;
     using System;
     using System.Globalization;
@@ -147,7 +146,7 @@
             altoPage.PrintSpace.TextBlock = blocks;
 
             altoPage.PrintSpace.Illustrations = page.GetImages().Select(i => ToAltoIllustration(i, page.Height)).ToArray();
-            
+
             if (includePaths)
             {
                 altoPage.PrintSpace.GraphicalElements = page.ExperimentalAccess.Paths
@@ -288,7 +287,7 @@
                 ProcessingSoftware = new AltoDocument.AltoProcessingSoftware
                 {
                     SoftwareName = "PdfPig",
-                    SoftwareCreator = @"https://github.com/UglyToad/PdfPig",
+                    SoftwareCreator = "https://github.com/UglyToad/PdfPig",
                     ApplicationDescription = "Read and extract text and other content from PDFs in C# (port of PdfBox)",
                     SoftwareVersion = "x.x.xx"
                 },
