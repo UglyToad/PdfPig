@@ -400,7 +400,13 @@ namespace UglyToad.PdfPig.Writer
                     var val = kvp.Value;
                     if (kvp.Value is IndirectReferenceToken ir)
                     {
-                        val = document.Structure.TokenScanner.Get(ir.Data).Data;
+                        ObjectToken tk = document.Structure.TokenScanner.Get(ir.Data);
+                        if (tk == null)
+                        {
+                            // malformed
+                            continue;
+                        }
+                        val = tk.Data;
                     }
                                                     
                     if (!(val is ArrayToken arr))
