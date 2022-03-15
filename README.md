@@ -299,6 +299,10 @@ You can merge 2 or more existing PDF files using the `PdfMerger` class:
     var resultFileBytes = PdfMerger.Merge(filePath1, filePath2);
     File.WriteAllBytes(@"C:\pdfs\outputfilename.pdf", resultFileBytes);
 
+## API Reference
+
+If you wish to generate doxygen documentation, run `doxygen doxygen-docs` and open `docs/doxygen/html/index.html`.
+
 ## Issues
 
 Please do file an issue if you encounter a bug.
