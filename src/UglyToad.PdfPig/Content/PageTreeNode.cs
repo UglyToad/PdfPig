@@ -38,7 +38,7 @@
         /// The child nodes of this node if <see cref="IsPage"/> is <see langword="false" />
         /// </summary>
         [NotNull]
-        public IReadOnlyList<PageTreeNode> Children { get; }
+        public IReadOnlyList<PageTreeNode> Children { get; private set; }
 
         /// <summary>
         /// The parent node of this node, unless it is the root node.
@@ -56,29 +56,33 @@
         /// </summary>
         internal PageTreeNode(DictionaryToken nodeDictionary, IndirectReference reference,
             bool isPage, 
-            int? pageNumber, 
-            IReadOnlyList<PageTreeNode> children)
+            int? pageNumber)
         {
             NodeDictionary = nodeDictionary ?? throw new ArgumentNullException(nameof(nodeDictionary));
             Reference = reference;
             IsPage = isPage;
             PageNumber = pageNumber;
+            
+            if (!IsPage && PageNumber.HasValue)
+            {
+                throw new ArgumentException("Cannot define page number for a pages node.", nameof(pageNumber));
+            }
+        }
+
+        internal PageTreeNode WithChildren(IReadOnlyList<PageTreeNode> children)
+        {
             Children = children ?? throw new ArgumentNullException(nameof(children));
 
             if (IsPage && Children.Count > 0)
             {
-                throw new ArgumentException("Cannot define children on a page node.", nameof(children));   
-            }
-
-            if (!IsPage && pageNumber.HasValue)
-            {
-                throw new ArgumentException("Cannot define page number for a pages node.", nameof(pageNumber));
+                throw new ArgumentException("Cannot define children on a page node.", nameof(children));
             }
 
             foreach (var child in Children)
             {
                 child.Parent = this;
             }
+            return this;
         }
 
         /// <inheritdoc />
