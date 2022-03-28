@@ -10,6 +10,11 @@
 
     internal static class CatalogFactory
     {
+
+        // Keep the algorithm below from throwing a StackOverflow exception. 
+        // It probably should be refactored to not be recursive
+        private const ushort MAX_TREE_DEPTH = 1024; 
+
         public static Catalog Create(IndirectReference rootReference, DictionaryToken dictionary, 
             IPdfTokenScanner scanner,
             bool isLenientParsing)
@@ -49,7 +54,7 @@
             var pageNumber = 0;
 
             var pageTree = ProcessPagesNode(pagesReference, pages, new IndirectReference(1, 0), true,
-                scanner, isLenientParsing, ref pageNumber);
+                scanner, isLenientParsing, ref pageNumber, 0);
 
             return new Catalog(dictionary, pages, pageTree);
         }
@@ -59,8 +64,14 @@
             bool isRoot,
             IPdfTokenScanner pdfTokenScanner,
             bool isLenientParsing,
-            ref int pageNumber)
+            ref int pageNumber,
+            ushort depth)
         {
+            if(depth > MAX_TREE_DEPTH)
+            {
+                throw new PdfDocumentFormatException($"Tree exceeded maximum depth of {MAX_TREE_DEPTH}, aborting.");
+            }
+
             var isPage = false;
 
             if (!nodeDictionary.TryGet(NameToken.Type, pdfTokenScanner, out NameToken type))
@@ -133,7 +144,7 @@
                     throw new PdfDocumentFormatException($"Could not find dictionary associated with reference in pages kids array: {kidRef}.");
                 }
 
-                var kidNode = ProcessPagesNode(kidRef.Data, kidDictionaryToken, reference, false, pdfTokenScanner, isLenientParsing, ref pageNumber);
+                var kidNode = ProcessPagesNode(kidRef.Data, kidDictionaryToken, reference, false, pdfTokenScanner, isLenientParsing, ref pageNumber, depth + 1);
 
                 nodeChildren.Add(kidNode);
             }
