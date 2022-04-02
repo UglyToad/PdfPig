@@ -33,13 +33,24 @@
 
         public CrossReferenceType Type { get; }
 
-        public CrossReferenceTablePart(IReadOnlyDictionary<IndirectReference, long> objectOffsets, long offset, long previous, DictionaryToken dictionary, CrossReferenceType type)
+        /// <summary>
+        /// For Xref streams indicated by tables they should be used together when constructing the final table.
+        /// </summary>
+        public long? TiedToXrefAtOffset { get; }
+
+        public CrossReferenceTablePart(
+            IReadOnlyDictionary<IndirectReference, long> objectOffsets,
+            long offset, long previous,
+            DictionaryToken dictionary,
+            CrossReferenceType type,
+            long? tiedToXrefAtOffset)
         {
             ObjectOffsets = objectOffsets;
             Offset = offset;
             Previous = previous;
             Dictionary = dictionary;
             Type = type;
+            TiedToXrefAtOffset = tiedToXrefAtOffset;
         }
 
         public void FixOffset(long offset)

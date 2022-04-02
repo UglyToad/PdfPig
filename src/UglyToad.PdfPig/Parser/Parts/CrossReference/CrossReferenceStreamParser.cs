@@ -19,7 +19,7 @@
         /// <summary>
         /// Parses through the unfiltered stream and populates the xrefTable HashMap.
         /// </summary>
-        public CrossReferenceTablePart Parse(long streamOffset, StreamToken stream)
+        public CrossReferenceTablePart Parse(long streamOffset, long? fromTableAtOffset, StreamToken stream)
         {
             var decoded = stream.Decode(filterProvider);
 
@@ -38,7 +38,8 @@
                 Offset = streamOffset,
                 Previous = previousOffset,
                 Dictionary = stream.StreamDictionary,
-                XRefType = CrossReferenceType.Stream
+                XRefType = CrossReferenceType.Stream,
+                TiedToPreviousAtOffset = fromTableAtOffset
             };
 
             var objectNumbers = GetObjectNumbers(stream.StreamDictionary);

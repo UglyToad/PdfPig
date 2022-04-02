@@ -82,9 +82,11 @@
                     // check for a XRef stream, it may contain some object ids of compressed objects 
                     if (tableDictionary.ContainsKey(NameToken.XrefStm))
                     {
-                        log.Debug("Cross reference table contained referenced to stream. Reading the stream.");
+                        log.Debug("Cross reference table contained reference to stream. Reading the stream.");
 
-                        int streamOffset = ((NumericToken)tableDictionary.Data[NameToken.XrefStm]).Int;
+                        var tiedToTableAtOffset = tablePart.Offset;
+
+                        int streamOffset = ((NumericToken) tableDictionary.Data[NameToken.XrefStm]).Int;
 
                         // check the xref stream reference
                         fixedOffset = offsetValidator.CheckXRefOffset(streamOffset, tokenScanner, bytes, isLenientParsing);
@@ -96,8 +98,13 @@
 
                             // Update the cross reference table to be a stream instead.
                             tableDictionary = tableDictionary.With(NameToken.XrefStm, new NumericToken(streamOffset));
-                            tablePart = new CrossReferenceTablePart(tablePart.ObjectOffsets, streamOffset,
-                                tablePart.Previous, tableDictionary, tablePart.Type);
+                            tablePart = new CrossReferenceTablePart(
+                                tablePart.ObjectOffsets,
+                                streamOffset,
+                                tablePart.Previous,
+                                tableDictionary,
+                                tablePart.Type,
+                                tiedToTableAtOffset);
                         }
 
                         // Read the stream from the table.
@@ -105,7 +112,7 @@
                         {
                             try
                             {
-                                TryParseCrossReferenceStream(streamOffset, pdfScanner, out streamPart);
+                                TryParseCrossReferenceStream(streamOffset, pdfScanner, tiedToTableAtOffset, out streamPart);
                             }
                             catch (InvalidOperationException ex)
                             {
@@ -149,7 +156,7 @@
                     tokenScanner.Seek(previousCrossReferenceLocation);
 
                     // parse xref stream
-                    if (!TryParseCrossReferenceStream(previousCrossReferenceLocation, pdfScanner, out var tablePart))
+                    if (!TryParseCrossReferenceStream(previousCrossReferenceLocation, pdfScanner, null, out var tablePart))
                     {
                         if (!TryBruteForceXrefTableLocate(bytes, previousCrossReferenceLocation, out var actualOffset))
                         {
@@ -218,7 +225,10 @@
             return resolved;
         }
 
-        private bool TryParseCrossReferenceStream(long objByteOffset, IPdfTokenScanner pdfScanner,
+        private bool TryParseCrossReferenceStream(
+            long objByteOffset,
+            IPdfTokenScanner pdfScanner,
+            long? fromTableAtOffset,
             out CrossReferenceTablePart xrefTablePart)
         {
             xrefTablePart = null;
@@ -236,7 +246,7 @@
                 return false;
             }
             
-            xrefTablePart = crossReferenceStreamParser.Parse(objByteOffset, objectStream);
+            xrefTablePart = crossReferenceStreamParser.Parse(objByteOffset, fromTableAtOffset, objectStream);
 
             return true;
         }

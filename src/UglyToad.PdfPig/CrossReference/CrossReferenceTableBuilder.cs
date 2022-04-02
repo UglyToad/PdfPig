@@ -34,28 +34,35 @@
             DictionaryToken trailerDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>());
             Dictionary<IndirectReference, long> objectOffsets = new Dictionary<IndirectReference, long>();
 
-            List<long> xrefSeqBytePos = new List<long>();
+            var xrefPartToBytePositionOrder = new List<long>();
 
             var currentPart = parts.FirstOrDefault(x => x.Offset == firstCrossReferenceOffset);
             
             if (currentPart == null)
             {
                 // no XRef at given position
-                log.Warn("Did not found XRef object at specified startxref position " + firstCrossReferenceOffset);
+                log.Warn($"Did not find an XRef object at the specified startxref position {firstCrossReferenceOffset}");
 
                 // use all objects in byte position order (last entries overwrite previous ones)
-                xrefSeqBytePos.AddRange(parts.Select(x => x.Offset));
-                xrefSeqBytePos.Sort();
+                xrefPartToBytePositionOrder.AddRange(parts.Select(x => x.Offset));
+                xrefPartToBytePositionOrder.Sort();
             }
             else
             {
                 // copy xref type
                 type = currentPart.Type;
-                
 
                 // found starting Xref object
                 // add this and follow chain defined by 'Prev' keys
-                xrefSeqBytePos.Add(firstCrossReferenceOffset);
+                xrefPartToBytePositionOrder.Add(firstCrossReferenceOffset);
+
+                // Get any streams that are tied to this table.
+                var activePart = currentPart;
+                var dependents = parts.Where(x => x.TiedToXrefAtOffset == activePart.Offset);
+                foreach (var dependent in dependents)
+                {
+                    xrefPartToBytePositionOrder.Add(dependent.Offset);
+                }
 
                 while (currentPart.Dictionary != null)
                 {
@@ -72,21 +79,21 @@
                         break;
                     }
 
-                    xrefSeqBytePos.Add(prevBytePos);
+                    xrefPartToBytePositionOrder.Add(prevBytePos);
 
                     // sanity check to prevent infinite loops
-                    if (xrefSeqBytePos.Count >= parts.Count)
+                    if (xrefPartToBytePositionOrder.Count >= parts.Count)
                     {
                         break;
                     }
                 }
 
                 // have to reverse order so that later XRefs will overwrite previous ones
-                xrefSeqBytePos.Reverse();
+                xrefPartToBytePositionOrder.Reverse();
             }
 
             // merge used and sorted XRef/trailer
-            foreach (long bPos in xrefSeqBytePos)
+            foreach (long bPos in xrefPartToBytePositionOrder)
             {
                 var currentObject = parts.First(x => x.Offset == bPos || x.Offset == bPos + offsetCorrection);
                 if (currentObject.Dictionary != null)
