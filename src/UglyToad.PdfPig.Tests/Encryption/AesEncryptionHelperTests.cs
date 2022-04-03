@@ -23,7 +23,9 @@ namespace UglyToad.PdfPig.Tests.Encryption
 
             var output = AesEncryptionHelper.Decrypt(data, key);
 
-            Assert.Equal("D:20180808103317-07'00'", OtherEncodings.BytesAsLatin1String(output));
+            var actual = OtherEncodings.BytesAsLatin1String(output);
+
+            Assert.Equal("D:20180808103317-07'00'", actual);
         }
     }
 }

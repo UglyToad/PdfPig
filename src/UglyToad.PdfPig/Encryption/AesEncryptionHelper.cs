@@ -35,16 +35,16 @@
                     input.Seek(iv.Length, SeekOrigin.Begin);
                     using (var cryptoStream = new CryptoStream(input, decryptor, CryptoStreamMode.Read))
                     {
+                        var offset = 0;
                         int read;
-                        while ((read = cryptoStream.Read(buffer, 0, buffer.Length)) != -1)
+                        do
                         {
-                            output.Write(buffer, 0, read);
+                            read = cryptoStream.Read(buffer, offset, buffer.Length - offset);
 
-                            if (read < buffer.Length)
-                            {
-                                break;
-                            }
-                        }
+                            output.Write(buffer, offset, read);
+
+                            offset += read;
+                        } while (read > 0);
 
                         return output.ToArray();
                     }
