@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Encryption
 {
     using System;
+    using System.Diagnostics;
     using System.IO;
     using System.Security.Cryptography;
 
@@ -20,13 +21,18 @@
 
             var iv = new byte[16];
             Array.Copy(data, iv, iv.Length);
-            
+
             using (var rijndael = Rijndael.Create())
             {
                 rijndael.Key = finalKey;
                 rijndael.IV = iv;
 
                 var buffer = new byte[256];
+
+                if (data.Length > 256)
+                {
+                    Debugger.Break();
+                }
 
                 using (var decryptor = rijndael.CreateDecryptor(rijndael.Key, rijndael.IV))
                 using (var input = new MemoryStream(data))
@@ -35,15 +41,15 @@
                     input.Seek(iv.Length, SeekOrigin.Begin);
                     using (var cryptoStream = new CryptoStream(input, decryptor, CryptoStreamMode.Read))
                     {
-                        var offset = 0;
                         int read;
                         do
                         {
-                            read = cryptoStream.Read(buffer, offset, buffer.Length - offset);
+                            read = cryptoStream.Read(buffer, 0, buffer.Length);
 
-                            output.Write(buffer, offset, read);
-
-                            offset += read;
+                            if (read > 0)
+                            {
+                                output.Write(buffer, 0, read);
+                            }
                         } while (read > 0);
 
                         return output.ToArray();
