@@ -795,8 +795,8 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
              * and the fourth byte contains the lowest order bits.
              * This number is interpreted as a Fixed; that is, a signed number with 16 bits of fraction
              */
-            var lead = bytes[++i] << 8 | bytes[++i];
-            var fractionalPart = bytes[++i] << 8 | bytes[++i];
+            var lead = (short)(bytes[++i] << 8) + bytes[++i];
+            var fractionalPart = (bytes[++i] << 8) + bytes[++i];
 
             return lead + (fractionalPart / 65535.0f);
         }
