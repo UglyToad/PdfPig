@@ -45,7 +45,7 @@ Open `.\src\UglyToad.PdfPig\UglyToad.PdfPig.csproj` in a text editor and change:
 
 ```
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net45;net451;net452;net46;net461;net462;net47</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net45;net451;net452;net46;net461;net462;net47;net6.0</TargetFrameworks>
     <PackageId>PdfPig</PackageId>
     ...
 ```

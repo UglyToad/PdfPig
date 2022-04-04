@@ -30,9 +30,11 @@ jobs:
       - uses: actions/checkout@master
 
       - name: Set up dotnet core
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v2
         with:
-          dotnet-version: "2.1.x"
+          dotnet-version: | 
+            2.1.x
+            6.0.x
 
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
