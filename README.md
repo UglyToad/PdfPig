@@ -2,7 +2,6 @@
 
 # PdfPig
 
-[![Build Status](https://dev.azure.com/pdfpig/pdfpig/_apis/build/status/UglyToad.PdfPig?branchName=master)](https://dev.azure.com/pdfpig/pdfpig/_build/latest?definitionId=1&branchName=master)
 [![codecov](https://codecov.io/gh/UglyToad/PdfPig/branch/master/graph/badge.svg)](https://codecov.io/gh/UglyToad/PdfPig)
 [![Gitter](https://badges.gitter.im/pdfpig/community.svg)](https://gitter.im/pdfpig/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![nuget](https://img.shields.io/nuget/dt/PdfPig)](https://www.nuget.org/packages/PdfPig/)
