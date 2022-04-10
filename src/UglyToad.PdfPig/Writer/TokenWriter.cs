@@ -151,14 +151,6 @@
             outputStream.Write(Xref, 0, Xref.Length);
             WriteLineBreak(outputStream);
 
-            var min = objectOffsets.Min(x => x.Key.ObjectNumber);
-            var max = objectOffsets.Max(x => x.Key.ObjectNumber);
-
-            if (max - min != objectOffsets.Count - 1)
-            {
-                throw new NotSupportedException("Object numbers must form a contiguous range");
-            }
-
             WriteLong(0, outputStream);
             WriteWhitespace(outputStream);
             // 1 extra for the free entry.
@@ -229,6 +221,87 @@
 
             // Complete!
             outputStream.Write(Eof, 0, Eof.Length);
+        }
+
+        private static void WriteCrossReferenceTable(IReadOnlyDictionary<IndirectReference, long> objectOffsets, Stream outputStream)
+        {
+            var sets = new List<XrefSeries>();
+
+            var orderedList = objectOffsets.OrderBy(x => x.Key.ObjectNumber).ToList();
+
+            long firstObjectNumber = 0;
+            long currentObjNum = 0;
+            var items = new List<XrefSeries.OffsetAndGeneration>
+            {
+                // Zero entry
+                null
+            };
+
+            foreach (var item in orderedList)
+            {
+                var step = item.Key.ObjectNumber - currentObjNum;
+                if (step == 1)
+                {
+                    currentObjNum = item.Key.ObjectNumber;
+                    items.Add(new XrefSeries.OffsetAndGeneration(item.Value, item.Key.Generation));
+                }
+                else
+                {
+                    sets.Add(new XrefSeries(firstObjectNumber, items));
+                    items = new List<XrefSeries.OffsetAndGeneration>
+                    {
+                        new XrefSeries.OffsetAndGeneration(item.Value, item.Key.Generation)
+                    };
+
+                    currentObjNum = item.Key.ObjectNumber;
+                    firstObjectNumber = item.Key.ObjectNumber;
+                }
+            }
+
+            foreach (var series in sets)
+            {
+                WriteLong(0, outputStream);
+                WriteWhitespace(outputStream);
+                // 1 extra for the free entry.
+                WriteLong(series.Offsets.Count, outputStream);
+
+                WriteWhitespace(outputStream);
+                WriteLineBreak(outputStream);
+
+                foreach (var offset in series.Offsets)
+                {
+                    if (offset != null)
+                    {
+                        /*
+                     * nnnnnnnnnn ggggg n eol
+                     * where:
+                     * nnnnnnnnnn is a 10-digit byte offset
+                     * ggggg is a 5-digit generation number
+                     * n is a literal keyword identifying this as an in-use entry
+                     * eol is a 2-character end-of-line sequence ('\r\n' or ' \n')
+                     */
+                        var paddedOffset = OtherEncodings.StringAsLatin1Bytes(offset.Offset.ToString("D10", CultureInfo.InvariantCulture));
+                        outputStream.Write(paddedOffset, 0, paddedOffset.Length);
+
+                        WriteWhitespace(outputStream);
+
+                        var generation = OtherEncodings.StringAsLatin1Bytes(offset.Generation.ToString("D5", CultureInfo.InvariantCulture));
+                        outputStream.Write(generation, 0, generation.Length);
+
+                        WriteWhitespace(outputStream);
+
+                        outputStream.WriteByte(InUseEntry);
+
+                        WriteWhitespace(outputStream);
+                        WriteLineBreak(outputStream);
+
+                    }
+                    else
+                    {
+                        WriteFirstXrefEmptyEntry(outputStream);
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -523,6 +596,32 @@
             }
 
             return bytes[0];
+        }
+
+        private class XrefSeries
+        {
+            public long First { get; }
+
+            public IReadOnlyList<OffsetAndGeneration> Offsets { get; }
+
+            public XrefSeries(long first, IReadOnlyList<OffsetAndGeneration> offsets)
+            {
+                First = first;
+                Offsets = offsets;
+            }
+
+            public class OffsetAndGeneration
+            {
+                public long Offset { get; }
+
+                public long Generation { get; }
+
+                public OffsetAndGeneration(long offset, long generation)
+                {
+                    Offset = offset;
+                    Generation = generation;
+                }
+            }
         }
     }
 }
