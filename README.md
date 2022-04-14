@@ -11,7 +11,7 @@ containing text and geometrical shapes.
 
 This project aims to port [PDFBox](https://github.com/apache/pdfbox) to C#.
 
-**Migrating to 0.1.x from 0.0.x?** Use this guide: [migration to 0.1.x](https://github.com/UglyToad/PdfPig/wiki/Migration-0.0.X-to-0.1.0).
+**Migrating to 0.1.6 from 0.1.x?** Use this guide: [migration to 0.1.6](https://github.com/UglyToad/PdfPig/wiki/Migration-to-0.1.6).
 
 ## Installation
 
