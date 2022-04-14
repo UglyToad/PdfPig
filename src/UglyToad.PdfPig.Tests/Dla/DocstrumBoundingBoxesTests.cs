@@ -88,7 +88,7 @@
             {
                 var page = document.GetPage(1);
                 var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
-                var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words, options);
+                var blocks = new DocstrumBoundingBoxes(options).GetBlocks(words);
 
                 Assert.Equal(expected.Length, blocks.Count);
                 var orderedBlocks = blocks.OrderBy(b => b.BoundingBox.BottomLeft.X)

@@ -53,7 +53,7 @@
             builder.Append("</g></svg>");
             return builder.ToString();
         }
-        
+
         private static string LetterToSvg(Letter l, double height, XmlDocument doc)
         {
             string fontFamily = GetFontFamily(l.FontName, out string style, out string weight);
@@ -69,7 +69,7 @@
             var x = Math.Round(l.StartBaseLine.X, Rounding);
             var y = Math.Round(height - l.StartBaseLine.Y, Rounding);
 
-            return $"<text x='{x}' y='{y}'{rotation} font-family='{fontFamily}' font-style='{style}' font-weight='{weight}' {fontSize} fill='{ColorToSvg(l.Color)}'>{safeValue}</text>" 
+            return $"<text x='{x}' y='{y}'{rotation} font-family='{fontFamily}' font-style='{style}' font-weight='{weight}' {fontSize} fill='{ColorToSvg(l.Color)}'>{safeValue}</text>"
                    + Environment.NewLine;
         }
 
@@ -123,7 +123,11 @@
                 }
             }
 
-            if (Fonts.ContainsKey(fontName)) fontName = Fonts[fontName];
+            if (Fonts.ContainsKey(fontName))
+            {
+                fontName = Fonts[fontName];
+            }
+
             return fontName;
         }
 
@@ -136,7 +140,11 @@
 
         private static string ColorToSvg(IColor color)
         {
-            if (color == null) return "";
+            if (color == null)
+            {
+                return string.Empty;
+            }
+
             var (r, g, b) = color.ToRGBValues();
             return $"rgb({Math.Ceiling(r * 255)},{Math.Ceiling(g * 255)},{Math.Ceiling(b * 255)})";
         }

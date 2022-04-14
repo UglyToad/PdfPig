@@ -43,7 +43,7 @@
                 DefaultWordExtractor.Instance,
                 RecursiveXYCut.Instance,
                 UnsupervisedReadingOrderDetector.Instance);
-            var xml = GetXml(pageXmlTextExporter); 
+            var xml = GetXml(pageXmlTextExporter);
 
             Assert.Contains("<ReadingOrder>", xml);
             Assert.Contains("</OrderedGroup>", xml);
@@ -69,7 +69,7 @@
         public void ContainsExpectedText()
         {
             var xml = GetXml();
-            Assert.Contains(@"2006 Swedish Touring Car Championship", xml);
+            Assert.Contains("2006 Swedish Touring Car Championship", xml);
             // the coords for that text
             Assert.Contains(@"<Coords points=""35,77 35,62 397,62 397,77"" />", xml);
         }
