@@ -5,7 +5,7 @@
     using Parts;
     using Tokenization.Scanner;
     using Tokens;
-    using UglyToad.PdfPig.Core;
+    using Core;
 
     /// <summary>
     /// Parse the dictionary from a PDF file trailer.
@@ -15,7 +15,7 @@
         /// <summary>
         /// Convert the file trailer dictionary into a <see cref="DocumentInformation"/> instance.
         /// </summary>
-        public static DocumentInformation Create(IPdfTokenScanner pdfTokenScanner, TrailerDictionary trailer)
+        public static DocumentInformation Create(IPdfTokenScanner pdfTokenScanner, TrailerDictionary trailer, bool isLenientParsing)
         {
             if (!trailer.Info.HasValue)
             {
@@ -37,26 +37,30 @@
                 return new DocumentInformation(infoParsed, title, author, subject,
                     keywords, creator, producer, creationDate, modifiedDate);
             }
-            else if (token is StreamToken streamToken)
+
+            if (token is StreamToken streamToken)
             {
                 var streamDictionary = streamToken.StreamDictionary;
                 if (!streamDictionary.TryGet(NameToken.Type, out NameToken typeNameToken) || typeNameToken != "Metadata")
                 {
-                    throw new PdfDocumentFormatException($"Unknown document metadata type was found");
+                    throw new PdfDocumentFormatException("Unknown document metadata type was found");
                 }
 
                 if (!streamDictionary.TryGet(NameToken.Subtype, out NameToken subtypeToken) || subtypeToken != "XML")
                 {
-                    throw new PdfDocumentFormatException($"Unknown document metadata subtype was found");
+                    throw new PdfDocumentFormatException("Unknown document metadata subtype was found");
                 }
 
-                // We are not fully supporting XMP Stream so we left the user fully deserialize the stream
+                // We are not fully supporting XMP Stream so we let the user fully deserialize the stream
                 return DocumentInformation.Default;
             }
-            else
+
+            if (isLenientParsing)
             {
-                throw new PdfDocumentFormatException($"Unknown document information token was found {token.GetType().Name}");
+                return DocumentInformation.Default;
             }
+
+            throw new PdfDocumentFormatException($"Unknown document information token was found {token.GetType().Name}");
         }
 
         private static string GetEntryOrDefault(DictionaryToken infoDictionary, NameToken key)

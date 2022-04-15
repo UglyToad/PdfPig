@@ -137,7 +137,7 @@
 
             var resourceContainer = new ResourceStore(pdfScanner, fontFactory);
 
-            var information = DocumentInformationFactory.Create(pdfScanner, crossReferenceTable.Trailer);
+            var information = DocumentInformationFactory.Create(pdfScanner, crossReferenceTable.Trailer, isLenientParsing);
 
             var catalog = CatalogFactory.Create(rootReference, rootDictionary, pdfScanner, isLenientParsing);
 
