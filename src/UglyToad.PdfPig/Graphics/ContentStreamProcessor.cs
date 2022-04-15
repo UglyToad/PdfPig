@@ -295,7 +295,7 @@
                     : currentState.CurrentStrokingColor;
 
                 Letter letter = null;
-                if (Diacritics.IsInCombiningDiacriticRange(unicode) && letters.Count > 0)
+                if (Diacritics.IsInCombiningDiacriticRange(unicode) && bytes.CurrentOffset > 0 && letters.Count > 0)
                 {
                     var attachTo = letters[letters.Count - 1];
 
