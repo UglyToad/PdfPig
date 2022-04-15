@@ -42,6 +42,5 @@
                 Assert.Contains("financial results for the fiscal quarter ended June 30, 2017 and (2) a conference call to discuss those results and Farmer Mac", page.Text);
             }
         }
-
     }
 }

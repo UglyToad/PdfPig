@@ -17,6 +17,7 @@
     using Tokenization.Scanner;
     using Tokens;
     using Operations.TextPositioning;
+    using Util;
     using XObjects;
     using static PdfPig.Core.PdfSubpath;
 
@@ -293,15 +294,58 @@
                     ? currentState.CurrentNonStrokingColor
                     : currentState.CurrentStrokingColor;
 
-                var letter = new Letter(unicode, transformedGlyphBounds,
-                    transformedPdfBounds.BottomLeft,
-                    transformedPdfBounds.BottomRight,
-                    transformedPdfBounds.Width,
-                    fontSize,
-                    font.Details,
-                    color,
-                    pointSize,
-                    textSequence);
+                Letter letter = null;
+                if (Diacritics.IsInCombiningDiacriticRange(unicode) && letters.Count > 0)
+                {
+                    var attachTo = letters[letters.Count - 1];
+
+                    if (attachTo.TextSequence == textSequence
+                        && Diacritics.TryCombineDiacriticWithPreviousLetter(unicode, attachTo.Value, out var newLetter))
+                    {
+                        // TODO: union of bounding boxes.
+                        letters.Remove(attachTo);
+
+                        letter = new Letter(
+                            newLetter,
+                            attachTo.GlyphRectangle,
+                            attachTo.StartBaseLine,
+                            attachTo.EndBaseLine,
+                            attachTo.Width,
+                            attachTo.FontSize,
+                            attachTo.Font,
+                            attachTo.Color,
+                            attachTo.PointSize,
+                            attachTo.TextSequence);
+                    }
+                    else
+                    {
+                        letter = new Letter(
+                            unicode,
+                            transformedGlyphBounds,
+                            transformedPdfBounds.BottomLeft,
+                            transformedPdfBounds.BottomRight,
+                            transformedPdfBounds.Width,
+                            fontSize,
+                            font.Details,
+                            color,
+                            pointSize,
+                            textSequence);
+                    }
+                }
+                else
+                {
+                    letter = new Letter(
+                        unicode,
+                        transformedGlyphBounds,
+                        transformedPdfBounds.BottomLeft,
+                        transformedPdfBounds.BottomRight,
+                        transformedPdfBounds.Width,
+                        fontSize,
+                        font.Details,
+                        color,
+                        pointSize,
+                        textSequence);
+                }
 
                 letters.Add(letter);
 
