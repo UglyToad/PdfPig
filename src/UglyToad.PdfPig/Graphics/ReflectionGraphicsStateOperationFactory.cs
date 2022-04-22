@@ -141,6 +141,10 @@ namespace UglyToad.PdfPig.Graphics
                 case SetMiterLimit.Symbol:
                     return new SetMiterLimit(OperandToDecimal(operands[0]));
                 case AppendDualControlPointBezierCurve.Symbol:
+                    if (operands.Count == 0)
+                    {
+                        return null;
+                    }
                     return new AppendDualControlPointBezierCurve(OperandToDecimal(operands[0]),
                         OperandToDecimal(operands[1]),
                         OperandToDecimal(operands[2]),
@@ -148,16 +152,28 @@ namespace UglyToad.PdfPig.Graphics
                         OperandToDecimal(operands[4]),
                         OperandToDecimal(operands[5]));
                 case AppendEndControlPointBezierCurve.Symbol:
+                    if (operands.Count == 0)
+                    {
+                        return null;
+                    }
                     return new AppendEndControlPointBezierCurve(OperandToDecimal(operands[0]),
                         OperandToDecimal(operands[1]),
                         OperandToDecimal(operands[2]),
                         OperandToDecimal(operands[3]));
                 case AppendRectangle.Symbol:
+                    if (operands.Count == 0)
+                    {
+                        return null;
+                    }
                     return new AppendRectangle(OperandToDecimal(operands[0]),
                         OperandToDecimal(operands[1]),
                         OperandToDecimal(operands[2]),
                         OperandToDecimal(operands[3]));
                 case AppendStartControlPointBezierCurve.Symbol:
+                    if (operands.Count == 0)
+                    {
+                        return null;
+                    }
                     return new AppendStartControlPointBezierCurve(OperandToDecimal(operands[0]),
                         OperandToDecimal(operands[1]),
                         OperandToDecimal(operands[2]),
