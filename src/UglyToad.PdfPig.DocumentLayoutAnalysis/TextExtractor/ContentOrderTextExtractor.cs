@@ -3,6 +3,7 @@
     using System;
     using System.Text;
     using Content;
+    using System.Collections.Generic;
     using Util;
 
     /// <summary>
@@ -10,6 +11,13 @@
     /// </summary>
     public static class ContentOrderTextExtractor
     {
+        private static readonly HashSet<string> ReplaceableWhitespace = new HashSet<string>
+        {
+            "\t",
+            "\v",
+            "\f"
+        };
+
         /// <summary>
         /// Gets a human readable representation of the text from the page based on
         /// the letter order of the original PDF document.
@@ -17,7 +25,23 @@
         /// <param name="page">A page from the document.</param>
         /// <param name="addDoubleNewline">Whether to include a double new-line when the text is likely to be a new paragraph.</param>
         public static string GetText(Page page, bool addDoubleNewline = false)
+            => GetText(
+                page,
+                new Options
+                {
+                    SeparateParagraphsWithDoubleNewline = addDoubleNewline
+                });
+
+        /// <summary>
+        /// Gets a human readable representation of the text from the page based on
+        /// the letter order of the original PDF document.
+        /// </summary>
+        /// <param name="page">A page from the document.</param>
+        /// <param name="options">Control various aspects of the generated text.</param>
+        public static string GetText(Page page, Options options)
         {
+            options ??= new Options();
+
             var sb = new StringBuilder();
 
             var previous = default(Letter);
@@ -29,6 +53,21 @@
                 if (string.IsNullOrEmpty(letter.Value))
                 {
                     continue;
+                }
+
+                if (options.ReplaceWhitespaceWithSpace && ReplaceableWhitespace.Contains(letter.Value))
+                {
+                    letter = new Letter(
+                        " ",
+                        letter.GlyphRectangle,
+                        letter.StartBaseLine,
+                        letter.EndBaseLine,
+                        letter.Width,
+                        letter.FontSize,
+                        letter.Font,
+                        letter.Color,
+                        letter.PointSize,
+                        letter.TextSequence);
                 }
 
                 if (letter.Value == " " && !hasJustAddedWhitespace)
@@ -58,7 +97,7 @@
                         }
 
                         sb.AppendLine();
-                        if (addDoubleNewline && isDoubleNewline)
+                        if (options.SeparateParagraphsWithDoubleNewline && isDoubleNewline)
                         {
                             sb.AppendLine();
                         }
@@ -119,6 +158,24 @@
             }
 
             return gap > minPtSize * 0.9;
+        }
+
+        /// <summary>
+        /// Options controlling the text generation algorithm.
+        /// </summary>
+        public class Options
+        {
+            /// <summary>
+            /// Whether to include a double new-line when the text is likely to be a new paragraph.
+            /// Default <see langword="false"/>.
+            /// </summary>
+            public bool SeparateParagraphsWithDoubleNewline { get; set; }
+
+            /// <summary>
+            /// Whether to replace all whitespace characters (except line breaks) with single space ' '
+            /// character. Default <see langword="false"/>.
+            /// </summary>
+            public bool ReplaceWhitespaceWithSpace { get; set; }
         }
     }
 }
