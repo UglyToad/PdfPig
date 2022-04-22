@@ -151,80 +151,6 @@
             outputStream.Write(Xref, 0, Xref.Length);
             WriteLineBreak(outputStream);
 
-            WriteLong(0, outputStream);
-            WriteWhitespace(outputStream);
-            // 1 extra for the free entry.
-            WriteLong(objectOffsets.Count + 1, outputStream);
-            WriteWhitespace(outputStream);
-            WriteLineBreak(outputStream);
-
-            WriteFirstXrefEmptyEntry(outputStream);
-
-            foreach (var keyValuePair in objectOffsets.OrderBy(x => x.Key.ObjectNumber))
-            {
-                /*
-                 * nnnnnnnnnn ggggg n eol
-                 * where:
-                 * nnnnnnnnnn is a 10-digit byte offset
-                 * ggggg is a 5-digit generation number
-                 * n is a literal keyword identifying this as an in-use entry
-                 * eol is a 2-character end-of-line sequence ('\r\n' or ' \n')
-                 */
-                var paddedOffset = OtherEncodings.StringAsLatin1Bytes(keyValuePair.Value.ToString("D10"));
-                outputStream.Write(paddedOffset, 0, paddedOffset.Length);
-
-                WriteWhitespace(outputStream);
-
-                var generation = OtherEncodings.StringAsLatin1Bytes(keyValuePair.Key.Generation.ToString("D5"));
-                outputStream.Write(generation, 0, generation.Length);
-
-                WriteWhitespace(outputStream);
-
-                outputStream.WriteByte(InUseEntry);
-
-                WriteWhitespace(outputStream);
-                WriteLineBreak(outputStream);
-            }
-
-            outputStream.Write(Trailer, 0, Trailer.Length);
-            WriteLineBreak(outputStream);
-
-            var identifier = new ArrayToken(new IToken[]
-            {
-                new HexToken(Guid.NewGuid().ToString("N").ToCharArray()),
-                new HexToken(Guid.NewGuid().ToString("N").ToCharArray())
-            });
-
-            var trailerDictionaryData = new Dictionary<NameToken, IToken>
-            {
-                // 1 for the free entry.
-                {NameToken.Size, new NumericToken(objectOffsets.Count + 1)},
-                {NameToken.Root, new IndirectReferenceToken(catalogToken)},
-                {NameToken.Id, identifier}
-            };
-
-            if (documentInformationReference.HasValue)
-            {
-                trailerDictionaryData[NameToken.Info] = new IndirectReferenceToken(documentInformationReference.Value);
-            }
-
-            var trailerDictionary = new DictionaryToken(trailerDictionaryData);
-
-            WriteDictionary(trailerDictionary, outputStream);
-            WriteLineBreak(outputStream);
-
-            outputStream.Write(StartXref, 0, StartXref.Length);
-            WriteLineBreak(outputStream);
-
-            WriteLong(position, outputStream);
-            WriteLineBreak(outputStream);
-
-            // Complete!
-            outputStream.Write(Eof, 0, Eof.Length);
-        }
-
-        private static void WriteCrossReferenceTable(IReadOnlyDictionary<IndirectReference, long> objectOffsets, Stream outputStream)
-        {
             var sets = new List<XrefSeries>();
 
             var orderedList = objectOffsets.OrderBy(x => x.Key.ObjectNumber).ToList();
@@ -258,11 +184,16 @@
                 }
             }
 
+            if (items.Count > 0)
+            {
+                sets.Add(new XrefSeries(firstObjectNumber, items));
+            }
+
             foreach (var series in sets)
             {
-                WriteLong(0, outputStream);
+                WriteLong(series.First, outputStream);
                 WriteWhitespace(outputStream);
-                // 1 extra for the free entry.
+
                 WriteLong(series.Offsets.Count, outputStream);
 
                 WriteWhitespace(outputStream);
@@ -302,6 +233,42 @@
                     }
                 }
             }
+
+            outputStream.Write(Trailer, 0, Trailer.Length);
+            WriteLineBreak(outputStream);
+
+            var identifier = new ArrayToken(new IToken[]
+            {
+                new HexToken(Guid.NewGuid().ToString("N").ToCharArray()),
+                new HexToken(Guid.NewGuid().ToString("N").ToCharArray())
+            });
+
+            var trailerDictionaryData = new Dictionary<NameToken, IToken>
+            {
+                // 1 for the free entry.
+                {NameToken.Size, new NumericToken(objectOffsets.Count + 1)},
+                {NameToken.Root, new IndirectReferenceToken(catalogToken)},
+                {NameToken.Id, identifier}
+            };
+
+            if (documentInformationReference.HasValue)
+            {
+                trailerDictionaryData[NameToken.Info] = new IndirectReferenceToken(documentInformationReference.Value);
+            }
+
+            var trailerDictionary = new DictionaryToken(trailerDictionaryData);
+
+            WriteDictionary(trailerDictionary, outputStream);
+            WriteLineBreak(outputStream);
+
+            outputStream.Write(StartXref, 0, StartXref.Length);
+            WriteLineBreak(outputStream);
+
+            WriteLong(position, outputStream);
+            WriteLineBreak(outputStream);
+
+            // Complete!
+            outputStream.Write(Eof, 0, Eof.Length);
         }
 
         /// <summary>
