@@ -97,7 +97,7 @@
             var crossReferenceStreamParser = new CrossReferenceStreamParser(filterProvider);
             var crossReferenceParser = new CrossReferenceParser(log, xrefValidator, crossReferenceStreamParser);
 
-            var version = FileHeaderParser.Parse(scanner, isLenientParsing, log);
+            var version = FileHeaderParser.Parse(scanner, inputBytes, isLenientParsing, log);
 
             var crossReferenceOffset = FileTrailerParser.GetFirstCrossReferenceOffset(inputBytes, scanner,
                 isLenientParsing) + version.OffsetInFile;

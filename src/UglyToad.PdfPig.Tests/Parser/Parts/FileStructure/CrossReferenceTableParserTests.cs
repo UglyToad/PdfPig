@@ -25,7 +25,7 @@
 trailer
 << >>");
 
-            var result = CrossReferenceTableParser.Parse(input, 4, false);
+            var result = CrossReferenceTableParser.Parse(input.scanner, 4, false);
 
             Assert.Equal(4, result.ObjectOffsets.Count);
         }
@@ -288,7 +288,7 @@ trailer
 
         private static CoreTokenScanner GetReader(string input)
         {
-            return StringBytesTestConverter.Scanner(input);
+            return StringBytesTestConverter.Scanner(input).scanner;
         }
     }
 }

@@ -29,40 +29,41 @@
     internal static class FileHeaderParser
     {
         [NotNull]
-        public static HeaderVersion Parse([NotNull]ISeekableTokenScanner scanner, bool isLenientParsing, ILog log)
+        public static HeaderVersion Parse([NotNull] ISeekableTokenScanner scanner, IInputBytes inputBytes, bool isLenientParsing, ILog log)
         {
             if (scanner == null)
             {
                 throw new ArgumentNullException(nameof(scanner));
             }
 
-            // Read the first token
-            if (!scanner.MoveNext())
-            {
-                throw new PdfDocumentFormatException($"Could not read the first token in the document at position {scanner.CurrentPosition}.");
-            }
+            var startPosition = scanner.CurrentPosition;
 
-            var comment = scanner.CurrentToken as CommentToken;
-
-            const int junkTokensTolerance = 25;
+            const int junkTokensTolerance = 30;
             var attempts = 0;
-            while (comment == null)
+            CommentToken comment;
+            do
             {
-                if (attempts == junkTokensTolerance)
+                if (attempts == junkTokensTolerance || !scanner.MoveNext())
                 {
-                    throw new PdfDocumentFormatException("Could not find the version header comment at the start of the document.");
-                }
+                    if (!TryBruteForceVersionLocation(startPosition, inputBytes, out var version))
+                    {
+                        throw new PdfDocumentFormatException("Could not find the version header comment at the start of the document.");
+                    }
 
-                if (!scanner.MoveNext())
-                {
-                    throw new PdfDocumentFormatException("Could not find the version header comment at the start of the document.");
+                    scanner.Seek(startPosition);
+                    return version;
                 }
 
                 comment = scanner.CurrentToken as CommentToken;
 
                 attempts++;
-            }
+            } while (comment == null);
 
+            return GetHeaderVersionAndResetScanner(comment, scanner, isLenientParsing, log);
+        }
+
+        private static HeaderVersion GetHeaderVersionAndResetScanner(CommentToken comment, ISeekableTokenScanner scanner, bool isLenientParsing, ILog log)
+        {
             if (comment.Data.IndexOf("PDF-1.", StringComparison.OrdinalIgnoreCase) != 0 && comment.Data.IndexOf("FDF-1.", StringComparison.OrdinalIgnoreCase) != 0)
             {
                 return HandleMissingVersion(comment, isLenientParsing, log);
@@ -70,7 +71,7 @@
 
             const int toDecimalStartLength = 4;
 
-            if (!decimal.TryParse(comment.Data.Substring(toDecimalStartLength), 
+            if (!decimal.TryParse(comment.Data.Substring(toDecimalStartLength),
                 NumberStyles.Number,
                 CultureInfo.InvariantCulture,
                 out var version))
@@ -88,6 +89,61 @@
             var result = new HeaderVersion(version, comment.Data, commentOffset);
 
             return result;
+        }
+
+        private static bool TryBruteForceVersionLocation(long startPosition, IInputBytes inputBytes, out HeaderVersion headerVersion)
+        {
+            headerVersion = null;
+
+            inputBytes.Seek(startPosition);
+
+            // %PDF-x.y or %FDF-x.y
+            const int versionLength = 8;
+            const int bufferLength = 64;
+
+            // Slide a window of bufferLength bytes across the file allowing for the fact the version could get split by
+            // the window (so always ensure an overlap of versionLength bytes between the end of the previous and start of the next buffer).
+            var buffer = new byte[bufferLength];
+
+            var currentOffset = startPosition;
+            int readLength;
+            do
+            {
+                readLength = inputBytes.Read(buffer, bufferLength);
+
+                var content = OtherEncodings.BytesAsLatin1String(buffer);
+
+                var pdfIndex = content.IndexOf("%PDF-", StringComparison.OrdinalIgnoreCase);
+                var fdfIndex = content.IndexOf("%FDF-", StringComparison.OrdinalIgnoreCase);
+                var actualIndex = pdfIndex >= 0 ? pdfIndex : fdfIndex;
+
+                if (actualIndex >= 0 && content.Length - actualIndex >= versionLength)
+                {
+                    var numberPart = content.Substring(actualIndex + 5, 3);
+                    if (decimal.TryParse(
+                            numberPart,
+                            NumberStyles.Number,
+                            CultureInfo.InvariantCulture,
+                            out var version))
+                    {
+                        var afterCommentSymbolIndex = actualIndex + 1;
+
+                        headerVersion = new HeaderVersion(
+                            version,
+                            content.Substring(afterCommentSymbolIndex, versionLength - 1),
+                            currentOffset + afterCommentSymbolIndex);
+
+                        inputBytes.Seek(startPosition);
+
+                        return true;
+                    }
+                }
+
+                currentOffset += readLength - versionLength;
+                inputBytes.Seek(currentOffset);
+            } while (readLength == bufferLength);
+
+            return false;
         }
 
         private static HeaderVersion HandleMissingVersion(CommentToken comment, bool isLenientParsing, ILog log)

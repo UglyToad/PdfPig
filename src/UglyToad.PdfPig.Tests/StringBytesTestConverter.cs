@@ -31,11 +31,12 @@
             public IInputBytes Bytes { get; set; }
         }
 
-        internal static CoreTokenScanner Scanner(string s)
+        internal static (CoreTokenScanner scanner, IInputBytes bytes) Scanner(string s)
         {
-            var result = new CoreTokenScanner(new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(s)));
+            var inputBytes = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(s));
+            var result = new CoreTokenScanner(inputBytes);
 
-            return result;
+            return (result, inputBytes);
         }
     }
 }
