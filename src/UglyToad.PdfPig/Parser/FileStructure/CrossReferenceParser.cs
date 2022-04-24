@@ -42,7 +42,7 @@
             long previousCrossReferenceLocation = crossReferenceLocation;
 
             var missedAttempts = 0;
-            
+
             // Parse all cross reference tables and streams.
             while (previousCrossReferenceLocation > 0 && missedAttempts < 100)
             {
@@ -193,7 +193,30 @@
                     log.Debug($"The cross reference found at this location ({previousCrossReferenceLocation}) was not a table or stream. " +
                               $"Found token ({tokenScanner.CurrentToken}) ending at {tokenScanner.CurrentPosition} instead. Seeking next token.");
 
-                    previousCrossReferenceLocation = tokenScanner.CurrentPosition;
+                    var storedCurrentTokenScannerPosition = tokenScanner.CurrentPosition;
+
+                    if (missedAttempts == 0)
+                    {
+                        // We might only be a little bit out so let's just check the neighbourhood (for tables only).
+                        const int bufferSize = 128;
+                        var from = Math.Max(0, previousCrossReferenceLocation - bufferSize / 2);
+
+                        bytes.Seek(from);
+
+                        var buffer = new byte[bufferSize];
+                        bytes.Read(buffer);
+                        var content = OtherEncodings.BytesAsLatin1String(buffer);
+
+                        var xrefAt = content.IndexOf("xref", StringComparison.OrdinalIgnoreCase);
+                        if (xrefAt >= 0)
+                        {
+                            previousCrossReferenceLocation = from + xrefAt;
+                            missedAttempts++;
+                            continue;
+                        }
+                    }
+
+                    previousCrossReferenceLocation = storedCurrentTokenScannerPosition;
 
                     missedAttempts++;
 
