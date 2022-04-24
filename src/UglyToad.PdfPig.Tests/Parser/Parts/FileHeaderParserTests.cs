@@ -170,7 +170,7 @@ three %PDF-1.6");
             var result = FileHeaderParser.Parse(scanner.scanner, scanner.bytes, false, log);
 
             Assert.Equal(0, scanner.scanner.CurrentPosition);
-            Assert.Equal(129, result.OffsetInFile);
+            Assert.Equal(128, result.OffsetInFile);
             Assert.Equal(1.1m, result.Version);
             Assert.Equal("PDF-1.1", result.VersionString);
         }

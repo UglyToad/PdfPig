@@ -131,7 +131,7 @@
                         headerVersion = new HeaderVersion(
                             version,
                             content.Substring(afterCommentSymbolIndex, versionLength - 1),
-                            currentOffset + afterCommentSymbolIndex);
+                            currentOffset + actualIndex);
 
                         inputBytes.Seek(startPosition);
 
