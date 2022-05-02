@@ -107,18 +107,25 @@
             CMap toUnicodeCMap = null;
             if (dictionary.TryGet(NameToken.ToUnicode, out var toUnicodeObj))
             {
-                var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, pdfScanner);
-
-                var decodedUnicodeCMap = toUnicode.Decode(filterProvider, pdfScanner);
-
-                if (decodedUnicodeCMap != null)
+                try
                 {
-                    toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap));
+                    var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, pdfScanner);
+
+                    var decodedUnicodeCMap = toUnicode.Decode(filterProvider, pdfScanner);
+
+                    if (decodedUnicodeCMap != null)
+                    {
+                        toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    log.Error("Failed to decode ToUnicode CMap for a TrueType font in file due to an exception.", ex);
                 }
             }
 
             Encoding encoding = encodingReader.Read(dictionary, descriptor);
-            
+
             if (encoding == null && font?.TableRegister?.CMapTable != null
                                  && font.TableRegister.PostScriptTable?.GlyphNames != null)
             {
@@ -199,7 +206,7 @@
                             $"Expected a TrueType font in the TrueType font descriptor, instead it was {descriptor.FontFile.FileType}.");
                     }
                 }
-                
+
                 var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFile)));
 
                 return font;
