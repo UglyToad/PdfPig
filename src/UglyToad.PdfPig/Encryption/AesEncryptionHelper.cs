@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Encryption
 {
     using System;
-    using System.Diagnostics;
     using System.IO;
     using System.Security.Cryptography;
 
@@ -28,11 +27,6 @@
                 rijndael.IV = iv;
 
                 var buffer = new byte[256];
-
-                if (data.Length > 256)
-                {
-                    Debugger.Break();
-                }
 
                 using (var decryptor = rijndael.CreateDecryptor(rijndael.Key, rijndael.IV))
                 using (var input = new MemoryStream(data))
