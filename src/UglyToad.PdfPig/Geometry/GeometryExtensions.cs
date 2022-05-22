@@ -269,11 +269,12 @@
 
             double polarAngle(PdfPoint point1, PdfPoint point2)
             {
+                // This is used for grouping, we could use Math.Round()
                 return Math.Atan2(point2.Y - point1.Y, point2.X - point1.X) % Math.PI;
             }
 
-            Stack<PdfPoint> stack = new Stack<PdfPoint>();
-            var sortedPoints = points.OrderBy(p => p.Y).ThenBy(p => p.X).ToList();
+            var stack = new Stack<PdfPoint>();
+            var sortedPoints = points.OrderBy(p => p.X).ThenBy(p => p.Y).ToList();
             var P0 = sortedPoints[0];
             var groups = sortedPoints.Skip(1).GroupBy(p => polarAngle(P0, p)).OrderBy(g => g.Key);
 
@@ -309,7 +310,7 @@
             for (int i = 2; i < sortedPoints.Count; i++)
             {
                 var point = sortedPoints[i];
-                while (!ccw(stack.ElementAt(1), stack.Peek(), point))
+                while (stack.Count > 1 && !ccw(stack.ElementAt(1), stack.Peek(), point))
                 {
                     stack.Pop();
                 }

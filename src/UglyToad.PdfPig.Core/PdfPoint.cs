@@ -67,7 +67,7 @@
         {
             return new PdfPoint(X + dx, Y);
         }
-        
+
         /// <summary>
         /// Creates a new <see cref="PdfPoint"/> which is the current point moved in the y direction relative to its current position by a value.
         /// </summary>

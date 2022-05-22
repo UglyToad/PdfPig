@@ -528,6 +528,52 @@
                 }
             }
         };
+
+        public static IEnumerable<object[]> Issue458Data => new[]
+        {
+            new object[]
+            {
+                new PdfPoint[]
+                {
+                    new PdfPoint(134.74199999999985, 1611.657),
+                    new PdfPoint(277.58043749999985, 1611.657),
+                    new PdfPoint(314.74199999999985, 1611.657),
+                    new PdfPoint(507.0248828124999, 1611.657),
+                    new PdfPoint(545.1419999999998, 1611.657),
+                    new PdfPoint(632.9658281249997, 1611.657),
+                    new PdfPoint(668.5709999999998, 1611.657),
+                    new PdfPoint(831.3395078125002, 1611.657),
+                    new PdfPoint(868.1139999999998, 1611.657),
+                    new PdfPoint(892.8907187499999, 1611.657),
+                    new PdfPoint(1010.0569999999999, 1611.6569999999997),
+                    new PdfPoint(1046.2174003906248, 1611.7654812011715),
+                    new PdfPoint(1010.0569999999999, 1611.657),
+                    new PdfPoint(1046.2174003906248, 1611.7654812011717),
+                    new PdfPoint(1085.145, 1611.8822639999996),
+                    new PdfPoint(1255.484941406251, 1612.3932838242179),
+                    new PdfPoint(1301.144, 1612.5302609999994),
+                    new PdfPoint(1359.0006406250002, 1612.7038309218747),
+                    new PdfPoint(1301.144, 1612.5302609999997),
+                    new PdfPoint(1359.0006406250002, 1612.703830921875),
+                    new PdfPoint(1400.915, 1612.8295739999996),
+                    new PdfPoint(1505.379062499999, 1613.1429661874993),
+                    new PdfPoint(1400.915, 1612.8295739999999),
+                    new PdfPoint(1505.379062499999, 1613.1429661874995),
+                    new PdfPoint(1543.886, 1613.2584869999996),
+                    new PdfPoint(1600.9401015625003, 1613.4296493046872),
+                    new PdfPoint(1641.597, 1613.5516199999997),
+                    new PdfPoint(1764.5577421874998, 1613.9205022265612),
+                    new PdfPoint(1641.597, 1613.55162),
+                    new PdfPoint(1764.5577421874998, 1613.9205022265614)
+                },
+                new PdfPoint[]
+                {
+                    new PdfPoint(134.74199999999985, 1611.657),
+                    new PdfPoint(1010.0569999999999, 1611.6569999999997),
+                    new PdfPoint(1764.5577421874998, 1613.9205022265614),
+                }
+            }
+        };
         #endregion
 
         [Fact]
@@ -570,7 +616,6 @@
             }
         }
 
-
         [Theory]
         [MemberData(nameof(MinimumAreaRectangleData))]
         public void MinimumAreaRectangle(PdfPoint[] points, PdfPoint[] expected)
@@ -583,6 +628,52 @@
             for (var i = 0; i < expected.Length; i++)
             {
                 Assert.Equal(expected[i], mar[i], PointComparer);
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(Issue458Data))]
+        public void Issue458(PdfPoint[] points, PdfPoint[] expected)
+        {
+            /*
+             * https://github.com/UglyToad/PdfPig/issues/458
+             * An unhandled exception of type 'System.ArgumentOutOfRangeException' occurred in System.Linq.dll: 'Specified argument was out of the range of valid values.'
+             *  at System.Linq.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument argument)
+             *  at System.Linq.Enumerable.ElementAt[TSource](IEnumerable`1 source, Int32 index)
+             */
+
+            var result = GeometryExtensions.GrahamScan(points);
+
+            // Data is noisy so we just check it does not throw an exception
+            // and that key points are present (other points might be present,
+            // e.g. 'not enough equal dupplicates' or 'not collinear enough' points)
+            foreach (var point in expected)
+            {
+                Assert.Contains(point, result);
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(Issue458Data))]
+        public void Issue458_Inv(PdfPoint[] points, PdfPoint[] expected)
+        {
+            /*
+             * https://github.com/UglyToad/PdfPig/issues/458
+             * An unhandled exception of type 'System.ArgumentOutOfRangeException' occurred in System.Linq.dll: 'Specified argument was out of the range of valid values.'
+             *  at System.Linq.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument argument)
+             *  at System.Linq.Enumerable.ElementAt[TSource](IEnumerable`1 source, Int32 index)
+             */
+            var pointsInv = points.Select(p => new PdfPoint(p.Y, p.X)).ToArray();
+            var expectedInv = expected.Select(p => new PdfPoint(p.Y, p.X)).ToArray();
+
+            var result = GeometryExtensions.GrahamScan(pointsInv);
+
+            // Data is noisy so we just check it does not throw an exception
+            // and that key points are present (other points might be present,
+            // e.g. 'not enough equal dupplicates' or 'not collinear enough' points)
+            foreach (var point in expectedInv)
+            {
+                Assert.Contains(point, result);
             }
         }
     }
