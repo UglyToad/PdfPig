@@ -4,6 +4,7 @@
     using Core;
     using Filters;
     using PdfPig.CrossReference;
+    using Tokenization.Scanner;
     using Tokens;
     using Util;
 
@@ -19,9 +20,9 @@
         /// <summary>
         /// Parses through the unfiltered stream and populates the xrefTable HashMap.
         /// </summary>
-        public CrossReferenceTablePart Parse(long streamOffset, long? fromTableAtOffset, StreamToken stream)
+        public CrossReferenceTablePart Parse(long streamOffset, long? fromTableAtOffset, StreamToken stream, IPdfTokenScanner pdfTokenScanner)
         {
-            var decoded = stream.Decode(filterProvider);
+            var decoded = stream.DecodeWithLookup(filterProvider, pdfTokenScanner);
 
             var fieldSizes = new CrossReferenceStreamFieldSize(stream.StreamDictionary);
 

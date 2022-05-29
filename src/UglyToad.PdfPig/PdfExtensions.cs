@@ -51,8 +51,12 @@
         /// Get the decoded data from this stream.
         /// </summary>
         public static IReadOnlyList<byte> Decode(this StreamToken stream, IFilterProvider filterProvider)
+            => DecodeWithLookup(stream, filterProvider, null);
+        internal static IReadOnlyList<byte> DecodeWithLookup(this StreamToken stream, IFilterProvider filterProvider, IPdfTokenScanner pdfTokenScanner)
         {
-            var filters = filterProvider.GetFilters(stream.StreamDictionary);
+            var filters = pdfTokenScanner != null
+                ? new FilterProviderWithLookup(filterProvider).GetFilters(stream.StreamDictionary, pdfTokenScanner)
+                : filterProvider.GetFilters(stream.StreamDictionary);
 
             var transform = stream.Data;
             for (var i = 0; i < filters.Count; i++)

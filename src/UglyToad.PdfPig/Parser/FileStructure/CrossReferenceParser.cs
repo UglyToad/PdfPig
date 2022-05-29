@@ -269,7 +269,7 @@
                 return false;
             }
             
-            xrefTablePart = crossReferenceStreamParser.Parse(objByteOffset, fromTableAtOffset, objectStream);
+            xrefTablePart = crossReferenceStreamParser.Parse(objByteOffset, fromTableAtOffset, objectStream, pdfScanner);
 
             return true;
         }
