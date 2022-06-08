@@ -181,6 +181,111 @@
         }
 
         /// <summary>
+        /// Draws a triangle on the current page with the specified points and line width.
+        /// </summary>
+        /// <param name="point1">Position of the first corner of the triangle.</param>
+        /// <param name="point2">Position of the second corner of the triangle.</param>
+        /// <param name="point3">Position of the third corner of the triangle.</param>
+        /// <param name="lineWidth">The width of the line border of the triangle.</param>
+        /// <param name="fill">Whether to fill with the color set by <see cref="SetTextAndFillColor"/>.</param>
+        public void DrawTriangle(PdfPoint point1, PdfPoint point2, PdfPoint point3, decimal lineWidth = 1, bool fill = false)
+        {
+            if (lineWidth != 1)
+            {
+                currentStream.Add(new SetLineWidth(lineWidth));
+            }
+
+            currentStream.Add(new BeginNewSubpath((decimal)point1.X, (decimal)point1.Y));
+            currentStream.Add(new AppendStraightLineSegment((decimal)point2.X, (decimal)point2.Y));
+            currentStream.Add(new AppendStraightLineSegment((decimal)point3.X, (decimal)point3.Y));
+            currentStream.Add(new AppendStraightLineSegment((decimal)point1.X, (decimal)point1.Y));
+
+            if (fill)
+            {
+                currentStream.Add(FillPathEvenOddRuleAndStroke.Value);
+            }
+            else
+            {
+                currentStream.Add(StrokePath.Value);
+            }
+
+            if (lineWidth != 1)
+            {
+                currentStream.Add(new SetLineWidth(lineWidth));
+            }
+        }
+
+        /// <summary>
+        /// Draws a circle on the current page centering at the specified point with the given diameter and line width.
+        /// </summary>
+        /// <param name="center">The center position of the circle.</param>
+        /// <param name="diameter">The diameter of the circle.</param>
+        /// <param name="lineWidth">The width of the line border of the circle.</param>
+        /// <param name="fill">Whether to fill with the color set by <see cref="SetTextAndFillColor"/>.</param>
+        public void DrawCircle(PdfPoint center, decimal diameter, decimal lineWidth = 1, bool fill = false)
+        {
+            DrawEllipsis(center, diameter, diameter, lineWidth, fill);
+        }
+
+        /// <summary>
+        /// Draws an ellipsis on the current page centering at the specified point with the given width, height and line width.
+        /// </summary>
+        /// <param name="center">The center position of the ellipsis.</param>
+        /// <param name="width">The width of the ellipsis.</param>
+        /// <param name="height">The height of the ellipsis.</param>
+        /// <param name="lineWidth">The width of the line border of the ellipsis.</param>
+        /// <param name="fill">Whether to fill with the color set by <see cref="SetTextAndFillColor"/>.</param>
+        public void DrawEllipsis(PdfPoint center, decimal width, decimal height, decimal lineWidth = 1, bool fill = false)
+        {
+            width /= 2;
+            height /= 2;
+
+            // See here: https://spencermortensen.com/articles/bezier-circle/
+            decimal cc = 0.5519150244935105707435627m;
+
+            if (lineWidth != 1)
+            {
+                currentStream.Add(new SetLineWidth(lineWidth));
+            }
+
+            currentStream.Add(new BeginNewSubpath((decimal)center.X - width, (decimal)center.Y));
+            currentStream.Add(new AppendDualControlPointBezierCurve(
+                (decimal)center.X - width, (decimal)center.Y + height * cc,
+                (decimal)center.X - width * cc, (decimal)center.Y + height,
+                (decimal)center.X, (decimal)center.Y + height
+            ));
+            currentStream.Add(new AppendDualControlPointBezierCurve(
+                (decimal)center.X + width * cc, (decimal)center.Y + height,
+                (decimal)center.X + width, (decimal)center.Y + height * cc,
+                (decimal)center.X + width, (decimal)center.Y
+            ));
+            currentStream.Add(new AppendDualControlPointBezierCurve(
+                (decimal)center.X + width, (decimal)center.Y - height * cc,
+                (decimal)center.X + width * cc, (decimal)center.Y - height,
+                (decimal)center.X, (decimal)center.Y - height
+            ));
+            currentStream.Add(new AppendDualControlPointBezierCurve(
+                (decimal)center.X - width * cc, (decimal)center.Y - height,
+                (decimal)center.X - width, (decimal)center.Y - height * cc,
+                (decimal)center.X - width, (decimal)center.Y
+            ));
+
+            if (fill)
+            {
+                currentStream.Add(FillPathEvenOddRuleAndStroke.Value);
+            }
+            else
+            {
+                currentStream.Add(StrokePath.Value);
+            }
+
+            if (lineWidth != 1)
+            {
+                currentStream.Add(new SetLineWidth(lineWidth));
+            }
+        }
+
+        /// <summary>
         /// Sets the stroke color for any following operations to the RGB value. Use <see cref="ResetColor"/> to reset.
         /// </summary>
         /// <param name="r">Red - 0 to 255</param>
