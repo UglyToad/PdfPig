@@ -241,7 +241,7 @@
             height /= 2;
 
             // See here: https://spencermortensen.com/articles/bezier-circle/
-            decimal cc = 0.5519150244935105707435627m;
+            decimal cc = 0.55228474983079m;
 
             if (lineWidth != 1)
             {
