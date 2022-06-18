@@ -155,6 +155,12 @@
                     default:
                         if (!decimal.TryParse(str, NumberStyles.Any, CultureInfo.InvariantCulture, out var value))
                         {
+                            if (TryParseInvalidNumber(str, out value))
+                            {
+                                token = new NumericToken(value);
+                                return true;
+                            }
+
                             return false;
                         }
 
@@ -170,6 +176,35 @@
             {
                 return false;
             }
+        }
+
+        private static bool TryParseInvalidNumber(string numeric, out decimal result)
+        {
+            result = 0;
+
+            if (!numeric.Contains("-") && !numeric.Contains("+"))
+            {
+                return false;
+            }
+
+            var parts = numeric.Split(new string[] { "+", "-" }, StringSplitOptions.RemoveEmptyEntries);
+
+            if (parts.Length == 0)
+            {
+                return false;
+            }
+
+            foreach (var part in parts)
+            {
+                if (!decimal.TryParse(part, NumberStyles.Any, CultureInfo.InvariantCulture, out var partNumber))
+                {
+                    return false;
+                }
+
+                result += partNumber;
+            }
+
+            return true;
         }
     }
 }
