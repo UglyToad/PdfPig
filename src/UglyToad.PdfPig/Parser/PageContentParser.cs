@@ -94,7 +94,7 @@
                                 throw new InvalidOperationException($"Failed to read expected buffer length {gap} on page {pageNumber} " +
                                                                     $"when reading inline image at offset in content: {lastEndImageOffset.Value}.");
                             }
-                            
+
                             // Replace the last end image operator with one containing the full set of data.
                             graphicsStateOperations.Remove(lastEndImage);
                             graphicsStateOperations.Add(new EndInlineImage(lastEndImage.ImageData.Concat(missingData).ToArray()));
@@ -141,6 +141,13 @@
                                 var newEndInlineImage = new EndInlineImage(prevEndInlineImage.ImageData.Concat(nextByteSet).ToList());
                                 graphicsStateOperations.Add(newEndInlineImage);
                                 lastEndImageOffset = scanner.CurrentPosition - 3;
+                            }
+                            else if (op.Data == "inf")
+                            {
+                                // Value representing infinity in broken file from #467.
+                                // Treat as zero.
+                                precedingTokens.Add(NumericToken.Zero);
+                                continue;
                             }
                             else
                             {
