@@ -1,16 +1,16 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
+    using Annotations;
+    using Graphics;
+    using Graphics.Operations;
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Text;
-    using Annotations;
-    using Graphics.Operations;
+    using Tokenization.Scanner;
     using Tokens;
     using Util;
     using Util.JetBrains.Annotations;
-    using Tokenization.Scanner;
-    using Graphics;
-    using System.Linq;
 
     /// <summary>
     /// Contains the content and provides access to methods of a single page in the <see cref="PdfDocument"/>.
@@ -137,6 +137,22 @@
         /// </summary>
         /// <returns>The words on this page.</returns>
         public IEnumerable<Word> GetWords() => GetWords(DefaultWordExtractor.Instance);
+
+        /// <summary>
+        /// Returns Page text with whitespaces.
+        /// </summary>
+        /// <returns></returns>
+        public String GetTextWithWhiteSpaces()
+        {
+            List<Word> words = new List<Word>();
+
+            foreach (Word word in GetWords())
+            {
+                words.Add(word);
+            }
+
+            return string.Join(" ", words);
+        }
 
         /// <summary>
         /// Use a custom <see cref="IWordExtractor"/> to get the words for this page.
