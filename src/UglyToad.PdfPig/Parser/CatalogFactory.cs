@@ -5,8 +5,10 @@
     using Content;
     using Core;
     using Parts;
+    using System.Linq;
     using Tokenization.Scanner;
     using Tokens;
+    using Util;
 
     internal static class CatalogFactory
     {
@@ -80,6 +82,8 @@
 
                 return new PageTreeNode(nodeDictionaryInput, referenceInput, true, pageNumber.PageCount).WithChildren(EmptyArray<PageTreeNode>.Instance);
             }
+            
+            
 
             //If we got here, we have to iterate till we manage to exit
 
@@ -126,8 +130,6 @@
 
                     if (isChildPage)
                     {
-                        pageNumber.Increment();
-
                         var kidPageNode =
                             new PageTreeNode(kidDictionaryToken, kidRef.Data, true, pageNumber.PageCount).WithChildren(EmptyArray<PageTreeNode>.Instance);
                         current.nodeChildren.Add(kidPageNode);
@@ -150,6 +152,12 @@
             foreach (var action in setChildren)
             {
                 action();
+            }
+
+            foreach (var child in firstPage.Children.ToRecursiveOrderList(x=>x.Children).Where(child => child.IsPage))
+            {
+                pageNumber.Increment();
+                child.PageNumber = pageNumber.PageCount;
             }
 
             return firstPage;

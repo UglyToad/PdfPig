@@ -32,7 +32,7 @@
         /// <summary>
         /// The number of this page if <see cref="IsPage"/> is <see langword="true"/>.
         /// </summary>
-        public int? PageNumber { get; }
+        public int? PageNumber { get; internal set; }
 
         /// <summary>
         /// The child nodes of this node if <see cref="IsPage"/> is <see langword="false" />
