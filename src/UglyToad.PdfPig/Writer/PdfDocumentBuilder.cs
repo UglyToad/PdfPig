@@ -290,13 +290,15 @@ namespace UglyToad.PdfPig.Writer
             new ConditionalWeakTable<IPdfTokenScanner, Dictionary<IndirectReference, IndirectReferenceToken>>();
         private readonly ConditionalWeakTable<PdfDocument, Dictionary<int, PageInfo>> existingTrees =
             new ConditionalWeakTable<PdfDocument, Dictionary<int, PageInfo>>();
+
         /// <summary>
         /// Add a new page with the specified size, this page will be included in the output when <see cref="Build"/> is called.
         /// </summary>
         /// <param name="document">Source document.</param>
         /// <param name="pageNumber">Page to copy.</param>
+        /// <param name="keepAnnotations">Flag to set whether annotation of page should be kept</param>
         /// <returns>A builder for editing the page.</returns>
-        public PdfPageBuilder AddPage(PdfDocument document, int pageNumber)
+        public PdfPageBuilder AddPage(PdfDocument document, int pageNumber, bool keepAnnotations = true)
         {
             if (!existingCopies.TryGetValue(document.Structure.TokenScanner, out var refs))
             {
@@ -395,7 +397,7 @@ namespace UglyToad.PdfPig.Writer
                     continue;
                 }
 
-                if (kvp.Key == NameToken.Annots)
+                if (kvp.Key == NameToken.Annots && keepAnnotations)
                 {
                     var val = kvp.Value;
                     if (kvp.Value is IndirectReferenceToken ir)
