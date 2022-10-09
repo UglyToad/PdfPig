@@ -23,10 +23,12 @@
             Count = catalog.PagesDictionary.GetIntOrDefault(NameToken.Count);
         }
         
-        public Page GetPage(int pageNumber, bool clipPaths)
+        public Page GetPage(int pageNumber, InternalParsingOptions parsingOptions)
         {
             if (pageNumber <= 0 || pageNumber > Count)
             {
+                parsingOptions.Logger.Error($"Page {pageNumber} requested but is out of range.");
+
                 throw new ArgumentOutOfRangeException(nameof(pageNumber), 
                     $"Page number {pageNumber} invalid, must be between 1 and {Count}.");
             }
@@ -63,7 +65,11 @@
                 }
             }
 
-            var page = pageFactory.Create(pageNumber, pageNode.NodeDictionary, pageTreeMembers, clipPaths);
+            var page = pageFactory.Create(
+                pageNumber,
+                pageNode.NodeDictionary,
+                pageTreeMembers,
+                parsingOptions);
             
             return page;
         }

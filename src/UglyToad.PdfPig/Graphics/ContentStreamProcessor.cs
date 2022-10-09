@@ -5,7 +5,6 @@
     using Core;
     using Filters;
     using Geometry;
-    using Logging;
     using Operations;
     using Parser;
     using PdfFonts;
@@ -49,9 +48,8 @@
         private readonly IPdfTokenScanner pdfScanner;
         private readonly IPageContentParser pageContentParser;
         private readonly ILookupFilterProvider filterProvider;
-        private readonly ILog log;
-        private readonly bool clipPaths;
         private readonly PdfVector pageSize;
+        private readonly InternalParsingOptions parsingOptions;
         private readonly MarkedContentStack markedContentStack = new MarkedContentStack();
 
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
@@ -90,9 +88,8 @@
             IPdfTokenScanner pdfScanner,
             IPageContentParser pageContentParser,
             ILookupFilterProvider filterProvider,
-            ILog log,
-            bool clipPaths,
-            PdfVector pageSize)
+            PdfVector pageSize,
+            InternalParsingOptions parsingOptions)
         {
             this.resourceStore = resourceStore;
             this.userSpaceUnit = userSpaceUnit;
@@ -100,9 +97,8 @@
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
             this.pageContentParser = pageContentParser ?? throw new ArgumentNullException(nameof(pageContentParser));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
-            this.log = log;
-            this.clipPaths = clipPaths;
             this.pageSize = pageSize;
+            this.parsingOptions = parsingOptions;
 
             // initiate CurrentClippingPath to cropBox
             var clippingSubpath = new PdfSubpath();
@@ -230,6 +226,15 @@
 
             if (font == null)
             {
+                if (parsingOptions.SkipMissingFonts)
+                {
+                    parsingOptions.Logger.Warn($"Skipping a missing font with name {currentState.FontState.FontName} " +
+                                               $"since it is not present in the document and {nameof(InternalParsingOptions.SkipMissingFonts)} " +
+                                               "is set to true. This may result in some text being skipped and not included in the output.");
+
+                    return;
+                }
+
                 throw new InvalidOperationException($"Could not find the font with name {currentState.FontState.FontName} in the resource store. It has not been loaded yet.");
             }
 
@@ -253,7 +258,8 @@
 
                 if (!foundUnicode || unicode == null)
                 {
-                    log.Warn($"We could not find the corresponding character with code {code} in font {font.Name}.");
+                    parsingOptions.Logger.Warn($"We could not find the corresponding character with code {code} in font {font.Name}.");
+
                     // Try casting directly to string as in PDFBox 1.8.
                     unicode = new string((char)code, 1);
                 }
@@ -494,7 +500,7 @@
 
             var contentStream = formStream.Decode(filterProvider, pdfScanner);
 
-            var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentStream), log);
+            var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentStream), parsingOptions.Logger);
 
             // 3. We don't respect clipping currently.
 
@@ -677,7 +683,7 @@
 
             if (CurrentPath.IsClipping)
             {
-                if (!clipPaths)
+                if (!parsingOptions.ClipPaths)
                 {
                     // if we don't clip paths, add clipping path to paths
                     paths.Add(CurrentPath);
@@ -717,9 +723,9 @@
                 CurrentPath.FillColor = currentState.CurrentNonStrokingColor;
             }
 
-            if (clipPaths)
+            if (parsingOptions.ClipPaths)
             {
-                var clippedPath = currentState.CurrentClippingPath.Clip(CurrentPath, log);
+                var clippedPath = currentState.CurrentClippingPath.Clip(CurrentPath, parsingOptions.Logger);
                 if (clippedPath != null)
                 {
                     paths.Add(clippedPath);
@@ -745,15 +751,15 @@
             AddCurrentSubpath();
             CurrentPath.SetClipping(clippingRule);
 
-            if (clipPaths)
+            if (parsingOptions.ClipPaths)
             {
                 var currentClipping = GetCurrentState().CurrentClippingPath;
                 currentClipping.SetClipping(clippingRule);
 
-                var newClippings = CurrentPath.Clip(currentClipping, log);
+                var newClippings = CurrentPath.Clip(currentClipping, parsingOptions.Logger);
                 if (newClippings == null)
                 {
-                    log.Warn("Empty clipping path found. Clipping path not updated.");
+                    parsingOptions.Logger.Warn("Empty clipping path found. Clipping path not updated.");
                 }
                 else
                 {
@@ -796,7 +802,7 @@
         {
             if (inlineImageBuilder != null)
             {
-                log?.Error("Begin inline image (BI) command encountered while another inline image was active.");
+                parsingOptions.Logger.Error("Begin inline image (BI) command encountered while another inline image was active.");
             }
 
             inlineImageBuilder = new InlineImageBuilder();
@@ -806,7 +812,7 @@
         {
             if (inlineImageBuilder == null)
             {
-                log?.Error("Begin inline image data (ID) command encountered without a corresponding begin inline image (BI) command.");
+                parsingOptions.Logger.Error("Begin inline image data (ID) command encountered without a corresponding begin inline image (BI) command.");
                 return;
             }
 
@@ -817,7 +823,7 @@
         {
             if (inlineImageBuilder == null)
             {
-                log?.Error("End inline image (EI) command encountered without a corresponding begin inline image (BI) command.");
+                parsingOptions.Logger.Error("End inline image (EI) command encountered without a corresponding begin inline image (BI) command.");
                 return;
             }
 
