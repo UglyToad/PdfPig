@@ -52,6 +52,11 @@
 
                 foreach (var pair in xobjectDictionary.Data)
                 {
+                    if (pair.Value is NullToken)
+                    {
+                        continue;
+                    }
+
                     if (!(pair.Value is IndirectReferenceToken reference))
                     {
                         throw new InvalidOperationException($"Expected the XObject dictionary value for key /{pair.Key} to be an indirect reference, instead got: {pair.Value}.");
