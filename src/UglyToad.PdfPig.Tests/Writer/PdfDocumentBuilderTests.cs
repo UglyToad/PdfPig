@@ -135,7 +135,6 @@
             var first = IntegrationHelpers.GetDocumentPath("outline.pdf");
             var contents = File.ReadAllBytes(first);
 
-            var annotCount = 0;
             byte[] results = null;
             using (var existing = PdfDocument.Open(contents, ParsingOptions.LenientParsingOff))
             using (var output = new PdfDocumentBuilder())
@@ -144,16 +143,14 @@
                 results = output.Build();
                 var pg = existing.GetPage(1);
                 var annots = pg.ExperimentalAccess.GetAnnotations().ToList();
-                annotCount = annots.Count;
-                Assert.Contains(annots, x => x.Type == Annotations.AnnotationType.Link);
+                Assert.NotEmpty(annots);
             }
 
             using (var rewritten = PdfDocument.Open(results, ParsingOptions.LenientParsingOff))
             {
                 var pg = rewritten.GetPage(1);
                 var annots = pg.ExperimentalAccess.GetAnnotations().ToList();
-                Assert.Equal(annotCount - 1, annots.Count);
-                Assert.DoesNotContain(annots, x => x.Type == Annotations.AnnotationType.Link);
+                Assert.Empty(annots);
             }
         }
 

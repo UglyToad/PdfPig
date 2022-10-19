@@ -397,8 +397,13 @@ namespace UglyToad.PdfPig.Writer
                     continue;
                 }
 
-                if (kvp.Key == NameToken.Annots && keepAnnotations)
+                if (kvp.Key == NameToken.Annots)
                 {
+                    if (!keepAnnotations)
+                    {
+                        continue;
+                    }
+                    
                     var val = kvp.Value;
                     if (kvp.Value is IndirectReferenceToken ir)
                     {
