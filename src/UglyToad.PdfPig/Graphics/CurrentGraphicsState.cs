@@ -61,7 +61,12 @@ namespace UglyToad.PdfPig.Graphics
         /// <summary>
         /// Opacity value to be used for transparent imaging.
         /// </summary>
-        public decimal AlphaConstant { get; set; } = 1;
+        public decimal AlphaConstantStroking { get; set; } = 1;
+
+        /// <summary>
+        /// Opacity value to be used for transparent imaging.
+        /// </summary>
+        public decimal AlphaConstantNonStroking { get; set; } = 1;
 
         /// <summary>
         /// Should soft mask and alpha constant values be interpreted as shape (<see langword="true"/>) or opacity (<see langword="false"/>) values?
@@ -129,7 +134,8 @@ namespace UglyToad.PdfPig.Graphics
                 CapStyle = CapStyle,
                 MiterLimit = MiterLimit,
                 Flatness = Flatness,
-                AlphaConstant = AlphaConstant,
+                AlphaConstantStroking = AlphaConstantStroking,
+                AlphaConstantNonStroking = AlphaConstantNonStroking,
                 AlphaSource = AlphaSource,
                 NonStrokingOverprint = NonStrokingOverprint,
                 OverprintMode = OverprintMode,

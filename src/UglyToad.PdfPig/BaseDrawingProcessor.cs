@@ -238,8 +238,8 @@
                 // In modes that perform both filling and stroking, the effect is as if each glyph outline were filled and then stroked in separate operations.
                 // TODO: expose color as something more advanced
                 var color = currentState.FontState.TextRenderingMode != TextRenderingMode.Stroke
-                    ? currentState.CurrentNonStrokingColor
-                    : currentState.CurrentStrokingColor;
+                    ? new AlphaColor(currentState.AlphaConstantNonStroking, currentState.CurrentNonStrokingColor)
+                    : new AlphaColor(currentState.AlphaConstantStroking, currentState.CurrentStrokingColor);
 
                 if (font.TryGetPath(code, out var path))
                 {
@@ -681,6 +681,196 @@
                 currentGraphicsState.FontState.FromExtendedGraphicsState = true;
                 currentGraphicsState.FontState.FontSize = (double)sizeToken.Data;
                 activeExtendedGraphicsStateFont = resourceStore.GetFontDirectly(fontReference);
+            }
+
+            if (state.TryGet(NameToken.Ais, pdfScanner, out BooleanToken aisToken))
+            {
+                /*  Page 223
+                    The alpha source flag (“alpha is shape”), specifying
+                    whether the current soft mask and alpha constant are to be interpreted as
+                    shape values (true) or opacity values (false). 
+                */
+                currentGraphicsState.AlphaSource = aisToken.Data;
+            }
+
+
+            if (state.TryGet(NameToken.Bm, pdfScanner, out NameToken bmNameToken))
+            {
+                /*  Page 223
+                    (Optional; PDF 1.4) The current blend mode to be used in the transparent
+                    imaging model (see Sections 7.2.4, “Blend Mode,” and 7.5.2, “Specifying
+                    Blending Color Space and Blend Mode”).
+                 */
+                SetBlendModeFromToken(bmNameToken);
+            }
+
+            if (state.TryGet(NameToken.Bm, pdfScanner, out ArrayToken bmArrayToken))
+            {
+                /*  Page 223
+                    (Optional; PDF 1.4) The current blend mode to be used in the transparent
+                    imaging model (see Sections 7.2.4, “Blend Mode,” and 7.5.2, “Specifying
+                    Blending Color Space and Blend Mode”).
+                 */
+                foreach (var item in bmArrayToken.Data)
+                {
+                    SetBlendModeFromToken(bmNameToken);
+                }
+            }
+
+            if (state.TryGet(NameToken.Ca, pdfScanner, out NumericToken caToken))
+            {
+                /*  Page 223
+                    (Optional; PDF 1.4) The current stroking alpha constant, specifying the constant shape or constant opacity value to be used for stroking operations in the
+                    transparent imaging model (see “Source Shape and Opacity” on page 526 and
+                    “Constant Shape and Opacity” on page 551).                     
+                 */
+                currentGraphicsState.AlphaConstantStroking = caToken.Data;
+            }
+
+            if (state.TryGet(NameToken.CaNs, pdfScanner, out NumericToken cansToken))
+            {
+                /*  Page 223
+                    (Optional; PDF 1.4) The current stroking alpha constant, specifying the constant shape or constant opacity value to be used for NON-stroking operations in the
+                    transparent imaging model (see “Source Shape and Opacity” on page 526 and
+                    “Constant Shape and Opacity” on page 551).                     
+                 */
+                //var fk = 0;
+                //var qk = 0;
+                currentGraphicsState.AlphaConstantNonStroking = cansToken.Data;
+                Debug.WriteLine($"AlphaConstant: {cansToken.Data}");
+            }
+
+            if (state.TryGet(NameToken.Op, pdfScanner, out BooleanToken OPToken))
+            {
+                /*  Page 223
+                    (Optional) A flag specifying whether to apply overprint (see Section 4.5.6,
+                    “Overprint Control”). In PDF 1.2 and earlier, there is a single overprint
+                    parameter that applies to all painting operations. Beginning with PDF 1.3,
+                    there are two separate overprint parameters: one for stroking and one for all
+                    other painting operations. Specifying an OP entry sets both parameters unless there is also an op entry in the same graphics state parameter dictionary,
+                    in which case the OP entry sets only the overprint parameter for stroking.                  
+                 */
+                currentGraphicsState.Overprint = OPToken.Data;
+            }
+
+            if (state.TryGet(NameToken.OpNs, pdfScanner, out BooleanToken opToken))
+            {
+                /*  Page 223
+                    (Optional; PDF 1.3) A flag specifying whether to apply overprint (see Section
+                    4.5.6, “Overprint Control”) for painting operations other than stroking. If
+                    this entry is absent, the OP entry, if any, sets this parameter.    
+                
+                    Page 284
+                 */
+                currentGraphicsState.NonStrokingOverprint = opToken.Data;
+            }
+
+            if (state.TryGet(NameToken.Opm, pdfScanner, out NumericToken opmToken))
+            {
+                /*  Page 223
+                    (Optional; PDF 1.3) The overprint mode (see Section 4.5.6, “Overprint Control”). 
+                
+                    Page 284
+                 */
+                currentGraphicsState.OverprintMode = opmToken.Data;
+            }
+
+            if (state.TryGet(NameToken.Sa, pdfScanner, out BooleanToken saToken))
+            {
+                /*  Page 223
+                    (Optional) A flag specifying whether to apply automatic stroke adjustment
+                    (see Section 6.5.4, “Automatic Stroke Adjustment”).                
+                 */
+                currentGraphicsState.StrokeAdjustment = saToken.Data;
+            }
+
+            if (state.TryGet(NameToken.Smask, pdfScanner, out NameToken smaskToken))
+            {
+                /*  Page 223
+                    (Optional; PDF 1.4) The current soft mask, specifying the mask shape or
+                    mask opacity values to be used in the transparent imaging model (see
+                    “Source Shape and Opacity” on page 526 and “Mask Shape and Opacity” on
+                    page 550).               
+                 */
+                if (smaskToken.Data == NameToken.None.Data)
+                {
+                    // TODO: Replace soft mask with nothing.
+                }
+            }
+        }
+
+        private void SetBlendModeFromToken(NameToken bmNameToken)
+        {
+            // Standard separable blend modes -  1.7 - Page 520
+            if (bmNameToken.Data == NameToken.Normal)
+            {
+
+            }
+            else if (bmNameToken.Data == NameToken.Multiply)
+            {
+
+            }
+            else if (bmNameToken.Data == NameToken.Screen)
+            {
+
+            }
+            else if (bmNameToken.Data == NameToken.Overlay)
+            {
+
+            }
+            else if (bmNameToken.Data == NameToken.Darken)
+            {
+
+            }
+            else if (bmNameToken.Data == NameToken.Lighten)
+            {
+
+            }
+            else if (bmNameToken.Data == NameToken.ColorDodge)
+            {
+
+            }
+            else if (bmNameToken.Data == NameToken.ColorBurn)
+            {
+
+            }
+            else if (bmNameToken.Data == NameToken.HardLight)
+            {
+
+            }
+            else if (bmNameToken.Data == NameToken.SoftLight)
+            {
+
+            }
+            else if (bmNameToken.Data == NameToken.Difference)
+            {
+
+            }
+            else if (bmNameToken.Data == NameToken.Exclusion)
+            {
+
+            }
+
+            // Standard nonseparable blend modes - Page 524
+            if (bmNameToken.Data == NameToken.Normal)
+            {
+
+            }
+            else if (bmNameToken.Data == "Hue")
+            {
+
+            }
+            else if (bmNameToken.Data == "Saturation")
+            {
+
+            }
+            else if (bmNameToken.Data == "Color")
+            {
+
+            }
+            else if (bmNameToken.Data == "Luminosity")
+            {
+
             }
         }
 

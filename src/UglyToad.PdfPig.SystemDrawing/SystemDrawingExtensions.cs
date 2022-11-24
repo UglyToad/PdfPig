@@ -60,9 +60,15 @@ namespace UglyToad.PdfPig.SystemDrawing
             if (pdfColor != null)
             {
                 var colorRgb = pdfColor.ToRGBValues();
+                if (pdfColor is AlphaColor alphaColor)
+                {
+                    return Color.FromArgb((int)(alphaColor.A * 255), (int)(colorRgb.r * 255), (int)(colorRgb.g * 255), (int)(colorRgb.b * 255));
+                }
                 return Color.FromArgb((int)(colorRgb.r * 255), (int)(colorRgb.g * 255), (int)(colorRgb.b * 255));
+
             }
             return Color.Black;
         }
+
     }
 }
