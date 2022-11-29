@@ -176,7 +176,7 @@
 
             const string searchTerm = "%%EOF";
 
-            var minimumEndOffset = bytes.Length - searchTerm.Length;
+            var minimumEndOffset = bytes.Length - searchTerm.Length + 1; // Issue #512 - Unable to open PDF - BruteForceScan starts from earlier of two EOF marker due to min end offset off by 1
 
             bytes.Seek(minimumEndOffset);
 
