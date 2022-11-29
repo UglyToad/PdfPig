@@ -21,6 +21,12 @@
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
 
             Count = catalog.PagesDictionary.GetIntOrDefault(NameToken.Count);
+            var CountOfPagesByPagesTree = catalog.PageTree.Children.Count;
+            if (Count != CountOfPagesByPagesTree)
+            {
+                //log.Warning($"Dicrionary Page Count {Count} different to discovered pages {CountOfPagesByPagesTree}. Using {CountOfPagesByPagesTree}.");
+                Count = CountOfPagesByPagesTree;
+            }
         }
         
         public Page GetPage(int pageNumber, InternalParsingOptions parsingOptions)

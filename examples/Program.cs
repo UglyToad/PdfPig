@@ -51,7 +51,7 @@
                 8,
                     ("Extract Words with newline detection (example with algorithm). Issue 512",
                     () => OpenDocumentAndExtractWords.Run(Path.Combine(filesDirectory, "OPEN.RABBIT.ENGLISH.LOP.pdf")))
-                }
+                } 
         };
 
             var choices = string.Join(Environment.NewLine, examples.Select(x => $"{x.Key}: {x.Value.name}"));
