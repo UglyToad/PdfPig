@@ -22,10 +22,11 @@
 
             Count = catalog.PagesDictionary.GetIntOrDefault(NameToken.Count);
             var CountOfPagesByPagesTree = catalog.PageTree.Children.Count;
-            if (Count != CountOfPagesByPagesTree)
+            var numberOfDiscoveredPages = catalog.NumberOfDiscoveredPages;
+            if (numberOfDiscoveredPages is null == false && Count != numberOfDiscoveredPages)
             {
-                //log.Warning($"Dicrionary Page Count {Count} different to discovered pages {CountOfPagesByPagesTree}. Using {CountOfPagesByPagesTree}.");
-                Count = CountOfPagesByPagesTree;
+                //log.Warning($"Dictionary Page Count {Count} different to discovered pages {numberOfDiscoveredPages}. Using {numberOfDiscoveredPages}.");
+                Count = numberOfDiscoveredPages.Value;
             }
         }
         

@@ -51,7 +51,7 @@
             var result = FileHeaderParser.Parse(scanner.scanner, scanner.bytes, false, log);
 
             Assert.Equal(1.2m, result.Version);
-            Assert.Equal(TestEnvironment.IsUnixPlatform ? 7 : 9, result.OffsetInFile);
+            Assert.Equal(TestEnvironment.IsSingleByteNewLine(input) ? 7 : 9, result.OffsetInFile);
         }
 
         [Fact]
@@ -67,37 +67,41 @@
         [Fact]
         public void HeaderPrecededByJunkNonLenientDoesNotThrow()
         {
-            var scanner = StringBytesTestConverter.Scanner(@"one    
-    %PDF-1.2");
+            var input = @"one    
+    %PDF-1.2";
+            var scanner = StringBytesTestConverter.Scanner(input);
 
             var result = FileHeaderParser.Parse(scanner.scanner, scanner.bytes, false, log);
 
             Assert.Equal(1.2m, result.Version);
-            Assert.Equal(TestEnvironment.IsUnixPlatform ? 12 : 13, result.OffsetInFile);
+            Assert.Equal(TestEnvironment.IsSingleByteNewLine(input) ? 12 : 13, result.OffsetInFile);
         }
 
         [Fact]
         public void HeaderPrecededByJunkLenientReads()
         {
-            var scanner = StringBytesTestConverter.Scanner(@"one    
-    %PDF-1.7");
+            var input = @"one    
+    %PDF-1.7";
+            var scanner = StringBytesTestConverter.Scanner(input);
 
             var result = FileHeaderParser.Parse(scanner.scanner, scanner.bytes, true, log);
 
             Assert.Equal(1.7m, result.Version);
-            Assert.Equal(TestEnvironment.IsUnixPlatform ? 12 : 13, result.OffsetInFile);
+            Assert.Equal(TestEnvironment.IsSingleByteNewLine(input) ? 12 : 13, result.OffsetInFile);
         }
 
         [Fact]
         public void HeaderPrecededByJunkDoesNotThrow()
         {
-            var scanner = StringBytesTestConverter.Scanner(@"one two
-three %PDF-1.6");
+            var s = @"one two
+three %PDF-1.6";
+              
+            var scanner = StringBytesTestConverter.Scanner(s);
 
             var result = FileHeaderParser.Parse(scanner.scanner, scanner.bytes, true, log);
 
             Assert.Equal(1.6m, result.Version);
-            Assert.Equal(TestEnvironment.IsUnixPlatform ? 14 : 15, result.OffsetInFile);
+            Assert.Equal(TestEnvironment.IsSingleByteNewLine(s) ? 14 : 15, result.OffsetInFile);
         }
 
         [Fact]
