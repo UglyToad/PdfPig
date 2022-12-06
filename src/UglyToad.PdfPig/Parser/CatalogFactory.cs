@@ -103,7 +103,7 @@
             do
             {
                 var current = toProcess.Dequeue();
-
+                if (current.reference.GetHashCode() == current.parentReference.GetHashCode()) { continue; } // Issue #519
                 if (!current.nodeDictionary.TryGet(NameToken.Kids, pdfTokenScanner, out ArrayToken kids))
                 {
                     if (!isLenientParsing)
