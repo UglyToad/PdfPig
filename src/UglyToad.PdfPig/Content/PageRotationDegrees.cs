@@ -44,7 +44,7 @@
         /// <summary>
         /// Create a <see cref="PageRotationDegrees"/>.
         /// </summary>
-        /// <param name="rotation">Rotation in degrees clockwise.</param>
+        /// <param name="rotation">Rotation in degrees clockwise, must be a multiple of 90.</param>
         public PageRotationDegrees(int rotation)
         {
             if (rotation < 0)

@@ -46,6 +46,8 @@
 
         private int imageKey = 1;
 
+        internal int? rotation;
+
         internal IReadOnlyDictionary<string, IToken> Resources => pageDictionary.GetOrCreateDict(NameToken.Resources);
 
         /// <summary>
@@ -131,7 +133,7 @@
         /// <param name="from">The first point on the line.</param>
         /// <param name="to">The last point on the line.</param>
         /// <param name="lineWidth">The width of the line in user space units.</param>
-        public void DrawLine(PdfPoint from, PdfPoint to, decimal lineWidth = 1)
+        public PdfPageBuilder DrawLine(PdfPoint from, PdfPoint to, decimal lineWidth = 1)
         {
             if (lineWidth != 1)
             {
@@ -146,6 +148,8 @@
             {
                 currentStream.Add(new SetLineWidth(1));
             }
+
+            return this;
         }
 
         /// <summary>
@@ -156,7 +160,7 @@
         /// <param name="height">The height of the rectangle.</param>
         /// <param name="lineWidth">The width of the line border of the rectangle.</param>
         /// <param name="fill">Whether to fill with the color set by <see cref="SetTextAndFillColor"/>.</param>
-        public void DrawRectangle(PdfPoint position, decimal width, decimal height, decimal lineWidth = 1, bool fill = false)
+        public PdfPageBuilder DrawRectangle(PdfPoint position, decimal width, decimal height, decimal lineWidth = 1, bool fill = false)
         {
             if (lineWidth != 1)
             {
@@ -178,6 +182,17 @@
             {
                 currentStream.Add(new SetLineWidth(lineWidth));
             }
+
+            return this;
+        }
+
+        /// <summary>
+        /// Set the number of degrees by which the page is rotated clockwise when displayed or printed.
+        /// </summary>
+        public PdfPageBuilder SetRotation(PageRotationDegrees degrees)
+        {
+            rotation = degrees.Value;
+            return this;
         }
 
         /// <summary>
@@ -188,7 +203,7 @@
         /// <param name="point3">Position of the third corner of the triangle.</param>
         /// <param name="lineWidth">The width of the line border of the triangle.</param>
         /// <param name="fill">Whether to fill with the color set by <see cref="SetTextAndFillColor"/>.</param>
-        public void DrawTriangle(PdfPoint point1, PdfPoint point2, PdfPoint point3, decimal lineWidth = 1, bool fill = false)
+        public PdfPageBuilder DrawTriangle(PdfPoint point1, PdfPoint point2, PdfPoint point3, decimal lineWidth = 1, bool fill = false)
         {
             if (lineWidth != 1)
             {
@@ -213,6 +228,8 @@
             {
                 currentStream.Add(new SetLineWidth(lineWidth));
             }
+
+            return this;
         }
 
         /// <summary>
@@ -222,9 +239,11 @@
         /// <param name="diameter">The diameter of the circle.</param>
         /// <param name="lineWidth">The width of the line border of the circle.</param>
         /// <param name="fill">Whether to fill with the color set by <see cref="SetTextAndFillColor"/>.</param>
-        public void DrawCircle(PdfPoint center, decimal diameter, decimal lineWidth = 1, bool fill = false)
+        public PdfPageBuilder DrawCircle(PdfPoint center, decimal diameter, decimal lineWidth = 1, bool fill = false)
         {
             DrawEllipsis(center, diameter, diameter, lineWidth, fill);
+
+            return this;
         }
 
         /// <summary>
@@ -235,7 +254,7 @@
         /// <param name="height">The height of the ellipsis.</param>
         /// <param name="lineWidth">The width of the line border of the ellipsis.</param>
         /// <param name="fill">Whether to fill with the color set by <see cref="SetTextAndFillColor"/>.</param>
-        public void DrawEllipsis(PdfPoint center, decimal width, decimal height, decimal lineWidth = 1, bool fill = false)
+        public PdfPageBuilder DrawEllipsis(PdfPoint center, decimal width, decimal height, decimal lineWidth = 1, bool fill = false)
         {
             width /= 2;
             height /= 2;
@@ -283,6 +302,8 @@
             {
                 currentStream.Add(new SetLineWidth(lineWidth));
             }
+
+            return this;
         }
 
         /// <summary>
@@ -291,10 +312,12 @@
         /// <param name="r">Red - 0 to 255</param>
         /// <param name="g">Green - 0 to 255</param>
         /// <param name="b">Blue - 0 to 255</param>
-        public void SetStrokeColor(byte r, byte g, byte b)
+        public PdfPageBuilder SetStrokeColor(byte r, byte g, byte b)
         {
             currentStream.Add(Push.Value);
             currentStream.Add(new SetStrokeColorDeviceRgb(RgbToDecimal(r), RgbToDecimal(g), RgbToDecimal(b)));
+
+            return this;
         }
 
         /// <summary>
@@ -303,11 +326,13 @@
         /// <param name="r">Red - 0 to 1</param>
         /// <param name="g">Green - 0 to 1</param>
         /// <param name="b">Blue - 0 to 1</param>
-        internal void SetStrokeColorExact(decimal r, decimal g, decimal b)
+        internal PdfPageBuilder SetStrokeColorExact(decimal r, decimal g, decimal b)
         {
             currentStream.Add(Push.Value);
             currentStream.Add(new SetStrokeColorDeviceRgb(CheckRgbDecimal(r, nameof(r)),
                 CheckRgbDecimal(g, nameof(g)), CheckRgbDecimal(b, nameof(b))));
+
+            return this;
         }
 
         /// <summary>
@@ -316,18 +341,22 @@
         /// <param name="r">Red - 0 to 255</param>
         /// <param name="g">Green - 0 to 255</param>
         /// <param name="b">Blue - 0 to 255</param>
-        public void SetTextAndFillColor(byte r, byte g, byte b)
+        public PdfPageBuilder SetTextAndFillColor(byte r, byte g, byte b)
         {
             currentStream.Add(Push.Value);
             currentStream.Add(new SetNonStrokeColorDeviceRgb(RgbToDecimal(r), RgbToDecimal(g), RgbToDecimal(b)));
+
+            return this;
         }
 
         /// <summary>
         /// Restores the stroke, text and fill color to default (black).
         /// </summary>
-        public void ResetColor()
+        public PdfPageBuilder ResetColor()
         {
             currentStream.Add(Pop.Value);
+
+            return this;
         }
 
         /// <summary>
@@ -451,9 +480,11 @@
         /// To insert invisible text, for example output of OCR, use <c>TextRenderingMode.Neither</c>.
         /// </summary>
         /// <param name="mode">Text rendering mode to set.</param>
-        public void SetTextRenderingMode(TextRenderingMode mode)
+        public PdfPageBuilder SetTextRenderingMode(TextRenderingMode mode)
         {
             currentStream.Add(new SetTextRenderingMode(mode));
+
+            return this;
         }
 
         private NameToken GetAddedFont(PdfDocumentBuilder.AddedFont font)
@@ -690,7 +721,7 @@
         /// Copy a page from unknown source to this page
         /// </summary>
         /// <param name="srcPage">Page to be copied</param>
-        public void CopyFrom(Page srcPage)
+        public PdfPageBuilder CopyFrom(Page srcPage)
         {
             if (currentStream.Operations.Count > 0)
             {
@@ -704,7 +735,7 @@
                 // If the page doesn't have resources, then we copy the entire content stream, since not operation would collide 
                 // with the ones already written
                 destinationStream.Operations.AddRange(srcPage.Operations);
-                return;
+                return this;
             }
 
             // TODO: How should we handle any other token in the page dictionary (Eg. LastModified, MediaBox, CropBox, BleedBox, TrimBox, ArtBox,
@@ -828,6 +859,8 @@
             }
 
             destinationStream.Operations.AddRange(operations);
+
+            return this;
         }
 
         private List<Letter> DrawLetters(NameToken name, string text, IWritingFont font, TransformationMatrix fontMatrix, decimal fontSize, TransformationMatrix textMatrix)

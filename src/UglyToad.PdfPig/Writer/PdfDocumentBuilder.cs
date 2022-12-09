@@ -3,7 +3,6 @@ namespace UglyToad.PdfPig.Writer
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using Content;
@@ -557,6 +556,11 @@ namespace UglyToad.PdfPig.Writer
                 if (!pageDictionary.ContainsKey(NameToken.MediaBox))
                 {
                     pageDictionary[NameToken.MediaBox] = RectangleToArray(page.Value.PageSize);
+                }
+
+                if (page.Value.rotation.HasValue)
+                {
+                    pageDictionary[NameToken.Rotate] = new NumericToken(page.Value.rotation.Value);
                 }
 
                 // Adobe Acrobat errors if content streams ref'd by multiple pages, turn off
