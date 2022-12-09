@@ -82,10 +82,12 @@
 
                 return new PageTreeNode(nodeDictionaryInput, referenceInput, true, pageNumber.PageCount).WithChildren(EmptyArray<PageTreeNode>.Instance);
             }
-            
-            
+
+
 
             //If we got here, we have to iterate till we manage to exit
+
+            HashSet<int> visitedTokens = new HashSet<int>(); // As we visit each token add to this list (the hashcode of the indirect reference)
 
             var toProcess =
                 new Queue<(PageTreeNode thisPage, IndirectReference reference, DictionaryToken nodeDictionary, IndirectReference parentReference,
@@ -103,7 +105,15 @@
             do
             {
                 var current = toProcess.Dequeue();
-
+                var currentReferenceHash = current.reference.GetHashCode();                
+                if (visitedTokens.Contains(currentReferenceHash))
+                {
+                    continue; // don't revisit token already processed. break infinite loop. Issue #512
+                }
+                else
+                {
+                    visitedTokens.Add(currentReferenceHash);
+                }
                 if (!current.nodeDictionary.TryGet(NameToken.Kids, pdfTokenScanner, out ArrayToken kids))
                 {
                     if (!isLenientParsing)

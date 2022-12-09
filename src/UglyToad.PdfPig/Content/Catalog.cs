@@ -32,6 +32,11 @@
         public PageTreeNode PageTree { get; }
 
         /// <summary>
+        /// Number of discovered pages.
+        /// </summary>
+        public int? NumberOfDiscoveredPages => pagesByNumber?.Count;
+
+        /// <summary>
         /// Create a new <see cref="CatalogDictionary"/>.
         /// </summary>
         internal Catalog(DictionaryToken catalogDictionary, DictionaryToken pagesDictionary,
