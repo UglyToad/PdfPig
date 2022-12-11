@@ -63,13 +63,13 @@
             {
                 var resource = pageTreeMembers.ParentResources.Dequeue();
 
-                resourceStore.LoadResourceDictionary(resource);
+                resourceStore.LoadResourceDictionary(resource, parsingOptions);
                 stackDepth++;
             }
 
             if (dictionary.TryGet(NameToken.Resources, pdfScanner, out DictionaryToken resources))
             {
-                resourceStore.LoadResourceDictionary(resources);
+                resourceStore.LoadResourceDictionary(resources, parsingOptions);
                 stackDepth++;
             }
 

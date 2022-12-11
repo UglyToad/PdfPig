@@ -6,7 +6,7 @@
 
     internal interface IResourceStore
     {
-        void LoadResourceDictionary(DictionaryToken resourceDictionary);
+        void LoadResourceDictionary(DictionaryToken resourceDictionary, InternalParsingOptions parsingOptions);
 
         /// <summary>
         /// Remove any named resources and associated state for the last resource dictionary loaded.
