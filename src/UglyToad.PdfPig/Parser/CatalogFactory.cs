@@ -87,7 +87,10 @@
 
             //If we got here, we have to iterate till we manage to exit
 
-            HashSet<int> visitedTokens = new HashSet<int>(); // As we visit each token add to this list (the hashcode of the indirect reference)
+            // Attempt to detect (and break) any infitine loop (IL) by recording the ids of the last 1000 (by default) tokens processed.
+            const int InfiniteLoopWorkingWindow = 1000;
+            var visitedTokens = new Dictionary<long, HashSet<int>>(); // Quick lookup containing ids (object number, generation) of tokens already processed (trimmed as we go to last 1000 (by default))
+            var visitedTokensWorkingWindow = new Queue<(long ObjectNumber, int Generation)>(InfiniteLoopWorkingWindow);
 
             var toProcess =
                 new Queue<(PageTreeNode thisPage, IndirectReference reference, DictionaryToken nodeDictionary, IndirectReference parentReference,
@@ -105,15 +108,52 @@
             do
             {
                 var current = toProcess.Dequeue();
-                var currentReferenceHash = current.reference.GetHashCode();                
-                if (visitedTokens.Contains(currentReferenceHash))
+
+                #region Break any potential infinite loop
+                // Remember the last 1000 (by default) tokens and if we attempt to process again break out of loop
+                var currentReferenceObjectNumber = current.reference.ObjectNumber;
+                var currentReferenceGeneration = current.reference.Generation;
+                if (visitedTokens.ContainsKey(currentReferenceObjectNumber))
                 {
-                    continue; // don't revisit token already processed. break infinite loop. Issue #512
+                    var generations = visitedTokens[currentReferenceObjectNumber];
+
+                    if (generations.Contains(currentReferenceGeneration))
+                    {
+                        var listOfLastVisitedToken = visitedTokensWorkingWindow.ToList();
+                        var indexOfCurrentTokenInListOfLastVisitedToken = listOfLastVisitedToken.IndexOf((currentReferenceObjectNumber, currentReferenceGeneration));
+                        var howManyTokensBack = Math.Abs(indexOfCurrentTokenInListOfLastVisitedToken - listOfLastVisitedToken.Count); //eg initate loop is taking us back to last token or five token back
+                        System.Diagnostics.Debug.WriteLine($"Break infinite loop while processing page {pageNumber.PageCount+1} tokens. Token with object number {currentReferenceObjectNumber} and generation {currentReferenceGeneration} processed {howManyTokensBack} token(s) back. ");
+                        continue; // don't reprocess token already processed. break infinite loop. Issue #519
+                    }
+                    else
+                    {
+                        generations.Add(currentReferenceGeneration);
+                        visitedTokens[currentReferenceObjectNumber] = generations;
+                    }
                 }
                 else
                 {
-                    visitedTokens.Add(currentReferenceHash);
+                    visitedTokens.Add(currentReferenceObjectNumber, new HashSet<int>() { currentReferenceGeneration });
+
+                    visitedTokensWorkingWindow.Enqueue((currentReferenceObjectNumber, currentReferenceGeneration));
+                    if (visitedTokensWorkingWindow.Count >= InfiniteLoopWorkingWindow)
+                    {
+                        var toBeRemovedFromWorkingHashset = visitedTokensWorkingWindow.Dequeue();
+                        var toBeRemovedObjectNumber = toBeRemovedFromWorkingHashset.ObjectNumber;
+                        var toBeRemovedGeneration = toBeRemovedFromWorkingHashset.Generation;
+                        var generations = visitedTokens[toBeRemovedObjectNumber];
+                        generations.Remove(toBeRemovedGeneration);
+                        if (generations.Count == 0)
+                        {
+                            visitedTokens.Remove(toBeRemovedObjectNumber);
+                        }
+                        else
+                        {
+                            visitedTokens[toBeRemovedObjectNumber] = generations;
+                        }
+                    }
                 }
+                #endregion
                 if (!current.nodeDictionary.TryGet(NameToken.Kids, pdfTokenScanner, out ArrayToken kids))
                 {
                     if (!isLenientParsing)

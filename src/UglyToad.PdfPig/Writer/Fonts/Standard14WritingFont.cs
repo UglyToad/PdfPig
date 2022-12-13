@@ -2,12 +2,16 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
+    using System.Linq;
+    using System.Xml.Linq;
     using Core;
     using PdfPig.Fonts;
     using PdfPig.Fonts.AdobeFontMetrics;
     using PdfPig.Fonts.Encodings;
     using Tokens;
+    using UglyToad.PdfPig.Graphics.Colors;
     using Util.JetBrains.Annotations;
 
     internal class Standard14WritingFont : IWritingFont
@@ -24,11 +28,15 @@
         }
 
         public bool TryGetBoundingBox(char character, out PdfRectangle boundingBox)
-        {
-            var encoding = StandardEncoding.Instance;
-            boundingBox = default(PdfRectangle);
-            if (!metrics.CharacterMetrics.TryGetValue(encoding.GetName(character), out var characterMetric))
+        {            
+            boundingBox = default(PdfRectangle);        
+            var characterMetric = metrics.CharacterMetrics
+                                   .Where(v => v.Value.CharacterCode == character)
+                                   .Select(v => v.Value)
+                                   .FirstOrDefault();
+            if (characterMetric is null)
             {
+                Debug.WriteLine($"Font '{metrics.FontName}' does NOT have character '{character}' (0x{(int)character:X}).");
                 return false;
             }
 
@@ -63,9 +71,9 @@
                 { NameToken.Type, NameToken.Font },
                 { NameToken.Subtype, NameToken.Type1  },
                 { NameToken.BaseFont, NameToken.Create(metrics.FontName) },
-                { NameToken.Encoding, NameToken.MacRomanEncoding }
+                { NameToken.Encoding, (metrics.FontName is "Symbol" or "ZapfDingbats") ? NameToken.Create("FontSpecific") : NameToken.StandardEncoding }   //  2022-12-12 @fnatzke was NameToken.MacRomanEncoding; not sure based on spec why MacRomanEncoding enoding?
             };
-
+             
             var token = new DictionaryToken(dictionary);
 
             if (reservedIndirect != null)
@@ -80,22 +88,18 @@
 
         public byte GetValueForCharacter(char character)
         {
-            var name = GlyphList.AdobeGlyphList.UnicodeCodePointToName(character);
-
-            if (name == null || !MacRomanEncoding.Instance.NameToCodeMap.TryGetValue(name, out var code))
+           
+            var characterMetric = metrics.CharacterMetrics
+                                    .Where(v => v.Value.CharacterCode == character)
+                                    .Select(v => v.Value)
+                                    .FirstOrDefault();
+            if (characterMetric is null)
             {
-                var nameError = name ?? "NULL";
-                throw new NotSupportedException($"No mapping for character '{character}' exists in the Standard14 font. Glyph name: '{nameError}'.");
+                throw new NotSupportedException($"Font '{metrics.FontName}' does NOT have character '{character}' (0x{(int)character:X}).");
             }
-
-            if (code > byte.MaxValue)
-            {
-                throw new NotSupportedException($"Value of code for character '{character}' exceeded the range of a byte. Glyph name: '{name}'.");
-            }
-
-            var result = (byte) code;
+            var code = characterMetric.CharacterCode;
+            var result = (byte)code;
             return result;
-        }
-    }
-    
+        } 
+    }   
 }
