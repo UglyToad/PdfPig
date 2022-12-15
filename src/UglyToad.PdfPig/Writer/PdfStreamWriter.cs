@@ -18,6 +18,7 @@
         protected bool DisposeStream { get; set; }
         protected bool Initialized { get; set; }
         protected int CurrentNumber { get; set; } = 1;
+        protected readonly static TokenWriter TokenWriter = new TokenWriter();
 
         internal PdfStreamWriter(Stream baseStream, bool disposeStream = true)
         {
