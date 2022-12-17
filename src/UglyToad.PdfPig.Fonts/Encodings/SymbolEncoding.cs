@@ -38,7 +38,7 @@
             ( 81, "Theta"),                     // for char 'Q' using  81 as base10 equivilant (for C# source). Spec has 0121 octal.              ( 81,"Theta")             <=> (0121, "Theta")          ,
             ( 85, "Upsilon"),                   // for char 'U' using  85 as base10 equivilant (for C# source). Spec has 0125 octal.              ( 85,"Upsilon")           <=> (0125, "Upsilon")        ,
             (161, "Upsilon1"),                  // for char '¡' using 161 as base10 equivilant (for C# source). Spec has 0241 octal.              (161,"Upsilon1")          <=> (0241, "Upsilon1")       ,
-            ( 88, "Xi"),                        // for char 'X' using  88 as base10 equivilant (for C# source). Spec has 0130 octal.              ( 88,"Xi")                <=> (0130, "Xi")             ,
+            ( 88, "Xi"),                           // for char 'X' using  88 as base10 equivilant (for C# source). Spec has 0130 octal.              ( 88,"Xi")                <=> (0130, "Xi")             ,
             ( 90, "Zeta"),                      // for char 'Z' using  90 as base10 equivilant (for C# source). Spec has 0132 octal.              ( 90,"Zeta")              <=> (0132, "Zeta")           ,
             (192, "aleph"),                     // for char 'À' using 192 as base10 equivilant (for C# source). Spec has 0300 octal.              (192,"aleph")             <=> (0300, "aleph")          ,
             ( 97, "alpha"),                     // for char 'a' using  97 as base10 equivilant (for C# source). Spec has 0141 octal.              ( 97,"alpha")             <=> (0141, "alpha")          ,
@@ -201,6 +201,11 @@
             (120, "xi"),                        // for char 'x' using 120 as base10 equivilant (for C# source). Spec has 0170 octal.              (120,"xi")                <=> (0170, "xi")             ,
             ( 48, "zero"),                      // for char '0' using  48 as base10 equivilant (for C# source). Spec has 0060 octal.              ( 48,"zero")              <=> (0060, "zero")           ,
             (122, "zeta")                       // for char 'z' using 122 as base10 equivilant (for C# source). Spec has 0172 octal.              (122,"zeta")              <=> (0172, "zeta")           
+        };
+
+
+        private static readonly (int, int)[] UnicodeEquivilants = {
+            (0x391,  65),                       // Greek Capital Letter Alpha
         };
 
         /// <summary>

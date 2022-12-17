@@ -2,6 +2,7 @@
 namespace UglyToad.PdfPig.PdfFonts.Simple
 {
     using System;
+    using System.Diagnostics;
     using Core;
     using Fonts;
     using Fonts.AdobeFontMetrics;
@@ -47,12 +48,35 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
         public bool TryGetUnicode(int characterCode, out string value)
         {
             var name = encoding.GetName(characterCode);
+            if (name is ".notdef")
+            {
+                value = null;
+                return false;
+            }
+            if (encoding is ZapfDingbatsEncoding)
+            {
+                var listed = GlyphList.ZapfDingbats.NameToUnicode(name);
 
-            var listed = GlyphList.AdobeGlyphList.NameToUnicode(name);
+                value = listed;
 
-            value = listed;
+                return true;
+            }
+            else if (encoding is StandardEncoding or SymbolEncoding)
+            {
+                var listed = GlyphList.AdobeGlyphList.NameToUnicode(name);
 
-            return true;
+                value = listed;
+
+                return true;
+            } else
+            {             
+                Debug.WriteLine($"Warning: Type1Standard14Font with unexpected encoding: '{encoding.EncodingName}' Expected: 'ZapfDingbatsEncoding','SymbolEncoding' or 'StandardEncoding' . Font: '{standardFontMetrics.FontName}'");
+                var listed = GlyphList.AdobeGlyphList.NameToUnicode(name);
+
+                value = listed;
+
+                return true;
+            }
         }
 
         public CharacterBoundingBox GetBoundingBox(int characterCode)

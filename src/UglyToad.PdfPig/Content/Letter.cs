@@ -3,6 +3,7 @@
     using Core;
     using Graphics.Colors;
     using PdfFonts;
+    using System.Diagnostics;
 
     /// <summary>
     /// A glyph or combination of glyphs (characters) drawn by a PDF content stream.

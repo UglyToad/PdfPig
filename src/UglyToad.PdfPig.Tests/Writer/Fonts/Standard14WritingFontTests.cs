@@ -1,14 +1,14 @@
 ﻿namespace UglyToad.PdfPig.Tests.Writer.Fonts
 {
     using System;
-     
+
     using System.Linq;
     using PdfPig.Fonts;
     using PdfPig.Content;
-    using UglyToad.PdfPig.Core;    
+    using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Fonts.Standard14Fonts;
     using UglyToad.PdfPig.Writer;
-     
+
     using Xunit;
     using System.Reflection;
     using System.Collections.Generic;
@@ -16,71 +16,227 @@
     using System.IO;
     using System.Drawing;
     using System.Diagnostics;
+    using System.Reflection.Emit;
+    using System.Text;
 
     public class Standard14WritingFontTests
     {
         [Fact]
         public void ZapfDingbatsFontAddText()
         {
-            PdfDocumentBuilder builder = new PdfDocumentBuilder();
-            PdfDocumentBuilder.AddedFont F1 = builder.AddStandard14Font(Standard14Font.ZapfDingbats);
-            PdfPageBuilder page = builder.AddPage(PageSize.A4);
+            PdfDocumentBuilder pdfBuilder = new PdfDocumentBuilder();
+            PdfDocumentBuilder.AddedFont F1 = pdfBuilder.AddStandard14Font(Standard14Font.ZapfDingbats);
+            var EncodingTable = GetEncodingTable(typeof(UglyToad.PdfPig.Fonts.Encodings.ZapfDingbatsEncoding));
+            var unicodesCharacters = GetUnicodeCharacters(EncodingTable, GlyphList.ZapfDingbats);
+            {
+                PdfDocumentBuilder.AddedFont F2 = pdfBuilder.AddStandard14Font(Standard14Font.TimesRoman);
+                PdfPageBuilder page = pdfBuilder.AddPage(PageSize.A4);
 
-            double topPageY = page.PageSize.Top - 50;
-            double inch = (page.PageSize.Width / 8.5);
-            double cm = inch / 2.54;
-            double leftX = 1 * cm;
-            var point = new PdfPoint(leftX, topPageY);
+                double topPageY = page.PageSize.Top - 50;
+                double inch = (page.PageSize.Width / 8.5);
+                double cm = inch / 2.54;
+                double leftX = 1 * cm;
 
-            // Get existing (but private) EncodingTable from encoding class using reflection so we can obtain all codes
-            var ZapfDingbatsEncodingType = typeof(UglyToad.PdfPig.Fonts.Encodings.ZapfDingbatsEncoding);
-            var EncodingTableFieldInfo = ZapfDingbatsEncodingType.GetFields(BindingFlags.NonPublic | BindingFlags.Static)
-                                            .FirstOrDefault(v=>v.Name=="EncodingTable");            
-            (int, string)[] EncodingTable = ((int, string)[])EncodingTableFieldInfo.GetValue(Activator.CreateInstance(ZapfDingbatsEncodingType, true));
+                var point = new PdfPoint(leftX, topPageY);
+                var letters = page.AddText("Adobe Standard Font ZapfDingbats", 21, point, F2);
+                var newY = topPageY - letters.Select(v => v.GlyphRectangle.Height).Max() * 1.2;
+                point = new PdfPoint(leftX, newY);
+                letters = page.AddText("Font Specific encoding in Black (octal) and Unicode in Blue (hex)", 10, point, F2);
+                newY = newY - letters.Select(v => v.GlyphRectangle.Height).Max() * 3;
+                point = new PdfPoint(leftX, newY);
+                var eachRowY = new List<double>();
+                eachRowY.Add(newY); // First row
+                
+                (var maxCharacterHeight, var maxCharacterWidth) = GetCharacterDetails(page,F1, 12d,unicodesCharacters);
+                var context = GetContext(F1,page, nameof(F1), F2,maxCharacterHeight,maxCharacterWidth);
 
+                // Font specific character codes (in black)
+                page.SetTextAndFillColor(0,0,0); //Black
+                foreach ((var code, var name) in EncodingTable)
+                {
+                    var ch = (char)code; // Note code is already base 10 no need to use OctalHelpers.FromOctalInt or System.Convert.ToInt32($"{code}", 8);
+                    point = AddLetterWithContext(point, $"{ch}", context, true);
 
-            foreach ((var code, var name) in EncodingTable)
-            {             
-                var ch = (char)code; // Note code is already base 10 no need to use OctalHelpers.FromOctalInt or System.Convert.ToInt32($"{code}", 8);
-                point = AddLetterWithFont(page, point, $"{ch}", F1, nameof(F1));
+                    if (eachRowY.Last() != point.Y) { eachRowY.Add(point.Y); }
+                }
+
+                // Second set of rows for (unicode) characters : Test mapping from (C#) unicode chars to PDF encoding
+                newY = newY - maxCharacterHeight * 1.2;
+                point = new PdfPoint(leftX, newY);
+                 
+                // Unicode character codes (in blue)
+                page.SetTextAndFillColor(0, 0, 200); //Blue
+                foreach (var unicodeCh in unicodesCharacters)
+                {
+                    point = AddLetterWithContext(point, $"{unicodeCh}", context, isHexLabel: true);
+                }                
             }
-
+            
             // Save one page PDF to file system for manual review.
-            var pdfBytes = builder.Build();
+            var pdfBytes = pdfBuilder.Build();
             WritePdfFile(nameof(ZapfDingbatsFontAddText), pdfBytes);
+
+
+            // Check extracted letters
+            using (var document = PdfDocument.Open(pdfBytes))
+            {
+                var page1 = document.GetPage(1);
+                var letters = page1.Letters;
+
+                {
+                    var lettersFontSpecificCodes = letters.Where(l => l.FontName == "ZapfDingbats"
+                                                                && l.Color.ToRGBValues().b == 0)
+                                                    .ToList();
+
+
+                    Assert.Equal(188,lettersFontSpecificCodes.Count);
+                    for (int i = 0; i < lettersFontSpecificCodes.Count; i++)
+                    {
+                        var letter = lettersFontSpecificCodes[i];
+
+                        (var code, var name) = EncodingTable[i];
+                        var unicodeString = GlyphList.ZapfDingbats.NameToUnicode(name);
+
+                        var letterCharacter = letter.Value[0];
+                        var unicodeCharacter = unicodeString[0];
+                        Assert.Equal(letterCharacter, unicodeCharacter);
+                        //Debug.WriteLine($"{letterCharacter} , {unicodeCharacter}");
+                    }
+                }
+
+                {
+                    var lettersUnicode = letters.Where(l => l.FontName == "ZapfDingbats"
+                                                           && l.Color.ToRGBValues().b > 0.78m)
+                                               .ToList();
+                    Assert.Equal(188,lettersUnicode.Count);
+                    for (int i = 0; i < lettersUnicode.Count; i++)
+                    {
+                        var letter = lettersUnicode[i];
+                         
+                        var letterCharacter = letter.Value[0];
+                        var unicodeCharacter = unicodesCharacters[i];
+                        Assert.Equal(letterCharacter, unicodeCharacter);
+                        //Debug.WriteLine($"{letterCharacter} , {unicodeCharacter}");
+                    }
+                }
+            }
         }
 
         [Fact]
         public void SymbolFontAddText()
         {
-            PdfDocumentBuilder builder = new PdfDocumentBuilder();
-            PdfDocumentBuilder.AddedFont F1 = builder.AddStandard14Font(Standard14Font.Symbol);
-            PdfPageBuilder page = builder.AddPage(PageSize.A4);
-
-            double topPageY = page.PageSize.Top - 50;
-            double inch = (page.PageSize.Width / 8.5);
-            double cm = inch / 2.54;
-            double leftX = 1 * cm;
-            var point = new PdfPoint(leftX, topPageY);
-
-            // Get existing (but private) EncodingTable from encoding class using reflection so we can obtain all codes
-            var SymbolEncodingType = typeof(UglyToad.PdfPig.Fonts.Encodings.SymbolEncoding);
-            var EncodingTableFieldInfo = SymbolEncodingType.GetFields(BindingFlags.NonPublic | BindingFlags.Static)
-                                            .FirstOrDefault(v => v.Name == "EncodingTable");
-            (int, string)[] EncodingTable = ((int, string)[])EncodingTableFieldInfo.GetValue(Activator.CreateInstance(SymbolEncodingType, true));
-             
-
-            foreach ((var code, var name) in EncodingTable)
+            PdfDocumentBuilder pdfBuilder = new PdfDocumentBuilder();
+            PdfDocumentBuilder.AddedFont F1 = pdfBuilder.AddStandard14Font(Standard14Font.Symbol);
+            var EncodingTable = GetEncodingTable(typeof(UglyToad.PdfPig.Fonts.Encodings.SymbolEncoding));
+            var unicodesCharacters = GetUnicodeCharacters(EncodingTable, GlyphList.AdobeGlyphList);            
             {
-                var ch = (char)code; // Note code is already base 10 no need to use  OctalHelpers.FromOctalInt or System.Convert.ToInt32($"{code}", 8);
-                point = AddLetterWithFont(page, point, $"{ch}", F1, nameof(F1));
+                PdfDocumentBuilder.AddedFont F2 = pdfBuilder.AddStandard14Font(Standard14Font.TimesRoman);
+                PdfPageBuilder page = pdfBuilder.AddPage(PageSize.A4);
+
+                double topPageY = page.PageSize.Top - 50;
+                double inch = (page.PageSize.Width / 8.5);
+                double cm = inch / 2.54;
+                double leftX = 1 * cm;
+
+                var point = new PdfPoint(leftX, topPageY);
+                var letters = page.AddText("Adobe Standard Font Symbol ", 21, point, F2);
+                var newY = topPageY - letters.Select(v => v.GlyphRectangle.Height).Max() * 1.2;
+                point = new PdfPoint(leftX, newY);
+                letters = page.AddText("Font Specific encoding in Black (octal), Unicode in Blue (hex), Red only available using Unicode", 10, point, F2);
+                newY = newY - letters.Select(v => v.GlyphRectangle.Height).Max() * 3;
+               
+
+                
+                (var maxCharacterHeight, var maxCharacterWidth) = GetCharacterDetails(page, F1, 12d, unicodesCharacters);
+                var context = GetContext(F1, page, nameof(F1), F2, maxCharacterHeight, maxCharacterWidth);
+
+                // First set of rows for direct PDF font specific character codes
+                newY = newY - maxCharacterHeight;
+                point = new PdfPoint(leftX, newY);
+                var eachRowY = new List<double>(new[] { newY });
+                page.SetTextAndFillColor(0, 0, 0); //Black
+                bool isTextColorBlack = true;
+                foreach ((var codeFontSpecific, var name) in EncodingTable)
+                {
+                    var code = codeFontSpecific; // Code is already converted [neither OctalHelpers.FromOctalInt or System.Convert.ToInt32($"{code}", 8); is required]
+                    // For a clash library uses unicode interpretation. 
+                    // Substitue if code is any of the 4 codes that clash (in Unicode and font specific encodes for Symbol)
+                    if (code == 0xac) code = '\u2190';    // 0xac in unicode is logicalnot    ('¬')                       use Unicode alternative for arrowleft ('←') 0x2190
+                    if (code == 0xf7) code = '\uf8f7';    // 0xf7 in unicode is divide        ('÷') (different form '/')  use Unicode alternative for parenrightex Unicode 0xF8F7
+                    if (code == 0xb5) code = '\u221D';    // 0xb5 in unicode is lowercase mu  ('µ')                       use Unicode alternative for proportiona('∝')  0x221D
+                    if (code == 0xd7) code = '\u22c5';    // 0xd7 in unicode is muliply       ('×') (different from '*')  use Unicode alternative for dotmath ('⋅')  0x22C5
+                    if (code != codeFontSpecific && isTextColorBlack) { page.SetTextAndFillColor(200, 0, 0); isTextColorBlack = false; }
+                    if (code == codeFontSpecific && isTextColorBlack == false) { page.SetTextAndFillColor(0, 0, 0); isTextColorBlack = true; }
+
+                    char ch = (char)code;
+                    point = AddLetterWithContext(point, $"{ch}", context, isTextColorBlack);
+                    if (eachRowY.Last() != point.Y) { eachRowY.Add(point.Y); }
+                }
+ 
+                // Second set of rows for (unicode) characters : Test mapping from (C#) unicode chars to font specific encoding
+                newY = newY - maxCharacterHeight * 1.2;
+                point = new PdfPoint(leftX, newY);
+                 
+                page.SetTextAndFillColor(0, 0, 200); //Blue
+                foreach (var unicodeCh in unicodesCharacters)
+                {
+                    point = AddLetterWithContext(point, $"{unicodeCh}", context, isHexLabel: true);
+                }
             }
 
-            // Save one page PDF to file system for manual review.
-            var pdfBytes = builder.Build();
+            // Save two page PDF to file system for manual review.
+            var pdfBytes = pdfBuilder.Build();
             WritePdfFile(nameof(SymbolFontAddText), pdfBytes);
+
+
+            // Check extracted letters
+            using (var document = PdfDocument.Open(pdfBytes))
+            {
+                var page1 = document.GetPage(1);
+                var letters = page1.Letters;
+
+                {
+                    var lettersFontSpecificCodes = letters.Where(l => l.FontName == "Symbol"
+                                                                && l.Color.ToRGBValues().b == 0
+                                                                 && (l.Color.ToRGBValues().b == 0
+                                                                        || l.Color.ToRGBValues().r == 200)
+                                                                        )
+                                                    .ToList();
+
+
+                    Assert.Equal(189, lettersFontSpecificCodes.Count);
+                    Assert.Equal(EncodingTable.Length, lettersFontSpecificCodes.Count);                    
+                    for (int i = 0; i < lettersFontSpecificCodes.Count; i++)
+                    {
+                        var letter = lettersFontSpecificCodes[i];
+
+                        (var code, var name) = EncodingTable[i];
+                        var unicodeString = GlyphList.AdobeGlyphList.NameToUnicode(name);
+
+                        var letterCharacter = letter.Value[0];
+                        var unicodeCharacter = unicodeString[0];
+                        //Debug.WriteLine($"{letterCharacter} , {unicodeCharacter}");
+                        Assert.Equal(letterCharacter, unicodeCharacter);                        
+                    }
+                }
+
+                {
+                    var lettersUnicode = letters.Where(l => l.FontName == "Symbol"
+                                                           && l.Color.ToRGBValues().b > 0.78m)
+                                               .ToList();
+                    Assert.Equal(189, lettersUnicode.Count);
+                    for (int i = 0; i < lettersUnicode.Count; i++)
+                    {
+                        var letter = lettersUnicode[i];
+
+                        var letterCharacter = letter.Value[0];
+                        var unicodeCharacter = unicodesCharacters[i];
+                        //Debug.WriteLine($"{letterCharacter} , {unicodeCharacter}");
+                        Assert.Equal(letterCharacter, unicodeCharacter);                        
+                    }
+                }
+            }
         }
-    
 
         [Fact]
         public void StandardFontsAddText()
@@ -99,8 +255,7 @@
             PdfDocumentBuilder.AddedFont F11 = pdfBuilder.AddStandard14Font(Standard14Font.CourierOblique);
             PdfDocumentBuilder.AddedFont F12 = pdfBuilder.AddStandard14Font(Standard14Font.CourierBoldOblique);
            
-
-            var standardFontWithStandardEncoding = new PdfDocumentBuilder.AddedFont[]
+            var standardFontsWithStandardEncoding = new PdfDocumentBuilder.AddedFont[]
             {
                  F1,
                  F2,
@@ -115,7 +270,7 @@
                  F11,
                  F12
             };
-             
+           
             //AddLetterWithFont(page, point, "v", F1, nameof(F1));
             //AddLetterWithFont(page, point, "v", F2, nameof(F2));
             //AddLetterWithFont(page, point, "v", F3, nameof(F3));
@@ -130,106 +285,243 @@
             //AddLetterWithFont(page, point, "v", F12, nameof(F12));
 
 
-            // Get all characters/codes in font using existing (but private) class using reflection
-            var Standard14Type = typeof(UglyToad.PdfPig.Fonts.Standard14Fonts.Standard14);
-            var Standard14CacheFieldInfos = Standard14Type.GetFields(BindingFlags.NonPublic | BindingFlags.Static);
-            var Standard14Cache = (Dictionary<string, AdobeFontMetrics>)Standard14CacheFieldInfos.FirstOrDefault(v => v.Name == "Standard14Cache").GetValue(null);
+            // Get all characters codes in font using existing metrics in (private) Standard14Cache class (using reflection).
+            var Standard14Cache = GetStandard14Cache();
 
-
-            // Alternatively all 12 fonts should conform to 'StanardEncoding'
-            var SymbolEncodingType = typeof(UglyToad.PdfPig.Fonts.Encodings.StandardEncoding);
-            var EncodingTableFieldInfo = SymbolEncodingType.GetFields(BindingFlags.NonPublic | BindingFlags.Static)
-                                            .FirstOrDefault(v => v.Name == "EncodingTable");
-            (int, string)[] EncodingTable = ((int, string)[])EncodingTableFieldInfo.GetValue(Activator.CreateInstance(SymbolEncodingType, true));
-
-
+            // All 12 fonts should conform to 'StanardEncoding'          
+            var EncodingTable = ((int code, string name)[])GetEncodingTable(typeof(UglyToad.PdfPig.Fonts.Encodings.StandardEncoding));
+            var unicodesCharacters = GetUnicodeCharacters(EncodingTable, GlyphList.AdobeGlyphList);
+            
             int fontNumber = 0;
-            foreach (var font in standardFontWithStandardEncoding)
+            foreach (var font in standardFontsWithStandardEncoding)
             {
-                PdfPageBuilder page = pdfBuilder.AddPage(PageSize.A4);
-
-                double topPageY = page.PageSize.Top - 50;
-                double inch = (page.PageSize.Width / 8.5);
-                double cm = inch / 2.54;
-                double leftX = 1 * cm;
-
                 fontNumber++;
                 var storedFont = pdfBuilder.Fonts[font.Id];
                 var fontProgram = storedFont.FontProgram;
                 var fontName = fontProgram.Name;
-
-                var pointHeading = new PdfPoint(leftX, topPageY);
-                var letters = page.AddText("Font: " + fontName, 21, pointHeading, font);
-                var newY = topPageY - letters.Select(v => v.GlyphRectangle.Height).Max() * 2;
-                var point = new PdfPoint(leftX, newY);
-
-                var metrics = Standard14Cache[fontName];
-
-                var codesFromMetrics = new HashSet<int>();
-                foreach (var metric in metrics.CharacterMetrics)
+                 
                 {
-                    var code = metric.Value.CharacterCode;
-                    if (code == -1) continue;
-                    codesFromMetrics.Add(code);
-                    char ch = (char)code;
+                    PdfPageBuilder page = pdfBuilder.AddPage(PageSize.A4);
+                    
+                    double topPageY = page.PageSize.Top - 50;
+                    double inch = (page.PageSize.Width / 8.5);
+                    double cm = inch / 2.54;
+                    double leftX = 1 * cm;
 
-                    point = AddLetterWithFont(page, point, $"{ch}", font, $"F{fontNumber}");
-                }
+                    var point = new PdfPoint(leftX, topPageY);
+                    var letters = page.AddText("Adobe Standard Font "+ fontName, 21, point, F2);
+                    var newY = topPageY - letters.Select(v => v.GlyphRectangle.Height).Max() * 1.2;
+                    point = new PdfPoint(leftX, newY);
+                    letters = page.AddText("Font Specific encoding in Black, Unicode in Blue, Red only available using Unicode", 10, point, F2);
+                    newY = newY - letters.Select(v => v.GlyphRectangle.Height).Max() * 3;
+                    point = new PdfPoint(leftX, newY);
+                     
 
-                // Detect if all codes in Standard encoding table are in metrics for font.
-                bool isMissing = false;
-                foreach ((var codeNotBase8Converted, var name) in EncodingTable)
-                {
-                    var codeBase10 = System.Convert.ToInt32($"{codeNotBase8Converted}", 8);
-                    if (codesFromMetrics.Contains(codeBase10) == false)
-                    {                        
-                        var ch = (char)codeBase10; 
-                        isMissing = true;
-                        Debug.WriteLine($"In Adobe Standard Font '{fontName}' code {codeBase10} is in Standard encoding table but not in font metrics.");
+                    var eachRowY = new List<double>(new[] { newY });
+                     
+                    var metrics = Standard14Cache[fontName];
+
+                    var codesFromMetrics = new HashSet<int>();
+                    page.SetTextAndFillColor(0, 0, 0); //Black
+
+                    (var maxCharacterHeight, var maxCharacterWidth) = GetCharacterDetails(page, F1, 12d, unicodesCharacters);
+                    var context = GetContext(font, page, $"F{fontNumber}", F2, maxCharacterHeight, maxCharacterWidth);
+
+                    // Detect if all codes in Standard encoding table are in metrics for font.
+                    bool isMissing = false;
+                    bool isTextColorBlack = true;
+                    foreach ((var codeNotBase8Converted, var name) in EncodingTable)
+                    {
+                        var codeFontSpecific = System.Convert.ToInt32($"{codeNotBase8Converted}", 8);
+                        var isToggleColor = false;
+                        var code = codeFontSpecific;
+                        if (codeFontSpecific == 0xc6) { code = 0x02D8; }
+                        else if (codeFontSpecific == 0xb4) { code = 0x00b7; }
+                        else if (codeFontSpecific == 0xb7) { code = 0x2022; }
+                        else if (codeFontSpecific == 0xb8) { code = 0x201A; }
+                        else if (codeFontSpecific == 0xa4) { code = 0x2044; }
+                        else if (codeFontSpecific == 0xa8) { code = 0x00a4; }
+                        else if (codeFontSpecific == 0x60) { code = 0x2018; }
+                        else if (codeFontSpecific == 0xaf) { code = 0xFB02; }
+                        else if (codeFontSpecific == 0xaa) { code = 0x201C; }
+                        else if (codeFontSpecific == 0xba) { code = 0x201D; }
+                        else if (codeFontSpecific == 0xf8) { code = 0x0142; }
+                        else if (codeFontSpecific == 0x27) { code = 0x2019; }
+                        if (code != codeFontSpecific && isTextColorBlack) { page.SetTextAndFillColor(200, 0, 0); isTextColorBlack = false; }
+                        if (code == codeFontSpecific && isTextColorBlack == false) { page.SetTextAndFillColor(0, 0, 0); isTextColorBlack = true; }                        
+
+                        char ch = (char)code;
+                        point = AddLetterWithContext(point, $"{ch}", context, isTextColorBlack);
+                       
+                        if (eachRowY.Last() != point.Y) { eachRowY.Add(point.Y); }   
+                    }
+
+                    foreach (var metric in metrics.CharacterMetrics)
+                    {
+                        var code = metric.Value.CharacterCode;
+                        if (code == -1) continue;
+                        codesFromMetrics.Add(code);                         
+                    }
+
+                    foreach ((var codeNotBase8Converted, var name) in EncodingTable)
+                    {
+                        var codeBase10 = System.Convert.ToInt32($"{codeNotBase8Converted}", 8);
+                        if (codesFromMetrics.Contains(codeBase10) == false)
+                        {
+                            var ch = (char)codeBase10;
+                            isMissing = true;
+                            Debug.WriteLine($"In Adobe Standard Font '{fontName}' code {codeBase10} is in Standard encoding table but not in font metrics.");
+                        }
+                    }
+
+                    Assert.False(isMissing, $"Adobe Standard Font '{fontName}' contains code(s) in Standard encoding table but not in font metrics. See Debug output for details.");
+                     
+                    // Second set of rows for (unicode) characters : Test mapping from (C#) unicode chars to PDF encoding
+                    newY = newY - maxCharacterHeight * 1.2;
+                    point = new PdfPoint(leftX, newY);
+                    page.SetTextAndFillColor(0, 0, 200); //Blue
+                    foreach (var unicodeCh in unicodesCharacters)
+                    {                       
+                        point = AddLetterWithContext(point, $"{unicodeCh}", context, isHexLabel:true);
                     }
                 }
-
-                Assert.False(isMissing, $"Adobe Standard Font '{fontName}' contains code(s) in Standard encoding table but not in font metrics. See Debug output for details.");                
             }
 
             // Save one page per standard font to file system for manual review.
             var pdfBytes = pdfBuilder.Build();
             WritePdfFile($"{nameof(StandardFontsAddText)}", pdfBytes);
+
+            // Check extracted letters
+            using (var document = PdfDocument.Open(pdfBytes))
+            {
+                foreach (var page in document.GetPages())
+                {
+                    var letters = page.Letters;
+                    var expectedFontName = letters.FirstOrDefault(l=>l.FontSize == 12d).FontName;
+                     
+
+                    {
+                        var lettersFontSpecificCodes = letters.Where(l => l.FontName == expectedFontName
+                                                                    && l.FontSize == 12d
+                                                                    && ( l.Color.ToRGBValues().b == 0
+                                                                        || l.Color.ToRGBValues().r == 200)
+                                                                        )
+                                                        .ToList();
+
+
+                        Assert.Equal(149, lettersFontSpecificCodes.Count);
+                        Assert.Equal(lettersFontSpecificCodes.Count, EncodingTable.Length);
+                        for (int i = 0; i < lettersFontSpecificCodes.Count; i++)
+                        {
+                            var letter = lettersFontSpecificCodes[i];
+
+                            (var code, var name) = EncodingTable[i];
+                            var unicodeString = GlyphList.AdobeGlyphList.NameToUnicode(name);
+
+                            var letterCharacter = letter.Value[0];
+                            var unicodeCharacter = unicodeString[0];
+                            if (letterCharacter != unicodeCharacter) Debug.WriteLine($"{letterCharacter} , {unicodeCharacter}");
+                            Assert.Equal(unicodeCharacter, letterCharacter);
+                        }
+                    }
+
+                    {
+                        var lettersUnicode = letters.Where(l => l.FontName == expectedFontName
+                                                                && l.FontSize == 12d                                                           
+                                                                && l.Color.ToRGBValues().b > 0.78m)
+                                                   .ToList();
+                        Assert.Equal(149,lettersUnicode.Count);
+                        for (int i = 0; i < lettersUnicode.Count; i++)
+                        {
+                            var letter = lettersUnicode[i];
+
+                            var letterCharacter = letter.Value[0];
+                            var unicodeCharacter = unicodesCharacters[i];
+                            //Debug.WriteLine($"{letterCharacter} , {unicodeCharacter}");
+                            Assert.Equal(unicodeCharacter, letterCharacter);                            
+                        }
+                    }
+
+                }
+            }
         }
 
-        static double maxY = 0;
-        internal PdfPoint AddLetterWithFont(PdfPageBuilder page, PdfPoint point, string stringToAdd, PdfDocumentBuilder.AddedFont font, string fontName)
+        
+        internal PdfPoint AddLetterWithContext( PdfPoint point, string stringToAdd, ( PdfDocumentBuilder.AddedFont font, PdfPageBuilder page, string fontName, PdfDocumentBuilder.AddedFont fontLabel, double maxCharacterHeight, double maxCharacterWidth)context, bool isOctalLabel = false, bool isHexLabel = false)
+        {
+            var font = context.font;
+            var page = context.page;
+            var fontName = context.fontName;
+            var fontLabel = context.fontLabel;
+            var maxCharacterHeight = context.maxCharacterHeight;
+            var maxCharacterWidth = context.maxCharacterWidth;
+
+            return AddLetter(page, point, stringToAdd, font, fontName, fontLabel, maxCharacterHeight, maxCharacterWidth,isOctalLabel, isHexLabel);
+        }
+        internal PdfPoint AddLetter(PdfPageBuilder page, PdfPoint point, string stringToAdd, PdfDocumentBuilder.AddedFont font, string fontName, PdfDocumentBuilder.AddedFont fontLabel, double maxCharacterHeight, double maxCharacterWidth, bool isOctalLabel = false, bool isHexLabel = false)
         {
             if (stringToAdd is null) { throw new ArgumentException("Text to add must be a single letter.", nameof(stringToAdd)); }
-            if (stringToAdd.Length>1) { throw new ArgumentException("Text to add must be a single letter.", nameof(stringToAdd)); }
+            if (stringToAdd.Length > 1) { throw new ArgumentException("Text to add must be a single letter.", nameof(stringToAdd)); }
             if (fontName.ToUpper() != fontName) { throw new ArgumentException(@"FontName must be in uppercase eg. ""F1"".", nameof(fontName)); }
+            
             var letter = page.AddText(stringToAdd, 12, point, font);
-            Assert.NotNull(letter);                     // We should get back something.
-            Assert.Equal(1, letter.Count);              // There should be only one letter returned after the add operation.
-            Assert.Equal(stringToAdd, letter[0].Value);           // Check we got back the name letter (eg. "v")
-            //Assert.Equal(fontName, letter[0].FontName); // eg. "F1" for first font added, "F2" for second etc.
+            if (isOctalLabel)
+            {
+                var labelPointSize = 5;
+                var octalString = System.Convert.ToString((int)stringToAdd[0],8).PadLeft(3, '0');
+                var label = octalString;
+                var codeMidPoint = point.X + letter[0].GlyphRectangle.Width / 2;                
+                var ml = page.MeasureText(label, labelPointSize, point, fontLabel);
+                var labelY = point.Y + ml.Max(v => v.GlyphRectangle.Height) * 0.1 + maxCharacterHeight;
+                var xLabel =codeMidPoint - (ml.Sum(v => v.GlyphRectangle.Width) /2);
+                var labelPoint = new PdfPoint(xLabel, labelY);
+                page.AddText(label, labelPointSize, labelPoint, fontLabel);
+            }
 
+            if (isHexLabel)
+            {
+                var labelPointSize = 3;
+                var hexString = $"{(int)stringToAdd[0]:X}".PadLeft(4, '0');
+                var label = "0x" + hexString;
+                var codeMidPoint = point.X + letter[0].GlyphRectangle.Width / 2;
+                var ml = page.MeasureText(label, labelPointSize, point, fontLabel);
+                var labelY = point.Y - ml.Max(v => v.GlyphRectangle.Height) * 2.5;
+                var xLabel = codeMidPoint - (ml.Sum(v => v.GlyphRectangle.Width) / 2);
+                var labelPoint = new PdfPoint(xLabel, labelY);
+                page.AddText(label, labelPointSize, labelPoint, fontLabel);
+            }
+
+
+            Assert.NotNull(letter);                         // We should get back something.
+            Assert.Equal(1, letter.Count);                  // There should be only one letter returned after the add operation.
+            Assert.Equal(stringToAdd, letter[0].Value);     // Check we got back the name letter (eg. "v")
+            //Debug.WriteLine($"{letter[0]}");
+            
             double inch = (page.PageSize.Width / 8.5);
             double cm = inch / 2.54;
-         
-
-            var letterWidth = letter[0].GlyphRectangle.Width*2;
-            var letterHeight = letter[0].GlyphRectangle.Height * 2;
              
-            var newX = point.X + letterWidth;
+            var letterWidth = letter[0].GlyphRectangle.Width * 2;
+            var letterHeight = letter[0].GlyphRectangle.Height * 2;
+
+            var newX = point.X + maxCharacterWidth * 1.1;
             var newY = point.Y;
-            if (letterHeight > maxY) maxY = letterHeight;
-            if (newX > page.PageSize.Width - 2 * letterWidth)
+             
+            if (newX > page.PageSize.Width - cm)
             {
-                newX = 1 * cm;
-                newY -= maxY *2;
-                maxY=0;
+                return newLine(cm, point.Y, maxCharacterHeight);                
             }
             return new PdfPoint(newX, newY);
         }
 
+        PdfPoint newLine(double cm, double y, double maxCharacterHeight)
+        {
+            var newX = 1 * cm;
+            var newY = y - maxCharacterHeight * 5;          
+            return new PdfPoint(newX, newY);
+        }
+
         private static void WritePdfFile(string name, byte[] bytes, string extension = "pdf")
-        { 
+        {
             const string subFolder = nameof(Standard14WritingFontTests);
             var folderPath = subFolder;
 
@@ -243,5 +535,48 @@
             Debug.WriteLine($@"{Path.Combine(Directory.GetCurrentDirectory(), filePath)}");
         }
 
+        private static (int code, string name)[] GetEncodingTable(Type t)
+        {
+            // Get existing (but private) EncodingTable from encoding class using reflection so we can obtain all codes            
+            var EncodingTableFieldInfo = t.GetFields(BindingFlags.NonPublic | BindingFlags.Static)
+                                            .FirstOrDefault(v => v.Name == "EncodingTable");
+            (int, string)[] EncodingTable = ((int, string)[])EncodingTableFieldInfo.GetValue(Activator.CreateInstance(t, true));
+            return EncodingTable;
+        }
+
+
+        private (PdfDocumentBuilder.AddedFont font, PdfPageBuilder page, string fontName, PdfDocumentBuilder.AddedFont fontLabel, double maxCharacterHeight, double maxCharacterWidth) GetContext(PdfDocumentBuilder.AddedFont font, PdfPageBuilder page, string fontName, PdfDocumentBuilder.AddedFont fontLabel, double maxCharacterHeight, double maxCharacterWidth)
+        {
+            return (font, page, fontName, fontLabel, maxCharacterHeight, maxCharacterWidth);
+
+        }
+
+        private static char[]GetUnicodeCharacters((int code, string name)[] EncodingTable, GlyphList glyphList)
+        {
+            var gylphNamesFromEncodingTable = EncodingTable.Select(v => v.name).ToArray();
+            char[] unicodesCharacters = gylphNamesFromEncodingTable.Select(v => (char)glyphList.NameToUnicode(v)[0]).ToArray();
+            return unicodesCharacters;
+        }
+        (  double maxCharacterHeight,double maxCharacterWidth)GetCharacterDetails(PdfPageBuilder page,PdfDocumentBuilder.AddedFont font, double fontSize, char[] unicodesCharacters)
+        {          
+            double maxCharacterHeight;
+            double maxCharacterWidth;
+            {
+                var point = new PdfPoint(10, 10);
+                var characterRectangles = unicodesCharacters.Select(v => page.MeasureText($"{v}", 12m,point, font)[0].GlyphRectangle);
+                maxCharacterHeight = characterRectangles.Max(v => v.Height);
+                maxCharacterWidth = characterRectangles.Max(v => v.Height);
+            }
+            return (maxCharacterHeight, maxCharacterWidth);
+        }
+
+
+        private static Dictionary<string, AdobeFontMetrics> GetStandard14Cache()
+        {
+            var Standard14Type = typeof(UglyToad.PdfPig.Fonts.Standard14Fonts.Standard14);
+            var Standard14CacheFieldInfos = Standard14Type.GetFields(BindingFlags.NonPublic | BindingFlags.Static);
+            var Standard14Cache = (Dictionary<string, AdobeFontMetrics>)Standard14CacheFieldInfos.FirstOrDefault(v => v.Name == "Standard14Cache").GetValue(null);
+            return Standard14Cache;
+        }
     }
 }

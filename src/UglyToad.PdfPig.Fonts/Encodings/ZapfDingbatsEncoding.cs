@@ -8,8 +8,8 @@
         /// <summary>
         /// EncodingTable for ZapfDingbats
         /// PDF Spec 1.7 Page 1016 https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/pdfreference1.7old.pdf#page1016
-        /// Note spec has code values as octal (base 8) with leading zero (supported in 'C' and 'Java') but not by C#
-        /// Code values are already converted to base 10 prior to compile.
+        /// Note spec has code values are octal (base 8) with leading zero (supported in 'C' and 'Java') but not by C#
+        /// Code values are already converted to base 10 prior to compile. Original octal values in comments on each line.
         /// </summary>
         private static readonly (int, string)[] EncodingTable = {
             ( 32, "space"),                     // for char ' ' using  32 as base10 equivilant (for C# source). Spec has 040 octal.               ( 32,"space")  <=> (040, "space"),

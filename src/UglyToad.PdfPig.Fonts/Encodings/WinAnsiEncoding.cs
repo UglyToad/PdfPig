@@ -1,10 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Encodings
 {
-    using Core;
+    
+
+
 
     /// <summary>
     /// Windows ANSI encoding.
-    /// </summary>
+    /// </summary>    
     public class WinAnsiEncoding : Encoding
     {
         /// <summary>
