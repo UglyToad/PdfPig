@@ -3,7 +3,6 @@ namespace UglyToad.PdfPig.Writer
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using Content;
@@ -27,7 +26,7 @@ namespace UglyToad.PdfPig.Writer
         private readonly Dictionary<int, PdfPageBuilder> pages = new Dictionary<int, PdfPageBuilder>();
         private readonly Dictionary<Guid, FontStored> fonts = new Dictionary<Guid, FontStored>();
         private bool completed = false;
-        internal int fontId = 0;
+        private int fontId = 0;
 
         private readonly static ArrayToken DefaultProcSet = new ArrayToken(new List<NameToken>
         {
@@ -90,20 +89,21 @@ namespace UglyToad.PdfPig.Writer
         /// <param name="disposeStream">If stream should be disposed when builder is.</param>
         /// <param name="type">Type of pdf stream writer to use</param>
         /// <param name="version">Pdf version to use in header.</param>
-        public PdfDocumentBuilder(Stream stream, bool disposeStream = false, PdfWriterType type = PdfWriterType.Default, decimal version = 1.7m)
+        /// <param name="tokenWriter">Token writer to use</param>
+        public PdfDocumentBuilder(Stream stream, bool disposeStream = false, PdfWriterType type = PdfWriterType.Default, decimal version = 1.7m, ITokenWriter tokenWriter = null)
         {
             switch (type)
             {
                 case PdfWriterType.ObjectInMemoryDedup:
-                    context = new PdfDedupStreamWriter(stream, disposeStream);
+                    context = new PdfDedupStreamWriter(stream, disposeStream, tokenWriter);
                     break;
                 default:
-                    context = new PdfStreamWriter(stream, disposeStream);
+                    context = new PdfStreamWriter(stream, disposeStream, tokenWriter);
                     break;
             }
             context.InitializePdf(version);
         }
-
+        
         /// <summary>
         /// Determines whether the bytes of the TrueType font file provided can be used in a PDF document.
         /// </summary>

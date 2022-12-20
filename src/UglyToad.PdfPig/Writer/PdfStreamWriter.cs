@@ -18,17 +18,17 @@
         protected bool DisposeStream { get; set; }
         protected bool Initialized { get; set; }
         protected int CurrentNumber { get; set; } = 1;
-        protected readonly static TokenWriter TokenWriter = new TokenWriter();
+        protected readonly ITokenWriter TokenWriter;
 
-        internal PdfStreamWriter(Stream baseStream, bool disposeStream = true)
+        internal PdfStreamWriter(Stream baseStream, bool disposeStream = true, ITokenWriter tokenWriter = null)
         {
             Stream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
             if (!baseStream.CanWrite)
             {
                 throw new ArgumentException("Output stream must be writable");
             }
-
             DisposeStream = disposeStream;
+            TokenWriter = tokenWriter ?? new TokenWriter();
         }
 
         public Stream Stream { get; protected set; }

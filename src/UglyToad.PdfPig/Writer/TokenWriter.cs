@@ -135,14 +135,8 @@
             }
         }
 
-        /// <summary>
-        /// Writes a valid single section cross-reference (xref) table plus trailer dictionary to the output for the set of object offsets.
-        /// </summary>
-        /// <param name="objectOffsets">The byte offset from the start of the document for each object in the document.</param>
-        /// <param name="catalogToken">The object representing the catalog dictionary which is referenced from the trailer dictionary.</param>
-        /// <param name="outputStream">The output stream to write to.</param>
-        /// <param name="documentInformationReference">The object reference for the document information dictionary if present.</param>
-        internal void WriteCrossReferenceTable(IReadOnlyDictionary<IndirectReference, long> objectOffsets,
+        /// <inheritdoc cref="ITokenWriter.WriteCrossReferenceTable" />
+        public void WriteCrossReferenceTable(IReadOnlyDictionary<IndirectReference, long> objectOffsets,
             IndirectReference catalogToken,
             Stream outputStream,
             IndirectReference? documentInformationReference)
@@ -277,14 +271,8 @@
             outputStream.Write(Eof, 0, Eof.Length);
         }
 
-        /// <summary>
-        /// Writes pre-serialized token as an object token to the output stream.
-        /// </summary>
-        /// <param name="objectNumber">Object number of the indirect object.</param>
-        /// <param name="generation">Generation of the indirect object.</param>
-        /// <param name="data">Pre-serialized object contents.</param>
-        /// <param name="outputStream">The stream to write the token to.</param>
-        internal void WriteObject(long objectNumber, int generation, byte[] data, Stream outputStream)
+        /// <inheritdoc cref="ITokenWriter.WriteObject" />
+        public void WriteObject(long objectNumber, int generation, byte[] data, Stream outputStream)
         {
             WriteLong(objectNumber, outputStream);
             WriteWhitespace(outputStream);
