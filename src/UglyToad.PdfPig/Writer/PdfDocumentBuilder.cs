@@ -559,6 +559,11 @@ namespace UglyToad.PdfPig.Writer
                     pageDictionary[NameToken.MediaBox] = RectangleToArray(page.Value.PageSize);
                 }
 
+                if (page.Value.rotation.HasValue)
+                {
+                    pageDictionary[NameToken.Rotate] = new NumericToken(page.Value.rotation.Value);
+                }
+
                 // Adobe Acrobat errors if content streams ref'd by multiple pages, turn off
                 // dedup if on to avoid issues
                 var prev = context.AttemptDeduplication;

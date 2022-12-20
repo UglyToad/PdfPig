@@ -33,7 +33,7 @@
             this.fontFactory = fontFactory;
         }
 
-        public void LoadResourceDictionary(DictionaryToken resourceDictionary)
+        public void LoadResourceDictionary(DictionaryToken resourceDictionary, InternalParsingOptions parsingOptions)
         {
             lastLoadedFont = (null, null);
 
@@ -43,7 +43,7 @@
             {
                 var fontDictionary = DirectObjectFinder.Get<DictionaryToken>(fontBase, scanner);
 
-                LoadFontDictionary(fontDictionary);
+                LoadFontDictionary(fontDictionary, parsingOptions);
             }
 
             if (resourceDictionary.TryGet(NameToken.Xobject, out var xobjectBase))
@@ -132,7 +132,7 @@
             currentResourceState.Pop();
         }
 
-        private void LoadFontDictionary(DictionaryToken fontDictionary)
+        private void LoadFontDictionary(DictionaryToken fontDictionary, InternalParsingOptions parsingOptions)
         {
             lastLoadedFont = (null, null);
 
@@ -157,7 +157,18 @@
                         continue;
                     }
 
-                    loadedFonts[reference] = fontFactory.Get(fontObject);
+                    try
+                    { 
+                        loadedFonts[reference] = fontFactory.Get(fontObject);
+                    }
+                    catch
+                    {
+                        if (!parsingOptions.SkipMissingFonts)
+                        {
+                            throw;
+                        }
+                    }
+                    
                 }
                 else if (pair.Value is DictionaryToken fd)
                 {

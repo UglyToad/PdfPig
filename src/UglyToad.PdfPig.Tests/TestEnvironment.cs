@@ -4,6 +4,7 @@
 
     public static class TestEnvironment
     {
-        public static readonly bool IsUnixPlatform = Environment.NewLine.Length == 1;
+        public static bool IsSingleByteNewLine(string s) => s.IndexOf('\r') < 0;
+            
     }
 }

@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
+    using Fonts;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -79,10 +80,17 @@
                 memoryStream.ReadByte();
                 memoryStream.ReadByte();
 
-                using (var deflate = new DeflateStream(memoryStream, CompressionMode.Decompress))
+                try
                 {
-                    deflate.CopyTo(output);
-                    return output.ToArray();
+                    using (var deflate = new DeflateStream(memoryStream, CompressionMode.Decompress))
+                    {
+                        deflate.CopyTo(output);
+                        return output.ToArray();
+                    }
+                }
+                catch (InvalidDataException ex)
+                {
+                    throw new CorruptCompressedDataException("Invalid Flate compressed stream encountered", ex);
                 }
             }
         }
