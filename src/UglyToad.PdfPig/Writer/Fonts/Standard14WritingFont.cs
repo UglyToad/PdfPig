@@ -3,16 +3,12 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
-    using System.IO;
     using System.Linq;
-    using System.Xml.Linq;
     using Core;
     using PdfPig.Fonts;
     using PdfPig.Fonts.AdobeFontMetrics;
     using PdfPig.Fonts.Encodings;
     using Tokens;
-    using UglyToad.PdfPig.Graphics.Colors;
-    using Util.JetBrains.Annotations;
 
     internal class Standard14WritingFont : IWritingFont
     {
@@ -81,7 +77,7 @@
                 { NameToken.Type, NameToken.Font },
                 { NameToken.Subtype, NameToken.Type1  },
                 { NameToken.BaseFont, NameToken.Create(metrics.FontName) },
-                { NameToken.Encoding, (metrics.FontName is "Symbol" or "ZapfDingbats") ? NameToken.Create("FontSpecific") : NameToken.StandardEncoding }   //  2022-12-12 @fnatzke was NameToken.MacRomanEncoding; not sure based on spec why MacRomanEncoding enoding?
+                { NameToken.Encoding, (metrics.FontName is "Symbol" or "ZapfDingbats") ? NameToken.Create("FontSpecific") : NameToken.StandardEncoding }   //  2022-12-12 @fnatzke was NameToken.MacRomanEncoding; not sure based on spec why MacRomanEncoding encoding?
             };
              
             var token = new DictionaryToken(dictionary);
@@ -141,7 +137,7 @@
             code = encoding.GetCode(name);
             if (code == -1)
             {
-                Debug.WriteLine($"Found Unicode point '{character}' (0x{(int)character:X}) but glphy name '{name}' not found in font '{metrics.FontName}' (font specific encoding : ZapfDingbats).");
+                Debug.WriteLine($"Found Unicode point '{character}' (0x{(int)character:X}) but glphy name '{name}' not found in font '{metrics.FontName}' (font specific encoding: ZapfDingbats).");
             }
             return code;
 
