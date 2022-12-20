@@ -8,6 +8,7 @@
     using PdfPig.Fonts.Standard14Fonts;
     using PdfPig.Tokens;
     using PdfPig.Writer;
+    using System.Collections.Generic;
     using Tests.Fonts.TrueType;
     using Xunit;
 
@@ -1114,6 +1115,27 @@
             }
         }
 
+        [Fact]
+        public void CanUseCustomTokenWriter()
+        {
+            var docPath = IntegrationHelpers.GetDocumentPath("68-1990-01_A.pdf");
+            var tw = new TestTokenWriter();
+
+            using (var doc = PdfDocument.Open(docPath))
+            using (var ms = new MemoryStream())
+            using (var builder = new PdfDocumentBuilder(ms, tokenWriter: tw))
+            {
+                for (var i = 1; i <= doc.NumberOfPages; i++)
+                {
+                    builder.AddPage(doc, i);
+                }
+                builder.Build();
+            }
+            Assert.Equal(tw.Objects, 0); // No objects in sample file
+            Assert.True(tw.Tokens > 1000); // Roughly 1065
+            Assert.True(tw.WroteCrossReferenceTable);
+        }
+
         private static void WriteFile(string name, byte[] bytes, string extension = "pdf")
         {
             try
@@ -1131,6 +1153,31 @@
             {
                 // ignored.
             }
+        }
+    }
+
+    public class TestTokenWriter : ITokenWriter
+    {
+        public int Tokens { get; private set; }
+        public int Objects { get; private set; }
+        public bool WroteCrossReferenceTable { get; private set; }
+
+        public void WriteToken(IToken token, Stream outputStream)
+        {
+            Tokens++;
+        }
+
+        public void WriteObject(long objectNumber, int generation, byte[] data, Stream outputStream)
+        {
+            Objects++;
+        }
+
+        public void WriteCrossReferenceTable(IReadOnlyDictionary<IndirectReference, long> objectOffsets,
+            IndirectReference catalogToken,
+            Stream outputStream,
+            IndirectReference? documentInformationReference)
+        {
+            WroteCrossReferenceTable = true;
         }
     }
 }
