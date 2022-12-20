@@ -13,11 +13,9 @@
     using System.Reflection;
     using System.Collections.Generic;
     using UglyToad.PdfPig.Fonts.AdobeFontMetrics;
-    using System.IO;
-    using System.Drawing;
+    using System.IO;  
     using System.Diagnostics;
-    using System.Reflection.Emit;
-    using System.Text;
+  
 
     public class Standard14WritingFontTests
     {
@@ -38,6 +36,7 @@
                 double leftX = 1 * cm;
 
                 var point = new PdfPoint(leftX, topPageY);
+                DateTimeStampPage(pdfBuilder, page, point, cm);
                 var letters = page.AddText("Adobe Standard Font ZapfDingbats", 21, point, F2);
                 var newY = topPageY - letters.Select(v => v.GlyphRectangle.Height).Max() * 1.2;
                 point = new PdfPoint(leftX, newY);
@@ -123,6 +122,89 @@
         }
 
         [Fact]
+        public void ZapfDingbatsFontErrorResponseAddingInvalidText()
+        {
+            PdfDocumentBuilder pdfBuilder = new PdfDocumentBuilder();
+            PdfDocumentBuilder.AddedFont F1 = pdfBuilder.AddStandard14Font(Standard14Font.ZapfDingbats);
+            var EncodingTable = GetEncodingTable(typeof(UglyToad.PdfPig.Fonts.Encodings.ZapfDingbatsEncoding));
+          
+            {                
+                PdfPageBuilder page = pdfBuilder.AddPage(PageSize.A4);
+                var cm = (page.PageSize.Width / 8.5 / 2.54);              
+                var point = new PdfPoint(cm, page.PageSize.Top - cm);
+                 
+                {
+                    // Get the codes that have no character associated in the font specific coding. 
+                    var codesUnder255 = Enumerable.Range(0, 255).Select(v => (char)v).ToArray();
+                    var codesFromEncodingTable = EncodingTable.Select(v => (char)v.code).ToArray();
+                    var invalidCharactersUnder255 = codesUnder255.Except(codesFromEncodingTable);
+                    //Debug.WriteLine($"Number of invalid under 255 characters: {invalidCharactersUnder255.Count()}");
+                    Assert.Equal(67, invalidCharactersUnder255.Count());
+                    foreach (var ch in invalidCharactersUnder255)
+                    {
+                        try
+                        {
+                             var letter = page.AddText($"{ch}", 12, point, F1);
+                            Assert.True(true, $"Unexpected. Character: '{ch}' (0x{(int)ch:X}) should throw. Not supported.");
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            // Expected
+                            // "The font does not contain a character: '?' (0xnn)." where ? is a character and nn is hex number.
+                            Assert.Contains("The font does not contain a character", ex.Message);
+                        }
+                        try
+                        {
+                            var letter = page.MeasureText($"{ch}", 12, point, F1);
+                            Assert.True(true, $"Unexpected. Character: '{ch}' (0x{(int)ch:X}) should throw. Not supported.");
+                         
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            // Expected
+                            // "The font does not contain a character: '?' (0xnn)." where ? is a character and nn is hex number.
+                            Assert.Contains("The font does not contain a character", ex.Message);
+                        }
+                    }
+                }
+
+                {
+                    // UnicodeRanges.Dingbats - 0x2700 - 0x27BF
+                    var codesFromUnicodeDingbatBlock = Enumerable.Range(0x2700, 0xBF).Select(v => (char)v).ToArray();
+                    var unicodesCharacters = GetUnicodeCharacters(EncodingTable, GlyphList.ZapfDingbats);
+                    var invalidCharactersInUnicodeDingbaBlock = codesFromUnicodeDingbatBlock.Except(unicodesCharacters);
+                    //Debug.WriteLine($"Number of invalid unicode characters: {invalidCharactersInUnicodeDingbaBlock.Count()}");
+                    Assert.Equal(31, invalidCharactersInUnicodeDingbaBlock.Count());
+                    foreach (var ch in invalidCharactersInUnicodeDingbaBlock)
+                    {
+                        try
+                        {
+                            var letter = page.AddText($"{ch}", 12, point, F1);
+                            Assert.True(true, $"Unexpected. Character: '{ch}' (0x{(int)ch:X}) should throw. Not supported.");
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            // Expected
+                            // "The font does not contain a character: '?' (0xnn)." where ? is a character and nn is hex number.
+                            Assert.Contains("The font does not contain a character", ex.Message);
+                        }
+                        try
+                        {
+                            var letter = page.MeasureText($"{ch}", 12, point, F1);
+                            Assert.True(true, $"Unexpected. Character: '{ch}' (0x{(int)ch:X}) should throw. Not supported.");
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            // Expected
+                            // "The font does not contain a character: '?' (0xnn)." where ? is a character and nn is hex number.
+                            Assert.Contains("The font does not contain a character", ex.Message);
+                        }
+                    }
+                }
+            }             
+        }
+
+        [Fact]
         public void SymbolFontAddText()
         {
             PdfDocumentBuilder pdfBuilder = new PdfDocumentBuilder();
@@ -139,6 +221,7 @@
                 double leftX = 1 * cm;
 
                 var point = new PdfPoint(leftX, topPageY);
+                DateTimeStampPage(pdfBuilder, page, point, cm);
                 var letters = page.AddText("Adobe Standard Font Symbol ", 21, point, F2);
                 var newY = topPageY - letters.Select(v => v.GlyphRectangle.Height).Max() * 1.2;
                 point = new PdfPoint(leftX, newY);
@@ -239,6 +322,110 @@
         }
 
         [Fact]
+        public void SymbolFontErrorResponseAddingInvalidText()
+        {
+            PdfDocumentBuilder pdfBuilder = new PdfDocumentBuilder();
+            PdfDocumentBuilder.AddedFont F1 = pdfBuilder.AddStandard14Font(Standard14Font.Symbol);
+            var EncodingTable = GetEncodingTable(typeof(UglyToad.PdfPig.Fonts.Encodings.SymbolEncoding));
+
+            {
+                PdfPageBuilder page = pdfBuilder.AddPage(PageSize.A4);
+                var cm = (page.PageSize.Width / 8.5 / 2.54);
+                var point = new PdfPoint(cm, page.PageSize.Top - cm);
+
+                {
+                    // Get the codes that have no character associated in the font specific coding. 
+                    var codesUnder255 = Enumerable.Range(0, 255).Select(v => (char)v).ToArray();
+                    var codesFromEncodingTable = EncodingTable.Select(v => (char)v.code).ToArray();
+                    var invalidCharactersUnder255 = codesUnder255.Except(codesFromEncodingTable);
+                    Debug.WriteLine($"Number of invalid under 255 characters: {invalidCharactersUnder255.Count()}");
+                    foreach (var ch in invalidCharactersUnder255)
+                    {
+                        try
+                        {
+                            var letter = page.AddText($"{ch}", 12, point, F1);
+                            Assert.True(true, $"Unexpected. Character: '{ch}' (0x{(int)ch:X}) should throw. Not supported.");
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            // Expected
+                            // "The font does not contain a character: '?' (0xnn)." where ? is a character and nn is hex number.
+                            Assert.Contains("The font does not contain a character", ex.Message);
+                        }
+                        try
+                        {
+                            var letter = page.MeasureText($"{ch}", 12, point, F1);
+                            Assert.True(true, $"Unexpected. Character: '{ch}' (0x{(int)ch:X}) should throw. Not supported.");
+
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            // Expected
+                            // "The font does not contain a character: '?' (0xnn)." where ? is a character and nn is hex number.
+                            Assert.Contains("The font does not contain a character", ex.Message);
+                        }
+                    }
+                }
+
+                { 
+                    var unicodesCharacters = GetUnicodeCharacters(EncodingTable, GlyphList.AdobeGlyphList);
+                    
+                    var randomCharacters = new char[10];
+                    {
+                        var listUnicodeCharacters = unicodesCharacters.Select(v => (int)v).ToList();
+                        var rnd = new Random();
+                        int nextIndex = 0;
+                        while (nextIndex < randomCharacters.Length)
+                        { 
+                            var value = rnd.Next(0x10ffff);
+                           
+                            if (listUnicodeCharacters.Contains(value)) { continue; }
+                            char ch = (char)value;                            
+                            int i = (int)ch;
+                            if (i >= 0xd800 && i <= 0xdfff) { continue; }
+                            randomCharacters[nextIndex++] = ch;
+                            Debug.WriteLine($"{value:X}");
+                        }
+                    }                    
+                    foreach (var ch in randomCharacters)
+                    {
+                        int i = (int)ch;
+                        if (i > 0x10ffff) {
+                            Debug.WriteLine("Unexpected unicode point. Too large to be unicode. Expected: <0x10ffff. Got: 0x{i:X}"); 
+                            continue;
+                        }
+                        if (i >= 0xd800 && i<=0xdfff)
+                        {
+                            Debug.WriteLine("Unexpected unicode point that is not a surrogate  Expected: <0xd800 && >0xdfff. Got: 0x{i:X}");
+                            continue;
+                        }
+                        try
+                        {
+                            var letter = page.AddText($"{ch}", 12, point, F1);
+                            Assert.True(true, $"Unexpected. Character: '{ch}' (0x{(int)ch:X}) should throw. Not supported.");
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            // Expected
+                            // "The font does not contain a character: '?' (0xnn)." where ? is a character and nn is hex number.
+                            Assert.Contains("The font does not contain a character", ex.Message);
+                        }
+                        try
+                        {
+                            var letter = page.MeasureText($"{ch}", 12, point, F1);
+                            Assert.True(true, $"Unexpected. Character: '{ch}' (0x{(int)ch:X}) should throw. Not supported.");
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            // Expected
+                            // "The font does not contain a character: '?' (0xnn)." where ? is a character and nn is hex number.
+                            Assert.Contains("The font does not contain a character", ex.Message);
+                        }
+                    }
+                }
+            }
+        }
+        [Fact]
         public void StandardFontsAddText()
         {
             PdfDocumentBuilder pdfBuilder = new PdfDocumentBuilder();
@@ -309,6 +496,7 @@
                     double leftX = 1 * cm;
 
                     var point = new PdfPoint(leftX, topPageY);
+                    DateTimeStampPage(pdfBuilder, page, point, cm);
                     var letters = page.AddText("Adobe Standard Font "+ fontName, 21, point, F2);
                     var newY = topPageY - letters.Select(v => v.GlyphRectangle.Height).Max() * 1.2;
                     point = new PdfPoint(leftX, newY);
@@ -446,7 +634,155 @@
             }
         }
 
-        
+
+        [Fact]
+        public void StandardFontErrorResponseAddingInvalidText()
+        {
+            PdfDocumentBuilder pdfBuilder = new PdfDocumentBuilder();
+            PdfPageBuilder page = pdfBuilder.AddPage(PageSize.A4);
+            var cm = (page.PageSize.Width / 8.5 / 2.54);
+            var point = new PdfPoint(cm, page.PageSize.Top - cm);
+
+            PdfDocumentBuilder.AddedFont[] standardFontsWithStandardEncoding;
+            {
+                PdfDocumentBuilder.AddedFont F1 = pdfBuilder.AddStandard14Font(Standard14Font.TimesRoman);
+                PdfDocumentBuilder.AddedFont F2 = pdfBuilder.AddStandard14Font(Standard14Font.TimesBold);
+                PdfDocumentBuilder.AddedFont F3 = pdfBuilder.AddStandard14Font(Standard14Font.TimesItalic);
+                PdfDocumentBuilder.AddedFont F4 = pdfBuilder.AddStandard14Font(Standard14Font.TimesBoldItalic);
+                PdfDocumentBuilder.AddedFont F5 = pdfBuilder.AddStandard14Font(Standard14Font.Helvetica);
+                PdfDocumentBuilder.AddedFont F6 = pdfBuilder.AddStandard14Font(Standard14Font.HelveticaBold);
+                PdfDocumentBuilder.AddedFont F7 = pdfBuilder.AddStandard14Font(Standard14Font.HelveticaOblique);
+                PdfDocumentBuilder.AddedFont F8 = pdfBuilder.AddStandard14Font(Standard14Font.HelveticaBoldOblique);
+                PdfDocumentBuilder.AddedFont F9 = pdfBuilder.AddStandard14Font(Standard14Font.Courier);
+                PdfDocumentBuilder.AddedFont F10 = pdfBuilder.AddStandard14Font(Standard14Font.CourierBold);
+                PdfDocumentBuilder.AddedFont F11 = pdfBuilder.AddStandard14Font(Standard14Font.CourierOblique);
+                PdfDocumentBuilder.AddedFont F12 = pdfBuilder.AddStandard14Font(Standard14Font.CourierBoldOblique);
+
+                standardFontsWithStandardEncoding = new PdfDocumentBuilder.AddedFont[]
+                {
+                 F1,
+                 F2,
+                 F3,
+                 F4,
+                 F5,
+                 F6,
+                 F7,
+                 F8,
+                 F9,
+                 F10,
+                 F11,
+                 F12
+                };
+            }
+            var EncodingTable = GetEncodingTable(typeof(UglyToad.PdfPig.Fonts.Encodings.StandardEncoding));
+
+            // Get the codes that have no character associated in the font specific coding. 
+            char[] invalidCharactersUnder255;
+            {
+                var codesUnder255 = Enumerable.Range(0, 255).Select(v => (char)v).ToArray();
+                var codesFromEncodingTable = EncodingTable.Select(v => (char)v.code).ToArray();
+                invalidCharactersUnder255 = codesUnder255.Except(codesFromEncodingTable).ToArray();
+                Debug.WriteLine($"Number of invalid under 255 characters: {invalidCharactersUnder255.Count()}");
+            }
+
+            // Get random unicodes not valid for any font with Standard encoding.
+            var randomUnicodeCharacters = new char[10];
+            {
+                var unicodesCharacters = GetUnicodeCharacters(EncodingTable, GlyphList.AdobeGlyphList);
+                {
+                    var listUnicodeCharacters = unicodesCharacters.Select(v => (int)v).ToList();
+                    var rnd = new Random();
+                    int nextIndex = 0;
+                    while (nextIndex < randomUnicodeCharacters.Length)
+                    {
+                        var value = rnd.Next(0x10ffff);
+
+                        if (listUnicodeCharacters.Contains(value)) { continue; }
+                        char ch = (char)value;
+                        int i = (int)ch;
+                        if (i >= 0xd800 && i <= 0xdfff) { continue; }
+                        randomUnicodeCharacters[nextIndex++] = ch;
+                        Debug.WriteLine($"{value:X}");
+                    }
+                }
+            }
+
+            int fontNumber = 0;
+            foreach (var font in standardFontsWithStandardEncoding)
+            {
+                fontNumber++;
+                var storedFont = pdfBuilder.Fonts[font.Id];
+                var fontProgram = storedFont.FontProgram;
+                var fontName = fontProgram.Name;
+                 
+                foreach (var ch in invalidCharactersUnder255)
+                {
+                    try
+                    {
+                        var letter = page.AddText($"{ch}", 12, point, font);
+                        Assert.True(true, $"Unexpected. Character: '{ch}' (0x{(int)ch:X}) should throw. Not supported. Font: '{fontName}'");
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        // Expected
+                        // "The font does not contain a character: '?' (0xnn)." where ? is a character and nn is hex number.
+                        Assert.Contains("The font does not contain a character", ex.Message);
+                    }
+                    try
+                    {
+                        var letter = page.MeasureText($"{ch}", 12, point, font);
+                        Assert.True(true, $"Unexpected. Character: '{ch}' (0x{(int)ch:X}) should throw. Not supported. Font: '{fontName}'");
+
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        // Expected
+                        // "The font does not contain a character: '?' (0xnn)." where ? is a character and nn is hex number.
+                        Assert.Contains("The font does not contain a character", ex.Message);
+                    }
+                }
+
+
+                foreach (var ch in randomUnicodeCharacters)
+                {
+                    int i = (int)ch;
+                    if (i > 0x10ffff)
+                    {
+                        Debug.WriteLine("Unexpected unicode point. Too large to be unicode. Expected: <0x10ffff. Got: 0x{i:X}");
+                        continue;
+                    }
+                    if (i >= 0xd800 && i <= 0xdfff)
+                    {
+                        Debug.WriteLine("Unexpected unicode point that is not a surrogate  Expected: <0xd800 && >0xdfff. Got: 0x{i:X}");
+                        continue;
+                    }
+                    try
+                    {
+                        var letter = page.AddText($"{ch}", 12, point, font);
+                        Assert.True(true, $"Unexpected. Character: '{ch}' (0x{(int)ch:X}) should throw. Not supported.");
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        // Expected
+                        // "The font does not contain a character: '?' (0xnn)." where ? is a character and nn is hex number.
+                        Assert.Contains("The font does not contain a character", ex.Message);
+                    }
+                    try
+                    {
+                        var letter = page.MeasureText($"{ch}", 12, point, font);
+                        Assert.True(true, "Unexpected. Character: '{ch}' (0x{(int)ch:X}) should throw. Not supported.");
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        // Expected
+                        // "The font does not contain a character: '?' (0xnn)." where ? is a character and nn is hex number.
+                        Assert.Contains("The font does not contain a character", ex.Message);
+                    }
+                }
+
+            }
+        }
+
         internal PdfPoint AddLetterWithContext( PdfPoint point, string stringToAdd, ( PdfDocumentBuilder.AddedFont font, PdfPageBuilder page, string fontName, PdfDocumentBuilder.AddedFont fontLabel, double maxCharacterHeight, double maxCharacterWidth)context, bool isOctalLabel = false, bool isHexLabel = false)
         {
             var font = context.font;
@@ -577,6 +913,37 @@
             var Standard14CacheFieldInfos = Standard14Type.GetFields(BindingFlags.NonPublic | BindingFlags.Static);
             var Standard14Cache = (Dictionary<string, AdobeFontMetrics>)Standard14CacheFieldInfos.FirstOrDefault(v => v.Name == "Standard14Cache").GetValue(null);
             return Standard14Cache;
+        }
+
+        private static void DateTimeStampPage(PdfDocumentBuilder pdfBuilder, PdfPageBuilder page, PdfPoint point, double cm)
+        {
+            var courierFont = pdfBuilder.AddStandard14Font(Standard14Font.Courier);
+
+            var stampTextUTC =   "  UTC: " + DateTime.UtcNow.ToString("yyyy-MMM-dd HH:mm");
+            var stampTextLocal = "Local: " + DateTimeOffset.Now.ToString("yyyy-MMM-dd HH:mm zzz");
+
+            const decimal fontSize = 7m;
+
+            var indentFromLeft = page.PageSize.Width - cm;
+            {
+                var mtUTC = page.MeasureText(stampTextUTC, fontSize, point, courierFont);
+                var mtlocal = page.MeasureText(stampTextLocal, fontSize, point, courierFont);
+                var widthUTC = mtUTC.Sum(v => v.GlyphRectangle.Width);
+                var widthLocal = mtlocal.Sum(v => v.GlyphRectangle.Width);
+
+                indentFromLeft -= Math.Max(widthUTC, widthLocal);
+            }
+
+            {
+                point = new PdfPoint(indentFromLeft, point.Y);
+                var letters = page.AddText(stampTextUTC, 7m, point, courierFont);
+                var maxHeight = letters.Max(v=>v.GlyphRectangle.Height);
+                point = new PdfPoint(indentFromLeft, point.Y - maxHeight * 1.2);
+            }
+
+            {
+                var letters = page.AddText(stampTextLocal, 7m, point, courierFont);
+            }
         }
     }
 }

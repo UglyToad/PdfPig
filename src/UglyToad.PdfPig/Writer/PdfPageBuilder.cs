@@ -849,7 +849,7 @@
 
                 if (!font.TryGetBoundingBox(c, out var rect))
                 {
-                    throw new InvalidOperationException($"The font does not contain a character: {c}.");
+                    throw new InvalidOperationException($"The font does not contain a character: '{c}' (0x{(int)c:X}).");
                 }
 
                 if (!font.TryGetAdvanceWidth(c, out var charWidth))
