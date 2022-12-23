@@ -8,7 +8,7 @@
     using Geometry;
     using Tokens;
     using Util.JetBrains.Annotations;
-
+    using Debug = System.Diagnostics.Debug;
     /// <summary>
     /// Defines glyphs using a CIDFont
     /// </summary>
@@ -68,14 +68,36 @@
         {
             value = null;
 
-            if (!ToUnicode.CanMapToUnicode)
+            var isDirectUnicodeMappingAvailable = ToUnicode.CanMapToUnicode;
+            if (isDirectUnicodeMappingAvailable == false)
             {
-                if (ucs2CMap != null && ucs2CMap.TryConvertToUnicode(characterCode, out value))
+                var isUnicodeCodeTwoByteCharacterMapAvailable = (ucs2CMap is null == false);
+                var isCharacterMap_CharCodeToCID_Available = (CMap is null == false);
+                if (isUnicodeCodeTwoByteCharacterMapAvailable && isCharacterMap_CharCodeToCID_Available)
                 {
-                    return value != null;
-                }
+                    // characterCode  ----by CMAP---> CID ---ucs2Map---> Unicode
+                    var CID = CMap.ConvertToCid(characterCode);
+                    if (CID == 0)
+                    {
+                        Debug.WriteLine($"Warning: No mapping from characterCode (0x{characterCode:X} to CID by CMAP.");
+                        return false; // No mapping from characterCode to CID.
+                    }
+                    // CID ---ucs2Map---> Unicode
+                    if (ucs2CMap.TryConvertToUnicode(CID, out value))
+                    {
+                        return value != null;
+                    }
 
-                return false;
+                    return false;
+                }
+                if (isUnicodeCodeTwoByteCharacterMapAvailable)
+                {
+                    // characterCode ---ucs2Map---> Unicode      (?) @fnatzke possible?
+                    if (ucs2CMap.TryConvertToUnicode(characterCode, out value))
+                    {
+                        return value != null;
+                    }
+                }
             }
 
             // According to PdfBox certain providers incorrectly using Identity CMaps as ToUnicode.
