@@ -68,18 +68,18 @@
         {
             value = null;
 
-            var isDirectUnicodeMappingAvailable = ToUnicode.CanMapToUnicode;
-            if (isDirectUnicodeMappingAvailable == false)
+            var HaveCMap = ToUnicode.CanMapToUnicode;
+            if (HaveCMap == false)
             {
-                var isUnicodeCodeTwoByteCharacterMapAvailable = (ucs2CMap is null == false);
-                var isCharacterMap_CharCodeToCID_Available = (CMap is null == false);
-                if (isUnicodeCodeTwoByteCharacterMapAvailable && isCharacterMap_CharCodeToCID_Available)
+                var HaveUnicode2CMap = (ucs2CMap is null == false); 
+                if (HaveUnicode2CMap)
                 {
+                    // Have both ucs2Map and CMap convert to unicode by
                     // characterCode  ----by CMAP---> CID ---ucs2Map---> Unicode
                     var CID = CMap.ConvertToCid(characterCode);
                     if (CID == 0)
                     {
-                        Debug.WriteLine($"Warning: No mapping from characterCode (0x{characterCode:X} to CID by CMAP.");
+                        Debug.WriteLine($"Warning: No mapping from characterCode (0x{characterCode:X} to CID by ucs2Map.");
                         return false; // No mapping from characterCode to CID.
                     }
                     // CID ---ucs2Map---> Unicode
@@ -88,9 +88,8 @@
                         return value != null;
                     }
 
-                    return false;
                 }
-                if (isUnicodeCodeTwoByteCharacterMapAvailable)
+                if (HaveUnicode2CMap) // 2022-12-24 @fnatzke left as fall-back. Possible?
                 {
                     // characterCode ---ucs2Map---> Unicode      (?) @fnatzke possible?
                     if (ucs2CMap.TryConvertToUnicode(characterCode, out value))
