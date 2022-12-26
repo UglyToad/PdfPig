@@ -3,7 +3,9 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
+    using System.Runtime.CompilerServices;
     using Charsets;
     using Core;
 
@@ -35,7 +37,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
 
         private static readonly IReadOnlyDictionary<byte, LazyType2Command> SingleByteCommandStore = new Dictionary<byte, LazyType2Command>
         {
-            { HstemByte,  new LazyType2Command("hstem", ctx =>
+            { HstemByte,  new LazyType2Command("hstem", 2, ctx =>
                 {
                     var numberOfEdgeHints = ctx.Stack.Length / 2;
                     var hints = new (double, double)[numberOfEdgeHints];
@@ -62,7 +64,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 })
             },
             {
-                VstemByte,  new LazyType2Command("vstem", ctx =>
+                VstemByte,  new LazyType2Command("vstem", 2, ctx =>
                 {
                     var numberOfEdgeHints = ctx.Stack.Length / 2;
                     var hints = new (double, double)[numberOfEdgeHints];
@@ -89,7 +91,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 })
             },
             { 4,
-                new LazyType2Command("vmoveto", ctx =>
+                new LazyType2Command("vmoveto", 1, ctx =>
                 {
                     var dy = ctx.Stack.PopBottom();
 
@@ -100,7 +102,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 })
             },
             { 5,
-                new LazyType2Command("rlineto", ctx =>
+                new LazyType2Command("rlineto", 2, ctx =>
                 {
                     var numberOfLines = ctx.Stack.Length / 2;
 
@@ -116,7 +118,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 })
             },
             { 6,
-                new LazyType2Command("hlineto", ctx =>
+                new LazyType2Command("hlineto", 1, ctx =>
                 {
                     /*
                      * Appends a horizontal line of length dx1 to the current point.
@@ -152,7 +154,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 })
             },
             { 7,
-                new LazyType2Command("vlineto", ctx =>
+                new LazyType2Command("vlineto", 1, ctx =>
                 {
                     var isOdd = ctx.Stack.Length % 2 != 0;
 
@@ -182,7 +184,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 })
             },
             { 8,
-                new LazyType2Command("rrcurveto", ctx =>
+                new LazyType2Command("rrcurveto", 6, ctx =>
                 {
                     var curveCount = ctx.Stack.Length / 6;
                     for (var i = 0; i < curveCount; i++)
@@ -196,14 +198,14 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                     ctx.Stack.Clear();
                 })
             },
-            { 10,  new LazyType2Command("callsubr", ctx => {})},
-            { 11,  new LazyType2Command("return", ctx => {})},
-            { 14,  new LazyType2Command("endchar", ctx =>
+            { 10,  new LazyType2Command("callsubr", 1, ctx => {})},
+            { 11,  new LazyType2Command("return", 0, ctx => {})},
+            { 14,  new LazyType2Command("endchar", 0, ctx =>
                 {
                     ctx.Stack.Clear();
                 })
             },
-            { HstemhmByte,  new LazyType2Command("hstemhm", ctx =>
+            { HstemhmByte,  new LazyType2Command("hstemhm", 2, ctx =>
                 {
                     // Same as vstem except the charstring contains hintmask
                     var numberOfEdgeHints = ctx.Stack.Length / 2;
@@ -231,21 +233,21 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 })
             },
             {
-                HintmaskByte,  new LazyType2Command("hintmask", ctx =>
+                HintmaskByte,  new LazyType2Command("hintmask", 0, ctx =>
                 {
                     // TODO: record this mask somewhere
                     ctx.Stack.Clear();
                 })
             },
             {
-                CntrmaskByte,  new LazyType2Command("cntrmask", ctx =>
+                CntrmaskByte,  new LazyType2Command("cntrmask", 0,ctx =>
                 {
                     // TODO: record this mask somewhere
                     ctx.Stack.Clear();
                 })
             },
             { 21,
-                new LazyType2Command("rmoveto", ctx =>
+                new LazyType2Command("rmoveto", 2, ctx =>
                 {
                     var dx = ctx.Stack.PopBottom();
                     var dy = ctx.Stack.PopBottom();
@@ -260,7 +262,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 })
             },
             { 22,
-                new LazyType2Command("hmoveto", ctx =>
+                new LazyType2Command("hmoveto", 1, ctx =>
                 {
                     var dx = ctx.Stack.PopBottom();
 
@@ -270,7 +272,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                     ctx.Stack.Clear();
                 })
             },
-            { VstemhmByte,  new LazyType2Command("vstemhm", ctx =>
+            { VstemhmByte,  new LazyType2Command("vstemhm", 2, ctx =>
                 {
                     // Same as vstem except the charstring contains hintmask
                     var numberOfEdgeHints = ctx.Stack.Length / 2;
@@ -299,7 +301,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
             },
             {
                 24,
-                new LazyType2Command("rcurveline", ctx =>
+                new LazyType2Command("rcurveline", 8, ctx =>
                 {
                     var numberOfCurves = (ctx.Stack.Length - 2) / 6;
                     for (var i = 0; i < numberOfCurves; i++)
@@ -315,7 +317,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 })
             },
             { 25,
-                new LazyType2Command("rlinecurve", ctx =>
+                new LazyType2Command("rlinecurve", 8, ctx =>
                 {
                     var numberOfLines = (ctx.Stack.Length - 6) / 2;
                     for (var i = 0; i < numberOfLines; i++)
@@ -332,7 +334,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 })
             },
             { 26,
-                new LazyType2Command("vvcurveto", ctx =>
+                new LazyType2Command("vvcurveto", 4, ctx =>
                 {
                     // dx1? {dya dxb dyb dyc}+
                     var hasDeltaXFirstCurve = ctx.Stack.Length % 4 != 0;
@@ -357,7 +359,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                     ctx.Stack.Clear();
                 })
             },
-            { 27,  new LazyType2Command("hhcurveto", ctx =>
+            { 27,  new LazyType2Command("hhcurveto", 4, ctx =>
                 {
                     //  dy1? {dxa dxb dyb dxc}+
                     var hasDeltaYFirstCurve = ctx.Stack.Length % 4 != 0;
@@ -387,10 +389,10 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                     ctx.Stack.Clear();
                 })
             },
-            { 29,  new LazyType2Command("callgsubr", ctx => {})
+            { 29,  new LazyType2Command("callgsubr", 1, ctx => {})
             },
             { 30,
-                new LazyType2Command("vhcurveto", ctx =>
+                new LazyType2Command("vhcurveto", 4, ctx =>
                 {
                     var remainder = ctx.Stack.Length % 8;
 
@@ -477,7 +479,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 })
             },
             { 31,
-                new LazyType2Command("hvcurveto", ctx =>
+                new LazyType2Command("hvcurveto", 4, ctx =>
                 {
                     var remainder = ctx.Stack.Length % 8;
 
@@ -563,70 +565,72 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                     ctx.Stack.Clear();
                 })
             },
-            { 255, new LazyType2Command("unknown", x => {}) }
+            { 255, new LazyType2Command("unknown", -1, x => {}) }
         };
+
+
 
         private static readonly IReadOnlyDictionary<byte, LazyType2Command> TwoByteCommandStore = new Dictionary<byte, LazyType2Command>
         {
-            { 3,  new LazyType2Command("and", ctx => ctx.Stack.Push(ctx.Stack.PopTop() != 0 && ctx.Stack.PopTop() != 0 ? 1 : 0))},
-            { 4,  new LazyType2Command("or", ctx =>
+            { 3,  new LazyType2Command("and", 2, ctx => ctx.Stack.Push(ctx.Stack.PopTop() != 0 && ctx.Stack.PopTop() != 0 ? 1 : 0))},
+            { 4,  new LazyType2Command("or", 2,ctx =>
             {
                 var arg1 = ctx.Stack.PopTop();
                 var arg2 = ctx.Stack.PopTop();
                 ctx.Stack.Push(arg1 != 0 || arg2 != 0 ? 1 : 0);
             })},
-            { 5,  new LazyType2Command("not", ctx => ctx.Stack.Push(ctx.Stack.PopTop() == 0 ? 1 : 0))},
-            { 9,  new LazyType2Command("abs", ctx => ctx.Stack.Push(Math.Abs(ctx.Stack.PopTop())))},
-            { 10,  new LazyType2Command("add", ctx => ctx.Stack.Push(ctx.Stack.PopTop() + ctx.Stack.PopTop()))},
+            { 5,  new LazyType2Command("not", 1,ctx => ctx.Stack.Push(ctx.Stack.PopTop() == 0 ? 1 : 0))},
+            { 9,  new LazyType2Command("abs", 1, ctx => ctx.Stack.Push(Math.Abs(ctx.Stack.PopTop())))},
+            { 10,  new LazyType2Command("add", 2, ctx => ctx.Stack.Push(ctx.Stack.PopTop() + ctx.Stack.PopTop()))},
             {
-                11,  new LazyType2Command("sub", ctx =>
+                11,  new LazyType2Command("sub", 2, ctx =>
                 {
                     var num1 = ctx.Stack.PopTop();
                     var num2 = ctx.Stack.PopTop();
                     ctx.Stack.Push(num2 - num1);
                 })
             },
-            { 12,  new LazyType2Command("div", ctx => ctx.Stack.Push(ctx.Stack.PopTop()/ctx.Stack.PopTop()))},
-            { 14,  new LazyType2Command("neg", ctx => ctx.Stack.Push(-1 * Math.Abs(ctx.Stack.PopTop())))},
+            { 12,  new LazyType2Command("div", 2, ctx => ctx.Stack.Push(ctx.Stack.PopTop()/ctx.Stack.PopTop()))},
+            { 14,  new LazyType2Command("neg", 1, ctx => ctx.Stack.Push(-1 * Math.Abs(ctx.Stack.PopTop())))},
             // ReSharper disable once EqualExpressionComparison
-            { 15,  new LazyType2Command("eq", ctx => ctx.Stack.Push(ctx.Stack.PopTop() == ctx.Stack.PopTop() ? 1 : 0))},
-            { 18,  new LazyType2Command("drop", ctx => ctx.Stack.PopTop())},
-            { 20,  new LazyType2Command("put", ctx => ctx.AddToTransientArray(ctx.Stack.PopTop(), (int)ctx.Stack.PopTop()))},
-            { 21,  new LazyType2Command("get", ctx => ctx.Stack.Push(ctx.GetFromTransientArray((int)ctx.Stack.PopTop())))},
-            { 22,  new LazyType2Command("ifelse", x => { })},
+            { 15,  new LazyType2Command("eq", 2, ctx => ctx.Stack.Push(ctx.Stack.PopTop() == ctx.Stack.PopTop() ? 1 : 0))},
+            { 18,  new LazyType2Command("drop", 1, ctx => ctx.Stack.PopTop())},
+            { 20,  new LazyType2Command("put", 2, ctx => ctx.AddToTransientArray(ctx.Stack.PopTop(), (int)ctx.Stack.PopTop()))},
+            { 21,  new LazyType2Command("get", 1, ctx => ctx.Stack.Push(ctx.GetFromTransientArray((int)ctx.Stack.PopTop())))},
+            { 22,  new LazyType2Command("ifelse", 4, x => { })},
             // TODO: Random, do we want to support this?
-            { 23,  new LazyType2Command("random", ctx => ctx.Stack.Push(0.5))},
-            { 24,  new LazyType2Command("mul", ctx => ctx.Stack.Push(ctx.Stack.PopTop() * ctx.Stack.PopTop()))},
-            { 26,  new LazyType2Command("sqrt", ctx => ctx.Stack.Push(Math.Sqrt(ctx.Stack.PopTop())))},
+            { 23,  new LazyType2Command("random", 0, ctx => ctx.Stack.Push(0.5))},
+            { 24,  new LazyType2Command("mul", 2, ctx => ctx.Stack.Push(ctx.Stack.PopTop() * ctx.Stack.PopTop()))},
+            { 26,  new LazyType2Command("sqrt", 1, ctx => ctx.Stack.Push(Math.Sqrt(ctx.Stack.PopTop())))},
             {
-                27,  new LazyType2Command("dup", ctx =>
+                27,  new LazyType2Command("dup", 1, ctx =>
                 {
                     var val = ctx.Stack.PopTop();
                     ctx.Stack.Push(val);
                     ctx.Stack.Push(val);
                 })
             },
-            { 28,  new LazyType2Command("exch", ctx =>
+            { 28,  new LazyType2Command("exch", 2, ctx =>
             {
                 var num1 = ctx.Stack.PopTop();
                 var num2 = ctx.Stack.PopTop();
                 ctx.Stack.Push(num1);
                 ctx.Stack.Push(num2);
             })},
-            { 29,  new LazyType2Command("index", ctx =>
+            { 29,  new LazyType2Command("index", 2, ctx =>
             {
                 var index = ctx.Stack.PopTop();
                 var val = ctx.Stack.CopyElementAt((int) index);
                 ctx.Stack.Push(val);
             })},
             {
-                30,  new LazyType2Command("roll", ctx =>
+                30,  new LazyType2Command("roll", 3, ctx =>
                 {
                     // TODO: roll
                 })
             },
             {
-                34,  new LazyType2Command("hflex", ctx =>
+                34,  new LazyType2Command("hflex", 7, ctx =>
                 {
                     //  dx1 dx2 dy2 dx3 dx4 dx5 dx6 
                     // Two Bezier curves with an fd of 50
@@ -636,7 +640,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 })
             },
             {
-                35,  new LazyType2Command("flex", ctx =>
+                35,  new LazyType2Command("flex", 13, ctx =>
                 {
                     //  dx1 dy1 dx2 dy2 dx3 dy3 dx4 dy4 dx5 dy5 dx6 dy6 fd
                     // Two Bezier curves will be represented as a straight line when depth less than fd character space units
@@ -656,12 +660,12 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                     ctx.Stack.Clear();
                 })
             },
-            { 36,  new LazyType2Command("hflex1", ctx =>
+            { 36,  new LazyType2Command("hflex1", 9, ctx =>
             {
                 // TODO: implement
                 ctx.Stack.Clear();
             })},
-            { 37,  new LazyType2Command("flex1", ctx =>
+            { 37,  new LazyType2Command("flex1", 11, ctx =>
             {
                 // dx1 dy1 dx2 dy2 dx3 dy3 dx4 dy4 dx5 dy5 d6 
                 // d6 is either dx or dy
@@ -769,7 +773,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
             {
                 var num = bytes[++i] << 8 | bytes[++i];
                 // Next 2 bytes are a 16-bit two's complement number.
-                return (short) (num);
+                return (short)(num);
             }
 
             if (b >= 32 && b <= 246)
