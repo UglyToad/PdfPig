@@ -8,7 +8,7 @@
     {
         private readonly Dictionary<byte[], IndirectReferenceToken> hashes = new Dictionary<byte[], IndirectReferenceToken>(new FNVByteComparison());
 
-        public PdfDedupStreamWriter(Stream stream, bool dispose) : base(stream, dispose)
+        public PdfDedupStreamWriter(Stream stream, bool dispose, ITokenWriter tokenWriter = null) : base(stream, dispose, tokenWriter)
         {
         }
 
