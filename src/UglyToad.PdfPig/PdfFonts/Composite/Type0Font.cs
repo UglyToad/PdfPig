@@ -8,7 +8,7 @@
     using Geometry;
     using Tokens;
     using Util.JetBrains.Annotations;
-
+    using Debug = System.Diagnostics.Debug;
     /// <summary>
     /// Defines glyphs using a CIDFont
     /// </summary>
@@ -68,14 +68,35 @@
         {
             value = null;
 
-            if (!ToUnicode.CanMapToUnicode)
+            var HaveCMap = ToUnicode.CanMapToUnicode;
+            if (HaveCMap == false)
             {
-                if (ucs2CMap != null && ucs2CMap.TryConvertToUnicode(characterCode, out value))
+                var HaveUnicode2CMap = (ucs2CMap is null == false); 
+                if (HaveUnicode2CMap)
                 {
-                    return value != null;
-                }
+                    // Have both ucs2Map and CMap convert to unicode by
+                    // characterCode  ----by CMAP---> CID ---ucs2Map---> Unicode
+                    var CID = CMap.ConvertToCid(characterCode);
+                    if (CID == 0)
+                    {
+                        Debug.WriteLine($"Warning: No mapping from characterCode (0x{characterCode:X} to CID by ucs2Map.");
+                        return false; // No mapping from characterCode to CID.
+                    }
+                    // CID ---ucs2Map---> Unicode
+                    if (ucs2CMap.TryConvertToUnicode(CID, out value))
+                    {
+                        return value != null;
+                    }
 
-                return false;
+                }
+                if (HaveUnicode2CMap) // 2022-12-24 @fnatzke left as fall-back. Possible?
+                {
+                    // characterCode ---ucs2Map---> Unicode      (?) @fnatzke possible?
+                    if (ucs2CMap.TryConvertToUnicode(characterCode, out value))
+                    {
+                        return value != null;
+                    }
+                }
             }
 
             // According to PdfBox certain providers incorrectly using Identity CMaps as ToUnicode.
