@@ -6,7 +6,7 @@ namespace UglyToad.PdfPig.Tests.Geometry
     public class ClippingTests
     {
         [Fact]
-        public void ContainsRectangleEvenOdd()
+            public void ContainsRectangleEvenOdd()
         {
             using (var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("SPARC - v9 Architecture Manual"),
                 new ParsingOptions() { ClipPaths = true }))
