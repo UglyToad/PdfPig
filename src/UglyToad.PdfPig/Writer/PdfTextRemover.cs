@@ -5,7 +5,8 @@ using System.IO;
 namespace UglyToad.PdfPig.Writer
 {
     /// <summary>
-    /// Class to remove text from PDFs, useful as a preprocessing step for Optical Character Recognition (OCR)
+    /// Class to remove text from PDFs, useful as a preprocessing step for Optical Character Recognition (OCR).
+    /// Note that this should not be used to redact content from PDFs, this is not a secure or reliable way to redact text.
     /// </summary>
     public static class PdfTextRemover
     {

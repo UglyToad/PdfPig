@@ -1129,9 +1129,11 @@
                 {
                     builder.AddPage(doc, i);
                 }
+
                 builder.Build();
             }
-            Assert.Equal(tw.Objects, 0); // No objects in sample file
+
+            Assert.Equal(0, tw.Objects); // No objects in sample file
             Assert.True(tw.Tokens > 1000); // Roughly 1065
             Assert.True(tw.WroteCrossReferenceTable);
         }

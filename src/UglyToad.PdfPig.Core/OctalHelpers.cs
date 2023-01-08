@@ -7,7 +7,6 @@
     /// </summary>
     public static class OctalHelpers
     {
-
         /// <summary>
         /// Read a short.
         /// </summary>
@@ -60,19 +59,7 @@
         /// </summary>
         public static int FromOctalInt(int input)
         {
-            return System.Convert.ToInt32($"{input}", 8);
-                    
-            //var str = input.ToString();
-
-            //int sum = 0;
-            //for (var i = 0; i < str.Length; i++)
-            //{
-            //    var part = str[str.Length - 1 - i].CharacterToShort();
-
-            //    sum += part * QuickPower(8, i);
-            //}
-
-            //return sum;
+            return Convert.ToInt32($"{input}", 8);
         }
 
         private static int QuickPower(int x, int pow)
@@ -81,13 +68,15 @@
             while (pow != 0)
             {
                 if ((pow & 1) == 1)
+                {
                     ret *= x;
+                }
+
                 x *= x;
                 pow >>= 1;
             }
 
             return ret;
         }
-
     }
 }

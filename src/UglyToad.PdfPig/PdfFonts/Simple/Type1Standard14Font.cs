@@ -53,6 +53,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
                 value = null;
                 return false;
             }
+
             if (encoding is ZapfDingbatsEncoding)
             {
                 var listed = GlyphList.ZapfDingbats.NameToUnicode(name);
@@ -61,15 +62,17 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
 
                 return true;
             }
-            else if (encoding is StandardEncoding or SymbolEncoding)
+            
+            if (encoding is StandardEncoding or SymbolEncoding)
             {
                 var listed = GlyphList.AdobeGlyphList.NameToUnicode(name);
 
                 value = listed;
 
                 return true;
-            } else
-            {             
+            } 
+            else
+            {
                 Debug.WriteLine($"Warning: Type1Standard14Font with unexpected encoding: '{encoding.EncodingName}' Expected: 'ZapfDingbatsEncoding','SymbolEncoding' or 'StandardEncoding' . Font: '{standardFontMetrics.FontName}'");
                 var listed = GlyphList.AdobeGlyphList.NameToUnicode(name);
 
