@@ -24,22 +24,22 @@
         }
 
         public bool TryGetBoundingBox(char character, out PdfRectangle boundingBox)
-        {         
-         
+        {
+
             boundingBox = default(PdfRectangle);
-            
+
             int code = CodeMapIfUnicode(character);
             if (code == -1)
             {
                 Debug.WriteLine($"Font '{metrics.FontName}' does NOT have character '{character}' (0x{(int)character:X}).");
                 return false;
             }
-            
+
             var characterMetric = metrics.CharacterMetrics
                                    .Where(v => v.Value.CharacterCode == code)
                                    .Select(v => v.Value)
                                    .FirstOrDefault();
-            if (characterMetric is null)
+            if (characterMetric == null)
             {
                 Debug.WriteLine($"Font '{metrics.FontName}' does NOT have character '{character}' (0x{(int)character:X}).");
                 return false;
@@ -67,19 +67,27 @@
 
         public TransformationMatrix GetFontMatrix()
         {
-            return TransformationMatrix.FromValues(1/1000.0, 0, 0, 1/1000.0, 0, 0);
+            return TransformationMatrix.FromValues(1 / 1000.0, 0, 0, 1 / 1000.0, 0, 0);
         }
 
-        public IndirectReferenceToken WriteFont(IPdfStreamWriter writer, IndirectReferenceToken reservedIndirect=null)
+        public IndirectReferenceToken WriteFont(IPdfStreamWriter writer, IndirectReferenceToken reservedIndirect = null)
         {
+            var encoding = NameToken.StandardEncoding;
+            if (string.Equals(metrics.FontName, "Symbol", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(metrics.FontName, "ZapfDingbats", StringComparison.OrdinalIgnoreCase))
+            {
+                //  2022-12-12 @fnatzke was NameToken.MacRomanEncoding; not sure based on spec why MacRomanEncoding encoding?
+                encoding = NameToken.Create("FontSpecific");
+            }
+
             var dictionary = new Dictionary<NameToken, IToken>
             {
                 { NameToken.Type, NameToken.Font },
                 { NameToken.Subtype, NameToken.Type1  },
                 { NameToken.BaseFont, NameToken.Create(metrics.FontName) },
-                { NameToken.Encoding, (metrics.FontName is "Symbol" or "ZapfDingbats") ? NameToken.Create("FontSpecific") : NameToken.StandardEncoding }   //  2022-12-12 @fnatzke was NameToken.MacRomanEncoding; not sure based on spec why MacRomanEncoding encoding?
+                { NameToken.Encoding, encoding }
             };
-             
+
             var token = new DictionaryToken(dictionary);
 
             if (reservedIndirect != null)
@@ -93,13 +101,13 @@
         }
 
         public byte GetValueForCharacter(char character)
-        {        
+        {
             var characterCode = CodeMapIfUnicode(character);
             var characterMetric = metrics.CharacterMetrics
                                     .Where(v => v.Value.CharacterCode == characterCode)
                                     .Select(v => v.Value)
                                     .FirstOrDefault();
-            if (characterMetric is null)
+            if (characterMetric == null)
             {
                 throw new NotSupportedException($"Font '{metrics.FontName}' does NOT have character '{character}' (0x{(int)character:X}).");
             }
@@ -108,9 +116,9 @@
             return result;
         }
         private int UnicodeToSymbolCode(char character)
-        {             
+        {
             var name = GlyphList.AdobeGlyphList.UnicodeCodePointToName(character);
-            if (name is ".notdef")
+            if (string.Equals(name, ".notdef", StringComparison.OrdinalIgnoreCase))
             {
                 return -1;
             }
@@ -125,16 +133,15 @@
 
         private int UnicodeToZapfDingbats(char character)
         {
-
-            int code;
             var name = GlyphList.ZapfDingbats.UnicodeCodePointToName(character);
-            if (name is ".notdef")
+            if (string.Equals(name, ".notdef", StringComparison.OrdinalIgnoreCase))
             {
                 Debug.WriteLine($"Failed to find Unicode character '{character}' (0x{(int)character:X}).");
                 return -1;
             }
+
             var encoding = ZapfDingbatsEncoding.Instance;
-            code = encoding.GetCode(name);
+            var code = encoding.GetCode(name);
             if (code == -1)
             {
                 Debug.WriteLine($"Found Unicode point '{character}' (0x{(int)character:X}) but glphy name '{name}' not found in font '{metrics.FontName}' (font specific encoding: ZapfDingbats).");
@@ -142,57 +149,60 @@
             return code;
 
         }
-    
+
         private int UnicodeToStandardEncoding(char character)
         {
-            int code;
             var name = GlyphList.AdobeGlyphList.UnicodeCodePointToName(character);
-            if (name is ".notdef")
+            if (string.Equals(name, ".notdef", StringComparison.OrdinalIgnoreCase))
             {
                 Debug.WriteLine($"Failed to find Unicode character '{character}' (0x{(int)character:X}).");
                 return -1;
             }
             var standardEncoding = StandardEncoding.Instance;
-            code = standardEncoding.GetCode(name); 
+            var code = standardEncoding.GetCode(name);
             if (code == -1)
             {
                 // Check if name from glyph list is the same except first letter's case; capital letter (or if capital a lowercase)
-                var nameCapitalisedChange = Char.IsUpper(name[0]) ? Char.ToLower(name[0]) + name.Substring(1)  :Char.ToUpper(name[0]) + name.Substring(1);
+                var nameCapitalisedChange = Char.IsUpper(name[0]) ? Char.ToLower(name[0]) + name.Substring(1) : Char.ToUpper(name[0]) + name.Substring(1);
                 code = standardEncoding.GetCode(nameCapitalisedChange);
                 if (code == -1)
                 {
                     Debug.WriteLine($"Found Unicode point '{character}' (0x{(int)character:X}) but glphy name '{name}' not found in font '{metrics.FontName}' (StandardEncoding).");
                 }
-            }            
+            }
             return code;
         }
 
         private int CodeMapIfUnicode(char character)
         {
-            int code; // encoding code either from StanardEncoding, ZapfDingbatsEncoding or SymbolEncoding depending on font
-            int i = (int)character;
-            if (metrics.FontName is "ZapfDingbats")
+            int code; // encoding code either from StandardEncoding, ZapfDingbatsEncoding or SymbolEncoding depending on font.
+            int i = character;
+            if (string.Equals(metrics.FontName, "ZapfDingbats", StringComparison.OrdinalIgnoreCase))
             {
-                // Either use character code as is if font specific code or map from Unicode Dingbats range. 0x2700- 0x27bf     
+                // Either use character code as is if font specific code or map from Unicode Dingbats range. 0x2700 - 0x27bf.
                 code = i < 255 ? i : UnicodeToZapfDingbats(character);
             }
-            else if (metrics.FontName is "Symbol")
+            else if (string.Equals(metrics.FontName, "Symbol", StringComparison.OrdinalIgnoreCase))
             {
-                if (i == 0x00AC) { 
+                if (i == 0x00AC)
+                {
                     Debug.WriteLine("Warning: 0x00AC used as Unicode ('¬') (logicalnot). For (arrowleft)('←') from Adobe Symbol Font Specific (0330) use Unicode 0x2190 ('←').");
                     return 0x00d8;
                 }
-                if (i == 0x00F7) { 
-                    Debug.WriteLine("Warning: 0x00F7 used as Unicode ('÷')(divide). For (parenrightex) from Adobe Symbol Font Specific (0367) use Unicode 0xF8F7."); 
+                if (i == 0x00F7)
+                {
+                    Debug.WriteLine("Warning: 0x00F7 used as Unicode ('÷')(divide). For (parenrightex) from Adobe Symbol Font Specific (0367) use Unicode 0xF8F7.");
                     return 0x00B8;
                 }
-                if (i == 0x00B5) {
+                if (i == 0x00B5)
+                {
                     Debug.WriteLine("Warning: 0x00B5 used as Unicode divide ('µ')(mu). For (proportional)('∝')  from Adobe Symbol Font Specific (0265) use Unicode 0x221D('∝').");
                     return 0x006d;
                 }
-                if (i == 0x00D7) {
+                if (i == 0x00D7)
+                {
                     Debug.WriteLine("Warning: 0x00D7 used as Unicode multiply ('×')(multiply). For (dotmath)('⋅')  from Adobe Symbol Font Specific (0327) use Unicode 0x22C5('⋅').");
-                    return 0x00B4; 
+                    return 0x00B4;
                 }
 
                 // Either use character code as is if font specific code or map from Unicode 
@@ -214,7 +224,7 @@
                     return 0x00c2; // (0302)
                 }
 
-                
+
 
                 if (i == 0x00b7)
                 {
@@ -282,5 +292,5 @@
             return code;
         }
 
-    }   
+    }
 }

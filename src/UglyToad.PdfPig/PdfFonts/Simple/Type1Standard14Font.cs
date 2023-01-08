@@ -48,7 +48,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
         public bool TryGetUnicode(int characterCode, out string value)
         {
             var name = encoding.GetName(characterCode);
-            if (name is ".notdef")
+            if (string.Equals(name, ".notdef", StringComparison.OrdinalIgnoreCase))
             {
                 value = null;
                 return false;
@@ -63,7 +63,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
                 return true;
             }
             
-            if (encoding is StandardEncoding or SymbolEncoding)
+            if (encoding is StandardEncoding || encoding is SymbolEncoding)
             {
                 var listed = GlyphList.AdobeGlyphList.NameToUnicode(name);
 
