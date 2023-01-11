@@ -29,25 +29,30 @@
         /// </summary>
         void Error(string message, Exception ex);
     }
-
-    internal class NoOpLog : ILog
+    ///<inheritdoc />
+    public class NoOpLog : ILog
     {
+        ///<inheritdoc />
         public void Debug(string message)
         {
         }
 
+        ///<inheritdoc />
         public void Debug(string message, Exception ex)
         {
         }
 
+        ///<inheritdoc />
         public void Warn(string message)
         {
         }
 
+        ///<inheritdoc />
         public void Error(string message)
         {
         }
 
+        ///<inheritdoc />
         public void Error(string message, Exception ex)
         {
         }
