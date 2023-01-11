@@ -6,9 +6,18 @@
     using Filters;
     using Tokens;
 
-    internal static class DataCompresser
+    /// <summary>
+    /// Data Compressor for Token Stream
+    /// </summary>
+    public static class DataCompresser
     {
+        /// <summary>
+        /// Compress token bytes
+        /// </summary>
         public static byte[] CompressBytes(IReadOnlyList<byte> bytes) => CompressBytes(bytes.ToArray());
+        /// <summary>
+        /// Compress token bytes
+        /// </summary>
         public static byte[] CompressBytes(byte[] bytes)
         {
             using (var memoryStream = new MemoryStream(bytes))
@@ -19,8 +28,14 @@
                 return result;
             }
         }
+        /// <summary>
+        /// Compress token bytes
+        /// </summary>
 
         public static StreamToken CompressToStream(IReadOnlyList<byte> bytes) => CompressToStream(bytes.ToArray());
+        /// <summary>
+        /// Compress token bytes
+        /// </summary>
         public static StreamToken CompressToStream(byte[] bytes)
         {
             var compressed = CompressBytes(bytes);

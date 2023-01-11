@@ -4,9 +4,14 @@
     using Operations;
     using Tokens;
     using Util.JetBrains.Annotations;
-
-    internal interface IGraphicsStateOperationFactory
+    /// <summary>
+    /// interface for Graphics State to create Operator token with operands 
+    /// </summary>
+    public interface IGraphicsStateOperationFactory
     {
+        /// <summary>
+        /// Create Operator token with operands 
+        /// </summary>
         [CanBeNull]
         IGraphicsStateOperation Create(OperatorToken op, IReadOnlyList<IToken> operands);
     }

@@ -11,16 +11,22 @@
     using Logging;
     using Tokenization.Scanner;
     using Tokens;
-
-    internal class PageContentParser : IPageContentParser
+    /// <summary>
+    /// Parse Page Content
+    /// </summary>
+    public class PageContentParser : IPageContentParser
     {
         private readonly IGraphicsStateOperationFactory operationFactory;
-
+        /// <summary>
+        /// Parse Page Graphics state operations
+        /// </summary>
         public PageContentParser(IGraphicsStateOperationFactory operationFactory)
         {
             this.operationFactory = operationFactory;
         }
-
+        /// <summary>
+        /// Parse page content bytes
+        /// </summary>
         public IReadOnlyList<IGraphicsStateOperation> Parse(int pageNumber, IInputBytes inputBytes,
             ILog log)
         {

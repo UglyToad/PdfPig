@@ -21,13 +21,15 @@ namespace UglyToad.PdfPig.Graphics
     using System.Reflection;
     using Tokens;
     using Operations.PathPainting;
-
-    internal class ReflectionGraphicsStateOperationFactory : IGraphicsStateOperationFactory
+    
+    ///<inheritdoc />
+    public class ReflectionGraphicsStateOperationFactory : IGraphicsStateOperationFactory
     {
         private static readonly ListPool<decimal> DecimalListPool = new ListPool<decimal>(10);
 
         private readonly IReadOnlyDictionary<string, Type> operations;
 
+        ///<inheritdoc />
         public ReflectionGraphicsStateOperationFactory()
         {
             var assemblyTypes = Assembly.GetAssembly(typeof(ReflectionGraphicsStateOperationFactory)).GetTypes();
@@ -113,7 +115,9 @@ namespace UglyToad.PdfPig.Graphics
 
             return numeric.Data;
         }
-
+        /// <summary>
+        /// Create Operator token with operands 
+        /// </summary>
         public IGraphicsStateOperation Create(OperatorToken op, IReadOnlyList<IToken> operands)
         {
             switch (op.Data)

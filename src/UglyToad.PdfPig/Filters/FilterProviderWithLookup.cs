@@ -9,24 +9,40 @@
     using Tokens;
     using UglyToad.PdfPig.Util;
 
-    internal class FilterProviderWithLookup : ILookupFilterProvider
+    /// <summary>
+    /// Gets filter implementations (<see cref="IFilter"/>) for decoding PDF data.
+    /// </summary>
+    public class FilterProviderWithLookup : ILookupFilterProvider
     {
         private readonly IFilterProvider inner;
-
+        /// <summary>
+        /// /// <summary>
+        /// Gets filter implementations (<see cref="IFilter"/>) for decoding PDF data.
+        /// </summary>
+        /// </summary>
+        /// <param name="inner"></param>
         public FilterProviderWithLookup(IFilterProvider inner)
         {
             this.inner = inner;
         }
-
+        /// <summary>
+        /// Get all available filters in this library.
+        /// </summary>
         public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary)
             => inner.GetFilters(dictionary);
-
+        /// <summary>
+        /// Gets the filters specified by the filter names.
+        /// </summary>
         public IReadOnlyList<IFilter> GetNamedFilters(IReadOnlyList<NameToken> names)
             => inner.GetNamedFilters(names);
-
+        /// <summary>
+        /// Get all available filters in this library.
+        /// </summary>
         public IReadOnlyList<IFilter> GetAllFilters()
             => inner.GetAllFilters();
-
+        /// <summary>
+        /// Get all available filters in this library.
+        /// </summary>
         public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary, IPdfTokenScanner scanner)
         {
             if (dictionary == null)
