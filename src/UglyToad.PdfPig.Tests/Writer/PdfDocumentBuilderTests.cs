@@ -11,6 +11,8 @@
     using System.Collections.Generic;
     using Tests.Fonts.TrueType;
     using Xunit;
+    using System;
+    using UglyToad.PdfPig.Graphics.Operations.InlineImages;
 
     public class PdfDocumentBuilderTests
     {
@@ -166,6 +168,9 @@
 
             return result;
         }
+
+
+
 
         [Fact]
         public void CanWriteSinglePageStandard14FontHelloWorld()
@@ -1138,6 +1143,45 @@
             Assert.True(tw.WroteCrossReferenceTable);
         }
 
+        [Fact]
+        public void CanCopyInLineImage()
+        {
+            var docPath = IntegrationHelpers.GetDocumentPath("ssm2163.pdf");
+
+            using (var docOrig = PdfDocument.Open(docPath))
+            {
+
+                // Copy original document with inline images into pdf bytes for opening and checking.
+                PdfDocumentBuilder pdfBuilder = new PdfDocumentBuilder();
+                var numberOfPages = docOrig.NumberOfPages;
+                for (int pageNumber = 1; pageNumber <= numberOfPages; pageNumber++)
+                {
+                    var sourcePage = docOrig.GetPage(pageNumber);
+                    pdfBuilder.AddPage(sourcePage.Width, sourcePage.Height).CopyFrom(sourcePage);
+                }
+                var pdfBytes = pdfBuilder.Build();
+
+
+                using (var docCopy = PdfDocument.Open(pdfBytes))
+                {
+                    var pageNum = 7;
+                    var origPage = docOrig.GetPage(pageNum);
+                    var copyPage = docCopy.GetPage(pageNum);
+
+                    var opsOrig = origPage.Operations.Where(v => v.Operator == BeginInlineImageData.Symbol).Select(v => (BeginInlineImageData)v).ToArray();
+                    var opCopy = copyPage.Operations.Where(v => v.Operator == BeginInlineImageData.Symbol).Select(v => (BeginInlineImageData)v).ToArray();
+
+                    var dictOrig = opCopy.Select(v => v.Dictionary).ToArray();
+                    var dictCopy = opCopy.Select(v => v.Dictionary).ToArray();
+
+                    var exampleCopiedDictionary = dictCopy.FirstOrDefault();
+
+                    Assert.NotNull(exampleCopiedDictionary);
+                    Assert.True(exampleCopiedDictionary.Count>0);                    
+                }
+            }
+        }    
+        
         private static void WriteFile(string name, byte[] bytes, string extension = "pdf")
         {
             try
