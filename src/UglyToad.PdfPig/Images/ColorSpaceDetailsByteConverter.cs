@@ -52,6 +52,10 @@
                 // Use the base color space in potential further decoding
                 details = indexed.BaseColorSpaceDetails;
             }
+            else if (bitsPerComponent == 1)
+            {
+                decoded = decoded.Select(x => x == 1 ? (byte) 0 : (byte) 255).ToList();
+            }
 
             if (details is CalRGBColorSpaceDetails calRgb)
             {

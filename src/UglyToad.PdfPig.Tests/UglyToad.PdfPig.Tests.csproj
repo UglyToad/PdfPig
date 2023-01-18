@@ -10,12 +10,16 @@
     <AssemblyOriginatorKeyFile>..\pdfpig.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
   <ItemGroup>
     <None Remove="Fonts\TrueType\*.ttf" />
     <None Remove="Fonts\Type1\*.pfa" />
      <None Remove="Fonts\Type1\*.pfb" />
     <None Remove="Integration\Documents\*" />
     <None Remove="Integration\SpecificTestDocuments\*" />
+    <None Remove="Filters\Jbig2\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -137,5 +141,6 @@
   <ItemGroup>
     <Folder Include="Images\" />
     <Folder Include="Images\Files\" />
+    <Folder Include="Filters\Jbig2\" />
   </ItemGroup>
 </Project>

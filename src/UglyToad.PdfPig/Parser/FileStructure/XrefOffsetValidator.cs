@@ -80,8 +80,6 @@
             return 0;
         }
 
-       
-
         private long BruteForceSearchForXref(long xrefOffset, ISeekableTokenScanner scanner, IInputBytes reader)
         {
             long newOffset = -1;
