@@ -1,6 +1,6 @@
-﻿using UglyToad.PdfPig.Tests.Integration;
+﻿using System.IO;
+using UglyToad.PdfPig.Tests.Integration;
 using UglyToad.PdfPig.Writer;
-using System.IO;
 using Xunit;
 
 namespace UglyToad.PdfPig.Tests.Writer
@@ -18,7 +18,8 @@ namespace UglyToad.PdfPig.Tests.Writer
             using (var document = PdfDocument.Open(filePath))
             {
                 var withoutText = PdfTextRemover.RemoveText(filePath);
-                File.WriteAllBytes(@"C:\temp\_tx.pdf", withoutText);
+                WriteFile($"{nameof(TextRemoverRemovesText)}_{file}", withoutText);
+
                 using (var documentWithoutText = PdfDocument.Open(withoutText))
                 {
                     Assert.Equal(document.NumberOfPages, documentWithoutText.NumberOfPages);
@@ -27,8 +28,26 @@ namespace UglyToad.PdfPig.Tests.Writer
                         Assert.NotEqual(document.GetPage(i).Text, string.Empty);
                         Assert.Equal(documentWithoutText.GetPage(i).Text, string.Empty);
                     }
-
                 }
+            }
+        }
+
+        private static void WriteFile(string name, byte[] bytes)
+        {
+            try
+            {
+                if (!Directory.Exists("Writer"))
+                {
+                    Directory.CreateDirectory("Writer");
+                }
+
+                var output = Path.Combine("Writer", $"{name}");
+
+                File.WriteAllBytes(output, bytes);
+            }
+            catch
+            {
+                // ignored.
             }
         }
     }

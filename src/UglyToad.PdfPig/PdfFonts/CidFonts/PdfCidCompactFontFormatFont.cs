@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.CidFonts
 {
     using System;
+    using System.Collections.Generic;
     using Core;
     using Fonts.CompactFontFormat;
 
@@ -62,7 +63,6 @@
             return true;
         }
 
-
         public bool TryGetBoundingBox(int characterIdentifier, Func<int, int?> characterCodeToGlyphId, out PdfRectangle boundingBox)
         {
             throw new NotImplementedException();
@@ -105,6 +105,32 @@
             }
 #endif
             return fontCollection.FirstFont;
+        }
+
+        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        {
+            path = EmptyArray<PdfSubpath>.Instance;
+
+            var font = GetFont();
+
+            if (font.Encoding == null)
+            {
+                return false;
+            }
+
+            var characterName = GetCharacterName(characterCode);
+
+            if (font.TryGetPath(characterName, out path))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool TryGetPath(int characterCode, Func<int, int?> characterCodeToGlyphId, out IReadOnlyList<PdfSubpath> path)
+        {
+            throw new NotImplementedException();
         }
     }
 }

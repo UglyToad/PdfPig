@@ -87,7 +87,7 @@
                     pdfScanner,
                     filterProvider,
                     resourceStore);
-                 // ignored for now, is it possible? check the spec...
+                // ignored for now, is it possible? check the spec...
             }
             else if (DirectObjectFinder.TryGet<ArrayToken>(contents, pdfScanner, out var array))
             {

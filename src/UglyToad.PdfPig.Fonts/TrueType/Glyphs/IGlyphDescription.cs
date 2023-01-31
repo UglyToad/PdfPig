@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Glyphs
 {
     using Core;
+    using System.Collections.Generic;
 
     internal interface IGlyphDescription : IMergeableGlyph, ITransformableGlyph
     {
@@ -15,6 +16,8 @@
         GlyphPoint[] Points { get; }
 
         bool IsEmpty { get; }
+
+        bool TryGetGlyphPath(out IReadOnlyList<PdfSubpath> subpaths);
 
         IGlyphDescription DeepClone();
     }

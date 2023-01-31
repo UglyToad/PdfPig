@@ -114,11 +114,11 @@
             switch (descriptor.FontFile.FileType)
             {
                 case DescriptorFontFile.FontFileType.TrueType:
-                {
-                    var input = new TrueTypeDataBytes(new ByteArrayInputBytes(fontFile));
-                    var ttf = TrueTypeFontParser.Parse(input);
-                    return new PdfCidTrueTypeFont(ttf);
-                }
+                    {
+                        var input = new TrueTypeDataBytes(new ByteArrayInputBytes(fontFile));
+                        var ttf = TrueTypeFontParser.Parse(input);
+                        return new PdfCidTrueTypeFont(ttf);
+                    }
                 case DescriptorFontFile.FontFileType.FromSubtype:
                     {
                         if (!DirectObjectFinder.TryGet(descriptor.FontFile.ObjectKey, pdfScanner, out StreamToken str))
@@ -145,7 +145,7 @@
                             var ttf = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(bytes)));
                             return new PdfCidTrueTypeFont(ttf);
                         }
-                        
+
                         throw new PdfDocumentFormatException($"Unexpected subtype for CID font: {subtypeName}.");
                     }
                 default:

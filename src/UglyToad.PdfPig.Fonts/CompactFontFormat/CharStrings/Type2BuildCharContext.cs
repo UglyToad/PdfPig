@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
 {
-    using System.Collections.Generic;
     using Core;
+    using System.Collections.Generic;
 
     /// <summary>
     /// The context used and updated when interpreting the commands for a charstring.
@@ -18,7 +18,7 @@
         /// <summary>
         /// The current path.
         /// </summary>
-        public PdfSubpath Path { get; } = new PdfSubpath();
+        public List<PdfSubpath> Path { get; } = new List<PdfSubpath>();
 
         /// <summary>
         /// The current location of the active point.
@@ -41,6 +41,28 @@
             AddRelativeLine(0, dy);
         }
 
+        public void AddRelativeMoveTo(double dx, double dy)
+        {
+            BeforeMoveTo();
+            var newLocation = new PdfPoint(CurrentLocation.X + dx, CurrentLocation.Y + dy);
+            Path[Path.Count - 1].MoveTo(newLocation.X, newLocation.Y);
+            CurrentLocation = newLocation;
+        }
+
+        public void AddHorizontalMoveTo(double dx)
+        {
+            BeforeMoveTo();
+            Path[Path.Count - 1].MoveTo(CurrentLocation.X + dx, CurrentLocation.Y);
+            CurrentLocation = CurrentLocation.MoveX(dx);
+        }
+
+        public void AddVerticallMoveTo(double dy)
+        {
+            BeforeMoveTo();
+            Path[Path.Count - 1].MoveTo(CurrentLocation.X, CurrentLocation.Y + dy);
+            CurrentLocation = CurrentLocation.MoveY(dy);
+        }
+
         public void AddRelativeBezierCurve(double dx1, double dy1, double dx2, double dy2, double dx3, double dy3)
         {
             var x1 = CurrentLocation.X + dx1;
@@ -52,7 +74,7 @@
             var x3 = x2 + dx3;
             var y3 = y2 + dy3;
 
-            Path.BezierCurveTo(x1, y1, x2, y2, x3, y3);
+            Path[Path.Count - 1].BezierCurveTo(x1, y1, x2, y2, x3, y3);
             CurrentLocation = new PdfPoint(x3, y3);
         }
 
@@ -60,7 +82,7 @@
         {
             var dest = new PdfPoint(CurrentLocation.X + dx, CurrentLocation.Y + dy);
 
-            Path.LineTo(dest.X, dest.Y);
+            Path[Path.Count - 1].LineTo(dest.X, dest.Y);
             CurrentLocation = dest;
         }
 
@@ -75,6 +97,23 @@
         public void AddToTransientArray(double value, int location)
         {
             transientArray[location] = value;
+        }
+
+        /// <summary>
+        /// Every character path and subpath must begin with one of the
+        /// moveto operators. If the current path is open when a moveto
+        /// operator is encountered, the path is closed before performing
+        /// the moveto operation.
+        /// <para>See 4.1 Path Construction Operators in 'The Type 2 Charstring Format, Technical Note #5177', 16 March 2000</para>
+        /// <see href="https://adobe-type-tools.github.io/font-tech-notes/pdfs/5177.Type2.pdf"/>
+        /// </summary>
+        private void BeforeMoveTo()
+        {
+            if (Path.Count > 0)
+            {
+                Path[Path.Count - 1].CloseSubpath();
+            }
+            Path.Add(new PdfSubpath());
         }
 
         public double GetFromTransientArray(int location)

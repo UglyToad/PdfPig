@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using Core;
     using Glyphs;
     using Parser;
@@ -25,9 +26,9 @@
 
         private readonly Lazy<IReadOnlyList<IGlyphDescription>> glyphs;
         public IReadOnlyList<IGlyphDescription> Glyphs => glyphs.Value;
-        
-        public GlyphDataTable(TrueTypeHeaderTable directoryTable, IReadOnlyList<uint> glyphOffsets, 
-            PdfRectangle maxGlyphBounds, 
+
+        public GlyphDataTable(TrueTypeHeaderTable directoryTable, IReadOnlyList<uint> glyphOffsets,
+            PdfRectangle maxGlyphBounds,
             TrueTypeDataBytes tableBytes)
         {
             this.glyphOffsets = glyphOffsets;
@@ -69,7 +70,7 @@
                 bounds = new PdfRectangle(0, 0, 0, 0);
                 return true;
             }
-            
+
             tableBytes.Seek(offset);
 
             // ReSharper disable once UnusedVariable
@@ -91,7 +92,7 @@
 
             var bytes = data.ReadByteArray((int)table.Length);
 
-            return new GlyphDataTable(table, tableRegister.IndexToLocationTable.GlyphOffsets, 
+            return new GlyphDataTable(table, tableRegister.IndexToLocationTable.GlyphOffsets,
                 tableRegister.HeaderTable.Bounds,
                 new TrueTypeDataBytes(bytes));
         }
@@ -164,7 +165,7 @@
             if (contourCount == 0)
             {
                 return new Glyph(true, EmptyArray<byte>.Instance, EmptyArray<ushort>.Instance,
-                    EmptyArray<GlyphPoint>.Instance, 
+                    EmptyArray<GlyphPoint>.Instance,
                     new PdfRectangle(0, 0, 0, 0));
             }
 
@@ -188,11 +189,25 @@
             var yCoordinates = ReadCoordinates(data, pointCount, flags, SimpleGlyphFlags.YSingleByte,
                 SimpleGlyphFlags.ThisYIsTheSame);
 
+            int endPtIndex = endPointsOfContours.Length - 1;
+            int endPtOfContourIndex = -1;
             var points = new GlyphPoint[xCoordinates.Length];
+
             for (var i = xCoordinates.Length - 1; i >= 0; i--)
             {
+                if (endPtOfContourIndex == -1)
+                {
+                    endPtOfContourIndex = endPointsOfContours[endPtIndex];
+                }
+                bool endPt = endPtOfContourIndex == i;
+                if (endPt && endPtIndex > 0)
+                {
+                    endPtIndex--;
+                    endPtOfContourIndex = -1;
+                }
+
                 var isOnCurve = (flags[i] & SimpleGlyphFlags.OnCurve) == SimpleGlyphFlags.OnCurve;
-                points[i] = new GlyphPoint(xCoordinates[i], yCoordinates[i], isOnCurve);
+                points[i] = new GlyphPoint(xCoordinates[i], yCoordinates[i], isOnCurve, endPt);
             }
 
             return new Glyph(true, instructions, endPointsOfContours, points, bounds);
@@ -209,12 +224,12 @@
             data.Seek(compositeLocation.Position);
 
             var components = new List<CompositeComponent>();
-            
+
             // First recursively find all components and ensure they are available.
             CompositeGlyphFlags flags;
             do
             {
-                flags = (CompositeGlyphFlags) data.ReadUnsignedShort();
+                flags = (CompositeGlyphFlags)data.ReadUnsignedShort();
                 var glyphIndex = data.ReadUnsignedShort();
 
                 var childGlyph = glyphs[glyphIndex];
@@ -232,7 +247,7 @@
 
                     glyphs[glyphIndex] = childGlyph;
                 }
-                
+
                 short arg1, arg2;
                 if (HasFlag(flags, CompositeGlyphFlags.Args1And2AreWords))
                 {
@@ -276,7 +291,6 @@
                 {
                     // TODO: Not implemented, it is unclear how to do this.
                 }
-
             } while (HasFlag(flags, CompositeGlyphFlags.MoreComponents));
 
             // Now build the final glyph from the components.
@@ -381,12 +395,12 @@
             /// Stores the position after reading the contour count and bounds.
             /// </summary>
             public long Position { get; }
-            
+
             public PdfRectangle Bounds { get; }
-            
+
             public TemporaryCompositeLocation(long position, PdfRectangle bounds, short contourCount)
             {
-                if (contourCount >= 0 )
+                if (contourCount >= 0)
                 {
                     throw new ArgumentException($"A composite glyph should not have a positive contour count. Got: {contourCount}.", nameof(contourCount));
                 }
