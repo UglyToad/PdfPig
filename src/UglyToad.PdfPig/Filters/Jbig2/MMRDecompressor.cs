@@ -8,7 +8,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
     /// <summary>
     /// A decompressor for MMR compression.
     /// </summary>
-    internal class MMRDecompressor
+    internal sealed class MMRDecompressor
     {
         private readonly int width;
         private readonly int height;
@@ -490,9 +490,9 @@ namespace UglyToad.PdfPig.Filters.Jbig2
             InitTables();
         }
 
-        public Bitmap Uncompress()
+        public Jbig2Bitmap Uncompress()
         {
-            Bitmap result = new Bitmap(width, height);
+            Jbig2Bitmap result = new Jbig2Bitmap(width, height);
 
             int[] currentOffsets = new int[width + 5];
             int[] referenceOffsets = new int[width + 5];
@@ -545,7 +545,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
             }
         }
 
-        private void FillBitmap(Bitmap result, int line, int[] currentOffsets, int count)
+        private void FillBitmap(Jbig2Bitmap result, int line, int[] currentOffsets, int count)
         {
             int x = 0;
             int targetByte = result.GetByteIndex(0, line);

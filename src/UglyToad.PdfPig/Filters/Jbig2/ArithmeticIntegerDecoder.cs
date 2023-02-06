@@ -3,7 +3,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
     /// <summary>
     /// This class represents the arithmetic integer decoder, described in ISO/IEC 14492:2001 (Annex A).
     /// </summary>
-    internal class ArithmeticIntegerDecoder
+    internal sealed class ArithmeticIntegerDecoder
     {
         private readonly ArithmeticDecoder decoder;
 

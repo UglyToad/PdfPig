@@ -7,7 +7,7 @@
     /// Read accesses to the wrapped stream are synchronized, so that users of this stream need to deal with synchronization
     /// against other users of the same instance, but not against other users of the wrapped stream.
     /// </summary>
-    internal class SubInputStream : AbstractImageInputStream
+    internal sealed class SubInputStream : AbstractImageInputStream
     {
         private readonly IImageInputStream wrappedStream;
 

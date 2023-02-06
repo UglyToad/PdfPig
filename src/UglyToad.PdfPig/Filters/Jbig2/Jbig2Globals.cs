@@ -8,7 +8,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
     /// This segments will be decoded on demand and all results are stored in the document object and can be retrieved from
     /// there.
     /// </summary>
-    internal class Jbig2Globals
+    internal sealed class Jbig2Globals
     {
         // This map contains all segments, that are not associated with a page. The key is the segment number.
         private readonly Dictionary<int, SegmentHeader> globalSegments = new Dictionary<int, SegmentHeader>();

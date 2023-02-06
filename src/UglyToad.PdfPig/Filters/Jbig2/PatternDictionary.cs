@@ -1,12 +1,11 @@
 ﻿namespace UglyToad.PdfPig.Filters.Jbig2
 {
     using System.Collections.Generic;
-    using System.Drawing;
 
     /// <summary>
     /// This class represents the segment type "Pattern dictionary", 7.4.4.
     /// </summary>
-    internal class PatternDictionary : IDictionary
+    internal sealed class PatternDictionary : IJbigDictionary
     {
         private SubInputStream subInputStream;
 
@@ -20,7 +19,7 @@
         private short[] gbAtY = null;
 
         // Decoded bitmaps, stored to be used by segments, that refer to it
-        private List<Bitmap> patterns;
+        private List<Jbig2Bitmap> patterns;
 
         // Pattern dictionary flags, 7.4.4.1.1
         public bool IsMMREncoded { get; private set; }
@@ -99,11 +98,11 @@
 
         /// <summary>
         /// This method decodes a pattern dictionary segment and returns an array of
-        /// <see cref="Bitmap"/>s. Each <see cref="Bitmap"/> is a pattern.
+        /// <see cref="Jbig2Bitmap"/>s. Each <see cref="Jbig2Bitmap"/> is a pattern.
         /// The procedure is described in 6.7.5 (page 43).
         /// </summary>
-        /// <returns>An array of <see cref="Bitmap"/>s as result of the decoding procedure.</returns>
-        public List<Bitmap> GetDictionary()
+        /// <returns>An array of <see cref="Jbig2Bitmap"/>s as result of the decoding procedure.</returns>
+        public List<Jbig2Bitmap> GetDictionary()
         {
             if (null == patterns)
             {
@@ -117,7 +116,7 @@
                 genericRegion.SetParameters(IsMMREncoded, dataOffset, dataLength, HdpHeight,
                         (GrayMax + 1) * HdpWidth, HdTemplate, false, false, gbAtX, gbAtY);
 
-                Bitmap collectiveBitmap = genericRegion.GetRegionBitmap();
+                Jbig2Bitmap collectiveBitmap = genericRegion.GetRegionBitmap();
 
                 // 4)
                 ExtractPatterns(collectiveBitmap);
@@ -126,18 +125,18 @@
             return patterns;
         }
 
-        private void ExtractPatterns(Bitmap collectiveBitmap)
+        private void ExtractPatterns(Jbig2Bitmap collectiveBitmap)
         {
             // 3)
             int gray = 0;
-            patterns = new List<Bitmap>(GrayMax + 1);
+            patterns = new List<Jbig2Bitmap>(GrayMax + 1);
 
             // 4)
             while (gray <= GrayMax)
             {
                 // 4) a) Retrieve a pattern bitmap by extracting it out of the collective bitmap
-                Rectangle roi = new Rectangle(HdpWidth * gray, 0, HdpWidth, HdpHeight);
-                Bitmap patternBitmap = Bitmaps.Extract(roi, collectiveBitmap);
+                Jbig2Rectangle roi = new Jbig2Rectangle(HdpWidth * gray, 0, HdpWidth, HdpHeight);
+                Jbig2Bitmap patternBitmap = Jbig2Bitmaps.Extract(roi, collectiveBitmap);
                 patterns.Add(patternBitmap);
 
                 // 4) b)

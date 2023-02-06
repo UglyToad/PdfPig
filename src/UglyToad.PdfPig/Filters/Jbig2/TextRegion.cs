@@ -8,7 +8,7 @@
     /// <summary>
     /// This class represented the segment type "Text region", 7.4.3, page 56.
     /// </summary>
-    internal class TextRegion : IRegion
+    internal sealed class TextRegion : IRegion
     {
         private SubInputStream subInputStream;
 
@@ -45,8 +45,8 @@
         private int sbStrips;
         private int amountOfSymbols;
 
-        private Bitmap regionBitmap;
-        private List<Bitmap> symbols = new List<Bitmap>();
+        private Jbig2Bitmap regionBitmap;
+        private List<Jbig2Bitmap> symbols = new List<Jbig2Bitmap>();
 
         private ArithmeticDecoder arithmeticDecoder;
         private ArithmeticIntegerDecoder integerDecoder;
@@ -283,7 +283,7 @@
             }
         }
 
-        public Bitmap GetRegionBitmap()
+        public Jbig2Bitmap GetRegionBitmap()
         {
             if (!isHuffmanEncoded)
             {
@@ -363,7 +363,7 @@
         private void CreateRegionBitmap()
         {
             // 6.4.5
-            regionBitmap = new Bitmap(RegionInfo.BitmapWidth, RegionInfo.BitmapHeight);
+            regionBitmap = new Jbig2Bitmap(RegionInfo.BitmapWidth, RegionInfo.BitmapHeight);
 
             // 1)
             if (defaultPixel != 0)
@@ -472,7 +472,7 @@
                     // 3 c) v)
                     long r = DecodeRI();
                     // 6.4.11
-                    Bitmap ib = DecodeIb(r, id);
+                    Jbig2Bitmap ib = DecodeIb(r, id);
 
                     // vi)
                     Blit(ib, t);
@@ -609,9 +609,9 @@
             return 0;
         }
 
-        private Bitmap DecodeIb(long r, long id)
+        private Jbig2Bitmap DecodeIb(long r, long id)
         {
-            Bitmap ib;
+            Jbig2Bitmap ib;
 
             if (r == 0)
             {
@@ -635,7 +635,7 @@
                 }
 
                 // 6)
-                Bitmap ibo = symbols[(int)id];
+                Jbig2Bitmap ibo = symbols[(int)id];
                 int wo = ibo.Width;
                 int ho = ibo.Height;
 
@@ -904,7 +904,7 @@
 
         }
 
-        private void Blit(Bitmap ib, long t)
+        private void Blit(Jbig2Bitmap ib, long t)
         {
             if (isTransposed == 0 && (referenceCorner == 2 || referenceCorner == 3))
             {
@@ -946,7 +946,7 @@
                 }
             }
 
-            Bitmaps.Blit(ib, regionBitmap, (int)s, (int)t, combinationOperator);
+            Jbig2Bitmaps.Blit(ib, regionBitmap, (int)s, (int)t, combinationOperator);
 
             // x)
             if (isTransposed == 0 && (referenceCorner == 0 || referenceCorner == 1))
@@ -1105,7 +1105,7 @@
                 short sbCombinationOperator, short transposed, short refCorner, short sbdsOffset,
                 short sbHuffFS, short sbHuffDS, short sbHuffDT, short sbHuffRDWidth,
                 short sbHuffRDHeight, short sbHuffRDX, short sbHuffRDY, short sbHuffRSize,
-                short sbrTemplate, short[] sbrATX, short[] sbrATY, List<Bitmap> sbSyms,
+                short sbrTemplate, short[] sbrATX, short[] sbrATY, List<Jbig2Bitmap> sbSyms,
                 int sbSymCodeLen)
         {
 

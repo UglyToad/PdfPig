@@ -2,7 +2,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
 {
     using System.Collections.Generic;
 
-    internal class StandardTables
+    internal static class StandardTables
     {
         class StandardTable : HuffmanTable
         {

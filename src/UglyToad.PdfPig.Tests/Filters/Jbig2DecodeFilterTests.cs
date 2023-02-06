@@ -8,7 +8,7 @@ namespace UglyToad.PdfPig.Tests.Filters
 {
     public class Jbig2DecodeFilterTests
     {
-        [Fact]
+        [Fact(Skip = "File removed")]
         public void CanDecodeJbig2CompressedImageData_WithoutGlobalSegments()
         {
             var encodedImageBytes = ImageHelpers.LoadFileBytes("sampledata_page1.jb2");

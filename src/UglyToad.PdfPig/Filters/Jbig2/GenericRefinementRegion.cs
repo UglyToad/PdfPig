@@ -6,7 +6,7 @@
     /// This class represents a generic refinement region and implements the procedure described in JBIG2 ISO standard, 6.3
     /// and 7.4.7.
     /// </summary>
-    internal class GenericRefinementRegion : IRegion
+    internal sealed class GenericRefinementRegion : IRegion
     {
         public abstract class Template
         {
@@ -63,10 +63,10 @@
         private short[] grAtY;
 
         // Decoded data as pixel values (use row stride/width to wrap line)
-        private Bitmap regionBitmap;
+        private Jbig2Bitmap regionBitmap;
 
         // Variables for decoding
-        private Bitmap referenceBitmap;
+        private Jbig2Bitmap referenceBitmap;
         private int referenceDX;
         private int referenceDY;
 
@@ -147,11 +147,11 @@
         /// <summary>
         /// Decode using a template and arithmetic coding, as described in 6.3.5.6
         /// </summary>
-        /// <returns>The decoded <see cref="Bitmap"/>.</returns>
+        /// <returns>The decoded <see cref="Jbig2Bitmap"/>.</returns>
         /// <exception cref="System.IO.IOException">if an underlying IO operation fails</exception>
         /// <exception cref="InvalidHeaderValueException">if a segment header value is invalid</exception>
         /// <exception cref="IntegerMaxValueException"> if the maximum value limit of an integer is exceeded</exception>
-        public Bitmap GetRegionBitmap()
+        public Jbig2Bitmap GetRegionBitmap()
         {
             if (null == regionBitmap)
             {
@@ -175,7 +175,7 @@
                 }
 
                 // 6.3.5.6 - 2)
-                regionBitmap = new Bitmap(RegionInfo.BitmapWidth, RegionInfo.BitmapHeight);
+                regionBitmap = new Jbig2Bitmap(RegionInfo.BitmapWidth, RegionInfo.BitmapHeight);
 
                 if (templateID == 0)
                 {
@@ -221,7 +221,7 @@
             return arithDecoder.Decode(cx);
         }
 
-        private Bitmap GetGrReference()
+        private Jbig2Bitmap GetGrReference()
         {
             SegmentHeader[] segments = segmentHeader.GetRtSegments();
             IRegion region = (IRegion)segments[0].GetSegmentData();
@@ -824,7 +824,7 @@
             return context;
         }
 
-        private static byte GetPixel(Bitmap b, int x, int y)
+        private static byte GetPixel(Jbig2Bitmap b, int x, int y)
         {
             if (x < 0 || x >= b.Width)
             {
@@ -848,7 +848,7 @@
 
         internal void SetParameters(CX cx, ArithmeticDecoder arithmeticDecoder,
                 short grTemplate, int regionWidth, int regionHeight,
-                Bitmap grReference, int grReferenceDX, int grReferenceDY,
+                Jbig2Bitmap grReference, int grReferenceDX, int grReferenceDY,
                 bool isTPGRon, short[] grAtX, short[] grAtY)
         {
 

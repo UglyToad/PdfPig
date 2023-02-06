@@ -7,7 +7,7 @@
     /// <summary>
     ///  This class represents an internal node of a Huffman tree. It contains two child nodes.
     /// </summary>
-    internal class InternalNode : Node
+    internal sealed class InternalNode : Node
     {
         private readonly int depth;
 

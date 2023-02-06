@@ -9,7 +9,7 @@
         [Fact]
         public void GetPixelAndSetPixelTest()
         {
-            var bitmap = new Bitmap(37, 49);
+            var bitmap = new Jbig2Bitmap(37, 49);
             Assert.Equal(0, bitmap.GetPixel(3, 19));
 
             bitmap.SetPixel(3, 19, (byte)1);
@@ -20,7 +20,7 @@
         [Fact]
         public void GetByteAndSetByteTest()
         {
-            var bitmap = new Bitmap(16, 16);
+            var bitmap = new Jbig2Bitmap(16, 16);
 
             byte value = (byte)4;
             bitmap.SetByte(0, value);
@@ -33,7 +33,7 @@
         [Fact]
         public void GetByteThrowsExceptionTest()
         {
-            var bitmap = new Bitmap(16, 16);
+            var bitmap = new Jbig2Bitmap(16, 16);
 
             Action action = () => bitmap.GetByte(32);
 
@@ -43,7 +43,7 @@
         [Fact]
         public void SetByteThrowsExceptionTest()
         {
-            var bitmap = new Bitmap(16, 16);
+            var bitmap = new Jbig2Bitmap(16, 16);
 
             Action action = () => bitmap.SetByte(32, (byte)0);
 
@@ -53,7 +53,7 @@
         [Fact]
         public void GetByteAsIntegerTest()
         {
-            var bitmap = new Bitmap(16, 16);
+            var bitmap = new Jbig2Bitmap(16, 16);
 
             var byteValue = (byte)4;
             int integerValue = byteValue;
@@ -69,7 +69,7 @@
         public void GetHeightTest()
         {
             int height = 16;
-            var bitmap = new Bitmap(1, height);
+            var bitmap = new Jbig2Bitmap(1, height);
 
             Assert.Equal(height, bitmap.Height);
         }
@@ -78,7 +78,7 @@
         public void GetWidthTest()
         {
             int width = 16;
-            var bitmap = new Bitmap(width, 1);
+            var bitmap = new Jbig2Bitmap(width, 1);
 
             Assert.Equal(width, bitmap.Width);
         }

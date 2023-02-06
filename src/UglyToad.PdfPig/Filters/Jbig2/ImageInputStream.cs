@@ -3,7 +3,7 @@
     using System;
     using System.IO;
 
-    internal class ImageInputStream : AbstractImageInputStream
+    internal sealed class ImageInputStream : AbstractImageInputStream
     {
         private readonly Stream inner;
 

@@ -3,7 +3,7 @@
     /// <summary>
     /// This class represents the segment type "Page information", 7.4.8 (page 73).
     /// </summary>
-    internal class PageInformation : ISegmentData
+    internal sealed class PageInformation : ISegmentData
     {
         private SubInputStream subInputStream;
 

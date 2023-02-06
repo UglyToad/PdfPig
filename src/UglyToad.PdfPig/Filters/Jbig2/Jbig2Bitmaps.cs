@@ -1,19 +1,18 @@
 namespace UglyToad.PdfPig.Filters.Jbig2
 {
     using System;
-    using System.Drawing;
 
-    internal static class Bitmaps
+    internal static class Jbig2Bitmaps
     {
         /// <summary>
         /// Returns the specified rectangle area of the bitmap.
         /// </summary>
-        /// <param name="roi">A <see cref="System.Drawing.Rectangle"/> that specifies the requested image section.</param>
+        /// <param name="roi">A <see cref="Jbig2Rectangle"/> that specifies the requested image section.</param>
         /// <param name="src">src the given bitmap</param>
-        /// <returns>A <see cref="Bitmap"/> that represents the requested image section.</returns>
-        public static Bitmap Extract(Rectangle roi, Bitmap src)
+        /// <returns>A <see cref="Jbig2Bitmap"/> that represents the requested image section.</returns>
+        public static Jbig2Bitmap Extract(Jbig2Rectangle roi, Jbig2Bitmap src)
         {
-            var dst = new Bitmap(roi.Width, roi.Height);
+            var dst = new Jbig2Bitmap(roi.Width, roi.Height);
 
             int upShift = roi.X & 0x07;
             int downShift = 8 - upShift;
@@ -24,7 +23,8 @@ namespace UglyToad.PdfPig.Filters.Jbig2
             int srcLineEndIdx = src.GetByteIndex(roi.X + roi.Width - 1, roi.Y);
             bool usePadding = dst.RowStride == srcLineEndIdx + 1 - srcLineStartIdx;
 
-            for (int y = roi.Y; y < roi.GetMaxY(); y++)
+            int maxY = roi.GetMaxY();
+            for (int y = roi.Y; y < maxY; y++)
             {
                 int srcIdx = srcLineStartIdx;
                 int dstIdx = dstLineStartIdx;
@@ -104,7 +104,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
         /// <param name="x">The x coordinate where the upper left corner of the bitmap to blit should be positioned.</param>
         /// <param name="y">The y coordinate where the upper left corner of the bitmap to blit should be positioned.</param>
         /// <param name="combinationOperator">The combination operator for combining two pixels.</param>
-        public static void Blit(Bitmap src, Bitmap dst, int x, int y, CombinationOperator combinationOperator)
+        public static void Blit(Jbig2Bitmap src, Jbig2Bitmap dst, int x, int y, CombinationOperator combinationOperator)
         {
             int startLine = 0;
             int srcStartIdx = 0;
@@ -163,7 +163,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
             }
         }
 
-        private static void CopyLine(Bitmap src, Bitmap dst, int sourceUpShift, int sourceDownShift,
+        private static void CopyLine(Jbig2Bitmap src, Jbig2Bitmap dst, int sourceUpShift, int sourceDownShift,
                 int padding, int firstSourceByteOfLine, int lastSourceByteOfLine, bool usePadding,
                 int sourceOffset, int targetOffset)
         {
@@ -210,7 +210,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
             return (byte)(value >> padding << padding);
         }
 
-        private static void BlitUnshifted(Bitmap src, Bitmap dst, int startLine, int lastLine,
+        private static void BlitUnshifted(Jbig2Bitmap src, Jbig2Bitmap dst, int startLine, int lastLine,
                 int dstStartIdx, int srcStartIdx, int srcEndIdx, CombinationOperator op)
         {
 
@@ -229,7 +229,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
             }
         }
 
-        private static void BlitSpecialShifted(Bitmap src, Bitmap dst, int startLine, int lastLine,
+        private static void BlitSpecialShifted(Jbig2Bitmap src, Jbig2Bitmap dst, int startLine, int lastLine,
                 int dstStartIdx, int srcStartIdx, int srcEndIdx, int toShift, int shiftVal1,
                 int shiftVal2, CombinationOperator op)
         {
@@ -258,7 +258,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
             }
         }
 
-        private static void BlitShifted(Bitmap src, Bitmap dst, int startLine, int lastLine,
+        private static void BlitShifted(Jbig2Bitmap src, Jbig2Bitmap dst, int startLine, int lastLine,
                 int dstStartIdx, int srcStartIdx, int srcEndIdx, int toShift, int shiftVal1,
                 int shiftVal2, CombinationOperator op, int padding)
         {

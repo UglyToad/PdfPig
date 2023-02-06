@@ -4,7 +4,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
     /// This class represents the "Region segment information" field, 7.4.1(page 50).
     /// Every region segment data starts with this part.
     /// </summary>
-    internal class RegionSegmentInformation : ISegmentData
+    internal sealed class RegionSegmentInformation : ISegmentData
     {
         private readonly SubInputStream subInputStream;
 

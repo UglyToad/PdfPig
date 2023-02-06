@@ -3,7 +3,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
     /// <summary>
     /// This class represents a bi-level image that is organized like a bitmap.
     /// </summary>
-    internal class Bitmap
+    internal sealed class Jbig2Bitmap
     {
         // 8 pixels per byte, 0 for white, 1 for black
         private readonly byte[] bitmap;
@@ -31,7 +31,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
         /// </summary>
         /// <param name="width"></param>
         /// <param name="height"></param>
-        public Bitmap(int width, int height)
+        public Jbig2Bitmap(int width, int height)
         {
             Height = height;
             Width = width;

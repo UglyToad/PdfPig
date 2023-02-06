@@ -5,7 +5,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
     /// <summary>
     /// Can be used if the maximum value limit of an integer is exceeded.
     /// </summary>
-    internal class IntegerMaxValueException : Jbig2Exception
+    internal sealed class IntegerMaxValueException : Jbig2Exception
     {
         public IntegerMaxValueException()
         {

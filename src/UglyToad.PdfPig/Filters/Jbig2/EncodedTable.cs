@@ -5,7 +5,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
     /// <summary>
     /// This class represents a encoded huffman table.
     /// </summary>
-    internal class EncodedTable : HuffmanTable
+    internal sealed class EncodedTable : HuffmanTable
     {
         private readonly Table table;
 

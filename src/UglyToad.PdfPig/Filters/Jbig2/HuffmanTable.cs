@@ -33,7 +33,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
 
             public override sealed string ToString()
             {
-                return (Value != -1 ? ValueNode.bitPattern(Value, PrefixLength) : "?") + "/"
+                return (Value != -1 ? ValueNode.BitPattern(Value, PrefixLength) : "?") + "/"
                         + PrefixLength + "/" + RangeLength + "/" + RangeLow;
             }
         }

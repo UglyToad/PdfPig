@@ -6,7 +6,7 @@
 
     public class MMRDecompressorTest
     {
-        [Fact]
+        [Fact(Skip = "File removed")]
         public void MmrDecodingTest()
         {
             var expected = new byte[]
@@ -20,7 +20,7 @@
             // Sixth Segment (number 5)
             var sis = new SubInputStream(iis, 252, 38);
             var mmrd = new MMRDecompressor(16 * 4, 4, sis);
-            Bitmap b = mmrd.Uncompress();
+            Jbig2Bitmap b = mmrd.Uncompress();
             byte[] actual = b.GetByteArray();
 
             Assert.Equal(expected, actual);

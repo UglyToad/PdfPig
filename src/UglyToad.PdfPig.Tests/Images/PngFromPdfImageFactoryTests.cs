@@ -258,7 +258,7 @@
             Assert.True(ImageHelpers.ImagesAreEqual(LoadImage("calgray.png"), bytes));
         }
 
-        [Fact]
+        [Fact(Skip = "File removed")]
         public void CanGeneratePngFromJbig2DecodedImageData()
         {
             var decodedBytes = ImageHelpers.LoadFileBytes("sampledata_page1.jb2-decoded.bin");

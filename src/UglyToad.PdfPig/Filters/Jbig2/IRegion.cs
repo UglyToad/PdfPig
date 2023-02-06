@@ -13,10 +13,10 @@ namespace UglyToad.PdfPig.Filters.Jbig2
         /// <summary>
         /// Decodes and returns a regions content.
         /// </summary>
-        /// <returns>The decoded region as <see cref="Bitmap"/>.</returns>
+        /// <returns>The decoded region as <see cref="Jbig2Bitmap"/>.</returns>
         /// <exception cref="InvalidHeaderValueException">if the segment header value is invalid.</exception>
         /// <exception cref="IntegerMaxValueException">if the maximum value limit of an integer is exceeded.</exception>
         /// <exception cref="System.IO.IOException">if an underlying IO operation fails.</exception>
-        Bitmap GetRegionBitmap();
+        Jbig2Bitmap GetRegionBitmap();
     }
 }

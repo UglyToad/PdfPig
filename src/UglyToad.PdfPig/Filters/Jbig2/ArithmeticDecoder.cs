@@ -3,7 +3,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
     /// <summary>
     ///  This class represents the arithmetic decoder, described in ISO/IEC 14492:2001 in E.3
     /// </summary>
-    internal class ArithmeticDecoder
+    internal sealed class ArithmeticDecoder
     {
         private static readonly int[][] QE = new[]{
             new []{ 0x5601, 01, 01, 1 }, new []{ 0x3401, 02, 06, 0 }, new []{ 0x1801, 03, 09, 0 },

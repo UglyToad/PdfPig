@@ -1,12 +1,11 @@
 ﻿namespace UglyToad.PdfPig.Filters.Jbig2
 {
-    using System;
     using static HuffmanTable;
 
     /// <summary>
     /// Represents a value node in a Huffman tree. It is a leaf of a tree.
     /// </summary>
-    internal class ValueNode : Node
+    internal sealed class ValueNode : Node
     {
         private readonly int rangeLength;
         private readonly int rangeLow;
@@ -33,13 +32,15 @@
             }
         }
 
-        internal static string bitPattern(int v, int len)
+        internal static string BitPattern(int v, int len)
         {
             var result = new char[len];
             for (int i = 1; i <= len; i++)
+            {
                 result[i - 1] = (v >> (len - i) & 1) != 0 ? '1' : '0';
+            }
 
-            return new String(result);
+            return new string(result);
         }
     }
 }

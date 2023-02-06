@@ -3,7 +3,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
     /// <summary>
     /// This segment flags an end of stripe (see JBIG2 ISO standard, 7.4.9).
     /// </summary>
-    internal class EndOfStripe : ISegmentData
+    internal sealed class EndOfStripe : ISegmentData
     {
         private SubInputStream subInputStream;
         private int lineNumber;

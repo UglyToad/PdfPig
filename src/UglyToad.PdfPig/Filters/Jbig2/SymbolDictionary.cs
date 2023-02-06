@@ -2,13 +2,12 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Drawing;
 
     /// <summary>
     /// This class represents the data of segment type "Symbol dictionary". Parsing is described in
     /// 7.4.2.1.1 - 7.4.1.1.5 and decoding procedure is described in 6.5.
     /// </summary>
-    internal class SymbolDictionary : IDictionary
+    internal sealed class SymbolDictionary : IJbigDictionary
     {
         private SubInputStream subInputStream;
 
@@ -41,9 +40,9 @@
         // Further parameters
         private SegmentHeader segmentHeader;
         private int amountOfImportedSymbolss;
-        private List<Bitmap> importSymbols;
+        private List<Jbig2Bitmap> importSymbols;
         private int amountOfDecodedSymbols;
-        private Bitmap[] newSymbols;
+        private Jbig2Bitmap[] newSymbols;
 
         // User-supplied tables
         private HuffmanTable dhTable;
@@ -52,8 +51,8 @@
         private HuffmanTable aggInstTable;
 
         // Return value of that segment
-        private List<Bitmap> exportSymbols;
-        private List<Bitmap> sbSymbols;
+        private List<Jbig2Bitmap> exportSymbols;
+        private List<Jbig2Bitmap> sbSymbols;
 
         private ArithmeticDecoder arithmeticDecoder;
         private ArithmeticIntegerDecoder iDecoder;
@@ -230,7 +229,7 @@
             }
             else
             {
-                importSymbols = new List<Bitmap>();
+                importSymbols = new List<Jbig2Bitmap>();
             }
         }
 
@@ -309,7 +308,7 @@
         /// 6.5.5 Decoding the symbol dictionary.
         /// </summary>
         /// <returns>List of decoded symbol bitmaps.</returns>
-        public List<Bitmap> GetDictionary()
+        public List<Jbig2Bitmap> GetDictionary()
         {
             if (null == exportSymbols)
             {
@@ -324,7 +323,7 @@
                 }
 
                 // 6.5.5 1)
-                newSymbols = new Bitmap[amountOfNewSymbols];
+                newSymbols = new Jbig2Bitmap[amountOfNewSymbols];
 
                 // 6.5.5 2)
                 int[] newSymbolsWidths = null;
@@ -408,7 +407,7 @@
 
                         subInputStream.SkipBits();
 
-                        Bitmap heightClassCollectiveBitmap =
+                        Jbig2Bitmap heightClassCollectiveBitmap =
                             DecodeHeightClassCollectiveBitmap(bmSize, heightClassHeight, totalWidth);
 
                         subInputStream.SkipBits();
@@ -479,7 +478,7 @@
             }
         }
 
-        private void DecodeHeightClassBitmap(Bitmap heightClassCollectiveBitmap,
+        private void DecodeHeightClassBitmap(Jbig2Bitmap heightClassCollectiveBitmap,
                 int heightClassFirstSymbol, int heightClassHeight,
                 int[] newSymbolsWidths)
         {
@@ -492,8 +491,8 @@
                     startColumn += newSymbolsWidths[j];
                 }
 
-                var roi = new Rectangle(startColumn, 0, newSymbolsWidths[i], heightClassHeight);
-                var symbolBitmap = Bitmaps.Extract(roi, heightClassCollectiveBitmap);
+                var roi = new Jbig2Rectangle(startColumn, 0, newSymbolsWidths[i], heightClassHeight);
+                var symbolBitmap = Jbig2Bitmaps.Extract(roi, heightClassCollectiveBitmap);
                 newSymbols[i] = symbolBitmap;
                 sbSymbols.Add(symbolBitmap);
             }
@@ -619,7 +618,7 @@
 
             // 6)
             SetSymbolsArray();
-            Bitmap ibo = sbSymbols[id];
+            Jbig2Bitmap ibo = sbSymbols[id];
             DecodeNewSymbols(symbolWidth, heightClassHeight, ibo, rdx, rdy);
 
             // 7)
@@ -630,7 +629,7 @@
             }
         }
 
-        private void DecodeNewSymbols(int symWidth, int hcHeight, Bitmap ibo, int rdx, int rdy)
+        private void DecodeNewSymbols(int symWidth, int hcHeight, Jbig2Bitmap ibo, int rdx, int rdy)
         {
             if (genericRefinementRegion == null)
             {
@@ -670,7 +669,7 @@
 
         private void AddSymbol(IRegion region)
         {
-            Bitmap symbol = region.GetRegionBitmap();
+            Jbig2Bitmap symbol = region.GetRegionBitmap();
             newSymbols[amountOfDecodedSymbols] = symbol;
             sbSymbols.Add(symbol);
         }
@@ -747,12 +746,12 @@
             return 0;
         }
 
-        private Bitmap DecodeHeightClassCollectiveBitmap(long bmSize,
+        private Jbig2Bitmap DecodeHeightClassCollectiveBitmap(long bmSize,
                 int heightClassHeight, int totalWidth)
         {
             if (bmSize == 0)
             {
-                Bitmap heightClassCollectiveBitmap = new Bitmap(totalWidth, heightClassHeight);
+                Jbig2Bitmap heightClassCollectiveBitmap = new Jbig2Bitmap(totalWidth, heightClassHeight);
 
                 for (int i = 0; i < heightClassCollectiveBitmap.GetByteArray().Length; i++)
                 {
@@ -777,7 +776,7 @@
 
         private void SetExportedSymbols(int[] toExportFlags)
         {
-            exportSymbols = new List<Bitmap>(amountOfExportSymbolss);
+            exportSymbols = new List<Jbig2Bitmap>(amountOfExportSymbolss);
 
             for (int i = 0; i < amountOfImportedSymbolss + amountOfNewSymbols; i++)
             {
@@ -881,7 +880,7 @@
 
             if (sbSymbols == null)
             {
-                sbSymbols = new List<Bitmap>();
+                sbSymbols = new List<Jbig2Bitmap>();
                 sbSymbols.AddRange(importSymbols);
             }
         }
@@ -891,7 +890,7 @@
         /// </summary>
         private void RetrieveImportSymbols()
         {
-            importSymbols = new List<Bitmap>();
+            importSymbols = new List<Jbig2Bitmap>();
             foreach (SegmentHeader referredToSegmentHeader in segmentHeader.GetRtSegments())
             {
                 if (referredToSegmentHeader.SegmentType == 0)

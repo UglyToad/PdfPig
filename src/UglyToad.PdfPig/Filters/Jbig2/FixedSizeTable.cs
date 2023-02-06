@@ -5,7 +5,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
     /// <summary>
     /// This class represents a fixed size huffman table.
     /// </summary>
-    internal class FixedSizeTable : HuffmanTable
+    internal sealed class FixedSizeTable : HuffmanTable
     {
         public FixedSizeTable(List<Code> runCodeTable)
         {

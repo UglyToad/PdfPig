@@ -3,7 +3,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
     /// <summary>
     /// Constants for MMR (de)compression.
     /// </summary>
-    internal class MMRConstants
+    internal static class MMRConstants
     {
         public const int COMP_FAXG3 = 0;
         public const int COMP_FAXG4 = 1;

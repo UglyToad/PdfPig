@@ -5,7 +5,7 @@
     /// Parsing is done as described in 7.4.5.
     /// Decoding procedure is done as described in 6.2.5.7 and 7.4.6.4.
     /// </summary>
-    internal class GenericRegion : IRegion
+    internal sealed class GenericRegion : IRegion
     {
         private SubInputStream subInputStream;
         private long dataHeaderOffset = 0;
@@ -28,7 +28,7 @@
         private bool @override;
 
         // Decoded data as pixel values (use row stride/width to wrap line)
-        private Bitmap regionBitmap;
+        private Jbig2Bitmap regionBitmap;
 
         private ArithmeticDecoder arithDecoder;
         private CX cx;
@@ -123,8 +123,8 @@
         /// <summary>
         /// The procedure is described in 6.2.5.7, page 17.
         /// </summary>
-        /// <returns>The decoded <see cref="Bitmap"/>.</returns>
-        public Bitmap GetRegionBitmap()
+        /// <returns>The decoded <see cref="Jbig2Bitmap"/>.</returns>
+        public Jbig2Bitmap GetRegionBitmap()
         {
             if (null == regionBitmap)
             {
@@ -160,7 +160,7 @@
                     }
 
                     // 6.2.5.7 - 2)
-                    regionBitmap = new Bitmap(RegionInfo.BitmapWidth,
+                    regionBitmap = new Jbig2Bitmap(RegionInfo.BitmapWidth,
                             RegionInfo.BitmapHeight);
 
                     int paddedWidth = (regionBitmap.Width + 7) & -8;

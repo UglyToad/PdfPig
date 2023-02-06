@@ -7,7 +7,7 @@ namespace UglyToad.PdfPig.Filters.Jbig2
     /// <summary>
     /// The basic class for all JBIG2 segments.
     /// </summary>
-    internal class SegmentHeader
+    internal sealed class SegmentHeader
     {
         private static readonly Dictionary<int, Type> SEGMENT_TYPE_MAP = new Dictionary<int, Type>
         {
