@@ -640,6 +640,11 @@ namespace UglyToad.PdfPig.Writer
                     case PdfAStandard.A2A:
                         PdfA1ARuleBuilder.Obey(catalogDictionary);
                         break;
+                    case PdfAStandard.A3B:
+                        break;
+                    case PdfAStandard.A3A:
+                        PdfA1ARuleBuilder.Obey(catalogDictionary);
+                        break;
                 }
             }
 
