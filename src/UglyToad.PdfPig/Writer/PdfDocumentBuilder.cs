@@ -11,6 +11,8 @@ namespace UglyToad.PdfPig.Writer
     using PdfPig.Fonts.TrueType;
     using PdfPig.Fonts.Standard14Fonts;
     using PdfPig.Fonts.TrueType.Parser;
+    using PdfPig.Outline;
+    using PdfPig.Outline.Destinations;
     using System.Runtime.CompilerServices;
     using Tokenization.Scanner;
     using Tokens;
@@ -51,6 +53,11 @@ namespace UglyToad.PdfPig.Writer
         /// The values of the fields to include in the document information dictionary.
         /// </summary>
         public DocumentInformationBuilder DocumentInformation { get; set; } = new DocumentInformationBuilder();
+
+        /// <summary>
+        /// The bookmark nodes to include in the document outline dictionary.
+        /// </summary>
+        public Bookmarks Bookmarks { get; set; }
 
         /// <summary>
         /// The current page builders in the document and the corresponding 1 indexed page numbers. Use <see cref="AddPage(double,double)"/>
@@ -103,7 +110,7 @@ namespace UglyToad.PdfPig.Writer
             }
             context.InitializePdf(version);
         }
-        
+
         /// <summary>
         /// Determines whether the bytes of the TrueType font file provided can be used in a PDF document.
         /// </summary>
@@ -408,7 +415,7 @@ namespace UglyToad.PdfPig.Writer
                         }
                         val = tk.Data;
                     }
-                                                    
+
                     if (!(val is ArrayToken arr))
                     {
                         // should be array... ignore and remove bad dict
@@ -547,6 +554,7 @@ namespace UglyToad.PdfPig.Writer
             }
 
             int leafNum = 0;
+            var pageReferences = new Dictionary<int, IndirectReferenceToken>(pages.Count);
 
             foreach (var page in pages)
             {
@@ -589,9 +597,10 @@ namespace UglyToad.PdfPig.Writer
                     }
                     pageDictionary[NameToken.Contents] = new ArrayToken(streams);
                 }
-                context.AttemptDeduplication = prev;;
+                context.AttemptDeduplication = prev;
 
-                leafChildren[leafNum].Add(context.WriteToken(new DictionaryToken(pageDictionary)));
+                pageReferences[page.Key] = context.WriteToken(new DictionaryToken(pageDictionary));
+                leafChildren[leafNum].Add(pageReferences[page.Key]);
 
                 if (leafChildren[leafNum].Count >= desiredLeafSize)
                 {
@@ -622,6 +631,20 @@ namespace UglyToad.PdfPig.Writer
             {
                 var rootPageInfo = CreatePageTree(leafs, null);
                 catalogDictionary[NameToken.Pages] = rootPageInfo.Ref;
+            }
+
+            if (Bookmarks != null && Bookmarks.Roots.Count > 0)
+            {
+                var bookmarks = CreateBookmarkTree(Bookmarks.Roots, pageReferences, null);
+                var outline = new Dictionary<NameToken, IToken>
+                {
+                    {NameToken.Type, NameToken.Outlines},
+                    {NameToken.Count, new NumericToken(Bookmarks.Roots.Count)},
+                    {NameToken.First, bookmarks[0]},
+                    {NameToken.Last, bookmarks[bookmarks.Length - 1]},
+                };
+
+                catalogDictionary[NameToken.Outlines] = context.WriteToken(new DictionaryToken(outline));
             }
 
             if (ArchiveStandard != PdfAStandard.None)
@@ -750,6 +773,138 @@ namespace UglyToad.PdfPig.Writer
             });
         }
 
+        private IndirectReferenceToken[] CreateBookmarkTree(IReadOnlyList<BookmarkNode> nodes, Dictionary<int, IndirectReferenceToken> pageReferences, IndirectReferenceToken parent)
+        {
+            var childObjectNumbers = new IndirectReferenceToken[nodes.Count];
+            for (var i = 0; i < nodes.Count; i++)
+            {
+                childObjectNumbers[i] = context.ReserveObjectNumber();
+            }
+
+            for (var i = 0; i < nodes.Count; i++)
+            {
+                var node = nodes[i];
+                var objectNumber = childObjectNumbers[i];
+                var data = new Dictionary<NameToken, IToken>
+                {
+                    {NameToken.Title, new StringToken(node.Title)},
+                    {NameToken.Count, new NumericToken(node.Children.Count)}
+                };
+
+                if (parent != null)
+                {
+                    data[NameToken.Parent] = parent;
+                }
+                if (i > 0)
+                {
+                    data[NameToken.Prev] = childObjectNumbers[i - 1];
+                }
+                if (i < childObjectNumbers.Length - 1)
+                {
+                    data[NameToken.Next] = childObjectNumbers[i + 1];
+                }
+
+                if (node.Children.Count > 0)
+                {
+                    var children = CreateBookmarkTree(node.Children, pageReferences, objectNumber);
+                    data[NameToken.First] = children[0];
+                    data[NameToken.Last] = children[children.Length - 1];
+                }
+
+                switch (node)
+                {
+                    case DocumentBookmarkNode documentBookmarkNode:
+                        if (!pageReferences.TryGetValue(documentBookmarkNode.PageNumber, out var pageReference))
+                        {
+                            throw new KeyNotFoundException($"Page {documentBookmarkNode.PageNumber} was not found in the source document.");
+                        }
+
+                        data[NameToken.Dest] = CreateExplicitDestinationToken(documentBookmarkNode.Destination, pageReference);
+                        break;
+
+                    case UriBookmarkNode uriBookmarkNode:
+                        data[NameToken.A] = new DictionaryToken(new Dictionary<NameToken, IToken>()
+                        {
+                            [NameToken.S] = NameToken.Uri,
+                            [NameToken.Uri] = new StringToken(uriBookmarkNode.Uri),
+                        });
+                        break;
+
+                    default:
+                        throw new NotSupportedException($"{node.GetType().Name} is not a supported bookmark node type.");
+                }
+
+                context.WriteToken(new DictionaryToken(data), objectNumber);
+            }
+
+            return childObjectNumbers;
+
+            static ArrayToken CreateExplicitDestinationToken(ExplicitDestination destination, IndirectReferenceToken page)
+            {
+                return destination.Type switch
+                {
+                    ExplicitDestinationType.XyzCoordinates => new ArrayToken(new IToken[]
+                    {
+                        page,
+                        NameToken.XYZ,
+                        new NumericToken(destination.Coordinates.Left ?? 0),
+                        new NumericToken(destination.Coordinates.Top ?? 0),
+                    }),
+
+                    ExplicitDestinationType.FitPage => new ArrayToken(new IToken[]
+                    {
+                        page,
+                        NameToken.Fit,
+                    }),
+
+                    ExplicitDestinationType.FitHorizontally => new ArrayToken(new IToken[]
+                    {
+                        page,
+                        NameToken.FitH,
+                        new NumericToken(destination.Coordinates.Top ?? 0),
+                    }),
+
+                    ExplicitDestinationType.FitVertically => new ArrayToken(new IToken[]
+                    {
+                        page,
+                        NameToken.FitV,
+                        new NumericToken(destination.Coordinates.Left ?? 0),
+                    }),
+
+                    ExplicitDestinationType.FitRectangle => new ArrayToken(new IToken[]
+                    {
+                        page,
+                        NameToken.FitR,
+                        new NumericToken(destination.Coordinates.Left ?? 0),
+                        new NumericToken(destination.Coordinates.Top ?? 0),
+                        new NumericToken(destination.Coordinates.Right ?? 0),
+                        new NumericToken(destination.Coordinates.Bottom ?? 0),
+                    }),
+
+                    ExplicitDestinationType.FitBoundingBox => new ArrayToken(new IToken[]
+                    {
+                        page,
+                        NameToken.FitB,
+                    }),
+
+                    ExplicitDestinationType.FitBoundingBoxHorizontally => new ArrayToken(new IToken[]
+                    {
+                        page,
+                        NameToken.FitBH,
+                        new NumericToken(destination.Coordinates.Left ?? 0),
+                    }),
+
+                    ExplicitDestinationType.FitBoundingBoxVertically => new ArrayToken(new IToken[]
+                    {
+                        page,
+                        NameToken.FitBV,
+                        new NumericToken(destination.Coordinates.Left ?? 0),
+                    }),
+
+                    _ => throw new NotSupportedException($"{destination.Type} is not a supported bookmark destination type."),
+                };
+            }
+        }
 
         internal class FontStored
         {

@@ -13,6 +13,8 @@
     using Xunit;
     using System;
     using UglyToad.PdfPig.Graphics.Operations.InlineImages;
+    using UglyToad.PdfPig.Outline;
+    using UglyToad.PdfPig.Outline.Destinations;
 
     public class PdfDocumentBuilderTests
     {
@@ -1179,11 +1181,81 @@
                     var exampleCopiedDictionary = dictCopy.FirstOrDefault();
 
                     Assert.NotNull(exampleCopiedDictionary);
-                    Assert.True(exampleCopiedDictionary.Count>0);                    
+                    Assert.True(exampleCopiedDictionary.Count > 0);
                 }
             }
-        }    
-        
+        }
+
+        [Fact]
+        public void CanCreateDocumentWithOutline()
+        {
+            var builder = new PdfDocumentBuilder();
+            builder.Bookmarks = new Bookmarks(new BookmarkNode[]
+            {
+                new DocumentBookmarkNode(
+                    "1", 0, new ExplicitDestination(1, ExplicitDestinationType.XyzCoordinates, ExplicitDestinationCoordinates.Empty),
+                    new[]
+                    {
+                        new DocumentBookmarkNode("1.1", 0, new ExplicitDestination(2, ExplicitDestinationType.FitPage, ExplicitDestinationCoordinates.Empty), Array.Empty<BookmarkNode>()),
+                    }),
+                new DocumentBookmarkNode(
+                    "2", 0, new ExplicitDestination(3, ExplicitDestinationType.FitRectangle, ExplicitDestinationCoordinates.Empty),
+                    new[]
+                    {
+                        new DocumentBookmarkNode("2.1", 0, new ExplicitDestination(4, ExplicitDestinationType.FitBoundingBox, ExplicitDestinationCoordinates.Empty), Array.Empty<BookmarkNode>()),
+                        new DocumentBookmarkNode("2.2", 0, new ExplicitDestination(5, ExplicitDestinationType.FitBoundingBoxHorizontally, ExplicitDestinationCoordinates.Empty), Array.Empty<BookmarkNode>()),
+                        new DocumentBookmarkNode("2.3", 0, new ExplicitDestination(6, ExplicitDestinationType.FitBoundingBoxVertically, ExplicitDestinationCoordinates.Empty), Array.Empty<BookmarkNode>()),
+                        new DocumentBookmarkNode("2.4", 0, new ExplicitDestination(7, ExplicitDestinationType.FitHorizontally, ExplicitDestinationCoordinates.Empty), Array.Empty<BookmarkNode>()),
+                        new DocumentBookmarkNode("2.5", 0, new ExplicitDestination(8, ExplicitDestinationType.FitVertically, ExplicitDestinationCoordinates.Empty), Array.Empty<BookmarkNode>()),
+                    }),
+                new UriBookmarkNode("3", 0, "https://github.com", Array.Empty<BookmarkNode>()),
+            });
+
+            var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+
+            foreach (var node in builder.Bookmarks.GetNodes())
+            {
+                builder.AddPage(PageSize.A4).AddText(node.Title, 12, new PdfPoint(25, 800), font);
+            }
+
+            var file = builder.Build();
+            WriteFile(nameof(CanCreateDocumentWithOutline), file);
+            using (var document = PdfDocument.Open(file))
+            {
+                Assert.True(document.TryGetBookmarks(out var bookmarks));
+
+                Assert.Equal(
+                    new[] { "1", "1.1", "2", "2.1", "2.2", "2.3", "2.4", "2.5", "3" },
+                    bookmarks.GetNodes().Select(node => node.Title));
+
+                Assert.Equal(
+                    new[] { 0, 1, 0, 1, 1, 1, 1, 1, 0 },
+                    bookmarks.GetNodes().Select(node => node.Level));
+
+                Assert.Equal(
+                    new[] { false, true, false, true, true, true, true, true, true },
+                    bookmarks.GetNodes().Select(node => node.IsLeaf));
+
+                Assert.Equal(
+                    new[] { "https://github.com" },
+                    bookmarks.GetNodes().OfType<UriBookmarkNode>().Select(node => node.Uri));
+
+                Assert.Equal(
+                    new[] 
+                    {
+                        ExplicitDestinationType.XyzCoordinates,
+                        ExplicitDestinationType.FitPage,
+                        ExplicitDestinationType.FitRectangle,
+                        ExplicitDestinationType.FitBoundingBox,
+                        ExplicitDestinationType.FitBoundingBoxHorizontally,
+                        ExplicitDestinationType.FitBoundingBoxVertically,
+                        ExplicitDestinationType.FitHorizontally,
+                        ExplicitDestinationType.FitVertically,
+                    },
+                    bookmarks.GetNodes().OfType<DocumentBookmarkNode>().Select(node => node.Destination.Type));
+            }
+        }
+
         private static void WriteFile(string name, byte[] bytes, string extension = "pdf")
         {
             try
