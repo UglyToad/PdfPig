@@ -895,7 +895,16 @@
 
                 var documentSpace = textMatrix.Transform(renderingMatrix.Transform(fontMatrix.Transform(rect)));
 
-                var letter = new Letter(c.ToString(), documentSpace, advanceRect.BottomLeft, advanceRect.BottomRight, width, (double)fontSize, FontDetails.GetDefault(name),
+                var letter = new Letter(
+                    c.ToString(), 
+                    documentSpace, 
+                    advanceRect.BottomLeft, 
+                    advanceRect.BottomRight, 
+                    width, 
+                    (double)fontSize, 
+                    FontDetails.GetDefault(name),
+                    TextRenderingMode.Fill,
+                    GrayColor.Black,
                     GrayColor.Black,
                     (double)fontSize,
                     textSequence);
