@@ -28,6 +28,19 @@
             {
                 switch (marker)
                 {
+                    case JpegMarker.StartOfImage:
+                    case JpegMarker.EndOfImage:
+                    case JpegMarker.Restart0:
+                    case JpegMarker.Restart1:
+                    case JpegMarker.Restart2:
+                    case JpegMarker.Restart3:
+                    case JpegMarker.Restart4:
+                    case JpegMarker.Restart5:
+                    case JpegMarker.Restart6:
+                    case JpegMarker.Restart7:
+
+                        // No length markers
+                        break;
                     case JpegMarker.StartOfBaselineDctFrame:
                     case JpegMarker.StartOfProgressiveDctFrame:
                         {
@@ -55,6 +68,7 @@
                     case JpegMarker.ApplicationSpecific13:
                     case JpegMarker.ApplicationSpecific14:
                     case JpegMarker.ApplicationSpecific15:
+                    default:
                         {
                             var length = ReadShort(stream, shortBuffer);
                             stream.Seek(length - 2, SeekOrigin.Current);

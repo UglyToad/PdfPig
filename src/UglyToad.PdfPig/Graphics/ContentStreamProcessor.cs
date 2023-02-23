@@ -292,14 +292,7 @@
                 var transformedPdfBounds = PerformantRectangleTransformer
                     .Transform(renderingMatrix, textMatrix, transformationMatrix, new PdfRectangle(0, 0, boundingBox.Width, 0));
 
-                // If the text rendering mode calls for filling, the current nonstroking color in the graphics state is used; 
-                // if it calls for stroking, the current stroking color is used.
-                // In modes that perform both filling and stroking, the effect is as if each glyph outline were filled and then stroked in separate operations.
-                // TODO: expose color as something more advanced
-                var color = currentState.FontState.TextRenderingMode != TextRenderingMode.Stroke
-                    ? currentState.CurrentNonStrokingColor
-                    : currentState.CurrentStrokingColor;
-
+                      
                 Letter letter = null;
                 if (Diacritics.IsInCombiningDiacriticRange(unicode) && bytes.CurrentOffset > 0 && letters.Count > 0)
                 {
@@ -319,26 +312,16 @@
                             attachTo.Width,
                             attachTo.FontSize,
                             attachTo.Font,
-                            attachTo.Color,
+                            attachTo.RenderingMode,
+                            attachTo.StrokeColor,
+                            attachTo.FillColor,
                             attachTo.PointSize,
                             attachTo.TextSequence);
                     }
-                    else
-                    {
-                        letter = new Letter(
-                            unicode,
-                            transformedGlyphBounds,
-                            transformedPdfBounds.BottomLeft,
-                            transformedPdfBounds.BottomRight,
-                            transformedPdfBounds.Width,
-                            fontSize,
-                            font.Details,
-                            color,
-                            pointSize,
-                            textSequence);
-                    }
                 }
-                else
+
+                // If we did not create a letter for a combined diacritic, create one here.
+                if (letter == null)
                 {
                     letter = new Letter(
                         unicode,
@@ -348,7 +331,9 @@
                         transformedPdfBounds.Width,
                         fontSize,
                         font.Details,
-                        color,
+                        currentState.FontState.TextRenderingMode,
+                        currentState.CurrentStrokingColor,
+                        currentState.CurrentNonStrokingColor,
                         pointSize,
                         textSequence);
                 }
