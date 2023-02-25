@@ -92,12 +92,15 @@
                 "UglyToad.PdfPig.Filters.IFilterProvider",
                 "UglyToad.PdfPig.Functions.FunctionTypes",
                 "UglyToad.PdfPig.Functions.PdfFunction",
+                "UglyToad.PdfPig.PdfFonts.CharacterBoundingBox",
                 "UglyToad.PdfPig.PdfFonts.DescriptorFontFile",
                 "UglyToad.PdfPig.PdfFonts.FontDescriptor",
                 "UglyToad.PdfPig.PdfFonts.FontDescriptorFlags",
                 "UglyToad.PdfPig.PdfFonts.FontDetails",
                 "UglyToad.PdfPig.PdfFonts.FontStretch",
+                "UglyToad.PdfPig.PdfFonts.IFont",
                 "UglyToad.PdfPig.Geometry.GeometryExtensions",
+                "UglyToad.PdfPig.Graphics.BaseStreamProcessor`1",
                 "UglyToad.PdfPig.Graphics.Colors.CMYKColor",
                 "UglyToad.PdfPig.Graphics.Colors.ColorSpace",
                 "UglyToad.PdfPig.Graphics.PdfPath",
@@ -199,6 +202,7 @@
                 "UglyToad.PdfPig.Graphics.Operations.TextState.Type3SetGlyphWidth",
                 "UglyToad.PdfPig.Graphics.Operations.TextState.Type3SetGlyphWidthAndBoundingBox",
                 "UglyToad.PdfPig.Graphics.TextMatrices",
+                "UglyToad.PdfPig.Graphics.XObjectContentRecord",
                 "UglyToad.PdfPig.Images.ColorSpaceDetailsByteConverter",
                 "UglyToad.PdfPig.Logging.ILog",
                 "UglyToad.PdfPig.Outline.Bookmarks",
@@ -227,7 +231,8 @@
                 "UglyToad.PdfPig.Writer.PdfWriterType",
                 "UglyToad.PdfPig.Writer.PdfPageBuilder",
                 "UglyToad.PdfPig.Writer.TokenWriter",
-                "UglyToad.PdfPig.XObjects.XObjectImage"
+                "UglyToad.PdfPig.XObjects.XObjectImage",
+                "UglyToad.PdfPig.XObjects.XObjectType",
             };
 
             foreach (var publicTypeName in publicTypeNames)

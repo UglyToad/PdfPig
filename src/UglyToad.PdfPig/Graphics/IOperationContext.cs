@@ -69,11 +69,6 @@
         PdfPoint? CloseSubpath();
 
         /// <summary>
-        /// Add the current subpath to the path.
-        /// </summary>
-        void AddCurrentSubpath();
-
-        /// <summary>
         /// Stroke the current path.
         /// </summary>
         /// <param name="close">Whether to also close the path.</param>

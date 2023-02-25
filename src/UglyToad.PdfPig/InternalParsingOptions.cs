@@ -18,7 +18,7 @@
 
         public ILog Logger { get; }
 
-        public InternalParsingOptions(
+        internal InternalParsingOptions(
             IReadOnlyList<string> passwords,
             bool useLenientParsing,
             bool clipPaths,
