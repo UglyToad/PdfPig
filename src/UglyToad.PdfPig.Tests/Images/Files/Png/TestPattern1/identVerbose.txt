@@ -1,0 +1,1043 @@
+Image: tp1-001-8bitRGB-withExif~Thumbnail~ColorProfile.png
+  Format: PNG (Portable Network Graphics)
+  Mime type: image/png
+  Class: DirectClass
+  Geometry: 200x150+0+0
+  Resolution: 72x72
+  Print size: 2.77778x2.08333
+  Units: PixelsPerInch
+  Type: Palette
+  Base type: TrueColor
+  Endianess: Undefined
+  Colorspace: sRGB
+  Depth: 8-bit
+  Channel depth:
+    Red: 8-bit
+    Green: 8-bit
+    Blue: 8-bit
+  Channel statistics:
+    Pixels: 30000
+    Red:
+      min: 0 (0)
+      max: 255 (1)
+      mean: 103.875 (0.407353)
+      standard deviation: 105.653 (0.414324)
+      kurtosis: -1.82802
+      skewness: 0.108259
+      entropy: 0.88686
+    Green:
+      min: 0 (0)
+      max: 255 (1)
+      mean: 103.875 (0.407353)
+      standard deviation: 105.653 (0.414324)
+      kurtosis: -1.82802
+      skewness: 0.108259
+      entropy: 0.88686
+    Blue:
+      min: 0 (0)
+      max: 255 (1)
+      mean: 103.875 (0.407353)
+      standard deviation: 105.653 (0.414324)
+      kurtosis: -1.82802
+      skewness: 0.108259
+      entropy: 0.88686
+  Image statistics:
+    Overall:
+      min: 0 (0)
+      max: 255 (1)
+      mean: 103.875 (0.407353)
+      standard deviation: 105.651 (0.414319)
+      kurtosis: -1.82797
+      skewness: 0.108263
+      entropy: 0.88686
+  Colors: 8
+  Histogram:
+      3750: (  0,  0,  0) #000000 black
+      3750: (  0,  0,192) #0000C0 srgb(0,0,192)
+      3750: (  0,192,  0) #00C000 srgb(0,192,0)
+      3750: (  0,192,192) #00C0C0 srgb(0,192,192)
+      3750: (192,  0,  0) #C00000 srgb(192,0,0)
+      3750: (192,  0,192) #C000C0 srgb(192,0,192)
+      3750: (192,192,  0) #C0C000 srgb(192,192,0)
+      3750: (255,255,255) #FFFFFF white
+  Rendering intent: Perceptual
+  Gamma: 0.454545
+  Chromaticity:
+    red primary: (0.64,0.33)
+    green primary: (0.3,0.6)
+    blue primary: (0.15,0.06)
+    white point: (0.3127,0.329)
+  Matte color: grey74
+  Background color: white
+  Border color: srgb(223,223,223)
+  Transparent color: none
+  Interlace: None
+  Intensity: Undefined
+  Compose: Over
+  Page geometry: 200x150+0+0
+  Dispose: Undefined
+  Iterations: 0
+  Compression: Zip
+  Orientation: Undefined
+  Properties:
+    date:create: 2023-02-25T14:44:15+10:00
+    date:modify: 2023-02-25T14:44:15+10:00
+    exif:BitsPerSample: 8, 8, 8
+    exif:ColorSpace: 1
+    exif:DateTime: 2023:02:25 14:44:02
+    exif:ExifOffset: 178
+    exif:ImageLength: 150
+    exif:ImageWidth: 200
+    exif:ResolutionUnit: 2
+    exif:Software: GIMP 2.10.14
+    exif:thumbnail:BitsPerSample: 8, 8, 8
+    exif:thumbnail:Compression: 6
+    exif:thumbnail:ImageLength: 192
+    exif:thumbnail:ImageWidth: 256
+    exif:thumbnail:JPEGInterchangeFormat: 304
+    exif:thumbnail:JPEGInterchangeFormatLength: 1711
+    exif:thumbnail:PhotometricInterpretation: 6
+    exif:thumbnail:SamplesPerPixel: 3
+    exif:XResolution: 72/1
+    exif:YResolution: 72/1
+    icc:copyright: Public Domain
+    icc:description: GIMP built-in sRGB
+    icc:manufacturer: GIMP
+    icc:model: sRGB
+    png:iCCP: chunk was found
+    png:IHDR.bit-depth-orig: 8
+    png:IHDR.bit_depth: 8
+    png:IHDR.color-type-orig: 2
+    png:IHDR.color_type: 2 (Truecolor)
+    png:IHDR.interlace_method: 0 (Not interlaced)
+    png:IHDR.width,height: 200, 150
+    png:pHYs: x_res=2835, y_res=2835, units=1
+    png:text: 1 tEXt/zTXt/iTXt chunks were found
+    png:text-encoded profiles: 1 were found
+    png:tIME: 2023-02-25T04:44:15Z
+    signature: e45c14eb01b14647136b13db711568054884aca01761562d19c27206d5cc03c1
+  Profiles:
+    Profile-exif: 2022 bytes
+    Profile-icc: 672 bytes
+  Artifacts:
+    verbose: true
+  Tainted: False
+  Filesize: 1747B
+  Number pixels: 30000
+  Pixels per second: 30.0165MB
+  User time: 0.000u
+  Elapsed time: 0:01.000
+  Version: ImageMagick 7.0.6-3 Q16 x64 2017-07-24 http://www.imagemagick.org
+Image: tp1-002-8bitRGBA-withExif~Thumbnail~ColorProfile.png
+  Format: PNG (Portable Network Graphics)
+  Mime type: image/png
+  Class: DirectClass
+  Geometry: 200x200+0+0
+  Resolution: 28.35x28.35
+  Print size: 7.05467x7.05467
+  Units: PixelsPerCentimeter
+  Type: PaletteAlpha
+  Base type: TrueColorAlpha
+  Endianess: Undefined
+  Colorspace: sRGB
+  Depth: 8-bit
+  Channel depth:
+    Red: 8-bit
+    Green: 8-bit
+    Blue: 8-bit
+    Alpha: 1-bit
+  Channel statistics:
+    Pixels: 40000
+    Red:
+      min: 0 (0)
+      max: 255 (1)
+      mean: 77.9063 (0.305515)
+      standard deviation: 101.956 (0.399826)
+      kurtosis: -1.4925
+      skewness: 0.606588
+      entropy: 0.794128
+    Green:
+      min: 0 (0)
+      max: 255 (1)
+      mean: 77.9063 (0.305515)
+      standard deviation: 101.956 (0.399826)
+      kurtosis: -1.4925
+      skewness: 0.606588
+      entropy: 0.794128
+    Blue:
+      min: 0 (0)
+      max: 255 (1)
+      mean: 77.9063 (0.305515)
+      standard deviation: 101.956 (0.399826)
+      kurtosis: -1.4925
+      skewness: 0.606588
+      entropy: 0.794128
+    Alpha:
+      min: 0 (0)
+      max: 255 (1)
+      mean: 191.25 (0.75)
+      standard deviation: 110.42 (0.433018)
+      kurtosis: -0.666783
+      skewness: -1.15466
+      entropy: 0.811278
+  Image statistics:
+    Overall:
+      min: 0 (0)
+      max: 255 (1)
+      mean: 106.242 (0.416636)
+      standard deviation: 115.121 (0.451456)
+      kurtosis: -1.8309
+      skewness: 0.225892
+      entropy: 0.798416
+  Alpha: none   #00000000
+  Colors: 9
+  Histogram:
+     10000: (  0,  0,  0,  0) #00000000 none
+      3750: (  0,  0,  0,255) #000000FF black
+      3750: (  0,  0,192,255) #0000C0FF srgba(0,0,192,1)
+      3750: (  0,192,  0,255) #00C000FF srgba(0,192,0,1)
+      3750: (  0,192,192,255) #00C0C0FF srgba(0,192,192,1)
+      3750: (192,  0,  0,255) #C00000FF srgba(192,0,0,1)
+      3750: (192,  0,192,255) #C000C0FF srgba(192,0,192,1)
+      3750: (192,192,  0,255) #C0C000FF srgba(192,192,0,1)
+      3750: (255,255,255,255) #FFFFFFFF white
+  Rendering intent: Perceptual
+  Gamma: 0.454545
+  Chromaticity:
+    red primary: (0.64,0.33)
+    green primary: (0.3,0.6)
+    blue primary: (0.15,0.06)
+    white point: (0.3127,0.329)
+  Matte color: grey74
+  Background color: white
+  Border color: srgb(223,223,223)
+  Transparent color: none
+  Interlace: None
+  Intensity: Undefined
+  Compose: Over
+  Page geometry: 200x200+0+0
+  Dispose: Undefined
+  Iterations: 0
+  Compression: Zip
+  Orientation: Undefined
+  Properties:
+    date:create: 2023-02-25T14:53:54+10:00
+    date:modify: 2023-02-25T14:53:54+10:00
+    exif:BitsPerSample: 8, 8, 8
+    exif:ColorSpace: 1
+    exif:DateTime: 2023:02:25 14:53:47
+    exif:ExifOffset: 178
+    exif:ImageLength: 200
+    exif:ImageWidth: 200
+    exif:ResolutionUnit: 3
+    exif:Software: GIMP 2.10.14
+    exif:thumbnail:BitsPerSample: 8, 8, 8
+    exif:thumbnail:Compression: 6
+    exif:thumbnail:ImageLength: 256
+    exif:thumbnail:ImageWidth: 256
+    exif:thumbnail:JPEGInterchangeFormat: 304
+    exif:thumbnail:JPEGInterchangeFormatLength: 1967
+    exif:thumbnail:PhotometricInterpretation: 6
+    exif:thumbnail:SamplesPerPixel: 3
+    exif:XResolution: 567/20
+    exif:YResolution: 567/20
+    icc:copyright: Public Domain
+    icc:description: GIMP built-in sRGB
+    icc:manufacturer: GIMP
+    icc:model: sRGB
+    png:iCCP: chunk was found
+    png:IHDR.bit-depth-orig: 8
+    png:IHDR.bit_depth: 8
+    png:IHDR.color-type-orig: 6
+    png:IHDR.color_type: 6 (RGBA)
+    png:IHDR.interlace_method: 0 (Not interlaced)
+    png:IHDR.width,height: 200, 200
+    png:pHYs: x_res=2835, y_res=2835, units=1
+    png:text: 1 tEXt/zTXt/iTXt chunks were found
+    png:text-encoded profiles: 1 were found
+    png:tIME: 2023-02-25T04:53:54Z
+    signature: f16738b3957a79aee08dc2c79048ad04744276e5f898e1c24e64bee33e5cfa0e
+  Profiles:
+    Profile-exif: 2278 bytes
+    Profile-icc: 672 bytes
+  Artifacts:
+    verbose: true
+  Tainted: False
+  Filesize: 1826B
+  Number pixels: 40000
+  Pixels per second: 13.3322MB
+  User time: 0.031u
+  Elapsed time: 0:01.003
+  Version: ImageMagick 7.0.6-3 Q16 x64 2017-07-24 http://www.imagemagick.org
+Image: tp1-003-8bitRGB-Interlaced-withExif~ColorProfile.png
+  Format: PNG (Portable Network Graphics)
+  Mime type: image/png
+  Class: DirectClass
+  Geometry: 200x150+0+0
+  Resolution: 28.35x28.35
+  Print size: 7.05467x5.29101
+  Units: PixelsPerCentimeter
+  Type: Palette
+  Base type: TrueColor
+  Endianess: Undefined
+  Colorspace: sRGB
+  Depth: 8-bit
+  Channel depth:
+    Red: 8-bit
+    Green: 8-bit
+    Blue: 8-bit
+  Channel statistics:
+    Pixels: 30000
+    Red:
+      min: 0 (0)
+      max: 255 (1)
+      mean: 103.875 (0.407353)
+      standard deviation: 105.653 (0.414324)
+      kurtosis: -1.82802
+      skewness: 0.108259
+      entropy: 0.88686
+    Green:
+      min: 0 (0)
+      max: 255 (1)
+      mean: 103.875 (0.407353)
+      standard deviation: 105.653 (0.414324)
+      kurtosis: -1.82802
+      skewness: 0.108259
+      entropy: 0.88686
+    Blue:
+      min: 0 (0)
+      max: 255 (1)
+      mean: 103.875 (0.407353)
+      standard deviation: 105.653 (0.414324)
+      kurtosis: -1.82802
+      skewness: 0.108259
+      entropy: 0.88686
+  Image statistics:
+    Overall:
+      min: 0 (0)
+      max: 255 (1)
+      mean: 103.875 (0.407353)
+      standard deviation: 105.651 (0.414319)
+      kurtosis: -1.82797
+      skewness: 0.108263
+      entropy: 0.88686
+  Colors: 8
+  Histogram:
+      3750: (  0,  0,  0) #000000 black
+      3750: (  0,  0,192) #0000C0 srgb(0,0,192)
+      3750: (  0,192,  0) #00C000 srgb(0,192,0)
+      3750: (  0,192,192) #00C0C0 srgb(0,192,192)
+      3750: (192,  0,  0) #C00000 srgb(192,0,0)
+      3750: (192,  0,192) #C000C0 srgb(192,0,192)
+      3750: (192,192,  0) #C0C000 srgb(192,192,0)
+      3750: (255,255,255) #FFFFFF white
+  Rendering intent: Perceptual
+  Gamma: 0.454545
+  Chromaticity:
+    red primary: (0.64,0.33)
+    green primary: (0.3,0.6)
+    blue primary: (0.15,0.06)
+    white point: (0.3127,0.329)
+  Matte color: grey74
+  Background color: white
+  Border color: srgb(223,223,223)
+  Transparent color: none
+  Interlace: PNG
+  Intensity: Undefined
+  Compose: Over
+  Page geometry: 200x150+0+0
+  Dispose: Undefined
+  Iterations: 0
+  Compression: Zip
+  Orientation: Undefined
+  Properties:
+    date:create: 2023-02-25T14:56:25+10:00
+    date:modify: 2023-02-25T14:56:25+10:00
+    exif:BitsPerSample: 8, 8, 8
+    exif:ColorSpace: 1
+    exif:DateTime: 2023:02:25 14:56:19
+    exif:ExifOffset: 178
+    exif:ImageLength: 150
+    exif:ImageWidth: 200
+    exif:ResolutionUnit: 3
+    exif:Software: GIMP 2.10.14
+    exif:XResolution: 567/20
+    exif:YResolution: 567/20
+    icc:copyright: Public Domain
+    icc:description: GIMP built-in sRGB
+    icc:manufacturer: GIMP
+    icc:model: sRGB
+    png:iCCP: chunk was found
+    png:IHDR.bit-depth-orig: 8
+    png:IHDR.bit_depth: 8
+    png:IHDR.color-type-orig: 2
+    png:IHDR.color_type: 2 (Truecolor)
+    png:IHDR.interlace_method: 1 (Adam7 method)
+    png:IHDR.width,height: 200, 150
+    png:pHYs: x_res=2835, y_res=2835, units=1
+    png:text: 1 tEXt/zTXt/iTXt chunks were found
+    png:text-encoded profiles: 1 were found
+    png:tIME: 2023-02-25T04:56:25Z
+    signature: e45c14eb01b14647136b13db711568054884aca01761562d19c27206d5cc03c1
+  Profiles:
+    Profile-exif: 202 bytes
+    Profile-icc: 672 bytes
+  Artifacts:
+    verbose: true
+  Tainted: False
+  Filesize: 1229B
+  Number pixels: 30000
+  Pixels per second: 10.0055MB
+  User time: 0.000u
+  Elapsed time: 0:01.002
+  Version: ImageMagick 7.0.6-3 Q16 x64 2017-07-24 http://www.imagemagick.org
+Image: tp1-003-8bitRGB-Interlaced.png
+  Format: PNG (Portable Network Graphics)
+  Mime type: image/png
+  Class: DirectClass
+  Geometry: 200x150+0+0
+  Resolution: 28.35x28.35
+  Print size: 7.05467x5.29101
+  Units: PixelsPerCentimeter
+  Type: Palette
+  Base type: TrueColor
+  Endianess: Undefined
+  Colorspace: sRGB
+  Depth: 8-bit
+  Channel depth:
+    Red: 8-bit
+    Green: 8-bit
+    Blue: 8-bit
+  Channel statistics:
+    Pixels: 30000
+    Red:
+      min: 0 (0)
+      max: 255 (1)
+      mean: 103.875 (0.407353)
+      standard deviation: 105.653 (0.414324)
+      kurtosis: -1.82802
+      skewness: 0.108259
+      entropy: 0.88686
+    Green:
+      min: 0 (0)
+      max: 255 (1)
+      mean: 103.875 (0.407353)
+      standard deviation: 105.653 (0.414324)
+      kurtosis: -1.82802
+      skewness: 0.108259
+      entropy: 0.88686
+    Blue:
+      min: 0 (0)
+      max: 255 (1)
+      mean: 103.875 (0.407353)
+      standard deviation: 105.653 (0.414324)
+      kurtosis: -1.82802
+      skewness: 0.108259
+      entropy: 0.88686
+  Image statistics:
+    Overall:
+      min: 0 (0)
+      max: 255 (1)
+      mean: 103.875 (0.407353)
+      standard deviation: 105.651 (0.414319)
+      kurtosis: -1.82797
+      skewness: 0.108263
+      entropy: 0.88686
+  Colors: 8
+  Histogram:
+      3750: (  0,  0,  0) #000000 black
+      3750: (  0,  0,192) #0000C0 srgb(0,0,192)
+      3750: (  0,192,  0) #00C000 srgb(0,192,0)
+      3750: (  0,192,192) #00C0C0 srgb(0,192,192)
+      3750: (192,  0,  0) #C00000 srgb(192,0,0)
+      3750: (192,  0,192) #C000C0 srgb(192,0,192)
+      3750: (192,192,  0) #C0C000 srgb(192,192,0)
+      3750: (255,255,255) #FFFFFF white
+  Rendering intent: Perceptual
+  Gamma: 0.454545
+  Chromaticity:
+    red primary: (0.64,0.33)
+    green primary: (0.3,0.6)
+    blue primary: (0.15,0.06)
+    white point: (0.3127,0.329)
+  Matte color: grey74
+  Background color: white
+  Border color: srgb(223,223,223)
+  Transparent color: none
+  Interlace: PNG
+  Intensity: Undefined
+  Compose: Over
+  Page geometry: 200x150+0+0
+  Dispose: Undefined
+  Iterations: 0
+  Compression: Zip
+  Orientation: Undefined
+  Properties:
+    date:create: 2023-02-25T14:55:13+10:00
+    date:modify: 2023-02-25T14:55:13+10:00
+    exif:BitsPerSample: 8, 8, 8
+    exif:ColorSpace: 1
+    exif:DateTime: 2023:02:25 14:55:10
+    exif:ExifOffset: 178
+    exif:ImageLength: 150
+    exif:ImageWidth: 200
+    exif:ResolutionUnit: 3
+    exif:Software: GIMP 2.10.14
+    exif:thumbnail:BitsPerSample: 8, 8, 8
+    exif:thumbnail:Compression: 6
+    exif:thumbnail:ImageLength: 192
+    exif:thumbnail:ImageWidth: 256
+    exif:thumbnail:JPEGInterchangeFormat: 304
+    exif:thumbnail:JPEGInterchangeFormatLength: 1711
+    exif:thumbnail:PhotometricInterpretation: 6
+    exif:thumbnail:SamplesPerPixel: 3
+    exif:XResolution: 567/20
+    exif:YResolution: 567/20
+    icc:copyright: Public Domain
+    icc:description: GIMP built-in sRGB
+    icc:manufacturer: GIMP
+    icc:model: sRGB
+    png:iCCP: chunk was found
+    png:IHDR.bit-depth-orig: 8
+    png:IHDR.bit_depth: 8
+    png:IHDR.color-type-orig: 2
+    png:IHDR.color_type: 2 (Truecolor)
+    png:IHDR.interlace_method: 1 (Adam7 method)
+    png:IHDR.width,height: 200, 150
+    png:pHYs: x_res=2835, y_res=2835, units=1
+    png:text: 1 tEXt/zTXt/iTXt chunks were found
+    png:text-encoded profiles: 1 were found
+    png:tIME: 2023-02-25T04:55:13Z
+    signature: e45c14eb01b14647136b13db711568054884aca01761562d19c27206d5cc03c1
+  Profiles:
+    Profile-exif: 2022 bytes
+    Profile-icc: 672 bytes
+  Artifacts:
+    verbose: true
+  Tainted: False
+  Filesize: 1972B
+  Number pixels: 30000
+  Pixels per second: 14.9939MB
+  User time: 0.000u
+  Elapsed time: 0:01.002
+  Version: ImageMagick 7.0.6-3 Q16 x64 2017-07-24 http://www.imagemagick.org
+Image: tp1-100-16bitRGB-withExif~Thumbnail~ColorProfile.png
+  Format: PNG (Portable Network Graphics)
+  Mime type: image/png
+  Class: DirectClass
+  Geometry: 200x150+0+0
+  Resolution: 72x72
+  Print size: 2.77778x2.08333
+  Units: PixelsPerInch
+  Type: Palette
+  Base type: TrueColor
+  Endianess: Undefined
+  Colorspace: sRGB
+  Depth: 16/11-bit
+  Channel depth:
+    Red: 11-bit
+    Green: 11-bit
+    Blue: 11-bit
+  Channel statistics:
+    Pixels: 30000
+    Red:
+      min: 0 (0)
+      max: 65535 (1)
+      mean: 21145.9 (0.322665)
+      standard deviation: 23177.7 (0.35367)
+      kurtosis: -0.930082
+      skewness: 0.570806
+      entropy: 0.88686
+    Green:
+      min: 0 (0)
+      max: 65535 (1)
+      mean: 21145.9 (0.322665)
+      standard deviation: 23177.7 (0.35367)
+      kurtosis: -0.930082
+      skewness: 0.570806
+      entropy: 0.88686
+    Blue:
+      min: 0 (0)
+      max: 65535 (1)
+      mean: 21145.9 (0.322665)
+      standard deviation: 23177.7 (0.35367)
+      kurtosis: -0.930082
+      skewness: 0.570806
+      entropy: 0.88686
+  Image statistics:
+    Overall:
+      min: 0 (0)
+      max: 65535 (1)
+      mean: 21145.9 (0.322665)
+      standard deviation: 23177.5 (0.353666)
+      kurtosis: -0.92999
+      skewness: 0.570825
+      entropy: 0.88686
+  Colors: 8
+  Histogram:
+      3750: (    0,    0,    0) #000000000000 black
+      3750: (    0,    0,34544) #0000000086F0 srgb(0%,0%,53%)
+      3750: (    0,34544,    0) #000086F00000 srgb(0%,53%,0%)
+      3750: (    0,34544,34544) #000086F086F0 srgb(0%,53%,53%)
+      3750: (34544,    0,    0) #86F000000000 srgb(53%,0%,0%)
+      3750: (34544,    0,34544) #86F0000086F0 srgb(53%,0%,53%)
+      3750: (34544,34544,    0) #86F086F00000 srgb(53%,53%,0%)
+      3750: (65535,65535,65535) #FFFFFFFFFFFF white
+  Rendering intent: Perceptual
+  Gamma: 0.454545
+  Chromaticity:
+    red primary: (0.64,0.33)
+    green primary: (0.3,0.6)
+    blue primary: (0.15,0.06)
+    white point: (0.3127,0.329)
+  Matte color: grey74
+  Background color: white
+  Border color: srgb(223,223,223)
+  Transparent color: none
+  Interlace: None
+  Intensity: Undefined
+  Compose: Over
+  Page geometry: 200x150+0+0
+  Dispose: Undefined
+  Iterations: 0
+  Compression: Zip
+  Orientation: Undefined
+  Properties:
+    date:create: 2023-02-25T14:45:50+10:00
+    date:modify: 2023-02-25T14:45:50+10:00
+    exif:BitsPerSample: 8, 8, 8
+    exif:ColorSpace: 1
+    exif:DateTime: 2023:02:25 14:45:45
+    exif:ExifOffset: 178
+    exif:ImageLength: 150
+    exif:ImageWidth: 200
+    exif:ResolutionUnit: 2
+    exif:Software: GIMP 2.10.14
+    exif:thumbnail:BitsPerSample: 8, 8, 8
+    exif:thumbnail:Compression: 6
+    exif:thumbnail:ImageLength: 192
+    exif:thumbnail:ImageWidth: 256
+    exif:thumbnail:JPEGInterchangeFormat: 304
+    exif:thumbnail:JPEGInterchangeFormatLength: 1686
+    exif:thumbnail:PhotometricInterpretation: 6
+    exif:thumbnail:SamplesPerPixel: 3
+    exif:XResolution: 72/1
+    exif:YResolution: 72/1
+    icc:copyright: Public Domain
+    icc:description: GIMP built-in Linear sRGB
+    icc:manufacturer: GIMP
+    icc:model: Linear sRGB
+    png:iCCP: chunk was found
+    png:IHDR.bit-depth-orig: 16
+    png:IHDR.bit_depth: 16
+    png:IHDR.color-type-orig: 2
+    png:IHDR.color_type: 2 (Truecolor)
+    png:IHDR.interlace_method: 0 (Not interlaced)
+    png:IHDR.width,height: 200, 150
+    png:pHYs: x_res=2835, y_res=2835, units=1
+    png:text: 1 tEXt/zTXt/iTXt chunks were found
+    png:text-encoded profiles: 1 were found
+    png:tIME: 2023-02-25T04:45:50Z
+    signature: a28b14b0fdf5e2981eeebfd1aad71ca85ee9496e53725e59374f801acce37c7c
+  Profiles:
+    Profile-exif: 1996 bytes
+    Profile-icc: 688 bytes
+  Artifacts:
+    verbose: true
+  Tainted: False
+  Filesize: 1973B
+  Number pixels: 30000
+  Pixels per second: 10.0055MB
+  User time: 0.000u
+  Elapsed time: 0:01.002
+  Version: ImageMagick 7.0.6-3 Q16 x64 2017-07-24 http://www.imagemagick.org
+Image: tp1-200-32bitRGB-withExif~Thumbnail~ColorProfile.png
+  Format: PNG (Portable Network Graphics)
+  Mime type: image/png
+  Class: DirectClass
+  Geometry: 200x150+0+0
+  Resolution: 72x72
+  Print size: 2.77778x2.08333
+  Units: PixelsPerInch
+  Type: Palette
+  Base type: TrueColor
+  Endianess: Undefined
+  Colorspace: sRGB
+  Depth: 16/11-bit
+  Channel depth:
+    Red: 11-bit
+    Green: 11-bit
+    Blue: 11-bit
+  Channel statistics:
+    Pixels: 30000
+    Red:
+      min: 0 (0)
+      max: 65535 (1)
+      mean: 21145.9 (0.322665)
+      standard deviation: 23177.7 (0.35367)
+      kurtosis: -0.930082
+      skewness: 0.570806
+      entropy: 0.88686
+    Green:
+      min: 0 (0)
+      max: 65535 (1)
+      mean: 21145.9 (0.322665)
+      standard deviation: 23177.7 (0.35367)
+      kurtosis: -0.930082
+      skewness: 0.570806
+      entropy: 0.88686
+    Blue:
+      min: 0 (0)
+      max: 65535 (1)
+      mean: 21145.9 (0.322665)
+      standard deviation: 23177.7 (0.35367)
+      kurtosis: -0.930082
+      skewness: 0.570806
+      entropy: 0.88686
+  Image statistics:
+    Overall:
+      min: 0 (0)
+      max: 65535 (1)
+      mean: 21145.9 (0.322665)
+      standard deviation: 23177.5 (0.353666)
+      kurtosis: -0.92999
+      skewness: 0.570825
+      entropy: 0.88686
+  Colors: 8
+  Histogram:
+      3750: (    0,    0,    0) #000000000000 black
+      3750: (    0,    0,34544) #0000000086F0 srgb(0%,0%,53%)
+      3750: (    0,34544,    0) #000086F00000 srgb(0%,53%,0%)
+      3750: (    0,34544,34544) #000086F086F0 srgb(0%,53%,53%)
+      3750: (34544,    0,    0) #86F000000000 srgb(53%,0%,0%)
+      3750: (34544,    0,34544) #86F0000086F0 srgb(53%,0%,53%)
+      3750: (34544,34544,    0) #86F086F00000 srgb(53%,53%,0%)
+      3750: (65535,65535,65535) #FFFFFFFFFFFF white
+  Rendering intent: Perceptual
+  Gamma: 0.454545
+  Chromaticity:
+    red primary: (0.64,0.33)
+    green primary: (0.3,0.6)
+    blue primary: (0.15,0.06)
+    white point: (0.3127,0.329)
+  Matte color: grey74
+  Background color: white
+  Border color: srgb(223,223,223)
+  Transparent color: none
+  Interlace: None
+  Intensity: Undefined
+  Compose: Over
+  Page geometry: 200x150+0+0
+  Dispose: Undefined
+  Iterations: 0
+  Compression: Zip
+  Orientation: Undefined
+  Properties:
+    date:create: 2023-02-25T14:46:29+10:00
+    date:modify: 2023-02-25T14:46:29+10:00
+    exif:BitsPerSample: 8, 8, 8
+    exif:ColorSpace: 1
+    exif:DateTime: 2023:02:25 14:46:26
+    exif:ExifOffset: 178
+    exif:ImageLength: 150
+    exif:ImageWidth: 200
+    exif:ResolutionUnit: 2
+    exif:Software: GIMP 2.10.14
+    exif:thumbnail:BitsPerSample: 8, 8, 8
+    exif:thumbnail:Compression: 6
+    exif:thumbnail:ImageLength: 192
+    exif:thumbnail:ImageWidth: 256
+    exif:thumbnail:JPEGInterchangeFormat: 304
+    exif:thumbnail:JPEGInterchangeFormatLength: 1686
+    exif:thumbnail:PhotometricInterpretation: 6
+    exif:thumbnail:SamplesPerPixel: 3
+    exif:XResolution: 72/1
+    exif:YResolution: 72/1
+    icc:copyright: Public Domain
+    icc:description: GIMP built-in Linear sRGB
+    icc:manufacturer: GIMP
+    icc:model: Linear sRGB
+    png:iCCP: chunk was found
+    png:IHDR.bit-depth-orig: 16
+    png:IHDR.bit_depth: 16
+    png:IHDR.color-type-orig: 2
+    png:IHDR.color_type: 2 (Truecolor)
+    png:IHDR.interlace_method: 0 (Not interlaced)
+    png:IHDR.width,height: 200, 150
+    png:pHYs: x_res=2835, y_res=2835, units=1
+    png:text: 1 tEXt/zTXt/iTXt chunks were found
+    png:text-encoded profiles: 1 were found
+    png:tIME: 2023-02-25T04:46:29Z
+    signature: a28b14b0fdf5e2981eeebfd1aad71ca85ee9496e53725e59374f801acce37c7c
+  Profiles:
+    Profile-exif: 1996 bytes
+    Profile-icc: 688 bytes
+  Artifacts:
+    verbose: true
+  Tainted: False
+  Filesize: 1973B
+  Number pixels: 30000
+  Pixels per second: 14.9939MB
+  User time: 0.000u
+  Elapsed time: 0:01.002
+  Version: ImageMagick 7.0.6-3 Q16 x64 2017-07-24 http://www.imagemagick.org
+Image: tp1-300-16bitFloatRGB-withExif~Thumbnail~ColorProfile.png
+  Format: PNG (Portable Network Graphics)
+  Mime type: image/png
+  Class: DirectClass
+  Geometry: 200x150+0+0
+  Resolution: 72x72
+  Print size: 2.77778x2.08333
+  Units: PixelsPerInch
+  Type: Palette
+  Base type: TrueColor
+  Endianess: Undefined
+  Colorspace: sRGB
+  Depth: 16/15-bit
+  Channel depth:
+    Red: 15-bit
+    Green: 15-bit
+    Blue: 15-bit
+  Channel statistics:
+    Pixels: 30000
+    Red:
+      min: 0 (0)
+      max: 65535 (1)
+      mean: 21151.5 (0.322751)
+      standard deviation: 23181 (0.353719)
+      kurtosis: -0.931609
+      skewness: 0.570082
+      entropy: 0.88686
+    Green:
+      min: 0 (0)
+      max: 65535 (1)
+      mean: 21151.5 (0.322751)
+      standard deviation: 23181 (0.353719)
+      kurtosis: -0.931609
+      skewness: 0.570082
+      entropy: 0.88686
+    Blue:
+      min: 0 (0)
+      max: 65535 (1)
+      mean: 21151.5 (0.322751)
+      standard deviation: 23181 (0.353719)
+      kurtosis: -0.931609
+      skewness: 0.570082
+      entropy: 0.88686
+  Image statistics:
+    Overall:
+      min: 0 (0)
+      max: 65535 (1)
+      mean: 21151.5 (0.322751)
+      standard deviation: 23180.7 (0.353715)
+      kurtosis: -0.931517
+      skewness: 0.570101
+      entropy: 0.88686
+  Colors: 8
+  Histogram:
+      3750: (    0,    0,    0) #000000000000 black
+      3750: (    0,    0,34559) #0000000086FF srgb(0%,0%,53%)
+      3750: (    0,34559,    0) #000086FF0000 srgb(0%,53%,0%)
+      3750: (    0,34559,34559) #000086FF86FF srgb(0%,53%,53%)
+      3750: (34559,    0,    0) #86FF00000000 srgb(53%,0%,0%)
+      3750: (34559,    0,34559) #86FF000086FF srgb(53%,0%,53%)
+      3750: (34559,34559,    0) #86FF86FF0000 srgb(53%,53%,0%)
+      3750: (65535,65535,65535) #FFFFFFFFFFFF white
+  Rendering intent: Perceptual
+  Gamma: 0.454545
+  Chromaticity:
+    red primary: (0.64,0.33)
+    green primary: (0.3,0.6)
+    blue primary: (0.15,0.06)
+    white point: (0.3127,0.329)
+  Matte color: grey74
+  Background color: white
+  Border color: srgb(223,223,223)
+  Transparent color: none
+  Interlace: None
+  Intensity: Undefined
+  Compose: Over
+  Page geometry: 200x150+0+0
+  Dispose: Undefined
+  Iterations: 0
+  Compression: Zip
+  Orientation: Undefined
+  Properties:
+    date:create: 2023-02-25T14:50:44+10:00
+    date:modify: 2023-02-25T14:50:44+10:00
+    exif:BitsPerSample: 8, 8, 8
+    exif:ColorSpace: 1
+    exif:DateTime: 2023:02:25 14:50:40
+    exif:ExifOffset: 178
+    exif:ImageLength: 150
+    exif:ImageWidth: 200
+    exif:ResolutionUnit: 2
+    exif:Software: GIMP 2.10.14
+    exif:thumbnail:BitsPerSample: 8, 8, 8
+    exif:thumbnail:Compression: 6
+    exif:thumbnail:ImageLength: 192
+    exif:thumbnail:ImageWidth: 256
+    exif:thumbnail:JPEGInterchangeFormat: 304
+    exif:thumbnail:JPEGInterchangeFormatLength: 1686
+    exif:thumbnail:PhotometricInterpretation: 6
+    exif:thumbnail:SamplesPerPixel: 3
+    exif:XResolution: 72/1
+    exif:YResolution: 72/1
+    icc:copyright: Public Domain
+    icc:description: GIMP built-in Linear sRGB
+    icc:manufacturer: GIMP
+    icc:model: Linear sRGB
+    png:iCCP: chunk was found
+    png:IHDR.bit-depth-orig: 16
+    png:IHDR.bit_depth: 16
+    png:IHDR.color-type-orig: 2
+    png:IHDR.color_type: 2 (Truecolor)
+    png:IHDR.interlace_method: 0 (Not interlaced)
+    png:IHDR.width,height: 200, 150
+    png:pHYs: x_res=2835, y_res=2835, units=1
+    png:text: 1 tEXt/zTXt/iTXt chunks were found
+    png:text-encoded profiles: 1 were found
+    png:tIME: 2023-02-25T04:50:44Z
+    signature: d2d376d22936afa78422b676f4a220aa31a85ab28c335f02c92f078e51ea863f
+  Profiles:
+    Profile-exif: 1996 bytes
+    Profile-icc: 688 bytes
+  Artifacts:
+    verbose: true
+  Tainted: False
+  Filesize: 1970B
+  Number pixels: 30000
+  Pixels per second: 14.9939MB
+  User time: 0.000u
+  Elapsed time: 0:01.002
+  Version: ImageMagick 7.0.6-3 Q16 x64 2017-07-24 http://www.imagemagick.org
+Image: tp1-400-32bitFloatRGB-withExif~Thumbnail~ColorProfile.png
+  Format: PNG (Portable Network Graphics)
+  Mime type: image/png
+  Class: DirectClass
+  Geometry: 200x150+0+0
+  Resolution: 72x72
+  Print size: 2.77778x2.08333
+  Units: PixelsPerInch
+  Type: Palette
+  Base type: TrueColor
+  Endianess: Undefined
+  Colorspace: sRGB
+  Depth: 16/15-bit
+  Channel depth:
+    Red: 15-bit
+    Green: 15-bit
+    Blue: 15-bit
+  Channel statistics:
+    Pixels: 30000
+    Red:
+      min: 0 (0)
+      max: 65535 (1)
+      mean: 21151.5 (0.322751)
+      standard deviation: 23181 (0.353719)
+      kurtosis: -0.931609
+      skewness: 0.570082
+      entropy: 0.88686
+    Green:
+      min: 0 (0)
+      max: 65535 (1)
+      mean: 21151.5 (0.322751)
+      standard deviation: 23181 (0.353719)
+      kurtosis: -0.931609
+      skewness: 0.570082
+      entropy: 0.88686
+    Blue:
+      min: 0 (0)
+      max: 65535 (1)
+      mean: 21151.5 (0.322751)
+      standard deviation: 23181 (0.353719)
+      kurtosis: -0.931609
+      skewness: 0.570082
+      entropy: 0.88686
+  Image statistics:
+    Overall:
+      min: 0 (0)
+      max: 65535 (1)
+      mean: 21151.5 (0.322751)
+      standard deviation: 23180.7 (0.353715)
+      kurtosis: -0.931517
+      skewness: 0.570101
+      entropy: 0.88686
+  Colors: 8
+  Histogram:
+      3750: (    0,    0,    0) #000000000000 black
+      3750: (    0,    0,34559) #0000000086FF srgb(0%,0%,53%)
+      3750: (    0,34559,    0) #000086FF0000 srgb(0%,53%,0%)
+      3750: (    0,34559,34559) #000086FF86FF srgb(0%,53%,53%)
+      3750: (34559,    0,    0) #86FF00000000 srgb(53%,0%,0%)
+      3750: (34559,    0,34559) #86FF000086FF srgb(53%,0%,53%)
+      3750: (34559,34559,    0) #86FF86FF0000 srgb(53%,53%,0%)
+      3750: (65535,65535,65535) #FFFFFFFFFFFF white
+  Rendering intent: Perceptual
+  Gamma: 0.454545
+  Chromaticity:
+    red primary: (0.64,0.33)
+    green primary: (0.3,0.6)
+    blue primary: (0.15,0.06)
+    white point: (0.3127,0.329)
+  Matte color: grey74
+  Background color: white
+  Border color: srgb(223,223,223)
+  Transparent color: none
+  Interlace: None
+  Intensity: Undefined
+  Compose: Over
+  Page geometry: 200x150+0+0
+  Dispose: Undefined
+  Iterations: 0
+  Compression: Zip
+  Orientation: Undefined
+  Properties:
+    date:create: 2023-02-25T14:51:49+10:00
+    date:modify: 2023-02-25T14:51:49+10:00
+    exif:BitsPerSample: 8, 8, 8
+    exif:ColorSpace: 1
+    exif:DateTime: 2023:02:25 14:51:47
+    exif:ExifOffset: 178
+    exif:ImageLength: 150
+    exif:ImageWidth: 200
+    exif:ResolutionUnit: 2
+    exif:Software: GIMP 2.10.14
+    exif:thumbnail:BitsPerSample: 8, 8, 8
+    exif:thumbnail:Compression: 6
+    exif:thumbnail:ImageLength: 192
+    exif:thumbnail:ImageWidth: 256
+    exif:thumbnail:JPEGInterchangeFormat: 304
+    exif:thumbnail:JPEGInterchangeFormatLength: 1686
+    exif:thumbnail:PhotometricInterpretation: 6
+    exif:thumbnail:SamplesPerPixel: 3
+    exif:XResolution: 72/1
+    exif:YResolution: 72/1
+    icc:copyright: Public Domain
+    icc:description: GIMP built-in Linear sRGB
+    icc:manufacturer: GIMP
+    icc:model: Linear sRGB
+    png:iCCP: chunk was found
+    png:IHDR.bit-depth-orig: 16
+    png:IHDR.bit_depth: 16
+    png:IHDR.color-type-orig: 2
+    png:IHDR.color_type: 2 (Truecolor)
+    png:IHDR.interlace_method: 0 (Not interlaced)
+    png:IHDR.width,height: 200, 150
+    png:pHYs: x_res=2835, y_res=2835, units=1
+    png:text: 1 tEXt/zTXt/iTXt chunks were found
+    png:text-encoded profiles: 1 were found
+    png:tIME: 2023-02-25T04:51:49Z
+    signature: d2d376d22936afa78422b676f4a220aa31a85ab28c335f02c92f078e51ea863f
+  Profiles:
+    Profile-exif: 1996 bytes
+    Profile-icc: 688 bytes
+  Artifacts:
+    verbose: true
+  Tainted: False
+  Filesize: 1970B
+  Number pixels: 30000
+  Pixels per second: 14.9939MB
+  User time: 0.000u
+  Elapsed time: 0:01.002
+  Version: ImageMagick 7.0.6-3 Q16 x64 2017-07-24 http://www.imagemagick.org

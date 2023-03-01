@@ -666,7 +666,7 @@
                     {NameToken.Width, widthToken},
                     {NameToken.Height, heightToken},
                     {NameToken.ColorSpace, NameToken.Devicegray},
-                    {NameToken.BitsPerComponent, new NumericToken(png.Header.BitDepth)},
+                    {NameToken.BitsPerComponent, new NumericToken(1)},
                     {NameToken.Decode, new ArrayToken(new IToken[] { new NumericToken(0), new NumericToken(1) })},
                     {NameToken.Length, new NumericToken(compressedSmask.Length)},
                     {NameToken.Filter, NameToken.FlateDecode}
@@ -683,7 +683,7 @@
                 {NameToken.Subtype, NameToken.Image},
                 {NameToken.Width, widthToken},
                 {NameToken.Height, heightToken},
-                {NameToken.BitsPerComponent, new NumericToken(png.Header.BitDepth)},
+                {NameToken.BitsPerComponent, new NumericToken(8)},
                 {NameToken.ColorSpace, NameToken.Devicergb},
                 {NameToken.Filter, NameToken.FlateDecode},
                 {NameToken.Length, new NumericToken(compressed.Length)}
