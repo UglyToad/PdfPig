@@ -178,6 +178,7 @@
                 DirectObjectFinder.Get<NumericToken>(array[3], tokenScanner).Double);
         }
 
+        // TODO: Can this be removed? Seems unused but is public method
         public static PdfRectangle ToIntRectangle(this ArrayToken array, IPdfTokenScanner tokenScanner)
         {
             if (array == null)
