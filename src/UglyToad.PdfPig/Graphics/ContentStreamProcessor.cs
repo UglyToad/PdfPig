@@ -19,6 +19,8 @@
     using Util;
     using XObjects;
     using static PdfPig.Core.PdfSubpath;
+    using System.Drawing;
+    using System.Numerics;
 
     internal class ContentStreamProcessor : IOperationContext
     {
@@ -48,7 +50,6 @@
         private readonly IPdfTokenScanner pdfScanner;
         private readonly IPageContentParser pageContentParser;
         private readonly ILookupFilterProvider filterProvider;
-        private readonly PdfVector pageSize;
         private readonly InternalParsingOptions parsingOptions;
         private readonly MarkedContentStack markedContentStack = new MarkedContentStack();
 
@@ -84,11 +85,14 @@
             {XObjectType.PostScript, new List<XObjectContentRecord>()}
         };
 
-        public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation,
+        public ContentStreamProcessor(IResourceStore resourceStore, 
+            UserSpaceUnit userSpaceUnit, 
+            PdfRectangle mediaBox, 
+            PdfRectangle cropBox, 
+            PageRotationDegrees rotation,
             IPdfTokenScanner pdfScanner,
             IPageContentParser pageContentParser,
             ILookupFilterProvider filterProvider,
-            PdfVector pageSize,
             InternalParsingOptions parsingOptions)
         {
             this.resourceStore = resourceStore;
@@ -97,7 +101,6 @@
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
             this.pageContentParser = pageContentParser ?? throw new ArgumentNullException(nameof(pageContentParser));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
-            this.pageSize = pageSize;
             this.parsingOptions = parsingOptions;
 
             // initiate CurrentClippingPath to cropBox
@@ -108,7 +111,7 @@
 
             graphicsStack.Push(new CurrentGraphicsState()
             {
-                CurrentTransformationMatrix = GetInitialMatrix(),
+                CurrentTransformationMatrix = GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation),
                 CurrentClippingPath = clippingPath
             });
 
@@ -116,63 +119,71 @@
         }
 
         [System.Diagnostics.Contracts.Pure]
-        private TransformationMatrix GetInitialMatrix()
+        internal static TransformationMatrix GetInitialMatrix(UserSpaceUnit userSpaceUnit, 
+            PdfRectangle mediaBox,
+            PdfRectangle cropBox, 
+            PageRotationDegrees rotation)
         {
-            // TODO: this is a bit of a hack because I don't understand matrices
-            // TODO: use MediaBox (i.e. pageSize) or CropBox?
+            // Cater for scenario where the cropbox is larger than the mediabox.
+            // If there is no intersection (method returns null), fall back to the cropbox.
+            var viewBox = mediaBox.Intersect(cropBox) ?? cropBox;
 
-            /* 
-             * There should be a single Affine Transform we can apply to any point resulting
-             * from a content stream operation which will rotate the point and translate it back to
-             * a point where the origin is in the page's lower left corner.
-             *
-             * For example this matrix represents a (clockwise) rotation and translation:
-             * [  cos  sin  tx ]
-             * [ -sin  cos  ty ]
-             * [    0    0   1 ]
-             * Warning: rotation is counter-clockwise here
-             * 
-             * The values of tx and ty are those required to move the origin back to the expected origin (lower-left).
-             * The corresponding values should be:
-             * Rotation:  0   90  180  270
-             *       tx:  0    0    w    w
-             *       ty:  0    h    h    0
-             *
-             * Where w and h are the page width and height after rotation.
-            */
+            if (rotation.Value == 0
+                && viewBox.Left == 0 
+                && viewBox.Bottom == 0
+                && userSpaceUnit.PointMultiples == 1)
+            {
+                return TransformationMatrix.Identity;
+            }
 
-            double cos, sin;
-            double dx = 0, dy = 0;
+            // Move points so that (0,0) is equal to the viewbox bottom left corner.
+            var t1 = TransformationMatrix.GetTranslationMatrix(-viewBox.Left, -viewBox.Bottom);
+
+            // Not implemented yet: userSpaceUnit
+            // if (userSpaceUnit.PointMultiples != 1)
+            // {
+            //     var scale = TransformationMatrix.GetScaleMatrix(userSpaceUnit.PointMultiples,
+            //         userSpaceUnit.PointMultiples);
+            //     ....
+            // }
+
+            // After rotating around the origin, our points will have negative x/y coordinates.
+            // Fix this by translating them by a certain dx/dy after rotation based on the viewbox.
+            double dx, dy;
             switch (rotation.Value)
             {
                 case 0:
-                    cos = 1;
-                    sin = 0;
-                    break;
+                    // No need to rotate / translate after rotation, just return the initial
+                    // translation matrix.
+                    return t1;
                 case 90:
-                    cos = 0;
-                    sin = 1;
-                    dy = pageSize.Y;
+                    // Move rotated points up by our (unrotated) viewbox width
+                    dx = 0;
+                    dy = viewBox.Width;
                     break;
                 case 180:
-                    cos = -1;
-                    sin = 0;
-                    dx = pageSize.X;
-                    dy = pageSize.Y;
+                    // Move rotated points up/right using the (unrotated) viewbox width/height
+                    dx = viewBox.Width;
+                    dy = viewBox.Height;
                     break;
                 case 270:
-                    cos = 0;
-                    sin = -1;
-                    dx = pageSize.X;
+                    // Move rotated points right using the (unrotated) viewbox height
+                    dx = viewBox.Height;
+                    dy = 0;
                     break;
                 default:
                     throw new InvalidOperationException($"Invalid value for page rotation: {rotation.Value}.");
             }
 
-            return new TransformationMatrix(
-                cos, -sin, 0,
-                sin, cos, 0,
-                dx, dy, 1);
+            // GetRotationMatrix uses counter clockwise angles, whereas our page rotation
+            // is a clockwise angle, so flip the sign.
+            var r = TransformationMatrix.GetRotationMatrix(-rotation.Value);
+
+            // Fix up negative coordinates after rotation
+            var t2 = TransformationMatrix.GetTranslationMatrix(dx, dy);
+
+            // Now get the final combined matrix T1 > R > T2
+            return t1.Multiply(r.Multiply(t2));
         }
 
         public PageContent Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations)
