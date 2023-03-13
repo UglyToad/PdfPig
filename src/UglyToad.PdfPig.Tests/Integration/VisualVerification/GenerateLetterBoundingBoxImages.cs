@@ -19,7 +19,9 @@
         private const string SinglePage90ClockwiseRotation = "SinglePage90ClockwiseRotation - from PdfPig";
         private const string SinglePage180ClockwiseRotation = "SinglePage180ClockwiseRotation - from PdfPig";
         private const string SinglePage270ClockwiseRotation = "SinglePage270ClockwiseRotation - from PdfPig";
-        
+        private const string SPARCv9ArchitectureManual = "SPARC - v9 Architecture Manual";
+        private const string CroppedAndRotatedFile = "cropped-and-rotated";
+
         private static string GetFilename(string name)
         {
             var documentFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Integration", "Documents"));
@@ -116,6 +118,18 @@
             Run(SinglePage270ClockwiseRotation, 595);
         }
 
+        [Fact]
+        public void SPARCv9ArchitectureManualTest()
+        {
+            Run(SPARCv9ArchitectureManual);
+        }
+
+        [Fact]
+        public void CroppedAndRotatedTest()
+        {
+            Run(CroppedAndRotatedFile, 205);
+        }
+
         private static void Run(string file, int imageHeight = 792)
         {
             var pdfFileName = GetFilename(file);
@@ -127,6 +141,7 @@
 
                 var violetPen = new Pen(Color.BlueViolet, 1);
                 var redPen = new Pen(Color.Crimson, 1);
+                var bluePen = new Pen(Color.GreenYellow, 1);
 
                 using (var bitmap = new Bitmap(image))
                 using (var graphics = Graphics.FromImage(bitmap))
@@ -139,6 +154,11 @@
                     foreach (var letter in page.Letters)
                     {
                         DrawRectangle(letter.GlyphRectangle, graphics, violetPen, imageHeight);
+                    }
+
+                    foreach (var annotation in page.ExperimentalAccess.GetAnnotations())
+                    {
+                        DrawRectangle(annotation.Rectangle, graphics, bluePen, imageHeight);
                     }
 
                     var imageName = $"{file}.jpg";
