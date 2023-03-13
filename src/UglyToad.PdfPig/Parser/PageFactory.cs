@@ -133,8 +133,10 @@
                 content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, mediaBox, parsingOptions);
             }
 
-            var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, 
-                new AnnotationProvider(pdfScanner, dictionary),
+            var initialMatrix = ContentStreamProcessor.GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation);
+
+            var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content,
+                new AnnotationProvider(pdfScanner, dictionary, initialMatrix),
                 pdfScanner);
 
             for (var i = 0; i < stackDepth; i++)
@@ -160,8 +162,8 @@
             var context = new ContentStreamProcessor(
                 resourceStore,
                 userSpaceUnit,
-                mediaBox.Bounds,
-                cropBox.Bounds,
+                mediaBox,
+                cropBox,
                 rotation,
                 pdfScanner,
                 pageContentParser,

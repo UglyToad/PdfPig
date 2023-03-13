@@ -87,8 +87,8 @@
 
         public ContentStreamProcessor(IResourceStore resourceStore, 
             UserSpaceUnit userSpaceUnit, 
-            PdfRectangle mediaBox, 
-            PdfRectangle cropBox, 
+            MediaBox mediaBox, 
+            CropBox cropBox, 
             PageRotationDegrees rotation,
             IPdfTokenScanner pdfScanner,
             IPageContentParser pageContentParser,
@@ -105,7 +105,7 @@
 
             // initiate CurrentClippingPath to cropBox
             var clippingSubpath = new PdfSubpath();
-            clippingSubpath.Rectangle(cropBox.BottomLeft.X, cropBox.BottomLeft.Y, cropBox.Width, cropBox.Height);
+            clippingSubpath.Rectangle(cropBox.Bounds.BottomLeft.X, cropBox.Bounds.BottomLeft.Y, cropBox.Bounds.Width, cropBox.Bounds.Height);
             var clippingPath = new PdfPath() { clippingSubpath };
             clippingPath.SetClipping(FillingRule.EvenOdd);
 
@@ -120,13 +120,13 @@
 
         [System.Diagnostics.Contracts.Pure]
         internal static TransformationMatrix GetInitialMatrix(UserSpaceUnit userSpaceUnit, 
-            PdfRectangle mediaBox,
-            PdfRectangle cropBox, 
+            MediaBox mediaBox,
+            CropBox cropBox, 
             PageRotationDegrees rotation)
         {
             // Cater for scenario where the cropbox is larger than the mediabox.
             // If there is no intersection (method returns null), fall back to the cropbox.
-            var viewBox = mediaBox.Intersect(cropBox) ?? cropBox;
+            var viewBox = mediaBox.Bounds.Intersect(cropBox.Bounds) ?? cropBox.Bounds;
 
             if (rotation.Value == 0
                 && viewBox.Left == 0 

@@ -4,6 +4,7 @@
     using PdfPig.Core;
     using PdfPig.Geometry;
     using PdfPig.Graphics;
+    using System.Linq;
     using Xunit;
 
     public class ContentStreamProcessorTests
@@ -132,14 +133,24 @@
         }
 
         private static void GetInitialTransformationMatrices(
-            PdfRectangle mediaBox,
-            PdfRectangle cropBox,
+            MediaBox mediaBox,
+            CropBox cropBox,
             PageRotationDegrees rotation,
             out TransformationMatrix initialMatrix,
             out TransformationMatrix inverseMatrix)
         {
             initialMatrix = ContentStreamProcessor.GetInitialMatrix(UserSpaceUnit.Default, mediaBox, cropBox, rotation);
             inverseMatrix = initialMatrix.Inverse();
+        }
+
+        private static void GetInitialTransformationMatrices(
+            PdfRectangle mediaBox,
+            PdfRectangle cropBox,
+            PageRotationDegrees rotation,
+            out TransformationMatrix initialMatrix,
+            out TransformationMatrix inverseMatrix)
+        {
+            GetInitialTransformationMatrices(new MediaBox(mediaBox), new CropBox(cropBox), rotation, out initialMatrix, out inverseMatrix);
         }
 
         private static void AssertAreEqual(PdfRectangle r1, PdfRectangle r2)

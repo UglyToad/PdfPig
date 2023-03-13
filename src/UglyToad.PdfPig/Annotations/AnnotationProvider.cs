@@ -13,9 +13,12 @@
     {
         private readonly IPdfTokenScanner tokenScanner;
         private readonly DictionaryToken pageDictionary;
+        private readonly TransformationMatrix matrix;
 
-        public AnnotationProvider(IPdfTokenScanner tokenScanner, DictionaryToken pageDictionary)
+        public AnnotationProvider(IPdfTokenScanner tokenScanner, DictionaryToken pageDictionary,
+            TransformationMatrix matrix)
         {
+            this.matrix = matrix;
             this.tokenScanner = tokenScanner ?? throw new ArgumentNullException(nameof(tokenScanner));
             this.pageDictionary = pageDictionary ?? throw new ArgumentNullException(nameof(pageDictionary));
         }
@@ -37,11 +40,12 @@
                 var type = annotationDictionary.Get<NameToken>(NameToken.Subtype, tokenScanner);
 
                 var annotationType = type.ToAnnotationType();
-                var rectangle = annotationDictionary.Get<ArrayToken>(NameToken.Rect, tokenScanner).ToRectangle(tokenScanner);
+                var rectangle = matrix.Transform(annotationDictionary.Get<ArrayToken>(NameToken.Rect, tokenScanner).ToRectangle(tokenScanner));
 
                 var contents = GetNamedString(NameToken.Contents, annotationDictionary);
                 var name = GetNamedString(NameToken.Nm, annotationDictionary);
-                var modifiedDate = GetNamedString(NameToken.M, annotationDictionary);
+                var modifiedDateAsString = GetNamedString(NameToken.M, annotationDictionary);
+                if (!DateFormatHelper.TryParseDateTimeOffset(modifiedDateAsString, out var modifiedDate)) modifiedDate = default(DateTimeOffset);
 
                 var flags = (AnnotationFlags)0;
                 if (annotationDictionary.TryGet(NameToken.F, out var flagsToken) && DirectObjectFinder.TryGet(flagsToken, tokenScanner, out NumericToken flagsNumericToken))
@@ -83,10 +87,10 @@
                         {
                             quadPointRectangles.Add(new QuadPointsQuadrilateral(new[]
                             {
-                                new PdfPoint(values[0], values[1]), 
-                                new PdfPoint(values[2], values[3]), 
-                                new PdfPoint(values[4], values[5]), 
-                                new PdfPoint(values[6], values[7]) 
+                                matrix.Transform(new PdfPoint(values[0], values[1])), 
+                                matrix.Transform(new PdfPoint(values[2], values[3])), 
+                                matrix.Transform(new PdfPoint(values[4], values[5])), 
+                                matrix.Transform(new PdfPoint(values[6], values[7]))
                             }));
 
                             values.Clear();
@@ -94,8 +98,29 @@
                     }
                 }
 
-                yield return new Annotation(annotationDictionary, annotationType, rectangle, contents, name, modifiedDate, flags, border,
-                    quadPointRectangles);
+                StreamToken normalAppearanceStream = null, downAppearanceStream = null, rollOverAppearanceStream = null;
+                if (annotationDictionary.TryGet(NameToken.Ap, out DictionaryToken appearanceDictionary))
+                {
+                    // The normal appearance of this annotation
+                    if (appearanceDictionary.TryGet(NameToken.N, out IndirectReferenceToken normalAppearanceRef))
+                    {
+                        normalAppearanceStream = tokenScanner.Get(normalAppearanceRef.Data)?.Data as StreamToken;
+                    }
+                    // If present, the 'roll over' appearance of this annotation (when hovering the mouse pointer over this annotation)
+                    if (appearanceDictionary.TryGet(NameToken.R, out IndirectReferenceToken rollOverAppearanceRef))
+                    {
+                        rollOverAppearanceStream = tokenScanner.Get(rollOverAppearanceRef.Data)?.Data as StreamToken;
+                    }
+                    // If present, the 'down' appearance of this annotation (when you click on it)
+                    if (appearanceDictionary.TryGet(NameToken.D, out IndirectReferenceToken downAppearanceRef))
+                    {
+                        downAppearanceStream = tokenScanner.Get(downAppearanceRef.Data)?.Data as StreamToken;
+                    }
+                }
+
+                yield return new Annotation(annotationDictionary, annotationType, rectangle, 
+                    contents, name, modifiedDate, flags, border, quadPointRectangles,
+                    normalAppearanceStream, rollOverAppearanceStream, downAppearanceStream);
             }
         }
 
