@@ -150,8 +150,8 @@
             public override bool Equals(object obj)
             {
                 return obj is WidthHeight height &&
-                       Math.Abs(Width - height.Width) < 1 &&
-                       Math.Abs(Height - height.Height) < 1;
+                       Math.Round(Width) == Math.Round(height.Width) &&
+                       Math.Round(Height) == Math.Round(height.Height);
             }
 
             public override int GetHashCode()

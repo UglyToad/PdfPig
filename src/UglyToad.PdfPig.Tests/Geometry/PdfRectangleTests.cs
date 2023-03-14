@@ -1699,6 +1699,8 @@
 
         [Theory]
         [InlineData(595, 842, PageSize.A4)]
+        [InlineData(594, 843, PageSize.Custom)]
+        [InlineData(596, 841, PageSize.Custom)]
         [InlineData(842, 595, PageSize.A4)]
         [InlineData(595.3, 841.5, PageSize.A4)]
         [InlineData(841.5, 595.3, PageSize.A4)]
