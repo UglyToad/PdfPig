@@ -47,7 +47,7 @@
         /// The date and time the annotation was last modified, can be in any format. Optional.
         /// </summary>
         [CanBeNull]
-        public DateTimeOffset ModifiedDate { get; }
+        public string ModifiedDate { get; }
 
         /// <summary>
         /// Flags defining the appearance and behaviour of this annotation.
@@ -79,7 +79,7 @@
         /// <summary>
         /// Create a new <see cref="Annotation"/>.
         /// </summary>
-        public Annotation(DictionaryToken annotationDictionary, AnnotationType type, PdfRectangle rectangle, string content, string name, DateTimeOffset modifiedDate,
+        public Annotation(DictionaryToken annotationDictionary, AnnotationType type, PdfRectangle rectangle, string content, string name, string modifiedDate,
             AnnotationFlags flags, AnnotationBorder border, IReadOnlyList<QuadPointsQuadrilateral> quadPoints,
             StreamToken normalAppearanceStream, StreamToken rollOverAppearanceStream, StreamToken downAppearanceStream)
         {

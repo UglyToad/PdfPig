@@ -44,8 +44,8 @@
 
                 var contents = GetNamedString(NameToken.Contents, annotationDictionary);
                 var name = GetNamedString(NameToken.Nm, annotationDictionary);
-                var modifiedDateAsString = GetNamedString(NameToken.M, annotationDictionary);
-                if (!DateFormatHelper.TryParseDateTimeOffset(modifiedDateAsString, out var modifiedDate)) modifiedDate = default(DateTimeOffset);
+                // As indicated in PDF reference 8.4.1, the modified date can be anything, but is usually a date formatted according to sec. 3.8.3
+                var modifiedDate = GetNamedString(NameToken.M, annotationDictionary);
 
                 var flags = (AnnotationFlags)0;
                 if (annotationDictionary.TryGet(NameToken.F, out var flagsToken) && DirectObjectFinder.TryGet(flagsToken, tokenScanner, out NumericToken flagsNumericToken))
