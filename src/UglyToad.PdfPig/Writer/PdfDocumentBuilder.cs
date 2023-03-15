@@ -269,7 +269,6 @@ namespace UglyToad.PdfPig.Writer
             return AddPage(rectangle.Width, rectangle.Height);
         }
 
-
         internal IToken CopyToken(IPdfTokenScanner source, IToken token)
         {
             if (!existingCopies.TryGetValue(source, out var refs))
@@ -281,15 +280,18 @@ namespace UglyToad.PdfPig.Writer
             return WriterUtil.CopyToken(context, token, source, refs);
         }
 
-        internal class PageInfo
+        private class PageInfo
         {
             public DictionaryToken Page { get; set; }
             public IReadOnlyList<DictionaryToken> Parents { get; set; }
         }
+
         private readonly ConditionalWeakTable<IPdfTokenScanner, Dictionary<IndirectReference, IndirectReferenceToken>> existingCopies =
             new ConditionalWeakTable<IPdfTokenScanner, Dictionary<IndirectReference, IndirectReferenceToken>>();
+
         private readonly ConditionalWeakTable<PdfDocument, Dictionary<int, PageInfo>> existingTrees =
             new ConditionalWeakTable<PdfDocument, Dictionary<int, PageInfo>>();
+
         /// <summary>
         /// Add a new page with the specified size, this page will be included in the output when <see cref="Build"/> is called.
         /// </summary>
@@ -308,7 +310,7 @@ namespace UglyToad.PdfPig.Writer
             {
                 pagesInfos = new Dictionary<int, PageInfo>();
                 int i = 1;
-                foreach (var (pageDict, parents) in WriterUtil.WalkTree(document.Structure.Catalog.PageTree))
+                foreach (var (pageDict, parents) in WriterUtil.WalkTree(document.Structure.Catalog.Pages.PageTree))
                 {
                     pagesInfos[i] = new PageInfo
                     {

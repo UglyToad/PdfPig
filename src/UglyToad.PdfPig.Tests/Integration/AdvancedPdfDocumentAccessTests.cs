@@ -13,7 +13,7 @@
 
             using (var document = PdfDocument.Open(path))
             {
-                var pg = document.Structure.Catalog.GetPageNode(1).NodeDictionary;
+                var pg = document.Structure.Catalog.Pages.GetPageNode(1).NodeDictionary;
                 var contents = pg.Data[NameToken.Contents] as IndirectReferenceToken;
                 document.Advanced.ReplaceIndirectObject(contents.Data, tk =>
                 {
@@ -39,7 +39,7 @@
                 dict[NameToken.Length] = new NumericToken(0);
                 var replacement = new StreamToken(new DictionaryToken(dict), new List<byte>());
 
-                var pg = document.Structure.Catalog.GetPageNode(1).NodeDictionary;
+                var pg = document.Structure.Catalog.Pages.GetPageNode(1).NodeDictionary;
                 var contents = pg.Data[NameToken.Contents] as IndirectReferenceToken;
                 document.Advanced.ReplaceIndirectObject(contents.Data, replacement);
 
