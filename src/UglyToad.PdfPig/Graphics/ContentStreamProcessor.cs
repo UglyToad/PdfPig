@@ -5,6 +5,7 @@
     using Core;
     using Filters;
     using Geometry;
+    using Logging;
     using Operations;
     using Parser;
     using PdfFonts;
@@ -19,8 +20,6 @@
     using Util;
     using XObjects;
     using static PdfPig.Core.PdfSubpath;
-    using System.Drawing;
-    using System.Numerics;
 
     internal class ContentStreamProcessor : IOperationContext
     {
@@ -111,7 +110,7 @@
 
             graphicsStack.Push(new CurrentGraphicsState()
             {
-                CurrentTransformationMatrix = GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation),
+                CurrentTransformationMatrix = GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, parsingOptions.Logger),
                 CurrentClippingPath = clippingPath
             });
 
@@ -122,7 +121,8 @@
         internal static TransformationMatrix GetInitialMatrix(UserSpaceUnit userSpaceUnit, 
             MediaBox mediaBox,
             CropBox cropBox, 
-            PageRotationDegrees rotation)
+            PageRotationDegrees rotation,
+            ILog log)
         {
             // Cater for scenario where the cropbox is larger than the mediabox.
             // If there is no intersection (method returns null), fall back to the cropbox.
@@ -139,13 +139,10 @@
             // Move points so that (0,0) is equal to the viewbox bottom left corner.
             var t1 = TransformationMatrix.GetTranslationMatrix(-viewBox.Left, -viewBox.Bottom);
 
-            // Not implemented yet: userSpaceUnit
-            // if (userSpaceUnit.PointMultiples != 1)
-            // {
-            //     var scale = TransformationMatrix.GetScaleMatrix(userSpaceUnit.PointMultiples,
-            //         userSpaceUnit.PointMultiples);
-            //     ....
-            // }
+            if (userSpaceUnit.PointMultiples != 1)
+            {
+                log.Warn("User space unit other than 1 is not implemented");
+            }
 
             // After rotating around the origin, our points will have negative x/y coordinates.
             // Fix this by translating them by a certain dx/dy after rotation based on the viewbox.
