@@ -4,6 +4,9 @@
     using System.Collections.Generic;
     using System.Linq;
     using Core;
+    using Logging;
+    using Outline;
+    using Outline.Destinations;
     using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
@@ -13,14 +16,18 @@
     {
         private readonly IPdfTokenScanner tokenScanner;
         private readonly DictionaryToken pageDictionary;
+        private readonly NamedDestinations namedDestinations;
+        private readonly ILog log;
         private readonly TransformationMatrix matrix;
 
         public AnnotationProvider(IPdfTokenScanner tokenScanner, DictionaryToken pageDictionary,
-            TransformationMatrix matrix)
+            TransformationMatrix matrix, NamedDestinations namedDestinations, ILog log)
         {
             this.matrix = matrix;
             this.tokenScanner = tokenScanner ?? throw new ArgumentNullException(nameof(tokenScanner));
             this.pageDictionary = pageDictionary ?? throw new ArgumentNullException(nameof(pageDictionary));
+            this.namedDestinations = namedDestinations;
+            this.log = log;
         }
 
         public IEnumerable<Annotation> GetAnnotations()
@@ -40,6 +47,21 @@
                 var type = annotationDictionary.Get<NameToken>(NameToken.Subtype, tokenScanner);
 
                 var annotationType = type.ToAnnotationType();
+
+                if (!BookmarksProvider.TryGetDestination(annotationDictionary, NameToken.Dest, namedDestinations,
+                        tokenScanner, log, false, out var destination))
+                {
+                    if (BookmarksProvider.TryGetAction(annotationDictionary, namedDestinations, tokenScanner, log,
+                            out var actionResult))
+                    {
+                        destination = actionResult.destination;
+                    }
+                    else
+                    {
+                        destination = null;
+                    }
+                }
+
                 var rectangle = matrix.Transform(annotationDictionary.Get<ArrayToken>(NameToken.Rect, tokenScanner).ToRectangle(tokenScanner));
 
                 var contents = GetNamedString(NameToken.Contents, annotationDictionary);
@@ -119,7 +141,7 @@
                 }
 
                 yield return new Annotation(annotationDictionary, annotationType, rectangle, 
-                    contents, name, modifiedDate, flags, border, quadPointRectangles,
+                    contents, name, modifiedDate, flags, border, quadPointRectangles, destination,
                     normalAppearanceStream, rollOverAppearanceStream, downAppearanceStream);
             }
         }

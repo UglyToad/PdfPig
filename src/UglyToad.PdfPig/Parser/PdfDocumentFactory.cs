@@ -177,7 +177,7 @@
                 parsingOptions.UseLenientParsing);
 
             var pageFactory = new PageFactory(pdfScanner, resourceContainer, filterProvider,
-                new PageContentParser(new ReflectionGraphicsStateOperationFactory()));
+                new PageContentParser(new ReflectionGraphicsStateOperationFactory()), parsingOptions.Logger);
 
             var catalog = CatalogFactory.Create(
                 rootReference,

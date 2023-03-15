@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
+    using Annotations;
     using Core;
+    using Outline;
     using System;
     using System.Collections.Generic;
     using Tokenization.Scanner;
@@ -27,7 +29,7 @@
             PageTree = pageTree;
         }
 
-        internal Page GetPage(int pageNumber, InternalParsingOptions parsingOptions)
+        internal Page GetPage(int pageNumber, NamedDestinations namedDestinations, InternalParsingOptions parsingOptions)
         {
             if (pageNumber <= 0 || pageNumber > Count)
             {
@@ -68,11 +70,11 @@
                     pageTreeMembers.Rotation = rotateToken.Int;
                 }
             }
-
             var page = pageFactory.Create(
                 pageNumber,
                 pageNode.NodeDictionary,
                 pageTreeMembers,
+                namedDestinations,
                 parsingOptions);
             
             return page;

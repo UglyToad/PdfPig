@@ -6,7 +6,7 @@
     public class ExplicitDestination
     {
         /// <summary>
-        /// The page number of the destination.
+        /// The page number (1-based) of the destination.
         /// </summary>
         public int PageNumber { get; }
 

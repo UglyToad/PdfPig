@@ -4,7 +4,6 @@ using Content;
 using Destinations;
 using Logging;
 using System.Collections.Generic;
-using Tokenization.Scanner;
 using Tokens;
 
 /// <summary>
@@ -38,8 +37,8 @@ internal class NamedDestinations
         return namedDestinations.TryGetValue(name, out destination);
     }
 
-    internal bool TryGetExplicitDestination(ArrayToken explicitDestinationArray, IPdfTokenScanner pdfScanner, ILog log, out ExplicitDestination destination)
+    internal bool TryGetExplicitDestination(ArrayToken explicitDestinationArray, ILog log, bool isRemoteDestination, out ExplicitDestination destination)
     {
-        return NamedDestinationsProvider.TryGetExplicitDestination(explicitDestinationArray, pages, log, out destination);
+        return NamedDestinationsProvider.TryGetExplicitDestination(explicitDestinationArray, pages, log, isRemoteDestination, out destination);
     }
 }

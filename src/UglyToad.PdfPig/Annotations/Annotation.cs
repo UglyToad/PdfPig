@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using Core;
+    using Outline.Destinations;
     using Tokens;
     using Util.JetBrains.Annotations;
 
@@ -67,6 +68,16 @@
         public IReadOnlyList<QuadPointsQuadrilateral> QuadPoints { get; }
 
         /// <summary>
+        /// Explicit destination for this annotation, if any
+        /// </summary>
+        public ExplicitDestination Destination { get; }
+
+        /// <summary>
+        /// Indicates if a normal appearance is present for this annotation
+        /// </summary>
+        public bool HasNormalAppearance => normalAppearanceStream != null;
+
+        /// <summary>
         /// Indicates if a roll over appearance is present for this annotation (shown when you hover over this annotation)
         /// </summary>
         public bool HasRollOverAppearance => rollOverAppearanceStream != null;
@@ -80,7 +91,7 @@
         /// Create a new <see cref="Annotation"/>.
         /// </summary>
         public Annotation(DictionaryToken annotationDictionary, AnnotationType type, PdfRectangle rectangle, string content, string name, string modifiedDate,
-            AnnotationFlags flags, AnnotationBorder border, IReadOnlyList<QuadPointsQuadrilateral> quadPoints,
+            AnnotationFlags flags, AnnotationBorder border, IReadOnlyList<QuadPointsQuadrilateral> quadPoints, ExplicitDestination destination,
             StreamToken normalAppearanceStream, StreamToken rollOverAppearanceStream, StreamToken downAppearanceStream)
         {
             AnnotationDictionary = annotationDictionary ?? throw new ArgumentNullException(nameof(annotationDictionary));
@@ -92,6 +103,7 @@
             Flags = flags;
             Border = border;
             QuadPoints = quadPoints ?? EmptyArray<QuadPointsQuadrilateral>.Instance;
+            Destination = destination;
             this.normalAppearanceStream = normalAppearanceStream;
             this.rollOverAppearanceStream = rollOverAppearanceStream;
             this.downAppearanceStream = downAppearanceStream;

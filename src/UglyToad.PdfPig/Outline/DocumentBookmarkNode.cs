@@ -16,19 +16,13 @@
         /// </summary>
         public int PageNumber { get; }
 
-        /// <summary>
-        /// The destination of the bookmark in the current document.
-        /// </summary>
-        public ExplicitDestination Destination { get; }
-
         /// <inheritdoc />
         /// <summary>
         /// Create a new <see cref="DocumentBookmarkNode"/>.
         /// </summary>
         public DocumentBookmarkNode(string title, int level, ExplicitDestination destination, IReadOnlyList<BookmarkNode> children)
-            : base(title, level, children)
+            : base(title, level, destination, children)
         {
-            Destination = destination ?? throw new ArgumentNullException(nameof(destination));
             PageNumber = destination.PageNumber;
         }
 

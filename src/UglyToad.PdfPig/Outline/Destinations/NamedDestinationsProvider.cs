@@ -25,7 +25,7 @@ internal static class NamedDestinationsProvider
             {
                 var value = kvp.Value;
 
-                if (TryReadExplicitDestination(value, pdfScanner, pages, log, out var destination))
+                if (TryReadExplicitDestination(value, pdfScanner, pages, log, false, out var destination))
                 {
                     destinationsByName[kvp.Key] = destination;
                 }
@@ -42,7 +42,7 @@ internal static class NamedDestinationsProvider
              */
             NameTreeParser.FlattenNameTree(destinations, pdfScanner, value =>
             {
-                if (TryReadExplicitDestination(value, pdfScanner, pages, log, out var destination))
+                if (TryReadExplicitDestination(value, pdfScanner, pages, log, false, out var destination))
                 {
                     return destination;
                 }
@@ -54,19 +54,19 @@ internal static class NamedDestinationsProvider
         return new NamedDestinations(destinationsByName, pages);
     }
 
-    private static bool TryReadExplicitDestination(IToken value, IPdfTokenScanner pdfScanner, Pages pages, ILog log, out ExplicitDestination destination)
+    private static bool TryReadExplicitDestination(IToken value, IPdfTokenScanner pdfScanner, Pages pages, ILog log, bool isRemoteDestination, out ExplicitDestination destination)
     {
         destination = null;
 
         if (DirectObjectFinder.TryGet(value, pdfScanner, out ArrayToken valueArray)
-            && TryGetExplicitDestination(valueArray, pages, log, out destination))
+            && TryGetExplicitDestination(valueArray, pages, log, isRemoteDestination, out destination))
         {
             return true;
         }
 
         if (DirectObjectFinder.TryGet(value, pdfScanner, out DictionaryToken valueDictionary)
             && valueDictionary.TryGet(NameToken.D, pdfScanner, out valueArray)
-            && TryGetExplicitDestination(valueArray, pages, log, out destination))
+            && TryGetExplicitDestination(valueArray, pages, log, isRemoteDestination, out destination))
         {
             return true;
         }
@@ -74,7 +74,7 @@ internal static class NamedDestinationsProvider
         return false;
     }
     
-    internal static bool TryGetExplicitDestination(ArrayToken explicitDestinationArray, Pages pages, ILog log, out ExplicitDestination destination)
+    internal static bool TryGetExplicitDestination(ArrayToken explicitDestinationArray, Pages pages, ILog log, bool isRemoteDestination, out ExplicitDestination destination)
     {
         destination = null;
 
@@ -89,6 +89,13 @@ internal static class NamedDestinationsProvider
 
         if (pageToken is IndirectReferenceToken pageIndirectReferenceToken)
         {
+            if (isRemoteDestination)
+            {
+                // Table 8.50 Remote Go-To Actions
+                var errorMessage = $"{nameof(TryGetExplicitDestination)} Cannot use indirect reference for remote destination.";
+                log?.Error(errorMessage);
+                return false;
+            }
             var page = pages.GetPageByReference(pageIndirectReferenceToken.Data);
             if (page?.PageNumber == null)
             {
@@ -110,7 +117,11 @@ internal static class NamedDestinationsProvider
             return false;
         }
 
-        var destTypeToken = explicitDestinationArray[1] as NameToken;
+        NameToken destTypeToken = null;
+        if (explicitDestinationArray.Length > 1)
+        {
+            destTypeToken = explicitDestinationArray[1] as NameToken;
+        }
         if (destTypeToken == null)
         {
             var errorMessage = $"Missing name token as second argument to explicit destination: {explicitDestinationArray}.";

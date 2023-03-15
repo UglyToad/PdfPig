@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Outline
 {
+    using Destinations;
     using System;
     using System.Collections.Generic;
 
@@ -19,7 +20,7 @@
         /// <summary>
         /// Create a new <see cref="ExternalBookmarkNode" />.
         /// </summary>
-        public ExternalBookmarkNode(string title, int level, string fileName, IReadOnlyList<BookmarkNode> children) : base(title, level, children)
+        public ExternalBookmarkNode(string title, int level, ExplicitDestination destination, string fileName, IReadOnlyList<BookmarkNode> children) : base(title, level, destination, children)
         {
             FileName = fileName ?? throw new ArgumentNullException(nameof(fileName));
         }
