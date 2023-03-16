@@ -133,7 +133,7 @@
                 content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, mediaBox, parsingOptions);
             }
 
-            var initialMatrix = ContentStreamProcessor.GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation);
+            var initialMatrix = ContentStreamProcessor.GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, parsingOptions.Logger);
 
             var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content,
                 new AnnotationProvider(pdfScanner, dictionary, initialMatrix),
