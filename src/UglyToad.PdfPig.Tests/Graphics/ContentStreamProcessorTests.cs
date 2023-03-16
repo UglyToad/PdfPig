@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Graphics
 {
     using Content;
+    using Logging;
     using PdfPig.Core;
     using PdfPig.Geometry;
     using PdfPig.Graphics;
@@ -139,7 +140,7 @@
             out TransformationMatrix initialMatrix,
             out TransformationMatrix inverseMatrix)
         {
-            initialMatrix = ContentStreamProcessor.GetInitialMatrix(UserSpaceUnit.Default, mediaBox, cropBox, rotation);
+            initialMatrix = ContentStreamProcessor.GetInitialMatrix(UserSpaceUnit.Default, mediaBox, cropBox, rotation, new TestingLog());
             inverseMatrix = initialMatrix.Inverse();
         }
 
