@@ -38,7 +38,13 @@
             double cos;
             double sin;
 
-            switch (degreesCounterclockwise)
+            var deg = degreesCounterclockwise % 360;
+            if (deg < 0)
+            {
+                deg += 360;
+            }
+
+            switch (deg)
             {
                 case 0:
                 case 360:

@@ -11,6 +11,10 @@
     /// </summary>
     public class Annotation
     {
+        private readonly StreamToken normalAppearanceStream;
+        private readonly StreamToken rollOverAppearanceStream;
+        private readonly StreamToken downAppearanceStream;
+
         /// <summary>
         /// The underlying PDF dictionary which this annotation was created from.
         /// </summary>
@@ -63,10 +67,21 @@
         public IReadOnlyList<QuadPointsQuadrilateral> QuadPoints { get; }
 
         /// <summary>
+        /// Indicates if a roll over appearance is present for this annotation (shown when you hover over this annotation)
+        /// </summary>
+        public bool HasRollOverAppearance => rollOverAppearanceStream != null;
+
+        /// <summary>
+        /// Indicates if a down appearance is present for this annotation (shown when you click on this annotation)
+        /// </summary>
+        public bool HasDownAppearance => downAppearanceStream != null;
+
+        /// <summary>
         /// Create a new <see cref="Annotation"/>.
         /// </summary>
         public Annotation(DictionaryToken annotationDictionary, AnnotationType type, PdfRectangle rectangle, string content, string name, string modifiedDate,
-            AnnotationFlags flags, AnnotationBorder border, IReadOnlyList<QuadPointsQuadrilateral> quadPoints)
+            AnnotationFlags flags, AnnotationBorder border, IReadOnlyList<QuadPointsQuadrilateral> quadPoints,
+            StreamToken normalAppearanceStream, StreamToken rollOverAppearanceStream, StreamToken downAppearanceStream)
         {
             AnnotationDictionary = annotationDictionary ?? throw new ArgumentNullException(nameof(annotationDictionary));
             Type = type;
@@ -77,6 +92,9 @@
             Flags = flags;
             Border = border;
             QuadPoints = quadPoints ?? EmptyArray<QuadPointsQuadrilateral>.Instance;
+            this.normalAppearanceStream = normalAppearanceStream;
+            this.rollOverAppearanceStream = rollOverAppearanceStream;
+            this.downAppearanceStream = downAppearanceStream;
         }
 
         /// <inheritdoc />

@@ -3,6 +3,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using Core;
+    using System;
 
     /// <summary>
     /// The corresponding named size of the <see cref="Page"/>.
@@ -102,6 +103,7 @@
             {new WidthHeight(74, 105), PageSize.A10},
             {new WidthHeight(612, 792), PageSize.Letter},
             {new WidthHeight(612, 1008), PageSize.Legal},
+            // Ledger and Tabloid differ by orientation
             {new WidthHeight(1224, 792), PageSize.Ledger},
             {new WidthHeight(792, 1224), PageSize.Tabloid},
             // Again there is disagreement here
@@ -111,11 +113,11 @@
 
         public static PageSize GetPageSize(this PdfRectangle rectangle)
         {
-            if (!Lookup.TryGetValue(new WidthHeight(rectangle.Width, rectangle.Height), out var size))
+            if (!Lookup.TryGetValue(new WidthHeight(rectangle.Width, rectangle.Height), out var size)
+                && !Lookup.TryGetValue(new WidthHeight(rectangle.Height, rectangle.Width), out size))
             {
                 return PageSize.Custom;
             }
-
             return size;
         }
 
@@ -148,15 +150,15 @@
             public override bool Equals(object obj)
             {
                 return obj is WidthHeight height &&
-                       Width == height.Width &&
-                       Height == height.Height;
+                       Math.Round(Width) == Math.Round(height.Width) &&
+                       Math.Round(Height) == Math.Round(height.Height);
             }
 
             public override int GetHashCode()
             {
                 var hashCode = 859600377;
-                hashCode = hashCode * -1521134295 + Width.GetHashCode();
-                hashCode = hashCode * -1521134295 + Height.GetHashCode();
+                hashCode = hashCode * -1521134295 + Math.Round(Width).GetHashCode();
+                hashCode = hashCode * -1521134295 + Math.Round(Height).GetHashCode();
                 return hashCode;
             }
         }
