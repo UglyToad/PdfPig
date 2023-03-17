@@ -201,7 +201,6 @@
 
             private void ScanNewLine()
             {
-                System.Diagnostics.Debug.Assert(state == State.NEWLINE);
                 char ch = CurrentChar();
                 buffer.Append(ch);
                 if (ch == CR && Peek() == LF)
@@ -215,7 +214,6 @@
 
             private void ScanWhitespace()
             {
-                System.Diagnostics.Debug.Assert(state == State.WHITESPACE);
                 buffer.Append(CurrentChar());
 
                 bool loop = true;
@@ -239,7 +237,6 @@
 
             private void ScanComment()
             {
-                System.Diagnostics.Debug.Assert(state == State.COMMENT);
                 buffer.Append(CurrentChar());
 
                 bool loop = true;
@@ -264,7 +261,6 @@
 
             private void ScanToken()
             {
-                System.Diagnostics.Debug.Assert(state == State.TOKEN);
                 char ch = CurrentChar();
                 buffer.Append(ch);
                 switch (ch)
