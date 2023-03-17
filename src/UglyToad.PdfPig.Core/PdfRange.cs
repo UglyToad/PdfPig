@@ -12,15 +12,6 @@
         private readonly int startingIndex;
 
         /// <summary>
-        /// Constructor with an initial range of 0..1.
-        /// </summary>
-        public PdfRange()
-        {
-            rangeArray = new double[] { 0.0, 1.0 };
-            startingIndex = 0;
-        }
-
-        /// <summary>
         /// Constructor assumes a starting index of 0.
         /// </summary>
         /// <param name="range">The array that describes the range.</param>
@@ -61,30 +52,18 @@
         /// <param name="index">The range index into the array for the start of the range.</param>
         public PdfRange(IEnumerable<double> range, int index)
         {
-            rangeArray = range.Select(v => (double)v).ToArray();
+            rangeArray = range.ToArray();
             startingIndex = index;
         }
 
         /// <summary>
         /// The minimum value of the range.
         /// </summary>
-        public double Min
-        {
-            get
-            {
-                return rangeArray[startingIndex * 2];
-            }
-        }
+        public double Min => rangeArray[startingIndex * 2];
 
         /// <summary>
         /// The maximum value of the range.
         /// </summary>
-        public double Max
-        {
-            get
-            {
-                return rangeArray[startingIndex * 2 + 1];
-            }
-        }
+        public double Max => rangeArray[startingIndex * 2 + 1];
     }
 }
