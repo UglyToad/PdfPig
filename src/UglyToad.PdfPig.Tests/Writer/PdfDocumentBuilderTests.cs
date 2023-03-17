@@ -636,6 +636,8 @@
         [InlineData(PdfAStandard.A1A)]
         [InlineData(PdfAStandard.A2B)]
         [InlineData(PdfAStandard.A2A)]
+        [InlineData(PdfAStandard.A3B)]
+        [InlineData(PdfAStandard.A3A)]
         public void CanGeneratePdfAFile(PdfAStandard standard)
         {
             var builder = new PdfDocumentBuilder
