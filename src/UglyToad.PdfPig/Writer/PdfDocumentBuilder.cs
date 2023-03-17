@@ -50,7 +50,7 @@ namespace UglyToad.PdfPig.Writer
         /// <summary>
         /// The values of the fields to include in the document information dictionary.
         /// </summary>
-        public DocumentInformationBuilder DocumentInformation { get; } = new DocumentInformationBuilder();
+        public DocumentInformationBuilder DocumentInformation { get; set; } = new DocumentInformationBuilder();
 
         /// <summary>
         /// The current page builders in the document and the corresponding 1 indexed page numbers. Use <see cref="AddPage(double,double)"/>
@@ -638,6 +638,11 @@ namespace UglyToad.PdfPig.Writer
                     case PdfAStandard.A2B:
                         break;
                     case PdfAStandard.A2A:
+                        PdfA1ARuleBuilder.Obey(catalogDictionary);
+                        break;
+                    case PdfAStandard.A3B:
+                        break;
+                    case PdfAStandard.A3A:
                         PdfA1ARuleBuilder.Obey(catalogDictionary);
                         break;
                 }
