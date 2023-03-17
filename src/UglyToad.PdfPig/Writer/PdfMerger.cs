@@ -19,11 +19,11 @@
         /// <summary>
         /// Merge two PDF documents together with the pages from <paramref name="file1"/> followed by <paramref name="file2"/>.
         /// </summary>
-        public static byte[] Merge(string file1, string file2, IReadOnlyList<int> file1Selection = null, IReadOnlyList<int> file2Selection = null)
+        public static byte[] Merge(string file1, string file2, IReadOnlyList<int> file1Selection = null, IReadOnlyList<int> file2Selection = null, PdfAStandard archiveStandard = PdfAStandard.None, PdfDocumentBuilder.DocumentInformationBuilder docInfoBuilder = null)
         {
             using (var output = new MemoryStream())
             {
-                Merge(file1, file2, output, file1Selection, file2Selection);
+                Merge(file1, file2, output, file1Selection, file2Selection, archiveStandard, docInfoBuilder);
                 return output.ToArray();
             }
         }
@@ -31,7 +31,7 @@
         /// <summary>
         /// Merge two PDF documents together with the pages from <paramref name="file1"/> followed by <paramref name="file2"/> into the output stream.
         /// </summary>
-        public static void Merge(string file1, string file2, Stream output, IReadOnlyList<int> file1Selection = null, IReadOnlyList<int> file2Selection = null)
+        public static void Merge(string file1, string file2, Stream output, IReadOnlyList<int> file1Selection = null, IReadOnlyList<int> file2Selection = null, PdfAStandard archiveStandard = PdfAStandard.None, PdfDocumentBuilder.DocumentInformationBuilder docInfoBuilder = null)
         {
             _ = file1 ?? throw new ArgumentNullException(nameof(file1));
             _ = file2 ?? throw new ArgumentNullException(nameof(file2));
@@ -40,7 +40,7 @@
             {
                 using (var stream2 = File.OpenRead(file2))
                 {
-                    Merge(new[] { stream1, stream2 }, output, new[] { file1Selection, file2Selection });
+                    Merge(new[] { stream1, stream2 }, output, new[] { file1Selection, file2Selection }, archiveStandard, docInfoBuilder);
                 }
             }
         }
@@ -50,9 +50,17 @@
         /// </summary>
         public static byte[] Merge(params string[] filePaths)
         {
+            return Merge(PdfAStandard.None, null, filePaths);
+        }
+
+        /// <summary>
+        /// Merge multiple PDF documents together with the pages in the order the file paths are provided.
+        /// </summary>
+        public static byte[] Merge(PdfAStandard archiveStandard, PdfDocumentBuilder.DocumentInformationBuilder docInfoBuilder, params string[] filePaths)
+        {
             using (var output = new MemoryStream())
             {
-                Merge(output, filePaths);
+                Merge(output, archiveStandard, docInfoBuilder, filePaths);
                 return output.ToArray();
             }
         }
@@ -60,7 +68,15 @@
         /// <summary>
         /// Merge multiple PDF documents together with the pages in the order the file paths are provided into the output stream
         /// </summary>
-        public static void Merge(Stream output, params string[] filePaths)
+        public static void Merge(Stream output, params string[] filePaths) 
+        {
+            Merge(output, PdfAStandard.None, null, filePaths);
+        }
+
+        /// <summary>
+        /// Merge multiple PDF documents together with the pages in the order the file paths are provided into the output stream
+        /// </summary>
+        public static void Merge(Stream output, PdfAStandard archiveStandard, PdfDocumentBuilder.DocumentInformationBuilder docInfoBuilder, params string[] filePaths)
         {
             var streams = new List<Stream>(filePaths.Length);
             try
@@ -71,7 +87,7 @@
                     streams.Add(File.OpenRead(filePath));
                 }
 
-                Merge(streams, output, null);
+                Merge(streams, output, null, archiveStandard, docInfoBuilder);
             }
             finally
             {
@@ -85,13 +101,13 @@
         /// <summary>
         /// Merge the set of PDF documents.
         /// </summary>
-        public static byte[] Merge(IReadOnlyList<byte[]> files, IReadOnlyList<IReadOnlyList<int>> pagesBundle = null)
+        public static byte[] Merge(IReadOnlyList<byte[]> files, IReadOnlyList<IReadOnlyList<int>> pagesBundle = null, PdfAStandard archiveStandard = PdfAStandard.None, PdfDocumentBuilder.DocumentInformationBuilder docInfoBuilder = null)
         {
             _ = files ?? throw new ArgumentNullException(nameof(files));
 
             using (var output = new MemoryStream())
             {
-                Merge(files.Select(f => PdfDocument.Open(f)).ToArray(), output, pagesBundle);
+                Merge(files.Select(f => PdfDocument.Open(f)).ToArray(), output, pagesBundle, archiveStandard, docInfoBuilder);
                 return output.ToArray();
             }
         }
@@ -104,20 +120,28 @@
         /// </param>
         /// <param name="output">Must be writable</param>
         /// <param name="pagesBundle"></param>
+        /// <param name="archiveStandard"></param>
+        /// <param name="docInfoBuilder"></param>
         /// </summary>
-        public static void Merge(IReadOnlyList<Stream> streams, Stream output, IReadOnlyList<IReadOnlyList<int>> pagesBundle = null)
+        public static void Merge(IReadOnlyList<Stream> streams, Stream output, IReadOnlyList<IReadOnlyList<int>> pagesBundle = null, PdfAStandard archiveStandard = PdfAStandard.None, PdfDocumentBuilder.DocumentInformationBuilder docInfoBuilder = null)
         {
             _ = streams ?? throw new ArgumentNullException(nameof(streams));
             _ = output ?? throw new ArgumentNullException(nameof(output));
 
-            Merge(streams.Select(f => PdfDocument.Open(f)).ToArray(), output, pagesBundle);
+            Merge(streams.Select(f => PdfDocument.Open(f)).ToArray(), output, pagesBundle, archiveStandard, docInfoBuilder);
         }
 
-        private static void Merge(IReadOnlyList<PdfDocument> files, Stream output, IReadOnlyList<IReadOnlyList<int>> pagesBundle)
+        private static void Merge(IReadOnlyList<PdfDocument> files, Stream output, IReadOnlyList<IReadOnlyList<int>> pagesBundle, PdfAStandard archiveStandard = PdfAStandard.None, PdfDocumentBuilder.DocumentInformationBuilder docInfoBuilder = null)
         {
             var maxVersion = files.Select(x=>x.Version).Max();
             using (var document = new PdfDocumentBuilder(output, false, PdfWriterType.Default, maxVersion))
             {
+                document.ArchiveStandard = archiveStandard;
+                if (docInfoBuilder != null) 
+                {
+                    document.IncludeDocumentInformation = true;
+                    document.DocumentInformation = docInfoBuilder;
+                }
                 foreach (var fileIndex in Enumerable.Range(0, files.Count))
                 {
                     var existing = files[fileIndex];

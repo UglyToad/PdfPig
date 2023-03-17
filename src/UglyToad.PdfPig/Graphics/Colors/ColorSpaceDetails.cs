@@ -1,11 +1,11 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
-    using PdfPig.Core;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using Tokens;
     using UglyToad.PdfPig.Content;
+    using UglyToad.PdfPig.Functions;
     using UglyToad.PdfPig.Util;
     using UglyToad.PdfPig.Util.JetBrains.Annotations;
 
@@ -167,14 +167,14 @@
         /// The function is called with the tint value and must return the corresponding color component values.
         /// That is, the number of components and the interpretation of their values depend on the <see cref="AlternateColorSpaceDetails"/>.
         /// </summary>
-        public Union<DictionaryToken, StreamToken> TintFunction { get; }
+        public PdfFunction TintFunction { get; }
 
         /// <summary>
         /// Create a new <see cref="SeparationColorSpaceDetails"/>.
         /// </summary>
         public SeparationColorSpaceDetails(NameToken name,
             ColorSpaceDetails alternateColorSpaceDetails,
-            Union<DictionaryToken, StreamToken> tintFunction)
+            PdfFunction tintFunction)
             : base(ColorSpace.Separation)
         {
             Name = name;
