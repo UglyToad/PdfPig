@@ -90,6 +90,8 @@
                 "UglyToad.PdfPig.Filters.DefaultFilterProvider",
                 "UglyToad.PdfPig.Filters.IFilter",
                 "UglyToad.PdfPig.Filters.IFilterProvider",
+                "UglyToad.PdfPig.Functions.FunctionTypes",
+                "UglyToad.PdfPig.Functions.PdfFunction",
                 "UglyToad.PdfPig.PdfFonts.DescriptorFontFile",
                 "UglyToad.PdfPig.PdfFonts.FontDescriptor",
                 "UglyToad.PdfPig.PdfFonts.FontDescriptorFlags",
