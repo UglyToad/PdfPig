@@ -12,7 +12,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
     /// <summary>
     /// A font using one of the Adobe Standard 14 fonts. Can use a custom encoding.
     /// </summary>
-    internal class Type1Standard14Font: IFont
+    internal class Type1Standard14Font : IFont
     {
         private readonly AdobeFontMetrics standardFontMetrics;
         private readonly Encoding encoding;
@@ -31,7 +31,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
             encoding = overrideEncoding ?? new AdobeFontMetricsEncoding(standardFontMetrics);
 
             Name = NameToken.Create(standardFontMetrics.FontName);
-            
+
             IsVertical = false;
             Details = new FontDetails(Name.Data,
                 standardFontMetrics.Weight == "Bold",
@@ -62,7 +62,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
 
                 return true;
             }
-            
+
             if (encoding is StandardEncoding || encoding is SymbolEncoding)
             {
                 var listed = GlyphList.AdobeGlyphList.NameToUnicode(name);
@@ -70,7 +70,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
                 value = listed;
 
                 return true;
-            } 
+            }
             else
             {
                 Debug.WriteLine($"Warning: Type1Standard14Font with unexpected encoding: '{encoding.EncodingName}' Expected: 'ZapfDingbatsEncoding','SymbolEncoding' or 'StandardEncoding' . Font: '{standardFontMetrics.FontName}'");
@@ -102,7 +102,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
 
             var x = metrics.Width.X;
             var y = metrics.Width.Y;
-            
+
             if (metrics.Width.X == 0 && metrics.BoundingBox.Width > 0)
             {
                 x = metrics.BoundingBox.Width;
@@ -112,7 +112,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
             {
                 y = metrics.BoundingBox.Height;
             }
-            
+
             return new PdfRectangle(0, 0, x, y);
         }
 
