@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.CidFonts
 {
     using System;
+    using System.Collections.Generic;
     using Core;
 
     /// <summary>
@@ -17,6 +18,10 @@
         bool TryGetBoundingAdvancedWidth(int characterIdentifier, Func<int, int?> characterCodeToGlyphId, out double width);
 
         bool TryGetBoundingAdvancedWidth(int characterIdentifier, out double width);
+
+        bool TryGetPath(int characterName, out IReadOnlyList<PdfSubpath> path);
+
+        bool TryGetPath(int characterCode, Func<int, int?> characterCodeToGlyphId, out IReadOnlyList<PdfSubpath> path);
 
         int GetFontMatrixMultiplier();
     }

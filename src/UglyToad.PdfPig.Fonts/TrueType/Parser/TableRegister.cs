@@ -9,7 +9,7 @@
     public class TableRegister
     {
         /// <summary>
-        /// This table contains global information about the font. 
+        /// This table contains global information about the font.
         /// </summary>
         public HeaderTable HeaderTable { get; }
 

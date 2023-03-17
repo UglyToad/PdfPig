@@ -5,6 +5,7 @@
     using Core;
     using Fonts;
     using Fonts.Encodings;
+    using System.Collections.Generic;
     using Tokens;
 
     internal class Type3Font : IFont
@@ -57,9 +58,7 @@
 
             var name = encoding.GetName(characterCode);
 
-            var listed = GlyphList.AdobeGlyphList.NameToUnicode(name);
-
-            value = listed;
+            value = GlyphList.AdobeGlyphList.NameToUnicode(name);
 
             return true;
         }
@@ -88,6 +87,25 @@
         public TransformationMatrix GetFontMatrix()
         {
             return fontMatrix;
+        }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// <para>Type 3 fonts do not use vector paths. Always returns <c>false</c>.</para>
+        /// </summary>
+        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        {
+            path = null;
+            return false;
+        }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// <para>Type 3 fonts do not use vector paths. Always returns <c>false</c>.</para>
+        /// </summary>
+        public bool TryGetNormalisedPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        {
+            return TryGetPath(characterCode, out path);
         }
     }
 }

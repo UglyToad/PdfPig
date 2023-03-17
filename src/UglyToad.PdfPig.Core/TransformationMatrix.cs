@@ -1,8 +1,11 @@
 ﻿namespace UglyToad.PdfPig.Core
 {
     using System;
+    using System.Collections;
+    using System.Collections.Generic;
     using System.Diagnostics.Contracts;
     using System.Linq;
+    using static UglyToad.PdfPig.Core.PdfSubpath;
 
     /// <summary>
     /// Specifies the conversion from the transformed coordinate space to the original untransformed coordinate space.
@@ -254,6 +257,59 @@
                 Transform(original.BottomLeft),
                 Transform(original.BottomRight)
             );
+        }
+
+        /// <summary>
+        /// Transform a subpath using this transformation matrix.
+        /// </summary>
+        /// <param name="subpath">The original subpath.</param>
+        /// <returns>A new subpath which is the result of applying this transformation matrix.</returns>
+        public PdfSubpath Transform(PdfSubpath subpath)
+        {
+            var trSubpath = new PdfSubpath();
+            foreach (var c in subpath.Commands)
+            {
+                if (c is Move move)
+                {
+                    var loc = Transform(move.Location);
+                    trSubpath.MoveTo(loc.X, loc.Y);
+                }
+                else if (c is Line line)
+                {
+                    //var from = Transform(line.From);
+                    var to = Transform(line.To);
+                    trSubpath.LineTo(to.X, to.Y);
+                }
+                else if (c is BezierCurve curve)
+                {
+                    var first = Transform(curve.FirstControlPoint);
+                    var second = Transform(curve.SecondControlPoint);
+                    var end = Transform(curve.EndPoint);
+                    trSubpath.BezierCurveTo(first.X, first.Y, second.X, second.Y, end.X, end.Y);
+                }
+                else if (c is Close)
+                {
+                    trSubpath.CloseSubpath();
+                }
+                else
+                {
+                    throw new Exception("Unknown PdfSubpath type");
+                }
+            }
+            return trSubpath;
+        }
+
+        /// <summary>
+        /// Transform a path using this transformation matrix.
+        /// </summary>
+        /// <param name="path">The original path.</param>
+        /// <returns>A new path which is the result of applying this transformation matrix.</returns>
+        public IEnumerable<PdfSubpath> Transform(IEnumerable<PdfSubpath> path)
+        {
+            foreach (var subpath in path)
+            {
+                yield return Transform(subpath);
+            }
         }
 
         /// <summary>

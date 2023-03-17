@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.CidFonts
 {
     using System;
+    using System.Collections.Generic;
     using Core;
     using Fonts.TrueType;
     using Fonts.TrueType.Tables;
@@ -10,7 +11,7 @@
         private readonly TrueTypeFont font;
 
         public FontDetails Details { get; }
-        
+
         public PdfCidTrueTypeFont(TrueTypeFont font)
         {
             this.font = font ?? throw new ArgumentNullException(nameof(font));
@@ -33,5 +34,10 @@
             => font.TryGetAdvanceWidth(characterIdentifier, characterCodeToGlyphId, out width);
 
         public int GetFontMatrixMultiplier() => font.GetUnitsPerEm();
+
+        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path) => font.TryGetPath(characterCode, out path);
+
+        public bool TryGetPath(int characterCode, Func<int, int?> characterCodeToGlyphId, out IReadOnlyList<PdfSubpath> path)
+            => font.TryGetPath(characterCode, characterCodeToGlyphId, out path);
     }
 }

@@ -1,10 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
 {
+    using Core;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
     using System.Text;
-    using Core;
 
     /// <summary>
     /// Stores the decoded command sequences for Type 2 CharStrings from a Compact Font Format font as well
@@ -20,7 +20,6 @@
         /// The decoded charstrings in this font.
         /// </summary>
         public IReadOnlyDictionary<string, CommandSequence> CharStrings { get; }
-
 
         public Type2CharStrings(IReadOnlyDictionary<string, CommandSequence> charStrings)
         {
@@ -70,7 +69,7 @@
         private static Type2Glyph Run(CommandSequence sequence, double defaultWidthX, double nominalWidthX)
         {
             var context = new Type2BuildCharContext();
-            
+
             var hasRunStackClearingCommand = false;
             for (var i = -1; i < sequence.Values.Count; i++)
             {
@@ -224,7 +223,7 @@
         /// <summary>
         /// The path of the glyph.
         /// </summary>
-        public PdfSubpath Path { get; }
+        public IReadOnlyList<PdfSubpath> Path { get; }
 
         /// <summary>
         /// The width of the glyph as a difference from the nominal width X for the font. Optional.
@@ -234,7 +233,7 @@
         /// <summary>
         /// Create a new <see cref="Type2Glyph"/>.
         /// </summary>
-        public Type2Glyph(PdfSubpath path, double? width)
+        public Type2Glyph(IReadOnlyList<PdfSubpath> path, double? width)
         {
             Path = path ?? throw new ArgumentNullException(nameof(path));
             Width = width;

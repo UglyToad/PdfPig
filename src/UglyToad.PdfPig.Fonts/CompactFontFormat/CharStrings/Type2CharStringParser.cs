@@ -1,13 +1,10 @@
 ﻿// ReSharper disable CompareOfFloatsByEqualityOperator
 namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
 {
+    using Charsets;
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Linq;
-    using System.Runtime.CompilerServices;
-    using Charsets;
-    using Core;
 
     /// <summary>
     /// Decodes the commands and numbers making up a Type 2 CharString. A Type 2 CharString extends on the Type 1 CharString format.
@@ -18,7 +15,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
     /// A Type 2 charstring program is a sequence of unsigned 8-bit bytes that encode numbers and operators.
     /// The byte value specifies a operator, a number, or subsequent bytes that are to be interpreted in a specific manner
     /// </remarks>
-    internal class Type2CharStringParser
+    internal static class Type2CharStringParser
     {
         private const byte HstemByte = 1;
         private const byte VstemByte = 3;
@@ -94,10 +91,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 new LazyType2Command("vmoveto", 1, ctx =>
                 {
                     var dy = ctx.Stack.PopBottom();
-
-                    ctx.Path.MoveTo(ctx.CurrentLocation.X, ctx.CurrentLocation.Y + dy);
-                    ctx.CurrentLocation = ctx.CurrentLocation.MoveY(dy);
-
+                    ctx.AddVerticallMoveTo(dy);
                     ctx.Stack.Clear();
                 })
             },
@@ -251,13 +245,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 {
                     var dx = ctx.Stack.PopBottom();
                     var dy = ctx.Stack.PopBottom();
-
-                    var newLocation = new PdfPoint(ctx.CurrentLocation.X + dx,
-                        ctx.CurrentLocation.Y + dy);
-
-                    ctx.Path.MoveTo(newLocation.X, newLocation.Y);
-                    ctx.CurrentLocation = newLocation;
-
+                    ctx.AddRelativeMoveTo(dx,dy);
                     ctx.Stack.Clear();
                 })
             },
@@ -265,10 +253,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 new LazyType2Command("hmoveto", 1, ctx =>
                 {
                     var dx = ctx.Stack.PopBottom();
-
-                    ctx.Path.MoveTo(ctx.CurrentLocation.X + dx, ctx.CurrentLocation.Y);
-                    ctx.CurrentLocation = ctx.CurrentLocation.MoveX(dx);
-
+                    ctx.AddHorizontalMoveTo(dx);
                     ctx.Stack.Clear();
                 })
             },

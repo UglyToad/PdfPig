@@ -25,7 +25,7 @@
             var x = context.CurrentPosition.X + deltaX;
             var y = context.CurrentPosition.Y + deltaY;
 
-            context.Path.LineTo(x, y);
+            context.Path[context.Path.Count - 1].LineTo(x, y);
             context.CurrentPosition = new PdfPoint(x, y);
 
             context.Stack.Clear();

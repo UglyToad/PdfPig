@@ -37,7 +37,9 @@
                 var x = context.CurrentPosition.X + deltaX;
                 var y = context.CurrentPosition.Y + deltaY;
                 context.CurrentPosition = new PdfPoint(x, y);
-                context.Path.MoveTo(x, y);
+
+                context.Path.Add(new PdfSubpath());
+                context.Path[context.Path.Count - 1].MoveTo(x, y);
             }
 
             context.Stack.Clear();
