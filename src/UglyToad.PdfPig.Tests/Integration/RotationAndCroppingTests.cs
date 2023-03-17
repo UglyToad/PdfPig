@@ -16,8 +16,8 @@
             using (var document = PdfDocument.Open(path))
             {
                 var page = document.GetPage(1);
-                Assert.Equal(page.Width, 612);  // Due to cropping
-                Assert.Equal(page.Height, 792); // Due to cropping
+                Assert.Equal(612, page.Width);  // Due to cropping
+                Assert.Equal(792, page.Height); // Due to cropping
                 var minX = page.Letters.Select(l => l.GlyphRectangle.Left).Min();
                 var maxX = page.Letters.Select(l => l.GlyphRectangle.Right).Max();
                 Assert.Equal(72, minX, 0);  // If cropping is not applied correctly, these values will be off
