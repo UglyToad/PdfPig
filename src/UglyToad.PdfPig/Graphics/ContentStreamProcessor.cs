@@ -789,6 +789,65 @@
                 currentGraphicsState.FontState.FontSize = (double)sizeToken.Data;
                 activeExtendedGraphicsStateFont = resourceStore.GetFontDirectly(fontReference);
             }
+
+            if (state.TryGet(NameToken.Ais, pdfScanner, out BooleanToken aisToken))
+            {
+                // The alpha source flag (“alpha is shape”), specifying
+                // whether the current soft mask and alpha constant are to be interpreted as
+                // shape values (true) or opacity values (false).
+                currentGraphicsState.AlphaSource = aisToken.Data;
+            }
+
+            if (state.TryGet(NameToken.Ca, pdfScanner, out NumericToken caToken))
+            {
+                // (Optional; PDF 1.4) The current stroking alpha constant, specifying the constant
+                // shape or constant opacity value to be used for stroking operations in the
+                // transparent imaging model (see “Source Shape and Opacity” on page 526 and
+                // “Constant Shape and Opacity” on page 551).
+                currentGraphicsState.AlphaConstantStroking = caToken.Data;
+            }
+
+            if (state.TryGet(NameToken.CaNs, pdfScanner, out NumericToken cansToken))
+            {
+                // (Optional; PDF 1.4) The current stroking alpha constant, specifying the constant
+                // shape or constant opacity value to be used for NON-stroking operations in the
+                // transparent imaging model (see “Source Shape and Opacity” on page 526 and
+                // “Constant Shape and Opacity” on page 551).
+                currentGraphicsState.AlphaConstantNonStroking = cansToken.Data;
+            }
+
+            if (state.TryGet(NameToken.Op, pdfScanner, out BooleanToken OPToken))
+            {
+                // (Optional) A flag specifying whether to apply overprint (see Section 4.5.6,
+                // “Overprint Control”). In PDF 1.2 and earlier, there is a single overprint
+                // parameter that applies to all painting operations. Beginning with PDF 1.3,
+                // there are two separate overprint parameters: one for stroking and one for all
+                // other painting operations. Specifying an OP entry sets both parameters unless there
+                // is also an op entry in the same graphics state parameter dictionary,
+                // in which case the OP entry sets only the overprint parameter for stroking.
+                currentGraphicsState.Overprint = OPToken.Data;
+            }
+
+            if (state.TryGet(NameToken.OpNs, pdfScanner, out BooleanToken opToken))
+            {
+                // (Optional; PDF 1.3) A flag specifying whether to apply overprint (see Section
+                // 4.5.6, “Overprint Control”) for painting operations other than stroking. If
+                // this entry is absent, the OP entry, if any, sets this parameter.
+                currentGraphicsState.NonStrokingOverprint = opToken.Data;
+            }
+
+            if (state.TryGet(NameToken.Opm, pdfScanner, out NumericToken opmToken))
+            {
+                // (Optional; PDF 1.3) The overprint mode (see Section 4.5.6, “Overprint Control”).
+                currentGraphicsState.OverprintMode = opmToken.Data;
+            }
+
+            if (state.TryGet(NameToken.Sa, pdfScanner, out BooleanToken saToken))
+            {
+                // (Optional) A flag specifying whether to apply automatic stroke adjustment
+                // (see Section 6.5.4, “Automatic Stroke Adjustment”).
+                currentGraphicsState.StrokeAdjustment = saToken.Data;
+            }
         }
 
         public void BeginInlineImage()
