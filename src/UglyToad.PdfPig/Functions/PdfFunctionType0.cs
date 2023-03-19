@@ -348,8 +348,6 @@
                 // Successive values are adjacent in the bit stream; there is no padding at byte boundaries.
                 var bits = new BitArray(FunctionStream.Data.ToArray());
 
-                System.Diagnostics.Debug.Assert(bits.Length == arraySize * nOut * bitsPerSample);
-
                 for (int i = 0; i < arraySize; i++)
                 {
                     samples[i] = new int[nOut];
