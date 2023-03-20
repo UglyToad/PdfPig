@@ -120,29 +120,40 @@
                     }
                 }
 
-                StreamToken normalAppearanceStream = null, downAppearanceStream = null, rollOverAppearanceStream = null;
+                AppearanceStream normalAppearanceStream = null;
+                AppearanceStream downAppearanceStream = null;
+                AppearanceStream rollOverAppearanceStream = null;
+
                 if (annotationDictionary.TryGet(NameToken.Ap, out DictionaryToken appearanceDictionary))
                 {
                     // The normal appearance of this annotation
-                    if (appearanceDictionary.TryGet(NameToken.N, out IndirectReferenceToken normalAppearanceRef))
+                    if (AppearanceStreamFactory.TryCreate(appearanceDictionary, NameToken.N, tokenScanner, out AppearanceStream stream))
                     {
-                        normalAppearanceStream = tokenScanner.Get(normalAppearanceRef.Data)?.Data as StreamToken;
+                        normalAppearanceStream = stream;
                     }
+
                     // If present, the 'roll over' appearance of this annotation (when hovering the mouse pointer over this annotation)
-                    if (appearanceDictionary.TryGet(NameToken.R, out IndirectReferenceToken rollOverAppearanceRef))
+                    if (AppearanceStreamFactory.TryCreate(appearanceDictionary, NameToken.R, tokenScanner, out stream))
                     {
-                        rollOverAppearanceStream = tokenScanner.Get(rollOverAppearanceRef.Data)?.Data as StreamToken;
+                        rollOverAppearanceStream = stream;
                     }
+
                     // If present, the 'down' appearance of this annotation (when you click on it)
-                    if (appearanceDictionary.TryGet(NameToken.D, out IndirectReferenceToken downAppearanceRef))
+                    if (AppearanceStreamFactory.TryCreate(appearanceDictionary, NameToken.D, tokenScanner, out stream))
                     {
-                        downAppearanceStream = tokenScanner.Get(downAppearanceRef.Data)?.Data as StreamToken;
+                        downAppearanceStream = stream;
                     }
+                }
+
+                string appearanceState = null;
+                if (annotationDictionary.TryGet(NameToken.As, out NameToken appearanceStateToken))
+                {
+                    appearanceState = appearanceStateToken.Data;
                 }
 
                 yield return new Annotation(annotationDictionary, annotationType, rectangle, 
                     contents, name, modifiedDate, flags, border, quadPointRectangles, destination,
-                    normalAppearanceStream, rollOverAppearanceStream, downAppearanceStream);
+                    normalAppearanceStream, rollOverAppearanceStream, downAppearanceStream, appearanceState);
             }
         }
 

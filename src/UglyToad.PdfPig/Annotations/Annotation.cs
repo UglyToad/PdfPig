@@ -12,9 +12,10 @@
     /// </summary>
     public class Annotation
     {
-        private readonly StreamToken normalAppearanceStream;
-        private readonly StreamToken rollOverAppearanceStream;
-        private readonly StreamToken downAppearanceStream;
+        internal readonly AppearanceStream normalAppearanceStream;
+        internal readonly AppearanceStream rollOverAppearanceStream;
+        internal readonly AppearanceStream downAppearanceStream;
+        internal readonly string appearanceState;
 
         /// <summary>
         /// The underlying PDF dictionary which this annotation was created from.
@@ -90,9 +91,12 @@
         /// <summary>
         /// Create a new <see cref="Annotation"/>.
         /// </summary>
-        public Annotation(DictionaryToken annotationDictionary, AnnotationType type, PdfRectangle rectangle, string content, string name, string modifiedDate,
-            AnnotationFlags flags, AnnotationBorder border, IReadOnlyList<QuadPointsQuadrilateral> quadPoints, ExplicitDestination destination,
-            StreamToken normalAppearanceStream, StreamToken rollOverAppearanceStream, StreamToken downAppearanceStream)
+        public Annotation(DictionaryToken annotationDictionary, AnnotationType type, PdfRectangle rectangle,
+            string content, string name, string modifiedDate,
+            AnnotationFlags flags, AnnotationBorder border, IReadOnlyList<QuadPointsQuadrilateral> quadPoints,
+            ExplicitDestination destination,
+            AppearanceStream normalAppearanceStream, AppearanceStream rollOverAppearanceStream,
+            AppearanceStream downAppearanceStream, string appearanceState)
         {
             AnnotationDictionary = annotationDictionary ?? throw new ArgumentNullException(nameof(annotationDictionary));
             Type = type;
@@ -107,6 +111,7 @@
             this.normalAppearanceStream = normalAppearanceStream;
             this.rollOverAppearanceStream = rollOverAppearanceStream;
             this.downAppearanceStream = downAppearanceStream;
+            this.appearanceState = appearanceState;
         }
 
         /// <inheritdoc />
