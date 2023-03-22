@@ -129,7 +129,7 @@
             throw new InvalidOperationException();
         }
 
-        private static short ReadShort(Stream stream, byte[] buffer)
+        private static ushort ReadShort(Stream stream, byte[] buffer)
         {
             var read = stream.Read(buffer, 0, 2);
 
@@ -138,7 +138,7 @@
                 throw new InvalidOperationException("Failed to read a short where expected in the JPEG stream.");
             }
 
-            return (short)((buffer[0] << 8) + buffer[1]);
+            return (ushort)((buffer[0] << 8) + buffer[1]);
         }
     }
 }
