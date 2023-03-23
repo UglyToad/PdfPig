@@ -105,20 +105,9 @@
                 }
             }
             else if (nodeDictionary.TryGet(NameToken.A, pdfScanner, out DictionaryToken actionDictionary)
-                && TryGetAction(actionDictionary, catalog, pdfScanner, namedDestinations, log, out var actionResult))
+                && TryGetAction(actionDictionary, catalog, pdfScanner, namedDestinations, log, title, level, children, out var actionResult))
             {
-                if (actionResult.isExternal)
-                {
-                    bookmark = new ExternalBookmarkNode(title, level, actionResult.externalFileName, children);
-                }
-                else if (actionResult.destination != null)
-                {
-                    bookmark = new DocumentBookmarkNode(title, level, actionResult.destination, children);
-                }
-                else
-                {
-                    return;
-                }
+                bookmark = actionResult;
             }
             else
             {
@@ -361,10 +350,9 @@
 
         private static bool TryGetAction(DictionaryToken actionDictionary, Catalog catalog, IPdfTokenScanner pdfScanner,
             IReadOnlyDictionary<string, ExplicitDestination> namedDestinations,
-            ILog log,
-            out (bool isExternal, string externalFileName, ExplicitDestination destination) result)
+            ILog log, string title, int level, List<BookmarkNode> children, out BookmarkNode result)
         {
-            result = (false, null, null);
+            result = null;
 
             if (!actionDictionary.TryGet(NameToken.S, pdfScanner, out NameToken actionType))
             {
@@ -376,7 +364,7 @@
                 if (actionDictionary.TryGet(NameToken.D, pdfScanner, out ArrayToken destinationArray)
                 && TryGetExplicitDestination(destinationArray, catalog, log, out var destination))
                 {
-                    result = (false, null, destination);
+                    result = new DocumentBookmarkNode(title, level, destination, children);
 
                     return true;
                 }
@@ -384,7 +372,7 @@
                 if (actionDictionary.TryGet(NameToken.D, pdfScanner, out IDataToken<string> destinationName)
                          && namedDestinations.TryGetValue(destinationName.Data, out destination))
                 {
-                    result = (false, null, destination);
+                    result = new DocumentBookmarkNode(title, level, destination, children);
 
                     return true;
                 }
@@ -393,11 +381,22 @@
             {
                 if (actionDictionary.TryGetOptionalStringDirect(NameToken.F, pdfScanner, out var filename))
                 {
-                    result = (true, filename, null);
+                    result = new ExternalBookmarkNode(title, level, filename, children);
                     return true;
                 }
 
-                result = (true, string.Empty, null);
+                result = new ExternalBookmarkNode(title, level, string.Empty, children);
+                return true;
+            }
+            else if (actionType.Equals(NameToken.Uri))
+            {
+                if (actionDictionary.TryGetOptionalStringDirect(NameToken.Uri, pdfScanner, out var uri))
+                {
+                    result = new UriBookmarkNode(title, level, uri, children);
+                    return true;
+                }
+
+                result = new UriBookmarkNode(title, level, string.Empty, children);
                 return true;
             }
 
