@@ -208,6 +208,7 @@
                 "UglyToad.PdfPig.Outline.BookmarkNode",
                 "UglyToad.PdfPig.Outline.DocumentBookmarkNode",
                 "UglyToad.PdfPig.Outline.ExternalBookmarkNode",
+                "UglyToad.PdfPig.Outline.UriBookmarkNode",
                 "UglyToad.PdfPig.Outline.Destinations.ExplicitDestination",
                 "UglyToad.PdfPig.Outline.Destinations.ExplicitDestinationCoordinates",
                 "UglyToad.PdfPig.Outline.Destinations.ExplicitDestinationType",
