@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Annotations
 {
+    using Actions;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -11,6 +12,7 @@
     using Tokenization.Scanner;
     using Tokens;
     using Util;
+    using Action = Actions.Action;
 
     internal class AnnotationProvider
     {
@@ -45,25 +47,9 @@
                 }
 
                 var type = annotationDictionary.Get<NameToken>(NameToken.Subtype, tokenScanner);
-
                 var annotationType = type.ToAnnotationType();
-
-                if (!BookmarksProvider.TryGetDestination(annotationDictionary, NameToken.Dest, namedDestinations,
-                        tokenScanner, log, false, out var destination))
-                {
-                    if (BookmarksProvider.TryGetAction(annotationDictionary, namedDestinations, tokenScanner, log,
-                            out var actionResult))
-                    {
-                        destination = actionResult.destination;
-                    }
-                    else
-                    {
-                        destination = null;
-                    }
-                }
-
+                var action = GetAction(annotationDictionary);
                 var rectangle = matrix.Transform(annotationDictionary.Get<ArrayToken>(NameToken.Rect, tokenScanner).ToRectangle(tokenScanner));
-
                 var contents = GetNamedString(NameToken.Contents, annotationDictionary);
                 var name = GetNamedString(NameToken.Nm, annotationDictionary);
                 // As indicated in PDF reference 8.4.1, the modified date can be anything, but is usually a date formatted according to sec. 3.8.3
@@ -152,9 +138,33 @@
                 }
 
                 yield return new Annotation(annotationDictionary, annotationType, rectangle, 
-                    contents, name, modifiedDate, flags, border, quadPointRectangles, destination,
+                    contents, name, modifiedDate, flags, border, quadPointRectangles, action,
                     normalAppearanceStream, rollOverAppearanceStream, downAppearanceStream, appearanceState);
             }
+        }
+
+        private Action GetAction(DictionaryToken annotationDictionary)
+        {
+            // If this annotation returns a direct destination, turn it into a GoTo action.
+            if (DestinationProvider.TryGetDestination(annotationDictionary,
+                    NameToken.Dest,
+                    namedDestinations,
+                    tokenScanner,
+                    log,
+                    false,
+                    out var destination))
+            {
+                return new GoToAction(destination);
+            }
+            
+            // Try get action from the dictionary.
+            if (ActionProvider.TryGetAction(annotationDictionary, namedDestinations, tokenScanner, log, out var action))
+            {
+                return action;
+            }
+
+            // No action or destination found, return null
+            return null;
         }
 
         private string GetNamedString(NameToken name, DictionaryToken dictionary)

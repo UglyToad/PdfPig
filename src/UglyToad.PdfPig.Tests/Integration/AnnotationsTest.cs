@@ -1,16 +1,13 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
-    using System.Collections.Generic;
+    using Actions;
     using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
     using Xunit;
 
     public class AnnotationsTest
     {
         [Fact]
-        public void AnnotationsHaveDestinations()
+        public void AnnotationsHaveActions()
         {
             var pdf = IntegrationHelpers.GetDocumentPath("toc");
 
@@ -18,8 +15,9 @@
             {
                 var annots = doc.GetPage(1).ExperimentalAccess.GetAnnotations().ToArray();
                 Assert.Equal(5, annots.Length);
-                Assert.All(annots, a => Assert.NotNull(a.Destination));
-                Assert.All(annots, a => Assert.True(a.Destination.PageNumber > 0));
+                Assert.All(annots, a => Assert.NotNull(a.Action));
+                Assert.All(annots, a => Assert.IsType<GoToAction>(a.Action));
+                Assert.All(annots, a => Assert.True((a.Action as GoToAction).Destination.PageNumber > 0));
             }
         }
 

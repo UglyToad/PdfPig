@@ -3,9 +3,10 @@
     using System;
     using System.Collections.Generic;
     using Core;
-    using Outline.Destinations;
+    using Actions;
     using Tokens;
     using Util.JetBrains.Annotations;
+    using Action = Actions.Action;
 
     /// <summary>
     /// An annotation on a page in a PDF document.
@@ -69,9 +70,9 @@
         public IReadOnlyList<QuadPointsQuadrilateral> QuadPoints { get; }
 
         /// <summary>
-        /// Explicit destination for this annotation, if any
+        /// Action for this annotation, if any (can be null)
         /// </summary>
-        public ExplicitDestination Destination { get; }
+        public Action Action { get; }
 
         /// <summary>
         /// Indicates if a normal appearance is present for this annotation
@@ -94,7 +95,7 @@
         public Annotation(DictionaryToken annotationDictionary, AnnotationType type, PdfRectangle rectangle,
             string content, string name, string modifiedDate,
             AnnotationFlags flags, AnnotationBorder border, IReadOnlyList<QuadPointsQuadrilateral> quadPoints,
-            ExplicitDestination destination,
+            Action action,
             AppearanceStream normalAppearanceStream, AppearanceStream rollOverAppearanceStream,
             AppearanceStream downAppearanceStream, string appearanceState)
         {
@@ -107,7 +108,7 @@
             Flags = flags;
             Border = border;
             QuadPoints = quadPoints ?? EmptyArray<QuadPointsQuadrilateral>.Instance;
-            Destination = destination;
+            Action = action;
             this.normalAppearanceStream = normalAppearanceStream;
             this.rollOverAppearanceStream = rollOverAppearanceStream;
             this.downAppearanceStream = downAppearanceStream;
