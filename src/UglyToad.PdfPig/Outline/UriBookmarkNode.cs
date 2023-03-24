@@ -30,4 +30,4 @@
             return $"URI '{Uri}', {Level}, {Title}";
         }
     }
-}
+}

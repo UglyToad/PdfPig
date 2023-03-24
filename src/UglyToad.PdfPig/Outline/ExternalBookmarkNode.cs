@@ -9,7 +9,7 @@
     /// A node in the <see cref="Bookmarks" /> of a PDF document which corresponds
     /// to a location in an external file.
     /// </summary>
-    public class ExternalBookmarkNode : BookmarkNode
+    public class ExternalBookmarkNode : DocumentBookmarkNode
     {
         /// <summary>
         /// The name of the file containing this bookmark.
@@ -20,7 +20,7 @@
         /// <summary>
         /// Create a new <see cref="ExternalBookmarkNode" />.
         /// </summary>
-        public ExternalBookmarkNode(string title, int level, ExplicitDestination destination, string fileName, IReadOnlyList<BookmarkNode> children) : base(title, level, destination, children)
+        public ExternalBookmarkNode(string title, int level, ExplicitDestination destination, IReadOnlyList<BookmarkNode> children, string fileName) : base(title, level, destination, children)
         {
             FileName = fileName ?? throw new ArgumentNullException(nameof(fileName));
         }
