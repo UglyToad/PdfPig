@@ -6,7 +6,7 @@
     /// <summary>
     /// Encapsulates a metadata property to be included in an image file.
     /// </summary>
-    public sealed class PropertyItem
+    internal sealed class PropertyItem
     {
         internal PropertyItem()
         {

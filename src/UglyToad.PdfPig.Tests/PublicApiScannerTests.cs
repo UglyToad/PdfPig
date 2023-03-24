@@ -203,6 +203,7 @@
                 "UglyToad.PdfPig.Graphics.TextMatrices",
                 "UglyToad.PdfPig.Graphics.XObjectContentRecord",
                 "UglyToad.PdfPig.Images.ColorSpaceDetailsByteConverter",
+                "UglyToad.PdfPig.Images.Jpg.Jpg",
                 "UglyToad.PdfPig.Logging.ILog",
                 "UglyToad.PdfPig.Outline.Bookmarks",
                 "UglyToad.PdfPig.Outline.BookmarkNode",

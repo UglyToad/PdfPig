@@ -10,7 +10,7 @@
         internal static void ParseSof2(JpgBinaryStreamReader reader, ContextForSOF0 context)
         {
             throw new NotImplementedException("ProgressDct not yet implemented.");
-#if WIP_2023_03_23_COPY_OF_SOF1_ONLY_TO_BE_UPDATED
+#if WIP_2023_03_23_COPY_OF_SOF0_ONLY_TO_BE_UPDATED
             int Width;
             int Height;
             int NumberOfComponents;

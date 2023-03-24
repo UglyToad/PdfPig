@@ -67,8 +67,9 @@
             var NumberOfScans = 0;
             var NumberOfIntervalResets = 0;
             var NumberOfEndOfImage = 0;
+#if DEBUG
             var isOnDebug = UglyToad.PdfPig.Images.Jpg.Jpg.isOnDebug;
-
+#endif
             PdfDictionary.Parse(dictionary,context);
 
             while (reader.isAtEnd == false)
@@ -165,6 +166,7 @@
                     case JpegMarker.ApplicationSpecific13:                    
                     case JpegMarker.ApplicationSpecific15:
                         {
+#if DEBUG
                             if (isOnDebug)
                             {
                                 var appBuffer = new byte[length-2];
@@ -172,6 +174,7 @@
                                 var appData = new System.Text.ASCIIEncoding().GetString(appBuffer);
                             }
                             else
+#endif
                             {
                                 reader.Skip(length - 2);
                             }
@@ -194,6 +197,7 @@
                         }
                         break;
                     case JpegMarker.Comment:
+#if DEBUG
                         if (isOnDebug)
                         {
                             var appBuffer = new byte[length - 2];
@@ -202,6 +206,7 @@
                             context.Comments.Add(comment);
                         }
                         else
+#endif
                         {
                             reader.Skip(length - 2);
                         }
@@ -259,7 +264,9 @@
         private const byte MarkerStart = 0xFF;  //  called "Fill Marker" (0xFF) in TN5116 Page 7
         private static (bool isMakerValid, JpegMarker marker, int length) ParseSegmentMarker(JpgBinaryStreamReader reader, bool skipData = false)
         {
+#if DEBUG
             var isOnDebug = UglyToad.PdfPig.Images.Jpg.Jpg.isOnDebug;
+#endif
             // A marker segment consists of a marker followed by a sequence of related parameters.
             // For most segments the first parameter in a marker segment is the two - byte length parameter.
             // This length parameter encodes the number of bytes in the marker segment,
@@ -320,7 +327,9 @@
                     case JpegMarker.Restart6:
                     case JpegMarker.Restart7:
                     case JpegMarker.TemporaryPrivateUseInArithmeticCoding:
+#if DEBUG
                         if (isOnDebug) { Debug.WriteLine($"Jpg Marker: {jpegMarker} (0x{marker:X})"); }  // No length markers
+#endif
                         break;
                     default:
                         {
@@ -336,7 +345,9 @@
                                 throw new Exception($"Jpg invalid segment length. Expected < remaining bytes in file ({reader.Remaining}). Got {length}.");
                             }
                             reader.JumpBack(2);
+#if DEBUG
                             if (isOnDebug) { Debug.WriteLine($"Jpg Marker: {jpegMarker} (0x{marker:X}) length: {length}"); } // All others have length
+#endif
                         }
                         break;
                 }
