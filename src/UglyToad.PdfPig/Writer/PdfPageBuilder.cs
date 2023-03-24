@@ -666,7 +666,7 @@
                     {NameToken.Width, widthToken},
                     {NameToken.Height, heightToken},
                     {NameToken.ColorSpace, NameToken.Devicegray},
-                    {NameToken.BitsPerComponent, new NumericToken(1)},
+                    {NameToken.BitsPerComponent, new NumericToken(8)},
                     {NameToken.Decode, new ArrayToken(new IToken[] { new NumericToken(0), new NumericToken(1) })},
                     {NameToken.Length, new NumericToken(compressedSmask.Length)},
                     {NameToken.Filter, NameToken.FlateDecode}
