@@ -30,18 +30,12 @@
         public int Level { get; }
 
         /// <summary>
-        /// The destination of the bookmark in the current document.
-        /// </summary>
-        public ExplicitDestination Destination { get; }
-
-        /// <summary>
         /// Create a new <see cref="BookmarkNode"/>.
         /// </summary>
-        protected BookmarkNode(string title, int level, ExplicitDestination destination, IReadOnlyList<BookmarkNode> children)
+        protected BookmarkNode(string title, int level, IReadOnlyList<BookmarkNode> children)
         {
             Title = title;
             Level = level;
-            Destination = destination;
             Children = children ?? throw new ArgumentNullException(nameof(children));
             IsLeaf = children.Count == 0;
         }

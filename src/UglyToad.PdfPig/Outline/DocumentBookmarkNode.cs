@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Outline
 {
-    using System;
     using System.Collections.Generic;
     using Destinations;
 
@@ -14,16 +13,21 @@
         /// <summary>
         /// The page number where the bookmark is located.
         /// </summary>
-        public int PageNumber { get; }
+        public int PageNumber => Destination.PageNumber;
+
+        /// <summary>
+        /// The destination of the bookmark in the current document.
+        /// </summary>
+        public ExplicitDestination Destination { get; }
 
         /// <inheritdoc />
         /// <summary>
         /// Create a new <see cref="DocumentBookmarkNode"/>.
         /// </summary>
         public DocumentBookmarkNode(string title, int level, ExplicitDestination destination, IReadOnlyList<BookmarkNode> children)
-            : base(title, level, destination, children)
+            : base(title, level, children)
         {
-            PageNumber = destination.PageNumber;
+            Destination = destination;
         }
 
         /// <inheritdoc />
