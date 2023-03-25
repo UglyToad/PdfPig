@@ -838,71 +838,80 @@ namespace UglyToad.PdfPig.Writer
             }
 
             return childObjectNumbers;
+        }
 
-            static ArrayToken CreateExplicitDestinationToken(ExplicitDestination destination, IndirectReferenceToken page)
+        private static ArrayToken CreateExplicitDestinationToken(ExplicitDestination destination, IndirectReferenceToken page)
+        {
+            switch (destination.Type)
             {
-                return destination.Type switch
-                {
-                    ExplicitDestinationType.XyzCoordinates => new ArrayToken(new IToken[]
+                case ExplicitDestinationType.XyzCoordinates:
+                    return new ArrayToken(new IToken[]
                     {
                         page,
                         NameToken.XYZ,
                         new NumericToken(destination.Coordinates.Left ?? 0),
-                        new NumericToken(destination.Coordinates.Top ?? 0),
-                    }),
+                        new NumericToken(destination.Coordinates.Top ?? 0)
+                    });
 
-                    ExplicitDestinationType.FitPage => new ArrayToken(new IToken[]
+                case ExplicitDestinationType.FitPage:
+                    return new ArrayToken(new IToken[]
                     {
                         page,
-                        NameToken.Fit,
-                    }),
+                        NameToken.Fit
+                    });
 
-                    ExplicitDestinationType.FitHorizontally => new ArrayToken(new IToken[]
+                case ExplicitDestinationType.FitHorizontally:
+                    return new ArrayToken(new IToken[]
                     {
                         page,
                         NameToken.FitH,
-                        new NumericToken(destination.Coordinates.Top ?? 0),
-                    }),
+                        new NumericToken(destination.Coordinates.Top ?? 0)
+                    });
 
-                    ExplicitDestinationType.FitVertically => new ArrayToken(new IToken[]
+                case ExplicitDestinationType.FitVertically:
+                    return new ArrayToken(new IToken[]
                     {
                         page,
                         NameToken.FitV,
-                        new NumericToken(destination.Coordinates.Left ?? 0),
-                    }),
+                        new NumericToken(destination.Coordinates.Left ?? 0)
+                    });
 
-                    ExplicitDestinationType.FitRectangle => new ArrayToken(new IToken[]
+                case ExplicitDestinationType.FitRectangle:
+                    return new ArrayToken(new IToken[]
                     {
                         page,
                         NameToken.FitR,
                         new NumericToken(destination.Coordinates.Left ?? 0),
                         new NumericToken(destination.Coordinates.Top ?? 0),
                         new NumericToken(destination.Coordinates.Right ?? 0),
-                        new NumericToken(destination.Coordinates.Bottom ?? 0),
-                    }),
+                        new NumericToken(destination.Coordinates.Bottom ?? 0)
+                    });
 
-                    ExplicitDestinationType.FitBoundingBox => new ArrayToken(new IToken[]
+                case ExplicitDestinationType.FitBoundingBox:
+                    return new ArrayToken(new IToken[]
                     {
                         page,
                         NameToken.FitB,
-                    }),
+                    });
 
-                    ExplicitDestinationType.FitBoundingBoxHorizontally => new ArrayToken(new IToken[]
+                case ExplicitDestinationType.FitBoundingBoxHorizontally:
+                    return new ArrayToken(new IToken[]
                     {
                         page,
                         NameToken.FitBH,
-                        new NumericToken(destination.Coordinates.Left ?? 0),
-                    }),
+                        new NumericToken(destination.Coordinates.Left ?? 0)
+                    });
 
-                    ExplicitDestinationType.FitBoundingBoxVertically => new ArrayToken(new IToken[]
+                case ExplicitDestinationType.FitBoundingBoxVertically:
+                    return new ArrayToken(new IToken[]
                     {
                         page,
                         NameToken.FitBV,
-                        new NumericToken(destination.Coordinates.Left ?? 0),
-                    }),
+                        new NumericToken(destination.Coordinates.Left ?? 0)
+                    });
 
-                    _ => throw new NotSupportedException($"{destination.Type} is not a supported bookmark destination type."),
-                };
+                default:
+                    throw new NotSupportedException($"{destination.Type} is not a supported bookmark destination type.");
             }
         }
 
