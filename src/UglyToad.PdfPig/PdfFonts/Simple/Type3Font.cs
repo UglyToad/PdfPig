@@ -81,7 +81,7 @@
                 throw new InvalidFontFormatException($"The character code was not contained in the widths array: {characterCode}.");
             }
 
-            return new PdfRectangle(0, 0, widths[characterCode - firstChar], 0);
+            return new PdfRectangle(0, 0, widths[characterCode - firstChar], boundingBox.Height);
         }
 
         public TransformationMatrix GetFontMatrix()

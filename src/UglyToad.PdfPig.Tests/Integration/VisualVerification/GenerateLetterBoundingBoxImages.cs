@@ -1,9 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration.VisualVerification
 {
+    using PdfPig.Core;
     using System;
     using System.Drawing;
     using System.IO;
-    using PdfPig.Core;
     using Xunit;
 
     public class GenerateLetterBoundingBoxImages
@@ -21,6 +21,7 @@
         private const string SinglePage270ClockwiseRotation = "SinglePage270ClockwiseRotation - from PdfPig";
         private const string SPARCv9ArchitectureManual = "SPARC - v9 Architecture Manual";
         private const string CroppedAndRotatedFile = "cropped-and-rotated";
+        private const string MOZILLA_10372_2File = "MOZILLA-10372-2";
 
         private static string GetFilename(string name)
         {
@@ -130,14 +131,22 @@
             Run(CroppedAndRotatedFile, 205);
         }
 
-        private static void Run(string file, int imageHeight = 792)
+        [Fact]
+        public void MOZILLA_10372_2Test()
+        {
+            Run(MOZILLA_10372_2File, 1584, 7);
+        }
+
+        private static void Run(string file, int imageHeight = 792, int pageNo = 1)
         {
             var pdfFileName = GetFilename(file);
 
             using (var document = PdfDocument.Open(pdfFileName))
             using (var image = GetCorrespondingImage(pdfFileName))
             {
-                var page = document.GetPage(1);
+                var page = document.GetPage(pageNo);
+
+                double scale = imageHeight / page.Height;
 
                 var violetPen = new Pen(Color.BlueViolet, 1);
                 var redPen = new Pen(Color.Crimson, 1);
@@ -148,17 +157,17 @@
                 {
                     foreach (var word in page.GetWords())
                     {
-                        DrawRectangle(word.BoundingBox, graphics, redPen, imageHeight);
+                        DrawRectangle(word.BoundingBox, graphics, redPen, imageHeight, scale);
                     }
 
                     foreach (var letter in page.Letters)
                     {
-                        DrawRectangle(letter.GlyphRectangle, graphics, violetPen, imageHeight);
+                        DrawRectangle(letter.GlyphRectangle, graphics, violetPen, imageHeight, scale);
                     }
 
                     foreach (var annotation in page.ExperimentalAccess.GetAnnotations())
                     {
-                        DrawRectangle(annotation.Rectangle, graphics, bluePen, imageHeight);
+                        DrawRectangle(annotation.Rectangle, graphics, bluePen, imageHeight, scale);
                     }
 
                     var imageName = $"{file}.jpg";
@@ -176,16 +185,16 @@
         }
 
         private static void DrawRectangle(PdfRectangle rectangle, Graphics graphics, Pen pen,
-            int imageHeight)
+            int imageHeight, double scale)
         {
             int GetY(PdfPoint p)
             {
-                return imageHeight - (int) p.Y;
+                return imageHeight - (int)(p.Y * scale);
             }
 
             Point GetPoint(PdfPoint p)
             {
-                return new Point((int)p.X, GetY(p));
+                return new Point((int)(p.X * scale), GetY(p));
             }
 
             graphics.DrawLine(pen, GetPoint(rectangle.BottomLeft), GetPoint(rectangle.BottomRight));
