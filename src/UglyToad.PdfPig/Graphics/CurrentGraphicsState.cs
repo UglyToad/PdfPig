@@ -14,6 +14,11 @@ namespace UglyToad.PdfPig.Graphics
     public class CurrentGraphicsState : IDeepCloneable<CurrentGraphicsState>
     {
         /// <summary>
+        /// The active colorspaces for this content stream.
+        /// </summary>
+        public IColorSpaceContext ColorSpaceContext { get; set; }
+
+        /// <summary>
         /// The current clipping path.
         /// </summary>
         public PdfPath CurrentClippingPath { get; set; }
@@ -143,7 +148,8 @@ namespace UglyToad.PdfPig.Graphics
                 StrokeAdjustment = StrokeAdjustment,
                 CurrentStrokingColor = CurrentStrokingColor,
                 CurrentNonStrokingColor = CurrentNonStrokingColor,
-                CurrentClippingPath = CurrentClippingPath
+                CurrentClippingPath = CurrentClippingPath,
+                ColorSpaceContext = ColorSpaceContext?.DeepClone()
             };
         }
     }

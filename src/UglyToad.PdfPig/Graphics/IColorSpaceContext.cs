@@ -2,11 +2,12 @@
 {
     using Colors;
     using Tokens;
+    using UglyToad.PdfPig.Core;
 
     /// <summary>
     /// Methods for manipulating and retrieving the current color state for a PDF content stream.
     /// </summary>
-    public interface IColorSpaceContext
+    public interface IColorSpaceContext : IDeepCloneable<IColorSpaceContext>
     {
         /// <summary>
         /// The <see cref="ColorSpace"/> used for stroking operations.
@@ -27,7 +28,7 @@
         /// The name of the advanced ColorSpace active for non-stroking operations, if any.
         /// </summary>
         NameToken AdvancedNonStrokingColorSpace { get; }
-        
+
         /// <summary>
         ///  Set the current color space to use for stroking operations.
         /// </summary>

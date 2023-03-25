@@ -38,13 +38,13 @@
             switch (Operands.Count)
             {
                 case 1:
-                    operationContext.ColorSpaceContext.SetNonStrokingColorGray(Operands[0]);
+                    operationContext.GetCurrentState().ColorSpaceContext.SetNonStrokingColorGray(Operands[0]);
                     break;
                 case 3:
-                    operationContext.ColorSpaceContext.SetNonStrokingColorRgb(Operands[0], Operands[1], Operands[2]);
+                    operationContext.GetCurrentState().ColorSpaceContext.SetNonStrokingColorRgb(Operands[0], Operands[1], Operands[2]);
                     break;
                 case 4:
-                    operationContext.ColorSpaceContext.SetNonStrokingColorCmyk(Operands[0], Operands[1], Operands[2], Operands[3]);
+                    operationContext.GetCurrentState().ColorSpaceContext.SetNonStrokingColorCmyk(Operands[0], Operands[1], Operands[2], Operands[3]);
                     break;
                 default:
                     return;

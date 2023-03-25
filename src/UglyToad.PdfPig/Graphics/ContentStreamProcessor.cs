@@ -7,6 +7,7 @@
     using Geometry;
     using Logging;
     using Operations;
+    using Operations.TextPositioning;
     using Parser;
     using PdfFonts;
     using PdfPig.Core;
@@ -16,7 +17,6 @@
     using System.Linq;
     using Tokenization.Scanner;
     using Tokens;
-    using Operations.TextPositioning;
     using Util;
     using XObjects;
     using static PdfPig.Core.PdfSubpath;
@@ -72,8 +72,6 @@
 
         public PdfPath CurrentPath { get; private set; }
 
-        public IColorSpaceContext ColorSpaceContext { get; }
-
         public PdfPoint CurrentPosition { get; set; }
 
         public int StackSize => graphicsStack.Count;
@@ -84,10 +82,10 @@
             {XObjectType.PostScript, new List<XObjectContentRecord>()}
         };
 
-        public ContentStreamProcessor(IResourceStore resourceStore, 
-            UserSpaceUnit userSpaceUnit, 
-            MediaBox mediaBox, 
-            CropBox cropBox, 
+        public ContentStreamProcessor(IResourceStore resourceStore,
+            UserSpaceUnit userSpaceUnit,
+            MediaBox mediaBox,
+            CropBox cropBox,
             PageRotationDegrees rotation,
             IPdfTokenScanner pdfScanner,
             IPageContentParser pageContentParser,
@@ -114,13 +112,13 @@
                 CurrentClippingPath = clippingPath
             });
 
-            ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore);
+            GetCurrentState().ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore);
         }
 
         [System.Diagnostics.Contracts.Pure]
-        internal static TransformationMatrix GetInitialMatrix(UserSpaceUnit userSpaceUnit, 
+        internal static TransformationMatrix GetInitialMatrix(UserSpaceUnit userSpaceUnit,
             MediaBox mediaBox,
-            CropBox cropBox, 
+            CropBox cropBox,
             PageRotationDegrees rotation,
             ILog log)
         {
@@ -129,7 +127,7 @@
             var viewBox = mediaBox.Bounds.Intersect(cropBox.Bounds) ?? cropBox.Bounds;
 
             if (rotation.Value == 0
-                && viewBox.Left == 0 
+                && viewBox.Left == 0
                 && viewBox.Bottom == 0
                 && userSpaceUnit.PointMultiples == 1)
             {
@@ -300,7 +298,7 @@
                 var transformedPdfBounds = PerformantRectangleTransformer
                     .Transform(renderingMatrix, textMatrix, transformationMatrix, new PdfRectangle(0, 0, boundingBox.Width, 0));
 
-                      
+
                 Letter letter = null;
                 if (Diacritics.IsInCombiningDiacriticRange(unicode) && bytes.CurrentOffset > 0 && letters.Count > 0)
                 {

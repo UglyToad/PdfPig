@@ -221,5 +221,16 @@
             CurrentNonStrokingColorSpace = ColorSpace.DeviceCMYK;
             currentStateFunc().CurrentNonStrokingColor = new CMYKColor(c, m, y, k);
         }
+
+        public IColorSpaceContext DeepClone()
+        {
+            return new ColorSpaceContext(currentStateFunc, resourceStore)
+            {
+                CurrentStrokingColorSpace = CurrentStrokingColorSpace,
+                CurrentNonStrokingColorSpace = CurrentNonStrokingColorSpace,
+                AdvancedStrokingColorSpace = AdvancedStrokingColorSpace,
+                AdvancedNonStrokingColorSpace = AdvancedNonStrokingColorSpace
+            };
+        }
     }
 }
