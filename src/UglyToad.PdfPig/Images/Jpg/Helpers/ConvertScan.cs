@@ -75,6 +75,25 @@
                     component.stride = component.width;
                 }
             }
+            if (context.ncomp == 1 && context.comp[0].pixels.Length != context.comp[0].width * context.comp[0].height)
+            {
+                if (context.comp[0].pixels.Length > context.comp[0].width * context.comp[0].height)
+                {
+                    //Truncate block. Seperfulous scan lines at bottom removed.
+                    var component = context.comp[0];
+                    var newSize = context.comp[0].width * context.comp[0].height;
+                    var newPixels = new byte[newSize];
+
+                    Buffer.BlockCopy(
+                        component.pixels,
+                        0,
+                        newPixels,
+                        0,
+                        newPixels.Length);
+
+                    component.pixels = newPixels;
+                }
+            }
             return true;
         }
 
