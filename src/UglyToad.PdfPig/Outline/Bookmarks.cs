@@ -12,7 +12,10 @@ namespace UglyToad.PdfPig.Outline
         /// </summary>
         public IReadOnlyList<BookmarkNode> Roots { get; }
 
-        internal Bookmarks(IReadOnlyList<BookmarkNode> roots)
+        /// <summary>
+        /// Create a new <see cref="Bookmarks" />.
+        /// </summary>
+        public Bookmarks(IReadOnlyList<BookmarkNode> roots)
         {
             Roots = roots;
         }
