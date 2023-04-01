@@ -992,6 +992,16 @@ namespace UglyToad.PdfPig.Writer
             /// </summary>
             public string Producer { get; set; } = "PdfPig";
 
+            /// <summary>
+            /// <see cref="DocumentInformation.CreationDate"/>.
+            /// </summary>
+            public string CreationDate { get; set; }
+
+            /// <summary>
+            /// <see cref="DocumentInformation.ModifiedDate"/>.
+            /// </summary>
+            public string ModifiedDate { get; set; }
+
             internal Dictionary<NameToken, IToken> ToDictionary()
             {
                 var result = new Dictionary<NameToken, IToken>();
@@ -1024,6 +1034,16 @@ namespace UglyToad.PdfPig.Writer
                 if (Producer != null)
                 {
                     result[NameToken.Producer] = new StringToken(Producer);
+                }
+
+                if (CreationDate != null)
+                {
+                    result[NameToken.CreationDate] = new StringToken(CreationDate);
+                }
+
+                if (ModifiedDate != null)
+                {
+                    result[NameToken.ModDate] = new StringToken(ModifiedDate);
                 }
 
                 return result;
