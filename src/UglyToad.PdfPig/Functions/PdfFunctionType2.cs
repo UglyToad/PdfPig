@@ -96,7 +96,7 @@
             }
         }
 
-        public override double[] Eval(double[] input)
+        public override double[] Eval(params double[] input)
         {
             // exponential interpolation
             double xToN = Math.Pow(input[0], N); // x^exponent

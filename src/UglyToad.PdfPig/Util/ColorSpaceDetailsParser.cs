@@ -13,37 +13,9 @@
 
     internal static class ColorSpaceMapper
     {
-        private static bool TryExtendedColorSpaceNameMapping(NameToken name, out ColorSpace result)
-        {
-            result = ColorSpace.DeviceGray;
-
-            switch (name.Data)
-            {
-                case "G":
-                    result = ColorSpace.DeviceGray;
-                    return true;
-                case "RGB":
-                    result = ColorSpace.DeviceRGB;
-                    return true;
-                case "CMYK":
-                    result = ColorSpace.DeviceCMYK;
-                    return true;
-                case "I":
-                    result = ColorSpace.Indexed;
-                    return true;
-            }
-
-            return false;
-        }
-
         public static bool TryMap(NameToken name, IResourceStore resourceStore, out ColorSpace colorSpaceResult)
         {
             if (name.TryMapToColorSpace(out colorSpaceResult))
-            {
-                return true;
-            }
-
-            if (TryExtendedColorSpaceNameMapping(name, out colorSpaceResult))
             {
                 return true;
             }
@@ -58,14 +30,8 @@
                 return true;
             }
 
-            if (TryExtendedColorSpaceNameMapping(colorSpaceNamedToken.Name, out colorSpaceResult))
-            {
-                return true;
-            }
-
             return false;
         }
-
     }
 
     internal static class ColorSpaceDetailsParser
@@ -86,7 +52,7 @@
                 }
 
                 var colorSpaceDetails = GetColorSpaceDetails(colorSpace, imageDictionary.Without(NameToken.Filter).Without(NameToken.F), scanner, resourceStore, filterProvider, true);
-                
+
                 var decodeRaw = imageDictionary.GetObjectOrDefault(NameToken.Decode, NameToken.D) as ArrayToken
                     ?? new ArrayToken(EmptyArray<IToken>.Instance);
                 var decode = decodeRaw.Data.OfType<NumericToken>().Select(x => x.Data).ToArray();

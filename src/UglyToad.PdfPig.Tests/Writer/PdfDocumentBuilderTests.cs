@@ -1100,7 +1100,6 @@
                 }
             }
 
-
             (int, double) GetCounts(PdfDocument toCount)
             {
                 int letters = 0;
@@ -1109,7 +1108,6 @@
                 {
                     foreach (var letter in page.Letters)
                     {
-
                         unchecked { letters += 1; }
                         unchecked
                         {

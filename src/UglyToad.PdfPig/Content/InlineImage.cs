@@ -29,9 +29,6 @@
         public int HeightInSamples { get; }
 
         /// <inheritdoc />
-        public ColorSpace? ColorSpace { get; }
-
-        /// <inheritdoc />
         public int BitsPerComponent { get; }
 
         /// <inheritdoc />
@@ -65,7 +62,6 @@
         internal InlineImage(PdfRectangle bounds, int widthInSamples, int heightInSamples, int bitsPerComponent, bool isImageMask,
             RenderingIntent renderingIntent,
             bool interpolate,
-            ColorSpace? colorSpace,
             IReadOnlyList<decimal> decode,
             IReadOnlyList<byte> bytes,
             IReadOnlyList<IFilter> filters,
@@ -75,7 +71,6 @@
             Bounds = bounds;
             WidthInSamples = widthInSamples;
             HeightInSamples = heightInSamples;
-            ColorSpace = colorSpace;
             Decode = decode;
             BitsPerComponent = bitsPerComponent;
             IsImageMask = isImageMask;

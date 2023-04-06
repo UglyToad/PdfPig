@@ -12,12 +12,13 @@
 
             var hasValidDetails = image.ColorSpaceDetails != null &&
                                   !(image.ColorSpaceDetails is UnsupportedColorSpaceDetails);
-            var actualColorSpace = hasValidDetails ? image.ColorSpaceDetails.BaseType : image.ColorSpace;
 
-            var isColorSpaceSupported =
-                actualColorSpace == ColorSpace.DeviceGray || actualColorSpace == ColorSpace.DeviceRGB
-                || actualColorSpace == ColorSpace.DeviceCMYK || actualColorSpace == ColorSpace.CalGray 
-                || actualColorSpace == ColorSpace.CalRGB;
+            var actualColorSpace = image.ColorSpaceDetails.BaseType;
+
+            var isColorSpaceSupported = hasValidDetails &&
+                (actualColorSpace == ColorSpace.DeviceGray || actualColorSpace == ColorSpace.DeviceRGB
+                || actualColorSpace == ColorSpace.DeviceCMYK || actualColorSpace == ColorSpace.CalGray
+                || actualColorSpace == ColorSpace.CalRGB);
 
             if (!isColorSpaceSupported || !image.TryGetBytes(out var bytesPure))
             {

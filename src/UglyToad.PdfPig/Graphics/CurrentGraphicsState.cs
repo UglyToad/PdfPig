@@ -78,6 +78,21 @@ namespace UglyToad.PdfPig.Graphics
         /// </summary>
         public TransformationMatrix CurrentTransformationMatrix { get; set; } = TransformationMatrix.Identity;
 
+        /// <summary>
+        /// The active colorspaces for this content stream.
+        /// </summary>
+        public IColorSpaceContext ColorSpaceContext { get; set; }
+
+        /// <summary>
+        /// The current active stroking color for paths.
+        /// </summary>
+        public IColor CurrentStrokingColor { get; set; }
+
+        /// <summary>
+        /// The current active non-stroking color for text and fill.
+        /// </summary>
+        public IColor CurrentNonStrokingColor { get; set; }
+
         #region Device Dependent
 
         /// <summary>
@@ -106,17 +121,6 @@ namespace UglyToad.PdfPig.Graphics
         /// The precision for rendering color gradients on the output device.
         /// </summary>
         public decimal Smoothness { get; set; } = 0;
-
-        /// <summary>
-        /// The current active stroking color for paths.
-        /// </summary>
-        public IColor CurrentStrokingColor { get; set; }
-
-        /// <summary>
-        /// The current active non-stroking color for text and fill.
-        /// </summary>
-        public IColor CurrentNonStrokingColor { get; set; }
-
         #endregion
 
         /// <inheritdoc />
@@ -143,7 +147,8 @@ namespace UglyToad.PdfPig.Graphics
                 StrokeAdjustment = StrokeAdjustment,
                 CurrentStrokingColor = CurrentStrokingColor,
                 CurrentNonStrokingColor = CurrentNonStrokingColor,
-                CurrentClippingPath = CurrentClippingPath
+                CurrentClippingPath = CurrentClippingPath,
+                ColorSpaceContext = ColorSpaceContext?.DeepClone(),
             };
         }
     }
