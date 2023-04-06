@@ -3,7 +3,7 @@
     /// <summary>
     /// Actions (PDF reference 8.5)
     /// </summary>
-    public class Action
+    public class PdfAction
     {
         /// <summary>
         /// Type of action
@@ -14,7 +14,7 @@
         /// Constructor
         /// </summary>
         /// <param name="type"></param>
-        protected Action(ActionType type)
+        protected PdfAction(ActionType type)
         {
             Type = type;
         }

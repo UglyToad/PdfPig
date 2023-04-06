@@ -5,7 +5,7 @@ using Outline.Destinations;
 /// <summary>
 /// Abstract class for GoTo-type actions (GoTo, GoToE, GoToR) that have a destination
 /// </summary>
-public abstract class AbstractGoToAction : Action
+public abstract class AbstractGoToAction : PdfAction
 {
     /// <summary>
     /// Destination for the GoTo-type action

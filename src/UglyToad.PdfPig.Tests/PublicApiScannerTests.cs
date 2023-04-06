@@ -59,7 +59,7 @@
                 "UglyToad.PdfPig.AcroForms.Fields.AcroTextField",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroTextFieldFlags",
                 "UglyToad.PdfPig.Actions.AbstractGoToAction",
-                "UglyToad.PdfPig.Actions.Action",
+                "UglyToad.PdfPig.Actions.PdfAction",
                 "UglyToad.PdfPig.Actions.ActionType",
                 "UglyToad.PdfPig.Actions.GoToAction",
                 "UglyToad.PdfPig.Actions.GoToEAction",

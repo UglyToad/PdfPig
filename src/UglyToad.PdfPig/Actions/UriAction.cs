@@ -3,7 +3,7 @@
 /// <summary>
 /// Action to open a URI
 /// </summary>
-public class UriAction : Action
+public class UriAction : PdfAction
 {
     /// <summary>
     /// URI to open

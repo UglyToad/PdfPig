@@ -6,7 +6,6 @@
     using Actions;
     using Tokens;
     using Util.JetBrains.Annotations;
-    using Action = Actions.Action;
 
     /// <summary>
     /// An annotation on a page in a PDF document.
@@ -72,7 +71,7 @@
         /// <summary>
         /// Action for this annotation, if any (can be null)
         /// </summary>
-        public Action Action { get; }
+        public PdfAction Action { get; }
 
         /// <summary>
         /// Indicates if a normal appearance is present for this annotation
@@ -95,7 +94,7 @@
         public Annotation(DictionaryToken annotationDictionary, AnnotationType type, PdfRectangle rectangle,
             string content, string name, string modifiedDate,
             AnnotationFlags flags, AnnotationBorder border, IReadOnlyList<QuadPointsQuadrilateral> quadPoints,
-            Action action,
+            PdfAction action,
             AppearanceStream normalAppearanceStream, AppearanceStream rollOverAppearanceStream,
             AppearanceStream downAppearanceStream, string appearanceState)
         {

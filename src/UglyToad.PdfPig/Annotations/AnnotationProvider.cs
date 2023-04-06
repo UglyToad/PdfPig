@@ -12,7 +12,6 @@
     using Tokenization.Scanner;
     using Tokens;
     using Util;
-    using Action = Actions.Action;
 
     internal class AnnotationProvider
     {
@@ -143,7 +142,7 @@
             }
         }
 
-        private Action GetAction(DictionaryToken annotationDictionary)
+        private PdfAction GetAction(DictionaryToken annotationDictionary)
         {
             // If this annotation returns a direct destination, turn it into a GoTo action.
             if (DestinationProvider.TryGetDestination(annotationDictionary,

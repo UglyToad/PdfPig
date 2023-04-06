@@ -7,7 +7,6 @@
     using Tokens;
     using Outline.Destinations;
     using Util;
-    using System.Reflection.Emit;
 
     internal static class ActionProvider
     {
@@ -25,7 +24,7 @@
             NamedDestinations namedDestinations,
             IPdfTokenScanner pdfScanner,
             ILog log,
-            out Action result)
+            out PdfAction result)
         {   
             result = null;
 
