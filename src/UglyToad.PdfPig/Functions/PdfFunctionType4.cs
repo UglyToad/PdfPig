@@ -32,7 +32,7 @@
             }
         }
 
-        public override double[] Eval(double[] input)
+        public override double[] Eval(params double[] input)
         {
             //Setup the input values
             ExecutionContext context = new ExecutionContext(operators);

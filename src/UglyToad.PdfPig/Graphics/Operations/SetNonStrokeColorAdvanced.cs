@@ -3,7 +3,6 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using Colors;
     using Tokens;
     using Writer;
 
@@ -56,26 +55,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            if (operationContext.ColorSpaceContext.CurrentNonStrokingColorSpace.GetFamily() != ColorSpaceFamily.Device
-                || operationContext.ColorSpaceContext.AdvancedNonStrokingColorSpace != null)
-            {
-                return;
-            }
-
-            switch (Operands.Count)
-            {
-                case 1:
-                    operationContext.ColorSpaceContext.SetNonStrokingColorGray(Operands[0]);
-                    break;
-                case 3:
-                    operationContext.ColorSpaceContext.SetNonStrokingColorRgb(Operands[0], Operands[1], Operands[2]);
-                    break;
-                case 4:
-                    operationContext.ColorSpaceContext.SetNonStrokingColorCmyk(Operands[0], Operands[1], Operands[2], Operands[3]);
-                    break;
-                default:
-                    return;
-            }
+            operationContext.GetCurrentState().ColorSpaceContext.SetNonStrokingColor(Operands, PatternName);
         }
 
         /// <inheritdoc />

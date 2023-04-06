@@ -11,11 +11,6 @@
     public interface IOperationContext
     {
         /// <summary>
-        /// The active colorspaces for this content stream.
-        /// </summary>
-        IColorSpaceContext ColorSpaceContext { get; }
-
-        /// <summary>
         /// The current position.
         /// </summary>
         PdfPoint CurrentPosition { get; set; }
@@ -29,6 +24,11 @@
         /// The number of graphics states on the stack.
         /// </summary>
         int StackSize { get; }
+
+        /// <summary>
+        /// Gets the current graphic state.
+        /// </summary>
+        CurrentGraphicsState GetCurrentState();
 
         /// <summary>
         /// Sets the current graphics state to the state from the top of the stack.

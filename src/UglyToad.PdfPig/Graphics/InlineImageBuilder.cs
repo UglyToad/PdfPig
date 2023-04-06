@@ -41,11 +41,11 @@
 
             var bitsPerComponent = GetByKeys<NumericToken>(NameToken.BitsPerComponent, NameToken.Bpc, !isMask)?.Int ?? 1;
 
-            var colorSpace = default(ColorSpace?);
+            NameToken colorSpaceName = null;
 
             if (!isMask)
             {
-                var colorSpaceName = GetByKeys<NameToken>(NameToken.ColorSpace, NameToken.Cs, false);
+                colorSpaceName = GetByKeys<NameToken>(NameToken.ColorSpace, NameToken.Cs, false);
 
                 if (colorSpaceName == null)
                 {
@@ -61,32 +61,13 @@
                         throw new PdfDocumentFormatException($"Invalid ColorSpace array defined for inline image: {colorSpaceArray}.");
                     }
 
-                    if (!ColorSpaceMapper.TryMap(firstColorSpaceName, resourceStore, out var colorSpaceMapped))
-                    {
-                        throw new PdfDocumentFormatException($"Invalid ColorSpace defined for inline image: {firstColorSpaceName}.");
-                    }
-
-                    colorSpace = colorSpaceMapped;
-                }
-                else
-                {
-                    if (!ColorSpaceMapper.TryMap(colorSpaceName, resourceStore, out var colorSpaceMapped))
-                    {
-                        throw new PdfDocumentFormatException($"Invalid ColorSpace defined for inline image: {colorSpaceName}.");
-                    }
-
-                    colorSpace = colorSpaceMapped;
+                    colorSpaceName = firstColorSpaceName;
                 }
             }
 
             var imgDic = new DictionaryToken(Properties ?? new Dictionary<NameToken, IToken>());
 
-            var details = ColorSpaceDetailsParser.GetColorSpaceDetails(
-                colorSpace,
-                imgDic,
-                tokenScanner,
-                resourceStore,
-                filterProvider);
+            var details = resourceStore.GetColorSpaceDetails(colorSpaceName, imgDic);
 
             var renderingIntent = GetByKeys<NameToken>(NameToken.Intent, null, false)?.Data?.ToRenderingIntent() ?? defaultRenderingIntent;
 
@@ -116,7 +97,7 @@
 
             var interpolate = GetByKeys<BooleanToken>(NameToken.Interpolate, NameToken.I, false)?.Data ?? false;
 
-            return new InlineImage(bounds, width, height, bitsPerComponent, isMask, renderingIntent, interpolate, colorSpace, decode, Bytes,
+            return new InlineImage(bounds, width, height, bitsPerComponent, isMask, renderingIntent, interpolate, decode, Bytes,
                 filters,
                 imgDic,
                 details);
