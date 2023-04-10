@@ -1,9 +1,13 @@
 ﻿namespace UglyToad.PdfPig.Annotations
 {
+    using Actions;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using Core;
+    using Logging;
+    using Outline;
+    using Outline.Destinations;
     using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
@@ -13,14 +17,18 @@
     {
         private readonly IPdfTokenScanner tokenScanner;
         private readonly DictionaryToken pageDictionary;
+        private readonly NamedDestinations namedDestinations;
+        private readonly ILog log;
         private readonly TransformationMatrix matrix;
 
         public AnnotationProvider(IPdfTokenScanner tokenScanner, DictionaryToken pageDictionary,
-            TransformationMatrix matrix)
+            TransformationMatrix matrix, NamedDestinations namedDestinations, ILog log)
         {
             this.matrix = matrix;
             this.tokenScanner = tokenScanner ?? throw new ArgumentNullException(nameof(tokenScanner));
             this.pageDictionary = pageDictionary ?? throw new ArgumentNullException(nameof(pageDictionary));
+            this.namedDestinations = namedDestinations;
+            this.log = log;
         }
 
         public IEnumerable<Annotation> GetAnnotations()
@@ -38,10 +46,9 @@
                 }
 
                 var type = annotationDictionary.Get<NameToken>(NameToken.Subtype, tokenScanner);
-
                 var annotationType = type.ToAnnotationType();
+                var action = GetAction(annotationDictionary);
                 var rectangle = matrix.Transform(annotationDictionary.Get<ArrayToken>(NameToken.Rect, tokenScanner).ToRectangle(tokenScanner));
-
                 var contents = GetNamedString(NameToken.Contents, annotationDictionary);
                 var name = GetNamedString(NameToken.Nm, annotationDictionary);
                 // As indicated in PDF reference 8.4.1, the modified date can be anything, but is usually a date formatted according to sec. 3.8.3
@@ -98,30 +105,65 @@
                     }
                 }
 
-                StreamToken normalAppearanceStream = null, downAppearanceStream = null, rollOverAppearanceStream = null;
+                AppearanceStream normalAppearanceStream = null;
+                AppearanceStream downAppearanceStream = null;
+                AppearanceStream rollOverAppearanceStream = null;
+
                 if (annotationDictionary.TryGet(NameToken.Ap, out DictionaryToken appearanceDictionary))
                 {
                     // The normal appearance of this annotation
-                    if (appearanceDictionary.TryGet(NameToken.N, out IndirectReferenceToken normalAppearanceRef))
+                    if (AppearanceStreamFactory.TryCreate(appearanceDictionary, NameToken.N, tokenScanner, out AppearanceStream stream))
                     {
-                        normalAppearanceStream = tokenScanner.Get(normalAppearanceRef.Data)?.Data as StreamToken;
+                        normalAppearanceStream = stream;
                     }
+
                     // If present, the 'roll over' appearance of this annotation (when hovering the mouse pointer over this annotation)
-                    if (appearanceDictionary.TryGet(NameToken.R, out IndirectReferenceToken rollOverAppearanceRef))
+                    if (AppearanceStreamFactory.TryCreate(appearanceDictionary, NameToken.R, tokenScanner, out stream))
                     {
-                        rollOverAppearanceStream = tokenScanner.Get(rollOverAppearanceRef.Data)?.Data as StreamToken;
+                        rollOverAppearanceStream = stream;
                     }
+
                     // If present, the 'down' appearance of this annotation (when you click on it)
-                    if (appearanceDictionary.TryGet(NameToken.D, out IndirectReferenceToken downAppearanceRef))
+                    if (AppearanceStreamFactory.TryCreate(appearanceDictionary, NameToken.D, tokenScanner, out stream))
                     {
-                        downAppearanceStream = tokenScanner.Get(downAppearanceRef.Data)?.Data as StreamToken;
+                        downAppearanceStream = stream;
                     }
                 }
 
+                string appearanceState = null;
+                if (annotationDictionary.TryGet(NameToken.As, out NameToken appearanceStateToken))
+                {
+                    appearanceState = appearanceStateToken.Data;
+                }
+
                 yield return new Annotation(annotationDictionary, annotationType, rectangle, 
-                    contents, name, modifiedDate, flags, border, quadPointRectangles,
-                    normalAppearanceStream, rollOverAppearanceStream, downAppearanceStream);
+                    contents, name, modifiedDate, flags, border, quadPointRectangles, action,
+                    normalAppearanceStream, rollOverAppearanceStream, downAppearanceStream, appearanceState);
             }
+        }
+
+        private PdfAction GetAction(DictionaryToken annotationDictionary)
+        {
+            // If this annotation returns a direct destination, turn it into a GoTo action.
+            if (DestinationProvider.TryGetDestination(annotationDictionary,
+                    NameToken.Dest,
+                    namedDestinations,
+                    tokenScanner,
+                    log,
+                    false,
+                    out var destination))
+            {
+                return new GoToAction(destination);
+            }
+            
+            // Try get action from the dictionary.
+            if (ActionProvider.TryGetAction(annotationDictionary, namedDestinations, tokenScanner, log, out var action))
+            {
+                return action;
+            }
+
+            // No action or destination found, return null
+            return null;
         }
 
         private string GetNamedString(NameToken name, DictionaryToken dictionary)

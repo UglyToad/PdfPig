@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using Core;
+    using Actions;
     using Tokens;
     using Util.JetBrains.Annotations;
 
@@ -11,9 +12,10 @@
     /// </summary>
     public class Annotation
     {
-        private readonly StreamToken normalAppearanceStream;
-        private readonly StreamToken rollOverAppearanceStream;
-        private readonly StreamToken downAppearanceStream;
+        internal readonly AppearanceStream normalAppearanceStream;
+        internal readonly AppearanceStream rollOverAppearanceStream;
+        internal readonly AppearanceStream downAppearanceStream;
+        internal readonly string appearanceState;
 
         /// <summary>
         /// The underlying PDF dictionary which this annotation was created from.
@@ -67,6 +69,16 @@
         public IReadOnlyList<QuadPointsQuadrilateral> QuadPoints { get; }
 
         /// <summary>
+        /// Action for this annotation, if any (can be null)
+        /// </summary>
+        public PdfAction Action { get; }
+
+        /// <summary>
+        /// Indicates if a normal appearance is present for this annotation
+        /// </summary>
+        public bool HasNormalAppearance => normalAppearanceStream != null;
+
+        /// <summary>
         /// Indicates if a roll over appearance is present for this annotation (shown when you hover over this annotation)
         /// </summary>
         public bool HasRollOverAppearance => rollOverAppearanceStream != null;
@@ -79,9 +91,12 @@
         /// <summary>
         /// Create a new <see cref="Annotation"/>.
         /// </summary>
-        public Annotation(DictionaryToken annotationDictionary, AnnotationType type, PdfRectangle rectangle, string content, string name, string modifiedDate,
+        public Annotation(DictionaryToken annotationDictionary, AnnotationType type, PdfRectangle rectangle,
+            string content, string name, string modifiedDate,
             AnnotationFlags flags, AnnotationBorder border, IReadOnlyList<QuadPointsQuadrilateral> quadPoints,
-            StreamToken normalAppearanceStream, StreamToken rollOverAppearanceStream, StreamToken downAppearanceStream)
+            PdfAction action,
+            AppearanceStream normalAppearanceStream, AppearanceStream rollOverAppearanceStream,
+            AppearanceStream downAppearanceStream, string appearanceState)
         {
             AnnotationDictionary = annotationDictionary ?? throw new ArgumentNullException(nameof(annotationDictionary));
             Type = type;
@@ -92,9 +107,11 @@
             Flags = flags;
             Border = border;
             QuadPoints = quadPoints ?? EmptyArray<QuadPointsQuadrilateral>.Instance;
+            Action = action;
             this.normalAppearanceStream = normalAppearanceStream;
             this.rollOverAppearanceStream = rollOverAppearanceStream;
             this.downAppearanceStream = downAppearanceStream;
+            this.appearanceState = appearanceState;
         }
 
         /// <inheritdoc />

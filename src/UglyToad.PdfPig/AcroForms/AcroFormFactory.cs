@@ -187,7 +187,7 @@
             int? pageNumber = null;
             if (fieldDictionary.TryGet(NameToken.P, tokenScanner, out IndirectReferenceToken pageReference))
             {
-                pageNumber = catalog.GetPageByReference(pageReference.Data)?.PageNumber;
+                pageNumber = catalog.Pages.GetPageByReference(pageReference.Data)?.PageNumber;
             }
 
             PdfRectangle? bounds = null;

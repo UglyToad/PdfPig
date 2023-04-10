@@ -14,6 +14,8 @@
     using Tokenization.Scanner;
     using Tokens;
     using Outline;
+    using Outline.Destinations;
+    using System.Linq;
     using Util.JetBrains.Annotations;
 
     /// <inheritdoc />
@@ -42,6 +44,7 @@
 
         [NotNull]
         private readonly Pages pages;
+        private readonly NamedDestinations namedDestinations;
 
         /// <summary>
         /// The metadata associated with this document.
@@ -75,13 +78,12 @@
         /// </summary>
         public bool IsEncrypted => encryptionDictionary != null;
 
-        internal PdfDocument(
-            IInputBytes inputBytes,
-            HeaderVersion version, 
+        internal PdfDocument(IInputBytes inputBytes,
+            HeaderVersion version,
             CrossReferenceTable crossReferenceTable,
             IPageFactory pageFactory,
             Catalog catalog,
-            DocumentInformation information, 
+            DocumentInformation information,
             EncryptionDictionary encryptionDictionary,
             IPdfTokenScanner pdfScanner,
             ILookupFilterProvider filterProvider,
@@ -98,7 +100,8 @@
             this.parsingOptions = parsingOptions;
 
             Information = information ?? throw new ArgumentNullException(nameof(information));
-            pages = new Pages(catalog, pageFactory, pdfScanner);
+            pages = catalog.Pages;
+            namedDestinations = catalog.NamedDestinations;
             Structure = new Structure(catalog, crossReferenceTable, pdfScanner);
             Advanced = new AdvancedPdfDocumentAccess(pdfScanner, filterProvider, catalog);
             documentForm = new Lazy<AcroForm>(() => acroFormFactory.GetAcroForm(catalog));
@@ -148,7 +151,7 @@
 
             try
             {
-                return pages.GetPage(pageNumber, parsingOptions);
+                return pages.GetPage(pageNumber, namedDestinations, parsingOptions);
             }
             catch (Exception ex)
             {

@@ -255,6 +255,7 @@
         public static readonly NameToken G = new NameToken("G");
         public static readonly NameToken Gamma = new NameToken("Gamma");
         public static readonly NameToken GoTo = new NameToken("GoTo");
+        public static readonly NameToken GoToE = new NameToken("GoToE");
         public static readonly NameToken GoToR = new NameToken("GoToR");
         public static readonly NameToken Group = new NameToken("Group");
         public static readonly NameToken GtsPdfa1 = new NameToken("GTS_PDFA1");
