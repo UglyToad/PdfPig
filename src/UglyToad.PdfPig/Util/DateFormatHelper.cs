@@ -8,7 +8,7 @@
     public static class DateFormatHelper
     {
         /// <summary>
-        /// Try parsing a pdf formated date string into a <see cref="DateTimeOffset"/>.
+        /// Try parsing a pdf formatted date string into a <see cref="DateTimeOffset"/>.
         /// <para>Date values used in a PDF shall conform to a standard date format, which closely 
         /// follows that of the international standard ASN.1, defined in ISO/IEC 8824. A date shall be a text string 
         /// of the form (D:YYYYMMDDHHmmSSOHH'mm).</para>

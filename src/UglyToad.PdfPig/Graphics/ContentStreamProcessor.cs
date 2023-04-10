@@ -5,6 +5,7 @@
     using Core;
     using Filters;
     using Geometry;
+    using Logging;
     using Operations;
     using Parser;
     using PdfFonts;
@@ -48,7 +49,6 @@
         private readonly IPdfTokenScanner pdfScanner;
         private readonly IPageContentParser pageContentParser;
         private readonly ILookupFilterProvider filterProvider;
-        private readonly PdfVector pageSize;
         private readonly InternalParsingOptions parsingOptions;
         private readonly MarkedContentStack markedContentStack = new MarkedContentStack();
 
@@ -84,11 +84,14 @@
             {XObjectType.PostScript, new List<XObjectContentRecord>()}
         };
 
-        public ContentStreamProcessor(PdfRectangle cropBox, IResourceStore resourceStore, UserSpaceUnit userSpaceUnit, PageRotationDegrees rotation,
+        public ContentStreamProcessor(IResourceStore resourceStore, 
+            UserSpaceUnit userSpaceUnit, 
+            MediaBox mediaBox, 
+            CropBox cropBox, 
+            PageRotationDegrees rotation,
             IPdfTokenScanner pdfScanner,
             IPageContentParser pageContentParser,
             ILookupFilterProvider filterProvider,
-            PdfVector pageSize,
             InternalParsingOptions parsingOptions)
         {
             this.resourceStore = resourceStore;
@@ -97,18 +100,17 @@
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
             this.pageContentParser = pageContentParser ?? throw new ArgumentNullException(nameof(pageContentParser));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
-            this.pageSize = pageSize;
             this.parsingOptions = parsingOptions;
 
             // initiate CurrentClippingPath to cropBox
             var clippingSubpath = new PdfSubpath();
-            clippingSubpath.Rectangle(cropBox.BottomLeft.X, cropBox.BottomLeft.Y, cropBox.Width, cropBox.Height);
+            clippingSubpath.Rectangle(cropBox.Bounds.BottomLeft.X, cropBox.Bounds.BottomLeft.Y, cropBox.Bounds.Width, cropBox.Bounds.Height);
             var clippingPath = new PdfPath() { clippingSubpath };
             clippingPath.SetClipping(FillingRule.EvenOdd);
 
             graphicsStack.Push(new CurrentGraphicsState()
             {
-                CurrentTransformationMatrix = GetInitialMatrix(),
+                CurrentTransformationMatrix = GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, parsingOptions.Logger),
                 CurrentClippingPath = clippingPath
             });
 
@@ -116,63 +118,69 @@
         }
 
         [System.Diagnostics.Contracts.Pure]
-        private TransformationMatrix GetInitialMatrix()
+        internal static TransformationMatrix GetInitialMatrix(UserSpaceUnit userSpaceUnit, 
+            MediaBox mediaBox,
+            CropBox cropBox, 
+            PageRotationDegrees rotation,
+            ILog log)
         {
-            // TODO: this is a bit of a hack because I don't understand matrices
-            // TODO: use MediaBox (i.e. pageSize) or CropBox?
+            // Cater for scenario where the cropbox is larger than the mediabox.
+            // If there is no intersection (method returns null), fall back to the cropbox.
+            var viewBox = mediaBox.Bounds.Intersect(cropBox.Bounds) ?? cropBox.Bounds;
 
-            /* 
-             * There should be a single Affine Transform we can apply to any point resulting
-             * from a content stream operation which will rotate the point and translate it back to
-             * a point where the origin is in the page's lower left corner.
-             *
-             * For example this matrix represents a (clockwise) rotation and translation:
-             * [  cos  sin  tx ]
-             * [ -sin  cos  ty ]
-             * [    0    0   1 ]
-             * Warning: rotation is counter-clockwise here
-             * 
-             * The values of tx and ty are those required to move the origin back to the expected origin (lower-left).
-             * The corresponding values should be:
-             * Rotation:  0   90  180  270
-             *       tx:  0    0    w    w
-             *       ty:  0    h    h    0
-             *
-             * Where w and h are the page width and height after rotation.
-            */
+            if (rotation.Value == 0
+                && viewBox.Left == 0 
+                && viewBox.Bottom == 0
+                && userSpaceUnit.PointMultiples == 1)
+            {
+                return TransformationMatrix.Identity;
+            }
 
-            double cos, sin;
-            double dx = 0, dy = 0;
+            // Move points so that (0,0) is equal to the viewbox bottom left corner.
+            var t1 = TransformationMatrix.GetTranslationMatrix(-viewBox.Left, -viewBox.Bottom);
+
+            if (userSpaceUnit.PointMultiples != 1)
+            {
+                log.Warn("User space unit other than 1 is not implemented");
+            }
+
+            // After rotating around the origin, our points will have negative x/y coordinates.
+            // Fix this by translating them by a certain dx/dy after rotation based on the viewbox.
+            double dx, dy;
             switch (rotation.Value)
             {
                 case 0:
-                    cos = 1;
-                    sin = 0;
-                    break;
+                    // No need to rotate / translate after rotation, just return the initial
+                    // translation matrix.
+                    return t1;
                 case 90:
-                    cos = 0;
-                    sin = 1;
-                    dy = pageSize.Y;
+                    // Move rotated points up by our (unrotated) viewbox width
+                    dx = 0;
+                    dy = viewBox.Width;
                     break;
                 case 180:
-                    cos = -1;
-                    sin = 0;
-                    dx = pageSize.X;
-                    dy = pageSize.Y;
+                    // Move rotated points up/right using the (unrotated) viewbox width/height
+                    dx = viewBox.Width;
+                    dy = viewBox.Height;
                     break;
                 case 270:
-                    cos = 0;
-                    sin = -1;
-                    dx = pageSize.X;
+                    // Move rotated points right using the (unrotated) viewbox height
+                    dx = viewBox.Height;
+                    dy = 0;
                     break;
                 default:
                     throw new InvalidOperationException($"Invalid value for page rotation: {rotation.Value}.");
             }
 
-            return new TransformationMatrix(
-                cos, -sin, 0,
-                sin, cos, 0,
-                dx, dy, 1);
+            // GetRotationMatrix uses counter clockwise angles, whereas our page rotation
+            // is a clockwise angle, so flip the sign.
+            var r = TransformationMatrix.GetRotationMatrix(-rotation.Value);
+
+            // Fix up negative coordinates after rotation
+            var t2 = TransformationMatrix.GetTranslationMatrix(dx, dy);
+
+            // Now get the final combined matrix T1 > R > T2
+            return t1.Multiply(r.Multiply(t2));
         }
 
         public PageContent Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations)
@@ -292,14 +300,7 @@
                 var transformedPdfBounds = PerformantRectangleTransformer
                     .Transform(renderingMatrix, textMatrix, transformationMatrix, new PdfRectangle(0, 0, boundingBox.Width, 0));
 
-                // If the text rendering mode calls for filling, the current nonstroking color in the graphics state is used; 
-                // if it calls for stroking, the current stroking color is used.
-                // In modes that perform both filling and stroking, the effect is as if each glyph outline were filled and then stroked in separate operations.
-                // TODO: expose color as something more advanced
-                var color = currentState.FontState.TextRenderingMode != TextRenderingMode.Stroke
-                    ? currentState.CurrentNonStrokingColor
-                    : currentState.CurrentStrokingColor;
-
+                      
                 Letter letter = null;
                 if (Diacritics.IsInCombiningDiacriticRange(unicode) && bytes.CurrentOffset > 0 && letters.Count > 0)
                 {
@@ -319,26 +320,16 @@
                             attachTo.Width,
                             attachTo.FontSize,
                             attachTo.Font,
-                            attachTo.Color,
+                            attachTo.RenderingMode,
+                            attachTo.StrokeColor,
+                            attachTo.FillColor,
                             attachTo.PointSize,
                             attachTo.TextSequence);
                     }
-                    else
-                    {
-                        letter = new Letter(
-                            unicode,
-                            transformedGlyphBounds,
-                            transformedPdfBounds.BottomLeft,
-                            transformedPdfBounds.BottomRight,
-                            transformedPdfBounds.Width,
-                            fontSize,
-                            font.Details,
-                            color,
-                            pointSize,
-                            textSequence);
-                    }
                 }
-                else
+
+                // If we did not create a letter for a combined diacritic, create one here.
+                if (letter == null)
                 {
                     letter = new Letter(
                         unicode,
@@ -348,7 +339,9 @@
                         transformedPdfBounds.Width,
                         fontSize,
                         font.Details,
-                        color,
+                        currentState.FontState.TextRenderingMode,
+                        currentState.CurrentStrokingColor,
+                        currentState.CurrentNonStrokingColor,
                         pointSize,
                         textSequence);
                 }
@@ -795,6 +788,65 @@
                 currentGraphicsState.FontState.FromExtendedGraphicsState = true;
                 currentGraphicsState.FontState.FontSize = (double)sizeToken.Data;
                 activeExtendedGraphicsStateFont = resourceStore.GetFontDirectly(fontReference);
+            }
+
+            if (state.TryGet(NameToken.Ais, pdfScanner, out BooleanToken aisToken))
+            {
+                // The alpha source flag (“alpha is shape”), specifying
+                // whether the current soft mask and alpha constant are to be interpreted as
+                // shape values (true) or opacity values (false).
+                currentGraphicsState.AlphaSource = aisToken.Data;
+            }
+
+            if (state.TryGet(NameToken.Ca, pdfScanner, out NumericToken caToken))
+            {
+                // (Optional; PDF 1.4) The current stroking alpha constant, specifying the constant
+                // shape or constant opacity value to be used for stroking operations in the
+                // transparent imaging model (see “Source Shape and Opacity” on page 526 and
+                // “Constant Shape and Opacity” on page 551).
+                currentGraphicsState.AlphaConstantStroking = caToken.Data;
+            }
+
+            if (state.TryGet(NameToken.CaNs, pdfScanner, out NumericToken cansToken))
+            {
+                // (Optional; PDF 1.4) The current stroking alpha constant, specifying the constant
+                // shape or constant opacity value to be used for NON-stroking operations in the
+                // transparent imaging model (see “Source Shape and Opacity” on page 526 and
+                // “Constant Shape and Opacity” on page 551).
+                currentGraphicsState.AlphaConstantNonStroking = cansToken.Data;
+            }
+
+            if (state.TryGet(NameToken.Op, pdfScanner, out BooleanToken OPToken))
+            {
+                // (Optional) A flag specifying whether to apply overprint (see Section 4.5.6,
+                // “Overprint Control”). In PDF 1.2 and earlier, there is a single overprint
+                // parameter that applies to all painting operations. Beginning with PDF 1.3,
+                // there are two separate overprint parameters: one for stroking and one for all
+                // other painting operations. Specifying an OP entry sets both parameters unless there
+                // is also an op entry in the same graphics state parameter dictionary,
+                // in which case the OP entry sets only the overprint parameter for stroking.
+                currentGraphicsState.Overprint = OPToken.Data;
+            }
+
+            if (state.TryGet(NameToken.OpNs, pdfScanner, out BooleanToken opToken))
+            {
+                // (Optional; PDF 1.3) A flag specifying whether to apply overprint (see Section
+                // 4.5.6, “Overprint Control”) for painting operations other than stroking. If
+                // this entry is absent, the OP entry, if any, sets this parameter.
+                currentGraphicsState.NonStrokingOverprint = opToken.Data;
+            }
+
+            if (state.TryGet(NameToken.Opm, pdfScanner, out NumericToken opmToken))
+            {
+                // (Optional; PDF 1.3) The overprint mode (see Section 4.5.6, “Overprint Control”).
+                currentGraphicsState.OverprintMode = opmToken.Data;
+            }
+
+            if (state.TryGet(NameToken.Sa, pdfScanner, out BooleanToken saToken))
+            {
+                // (Optional) A flag specifying whether to apply automatic stroke adjustment
+                // (see Section 6.5.4, “Automatic Stroke Adjustment”).
+                currentGraphicsState.StrokeAdjustment = saToken.Data;
             }
         }
 

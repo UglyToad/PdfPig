@@ -1,13 +1,14 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Simple
 {
-    using System;
-    using System.Collections.Generic;
     using Cmap;
     using Composite;
     using Core;
     using Fonts;
     using Fonts.Encodings;
     using Fonts.TrueType;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using Tokens;
     using Util.JetBrains.Annotations;
 
@@ -57,7 +58,7 @@
             Name = name;
             IsVertical = false;
             ToUnicode = new ToUnicodeCMap(toUnicodeCMap);
-            Details = descriptor?.ToDetails(Name?.Data) 
+            Details = descriptor?.ToDetails(Name?.Data)
                       ?? FontDetails.GetDefault(Name?.Data);
         }
 
@@ -321,6 +322,29 @@
 
             return widths[index];
         }
+
+        /// <inheritdoc/>
+        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        {
+            if (font == null)
+            {
+                path = EmptyArray<PdfSubpath>.Instance;
+                return false;
+            }
+
+            return font.TryGetPath(characterCode, CharacterCodeToGlyphId, out path);
+        }
+
+        /// <inheritdoc/>
+        public bool TryGetNormalisedPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        {
+            if (!TryGetPath(characterCode, out path))
+            {
+                return false;
+            }
+
+            path = GetFontMatrix().Transform(path).ToList();
+            return true;
+        }
     }
 }
-

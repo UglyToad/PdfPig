@@ -14,10 +14,8 @@
     /// <summary>
     /// Writes any type of <see cref="IToken"/> to the corresponding PDF document format output.
     /// </summary>
-    public class TokenWriter
+    public class TokenWriter : ITokenWriter
     {
-        private static readonly byte Backslash = GetByte("\\");
-
         private static readonly byte ArrayStart = GetByte("[");
         private static readonly byte ArrayEnd = GetByte("]");
 
@@ -46,10 +44,18 @@
 
         private static readonly byte[] StartXref = OtherEncodings.StringAsLatin1Bytes("startxref");
 
-        private static readonly byte[] StreamStart = OtherEncodings.StringAsLatin1Bytes("stream");
-        private static readonly byte[] StreamEnd = OtherEncodings.StringAsLatin1Bytes("endstream");
+        /// <summary>
+        /// Bytes that indicate start of stream
+        /// </summary>
+        protected static readonly byte[] StreamStart = OtherEncodings.StringAsLatin1Bytes("stream");
+
+        /// <summary>
+        /// Bytes that indicate end start of stream
+        /// </summary>
+        protected static readonly byte[] StreamEnd = OtherEncodings.StringAsLatin1Bytes("endstream");
 
         private static readonly byte StringStart = GetByte("(");
+
         private static readonly byte StringEnd = GetByte(")");
 
         private static readonly byte[] Trailer = OtherEncodings.StringAsLatin1Bytes("trailer");
@@ -75,11 +81,16 @@
         };
 
         /// <summary>
+        /// Single global instance
+        /// </summary>
+        public static TokenWriter Instance { get; } = new TokenWriter();
+
+        /// <summary>
         /// Writes the given input token to the output stream with the correct PDF format and encoding including whitespace and line breaks as applicable.
         /// </summary>
         /// <param name="token">The token to write to the stream.</param>
         /// <param name="outputStream">The stream to write the token to.</param>
-        public static void WriteToken(IToken token, Stream outputStream)
+        public void WriteToken(IToken token, Stream outputStream)
         {
             if (token == null)
             {
@@ -129,14 +140,8 @@
             }
         }
 
-        /// <summary>
-        /// Writes a valid single section cross-reference (xref) table plus trailer dictionary to the output for the set of object offsets.
-        /// </summary>
-        /// <param name="objectOffsets">The byte offset from the start of the document for each object in the document.</param>
-        /// <param name="catalogToken">The object representing the catalog dictionary which is referenced from the trailer dictionary.</param>
-        /// <param name="outputStream">The output stream to write to.</param>
-        /// <param name="documentInformationReference">The object reference for the document information dictionary if present.</param>
-        internal static void WriteCrossReferenceTable(IReadOnlyDictionary<IndirectReference, long> objectOffsets,
+        /// <inheritdoc cref="ITokenWriter.WriteCrossReferenceTable" />
+        public void WriteCrossReferenceTable(IReadOnlyDictionary<IndirectReference, long> objectOffsets,
             IndirectReference catalogToken,
             Stream outputStream,
             IndirectReference? documentInformationReference)
@@ -271,14 +276,8 @@
             outputStream.Write(Eof, 0, Eof.Length);
         }
 
-        /// <summary>
-        /// Writes pre-serialized token as an object token to the output stream.
-        /// </summary>
-        /// <param name="objectNumber">Object number of the indirect object.</param>
-        /// <param name="generation">Generation of the indirect object.</param>
-        /// <param name="data">Pre-serialized object contents.</param>
-        /// <param name="outputStream">The stream to write the token to.</param>
-        internal static void WriteObject(long objectNumber, int generation, byte[] data, Stream outputStream)
+        /// <inheritdoc cref="ITokenWriter.WriteObject" />
+        public void WriteObject(long objectNumber, int generation, byte[] data, Stream outputStream)
         {
             WriteLong(objectNumber, outputStream);
             WriteWhitespace(outputStream);
@@ -297,14 +296,24 @@
             WriteLineBreak(outputStream);
         }
 
-        private static void WriteHex(HexToken hex, Stream stream)
+        /// <summary>
+        /// Write a hex value to the output stream
+        /// </summary>
+        /// <param name="hex"></param>
+        /// <param name="stream"></param>
+        protected void WriteHex(HexToken hex, Stream stream)
         {
             stream.WriteByte(HexStart);
             stream.WriteText(hex.GetHexString());
             stream.WriteByte(HexEnd);
         }
 
-        private static void WriteArray(ArrayToken array, Stream outputStream)
+        /// <summary>
+        /// Write an array to the output stream, with whitespace at the end.
+        /// </summary>
+        /// <param name="array"></param>
+        /// <param name="outputStream"></param>
+        protected void WriteArray(ArrayToken array, Stream outputStream)
         {
             outputStream.WriteByte(ArrayStart);
             WriteWhitespace(outputStream);
@@ -319,14 +328,24 @@
             WriteWhitespace(outputStream);
         }
 
-        private static void WriteBoolean(BooleanToken boolean, Stream outputStream)
+        /// <summary>
+        /// Write a boolean "true" or "false" to the output stream, with whitespace at the end.
+        /// </summary>
+        /// <param name="boolean"></param>
+        /// <param name="outputStream"></param>
+        protected void WriteBoolean(BooleanToken boolean, Stream outputStream)
         {
             var bytes = boolean.Data ? TrueBytes : FalseBytes;
             outputStream.Write(bytes, 0, bytes.Length);
             WriteWhitespace(outputStream);
         }
 
-        private static void WriteComment(CommentToken comment, Stream outputStream)
+        /// <summary>
+        /// Write a "%comment" in the output stream, with a line break at the end.
+        /// </summary>
+        /// <param name="comment"></param>
+        /// <param name="outputStream"></param>
+        protected void WriteComment(CommentToken comment, Stream outputStream)
         {
             var bytes = OtherEncodings.StringAsLatin1Bytes(comment.Data);
             outputStream.WriteByte(Comment);
@@ -334,7 +353,12 @@
             WriteLineBreak(outputStream);
         }
 
-        private static void WriteDictionary(DictionaryToken dictionary, Stream outputStream)
+        /// <summary>
+        /// Writes dictionary key/value pairs to output stream as Name/Token pairs.
+        /// </summary>
+        /// <param name="dictionary"></param>
+        /// <param name="outputStream"></param>
+        protected void WriteDictionary(DictionaryToken dictionary, Stream outputStream)
         {
             outputStream.Write(DictionaryStart, 0, DictionaryStart.Length);
 
@@ -356,7 +380,12 @@
             outputStream.Write(DictionaryEnd, 0, DictionaryEnd.Length);
         }
 
-        private static void WriteIndirectReference(IndirectReferenceToken reference, Stream outputStream)
+        /// <summary>
+        /// Write an indirect reference to the stream, with whitespace at the end. 
+        /// </summary>
+        /// <param name="reference"></param>
+        /// <param name="outputStream"></param>
+        protected virtual void WriteIndirectReference(IndirectReferenceToken reference, Stream outputStream)
         {
             WriteLong(reference.Data.ObjectNumber, outputStream);
             WriteWhitespace(outputStream);
@@ -368,12 +397,17 @@
             WriteWhitespace(outputStream);
         }
 
-        private static void WriteName(NameToken name, Stream outputStream)
+        /// <summary>
+        /// Write a name to the stream, with whitespace at the end.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="outputStream"></param>
+        protected virtual void WriteName(NameToken name, Stream outputStream)
         {
             WriteName(name.Data, outputStream);
         }
 
-        private static void WriteName(string name, Stream outputStream)
+        private void WriteName(string name, Stream outputStream)
         {
             /*
              * Beginning with PDF 1.2, any character except null (character code 0) may be
@@ -404,7 +438,12 @@
             WriteWhitespace(outputStream);
         }
 
-        private static void WriteNumber(NumericToken number, Stream outputStream)
+        /// <summary>
+        /// Write a number to the stream, with whitespace at the end. 
+        /// </summary>
+        /// <param name="number"></param>
+        /// <param name="outputStream"></param>
+        protected virtual void WriteNumber(NumericToken number, Stream outputStream)
         {
             if (!number.HasDecimalPlaces)
             {
@@ -419,7 +458,15 @@
             WriteWhitespace(outputStream);
         }
 
-        private static void WriteObject(ObjectToken objectToken, Stream outputStream)
+        /// <summary>
+        /// Write an object to the stream, with a line break at the end. It writes the following contents:
+        /// - "[ObjectNumber] [Generation] obj"
+        /// - Object data
+        /// - "endobj"
+        /// </summary>
+        /// <param name="objectToken"></param>
+        /// <param name="outputStream"></param>
+        protected virtual void WriteObject(ObjectToken objectToken, Stream outputStream)
         {
             WriteLong(objectToken.Number.ObjectNumber, outputStream);
             WriteWhitespace(outputStream);
@@ -438,7 +485,16 @@
             WriteLineBreak(outputStream);
         }
 
-        private static void WriteStream(StreamToken streamToken, Stream outputStream)
+        /// <summary>
+        /// Write a stream token to the output stream, with the following contents:
+        /// - Dictionary specifying the length of the stream, any applied compression filters and additional information.
+        /// - Stream start indicator
+        /// - Bytes in the StreamToken data
+        /// - Stream end indicator
+        /// </summary>
+        /// <param name="streamToken"></param>
+        /// <param name="outputStream"></param>
+        protected virtual void WriteStream(StreamToken streamToken, Stream outputStream)
         {
             WriteDictionary(streamToken.StreamDictionary, outputStream);
             WriteLineBreak(outputStream);
@@ -449,15 +505,22 @@
             outputStream.Write(StreamEnd, 0, StreamEnd.Length);
         }
 
-        private static int[] EscapeNeeded = new int[]
+        private static readonly int[] EscapeNeeded = new int[]
         {
             '\r', '\n', '\t', '\b', '\f', '\\'
         };
-        private static int[] Escaped = new int[]
+
+        private static readonly int[] Escaped = new int[]
         {
             'r', 'n', 't', 'b', 'f', '\\'
         };
-        private static void WriteString(StringToken stringToken, Stream outputStream)
+
+        /// <summary>
+        /// Write string to the stream, with whitespace at the end
+        /// </summary>
+        /// <param name="stringToken"></param>
+        /// <param name="outputStream"></param>
+        protected virtual void WriteString(StringToken stringToken, Stream outputStream)
         {
             outputStream.WriteByte(StringStart);
 
@@ -515,29 +578,47 @@
             WriteWhitespace(outputStream);
         }
 
-        private static void WriteInt(int value, Stream outputStream)
+        /// <summary>
+        /// Write an integer to the stream
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="outputStream"></param>
+        protected virtual void WriteInt(int value, Stream outputStream)
         {
             var bytes = OtherEncodings.StringAsLatin1Bytes(value.ToString("G", CultureInfo.InvariantCulture));
             outputStream.Write(bytes, 0, bytes.Length);
         }
 
-        private static void WriteLineBreak(Stream outputStream)
+        /// <summary>
+        /// Write a line break to the output stream
+        /// </summary>
+        /// <param name="outputStream"></param>
+        protected virtual void WriteLineBreak(Stream outputStream)
         {
             outputStream.WriteNewLine();
         }
 
-        private static void WriteLong(long value, Stream outputStream)
+        /// <summary>
+        /// Write a long to the stream
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="outputStream"></param>
+        protected virtual void WriteLong(long value, Stream outputStream)
         {
             var bytes = OtherEncodings.StringAsLatin1Bytes(value.ToString("G", CultureInfo.InvariantCulture));
             outputStream.Write(bytes, 0, bytes.Length);
         }
 
-        private static void WriteWhitespace(Stream outputStream)
+        /// <summary>
+        /// Write a space to the output stream
+        /// </summary>
+        /// <param name="outputStream"></param>
+        protected virtual void WriteWhitespace(Stream outputStream)
         {
             outputStream.WriteByte(Whitespace);
         }
 
-        private static void WriteFirstXrefEmptyEntry(Stream outputStream)
+        private void WriteFirstXrefEmptyEntry(Stream outputStream)
         {
             /*
              *  The first entry in the table (object number 0) is always free and has a generation number of 65,535;
@@ -592,4 +673,3 @@
         }
     }
 }
-

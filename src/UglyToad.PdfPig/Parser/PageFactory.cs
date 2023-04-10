@@ -10,6 +10,7 @@
     using Graphics;
     using Graphics.Operations;
     using Logging;
+    using Outline;
     using Parts;
     using Tokenization.Scanner;
     using Tokens;
@@ -21,20 +22,24 @@
         private readonly IResourceStore resourceStore;
         private readonly ILookupFilterProvider filterProvider;
         private readonly IPageContentParser pageContentParser;
+        private readonly ILog log;
 
         public PageFactory(
             IPdfTokenScanner pdfScanner,
             IResourceStore resourceStore,
             ILookupFilterProvider filterProvider,
-            IPageContentParser pageContentParser)
+            IPageContentParser pageContentParser,
+            ILog log)
         {
             this.resourceStore = resourceStore;
             this.filterProvider = filterProvider;
             this.pageContentParser = pageContentParser;
             this.pdfScanner = pdfScanner;
+            this.log = log;
         }
 
-        public Page Create(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers, InternalParsingOptions parsingOptions)
+        public Page Create(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers,
+            NamedDestinations namedDestinations, InternalParsingOptions parsingOptions)
         {
             if (dictionary == null)
             {
@@ -48,8 +53,8 @@
                 parsingOptions.Logger.Error($"Page {number} had its type specified as {type} rather than 'Page'.");
             }
 
-            MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers, parsingOptions.Logger);
-            CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox, parsingOptions.Logger);
+            MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers);
+            CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox);
 
             var rotation = new PageRotationDegrees(pageTreeMembers.Rotation);
             if (dictionary.TryGet(NameToken.Rotate, pdfScanner, out NumericToken rotateToken))
@@ -73,19 +78,6 @@
                 stackDepth++;
             }
 
-            // Apply rotation.
-            if (rotation.SwapsAxis)
-            {
-                mediaBox = new MediaBox(new PdfRectangle(mediaBox.Bounds.Bottom, 
-                    mediaBox.Bounds.Left, 
-                    mediaBox.Bounds.Top,
-                    mediaBox.Bounds.Right));
-                cropBox = new CropBox(new PdfRectangle(cropBox.Bounds.Bottom,
-                    cropBox.Bounds.Left,
-                    cropBox.Bounds.Top,
-                    cropBox.Bounds.Right));
-            }
-            
             UserSpaceUnit userSpaceUnit = GetUserSpaceUnits(dictionary);
 
             PageContent content;
@@ -100,7 +92,7 @@
                     pdfScanner,
                     filterProvider,
                     resourceStore);
-                 // ignored for now, is it possible? check the spec...
+                // ignored for now, is it possible? check the spec...
             }
             else if (DirectObjectFinder.TryGet<ArrayToken>(contents, pdfScanner, out var array))
             {
@@ -146,9 +138,9 @@
                 content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, mediaBox, parsingOptions);
             }
 
-            var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, 
-                new AnnotationProvider(pdfScanner, dictionary),
-                pdfScanner);
+            var initialMatrix = ContentStreamProcessor.GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, log);
+            var annotationProvider = new AnnotationProvider(pdfScanner, dictionary, initialMatrix, namedDestinations, log);
+            var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, annotationProvider, pdfScanner);
 
             for (var i = 0; i < stackDepth; i++)
             {
@@ -171,14 +163,14 @@
                 parsingOptions.Logger);
 
             var context = new ContentStreamProcessor(
-                cropBox.Bounds,
                 resourceStore,
                 userSpaceUnit,
+                mediaBox,
+                cropBox,
                 rotation,
                 pdfScanner,
                 pageContentParser,
                 filterProvider,
-                new PdfVector(mediaBox.Bounds.Width, mediaBox.Bounds.Height),
                 parsingOptions);
 
             return context.Process(pageNumber, operations);
@@ -198,8 +190,7 @@
         private CropBox GetCropBox(
             DictionaryToken dictionary,
             PageTreeMembers pageTreeMembers,
-            MediaBox mediaBox,
-            ILog log)
+            MediaBox mediaBox)
         {
             CropBox cropBox;
             if (dictionary.TryGet(NameToken.CropBox, out var cropBoxObject) &&
@@ -214,7 +205,7 @@
                     return cropBox;
                 }
 
-                cropBox = new CropBox(cropBoxArray.ToIntRectangle(pdfScanner));
+                cropBox = new CropBox(cropBoxArray.ToRectangle(pdfScanner));
             }
             else
             {
@@ -227,23 +218,22 @@
         private MediaBox GetMediaBox(
             int number,
             DictionaryToken dictionary,
-            PageTreeMembers pageTreeMembers,
-            ILog log)
+            PageTreeMembers pageTreeMembers)
         {
             MediaBox mediaBox;
-            if (dictionary.TryGet(NameToken.MediaBox, out var mediaboxObject) 
-                && DirectObjectFinder.TryGet(mediaboxObject, pdfScanner, out ArrayToken mediaboxArray))
+            if (dictionary.TryGet(NameToken.MediaBox, out var mediaBoxObject) 
+                && DirectObjectFinder.TryGet(mediaBoxObject, pdfScanner, out ArrayToken mediaBoxArray))
             {
-                if (mediaboxArray.Length != 4)
+                if (mediaBoxArray.Length != 4)
                 {
-                    log.Error($"The MediaBox was the wrong length in the dictionary: {dictionary}. Array was: {mediaboxArray}. Defaulting to US Letter.");
+                    log.Error($"The MediaBox was the wrong length in the dictionary: {dictionary}. Array was: {mediaBoxArray}. Defaulting to US Letter.");
 
                     mediaBox = MediaBox.Letter;
 
                     return mediaBox;
                 }
 
-                mediaBox = new MediaBox(mediaboxArray.ToIntRectangle(pdfScanner));
+                mediaBox = new MediaBox(mediaBoxArray.ToRectangle(pdfScanner));
             }
             else
             {

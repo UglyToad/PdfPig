@@ -108,7 +108,17 @@
                 case 6:
                     return new Pixel(first, data[pixelStartIndex + 2], data[pixelStartIndex + 4], 255, false);
                 case 8:
-                    return new Pixel(first, data[pixelStartIndex + 2], data[pixelStartIndex + 4], data[pixelStartIndex + 6], false);
+                    var pos = pixelStartIndex;
+
+                    // 16 bit precision - 2 bytes  
+                    var R = ToSingleByte(data[pos++], data[pos++]);
+                    var G = ToSingleByte(data[pos++], data[pos++]);
+                    var B = ToSingleByte(data[pos++], data[pos++]);
+                    var A = ToSingleByte(data[pos++], data[pos++]);
+
+                    var pixel = new Pixel(R, G, B, A, false);
+
+                    return pixel;
                 default:
                     throw new InvalidOperationException($"Unreconized number of bytes per pixel: {bytesPerPixel}.");
             }

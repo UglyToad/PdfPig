@@ -158,7 +158,7 @@
                     }
 
                     try
-                    { 
+                    {
                         loadedFonts[reference] = fontFactory.Get(fontObject);
                     }
                     catch
@@ -168,7 +168,6 @@
                             throw;
                         }
                     }
-                    
                 }
                 else if (pair.Value is DictionaryToken fd)
                 {

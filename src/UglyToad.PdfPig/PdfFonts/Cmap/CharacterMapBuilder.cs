@@ -96,8 +96,6 @@
             }
 
             return CharacterIdentifierSystemInfo;
-
-            throw new InvalidOperationException("The Character Identifier System Information was never set.");
         }
 
         public void UseCMap(CMap other)

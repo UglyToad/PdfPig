@@ -1,14 +1,15 @@
 ﻿namespace UglyToad.PdfPig.Util
 {
-    using System.Collections.Generic;
-    using System.Linq;
     using Content;
     using Core;
     using Filters;
     using Graphics.Colors;
     using Parser.Parts;
+    using System.Collections.Generic;
+    using System.Linq;
     using Tokenization.Scanner;
     using Tokens;
+    using UglyToad.PdfPig.Functions;
 
     internal static class ColorSpaceMapper
     {
@@ -406,23 +407,23 @@
                             return UnsupportedColorSpaceDetails.Instance;
                         }
 
-                        Union<DictionaryToken, StreamToken> functionTokensUnion;
+                        PdfFunction function;
                         var func = colorSpaceArray[3];
 
                         if (DirectObjectFinder.TryGet(func, scanner, out DictionaryToken functionDictionary))
                         {
-                            functionTokensUnion = Union<DictionaryToken, StreamToken>.One(functionDictionary);
+                            function = PdfFunctionParser.Create(functionDictionary, scanner, filterProvider);
                         }
                         else if (DirectObjectFinder.TryGet(func, scanner, out StreamToken functionStream))
                         {
-                            functionTokensUnion = Union<DictionaryToken, StreamToken>.Two(functionStream);
+                            function = PdfFunctionParser.Create(functionStream, scanner, filterProvider);
                         }
                         else
                         {
                             return UnsupportedColorSpaceDetails.Instance;
                         }
 
-                        return new SeparationColorSpaceDetails(separationNameToken, alternateColorSpaceDetails, functionTokensUnion);
+                        return new SeparationColorSpaceDetails(separationNameToken, alternateColorSpaceDetails, function);
                     }
                 case ColorSpace.DeviceN:
                     return UnsupportedColorSpaceDetails.Instance;

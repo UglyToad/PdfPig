@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using Core;
     using Fonts;
     using Fonts.AdobeFontMetrics;
@@ -130,6 +131,29 @@
             }
 
             return DefaultTransformation;
+        }
+
+        /// <inheritdoc/>
+        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        {
+            path = null;
+            if (font == null)
+            {
+                return false;
+            }
+            return font.TryGetPath(characterCode, out path);
+        }
+
+        /// <inheritdoc/>
+        public bool TryGetNormalisedPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        {
+            if (!TryGetPath(characterCode, out path))
+            {
+                return false;
+            }
+
+            path = GetFontMatrix().Transform(path).ToList();
+            return true;
         }
 
         public class MetricOverrides

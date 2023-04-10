@@ -1,10 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Encodings
 {
-    using Core;
+    
+
+
 
     /// <summary>
     /// Windows ANSI encoding.
-    /// </summary>
+    /// </summary>    
     public class WinAnsiEncoding : Encoding
     {
         /// <summary>
@@ -244,12 +246,16 @@
 
         private WinAnsiEncoding()
         {
-            foreach (var valueTuple in EncodingTable)
+            foreach ((var codeToBeConverted, var name) in EncodingTable)
             {
-                // Convert out of octal before creating
-                var code = OctalHelpers.FromOctalInt(valueTuple.Item1);
-
-                Add(code, valueTuple.Item2);
+                // In source code an int literal with a leading zero ('0')
+                // in other languages ('C' and 'Java') would be interpreted
+                // as octal (base 8) and converted but C# does not support and
+                // so arrives here as a different value parsed as base10.
+                // Convert 'codeToBeConverted' to intended value as if it was an octal literal before using.
+                // For example 040 converts to string "40" then convert string to int again but using base 8 (octal) so result is 32 (base 10).
+                var code = System.Convert.ToInt32($"{codeToBeConverted}", 8);  // alternative is OctalHelpers.FromOctalInt()
+                Add(code, name);
             }
 
             // In WinAnsiEncoding, all unused codes greater than 40 map to the bullet character.

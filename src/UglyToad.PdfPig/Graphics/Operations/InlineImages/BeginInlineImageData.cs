@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.IO;
     using Tokens;
+    using UglyToad.PdfPig.Writer;
 
     /// <inheritdoc />
     /// <summary>
@@ -41,6 +42,16 @@
         /// <inheritdoc />
         public void Write(Stream stream)
         {
+            var tokenWriter = TokenWriter.Instance;
+            foreach (var item in Dictionary)
+            {
+                var name = item.Key;
+                var value = item.Value;
+
+                stream.WriteText($"{name} ");
+                tokenWriter.WriteToken(value, stream);
+                stream.WriteNewLine();
+            }
             stream.WriteText(Symbol);
             stream.WriteNewLine();
         }

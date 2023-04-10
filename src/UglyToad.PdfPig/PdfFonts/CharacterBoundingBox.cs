@@ -2,13 +2,22 @@
 {
     using Core;
 
-    internal class CharacterBoundingBox
+    /// <summary>
+    /// Character bounding box.
+    /// </summary>
+    public class CharacterBoundingBox
     {
+        /// <summary>
+        /// The glyph bounds.
+        /// </summary>
         public PdfRectangle GlyphBounds { get; }
 
+        /// <summary>
+        /// THe width.
+        /// </summary>
         public double Width { get; }
 
-        public CharacterBoundingBox(PdfRectangle bounds, double width)
+        internal CharacterBoundingBox(PdfRectangle bounds, double width)
         {
             GlyphBounds = bounds;
             Width = width;

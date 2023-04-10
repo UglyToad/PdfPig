@@ -666,7 +666,7 @@
                     {NameToken.Width, widthToken},
                     {NameToken.Height, heightToken},
                     {NameToken.ColorSpace, NameToken.Devicegray},
-                    {NameToken.BitsPerComponent, new NumericToken(png.Header.BitDepth)},
+                    {NameToken.BitsPerComponent, new NumericToken(8)},
                     {NameToken.Decode, new ArrayToken(new IToken[] { new NumericToken(0), new NumericToken(1) })},
                     {NameToken.Length, new NumericToken(compressedSmask.Length)},
                     {NameToken.Filter, NameToken.FlateDecode}
@@ -683,7 +683,7 @@
                 {NameToken.Subtype, NameToken.Image},
                 {NameToken.Width, widthToken},
                 {NameToken.Height, heightToken},
-                {NameToken.BitsPerComponent, new NumericToken(png.Header.BitDepth)},
+                {NameToken.BitsPerComponent, new NumericToken(8)},
                 {NameToken.ColorSpace, NameToken.Devicergb},
                 {NameToken.Filter, NameToken.FlateDecode},
                 {NameToken.Length, new NumericToken(compressed.Length)}
@@ -882,7 +882,7 @@
 
                 if (!font.TryGetBoundingBox(c, out var rect))
                 {
-                    throw new InvalidOperationException($"The font does not contain a character: {c}.");
+                    throw new InvalidOperationException($"The font does not contain a character: '{c}' (0x{(int)c:X}).");
                 }
 
                 if (!font.TryGetAdvanceWidth(c, out var charWidth))
@@ -895,7 +895,16 @@
 
                 var documentSpace = textMatrix.Transform(renderingMatrix.Transform(fontMatrix.Transform(rect)));
 
-                var letter = new Letter(c.ToString(), documentSpace, advanceRect.BottomLeft, advanceRect.BottomRight, width, (double)fontSize, FontDetails.GetDefault(name),
+                var letter = new Letter(
+                    c.ToString(), 
+                    documentSpace, 
+                    advanceRect.BottomLeft, 
+                    advanceRect.BottomRight, 
+                    width, 
+                    (double)fontSize, 
+                    FontDetails.GetDefault(name),
+                    TextRenderingMode.Fill,
+                    GrayColor.Black,
                     GrayColor.Black,
                     (double)fontSize,
                     textSequence);

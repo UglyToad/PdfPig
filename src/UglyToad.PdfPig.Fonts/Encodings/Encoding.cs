@@ -62,6 +62,22 @@
             return name;
         }
 
+
+        /// <summary>
+        /// Get the character code from name 
+        /// </summary>
+        /// <param name="name">Character name (eg. euro, ampersand, A, space)</param>
+        /// <returns>-1 if not found otherwise the character code</returns>
+        public virtual int GetCode(string name)
+        {
+            if (!NameToCode.TryGetValue(name, out var code))
+            {
+                return -1;
+            }
+
+            return code;
+        }
+
         /// <summary>
         /// Add a character code and name pair.
         /// </summary>
