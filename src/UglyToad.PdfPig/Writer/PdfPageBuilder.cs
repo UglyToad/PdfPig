@@ -520,10 +520,13 @@
         /// <summary>
         /// Adds the JPEG image represented by the input stream at the specified location.
         /// </summary>
-        public AddedImage AddJpeg(Stream fileStream, PdfRectangle placementRectangle)
+        public AddedImage AddJpeg(Stream fileStream, PdfRectangle placementRectangle = default)
         {
             var startFrom = fileStream.Position;
             var info = JpegHandler.GetInformation(fileStream);
+
+            if (placementRectangle.Equals(default(PdfRectangle)))
+                placementRectangle = new PdfRectangle(0, 0, info.Width, info.Height);
 
             byte[] data;
             using (var memory = new MemoryStream())
@@ -612,9 +615,12 @@
         /// <summary>
         /// Adds the PNG image represented by the input stream at the specified location.
         /// </summary>
-        public AddedImage AddPng(Stream pngStream, PdfRectangle placementRectangle)
+        public AddedImage AddPng(Stream pngStream, PdfRectangle placementRectangle = default)
         {
             var png = Png.Open(pngStream);
+
+            if (placementRectangle.Equals(default(PdfRectangle)))
+                placementRectangle = new PdfRectangle(0, 0, png.Width, png.Height);
 
             byte[] data;
             var pixelBuffer = new byte[3];
