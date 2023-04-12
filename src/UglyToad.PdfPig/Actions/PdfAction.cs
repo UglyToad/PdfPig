@@ -13,7 +13,6 @@
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="type"></param>
         protected PdfAction(ActionType type)
         {
             Type = type;

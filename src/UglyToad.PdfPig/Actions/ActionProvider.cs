@@ -13,19 +13,12 @@
         /// <summary>
         /// Get an action (A) from dictionary. If GoTo, GoToR or GoToE, also fetches the action destination.
         /// </summary>
-        /// <param name="dictionary"></param>
-        /// <param name="namedDestinations"></param>
-        /// <param name="pdfScanner"></param>
-        /// <param name="log"></param>
-        /// <param name="result"></param>
-        /// <returns></returns>
-        /// <exception cref="PdfDocumentFormatException"></exception>
         internal static bool TryGetAction(DictionaryToken dictionary,
             NamedDestinations namedDestinations,
             IPdfTokenScanner pdfScanner,
             ILog log,
             out PdfAction result)
-        {   
+        {
             result = null;
 
             if (!dictionary.TryGet(NameToken.A, pdfScanner, out DictionaryToken actionDictionary))
