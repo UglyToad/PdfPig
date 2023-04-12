@@ -1,21 +1,22 @@
-﻿namespace UglyToad.PdfPig.Actions;
-
-/// <summary>
-/// Action to open a URI
-/// </summary>
-public class UriAction : PdfAction
+﻿namespace UglyToad.PdfPig.Actions
 {
     /// <summary>
-    /// URI to open
+    /// Action to open a URI
     /// </summary>
-    public string Uri { get; }
-
-    /// <summary>
-    /// Constructor
-    /// </summary>
-    /// <param name="uri">URI to open</param>
-    public UriAction(string uri) : base(ActionType.URI)
+    public class UriAction : PdfAction
     {
-        Uri = uri;
+        /// <summary>
+        /// URI to open
+        /// </summary>
+        public string Uri { get; }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="uri">URI to open</param>
+        public UriAction(string uri) : base(ActionType.URI)
+        {
+            Uri = uri;
+        }
     }
 }
