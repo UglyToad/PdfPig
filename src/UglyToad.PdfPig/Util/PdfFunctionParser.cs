@@ -16,12 +16,12 @@
             DictionaryToken functionDictionary;
             StreamToken functionStream = null;
 
-            if (function is StreamToken fs)
+            if (DirectObjectFinder.TryGet(function, scanner, out StreamToken fs))
             {
                 functionDictionary = fs.StreamDictionary;
                 functionStream = new StreamToken(fs.StreamDictionary, fs.Decode(filterProvider, scanner));
             }
-            else if (function is DictionaryToken fd)
+            else if (DirectObjectFinder.TryGet(function, scanner, out DictionaryToken fd))
             {
                 functionDictionary = fd;
             }
