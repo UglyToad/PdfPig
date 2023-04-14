@@ -44,30 +44,7 @@
                 decoded = RemoveStridePadding(decoded.ToArray(), strideWidth, imageWidth, imageHeight, bytesPerPixel);
             }
 
-            if (details is SeparationColorSpaceDetails separation)
-            {
-                decoded = separation.TransformToRGB(decoded);
-            }
-            else
-            {
-                // In case of indexed color space images, unwrap indices to actual pixel component values
-                if (details is IndexedColorSpaceDetails indexed)
-                {
-                    decoded = indexed.UnwrapIndexedColorSpaceBytes(decoded);
-
-                    // Use the base color space in potential further decoding
-                    details = indexed.BaseColorSpaceDetails;
-                }
-
-                if (details is CalRGBColorSpaceDetails calRgb)
-                {
-                    decoded = calRgb.TransformToRGB(decoded);
-                }
-                else if (details is CalGrayColorSpaceDetails calGray)
-                {
-                    decoded = calGray.TransformToRGB(decoded);
-                }
-            }
+            decoded = details.Transform(decoded);
 
             return decoded.ToArray();
         }
