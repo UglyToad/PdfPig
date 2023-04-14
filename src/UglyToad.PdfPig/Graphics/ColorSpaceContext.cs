@@ -14,7 +14,7 @@
 
         public ColorSpaceDetails CurrentStrokingColorSpace { get; private set; } = DeviceGrayColorSpaceDetails.Instance;
 
-        public ColorSpaceDetails CurrentNonStrokingColorSpace { get; set; } = DeviceGrayColorSpaceDetails.Instance;
+        public ColorSpaceDetails CurrentNonStrokingColorSpace { get; private set; } = DeviceGrayColorSpaceDetails.Instance;
 
         public ColorSpaceContext(Func<CurrentGraphicsState> currentStateFunc, IResourceStore resourceStore)
         {
@@ -22,9 +22,9 @@
             this.resourceStore = resourceStore ?? throw new ArgumentNullException(nameof(resourceStore));
         }
 
-        public void SetStrokingColorspace(NameToken colorspace)
+        public void SetStrokingColorspace(NameToken colorspace, DictionaryToken dictionary = null)
         {
-            CurrentStrokingColorSpace = resourceStore.GetColorSpaceDetails(colorspace, null);
+            CurrentStrokingColorSpace = resourceStore.GetColorSpaceDetails(colorspace, dictionary);
             if (CurrentStrokingColorSpace is UnsupportedColorSpaceDetails)
             {
                 return;
@@ -61,9 +61,9 @@
             currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor((double)c, (double)m, (double)y, (double)k);
         }
 
-        public void SetNonStrokingColorspace(NameToken colorspace)
+        public void SetNonStrokingColorspace(NameToken colorspace, DictionaryToken dictionary = null)
         {
-            CurrentNonStrokingColorSpace = resourceStore.GetColorSpaceDetails(colorspace, null);
+            CurrentNonStrokingColorSpace = resourceStore.GetColorSpaceDetails(colorspace, dictionary);
             if (CurrentNonStrokingColorSpace is UnsupportedColorSpaceDetails)
             {
                 return;

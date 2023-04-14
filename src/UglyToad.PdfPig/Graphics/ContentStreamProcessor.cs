@@ -513,8 +513,7 @@
                 {
                     if (csArrayToken.Data[0] is NameToken firstColorSpaceName)
                     {
-                        startState.ColorSpaceContext.CurrentNonStrokingColorSpace = resourceStore.GetColorSpaceDetails(firstColorSpaceName, formGroupToken);
-                        startState.CurrentNonStrokingColor = startState.ColorSpaceContext.CurrentNonStrokingColorSpace.GetInitializeColor();
+                        startState.ColorSpaceContext.SetNonStrokingColorspace(csNameToken, formGroupToken);
                     }
                     else
                     {

@@ -18,17 +18,21 @@
         /// <summary>
         /// The <see cref="ColorSpaceDetails"/> used for non-stroking operations.
         /// </summary>
-        ColorSpaceDetails CurrentNonStrokingColorSpace { get; internal set; }
+        ColorSpaceDetails CurrentNonStrokingColorSpace { get; }
 
         /// <summary>
-        /// Set the current color space to use for stroking operations.
+        /// Set the current color space to use for stroking operations and initialize the stroking color.
         /// </summary>
-        void SetStrokingColorspace(NameToken colorspace);
+        /// <param name="colorspace">The color space name.</param>
+        /// <param name="dictionary">The color space dictionary. Default value is null.</param>
+        void SetStrokingColorspace(NameToken colorspace, DictionaryToken dictionary = null);
 
         /// <summary>
-        /// Set the current color space to use for nonstroking operations.
+        /// Set the current color space to use for nonstroking operations and initialize the nonstroking color.
         /// </summary>
-        void SetNonStrokingColorspace(NameToken colorspace);
+        /// <param name="colorspace">The color space name.</param>
+        /// <param name="dictionary">The color space dictionary. Default value is null.</param>
+        void SetNonStrokingColorspace(NameToken colorspace, DictionaryToken dictionary = null);
 
         /// <summary>
         /// Set the color to use for stroking operations using the current color space.
