@@ -22,6 +22,7 @@
         private const string SPARCv9ArchitectureManual = "SPARC - v9 Architecture Manual";
         private const string CroppedAndRotatedFile = "cropped-and-rotated";
         private const string MOZILLA_10372_2File = "MOZILLA-10372-2";
+        private const string Type3FontZeroHeight = "type3-font-zero-height";
 
         private static string GetFilename(string name)
         {
@@ -135,6 +136,12 @@
         public void MOZILLA_10372_2Test()
         {
             Run(MOZILLA_10372_2File, 1584, 7);
+        }
+
+        [Fact]
+        public void Type3FontZeroHeightTest()
+        {
+            Run(Type3FontZeroHeight, 1255);
         }
 
         private static void Run(string file, int imageHeight = 792, int pageNo = 1)

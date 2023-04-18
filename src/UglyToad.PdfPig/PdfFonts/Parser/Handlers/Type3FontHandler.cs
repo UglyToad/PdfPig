@@ -31,6 +31,11 @@
 
             var fontMatrix = GetFontMatrix(dictionary);
 
+            if (boundingBox.Left == 0 && boundingBox.Bottom == 0 && boundingBox.Height == 0 && boundingBox.Width == 0)
+            {
+                boundingBox = new PdfRectangle(0, 0, 1 / fontMatrix.A, 1 / fontMatrix.D);
+            }
+
             var firstCharacter = FontDictionaryAccessHelper.GetFirstCharacter(dictionary);
             var lastCharacter = FontDictionaryAccessHelper.GetLastCharacter(dictionary);
             var widths = FontDictionaryAccessHelper.GetWidths(scanner, dictionary);
