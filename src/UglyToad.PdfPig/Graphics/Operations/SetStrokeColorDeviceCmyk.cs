@@ -12,7 +12,7 @@
         /// The symbol for this operation in a stream.
         /// </summary>
         public const string Symbol = "K";
-        
+
         /// <inheritdoc />
         public string Operator => Symbol;
 
@@ -54,7 +54,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.ColorSpaceContext.SetStrokingColorCmyk(C, M, Y, K);
+            operationContext.GetCurrentState().ColorSpaceContext.SetStrokingColorCmyk(C, M, Y, K);
         }
 
         /// <inheritdoc />

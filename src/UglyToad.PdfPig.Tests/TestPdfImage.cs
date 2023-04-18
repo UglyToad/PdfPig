@@ -16,8 +16,6 @@
 
         public int HeightInSamples { get; set; }
 
-        public ColorSpace? ColorSpace => IsImageMask ? default(ColorSpace?) : ColorSpaceDetails.Type;
-
         public int BitsPerComponent { get; set; } = 8;
 
         public IReadOnlyList<byte> RawBytes { get; }

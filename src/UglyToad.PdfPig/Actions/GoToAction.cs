@@ -1,17 +1,17 @@
-﻿namespace UglyToad.PdfPig.Actions;
-
-using Outline.Destinations;
-
-/// <summary>
-/// GoTo action (with a destination inside the current document)
-/// </summary>
-public class GoToAction : AbstractGoToAction
+﻿namespace UglyToad.PdfPig.Actions
 {
+    using Outline.Destinations;
+
     /// <summary>
-    /// Constructor
+    /// GoTo action (with a destination inside the current document)
     /// </summary>
-    /// <param name="destination"></param>
-    public GoToAction(ExplicitDestination destination) : base(ActionType.GoTo, destination)
+    public class GoToAction : AbstractGoToAction
     {
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public GoToAction(ExplicitDestination destination) : base(ActionType.GoTo, destination)
+        {
+        }
     }
 }

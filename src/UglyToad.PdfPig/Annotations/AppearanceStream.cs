@@ -1,66 +1,67 @@
-﻿namespace UglyToad.PdfPig.Annotations;
-
-using System;
-using System.Collections.Generic;
-using Tokens;
-
-/// <summary>
-/// Appearance stream (PDF Reference 8.4.4) that describes what an annotation looks like. Each stream is a Form XObject.
-/// The appearance stream is either stateless (in which case <see cref="IsStateless"/> is true)
-/// or stateful, in which case <see cref="IsStateless"/> is false and the states can be retrieved via <see cref="GetStates"/>.
-/// The states can then be used to retrieve the state-specific appearances using <see cref="Get"/>.
-/// </summary>
-public class AppearanceStream
+﻿namespace UglyToad.PdfPig.Annotations
 {
-    private readonly IDictionary<string, StreamToken> appearanceStreamsByState;
-
-    private readonly StreamToken statelessAppearanceStream;
-
-    /// <summary>
-    /// Indicates if this appearance stream is stateless, or whether you can get appearances by state.
-    /// </summary>
-    public bool IsStateless => statelessAppearanceStream != null;
+    using System;
+    using System.Collections.Generic;
+    using Tokens;
 
     /// <summary>
-    /// Get list of states. If this is a stateless appearance stream, an empty collection is returned.
+    /// Appearance stream (PDF Reference 8.4.4) that describes what an annotation looks like. Each stream is a Form XObject.
+    /// The appearance stream is either stateless (in which case <see cref="IsStateless"/> is true)
+    /// or stateful, in which case <see cref="IsStateless"/> is false and the states can be retrieved via <see cref="GetStates"/>.
+    /// The states can then be used to retrieve the state-specific appearances using <see cref="Get"/>.
     /// </summary>
-    public ICollection<string> GetStates => appearanceStreamsByState != null ? appearanceStreamsByState.Keys : new string[0];
-
-    /// <summary>
-    /// Constructor for stateless appearance stream
-    /// </summary>
-    /// <param name="streamToken"></param>
-    internal AppearanceStream(StreamToken streamToken)
+    public class AppearanceStream
     {
-        statelessAppearanceStream = streamToken;
-    }
+        private readonly IDictionary<string, StreamToken> appearanceStreamsByState;
 
-    /// <summary>
-    /// Constructor for stateful appearance stream
-    /// </summary>
-    /// <param name="appearanceStreamsByState"></param>
-    internal AppearanceStream(IDictionary<string, StreamToken> appearanceStreamsByState)
-    {
-        this.appearanceStreamsByState = appearanceStreamsByState;
-    }
+        private readonly StreamToken statelessAppearanceStream;
 
-    /// <summary>
-    /// Get appearance stream for particular state
-    /// </summary>
-    /// <param name="state"></param>
-    /// <returns></returns>
-    /// <exception cref="Exception"></exception>
-    /// <exception cref="ArgumentOutOfRangeException"></exception>
-    public StreamToken Get(string state)
-    {
-        if (appearanceStreamsByState == null)
+        /// <summary>
+        /// Indicates if this appearance stream is stateless, or whether you can get appearances by state.
+        /// </summary>
+        public bool IsStateless => statelessAppearanceStream != null;
+
+        /// <summary>
+        /// Get list of states. If this is a stateless appearance stream, an empty collection is returned.
+        /// </summary>
+        public ICollection<string> GetStates => appearanceStreamsByState != null ? appearanceStreamsByState.Keys : new string[0];
+
+        /// <summary>
+        /// Constructor for stateless appearance stream
+        /// </summary>
+        /// <param name="streamToken"></param>
+        internal AppearanceStream(StreamToken streamToken)
         {
-            throw new Exception("Cannot get appearance by state when this is a stateless appearance stream");
+            statelessAppearanceStream = streamToken;
         }
-        if (!appearanceStreamsByState.ContainsKey(state))
+
+        /// <summary>
+        /// Constructor for stateful appearance stream
+        /// </summary>
+        /// <param name="appearanceStreamsByState"></param>
+        internal AppearanceStream(IDictionary<string, StreamToken> appearanceStreamsByState)
         {
-            throw new ArgumentOutOfRangeException(nameof(state), $"Appearance stream does not have state '{state}' (available states: {string.Join(",", appearanceStreamsByState.Keys)})");
+            this.appearanceStreamsByState = appearanceStreamsByState;
         }
-        return appearanceStreamsByState[state];
+
+        /// <summary>
+        /// Get appearance stream for particular state
+        /// </summary>
+        /// <param name="state"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        public StreamToken Get(string state)
+        {
+            if (appearanceStreamsByState == null)
+            {
+                throw new Exception("Cannot get appearance by state when this is a stateless appearance stream");
+            }
+            if (!appearanceStreamsByState.ContainsKey(state))
+            {
+                throw new ArgumentOutOfRangeException(nameof(state), $"Appearance stream does not have state '{state}' (available states: {string.Join(",", appearanceStreamsByState.Keys)})");
+            }
+            return appearanceStreamsByState[state];
+        }
     }
 }

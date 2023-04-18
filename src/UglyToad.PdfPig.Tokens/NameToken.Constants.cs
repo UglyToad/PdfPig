@@ -349,6 +349,7 @@
         public static readonly NameToken Metadata = new NameToken("Metadata");
         public static readonly NameToken MissingWidth = new NameToken("MissingWidth");
         public static readonly NameToken Mix = new NameToken("Mix");
+        public static readonly NameToken MixingHints = new NameToken("MixingHints");
         public static readonly NameToken Mk = new NameToken("MK");
         public static readonly NameToken Ml = new NameToken("ML");
         public static readonly NameToken MmType1 = new NameToken("MMType1");
