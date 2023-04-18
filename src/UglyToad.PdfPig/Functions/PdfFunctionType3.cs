@@ -51,7 +51,7 @@
             }
         }
 
-        public override double[] Eval(double[] input)
+        public override double[] Eval(params double[] input)
         {
             // This function is known as a "stitching" function. Based on the input, it decides which child function to call.
             // All functions in the array are 1-value-input functions

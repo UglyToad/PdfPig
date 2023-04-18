@@ -47,7 +47,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.ColorSpaceContext.SetNonStrokingColorRgb(R, G, B);
+            operationContext.GetCurrentState().ColorSpaceContext.SetNonStrokingColorRgb(R, G, B);
         }
 
         /// <inheritdoc />

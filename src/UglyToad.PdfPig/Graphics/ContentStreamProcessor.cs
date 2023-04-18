@@ -72,8 +72,6 @@
 
         public PdfPath CurrentPath { get; private set; }
 
-        public IColorSpaceContext ColorSpaceContext { get; }
-
         public PdfPoint CurrentPosition { get; set; }
 
         public int StackSize => graphicsStack.Count;
@@ -84,10 +82,10 @@
             {XObjectType.PostScript, new List<XObjectContentRecord>()}
         };
 
-        public ContentStreamProcessor(IResourceStore resourceStore, 
-            UserSpaceUnit userSpaceUnit, 
-            MediaBox mediaBox, 
-            CropBox cropBox, 
+        public ContentStreamProcessor(IResourceStore resourceStore,
+            UserSpaceUnit userSpaceUnit,
+            MediaBox mediaBox,
+            CropBox cropBox,
             PageRotationDegrees rotation,
             IPdfTokenScanner pdfScanner,
             IPageContentParser pageContentParser,
@@ -111,16 +109,15 @@
             graphicsStack.Push(new CurrentGraphicsState()
             {
                 CurrentTransformationMatrix = GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, parsingOptions.Logger),
-                CurrentClippingPath = clippingPath
+                CurrentClippingPath = clippingPath,
+                ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore)
             });
-
-            ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore);
         }
 
         [System.Diagnostics.Contracts.Pure]
-        internal static TransformationMatrix GetInitialMatrix(UserSpaceUnit userSpaceUnit, 
+        internal static TransformationMatrix GetInitialMatrix(UserSpaceUnit userSpaceUnit,
             MediaBox mediaBox,
-            CropBox cropBox, 
+            CropBox cropBox,
             PageRotationDegrees rotation,
             ILog log)
         {
@@ -434,14 +431,14 @@
             if (subType.Equals(NameToken.Ps))
             {
                 var contentRecord = new XObjectContentRecord(XObjectType.PostScript, xObjectStream, matrix, state.RenderingIntent,
-                    state.CurrentStrokingColor?.ColorSpace ?? ColorSpace.DeviceRGB);
+                    state.ColorSpaceContext?.CurrentStrokingColorSpace ?? DeviceRgbColorSpaceDetails.Instance);
 
                 xObjects[XObjectType.PostScript].Add(contentRecord);
             }
             else if (subType.Equals(NameToken.Image))
             {
                 var contentRecord = new XObjectContentRecord(XObjectType.Image, xObjectStream, matrix, state.RenderingIntent,
-                    state.CurrentStrokingColor?.ColorSpace ?? ColorSpace.DeviceRGB);
+                    state.ColorSpaceContext?.CurrentStrokingColorSpace ?? DeviceRgbColorSpaceDetails.Instance);
 
                 images.Add(Union<XObjectContentRecord, InlineImage>.One(contentRecord));
 
@@ -480,6 +477,76 @@
 
             var startState = GetCurrentState();
 
+            // Transparency Group XObjects
+            if (formStream.StreamDictionary.TryGet(NameToken.Group, pdfScanner, out DictionaryToken formGroupToken))
+            {
+                if (!formGroupToken.TryGet<NameToken>(NameToken.S, pdfScanner, out var sToken) || sToken != NameToken.Transparency)
+                {
+                    throw new InvalidOperationException($"Invalid Transparency Group XObject, '{NameToken.S}' token is not set or not equal to '{NameToken.Transparency}'.");
+                }
+
+                /* blend mode
+                 * A conforming reader shall implicitly reset this parameter to its initial value at the beginning of execution of a
+                 * transparency group XObject (see 11.6.6, "Transparency Group XObjects"). Initial value: Normal.
+                 */
+                //startState.BlendMode = BlendMode.Normal;
+
+                /* soft mask
+                 * A conforming reader shall implicitly reset this parameter implicitly reset to its initial value at the beginning
+                 * of execution of a transparency group XObject (see 11.6.6, "Transparency Group XObjects"). Initial value: None.
+                 */
+                // TODO
+
+                /* alpha constant
+                 * A conforming reader shall implicitly reset this parameter to its initial value at the beginning of execution of a
+                 * transparency group XObject (see 11.6.6, "Transparency Group XObjects"). Initial value: 1.0.
+                 */
+                startState.AlphaConstantNonStroking = 1.0m;
+                startState.AlphaConstantStroking = 1.0m;
+
+                if (formGroupToken.TryGet(NameToken.Cs, pdfScanner, out NameToken csNameToken))
+                {
+                    startState.ColorSpaceContext.SetNonStrokingColorspace(csNameToken);
+                }
+                else if (formGroupToken.TryGet(NameToken.Cs, pdfScanner, out ArrayToken csArrayToken)
+                    && csArrayToken.Length > 0)
+                {
+                    if (csArrayToken.Data[0] is NameToken firstColorSpaceName)
+                    {
+                        startState.ColorSpaceContext.SetNonStrokingColorspace(firstColorSpaceName, formGroupToken);
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Invalid color space in Transparency Group XObjects.");
+                    }
+                }
+
+                bool isolated = false;
+                if (formGroupToken.TryGet(NameToken.I, pdfScanner, out BooleanToken isolatedToken))
+                {
+                    /*
+                     * (Optional) A flag specifying whether the transparency group is isolated (see “Isolated Groups”).
+                     * If this flag is true, objects within the group shall be composited against a fully transparent
+                     * initial backdrop; if false, they shall be composited against the group’s backdrop.
+                     * Default value: false.
+                     */
+                    isolated = isolatedToken.Data;
+                }
+
+                bool knockout = false;
+                if (formGroupToken.TryGet(NameToken.K, pdfScanner, out BooleanToken knockoutToken))
+                {
+                    /*
+                     * (Optional) A flag specifying whether the transparency group is a knockout group (see “Knockout Groups”).
+                     * If this flag is false, later objects within the group shall be composited with earlier ones with which
+                     * they overlap; if true, they shall be composited with the group’s initial backdrop and shall overwrite
+                     * (“knock out”) any earlier overlapping objects.
+                     * Default value: false.
+                     */
+                    knockout = knockoutToken.Data;
+                }
+            }
+
             var formMatrix = TransformationMatrix.Identity;
             if (formStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Matrix, pdfScanner, out var formMatrixToken))
             {
@@ -487,9 +554,7 @@
             }
 
             // 2. Update current transformation matrix.
-            var resultingTransformationMatrix = formMatrix.Multiply(startState.CurrentTransformationMatrix);
-
-            startState.CurrentTransformationMatrix = resultingTransformationMatrix;
+            startState.CurrentTransformationMatrix = formMatrix.Multiply(startState.CurrentTransformationMatrix);
 
             var contentStream = formStream.Decode(filterProvider, pdfScanner);
 
