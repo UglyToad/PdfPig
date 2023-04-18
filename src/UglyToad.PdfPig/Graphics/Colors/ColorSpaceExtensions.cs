@@ -36,20 +36,21 @@
 
         /// <summary>
         /// Maps from a <see cref="NameToken"/> to the corresponding <see cref="ColorSpace"/> if one exists.
+        /// <para>Includes extended color spaces.</para>
         /// </summary>
         public static bool TryMapToColorSpace(this NameToken name, out ColorSpace colorspace)
         {
             colorspace = ColorSpace.DeviceGray;
 
-            if (name.Data == NameToken.Devicegray.Data)
+            if (name.Data == NameToken.Devicegray.Data || name.Data == "G")
             {
                 colorspace = ColorSpace.DeviceGray;
             }
-            else if (name.Data == NameToken.Devicergb.Data)
+            else if (name.Data == NameToken.Devicergb.Data || name.Data == "RGB")
             {
                 colorspace = ColorSpace.DeviceRGB;
             }
-            else if (name.Data == NameToken.Devicecmyk.Data)
+            else if (name.Data == NameToken.Devicecmyk.Data || name.Data == "CMYK")
             {
                 colorspace = ColorSpace.DeviceCMYK;
             }
@@ -69,7 +70,7 @@
             {
                 colorspace = ColorSpace.ICCBased;
             }
-            else if (name.Data == NameToken.Indexed.Data)
+            else if (name.Data == NameToken.Indexed.Data || name.Data == "I")
             {
                 colorspace = ColorSpace.Indexed;
             }

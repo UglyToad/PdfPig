@@ -37,11 +37,11 @@
         /// <summary>
         /// The default color space.
         /// </summary>
-        public ColorSpace DefaultColorSpace { get; }
+        public ColorSpaceDetails DefaultColorSpace { get; }
 
         internal XObjectContentRecord(XObjectType type, StreamToken stream, TransformationMatrix appliedTransformation,
             RenderingIntent defaultRenderingIntent,
-            ColorSpace defaultColorSpace)
+            ColorSpaceDetails defaultColorSpace)
         {
             Type = type;
             Stream = stream ?? throw new ArgumentNullException(nameof(stream));

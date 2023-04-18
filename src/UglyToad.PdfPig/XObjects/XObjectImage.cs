@@ -29,9 +29,6 @@
         public int HeightInSamples { get; }
 
         /// <inheritdoc />
-        public ColorSpace? ColorSpace { get; }
-
-        /// <inheritdoc />
         public int BitsPerComponent { get; }
 
         /// <summary>
@@ -73,7 +70,6 @@
             int widthInSamples,
             int heightInSamples,
             int bitsPerComponent,
-            ColorSpace? colorSpace,
             bool isJpxEncoded,
             bool isImageMask,
             RenderingIntent renderingIntent,
@@ -88,7 +84,6 @@
             WidthInSamples = widthInSamples;
             HeightInSamples = heightInSamples;
             BitsPerComponent = bitsPerComponent;
-            ColorSpace = colorSpace;
             IsJpxEncoded = isJpxEncoded;
             IsImageMask = isImageMask;
             RenderingIntent = renderingIntent;

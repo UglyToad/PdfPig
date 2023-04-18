@@ -369,7 +369,7 @@
             return samples;
         }
 
-        public override double[] Eval(double[] input)
+        public override double[] Eval(params double[] input)
         {
             //This involves linear interpolation based on a set of sample points.
             //Theoretically it's not that difficult ... see section 3.9.1 of the PDF Reference.

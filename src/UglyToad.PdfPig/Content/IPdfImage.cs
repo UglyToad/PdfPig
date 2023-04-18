@@ -28,17 +28,6 @@
         int HeightInSamples { get; }
 
         /// <summary>
-        /// The <see cref="ColorSpace"/> used to interpret the image.
-        /// This defines the number of color components per sample, e.g.
-        /// 1 component for <see cref="Graphics.Colors.ColorSpace.DeviceGray"/>,
-        /// 3 components for <see cref="Graphics.Colors.ColorSpace.DeviceRGB"/>,
-        /// 4 components for <see cref="Graphics.Colors.ColorSpace.DeviceCMYK"/>,
-        /// etc.
-        /// This is not defined where <see cref="IsImageMask"/> is <see langword="true"/> and is optional where the image is JPXEncoded for <see cref="XObjectImage"/>.
-        /// </summary>
-        ColorSpace? ColorSpace { get; }
-
-        /// <summary>
         /// The number of bits used to represent each color component.
         /// </summary>
         int BitsPerComponent { get; }
@@ -91,7 +80,10 @@
         DictionaryToken ImageDictionary { get; }
 
         /// <summary>
-        /// Full details for the <see cref="ColorSpace"/> with any associated data.
+        /// The <see cref="ColorSpaceDetails"/> used to interpret the image.
+        /// <para>
+        /// This is not defined where <see cref="IsImageMask"/> is <see langword="true"/> and is optional where the image is JPXEncoded for <see cref="XObjectImage"/>.
+        /// </para>
         /// </summary>
         ColorSpaceDetails ColorSpaceDetails { get; }
 
