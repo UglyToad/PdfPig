@@ -31,7 +31,8 @@
 
             var fontMatrix = GetFontMatrix(dictionary);
 
-            if (boundingBox.Left == 0 && boundingBox.Bottom == 0 && boundingBox.Height == 0 && boundingBox.Width == 0)
+            if (boundingBox.Left == 0 && boundingBox.Bottom == 0 && boundingBox.Height == 0 && boundingBox.Width == 0 
+                && fontMatrix.A != 0 && fontMatrix.D != 0)
             {
                 boundingBox = new PdfRectangle(0, 0, 1 / fontMatrix.A, 1 / fontMatrix.D);
             }
