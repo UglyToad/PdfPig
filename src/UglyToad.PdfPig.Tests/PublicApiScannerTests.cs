@@ -40,6 +40,7 @@
             var expected = new List<string>
             {
                 "UglyToad.PdfPig.AcroForms.AcroForm",
+                "UglyToad.PdfPig.AcroForms.AcroFormExtensions",
                 "UglyToad.PdfPig.AcroForms.SignatureFlags",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroButtonFieldFlags",
                 "UglyToad.PdfPig.AcroForms.Fields.AcroCheckboxField",
