@@ -142,7 +142,7 @@
             }
         }
 
-        private PdfAction GetAction(DictionaryToken annotationDictionary)
+        internal PdfAction GetAction(DictionaryToken annotationDictionary)
         {
             // If this annotation returns a direct destination, turn it into a GoTo action.
             if (DestinationProvider.TryGetDestination(annotationDictionary,

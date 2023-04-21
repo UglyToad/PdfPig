@@ -21,6 +21,7 @@
     using Tokens;
     using Graphics.Operations.PathPainting;
     using Images.Png;
+    using UglyToad.PdfPig.Actions;
 
     /// <summary>
     /// A builder used to add construct a page in a PDF document.
@@ -36,6 +37,9 @@
         // streams
         internal readonly List<IPageContentStream> contentStreams;
         private IPageContentStream currentStream;
+
+        // links to be resolved when all page references are available
+        internal readonly List<(DictionaryToken token, PdfAction action)> links;
         
         // maps fonts added using PdfDocumentBuilder to page font names
         private readonly Dictionary<Guid, NameToken> documentFonts = new Dictionary<Guid, NameToken>();
@@ -80,16 +84,17 @@
         }
 
         internal PdfPageBuilder(int number, PdfDocumentBuilder documentBuilder, IEnumerable<CopiedContentStream> copied,
-            Dictionary<NameToken, IToken> pageDict)
+            Dictionary<NameToken, IToken> pageDict, List<(DictionaryToken token, PdfAction action)> links)
         {
             this.documentBuilder = documentBuilder ?? throw new ArgumentNullException(nameof(documentBuilder));
+            this.links = links;
             PageNumber = number;
             pageDictionary = pageDict;
             contentStreams = new List<IPageContentStream>();
             contentStreams.AddRange(copied);
             currentStream = new DefaultContentStream();
             contentStreams.Add(currentStream);
-        }	        
+        }
 
         /// <summary>
         /// Allow to append a new content stream before the current one and select it

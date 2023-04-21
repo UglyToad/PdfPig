@@ -18,7 +18,7 @@
     /// </summary>
     public class Page
     {
-        private readonly AnnotationProvider annotationProvider;
+        internal readonly AnnotationProvider annotationProvider;
         internal readonly IPdfTokenScanner pdfScanner;
         private readonly Lazy<string> textLazy;
 
