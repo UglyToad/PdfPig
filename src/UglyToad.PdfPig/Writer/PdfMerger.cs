@@ -6,6 +6,8 @@
     using Filters;
     using Logging;
     using System.Linq;
+    using UglyToad.PdfPig.Actions;
+    using UglyToad.PdfPig.Outline.Destinations;
 
     /// <summary>
     /// Merges PDF documents into each other.
@@ -151,19 +153,63 @@
                         pages = pagesBundle[fileIndex];
                     }
 
+                    var basePageNumber = document.Pages.Count;
+
                     if (pages == null)
                     {
                         for (var i = 1; i <= existing.NumberOfPages; i++)
                         {
-                            document.AddPage(existing, i);
-                        }
-                    } else
-                    {
-                        foreach (var i in pages)
-                        {
-                            document.AddPage(existing, i);
+                            document.AddPage(existing, i, link => CopyLink(link, n => basePageNumber + n));
                         }
                     }
+                    else
+                    {
+                        var pageNumbers = new Dictionary<int, int>();
+                        for (var i = 0; i < pages.Count; i++)
+                        {
+                            pageNumbers[pages[i]] = basePageNumber + i + 1;
+                        }
+
+                        foreach (var i in pages)
+                        {
+                            document.AddPage(existing, i, link => CopyLink(
+                                link, n => pageNumbers.TryGetValue(n, out var pageNumber) ? pageNumber : null));
+                        }
+                    }
+                }
+            }
+
+            PdfAction CopyLink(PdfAction action, Func<int, int?> getPageNumber)
+            {
+                var link = action as AbstractGoToAction;
+                if (link == null)
+                {
+                    // copy the link if it is not a link to PDF documents
+                    return action;
+                }
+
+                var newPageNumber = getPageNumber(link.Destination.PageNumber);
+                if (newPageNumber == null)
+                {
+                    // ignore the link if the target page does not exist in the PDF document
+                    return null;
+                }
+
+                var newDestination = new ExplicitDestination(newPageNumber.Value, link.Destination.Type, link.Destination.Coordinates);
+
+                switch (action)
+                {
+                    case GoToAction goToAction:
+                        return new GoToAction(newDestination);
+
+                    case GoToEAction goToEAction:
+                        return new GoToEAction(newDestination, goToEAction.FileSpecification);
+
+                    case GoToRAction goToRAction:
+                        return new GoToRAction(newDestination, goToRAction.Filename);
+
+                    default:
+                        return action;
                 }
             }
         }

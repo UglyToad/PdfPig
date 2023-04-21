@@ -5,6 +5,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using Xunit;
 
     public class PdfMergerTests
@@ -184,6 +185,36 @@
                 {
                     Assert.NotNull(page.Text);
                 }
+            }
+        }
+
+        [Fact]
+        public void CanMergeWithLinks()
+        {
+            var test = IntegrationHelpers.GetDocumentPath("outline.pdf");
+            var result = PdfMerger.Merge(new[] { File.ReadAllBytes(test), File.ReadAllBytes(test) });
+
+            WriteFile(nameof(CanMergeWithLinks), result);
+
+            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            {
+                Assert.Equal(2, document.GetPages().Sum(
+                    page => page.ExperimentalAccess.GetAnnotations().Count(x => x.Type == Annotations.AnnotationType.Link)));
+            }
+        }
+
+        [Fact]
+        public void CanMergeWithLinksWithSelection()
+        {
+            var test = IntegrationHelpers.GetDocumentPath("outline.pdf");
+            var result = PdfMerger.Merge(new[] { File.ReadAllBytes(test), File.ReadAllBytes(test) }, new[] { new[] { 2, 1 }, new[] { 3, 1 } });
+
+            WriteFile(nameof(CanMergeWithLinksWithSelection), result);
+
+            using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
+            {
+                Assert.Equal(1, document.GetPages().Sum(
+                    page => page.ExperimentalAccess.GetAnnotations().Count(x => x.Type == Annotations.AnnotationType.Link)));
             }
         }
 
