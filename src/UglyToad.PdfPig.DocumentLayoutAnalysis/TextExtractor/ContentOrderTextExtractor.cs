@@ -40,7 +40,10 @@
         /// <param name="options">Control various aspects of the generated text.</param>
         public static string GetText(Page page, Options options)
         {
-            options ??= new Options();
+            if (options == null)
+            {
+                options = new Options();
+            }
 
             var sb = new StringBuilder();
 

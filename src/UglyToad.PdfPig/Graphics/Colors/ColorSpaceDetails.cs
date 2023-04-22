@@ -562,7 +562,7 @@
         /// <summary>
         /// DeviceN Color Space Attributes.
         /// </summary>
-        public struct DeviceNColorSpaceAttributes
+        public readonly struct DeviceNColorSpaceAttributes
         {
             /// <summary>
             /// A name specifying the preferred treatment for the colour space. Values shall be <c>DeviceN</c> or <c>NChannel</c>. Default value: <c>DeviceN</c>.
@@ -585,18 +585,18 @@
             public DictionaryToken MixingHints { get; }
 
             /// <summary>
-            /// TODO
+            /// Create a new <see cref="DeviceNColorSpaceAttributes"/>.
             /// </summary>
-            public DeviceNColorSpaceAttributes()
+            public DeviceNColorSpaceAttributes(NameToken subtype)
             {
-                Subtype = NameToken.Devicen;
+                Subtype = subtype;
                 Colorants = null;
                 Process = null;
                 MixingHints = null;
             }
 
             /// <summary>
-            /// TODO
+            /// Create a new <see cref="DeviceNColorSpaceAttributes"/>.
             /// </summary>
             public DeviceNColorSpaceAttributes(NameToken subtype, DictionaryToken colorants, DictionaryToken process, DictionaryToken mixingHints)
             {

@@ -70,7 +70,7 @@
         /// <summary>
         /// Merge multiple PDF documents together with the pages in the order the file paths are provided into the output stream
         /// </summary>
-        public static void Merge(Stream output, params string[] filePaths) 
+        public static void Merge(Stream output, params string[] filePaths)
         {
             Merge(output, PdfAStandard.None, null, filePaths);
         }
@@ -135,11 +135,11 @@
 
         private static void Merge(IReadOnlyList<PdfDocument> files, Stream output, IReadOnlyList<IReadOnlyList<int>> pagesBundle, PdfAStandard archiveStandard = PdfAStandard.None, PdfDocumentBuilder.DocumentInformationBuilder docInfoBuilder = null)
         {
-            var maxVersion = files.Select(x=>x.Version).Max();
+            var maxVersion = files.Select(x => x.Version).Max();
             using (var document = new PdfDocumentBuilder(output, false, PdfWriterType.Default, maxVersion))
             {
                 document.ArchiveStandard = archiveStandard;
-                if (docInfoBuilder != null) 
+                if (docInfoBuilder != null)
                 {
                     document.IncludeDocumentInformation = true;
                     document.DocumentInformation = docInfoBuilder;
@@ -172,8 +172,14 @@
 
                         foreach (var i in pages)
                         {
-                            document.AddPage(existing, i, link => CopyLink(
-                                link, n => pageNumbers.TryGetValue(n, out var pageNumber) ? pageNumber : null));
+                            document.AddPage(existing, i, link => CopyLink(link, n =>
+                            {
+                                if (pageNumbers.TryGetValue(n, out var pageNumber))
+                                {
+                                    return pageNumber;
+                                }
+                                return null;
+                            }));
                         }
                     }
                 }
@@ -181,8 +187,7 @@
 
             PdfAction CopyLink(PdfAction action, Func<int, int?> getPageNumber)
             {
-                var link = action as AbstractGoToAction;
-                if (link == null)
+                if (!(action is AbstractGoToAction link))
                 {
                     // copy the link if it is not a link to PDF documents
                     return action;
@@ -213,6 +218,5 @@
                 }
             }
         }
-
     }
 }

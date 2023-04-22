@@ -245,7 +245,10 @@
 
         public ColorSpaceDetails GetColorSpaceDetails(NameToken name, DictionaryToken dictionary)
         {
-            dictionary ??= new DictionaryToken(new Dictionary<NameToken, IToken>());
+            if (dictionary == null)
+            {
+                dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>());
+            }
 
             // Null color space for images
             if (name is null)

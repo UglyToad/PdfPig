@@ -10,7 +10,7 @@ namespace UglyToad.PdfPig.AcroForms
     public static class AcroFormExtensions
     {
         /// <summary>
-        /// Get fields containing data in form. 
+        /// Get fields containing data in form.
         /// </summary>
         public static IEnumerable<AcroFieldBase> GetFields(this AcroForm form)
         {
@@ -18,16 +18,25 @@ namespace UglyToad.PdfPig.AcroForms
         }
 
         /// <summary>
-        /// Get fields containing data which are children of field. 
+        /// Get fields containing data which are children of field.
         /// </summary>
         public static IEnumerable<AcroFieldBase> GetFields(this AcroFieldBase fieldBase)
         {
             if (fieldBase.FieldType != AcroFieldType.Unknown)
+            {
                 yield return fieldBase;
+            }
+
             if (fieldBase is AcroNonTerminalField nonTerminalField)
+            {
                 foreach (var child in nonTerminalField.Children)
+                {
                     foreach (var item in child.GetFields())
+                    {
                         yield return item;
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -35,12 +44,15 @@ namespace UglyToad.PdfPig.AcroForms
         /// </summary>
         public static KeyValuePair<string, string> GetFieldValue(this AcroFieldBase fieldBase)
         {
-            return fieldBase switch
+            if (fieldBase is AcroTextField textField)
             {
-                AcroTextField textField => new(textField.Information.PartialName, textField.Value),
-                AcroCheckboxField checkboxField => new(checkboxField.Information.PartialName, checkboxField.IsChecked.ToString()),
-                _ => new(fieldBase.Information.PartialName, ""),
-            };
+                return new KeyValuePair<string, string>(textField.Information.PartialName, textField.Value);
+            }
+            else if (fieldBase is AcroCheckboxField checkboxField)
+            {
+                return new KeyValuePair<string, string>(checkboxField.Information.PartialName, checkboxField.IsChecked.ToString());
+            }
+            return new KeyValuePair<string, string>(fieldBase.Information.PartialName, "");
         }
     }
 }
