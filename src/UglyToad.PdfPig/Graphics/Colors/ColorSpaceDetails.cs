@@ -1259,22 +1259,32 @@
         /// <inheritdoc/>
         internal override double[] Process(params double[] values)
         {
-            // TODO - use ICC profile
-
-            if (Profile != null && Profile.TryProcess(values, out double[] xyz) && xyz.Length == 3)
+            if (Profile != null)
             {
-                double x = xyz[0];
-                double y = xyz[1];
-                double z = xyz[2];
-
-                if (Profile.Header.Pcs == IccProfileConnectionSpace.PCSXYZ)
+                if (Profile.Header.ColourSpace == IccColourSpaceType.CMYK && values[0] == 0 && values[1] == 0 && values[2] == 0 && values[3] == 1)
                 {
-                    var rgb = colorSpaceTransformer.TransformXYZToRGB((x, y, z));
-                    return new double[] { rgb.R, rgb.G, rgb.B };
+                    // See 'COLOR MANAGEMENT UNDERSTANDING AND USING ICC PROFILES' by Phil Green:
+                    // Issues in CMYK Workflows
+                    // Pure black (0–0–0–K) turns into four-color C–M–Y–K color build, with resulting color shift,
+                    // misregister, and / or trap implications. Also known as the black type problem.
+                    return new double[] { 0, 0, 0 };
                 }
-                else
+
+                if (Profile.TryProcess(values, out double[] xyz) && xyz.Length == 3)
                 {
-                    return labColorSpaceDetails.Process(x * 100.0, y * 255.0 - 128.0, z * 255.0 - 128.0); // need to scale
+                    double x = xyz[0];
+                    double y = xyz[1];
+                    double z = xyz[2];
+
+                    if (Profile.Header.Pcs == IccProfileConnectionSpace.PCSXYZ)
+                    {
+                        var rgb = colorSpaceTransformer.TransformXYZToRGB((x, y, z));
+                        return new double[] { rgb.R, rgb.G, rgb.B };
+                    }
+                    else
+                    {
+                        return labColorSpaceDetails.Process(x * 100.0, y * 255.0 - 128.0, z * 255.0 - 128.0); // need to scale
+                    }
                 }
             }
 
@@ -1289,22 +1299,32 @@
                 throw new ArgumentException($"Invalid number of imputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
-            // TODO - use ICC profile
-
-            if (Profile != null && Profile.TryProcess(values, out double[] xyz) && xyz.Length == 3)
+            if (Profile != null)
             {
-                double x = xyz[0];
-                double y = xyz[1];
-                double z = xyz[2];
-
-                if (Profile.Header.Pcs == IccProfileConnectionSpace.PCSXYZ)
+                if (Profile.Header.ColourSpace == IccColourSpaceType.CMYK && values[0] == 0 && values[1] == 0 && values[2] == 0 && values[3] == 1)
                 {
-                    var rgb = colorSpaceTransformer.TransformXYZToRGB((x, y, z));
-                    return new RGBColor((decimal)rgb.R, (decimal)rgb.G, (decimal)rgb.B);
+                    // See 'COLOR MANAGEMENT UNDERSTANDING AND USING ICC PROFILES' by Phil Green:
+                    // Issues in CMYK Workflows
+                    // Pure black (0–0–0–K) turns into four-color C–M–Y–K color build, with resulting color shift,
+                    // misregister, and / or trap implications. Also known as the black type problem.
+                    return RGBColor.Black;
                 }
-                else
+
+                if (Profile.TryProcess(values, out double[] xyz) && xyz.Length == 3)
                 {
-                    return labColorSpaceDetails.GetColor(x, y, z);
+                    double x = xyz[0];
+                    double y = xyz[1];
+                    double z = xyz[2];
+
+                    if (Profile.Header.Pcs == IccProfileConnectionSpace.PCSXYZ)
+                    {
+                        var (R, G, B) = colorSpaceTransformer.TransformXYZToRGB((x, y, z));
+                        return new RGBColor((decimal)R, (decimal)G, (decimal)B);
+                    }
+                    else
+                    {
+                        return labColorSpaceDetails.GetColor(x, y, z);
+                    }
                 }
             }
 
