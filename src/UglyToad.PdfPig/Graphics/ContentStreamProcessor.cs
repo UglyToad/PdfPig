@@ -1064,5 +1064,12 @@
         {
             GetCurrentState().FontState.CharacterSpacing = spacing;
         }
+
+        public void PaintShading(NameToken shadingName)
+        {
+            // We do nothing for the moment
+            // Do the following if you need to access the shading:
+            // var shading = resourceStore.GetShading(shadingName);
+        }
     }
 }

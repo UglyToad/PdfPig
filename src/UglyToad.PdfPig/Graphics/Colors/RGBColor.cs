@@ -6,7 +6,7 @@
     /// <summary>
     /// A color with red, green and blue components.
     /// </summary>
-    public class RGBColor : IColor, IEquatable<RGBColor>
+    public sealed class RGBColor : IColor, IEquatable<RGBColor>
     {
         /// <summary>
         /// RGB Black value (all 0).
@@ -24,17 +24,17 @@
         /// <summary>
         /// The red value between 0 and 1.
         /// </summary>
-        public decimal R { get; }
+        public double R { get; }
 
         /// <summary>
         /// The green value between 0 and 1.
         /// </summary>
-        public decimal G { get; }
+        public double G { get; }
 
         /// <summary>
         /// The blue value between 0 and 1.
         /// </summary>
-        public decimal B { get; }
+        public double B { get; }
 
         /// <summary>
         /// Create a new <see cref="RGBColor"/>.
@@ -42,7 +42,7 @@
         /// <param name="r">The red value between 0 and 1.</param>
         /// <param name="g">The green value between 0 and 1.</param>
         /// <param name="b">The blue value between 0 and 1.</param>
-        public RGBColor(decimal r, decimal g, decimal b)
+        public RGBColor(double r, double g, double b)
         {
             R = r;
             G = g;
@@ -50,7 +50,7 @@
         }
 
         /// <inheritdoc/>
-        public (decimal r, decimal g, decimal b) ToRGBValues() => (R, G, B);
+        public (double r, double g, double b) ToRGBValues() => (R, G, B);
 
         /// <inheritdoc />
         public override bool Equals(object obj)

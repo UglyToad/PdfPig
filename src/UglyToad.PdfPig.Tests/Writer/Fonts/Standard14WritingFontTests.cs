@@ -105,7 +105,7 @@
 
                 {
                     var lettersUnicode = letters.Where(l => l.FontName == "ZapfDingbats"
-                                                           && l.Color.ToRGBValues().b > 0.78m)
+                                                           && l.Color.ToRGBValues().b > 0.78)
                                                .ToList();
                     Assert.Equal(188, lettersUnicode.Count);
                     for (int i = 0; i < lettersUnicode.Count; i++)
@@ -305,7 +305,7 @@
 
                 {
                     var lettersUnicode = letters.Where(l => l.FontName == "Symbol"
-                                                           && l.Color.ToRGBValues().b > 0.78m)
+                                                           && l.Color.ToRGBValues().b > 0.78)
                                                .ToList();
                     Assert.Equal(189, lettersUnicode.Count);
                     for (int i = 0; i < lettersUnicode.Count; i++)
@@ -616,7 +616,7 @@
                     {
                         var lettersUnicode = letters.Where(l => l.FontName == expectedFontName
                                                                 && l.FontSize == 12d
-                                                                && l.Color.ToRGBValues().b > 0.78m)
+                                                                && l.Color.ToRGBValues().b > 0.78)
                                                    .ToList();
                         Assert.Equal(149, lettersUnicode.Count);
                         for (int i = 0; i < lettersUnicode.Count; i++)

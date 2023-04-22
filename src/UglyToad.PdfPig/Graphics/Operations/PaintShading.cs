@@ -4,7 +4,6 @@
     using System.IO;
     using Tokens;
 
-    /// <inheritdoc />
     /// <summary>
     /// Paint the shape and color shading described by a shading dictionary, subject to the current clipping path.
     /// The current color in the graphics state is neither used nor altered.
@@ -37,6 +36,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
+            operationContext.PaintShading(Name);
         }
 
         /// <inheritdoc />

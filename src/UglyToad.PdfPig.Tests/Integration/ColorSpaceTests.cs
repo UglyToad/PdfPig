@@ -58,14 +58,14 @@
                 var image3_0 = images3[0];
                 var deviceNCs = image3_0.ColorSpaceDetails as DeviceNColorSpaceDetails;
                 Assert.NotNull(deviceNCs);
-                Assert.True(deviceNCs.AlternateColorSpaceDetails is ICCBasedColorSpaceDetails);
+                Assert.True(deviceNCs.AlternateColorSpace is ICCBasedColorSpaceDetails);
                 Assert.True(image3_0.TryGetPng(out byte[] bytes3_0));
                 File.WriteAllBytes(Path.Combine(OutputFolder, "DeviceN_CS_test_3_0.png"), bytes3_0);
 
                 var image3_2 = images3[2];
                 deviceNCs = image3_2.ColorSpaceDetails as DeviceNColorSpaceDetails;
                 Assert.NotNull(deviceNCs);
-                Assert.True(deviceNCs.AlternateColorSpaceDetails is ICCBasedColorSpaceDetails);
+                Assert.True(deviceNCs.AlternateColorSpace is ICCBasedColorSpaceDetails);
                 Assert.True(image3_2.TryGetPng(out byte[] bytes3_2));
                 File.WriteAllBytes(Path.Combine(OutputFolder, "DeviceN_CS_test_3_2.png"), bytes3_2);
 
@@ -76,21 +76,21 @@
                 var image6_0 = images6[0];
                 deviceNCs = image6_0.ColorSpaceDetails as DeviceNColorSpaceDetails;
                 Assert.NotNull(deviceNCs);
-                Assert.True(deviceNCs.AlternateColorSpaceDetails is ICCBasedColorSpaceDetails);
+                Assert.True(deviceNCs.AlternateColorSpace is ICCBasedColorSpaceDetails);
                 Assert.True(image6_0.TryGetPng(out byte[] bytes6_0));
                 File.WriteAllBytes(Path.Combine(OutputFolder, "DeviceN_CS_test_6_0.png"), bytes6_0);
 
                 var image6_1 = images6[1];
                 deviceNCs = image6_0.ColorSpaceDetails as DeviceNColorSpaceDetails;
                 Assert.NotNull(deviceNCs);
-                Assert.True(deviceNCs.AlternateColorSpaceDetails is ICCBasedColorSpaceDetails);
+                Assert.True(deviceNCs.AlternateColorSpace is ICCBasedColorSpaceDetails);
                 Assert.True(image6_1.TryGetPng(out byte[] bytes6_1));
                 File.WriteAllBytes(Path.Combine(OutputFolder, "DeviceN_CS_test_6_1.png"), bytes6_1);
 
                 var image6_2 = images6[2];
                 deviceNCs = image6_2.ColorSpaceDetails as DeviceNColorSpaceDetails;
                 Assert.NotNull(deviceNCs);
-                Assert.True(deviceNCs.AlternateColorSpaceDetails is ICCBasedColorSpaceDetails);
+                Assert.True(deviceNCs.AlternateColorSpace is ICCBasedColorSpaceDetails);
                 Assert.True(image6_2.TryGetPng(out byte[] bytes6_2));
                 File.WriteAllBytes(Path.Combine(OutputFolder, "DeviceN_CS_test_6_2.png"), bytes6_2);
             }
@@ -104,17 +104,17 @@
             using (var document = PdfDocument.Open(path))
             {
                 var page1 = document.GetPage(1);
-                var images = page1.GetImages();
+                var images = page1.GetImages().ToArray();
                 var image1page1 = images.ElementAt(0);
                 var separationCs = image1page1.ColorSpaceDetails as SeparationColorSpaceDetails;
                 Assert.NotNull(separationCs);
-                Assert.True(separationCs.AlternateColorSpaceDetails is DeviceCmykColorSpaceDetails);
+                Assert.True(separationCs.AlternateColorSpace is DeviceCmykColorSpaceDetails);
 
-                foreach (var image in images)
+                for (int i = 0; i < images.Length; i++)
                 {
-                    if (image.TryGetPng(out byte[] bytes))
+                    if (images[i].TryGetPng(out var png))
                     {
-                        // Can't check actual image processing yet because encoded not supported
+                        File.WriteAllBytes(Path.Combine(OutputFolder, $"MOZILLA-7375-0_1_{i}.png"), png);
                     }
                 }
             }
@@ -135,7 +135,7 @@
 
                 var indexedCs = image0.ColorSpaceDetails as IndexedColorSpaceDetails;
                 Assert.NotNull(indexedCs);
-                Assert.Equal(ColorSpace.CalRGB, indexedCs.BaseColorSpaceDetails.Type);
+                Assert.Equal(ColorSpace.CalRGB, indexedCs.BaseColorSpace.Type);
                 Assert.True(image0.TryGetPng(out byte[] bytes0));
                 File.WriteAllBytes(Path.Combine(OutputFolder, "MOZILLA-10084-0_1_0.png"), bytes0);
 
@@ -143,7 +143,7 @@
                 Assert.Equal(ColorSpace.Indexed, image1.ColorSpaceDetails.Type);
                 indexedCs = image1.ColorSpaceDetails as IndexedColorSpaceDetails;
                 Assert.NotNull(indexedCs);
-                Assert.Equal(ColorSpace.CalRGB, indexedCs.BaseColorSpaceDetails.Type);
+                Assert.Equal(ColorSpace.CalRGB, indexedCs.BaseColorSpace.Type);
                 Assert.True(image1.TryGetPng(out byte[] bytes1));
                 File.WriteAllBytes(Path.Combine(OutputFolder, "MOZILLA-10084-0_1_1.png"), bytes1);
             }
@@ -259,11 +259,12 @@
                 for (int p = 0; p < document.NumberOfPages; p++)
                 {
                     var page = document.GetPage(p + 1);
-                    foreach (var image in page.GetImages())
+                    var images = page.GetImages().ToArray();
+                    for (int i = 0; i < images.Length; i++)
                     {
-                        if (image.TryGetPng(out var png))
+                        if (images[i].TryGetPng(out var png))
                         {
-                            // TODO
+                            File.WriteAllBytes(Path.Combine(OutputFolder, $"Pig Production Handbook_{p + 1}_{i}.png"), png);
                         }
                     }
                 }
@@ -279,7 +280,10 @@
             {
                 Page page1 = document.GetPage(1);
                 var paths1 = page1.ExperimentalAccess.Paths.Where(p => p.IsFilled).ToArray();
-                Assert.Equal((0.930496m, 0.111542m, 0.142197m), paths1[0].FillColor.ToRGBValues()); // 'Reflex Red' Separation color space
+                var reflexRed = paths1[0].FillColor.ToRGBValues(); // 'Reflex Red' Separation color space
+                Assert.Equal(0.930496, reflexRed.r, 6);
+                Assert.Equal(0.111542, reflexRed.g, 6);
+                Assert.Equal(0.142197, reflexRed.b, 6);
 
                 Page page2 = document.GetPage(2);
                 var words = page2.GetWords(NearestNeighbourWordExtractor.Instance).ToArray();
@@ -294,9 +298,9 @@
                 var filledRects = filledPath.Where(p => p.Count == 1 && p[0].IsDrawnAsRectangle).ToArray();
 
                 // Colors picked from Acrobat reader
-                (decimal r, decimal g, decimal b) lightRed = (0.985m, 0.942m, 0.921m);
-                (decimal r, decimal g, decimal b) lightRed2 = (1m, 0.95m, 0.95m);
-                (decimal r, decimal g, decimal b) lightOrange = (0.993m, 0.964m, 0.929m);
+                (double r, double g, double b) lightRed = (0.985, 0.942, 0.921);
+                (double r, double g, double b) lightRed2 = (1, 0.95, 0.95);
+                (double r, double g, double b) lightOrange = (0.993, 0.964, 0.929);
 
                 var filledColors = filledRects
                     .OrderBy(x => x.GetBoundingRectangle().Value.Left)
@@ -327,7 +331,7 @@
             }
         }
 
-        private static byte ConvertToByte(decimal componentValue)
+        private static byte ConvertToByte(double componentValue)
         {
             var rounded = Math.Round(componentValue * 255, MidpointRounding.AwayFromZero);
             return (byte)rounded;
