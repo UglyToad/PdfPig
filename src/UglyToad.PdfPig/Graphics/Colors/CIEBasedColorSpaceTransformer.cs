@@ -103,6 +103,18 @@
             return xyz;
         }
 
+        public (double R, double G, double B) TransformXYZToRGB((double X, double Y, double Z) xyz)
+        {
+            var adaptedColor = chromaticAdaptation.Transform(xyz);
+            var rgb = transformationMatrix.Multiply(adaptedColor);
+
+            var gammaCorrectedR = destinationWorkingSpace.GammaCorrection(rgb.Item1);
+            var gammaCorrectedG = destinationWorkingSpace.GammaCorrection(rgb.Item2);
+            var gammaCorrectedB = destinationWorkingSpace.GammaCorrection(rgb.Item3);
+
+            return (Clamp(gammaCorrectedR), Clamp(gammaCorrectedG), Clamp(gammaCorrectedB));
+        }
+
         private static double Clamp(double value)
         {
             // Force value into range [0..1]

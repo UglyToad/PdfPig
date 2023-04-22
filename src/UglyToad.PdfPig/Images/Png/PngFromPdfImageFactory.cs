@@ -24,7 +24,7 @@
                 bytesPure = ColorSpaceDetailsByteConverter.Convert(image.ColorSpaceDetails, bytesPure,
                     image.BitsPerComponent, image.WidthInSamples, image.HeightInSamples);
 
-                var numberOfComponents = image.ColorSpaceDetails.BaseNumberOfColorComponents;
+                var numberOfComponents = image.ColorSpaceDetails.BaseType == ColorSpace.ICCBased ? 3 : image.ColorSpaceDetails.BaseNumberOfColorComponents;
 
                 var is3Byte = numberOfComponents == 3;
 

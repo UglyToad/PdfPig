@@ -279,7 +279,12 @@
             {
                 Page page1 = document.GetPage(1);
                 var paths1 = page1.ExperimentalAccess.Paths.Where(p => p.IsFilled).ToArray();
-                Assert.Equal((0.930496m, 0.111542m, 0.142197m), paths1[0].FillColor.ToRGBValues()); // 'Reflex Red' Separation color space
+
+                // 'Reflex Red' Separation color space
+                var reflexRed = paths1[0].FillColor.ToRGBValues();
+                Assert.Equal(237, ConvertToByte(reflexRed.r));
+                Assert.Equal(28, ConvertToByte(reflexRed.g));
+                Assert.Equal(36, ConvertToByte(reflexRed.b));
 
                 Page page2 = document.GetPage(2);
                 var words = page2.GetWords(NearestNeighbourWordExtractor.Instance).ToArray();
@@ -287,16 +292,19 @@
                 var urlWord = words.First(w => w.ToString().Contains("www.extron.com"));
                 var firstLetter = urlWord.Letters[0];
                 Assert.Equal("w", firstLetter.Value);
-                Assert.Equal((0, 0, 1), firstLetter.Color.ToRGBValues()); // Blue
+                var blue = firstLetter.Color.ToRGBValues();
+                Assert.Equal(0, ConvertToByte(blue.r));
+                Assert.Equal(0, ConvertToByte(blue.g));
+                Assert.Equal(255, ConvertToByte(blue.b));
 
                 var paths2 = page2.ExperimentalAccess.Paths;
                 var filledPath = paths2.Where(p => p.IsFilled).ToArray();
                 var filledRects = filledPath.Where(p => p.Count == 1 && p[0].IsDrawnAsRectangle).ToArray();
 
                 // Colors picked from Acrobat reader
-                (decimal r, decimal g, decimal b) lightRed = (0.985m, 0.942m, 0.921m);
-                (decimal r, decimal g, decimal b) lightRed2 = (1m, 0.95m, 0.95m);
-                (decimal r, decimal g, decimal b) lightOrange = (0.993m, 0.964m, 0.929m);
+                (decimal r, decimal g, decimal b) lightRed = (251, 240, 235);
+                (decimal r, decimal g, decimal b) lightRed2 = (255, 242, 242);
+                (decimal r, decimal g, decimal b) lightOrange = (253, 246, 237);
 
                 var filledColors = filledRects
                     .OrderBy(x => x.GetBoundingRectangle().Value.Left)
@@ -312,16 +320,25 @@
                     {
                         if (r == 2)
                         {
-                            Assert.Equal(lightRed2, color.ToRGBValues());
+                            var red = color.ToRGBValues();
+                            Assert.Equal(lightRed2.r, ConvertToByte(red.r));
+                            Assert.Equal(lightRed2.g, ConvertToByte(red.g));
+                            Assert.Equal(lightRed2.b, ConvertToByte(red.b));
                         }
                         else
                         {
-                            Assert.Equal(lightRed, color.ToRGBValues());
+                            var red = color.ToRGBValues();
+                            Assert.Equal(lightRed.r, ConvertToByte(red.r));
+                            Assert.Equal(lightRed.g, ConvertToByte(red.g));
+                            Assert.Equal(lightRed.b, ConvertToByte(red.b));
                         }
                     }
                     else
                     {
-                        Assert.Equal(lightOrange, color.ToRGBValues());
+                        var orange = color.ToRGBValues();
+                        Assert.Equal(lightOrange.r, ConvertToByte(orange.r));
+                        Assert.Equal(lightOrange.g, ConvertToByte(orange.g));
+                        Assert.Equal(lightOrange.b, ConvertToByte(orange.b));
                     }
                 }
             }

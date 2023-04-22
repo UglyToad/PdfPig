@@ -172,7 +172,8 @@
                     numberOfColorComponents: 3,
                     alternateColorSpaceDetails: DeviceRgbColorSpaceDetails.Instance,
                     range: new List<decimal> { 0, 1, 0, 1, 0, 1 },
-                    metadata: null),
+                    metadata: null,
+                    rawProfile: null),
                 DecodedBytes = decodedBytes,
                 WidthInSamples = 1,
                 HeightInSamples = 1,
@@ -193,7 +194,8 @@
                     numberOfColorComponents: 3,
                     alternateColorSpaceDetails: DeviceRgbColorSpaceDetails.Instance,
                     range: new List<decimal> { 0, 1, 0, 1, 0, 1 },
-                    metadata: null),
+                    metadata: null,
+                    rawProfile: null),
                 DecodedBytes = decodedBytes,
                 WidthInSamples = 1,
                 HeightInSamples = 1,
@@ -212,7 +214,6 @@
             Assert.True(PngFromPdfImageFactory.TryGenerate(iccBasedImage, out var iccPngBytes));
             Assert.True(PngFromPdfImageFactory.TryGenerate(deviceRGBImage, out var deviceRgbBytes));
             Assert.Equal(iccPngBytes, deviceRgbBytes);
-
         }
 
         [Fact]

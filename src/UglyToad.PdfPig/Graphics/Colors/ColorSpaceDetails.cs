@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
+    using IccProfileNet;
+    using IccProfileNet.Tags;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
@@ -34,7 +36,7 @@
         /// <summary>
         /// The number of components for the underlying color space.
         /// </summary>
-        public abstract int BaseNumberOfColorComponents { get; }
+        internal abstract int BaseNumberOfColorComponents { get; }
 
         /// <summary>
         /// Create a new <see cref="ColorSpaceDetails"/>.
@@ -90,7 +92,7 @@
         public override int NumberOfColorComponents => 1;
 
         /// <inheritdoc/>
-        public override int BaseNumberOfColorComponents => NumberOfColorComponents;
+        internal override int BaseNumberOfColorComponents => NumberOfColorComponents;
 
         private DeviceGrayColorSpaceDetails() : base(ColorSpace.DeviceGray)
         { }
@@ -152,7 +154,7 @@
         public override int NumberOfColorComponents => 3;
 
         /// <inheritdoc/>
-        public override int BaseNumberOfColorComponents => NumberOfColorComponents;
+        internal override int BaseNumberOfColorComponents => NumberOfColorComponents;
 
         private DeviceRgbColorSpaceDetails() : base(ColorSpace.DeviceRGB)
         { }
@@ -213,7 +215,7 @@
         public override int NumberOfColorComponents => 4;
 
         /// <inheritdoc/>
-        public override int BaseNumberOfColorComponents => NumberOfColorComponents;
+        internal override int BaseNumberOfColorComponents => NumberOfColorComponents;
 
         private DeviceCmykColorSpaceDetails() : base(ColorSpace.DeviceCMYK)
         {
@@ -287,9 +289,9 @@
 
         /// <summary>
         /// <inheritdoc/>
-        /// <para>In the case of <see cref="IndexedColorSpaceDetails"/>, gets the <see cref="IndexedColorSpaceDetails.BaseColorSpaceDetails"/>' <c>BaseNumberOfColorComponents</c>.</para>
+        /// <para>In the case of <see cref="IndexedColorSpaceDetails"/>, gets the <see cref="BaseColorSpaceDetails"/>' <c>BaseNumberOfColorComponents</c>.</para>
         /// </summary>
-        public override int BaseNumberOfColorComponents => BaseColorSpaceDetails.BaseNumberOfColorComponents;
+        internal override int BaseNumberOfColorComponents => BaseColorSpaceDetails.BaseNumberOfColorComponents;
 
         /// <summary>
         /// The base color space in which the values in the color table are to be interpreted.
@@ -317,7 +319,7 @@
             BaseColorSpaceDetails = baseColorSpaceDetails ?? throw new ArgumentNullException(nameof(baseColorSpaceDetails));
             HiVal = hiVal;
             ColorTable = colorTable;
-            BaseType = baseColorSpaceDetails.BaseType;
+            BaseType = baseColorSpaceDetails.Type;
         }
 
         /// <inheritdoc/>
@@ -386,6 +388,7 @@
                     multiplier = 1;
                     break;
 
+                case ColorSpace.ICCBased:
                 case ColorSpace.DeviceN:
                     transformer = x =>
                     {
@@ -454,7 +457,7 @@
         public override int NumberOfColorComponents { get; }
 
         /// <inheritdoc/>
-        public override int BaseNumberOfColorComponents => AlternateColorSpaceDetails.NumberOfColorComponents;
+        internal override int BaseNumberOfColorComponents => AlternateColorSpaceDetails.NumberOfColorComponents;
 
         /// <summary>
         /// Specifies name objects specifying the individual colour components. The length of the array shall
@@ -504,12 +507,13 @@
             AlternateColorSpaceDetails = alternateColorSpaceDetails;
             Attributes = attributes;
             TintFunction = tintFunction;
+            BaseType = alternateColorSpaceDetails.Type;
         }
 
         /// <inheritdoc/>
         internal override double[] Process(params double[] values)
         {
-            var evaled = TintFunction.Eval(values[0]);
+            var evaled = TintFunction.Eval(values);
             return AlternateColorSpaceDetails.Process(evaled);
         }
 
@@ -622,7 +626,7 @@
         public override int NumberOfColorComponents => 1;
 
         /// <inheritdoc/>
-        public override int BaseNumberOfColorComponents => AlternateColorSpaceDetails.NumberOfColorComponents;
+        internal override int BaseNumberOfColorComponents => AlternateColorSpaceDetails.NumberOfColorComponents;
 
         /// <summary>
         /// Specifies the name of the colorant that this Separation color space is intended to represent.
@@ -728,7 +732,7 @@
         public override int NumberOfColorComponents => 1;
 
         /// <inheritdoc/>
-        public override int BaseNumberOfColorComponents => NumberOfColorComponents;
+        internal override int BaseNumberOfColorComponents => NumberOfColorComponents;
 
         private readonly CIEBasedColorSpaceTransformer colorSpaceTransformer;
 
@@ -852,7 +856,7 @@
         public override int NumberOfColorComponents => 3;
 
         /// <inheritdoc/>
-        public override int BaseNumberOfColorComponents => NumberOfColorComponents;
+        internal override int BaseNumberOfColorComponents => NumberOfColorComponents;
 
         private readonly CIEBasedColorSpaceTransformer colorSpaceTransformer;
 
@@ -995,7 +999,7 @@
         public override int NumberOfColorComponents => 3;
 
         /// <inheritdoc/>
-        public override int BaseNumberOfColorComponents => NumberOfColorComponents;
+        internal override int BaseNumberOfColorComponents => NumberOfColorComponents;
 
         /// <summary>
         /// An array of three numbers [XW  YW  ZW] specifying the tristimulus value, in the CIE 1931 XYZ space of the
@@ -1136,6 +1140,10 @@
     /// </summary>
     public sealed class ICCBasedColorSpaceDetails : ColorSpaceDetails
     {
+        private readonly CIEBasedColorSpaceTransformer colorSpaceTransformer;
+
+        private readonly LabColorSpaceDetails labColorSpaceDetails;
+
         /// <summary>
         /// The number of color components in the color space described by the ICC profile data.
         /// This numbers shall match the number of components actually in the ICC profile.
@@ -1144,7 +1152,7 @@
         public override int NumberOfColorComponents { get; }
 
         /// <inheritdoc/>
-        public override int BaseNumberOfColorComponents => NumberOfColorComponents;
+        internal override int BaseNumberOfColorComponents => NumberOfColorComponents;
 
         /// <summary>
         /// An alternate color space that can be used in case the one specified in the stream data is not
@@ -1177,10 +1185,16 @@
         public XmpMetadata Metadata { get; }
 
         /// <summary>
+        /// ICC profile.
+        /// </summary>
+        [CanBeNull]
+        internal IccProfile Profile { get; }
+
+        /// <summary>
         /// Create a new <see cref="ICCBasedColorSpaceDetails"/>.
         /// </summary>
         internal ICCBasedColorSpaceDetails(int numberOfColorComponents, [CanBeNull] ColorSpaceDetails alternateColorSpaceDetails,
-            [CanBeNull] IReadOnlyList<decimal> range, [CanBeNull] XmpMetadata metadata)
+            [CanBeNull] IReadOnlyList<decimal> range, [CanBeNull] XmpMetadata metadata, [CanBeNull] IReadOnlyList<byte> rawProfile)
             : base(ColorSpace.ICCBased)
         {
             if (numberOfColorComponents != 1 && numberOfColorComponents != 3 && numberOfColorComponents != 4)
@@ -1202,12 +1216,67 @@
                     $"Must consist of exactly {2 * numberOfColorComponents} (2 x NumberOfColorComponents), but was passed {range.Count}");
             }
             Metadata = metadata;
+
+            if (rawProfile != null)
+            {
+                System.IO.Directory.CreateDirectory("ICC_Profiles_errors");
+                System.IO.File.WriteAllBytes($"ICC_Profiles_errors/ICC_{Guid.NewGuid().ToString().ToLower()}.icc",
+                    rawProfile.ToArray());
+
+                try
+                {
+                    Profile = new IccProfile(rawProfile.ToArray());
+
+                    if (Profile.Header.Pcs == IccProfileConnectionSpace.PCSXYZ)
+                    {
+                        IccXyz referenceWhite = Profile.Header.nCIEXYZ; // Really not sure
+                        colorSpaceTransformer = new CIEBasedColorSpaceTransformer((referenceWhite.X, referenceWhite.Y, referenceWhite.Z), RGBWorkingSpace.sRGB);
+                    }
+                    else // LAB
+                    {
+                        if (Profile.Tags.TryGetValue(IccTags.MediaWhitePointTag, out var tag) && tag is IccXyzType whitepoint)
+                        {
+                            IccXyz referenceWhite = Profile.Header.nCIEXYZ; // Really not sure
+                            labColorSpaceDetails = new LabColorSpaceDetails(new decimal[]
+                            {
+                                (decimal)referenceWhite.X, (decimal)referenceWhite.Y, (decimal)referenceWhite.Z
+                            }, null, null);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"ERROR creating ICC profile: {ex}");
+
+                    System.IO.Directory.CreateDirectory("ICC_Profiles_errors");
+                    System.IO.File.WriteAllBytes($"ICC_Profiles_errors/ICC_{Guid.NewGuid().ToString().ToLower()}.icc",
+                        rawProfile.ToArray());
+                    //throw;
+                }
+            }
         }
 
         /// <inheritdoc/>
         internal override double[] Process(params double[] values)
         {
             // TODO - use ICC profile
+
+            if (Profile != null && Profile.TryProcess(values, out double[] xyz) && xyz.Length == 3)
+            {
+                double x = xyz[0];
+                double y = xyz[1];
+                double z = xyz[2];
+
+                if (Profile.Header.Pcs == IccProfileConnectionSpace.PCSXYZ)
+                {
+                    var rgb = colorSpaceTransformer.TransformXYZToRGB((x, y, z));
+                    return new double[] { rgb.R, rgb.G, rgb.B };
+                }
+                else
+                {
+                    return labColorSpaceDetails.Process(x * 100.0, y * 255.0 - 128.0, z * 255.0 - 128.0); // need to scale
+                }
+            }
 
             return AlternateColorSpaceDetails.Process(values);
         }
@@ -1221,6 +1290,23 @@
             }
 
             // TODO - use ICC profile
+
+            if (Profile != null && Profile.TryProcess(values, out double[] xyz) && xyz.Length == 3)
+            {
+                double x = xyz[0];
+                double y = xyz[1];
+                double z = xyz[2];
+
+                if (Profile.Header.Pcs == IccProfileConnectionSpace.PCSXYZ)
+                {
+                    var rgb = colorSpaceTransformer.TransformXYZToRGB((x, y, z));
+                    return new RGBColor((decimal)rgb.R, (decimal)rgb.G, (decimal)rgb.B);
+                }
+                else
+                {
+                    return labColorSpaceDetails.GetColor(x, y, z);
+                }
+            }
 
             return AlternateColorSpaceDetails.GetColor(values);
         }
@@ -1241,6 +1327,27 @@
         internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded)
         {
             // TODO - use ICC profile
+
+            if (Profile != null)
+            {
+                var transformed = new List<byte>();
+                for (var i = 0; i < decoded.Count; i += NumberOfColorComponents)
+                {
+                    double[] comps = new double[NumberOfColorComponents];
+                    for (int n = 0; n < NumberOfColorComponents; n++)
+                    {
+                        comps[n] = decoded[i + n] / 255.0;
+                    }
+
+                    var colors = Process(comps);
+                    for (int c = 0; c < colors.Length; c++)
+                    {
+                        transformed.Add(ConvertToByte(colors[c]));
+                    }
+                }
+
+                return transformed;
+            }
 
             return AlternateColorSpaceDetails.Transform(decoded);
         }
@@ -1270,7 +1377,7 @@
         /// Cannot be called for <see cref="UnsupportedColorSpaceDetails"/>, will throw a <see cref="InvalidOperationException"/>.
         /// </para>
         /// </summary>
-        public override int BaseNumberOfColorComponents => NumberOfColorComponents;
+        internal override int BaseNumberOfColorComponents => NumberOfColorComponents;
 
         private UnsupportedColorSpaceDetails() : base(ColorSpace.DeviceGray)
         {
