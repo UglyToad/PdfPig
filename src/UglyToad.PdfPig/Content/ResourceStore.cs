@@ -28,6 +28,10 @@
 
         private readonly Dictionary<NameToken, DictionaryToken> markedContentProperties = new Dictionary<NameToken, DictionaryToken>();
 
+        private readonly Dictionary<NameToken, Shading> shadingsProperties = new Dictionary<NameToken, Shading>();
+
+        private readonly Dictionary<NameToken, PatternColor> patternsProperties = new Dictionary<NameToken, PatternColor>();
+
         private (NameToken name, IFont font) lastLoadedFont;
 
         public ResourceStore(IPdfTokenScanner scanner, IFontFactory fontFactory, ILookupFilterProvider filterProvider)
@@ -116,6 +120,16 @@
                 }
             }
 
+            if (resourceDictionary.TryGet(NameToken.Pattern, scanner, out DictionaryToken patternDictionary))
+            {
+                // NB: in PDF, all patterns shall be local to the context in which they are defined.
+                foreach (var namePatternPair in patternDictionary.Data)
+                {
+                    var name = NameToken.Create(namePatternPair.Key);
+                    patternsProperties[name] = PatternParser.Create(namePatternPair.Value, scanner, this, filterProvider);
+                }
+            }
+
             if (resourceDictionary.TryGet(NameToken.Properties, scanner, out DictionaryToken markedContentPropertiesList))
             {
                 foreach (var pair in markedContentPropertiesList.Data)
@@ -128,6 +142,28 @@
                     }
 
                     markedContentProperties[key] = namedProperties;
+                }
+            }
+
+            if (resourceDictionary.TryGet(NameToken.Shading, scanner, out DictionaryToken shadingList))
+            {
+                foreach (var pair in shadingList.Data)
+                {
+                    var key = NameToken.Create(pair.Key);
+                    if (DirectObjectFinder.TryGet(pair.Value, scanner, out DictionaryToken namedPropertiesDictionary))
+                    {
+                        shadingsProperties[key] = ShadingParser.Create(namedPropertiesDictionary, scanner, this, filterProvider);
+                    }
+                    else if (DirectObjectFinder.TryGet(pair.Value, scanner, out StreamToken namedPropertiesStream))
+                    {
+                        // Shading types 4 to 7 shall be defined by a stream containing descriptive data characterizing
+                        // the shading's gradient fill.
+                       shadingsProperties[key] = ShadingParser.Create(namedPropertiesStream, scanner, this, filterProvider);
+                    }
+                    else
+                    {
+                        throw new NotImplementedException("Shading");
+                    }
                 }
             }
         }
@@ -245,7 +281,10 @@
 
         public ColorSpaceDetails GetColorSpaceDetails(NameToken name, DictionaryToken dictionary)
         {
-            dictionary ??= new DictionaryToken(new Dictionary<NameToken, IToken>());
+            if (dictionary == null)
+            {
+                dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>());
+            }
 
             // Null color space for images
             if (name is null)
@@ -297,6 +336,16 @@
         public DictionaryToken GetMarkedContentPropertiesDictionary(NameToken name)
         {
             return markedContentProperties.TryGetValue(name, out var result) ? result : null;
+        }
+
+        public Shading GetShading(NameToken name)
+        {
+            return shadingsProperties[name];
+        }
+
+        public IReadOnlyDictionary<NameToken, PatternColor> GetPatterns()
+        {
+            return patternsProperties;
         }
     }
 }

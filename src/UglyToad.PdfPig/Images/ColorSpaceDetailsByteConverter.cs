@@ -53,10 +53,12 @@
         {
             IEnumerable<byte> Unpack(byte b)
             {
+                int right = (int)Math.Pow(2, bitsPerComponent) - 1;
+
                 // Enumerate bits in bitsPerComponent-sized chunks from MSB to LSB, masking on the appropriate bits
                 for (int i = 8 - bitsPerComponent; i >= 0; i -= bitsPerComponent)
                 {
-                    yield return (byte)((b >> i) & ((int)Math.Pow(2, bitsPerComponent) - 1));
+                    yield return (byte)((b >> i) & right);
                 }
             }
 

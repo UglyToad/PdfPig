@@ -249,5 +249,11 @@
         /// Initial value: 0.
         /// </summary>
         void SetCharacterSpacing(double spacing);
+
+        /// <summary>
+        /// Paint the shape and colour shading described by a shading dictionary, subject to the current clipping path. The current colour in the graphics state is neither used nor altered. The effect is different from that of painting a path using a shading pattern as the current colour.
+        /// </summary>
+        /// <param name="shading">The name of a shading dictionary resource in the Shading subdictionary of the current resource dictionary.</param>
+        void PaintShading(NameToken shading);
     }
 }
