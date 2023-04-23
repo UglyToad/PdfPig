@@ -1267,7 +1267,7 @@
                     // Issues in CMYK Workflows
                     // Pure black (0–0–0–K) turns into four-color C–M–Y–K color build, with resulting color shift,
                     // misregister, and / or trap implications. Also known as the black type problem.
-                    return new double[] { 0, 0, 0 };
+                    return new double[] { 0, 0, 0 }; // Black RGB
                 }
 
                 if (Profile.TryProcess(values, out double[] xyz) && xyz.Length == 3)
@@ -1283,7 +1283,7 @@
                     }
                     else
                     {
-                        return labColorSpaceDetails.Process(x * 100.0, y * 255.0 - 128.0, z * 255.0 - 128.0); // need to scale
+                        return labColorSpaceDetails.Process(x * 100.0, y * 255.0 - 127.0, z * 255.0 - 127.0); // need to scale
                     }
                 }
             }
@@ -1346,8 +1346,6 @@
         /// <inheritdoc/>
         internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded)
         {
-            // TODO - use ICC profile
-
             if (Profile != null)
             {
                 var transformed = new List<byte>();

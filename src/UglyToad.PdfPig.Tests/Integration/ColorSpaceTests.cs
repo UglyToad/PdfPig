@@ -30,7 +30,9 @@
                     .ThenBy(p => p.GetBoundingRectangle().Value.Centroid.Y)
                     .ToArray();
 
-                var grouped = page1.ExperimentalAccess.Paths.GroupBy(p => p.GetBoundingRectangle().Value.Centroid.X).ToArray();
+                var grouped = page1.ExperimentalAccess.Paths
+                    .GroupBy(p => p.GetBoundingRectangle().Value.Centroid.X)
+                    .ToArray();
 
                 int i = 0; // Red
                 var gr = grouped[i].ToArray();
