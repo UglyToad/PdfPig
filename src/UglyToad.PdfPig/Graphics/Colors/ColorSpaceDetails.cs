@@ -6,6 +6,7 @@
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading.Tasks;
     using Tokens;
     using UglyToad.PdfPig.Content;
     using UglyToad.PdfPig.Functions;
@@ -535,6 +536,89 @@
         /// <inheritdoc/>
         internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded)
         {
+            int outputCount = Process(Enumerable.Repeat(1.0, NumberOfColorComponents).ToArray()).Length;
+            int outputSize = (int)(decoded.Count * outputCount / (double)NumberOfColorComponents);
+            var transformed = new byte[outputSize];
+
+            Parallel.For(0, decoded.Count / NumberOfColorComponents, i =>
+            {
+                double[] comps = new double[NumberOfColorComponents];
+                for (int n = 0; n < NumberOfColorComponents; n++)
+                {
+                    comps[n] = decoded[i * NumberOfColorComponents + n] / 255.0;
+                }
+
+                var colors = Process(comps);
+                for (int c = 0; c < outputCount; c++)
+                {
+                    transformed[i * outputCount + c] = ConvertToByte(colors[c]);
+                }
+            });
+            return transformed;
+        }
+
+        /*
+        
+        /// <inheritdoc/>
+        internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded)
+        {
+            int outputCount = Process(Enumerable.Repeat(1.0, NumberOfColorComponents).ToArray()).Length;
+            int outputSize = (int)(decoded.Count * outputCount / (double)NumberOfColorComponents);
+            var transformed = new byte[outputSize];
+
+            //Parallel.For(0, )
+            for (var i = 0; i < decoded.Count / NumberOfColorComponents; i++)
+            {
+                double[] comps = new double[NumberOfColorComponents];
+                for (int n = 0; n < NumberOfColorComponents; n++)
+                {
+                    comps[n] = decoded[i* NumberOfColorComponents + n] / 255.0;
+                }
+
+                var colors = Process(comps);
+                for (int c = 0; c < outputCount; c++)
+                {
+                    transformed[i * outputCount + c] = ConvertToByte(colors[c]);
+                }
+            }
+
+            return transformed;
+        }
+         */
+
+        /*
+        /// <inheritdoc/>
+        internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded)
+        {
+            int outputCount = Process(Enumerable.Repeat(1.0, NumberOfColorComponents).ToArray()).Length;
+            int outputSize = (int)(decoded.Count * outputCount / (double)NumberOfColorComponents);
+
+            var transformed = new byte[outputSize];
+            for (var i = 0; i < decoded.Count; i += NumberOfColorComponents)
+            {
+                double[] comps = new double[NumberOfColorComponents];
+                for (int n = 0; n < NumberOfColorComponents; n++)
+                {
+                    comps[n] = decoded[i + n] / 255.0;
+                }
+
+                var colors = Process(comps);
+                for (int c = 0; c < outputCount; c++)
+                {
+                    transformed[(i / NumberOfColorComponents) * outputCount + c] = ConvertToByte(colors[c]);
+                }
+            }
+
+            return transformed;
+        }
+        */
+
+        /*
+        /// <inheritdoc/>
+        internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded)
+        {
+            int outputCount = Process(Enumerable.Repeat(1.0, NumberOfColorComponents).ToArray()).Length;
+
             var transformed = new List<byte>();
             for (var i = 0; i < decoded.Count; i += NumberOfColorComponents)
             {
@@ -545,7 +629,7 @@
                 }
 
                 var colors = Process(comps);
-                for (int c = 0; c < colors.Length; c++)
+                for (int c = 0; c < outputCount; c++)
                 {
                     transformed.Add(ConvertToByte(colors[c]));
                 }
@@ -553,6 +637,7 @@
 
             return transformed;
         }
+        */
 
         /// <inheritdoc/>
         public override IColor GetInitializeColor()
@@ -1348,22 +1433,24 @@
         {
             if (Profile != null)
             {
-                var transformed = new List<byte>();
-                for (var i = 0; i < decoded.Count; i += NumberOfColorComponents)
+                int outputCount = Process(Enumerable.Repeat(1.0, NumberOfColorComponents).ToArray()).Length;
+                int outputSize = (int)(decoded.Count * outputCount / (double)NumberOfColorComponents);
+                var transformed = new byte[outputSize];
+
+                Parallel.For(0, decoded.Count / NumberOfColorComponents, i =>
                 {
                     double[] comps = new double[NumberOfColorComponents];
                     for (int n = 0; n < NumberOfColorComponents; n++)
                     {
-                        comps[n] = decoded[i + n] / 255.0;
+                        comps[n] = decoded[i * NumberOfColorComponents + n] / 255.0;
                     }
 
                     var colors = Process(comps);
-                    for (int c = 0; c < colors.Length; c++)
+                    for (int c = 0; c < outputCount; c++)
                     {
-                        transformed.Add(ConvertToByte(colors[c]));
+                        transformed[i * outputCount + c] = ConvertToByte(colors[c]);
                     }
-                }
-
+                });
                 return transformed;
             }
 

@@ -334,11 +334,12 @@
                 for (int p = 0; p < document.NumberOfPages; p++)
                 {
                     var page = document.GetPage(p + 1);
-                    foreach (var image in page.GetImages())
+                    var images = page.GetImages().ToArray();
+                    for (int i = 0;  i < images.Length; i++)
                     {
-                        if (image.TryGetPng(out var png))
+                        if (images[i].TryGetPng(out var png))
                         {
-                            // TODO
+                            File.WriteAllBytes(Path.Combine(OutputFolder, $"Pig Production Handbook_{p + 1}_{i}.png"), png);
                         }
                     }
                 }
