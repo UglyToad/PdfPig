@@ -18,6 +18,79 @@
         }
 
         [Fact]
+        public void IccXyzTest()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("xyztest.pdf");
+            using (var document = PdfDocument.Open(path))
+            {
+                // page 1
+                var page1 = document.GetPage(1);
+                var paths = page1.ExperimentalAccess.Paths
+                    .OrderBy(p => p.GetBoundingRectangle().Value.Centroid.X)
+                    .ThenBy(p => p.GetBoundingRectangle().Value.Centroid.Y)
+                    .ToArray();
+
+                var grouped = page1.ExperimentalAccess.Paths.GroupBy(p => p.GetBoundingRectangle().Value.Centroid.X).ToArray();
+
+                int i = 0; // Red
+                var gr = grouped[i].ToArray();
+                Assert.Equal(3, gr.Length);
+                Assert.True(gr[1].IsFilled);
+                var actualColor = gr[1].FillColor.ToRGBValues();
+                byte rAct = ConvertToByte(actualColor.r);
+                byte gAct = ConvertToByte(actualColor.g);
+                byte bAct = ConvertToByte(actualColor.b);
+                Assert.Equal(255, rAct);
+                Assert.Equal(0, gAct);
+                Assert.Equal(0, bAct);
+
+                // pdf.js - not correct
+                var firstRow = gr[0].FillColor.ToRGBValues();
+                Assert.Equal(111, ConvertToByte(firstRow.r));
+                Assert.Equal(57, ConvertToByte(firstRow.g));
+                Assert.Equal(4, ConvertToByte(firstRow.b));
+
+                // pdf.js - not correct
+                var thirdRow = gr[2].FillColor.ToRGBValues();
+                Assert.Equal(115, ConvertToByte(thirdRow.r));
+                Assert.Equal(57, ConvertToByte(thirdRow.g));
+                Assert.Equal(4, ConvertToByte(thirdRow.b));
+
+                i = 1; // Green
+
+                i = 2; // Blue
+
+                i = 3; // White
+
+
+            }
+        }
+
+        [Fact]
+        public void IccLabProfile16bitLUTv2()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("icc-lab2.pdf");
+            using (var document = PdfDocument.Open(path))
+            {
+                // page 1
+                var page1 = document.GetPage(1);
+                // TODO
+            }
+        }
+
+        [Fact]
+        public void IccLabProfileMatrixv4()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("icc-lab4.pdf");
+            using (var document = PdfDocument.Open(path))
+            {
+                // page 1
+                var page1 = document.GetPage(1);
+                // TODO
+            }
+        }
+
+        [Fact]
         public void IndexedDeviceNColorSpaceImages()
         {
             var path = IntegrationHelpers.GetDocumentPath("MOZILLA-3136-0.pdf");

@@ -39,6 +39,6 @@
     <ProjectReference Include="..\UglyToad.PdfPig.Tokens\UglyToad.PdfPig.Tokens.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Graphics\Colors\ICC\" />
+    <Folder Include="Graphics\Colors\Icc\" />
   </ItemGroup>
 </Project>

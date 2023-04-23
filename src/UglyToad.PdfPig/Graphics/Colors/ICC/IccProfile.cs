@@ -294,17 +294,48 @@ namespace IccProfileNet
                     case IccProfileClass.ColorSpace:
                         {
                             // 8.7 ColorSpace profile
-                            if (Tags.TryGetValue(IccTags.AToB0Tag, out var lutAB0Tag) && lutAB0Tag is IccLutABType lutAb0 &&
-                                Tags.TryGetValue(IccTags.BToA0Tag, out var lutBA0Tag) && lutBA0Tag is IccLutABType lutBa0)
+                            if (Tags.TryGetValue(IccTags.AToB0Tag, out var lutAB0Tag) &&
+                                Tags.TryGetValue(IccTags.BToA0Tag, out var lutBA0Tag))
                             {
-
+                                // TODO - check
+                                if (lutAB0Tag is IccLutABType lutAb0)
+                                {
+                                    output = lutAb0.Process(input, Header);
+                                    return true;
+                                }
+                                else if (lutAB0Tag is IccBaseLutType lutAb0bis)
+                                {
+                                    output = lutAb0bis.Process(input, Header);
+                                    return true;
+                                }
+                                else
+                                {
+                                    throw new Exception("");
+                                }
                             }
                             break;
                         }
 
                     case IccProfileClass.Abstract:
                         {
-                            // TODOS
+                            if (Tags.TryGetValue(IccTags.AToB0Tag, out var lutAB0Tag))
+                            {
+                                // TODO - check
+                                if (lutAB0Tag is IccLutABType lutAb0)
+                                {
+                                    output = lutAb0.Process(input, Header);
+                                    return true;
+                                }
+                                else if (lutAB0Tag is IccBaseLutType lutAb0bis)
+                                {
+                                    output = lutAb0bis.Process(input, Header);
+                                    return true;
+                                }
+                                else
+                                {
+                                    throw new Exception("");
+                                }
+                            }
                             break;
                         }
 
