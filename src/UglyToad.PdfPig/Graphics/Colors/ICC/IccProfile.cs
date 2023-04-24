@@ -144,209 +144,236 @@ namespace IccProfileNet
             }
         }
 
-        public bool TryProcessOld(double[] input, out double[] output)
+        private bool TryProcessGrayTRC(double[] input, out double[] output)
         {
-            throw new NotImplementedException($"Unsuported ICC profile v{Header.VersionMajor}");
+            // 8.3.4 Monochrome Input profiles
+            // 8.4.4 Monochrome Display profiles
+            // 8.5.3 Monochrome Output profiles
+            if (Tags.TryGetValue(IccTags.GrayTRCTag, out var kTrcTag) && kTrcTag is IccBaseCurveType kTrc)
+            {
+                double v = kTrc.Process(input.Single());
+                output = new double[] { v, v, v };
+                return true;
+            }
 
-            //switch (Header.VersionMajor)
-            //{
-            //    case 2:
-            //        return TryProcess2(input, out output);
-
-            //    case 4:
-            //        return TryProcess4(input, out output);
-
-            //    default:
-            //        throw new NotImplementedException($"Unsuported ICC profile v{Header.VersionMajor}");
-            //}
+            output = null;
+            return false;
         }
 
-        public bool TryProcess(double[] input, out double[] output)
+        private bool TryProcessTRCMatrix(double[] input, out double[] output)
         {
-            try
+            // 8.3.3 Three-component matrix-based Input profiles
+            // 8.4.3 Three-component matrix-based Display profiles
+            // See p197 of Wiley book
+            if (Tags.TryGetValue(IccTags.RedMatrixColumnTag, out var rmcTag) && rmcTag is IccXyzType rmc &&
+                Tags.TryGetValue(IccTags.GreenMatrixColumnTag, out var gmcTag) && gmcTag is IccXyzType gmc &&
+                Tags.TryGetValue(IccTags.BlueMatrixColumnTag, out var bmcTag) && bmcTag is IccXyzType bmc &&
+                Tags.TryGetValue(IccTags.RedTRCTag, out var rTrcTag) && rTrcTag is IccBaseCurveType rTrc &&
+                Tags.TryGetValue(IccTags.GreenTRCTag, out var gTrcTag) && gTrcTag is IccBaseCurveType gTrc &&
+                Tags.TryGetValue(IccTags.BlueTRCTag, out var bTrcTag) && bTrcTag is IccBaseCurveType bTrc)
             {
+                // Optional
+                // Tags.TryGetValue(IccTags.ChromaticAdaptationTag, out var caTag) && caTag is IccS15Fixed16ArrayType ca
+
+                double channel1 = input[0];
+                double channel2 = input[1];
+                double channel3 = input[2];
+
+                double lR = rTrc.Process(channel1);
+                double lG = gTrc.Process(channel2);
+                double lB = bTrc.Process(channel3);
+
+                double cX = (rmc.Xyz.X * lR) + (gmc.Xyz.X * lG) + (bmc.Xyz.X * lB);
+                double cY = (rmc.Xyz.Y * lR) + (gmc.Xyz.Y * lG) + (bmc.Xyz.Y * lB);
+                double cZ = (rmc.Xyz.Z * lR) + (gmc.Xyz.Z * lG) + (bmc.Xyz.Z * lB);
+
+                output = new double[] { cX, cY, cZ };
+                return true;
+            }
+
+            output = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Process from Device space to PCS.
+        /// <para>
+        /// A to B.
+        /// </para>
+        /// </summary>
+        public bool TryProcessToPcs(double[] input, IccRenderingIntent? renderingIntent, out double[] output)
+        {
+            // See Table 25 — Profile type/profile tag and defined rendering intents
+
+            //try
+            //{
+                if (TryProcessGrayTRC(input, out output))
+                {
+                    return true;
+                }
+
+                if (TryProcessTRCMatrix(input, out output))
+                {
+                    return true;
+                }
+
+                if (renderingIntent == null)
+                {
+                    // use profile rendering intent
+                    renderingIntent = Header.RenderingIntent;
+                }
+
                 switch (Header.ProfileClass)
                 {
                     case IccProfileClass.Input:
-                        {
-                            // 8.3 Input profiles
-                            // 8.3.2 N-component LUT-based Input profiles
-                            if (Tags.TryGetValue(IccTags.AToB0Tag, out var lutAB0TagI) &&
-                                lutAB0TagI is IccLutABType lutAb0I)
-                            {
-                                //output = lutAB.Process(input, Header);
-                                //return true;
-                            }
-
-                            // 8.3.3 Three-component matrix-based Input profiles
-                            if (Tags.TryGetValue(IccTags.RedMatrixColumnTag, out var rmcTagI) &&
-                                Tags.TryGetValue(IccTags.RedTRCTag, out var rTrcTagI))
-                            {
-                                // Check other taggs
-                            }
-
-                            // 8.3.4 Monochrome Input profiles
-                            if (Tags.TryGetValue(IccTags.GrayTRCTag, out var kTrcTag) && kTrcTag is IccBaseCurveType kTrc)
-                            {
-                                double v = kTrc.Process(input.Single());
-                                output = new double[] { v, v, v };
-                                return true;
-                            }
-                            break;
-                        }
-
                     case IccProfileClass.Display:
-                        {
-                            // 8.4 Display profiles
-                            // 8.4.2 N-Component LUT-based Display profilesS
-                            if (Tags.TryGetValue(IccTags.AToB0Tag, out var lutAB0TagD) && lutAB0TagD is IccLutABType lutAb0D &&
-                                Tags.TryGetValue(IccTags.BToA0Tag, out var lutBA0TagD) && lutBA0TagD is IccLutABType lutBa0D)
-                            {
-                                output = lutBa0D.Process(input, Header);
-                                return true;
-                            }
-
-                            // 8.4.3 Three-component matrix-based Display profiles
-                            // See p197 of Wiley book
-                            if (Tags.TryGetValue(IccTags.RedMatrixColumnTag, out var rmcTag) && rmcTag is IccXyzType rmc &&
-                                Tags.TryGetValue(IccTags.GreenMatrixColumnTag, out var gmcTag) && gmcTag is IccXyzType gmc &&
-                                Tags.TryGetValue(IccTags.BlueMatrixColumnTag, out var bmcTag) && bmcTag is IccXyzType bmc &&
-
-                                Tags.TryGetValue(IccTags.RedTRCTag, out var rTrcTag) && rTrcTag is IccBaseCurveType rTrc &&
-                                Tags.TryGetValue(IccTags.GreenTRCTag, out var gTrcTag) && gTrcTag is IccBaseCurveType gTrc &&
-                                Tags.TryGetValue(IccTags.BlueTRCTag, out var bTrcTag) && bTrcTag is IccBaseCurveType bTrc)
-                            {
-                                // Optional
-                                // Tags.TryGetValue(IccTags.ChromaticAdaptationTag, out var caTag) && caTag is IccS15Fixed16ArrayType ca
-
-                                double channel1 = input[0];
-                                double channel2 = input[1];
-                                double channel3 = input[2];
-
-                                double lR = rTrc.Process(channel1);
-                                double lG = gTrc.Process(channel2);
-                                double lB = bTrc.Process(channel3);
-
-                                double cX = rmc.Xyz.X * lR + gmc.Xyz.X * lG + bmc.Xyz.X * lB;
-                                double cY = rmc.Xyz.Y * lR + gmc.Xyz.Y * lG + bmc.Xyz.Y * lB;
-                                double cZ = rmc.Xyz.Z * lR + gmc.Xyz.Z * lG + bmc.Xyz.Z * lB;
-
-                                output = new double[] { cX, cY, cZ };
-                                return true;
-                            }
-
-                            // 8.4.4 Monochrome Display profiles
-                            if (Tags.TryGetValue(IccTags.GrayTRCTag, out var kTrcTag) && kTrcTag is IccBaseCurveType kTrc)
-                            {
-                                double v = kTrc.Process(input.Single());
-                                output = new double[] { v, v, v };
-                                return true;
-                            }
-                            break;
-                        }
-
                     case IccProfileClass.Output:
-                        {
-                            // 8.5.2 N-component LUT-based Output profiles
-                            if (Tags.TryGetValue(IccTags.AToB0Tag, out var lutAB0Tag) && lutAB0Tag is IIccClutType lutAb0 &&
-                                Tags.TryGetValue(IccTags.AToB1Tag, out var lutAB1Tag) && lutAB1Tag is IIccClutType lutAb1 &&
-                                Tags.TryGetValue(IccTags.AToB2Tag, out var lutAB2Tag) && lutAB2Tag is IIccClutType lutAb2 &&
-
-
-                                Tags.TryGetValue(IccTags.BToA0Tag, out var lutBA0Tag) && lutBA0Tag is IIccClutType lutBa0 &&
-                                Tags.TryGetValue(IccTags.BToA1Tag, out var lutBA1Tag) && lutBA1Tag is IIccClutType lutBa1 &&
-                                Tags.TryGetValue(IccTags.BToA2Tag, out var lutBA2Tag) && lutBA2Tag is IIccClutType lutBa2 &&
-
-                                Tags.TryGetValue(IccTags.GamutTag, out var gamutTag))
-                            {
-                                // Optional??
-                                // Tags.TryGetValue(IccTags.ColorantTableTag, out var colorantTableTag)
-                                switch (Header.RenderingIntent)
-                                {
-                                    case IccRenderingIntent.Perceptual:
-                                        output = lutAb0.Process(input, Header);
-                                        return true;
-
-                                    case IccRenderingIntent.MediaRelativeColorimetric:
-                                        output = lutAb1.Process(input, Header);
-                                        return true;
-
-                                    case IccRenderingIntent.Saturation:
-                                        output = lutAb2.Process(input, Header);
-                                        return true;
-                                }
-                            }
-
-                            // 8.5.3 Monochrome Output profiles
-                            if (Tags.TryGetValue(IccTags.GrayTRCTag, out var tag))
-                            {
-
-                            }
-                            break;
-                        }
-
-                    case IccProfileClass.DeviceLink:
-                        {
-                            // TODO
-                            break;
-                        }
-
                     case IccProfileClass.ColorSpace:
                         {
-                            // 8.7 ColorSpace profile
-                            if (Tags.TryGetValue(IccTags.AToB0Tag, out var lutAB0Tag) &&
-                                Tags.TryGetValue(IccTags.BToA0Tag, out var lutBA0Tag))
+                            // 8.3.2 N-component LUT-based Input profiles
+                            // 8.4.2 N-Component LUT-based Display profiles
+                            // 8.5.2 N-component LUT-based Output profiles
+
+                            if (renderingIntent == IccRenderingIntent.Perceptual && Tags.TryGetValue(IccTags.AToB0Tag, out var lutAB0Tag)
+                                && lutAB0Tag is IIccClutType lutAb0)
                             {
-                                // TODO - check
-                                if (lutAB0Tag is IccLutABType lutAb0)
-                                {
-                                    output = lutAb0.Process(input, Header);
-                                    return true;
-                                }
-                                else if (lutAB0Tag is IccBaseLutType lutAb0bis)
-                                {
-                                    output = lutAb0bis.Process(input, Header);
-                                    return true;
-                                }
-                                else
-                                {
-                                    throw new Exception("");
-                                }
+                                output = lutAb0.Process(input, Header);
+                                return true;
+                            }
+                            else if (renderingIntent == IccRenderingIntent.MediaRelativeColorimetric && Tags.TryGetValue(IccTags.AToB1Tag, out var lutAB1Tag)
+                                && lutAB1Tag is IIccClutType lutAb1)
+                            {
+                                output = lutAb1.Process(input, Header);
+                                return true;
+                            }
+                            else if (renderingIntent == IccRenderingIntent.Saturation && Tags.TryGetValue(IccTags.AToB2Tag, out var lutAB2Tag)
+                                && lutAB2Tag is IIccClutType lutAb2)
+                            {
+                                output = lutAb2.Process(input, Header);
+                                return true;
+                            }
+                            else if (Tags.TryGetValue(IccTags.AToB0Tag, out var lutAB0TagDefault) && lutAB0TagDefault is IIccClutType lutAb0Default)
+                            {
+                                output = lutAb0Default.Process(input, Header);
+                                return true;
                             }
                             break;
                         }
 
                     case IccProfileClass.Abstract:
+                    case IccProfileClass.DeviceLink:
+                    case IccProfileClass.NamedColor: // undefined actually
                         {
-                            if (Tags.TryGetValue(IccTags.AToB0Tag, out var lutAB0Tag))
+                            // TODO - use IIccClutType instead?
+                            if (Tags.TryGetValue(IccTags.AToB0Tag, out var lutAB0Tag) && lutAB0Tag is IIccClutType lutAb0)
                             {
-                                // TODO - check
-                                if (lutAB0Tag is IccLutABType lutAb0)
-                                {
-                                    output = lutAb0.Process(input, Header);
-                                    return true;
-                                }
-                                else if (lutAB0Tag is IccBaseLutType lutAb0bis)
-                                {
-                                    output = lutAb0bis.Process(input, Header);
-                                    return true;
-                                }
-                                else
-                                {
-                                    throw new Exception("");
-                                }
+                                output = lutAb0.Process(input, Header);
+                                return true;
                             }
                             break;
                         }
 
-                    case IccProfileClass.NamedColor:
+                    default:
+                        throw new ArgumentOutOfRangeException("TODO");
+                }
+            //}
+            //catch (Exception ex)
+            //{
+            //    // Ignore
+            //    System.Diagnostics.Debug.WriteLine(ex);
+            //    output = null;
+            //    return false;
+            //}
+
+            output = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Process from PCS to Device space.
+        /// <para>
+        /// B to A.
+        /// </para>
+        /// </summary>
+        public bool TryProcessFromPcs(double[] input, IccRenderingIntent? renderingIntent, out double[] output)
+        {
+            // TODO
+
+            // See Table 25 — Profile type/profile tag and defined rendering intents
+
+            try
+            {
+                if (TryProcessGrayTRC(input, out output)) // TODO - Need inversion
+                {
+                    return true;
+                }
+
+                if (TryProcessTRCMatrix(input, out output)) // TODO - Need inversion
+                {
+                    return true;
+                }
+
+                if (renderingIntent == null)
+                {
+                    // use profile rendering intent
+                    renderingIntent = Header.RenderingIntent;
+                }
+
+                switch (Header.ProfileClass)
+                {
+                    case IccProfileClass.Input:
+                    case IccProfileClass.Display:
+                    case IccProfileClass.Output:
+                    case IccProfileClass.ColorSpace:
                         {
-                            // TODO
+                            // 8.3.2 N-component LUT-based Input profiles
+                            // 8.4.2 N-Component LUT-based Display profiles
+                            // 8.5.2 N-component LUT-based Output profiles
+                            if (Tags.TryGetValue(IccTags.BToA0Tag, out var lutBA0Tag) && lutBA0Tag is IIccClutType lutBa0 &&
+                                Tags.TryGetValue(IccTags.BToA1Tag, out var lutBA1Tag) && lutBA1Tag is IIccClutType lutBa1 &&
+                                Tags.TryGetValue(IccTags.BToA2Tag, out var lutBA2Tag) && lutBA2Tag is IIccClutType lutBa2)
+                            {
+                                // Optional??
+                                // Tags.TryGetValue(IccTags.GamutTag, out var gamutTag)
+                                // Tags.TryGetValue(IccTags.ColorantTableTag, out var colorantTableTag)
+
+                                switch (renderingIntent)
+                                {
+                                    case IccRenderingIntent.Perceptual:
+                                        output = lutBa0.Process(input, Header);
+                                        return true;
+
+                                    case IccRenderingIntent.MediaRelativeColorimetric:
+                                        output = lutBa1.Process(input, Header);
+                                        return true;
+
+                                    case IccRenderingIntent.Saturation:
+                                        output = lutBa2.Process(input, Header);
+                                        return true;
+
+                                    default:
+                                        output = lutBa0.Process(input, Header);
+                                        return true;
+                                }
+                            }
+
+                            break;
+                        }
+
+                    case IccProfileClass.Abstract:
+                    case IccProfileClass.DeviceLink:
+                    case IccProfileClass.NamedColor: // undefined actually
+                        {
+                            if (Tags.TryGetValue(IccTags.BToA0Tag, out var lutBA0Tag) && lutBA0Tag is IccLutABType lutBa0)
+                            {
+                                output = lutBa0.Process(input, Header);
+                                return true;
+                            }
                             break;
                         }
 
                     default:
-                        throw new ArgumentOutOfRangeException();
+                        throw new ArgumentOutOfRangeException("TODO");
                 }
             }
             catch (Exception)

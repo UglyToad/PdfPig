@@ -1161,7 +1161,7 @@
             return transformed;
         }
 
-        private static double g(double x)
+        internal static double g(double x)
         {
             if (x > 6.0 / 29.0)
             {
@@ -1355,7 +1355,7 @@
                     return new double[] { 0, 0, 0 }; // Black RGB
                 }
 
-                if (Profile.TryProcess(values, out double[] xyz) && xyz.Length == 3)
+                if (Profile.TryProcessToPcs(values, null, out double[] xyz) && xyz.Length == 3) // No rendering intent for now
                 {
                     double x = xyz[0];
                     double y = xyz[1];
@@ -1395,7 +1395,44 @@
                     return RGBColor.Black;
                 }
 
-                if (Profile.TryProcess(values, out double[] xyz) && xyz.Length == 3)
+                if (values.Any(x => x > 1.0))
+                {
+                    //values[0] /= 100.0;
+                    //values[1] = (values[1] + 127.0) / 255.0;
+                    //values[2] = (values[2] + 127.0) / 255.0;
+
+                    for (int i = 0; i < values.Length; i++)
+                    {
+                        values[i] /= 100.0;
+                    }
+                }
+
+                if (Profile.Header.ColourSpace == IccColourSpaceType.CIELABorPCSLAB)
+                {
+                    //values[0] /= 100.0;
+                    //values[1] = (values[1] + 127.0) / 256.0;
+                    //values[2] = (values[2] + 127.0) / 256.0;
+
+                    // Component Ranges: L*: [0 100]; a* and b*: [−128 127]
+                    //double b = PdfFunction.ClipToRange(values[1], -128.0, 127.0);
+                    //double c = PdfFunction.ClipToRange(values[2], -128.0, 127.0);
+
+                    //double M = (values[0] + 16.0) / 116.0;
+                    //double L = M + (b / 500.0);
+                    //double N = M - (c / 200.0);
+
+                    //IccXyz referenceWhite = Profile.Header.nCIEXYZ;
+
+                    //values[0] = LabColorSpaceDetails.g(L) * referenceWhite.X; // X
+                    //values[1] = LabColorSpaceDetails.g(M) * referenceWhite.Y; // Y
+                    //values[2] = LabColorSpaceDetails.g(N) * referenceWhite.Z; // Z
+
+                    //var labColor =  labColorSpaceDetails.GetColor(values[0], values[1], values[2]);
+                    //values[0] =
+                }
+
+
+                if (Profile.TryProcessToPcs(values, null, out double[] xyz) && xyz.Length == 3) // No rendering intent for now
                 {
                     double x = xyz[0];
                     double y = xyz[1];
@@ -1408,7 +1445,7 @@
                     }
                     else
                     {
-                        return labColorSpaceDetails.GetColor(x, y, z);
+                        return labColorSpaceDetails.GetColor(x * 100.0, y * 255.0 - 127.0, z * 255.0 - 127.0);
                     }
                 }
             }
@@ -1437,7 +1474,8 @@
                 int outputSize = (int)(decoded.Count * outputCount / (double)NumberOfColorComponents);
                 var transformed = new byte[outputSize];
 
-                Parallel.For(0, decoded.Count / NumberOfColorComponents, i =>
+                //Parallel.For(0, decoded.Count / NumberOfColorComponents, i =>
+                for (int i = 0; i < decoded.Count / NumberOfColorComponents; i++)
                 {
                     double[] comps = new double[NumberOfColorComponents];
                     for (int n = 0; n < NumberOfColorComponents; n++)
@@ -1450,7 +1488,8 @@
                     {
                         transformed[i * outputCount + c] = ConvertToByte(colors[c]);
                     }
-                });
+                }
+                //);
                 return transformed;
             }
 

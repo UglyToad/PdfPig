@@ -17,13 +17,13 @@
             Directory.CreateDirectory(OutputFolder);
         }
 
+
         [Fact]
         public void IccXyzTest()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("xyztest.pdf");
             using (var document = PdfDocument.Open(path))
             {
-                // page 1
                 var page1 = document.GetPage(1);
                 var paths = page1.ExperimentalAccess.Paths
                     .OrderBy(p => p.GetBoundingRectangle().Value.Centroid.X)
@@ -78,6 +78,52 @@
                 var page1 = document.GetPage(1);
                 // TODO
             }
+        }
+
+        [Fact]
+        public void IccLabProfile8bitLUT()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("icc-lab-8bit.pdf");
+            using (var document = PdfDocument.Open(path))
+           {
+                var page1 = document.GetPage(1);
+                var paths = page1.ExperimentalAccess.Paths
+                    .OrderBy(p => p.GetBoundingRectangle().Value.Centroid.X)
+                    .ThenBy(p => p.GetBoundingRectangle().Value.Centroid.Y)
+                    .ToArray();
+
+                var grouped = page1.ExperimentalAccess.Paths
+                    .GroupBy(p => p.GetBoundingRectangle().Value.Centroid.X)
+                    .ToDictionary(kvp => kvp.Key, kvp => kvp);
+
+                /*
+                 * If all the profiles were rendered correctly, for the 3 "Lab" files we'd expect to see:
+                 *      stripe 1: lab(0 0 0) - black
+                 *      stripe 2: lab(100% 0 0) - white
+                 *      stripe 3: lab(75% 0 50) - mustard (#CEB759)
+                 *      stripe 4: lab(75% 50 0) - pink (#FF92BB)
+                 */
+
+                var black = grouped[30].Single().FillColor;
+                var white = grouped[60].Single().FillColor;
+                var mustard = grouped[90].Single().FillColor; // rgb(206,183,89)
+                var pink = grouped[120].Single().FillColor; // rgb(255,146,187)
+
+                AssertColor(206, 183, 89, mustard);
+                AssertColor(255, 146, 187, pink);
+            }
+        }
+
+        private void AssertColor(byte r, byte g, byte b, IColor color)
+        {
+            var rgb = color.ToRGBValues();
+            var rAct = ConvertToByte(rgb.r);
+            var gAct = ConvertToByte(rgb.g);
+            var bAct = ConvertToByte(rgb.b);
+
+            Assert.Equal(r, rAct);
+            Assert.Equal(g, gAct);
+            Assert.Equal(b, bAct);
         }
 
         [Fact]
@@ -422,7 +468,7 @@
 
         private static byte ConvertToByte(decimal componentValue)
         {
-            var rounded = Math.Round(componentValue * 255, MidpointRounding.AwayFromZero);
+            var rounded = Math.Round(componentValue * 255m, MidpointRounding.AwayFromZero);
             return (byte)rounded;
         }
     }

@@ -29,7 +29,13 @@ namespace IccProfileNet
                 index += w;
             }
 
-            return clut[(int)index];
+            int indexInt = (int)index;
+            if (indexInt > clut.Length - 1)
+            {
+                //indexInt = clut.Length - 1;
+            }
+
+            return clut[indexInt];
         }
 
         internal static double[] Lookup(double[] input, double[][] clut, int clutGridPoints)
@@ -40,10 +46,17 @@ namespace IccProfileNet
             double index = 0;
             for (int i = 0; i < input.Length; i++)
             {
-                index += input[i] * Math.Pow(clutGridPoints, input.Length - i);
+                double pow = Math.Pow(clutGridPoints, input.Length - i);
+                index += input[i] * pow;
             }
 
-            return clut[(int)index];
+            int indexInt = (int)index;
+            if (indexInt > clut.Length - 1)
+            {
+                //indexInt = indexInt % clut.Length;
+            }
+
+            return clut[indexInt];
         }
 
         /// <summary>
