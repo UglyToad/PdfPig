@@ -151,7 +151,7 @@
             var decodedBytes = ImageHelpers.LoadFileBytes("ccittfax-decoded.bin");
             var image = new TestPdfImage
             {
-                ColorSpaceDetails = IndexedColorSpaceDetails.Stencil(DeviceGrayColorSpaceDetails.Instance, new[] { 1m, 0 }),
+                ColorSpaceDetails = IndexedColorSpaceDetails.Stencil(DeviceGrayColorSpaceDetails.Instance, new[] { 1.0, 0 }),
                 DecodedBytes = decodedBytes,
                 WidthInSamples = 1800,
                 HeightInSamples = 3113,
@@ -171,7 +171,7 @@
                 ColorSpaceDetails = new ICCBasedColorSpaceDetails(
                     numberOfColorComponents: 3,
                     alternateColorSpaceDetails: DeviceRgbColorSpaceDetails.Instance,
-                    range: new List<decimal> { 0, 1, 0, 1, 0, 1 },
+                    range: new List<double> { 0, 1, 0, 1, 0, 1 },
                     metadata: null),
                 DecodedBytes = decodedBytes,
                 WidthInSamples = 1,
@@ -192,7 +192,7 @@
                 ColorSpaceDetails = new ICCBasedColorSpaceDetails(
                     numberOfColorComponents: 3,
                     alternateColorSpaceDetails: DeviceRgbColorSpaceDetails.Instance,
-                    range: new List<decimal> { 0, 1, 0, 1, 0, 1 },
+                    range: new List<double> { 0, 1, 0, 1, 0, 1 },
                     metadata: null),
                 DecodedBytes = decodedBytes,
                 WidthInSamples = 1,
@@ -212,7 +212,6 @@
             Assert.True(PngFromPdfImageFactory.TryGenerate(iccBasedImage, out var iccPngBytes));
             Assert.True(PngFromPdfImageFactory.TryGenerate(deviceRGBImage, out var deviceRgbBytes));
             Assert.Equal(iccPngBytes, deviceRgbBytes);
-
         }
 
         [Fact]
@@ -222,13 +221,13 @@
             var image = new TestPdfImage
             {
                 ColorSpaceDetails = new CalRGBColorSpaceDetails(
-                    whitePoint: new List<decimal> { 0.95043m, 1, 1.09m },
+                    whitePoint: new List<double> { 0.95043, 1, 1.09 },
                     blackPoint: null,
-                    gamma: new List<decimal> { 2.2m, 2.2m, 2.2m },
-                    matrix: new List<decimal> {
-                        0.41239m, 0.21264m, 0.01933m,
-                        0.35758m, 0.71517m, 0.11919m,
-                        0.18045m, 0.07218m, 0.9504m }),
+                    gamma: new List<double> { 2.2, 2.2, 2.2 },
+                    matrix: new List<double> {
+                        0.41239, 0.21264, 0.01933,
+                        0.35758, 0.71517, 0.11919,
+                        0.18045, 0.07218, 0.9504 }),
                 DecodedBytes = decodedBytes,
                 WidthInSamples = 153,
                 HeightInSamples = 83,
@@ -246,9 +245,9 @@
             var image = new TestPdfImage
             {
                 ColorSpaceDetails = new CalGrayColorSpaceDetails(
-                    whitePoint: new List<decimal> { 0.9505000114m, 1, 1.0889999866m },
+                    whitePoint: new List<double> { 0.9505000114, 1, 1.0889999866 },
                     blackPoint: null,
-                    gamma: 2.2000000477m),
+                    gamma: 2.2000000477),
                 DecodedBytes = decodedBytes,
                 WidthInSamples = 2480,
                 HeightInSamples = 1748,

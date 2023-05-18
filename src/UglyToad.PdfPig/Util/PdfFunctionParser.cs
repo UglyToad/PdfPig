@@ -69,7 +69,7 @@
                 case 4:
                     if (functionStream == null)
                     {
-                        throw new NotImplementedException("PdfFunctionType0 not stream");
+                        throw new NotImplementedException("PdfFunctionType4 not stream");
                     }
                     return new PdfFunctionType4(functionStream);
 

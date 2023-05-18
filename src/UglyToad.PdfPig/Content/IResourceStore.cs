@@ -2,6 +2,7 @@
 {
     using Graphics.Colors;
     using PdfFonts;
+    using System.Collections.Generic;
     using Tokens;
 
     internal interface IResourceStore
@@ -27,5 +28,9 @@
         ColorSpaceDetails GetColorSpaceDetails(NameToken name, DictionaryToken dictionary);
 
         DictionaryToken GetMarkedContentPropertiesDictionary(NameToken name);
+
+        IReadOnlyDictionary<NameToken, PatternColor> GetPatterns();
+
+        Shading GetShading(NameToken name);
     }
 }

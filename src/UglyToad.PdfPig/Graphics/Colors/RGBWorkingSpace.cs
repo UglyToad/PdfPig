@@ -6,7 +6,7 @@
     internal class RGBWorkingSpace
     {
         public static readonly XYZReferenceWhite ReferenceWhites = new XYZReferenceWhite();
-      
+
         public static readonly RGBWorkingSpace AdobeRGB1998 = new RGBWorkingSpace
         {
             GammaCorrection = CreateGammaFunc(2.2),
@@ -143,7 +143,7 @@
             BluePrimary = (0.1570, 0.0180, 0.016875)
         };
 
-        public Func<double, double> GammaCorrection { get; private set; } 
+        public Func<double, double> GammaCorrection { get; private set; }
         public (double X, double Y, double Z) ReferenceWhite { get; private set; }
         public (double x, double y, double Y) RedPrimary { get; private set; }
         public (double x, double y, double Y) BluePrimary { get; private set; }
@@ -161,10 +161,10 @@
         // The reference white values below were obtained from: http://www.brucelindbloom.com/index.html?Eqn_ChromAdapt.html
         internal class XYZReferenceWhite
         {
-            internal XYZReferenceWhite() {}
+            internal XYZReferenceWhite() { }
             public readonly (double X, double Y, double Z) A = (1.09850, 1.00000, 0.35585);
             public readonly (double X, double Y, double Z) B = (0.99072, 1.00000, 0.85223);
-            public readonly (double X, double Y, double Z) C = (0.98074, 1.00000,	1.18232);
+            public readonly (double X, double Y, double Z) C = (0.98074, 1.00000, 1.18232);
             public readonly (double X, double Y, double Z) D50 = (0.96422, 1.00000, 0.82521);
             public readonly (double X, double Y, double Z) D55 = (0.95682, 1.00000, 0.92149);
             public readonly (double X, double Y, double Z) D65 = (0.95047, 1.00000, 1.08883);

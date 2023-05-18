@@ -35,8 +35,8 @@
                 var (r, g, b) = page.Letters[0].Color.ToRGBValues();
 
                 Assert.Equal(1, r);
-                Assert.Equal(0.914m, g);
-                Assert.Equal(0.765m, b);
+                Assert.Equal(0.914, g);
+                Assert.Equal(0.765, b);
 
                 // White.
                 (r, g, b) = page.Letters[37].Color.ToRGBValues();
@@ -48,9 +48,9 @@
                 // Blackish.
                 (r, g, b) = page.Letters[76].Color.ToRGBValues();
 
-                Assert.Equal(0.137m, r);
-                Assert.Equal(0.122m, g);
-                Assert.Equal(0.125m, b);
+                Assert.Equal(0.137, r);
+                Assert.Equal(0.122, g);
+                Assert.Equal(0.125, b);
             }
         }
 

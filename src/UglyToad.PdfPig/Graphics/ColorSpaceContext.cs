@@ -40,7 +40,15 @@
                 return;
             }
 
-            currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(operands.Select(v => (double)v).ToArray());
+            if (patternName != null && CurrentStrokingColorSpace.Type == ColorSpace.Pattern)
+            {
+                currentStateFunc().CurrentStrokingColor = ((PatternColorSpaceDetails)CurrentStrokingColorSpace).GetColor(patternName);
+                // TODO - use operands values for Uncoloured Tiling Patterns
+            }
+            else
+            {
+                currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(operands.Select(v => (double)v).ToArray());
+            }
         }
 
         public void SetStrokingColorGray(decimal gray)
@@ -79,7 +87,15 @@
                 return;
             }
 
-            currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(operands.Select(v => (double)v).ToArray());
+            if (patternName != null && CurrentNonStrokingColorSpace.Type == ColorSpace.Pattern)
+            {
+                currentStateFunc().CurrentNonStrokingColor = ((PatternColorSpaceDetails)CurrentNonStrokingColorSpace).GetColor(patternName);
+                // TODO - use operands values for Uncoloured Tiling Patterns
+            }
+            else
+            {
+                currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(operands.Select(v => (double)v).ToArray());
+            }
         }
 
         public void SetNonStrokingColorGray(decimal gray)
