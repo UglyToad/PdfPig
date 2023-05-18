@@ -5,6 +5,7 @@
     using Logging;
     using Parser.Parts;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -83,6 +84,21 @@
                 return false;
             }
 
+            decimal? GetPossibleEntry(int index)
+            {
+                if (index >= explicitDestinationArray.Length)
+                {
+                    return null;
+                }
+
+                if (explicitDestinationArray[index] is NumericToken num)
+                {
+                    return num.Data;
+                }
+
+                return null;
+            }
+
             int pageNumber;
 
             var pageToken = explicitDestinationArray[0];
@@ -136,11 +152,11 @@
             if (destTypeToken.Equals(NameToken.XYZ))
             {
                 // [page /XYZ left top zoom]
-                var left = explicitDestinationArray[2] as NumericToken;
-                var top = explicitDestinationArray[3] as NumericToken;
+                var left = GetPossibleEntry(2);
+                var top = GetPossibleEntry(3);
 
                 destination = new ExplicitDestination(pageNumber, ExplicitDestinationType.XyzCoordinates,
-                    new ExplicitDestinationCoordinates(left?.Data, top?.Data));
+                    new ExplicitDestinationCoordinates(left, top));
 
                 return true;
             }
@@ -157,9 +173,9 @@
             if (destTypeToken.Equals(NameToken.FitH))
             {
                 // [page /FitH top]
-                var top = explicitDestinationArray[2] as NumericToken;
+                var top = GetPossibleEntry(2);
                 destination = new ExplicitDestination(pageNumber, ExplicitDestinationType.FitHorizontally,
-                    new ExplicitDestinationCoordinates(null, top?.Data));
+                    new ExplicitDestinationCoordinates(null, top));
 
                 return true;
             }
@@ -167,9 +183,9 @@
             if (destTypeToken.Equals(NameToken.FitV))
             {
                 // [page /FitV left]
-                var left = explicitDestinationArray[2] as NumericToken;
+                var left = GetPossibleEntry(2);
                 destination = new ExplicitDestination(pageNumber, ExplicitDestinationType.FitVertically,
-                    new ExplicitDestinationCoordinates(left?.Data));
+                    new ExplicitDestinationCoordinates(left));
 
                 return true;
             }
@@ -177,13 +193,13 @@
             if (destTypeToken.Equals(NameToken.FitR))
             {
                 // [page /FitR left bottom right top]
-                var left = explicitDestinationArray[2] as NumericToken;
-                var bottom = explicitDestinationArray[3] as NumericToken;
-                var right = explicitDestinationArray[4] as NumericToken;
-                var top = explicitDestinationArray[5] as NumericToken;
+                var left = GetPossibleEntry(2);
+                var bottom = GetPossibleEntry(3);
+                var right = GetPossibleEntry(4);
+                var top = GetPossibleEntry(5);
 
                 destination = new ExplicitDestination(pageNumber, ExplicitDestinationType.FitRectangle,
-                    new ExplicitDestinationCoordinates(left?.Data, top?.Data, right?.Data, bottom?.Data));
+                    new ExplicitDestinationCoordinates(left, top, right, bottom));
 
                 return true;
             }
@@ -200,8 +216,9 @@
             if (destTypeToken.Equals(NameToken.FitBH))
             {
                 // [page /FitBH top]
+                var top = GetPossibleEntry(2);
                 destination = new ExplicitDestination(pageNumber, ExplicitDestinationType.FitBoundingBoxHorizontally,
-                    new ExplicitDestinationCoordinates(null, (explicitDestinationArray[2] as NumericToken)?.Data));
+                    new ExplicitDestinationCoordinates(null, top));
 
                 return true;
             }
@@ -209,8 +226,9 @@
             if (destTypeToken.Equals(NameToken.FitBV))
             {
                 // [page /FitBV left]
+                var left = GetPossibleEntry(2);
                 destination = new ExplicitDestination(pageNumber, ExplicitDestinationType.FitBoundingBoxVertically,
-                    new ExplicitDestinationCoordinates((explicitDestinationArray[2] as NumericToken)?.Data));
+                    new ExplicitDestinationCoordinates(left));
 
                 return true;
             }
