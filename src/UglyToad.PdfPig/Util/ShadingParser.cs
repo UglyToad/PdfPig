@@ -7,6 +7,7 @@
     using UglyToad.PdfPig.Filters;
     using UglyToad.PdfPig.Functions;
     using UglyToad.PdfPig.Graphics.Colors;
+    using UglyToad.PdfPig.Parser.Parts;
     using UglyToad.PdfPig.Tokenization.Scanner;
     using UglyToad.PdfPig.Tokens;
 
@@ -111,6 +112,23 @@
             }
         }
 
+        private static PdfFunction[] GetFunctions(IToken functionToken, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
+        {
+            if (DirectObjectFinder.TryGet(functionToken, scanner, out ArrayToken fa))
+            {
+                var functionArray = new PdfFunction[fa.Length];
+                for (int i = 0; i < fa.Length; i++)
+                {
+                    functionArray[i] = PdfFunctionParser.Create(fa[i], scanner, filterProvider);
+                }
+                return functionArray;
+            }
+            else
+            {
+                return new PdfFunction[] { PdfFunctionParser.Create(functionToken, scanner, filterProvider) };
+            }
+        }
+
         private static FunctionBasedShading CreateFunctionBasedShading(DictionaryToken shadingDictionary, ColorSpaceDetails colorSpace,
             double[] background, PdfRectangle? bbox, bool antiAlias, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
         {
@@ -141,9 +159,9 @@
                 throw new ArgumentNullException($"'{NameToken.Function}' is required for shading type '{ShadingType.FunctionBased}'.");
             }
 
-            PdfFunction function = PdfFunctionParser.Create(shadingDictionary.Data[NameToken.Function], scanner, filterProvider);
+            PdfFunction[] functions = GetFunctions(shadingDictionary.Data[NameToken.Function], scanner, filterProvider);
 
-            return new FunctionBasedShading(antiAlias, shadingDictionary, colorSpace, bbox, background, domain, matrix, function);
+            return new FunctionBasedShading(antiAlias, shadingDictionary, colorSpace, bbox, background, domain, matrix, functions);
         }
 
         private static AxialShading CreateAxialShading(DictionaryToken shadingDictionary, ColorSpaceDetails colorSpace,
@@ -175,7 +193,7 @@
                 throw new ArgumentNullException($"{NameToken.Function} is required for shading type '{ShadingType.Axial}'.");
             }
 
-            PdfFunction function = PdfFunctionParser.Create(shadingDictionary.Data[NameToken.Function], scanner, filterProvider);
+            PdfFunction[] functions = GetFunctions(shadingDictionary.Data[NameToken.Function], scanner, filterProvider);
 
             bool[] extend = new bool[] { false, false }; // Default values
             if (shadingDictionary.TryGet<ArrayToken>(NameToken.Extend, scanner, out var extendToken))
@@ -183,7 +201,7 @@
                 extend = extendToken.Data.OfType<BooleanToken>().Select(v => v.Data).ToArray();
             }
 
-            return new AxialShading(antiAlias, shadingDictionary, colorSpace, bbox, background, coords, domain, function, extend);
+            return new AxialShading(antiAlias, shadingDictionary, colorSpace, bbox, background, coords, domain, functions, extend);
         }
 
         private static RadialShading CreateRadialShading(DictionaryToken shadingDictionary, ColorSpaceDetails colorSpace,
@@ -215,7 +233,7 @@
                 throw new ArgumentNullException($"{NameToken.Function} is required for shading type '{ShadingType.Radial}'.");
             }
 
-            PdfFunction function = PdfFunctionParser.Create(shadingDictionary.Data[NameToken.Function], scanner, filterProvider);
+            PdfFunction[] functions = GetFunctions(shadingDictionary.Data[NameToken.Function], scanner, filterProvider);
 
             bool[] extend = new bool[] { false, false }; // Default values
             if (shadingDictionary.TryGet<ArrayToken>(NameToken.Extend, scanner, out var extendToken))
@@ -223,7 +241,7 @@
                 extend = extendToken.Data.OfType<BooleanToken>().Select(v => v.Data).ToArray();
             }
 
-            return new RadialShading(antiAlias, shadingDictionary, colorSpace, bbox, background, coords, domain, function, extend);
+            return new RadialShading(antiAlias, shadingDictionary, colorSpace, bbox, background, coords, domain, functions, extend);
         }
 
         private static FreeFormGouraudShading CreateFreeFormGouraudShadedTriangleMeshesShading(StreamToken shadingStream,
@@ -269,14 +287,14 @@
                 throw new ArgumentNullException($"{NameToken.Decode} is required for shading type '{ShadingType.FreeFormGouraud}'.");
             }
 
-            PdfFunction function = null; // Optional
+            PdfFunction[] functions = null; // Optional
             if (shadingStream.StreamDictionary.ContainsKey(NameToken.Function))
             {
-                function = PdfFunctionParser.Create(shadingStream.StreamDictionary.Data[NameToken.Function], scanner, filterProvider);
+                functions = GetFunctions(shadingStream.StreamDictionary.Data[NameToken.Function], scanner, filterProvider);
             }
 
             return new FreeFormGouraudShading(antiAlias, shadingStream, colorSpace, bbox, background,
-                bitsPerCoordinate, bitsPerComponent, bitsPerFlag, decode, function);
+                bitsPerCoordinate, bitsPerComponent, bitsPerFlag, decode, functions);
         }
 
         private static LatticeFormGouraudShading CreateLatticeFormGouraudShadedTriangleMeshesShading(StreamToken shadingStream,
@@ -322,14 +340,14 @@
                 throw new ArgumentNullException($"{NameToken.Decode} is required for shading type '{ShadingType.LatticeFormGouraud}'.");
             }
 
-            PdfFunction function = null; // Optional
+            PdfFunction[] functions = null; // Optional
             if (shadingStream.StreamDictionary.ContainsKey(NameToken.Function))
             {
-                function = PdfFunctionParser.Create(shadingStream.StreamDictionary.Data[NameToken.Function], scanner, filterProvider);
+                functions = GetFunctions(shadingStream.StreamDictionary.Data[NameToken.Function], scanner, filterProvider);
             }
 
             return new LatticeFormGouraudShading(antiAlias, shadingStream, colorSpace, bbox, background,
-                bitsPerCoordinate, bitsPerComponent, verticesPerRow, decode, function);
+                bitsPerCoordinate, bitsPerComponent, verticesPerRow, decode, functions);
         }
 
         private static CoonsPatchMeshesShading CreateCoonsPatchMeshesShading(StreamToken shadingStream,
@@ -375,14 +393,14 @@
                 throw new ArgumentNullException($"{NameToken.Decode} is required for shading type '{ShadingType.CoonsPatch}'.");
             }
 
-            PdfFunction function = null; // Optional
+            PdfFunction[] functions = null; // Optional
             if (shadingStream.StreamDictionary.ContainsKey(NameToken.Function))
             {
-                function = PdfFunctionParser.Create(shadingStream.StreamDictionary.Data[NameToken.Function], scanner, filterProvider);
+                functions = GetFunctions(shadingStream.StreamDictionary.Data[NameToken.Function], scanner, filterProvider);
             }
 
             return new CoonsPatchMeshesShading(antiAlias, shadingStream, colorSpace, bbox, background,
-                bitsPerCoordinate, bitsPerComponent, bitsPerFlag, decode, function);
+                bitsPerCoordinate, bitsPerComponent, bitsPerFlag, decode, functions);
         }
 
         private static TensorProductPatchMeshesShading CreateTensorProductPatchMeshesShading(StreamToken shadingStream,
@@ -428,14 +446,14 @@
                 throw new ArgumentNullException($"{NameToken.Decode} is required for shading type '{ShadingType.TensorProductPatch}'.");
             }
 
-            PdfFunction function = null; // Optional
+            PdfFunction[] functions = null; // Optional
             if (shadingStream.StreamDictionary.ContainsKey(NameToken.Function))
             {
-                function = PdfFunctionParser.Create(shadingStream.StreamDictionary.Data[NameToken.Function], scanner, filterProvider);
+                functions = GetFunctions(shadingStream.StreamDictionary.Data[NameToken.Function], scanner, filterProvider);
             }
 
             return new TensorProductPatchMeshesShading(antiAlias, shadingStream, colorSpace, bbox, background,
-                bitsPerCoordinate, bitsPerComponent, bitsPerFlag, decode, function);
+                bitsPerCoordinate, bitsPerComponent, bitsPerFlag, decode, functions);
         }
     }
 }

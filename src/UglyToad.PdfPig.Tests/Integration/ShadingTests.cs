@@ -30,5 +30,15 @@
                 }
             }
         }
+
+        [Fact]
+        public void AxialRadialTensorProductManyFunctions2()
+        {
+            // We just check pages can be parsed correctly for now
+            using (var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("iron-ore-q2-q3-2013.pdf")))
+            {
+                var page = document.GetPage(8); // Should not throw
+            }
+        }
     }
 }
