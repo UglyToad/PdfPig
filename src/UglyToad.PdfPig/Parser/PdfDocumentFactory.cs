@@ -160,12 +160,25 @@
             var cidFontFactory = new CidFontFactory(pdfScanner, filterProvider);
             var encodingReader = new EncodingReader(pdfScanner);
 
+            var type0Handler = new Type0FontHandler(
+                cidFontFactory,
+                filterProvider,
+                pdfScanner,
+                parsingOptions.Logger);
+
             var type1Handler = new Type1FontHandler(pdfScanner, filterProvider, encodingReader);
 
-            var fontFactory = new FontFactory(parsingOptions.Logger, new Type0FontHandler(cidFontFactory,
-                filterProvider, pdfScanner),
-                new TrueTypeFontHandler(parsingOptions.Logger, pdfScanner, filterProvider, encodingReader, SystemFontFinder.Instance,
-                    type1Handler),
+            var trueTypeHandler = new TrueTypeFontHandler(parsingOptions.Logger,
+                pdfScanner,
+                filterProvider,
+                encodingReader,
+                SystemFontFinder.Instance,
+                type1Handler);
+
+            var fontFactory = new FontFactory(
+                parsingOptions.Logger,
+                type0Handler,
+                trueTypeHandler,
                 type1Handler,
                 new Type3FontHandler(pdfScanner, filterProvider, encodingReader));
 

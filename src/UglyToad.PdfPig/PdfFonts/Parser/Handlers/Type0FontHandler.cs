@@ -7,6 +7,7 @@
     using Core;
     using Filters;
     using Fonts;
+    using Logging;
     using Parts;
     using PdfPig.Parser.Parts;
     using Tokenization.Scanner;
@@ -18,13 +19,18 @@
         private readonly CidFontFactory cidFontFactory;
         private readonly ILookupFilterProvider filterProvider;
         private readonly IPdfTokenScanner scanner;
+        private readonly ILog logger;
 
-        public Type0FontHandler(CidFontFactory cidFontFactory, ILookupFilterProvider filterProvider,
-            IPdfTokenScanner scanner)
+        public Type0FontHandler(
+            CidFontFactory cidFontFactory,
+            ILookupFilterProvider filterProvider,
+            IPdfTokenScanner scanner,
+            ILog logger)
         {
             this.cidFontFactory = cidFontFactory;
             this.filterProvider = filterProvider;
             this.scanner = scanner;
+            this.logger = logger;
         }
 
         public IFont Generate(DictionaryToken dictionary)
@@ -79,7 +85,10 @@
                 }
                 else
                 {
-                    throw new PdfDocumentFormatException($"Invalid type of toUnicode CMap encountered. Got: {toUnicodeValue}.");
+                    // Rather than throwing here, let's try returning the font anyway since
+                    // this error is tripping people up as seen in issues #354 and #619.
+                    // This will probably just cause errors further along the parsing but it might be more informative.
+                    logger.Error($"Invalid type of toUnicode CMap encountered for font named {baseFont}. Got: {toUnicodeValue}.");
                 }
             }
 
