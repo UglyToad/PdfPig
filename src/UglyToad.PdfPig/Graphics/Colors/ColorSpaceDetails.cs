@@ -533,23 +533,31 @@
         /// <inheritdoc/>
         internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded)
         {
+            var cache = new Dictionary<int, double[]>();
             var transformed = new List<byte>();
             for (var i = 0; i < decoded.Count; i += NumberOfColorComponents)
             {
+                int key = 0;
                 double[] comps = new double[NumberOfColorComponents];
                 for (int n = 0; n < NumberOfColorComponents; n++)
                 {
-                    comps[n] = decoded[i + n] / 255.0;
+                    byte b = decoded[i + n];
+                    key = (key * 31) ^ b;
+                    comps[n] = b / 255.0;
                 }
 
-                var colors = Process(comps);
+                if (!cache.TryGetValue(key, out double[] colors))
+                {
+                    colors = Process(comps);
+                    cache[key] = colors;
+                }
+
                 for (int c = 0; c < colors.Length; c++)
                 {
                     transformed.Add(ConvertToByte(colors[c]));
                 }
             }
-
-            return transformed;
+            return transformed.ToArray();
         }
 
         /// <inheritdoc/>
@@ -697,10 +705,17 @@
         /// <inheritdoc/>
         internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> values)
         {
+            var cache = new Dictionary<int, double[]>();
             var transformed = new List<byte>();
             for (var i = 0; i < values.Count; i += 3)
             {
-                var colors = Process(values[i++] / 255.0);
+                byte b = values[i++];
+                if (!cache.TryGetValue(b, out double[] colors))
+                {
+                    colors = Process(b / 255.0);
+                    cache[b] = colors;
+                }
+
                 for (int c = 0; c < colors.Length; c++)
                 {
                     transformed.Add(ConvertToByte(colors[c]));
