@@ -235,8 +235,6 @@
 
         private static void AddPageWithImage(PdfDocumentBuilder pdfBuilder, string subfolderName, string imageFileName, double imageHeight, PdfDocumentBuilder.AddedFont font)
         {
-             
-            var imageMargin = 20d;
             var imageBottom = 842d - 600d;
 
             //var imagePlacement = new PdfRectangle(0, imageTop, 595d, imageTop - imageHeight);

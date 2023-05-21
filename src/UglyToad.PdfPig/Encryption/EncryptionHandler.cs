@@ -685,15 +685,24 @@
 
             var iv = new byte[16];
 
-            using (var rijndaelManaged = new RijndaelManaged { Key = intermediateKey, IV = iv, Mode = CipherMode.CBC, Padding = PaddingMode.None })
-            using (var memoryStream = new MemoryStream(encryptedFileKey))
-            using (var output = new MemoryStream())
-            using (var cryptoStream = new CryptoStream(memoryStream, rijndaelManaged.CreateDecryptor(intermediateKey, iv), CryptoStreamMode.Read))
+            using (var aes = Aes.Create("AesManaged")!)
             {
-                cryptoStream.CopyTo(output);
-                var result = output.ToArray();
+                aes.Key = intermediateKey;
+                aes.IV = iv;
+                aes.Mode = CipherMode.CBC;
+                aes.Padding = PaddingMode.None;
 
-                return result;
+                using (var memoryStream = new MemoryStream(encryptedFileKey))
+                using (var output = new MemoryStream())
+                using (var cryptoStream = new CryptoStream(memoryStream,
+                           aes.CreateDecryptor(intermediateKey, iv),
+                           CryptoStreamMode.Read))
+                {
+                    cryptoStream.CopyTo(output);
+                    var result = output.ToArray();
+
+                    return result;
+                }
             }
         }
 

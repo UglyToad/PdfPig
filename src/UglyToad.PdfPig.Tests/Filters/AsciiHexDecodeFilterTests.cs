@@ -90,7 +90,9 @@
 
             var decoded = new AsciiHexDecodeFilter().Decode(input, dictionary, 1);
 
+#pragma warning disable SYSLIB0001
             var decodedText = Encoding.UTF7.GetString(decoded);
+#pragma warning restore SYSLIB0001
 
             Assert.Equal("®P", decodedText);
         }

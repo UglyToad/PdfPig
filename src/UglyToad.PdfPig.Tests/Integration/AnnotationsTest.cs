@@ -28,8 +28,7 @@
             using (var doc = PdfDocument.Open(pdf))
             {
                 var annotations = doc.GetPage(1).ExperimentalAccess.GetAnnotations().ToArray();
-                Assert.Equal(1, annotations.Length);
-                var annotation = annotations[0];
+                var annotation = Assert.Single(annotations);
 
                 Assert.True(annotation.HasDownAppearance);
                 Assert.True(annotation.HasNormalAppearance);
