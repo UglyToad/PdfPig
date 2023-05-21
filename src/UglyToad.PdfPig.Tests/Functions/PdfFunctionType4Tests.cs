@@ -4,12 +4,14 @@
     using System.Linq;
     using System.Text;
     using UglyToad.PdfPig.Functions;
+    using UglyToad.PdfPig.Tests.Tokens;
     using UglyToad.PdfPig.Tokens;
+    using UglyToad.PdfPig.Util;
     using Xunit;
 
     public class PdfFunctionType4Tests
     {
-        private PdfFunctionType4 CreateFunction(string function, double[] domain, double[] range)
+        private static PdfFunctionType4 CreateFunction(string function, double[] domain, double[] range)
         {
             DictionaryToken dictionaryToken = new DictionaryToken(new Dictionary<NameToken, IToken>()
             {
@@ -21,7 +23,10 @@
             var data = Encoding.ASCII.GetBytes(function); // OtherEncodings.Iso88591.GetBytes(function);
             StreamToken stream = new StreamToken(dictionaryToken, data);
 
-            return new PdfFunctionType4(stream);
+            var func = PdfFunctionParser.Create(stream, new TestPdfTokenScanner(), new TestFilterProvider());
+            Assert.Equal(FunctionTypes.PostScript, func.FunctionType);
+
+            return func as PdfFunctionType4;
         }
 
         /// <summary>

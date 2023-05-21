@@ -4,11 +4,16 @@
     using System.Collections.Generic;
     using System.Linq;
     using UglyToad.PdfPig.Functions;
+    using UglyToad.PdfPig.Tests.Tokens;
     using UglyToad.PdfPig.Tokens;
+    using UglyToad.PdfPig.Util;
     using Xunit;
 
     public class PdfFunctionType0Tests
     {
+        private readonly TestPdfTokenScanner testPdfTokenScanner = new TestPdfTokenScanner();
+        private readonly TestFilterProvider testFilterProvider = new TestFilterProvider();
+
         private static ArrayToken GetArrayToken(params double[] data)
         {
             return new ArrayToken(data.Select(v => new NumericToken((decimal)v)).ToArray());
@@ -33,7 +38,10 @@
 
             StreamToken function = new StreamToken(dictionaryToken, data);
 
-            var function0 = new PdfFunctionType0(function);
+            var func = PdfFunctionParser.Create(function, testPdfTokenScanner, testFilterProvider);
+            Assert.Equal(FunctionTypes.Sampled, func.FunctionType);
+            var function0 = func as PdfFunctionType0;
+
             var result = function0.Eval(new double[] { 0 });
             Assert.Equal(4, result.Length);
             result = function0.Eval(new double[] { 0.5 });
@@ -61,7 +69,10 @@
 
             StreamToken function = new StreamToken(dictionaryToken, data);
 
-            var function0 = new PdfFunctionType0(function);
+            var func = PdfFunctionParser.Create(function, testPdfTokenScanner, testFilterProvider);
+            Assert.Equal(FunctionTypes.Sampled, func.FunctionType);
+            var function0 = func as PdfFunctionType0;
+
             var result = function0.Eval(new double[] { 0.00 });
             Assert.Single(result);
             Assert.Equal(0.0, result[0], 3);
@@ -100,7 +111,10 @@
 
             StreamToken function = new StreamToken(dictionaryToken, data);
 
-            var function0 = new PdfFunctionType0(function);
+            var func = PdfFunctionParser.Create(function, testPdfTokenScanner, testFilterProvider);
+            Assert.Equal(FunctionTypes.Sampled, func.FunctionType);
+            var function0 = func as PdfFunctionType0;
+
             var result = function0.Eval(new double[] { 0.00 });
             Assert.Single(result);
             Assert.Equal(0.0, result[0], 3);
@@ -139,7 +153,10 @@
 
             StreamToken function = new StreamToken(dictionaryToken, data);
 
-            var function0 = new PdfFunctionType0(function);
+            var func = PdfFunctionParser.Create(function, testPdfTokenScanner, testFilterProvider);
+            Assert.Equal(FunctionTypes.Sampled, func.FunctionType);
+            var function0 = func as PdfFunctionType0;
+
             var result = function0.Eval(new double[] { 0, 0 });
             Assert.Equal(3, result.Length);
             Assert.Equal(new double[] { 1, 1, 0 }, result); // yellow
@@ -178,7 +195,9 @@
 
             StreamToken function = new StreamToken(dictionaryToken, data);
 
-            var function0 = new PdfFunctionType0(function);
+            var func = PdfFunctionParser.Create(function, testPdfTokenScanner, testFilterProvider);
+            Assert.Equal(FunctionTypes.Sampled, func.FunctionType);
+            var function0 = func as PdfFunctionType0;
 
             var result = function0.Eval(new double[] { 0 });
             Assert.Equal(3, result.Length);
