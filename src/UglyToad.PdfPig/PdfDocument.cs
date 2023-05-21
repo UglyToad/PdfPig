@@ -14,8 +14,6 @@
     using Tokenization.Scanner;
     using Tokens;
     using Outline;
-    using Outline.Destinations;
-    using System.Linq;
     using Util.JetBrains.Annotations;
 
     /// <inheritdoc />
@@ -81,7 +79,6 @@
         internal PdfDocument(IInputBytes inputBytes,
             HeaderVersion version,
             CrossReferenceTable crossReferenceTable,
-            IPageFactory pageFactory,
             Catalog catalog,
             DocumentInformation information,
             EncryptionDictionary encryptionDictionary,

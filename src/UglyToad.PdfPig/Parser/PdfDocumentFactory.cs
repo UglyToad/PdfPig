@@ -187,8 +187,6 @@
                 parsingOptions.Logger,
                 parsingOptions.UseLenientParsing);
 
-            
-
             var acroFormFactory = new AcroFormFactory(pdfScanner, filterProvider, crossReferenceTable);
             var bookmarksProvider = new BookmarksProvider(parsingOptions.Logger, pdfScanner);
 
@@ -196,7 +194,6 @@
                 inputBytes,
                 version,
                 crossReferenceTable,
-                pageFactory,
                 catalog,
                 information,
                 encryptionDictionary,
@@ -228,7 +225,6 @@
             {
                 return null;
             }
-
 
             if (!DirectObjectFinder.TryGet(crossReferenceTable.Trailer.EncryptionToken, pdfTokenScanner, out DictionaryToken encryptionDictionaryToken))
             {
