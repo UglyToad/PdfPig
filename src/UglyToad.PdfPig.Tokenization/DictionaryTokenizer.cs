@@ -7,9 +7,45 @@
 
     internal class DictionaryTokenizer : ITokenizer
     {
+        private readonly IReadOnlyList<NameToken> requiredKeys;
+
         public bool ReadsNextByte { get; } = false;
 
+        /// <summary>
+        /// Create a new <see cref="DictionaryTokenizer"/>.
+        /// </summary>
+        /// <param name="requiredKeys">
+        /// Can be provided to recover from errors with missing dictionary end symbols if the
+        /// set of keys expected in the dictionary are known.
+        /// </param>
+        public DictionaryTokenizer(IReadOnlyList<NameToken> requiredKeys = null)
+        {
+            this.requiredKeys = requiredKeys;
+        }
+
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
+        {
+            var start = inputBytes.CurrentOffset;
+
+            try
+            {
+                return TryTokenizeInternal(currentByte, inputBytes, false, out token);
+            }
+            catch (PdfDocumentFormatException)
+            {
+                // Cannot attempt inferred end.
+                if (requiredKeys == null)
+                {
+                    throw;
+                }
+            }
+
+            inputBytes.Seek(start);
+
+            return TryTokenizeInternal(currentByte, inputBytes, true, out token);
+        }
+
+        private bool TryTokenizeInternal(byte currentByte, IInputBytes inputBytes, bool useRequiredKeys, out IToken token)
         {
             token = null;
 
@@ -51,6 +87,30 @@
                 }
 
                 tokens.Add(coreScanner.CurrentToken);
+
+                // Has enough key/values for each required key
+                if (useRequiredKeys && tokens.Count >= requiredKeys.Count * 2)
+                {
+                    var proposedDictionary = ConvertToDictionary(tokens);
+
+                    var isAcceptable = true;
+                    foreach (var key in requiredKeys)
+                    {
+                        if (!proposedDictionary.TryGetValue(key, out var tok) || tok == null)
+                        {
+                            isAcceptable = false;
+                            break;
+                        }
+                    }
+
+                    // If each required key has a value and we're here because parsing broke previously then return
+                    // this dictionary.
+                    if (isAcceptable)
+                    {
+                        token = new DictionaryToken(proposedDictionary);
+                        return true;
+                    }
+                }
             }
 
             var dictionary = ConvertToDictionary(tokens);
@@ -58,6 +118,7 @@
             token = new DictionaryToken(dictionary);
 
             return true;
+
         }
 
         private static Dictionary<NameToken, IToken> ConvertToDictionary(List<IToken> tokens)

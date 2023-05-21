@@ -41,6 +41,20 @@ CMapName currentdict /CMap defineresource pop
 end
 end";
 
+        private const string CmapMissingDictionaryEndToken = @"
+/CIDInit /ProcSet findresource 
+begin 12 dict 
+begin begincmap 
+/CIDSystemInfo <<
+/Registry (F2+0) /Ordering (F2) /Supplement 0
+/CMapName /F2+0 def
+/CMapType 2 def
+1 begincodespacerange <020D> <020D>  endcodespacerange
+1 beginbfchar
+<020D> <03A9>
+endcmap CMapName currentdict /CMap defineresource pop end end
+endbfchar";
+
         private readonly CMapParser cMapParser = new CMapParser(); 
 
         [Fact]
@@ -56,6 +70,18 @@ end";
 
             Assert.Equal("Adobe-Identity-UCS", cmap.Name);
             Assert.Equal(2, cmap.Type);
+        }
+
+        [Fact]
+        public void CanParseCidSystemInfoAndOtherInformationWhenMissingDictionaryClose()
+        {
+            var input = StringBytesTestConverter.Convert(CmapMissingDictionaryEndToken, false);
+
+            var cmap = cMapParser.Parse(input.Bytes);
+
+            Assert.Equal("F2+0", cmap.Info.Registry);
+            Assert.Equal("F2", cmap.Info.Ordering);
+            Assert.Equal(0, cmap.Info.Supplement);
         }
 
         [Fact]

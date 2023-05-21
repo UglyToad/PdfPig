@@ -23,6 +23,7 @@
         private readonly StringTokenizer StringTokenizer = new StringTokenizer();
 
         private readonly ScannerScope scope;
+        private readonly IReadOnlyDictionary<NameToken, IReadOnlyList<NameToken>> namedDictionaryRequiredKeys;
         private readonly IInputBytes inputBytes;
         private readonly List<(byte firstByte, ITokenizer tokenizer)> customTokenizers = new List<(byte, ITokenizer)>();
         
@@ -46,10 +47,14 @@
         /// <summary>
         /// Create a new <see cref="CoreTokenScanner"/> from the input.
         /// </summary>
-        public CoreTokenScanner(IInputBytes inputBytes, ScannerScope scope = ScannerScope.None)
+        public CoreTokenScanner(
+            IInputBytes inputBytes,
+            ScannerScope scope = ScannerScope.None,
+            IReadOnlyDictionary<NameToken, IReadOnlyList<NameToken>> namedDictionaryRequiredKeys = null)
         {
-            this.scope = scope;
             this.inputBytes = inputBytes ?? throw new ArgumentNullException(nameof(inputBytes));
+            this.scope = scope;
+            this.namedDictionaryRequiredKeys = namedDictionaryRequiredKeys;
         }
 
         /// <inheritdoc />
@@ -124,6 +129,13 @@
                             {
                                 isSkippingSymbol = true;
                                 tokenizer = DictionaryTokenizer;
+
+                                if (namedDictionaryRequiredKeys != null
+                                    && CurrentToken is NameToken name
+                                    && namedDictionaryRequiredKeys.TryGetValue(name, out var requiredKeys))
+                                {
+                                    tokenizer = new DictionaryTokenizer(requiredKeys);
+                                }
                             }
                             else
                             {
