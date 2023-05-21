@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Functions
 {
-    using System;
     using System.Linq;
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Tokens;
@@ -20,25 +19,27 @@
         /// </summary>
         public StreamToken FunctionStream { get; }
 
-        private ArrayToken domain;
-        private ArrayToken range;
         private int numberOfInputValues = -1;
         private int numberOfOutputValues = -1;
 
         /// <summary>
         /// This class represents a function in a PDF document.
         /// </summary>
-        public PdfFunction(DictionaryToken function)
+        public PdfFunction(DictionaryToken function, ArrayToken domain, ArrayToken range)
         {
             FunctionDictionary = function;
+            DomainValues = domain;
+            RangeValues = range;
         }
 
         /// <summary>
         /// This class represents a function in a PDF document.
         /// </summary>
-        public PdfFunction(StreamToken function)
+        public PdfFunction(StreamToken function, ArrayToken domain, ArrayToken range)
         {
             FunctionStream = function;
+            DomainValues = domain;
+            RangeValues = range;
         }
 
         /// <summary>
@@ -119,7 +120,7 @@
             {
                 if (numberOfInputValues == -1)
                 {
-                    ArrayToken array = GetDomainValues();
+                    ArrayToken array = DomainValues;
                     numberOfInputValues = array.Length / 2;
                 }
                 return numberOfInputValues;
@@ -135,7 +136,7 @@
         /// <returns>The domain range for this component.</returns>
         public PdfRange GetDomainForInput(int n)
         {
-            ArrayToken domainValues = GetDomainValues();
+            ArrayToken domainValues = DomainValues;
             return new PdfRange(domainValues.Data.OfType<NumericToken>().Select(t => t.Double), n);
         }
 
@@ -153,34 +154,13 @@
         /// Returns all ranges for the output values as <see cref="ArrayToken"/>. Required for type 0 and type 4 functions.
         /// </summary>
         /// <returns>the ranges array.</returns>
-        protected virtual ArrayToken RangeValues
-        {
-            get
-            {
-                if (range == null)
-                {
-                    GetDictionary().TryGet(NameToken.Range, out range); // Optionnal
-                }
-                return range;
-            }
-        }
+        protected ArrayToken RangeValues { get; }
 
         /// <summary>
         /// Returns all domains for the input values as <see cref="ArrayToken"/>. Required for all function types.
         /// </summary>
         /// <returns>the domains array.</returns>
-        private ArrayToken GetDomainValues()
-        {
-            if (domain == null)
-            {
-                if (!GetDictionary().TryGet(NameToken.Domain, out ArrayToken domainToken))
-                {
-                    throw new ArgumentException("Could not retrieve Domain.");
-                }
-                domain = domainToken;
-            }
-            return domain;
-        }
+        private ArrayToken DomainValues { get; }
 
         /// <summary>
         /// Clip the given input values to the ranges.

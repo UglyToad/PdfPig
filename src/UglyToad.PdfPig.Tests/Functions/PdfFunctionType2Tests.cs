@@ -3,16 +3,18 @@
     using System.Collections.Generic;
     using System.Linq;
     using UglyToad.PdfPig.Functions;
+    using UglyToad.PdfPig.Tests.Tokens;
     using UglyToad.PdfPig.Tokens;
+    using UglyToad.PdfPig.Util;
     using Xunit;
 
     public class PdfFunctionType2Tests
     {
-        private PdfFunctionType2 CreateFunction(double[] domain, double[] range, double[] c0, double[] c1, double n)
+        private static PdfFunctionType2 CreateFunction(double[] domain, double[] range, double[] c0, double[] c1, double n)
         {
             DictionaryToken dictionaryToken = new DictionaryToken(new Dictionary<NameToken, IToken>()
             {
-                { NameToken.FunctionType, new NumericToken(4) },
+                { NameToken.FunctionType, new NumericToken(2) },
                 { NameToken.Domain, new ArrayToken(domain.Select(v => new NumericToken((decimal)v)).ToArray()) },
                 { NameToken.Range, new ArrayToken(range.Select(v => new NumericToken((decimal)v)).ToArray()) },
 
@@ -21,7 +23,9 @@
                 { NameToken.N, new NumericToken((decimal)n) },
             });
 
-            return new PdfFunctionType2(dictionaryToken);
+            var func = PdfFunctionParser.Create(dictionaryToken, new TestPdfTokenScanner(), new TestFilterProvider());
+            Assert.Equal(FunctionTypes.Exponential, func.FunctionType);
+            return func as PdfFunctionType2;
         }
 
         [Fact]

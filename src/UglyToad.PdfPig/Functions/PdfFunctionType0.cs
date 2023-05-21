@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections;
-    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using UglyToad.PdfPig.Core;
@@ -11,26 +10,6 @@
     internal sealed class PdfFunctionType0 : PdfFunction
     {
         /// <summary>
-        /// An array of 2 x m numbers specifying the linear mapping of input values 
-        /// into the domain of the function's sample table. Default value: [ 0 (Size0
-        /// - 1) 0 (Size1 - 1) ...].
-        /// </summary>
-        private ArrayToken encode;
-
-        /// <summary>
-        /// An array of 2 x n numbers specifying the linear mapping of sample values
-        /// into the range appropriate for the function's output values. Default
-        /// value: same as the value of Range.
-        /// </summary>
-        private ArrayToken decode;
-
-        /// <summary>
-        /// An array of m positive integers specifying the number of samples in each
-        /// input dimension of the sample table.
-        /// </summary>
-        private ArrayToken size;
-
-        /// <summary>
         /// The samples of the function.
         /// </summary>
         private int[][] samples;
@@ -38,15 +17,27 @@
         /// <summary>
         /// Stitching function
         /// </summary>
-        internal PdfFunctionType0(DictionaryToken function) : base(function)
+        internal PdfFunctionType0(DictionaryToken function, ArrayToken domain, ArrayToken range, ArrayToken size, int bitsPerSample, int order, ArrayToken encode, ArrayToken decode)
+            : base(function, domain, range)
         {
+            Size = size;
+            BitsPerSample = bitsPerSample;
+            Order = order;
+            EncodeValues = encode;
+            DecodeValues = decode;
         }
 
         /// <summary>
         /// Stitching function
         /// </summary>
-        internal PdfFunctionType0(StreamToken function) : base(function)
+        internal PdfFunctionType0(StreamToken function, ArrayToken domain, ArrayToken range, ArrayToken size, int bitsPerSample, int order, ArrayToken encode, ArrayToken decode)
+            : base(function, domain, range)
         {
+            Size = size;
+            BitsPerSample = bitsPerSample;
+            Order = order;
+            EncodeValues = encode;
+            DecodeValues = decode;
         }
 
         public override FunctionTypes FunctionType
@@ -59,35 +50,16 @@
 
         /// <summary>
         /// The "Size" entry, which is the number of samples in each input dimension of the sample table.
+        /// <para>An array of m positive integers specifying the number of samples in each input dimension of the sample table.</para>
         /// </summary>
-        public ArrayToken Size
-        {
-            get
-            {
-                if (size == null && !GetDictionary().TryGet(NameToken.Size, out size))
-                {
-                    throw new ArgumentNullException(NameToken.Size);
-                }
-                return size;
-            }
-        }
+        public ArrayToken Size { get; }
 
         /// <summary>
         /// Get the number of bits that the output value will take up.
         /// <para>Valid values are 1,2,4,8,12,16,24,32.</para>
         /// </summary>
         /// <returns>Number of bits for each output value.</returns>
-        public int BitsPerSample
-        {
-            get
-            {
-                if (!GetDictionary().TryGet<NumericToken>(NameToken.BitsPerSample, out var bps))
-                {
-                    throw new ArgumentNullException(NameToken.BitsPerSample);
-                }
-                return bps.Int;
-            }
-        }
+        public int BitsPerSample { get; }
 
         /// <summary>
         /// Get the order of interpolation between samples. Valid values are 1 and 3,
@@ -95,69 +67,21 @@
         /// is 1. See p.170 in PDF spec 1.7.
         /// </summary>
         /// <returns>order of interpolation.</returns>
-        public int Order
-        {
-            get
-            {
-                if (!GetDictionary().TryGet<NumericToken>(NameToken.Order, out var order))
-                {
-                    return 1;
-                }
-                return order.Int;
-            }
-        }
+        public int Order { get; }
 
         /// <summary>
-        /// Returns all encode values as <see cref="ArrayToken"/>.
+        /// An array of 2 x m numbers specifying the linear mapping of input values 
+        /// into the domain of the function's sample table. Default value: [ 0 (Size0
+        /// - 1) 0 (Size1 - 1) ...].
         /// </summary>
-        /// <returns>the encode array. </returns>
-        private ArrayToken EncodeValues
-        {
-            get
-            {
-                if (encode == null)
-                {
-                    GetDictionary().TryGet<ArrayToken>(NameToken.Encode, out encode);
-
-                    // the default value is [0 (size[0]-1) 0 (size[1]-1) ...]
-                    if (encode == null)
-                    {
-                        var values = new List<NumericToken>();
-                        ArrayToken sizeValues = Size;
-                        int sizeValuesSize = sizeValues.Length;
-                        for (int i = 0; i < sizeValuesSize; i++)
-                        {
-                            values.Add(new NumericToken(0));
-                            values.Add(new NumericToken((sizeValues[i] as NumericToken).Int - 1L));
-                        }
-                        encode = new ArrayToken(values);
-                    }
-                }
-                return encode;
-            }
-        }
+        private ArrayToken EncodeValues { get; }
 
         /// <summary>
-        /// Returns all decode values as <see cref="ArrayToken"/>.
+        /// An array of 2 x n numbers specifying the linear mapping of sample values
+        /// into the range appropriate for the function's output values. Default
+        /// value: same as the value of Range.
         /// </summary>
-        /// <returns>the decode array.</returns>
-        private ArrayToken DecodeValues
-        {
-            get
-            {
-                if (decode == null)
-                {
-                    GetDictionary().TryGet<ArrayToken>(NameToken.Decode, out decode);
-
-                    // if decode is null, the default values are the range values
-                    if (decode == null)
-                    {
-                        decode = RangeValues;
-                    }
-                }
-                return decode;
-            }
-        }
+        private ArrayToken DecodeValues { get; }
 
         /// <summary>
         /// Get the encode for the input parameter.

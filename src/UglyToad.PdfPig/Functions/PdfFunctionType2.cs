@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Functions
 {
     using System;
-    using System.Collections.Generic;
     using UglyToad.PdfPig.Tokens;
 
     /// <summary>
@@ -12,80 +11,20 @@
         /// <summary>
         /// Exponential interpolation function
         /// </summary>
-        internal PdfFunctionType2(DictionaryToken function) : base(function)
+        internal PdfFunctionType2(DictionaryToken function, ArrayToken domain, ArrayToken range, ArrayToken c0, ArrayToken c1, double n)
+            : base(function, domain, range)
         {
-            if (GetDictionary().TryGet(NameToken.C0, out ArrayToken array0))
-            {
-                C0 = array0;
-            }
-            else
-            {
-                C0 = new ArrayToken(new List<IToken>());
-            }
-            if (C0.Length == 0)
-            {
-                C0 = new ArrayToken(new List<NumericToken>() { new NumericToken(0) });
-            }
-
-            if (GetDictionary().TryGet(NameToken.C1, out ArrayToken array1))
-            {
-                C1 = array1;
-            }
-            else
-            {
-                C1 = new ArrayToken(new List<IToken>());
-            }
-            if (C0.Length == 0)
-            {
-                C1 = new ArrayToken(new List<NumericToken>() { new NumericToken(1) });
-            }
-
-            if (GetDictionary().TryGet(NameToken.N, out NumericToken exp))
-            {
-                N = exp.Double;
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
+            C0 = c0;
+            C1 = c1;
+            N = n;
         }
 
-        internal PdfFunctionType2(StreamToken function) : base(function)
+        internal PdfFunctionType2(StreamToken function, ArrayToken domain, ArrayToken range, ArrayToken c0, ArrayToken c1, double n)
+            : base(function, domain, range)
         {
-            if (GetDictionary().TryGet(NameToken.C0, out ArrayToken array0))
-            {
-                C0 = array0;
-            }
-            else
-            {
-                C0 = new ArrayToken(new List<IToken>());
-            }
-            if (C0.Length == 0)
-            {
-                C0 = new ArrayToken(new List<NumericToken>() { new NumericToken(0) });
-            }
-
-            if (GetDictionary().TryGet(NameToken.C1, out ArrayToken array1))
-            {
-                C1 = array1;
-            }
-            else
-            {
-                C1 = new ArrayToken(new List<IToken>());
-            }
-            if (C0.Length == 0)
-            {
-                C1 = new ArrayToken(new List<NumericToken>() { new NumericToken(1) });
-            }
-
-            if (GetDictionary().TryGet(NameToken.N, out NumericToken exp))
-            {
-                N = exp.Double;
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
+            C0 = c0;
+            C1 = c1;
+            N = n;
         }
 
         public override FunctionTypes FunctionType

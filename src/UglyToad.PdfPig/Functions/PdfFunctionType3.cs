@@ -12,35 +12,38 @@
     /// </summary>
     internal sealed class PdfFunctionType3 : PdfFunction
     {
-        private ArrayToken functions;
-        private ArrayToken encode;
-        private ArrayToken bounds;
-        private double[] boundsValues;
+        private readonly double[] boundsValues;
 
         /// <summary>
         /// Stitching function
         /// </summary>
-        internal PdfFunctionType3(DictionaryToken function, IReadOnlyList<PdfFunction> functionsArray)
-            : base(function)
+        internal PdfFunctionType3(DictionaryToken function, ArrayToken domain, ArrayToken range, IReadOnlyList<PdfFunction> functionsArray, ArrayToken bounds, ArrayToken encode)
+            : base(function, domain, range)
         {
             if (functionsArray == null || functionsArray.Count == 0)
             {
                 throw new ArgumentNullException(nameof(functionsArray));
             }
             this.FunctionsArray = functionsArray;
+            Bounds = bounds;
+            Encode = encode;
+            boundsValues = Bounds.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
         }
 
         /// <summary>
         /// Stitching function
         /// </summary>
-        internal PdfFunctionType3(StreamToken function, IReadOnlyList<PdfFunction> functionsArray)
-            : base(function)
+        internal PdfFunctionType3(StreamToken function, ArrayToken domain, ArrayToken range, IReadOnlyList<PdfFunction> functionsArray, ArrayToken bounds, ArrayToken encode)
+            : base(function, domain, range)
         {
             if (functionsArray == null || functionsArray.Count == 0)
             {
                 throw new ArgumentNullException(nameof(functionsArray));
             }
             this.FunctionsArray = functionsArray;
+            Bounds = bounds;
+            Encode = encode;
+            boundsValues = Bounds.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
         }
 
         public override FunctionTypes FunctionType
@@ -71,11 +74,6 @@
             }
             else
             {
-                if (boundsValues == null)
-                {
-                    boundsValues = Bounds.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
-                }
-
                 int boundsSize = boundsValues.Length;
                 // create a combined array containing the domain and the bounds values
                 // domain.min, bounds[0], bounds[1], ...., bounds[boundsSize-1], domain.max
@@ -108,55 +106,22 @@
             return ClipToRange(functionResult);
         }
 
-        public IReadOnlyList<PdfFunction> FunctionsArray { get; }
-
         /// <summary>
-        /// Returns all functions values as <see cref="ArrayToken"/>.
+        /// Returns all functions values.
         /// </summary>
-        /// <returns>the functions array. </returns>
-        public ArrayToken Functions
-        {
-            get
-            {
-                if (functions == null && !GetDictionary().TryGet<ArrayToken>(NameToken.Functions, out functions))
-                {
-                    throw new ArgumentNullException(NameToken.Functions);
-                }
-                return functions;
-            }
-        }
+        public IReadOnlyList<PdfFunction> FunctionsArray { get; }
 
         /// <summary>
         /// Returns all bounds values as <see cref="ArrayToken"/>.
         /// </summary>
         /// <returns>the bounds array.</returns>
-        public ArrayToken Bounds
-        {
-            get
-            {
-                if (bounds == null && !GetDictionary().TryGet<ArrayToken>(NameToken.Bounds, out bounds))
-                {
-                    throw new ArgumentNullException(NameToken.Bounds);
-                }
-                return bounds;
-            }
-        }
+        public ArrayToken Bounds { get; }
 
         /// <summary>
         /// Returns all encode values as <see cref="ArrayToken"/>.
         /// </summary>
         /// <returns>the encode array.</returns>
-        public ArrayToken Encode
-        {
-            get
-            {
-                if (encode == null && !GetDictionary().TryGet<ArrayToken>(NameToken.Encode, out encode))
-                {
-                    throw new ArgumentNullException(NameToken.Encode);
-                }
-                return encode;
-            }
-        }
+        public ArrayToken Encode { get; }
 
         /// <summary>
         /// Get the encode for the input parameter.

@@ -20,6 +20,7 @@
 
                 var appearance = annotationStamp.normalAppearanceStream;
                 // TODO - load color space in annotation appearance
+                // TODO - contains function with indirect reference
             }
         }
 
