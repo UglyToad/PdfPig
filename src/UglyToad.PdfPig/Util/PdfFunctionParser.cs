@@ -157,12 +157,12 @@
                 throw new ArgumentNullException(NameToken.Functions);
             }
 
-            if (!functionDictionary.TryGet<ArrayToken>(NameToken.Bounds, out var bounds))
+            if (!functionDictionary.TryGet<ArrayToken>(NameToken.Bounds, scanner, out var bounds))
             {
                 throw new ArgumentNullException(NameToken.Bounds);
             }
 
-            if (!functionDictionary.TryGet<ArrayToken>(NameToken.Encode, out var encode))
+            if (!functionDictionary.TryGet<ArrayToken>(NameToken.Encode, scanner, out var encode))
             {
                 throw new ArgumentNullException(NameToken.Encode);
             }
