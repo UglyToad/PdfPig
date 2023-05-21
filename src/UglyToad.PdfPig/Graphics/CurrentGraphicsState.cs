@@ -61,7 +61,12 @@ namespace UglyToad.PdfPig.Graphics
         /// <summary>
         /// Opacity value to be used for transparent imaging.
         /// </summary>
-        public decimal AlphaConstant { get; set; } = 1;
+        public decimal AlphaConstantStroking { get; set; } = 1;
+
+        /// <summary>
+        /// Opacity value to be used for transparent imaging.
+        /// </summary>
+        public decimal AlphaConstantNonStroking { get; set; } = 1;
 
         /// <summary>
         /// Should soft mask and alpha constant values be interpreted as shape (<see langword="true"/>) or opacity (<see langword="false"/>) values?
@@ -72,6 +77,21 @@ namespace UglyToad.PdfPig.Graphics
         /// Maps positions from user coordinates to device coordinates.
         /// </summary>
         public TransformationMatrix CurrentTransformationMatrix { get; set; } = TransformationMatrix.Identity;
+
+        /// <summary>
+        /// The active colorspaces for this content stream.
+        /// </summary>
+        public IColorSpaceContext ColorSpaceContext { get; set; }
+
+        /// <summary>
+        /// The current active stroking color for paths.
+        /// </summary>
+        public IColor CurrentStrokingColor { get; set; }
+
+        /// <summary>
+        /// The current active non-stroking color for text and fill.
+        /// </summary>
+        public IColor CurrentNonStrokingColor { get; set; }
 
         #region Device Dependent
 
@@ -101,17 +121,6 @@ namespace UglyToad.PdfPig.Graphics
         /// The precision for rendering color gradients on the output device.
         /// </summary>
         public decimal Smoothness { get; set; } = 0;
-
-        /// <summary>
-        /// The current active stroking color for paths.
-        /// </summary>
-        public IColor CurrentStrokingColor { get; set; }
-
-        /// <summary>
-        /// The current active non-stroking color for text and fill.
-        /// </summary>
-        public IColor CurrentNonStrokingColor { get; set; }
-
         #endregion
 
         /// <inheritdoc />
@@ -129,7 +138,8 @@ namespace UglyToad.PdfPig.Graphics
                 CapStyle = CapStyle,
                 MiterLimit = MiterLimit,
                 Flatness = Flatness,
-                AlphaConstant = AlphaConstant,
+                AlphaConstantStroking = AlphaConstantStroking,
+                AlphaConstantNonStroking = AlphaConstantNonStroking,
                 AlphaSource = AlphaSource,
                 NonStrokingOverprint = NonStrokingOverprint,
                 OverprintMode = OverprintMode,
@@ -137,7 +147,8 @@ namespace UglyToad.PdfPig.Graphics
                 StrokeAdjustment = StrokeAdjustment,
                 CurrentStrokingColor = CurrentStrokingColor,
                 CurrentNonStrokingColor = CurrentNonStrokingColor,
-                CurrentClippingPath = CurrentClippingPath
+                CurrentClippingPath = CurrentClippingPath,
+                ColorSpaceContext = ColorSpaceContext?.DeepClone(),
             };
         }
     }

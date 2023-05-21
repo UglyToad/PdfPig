@@ -5,10 +5,11 @@
 
     /// <summary>
     /// Transformer for CIEBased color spaces.
-    ///
+    /// <para>
     /// In addition to the PDF spec itself, the transformation implementation is based on the descriptions in:
     /// https://en.wikipedia.org/wiki/SRGB#The_forward_transformation_(CIE_XYZ_to_sRGB) and
     /// http://www.brucelindbloom.com/index.html?Eqn_XYZ_to_RGB.html
+    /// </para>
     /// </summary>
     internal class CIEBasedColorSpaceTransformer
     {
@@ -75,7 +76,7 @@
         /// Transforms the supplied ABC color to the RGB color of the <see cref="RGBWorkingSpace"/>
         /// that was supplied to this <see cref="CIEBasedColorSpaceTransformer"/> as the destination
         /// workspace.
-        /// A, B and C represent red, green and blue calibrated color values in the range 0 to 1. 
+        /// A, B and C represent red, green and blue calibrated color values in the range 0 to 1.
         /// </summary>
         public (double R, double G, double B) TransformToRGB((double A, double B, double C) color)
         {

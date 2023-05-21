@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2010
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32819.101
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig", "UglyToad.PdfPig\UglyToad.PdfPig.csproj", "{57D0610C-87D3-4E0B-B7C2-EC8B765A8288}"
 EndProject
@@ -18,9 +18,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.Core", "Ugl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.DocumentLayoutAnalysis", "UglyToad.PdfPig.DocumentLayoutAnalysis\UglyToad.PdfPig.DocumentLayoutAnalysis.csproj", "{60126BCA-6C52-48A9-A0A6-51796C8B0BE7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UglyToad.PdfPig.Tokens", "UglyToad.PdfPig.Tokens\UglyToad.PdfPig.Tokens.csproj", "{D840FF69-4250-4B05-9829-5ABEC43EC82C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.Tokens", "UglyToad.PdfPig.Tokens\UglyToad.PdfPig.Tokens.csproj", "{D840FF69-4250-4B05-9829-5ABEC43EC82C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UglyToad.PdfPig.Tokenization", "UglyToad.PdfPig.Tokenization\UglyToad.PdfPig.Tokenization.csproj", "{FD005C50-CD2C-497E-8F7E-6D791091E9B0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.Tokenization", "UglyToad.PdfPig.Tokenization\UglyToad.PdfPig.Tokenization.csproj", "{FD005C50-CD2C-497E-8F7E-6D791091E9B0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

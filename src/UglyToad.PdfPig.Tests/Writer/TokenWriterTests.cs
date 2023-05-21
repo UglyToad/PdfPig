@@ -12,10 +12,11 @@
         [Fact]
         public void EscapeSpecialCharacter()
         {
+            var writer = new TokenWriter();
             using (var memStream = new MemoryStream())
             {
-                TokenWriter.WriteToken(new StringToken("\\"), memStream);
-                TokenWriter.WriteToken(new StringToken("(Hello)"), memStream);
+                writer.WriteToken(new StringToken("\\"), memStream);
+                writer.WriteToken(new StringToken("(Hello)"), memStream);
 
                 // Read Test
                 memStream.Position = 0;

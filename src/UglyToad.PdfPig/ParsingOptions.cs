@@ -48,5 +48,11 @@
         /// All passwords to try when opening this document, will include any values set for <see cref="Password"/>.
         /// </summary>
         public List<string> Passwords { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Skip extracting content where the font could not be found, will result in some letters being skipped/missed
+        /// but will prevent the library throwing where the source PDF has some corrupted text.
+        /// </summary>
+        public bool SkipMissingFonts { get; set; } = false;
     }
 }

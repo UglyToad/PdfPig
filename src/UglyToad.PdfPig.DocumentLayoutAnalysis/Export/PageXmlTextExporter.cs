@@ -10,9 +10,9 @@
     using System.Linq;
     using System.Xml;
     using System.Xml.Serialization;
-    using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
-    using UglyToad.PdfPig.DocumentLayoutAnalysis.ReadingOrderDetector;
-    using UglyToad.PdfPig.Graphics;
+    using PageSegmenter;
+    using ReadingOrderDetector;
+    using Graphics;
     using Util;
 
     /// <summary>
@@ -51,7 +51,7 @@
             this.pageSegmenter = pageSegmenter;
             this.readingOrderDetector = readingOrderDetector;
             this.scale = scale;
-            this.indentChar = indent;
+            indentChar = indent;
         }
 
         /// <summary>
@@ -129,7 +129,7 @@
 
         private string ToPoints(IEnumerable<PdfPoint> points, double pageWidth, double pageHeight)
         {
-            return string.Join(" ", points.Select(p => PointToString(p, pageWidth, pageHeight, this.scale)));
+            return string.Join(" ", points.Select(p => PointToString(p, pageWidth, pageHeight, scale)));
         }
 
         private string ToPoints(PdfRectangle pdfRectangle, double pageWidth, double pageHeight)
@@ -163,7 +163,7 @@
 
         private PageXmlDocument.PageXmlPage ToPageXmlPage(Page page, bool includePaths)
         {
-            var pageXmlPage = new PageXmlDocument.PageXmlPage()
+            var pageXmlPage = new PageXmlDocument.PageXmlPage
             {
                 ImageFilename = "unknown",
                 ImageHeight = (int)Math.Round(page.Height * scale),
@@ -205,10 +205,14 @@
 
             if (includePaths)
             {
-                var graphicalElements = page.ExperimentalAccess.Paths.Select(p => ToPageXmlLineDrawingRegion(p, page.Width, page.Height));
-                if (graphicalElements.Count(g => g != null) > 0)
+                foreach (var path in page.ExperimentalAccess.Paths)
                 {
-                    regions.AddRange(graphicalElements.Where(g => g != null));
+                    var graphicalElement = ToPageXmlLineDrawingRegion(path, page.Width, page.Height);
+
+                    if (graphicalElement != null)
+                    {
+                        regions.Add(graphicalElement);
+                    }
                 }
             }
 

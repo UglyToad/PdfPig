@@ -11,6 +11,8 @@
     /// </summary>
     public class BeginMarkedContentWithProperties : IGraphicsStateOperation
     {
+        private static readonly TokenWriter TokenWriter = new TokenWriter();
+
         /// <summary>
         /// The symbol for this operation in a stream.
         /// </summary>

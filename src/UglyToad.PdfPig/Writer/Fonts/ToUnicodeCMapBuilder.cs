@@ -14,6 +14,8 @@
         private const string DictToken = "dict";
         private const string FindResourceToken = "findresource";
 
+        private static readonly TokenWriter TokenWriter = new TokenWriter();
+
         public static IReadOnlyList<byte> ConvertToCMapStream(IReadOnlyDictionary<char, byte> unicodeToCharacterCode)
         {
             using (var memoryStream = new MemoryStream())

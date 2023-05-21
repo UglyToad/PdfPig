@@ -11,11 +11,6 @@
     public interface IOperationContext
     {
         /// <summary>
-        /// The active colorspaces for this content stream.
-        /// </summary>
-        IColorSpaceContext ColorSpaceContext { get; }
-
-        /// <summary>
         /// The current position.
         /// </summary>
         PdfPoint CurrentPosition { get; set; }
@@ -29,6 +24,11 @@
         /// The number of graphics states on the stack.
         /// </summary>
         int StackSize { get; }
+
+        /// <summary>
+        /// Gets the current graphic state.
+        /// </summary>
+        CurrentGraphicsState GetCurrentState();
 
         /// <summary>
         /// Sets the current graphics state to the state from the top of the stack.
@@ -67,11 +67,6 @@
         /// Close the current subpath.
         /// </summary>
         PdfPoint? CloseSubpath();
-
-        /// <summary>
-        /// Add the current subpath to the path.
-        /// </summary>
-        void AddCurrentSubpath();
 
         /// <summary>
         /// Stroke the current path.
@@ -254,5 +249,11 @@
         /// Initial value: 0.
         /// </summary>
         void SetCharacterSpacing(double spacing);
+
+        /// <summary>
+        /// Paint the shape and colour shading described by a shading dictionary, subject to the current clipping path. The current colour in the graphics state is neither used nor altered. The effect is different from that of painting a path using a shading pattern as the current colour.
+        /// </summary>
+        /// <param name="shading">The name of a shading dictionary resource in the Shading subdictionary of the current resource dictionary.</param>
+        void PaintShading(NameToken shading);
     }
 }

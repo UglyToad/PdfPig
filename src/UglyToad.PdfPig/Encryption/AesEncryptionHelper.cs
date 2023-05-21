@@ -21,14 +21,14 @@
             var iv = new byte[16];
             Array.Copy(data, iv, iv.Length);
 
-            using (var rijndael = Rijndael.Create())
+            using (var aes = Aes.Create())
             {
-                rijndael.Key = finalKey;
-                rijndael.IV = iv;
+                aes.Key = finalKey;
+                aes.IV = iv;
 
                 var buffer = new byte[256];
 
-                using (var decryptor = rijndael.CreateDecryptor(rijndael.Key, rijndael.IV))
+                using (var decryptor = aes.CreateDecryptor(aes.Key, aes.IV))
                 using (var input = new MemoryStream(data))
                 using (var output = new MemoryStream())
                 {

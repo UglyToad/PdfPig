@@ -11,6 +11,7 @@
     {
         public static void Run(string filePath)
         {
+#if YET_TO_BE_DONE
             var sb = new StringBuilder();
 
             using (var document = PdfDocument.Open(filePath))
@@ -86,6 +87,7 @@
             }
 
             Console.WriteLine(sb.ToString());
+#endif
         }
     }
 }

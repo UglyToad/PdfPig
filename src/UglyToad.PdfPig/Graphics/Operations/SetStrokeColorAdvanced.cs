@@ -3,7 +3,6 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using Colors;
     using Tokens;
     using Writer;
 
@@ -13,6 +12,8 @@
     /// </summary>
     public class SetStrokeColorAdvanced : IGraphicsStateOperation
     {
+        private static readonly TokenWriter TokenWriter = new TokenWriter();
+
         /// <summary>
         /// The symbol for this operation in a stream.
         /// </summary>
@@ -54,26 +55,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            if (operationContext.ColorSpaceContext.CurrentStrokingColorSpace.GetFamily() != ColorSpaceFamily.Device
-                || operationContext.ColorSpaceContext.AdvancedStrokingColorSpace != null)
-            {
-                return;
-            }
-
-            switch (Operands.Count)
-            {
-                case 1:
-                    operationContext.ColorSpaceContext.SetStrokingColorGray(Operands[0]);
-                    break;
-                case 3:
-                    operationContext.ColorSpaceContext.SetStrokingColorRgb(Operands[0], Operands[1], Operands[2]);
-                    break;
-                case 4:
-                    operationContext.ColorSpaceContext.SetStrokingColorCmyk(Operands[0], Operands[1], Operands[2], Operands[3]);
-                    break;
-                default:
-                    return;
-            }
+            operationContext.GetCurrentState().ColorSpaceContext.SetStrokingColor(Operands, PatternName);
         }
 
         /// <inheritdoc />

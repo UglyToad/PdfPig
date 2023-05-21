@@ -6,6 +6,8 @@ on:
   workflow_dispatch:
 
 jobs:
+  tests:
+    uses: ./.github/workflows/run_integration_tests.yml
   check_date:
     runs-on: ubuntu-latest
     name: Check latest commit
@@ -22,7 +24,7 @@ jobs:
         if: ${{ github.event_name == 'schedule' }}
         run: test -z $(git rev-list  --after="24 hours"  ${{ github.sha }}) && echo "::set-output name=should_run::false"
   build_and_publish_nightly:
-    needs: check_date
+    needs: [check_date, tests]
     if: ${{ needs.check_date.outputs.should_run != 'false' }}
     runs-on: windows-2019
     name: build_and_publish_nightly
@@ -32,7 +34,7 @@ jobs:
       - name: Set up dotnet core
         uses: actions/setup-dotnet@v2
         with:
-          dotnet-version: | 
+          dotnet-version: |
             2.1.x
             6.0.x
 

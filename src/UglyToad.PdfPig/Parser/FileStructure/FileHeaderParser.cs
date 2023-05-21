@@ -24,7 +24,7 @@
     /// %PDF–1.6
     /// %PDF–1.7
     /// This parser allows versions up to 1.9.
-    /// For versions equal or greater to PDF 1.4, the optional Version entry in the document’s catalog dictionary should be used instead of the header version.
+    /// For versions equal or greater to PDF 1.4, the optional Version entry in the document's catalog dictionary should be used instead of the header version.
     /// </remarks>
     internal static class FileHeaderParser
     {

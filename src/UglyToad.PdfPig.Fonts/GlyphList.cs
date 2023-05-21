@@ -15,7 +15,7 @@
 
         private readonly IReadOnlyDictionary<string, string> nameToUnicode;
         private readonly IReadOnlyDictionary<string, string> unicodeToName;
-        
+
         private readonly Dictionary<string, string> oddNameToUnicodeCache = new Dictionary<string, string>();
 
         private static readonly Lazy<GlyphList> LazyAdobeGlyphList = new Lazy<GlyphList>(() => GlyphListFactory.Get("glyphlist"));
@@ -138,9 +138,9 @@
             else if (name.StartsWith("u") && name.Length == 5)
             {
                 // test for an alternate Unicode name representation uXXXX
-                    var codePoint = int.Parse(name.Substring(1), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                var codePoint = int.Parse(name.Substring(1), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
 
-                    if (codePoint > 0xD7FF && codePoint < 0xE000)
+                if (codePoint > 0xD7FF && codePoint < 0xE000)
                 {
                     throw new InvalidFontFormatException(
                         $"Unicode character name with disallowed code area: {name}");
@@ -159,4 +159,3 @@
         }
     }
 }
-

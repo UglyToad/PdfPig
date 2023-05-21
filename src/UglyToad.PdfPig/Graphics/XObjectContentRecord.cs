@@ -8,22 +8,40 @@
     using Util.JetBrains.Annotations;
     using XObjects;
 
-    internal class XObjectContentRecord
+    /// <summary>
+    /// An XObject content record.
+    /// </summary>
+    public class XObjectContentRecord
     {
+        /// <summary>
+        /// The XObject type.
+        /// </summary>
         public XObjectType Type { get; }
 
+        /// <summary>
+        /// The XObject stream.
+        /// </summary>
         [NotNull]
         public StreamToken Stream { get; }
 
+        /// <summary>
+        /// The applied transformation.
+        /// </summary>
         public TransformationMatrix AppliedTransformation { get; }
 
+        /// <summary>
+        /// The default rendering intent.
+        /// </summary>
         public RenderingIntent DefaultRenderingIntent { get; }
 
-        public ColorSpace DefaultColorSpace { get; }
+        /// <summary>
+        /// The default color space.
+        /// </summary>
+        public ColorSpaceDetails DefaultColorSpace { get; }
 
-        public XObjectContentRecord(XObjectType type, StreamToken stream, TransformationMatrix appliedTransformation,
+        internal XObjectContentRecord(XObjectType type, StreamToken stream, TransformationMatrix appliedTransformation,
             RenderingIntent defaultRenderingIntent,
-            ColorSpace defaultColorSpace)
+            ColorSpaceDetails defaultColorSpace)
         {
             Type = type;
             Stream = stream ?? throw new ArgumentNullException(nameof(stream));

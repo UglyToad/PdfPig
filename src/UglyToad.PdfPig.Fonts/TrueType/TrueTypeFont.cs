@@ -112,7 +112,7 @@
             {
                 return false;
             }
-            
+
             if (!TableRegister.GlyphTable.TryGetGlyphBounds(index, out boundingBox))
             {
                 return false;
@@ -124,6 +124,28 @@
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Try to get the bounding box for a glyph representing the specified character code if present.
+        /// </summary>
+        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path) => TryGetPath(characterCode, null, out path);
+
+        /// <summary>
+        /// Try to get the path for a glyph representing the specified character code if present.
+        /// Uses a custom mapping of character code to glyph index.
+        /// </summary>
+        public bool TryGetPath(int characterCode, Func<int, int?> characterCodeToGlyphId, out IReadOnlyList<PdfSubpath> path)
+        {
+            path = EmptyArray<PdfSubpath>.Instance;
+
+            if (!TryGetGlyphIndex(characterCode, characterCodeToGlyphId, out var index)
+                || TableRegister.GlyphTable == null)
+            {
+                return false;
+            }
+
+            return TableRegister.GlyphTable.Glyphs[index].TryGetGlyphPath(out path);
         }
 
         /// <summary>

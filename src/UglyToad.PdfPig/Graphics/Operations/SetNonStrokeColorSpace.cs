@@ -11,6 +11,8 @@
     /// </summary>
     public class SetNonStrokeColorSpace : IGraphicsStateOperation
     {
+        private static readonly TokenWriter TokenWriter = new TokenWriter();
+
         /// <summary>
         /// The symbol for this operation in a stream.
         /// </summary>
@@ -36,7 +38,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.ColorSpaceContext.SetNonStrokingColorspace(Name);
+            operationContext.GetCurrentState().ColorSpaceContext.SetNonStrokingColorspace(Name);
         }
 
         /// <inheritdoc />

@@ -10,22 +10,22 @@
     {
         private static readonly (int, string)[] EncodingTable =
         {
-            (255, "notequal"),
-            (260, "infinity"),
-            (262, "lessequal"),
-            (263, "greaterequal"),
-            (266, "partialdiff"),
-            (267, "summation"),
-            (270, "product"),
-            (271, "pi"),
-            (272, "integral"),
-            (275, "Omega"),
-            (303, "radical"),
-            (305, "approxequal"),
-            (306, "Delta"),
-            (327, "lozenge"),
-            (333, "Euro"),
-            (360, "apple")
+            (0255, "notequal"),
+            (0260, "infinity"),
+            (0262, "lessequal"),
+            (0263, "greaterequal"),
+            (0266, "partialdiff"),
+            (0267, "summation"),
+            (0270, "product"),
+            (0271, "pi"),
+            (0272, "integral"),
+            (0275, "Omega"),
+            (0303, "radical"),
+            (0305, "approxequal"),
+            (0306, "Delta"),
+            (0327, "lozenge"),
+            (0333, "Euro"),
+            (0360, "apple")
         };
 
         /// <summary>
@@ -35,9 +35,16 @@
 
         private MacOsRomanEncoding()
         {
-            foreach (var valueTuple in EncodingTable)
+            foreach ((var codeToBeConverted, var name) in EncodingTable)
             {
-                Add(OctalHelpers.FromOctalInt(valueTuple.Item1), valueTuple.Item2);
+                // In source code an int literal with a leading zero ('0')
+                // in other languages ('C' and 'Java') would be interpreted
+                // as octal (base 8) and converted but C# does not support and
+                // so arrives here as a different value parsed as base10.
+                // Convert 'codeToBeConverted' to intended value as if it was an octal literal before using.
+                // For example 040 converts to string "40" then convert string to int again but using base 8 (octal) so result is 32 (base 10).
+                var code = System.Convert.ToInt32($"{codeToBeConverted}", 8);  // alternative is OctalHelpers.FromOctalInt()
+                Add(code, name);
             }
         }
     }

@@ -17,7 +17,7 @@
         
         public static void Run(Type1BuildCharContext context)
         {
-            context.Path.CloseSubpath();
+            context.Path[context.Path.Count - 1].CloseSubpath();
             context.Stack.Clear();
         }
     }

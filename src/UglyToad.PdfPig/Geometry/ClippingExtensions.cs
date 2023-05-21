@@ -6,7 +6,7 @@
     using ClipperLibrary;
     using Core;
     using Graphics;
-    using UglyToad.PdfPig.Logging;
+    using Logging;
     using static Core.PdfSubpath;
 
     /// <summary>
@@ -222,10 +222,6 @@
                 }
                 else if (command is Close)
                 {
-                    if (movePoint == null)
-                    {
-                        throw new ArgumentException("ToClipperPolygon(): Move command was null, cannot close the subpath.");
-                    }
                     yield return movePoint;
                 }
             }

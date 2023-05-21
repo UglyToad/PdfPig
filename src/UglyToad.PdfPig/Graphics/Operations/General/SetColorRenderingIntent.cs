@@ -3,6 +3,7 @@
     using System;
     using System.IO;
     using Tokens;
+    using UglyToad.PdfPig.Graphics.Core;
 
     /// <inheritdoc />
     /// <summary>
@@ -35,7 +36,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-
+            operationContext.GetCurrentState().RenderingIntent = RenderingIntentExtensions.ToRenderingIntent(RenderingIntent);
         }
 
         /// <inheritdoc />

@@ -77,7 +77,9 @@
                         letter.Width,
                         letter.FontSize,
                         fontDetails,
-                        letter.Color,
+                        letter.RenderingMode,
+                        letter.StrokeColor,
+                        letter.FillColor,
                         letter.PointSize,
                         letter.TextSequence);
 

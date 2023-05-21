@@ -255,6 +255,7 @@
         public static readonly NameToken G = new NameToken("G");
         public static readonly NameToken Gamma = new NameToken("Gamma");
         public static readonly NameToken GoTo = new NameToken("GoTo");
+        public static readonly NameToken GoToE = new NameToken("GoToE");
         public static readonly NameToken GoToR = new NameToken("GoToR");
         public static readonly NameToken Group = new NameToken("Group");
         public static readonly NameToken GtsPdfa1 = new NameToken("GTS_PDFA1");
@@ -348,6 +349,7 @@
         public static readonly NameToken Metadata = new NameToken("Metadata");
         public static readonly NameToken MissingWidth = new NameToken("MissingWidth");
         public static readonly NameToken Mix = new NameToken("Mix");
+        public static readonly NameToken MixingHints = new NameToken("MixingHints");
         public static readonly NameToken Mk = new NameToken("MK");
         public static readonly NameToken Ml = new NameToken("ML");
         public static readonly NameToken MmType1 = new NameToken("MMType1");

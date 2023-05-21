@@ -1,9 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1
 {
-    using System;
-    using System.Collections.Generic;
     using CharStrings;
     using Core;
+    using System;
+    using System.Collections.Generic;
     using Tokens;
 
     /// <summary>
@@ -62,14 +62,8 @@
         /// </summary>
         public PdfRectangle? GetCharacterBoundingBox(string characterName)
         {
-            if (!CharStrings.TryGenerate(characterName, out var glyph))
-            {
-                return null;
-            }
-
-            var bbox = glyph.GetBoundingRectangle();
-
-            return bbox;
+            var glyph = GetCharacterPath(characterName);
+            return PdfSubpath.GetBoundingRectangle(glyph);
         }
 
         /// <summary>
@@ -95,6 +89,18 @@
             var f = ((NumericToken)array.Data[5]).Double;
 
             return TransformationMatrix.FromValues(a, b, c, d, e, f);
+        }
+
+        /// <summary>
+        /// Get the pdfpath for the character with the given name.
+        /// </summary>
+        public IReadOnlyList<PdfSubpath> GetCharacterPath(string characterName)
+        {
+            if (!CharStrings.TryGenerate(characterName, out var glyph))
+            {
+                return null;
+            }
+            return glyph;
         }
     }
 }

@@ -1,7 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType.Glyphs
 {
-    using System;
     using Core;
+    using System;
+    using System.Collections.Generic;
 
     internal class Glyph : IGlyphDescription
     {
@@ -111,11 +112,111 @@
 
                 scaled = matrix.Translate(scaled);
 
-                newPoints[i] = new GlyphPoint((short)scaled.X, (short)scaled.Y, point.IsOnCurve);
+                newPoints[i] = new GlyphPoint((short)scaled.X, (short)scaled.Y, point.IsOnCurve, point.IsEndOfContour);
             }
 
             return new Glyph(IsSimple, Instructions, EndPointsOfContours, newPoints, Bounds);
         }
+
+        #region Subpaths
+        public bool TryGetGlyphPath(out IReadOnlyList<PdfSubpath> subpaths)
+        {
+            subpaths = EmptyArray<PdfSubpath>.Instance;
+            if (Points == null)
+            {
+                return false;
+            }
+
+            if (Points.Length > 0)
+            {
+                subpaths = CalculatePath(Points);
+            }
+            return true;
+        }
+
+        private static IReadOnlyList<PdfSubpath> CalculatePath(GlyphPoint[] points)
+        {
+            // https://github.com/apache/pdfbox/blob/trunk/fontbox/src/main/java/org/apache/fontbox/ttf/GlyphRenderer.java
+            var path = new List<PdfSubpath>();
+
+            int start = 0;
+            for (int p = 0; p < points.Length; ++p)
+            {
+                if (points[p].IsEndOfContour)
+                {
+                    PdfSubpath subpath = new PdfSubpath();
+                    GlyphPoint firstPoint = points[start];
+                    GlyphPoint lastPoint = points[p];
+                    var contour = new List<GlyphPoint>();
+
+                    for (int q = start; q <= p; ++q)
+                    {
+                        contour.Add(points[q]);
+                    }
+
+                    if (points[start].IsOnCurve)
+                    {
+                        // using start point at the contour end
+                        contour.Add(firstPoint);
+                    }
+                    else if (points[p].IsOnCurve)
+                    {
+                        // first is off-curve point, trying to use one from the end
+                        contour.Insert(0, lastPoint);
+                    }
+                    else
+                    {
+                        // start and end are off-curve points, creating implicit one
+                        var pmid = midValue(firstPoint, lastPoint);
+                        contour.Insert(0, pmid);
+                        contour.Add(pmid);
+                    }
+
+                    subpath.MoveTo(contour[0].X, contour[0].Y);
+                    for (int j = 1; j < contour.Count; j++)
+                    {
+                        GlyphPoint pNow = contour[j];
+                        if (pNow.IsOnCurve)
+                        {
+                            subpath.LineTo(pNow.X, pNow.Y);
+                        }
+                        else if (contour[j + 1].IsOnCurve)
+                        {
+                            var pPrevious = contour[j - 1];
+                            var pNext = contour[j + 1];
+                            subpath.BezierCurveTo(pPrevious.X, pPrevious.Y, pNow.X, pNow.Y, pNext.X, pNext.Y);
+                            ++j;
+                        }
+                        else
+                        {
+                            var pPrevious = contour[j - 1];
+                            var pmid = midValue(pNow, contour[j + 1]);
+                            subpath.BezierCurveTo(pPrevious.X, pPrevious.Y, pNow.X, pNow.Y, pmid.X, pmid.Y);
+                        }
+                    }
+                    subpath.CloseSubpath();
+                    path.Add(subpath);
+                    start = p + 1;
+                }
+            }
+
+            return path;
+        }
+
+        private static short midValue(short a, short b)
+        {
+            return (short)(a + (b - a) / 2);
+        }
+
+        /// <summary>
+        /// This creates an onCurve point that is between point1 and point2.
+        /// </summary>
+        private static GlyphPoint midValue(GlyphPoint point1, GlyphPoint point2)
+        {
+            // this constructs an on-curve, non-endofcountour point
+            return new GlyphPoint(midValue(point1.X, point2.X), midValue(point1.Y, point2.Y), true, false);
+        }
+        #endregion
 
         public override string ToString()
         {

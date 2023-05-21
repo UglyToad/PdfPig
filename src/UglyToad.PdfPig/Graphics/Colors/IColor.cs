@@ -13,6 +13,6 @@
         /// <summary>
         /// The color as RGB values (between 0 and 1).
         /// </summary>
-        (decimal r, decimal g, decimal b) ToRGBValues();
+        (double r, double g, double b) ToRGBValues();
     }
 }

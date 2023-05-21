@@ -1,9 +1,11 @@
 ﻿namespace UglyToad.PdfPig.Tests.Geometry
 {
+    using Content;
     using PdfPig.Geometry;
     using PdfPig.Core;
     using Xunit;
     using System.Collections.Generic;
+    using System.Drawing;
 
     public class PdfRectangleTests
     {
@@ -1693,6 +1695,21 @@
                 new PdfPoint(300.17322363281249, 291.45));
 
             Assert.True(rect.Height > 0);
+        }
+
+        [Theory]
+        [InlineData(595, 842, PageSize.A4)]
+        [InlineData(594, 843, PageSize.Custom)]
+        [InlineData(596, 841, PageSize.Custom)]
+        [InlineData(842, 595, PageSize.A4)]
+        [InlineData(595.3, 841.5, PageSize.A4)]
+        [InlineData(841.5, 595.3, PageSize.A4)]
+        [InlineData(1224, 792, PageSize.Ledger)]
+        [InlineData(792, 1224, PageSize.Tabloid)]
+        public void Parse(double w, double h, PageSize expectedPageSize)
+        {
+            var r = new PdfRectangle(0, 0, w, h);
+            Assert.Equal(expectedPageSize, r.GetPageSize());
         }
     }
 }

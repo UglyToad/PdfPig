@@ -10,7 +10,6 @@
     using Encryption;
     using Exceptions;
     using Filters;
-    using Logging;
     using Parser;
     using Tokenization.Scanner;
     using Tokens;
@@ -28,15 +27,8 @@
         
         [NotNull]
         private readonly HeaderVersion version;
-        
-        private readonly ILog log;
 
         private readonly IInputBytes inputBytes;
-
-        private readonly bool clipPaths;
-
-        [NotNull]
-        private readonly ParsingCachingProviders cachingProviders;
 
         [CanBeNull]
         private readonly EncryptionDictionary encryptionDictionary;
@@ -46,9 +38,11 @@
 
         private readonly ILookupFilterProvider filterProvider;
         private readonly BookmarksProvider bookmarksProvider;
+        private readonly InternalParsingOptions parsingOptions;
 
         [NotNull]
         private readonly Pages pages;
+        private readonly NamedDestinations namedDestinations;
 
         /// <summary>
         /// The metadata associated with this document.
@@ -82,32 +76,29 @@
         /// </summary>
         public bool IsEncrypted => encryptionDictionary != null;
 
-        internal PdfDocument(ILog log, 
-            IInputBytes inputBytes,
-            HeaderVersion version, 
+        internal PdfDocument(IInputBytes inputBytes,
+            HeaderVersion version,
             CrossReferenceTable crossReferenceTable,
-            ParsingCachingProviders cachingProviders,
-            IPageFactory pageFactory,
             Catalog catalog,
-            DocumentInformation information, 
+            DocumentInformation information,
             EncryptionDictionary encryptionDictionary,
             IPdfTokenScanner pdfScanner,
             ILookupFilterProvider filterProvider,
             AcroFormFactory acroFormFactory,
             BookmarksProvider bookmarksProvider,
-            bool clipPaths)
+            InternalParsingOptions parsingOptions)
         {
-            this.log = log;
             this.inputBytes = inputBytes;
             this.version = version ?? throw new ArgumentNullException(nameof(version));
-            this.cachingProviders = cachingProviders ?? throw new ArgumentNullException(nameof(cachingProviders));
             this.encryptionDictionary = encryptionDictionary;
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.bookmarksProvider = bookmarksProvider ?? throw new ArgumentNullException(nameof(bookmarksProvider));
-            this.clipPaths = clipPaths;
+            this.parsingOptions = parsingOptions;
+
             Information = information ?? throw new ArgumentNullException(nameof(information));
-            pages = new Pages(catalog, pageFactory, pdfScanner);
+            pages = catalog.Pages;
+            namedDestinations = catalog.NamedDestinations;
             Structure = new Structure(catalog, crossReferenceTable, pdfScanner);
             Advanced = new AdvancedPdfDocumentAccess(pdfScanner, filterProvider, catalog);
             documentForm = new Lazy<AcroForm>(() => acroFormFactory.GetAcroForm(catalog));
@@ -153,11 +144,11 @@
                 throw new ObjectDisposedException("Cannot access page after the document is disposed.");
             }
 
-            log.Debug($"Accessing page {pageNumber}.");
+            parsingOptions.Logger.Debug($"Accessing page {pageNumber}.");
 
             try
             {
-                return pages.GetPage(pageNumber, clipPaths);
+                return pages.GetPage(pageNumber, namedDestinations, parsingOptions);
             }
             catch (Exception ex)
             {
@@ -258,7 +249,7 @@
             }
             catch (Exception ex)
             {
-                log.Error("Failed disposing the PdfDocument due to an error.", ex);
+                parsingOptions.Logger.Error("Failed disposing the PdfDocument due to an error.", ex);
             }
             finally
             {

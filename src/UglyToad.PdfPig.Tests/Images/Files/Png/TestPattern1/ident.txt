@@ -1,0 +1,9 @@
+tp1-001-8bitRGB-withExif~Thumbnail~ColorProfile.png       PNG 200x150 200x150+0+0 8-bit sRGB 1747B 0.000u 0:00.001
+tp1-002-8bitRGBA-withExif~Thumbnail~ColorProfile.png      PNG 200x200 200x200+0+0 8-bit sRGB 1826B 0.000u 0:00.000
+tp1-003-8bitRGB-Interlaced-withExif~ColorProfile.png      PNG 200x150 200x150+0+0 8-bit sRGB 1229B 0.000u 0:00.000
+tp1-004-8bitRGBA-Interlaced-withExif~ColorProfile.png     PNG 200x200 200x200+0+0 8-bit sRGB 1328B 0.000u 0:00.000
+tp1-101-16bitRGB-withExif~Thumbnail~ColorProfile.png      PNG 200x150 200x150+0+0 16-bit sRGB 1973B 0.000u 0:00.000
+tp1-102-16bitRGBA-withExif~Thumbnail~ColorProfile.png     PNG 200x200 200x200+0+0 16-bit sRGB 2121B 0.000u 0:00.000
+tp1-201-32bitRGB-withExif~Thumbnail~ColorProfile.png      PNG 200x150 200x150+0+0 16-bit sRGB 1973B 0.000u 0:00.000
+tp1-301-16bitFloatRGB-withExif~Thumbnail~ColorProfile.png PNG 200x150 200x150+0+0 16-bit sRGB 1970B 0.000u 0:00.000
+tp1-401-32bitFloatRGB-withExif~Thumbnail~ColorProfile.png PNG 200x150 200x150+0+0 16-bit sRGB 1970B 0.000u 0:00.000

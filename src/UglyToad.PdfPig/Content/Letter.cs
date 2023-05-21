@@ -3,6 +3,7 @@
     using Core;
     using Graphics.Colors;
     using PdfFonts;
+    using System.Diagnostics;
 
     /// <summary>
     /// A glyph or combination of glyphs (characters) drawn by a PDF content stream.
@@ -62,9 +63,30 @@
         public FontDetails Font { get; }
 
         /// <summary>
-        /// The color of the letter.
+        /// Text rendering mode that indicates whether we should draw this letter's strokes,
+        /// fill, both, neither (in case of hidden text), etc.
+        /// If it calls for stroking the <see cref="StrokeColor" /> is used.
+        /// If it calls for filling, the <see cref="FillColor"/> is used.
+        /// In modes that perform both filling and stroking, the effect is as if each glyph outline were filled and then stroked in separate operations.
+        /// </summary>
+        public TextRenderingMode RenderingMode { get; }
+
+        /// <summary>
+        /// The primary color of the letter, which is either the <see cref="StrokeColor"/> in case
+        /// <see cref="RenderingMode"/> is <see cref="TextRenderingMode.Stroke"/>, or otherwise
+        /// it is the <see cref="FillColor"/>.
         /// </summary>
         public IColor Color { get; }
+
+        /// <summary>
+        /// Stroking color
+        /// </summary>
+        public IColor StrokeColor { get; }
+
+        /// <summary>
+        /// Non-stroking (fill) color
+        /// </summary>
+        public IColor FillColor { get; }
 
         /// <summary>
         /// The size of the font in points.
@@ -85,7 +107,9 @@
             double width,
             double fontSize,
             FontDetails font,
-            IColor color,
+            TextRenderingMode renderingMode,
+            IColor strokeColor,
+            IColor fillColor,
             double pointSize,
             int textSequence)
         {
@@ -96,7 +120,17 @@
             Width = width;
             FontSize = fontSize;
             Font = font;
-            Color = color ?? GrayColor.Black;
+            RenderingMode = renderingMode;
+            if (renderingMode == TextRenderingMode.Stroke)
+            {
+                Color = StrokeColor = strokeColor ?? GrayColor.Black;
+                FillColor = fillColor;
+            }
+            else
+            {
+                Color = FillColor = fillColor ?? GrayColor.Black;
+                StrokeColor = strokeColor;
+            }
             PointSize = pointSize;
             TextSequence = textSequence;
             TextOrientation = GetTextOrientation();

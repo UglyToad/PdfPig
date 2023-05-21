@@ -6,7 +6,7 @@ namespace UglyToad.PdfPig.Graphics.Colors
     /// <summary>
     /// A color with cyan, magenta, yellow and black (K) components.
     /// </summary>
-    public class CMYKColor : IColor, IEquatable<CMYKColor>
+    public sealed class CMYKColor : IColor, IEquatable<CMYKColor>
     {
         /// <summary>
         /// CMYK Black value (0, 0, 0, 1).
@@ -24,27 +24,27 @@ namespace UglyToad.PdfPig.Graphics.Colors
         /// <summary>
         /// The cyan value.
         /// </summary>
-        public decimal C { get; }
+        public double C { get; }
 
         /// <summary>
         /// The magenta value.
         /// </summary>
-        public decimal M { get; }
+        public double M { get; }
 
         /// <summary>
         /// The yellow value.
         /// </summary>
-        public decimal Y { get; }
+        public double Y { get; }
 
         /// <summary>
         /// The black value.
         /// </summary>
-        public decimal K { get; }
+        public double K { get; }
 
         /// <summary>
         /// Create a new <see cref="CMYKColor"/>.
         /// </summary>
-        public CMYKColor(decimal c, decimal m, decimal y, decimal k)
+        public CMYKColor(double c, double m, double y, double k)
         {
             C = c;
             M = m;
@@ -53,7 +53,7 @@ namespace UglyToad.PdfPig.Graphics.Colors
         }
 
         /// <inheritdoc/>
-        public (decimal r, decimal g, decimal b) ToRGBValues()
+        public (double r, double g, double b) ToRGBValues()
         {
             return ((1 - C) * (1 - K),
                 (1 - M) * (1 - K),

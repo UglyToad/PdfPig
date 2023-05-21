@@ -1,13 +1,14 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Composite
 {
-    using System;
-    using System.Collections.Generic;
     using CidFonts;
     using Cmap;
     using Core;
     using Geometry;
+    using System;
+    using System.Collections.Generic;
     using Tokens;
     using Util.JetBrains.Annotations;
+    using Debug = System.Diagnostics.Debug;
 
     /// <summary>
     /// Defines glyphs using a CIDFont
@@ -49,7 +50,7 @@
             CidFont = cidFont ?? throw new ArgumentNullException(nameof(cidFont));
             CMap = cmap ?? throw new ArgumentNullException(nameof(cmap));
             ToUnicode = new ToUnicodeCMap(toUnicodeCMap);
-            Details = cidFont.Details?.WithName(Name.Data) 
+            Details = cidFont.Details?.WithName(Name.Data)
                       ?? FontDetails.GetDefault(Name.Data);
         }
 
@@ -68,14 +69,34 @@
         {
             value = null;
 
-            if (!ToUnicode.CanMapToUnicode)
+            var HaveCMap = ToUnicode.CanMapToUnicode;
+            if (HaveCMap == false)
             {
-                if (ucs2CMap != null && ucs2CMap.TryConvertToUnicode(characterCode, out value))
+                var HaveUnicode2CMap = (ucs2CMap is null == false);
+                if (HaveUnicode2CMap)
                 {
-                    return value != null;
+                    // Have both ucs2Map and CMap convert to unicode by
+                    // characterCode  ----by CMAP---> CID ---ucs2Map---> Unicode
+                    var CID = CMap.ConvertToCid(characterCode);
+                    if (CID == 0)
+                    {
+                        Debug.WriteLine($"Warning: No mapping from characterCode (0x{characterCode:X} to CID by ucs2Map.");
+                        return false; // No mapping from characterCode to CID.
+                    }
+                    // CID ---ucs2Map---> Unicode
+                    if (ucs2CMap.TryConvertToUnicode(CID, out value))
+                    {
+                        return value != null;
+                    }
                 }
-
-                return false;
+                if (HaveUnicode2CMap) // 2022-12-24 @fnatzke left as fall-back. Possible?
+                {
+                    // characterCode ---ucs2Map---> Unicode      (?) @fnatzke possible?
+                    if (ucs2CMap.TryConvertToUnicode(characterCode, out value))
+                    {
+                        return value != null;
+                    }
+                }
             }
 
             // According to PdfBox certain providers incorrectly using Identity CMaps as ToUnicode.
@@ -139,6 +160,18 @@
             var characterIdentifier = CMap.ConvertToCid(characterCode);
 
             return CidFont.GetDisplacementVector(characterIdentifier).Scale(1 / 1000.0);
+        }
+
+        /// <inheritdoc/>
+        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        {
+            return CidFont.TryGetPath(characterCode, out path);
+        }
+
+        /// <inheritdoc/>
+        public bool TryGetNormalisedPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        {
+            return CidFont.TryGetNormalisedPath(characterCode, out path);
         }
     }
 }

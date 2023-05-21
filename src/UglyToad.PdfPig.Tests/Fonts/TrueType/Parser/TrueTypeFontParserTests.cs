@@ -2,13 +2,18 @@
 namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
 {
     using System;
+    using System.Collections.Generic;
+    using System.Drawing;
     using System.Globalization;
+    using System.Linq;
     using System.Text;
     using System.Text.RegularExpressions;
     using PdfPig.Core;
     using PdfPig.Fonts.TrueType;
     using PdfPig.Fonts.TrueType.Parser;
     using PdfPig.Fonts.TrueType.Tables;
+    using UglyToad.PdfPig.Fonts.TrueType.Glyphs;
+    using UglyToad.PdfPig.Graphics;
     using Xunit;
 
     public class TrueTypeFontParserTests
@@ -183,7 +188,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
             var font = TrueTypeFontParser.Parse(input);
 
             var robotoGlyphs = Encoding.ASCII.GetString(TrueTypeTestHelper.GetFileBytes("Roboto-Regular.GlyphData.txt"));
-            var lines = robotoGlyphs.Split(new[] {"\r\n", "\r", "\n"}, StringSplitOptions.RemoveEmptyEntries);
+            var lines = robotoGlyphs.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
             for (var i = 0; i < lines.Length; i++)
             {
@@ -205,9 +210,16 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
                 {
                     Assert.Equal(width, glyph.Bounds.Width);
                 }
-                
+
                 Assert.Equal(height, glyph.Bounds.Height);
                 Assert.Equal(points, glyph.Points.Length);
+                if (points > 0)
+                {
+                    Assert.True(glyph.Points[glyph.Points.Length - 1].IsEndOfContour);
+                    Assert.True(glyph.TryGetGlyphPath(out var subpaths));
+
+                    // TODO - more tests on path
+                }
             }
         }
 
@@ -226,4 +238,3 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
         }
     }
 }
-

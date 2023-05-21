@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Text;
     using Annotations;
+    using Geometry;
     using Graphics.Operations;
     using Tokens;
     using Util;
@@ -17,7 +18,7 @@
     /// </summary>
     public class Page
     {
-        private readonly AnnotationProvider annotationProvider;
+        internal readonly AnnotationProvider annotationProvider;
         internal readonly IPdfTokenScanner pdfScanner;
         private readonly Lazy<string> textLazy;
 
@@ -107,10 +108,13 @@
             Content = content;
             textLazy = new Lazy<string>(() => GetText(Content));
 
-            Width = mediaBox.Bounds.Width;
-            Height = mediaBox.Bounds.Height;
+            // Special case where cropbox is outside mediabox: use cropbox instead of intersection
+            var viewBox = mediaBox.Bounds.Intersect(cropBox.Bounds) ?? cropBox.Bounds;
 
-            Size = mediaBox.Bounds.GetPageSize();
+            Width = rotation.SwapsAxis ? viewBox.Height : viewBox.Width;
+            Height = rotation.SwapsAxis ? viewBox.Width : viewBox.Height;
+            Size = viewBox.GetPageSize();
+
             ExperimentalAccess = new Experimental(this, annotationProvider);
             this.annotationProvider = annotationProvider;
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));

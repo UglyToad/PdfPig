@@ -2,12 +2,13 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using Core;
 
     internal class Type1BuildCharContext
     {
-        private readonly Func<int, PdfSubpath> characterByIndexFactory;
-        private readonly Func<string, PdfSubpath> characterByNameFactory;
+        private readonly Func<int, IReadOnlyList<PdfSubpath>> characterByIndexFactory;
+        private readonly Func<string, IReadOnlyList<PdfSubpath>> characterByNameFactory;
         public IReadOnlyDictionary<int, Type1CharStrings.CommandSequence> Subroutines { get; }
 
         public double WidthX { get; set; }
@@ -20,7 +21,7 @@
 
         public bool IsFlexing { get; set; }
 
-        public PdfSubpath Path { get; private set; } = new PdfSubpath();
+        public List<PdfSubpath> Path { get; private set; } = new List<PdfSubpath>();
 
         public PdfPoint CurrentPosition { get; set; }
 
@@ -31,8 +32,8 @@
         public List<PdfPoint> FlexPoints { get; } = new List<PdfPoint>();
 
         public Type1BuildCharContext(IReadOnlyDictionary<int, Type1CharStrings.CommandSequence> subroutines,
-            Func<int, PdfSubpath> characterByIndexFactory,
-            Func<string, PdfSubpath> characterByNameFactory)
+            Func<int, IReadOnlyList<PdfSubpath>> characterByIndexFactory,
+            Func<string, IReadOnlyList<PdfSubpath>> characterByNameFactory)
         {
             this.characterByIndexFactory = characterByIndexFactory ?? throw new ArgumentNullException(nameof(characterByIndexFactory));
             this.characterByNameFactory = characterByNameFactory ?? throw new ArgumentNullException(nameof(characterByNameFactory));
@@ -44,19 +45,19 @@
             FlexPoints.Add(point);
         }
 
-        public PdfSubpath GetCharacter(int characterCode)
+        public IReadOnlyList<PdfSubpath> GetCharacter(int characterCode)
         {
             return characterByIndexFactory(characterCode);
         }
 
-        public PdfSubpath GetCharacter(string characterName)
+        public IReadOnlyList<PdfSubpath> GetCharacter(string characterName)
         {
             return characterByNameFactory(characterName);
         }
 
-        public void SetPath(PdfSubpath path)
+        public void SetPath(IReadOnlyList<PdfSubpath> path)
         {
-            Path = path ?? throw new ArgumentNullException(nameof(path));
+            Path = path.ToList() ?? throw new ArgumentNullException(nameof(path));
         }
 
         public void ClearFlexPoints()
