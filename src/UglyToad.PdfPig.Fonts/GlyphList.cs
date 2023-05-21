@@ -43,7 +43,7 @@
         {
             nameToUnicode = namesToUnicode;
 
-            var unicodeToNameTemp = new Dictionary<string, string>();
+            var unicodeToNameTemp = new Dictionary<string, string>(namesToUnicode.Count);
 
             foreach (var pair in namesToUnicode)
             {

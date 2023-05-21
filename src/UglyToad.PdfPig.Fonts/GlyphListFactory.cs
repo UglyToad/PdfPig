@@ -18,19 +18,31 @@
                     throw new ArgumentException($"No embedded glyph list resource was found with the name {listName}.");
                 }
 
+                int? capacity = null;
+                // Prevent too much wasted memory capacity for Adobe GlyphList
+                if (string.Equals("glyphlist", listName, StringComparison.OrdinalIgnoreCase))
+                {
+                    capacity = 4300;
+                }
 
-                return Read(resource);
+                return ReadInternal(resource, capacity);
             }
         }
 
         public static GlyphList Read(Stream stream)
+        {
+            return ReadInternal(stream);
+        }
+
+        private static GlyphList ReadInternal(Stream stream, int? defaultDictionaryCapacity = 0)
         {
             if (stream == null)
             {
                 throw new ArgumentNullException(nameof(stream));
             }
 
-            var result = new Dictionary<string, string>();
+            var result = defaultDictionaryCapacity.HasValue ? new Dictionary<string, string>(defaultDictionaryCapacity.Value)
+                    : new Dictionary<string, string>();
 
             using (var reader = new StreamReader(stream))
             {
