@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Functions.Type4
 {
     using System.Collections.Generic;
+    using System.Globalization;
 
     /// <summary>
     /// Basic parser for Type 4 functions which is used to build up instruction sequences.
@@ -62,13 +63,13 @@
             }
             else
             {
-                if (int.TryParse(token, out int tokenInt))
+                if (int.TryParse(token, NumberStyles.Integer, CultureInfo.InvariantCulture, out int tokenInt))
                 {
                     GetCurrentSequence().AddInteger(tokenInt);
                     return;
                 }
 
-                if (double.TryParse(token, out double tokenFloat))
+                if (double.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out double tokenFloat))
                 {
                     GetCurrentSequence().AddReal(tokenFloat);
                     return;

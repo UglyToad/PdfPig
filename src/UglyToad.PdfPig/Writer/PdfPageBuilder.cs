@@ -23,6 +23,59 @@
     using Images.Png;
     using UglyToad.PdfPig.Actions;
 
+    internal class NameConflictSolver
+    {
+        private string prefix;
+        private int key = 0;
+        private HashSet<string> xobjectNamesUsed = new HashSet<string>();
+
+        public NameConflictSolver(string prefix)
+        {
+            this.prefix = prefix;
+        }
+
+        private string ExtractPrefix(string name)
+        {
+            if (name == null)
+                return prefix;
+            var i = 0;
+            while (i < name.Length && (name[i] < '0' || name[i] > '9'))
+            {
+                i++;
+            }
+
+            
+            return i != 0 ? name.Substring(0,i) : prefix;
+        }
+
+        public string NewName(string orginalName = null)
+        {
+            var newPrefix = ExtractPrefix(orginalName);
+
+            var name = $"{newPrefix}{key}";
+            while (xobjectNamesUsed.Contains(name))
+            {
+                name = $"{newPrefix}{++key}";
+            }
+            xobjectNamesUsed.Add(name);
+            return name;
+        }
+
+        public string FixName(string name)
+        {
+            if (xobjectNamesUsed.Contains(name))
+            {
+                return NewName(name);
+            }
+            else
+            {
+                xobjectNamesUsed.Add(name);
+                return name;
+            }
+        }
+
+    }
+
     /// <summary>
     /// A builder used to add construct a page in a PDF document.
     /// </summary>
@@ -48,7 +101,9 @@
         //a sequence number of ShowText operation to determine whether letters belong to same operation or not (letters that belong to different operations have less changes to belong to same word)
         private int textSequence;
 
-        private int imageKey = 1;
+        private NameConflictSolver xobjectsNames = new NameConflictSolver("I");
+
+        private NameConflictSolver gStateNames = new NameConflictSolver("GS");
 
         internal int? rotation;
 
@@ -522,6 +577,7 @@
             }
         }
         
+
         /// <summary>
         /// Adds the JPEG image represented by the input stream at the specified location.
         /// </summary>
@@ -557,7 +613,7 @@
             var resources = pageDictionary.GetOrCreateDict(NameToken.Resources);
             var xObjects = resources.GetOrCreateDict(NameToken.Xobject);
 
-            var key = NameToken.Create($"I{imageKey++}");
+            var key = NameToken.Create( xobjectsNames.NewName());
             xObjects[key] = reference;
 
             currentStream.Add(Push.Value);
@@ -591,7 +647,7 @@
             var resources = pageDictionary.GetOrCreateDict(NameToken.Resources);
             var xObjects = resources.GetOrCreateDict(NameToken.Xobject);
 
-            var key = NameToken.Create($"I{imageKey++}");
+            var key = NameToken.Create(xobjectsNames.NewName());
             xObjects[key] = new IndirectReferenceToken(image.Reference);
 
             currentStream.Add(Push.Value);
@@ -710,7 +766,7 @@
             var resources = pageDictionary.GetOrCreateDict(NameToken.Resources);
             var xObjects = resources.GetOrCreateDict(NameToken.Xobject);
 
-            var key = NameToken.Create($"I{imageKey++}");
+            var key = NameToken.Create(xobjectsNames.NewName());
 
             xObjects[key] = reference;
 
@@ -832,15 +888,15 @@
             {
                 var pageXobjectsDictionary = resources.GetOrCreateDict(NameToken.Xobject);
 
-                var xobjectNamesUsed = Enumerable.Range(0, imageKey).Select(i => $"I{i}");
                 foreach (var xobjectSet in xobjectsDictionary.Data)
                 {
                     var xobjectName = xobjectSet.Key;
-                    if (xobjectName[0] == 'I' && xobjectNamesUsed.Any(s => s == xobjectName))
-                    {
-                        // This would mean that the imported xobject collide with one of the added image. so we have to rename it
-                        var newName = $"I{imageKey++}";
 
+                    // This would mean that the imported xobject collide with one of the added image. so we have to rename it
+                    var newName = xobjectsNames.FixName(xobjectName);
+
+                    if (xobjectName != newName)
+                    {
                         // Set all the pertinent SetFontAndSize operations with the new name
                         operations = operations.Select(op =>
                         {
@@ -856,9 +912,9 @@
 
                             return op;
                         }).ToList();
-
-                        xobjectName = newName;
                     }
+
+                    xobjectName = newName;
 
                     if (!(xobjectSet.Value is IndirectReferenceToken fontReferenceToken))
                     {
@@ -866,6 +922,49 @@
                     }
 
                     pageXobjectsDictionary[xobjectName] = documentBuilder.CopyToken(srcPage.pdfScanner, fontReferenceToken);
+                }
+            }
+
+            // Since we don't directly add xobjects's to the pages resources, we have to go look at the document's xobjects
+            if (srcResourceDictionary.TryGet(NameToken.ExtGState, srcPage.pdfScanner, out DictionaryToken gsDictionary))
+            {
+                var pageGstateDictionary = resources.GetOrCreateDict(NameToken.ExtGState);
+
+                foreach (var gstate in gsDictionary.Data)
+                {
+                    var gstateName = gstate.Key;
+                    var newName = gStateNames.FixName(gstateName);
+
+                    if (newName != gstateName)
+                    {
+                        // This would mean that the imported xobject collide with one of the added image. so we have to rename it
+
+                        // Set all the pertinent SetFontAndSize operations with the new name
+                        operations = operations.Select(op =>
+                        {
+                            if (!(op is SetGraphicsStateParametersFromDictionary invokeNamedOperation))
+                            {
+                                return op;
+                            }
+
+                            if (invokeNamedOperation.Name.Data == gstateName)
+                            {
+                                return new SetGraphicsStateParametersFromDictionary(NameToken.Create(newName));
+                            }
+
+                            return op;
+                        }).ToList();
+
+                        gstateName = newName;
+                    }
+
+                    if (!(gstate.Value is IndirectReferenceToken fontReferenceToken))
+                    {
+                        throw new PdfDocumentFormatException($"Expected a IndirectReferenceToken for the XObject, got a {gstate.Value.GetType().Name}");
+                    }
+
+                    pageGstateDictionary[gstateName] = documentBuilder.CopyToken(srcPage.pdfScanner, fontReferenceToken);
+
                 }
             }
 
