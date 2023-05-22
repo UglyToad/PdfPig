@@ -47,6 +47,8 @@
 
                     lettersSoFar.Add(letter);
                     lastLetter = letter;
+                    y = letter.Location.Y;
+                    lastX = letter.Location.X;
                     continue;
                 }
 
