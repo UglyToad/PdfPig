@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Functions.Type4
 {
     using System;
+    using System.Globalization;
     using UglyToad.PdfPig.Functions.Type4;
     using Xunit;
 
@@ -60,7 +61,7 @@
         /// <returns>this instance</returns>
         public Type4Tester PopReal(double expected, double delta)
         {
-            double value = Convert.ToDouble(context.Stack.Pop());
+            double value = Convert.ToDouble(context.Stack.Pop(), CultureInfo.InvariantCulture);
             DoubleComparer doubleComparer = new DoubleComparer(delta);
             Assert.True(doubleComparer.Equals(expected, value));//expected, value, delta);
             return this;
@@ -98,7 +99,7 @@
         {
             object value = context.PopNumber();
             DoubleComparer doubleComparer = new DoubleComparer(delta);
-            Assert.True(doubleComparer.Equals(expected, Convert.ToDouble(value)));
+            Assert.True(doubleComparer.Equals(expected, Convert.ToDouble(value, CultureInfo.InvariantCulture)));
             return this;
         }
 
