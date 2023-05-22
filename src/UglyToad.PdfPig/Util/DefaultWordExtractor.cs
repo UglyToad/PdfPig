@@ -50,7 +50,7 @@
                     continue;
                 }
 
-                if (letter.Location.Y > y.Value + 0.5)
+                if (letter.Location.Y < y.Value - 0.5)
                 {
                     if (lettersSoFar.Count > 0)
                     {
