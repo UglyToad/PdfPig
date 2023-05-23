@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using Annotations;
     using Core;
     using Outline;
     using System;
@@ -70,6 +69,7 @@
                     pageTreeMembers.Rotation = rotateToken.Int;
                 }
             }
+
             var page = pageFactory.Create(
                 pageNumber,
                 pageNode.NodeDictionary,

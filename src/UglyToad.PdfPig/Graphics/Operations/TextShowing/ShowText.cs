@@ -99,8 +99,8 @@
             }
             else
             {
-                var EscapedText = EscapeText(Text);     // escape '(', ')' or '\'
-                stream.WriteText($"({EscapedText})");
+                var escapedText = EscapeText(Text);     // escape '(', ')' or '\'
+                stream.WriteText($"({escapedText})");
             }
 
             stream.WriteWhiteSpace();
