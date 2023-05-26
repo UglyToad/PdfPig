@@ -153,7 +153,7 @@
                         token = NumericToken.OneThousand;
                         return true;
                     default:
-                        if (!decimal.TryParse(str, NumberStyles.Any, CultureInfo.InvariantCulture, out var value))
+                        if (!double.TryParse(str, NumberStyles.Any, CultureInfo.InvariantCulture, out var value))
                         {
                             if (TryParseInvalidNumber(str, out value))
                             {
@@ -178,7 +178,7 @@
             }
         }
 
-        private static bool TryParseInvalidNumber(string numeric, out decimal result)
+        private static bool TryParseInvalidNumber(string numeric, out double result)
         {
             result = 0;
 
@@ -196,7 +196,7 @@
 
             foreach (var part in parts)
             {
-                if (!decimal.TryParse(part, NumberStyles.Any, CultureInfo.InvariantCulture, out var partNumber))
+                if (!double.TryParse(part, NumberStyles.Any, CultureInfo.InvariantCulture, out var partNumber))
                 {
                     return false;
                 }

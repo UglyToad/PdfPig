@@ -46,7 +46,7 @@
             }.Build();
         }
 
-        private static decimal GetDecimalOrDefault(DictionaryToken dictionary, NameToken name)
+        private static double GetDecimalOrDefault(DictionaryToken dictionary, NameToken name)
         {
             if (!dictionary.TryGet(name, out var token) || !(token is NumericToken number))
             {

@@ -67,7 +67,7 @@
                     var horizontal = borderArray.GetNumeric(0).Data;
                     var vertical = borderArray.GetNumeric(1).Data;
                     var width = borderArray.GetNumeric(2).Data;
-                    var dashes = default(IReadOnlyList<decimal>);
+                    var dashes = default(IReadOnlyList<double>);
 
                     if (borderArray.Length == 4 && borderArray.Data[4] is ArrayToken dashArray)
                     {
@@ -80,7 +80,7 @@
                 var quadPointRectangles = new List<QuadPointsQuadrilateral>();
                 if (annotationDictionary.TryGet(NameToken.Quadpoints, tokenScanner, out ArrayToken quadPointsArray))
                 {
-                    var values = new List<decimal>();
+                    var values = new List<double>();
                     for (var i = 0; i < quadPointsArray.Length; i++)
                     {
                         if (!(quadPointsArray[i] is NumericToken value))

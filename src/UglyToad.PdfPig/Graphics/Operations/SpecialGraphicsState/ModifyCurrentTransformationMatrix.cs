@@ -2,7 +2,6 @@
 {
     using System;
     using System.IO;
-    using PdfPig.Core;
 
     /// <inheritdoc />
     /// <summary>
@@ -21,13 +20,13 @@
         /// <summary>
         /// The 6 values for the transformation matrix.
         /// </summary>
-        public decimal[] Value { get; }
+        public double[] Value { get; }
 
         /// <summary>
         /// Create a new <see cref="ModifyCurrentTransformationMatrix"/>.
         /// </summary>
         /// <param name="value">The 6 transformation matrix values.</param>
-        public ModifyCurrentTransformationMatrix(decimal[] value)
+        public ModifyCurrentTransformationMatrix(double[] value)
         {
             if (value == null)
             {
@@ -44,7 +43,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.ModifyCurrentTransformationMatrix(Array.ConvertAll(Value, x => (double)x));
+            operationContext.ModifyCurrentTransformationMatrix(Value);
         }
 
         /// <inheritdoc />

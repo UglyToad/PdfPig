@@ -31,8 +31,8 @@ namespace UglyToad.PdfPig.Tests.Tokenization.Scanner
                 tokens.Add(scanner.CurrentToken);
             }
 
-            AssertCorrectToken<NumericToken, decimal>(tokens[0], 549);
-            AssertCorrectToken<NumericToken, decimal>(tokens[1], 3.14m);
+            AssertCorrectToken<NumericToken, double>(tokens[0], 549);
+            AssertCorrectToken<NumericToken, double>(tokens[1], 3.14);
             AssertCorrectToken<BooleanToken, bool>(tokens[2], false);
             AssertCorrectToken<StringToken, string>(tokens[3], "Ralph");
             AssertCorrectToken<NameToken, string>(tokens[4], "SomeName");
@@ -61,9 +61,9 @@ namespace UglyToad.PdfPig.Tests.Tokenization.Scanner
             AssertCorrectToken<NameToken, string>(tokens[2], NameToken.Subtype.Data);
             AssertCorrectToken<NameToken, string>(tokens[3], "DictionaryExample");
             AssertCorrectToken<NameToken, string>(tokens[4], NameToken.Version.Data);
-            AssertCorrectToken<NumericToken, decimal>(tokens[5], 0.01m);
+            AssertCorrectToken<NumericToken, double>(tokens[5], 0.01);
             AssertCorrectToken<NameToken, string>(tokens[6], "IntegerItem");
-            AssertCorrectToken<NumericToken, decimal>(tokens[7], 12m);
+            AssertCorrectToken<NumericToken, double>(tokens[7], 12);
             AssertCorrectToken<NameToken, string>(tokens[8], "StringItem");
             AssertCorrectToken<StringToken, string>(tokens[9], "a string");
         }
@@ -84,8 +84,8 @@ endobj";
                 tokens.Add(scanner.CurrentToken);
             }
 
-            AssertCorrectToken<NumericToken, decimal>(tokens[0], 12);
-            AssertCorrectToken<NumericToken, decimal>(tokens[1], 0);
+            AssertCorrectToken<NumericToken, double>(tokens[0], 12);
+            AssertCorrectToken<NumericToken, double>(tokens[1], 0);
             Assert.Equal(tokens[2], OperatorToken.StartObject);
             AssertCorrectToken<StringToken, string>(tokens[3], "Brillig");
             Assert.Equal(tokens[4], OperatorToken.EndObject);
@@ -137,14 +137,14 @@ endobj";
             Assert.Equal(30, tokens.Count);
 
             AssertCorrectToken<OperatorToken, string>(tokens[29], "Td");
-            AssertCorrectToken<NumericToken, decimal>(tokens[28], 0);
-            AssertCorrectToken<NumericToken, decimal>(tokens[27], 16.12m);
+            AssertCorrectToken<NumericToken, double>(tokens[28], 0);
+            AssertCorrectToken<NumericToken, double>(tokens[27], 16.12);
             AssertCorrectToken<OperatorToken, string>(tokens[26], "Tw");
 
             var array = Assert.IsType<ArrayToken>(tokens[21]);
 
             AssertCorrectToken<StringToken, string>(array.Data[array.Data.Count - 1], ")");
-            AssertCorrectToken<NumericToken, decimal>(array.Data[array.Data.Count - 2], 1.9m);
+            AssertCorrectToken<NumericToken, double>(array.Data[array.Data.Count - 2], 1.9);
         }
 
         [Fact]
@@ -167,7 +167,7 @@ endobj";
             AssertCorrectToken<OperatorToken, string>(tokens[0], "T*");
             AssertCorrectToken<StringToken, string>(tokens[1], "");
             AssertCorrectToken<OperatorToken, string>(tokens[2], "Tj");
-            AssertCorrectToken<NumericToken, decimal>(tokens[3], -91);
+            AssertCorrectToken<NumericToken, double>(tokens[3], -91);
         }
 
         [Fact]
@@ -188,11 +188,11 @@ endobj";
 
             Assert.Equal(6, tokens.Count);
 
-            AssertCorrectToken<NumericToken, decimal>(tokens[0], 0m);
-            AssertCorrectToken<NumericToken, decimal>(tokens[1], -21.72m);
+            AssertCorrectToken<NumericToken, double>(tokens[0], 0);
+            AssertCorrectToken<NumericToken, double>(tokens[1], -21.72);
             AssertCorrectToken<OperatorToken, string>(tokens[2], "TD");
             AssertCorrectToken<NameToken, string>(tokens[3], "F1");
-            AssertCorrectToken<NumericToken, decimal>(tokens[4], 8m);
+            AssertCorrectToken<NumericToken, double>(tokens[4], 8);
             AssertCorrectToken<OperatorToken, string>(tokens[5], "Tf");
 
         }

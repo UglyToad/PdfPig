@@ -24,7 +24,7 @@
 
         public bool IsImageMask { get; set; }
 
-        public IReadOnlyList<decimal> Decode { get; set; }
+        public IReadOnlyList<double> Decode { get; set; }
 
         public bool Interpolate { get; set; }
 

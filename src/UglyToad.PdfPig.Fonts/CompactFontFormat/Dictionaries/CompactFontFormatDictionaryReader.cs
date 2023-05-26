@@ -91,7 +91,7 @@
             return builder;
         }
 
-        private static decimal ReadRealNumber(CompactFontFormatData data)
+        private static double ReadRealNumber(CompactFontFormatData data)
         {
             var sb = new StringBuilder();
             var done = false;
@@ -170,10 +170,10 @@
 
             if (sb.Length == 0)
             {
-                return 0m;
+                return 0.0;
             }
 
-            return hasExponent ? decimal.Parse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture) : decimal.Parse(sb.ToString(), CultureInfo.InvariantCulture);
+            return hasExponent ? double.Parse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture) : double.Parse(sb.ToString(), CultureInfo.InvariantCulture);
         }
 
         protected abstract void ApplyOperation(TBuilder builder, List<Operand> operands, OperandKey operandKey, IReadOnlyList<string> stringIndex);
@@ -187,7 +187,7 @@
 
             if (!operands[0].Int.HasValue)
             {
-                throw new InvalidOperationException($"The first operand for reading a string was not an integer. Got: {operands[0].Decimal}");
+                throw new InvalidOperationException($"The first operand for reading a string was not an integer. Got: {operands[0].Double}");
             }
 
             var index = operands[0].Int.Value;
@@ -213,17 +213,17 @@
                 return new PdfRectangle();
             }
 
-            return new PdfRectangle((double)operands[0].Decimal, (double)operands[1].Decimal,
-                (double)operands[2].Decimal, (double)operands[3].Decimal);
+            return new PdfRectangle(operands[0].Double, operands[1].Double,
+                operands[2].Double, operands[3].Double);
         }
 
-        protected static decimal[] ToArray(List<Operand> operands)
+        protected static double[] ToArray(List<Operand> operands)
         {
-            var result = new decimal[operands.Count];
+            var result = new double[operands.Count];
 
             for (int i = 0; i < result.Length; i++)
             {
-                result[i] = operands[i].Decimal;
+                result[i] = operands[i].Double;
             }
 
             return result;
@@ -255,12 +255,12 @@
                 return results;
             }
 
-            results[0] = (int)operands[0].Decimal;
+            results[0] = (int)operands[0].Double;
 
             for (var i = 1; i < operands.Count; i++)
             {
                 var previous = results[i - 1];
-                var current = operands[i].Decimal;
+                var current = operands[i].Double;
 
                 results[i] = (int)(previous + current);
             }
@@ -268,21 +268,21 @@
             return results;
         }
 
-        protected static decimal[] ReadDeltaToArray(List<Operand> operands)
+        protected static double[] ReadDeltaToArray(List<Operand> operands)
         {
-            var results = new decimal[operands.Count];
+            var results = new double[operands.Count];
 
             if (operands.Count == 0)
             {
                 return results;
             }
 
-            results[0] = operands[0].Decimal;
+            results[0] = operands[0].Double;
 
             for (var i = 1; i < operands.Count; i++)
             {
                 var previous = results[i - 1];
-                var current = operands[i].Decimal;
+                var current = operands[i].Double;
 
                 results[i] = previous + current;
             }
@@ -294,18 +294,18 @@
         {
             public int? Int { get; }
 
-            public decimal Decimal { get; }
+            public double Double { get; }
 
             public Operand(int integer)
             {
                 Int = integer;
-                Decimal = integer;
+                Double = integer;
             }
 
-            public Operand(decimal d)
+            public Operand(double d)
             {
                 Int = null;
-                Decimal = d;
+                Double = d;
             }
         }
 

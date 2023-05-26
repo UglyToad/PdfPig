@@ -19,13 +19,13 @@
         /// <summary>
         /// The amount of text rise - how far to move the baseline up or down from its default location.
         /// </summary>
-        public decimal Rise { get; }
+        public double Rise { get; }
 
         /// <summary>
         /// Create a new <see cref="SetTextRise"/>.
         /// </summary>
         /// <param name="rise">The text rise.</param>
-        public SetTextRise(decimal rise)
+        public SetTextRise(double rise)
         {
             Rise = rise;
         }
@@ -33,7 +33,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.SetTextRise((double)Rise);
+            operationContext.SetTextRise(Rise);
         }
 
         /// <inheritdoc />

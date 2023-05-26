@@ -326,10 +326,10 @@ namespace UglyToad.PdfPig.Fonts.AdobeFontMetrics
         /// </summary>
         public const string KernPairKpy = "KPY";
 
-        private static readonly char[] IndividualCharmetricsSplit = {';'};
+        private static readonly char[] IndividualCharmetricsSplit = { ';' };
 
-        private static readonly char[] CharmetricsKeySplit = {' '};
-        
+        private static readonly char[] CharmetricsKeySplit = { ' ' };
+
         /// <summary>
         /// Parse the font metrics from the input bytes.
         /// </summary>
@@ -344,7 +344,7 @@ namespace UglyToad.PdfPig.Fonts.AdobeFontMetrics
                 throw new InvalidFontFormatException($"The AFM file was not valid, it did not start with {StartFontMetrics}.");
             }
 
-            var version = ReadDecimal(bytes, stringBuilder);
+            var version = ReadDouble(bytes, stringBuilder);
 
             var builder = new AdobeFontMetricsBuilder(version);
 
@@ -368,7 +368,7 @@ namespace UglyToad.PdfPig.Fonts.AdobeFontMetrics
                         builder.Weight = ReadLine(bytes, stringBuilder);
                         break;
                     case ItalicAngle:
-                        builder.ItalicAngle = ReadDecimal(bytes, stringBuilder);
+                        builder.ItalicAngle = ReadDouble(bytes, stringBuilder);
                         break;
                     case IsFixedPitch:
                         builder.IsFixedPitch = ReadBool(bytes, stringBuilder);
@@ -378,10 +378,10 @@ namespace UglyToad.PdfPig.Fonts.AdobeFontMetrics
                             ReadDouble(bytes, stringBuilder), ReadDouble(bytes, stringBuilder));
                         break;
                     case UnderlinePosition:
-                        builder.UnderlinePosition = ReadDecimal(bytes, stringBuilder);
+                        builder.UnderlinePosition = ReadDouble(bytes, stringBuilder);
                         break;
                     case UnderlineThickness:
-                        builder.UnderlineThickness = ReadDecimal(bytes, stringBuilder);
+                        builder.UnderlineThickness = ReadDouble(bytes, stringBuilder);
                         break;
                     case Version:
                         builder.Version = ReadLine(bytes, stringBuilder);
@@ -393,37 +393,37 @@ namespace UglyToad.PdfPig.Fonts.AdobeFontMetrics
                         builder.EncodingScheme = ReadLine(bytes, stringBuilder);
                         break;
                     case MappingScheme:
-                        builder.MappingScheme = (int)ReadDecimal(bytes, stringBuilder);
+                        builder.MappingScheme = (int)ReadDouble(bytes, stringBuilder);
                         break;
                     case CharacterSet:
                         builder.CharacterSet = ReadLine(bytes, stringBuilder);
                         break;
                     case EscChar:
-                        builder.EscapeCharacter = (int) ReadDecimal(bytes, stringBuilder);
+                        builder.EscapeCharacter = (int)ReadDouble(bytes, stringBuilder);
                         break;
                     case Characters:
-                        builder.Characters = (int) ReadDecimal(bytes, stringBuilder);
+                        builder.Characters = (int)ReadDouble(bytes, stringBuilder);
                         break;
                     case IsBaseFont:
                         builder.IsBaseFont = ReadBool(bytes, stringBuilder);
                         break;
                     case CapHeight:
-                        builder.CapHeight = ReadDecimal(bytes, stringBuilder);
+                        builder.CapHeight = ReadDouble(bytes, stringBuilder);
                         break;
                     case XHeight:
-                        builder.XHeight = ReadDecimal(bytes, stringBuilder);
+                        builder.XHeight = ReadDouble(bytes, stringBuilder);
                         break;
                     case Ascender:
-                        builder.Ascender = ReadDecimal(bytes, stringBuilder);
+                        builder.Ascender = ReadDouble(bytes, stringBuilder);
                         break;
                     case Descender:
-                        builder.Descender = ReadDecimal(bytes, stringBuilder);
+                        builder.Descender = ReadDouble(bytes, stringBuilder);
                         break;
                     case StdHw:
-                        builder.StdHw = ReadDecimal(bytes, stringBuilder);
+                        builder.StdHw = ReadDouble(bytes, stringBuilder);
                         break;
                     case StdVw:
-                        builder.StdVw = ReadDecimal(bytes, stringBuilder);
+                        builder.StdVw = ReadDouble(bytes, stringBuilder);
                         break;
                     case CharWidth:
                         builder.SetCharacterWidth(ReadDouble(bytes, stringBuilder), ReadDouble(bytes, stringBuilder));
@@ -435,7 +435,7 @@ namespace UglyToad.PdfPig.Fonts.AdobeFontMetrics
                         builder.IsFixedV = ReadBool(bytes, stringBuilder);
                         break;
                     case StartCharMetrics:
-                        var count = (int)ReadDecimal(bytes, stringBuilder);
+                        var count = (int)ReadDouble(bytes, stringBuilder);
                         for (var i = 0; i < count; i++)
                         {
                             var metric = ReadCharacterMetric(bytes, stringBuilder);
@@ -457,17 +457,10 @@ namespace UglyToad.PdfPig.Fonts.AdobeFontMetrics
             return builder.Build();
         }
 
-        private static decimal ReadDecimal(IInputBytes input, StringBuilder stringBuilder)
-        {
-            var str = ReadString(input, stringBuilder);
-
-            return decimal.Parse(str, CultureInfo.InvariantCulture);
-        }
-
         private static double ReadDouble(IInputBytes input, StringBuilder stringBuilder)
         {
-            var dec = ReadDecimal(input, stringBuilder);
-            return (double) dec;
+            var str = ReadString(input, stringBuilder);
+            return double.Parse(str, CultureInfo.InvariantCulture);
         }
 
         private static bool ReadBool(IInputBytes input, StringBuilder stringBuilder)
@@ -484,7 +477,7 @@ namespace UglyToad.PdfPig.Fonts.AdobeFontMetrics
                     throw new InvalidFontFormatException($"The AFM should have contained a boolean but instead contained: {boolean}.");
             }
         }
-        
+
         private static string ReadString(IInputBytes input, StringBuilder stringBuilder)
         {
             stringBuilder.Clear();
@@ -602,7 +595,7 @@ namespace UglyToad.PdfPig.Fonts.AdobeFontMetrics
                         }
                     case CharmetricsVv:
                         {
-                            metric.VVector = new AdobeFontMetricsVector(double.Parse(parts[1], CultureInfo.InvariantCulture), 
+                            metric.VVector = new AdobeFontMetricsVector(double.Parse(parts[1], CultureInfo.InvariantCulture),
                                 double.Parse(parts[2], CultureInfo.InvariantCulture));
                             break;
                         }

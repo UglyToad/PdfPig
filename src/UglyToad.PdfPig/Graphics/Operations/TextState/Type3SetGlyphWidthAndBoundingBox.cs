@@ -20,32 +20,32 @@
         /// <summary>
         /// The horizontal displacement in the glyph coordinate system.
         /// </summary>
-        public decimal HorizontalDisplacement { get; }
+        public double HorizontalDisplacement { get; }
 
         /// <summary>
         /// The vertical displacement in the glyph coordinate system. Must be 0.
         /// </summary>
-        public decimal VerticalDisplacement { get; }
+        public double VerticalDisplacement { get; }
 
         /// <summary>
         /// The lower left x coordinate of the glyph bounding box.
         /// </summary>
-        public decimal LowerLeftX { get; }
+        public double LowerLeftX { get; }
 
         /// <summary>
         /// The lower left y coordinate of the glyph bounding box.
         /// </summary>
-        public decimal LowerLeftY { get; }
+        public double LowerLeftY { get; }
 
         /// <summary>
         /// The upper right x coordinate of the glyph bounding box.
         /// </summary>
-        public decimal UpperRightX { get; }
+        public double UpperRightX { get; }
 
         /// <summary>
         /// The upper right y coordinate of the glyph bounding box.
         /// </summary>
-        public decimal UpperRightY { get; }
+        public double UpperRightY { get; }
         
         /// <summary>
         /// Create a new <see cref="Type3SetGlyphWidthAndBoundingBox"/>.
@@ -56,11 +56,11 @@
         /// <param name="lowerLeftY">The lower left y coordinate of the glyph bounding box.</param>
         /// <param name="upperRightX">The upper right x coordinate of the glyph bounding box.</param>
         /// <param name="upperRightY">The upper right y coordinate of the glyph bounding box.</param>
-        public Type3SetGlyphWidthAndBoundingBox(decimal horizontalDisplacement, decimal verticalDisplacement,
-            decimal lowerLeftX, 
-            decimal lowerLeftY, 
-            decimal upperRightX,
-            decimal upperRightY)
+        public Type3SetGlyphWidthAndBoundingBox(double horizontalDisplacement, double verticalDisplacement,
+            double lowerLeftX, 
+            double lowerLeftY, 
+            double upperRightX,
+            double upperRightY)
         {
             HorizontalDisplacement = horizontalDisplacement;
             VerticalDisplacement = verticalDisplacement;

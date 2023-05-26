@@ -36,12 +36,12 @@
             stream.WriteByte(NewLine);
         }
 
-        public static void WriteDecimal(this Stream stream, decimal value)
+        public static void WriteDecimal(this Stream stream, double value)
         {
             stream.WriteText(value.ToString("G", CultureInfo.InvariantCulture));
         }
 
-        public static void WriteNumberText(this Stream stream, decimal number, string text)
+        public static void WriteNumberText(this Stream stream, double number, string text)
         {
             stream.WriteDecimal(number);
             stream.WriteWhiteSpace();

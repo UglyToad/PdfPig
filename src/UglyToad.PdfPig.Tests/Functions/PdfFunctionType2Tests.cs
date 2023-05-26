@@ -15,12 +15,12 @@
             DictionaryToken dictionaryToken = new DictionaryToken(new Dictionary<NameToken, IToken>()
             {
                 { NameToken.FunctionType, new NumericToken(2) },
-                { NameToken.Domain, new ArrayToken(domain.Select(v => new NumericToken((decimal)v)).ToArray()) },
-                { NameToken.Range, new ArrayToken(range.Select(v => new NumericToken((decimal)v)).ToArray()) },
+                { NameToken.Domain, new ArrayToken(domain.Select(v => new NumericToken(v)).ToArray()) },
+                { NameToken.Range, new ArrayToken(range.Select(v => new NumericToken(v)).ToArray()) },
 
-                { NameToken.C0, new ArrayToken(c0.Select(v => new NumericToken((decimal)v)).ToArray()) },
-                { NameToken.C1, new ArrayToken(c1.Select(v => new NumericToken((decimal)v)).ToArray()) },
-                { NameToken.N, new NumericToken((decimal)n) },
+                { NameToken.C0, new ArrayToken(c0.Select(v => new NumericToken(v)).ToArray()) },
+                { NameToken.C1, new ArrayToken(c1.Select(v => new NumericToken(v)).ToArray()) },
+                { NameToken.N, new NumericToken(n) },
             });
 
             var func = PdfFunctionParser.Create(dictionaryToken, new TestPdfTokenScanner(), new TestFilterProvider());

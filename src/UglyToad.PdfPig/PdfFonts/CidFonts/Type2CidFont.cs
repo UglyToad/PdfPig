@@ -87,7 +87,7 @@
                 return defaultWidth.Value;
             }
 
-            return (double)(Descriptor?.MissingWidth ?? 1000);
+            return Descriptor?.MissingWidth ?? 1000;
         }
 
         public PdfRectangle GetBoundingBox(int characterIdentifier)

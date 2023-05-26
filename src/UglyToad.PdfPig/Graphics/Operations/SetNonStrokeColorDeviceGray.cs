@@ -19,13 +19,13 @@
         /// <summary>
         /// The gray level between 0 (black) and 1 (white).
         /// </summary>
-        public decimal Gray { get; }
+        public double Gray { get; }
 
         /// <summary>
         /// Create a new <see cref="SetNonStrokeColorDeviceGray"/>.
         /// </summary>
         /// <param name="gray">The gray level.</param>
-        public SetNonStrokeColorDeviceGray(decimal gray)
+        public SetNonStrokeColorDeviceGray(double gray)
         {
             Gray = gray;
         }

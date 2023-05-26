@@ -26,19 +26,19 @@
         /// <summary>
         /// The x value of the offset.
         /// </summary>
-        public decimal Tx { get; }
+        public double Tx { get; }
 
         /// <summary>
         /// The y value of the offset.
         /// </summary>
-        public decimal Ty { get; }
+        public double Ty { get; }
 
         /// <summary>
         /// Create a new <see cref="MoveToNextLineWithOffset"/>.
         /// </summary>
         /// <param name="tx">The x offset.</param>
         /// <param name="ty">The y offset.</param>
-        public MoveToNextLineWithOffset(decimal tx, decimal ty)
+        public MoveToNextLineWithOffset(double tx, double ty)
         {
             Tx = tx;
             Ty = ty;
@@ -49,7 +49,7 @@
         {
             var currentTextLineMatrix = operationContext.TextMatrices.TextLineMatrix;
             
-            var matrix = TransformationMatrix.FromValues(1, 0, 0, 1, (double)Tx, (double)Ty);
+            var matrix = TransformationMatrix.FromValues(1, 0, 0, 1, Tx, Ty);
 
             var transformed = matrix.Multiply(currentTextLineMatrix);
 

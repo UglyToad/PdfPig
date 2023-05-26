@@ -192,7 +192,7 @@
             TextMatrices.TextMatrix = matrix.Multiply(TextMatrices.TextMatrix);
         }
 
-        public void SetFlatnessTolerance(decimal tolerance)
+        public void SetFlatnessTolerance(double tolerance)
         {
             GetCurrentState().Flatness = tolerance;
         }
@@ -212,19 +212,19 @@
             GetCurrentState().JoinStyle = join;
         }
 
-        public void SetLineWidth(decimal width)
+        public void SetLineWidth(double width)
         {
             GetCurrentState().LineWidth = width;
         }
 
-        public void SetMiterLimit(decimal limit)
+        public void SetMiterLimit(double limit)
         {
             GetCurrentState().MiterLimit = limit;
         }
 
         public void MoveToNextLineWithOffset()
         {
-            var tdOperation = new MoveToNextLineWithOffset(0, -1 * (decimal)GetCurrentState().FontState.Leading);
+            var tdOperation = new MoveToNextLineWithOffset(0, -1 * GetCurrentState().FontState.Leading);
             tdOperation.Run(this);
         }
 

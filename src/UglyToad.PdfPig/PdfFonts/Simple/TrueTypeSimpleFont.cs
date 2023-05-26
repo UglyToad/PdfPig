@@ -317,7 +317,7 @@
 
             if (index < 0 || index >= widths.Length)
             {
-                return (double)descriptor.MissingWidth;
+                return descriptor.MissingWidth;
             }
 
             return widths[index];

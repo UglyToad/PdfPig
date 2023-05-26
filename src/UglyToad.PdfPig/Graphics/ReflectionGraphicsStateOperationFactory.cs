@@ -24,7 +24,7 @@ namespace UglyToad.PdfPig.Graphics
 
     internal class ReflectionGraphicsStateOperationFactory : IGraphicsStateOperationFactory
     {
-        private static readonly ListPool<decimal> DecimalListPool = new ListPool<decimal>(10);
+        private static readonly ListPool<double> DecimalListPool = new ListPool<double>(10);
 
         private readonly IReadOnlyDictionary<string, Type> operations;
 
@@ -54,7 +54,7 @@ namespace UglyToad.PdfPig.Graphics
             operations = result;
         }
 
-        private static decimal[] TokensToDecimalArray(IReadOnlyList<IToken> tokens, bool exceptLast = false)
+        private static double[] TokensToDecimalArray(IReadOnlyList<IToken> tokens, bool exceptLast = false)
         {
             var result = DecimalListPool.Borrow();
 
@@ -104,7 +104,7 @@ namespace UglyToad.PdfPig.Graphics
             return numeric.Int;
         }
 
-        private static decimal OperandToDecimal(IToken token)
+        private static double OperandToDecimal(IToken token)
         {
             if (!(token is NumericToken numeric))
             {
@@ -417,7 +417,7 @@ namespace UglyToad.PdfPig.Graphics
                     throw new InvalidOperationException($"Fewer operands {operands.Count} found than required ({offset + 1}) for operator: {op.Data}.");
                 }
 
-                if (parameter.ParameterType == typeof(decimal))
+                if (parameter.ParameterType == typeof(double))
                 {
                     if (operands[offset] is NumericToken numeric)
                     {
@@ -425,7 +425,7 @@ namespace UglyToad.PdfPig.Graphics
                     }
                     else
                     {
-                        throw new InvalidOperationException($"Expected a decimal parameter for operation type {operationType.FullName}. Instead got: {operands[offset]}");
+                        throw new InvalidOperationException($"Expected a double parameter for operation type {operationType.FullName}. Instead got: {operands[offset]}");
                     }
 
                     offset++;
@@ -443,7 +443,7 @@ namespace UglyToad.PdfPig.Graphics
 
                     offset++;
                 }
-                else if (parameter.ParameterType == typeof(decimal[]))
+                else if (parameter.ParameterType == typeof(double[]))
                 {
                     if (operands[offset] is ArrayToken arr)
                     {
@@ -452,7 +452,7 @@ namespace UglyToad.PdfPig.Graphics
                         continue;
                     }
 
-                    var array = new List<decimal>();
+                    var array = new List<double>();
                     while (offset < operands.Count && operands[offset] is NumericToken numeric)
                     {
                         array.Add(numeric.Data);
@@ -473,7 +473,7 @@ namespace UglyToad.PdfPig.Graphics
                     }
                     else
                     {
-                        throw new InvalidOperationException($"Expected a decimal array parameter for operation type {operationType.FullName}. Instead got: {operands[offset]}");
+                        throw new InvalidOperationException($"Expected a double array parameter for operation type {operationType.FullName}. Instead got: {operands[offset]}");
                     }
 
                     offset++;

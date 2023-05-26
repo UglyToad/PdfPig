@@ -21,13 +21,13 @@
         /// <summary>
         /// The values of the text matrix.
         /// </summary>
-        public decimal[] Value { get; }
+        public double[] Value { get; }
 
         /// <summary>
         /// Create a new <see cref="SetTextMatrix"/>.
         /// </summary>
         /// <param name="value">The values of the text matrix.</param>
-        public SetTextMatrix(decimal[] value)
+        public SetTextMatrix(double[] value)
         {
             if (value.Length != 6)
             {

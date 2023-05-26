@@ -501,8 +501,8 @@
                  * A conforming reader shall implicitly reset this parameter to its initial value at the beginning of execution of a
                  * transparency group XObject (see 11.6.6, "Transparency Group XObjects"). Initial value: 1.0.
                  */
-                startState.AlphaConstantNonStroking = 1.0m;
-                startState.AlphaConstantStroking = 1.0m;
+                startState.AlphaConstantNonStroking = 1.0;
+                startState.AlphaConstantStroking = 1.0;
 
                 if (formGroupToken.TryGet(NameToken.Cs, pdfScanner, out NameToken csNameToken))
                 {
@@ -851,7 +851,7 @@
                 && fontArray.Data[0] is IndirectReferenceToken fontReference && fontArray.Data[1] is NumericToken sizeToken)
             {
                 currentGraphicsState.FontState.FromExtendedGraphicsState = true;
-                currentGraphicsState.FontState.FontSize = (double)sizeToken.Data;
+                currentGraphicsState.FontState.FontSize = sizeToken.Data;
                 activeExtendedGraphicsStateFont = resourceStore.GetFontDirectly(fontReference);
             }
 
@@ -986,7 +986,7 @@
             TextMatrices.TextMatrix = matrix.Multiply(TextMatrices.TextMatrix);
         }
 
-        public void SetFlatnessTolerance(decimal tolerance)
+        public void SetFlatnessTolerance(double tolerance)
         {
             GetCurrentState().Flatness = tolerance;
         }
@@ -1006,19 +1006,19 @@
             GetCurrentState().JoinStyle = join;
         }
 
-        public void SetLineWidth(decimal width)
+        public void SetLineWidth(double width)
         {
             GetCurrentState().LineWidth = width;
         }
 
-        public void SetMiterLimit(decimal limit)
+        public void SetMiterLimit(double limit)
         {
             GetCurrentState().MiterLimit = limit;
         }
 
         public void MoveToNextLineWithOffset()
         {
-            var tdOperation = new MoveToNextLineWithOffset(0, -1 * (decimal)GetCurrentState().FontState.Leading);
+            var tdOperation = new MoveToNextLineWithOffset(0, -1.0 * GetCurrentState().FontState.Leading);
             tdOperation.Run(this);
         }
 

@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Writer
 {
     using System;
-    using System.Collections.Generic;
     using System.IO;
-    using System.Text;
     using Tokens;
 
     internal interface IPdfStreamWriter : IDisposable
@@ -47,7 +45,7 @@
         /// Initializes the PDF stream with pdf header.
         /// </summary>
         /// <param name="version">Version of PDF.</param>
-        void InitializePdf(decimal version);
+        void InitializePdf(double version);
 
         /// <summary>
         /// Completes the PDF writing trailing PDF information.

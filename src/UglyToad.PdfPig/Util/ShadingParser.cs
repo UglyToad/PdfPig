@@ -151,7 +151,7 @@
             else
             {
                 // Optional - Default value: the identity matrix [1 0 0 1 0 0]
-                matrix = TransformationMatrix.FromArray(new decimal[] { 1, 0, 0, 1, 0, 0 });
+                matrix = TransformationMatrix.FromArray(new double[] { 1, 0, 0, 1, 0, 0 });
             }
 
             if (!shadingDictionary.ContainsKey(NameToken.Function))

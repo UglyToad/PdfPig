@@ -4,7 +4,6 @@
     using System.IO;
     using System.Linq;
     using UglyToad.PdfPig;
-    using UglyToad.PdfPig.Content;
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Fonts.Standard14Fonts;
     using UglyToad.PdfPig.Writer;
@@ -12,8 +11,6 @@
 
     public class PdfPageBuilderTests
     {
-
-
         [Fact]
         public void CanAddPng()
         {
@@ -44,7 +41,6 @@
                 }
                 pdfBytes = pdfBuilder.Build();
             }
-
 
             File.WriteAllBytes(@"PdfPageBuilderTests_CanAddPng.pdf", pdfBytes);
 
@@ -93,19 +89,14 @@
                     Assert.Equal(8, image1.BitsPerComponent);
                 }
             }
-            
-            
-
-
         }
-
 
         [Fact]
         public void CanAddPngTestPattern1()
         {
             const string subfolderName = "TestPattern1";
             byte[] pdfBytes;
-            
+
             using (var pdfBuilder = new PdfDocumentBuilder())
             {
                 var courierFont = pdfBuilder.AddStandard14Font(Standard14Font.Courier);
@@ -115,7 +106,6 @@
                 AddPageWithImage(pdfBuilder, subfolderName, "tp1-003-8bitRGB-Interlaced-withExif~ColorProfile.png", 150, courierFont);
                 AddPageWithImage(pdfBuilder, subfolderName, "tp1-004-8bitRGBA-Interlaced-withExif~ColorProfile.png", 200, courierFont);
 
-
                 AddPageWithImage(pdfBuilder, subfolderName, "tp1-101-16bitRGB-withExif~Thumbnail~ColorProfile.png", 150, courierFont);
                 AddPageWithImage(pdfBuilder, subfolderName, "tp1-102-16bitRGBA-withExif~Thumbnail~ColorProfile.png", 200, courierFont);
 
@@ -124,7 +114,6 @@
                 AddPageWithImage(pdfBuilder, subfolderName, "tp1-301-16bitFloatRGB-withExif~Thumbnail~ColorProfile.png", 150, courierFont);
 
                 AddPageWithImage(pdfBuilder, subfolderName, "tp1-401-32bitFloatRGB-withExif~Thumbnail~ColorProfile.png", 150, courierFont);
-
 
                 pdfBytes = pdfBuilder.Build();
             }
@@ -227,10 +216,6 @@
                     Assert.Equal(8, image1.BitsPerComponent);
                 }
             }
-
-
-
-
         }
 
         private static void AddPageWithImage(PdfDocumentBuilder pdfBuilder, string subfolderName, string imageFileName, double imageHeight, PdfDocumentBuilder.AddedFont font)
@@ -245,9 +230,9 @@
 
             var page = pdfBuilder.AddPage(595d, 842d); // A4
             var dataPNG = LoadPng(imageFileName, subfolderName);
-            page.DrawRectangle(borderPlacement, (decimal)imagePlacement.Width, (decimal)imagePlacement.Height, 3, true);
+            page.DrawRectangle(borderPlacement, imagePlacement.Width, imagePlacement.Height, 3, true);
             page.AddPng(dataPNG, imagePlacement);
-            page.AddText(imageFileName, 12m, labelPlacement, font);
+            page.AddText(imageFileName, 12, labelPlacement, font);
         }
 
         private static byte[] LoadPng(string name, string subfolderName = null)

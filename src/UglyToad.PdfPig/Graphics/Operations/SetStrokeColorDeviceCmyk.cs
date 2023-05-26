@@ -19,22 +19,22 @@
         /// <summary>
         /// The cyan level between 0 and 1.
         /// </summary>
-        public decimal C { get; }
+        public double C { get; }
 
         /// <summary>
         /// The magenta level between 0 and 1.
         /// </summary>
-        public decimal M { get; }
+        public double M { get; }
 
         /// <summary>
         /// The yellow level between 0 and 1.
         /// </summary>
-        public decimal Y { get; }
+        public double Y { get; }
 
         /// <summary>
         /// The key level between 0 and 1.
         /// </summary>
-        public decimal K { get; }
+        public double K { get; }
 
         /// <summary>
         /// Create a new <see cref="SetStrokeColorDeviceCmyk"/>.
@@ -43,7 +43,7 @@
         /// <param name="m">The magenta level.</param>
         /// <param name="y">The yellow level.</param>
         /// <param name="k">The key level.</param>
-        public SetStrokeColorDeviceCmyk(decimal c, decimal m, decimal y, decimal k)
+        public SetStrokeColorDeviceCmyk(double c, double m, double y, double k)
         {
             C = c;
             M = m;

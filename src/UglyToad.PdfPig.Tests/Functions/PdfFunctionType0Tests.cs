@@ -16,7 +16,7 @@
 
         private static ArrayToken GetArrayToken(params double[] data)
         {
-            return new ArrayToken(data.Select(v => new NumericToken((decimal)v)).ToArray());
+            return new ArrayToken(data.Select(v => new NumericToken(v)).ToArray());
         }
 
         [Fact]

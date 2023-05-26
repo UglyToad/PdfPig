@@ -21,13 +21,13 @@
         /// The flatness tolerance controls the maximum permitted distance in device pixels
         /// between the mathematically correct path and an approximation constructed from straight line segments.
         /// </summary>
-        public decimal Tolerance { get; }
+        public double Tolerance { get; }
 
         /// <summary>
         /// Create new <see cref="SetFlatnessTolerance"/>.
         /// </summary>
         /// <param name="tolerance">The flatness tolerance.</param>
-        public SetFlatnessTolerance(decimal tolerance)
+        public SetFlatnessTolerance(double tolerance)
         {
             Tolerance = tolerance;
         }

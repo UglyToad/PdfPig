@@ -7,7 +7,7 @@
         /// <summary>
         /// Compatibility entry.
         /// </summary>
-        public decimal InitialRandomSeed { get; }
+        public double InitialRandomSeed { get; }
 
         /// <summary>
         /// The offset in bytes for the local subroutine index in this font. The value is relative to this private dictionary.
@@ -17,12 +17,12 @@
         /// <summary>
         /// If a glyph's width equals the default width X it can be omitted from the charstring.
         /// </summary>
-        public decimal DefaultWidthX { get; }
+        public double DefaultWidthX { get; }
 
         /// <summary>
         /// If not equal to <see cref="DefaultWidthX"/>, Glyph width is computed by adding the charstring width to the nominal width X value.
         /// </summary>
-        public decimal NominalWidthX { get; }
+        public double NominalWidthX { get; }
 
         /// <inheritdoc />
         /// <summary>
@@ -44,19 +44,19 @@
 
         public class Builder : BaseBuilder
         {
-            public decimal InitialRandomSeed { get; set; }
+            public double InitialRandomSeed { get; set; }
 
             public int? LocalSubroutineOffset { get; set; }
 
             /// <summary>
             /// If a glyph's width equals the default width X it can be omitted from the charstring.
             /// </summary>
-            public decimal DefaultWidthX { get; set; }
+            public double DefaultWidthX { get; set; }
 
             /// <summary>
             /// If not equal to <see cref="DefaultWidthX"/>, Glyph width is computed by adding the charstring width to the nominal width X value.
             /// </summary>
-            public decimal NominalWidthX { get; set; }
+            public double NominalWidthX { get; set; }
 
             public CompactFontFormatPrivateDictionary Build()
             {

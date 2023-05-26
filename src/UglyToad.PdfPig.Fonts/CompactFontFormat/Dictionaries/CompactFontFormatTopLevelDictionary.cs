@@ -20,25 +20,25 @@
 
         public bool IsFixedPitch { get; set; }
 
-        public decimal ItalicAngle { get; set; }
+        public double ItalicAngle { get; set; }
 
-        public decimal UnderlinePosition { get; set; } = -100;
+        public double UnderlinePosition { get; set; } = -100;
 
-        public decimal UnderlineThickness { get; set; } = 50;
+        public double UnderlineThickness { get; set; } = 50;
 
-        public decimal PaintType { get; set; }
+        public double PaintType { get; set; }
 
         public CompactFontFormatCharStringType CharStringType { get; set; } = CompactFontFormatCharStringType.Type2;
 
         public TransformationMatrix FontMatrix { get; set; } = TransformationMatrix.FromValues(0.001, 0, 0, 0.001, 0, 0);
 
-        public decimal StrokeWidth { get; set; }
+        public double StrokeWidth { get; set; }
 
-        public decimal UniqueId { get; set; }
+        public double UniqueId { get; set; }
 
         public PdfRectangle FontBoundingBox { get; set; } = new PdfRectangle(0, 0, 0, 0);
 
-        public decimal[] Xuid { get; set; }
+        public double[] Xuid { get; set; }
 
         public int CharSetOffset { get; set; } = UnsetOffset;
 
@@ -54,7 +54,7 @@
 
         public string BaseFontName { get; set; }
 
-        public decimal[] BaseFontBlend { get; set; }
+        public double[] BaseFontBlend { get; set; }
 
         public bool IsCidFont { get; set; }
 
@@ -91,7 +91,7 @@
 
         public int Count { get; set; } = 8720;
 
-        public decimal UidBase { get; set; }
+        public double UidBase { get; set; }
 
         public int FontDictionaryArray { get; set; }
 
@@ -106,7 +106,7 @@
 
         public string Ordering { get; set; }
 
-        public decimal Supplement { get; set; }
+        public double Supplement { get; set; }
     }
 
     /// <summary>

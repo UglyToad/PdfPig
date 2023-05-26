@@ -25,7 +25,7 @@
         /// <summary>
         /// The values for the color.
         /// </summary>
-        public IReadOnlyList<decimal> Operands { get; }
+        public IReadOnlyList<double> Operands { get; }
 
         /// <summary>
         /// The name of an entry in the Pattern subdictionary of the current resource dictionary.
@@ -36,7 +36,7 @@
         /// Create a new <see cref="SetStrokeColor"/>.
         /// </summary>
         /// <param name="operands">The color operands.</param>
-        public SetStrokeColorAdvanced(IReadOnlyList<decimal> operands)
+        public SetStrokeColorAdvanced(IReadOnlyList<double> operands)
         {
             Operands = operands;
         }
@@ -46,7 +46,7 @@
         /// </summary>
         /// <param name="operands">The color operands.</param>
         /// <param name="patternName">The pattern name.</param>
-        public SetStrokeColorAdvanced(IReadOnlyList<decimal> operands, NameToken patternName)
+        public SetStrokeColorAdvanced(IReadOnlyList<double> operands, NameToken patternName)
         {
             Operands = operands;
             PatternName = patternName;

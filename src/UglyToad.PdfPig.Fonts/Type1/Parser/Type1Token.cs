@@ -42,12 +42,12 @@
 
         public int AsInt()
         {
-            return (int)AsDecimal();
+            return (int)AsDouble();
         }
 
-        public decimal AsDecimal()
+        public double AsDouble()
         {
-            return decimal.Parse(Text, CultureInfo.InvariantCulture);
+            return double.Parse(Text, CultureInfo.InvariantCulture);
         }
 
         public bool AsBool()
@@ -69,11 +69,11 @@
             Real,
             Integer,
             /// <summary>
-            /// An array must begin with either '[' or '{'. 
+            /// An array must begin with either '[' or '{'.
             /// </summary>
             StartArray,
             /// <summary>
-            /// An array must end with either ']' or '}'. 
+            /// An array must end with either ']' or '}'.
             /// </summary>
             EndArray,
             StartProc,

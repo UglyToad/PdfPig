@@ -13,7 +13,7 @@
     /// </summary>
     internal class PdfStreamWriter : IPdfStreamWriter
     {
-        protected const decimal DefaultVersion = 1.2m;
+        protected const double DefaultVersion = 1.2;
         protected Dictionary<IndirectReference, long> offsets = new Dictionary<IndirectReference, long>();
         protected bool DisposeStream { get; set; }
         protected bool Initialized { get; set; }
@@ -66,7 +66,7 @@
             return new IndirectReferenceToken(new IndirectReference(CurrentNumber++, 0));
         }
 
-        public void InitializePdf(decimal version)
+        public void InitializePdf(double version)
         {
             WriteString($"%PDF-{version.ToString("0.0", CultureInfo.InvariantCulture)}", Stream);
 

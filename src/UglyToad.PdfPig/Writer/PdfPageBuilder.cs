@@ -193,15 +193,15 @@
         /// <param name="from">The first point on the line.</param>
         /// <param name="to">The last point on the line.</param>
         /// <param name="lineWidth">The width of the line in user space units.</param>
-        public PdfPageBuilder DrawLine(PdfPoint from, PdfPoint to, decimal lineWidth = 1)
+        public PdfPageBuilder DrawLine(PdfPoint from, PdfPoint to, double lineWidth = 1)
         {
             if (lineWidth != 1)
             {
                 currentStream.Add(new SetLineWidth(lineWidth));
             }
 
-            currentStream.Add(new BeginNewSubpath((decimal)from.X, (decimal)from.Y));
-            currentStream.Add(new AppendStraightLineSegment((decimal)to.X, (decimal)to.Y));
+            currentStream.Add(new BeginNewSubpath(from.X, from.Y));
+            currentStream.Add(new AppendStraightLineSegment(to.X, to.Y));
             currentStream.Add(StrokePath.Value);
 
             if (lineWidth != 1)
@@ -220,14 +220,14 @@
         /// <param name="height">The height of the rectangle.</param>
         /// <param name="lineWidth">The width of the line border of the rectangle.</param>
         /// <param name="fill">Whether to fill with the color set by <see cref="SetTextAndFillColor"/>.</param>
-        public PdfPageBuilder DrawRectangle(PdfPoint position, decimal width, decimal height, decimal lineWidth = 1, bool fill = false)
+        public PdfPageBuilder DrawRectangle(PdfPoint position, double width, double height, double lineWidth = 1, bool fill = false)
         {
             if (lineWidth != 1)
             {
                 currentStream.Add(new SetLineWidth(lineWidth));
             }
 
-            currentStream.Add(new AppendRectangle((decimal)position.X, (decimal)position.Y, width, height));
+            currentStream.Add(new AppendRectangle(position.X, position.Y, width, height));
 
             if (fill)
             {
@@ -263,17 +263,17 @@
         /// <param name="point3">Position of the third corner of the triangle.</param>
         /// <param name="lineWidth">The width of the line border of the triangle.</param>
         /// <param name="fill">Whether to fill with the color set by <see cref="SetTextAndFillColor"/>.</param>
-        public PdfPageBuilder DrawTriangle(PdfPoint point1, PdfPoint point2, PdfPoint point3, decimal lineWidth = 1, bool fill = false)
+        public PdfPageBuilder DrawTriangle(PdfPoint point1, PdfPoint point2, PdfPoint point3, double lineWidth = 1, bool fill = false)
         {
             if (lineWidth != 1)
             {
                 currentStream.Add(new SetLineWidth(lineWidth));
             }
 
-            currentStream.Add(new BeginNewSubpath((decimal)point1.X, (decimal)point1.Y));
-            currentStream.Add(new AppendStraightLineSegment((decimal)point2.X, (decimal)point2.Y));
-            currentStream.Add(new AppendStraightLineSegment((decimal)point3.X, (decimal)point3.Y));
-            currentStream.Add(new AppendStraightLineSegment((decimal)point1.X, (decimal)point1.Y));
+            currentStream.Add(new BeginNewSubpath(point1.X, point1.Y));
+            currentStream.Add(new AppendStraightLineSegment(point2.X, point2.Y));
+            currentStream.Add(new AppendStraightLineSegment(point3.X, point3.Y));
+            currentStream.Add(new AppendStraightLineSegment(point1.X, point1.Y));
 
             if (fill)
             {
@@ -299,7 +299,7 @@
         /// <param name="diameter">The diameter of the circle.</param>
         /// <param name="lineWidth">The width of the line border of the circle.</param>
         /// <param name="fill">Whether to fill with the color set by <see cref="SetTextAndFillColor"/>.</param>
-        public PdfPageBuilder DrawCircle(PdfPoint center, decimal diameter, decimal lineWidth = 1, bool fill = false)
+        public PdfPageBuilder DrawCircle(PdfPoint center, double diameter, double lineWidth = 1, bool fill = false)
         {
             DrawEllipsis(center, diameter, diameter, lineWidth, fill);
 
@@ -314,39 +314,39 @@
         /// <param name="height">The height of the ellipsis.</param>
         /// <param name="lineWidth">The width of the line border of the ellipsis.</param>
         /// <param name="fill">Whether to fill with the color set by <see cref="SetTextAndFillColor"/>.</param>
-        public PdfPageBuilder DrawEllipsis(PdfPoint center, decimal width, decimal height, decimal lineWidth = 1, bool fill = false)
+        public PdfPageBuilder DrawEllipsis(PdfPoint center, double width, double height, double lineWidth = 1, bool fill = false)
         {
             width /= 2;
             height /= 2;
 
             // See here: https://spencermortensen.com/articles/bezier-circle/
-            decimal cc = 0.55228474983079m;
+            const double cc = 0.55228474983079;
 
             if (lineWidth != 1)
             {
                 currentStream.Add(new SetLineWidth(lineWidth));
             }
 
-            currentStream.Add(new BeginNewSubpath((decimal)center.X - width, (decimal)center.Y));
+            currentStream.Add(new BeginNewSubpath(center.X - width, center.Y));
             currentStream.Add(new AppendDualControlPointBezierCurve(
-                (decimal)center.X - width, (decimal)center.Y + height * cc,
-                (decimal)center.X - width * cc, (decimal)center.Y + height,
-                (decimal)center.X, (decimal)center.Y + height
+                center.X - width, center.Y + height * cc,
+                center.X - width * cc, center.Y + height,
+                center.X, center.Y + height
             ));
             currentStream.Add(new AppendDualControlPointBezierCurve(
-                (decimal)center.X + width * cc, (decimal)center.Y + height,
-                (decimal)center.X + width, (decimal)center.Y + height * cc,
-                (decimal)center.X + width, (decimal)center.Y
+                center.X + width * cc, center.Y + height,
+                center.X + width, center.Y + height * cc,
+                center.X + width, center.Y
             ));
             currentStream.Add(new AppendDualControlPointBezierCurve(
-                (decimal)center.X + width, (decimal)center.Y - height * cc,
-                (decimal)center.X + width * cc, (decimal)center.Y - height,
-                (decimal)center.X, (decimal)center.Y - height
+                center.X + width, center.Y - height * cc,
+                center.X + width * cc, center.Y - height,
+                center.X, center.Y - height
             ));
             currentStream.Add(new AppendDualControlPointBezierCurve(
-                (decimal)center.X - width * cc, (decimal)center.Y - height,
-                (decimal)center.X - width, (decimal)center.Y - height * cc,
-                (decimal)center.X - width, (decimal)center.Y
+                center.X - width * cc, center.Y - height,
+                center.X - width, center.Y - height * cc,
+                center.X - width, center.Y
             ));
 
             if (fill)
@@ -381,12 +381,12 @@
         }
 
         /// <summary>
-        /// Sets the stroke color with the exact decimal value between 0 and 1 for any following operations to the RGB value. Use <see cref="ResetColor"/> to reset.
+        /// Sets the stroke color with the exact double value between 0 and 1 for any following operations to the RGB value. Use <see cref="ResetColor"/> to reset.
         /// </summary>
         /// <param name="r">Red - 0 to 1</param>
         /// <param name="g">Green - 0 to 1</param>
         /// <param name="b">Blue - 0 to 1</param>
-        internal PdfPageBuilder SetStrokeColorExact(decimal r, decimal g, decimal b)
+        internal PdfPageBuilder SetStrokeColorExact(double r, double g, double b)
         {
             currentStream.Add(Push.Value);
             currentStream.Add(new SetStrokeColorDeviceRgb(CheckRgbDecimal(r, nameof(r)),
@@ -430,7 +430,7 @@
         /// or <see cref="PdfDocumentBuilder.AddStandard14Font"/> methods.
         /// </param> 
         /// <returns>The letters from the input text with their corresponding size and position.</returns>
-        public IReadOnlyList<Letter> MeasureText(string text, decimal fontSize, PdfPoint position, PdfDocumentBuilder.AddedFont font)
+        public IReadOnlyList<Letter> MeasureText(string text, double fontSize, PdfPoint position, PdfDocumentBuilder.AddedFont font)
         {
             if (font == null)
             {
@@ -475,7 +475,7 @@
         /// or <see cref="PdfDocumentBuilder.AddStandard14Font"/> methods.
         /// </param> 
         /// <returns>The letters from the input text with their corresponding size and position.</returns>
-        public IReadOnlyList<Letter> AddText(string text, decimal fontSize, PdfPoint position, PdfDocumentBuilder.AddedFont font)
+        public IReadOnlyList<Letter> AddText(string text, double fontSize, PdfPoint position, PdfDocumentBuilder.AddedFont font)
         {
             if (font == null)
             {
@@ -510,7 +510,7 @@
 
             currentStream.Add(BeginText.Value);
             currentStream.Add(new SetFontAndSize(fontName, fontSize));
-            currentStream.Add(new MoveToNextLineWithOffset((decimal)position.X, (decimal)position.Y));
+            currentStream.Add(new MoveToNextLineWithOffset(position.X, position.Y));
             var bytesPerShow = new List<byte>();
             foreach (var letter in text)
             {
@@ -620,9 +620,9 @@
             // This needs to be the placement rectangle.
             currentStream.Add(new ModifyCurrentTransformationMatrix(new []
             {
-                (decimal)placementRectangle.Width, 0,
-                0, (decimal)placementRectangle.Height,
-                (decimal)placementRectangle.BottomLeft.X, (decimal)placementRectangle.BottomLeft.Y
+                placementRectangle.Width, 0,
+                0, placementRectangle.Height,
+                placementRectangle.BottomLeft.X, placementRectangle.BottomLeft.Y
             }));
             currentStream.Add(new InvokeNamedXObject(key));
             currentStream.Add(Pop.Value);
@@ -654,9 +654,9 @@
             // This needs to be the placement rectangle.
             currentStream.Add(new ModifyCurrentTransformationMatrix(new[]
             {
-                (decimal)placementRectangle.Width, 0,
-                0, (decimal)placementRectangle.Height,
-                (decimal)placementRectangle.BottomLeft.X, (decimal)placementRectangle.BottomLeft.Y
+                placementRectangle.Width, 0,
+                0, placementRectangle.Height,
+                placementRectangle.BottomLeft.X, placementRectangle.BottomLeft.Y
             }));
             currentStream.Add(new InvokeNamedXObject(key));
             currentStream.Add(Pop.Value);
@@ -774,9 +774,9 @@
             // This needs to be the placement rectangle.
             currentStream.Add(new ModifyCurrentTransformationMatrix(new[]
             {
-                (decimal)placementRectangle.Width, 0,
-                0, (decimal)placementRectangle.Height,
-                (decimal)placementRectangle.BottomLeft.X, (decimal)placementRectangle.BottomLeft.Y
+                placementRectangle.Width, 0,
+                0, placementRectangle.Height,
+                placementRectangle.BottomLeft.X, placementRectangle.BottomLeft.Y
             }));
             currentStream.Add(new InvokeNamedXObject(key));
             currentStream.Add(Pop.Value);
@@ -973,14 +973,14 @@
             return this;
         }
 
-        private List<Letter> DrawLetters(NameToken name, string text, IWritingFont font, TransformationMatrix fontMatrix, decimal fontSize, TransformationMatrix textMatrix)
+        private List<Letter> DrawLetters(NameToken name, string text, IWritingFont font, TransformationMatrix fontMatrix, double fontSize, TransformationMatrix textMatrix)
         {
             var horizontalScaling = 1;
             var rise = 0;
             var letters = new List<Letter>();
 
             var renderingMatrix =
-                TransformationMatrix.FromValues((double)fontSize * horizontalScaling, 0, 0, (double)fontSize, 0, rise);
+                TransformationMatrix.FromValues(fontSize * horizontalScaling, 0, 0, fontSize, 0, rise);
 
             var width = 0.0;
 
@@ -1006,17 +1006,17 @@
                 var documentSpace = textMatrix.Transform(renderingMatrix.Transform(fontMatrix.Transform(rect)));
 
                 var letter = new Letter(
-                    c.ToString(), 
-                    documentSpace, 
-                    advanceRect.BottomLeft, 
-                    advanceRect.BottomRight, 
-                    width, 
-                    (double)fontSize, 
+                    c.ToString(),
+                    documentSpace,
+                    advanceRect.BottomLeft,
+                    advanceRect.BottomRight,
+                    width,
+                    fontSize,
                     FontDetails.GetDefault(name),
                     TextRenderingMode.Fill,
                     GrayColor.Black,
                     GrayColor.Black,
-                    (double)fontSize,
+                    fontSize,
                     textSequence);
 
                 letters.Add(letter);
@@ -1034,24 +1034,24 @@
             return letters;
         }
 
-        private static decimal RgbToDecimal(byte value)
+        private static double RgbToDecimal(byte value)
         {
-            var res = Math.Max(0, value / (decimal)byte.MaxValue);
+            var res = Math.Max(0, value / (double)byte.MaxValue);
             res = Math.Round(Math.Min(1, res), 4);
 
             return res;
         }
 
-        private static decimal CheckRgbDecimal(decimal value, string argument)
+        private static double CheckRgbDecimal(double value, string argument)
         {
             if (value < 0)
             {
-                throw new ArgumentOutOfRangeException(argument, $"Provided decimal for RGB color was less than zero: {value}.");
+                throw new ArgumentOutOfRangeException(argument, $"Provided double for RGB color was less than zero: {value}.");
             }
 
             if (value > 1)
             {
-                throw new ArgumentOutOfRangeException(argument, $"Provided decimal for RGB color was greater than one: {value}.");
+                throw new ArgumentOutOfRangeException(argument, $"Provided double for RGB color was greater than one: {value}.");
             }
 
             return value;

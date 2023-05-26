@@ -15,7 +15,6 @@ namespace UglyToad.PdfPig.Writer.Xmp
         private const string XmpMetaPrefix = "x";
         private const string XmpMetaNamespace = "adobe:ns:meta/";
 
-
         private const string DublinCorePrefix = "dc";
         private const string DublinCoreNamespace = "http://purl.org/dc/elements/1.1/";
 
@@ -36,7 +35,7 @@ namespace UglyToad.PdfPig.Writer.Xmp
         private const string PdfAIdentificationExtensionPrefix = "pdfaid";
         private const string PdfAIdentificationExtensionNamespace = "http://www.aiim.org/pdfa/ns/id/";
         
-        public static StreamToken GenerateXmpStream(PdfDocumentBuilder.DocumentInformationBuilder builder, decimal version,
+        public static StreamToken GenerateXmpStream(PdfDocumentBuilder.DocumentInformationBuilder builder, double version,
             PdfAStandard standard)
         {
             XNamespace xmpMeta = XmpMetaNamespace;

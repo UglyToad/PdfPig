@@ -21,11 +21,11 @@
         /// The line dash pattern.
         /// </summary>
         public LineDashPattern Pattern { get; }
-        
+
         /// <summary>
         /// Create a new <see cref="SetLineDashPattern"/>.
         /// </summary>
-        public SetLineDashPattern(decimal[] array, int phase)
+        public SetLineDashPattern(double[] array, int phase)
         {
             Pattern = new LineDashPattern(phase, array);
         }

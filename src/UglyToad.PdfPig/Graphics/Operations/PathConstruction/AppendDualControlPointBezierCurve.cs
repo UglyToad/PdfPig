@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.PathConstruction
 {
     using System.IO;
-    using PdfPig.Core;
 
     /// <inheritdoc />
     /// <summary>
@@ -21,32 +20,32 @@
         /// <summary>
         /// First control point x.
         /// </summary>
-        public decimal X1 { get; }
+        public double X1 { get; }
 
         /// <summary>
         /// First control point y.
         /// </summary>
-        public decimal Y1 { get; }
+        public double Y1 { get; }
 
         /// <summary>
         /// Second control point x.
         /// </summary>
-        public decimal X2 { get; }
+        public double X2 { get; }
 
         /// <summary>
         /// Second control point y.
         /// </summary>
-        public decimal Y2 { get; }
+        public double Y2 { get; }
 
         /// <summary>
         /// End point x.
         /// </summary>
-        public decimal X3 { get; }
+        public double X3 { get; }
 
         /// <summary>
         /// End point y.
         /// </summary>
-        public decimal Y3 { get; }
+        public double Y3 { get; }
 
         /// <summary>
         /// Create a new <see cref="AppendDualControlPointBezierCurve"/>.
@@ -57,7 +56,7 @@
         /// <param name="y2">Control point 2 y coordinate.</param>
         /// <param name="x3">End point x coordinate.</param>
         /// <param name="y3">End point y coordinate.</param>
-        public AppendDualControlPointBezierCurve(decimal x1, decimal y1, decimal x2, decimal y2, decimal x3, decimal y3)
+        public AppendDualControlPointBezierCurve(double x1, double y1, double x2, double y2, double x3, double y3)
         {
             X1 = x1;
             Y1 = y1;
@@ -65,13 +64,12 @@
             Y2 = y2;
             X3 = x3;
             Y3 = y3;
-
         }
 
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.BezierCurveTo((double)X1, (double)Y1, (double)X2, (double)Y2, (double)X3, (double)Y3);
+            operationContext.BezierCurveTo(X1, Y1, X2, Y2, X3, Y3);
         }
 
         /// <inheritdoc />

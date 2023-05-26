@@ -289,8 +289,8 @@
 
             // http://kba.cloud/hocr-spec/1.2/#propdef-baseline
             // below will be 0 as long as the word's bounding box bottom is the BaseLine and not 'Bottom'
-            double baseLine = (double)line.Words[0].Letters[0].StartBaseLine.Y;
-            baseLine = (double)line.BoundingBox.Bottom - baseLine;
+            double baseLine = line.Words[0].Letters[0].StartBaseLine.Y;
+            baseLine = line.BoundingBox.Bottom - baseLine;
 
             string hocr = GetIndent(level) + "<span class='ocr_line' id='line_" + pageCount + "_" + lineCount + "' title='" +
                 GetCode(line.BoundingBox, pageHeight) + "; baseline " + angle + " 0'>"; //"; x_size 42; x_descenders 5; x_ascenders 12' >";

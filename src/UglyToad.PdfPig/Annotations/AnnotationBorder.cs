@@ -16,28 +16,28 @@
         /// <summary>
         /// The horizontal corner radius in user space units.
         /// </summary>
-        public decimal HorizontalCornerRadius { get; }
+        public double HorizontalCornerRadius { get; }
 
         /// <summary>
         /// The vertical corner radius in user space units.
         /// </summary>
-        public decimal VerticalCornerRadius { get; }
+        public double VerticalCornerRadius { get; }
 
         /// <summary>
         /// The width of the border in user space units.
         /// </summary>
-        public decimal BorderWidth { get; }
+        public double BorderWidth { get; }
 
         /// <summary>
         /// The dash pattern for the border lines if provided. Optional.
         /// </summary>
         [CanBeNull]
-        public IReadOnlyList<decimal> LineDashPattern { get; }
+        public IReadOnlyList<double> LineDashPattern { get; }
 
         /// <summary>
         /// Create a new <see cref="AnnotationBorder"/>.
         /// </summary>
-        public AnnotationBorder(decimal horizontalCornerRadius, decimal verticalCornerRadius, decimal borderWidth, IReadOnlyList<decimal> lineDashPattern)
+        public AnnotationBorder(double horizontalCornerRadius, double verticalCornerRadius, double borderWidth, IReadOnlyList<double> lineDashPattern)
         {
             HorizontalCornerRadius = horizontalCornerRadius;
             VerticalCornerRadius = verticalCornerRadius;

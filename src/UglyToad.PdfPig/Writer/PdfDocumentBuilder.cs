@@ -77,14 +77,14 @@ namespace UglyToad.PdfPig.Writer
         public PdfDocumentBuilder()
         {
             context = new PdfStreamWriter(new MemoryStream(), true);
-            context.InitializePdf(1.7m);
+            context.InitializePdf(1.7);
         }
 
         /// <summary>
         /// Creates a document builder keeping resources in memory.
         /// </summary>
         /// <param name="version">Pdf version to use in header.</param>
-        public PdfDocumentBuilder(decimal version)
+        public PdfDocumentBuilder(double version)
         {
             context = new PdfStreamWriter(new MemoryStream(), true);
             context.InitializePdf(version);
@@ -98,7 +98,7 @@ namespace UglyToad.PdfPig.Writer
         /// <param name="type">Type of pdf stream writer to use</param>
         /// <param name="version">Pdf version to use in header.</param>
         /// <param name="tokenWriter">Token writer to use</param>
-        public PdfDocumentBuilder(Stream stream, bool disposeStream = false, PdfWriterType type = PdfWriterType.Default, decimal version = 1.7m, ITokenWriter tokenWriter = null)
+        public PdfDocumentBuilder(Stream stream, bool disposeStream = false, PdfWriterType type = PdfWriterType.Default, double version = 1.7, ITokenWriter tokenWriter = null)
         {
             switch (type)
             {
@@ -762,7 +762,8 @@ namespace UglyToad.PdfPig.Writer
                 {
                     var currentTreeDepth = (int)Math.Ceiling(Math.Log(pagesNodes.Count, desiredLeafSize));
                     var perBranch = (int)Math.Ceiling(Math.Pow(desiredLeafSize, currentTreeDepth - 1));
-                    var branches = (int)Math.Ceiling(decimal.Divide(pagesNodes.Count, (decimal)perBranch));
+
+                    var branches = (int)Math.Ceiling(pagesNodes.Count / (double)perBranch);
                     for (var i = 0; i < branches; i++)
                     {
                         var part = pagesNodes.Skip(i * perBranch).Take(perBranch).ToList();
@@ -827,10 +828,10 @@ namespace UglyToad.PdfPig.Writer
         {
             return new ArrayToken(new[]
             {
-                new NumericToken((decimal)rectangle.BottomLeft.X),
-                new NumericToken((decimal)rectangle.BottomLeft.Y),
-                new NumericToken((decimal)rectangle.TopRight.X),
-                new NumericToken((decimal)rectangle.TopRight.Y)
+                new NumericToken(rectangle.BottomLeft.X),
+                new NumericToken(rectangle.BottomLeft.Y),
+                new NumericToken(rectangle.TopRight.X),
+                new NumericToken(rectangle.TopRight.Y)
             });
         }
 

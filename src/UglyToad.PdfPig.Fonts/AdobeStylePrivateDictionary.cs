@@ -12,12 +12,12 @@
         /// <summary>
         /// Default value of <see cref="BlueScale"/>.
         /// </summary>
-        public static readonly decimal DefaultBlueScale = 0.039625m;
+        public static readonly double DefaultBlueScale = 0.039625;
 
         /// <summary>
         /// Default value of <see cref="ExpansionFactor"/>.
         /// </summary>
-        public static readonly decimal DefaultExpansionFactor = 0.06m;
+        public static readonly double DefaultExpansionFactor = 0.06;
 
         /// <summary>
         /// Default value of <see cref="BlueFuzz"/>.
@@ -33,7 +33,7 @@
         /// Default value of <see cref="LanguageGroup"/>.
         /// </summary>
         public const int DefaultLanguageGroup = 0;
-        
+
         /// <summary>
         /// Required. An array containing an even number of integers.
         /// The first pair is the baseline overshoot position and the baseline.
@@ -76,7 +76,7 @@
         /// points on a 300-dpi device, you should set BlueScale to
         /// (11 − 0.49) ÷ 240 or 0.04379
         /// </example>
-        public decimal BlueScale { get; }
+        public double BlueScale { get; }
 
         /// <summary>
         /// Optional: The character space distance beyond the flat position of alignment zones
@@ -97,22 +97,22 @@
         /// <summary>
         /// Optional: The dominant width of horizontal stems vertically in character space units.
         /// </summary>
-        public decimal? StandardHorizontalWidth { get; }
+        public double? StandardHorizontalWidth { get; }
 
         /// <summary>
         /// Optional: The dominant width of vertical stems horizontally in character space units.
         /// </summary>
-        public decimal? StandardVerticalWidth { get; }
+        public double? StandardVerticalWidth { get; }
 
         /// <summary>
         /// Optional: Up to 12 numbers with the most common widths for horizontal stems vertically in character space units.
         /// </summary>
-        public IReadOnlyList<decimal> StemSnapHorizontalWidths { get; }
+        public IReadOnlyList<double> StemSnapHorizontalWidths { get; }
 
         /// <summary>
         /// Optional: Up to 12 numbers with the most common widths for vertical stems horizontally in character space units.
         /// </summary>
-        public IReadOnlyList<decimal> StemSnapVerticalWidths { get; }
+        public IReadOnlyList<double> StemSnapVerticalWidths { get; }
 
         /// <summary>
         /// Optional: At small sizes at low resolutions this controls whether bold characters should appear thicker using
@@ -131,7 +131,7 @@
         /// Optional: The limit for changing the size of a character bounding box for
         /// <see cref="LanguageGroup"/> 1 counters during font processing.
         /// </summary>
-        public decimal ExpansionFactor { get; }
+        public double ExpansionFactor { get; }
         
         /// <summary>
         /// Creates a new <see cref="AdobeStylePrivateDictionary"/>.
@@ -153,8 +153,8 @@
             BlueShift = builder.BlueShift ?? DefaultBlueShift;
             StandardHorizontalWidth = builder.StandardHorizontalWidth;
             StandardVerticalWidth = builder.StandardVerticalWidth;
-            StemSnapHorizontalWidths = builder.StemSnapHorizontalWidths ?? EmptyArray<decimal>.Instance;
-            StemSnapVerticalWidths = builder.StemSnapVerticalWidths ?? EmptyArray<decimal>.Instance;
+            StemSnapHorizontalWidths = builder.StemSnapHorizontalWidths ?? EmptyArray<double>.Instance;
+            StemSnapVerticalWidths = builder.StemSnapVerticalWidths ?? EmptyArray<double>.Instance;
             ForceBold = builder.ForceBold ?? false;
             LanguageGroup = builder.LanguageGroup ?? DefaultLanguageGroup;
             ExpansionFactor = builder.ExpansionFactor ?? DefaultExpansionFactor;
@@ -188,7 +188,7 @@
             /// <summary>
             /// <see cref="AdobeStylePrivateDictionary.BlueScale"/>.
             /// </summary>
-            public decimal? BlueScale { get; set; }
+            public double? BlueScale { get; set; }
 
             /// <summary>
             /// <see cref="AdobeStylePrivateDictionary.BlueShift"/>.
@@ -203,22 +203,22 @@
             /// <summary>
             /// <see cref="AdobeStylePrivateDictionary.StandardVerticalWidth"/>.
             /// </summary>
-            public decimal? StandardHorizontalWidth { get; set; }
+            public double? StandardHorizontalWidth { get; set; }
 
             /// <summary>
             /// <see cref="AdobeStylePrivateDictionary.StandardVerticalWidth"/>.
             /// </summary>
-            public decimal? StandardVerticalWidth { get; set; }
+            public double? StandardVerticalWidth { get; set; }
 
             /// <summary>
             /// <see cref="AdobeStylePrivateDictionary.StemSnapHorizontalWidths"/>.
             /// </summary>
-            public IReadOnlyList<decimal> StemSnapHorizontalWidths { get; set; }
+            public IReadOnlyList<double> StemSnapHorizontalWidths { get; set; }
 
             /// <summary>
             /// <see cref="AdobeStylePrivateDictionary.StemSnapVerticalWidths"/>.
             /// </summary>
-            public IReadOnlyList<decimal> StemSnapVerticalWidths { get; set; }
+            public IReadOnlyList<double> StemSnapVerticalWidths { get; set; }
 
             /// <summary>
             /// <see cref="AdobeStylePrivateDictionary.ForceBold"/>.
@@ -229,11 +229,11 @@
             /// <see cref="AdobeStylePrivateDictionary.LanguageGroup"/>.
             /// </summary>
             public int? LanguageGroup { get; set; }
-            
+
             /// <summary>
             /// <see cref="AdobeStylePrivateDictionary.ExpansionFactor"/>.
             /// </summary>
-            public decimal? ExpansionFactor { get; set; }
+            public double? ExpansionFactor { get; set; }
         }
     }
 }

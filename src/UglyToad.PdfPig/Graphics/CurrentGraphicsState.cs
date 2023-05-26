@@ -26,7 +26,7 @@ namespace UglyToad.PdfPig.Graphics
         /// <summary>
         /// Thickness in user space units of path to be stroked.
         /// </summary>
-        public decimal LineWidth { get; set; } = 1;
+        public double LineWidth { get; set; } = 1;
 
         /// <summary>
         /// Specifies the shape of line ends for open stroked paths.
@@ -41,7 +41,7 @@ namespace UglyToad.PdfPig.Graphics
         /// <summary>
         /// Maximum length of mitered line joins for paths before becoming a bevel.
         /// </summary>
-        public decimal MiterLimit { get; set; } = 10;
+        public double MiterLimit { get; set; } = 10;
 
         /// <summary>
         /// The pattern to be used for stroked lines.
@@ -61,12 +61,12 @@ namespace UglyToad.PdfPig.Graphics
         /// <summary>
         /// Opacity value to be used for transparent imaging.
         /// </summary>
-        public decimal AlphaConstantStroking { get; set; } = 1;
+        public double AlphaConstantStroking { get; set; } = 1;
 
         /// <summary>
         /// Opacity value to be used for transparent imaging.
         /// </summary>
-        public decimal AlphaConstantNonStroking { get; set; } = 1;
+        public double AlphaConstantNonStroking { get; set; } = 1;
 
         /// <summary>
         /// Should soft mask and alpha constant values be interpreted as shape (<see langword="true"/>) or opacity (<see langword="false"/>) values?
@@ -110,17 +110,17 @@ namespace UglyToad.PdfPig.Graphics
         /// In DeviceCMYK color space a value of 0 for a component will erase a component (0)
         /// or leave it unchanged (1) for overprinting.
         /// </summary>
-        public decimal OverprintMode { get; set; }
+        public double OverprintMode { get; set; }
 
         /// <summary>
         /// The precision for rendering curves, smaller numbers give smoother curves.
         /// </summary>
-        public decimal Flatness { get; set; } = 1;
+        public double Flatness { get; set; } = 1;
 
         /// <summary>
         /// The precision for rendering color gradients on the output device.
         /// </summary>
-        public decimal Smoothness { get; set; } = 0;
+        public double Smoothness { get; set; } = 0;
         #endregion
 
         /// <inheritdoc />

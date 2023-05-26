@@ -22,19 +22,19 @@
         /// <summary>
         /// The horizontal displacement in the glyph coordinate system.
         /// </summary>
-        public decimal HorizontalDisplacement { get; }
+        public double HorizontalDisplacement { get; }
 
         /// <summary>
         /// The vertical displacement in the glyph coordinate system. Must be 0.
         /// </summary>
-        public decimal VerticalDisplacement { get; }
+        public double VerticalDisplacement { get; }
 
         /// <summary>
         /// Create a new <see cref="Type3SetGlyphWidth"/>.
         /// </summary>
         /// <param name="horizontalDisplacement">The horizontal displacement in the glyph coordinate system.</param>
         /// <param name="verticalDisplacement">The vertical displacement in the glyph coordinate system.</param>
-        public Type3SetGlyphWidth(decimal horizontalDisplacement, decimal verticalDisplacement)
+        public Type3SetGlyphWidth(double horizontalDisplacement, double verticalDisplacement)
         {
             HorizontalDisplacement = horizontalDisplacement;
             VerticalDisplacement = verticalDisplacement;

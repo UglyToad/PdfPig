@@ -21,7 +21,7 @@
         /// <summary>
         /// Get the rotation expressed in radians (anti-clockwise).
         /// </summary>
-        public decimal Radians
+        public double Radians
         {
             get
             {
@@ -30,11 +30,11 @@
                     case 0:
                         return 0;
                     case 90:
-                        return -(decimal)(0.5 * Math.PI);
+                        return -0.5 * Math.PI;
                     case 180:
-                        return -(decimal) Math.PI;
+                        return -Math.PI;
                     case 270:
-                        return -(decimal) (1.5 * Math.PI);
+                        return -1.5 * Math.PI;
                     default:
                         throw new InvalidOperationException($"Invalid value for rotation: {Value}.");
                 }

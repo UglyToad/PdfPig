@@ -35,7 +35,7 @@
         public bool IsImageMask { get; }
 
         /// <inheritdoc />
-        public IReadOnlyList<decimal> Decode { get; }
+        public IReadOnlyList<double> Decode { get; }
 
         /// <inheritdoc />
         public bool IsInlineImage { get; } = true;
@@ -62,7 +62,7 @@
         internal InlineImage(PdfRectangle bounds, int widthInSamples, int heightInSamples, int bitsPerComponent, bool isImageMask,
             RenderingIntent renderingIntent,
             bool interpolate,
-            IReadOnlyList<decimal> decode,
+            IReadOnlyList<double> decode,
             IReadOnlyList<byte> bytes,
             IReadOnlyList<IFilter> filters,
             DictionaryToken streamDictionary,

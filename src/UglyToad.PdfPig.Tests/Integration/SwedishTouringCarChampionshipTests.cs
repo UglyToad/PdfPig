@@ -25,7 +25,7 @@
         {
             using (var document = PdfDocument.Open(GetFilename()))
             {
-                Assert.Equal(1.4m, document.Version);
+                Assert.Equal(1.4, document.Version);
             }
         }
 

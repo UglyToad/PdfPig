@@ -37,7 +37,7 @@
         /// <summary>
         /// The value of Italic Angle from the top dictionary or 0.
         /// </summary>
-        public decimal ItalicAngle => TopDictionary?.ItalicAngle ?? 0;
+        public double ItalicAngle => TopDictionary?.ItalicAngle ?? 0;
 
         internal CompactFontFormatFont(CompactFontFormatTopLevelDictionary topDictionary, CompactFontFormatPrivateDictionary privateDictionary,
             ICompactFontFormatCharset charset,
@@ -68,7 +68,7 @@
                 return null;
             }
 
-            var glyph = type2CharStrings.Generate(characterName, (double)defaultWidthX, (double)nominalWidthX);
+            var glyph = type2CharStrings.Generate(characterName, defaultWidthX, nominalWidthX);
             var rectangle = PdfSubpath.GetBoundingRectangle(glyph.Path);
             if (rectangle.HasValue)
             {
@@ -84,7 +84,6 @@
         /// </summary>
         /// <param name="characterName"></param>
         /// <param name="path"></param>
-        /// <returns></returns>
         public bool TryGetPath(string characterName, out IReadOnlyList<PdfSubpath> path)
         {
             var defaultWidthX = GetDefaultWidthX(characterName);
@@ -101,7 +100,7 @@
                 return false;
             }
 
-            path = type2CharStrings.Generate(characterName, (double)defaultWidthX, (double)nominalWidthX).Path;
+            path = type2CharStrings.Generate(characterName, defaultWidthX, nominalWidthX).Path;
             return true;
         }
 
@@ -125,13 +124,13 @@
                 return null;
             }
 
-            return type2CharStrings.Generate(characterName, (double)defaultWidthX, (double)nominalWidthX).Path;
+            return type2CharStrings.Generate(characterName, defaultWidthX, nominalWidthX).Path;
         }
 
         /// <summary>
         /// Get the default width of x for the character.
         /// </summary>
-        protected virtual decimal GetDefaultWidthX(string characterName)
+        protected virtual double GetDefaultWidthX(string characterName)
         {
             return PrivateDictionary.DefaultWidthX;
         }
@@ -139,7 +138,7 @@
         /// <summary>
         /// Get the nominal width of x for the character.
         /// </summary>
-        protected virtual decimal GetNominalWidthX(string characterName)
+        protected virtual double GetNominalWidthX(string characterName)
         {
             return PrivateDictionary.NominalWidthX;
         }
@@ -163,7 +162,7 @@
             FdSelect = fdSelect;
         }
 
-        protected override decimal GetDefaultWidthX(string characterName)
+        protected override double GetDefaultWidthX(string characterName)
         {
             if (!TryGetPrivateDictionaryForCharacter(characterName, out var dictionary))
             {
@@ -173,7 +172,7 @@
             return dictionary.DefaultWidthX;
         }
 
-        protected override decimal GetNominalWidthX(string characterName)
+        protected override double GetNominalWidthX(string characterName)
         {
             if (!TryGetPrivateDictionaryForCharacter(characterName, out var dictionary))
             {

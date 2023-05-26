@@ -352,14 +352,6 @@
         /// </summary>
         /// <param name="values">Either all 9 values of the matrix, 6 values in the default PDF order or the 4 values of the top left square.</param>
         /// <returns></returns>
-        public static TransformationMatrix FromArray(decimal[] values)
-            => FromArray(values.Select(x => (double) x).ToArray());
-
-        /// <summary>
-        /// Create a new <see cref="TransformationMatrix"/> from the values.
-        /// </summary>
-        /// <param name="values">Either all 9 values of the matrix, 6 values in the default PDF order or the 4 values of the top left square.</param>
-        /// <returns></returns>
         public static TransformationMatrix FromArray(double[] values)
         {
             if (values.Length == 9)

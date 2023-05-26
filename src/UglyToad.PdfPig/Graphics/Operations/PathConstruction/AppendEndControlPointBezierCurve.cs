@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.PathConstruction
 {
     using System.IO;
-    using PdfPig.Core;
 
     /// <inheritdoc />
     /// <summary>
@@ -21,23 +20,23 @@
         /// <summary>
         /// The x coordinate of the first control point.
         /// </summary>
-        public decimal X1 { get; }
+        public double X1 { get; }
 
         /// <summary>
         /// The y coordinate of the first control point.
         /// </summary>
-        public decimal Y1 { get; }
+        public double Y1 { get; }
 
         /// <summary>
         /// The x coordinate of the end point.
         /// </summary>
-        public decimal X3 { get; }
+        public double X3 { get; }
 
         /// <summary>
         /// The y coordinate of the end point.
         /// </summary>
-        public decimal Y3 { get; }
-        
+        public double Y3 { get; }
+
         /// <summary>
         /// Create a new <see cref="AppendEndControlPointBezierCurve"/>.
         /// </summary>
@@ -45,18 +44,18 @@
         /// <param name="y1">Control point 1 y coordinate.</param>
         /// <param name="x3">Control point 2/End x coordinate.</param>
         /// <param name="y3">Control point 2/End y coordinate.</param>
-        public AppendEndControlPointBezierCurve(decimal x1, decimal y1, decimal x3, decimal y3)
+        public AppendEndControlPointBezierCurve(double x1, double y1, double x3, double y3)
         {
             X1 = x1;
             Y1 = y1;
             X3 = x3;
             Y3 = y3;
         }
-        
+
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.BezierCurveTo((double)X1, (double)Y1, (double)X3, (double)Y3, (double)X3, (double)Y3);
+            operationContext.BezierCurveTo(X1, Y1, X3, Y3, X3, Y3);
         }
 
         /// <inheritdoc />

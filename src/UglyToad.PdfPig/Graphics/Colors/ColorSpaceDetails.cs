@@ -1249,7 +1249,7 @@
             // initialize all components of the corresponding current colour to 0.0 (unless the range of valid
             // values for a given component does not include 0.0, in which case the nearest valid value shall
             // be substituted.)
-            double v = PdfFunction.ClipToRange(0.0, (double)Range[0], (double)Range[1]);
+            double v = PdfFunction.ClipToRange(0.0, Range[0], Range[1]);
             double[] init = Enumerable.Repeat(v, NumberOfColorComponents).ToArray();
             return GetColor(init);
         }

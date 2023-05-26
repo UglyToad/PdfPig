@@ -60,7 +60,7 @@
         /// The value from the image data is then interpolated into the values relevant to the <see cref="ColorSpace"/>
         /// using the corresponding values of the decode array.
         /// </summary>
-        IReadOnlyList<decimal> Decode { get; }
+        IReadOnlyList<double> Decode { get; }
 
         /// <summary>
         /// Specifies whether interpolation is to be performed. Interpolation smooths images where a single component in the image

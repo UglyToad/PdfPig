@@ -13,7 +13,7 @@ namespace UglyToad.PdfPig.Writer
             PdfAStandard archiveStandard)
         {
             catalog[NameToken.OutputIntents] = OutputIntentsFactory.GetOutputIntentsArray(writerFunc);
-            var xmpStream = XmpWriter.GenerateXmpStream(documentInformationBuilder, 1.7m, archiveStandard);
+            var xmpStream = XmpWriter.GenerateXmpStream(documentInformationBuilder, 1.7, archiveStandard);
             var xmpObj = writerFunc(xmpStream);
             catalog[NameToken.Metadata] = xmpObj;
         }

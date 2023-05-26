@@ -11,12 +11,12 @@
 
         public TrueTypeHeaderTable DirectoryTable { get; }
 
-        public bool IsCompressedFontFormat => Version == 0.5m;
+        public bool IsCompressedFontFormat => Version == 0.5;
 
         /// <summary>
         /// The table version number. CFF fonts must use version 0.5 and only set number of glyphs. TrueType must use version 1.
         /// </summary>
-        public decimal Version { get; }
+        public double Version { get; }
 
         /// <summary>
         /// The number of glyphs in the font.
@@ -26,7 +26,7 @@
         public BasicMaximumProfileTable(TrueTypeHeaderTable directoryTable, float version, int numberOfGlyphs)
         {
             DirectoryTable = directoryTable;
-            Version = (decimal)version;
+            Version = (double)version;
             NumberOfGlyphs = numberOfGlyphs;
         }
 
@@ -45,7 +45,7 @@
             var maxContours = data.ReadUnsignedShort();
             var maxCompositePoints = data.ReadUnsignedShort();
             var maxCompositeContours = data.ReadUnsignedShort();
-            
+
             var maxZones = data.ReadUnsignedShort();
             var maxTwilightPoints = data.ReadUnsignedShort();
             var maxStorage = data.ReadUnsignedShort();

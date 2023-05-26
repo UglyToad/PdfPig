@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tokens
 {
+    using System;
     using System.Globalization;
 
     /// <inheritdoc />
@@ -8,7 +9,7 @@
     /// Real objects  approximate mathematical real numbers, but with limited range and precision.
     /// This token represents both types and they are used interchangeably in the specification.
     /// </summary>
-    public class NumericToken : IDataToken<decimal>
+    public class NumericToken : IDataToken<double>
     {
         /// <summary>
         /// Single instance of numeric token for -1.
@@ -135,12 +136,12 @@
         public static readonly NumericToken OneThousand = new NumericToken(1000);
 
         /// <inheritdoc />
-        public decimal Data { get; }
+        public double Data { get; }
 
         /// <summary>
-        /// Whether the number represented has a non-zero decimal part.
+        /// Whether the number represented has a non-zero double part.
         /// </summary>
-        public bool HasDecimalPlaces => decimal.Floor(Data) != Data;
+        public bool HasDecimalPlaces => Math.Floor(Data) != Data;
 
         /// <summary>
         /// The value of this number as an <see langword="int"/>.
@@ -155,13 +156,13 @@
         /// <summary>
         /// The value of this number as a <see langword="double"/>.
         /// </summary>
-        public double Double => (double)Data;
+        public double Double => Data;
 
         /// <summary>
         /// Create a <see cref="NumericToken"/>.
         /// </summary>
         /// <param name="value">The number to represent.</param>
-        public NumericToken(decimal value)
+        public NumericToken(double value)
         {
             Data = value;
         }

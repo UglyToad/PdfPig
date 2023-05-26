@@ -21,13 +21,13 @@
         /// <summary>
         /// The values for the color, 1 for grayscale, 3 for RGB, 4 for CMYK.
         /// </summary>
-        public IReadOnlyList<decimal> Operands { get; }
+        public IReadOnlyList<double> Operands { get; }
 
         /// <summary>
         /// Create a new <see cref="SetStrokeColor"/>.
         /// </summary>
         /// <param name="operands">The color operands.</param>
-        public SetStrokeColor(decimal[] operands)
+        public SetStrokeColor(double[] operands)
         {
             Operands = operands;
         }
