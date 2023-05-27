@@ -9,12 +9,12 @@ namespace UglyToad.PdfPig.Writer
     using Content;
     using Core;
     using Fonts;
-    using PdfPig.Actions;
+    using Actions;
     using PdfPig.Fonts.TrueType;
     using PdfPig.Fonts.Standard14Fonts;
     using PdfPig.Fonts.TrueType.Parser;
-    using PdfPig.Outline;
-    using PdfPig.Outline.Destinations;
+    using Outline;
+    using Outline.Destinations;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -30,6 +30,7 @@ namespace UglyToad.PdfPig.Writer
         private readonly Dictionary<Guid, FontStored> fonts = new Dictionary<Guid, FontStored>();
         private bool completed = false;
         private int fontId = 0;
+        private decimal version = 1.7m;
 
         private readonly static ArrayToken DefaultProcSet = new ArrayToken(new List<NameToken>
         {
@@ -76,7 +77,7 @@ namespace UglyToad.PdfPig.Writer
         /// </summary>
         public PdfDocumentBuilder()
         {
-            context = new PdfStreamWriter(new MemoryStream(), true);
+            context = new PdfStreamWriter(new MemoryStream(), true, recordVersion: x => version = x);
             context.InitializePdf(1.7m);
         }
 
@@ -86,7 +87,7 @@ namespace UglyToad.PdfPig.Writer
         /// <param name="version">Pdf version to use in header.</param>
         public PdfDocumentBuilder(decimal version)
         {
-            context = new PdfStreamWriter(new MemoryStream(), true);
+            context = new PdfStreamWriter(new MemoryStream(), true, recordVersion: x => version = x);
             context.InitializePdf(version);
         }
 
@@ -103,12 +104,13 @@ namespace UglyToad.PdfPig.Writer
             switch (type)
             {
                 case PdfWriterType.ObjectInMemoryDedup:
-                    context = new PdfDedupStreamWriter(stream, disposeStream, tokenWriter);
+                    context = new PdfDedupStreamWriter(stream, disposeStream, tokenWriter, x => version = x);
                     break;
                 default:
-                    context = new PdfStreamWriter(stream, disposeStream, tokenWriter);
+                    context = new PdfStreamWriter(stream, disposeStream, tokenWriter, x => version = x);
                     break;
             }
+
             context.InitializePdf(version);
         }
 
@@ -712,7 +714,7 @@ namespace UglyToad.PdfPig.Writer
             {
                 Func<IToken, IndirectReferenceToken> writerFunc = x => context.WriteToken(x);
 
-                PdfABaselineRuleBuilder.Obey(catalogDictionary, writerFunc, DocumentInformation, ArchiveStandard);
+                PdfABaselineRuleBuilder.Obey(catalogDictionary, writerFunc, DocumentInformation, ArchiveStandard, version);
 
                 switch (ArchiveStandard)
                 {

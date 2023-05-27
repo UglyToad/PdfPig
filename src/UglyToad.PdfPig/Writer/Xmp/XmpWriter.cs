@@ -7,6 +7,8 @@ using UglyToad.PdfPig.Tokens;
 
 namespace UglyToad.PdfPig.Writer.Xmp
 {
+    using System.Globalization;
+
     internal static class XmpWriter
     {
         private const string Xmptk = "Adobe XMP Core 5.6-c014 79.156797, 2014/08/20-09:53:02        ";
@@ -67,7 +69,7 @@ namespace UglyToad.PdfPig.Writer.Xmp
             AddElementsForSchema(rdfDescriptionElement, AdobePdfPrefix, AdobePdfNamespace, builder,
                 new List<SchemaMapper>
                 {
-                    new SchemaMapper("PDFVersion", b => "1.7"),
+                    new SchemaMapper("PDFVersion", b => version.ToString("F1", CultureInfo.InvariantCulture)),
                     new SchemaMapper("Producer", b => b.Producer)
                 });
 

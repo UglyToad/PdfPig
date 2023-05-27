@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Writer
 {
+    using System;
     using System.Collections.Generic;
     using System.IO;
     using Tokens;
@@ -8,7 +9,12 @@
     {
         private readonly Dictionary<byte[], IndirectReferenceToken> hashes = new Dictionary<byte[], IndirectReferenceToken>(new FNVByteComparison());
 
-        public PdfDedupStreamWriter(Stream stream, bool dispose, ITokenWriter tokenWriter = null) : base(stream, dispose, tokenWriter)
+        public PdfDedupStreamWriter(
+            Stream stream,
+            bool dispose,
+            ITokenWriter tokenWriter = null,
+            Action<decimal> recordVersion = null
+            ) : base(stream, dispose, tokenWriter, recordVersion)
         {
         }
 
