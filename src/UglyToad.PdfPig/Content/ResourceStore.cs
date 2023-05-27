@@ -8,7 +8,7 @@
     using PdfFonts;
     using Tokenization.Scanner;
     using Tokens;
-    using UglyToad.PdfPig.Filters;
+    using Filters;
     using Util;
 
     internal class ResourceStore : IResourceStore
@@ -322,10 +322,15 @@
             throw new InvalidOperationException($"Could not find color space for token '{name}'.");
         }
 
-        public StreamToken GetXObject(NameToken name)
+        public bool TryGetXObject(NameToken name, out StreamToken stream)
         {
-            var reference = currentResourceState[name];
-            return DirectObjectFinder.Get<StreamToken>(new IndirectReferenceToken(reference), scanner);
+            stream = null;
+            if (!currentResourceState.TryGetValue(name, out var indirectReference))
+            {
+                return false;
+            }
+
+            return DirectObjectFinder.TryGet(new IndirectReferenceToken(indirectReference), scanner, out stream);
         }
 
         public DictionaryToken GetExtendedGraphicsStateDictionary(NameToken name)

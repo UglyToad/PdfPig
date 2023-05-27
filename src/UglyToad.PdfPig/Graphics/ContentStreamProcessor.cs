@@ -82,7 +82,9 @@
             {XObjectType.PostScript, new List<XObjectContentRecord>()}
         };
 
-        public ContentStreamProcessor(IResourceStore resourceStore,
+        public ContentStreamProcessor(
+            int pageNumber,
+            IResourceStore resourceStore,
             UserSpaceUnit userSpaceUnit,
             MediaBox mediaBox,
             CropBox cropBox,
@@ -92,6 +94,7 @@
             ILookupFilterProvider filterProvider,
             InternalParsingOptions parsingOptions)
         {
+            this.pageNumber = pageNumber;
             this.resourceStore = resourceStore;
             this.userSpaceUnit = userSpaceUnit;
             this.rotation = rotation;
@@ -418,7 +421,15 @@
 
         public void ApplyXObject(NameToken xObjectName)
         {
-            var xObjectStream = resourceStore.GetXObject(xObjectName);
+            if (!resourceStore.TryGetXObject(xObjectName, out var xObjectStream))
+            {
+                if (parsingOptions.SkipMissingFonts)
+                {
+                    return;
+                }
+
+                throw new PdfDocumentFormatException($"No XObject with name {xObjectName} found on page {pageNumber}.");
+            }
 
             // For now we will determine the type and store the object with the graphics state information preceding it.
             // Then consumers of the page can request the object(s) to be retrieved by type.

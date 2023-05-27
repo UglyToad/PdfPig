@@ -96,6 +96,7 @@
                 isLenientParsing,
                 clipPaths,
                 options?.SkipMissingFonts ?? false,
+                options?.SkipMissingFonts ?? false,
                 options?.Logger ?? new NoOpLog());
 
             var document = OpenDocument(inputBytes, tokenScanner, finalOptions);

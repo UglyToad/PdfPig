@@ -16,6 +16,8 @@
 
         public bool SkipMissingFonts { get; }
 
+        public bool SkipMissingXObjects { get; }
+
         public ILog Logger { get; }
 
         public InternalParsingOptions(
@@ -23,12 +25,14 @@
             bool useLenientParsing,
             bool clipPaths,
             bool skipMissingFonts,
+            bool skipMissingXObjects,
             ILog logger)
         {
             Passwords = passwords;
             UseLenientParsing = useLenientParsing;
             ClipPaths = clipPaths;
             SkipMissingFonts = skipMissingFonts;
+            SkipMissingXObjects = skipMissingXObjects;
             Logger = logger;
         }
     }

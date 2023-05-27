@@ -51,7 +51,8 @@
 
         /// <summary>
         /// Skip extracting content where the font could not be found, will result in some letters being skipped/missed
-        /// but will prevent the library throwing where the source PDF has some corrupted text.
+        /// but will prevent the library throwing where the source PDF has some corrupted text. Also skips XObjects like
+        /// forms and images when missing.
         /// </summary>
         public bool SkipMissingFonts { get; set; } = false;
     }

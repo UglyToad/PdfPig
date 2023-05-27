@@ -17,7 +17,7 @@
 
         IFont GetFont(NameToken name);
 
-        StreamToken GetXObject(NameToken name);
+        bool TryGetXObject(NameToken name, out StreamToken stream);
 
         DictionaryToken GetExtendedGraphicsStateDictionary(NameToken name);
 

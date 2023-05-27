@@ -163,6 +163,7 @@
                 parsingOptions.Logger);
 
             var context = new ContentStreamProcessor(
+                pageNumber,
                 resourceStore,
                 userSpaceUnit,
                 mediaBox,
