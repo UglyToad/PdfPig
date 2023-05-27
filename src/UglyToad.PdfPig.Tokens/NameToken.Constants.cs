@@ -290,6 +290,7 @@
         public static readonly NameToken Inklist = new NameToken("InkList");
         public static readonly NameToken Intent = new NameToken("Intent");
         public static readonly NameToken Interpolate = new NameToken("Interpolate");
+        public static readonly NameToken Irt = new NameToken("IRT");
         public static readonly NameToken It = new NameToken("IT");
         public static readonly NameToken ItalicAngle = new NameToken("ItalicAngle");
         // J

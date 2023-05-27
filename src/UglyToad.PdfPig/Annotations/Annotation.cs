@@ -89,14 +89,29 @@
         public bool HasDownAppearance => downAppearanceStream != null;
 
         /// <summary>
+        /// The <see cref="Annotation"/> this annotation was in reply to. Can be <see langword="null" />
+        /// </summary>
+        public Annotation InReplyTo { get; }
+
+        /// <summary>
         /// Create a new <see cref="Annotation"/>.
         /// </summary>
-        public Annotation(DictionaryToken annotationDictionary, AnnotationType type, PdfRectangle rectangle,
-            string content, string name, string modifiedDate,
-            AnnotationFlags flags, AnnotationBorder border, IReadOnlyList<QuadPointsQuadrilateral> quadPoints,
+        public Annotation(
+            DictionaryToken annotationDictionary,
+            AnnotationType type,
+            PdfRectangle rectangle,
+            string content,
+            string name,
+            string modifiedDate,
+            AnnotationFlags flags,
+            AnnotationBorder border,
+            IReadOnlyList<QuadPointsQuadrilateral> quadPoints,
             PdfAction action,
-            AppearanceStream normalAppearanceStream, AppearanceStream rollOverAppearanceStream,
-            AppearanceStream downAppearanceStream, string appearanceState)
+            AppearanceStream normalAppearanceStream,
+            AppearanceStream rollOverAppearanceStream,
+            AppearanceStream downAppearanceStream,
+            string appearanceState,
+            Annotation inReplyTo)
         {
             AnnotationDictionary = annotationDictionary ?? throw new ArgumentNullException(nameof(annotationDictionary));
             Type = type;
@@ -112,6 +127,7 @@
             this.rollOverAppearanceStream = rollOverAppearanceStream;
             this.downAppearanceStream = downAppearanceStream;
             this.appearanceState = appearanceState;
+            InReplyTo = inReplyTo;
         }
 
         /// <inheritdoc />

@@ -33,6 +33,8 @@
 
         public IEnumerable<Annotation> GetAnnotations()
         {
+            var lookupAnnotations = new Dictionary<IndirectReference, Annotation>();
+
             if (!pageDictionary.TryGet(NameToken.Annots, tokenScanner, out ArrayToken annotationsArray))
             {
                 yield break;
@@ -43,6 +45,13 @@
                 if (!DirectObjectFinder.TryGet(token, tokenScanner, out DictionaryToken annotationDictionary))
                 {
                         continue;
+                }
+
+                Annotation replyTo = null;
+                if (annotationDictionary.TryGet(NameToken.Irt, out IndirectReferenceToken referencedAnnotation)
+                    && lookupAnnotations.TryGetValue(referencedAnnotation.Data, out var linkedAnnotation))
+                {
+                    replyTo = linkedAnnotation;
                 }
 
                 var type = annotationDictionary.Get<NameToken>(NameToken.Subtype, tokenScanner);
@@ -136,9 +145,29 @@
                     appearanceState = appearanceStateToken.Data;
                 }
 
-                yield return new Annotation(annotationDictionary, annotationType, rectangle, 
-                    contents, name, modifiedDate, flags, border, quadPointRectangles, action,
-                    normalAppearanceStream, rollOverAppearanceStream, downAppearanceStream, appearanceState);
+                var annotation = new Annotation(
+                    annotationDictionary,
+                    annotationType,
+                    rectangle, 
+                    contents,
+                    name,
+                    modifiedDate,
+                    flags,
+                    border,
+                    quadPointRectangles,
+                    action,
+                    normalAppearanceStream,
+                    rollOverAppearanceStream,
+                    downAppearanceStream,
+                    appearanceState,
+                    replyTo);
+
+                if (token is IndirectReferenceToken indirectReference)
+                {
+                    lookupAnnotations[indirectReference.Data] = annotation;
+                }
+
+                yield return annotation;
             }
         }
 
