@@ -617,10 +617,19 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
             {
                 34,  new LazyType2Command("hflex", 7, ctx =>
                 {
-                    //  dx1 dx2 dy2 dx3 dx4 dx5 dx6 
+                    // dx1 dx2 dy2 dx3 dx4 dx5 dx6 
                     // Two Bezier curves with an fd of 50
+                    var dx1 = ctx.Stack.PopBottom();
+                    var dx2 = ctx.Stack.PopBottom();
+                    var dy2 = ctx.Stack.PopBottom();
+                    var dx3 = ctx.Stack.PopBottom();
+                    var dx4 = ctx.Stack.PopBottom();
+                    var dx5 = ctx.Stack.PopBottom();
+                    var dx6 = ctx.Stack.PopBottom();
 
-                    // TODO: implement
+                    ctx.AddRelativeBezierCurve(dx1, 0, dx2, dy2, dx3, 0);
+                    ctx.AddRelativeBezierCurve(dx4, 0, dx5, -dy2, dx6, 0);
+
                     ctx.Stack.Clear();
                 })
             },
@@ -645,11 +654,26 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                     ctx.Stack.Clear();
                 })
             },
-            { 36,  new LazyType2Command("hflex1", 9, ctx =>
             {
-                // TODO: implement
-                ctx.Stack.Clear();
-            })},
+                36,  new LazyType2Command("hflex1", 9, ctx =>
+                {
+                    // dx1 dy1 dx2 dy2 dx3 dx4 dx5 dy5 dx6
+                    var dx1 = ctx.Stack.PopBottom();
+                    var dy1 = ctx.Stack.PopBottom();
+                    var dx2 = ctx.Stack.PopBottom();
+                    var dy2 = ctx.Stack.PopBottom();
+                    var dx3 = ctx.Stack.PopBottom();
+                    var dx4 = ctx.Stack.PopBottom();
+                    var dx5 = ctx.Stack.PopBottom();
+                    var dy5 = ctx.Stack.PopBottom();
+                    var dx6 = ctx.Stack.PopBottom();
+
+                    ctx.AddRelativeBezierCurve(dx1, dy1, dx2, dy2, dx3, 0);
+                    ctx.AddRelativeBezierCurve(dx4, 0, dx5, dy5, dx6, -dy5 -dy2 -dy1);
+
+                    ctx.Stack.Clear();
+                })
+            },
             { 37,  new LazyType2Command("flex1", 11, ctx =>
             {
                 // dx1 dy1 dx2 dy2 dx3 dy3 dx4 dy4 dx5 dy5 d6 
