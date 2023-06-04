@@ -64,6 +64,9 @@
                     case HexToken hex:
                         documentIdBytes = hex.Bytes.ToArray();
                         break;
+                    case StringToken str:
+                        documentIdBytes = str.GetBytes();
+                        break;
                     default:
                         documentIdBytes = OtherEncodings.StringAsLatin1Bytes(token.Data);
                         break;
