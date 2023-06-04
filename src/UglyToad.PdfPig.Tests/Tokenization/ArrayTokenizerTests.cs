@@ -7,7 +7,7 @@
 
     public class ArrayTokenizerTests
     {
-        private readonly ArrayTokenizer tokenizer = new ArrayTokenizer();
+        private readonly ArrayTokenizer tokenizer = new ArrayTokenizer(true);
 
         [Theory]
         [InlineData("]")]

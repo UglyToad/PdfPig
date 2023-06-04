@@ -6,8 +6,16 @@
 
     internal class StringTokenizer : ITokenizer
     {
+        private readonly bool usePdfDocEncoding;
+
         private readonly StringBuilder stringBuilder = new StringBuilder();
+
         public bool ReadsNextByte { get; } = false;
+
+        public StringTokenizer(bool usePdfDocEncoding)
+        {
+            this.usePdfDocEncoding = usePdfDocEncoding;
+        }
 
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
         {
@@ -164,10 +172,40 @@
 
                     encodedWith = StringToken.Encoding.Utf16;
                 }
+                else if (usePdfDocEncoding)
+                {
+                    var builtStr = builder.ToString();
+                    var rawBytes = OtherEncodings.StringAsLatin1Bytes(builtStr);
+                    if (PdfDocEncoding.TryConvertBytesToString(rawBytes, out var str))
+                    {
+                        tokenStr = str;
+                        encodedWith = StringToken.Encoding.PdfDocEncoding;
+                    }
+                    else
+                    {
+                        tokenStr = builtStr;
+                        encodedWith = StringToken.Encoding.Iso88591;
+                    }
+                }
                 else
                 {
                     tokenStr = builder.ToString();
 
+                    encodedWith = StringToken.Encoding.Iso88591;
+                }
+            }
+            else if (usePdfDocEncoding)
+            {
+                var builtStr = builder.ToString();
+                var rawBytes = OtherEncodings.StringAsLatin1Bytes(builtStr);
+                if (PdfDocEncoding.TryConvertBytesToString(rawBytes, out var str))
+                {
+                    tokenStr = str;
+                    encodedWith = StringToken.Encoding.PdfDocEncoding;
+                }
+                else
+                {
+                    tokenStr = builtStr;
                     encodedWith = StringToken.Encoding.Iso88591;
                 }
             }

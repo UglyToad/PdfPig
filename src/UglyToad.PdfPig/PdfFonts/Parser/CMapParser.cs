@@ -22,6 +22,7 @@
         public CMap Parse(IInputBytes inputBytes)
         {
             var scanner = new CoreTokenScanner(inputBytes,
+                false,
                 namedDictionaryRequiredKeys: new Dictionary<NameToken, IReadOnlyList<NameToken>>
                 {
                     { NameToken.CidSystemInfo, new[] { NameToken.Registry, NameToken.Ordering, NameToken.Supplement } }

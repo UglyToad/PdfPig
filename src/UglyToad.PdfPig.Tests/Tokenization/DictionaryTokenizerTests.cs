@@ -10,7 +10,7 @@ namespace UglyToad.PdfPig.Tests.Tokenization
 
     public class DictionaryTokenizerTests
     {
-        private readonly DictionaryTokenizer tokenizer = new DictionaryTokenizer();
+        private readonly DictionaryTokenizer tokenizer = new DictionaryTokenizer(true);
 
         [Theory]
         [InlineData("[rjee]")]
