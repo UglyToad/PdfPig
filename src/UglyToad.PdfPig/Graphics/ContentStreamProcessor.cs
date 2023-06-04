@@ -380,6 +380,20 @@
             var horizontalScaling = textState.HorizontalScaling / 100.0;
             var font = resourceStore.GetFont(textState.FontName);
 
+            if (font == null)
+            {
+                if (parsingOptions.SkipMissingFonts)
+                {
+                    parsingOptions.Logger.Warn($"Skipping a missing font with name {currentState.FontState.FontName} " +
+                                               $"since it is not present in the document and {nameof(InternalParsingOptions.SkipMissingFonts)} " +
+                                               "is set to true. This may result in some text being skipped and not included in the output.");
+
+                    return;
+                }
+
+                throw new InvalidOperationException($"Could not find the font with name {currentState.FontState.FontName} in the resource store. It has not been loaded yet.");
+            }
+
             var isVertical = font.IsVertical;
 
             foreach (var token in tokens)
