@@ -401,7 +401,7 @@
                             return token;
                         }
 
-                        var data = OtherEncodings.StringAsLatin1Bytes(stringToken.Data);
+                        var data = stringToken.GetBytes();
 
                         var decrypted = DecryptData(data, reference);
 
