@@ -8,7 +8,11 @@ namespace UglyToad.PdfPig.Writer
     /// Class to remove text from PDFs, useful as a preprocessing step for Optical Character Recognition (OCR).
     /// Note that this should not be used to redact content from PDFs, this is not a secure or reliable way to redact text.
     /// </summary>
-    public static class PdfTextRemover
+    /// <remarks>
+    /// This is being made internal for release of the next major version subject to some refinements.
+    /// It can be re-enabled for nightly versions of 0.1.9.
+    /// </remarks>
+    internal static class PdfTextRemover
     {
         /// <summary>
         /// Return PDF without text as bytes
