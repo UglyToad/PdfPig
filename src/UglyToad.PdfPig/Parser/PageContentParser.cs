@@ -21,10 +21,12 @@
             this.operationFactory = operationFactory;
         }
 
-        public IReadOnlyList<IGraphicsStateOperation> Parse(int pageNumber, IInputBytes inputBytes,
+        public IReadOnlyList<IGraphicsStateOperation> Parse(
+            int pageNumber,
+            IInputBytes inputBytes,
             ILog log)
         {
-            var scanner = new CoreTokenScanner(inputBytes);
+            var scanner = new CoreTokenScanner(inputBytes, false);
 
             var precedingTokens = new List<IToken>();
             var graphicsStateOperations = new List<IGraphicsStateOperation>();

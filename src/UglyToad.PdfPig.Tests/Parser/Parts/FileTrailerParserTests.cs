@@ -23,7 +23,7 @@ startxref
 
 %%EOF", false);
 
-            var result = FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes), false);
+            var result = FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes, true), false);
 
             Assert.Equal(456, result);
         }
@@ -49,7 +49,7 @@ startxref
 startxref
 17", false);
 
-            var result = FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes), false);
+            var result = FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes, true), false);
 
             Assert.Equal(17, result);
         }
@@ -75,7 +75,7 @@ startref
 start_rexf
 17", false);
 
-            Action action = () => FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes), false);
+            Action action = () => FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes, true), false);
 
             Assert.Throws<PdfDocumentFormatException>(action);
         }
@@ -85,7 +85,7 @@ start_rexf
         {
             var input = StringBytesTestConverter.Convert("11 0 obj", false);
 
-            Action action = () => FileTrailerParser.GetFirstCrossReferenceOffset(null, new CoreTokenScanner(input.Bytes), false);
+            Action action = () => FileTrailerParser.GetFirstCrossReferenceOffset(null, new CoreTokenScanner(input.Bytes, true), false);
 
             Assert.Throws<ArgumentNullException>(action);
         }
@@ -111,7 +111,7 @@ startxref
 << /Why (am i here?) >> 69
 %EOF", false);
 
-            Action action = () => FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes), false);
+            Action action = () => FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes, true), false);
 
             Assert.Throws<PdfDocumentFormatException>(action);
         }
@@ -126,7 +126,7 @@ endobj
 startxref 
    ", false);
 
-            Action action = () => FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes), false);
+            Action action = () => FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes, true), false);
 
             Assert.Throws<PdfDocumentFormatException>(action);
         }
@@ -152,7 +152,7 @@ startxref
 
 %%EOF", false);
 
-            var result = FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes), false);
+            var result = FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes, true), false);
 
             Assert.Equal(1274665676543, result);
         }
@@ -166,7 +166,7 @@ startxref %Commented here
 
 %%EOF", false);
 
-            var result = FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes), false);
+            var result = FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes, true), false);
 
             Assert.Equal(57695, result);
         }

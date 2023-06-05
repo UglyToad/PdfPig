@@ -70,7 +70,7 @@
         {
             var isLenientParsing = options?.UseLenientParsing ?? true;
 
-            var tokenScanner = new CoreTokenScanner(inputBytes);
+            var tokenScanner = new CoreTokenScanner(inputBytes, true);
 
             var passwords = new List<string>();
 
