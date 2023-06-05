@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net451;net452;net46;net461;net462;net47;net6.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
-    <Version>0.1.8-alpha-001</Version>
+    <Version>0.1.8</Version>
     <IsTestProject>False</IsTestProject>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>true</SignAssembly>
