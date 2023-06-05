@@ -12,7 +12,7 @@ namespace UglyToad.PdfPig.Writer
     /// This is being made internal for release of the next major version subject to some refinements.
     /// It can be re-enabled for nightly versions of 0.1.9.
     /// </remarks>
-    internal static class PdfTextRemover
+    public static class PdfTextRemover
     {
         /// <summary>
         /// Return PDF without text as bytes

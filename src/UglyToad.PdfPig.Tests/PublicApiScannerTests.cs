@@ -255,6 +255,7 @@
                 "UglyToad.PdfPig.Writer.PdfAStandard",
                 "UglyToad.PdfPig.Writer.PdfDocumentBuilder",
                 "UglyToad.PdfPig.Writer.PdfMerger",
+                "UglyToad.PdfPig.Writer.PdfTextRemover",
                 "UglyToad.PdfPig.Writer.PdfWriterType",
                 "UglyToad.PdfPig.Writer.PdfPageBuilder",
                 "UglyToad.PdfPig.Writer.TokenWriter",
