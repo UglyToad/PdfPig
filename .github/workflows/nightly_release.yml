@@ -43,7 +43,7 @@ jobs:
 
       - name: Write nightly version to projects
         run: |
-          $newVer = .\tools\generate-nightly-version.ps1; .\tools\set-version.ps1 $newVer
+          $newVer = .\tools\generate-nightly-version.ps1; .\tools\set-version.ps1 $newVer; .\tool\set-package-nightly.ps1
 
       - name: Restore packages
         run: dotnet restore tools/UglyToad.PdfPig.Package/UglyToad.PdfPig.Package.csproj
