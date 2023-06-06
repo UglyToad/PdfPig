@@ -10,9 +10,7 @@
     /// </summary>
     public class CoreTokenScanner : ISeekableTokenScanner
     {
-        private static readonly ArrayTokenizer ArrayTokenizer = new ArrayTokenizer();
         private static readonly CommentTokenizer CommentTokenizer = new CommentTokenizer();
-        private static readonly DictionaryTokenizer DictionaryTokenizer = new DictionaryTokenizer();
         private static readonly HexTokenizer HexTokenizer = new HexTokenizer();
         private static readonly NameTokenizer NameTokenizer = new NameTokenizer();
 
@@ -20,11 +18,14 @@
         // StringBuilder it re-uses.
         private readonly PlainTokenizer PlainTokenizer = new PlainTokenizer();
         private readonly NumericTokenizer NumericTokenizer = new NumericTokenizer();
-        private readonly StringTokenizer StringTokenizer = new StringTokenizer();
+        private readonly StringTokenizer stringTokenizer;
+        private readonly ArrayTokenizer arrayTokenizer;
+        private readonly DictionaryTokenizer dictionaryTokenizer;
 
         private readonly ScannerScope scope;
         private readonly IReadOnlyDictionary<NameToken, IReadOnlyList<NameToken>> namedDictionaryRequiredKeys;
         private readonly IInputBytes inputBytes;
+        private readonly bool usePdfDocEncoding;
         private readonly List<(byte firstByte, ITokenizer tokenizer)> customTokenizers = new List<(byte, ITokenizer)>();
         
         /// <summary>
@@ -49,10 +50,15 @@
         /// </summary>
         public CoreTokenScanner(
             IInputBytes inputBytes,
+            bool usePdfDocEncoding,
             ScannerScope scope = ScannerScope.None,
             IReadOnlyDictionary<NameToken, IReadOnlyList<NameToken>> namedDictionaryRequiredKeys = null)
         {
             this.inputBytes = inputBytes ?? throw new ArgumentNullException(nameof(inputBytes));
+            this.usePdfDocEncoding = usePdfDocEncoding;
+            this.stringTokenizer = new StringTokenizer(usePdfDocEncoding);
+            this.arrayTokenizer = new ArrayTokenizer(usePdfDocEncoding);
+            this.dictionaryTokenizer = new DictionaryTokenizer(usePdfDocEncoding);
             this.scope = scope;
             this.namedDictionaryRequiredKeys = namedDictionaryRequiredKeys;
         }
@@ -121,20 +127,20 @@
                     switch (c)
                     {
                         case '(':
-                            tokenizer = StringTokenizer;
+                            tokenizer = stringTokenizer;
                             break;
                         case '<':
                             var following = inputBytes.Peek();
                             if (following == '<')
                             {
                                 isSkippingSymbol = true;
-                                tokenizer = DictionaryTokenizer;
+                                tokenizer = dictionaryTokenizer;
 
                                 if (namedDictionaryRequiredKeys != null
                                     && CurrentToken is NameToken name
                                     && namedDictionaryRequiredKeys.TryGetValue(name, out var requiredKeys))
                                 {
-                                    tokenizer = new DictionaryTokenizer(requiredKeys);
+                                    tokenizer = new DictionaryTokenizer(usePdfDocEncoding, requiredKeys);
                                 }
                             }
                             else
@@ -150,7 +156,7 @@
                             }
                             break;
                         case '[':
-                            tokenizer = ArrayTokenizer;
+                            tokenizer = arrayTokenizer;
                             break;
                         case ']' when scope == ScannerScope.Array:
                             return false;

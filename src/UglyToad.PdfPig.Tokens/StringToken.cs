@@ -53,6 +53,8 @@ namespace UglyToad.PdfPig.Tokens
                 {
                     return System.Text.Encoding.Unicode.GetBytes(Data);
                 }
+                case Encoding.PdfDocEncoding:
+                    return PdfDocEncoding.StringToBytes(Data);
                 default:
                     return OtherEncodings.StringAsLatin1Bytes(Data);
             }
@@ -96,7 +98,11 @@ namespace UglyToad.PdfPig.Tokens
             /// <summary>
             /// UTF-16 Big Endian.
             /// </summary>
-            Utf16BE = 2
+            Utf16BE = 2,
+            /// <summary>
+            /// The PdfDocEncoding for strings in the body of a PDF file.
+            /// </summary>
+            PdfDocEncoding = 3,
         }
     }
 }

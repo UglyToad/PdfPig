@@ -108,7 +108,7 @@
         {
             var parser = new CodespaceRangeParser();
             var byteArrayInput = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes("1 begincodespacerange\nendcodespacerange"));
-            var tokenScanner = new CoreTokenScanner(byteArrayInput);
+            var tokenScanner = new CoreTokenScanner(byteArrayInput, false);
 
             Assert.True(tokenScanner.MoveNext());
             Assert.True(tokenScanner.CurrentToken is NumericToken);

@@ -57,7 +57,7 @@
             this.objectLocationProvider = objectLocationProvider;
             this.filterProvider = filterProvider;
             this.encryptionHandler = encryptionHandler;
-            coreTokenScanner = new CoreTokenScanner(inputBytes);
+            coreTokenScanner = new CoreTokenScanner(inputBytes, true);
         }
 
         public void UpdateEncryptionHandler(IEncryptionHandler newHandler)
@@ -797,7 +797,7 @@
             // Read the N integers
             var bytes = new ByteArrayInputBytes(stream.Decode(filterProvider, this));
 
-            var scanner = new CoreTokenScanner(bytes);
+            var scanner = new CoreTokenScanner(bytes, true);
 
             var objects = new List<Tuple<long, long>>();
 

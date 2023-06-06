@@ -14,7 +14,7 @@ namespace UglyToad.PdfPig.Tests.Tokenization.Scanner
 
         public CoreTokenScannerTests()
         {
-            scannerFactory = x => new CoreTokenScanner(x);
+            scannerFactory = x => new CoreTokenScanner(x, true);
         }
 
         [Fact]

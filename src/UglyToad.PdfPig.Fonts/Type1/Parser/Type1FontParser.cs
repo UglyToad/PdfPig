@@ -42,7 +42,7 @@
                 inputBytes = new ByteArrayInputBytes(ascii);
             }
 
-            var scanner = new CoreTokenScanner(inputBytes);
+            var scanner = new CoreTokenScanner(inputBytes, false);
 
             if (!scanner.TryReadToken(out CommentToken comment) || !comment.Data.StartsWith("!"))
             {

@@ -34,7 +34,7 @@
         internal static (CoreTokenScanner scanner, IInputBytes bytes) Scanner(string s)
         {
             var inputBytes = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(s));
-            var result = new CoreTokenScanner(inputBytes);
+            var result = new CoreTokenScanner(inputBytes, true);
 
             return (result, inputBytes);
         }

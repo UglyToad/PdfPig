@@ -7,7 +7,14 @@
 
     internal class ArrayTokenizer : ITokenizer
     {
+        private readonly bool usePdfDocEncoding;
+
         public bool ReadsNextByte { get; } = false;
+
+        public ArrayTokenizer(bool usePdfDocEncoding)
+        {
+            this.usePdfDocEncoding = usePdfDocEncoding;
+        }
 
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
         {
@@ -18,7 +25,7 @@
                 return false;
             }
 
-            var scanner = new CoreTokenScanner(inputBytes, ScannerScope.Array);
+            var scanner = new CoreTokenScanner(inputBytes, usePdfDocEncoding, ScannerScope.Array);
 
             var contents = new List<IToken>();
 
