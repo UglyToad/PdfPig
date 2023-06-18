@@ -103,18 +103,33 @@
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
             this.parsingOptions = parsingOptions;
 
-            // initiate CurrentClippingPath to cropBox
-            var clippingSubpath = new PdfSubpath();
-            clippingSubpath.Rectangle(cropBox.Bounds.BottomLeft.X, cropBox.Bounds.BottomLeft.Y, cropBox.Bounds.Width, cropBox.Bounds.Height);
-            var clippingPath = new PdfPath() { clippingSubpath };
-            clippingPath.SetClipping(FillingRule.EvenOdd);
+            TransformationMatrix initialMatrix = GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, parsingOptions.Logger);
 
             graphicsStack.Push(new CurrentGraphicsState()
             {
-                CurrentTransformationMatrix = GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, parsingOptions.Logger),
-                CurrentClippingPath = clippingPath,
+                CurrentTransformationMatrix = initialMatrix,
+                CurrentClippingPath = GetInitialClipping(cropBox, initialMatrix),
                 ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore)
             });
+        }
+
+        /// <summary>
+        /// Get the initial clipping path using the crop box and the initial transformation matrix.
+        /// </summary>
+        private static PdfPath GetInitialClipping(CropBox cropBox, TransformationMatrix initialMatrix)
+        {
+            var transformedCropBox = initialMatrix.Transform(cropBox.Bounds);
+
+            // We re-compute width and height to get possible negative values.
+            double width = transformedCropBox.TopRight.X - transformedCropBox.BottomLeft.X;
+            double height = transformedCropBox.TopRight.Y - transformedCropBox.BottomLeft.Y;
+
+            // initiate CurrentClippingPath to cropBox
+            var clippingSubpath = new PdfSubpath();
+            clippingSubpath.Rectangle(transformedCropBox.BottomLeft.X, transformedCropBox.BottomLeft.Y, width, height);
+            var clippingPath = new PdfPath() { clippingSubpath };
+            clippingPath.SetClipping(FillingRule.EvenOdd);
+            return clippingPath;
         }
 
         [System.Diagnostics.Contracts.Pure]
@@ -129,7 +144,7 @@
             var viewBox = mediaBox.Bounds.Intersect(cropBox.Bounds) ?? cropBox.Bounds;
 
             if (rotation.Value == 0
-                && viewBox.Left == 0 
+                && viewBox.Left == 0
                 && viewBox.Bottom == 0
                 && userSpaceUnit.PointMultiples == 1)
             {
