@@ -37,5 +37,10 @@
             IReadOnlyDictionary<IndirectReference, long> objectOffsets,
             IndirectReference catalogToken, Stream outputStream,
             IndirectReference? documentInformationReference);
+
+        /// <summary>
+        /// Hints to the token writer that we are currently writing page contents.
+        /// </summary>
+        bool WritingPageContents { get; set; }
     }
 }

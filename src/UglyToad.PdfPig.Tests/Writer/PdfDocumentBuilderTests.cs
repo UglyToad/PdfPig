@@ -1279,6 +1279,7 @@
         public int Tokens { get; private set; }
         public int Objects { get; private set; }
         public bool WroteCrossReferenceTable { get; private set; }
+        public bool WritingPageContents { get; set; }
 
         public void WriteToken(IToken token, Stream outputStream)
         {

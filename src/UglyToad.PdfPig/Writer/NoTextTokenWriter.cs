@@ -19,16 +19,27 @@ namespace UglyToad.PdfPig.Writer
     internal class NoTextTokenWriter : TokenWriter
     {
         /// <summary>
+        /// Set this value prior to processing page to get the right page number in log messages
+        /// </summary>
+        internal int Page { get; set; }
+
+        /// <summary>
         /// Write stream without <see cref="ShowText"/> or <see cref="ShowTextsWithPositioning"/> operations
         /// </summary>
         /// <param name="streamToken"></param>
         /// <param name="outputStream"></param>
         protected override void WriteStream(StreamToken streamToken, Stream outputStream)
         {
-            if (!TryGetStreamWithoutText(streamToken, out var outputStreamToken))
+            StreamToken outputStreamToken;
+            if (!WritingPageContents && !IsFormStream(streamToken))
             {
                 outputStreamToken = streamToken;
             }
+            else if (!TryGetStreamWithoutText(streamToken, out outputStreamToken))
+            {
+                outputStreamToken = streamToken;
+            }
+
             WriteDictionary(outputStreamToken.StreamDictionary, outputStream);
             WriteLineBreak(outputStream);
             outputStream.Write(StreamStart, 0, StreamStart.Length);
@@ -36,6 +47,12 @@ namespace UglyToad.PdfPig.Writer
             outputStream.Write(outputStreamToken.Data.ToArray(), 0, outputStreamToken.Data.Count);
             WriteLineBreak(outputStream);
             outputStream.Write(StreamEnd, 0, StreamEnd.Length);
+        }
+
+        private bool IsFormStream(StreamToken streamToken)
+        {
+            return streamToken.StreamDictionary.Data.TryGetValue(NameToken.Subtype.Data, out var value)
+                   && (NameToken)value == NameToken.Form;
         }
 
         /// <summary>
@@ -63,7 +80,7 @@ namespace UglyToad.PdfPig.Writer
             IReadOnlyList<IGraphicsStateOperation> operations;
             try
             {
-                operations = pageContentParser.Parse(1, new ByteArrayInputBytes(bytes), new NoOpLog());
+                operations = pageContentParser.Parse(Page, new ByteArrayInputBytes(bytes), new NoOpLog());
             }
             catch (Exception)
             {
@@ -76,7 +93,9 @@ namespace UglyToad.PdfPig.Writer
                 var haveText = false;
                 foreach (var op in operations)
                 {
-                    if (op.Operator == ShowText.Symbol || op.Operator == ShowTextsWithPositioning.Symbol)
+                    if (op.Operator == ShowText.Symbol 
+                        || op.Operator == ShowTextsWithPositioning.Symbol
+                        || op.Operator == MoveToNextLineShowText.Symbol)
                     {
                         haveText = true;
                         continue;
@@ -89,7 +108,22 @@ namespace UglyToad.PdfPig.Writer
                     return false;
                 }
                 outputStreamT.Seek(0, SeekOrigin.Begin);
-                outputStreamToken = DataCompresser.CompressToStream(outputStreamT.ToArray());
+
+                var compressedBytes = DataCompresser.CompressBytes(outputStreamT.ToArray());
+                var outputStreamDictionary = new Dictionary<NameToken, IToken>()
+                {
+                    { NameToken.Length, new NumericToken(compressedBytes.Length) },
+                    { NameToken.Filter, NameToken.FlateDecode }
+                };
+                foreach (var kv in streamToken.StreamDictionary.Data)
+                {
+                    var key = NameToken.Create(kv.Key);
+                    if (!outputStreamDictionary.ContainsKey(key))
+                    {
+                        outputStreamDictionary[key] = kv.Value;
+                    }
+                };
+                outputStreamToken = new StreamToken(new DictionaryToken(outputStreamDictionary), compressedBytes);
                 return true;
             }
         }

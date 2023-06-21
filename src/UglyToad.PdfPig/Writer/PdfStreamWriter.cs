@@ -25,6 +25,12 @@
 
         public bool AttemptDeduplication { get; set; } = true;
 
+        public bool WritingPageContents
+        {
+            get => TokenWriter.WritingPageContents;
+            set => TokenWriter.WritingPageContents = value;
+        }
+
         internal PdfStreamWriter(
             Stream baseStream,
             bool disposeStream = true,

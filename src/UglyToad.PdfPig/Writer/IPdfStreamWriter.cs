@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Writer
 {
     using System;
-    using System.Collections.Generic;
     using System.IO;
-    using System.Text;
     using Tokens;
 
     internal interface IPdfStreamWriter : IDisposable
@@ -19,6 +17,11 @@
         /// The underlying stream used by the writer.
         /// </summary>
         Stream Stream { get; }
+
+        /// <summary>
+        /// Hints that the stream writer is used for writing page contents.
+        /// </summary>
+        bool WritingPageContents { get; set; }
 
         /// <summary>
         /// Writes a single token to the stream.

@@ -360,6 +360,7 @@ namespace UglyToad.PdfPig.Writer
                 // dedup if on to avoid issues
                 var prev = context.AttemptDeduplication;
                 context.AttemptDeduplication = false;
+                context.WritingPageContents = true;
                 if (contentsToken is ArrayToken array)
                 {
                     foreach (var item in array.Data)
@@ -378,6 +379,7 @@ namespace UglyToad.PdfPig.Writer
                         WriterUtil.CopyToken(context, ir, document.Structure.TokenScanner, refs) as IndirectReferenceToken));
                 }
                 context.AttemptDeduplication = prev;
+                context.WritingPageContents = false;
             }
 
             // manually copy page dict / resources as we need to modify some
@@ -405,7 +407,6 @@ namespace UglyToad.PdfPig.Writer
                     copiedPageDict[NameToken.Rotate] = WriterUtil.CopyToken(context, rt, document.Structure.TokenScanner, refs);
                 }
             }
-
 
             foreach (var kvp in pageInfo.Page.Data)
             {
