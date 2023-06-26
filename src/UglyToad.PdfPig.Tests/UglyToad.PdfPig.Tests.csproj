@@ -114,6 +114,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Dla\Documents\2559 words.pdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Dla\Documents\90 180 270 rotated.pdf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
