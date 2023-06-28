@@ -13,14 +13,14 @@
     /// hOCR v1.2 (HTML) text exporter.
     /// <para>See http://kba.cloud/hocr-spec/1.2/ </para>
     /// </summary>
-    public class HOcrTextExporter : ITextExporter
+    public sealed class HOcrTextExporter : ITextExporter
     {
         private const string XmlHeader = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"\n\t\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n";
         private const string Hocrjs = "<script src='https://unpkg.com/hocrjs'></script>\n";
 
         private readonly IPageSegmenter pageSegmenter;
         private readonly IWordExtractor wordExtractor;
-
+        private readonly Func<string, string> invalidCharacterHandler;
         private readonly double scale;
         private readonly string indentChar;
 
@@ -32,16 +32,60 @@
         private int paraCount;
         private int imageCount;
 
+        /// <inheritdoc/>
+        public InvalidCharStrategy InvalidCharStrategy { get; }
+
         /// <summary>
         /// hOCR v1.2 (HTML)
         /// <para>See http://kba.cloud/hocr-spec/1.2/ </para>
         /// </summary>
-        public HOcrTextExporter(IWordExtractor wordExtractor, IPageSegmenter pageSegmenter, double scale = 1.0, string indent = "\t")
+        /// <param name="wordExtractor">Extractor used to identify words in the document.</param>
+        /// <param name="pageSegmenter">Segmenter used to split page into blocks.</param>
+        /// <param name="scale">Scale multiplier to apply to output document, defaults to 1.</param>
+        /// <param name="indentChar">Character to use for indentation, defaults to tab.</param>
+        /// <param name="invalidCharacterHandler">How to handle invalid characters.</param>
+        public HOcrTextExporter(IWordExtractor wordExtractor, IPageSegmenter pageSegmenter,
+                                   double scale, string indentChar,
+                                   Func<string, string> invalidCharacterHandler)
+            : this(wordExtractor, pageSegmenter, scale, indentChar,
+                  InvalidCharStrategy.Custom, invalidCharacterHandler)
+        { }
+
+        /// <summary>
+        /// hOCR v1.2 (HTML)
+        /// <para>See http://kba.cloud/hocr-spec/1.2/ </para>
+        /// </summary>
+        /// <param name="wordExtractor">Extractor used to identify words in the document.</param>
+        /// <param name="pageSegmenter">Segmenter used to split page into blocks.</param>
+        /// <param name="scale">Scale multiplier to apply to output document, defaults to 1.</param>
+        /// <param name="indentChar">Character to use for indentation, defaults to tab.</param>
+        /// <param name="invalidCharacterStrategy">How to handle invalid characters.</param>
+        public HOcrTextExporter(IWordExtractor wordExtractor, IPageSegmenter pageSegmenter,
+                                   double scale = 1, string indentChar = "\t",
+                                   InvalidCharStrategy invalidCharacterStrategy = InvalidCharStrategy.DoNotCheck)
+             : this(wordExtractor, pageSegmenter, scale, indentChar,
+                  invalidCharacterStrategy, null)
+        { }
+
+        private HOcrTextExporter(IWordExtractor wordExtractor, IPageSegmenter pageSegmenter,
+                           double scale, string indentChar,
+                           InvalidCharStrategy invalidCharacterStrategy,
+                           Func<string, string> invalidCharacterHandler)
         {
             this.wordExtractor = wordExtractor;
             this.pageSegmenter = pageSegmenter;
             this.scale = scale;
-            indentChar = indent;
+            this.indentChar = indentChar ?? string.Empty;
+            InvalidCharStrategy = invalidCharacterStrategy;
+
+            if (invalidCharacterHandler is null)
+            {
+                this.invalidCharacterHandler = TextExporterHelper.GetXmlInvalidCharHandler(InvalidCharStrategy);
+            }
+            else
+            {
+                this.invalidCharacterHandler = invalidCharacterHandler;
+            }
         }
 
         /// <summary>
@@ -325,7 +369,7 @@
             }
             hocr += "'";
 
-            hocr += ">" + word.Text + "</span> ";
+            hocr += ">" + invalidCharacterHandler(word.Text) + "</span> ";
             return hocr;
         }
 
