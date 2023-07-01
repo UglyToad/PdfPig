@@ -1,13 +1,18 @@
 ﻿namespace UglyToad.PdfPig.Parser
 {
-    using System.Collections.Generic;
     using Core;
     using Graphics.Operations;
     using Logging;
+    using System.Collections.Generic;
 
-    internal interface IPageContentParser
+    /// <summary>
+    /// Page content parser interface.
+    /// </summary>
+    public interface IPageContentParser
     {
-        IReadOnlyList<IGraphicsStateOperation> Parse(int pageNumber, IInputBytes inputBytes,
-            ILog log);
+        /// <summary>
+        /// Parse the <see cref="IInputBytes"/> into <see cref="IGraphicsStateOperation"/>s.
+        /// </summary>
+        IReadOnlyList<IGraphicsStateOperation> Parse(int pageNumber, IInputBytes inputBytes, ILog log);
     }
 }

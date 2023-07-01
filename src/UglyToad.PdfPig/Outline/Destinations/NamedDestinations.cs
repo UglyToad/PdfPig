@@ -9,7 +9,7 @@
     /// <summary>
     /// Named destinations in a PDF document
     /// </summary>
-    internal class NamedDestinations
+    public class NamedDestinations
     {
         /// <summary>
         /// Dictionary containing explicit destinations, keyed by name

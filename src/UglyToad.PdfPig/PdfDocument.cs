@@ -162,6 +162,57 @@
         }
 
         /// <summary>
+        /// Get the page with the specified page number (1 indexed).
+        /// </summary>
+        /// <typeparam name="TPage"></typeparam>
+        /// <param name="pageNumber">The number of the page to return, this starts from 1.</param>
+        /// <returns>The page.</returns>
+        public TPage GetPage<TPage>(int pageNumber)
+        {
+            // TODO - update log with log type
+            if (isDisposed)
+            {
+                throw new ObjectDisposedException("Cannot access page after the document is disposed.");
+            }
+
+            parsingOptions.Logger.Debug($"Accessing page {pageNumber}.");
+
+            try
+            {
+                return pages.GetPage<TPage>(pageNumber, namedDestinations, parsingOptions);
+            }
+            catch (Exception ex)
+            {
+                if (IsEncrypted)
+                {
+                    throw new PdfDocumentEncryptedException("Document was encrypted which may have caused error when retrieving page.", encryptionDictionary, ex);
+                }
+
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <typeparam name="TPage"></typeparam>
+        /// <param name="pageFactory"></param>
+        public void AddPageFactory<TPage>(IPageFactory<TPage> pageFactory)
+        {
+            pages.AddPageFactory(pageFactory);
+        }
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <typeparam name="TPage"></typeparam>
+        /// <param name="type"></param>
+        public void AddPageFactory<TPage>(Type type)
+        {
+            pages.AddPageFactory<TPage>(type);
+        }
+
+        /// <summary>
         /// Gets all pages in this document in order.
         /// </summary>
         public IEnumerable<Page> GetPages()

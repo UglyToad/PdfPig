@@ -10,7 +10,7 @@
     using Tokens;
     using Util;
 
-    internal class PagesFactory
+    internal static class PagesFactory
     {
         private class PageCounter
         {
@@ -21,7 +21,7 @@
             }
         }
 
-        public static Pages Create(IndirectReference pagesReference, DictionaryToken pagesDictionary, IPdfTokenScanner scanner, IPageFactory pageFactory, ILog log, bool isLenientParsing)
+        public static Pages Create(IndirectReference pagesReference, DictionaryToken pagesDictionary, IPdfTokenScanner scanner, IPageFactory<Page> pageFactory, ILog log, bool isLenientParsing)
         {
             var pageNumber = new PageCounter();
 

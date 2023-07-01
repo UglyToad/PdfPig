@@ -6,7 +6,7 @@
     /// <summary>
     /// Configures options used by the parser when reading PDF documents.
     /// </summary>
-    public class ParsingOptions
+    public class ParsingOptions : IParsingOptions
     {
         /// <summary>
         /// A default <see cref="ParsingOptions"/> with <see cref="UseLenientParsing"/> set to false.

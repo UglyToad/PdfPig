@@ -49,7 +49,7 @@
         private readonly IPdfTokenScanner pdfScanner;
         private readonly IPageContentParser pageContentParser;
         private readonly ILookupFilterProvider filterProvider;
-        private readonly InternalParsingOptions parsingOptions;
+        private readonly IParsingOptions parsingOptions;
         private readonly MarkedContentStack markedContentStack = new MarkedContentStack();
 
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
@@ -92,7 +92,7 @@
             IPdfTokenScanner pdfScanner,
             IPageContentParser pageContentParser,
             ILookupFilterProvider filterProvider,
-            InternalParsingOptions parsingOptions)
+            IParsingOptions parsingOptions)
         {
             this.pageNumber = pageNumber;
             this.resourceStore = resourceStore;

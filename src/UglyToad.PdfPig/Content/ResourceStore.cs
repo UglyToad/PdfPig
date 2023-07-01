@@ -41,7 +41,7 @@
             this.filterProvider = filterProvider;
         }
 
-        public void LoadResourceDictionary(DictionaryToken resourceDictionary, InternalParsingOptions parsingOptions)
+        public void LoadResourceDictionary(DictionaryToken resourceDictionary, IParsingOptions parsingOptions)
         {
             lastLoadedFont = (null, null);
             loadedNamedColorSpaceDetails.Clear();
@@ -176,7 +176,7 @@
             namedColorSpaces.Pop();
         }
 
-        private void LoadFontDictionary(DictionaryToken fontDictionary, InternalParsingOptions parsingOptions)
+        private void LoadFontDictionary(DictionaryToken fontDictionary, IParsingOptions parsingOptions)
         {
             lastLoadedFont = (null, null);
 

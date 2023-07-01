@@ -25,8 +25,14 @@
         IReadOnlyList<IFilter> GetAllFilters();
     }
 
-    internal interface ILookupFilterProvider : IFilterProvider
+    /// <summary>
+    /// Gets filter implementations (<see cref="IFilter"/>) for decoding PDF data with lookup.
+    /// </summary>
+    public interface ILookupFilterProvider : IFilterProvider
     {
+        /// <summary>
+        /// Get the filters specified in this dictionary.
+        /// </summary>
         IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary, IPdfTokenScanner scanner);
     }
 }
