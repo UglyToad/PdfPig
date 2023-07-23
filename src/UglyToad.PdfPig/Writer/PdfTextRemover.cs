@@ -83,19 +83,22 @@ namespace UglyToad.PdfPig.Writer
         /// </summary>
         public static void RemoveText(PdfDocument file, Stream output, IReadOnlyList<int> pagesBundle = null)
         {
-            using (var document = new PdfDocumentBuilder(output, false, PdfWriterType.Default, file.Version, tokenWriter: new NoTextTokenWriter()))
+            var tokenWriter = new NoTextTokenWriter();
+            using (var document = new PdfDocumentBuilder(output, false, PdfWriterType.Default, file.Version, tokenWriter: tokenWriter))
             {
                 if (pagesBundle == null)
                 {
                     for (var i = 1; i <= file.NumberOfPages; i++)
                     {
+                        tokenWriter.Page = i;
                         document.AddPage(file, i);
                     }
-                } 
+                }
                 else
                 {
                     foreach (var i in pagesBundle)
                     {
+                        tokenWriter.Page = i;
                         document.AddPage(file, i);
                     }
                 }

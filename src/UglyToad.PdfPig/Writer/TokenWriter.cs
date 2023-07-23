@@ -276,6 +276,12 @@
             outputStream.Write(Eof, 0, Eof.Length);
         }
 
+        /// <summary>
+        /// Indicates that we are writing page contents.
+        /// Can be used by a derived class.
+        /// </summary>
+        public bool WritingPageContents { get; set; }
+
         /// <inheritdoc cref="ITokenWriter.WriteObject" />
         public void WriteObject(long objectNumber, int generation, byte[] data, Stream outputStream)
         {
