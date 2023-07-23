@@ -49,10 +49,10 @@ namespace UglyToad.PdfPig.Writer
             outputStream.Write(StreamEnd, 0, StreamEnd.Length);
         }
 
-        private bool IsFormStream(StreamToken streamToken)
+        private static bool IsFormStream(StreamToken streamToken)
         {
-            return streamToken.StreamDictionary.Data.TryGetValue(NameToken.Subtype.Data, out var value)
-                   && (NameToken)value == NameToken.Form;
+            return streamToken.StreamDictionary.TryGet(NameToken.Subtype, out NameToken subTypeValue)
+                   && subTypeValue.Equals(NameToken.Form);
         }
 
         /// <summary>
