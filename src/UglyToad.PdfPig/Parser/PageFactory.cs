@@ -49,7 +49,7 @@
             var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentBytes), parsingOptions.Logger);
             var content = context.Process(pageNumber, operations);
 
-            var initialMatrix = ContentStreamProcessor.GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, log);
+            var initialMatrix = StreamProcessorHelper.GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, log);
             var annotationProvider = new AnnotationProvider(pdfScanner, dictionary, initialMatrix, namedDestinations, log);
             return new Page(pageNumber, dictionary, mediaBox, cropBox, rotation, content, annotationProvider, pdfScanner);
         }
@@ -64,7 +64,7 @@
             MediaBox mediaBox,
             IParsingOptions parsingOptions)
         {
-            var initialMatrix = ContentStreamProcessor.GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, log);
+            var initialMatrix = StreamProcessorHelper.GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, log);
             var annotationProvider = new AnnotationProvider(pdfScanner, dictionary, initialMatrix, namedDestinations, log);
 
             var content = new PageContent(EmptyArray<IGraphicsStateOperation>.Instance,

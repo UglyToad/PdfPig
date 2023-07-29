@@ -1,24 +1,31 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using Colors;
     using Content;
     using Core;
     using Filters;
     using PdfPig.Core;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using Tokenization.Scanner;
     using Tokens;
-    using Util;
 
-    internal class InlineImageBuilder
+    /// <summary>
+    /// Inline Image Builder.
+    /// </summary>
+    public class InlineImageBuilder
     {
+        /// <summary>
+        /// Inline image properties.
+        /// </summary>
         public IReadOnlyDictionary<NameToken, IToken> Properties { get; set; }
 
+        /// <summary>
+        /// Inline image bytes.
+        /// </summary>
         public IReadOnlyList<byte> Bytes { get; set; }
 
-        public InlineImage CreateInlineImage(TransformationMatrix transformationMatrix, ILookupFilterProvider filterProvider,
+        internal InlineImage CreateInlineImage(TransformationMatrix transformationMatrix, ILookupFilterProvider filterProvider,
             IPdfTokenScanner tokenScanner,
             RenderingIntent defaultRenderingIntent,
             IResourceStore resourceStore)

@@ -140,7 +140,7 @@
             out TransformationMatrix initialMatrix,
             out TransformationMatrix inverseMatrix)
         {
-            initialMatrix = ContentStreamProcessor.GetInitialMatrix(UserSpaceUnit.Default, mediaBox, cropBox, rotation, new TestingLog());
+            initialMatrix = StreamProcessorHelper.GetInitialMatrix(UserSpaceUnit.Default, mediaBox, cropBox, rotation, new TestingLog());
             inverseMatrix = initialMatrix.Inverse();
         }
 
