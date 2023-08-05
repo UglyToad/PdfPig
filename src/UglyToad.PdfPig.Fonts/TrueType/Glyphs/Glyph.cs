@@ -4,7 +4,7 @@
     using System;
     using System.Collections.Generic;
 
-    internal class Glyph : IGlyphDescription
+    internal sealed class Glyph : IGlyphDescription
     {
         /// <summary>
         /// The bounding rectangle for the character.

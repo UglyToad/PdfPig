@@ -145,7 +145,7 @@
                 return false;
             }
 
-            return TableRegister.GlyphTable.Glyphs[index].TryGetGlyphPath(out path);
+            return TableRegister.GlyphTable.TryGetGlyphPath(index, out path);
         }
 
         /// <summary>

@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using Core;
     using Glyphs;
     using Parser;
@@ -12,7 +11,7 @@
     /// The 'glyf' table contains the data that defines the appearance of the glyphs in the font. 
     /// This includes specification of the points that describe the contours that make up a glyph outline and the instructions that grid-fit that glyph.
     /// </summary>
-    internal class GlyphDataTable : ITrueTypeTable
+    internal sealed class GlyphDataTable : ITrueTypeTable
     {
         private readonly IReadOnlyList<uint> glyphOffsets;
         private readonly PdfRectangle maxGlyphBounds;
@@ -71,19 +70,21 @@
                 return true;
             }
 
-            tableBytes.Seek(offset);
-
-            // ReSharper disable once UnusedVariable
-            var contourCount = tableBytes.ReadSignedShort();
-
-            var minX = tableBytes.ReadSignedShort();
-            var minY = tableBytes.ReadSignedShort();
-            var maxX = tableBytes.ReadSignedShort();
-            var maxY = tableBytes.ReadSignedShort();
-
-            bounds = new PdfRectangle(minX, minY, maxX, maxY);
+            bounds = Glyphs[glyphIndex].Bounds;
 
             return true;
+        }
+
+        public bool TryGetGlyphPath(int glyphIndex, out IReadOnlyList<PdfSubpath> subpaths)
+        {
+            subpaths = null;
+
+            if (glyphIndex < 0 || glyphIndex > Glyphs.Count - 1)
+            {
+                return false;
+            }
+
+            return Glyphs[glyphIndex].TryGetGlyphPath(out subpaths);
         }
 
         public static GlyphDataTable Load(TrueTypeDataBytes data, TrueTypeHeaderTable table, TableRegister.Builder tableRegister)
