@@ -13,7 +13,7 @@
     using Tokens;
     using UglyToad.PdfPig.Core;
 
-    internal class PageFactory : PageFactoryBase<Page>
+    internal sealed class PageFactory : PageFactoryBase<Page>
     {
         public PageFactory(
             IPdfTokenScanner pdfScanner,
@@ -36,22 +36,22 @@
         {
             var context = new ContentStreamProcessor(
                 pageNumber,
-                resourceStore,
+                ResourceStore,
                 userSpaceUnit,
                 mediaBox,
                 cropBox,
                 rotation,
-                pdfScanner,
-                pageContentParser,
-                filterProvider,
+                PdfScanner,
+                PageContentParser,
+                FilterProvider,
                 parsingOptions);
 
-            var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentBytes), parsingOptions.Logger);
+            var operations = PageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentBytes), parsingOptions.Logger);
             var content = context.Process(pageNumber, operations);
 
-            var initialMatrix = StreamProcessorHelper.GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, log);
-            var annotationProvider = new AnnotationProvider(pdfScanner, dictionary, initialMatrix, namedDestinations, log);
-            return new Page(pageNumber, dictionary, mediaBox, cropBox, rotation, content, annotationProvider, pdfScanner);
+            var initialMatrix = StreamProcessorHelper.GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, Log);
+            var annotationProvider = new AnnotationProvider(PdfScanner, dictionary, initialMatrix, namedDestinations, Log);
+            return new Page(pageNumber, dictionary, mediaBox, cropBox, rotation, content, annotationProvider, PdfScanner);
         }
 
         protected override Page ProcessPage(
@@ -64,20 +64,20 @@
             MediaBox mediaBox,
             IParsingOptions parsingOptions)
         {
-            var initialMatrix = StreamProcessorHelper.GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, log);
-            var annotationProvider = new AnnotationProvider(pdfScanner, dictionary, initialMatrix, namedDestinations, log);
+            var initialMatrix = StreamProcessorHelper.GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, Log);
+            var annotationProvider = new AnnotationProvider(PdfScanner, dictionary, initialMatrix, namedDestinations, Log);
 
             var content = new PageContent(EmptyArray<IGraphicsStateOperation>.Instance,
                 EmptyArray<Letter>.Instance,
                 EmptyArray<PdfPath>.Instance,
                 EmptyArray<Union<XObjectContentRecord, InlineImage>>.Instance,
                 EmptyArray<MarkedContentElement>.Instance,
-                pdfScanner,
-                filterProvider,
-                resourceStore);
+                PdfScanner,
+                FilterProvider,
+                ResourceStore);
             // ignored for now, is it possible? check the spec...
 
-            return new Page(pageNumber, dictionary, mediaBox, cropBox, rotation, content, annotationProvider, pdfScanner);
+            return new Page(pageNumber, dictionary, mediaBox, cropBox, rotation, content, annotationProvider, PdfScanner);
         }
     }
 }

@@ -59,12 +59,12 @@
 
         public override PageContent Process(int pageNumberCurrent, IReadOnlyList<IGraphicsStateOperation> operations)
         {
-            pageNumber = pageNumberCurrent;
+            PageNumber = pageNumberCurrent;
             CloneAllStates();
 
             ProcessOperations(operations);
 
-            return new PageContent(operations, letters, paths, images, markedContents, pdfScanner, filterProvider, resourceStore);
+            return new PageContent(operations, letters, paths, images, markedContents, PdfScanner, FilterProvider, ResourceStore);
         }
 
         public override void RenderGlyph(IFont font, IColor strokingColor, IColor nonStrokingColor, TextRenderingMode textRenderingMode, double fontSize, double pointSize, int code, string unicode,
@@ -129,7 +129,7 @@
         public override void RenderXObjectImage(XObjectContentRecord xObjectContentRecord)
         {
             images.Add(Union<XObjectContentRecord, InlineImage>.One(xObjectContentRecord));
-            markedContentStack.AddXObject(xObjectContentRecord, pdfScanner, filterProvider, resourceStore);
+            markedContentStack.AddXObject(xObjectContentRecord, PdfScanner, FilterProvider, ResourceStore);
         }
 
         public override void BeginSubpath()
@@ -299,7 +299,7 @@
 
             if (CurrentPath.IsClipping)
             {
-                if (!parsingOptions.ClipPaths)
+                if (!ParsingOptions.ClipPaths)
                 {
                     // if we don't clip paths, add clipping path to paths
                     paths.Add(CurrentPath);
@@ -339,9 +339,9 @@
                 CurrentPath.FillColor = currentState.CurrentNonStrokingColor;
             }
 
-            if (parsingOptions.ClipPaths)
+            if (ParsingOptions.ClipPaths)
             {
-                var clippedPath = currentState.CurrentClippingPath.Clip(CurrentPath, parsingOptions.Logger);
+                var clippedPath = currentState.CurrentClippingPath.Clip(CurrentPath, ParsingOptions.Logger);
                 if (clippedPath != null)
                 {
                     paths.Add(clippedPath);
@@ -367,15 +367,15 @@
             AddCurrentSubpath();
             CurrentPath.SetClipping(clippingRule);
 
-            if (parsingOptions.ClipPaths)
+            if (ParsingOptions.ClipPaths)
             {
                 var currentClipping = GetCurrentState().CurrentClippingPath;
                 currentClipping.SetClipping(clippingRule);
 
-                var newClippings = CurrentPath.Clip(currentClipping, parsingOptions.Logger);
+                var newClippings = CurrentPath.Clip(currentClipping, ParsingOptions.Logger);
                 if (newClippings == null)
                 {
-                    parsingOptions.Logger.Warn("Empty clipping path found. Clipping path not updated.");
+                    ParsingOptions.Logger.Warn("Empty clipping path found. Clipping path not updated.");
                 }
                 else
                 {
@@ -394,7 +394,7 @@
         {
             if (propertyDictionaryName != null)
             {
-                var actual = resourceStore.GetMarkedContentPropertiesDictionary(propertyDictionaryName);
+                var actual = ResourceStore.GetMarkedContentPropertiesDictionary(propertyDictionaryName);
 
                 properties = actual ?? properties;
             }
@@ -406,7 +406,7 @@
         {
             if (markedContentStack.CanPop)
             {
-                var mc = markedContentStack.Pop(pdfScanner);
+                var mc = markedContentStack.Pop(PdfScanner);
                 if (mc != null)
                 {
                     markedContents.Add(mc);

@@ -27,57 +27,57 @@
         /// <summary>
         /// The resource store.
         /// </summary>
-        protected readonly IResourceStore resourceStore;
+        protected readonly IResourceStore ResourceStore;
 
         /// <summary>
         /// The user space unit.
         /// </summary>
-        protected readonly UserSpaceUnit userSpaceUnit;
+        protected readonly UserSpaceUnit UserSpaceUnit;
 
         /// <summary>
         /// The page rotation.
         /// </summary>
-        protected readonly PageRotationDegrees rotation;
+        protected readonly PageRotationDegrees Rotation;
 
         /// <summary>
         /// The scanner.
         /// </summary>
-        protected readonly IPdfTokenScanner pdfScanner;
+        protected readonly IPdfTokenScanner PdfScanner;
 
         /// <summary>
         /// The page content parser.
         /// </summary>
-        protected readonly IPageContentParser pageContentParser;
+        protected readonly IPageContentParser PageContentParser;
 
         /// <summary>
         /// The filter provider.
         /// </summary>
-        protected readonly ILookupFilterProvider filterProvider;
+        protected readonly ILookupFilterProvider FilterProvider;
 
         /// <summary>
         /// The parsing options.
         /// </summary>
-        protected readonly IParsingOptions parsingOptions;
+        protected readonly IParsingOptions ParsingOptions;
 
         /// <summary>
         /// The graphics stack.
         /// </summary>
-        protected Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
+        protected Stack<CurrentGraphicsState> GraphicsStack = new Stack<CurrentGraphicsState>();
 
         /// <summary>
         /// The active ExtendedGraphicsState font.
         /// </summary>
-        protected IFont activeExtendedGraphicsStateFont;
+        protected IFont ActiveExtendedGraphicsStateFont;
 
         /// <summary>
         /// Inline image builder.
         /// </summary>
-        protected InlineImageBuilder inlineImageBuilder;
+        protected InlineImageBuilder InlineImageBuilder;
 
         /// <summary>
         /// The page number.
         /// </summary>
-        protected int pageNumber;
+        protected int PageNumber;
 
         /// <inheritdoc/>
         public TextMatrices TextMatrices { get; } = new TextMatrices();
@@ -89,7 +89,7 @@
         public PdfPoint CurrentPosition { get; set; }
 
         /// <inheritdoc/>
-        public int StackSize => graphicsStack.Count;
+        public int StackSize => GraphicsStack.Count;
 
         /// <summary>
         /// A counter to track individual calls to <see cref="ShowText"/> operations used to determine if letters are likely to be
@@ -119,18 +119,18 @@
             ILookupFilterProvider filterProvider,
             IParsingOptions parsingOptions)
         {
-            this.pageNumber = pageNumber;
-            this.resourceStore = resourceStore;
-            this.userSpaceUnit = userSpaceUnit;
-            this.rotation = rotation;
-            this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
-            this.pageContentParser = pageContentParser ?? throw new ArgumentNullException(nameof(pageContentParser));
-            this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
-            this.parsingOptions = parsingOptions;
+            this.PageNumber = pageNumber;
+            this.ResourceStore = resourceStore;
+            this.UserSpaceUnit = userSpaceUnit;
+            this.Rotation = rotation;
+            this.PdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
+            this.PageContentParser = pageContentParser ?? throw new ArgumentNullException(nameof(pageContentParser));
+            this.FilterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
+            this.ParsingOptions = parsingOptions;
 
             TransformationMatrix initialMatrix = StreamProcessorHelper.GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, parsingOptions.Logger);
 
-            graphicsStack.Push(new CurrentGraphicsState()
+            GraphicsStack.Push(new CurrentGraphicsState()
             {
                 CurrentTransformationMatrix = initialMatrix,
                 CurrentClippingPath = StreamProcessorHelper.GetInitialClipping(cropBox, initialMatrix),
@@ -157,9 +157,9 @@
         /// <inheritdoc/>
         protected Stack<CurrentGraphicsState> CloneAllStates()
         {
-            var saved = graphicsStack;
-            graphicsStack = new Stack<CurrentGraphicsState>();
-            graphicsStack.Push(saved.Peek().DeepClone());
+            var saved = GraphicsStack;
+            GraphicsStack = new Stack<CurrentGraphicsState>();
+            GraphicsStack.Push(saved.Peek().DeepClone());
             return saved;
         }
 
@@ -167,20 +167,20 @@
         [DebuggerStepThrough]
         public CurrentGraphicsState GetCurrentState()
         {
-            return graphicsStack.Peek();
+            return GraphicsStack.Peek();
         }
 
         /// <inheritdoc/>
         public virtual void PopState()
         {
-            graphicsStack.Pop();
-            activeExtendedGraphicsStateFont = null;
+            GraphicsStack.Pop();
+            ActiveExtendedGraphicsStateFont = null;
         }
 
         /// <inheritdoc/>
         public virtual void PushState()
         {
-            graphicsStack.Push(graphicsStack.Peek().DeepClone());
+            GraphicsStack.Push(GraphicsStack.Peek().DeepClone());
         }
 
         /// <inheritdoc/>
@@ -188,13 +188,13 @@
         {
             var currentState = GetCurrentState();
 
-            var font = currentState.FontState.FromExtendedGraphicsState ? activeExtendedGraphicsStateFont : resourceStore.GetFont(currentState.FontState.FontName);
+            var font = currentState.FontState.FromExtendedGraphicsState ? ActiveExtendedGraphicsStateFont : ResourceStore.GetFont(currentState.FontState.FontName);
 
             if (font == null)
             {
-                if (parsingOptions.SkipMissingFonts)
+                if (ParsingOptions.SkipMissingFonts)
                 {
-                    parsingOptions.Logger.Warn($"Skipping a missing font with name {currentState.FontState.FontName} " +
+                    ParsingOptions.Logger.Warn($"Skipping a missing font with name {currentState.FontState.FontName} " +
                                                $"since it is not present in the document and {nameof(InternalParsingOptions.SkipMissingFonts)} " +
                                                "is set to true. This may result in some text being skipped and not included in the output.");
 
@@ -224,7 +224,7 @@
 
                 if (!foundUnicode || unicode == null)
                 {
-                    parsingOptions.Logger.Warn($"We could not find the corresponding character with code {code} in font {font.Name}.");
+                    ParsingOptions.Logger.Warn($"We could not find the corresponding character with code {code} in font {font.Name}.");
 
                     // Try casting directly to string as in PDFBox 1.8.
                     unicode = new string((char)code, 1);
@@ -301,13 +301,13 @@
 
             var fontSize = textState.FontSize;
             var horizontalScaling = textState.HorizontalScaling / 100.0;
-            var font = resourceStore.GetFont(textState.FontName);
+            var font = ResourceStore.GetFont(textState.FontName);
 
             if (font == null)
             {
-                if (parsingOptions.SkipMissingFonts)
+                if (ParsingOptions.SkipMissingFonts)
                 {
-                    parsingOptions.Logger.Warn($"Skipping a missing font with name {currentState.FontState.FontName} " +
+                    ParsingOptions.Logger.Warn($"Skipping a missing font with name {currentState.FontState.FontName} " +
                                                $"since it is not present in the document and {nameof(InternalParsingOptions.SkipMissingFonts)} " +
                                                "is set to true. This may result in some text being skipped and not included in the output.");
 
@@ -359,14 +359,14 @@
         /// <inheritdoc/>
         public virtual void ApplyXObject(NameToken xObjectName)
         {
-            if (!resourceStore.TryGetXObject(xObjectName, out var xObjectStream))
+            if (!ResourceStore.TryGetXObject(xObjectName, out var xObjectStream))
             {
-                if (parsingOptions.SkipMissingFonts)
+                if (ParsingOptions.SkipMissingFonts)
                 {
                     return;
                 }
 
-                throw new PdfDocumentFormatException($"No XObject with name {xObjectName} found on page {pageNumber}.");
+                throw new PdfDocumentFormatException($"No XObject with name {xObjectName} found on page {PageNumber}.");
             }
 
             // For now we will determine the type and store the object with the graphics state information preceding it.
@@ -417,10 +417,10 @@
              * 5. Restore the saved graphics state, as if by invoking the Q operator.
              */
 
-            var hasResources = formStream.StreamDictionary.TryGet<DictionaryToken>(NameToken.Resources, pdfScanner, out var formResources);
+            var hasResources = formStream.StreamDictionary.TryGet<DictionaryToken>(NameToken.Resources, PdfScanner, out var formResources);
             if (hasResources)
             {
-                resourceStore.LoadResourceDictionary(formResources, parsingOptions);
+                ResourceStore.LoadResourceDictionary(formResources, ParsingOptions);
             }
 
             // 1. Save current state.
@@ -429,9 +429,9 @@
             var startState = GetCurrentState();
 
             // Transparency Group XObjects
-            if (formStream.StreamDictionary.TryGet(NameToken.Group, pdfScanner, out DictionaryToken formGroupToken))
+            if (formStream.StreamDictionary.TryGet(NameToken.Group, PdfScanner, out DictionaryToken formGroupToken))
             {
-                if (!formGroupToken.TryGet<NameToken>(NameToken.S, pdfScanner, out var sToken) || sToken != NameToken.Transparency)
+                if (!formGroupToken.TryGet<NameToken>(NameToken.S, PdfScanner, out var sToken) || sToken != NameToken.Transparency)
                 {
                     throw new InvalidOperationException($"Invalid Transparency Group XObject, '{NameToken.S}' token is not set or not equal to '{NameToken.Transparency}'.");
                 }
@@ -455,11 +455,11 @@
                 startState.AlphaConstantNonStroking = 1.0m;
                 startState.AlphaConstantStroking = 1.0m;
 
-                if (formGroupToken.TryGet(NameToken.Cs, pdfScanner, out NameToken csNameToken))
+                if (formGroupToken.TryGet(NameToken.Cs, PdfScanner, out NameToken csNameToken))
                 {
                     startState.ColorSpaceContext.SetNonStrokingColorspace(csNameToken);
                 }
-                else if (formGroupToken.TryGet(NameToken.Cs, pdfScanner, out ArrayToken csArrayToken)
+                else if (formGroupToken.TryGet(NameToken.Cs, PdfScanner, out ArrayToken csArrayToken)
                     && csArrayToken.Length > 0)
                 {
                     if (csArrayToken.Data[0] is NameToken firstColorSpaceName)
@@ -473,7 +473,7 @@
                 }
 
                 bool isolated = false;
-                if (formGroupToken.TryGet(NameToken.I, pdfScanner, out BooleanToken isolatedToken))
+                if (formGroupToken.TryGet(NameToken.I, PdfScanner, out BooleanToken isolatedToken))
                 {
                     /*
                      * (Optional) A flag specifying whether the transparency group is isolated (see “Isolated Groups”).
@@ -485,7 +485,7 @@
                 }
 
                 bool knockout = false;
-                if (formGroupToken.TryGet(NameToken.K, pdfScanner, out BooleanToken knockoutToken))
+                if (formGroupToken.TryGet(NameToken.K, PdfScanner, out BooleanToken knockoutToken))
                 {
                     /*
                      * (Optional) A flag specifying whether the transparency group is a knockout group (see “Knockout Groups”).
@@ -499,7 +499,7 @@
             }
 
             var formMatrix = TransformationMatrix.Identity;
-            if (formStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Matrix, pdfScanner, out var formMatrixToken))
+            if (formStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Matrix, PdfScanner, out var formMatrixToken))
             {
                 formMatrix = TransformationMatrix.FromArray(formMatrixToken.Data.OfType<NumericToken>().Select(x => x.Double).ToArray());
             }
@@ -507,9 +507,9 @@
             // 2. Update current transformation matrix.
             startState.CurrentTransformationMatrix = formMatrix.Multiply(startState.CurrentTransformationMatrix);
 
-            var contentStream = formStream.Decode(filterProvider, pdfScanner);
+            var contentStream = formStream.Decode(FilterProvider, PdfScanner);
 
-            var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentStream), parsingOptions.Logger);
+            var operations = PageContentParser.Parse(PageNumber, new ByteArrayInputBytes(contentStream), ParsingOptions.Logger);
 
             // 3. We don't respect clipping currently.
 
@@ -521,7 +521,7 @@
 
             if (hasResources)
             {
-                resourceStore.UnloadResourceDictionary();
+                ResourceStore.UnloadResourceDictionary();
             }
         }
 
@@ -575,32 +575,32 @@
         {
             var currentGraphicsState = GetCurrentState();
 
-            var state = resourceStore.GetExtendedGraphicsStateDictionary(stateName);
+            var state = ResourceStore.GetExtendedGraphicsStateDictionary(stateName);
 
-            if (state.TryGet(NameToken.Lw, pdfScanner, out NumericToken lwToken))
+            if (state.TryGet(NameToken.Lw, PdfScanner, out NumericToken lwToken))
             {
                 currentGraphicsState.LineWidth = lwToken.Data;
             }
 
-            if (state.TryGet(NameToken.Lc, pdfScanner, out NumericToken lcToken))
+            if (state.TryGet(NameToken.Lc, PdfScanner, out NumericToken lcToken))
             {
                 currentGraphicsState.CapStyle = (LineCapStyle)lcToken.Int;
             }
 
-            if (state.TryGet(NameToken.Lj, pdfScanner, out NumericToken ljToken))
+            if (state.TryGet(NameToken.Lj, PdfScanner, out NumericToken ljToken))
             {
                 currentGraphicsState.JoinStyle = (LineJoinStyle)ljToken.Int;
             }
 
-            if (state.TryGet(NameToken.Font, pdfScanner, out ArrayToken fontArray) && fontArray.Length == 2
+            if (state.TryGet(NameToken.Font, PdfScanner, out ArrayToken fontArray) && fontArray.Length == 2
                 && fontArray.Data[0] is IndirectReferenceToken fontReference && fontArray.Data[1] is NumericToken sizeToken)
             {
                 currentGraphicsState.FontState.FromExtendedGraphicsState = true;
                 currentGraphicsState.FontState.FontSize = (double)sizeToken.Data;
-                activeExtendedGraphicsStateFont = resourceStore.GetFontDirectly(fontReference);
+                ActiveExtendedGraphicsStateFont = ResourceStore.GetFontDirectly(fontReference);
             }
 
-            if (state.TryGet(NameToken.Ais, pdfScanner, out BooleanToken aisToken))
+            if (state.TryGet(NameToken.Ais, PdfScanner, out BooleanToken aisToken))
             {
                 // The alpha source flag (“alpha is shape”), specifying
                 // whether the current soft mask and alpha constant are to be interpreted as
@@ -608,7 +608,7 @@
                 currentGraphicsState.AlphaSource = aisToken.Data;
             }
 
-            if (state.TryGet(NameToken.Ca, pdfScanner, out NumericToken caToken))
+            if (state.TryGet(NameToken.Ca, PdfScanner, out NumericToken caToken))
             {
                 // (Optional; PDF 1.4) The current stroking alpha constant, specifying the constant
                 // shape or constant opacity value to be used for stroking operations in the
@@ -617,7 +617,7 @@
                 currentGraphicsState.AlphaConstantStroking = caToken.Data;
             }
 
-            if (state.TryGet(NameToken.CaNs, pdfScanner, out NumericToken cansToken))
+            if (state.TryGet(NameToken.CaNs, PdfScanner, out NumericToken cansToken))
             {
                 // (Optional; PDF 1.4) The current stroking alpha constant, specifying the constant
                 // shape or constant opacity value to be used for NON-stroking operations in the
@@ -626,7 +626,7 @@
                 currentGraphicsState.AlphaConstantNonStroking = cansToken.Data;
             }
 
-            if (state.TryGet(NameToken.Op, pdfScanner, out BooleanToken OPToken))
+            if (state.TryGet(NameToken.Op, PdfScanner, out BooleanToken OPToken))
             {
                 // (Optional) A flag specifying whether to apply overprint (see Section 4.5.6,
                 // “Overprint Control”). In PDF 1.2 and earlier, there is a single overprint
@@ -638,7 +638,7 @@
                 currentGraphicsState.Overprint = OPToken.Data;
             }
 
-            if (state.TryGet(NameToken.OpNs, pdfScanner, out BooleanToken opToken))
+            if (state.TryGet(NameToken.OpNs, PdfScanner, out BooleanToken opToken))
             {
                 // (Optional; PDF 1.3) A flag specifying whether to apply overprint (see Section
                 // 4.5.6, “Overprint Control”) for painting operations other than stroking. If
@@ -646,13 +646,13 @@
                 currentGraphicsState.NonStrokingOverprint = opToken.Data;
             }
 
-            if (state.TryGet(NameToken.Opm, pdfScanner, out NumericToken opmToken))
+            if (state.TryGet(NameToken.Opm, PdfScanner, out NumericToken opmToken))
             {
                 // (Optional; PDF 1.3) The overprint mode (see Section 4.5.6, “Overprint Control”).
                 currentGraphicsState.OverprintMode = opmToken.Data;
             }
 
-            if (state.TryGet(NameToken.Sa, pdfScanner, out BooleanToken saToken))
+            if (state.TryGet(NameToken.Sa, PdfScanner, out BooleanToken saToken))
             {
                 // (Optional) A flag specifying whether to apply automatic stroke adjustment
                 // (see Section 6.5.4, “Automatic Stroke Adjustment”).
@@ -663,42 +663,42 @@
         /// <inheritdoc/>
         public virtual void BeginInlineImage()
         {
-            if (inlineImageBuilder != null)
+            if (InlineImageBuilder != null)
             {
-                parsingOptions.Logger.Error("Begin inline image (BI) command encountered while another inline image was active.");
+                ParsingOptions.Logger.Error("Begin inline image (BI) command encountered while another inline image was active.");
             }
 
-            inlineImageBuilder = new InlineImageBuilder();
+            InlineImageBuilder = new InlineImageBuilder();
         }
 
         /// <inheritdoc/>
         public virtual void SetInlineImageProperties(IReadOnlyDictionary<NameToken, IToken> properties)
         {
-            if (inlineImageBuilder == null)
+            if (InlineImageBuilder == null)
             {
-                parsingOptions.Logger.Error("Begin inline image data (ID) command encountered without a corresponding begin inline image (BI) command.");
+                ParsingOptions.Logger.Error("Begin inline image data (ID) command encountered without a corresponding begin inline image (BI) command.");
                 return;
             }
 
-            inlineImageBuilder.Properties = properties;
+            InlineImageBuilder.Properties = properties;
         }
 
         /// <inheritdoc/>
         public virtual void EndInlineImage(IReadOnlyList<byte> bytes)
         {
-            if (inlineImageBuilder == null)
+            if (InlineImageBuilder == null)
             {
-                parsingOptions.Logger.Error("End inline image (EI) command encountered without a corresponding begin inline image (BI) command.");
+                ParsingOptions.Logger.Error("End inline image (EI) command encountered without a corresponding begin inline image (BI) command.");
                 return;
             }
 
-            inlineImageBuilder.Bytes = bytes;
+            InlineImageBuilder.Bytes = bytes;
 
-            var image = inlineImageBuilder.CreateInlineImage(CurrentTransformationMatrix, filterProvider, pdfScanner, GetCurrentState().RenderingIntent, resourceStore);
+            var image = InlineImageBuilder.CreateInlineImage(CurrentTransformationMatrix, FilterProvider, PdfScanner, GetCurrentState().RenderingIntent, ResourceStore);
 
             RenderInlineImage(image);
 
-            inlineImageBuilder = null;
+            InlineImageBuilder = null;
         }
 
         /// <summary>

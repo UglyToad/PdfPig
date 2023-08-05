@@ -119,9 +119,9 @@
 
             // TODO - careful here - resourceStore is not thread safe
             var pageFactory = (IPageFactory<TPage>)Activator.CreateInstance(type,
-                    defaultPageFactory.pdfScanner, defaultPageFactory.resourceStore,
-                    defaultPageFactory.filterProvider, defaultPageFactory.pageContentParser,
-                    defaultPageFactory.log);
+                    defaultPageFactory.PdfScanner, defaultPageFactory.ResourceStore,
+                    defaultPageFactory.FilterProvider, defaultPageFactory.PageContentParser,
+                    defaultPageFactory.Log);
             AddPageFactory(pageFactory);
         }
 
