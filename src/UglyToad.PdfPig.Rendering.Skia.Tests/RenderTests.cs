@@ -1,5 +1,4 @@
 using SkiaSharp;
-using System.IO;
 using UglyToad.PdfPig.Rendering.Skia.Parser;
 
 namespace UglyToad.PdfPig.Rendering.Skia.Tests
@@ -48,7 +47,7 @@ namespace UglyToad.PdfPig.Rendering.Skia.Tests
 
                 using (var document = PdfDocument.Open(doc))
                 {
-                    document.AddPageFactory<SKPicture>(typeof(SkiaPageFactory));
+                    document.AddPageFactory<SKPicture, SkiaPageFactory>();
 
                     for (int p = 1; p <= document.NumberOfPages; p++)
                     {
@@ -71,10 +70,10 @@ namespace UglyToad.PdfPig.Rendering.Skia.Tests
         }
 
         private static void RenderDocument(string path)
-        {            
+        {
             using (var document = PdfDocument.Open(Helpers.GetDocumentPath(path)))
             {
-                document.AddPageFactory<SKPicture>(typeof(SkiaPageFactory));
+                document.AddPageFactory<SKPicture, SkiaPageFactory>();
 
                 for (int p = 1; p <= document.NumberOfPages; p++)
                 {

@@ -206,10 +206,10 @@
         /// TODO
         /// </summary>
         /// <typeparam name="TPage"></typeparam>
-        /// <param name="type"></param>
-        public void AddPageFactory<TPage>(Type type)
+        /// <typeparam name="TPageFactory"></typeparam>
+        public void AddPageFactory<TPage, TPageFactory>() where TPageFactory : IPageFactory<TPage>
         {
-            pages.AddPageFactory<TPage>(type);
+            pages.AddPageFactory<TPage, TPageFactory>();
         }
 
         /// <summary>

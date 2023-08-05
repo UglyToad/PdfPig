@@ -106,19 +106,12 @@
             pageFactoryCache.TryAdd(typeof(TPage), pageFactory);
         }
 
-        internal void AddPageFactory<TPage>(Type type)
+        internal void AddPageFactory<TPage, TPageFactory>() where TPageFactory : IPageFactory<TPage>
         {
-            // TODO - check for type, should implement IPageFactory<TPage>
-
-            if (!typeof(IPageFactory<TPage>).IsAssignableFrom(type))
-            {
-                throw new ArgumentException($"The type provided does not implement {typeof(IPageFactory<TPage>)}.");
-            }
-
             var defaultPageFactory = (PageFactory)pageFactoryCache[typeof(Page)];
 
             // TODO - careful here - resourceStore is not thread safe
-            var pageFactory = (IPageFactory<TPage>)Activator.CreateInstance(type,
+            var pageFactory = (IPageFactory<TPage>)Activator.CreateInstance(typeof(TPageFactory),
                     defaultPageFactory.PdfScanner, defaultPageFactory.ResourceStore,
                     defaultPageFactory.FilterProvider, defaultPageFactory.PageContentParser,
                     defaultPageFactory.Log);

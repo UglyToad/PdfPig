@@ -20,7 +20,7 @@
 
             using (var document = PdfDocument.Open(file))
             {
-                document.AddPageFactory<SimplePage>(typeof(SimplePageFactory));
+                document.AddPageFactory<SimplePage, SimplePageFactory>();
 
                 var page = document.GetPage<SimplePage>(1);
                 Assert.Equal(1, page.Number);
@@ -54,7 +54,7 @@
 
             using (var document = PdfDocument.Open(file))
             {
-                document.AddPageFactory<PageInformation>(typeof(PageInformationFactory));
+                document.AddPageFactory<PageInformation, PageInformationFactory>();
 
                 Page page = document.GetPage(1);
 

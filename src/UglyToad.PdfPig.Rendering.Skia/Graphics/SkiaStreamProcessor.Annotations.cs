@@ -76,7 +76,7 @@ namespace UglyToad.PdfPig.Rendering.Skia.Graphics
 
                         try
                         {
-                            base.ProcessFormXObject(appearance);
+                            base.ProcessFormXObject(appearance, null);
                         }
                         catch (Exception ex)
                         {

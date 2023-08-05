@@ -392,7 +392,7 @@
             }
             else if (subType.Equals(NameToken.Form))
             {
-                ProcessFormXObject(xObjectStream);
+                ProcessFormXObject(xObjectStream, xObjectName);
             }
             else
             {
@@ -403,9 +403,7 @@
         /// <summary>
         /// Process a XObject form.
         /// </summary>
-        /// <param name="formStream"></param>
-        /// <exception cref="InvalidOperationException"></exception>
-        protected void ProcessFormXObject(StreamToken formStream)
+        protected void ProcessFormXObject(StreamToken formStream, NameToken xObjectName)
         {
             /*
              * When a form XObject is invoked the following should happen:
@@ -514,6 +512,20 @@
             // 3. We don't respect clipping currently.
 
             // 4. Paint the objects.
+            bool hasCircularReference = HasFormXObjectCircularReference(formStream, xObjectName, operations);
+            if (hasCircularReference)
+            {
+                if (ParsingOptions.UseLenientParsing)
+                {
+                    operations = operations.Where(o => o is not InvokeNamedXObject xo || xo.Name != xObjectName).ToArray();
+                    ParsingOptions.Logger.Warn($"An XObject form named '{xObjectName}' is referencing itself which can cause unexpected behaviour. The self reference was removed from the operations before further processing.");
+                }
+                else
+                {
+                    throw new PdfDocumentFormatException($"An XObject form named '{xObjectName}' is referencing itself which can cause unexpected behaviour.");
+                }
+            }
+
             ProcessOperations(operations);
 
             // 5. Restore saved state.
@@ -523,6 +535,20 @@
             {
                 ResourceStore.UnloadResourceDictionary();
             }
+        }
+
+        /// <summary>
+        /// Check for circular reference in the XObject form.
+        /// </summary>
+        /// <param name="formStream">The original form stream.</param>
+        /// <param name="xObjectName">The form's name.</param>
+        /// <param name="operations">The form operations parsed from original form stream.</param>
+        private bool HasFormXObjectCircularReference(StreamToken formStream, NameToken xObjectName, IReadOnlyList<IGraphicsStateOperation> operations)
+        {
+            return xObjectName != null
+                && operations.OfType<InvokeNamedXObject>()?.Any(o => o.Name == xObjectName) == true // operations contain another form with same name
+                && ResourceStore.TryGetXObject(xObjectName, out var result)
+                && result.Data.SequenceEqual(formStream.Data); // The form contained in the operations has identical data to current form
         }
 
         /// <summary>
