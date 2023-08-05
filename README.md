@@ -25,8 +25,6 @@ Or from the package manager console:
 
 While the version is below 1.0.0 minor versions will change the public API without warning (SemVer will not be followed until 1.0.0 is reached).
 
-Nightly pre-release versions of the development code are pushed to https://www.nuget.org/packages/PdfPig.Nightly/
-
 ## Get Started
 
 The simplest usage at this stage is to open a document, reading the words from every page:
