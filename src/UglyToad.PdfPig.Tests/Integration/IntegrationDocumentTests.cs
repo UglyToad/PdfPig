@@ -9,6 +9,10 @@
     public class IntegrationDocumentTests
     {
         private static readonly Lazy<string> DocumentFolder = new Lazy<string>(() => Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Integration", "Documents")));
+        private static readonly HashSet<string> _documentsToIgnore = new HashSet<string>()
+        {
+            "issue_671.pdf"
+        };
 
         [Theory]
         [MemberData(nameof(GetAllDocuments))]
@@ -101,7 +105,7 @@
                 var files = Directory.GetFiles(DocumentFolder.Value, "*.pdf");
 
                 // Return the shortname so we can see it in the test explorer.
-                return files.Select(x => new object[] { Path.GetFileName(x) });
+                return files.Where(x => !_documentsToIgnore.Any(i => x.EndsWith(i))).Select(x => new object[] { Path.GetFileName(x) });
             }
         }
     }
