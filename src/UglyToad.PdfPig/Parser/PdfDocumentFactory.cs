@@ -158,7 +158,11 @@
 
             pdfScanner.UpdateEncryptionHandler(encryptionHandler);
 
-            var cidFontFactory = new CidFontFactory(pdfScanner, filterProvider);
+            var cidFontFactory = new CidFontFactory(
+                parsingOptions.Logger,
+                pdfScanner,
+                filterProvider);
+
             var encodingReader = new EncodingReader(pdfScanner);
 
             var type0Handler = new Type0FontHandler(

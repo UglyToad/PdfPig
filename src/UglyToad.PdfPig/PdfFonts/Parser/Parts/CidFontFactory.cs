@@ -13,21 +13,24 @@
     using PdfPig.Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
+    using UglyToad.PdfPig.Logging;
     using Util;
 
     internal class CidFontFactory
     {
         private readonly ILookupFilterProvider filterProvider;
         private readonly IPdfTokenScanner pdfScanner;
+        private readonly ILog logger;
 
-        public CidFontFactory(IPdfTokenScanner pdfScanner, ILookupFilterProvider filterProvider)
+        public CidFontFactory(ILog log, IPdfTokenScanner pdfScanner, ILookupFilterProvider filterProvider)
         {
+            this.logger = log;
             this.pdfScanner = pdfScanner;
             this.filterProvider = filterProvider;
         }
 
         public ICidFont Generate(DictionaryToken dictionary)
-        { 
+        {
             var type = dictionary.GetNameOrDefault(NameToken.Type);
             if (!NameToken.Font.Equals(type))
             {
@@ -50,7 +53,15 @@
                 descriptor = FontDescriptorFactory.Generate(descriptorDictionary, pdfScanner);
             }
 
-            var fontProgram = ReadDescriptorFile(descriptor);
+            ICidFontProgram fontProgram = null;
+            try
+            {
+                fontProgram = ReadDescriptorFile(descriptor);
+            }
+            catch (Exception ex)
+            {
+                logger.Error($"Invalid descriptor in CID font named '{descriptor?.FontName}': {ex.Message}.");
+            }
 
             var baseFont = dictionary.GetNameOrDefault(NameToken.BaseFont);
 
@@ -74,25 +85,7 @@
 
         private bool TryGetFontDescriptor(DictionaryToken dictionary, out DictionaryToken descriptorDictionary)
         {
-            descriptorDictionary = null;
-
-            if (!dictionary.TryGet(NameToken.FontDescriptor, out var baseValue))
-            {
-                return false;
-            }
-
-            try
-            {
-                var descriptor = DirectObjectFinder.Get<DictionaryToken>(baseValue, pdfScanner);
-
-                descriptorDictionary = descriptor;
-            }
-            catch
-            {
-                return false;
-            }
-
-            return true;
+            return dictionary.TryGet(NameToken.FontDescriptor, pdfScanner, out descriptorDictionary);
         }
 
         private ICidFontProgram ReadDescriptorFile(FontDescriptor descriptor)
@@ -267,14 +260,9 @@
                 throw new InvalidFontFormatException($"No CID System Info was found in the CID Font dictionary: {dictionary}");
             }
 
-            if (cidEntry is DictionaryToken cidDictionary)
+            if (!(cidEntry is DictionaryToken cidDictionary))
             {
-
-            }
-            else
-            {
-                cidDictionary =
-                    DirectObjectFinder.Get<DictionaryToken>(cidEntry, pdfScanner);
+                cidDictionary = DirectObjectFinder.Get<DictionaryToken>(cidEntry, pdfScanner);
             }
 
             var registry = SafeKeyAccess(cidDictionary, NameToken.Registry);
