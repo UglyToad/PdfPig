@@ -315,7 +315,16 @@
                 var transformedPdfBounds = PerformantRectangleTransformer
                     .Transform(renderingMatrix, textMatrix, transformationMatrix, new PdfRectangle(0, 0, boundingBox.Width, 0));
 
-                      
+                if (parsingOptions.ClipPaths)
+                {
+                    var currentClipping = GetCurrentState().CurrentClippingPath;
+
+                    if (!currentClipping?.Contains(transformedGlyphBounds) ?? true)
+                    {
+                        return;
+                    }
+                }
+
                 Letter letter = null;
                 if (Diacritics.IsInCombiningDiacriticRange(unicode) && bytes.CurrentOffset > 0 && letters.Count > 0)
                 {
