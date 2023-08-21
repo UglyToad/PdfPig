@@ -317,9 +317,9 @@
 
                 if (parsingOptions.ClipPaths)
                 {
-                    var currentClipping = GetCurrentState().CurrentClippingPath;
+                    var currentClipping = currentState.CurrentClippingPath;
 
-                    if (!currentClipping?.Contains(transformedGlyphBounds) ?? true)
+                    if (currentState.CurrentClippingPath?.Contains(transformedGlyphBounds) == false)
                     {
                         return;
                     }
