@@ -76,7 +76,7 @@ namespace UglyToad.PdfPig.Fonts.SystemFonts
             NameSubstitutes = dict;
 
             ISystemFontLister lister;
-#if NETSTANDARD2_0
+#if NETSTANDARD2_0_OR_GREATER || NET
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 lister = new WindowsSystemFontLister();
@@ -93,8 +93,10 @@ namespace UglyToad.PdfPig.Fonts.SystemFonts
             {
                 throw new NotSupportedException($"Unsupported operating system: {RuntimeInformation.OSDescription}.");
             }
-#else 
+#elif NETFRAMEWORK
             lister = new WindowsSystemFontLister();
+#else
+#error Missing ISystemFontLister for target framework
 #endif
 
             AvailableFonts = new Lazy<IReadOnlyList<SystemFontRecord>>(() => lister.GetAllFonts().ToList());
