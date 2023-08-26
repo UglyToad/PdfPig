@@ -1,11 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Tests.Graphics
 {
     using Content;
-    using Logging;
     using PdfPig.Core;
     using PdfPig.Geometry;
     using PdfPig.Graphics;
-    using System.Linq;
     using Xunit;
 
     public class ContentStreamProcessorTests
@@ -54,7 +52,7 @@
             p0 = i.Transform(pt);
             AssertAreEqual(pointBelowViewBox, p0);
             Assert.True(pt.X > 0 && pt.X < 195 && pt.Y < 0);
-            
+
             pt = m.Transform(pointLeftOfViewBox);
             p0 = i.Transform(pt);
             AssertAreEqual(pointLeftOfViewBox, p0);
@@ -72,7 +70,7 @@
             p0 = i.Transform(pt);
             AssertAreEqual(pointAboveViewBox, p0);
             Assert.True(pt.X > 0 && pt.X < 195 && pt.Y < 0);
-            
+
             pt = m.Transform(pointRightOfViewBox);
             p0 = i.Transform(pt);
             AssertAreEqual(pointRightOfViewBox, p0);
@@ -99,7 +97,6 @@
             Assert.Equal(cropBox.Height - glyph.Height, transformedGlyph.BottomLeft.Y, 0);
             Assert.Equal(glyph.Width, transformedGlyph.TopRight.X, 0);
             Assert.Equal(cropBox.Height, transformedGlyph.TopRight.Y, 0);
-            
 
             // Test with 90 degrees
             GetInitialTransformationMatrices(mediaBox, cropBox, new PageRotationDegrees(90), out initialMatrix, out inverseMatrix);
@@ -110,7 +107,7 @@
             Assert.Equal(cropBox.Width, transformedGlyph.BottomLeft.Y, 0);
             Assert.Equal(cropBox.Height, transformedGlyph.TopRight.X, 0);
             Assert.Equal(cropBox.Width - glyph.Width, transformedGlyph.TopRight.Y, 0);
-            
+
             // Test with 180 degrees
             GetInitialTransformationMatrices(mediaBox, cropBox, new PageRotationDegrees(180), out initialMatrix, out inverseMatrix);
             transformedGlyph = initialMatrix.Transform(glyph);
@@ -120,7 +117,7 @@
             Assert.Equal(glyph.Height, transformedGlyph.BottomLeft.Y, 0);
             Assert.Equal(cropBox.Width - glyph.Width, transformedGlyph.TopRight.X, 0);
             Assert.Equal(0, transformedGlyph.TopRight.Y, 0);
-            
+
             // Test with 270 degrees
             GetInitialTransformationMatrices(mediaBox, cropBox, new PageRotationDegrees(270), out initialMatrix, out inverseMatrix);
             transformedGlyph = initialMatrix.Transform(glyph);
@@ -130,7 +127,6 @@
             Assert.Equal(0, transformedGlyph.BottomLeft.Y, 0);
             Assert.Equal(0, transformedGlyph.TopRight.X, 0);
             Assert.Equal(glyph.Width, transformedGlyph.TopRight.Y, 0);
-            
         }
 
         private static void GetInitialTransformationMatrices(
@@ -140,7 +136,7 @@
             out TransformationMatrix initialMatrix,
             out TransformationMatrix inverseMatrix)
         {
-            initialMatrix = ContentStreamProcessor.GetInitialMatrix(UserSpaceUnit.Default, mediaBox, cropBox, rotation, new TestingLog());
+            initialMatrix = OperationContextHelper.GetInitialMatrix(UserSpaceUnit.Default, mediaBox, cropBox, rotation, new TestingLog());
             inverseMatrix = initialMatrix.Inverse();
         }
 
