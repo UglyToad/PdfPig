@@ -129,6 +129,10 @@ namespace UglyToad.PdfPig.Graphics
                 case SetColorRenderingIntent.Symbol:
                     return new SetColorRenderingIntent((NameToken)operands[0]);
                 case SetFlatnessTolerance.Symbol:
+                    if (operands.Count == 0)
+                    {
+                        return null; // Should not happen by definition
+                    }
                     return new SetFlatnessTolerance(OperandToDecimal(operands[0]));
                 case SetLineCap.Symbol:
                     return new SetLineCap(OperandToInt(operands[0]));
