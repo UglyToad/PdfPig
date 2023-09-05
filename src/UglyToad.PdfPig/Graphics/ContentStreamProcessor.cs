@@ -319,7 +319,7 @@
                 {
                     var currentClipping = currentState.CurrentClippingPath;
 
-                    if (currentClipping?.Contains(transformedGlyphBounds) == false)
+                    if (currentClipping?.IntersectsWith(transformedGlyphBounds) == false)
                     {
                         return;
                     }
