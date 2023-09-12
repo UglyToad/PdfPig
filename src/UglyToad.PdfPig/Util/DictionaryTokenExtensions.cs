@@ -169,7 +169,7 @@
 
             if (array.Data.Count != 4)
             {
-                throw new PdfDocumentFormatException($"Cannot convert array to rectangle, expected 4 values instead got: {array}.");
+                throw new PdfDocumentFormatException($"Cannot convert array to rectangle, expected 4 values instead got: {array.Data.Count}.");
             }
 
             return new PdfRectangle(DirectObjectFinder.Get<NumericToken>(array[0], tokenScanner).Double,
@@ -187,7 +187,7 @@
 
             if (array.Data.Count != 4)
             {
-                throw new PdfDocumentFormatException($"Cannot convert array to rectangle, expected 4 values instead got: {array}.");
+                throw new PdfDocumentFormatException($"Cannot convert array to rectangle, expected 4 values instead got: {array.Data.Count}.");
             }
 
             return new PdfRectangle(DirectObjectFinder.Get<NumericToken>(array[0], tokenScanner).Int,
