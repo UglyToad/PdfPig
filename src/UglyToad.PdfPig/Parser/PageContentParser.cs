@@ -15,10 +15,12 @@
     internal class PageContentParser : IPageContentParser
     {
         private readonly IGraphicsStateOperationFactory operationFactory;
+        private readonly bool useLenientParsing;
 
-        public PageContentParser(IGraphicsStateOperationFactory operationFactory)
+        public PageContentParser(IGraphicsStateOperationFactory operationFactory, bool useLenientParsing = false)
         {
             this.operationFactory = operationFactory;
+            this.useLenientParsing = useLenientParsing;
         }
 
         public IReadOnlyList<IGraphicsStateOperation> Parse(
@@ -116,9 +118,10 @@
                         catch (Exception ex)
                         {
                             // End images can cause weird state if the "EI" appears inside the inline data stream.
-                            if (TryGetLastEndImage(graphicsStateOperations, out _, out _))
+                            log.Error($"Failed reading operation at offset {inputBytes.CurrentOffset} for page {pageNumber}, data: '{op.Data}'", ex);
+                            if (TryGetLastEndImage(graphicsStateOperations, out _, out _)
+                                || useLenientParsing)
                             {
-                                log.Error($"Failed reading an operation at offset {inputBytes.CurrentOffset} for page {pageNumber}.", ex);
                                 operation = null;
                             }
                             else
