@@ -403,7 +403,7 @@
                     {
                         if (optionArrayToken.Length != 2)
                         {
-                            throw new PdfDocumentFormatException($"An option array containing array elements should contain 2 strings, instead got: {optionArrayToken}.");
+                            throw new PdfDocumentFormatException($"An option array containing array elements should contain 2 strings, instead got: {optionArrayToken.Length}.");
                         }
 
                         string exportValue;

@@ -81,7 +81,7 @@
                                     }
                                     else
                                     {
-                                        throw new InvalidOperationException($"Expected four values for the font matrix, instead got: {array}.");
+                                        throw new InvalidOperationException($"Expected four values for the font matrix, instead got: {array.Length}.");
                                     }
                                 }
                                 break;

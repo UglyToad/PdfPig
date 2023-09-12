@@ -31,7 +31,7 @@
         {
             if (value.Length != 6)
             {
-                throw new ArgumentException("Text matrix must provide 6 values. Instead got: " + value);
+                throw new ArgumentException("Text matrix must provide 6 values. Instead got: " + value.Length);
             }
 
             Value = value;
