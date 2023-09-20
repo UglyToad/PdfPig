@@ -25,8 +25,8 @@
             {
                 var page = document.GetPage(1);
                 var text = page.Text;
-                Assert.Contains(text, "Text line 1");
-                Assert.Contains(text, "Text line 2");
+                Assert.Contains("Text line 1", text);
+                Assert.Contains("Text line 2", text);
             }
         }
     }
