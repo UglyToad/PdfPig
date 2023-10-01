@@ -290,7 +290,7 @@
             return results;
         }
 
-        protected struct Operand
+        protected readonly struct Operand
         {
             public int? Int { get; }
 
@@ -309,13 +309,13 @@
             }
         }
 
-        protected struct OperandKey
+        protected readonly struct OperandKey
         {
             public byte Byte0 { get; }
 
             public byte? Byte1 { get; }
 
-            public OperandKey(Byte byte0)
+            public OperandKey(byte byte0)
             {
                 Byte0 = byte0;
                 Byte1 = null;

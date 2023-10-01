@@ -2,7 +2,7 @@
 {
     using System;
 
-    internal struct SystemFontRecord
+    internal readonly struct SystemFontRecord
     {
         public string Path { get; }
 

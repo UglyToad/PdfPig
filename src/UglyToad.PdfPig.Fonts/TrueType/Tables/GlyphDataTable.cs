@@ -390,7 +390,7 @@
         /// Stores the composite glyph information we read when initially scanning the glyph table.
         /// Once we have all composite glyphs we can start building them from simple glyphs.
         /// </summary>
-        private struct TemporaryCompositeLocation
+        private readonly struct TemporaryCompositeLocation
         {
             /// <summary>
             /// Stores the position after reading the contour count and bounds.

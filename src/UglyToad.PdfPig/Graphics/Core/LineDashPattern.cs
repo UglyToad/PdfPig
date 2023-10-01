@@ -7,9 +7,9 @@
 
     /// <summary>
     /// The line dash pattern controls the pattern of dashes and gaps used to stroke paths.
-    /// It is specified by a dash array and a dash phase. 
+    /// It is specified by a dash array and a dash phase.
     /// </summary>
-    public struct LineDashPattern
+    public readonly struct LineDashPattern
     {
         /// <summary>
         /// The distance into the dash pattern at which to start the dash.

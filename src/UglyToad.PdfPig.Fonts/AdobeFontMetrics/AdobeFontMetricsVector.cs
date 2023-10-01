@@ -3,7 +3,7 @@
     /// <summary>
     /// A vector in the Adobe Font Metrics.
     /// </summary>
-    public struct AdobeFontMetricsVector
+    public readonly struct AdobeFontMetricsVector
     {
         /// <summary>
         /// The x component of the vector.

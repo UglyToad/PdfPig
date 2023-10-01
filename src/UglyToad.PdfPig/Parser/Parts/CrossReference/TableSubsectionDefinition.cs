@@ -16,7 +16,7 @@
     /// 
     /// Defines a table subsection that starts with object 12 and has 16 entries (12-27).
     /// </example>
-    internal struct TableSubsectionDefinition
+    internal readonly struct TableSubsectionDefinition
     {
         private static readonly char[] Splitters = { ' ' };
 

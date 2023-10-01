@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Core
 {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
     using System.Diagnostics.Contracts;
     using System.Linq;
@@ -10,7 +9,7 @@
     /// <summary>
     /// Specifies the conversion from the transformed coordinate space to the original untransformed coordinate space.
     /// </summary>
-    public struct TransformationMatrix
+    public readonly struct TransformationMatrix
     {
         /// <summary>
         /// The default <see cref="TransformationMatrix"/>.
@@ -18,14 +17,14 @@
         public static TransformationMatrix Identity = new TransformationMatrix(1,0,0,
             0,1,0,
             0,0,1);
-        
+
         /// <summary>
         /// Create a new <see cref="TransformationMatrix"/> with the X and Y translation values set.
         /// </summary>
         public static TransformationMatrix GetTranslationMatrix(double x, double y) => new TransformationMatrix(1, 0, 0,
             0, 1, 0,
             x, y, 1);
-        
+
         /// <summary>
         /// Create a new <see cref="TransformationMatrix"/> with the X and Y scaling values set.
         /// </summary>
@@ -105,7 +104,7 @@
         /// The value at (2, 1) - translation in Y.
         /// </summary>
         public readonly double F;
-        
+
         /// <summary>
         /// Get the value at the specific row and column.
         /// </summary>
@@ -136,47 +135,47 @@
                 switch (row)
                 {
                     case 0:
+                    {
+                        switch (col)
                         {
-                            switch (col)
-                            {
-                                case 0:
-                                    return A;
-                                case 1:
-                                    return B;
-                                case 2:
-                                    return row1;
-                                default:
+                            case 0:
+                                return A;
+                            case 1:
+                                return B;
+                            case 2:
+                                return row1;
+                            default:
                                     throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.");
-                            }
                         }
+                    }
                     case 1:
+                    {
+                        switch (col)
                         {
-                            switch (col)
-                            {
-                                case 0:
-                                    return C;
-                                case 1:
-                                    return D;
-                                case 2:
-                                    return row2;
-                                default:
+                            case 0:
+                                return C;
+                            case 1:
+                                return D;
+                            case 2:
+                                return row2;
+                            default:
                                     throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.");
-                            }
                         }
+                    }
                     case 2:
+                    {
+                        switch (col)
                         {
-                            switch (col)
-                            {
-                                case 0:
-                                    return E;
-                                case 1:
-                                    return F;
-                                case 2:
-                                    return row3;
-                                default:
+                            case 0:
+                                return E;
+                            case 1:
+                                return F;
+                            case 2:
+                                return row3;
+                            default:
                                     throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.");
-                            }
                         }
+                    }
                     default:
                         throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.");
                 }
@@ -404,7 +403,7 @@
             var f = (E * matrix.B) + (F * matrix.D) + (row3 * matrix.F);
             var r3 = (E * matrix.row1) + (F * matrix.row2) + (row3 * matrix.row3);
 
-            return new TransformationMatrix(a, b, r1, 
+            return new TransformationMatrix(a, b, r1,
                 c, d, r2, 
                 e, f, r3);
         }

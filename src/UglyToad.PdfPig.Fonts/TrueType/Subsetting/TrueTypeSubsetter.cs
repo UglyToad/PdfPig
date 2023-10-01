@@ -305,7 +305,7 @@
         /// <summary>
         /// Mapping from a glyph index in the old file to the new (subset) glyph index.
         /// </summary>
-        public struct OldToNewGlyphIndex
+        public readonly struct OldToNewGlyphIndex
         {
             /// <summary>
             /// Glyph index in the old input file.

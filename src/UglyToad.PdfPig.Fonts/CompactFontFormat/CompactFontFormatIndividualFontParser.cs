@@ -397,7 +397,7 @@
             return 0;
         }
 
-        internal struct Range3
+        internal readonly struct Range3
         {
             public int First { get; }
 
@@ -415,7 +415,4 @@
             }
         }
     }
-
-
-
 }

@@ -60,7 +60,7 @@
 
         public CidFontOperators CidFontOperators { get; set; } = new CidFontOperators();
 
-        public struct SizeAndOffset
+        public readonly struct SizeAndOffset
         {
             public int Size { get; }
 

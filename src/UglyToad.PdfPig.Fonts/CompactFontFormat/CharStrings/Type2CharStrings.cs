@@ -196,7 +196,7 @@
                 return stringBuilder.ToString();
             }
 
-            public struct CommandIdentifier
+            public readonly struct CommandIdentifier
             {
                 public int CommandIndex { get; }
 

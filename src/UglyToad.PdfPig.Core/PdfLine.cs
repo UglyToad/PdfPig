@@ -3,14 +3,14 @@
     using System;
 
     /// <summary>
-    /// A line in a PDF file. 
+    /// A line in a PDF file.
     /// </summary>
     /// <remarks>
     /// PDF coordinates are defined with the origin at the lower left (0, 0).
     /// The Y-axis extends vertically upwards and the X-axis horizontally to the right.
     /// Unless otherwise specified on a per-page basis, units in PDF space are equivalent to a typographic point (1/72 inch).
     /// </remarks>
-    public struct PdfLine
+    public readonly struct PdfLine
     {
         /// <summary>
         /// Length of the line.
@@ -71,7 +71,6 @@
         /// Returns a value indicating whether this <see cref="PdfLine"/> is equal to a specified <see cref="PdfLine"/> .
         /// </summary>
         /// <param name="obj"></param>
-        /// <returns></returns>
         public override bool Equals(object obj)
         {
             if (obj is PdfLine line)
@@ -84,7 +83,6 @@
         /// <summary>
         /// Returns the hash code for this <see cref="PdfLine"/>.
         /// </summary>
-        /// <returns></returns>
         public override int GetHashCode()
         {
             return (Point1, Point2).GetHashCode();

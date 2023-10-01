@@ -125,7 +125,7 @@
             return windows ?? any;
         }
 
-        private struct NameRecordBuilder
+        private readonly struct NameRecordBuilder
         {
             public TrueTypePlatformIdentifier PlatformId { get; }
 

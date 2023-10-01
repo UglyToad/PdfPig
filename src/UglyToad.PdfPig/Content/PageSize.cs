@@ -135,7 +135,7 @@
             return match.Key.Width > 0;
         }
 
-        private struct WidthHeight
+        private readonly struct WidthHeight
         {
             public double Width { get; }
 

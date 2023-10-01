@@ -3,7 +3,7 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Glyphs
 {
     using Core;
 
-    internal struct CompositeTransformMatrix3By2
+    internal readonly struct CompositeTransformMatrix3By2
     {
         private readonly double r0c0;
         private readonly double r0c1;

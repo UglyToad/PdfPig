@@ -3,7 +3,7 @@
     /// <summary>
     /// A kerning value for a pair of glyphs.
     /// </summary>
-    public struct KernPair
+    public readonly struct KernPair
     {
         /// <summary>
         /// The index of the left-hand glyph.
