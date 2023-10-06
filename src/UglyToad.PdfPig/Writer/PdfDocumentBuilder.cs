@@ -19,6 +19,7 @@ namespace UglyToad.PdfPig.Writer
     using Tokens;
 
     using Util.JetBrains.Annotations;
+    using System.Xml.Linq;
 
     /// <summary>
     /// Provides methods to construct new PDF documents.
@@ -60,6 +61,12 @@ namespace UglyToad.PdfPig.Writer
         /// The bookmark nodes to include in the document outline dictionary.
         /// </summary>
         public Bookmarks Bookmarks { get; set; }
+
+        /// <summary>
+        /// The document level metadata, which is XML in the XMP (Extensible Metadata Platform) format. Will only be added, if the PDF is
+        /// created with an ArchiveStandard other than PdfAStandard.None.
+        /// </summary>
+        public XDocument XmpMetadata { get; set; }
 
         /// <summary>
         /// The current page builders in the document and the corresponding 1 indexed page numbers. Use <see cref="AddPage(double,double)"/>
@@ -715,7 +722,7 @@ namespace UglyToad.PdfPig.Writer
             {
                 Func<IToken, IndirectReferenceToken> writerFunc = x => context.WriteToken(x);
 
-                PdfABaselineRuleBuilder.Obey(catalogDictionary, writerFunc, DocumentInformation, ArchiveStandard, version);
+                PdfABaselineRuleBuilder.Obey(catalogDictionary, writerFunc, DocumentInformation, ArchiveStandard, version, XmpMetadata);
 
                 switch (ArchiveStandard)
                 {
