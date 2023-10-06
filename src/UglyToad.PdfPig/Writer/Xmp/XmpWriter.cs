@@ -39,7 +39,7 @@ namespace UglyToad.PdfPig.Writer.Xmp
         private const string PdfAIdentificationExtensionNamespace = "http://www.aiim.org/pdfa/ns/id/";
         
         public static StreamToken GenerateXmpStream(PdfDocumentBuilder.DocumentInformationBuilder builder, decimal version,
-            PdfAStandard standard)
+            PdfAStandard standard, XDocument additionalXmpMetadata)
         {
             XNamespace xmpMeta = XmpMetaNamespace;
             XNamespace rdf = RdfNamespace;
@@ -74,8 +74,8 @@ namespace UglyToad.PdfPig.Writer.Xmp
                 });
 
             var pdfAIdContainer = GetVersionAndConformanceLevelIdentificationElement(rdf, emptyRdfAbout, standard);
-            
-            var document = new XDocument(
+
+            var document = MergeXmpXdocuments(new XDocument(
                 new XElement(xmpMeta + "xmpmeta", GetNamespaceAttribute(XmpMetaPrefix, XmpMetaNamespace),
                     new XAttribute(xmpMeta + "xmptk", Xmptk),
                     new XElement(rdf + "RDF",
@@ -84,7 +84,7 @@ namespace UglyToad.PdfPig.Writer.Xmp
                         pdfAIdContainer
                     )
                 )
-            );
+            ), additionalXmpMetadata);
 
             var xml = document.ToString(SaveOptions.None).Replace("\r\n", "\n");
             xml = $"<?xpacket begin=\"\ufeff\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?>\n{xml}\n<?xpacket end=\"r\"?>";
@@ -237,6 +237,43 @@ namespace UglyToad.PdfPig.Writer.Xmp
                 Name = name;
                 ValueFunc = valueFunc;
             }
+        }
+
+        /// <summary>
+        /// Merge multiple System.Xml.Linq.XDocument objects.
+        /// Nodes in rdf:Description nodes of XDocuments with higher array index which already occur in rdf:Description nodes of XDocuments
+        /// with a lower index won't be inserted. This leads to a simple XML merge, where no duplicate pdf:PDFVersion or pdfaid:conformance
+        /// nodes will occur.
+        /// </summary>
+        private static XDocument MergeXmpXdocuments(params XDocument[] xDocuments)
+        {
+            XDocument document = new XDocument(xDocuments.FirstOrDefault());
+            foreach (XDocument xdocOriginal in xDocuments.Skip(1).Where(doc => doc != null))
+            {
+                XDocument xdoc = new XDocument(xdocOriginal);
+                XElement rdfMainNode = document.Descendants(XNamespace.Get(RdfNamespace) + "RDF").First();
+                XElement rdfCurrentNode = xdoc.Descendants(XNamespace.Get(RdfNamespace) + "RDF").First();
+
+                // Remove all children of rdf:Description which are already existing in the main node
+                var allDescriptions = rdfCurrentNode.Elements().ToList();
+                foreach (var description in allDescriptions)
+                {
+                    foreach (XElement descriptionElement in description.Elements().ToList())
+                    {
+                        if (rdfMainNode.
+                            Descendants(XNamespace.Get(RdfNamespace) + "Description").
+                            SelectMany(d => d.Descendants()).
+                            Select(mx => mx.Name).
+                            Contains(descriptionElement.Name))
+                        {
+                            descriptionElement.Remove();
+                        }
+                    }
+                }
+
+                rdfMainNode.Add(allDescriptions);
+            }
+            return document;
         }
     }
 }
