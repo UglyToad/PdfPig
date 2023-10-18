@@ -14,9 +14,9 @@
         /// <summary>
         /// The default <see cref="TransformationMatrix"/>.
         /// </summary>
-        public static TransformationMatrix Identity = new TransformationMatrix(1,0,0,
-            0,1,0,
-            0,0,1);
+        public static readonly TransformationMatrix Identity = new TransformationMatrix(1, 0, 0,
+            0, 1, 0,
+            0, 0, 1);
 
         /// <summary>
         /// Create a new <see cref="TransformationMatrix"/> with the X and Y translation values set.
@@ -352,7 +352,7 @@
         /// <param name="values">Either all 9 values of the matrix, 6 values in the default PDF order or the 4 values of the top left square.</param>
         /// <returns></returns>
         public static TransformationMatrix FromArray(decimal[] values)
-            => FromArray(values.Select(x => (double) x).ToArray());
+            => FromArray(values.Select(x => (double)x).ToArray());
 
         /// <summary>
         /// Create a new <see cref="TransformationMatrix"/> from the values.
@@ -527,6 +527,18 @@
         public override string ToString()
         {
             return $"{A}, {B}, {row1}\r\n{C}, {D}, {row2}\r\n{E}, {F}, {row3}";
+        }
+
+        /// <inheritdoc/>
+        public static bool operator ==(TransformationMatrix left, TransformationMatrix right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <inheritdoc/>
+        public static bool operator !=(TransformationMatrix left, TransformationMatrix right)
+        {
+            return !(left == right);
         }
     }
 }

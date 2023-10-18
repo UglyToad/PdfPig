@@ -53,9 +53,6 @@
                 parsingOptions.Logger.Error($"Page {number} had its type specified as {type} rather than 'Page'.");
             }
 
-            MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers);
-            CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox);
-
             var rotation = new PageRotationDegrees(pageTreeMembers.Rotation);
             if (dictionary.TryGet(NameToken.Rotate, pdfScanner, out NumericToken rotateToken))
             {
@@ -79,6 +76,13 @@
             }
 
             UserSpaceUnit userSpaceUnit = GetUserSpaceUnits(dictionary);
+
+            MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers);
+            CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox);
+
+            var initialMatrix = OperationContextHelper.GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, log);
+
+            ApplyTransformNormalise(initialMatrix, ref mediaBox, ref cropBox);
 
             PageContent content;
 
@@ -122,7 +126,7 @@
                     }
                 }
 
-                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, mediaBox, parsingOptions);
+                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, initialMatrix, parsingOptions);
             }
             else
             {
@@ -135,10 +139,9 @@
 
                 var bytes = contentStream.Decode(filterProvider, pdfScanner);
 
-                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, mediaBox, parsingOptions);
+                content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, initialMatrix, parsingOptions);
             }
 
-            var initialMatrix = ContentStreamProcessor.GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, log);
             var annotationProvider = new AnnotationProvider(pdfScanner, dictionary, initialMatrix, namedDestinations, log);
             var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, annotationProvider, pdfScanner);
 
@@ -156,7 +159,7 @@
             CropBox cropBox,
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
-            MediaBox mediaBox,
+            TransformationMatrix initialMatrix,
             InternalParsingOptions parsingOptions)
         {
             var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentBytes),
@@ -166,8 +169,8 @@
                 pageNumber,
                 resourceStore,
                 userSpaceUnit,
-                mediaBox,
                 cropBox,
+                initialMatrix,
                 rotation,
                 pdfScanner,
                 pageContentParser,
@@ -200,7 +203,7 @@
                 if (cropBoxArray.Length != 4)
                 {
                     log.Error($"The CropBox was the wrong length in the dictionary: {dictionary}. Array was: {cropBoxArray}. Using MediaBox.");
-                    
+
                     cropBox = new CropBox(mediaBox.Bounds);
 
                     return cropBox;
@@ -222,7 +225,7 @@
             PageTreeMembers pageTreeMembers)
         {
             MediaBox mediaBox;
-            if (dictionary.TryGet(NameToken.MediaBox, out var mediaBoxObject) 
+            if (dictionary.TryGet(NameToken.MediaBox, out var mediaBoxObject)
                 && DirectObjectFinder.TryGet(mediaBoxObject, pdfScanner, out ArrayToken mediaBoxArray))
             {
                 if (mediaBoxArray.Length != 4)
@@ -250,6 +253,23 @@
             }
 
             return mediaBox;
+        }
+
+        /// <summary>
+        /// Apply the matrix transform to the media box and crop box.
+        /// Then Normalise() in order to obtain rectangles with rotation=0
+        /// and width and height as viewed on screen.
+        /// </summary>
+        /// <param name="transformationMatrix"></param>
+        /// <param name="mediaBox"></param>
+        /// <param name="cropBox"></param>
+        private static void ApplyTransformNormalise(TransformationMatrix transformationMatrix, ref MediaBox mediaBox, ref CropBox cropBox)
+        {
+            if (transformationMatrix != TransformationMatrix.Identity)
+            {
+                mediaBox = new MediaBox(transformationMatrix.Transform(mediaBox.Bounds).Normalise());
+                cropBox = new CropBox(transformationMatrix.Transform(cropBox.Bounds).Normalise());
+            }
         }
     }
 }

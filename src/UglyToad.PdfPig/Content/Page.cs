@@ -111,8 +111,8 @@
             // Special case where cropbox is outside mediabox: use cropbox instead of intersection
             var viewBox = mediaBox.Bounds.Intersect(cropBox.Bounds) ?? cropBox.Bounds;
 
-            Width = rotation.SwapsAxis ? viewBox.Height : viewBox.Width;
-            Height = rotation.SwapsAxis ? viewBox.Width : viewBox.Height;
+            Width = viewBox.Width;
+            Height = viewBox.Height;
             Size = viewBox.GetPageSize();
 
             ExperimentalAccess = new Experimental(this, annotationProvider);
