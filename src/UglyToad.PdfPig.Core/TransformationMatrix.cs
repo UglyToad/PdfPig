@@ -135,47 +135,47 @@
                 switch (row)
                 {
                     case 0:
+                    {
+                        switch (col)
                         {
-                            switch (col)
-                            {
-                                case 0:
-                                    return A;
-                                case 1:
-                                    return B;
-                                case 2:
-                                    return row1;
-                                default:
+                            case 0:
+                                return A;
+                            case 1:
+                                return B;
+                            case 2:
+                                return row1;
+                            default:
                                     throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.");
-                            }
                         }
+                    }
                     case 1:
+                    {
+                        switch (col)
                         {
-                            switch (col)
-                            {
-                                case 0:
-                                    return C;
-                                case 1:
-                                    return D;
-                                case 2:
-                                    return row2;
-                                default:
+                            case 0:
+                                return C;
+                            case 1:
+                                return D;
+                            case 2:
+                                return row2;
+                            default:
                                     throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.");
-                            }
                         }
+                    }
                     case 2:
+                    {
+                        switch (col)
                         {
-                            switch (col)
-                            {
-                                case 0:
-                                    return E;
-                                case 1:
-                                    return F;
-                                case 2:
-                                    return row3;
-                                default:
+                            case 0:
+                                return E;
+                            case 1:
+                                return F;
+                            case 2:
+                                return row3;
+                            default:
                                     throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.");
-                            }
                         }
+                    }
                     default:
                         throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.");
                 }
@@ -404,7 +404,7 @@
             var r3 = (E * matrix.row1) + (F * matrix.row2) + (row3 * matrix.row3);
 
             return new TransformationMatrix(a, b, r1,
-                c, d, r2,
+                c, d, r2, 
                 e, f, r3);
         }
 

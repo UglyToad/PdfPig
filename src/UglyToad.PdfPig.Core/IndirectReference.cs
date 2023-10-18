@@ -5,7 +5,7 @@
     /// <summary>
     /// Used to uniquely identify and refer to objects in the PDF file.
     /// </summary>
-    public struct IndirectReference
+    public readonly struct IndirectReference
     {
         /// <summary>
         /// A positive integer object number.

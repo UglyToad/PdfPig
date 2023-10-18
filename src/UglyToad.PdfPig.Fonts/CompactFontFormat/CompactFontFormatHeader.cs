@@ -3,13 +3,13 @@
     /// <summary>
     /// The header table for the binary data of a Compact Font Format file.
     /// </summary>
-    public struct CompactFontFormatHeader
+    public readonly struct CompactFontFormatHeader
     {
         /// <summary>
         /// The major version of this font format. Starting at 1.
         /// </summary>
         public byte MajorVersion { get; }
-        
+
         /// <summary>
         /// The minor version of this font format. Starting at 0. Indicates extensions to the format which
         /// are undetectable by readers which do not support them.

@@ -9,7 +9,7 @@
     /// A table directory entry from the TrueType font file. Indicates the position of the corresponding table
     /// data in the TrueType font.
     /// </summary>
-    public struct TrueTypeHeaderTable : IWriteable
+    public readonly struct TrueTypeHeaderTable : IWriteable
     {
         #region RequiredTableTags
         /// <summary>

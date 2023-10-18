@@ -6,7 +6,7 @@
     /// <summary>
     /// Used internally by the <see cref="PdfTokenScanner"/> when reading streams to store any occurrences of 'endobj' or 'endstream' observed.
     /// </summary>
-    internal struct PossibleStreamEndLocation
+    internal readonly struct PossibleStreamEndLocation
     {
         /// <summary>
         /// The offset at which the token started in the file.

@@ -5,7 +5,7 @@
     /// <summary>
     /// A color space definition from a resource dictionary.
     /// </summary>
-    internal struct ResourceColorSpace
+    internal readonly struct ResourceColorSpace
     {
         public NameToken Name { get; }
 

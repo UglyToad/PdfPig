@@ -116,7 +116,7 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Tables.CMapSubTables
         /// <summary>
         /// A contiguous segment which maps character to glyph codes in a Format 4 CMap sub-table.
         /// </summary>
-        public struct Segment
+        public readonly struct Segment
         {
             /// <summary>
             /// The start character code in the range.

@@ -2,7 +2,7 @@
 {
     using UglyToad.PdfPig.Core;
 
-    internal struct GlyphPoint
+    internal readonly struct GlyphPoint
     {
         public short X { get; }
 

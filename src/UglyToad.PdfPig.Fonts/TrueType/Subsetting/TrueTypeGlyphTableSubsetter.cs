@@ -418,7 +418,7 @@
         /// <summary>
         /// Marks a glyph index referenced by a composite glyph.
         /// </summary>
-        private struct CompositeGlyphIndexReference
+        private readonly struct CompositeGlyphIndexReference
         {
             /// <summary>
             /// The index of the glyph reference by this composite glyph.

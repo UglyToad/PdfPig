@@ -3,7 +3,7 @@
     /// <summary>
     /// The pair of horizontal metrics for an individual glyph.
     /// </summary>
-    public struct HorizontalMetric
+    public readonly struct HorizontalMetric
     {
         /// <summary>
         /// The advance width.

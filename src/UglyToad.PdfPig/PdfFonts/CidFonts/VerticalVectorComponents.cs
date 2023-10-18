@@ -6,7 +6,7 @@
     /// Defines the default position and displacement vector vertical components
     /// for fonts which have vertical writing modes.
     /// </summary>
-    internal struct VerticalVectorComponents
+    internal readonly struct VerticalVectorComponents
     {
         /// <summary>
         /// The default value of <see cref="VerticalVectorComponents"/> if not defined by a font.
@@ -22,7 +22,7 @@
         /// Where w0 is the width of the given glyph.
         /// </remarks>
         public double Position { get; }
-        
+
         /// <summary>
         /// The vertical component of the displacement vector.
         /// </summary>

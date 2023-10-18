@@ -4,7 +4,7 @@
     using System.Globalization;
 
     /// <summary>
-    /// A rectangle in a PDF file. 
+    /// A rectangle in a PDF file.
     /// </summary>
     /// <remarks>
     /// PDF coordinates are defined with the origin at the lower left (0, 0).
@@ -36,7 +36,7 @@
         /// <summary>
         /// Centroid point of the rectangle.
         /// </summary>
-        public PdfPoint Centroid
+        public readonly PdfPoint Centroid
         {
             get
             {
@@ -86,13 +86,7 @@
         /// Rotation angle of the rectangle. Counterclockwise, in degrees.
         /// <para>-180 ≤ θ ≤ 180</para>
         /// </summary>
-        public double Rotation
-        {
-            get
-            {
-                return GetT() * 180 / Math.PI;
-            }
-        }
+        public readonly double Rotation => GetT() * 180 / Math.PI;
 
         /// <summary>
         /// Area of the rectangle.
@@ -102,22 +96,22 @@
         /// <summary>
         /// Left. This value is only valid if the rectangle is not rotated, check <see cref="Rotation"/>.
         /// </summary>
-        public double Left => TopLeft.X < TopRight.X ? TopLeft.X : TopRight.X;
+        public readonly double Left => TopLeft.X < TopRight.X ? TopLeft.X : TopRight.X;
 
         /// <summary>
         /// Top. This value is only valid if the rectangle is not rotated, check <see cref="Rotation"/>.
         /// </summary>
-        public double Top => TopLeft.Y > BottomLeft.Y ? TopLeft.Y : BottomLeft.Y;
+        public readonly double Top => TopLeft.Y > BottomLeft.Y ? TopLeft.Y : BottomLeft.Y;
 
         /// <summary>
         /// Right. This value is only valid if the rectangle is not rotated, check <see cref="Rotation"/>.
         /// </summary>
-        public double Right => BottomRight.X > BottomLeft.X ? BottomRight.X : BottomLeft.X;
+        public readonly double Right => BottomRight.X > BottomLeft.X ? BottomRight.X : BottomLeft.X;
 
         /// <summary>
         /// Bottom. This value is only valid if the rectangle is not rotated, check <see cref="Rotation"/>.
         /// </summary>
-        public double Bottom => BottomRight.Y < TopRight.Y ? BottomRight.Y : TopRight.Y;
+        public readonly double Bottom => BottomRight.Y < TopRight.Y ? BottomRight.Y : TopRight.Y;
 
         /// <summary>
         /// Create a new <see cref="PdfRectangle"/>.
@@ -171,7 +165,7 @@
         /// <param name="dx">The distance to move the rectangle in the x direction relative to its current location.</param>
         /// <param name="dy">The distance to move the rectangle in the y direction relative to its current location.</param>
         /// <returns>A new rectangle shifted on the y axis by the given delta value.</returns>
-        public PdfRectangle Translate(double dx, double dy)
+        public readonly PdfRectangle Translate(double dx, double dy)
         {
             return new PdfRectangle(TopLeft.Translate(dx, dy), TopRight.Translate(dx, dy),
                                     BottomLeft.Translate(dx, dy), BottomRight.Translate(dx, dy));
@@ -180,17 +174,15 @@
         /// <summary>
         /// -π ≤ θ ≤ π
         /// </summary>
-        private double GetT()
+        private readonly double GetT()
         {
             if (!BottomRight.Equals(BottomLeft))
             {
                 return Math.Atan2(BottomRight.Y - BottomLeft.Y, BottomRight.X - BottomLeft.X);
             }
-            else
-            {
-                // handle the case where both bottom points are identical
-                return Math.Atan2(TopLeft.Y - BottomLeft.Y, TopLeft.X - BottomLeft.X) - Math.PI / 2;
-            }
+
+            // handle the case where both bottom points are identical
+            return Math.Atan2(TopLeft.Y - BottomLeft.Y, TopLeft.X - BottomLeft.X) - Math.PI / 2;
         }
 
         private void GetWidthHeight()

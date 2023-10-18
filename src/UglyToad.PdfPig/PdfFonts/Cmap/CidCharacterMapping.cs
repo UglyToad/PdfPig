@@ -3,7 +3,7 @@
     /// <summary>
     /// Maps from a single character code to its CID.
     /// </summary>
-    internal struct CidCharacterMapping
+    internal readonly struct CidCharacterMapping
     {
         /// <summary>
         /// The character code.

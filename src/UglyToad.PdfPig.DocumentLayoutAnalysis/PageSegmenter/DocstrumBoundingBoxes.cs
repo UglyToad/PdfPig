@@ -575,7 +575,7 @@
         /// <summary>
         /// The bounds for the angle between two words for them to have a certain type of relationship.
         /// </summary>
-        public struct AngleBounds
+        public readonly struct AngleBounds
         {
             /// <summary>
             /// The lower bound in degrees.
@@ -646,7 +646,7 @@
             public AngleBounds WithinLineBounds { get; set; } = new AngleBounds(-30, 30);
 
             /// <summary>
-            /// Multiplier that gives the maximum euclidian distance between
+            /// Multiplier that gives the maximum euclidean distance between
             /// words for building lines. Maximum distance will be this number times the within-line
             /// distance found by the analysis.
             /// <para>Default value is 3.</para>

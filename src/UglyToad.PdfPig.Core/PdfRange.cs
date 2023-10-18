@@ -6,7 +6,7 @@
     /// <summary>
     /// This class will be used to signify a range. a(min) &lt;= a* &lt;= a(max)
     /// </summary>
-    public struct PdfRange
+    public readonly struct PdfRange
     {
         private readonly IReadOnlyList<double> rangeArray;
         private readonly int startingIndex;

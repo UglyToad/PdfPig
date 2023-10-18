@@ -4,14 +4,14 @@
     using System.Globalization;
 
     /// <summary>
-    /// A point in a PDF file. 
+    /// A point in a PDF file.
     /// </summary>
     /// <remarks>
     /// PDF coordinates are defined with the origin at the lower left (0, 0).
     /// The Y-axis extends vertically upwards and the X-axis horizontally to the right.
     /// Unless otherwise specified on a per-page basis, units in PDF space are equivalent to a typographic point (1/72 inch).
     /// </remarks>
-    public struct PdfPoint
+    public readonly struct PdfPoint
     {
         /// <summary>
         /// The origin of the coordinates system.
