@@ -1143,6 +1143,11 @@ namespace UglyToad.PdfPig.Writer
 
                 foreach (var pair in CustomMetadata)
                 {
+                    if (pair.Key == null || pair.Value == null)
+                    {
+                        continue;
+                    }
+
                     result[NameToken.Create(pair.Key)] = new StringToken(pair.Value);
                 }
 
