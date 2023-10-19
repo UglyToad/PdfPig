@@ -1093,6 +1093,11 @@ namespace UglyToad.PdfPig.Writer
         public class DocumentInformationBuilder
         {
             /// <summary>
+            /// Consumer applications can store custom metadata in the document information dictionary.
+            /// </summary>
+            public Dictionary<string, string> CustomMetadata { get; } = new Dictionary<string, string>();
+
+            /// <summary>
             /// <see cref="DocumentInformation.Title"/>.
             /// </summary>
             public string Title { get; set; }
@@ -1135,6 +1140,11 @@ namespace UglyToad.PdfPig.Writer
             internal Dictionary<NameToken, IToken> ToDictionary()
             {
                 var result = new Dictionary<NameToken, IToken>();
+
+                foreach (var pair in CustomMetadata)
+                {
+                    result[NameToken.Create(pair.Key)] = new StringToken(pair.Value);
+                }
 
                 if (Title != null)
                 {
