@@ -7,8 +7,11 @@
     /// By default user space units correspond to 1/72nd of an inch (a typographic point).
     /// The UserUnit entry in a page dictionary can define the space units as a different multiple of 1/72 (1 point).
     /// </summary>
-    internal readonly struct UserSpaceUnit
+    public readonly struct UserSpaceUnit
     {
+        /// <summary>
+        /// Default user space units with <see cref="PointMultiples"/> set to <c>1</c>.
+        /// </summary>
         public static readonly UserSpaceUnit Default = new UserSpaceUnit(1);
 
         /// <summary>
@@ -19,7 +22,7 @@
         /// <summary>
         /// Create a new unit specification for a page.
         /// </summary>
-        public UserSpaceUnit(int pointMultiples)
+        internal UserSpaceUnit(int pointMultiples)
         {
             if (pointMultiples <= 0)
             {
@@ -29,6 +32,7 @@
             PointMultiples = pointMultiples;
         }
 
+        /// <inheritdoc/>
         public override string ToString()
         {
             return PointMultiples.ToString(CultureInfo.InvariantCulture);
