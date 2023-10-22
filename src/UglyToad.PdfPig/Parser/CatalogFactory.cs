@@ -4,7 +4,7 @@
     using Content;
     using Core;
     using Logging;
-    using Outline;
+    using Outline.Destinations;
     using Parts;
     using Tokenization.Scanner;
     using Tokens;
