@@ -3,22 +3,29 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Colors;
     using Content;
     using Core;
     using Filters;
     using PdfPig.Core;
     using Tokenization.Scanner;
     using Tokens;
-    using Util;
 
-    internal class InlineImageBuilder
+    /// <summary>
+    /// Inline Image Builder.
+    /// </summary>
+    public sealed class InlineImageBuilder
     {
-        public IReadOnlyDictionary<NameToken, IToken> Properties { get; set; }
+        /// <summary>
+        /// Inline image properties.
+        /// </summary>
+        public IReadOnlyDictionary<NameToken, IToken> Properties { get; internal set; }
 
-        public IReadOnlyList<byte> Bytes { get; set; }
+        /// <summary>
+        /// Inline image bytes.
+        /// </summary>
+        public IReadOnlyList<byte> Bytes { get; internal set; }
 
-        public InlineImage CreateInlineImage(TransformationMatrix transformationMatrix, ILookupFilterProvider filterProvider,
+        internal InlineImage CreateInlineImage(TransformationMatrix transformationMatrix, ILookupFilterProvider filterProvider,
             IPdfTokenScanner tokenScanner,
             RenderingIntent defaultRenderingIntent,
             IResourceStore resourceStore)

@@ -14,6 +14,7 @@
     using Tokenization.Scanner;
     using Tokens;
     using Outline;
+    using Outline.Destinations;
     using Util.JetBrains.Annotations;
 
     /// <inheritdoc />

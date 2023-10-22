@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
     using System;
-    using Outline;
+    using Outline.Destinations;
     using Tokens;
     using Util.JetBrains.Annotations;
 
@@ -9,7 +9,7 @@
     /// The root of the document's object hierarchy. Contains references to objects defining the contents,
     /// outline, named destinations and more.
     /// </summary>
-    public class Catalog
+    public sealed class Catalog
     {
         /// <summary>
         /// The catalog dictionary containing assorted information.

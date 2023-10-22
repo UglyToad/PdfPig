@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using Outline;
+    using Outline.Destinations;
     using Tokens;
 
     internal interface IPageFactory
