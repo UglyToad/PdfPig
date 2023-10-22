@@ -11,3 +11,11 @@ Copyright 1997, 1998, 2002, 2007, 2010 Adobe Systems Incorporated.
 
 Includes the Zapf Dingbats Glyph List
 Copyright 2002, 2010 Adobe Systems Incorporated.
+
+------------------------------------------------------------------
+
+Apache JBig2 ImageIO Plugin
+Copyright 2017 The Apache Software Foundation
+
+Based on source code originally developed in the JBig2 project.
+Copyright (C) 1995-2017 levigo holding GmbH

@@ -4,6 +4,11 @@
 
     internal static class ArrayHelper
     {
+        public static void Fill<T>(T[] array, T value)
+        {
+            Fill(array, 0, array.Length - 1, value);
+        }
+
         public static void Fill<T>(T[] array, int start, int end, T value)
         {
             if (array == null)
