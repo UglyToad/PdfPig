@@ -13,7 +13,7 @@
     /// <summary>
     /// Inline Image Builder.
     /// </summary>
-    public class InlineImageBuilder
+    public sealed class InlineImageBuilder
     {
         /// <summary>
         /// Inline image properties.
