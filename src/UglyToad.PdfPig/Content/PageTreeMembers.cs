@@ -16,12 +16,12 @@
         /// <summary>
         /// The page media box.
         /// </summary>
-        public MediaBox MediaBox { get; set; }
+        public MediaBox MediaBox { get; internal set; }
 
         /// <summary>
         /// The page rotation.
         /// </summary>
-        public int Rotation { get; set; }
+        public int Rotation { get; internal set; }
 
         /// <summary>
         /// The page parent resources.

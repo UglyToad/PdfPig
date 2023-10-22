@@ -18,12 +18,12 @@
         /// <summary>
         /// Inline image properties.
         /// </summary>
-        public IReadOnlyDictionary<NameToken, IToken> Properties { get; set; }
+        public IReadOnlyDictionary<NameToken, IToken> Properties { get; internal set; }
 
         /// <summary>
         /// Inline image bytes.
         /// </summary>
-        public IReadOnlyList<byte> Bytes { get; set; }
+        public IReadOnlyList<byte> Bytes { get; internal set; }
 
         internal InlineImage CreateInlineImage(TransformationMatrix transformationMatrix, ILookupFilterProvider filterProvider,
             IPdfTokenScanner tokenScanner,
