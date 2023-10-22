@@ -10,7 +10,6 @@
     using Graphics;
     using Graphics.Operations;
     using Logging;
-    using Outline;
     using Outline.Destinations;
     using Parts;
     using Tokenization.Scanner;
@@ -66,13 +65,13 @@
             {
                 var resource = pageTreeMembers.ParentResources.Dequeue();
 
-                resourceStore.LoadResourceDictionary(resource, parsingOptions);
+                resourceStore.LoadResourceDictionary(resource);
                 stackDepth++;
             }
 
             if (dictionary.TryGet(NameToken.Resources, pdfScanner, out DictionaryToken resources))
             {
-                resourceStore.LoadResourceDictionary(resources, parsingOptions);
+                resourceStore.LoadResourceDictionary(resources);
                 stackDepth++;
             }
 

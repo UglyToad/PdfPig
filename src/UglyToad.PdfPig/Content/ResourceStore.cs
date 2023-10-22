@@ -16,6 +16,7 @@
         private readonly IPdfTokenScanner scanner;
         private readonly IFontFactory fontFactory;
         private readonly ILookupFilterProvider filterProvider;
+        private readonly InternalParsingOptions parsingOptions;
 
         private readonly Dictionary<IndirectReference, IFont> loadedFonts = new Dictionary<IndirectReference, IFont>();
         private readonly Dictionary<NameToken, IFont> loadedDirectFonts = new Dictionary<NameToken, IFont>();
@@ -34,14 +35,18 @@
 
         private (NameToken name, IFont font) lastLoadedFont;
 
-        public ResourceStore(IPdfTokenScanner scanner, IFontFactory fontFactory, ILookupFilterProvider filterProvider)
+        public ResourceStore(IPdfTokenScanner scanner,
+            IFontFactory fontFactory,
+            ILookupFilterProvider filterProvider,
+            InternalParsingOptions parsingOptions)
         {
             this.scanner = scanner;
             this.fontFactory = fontFactory;
             this.filterProvider = filterProvider;
+            this.parsingOptions = parsingOptions;
         }
 
-        public void LoadResourceDictionary(DictionaryToken resourceDictionary, InternalParsingOptions parsingOptions)
+        public void LoadResourceDictionary(DictionaryToken resourceDictionary)
         {
             lastLoadedFont = (null, null);
             loadedNamedColorSpaceDetails.Clear();

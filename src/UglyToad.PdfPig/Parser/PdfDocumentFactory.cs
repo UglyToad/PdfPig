@@ -187,7 +187,7 @@
                 type1Handler,
                 new Type3FontHandler(pdfScanner, filterProvider, encodingReader));
 
-            var resourceContainer = new ResourceStore(pdfScanner, fontFactory, filterProvider);
+            var resourceContainer = new ResourceStore(pdfScanner, fontFactory, filterProvider, parsingOptions);
 
             var information = DocumentInformationFactory.Create(
                 pdfScanner,
