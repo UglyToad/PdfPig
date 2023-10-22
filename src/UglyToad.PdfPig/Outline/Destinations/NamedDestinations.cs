@@ -1,15 +1,14 @@
-﻿namespace UglyToad.PdfPig.Outline
+﻿namespace UglyToad.PdfPig.Outline.Destinations
 {
-    using Content;
-    using Destinations;
-    using Logging;
     using System.Collections.Generic;
+    using Content;
+    using Logging;
     using Tokens;
 
     /// <summary>
     /// Named destinations in a PDF document
     /// </summary>
-    internal class NamedDestinations
+    public class NamedDestinations
     {
         /// <summary>
         /// Dictionary containing explicit destinations, keyed by name

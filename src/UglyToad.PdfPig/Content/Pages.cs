@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
     using Core;
-    using Outline;
+    using Outline.Destinations;
     using System;
     using System.Collections.Generic;
     using Tokenization.Scanner;
