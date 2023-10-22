@@ -436,7 +436,7 @@
             var hasResources = formStream.StreamDictionary.TryGet<DictionaryToken>(NameToken.Resources, pdfScanner, out var formResources);
             if (hasResources)
             {
-                resourceStore.LoadResourceDictionary(formResources, parsingOptions);
+                resourceStore.LoadResourceDictionary(formResources);
             }
 
             // 1. Save current state.

@@ -2,10 +2,12 @@
 {
     using System.Collections.Generic;
     using Content;
+    using Logging;
     using PdfFonts;
     using PdfPig.Graphics;
     using PdfPig.Tokens;
     using PdfPig.Core;
+    using System;
     using Tokens;
     using UglyToad.PdfPig.Graphics.Core;
     using UglyToad.PdfPig.Graphics.Operations.TextPositioning;
@@ -32,7 +34,11 @@
         {
             StateStack.Push(new CurrentGraphicsState()
             {
-                ColorSpaceContext = new ColorSpaceContext(GetCurrentState, new ResourceStore(new TestPdfTokenScanner(), new TestFontFactory(), new TestFilterProvider()))
+                ColorSpaceContext = new ColorSpaceContext(GetCurrentState,
+                    new ResourceStore(new TestPdfTokenScanner(),
+                        new TestFontFactory(),
+                        new TestFilterProvider(),
+                        new InternalParsingOptions(Array.Empty<string>(), true, false, true, true, new NoOpLog())))
             });
             CurrentSubpath = new PdfSubpath();
         }
