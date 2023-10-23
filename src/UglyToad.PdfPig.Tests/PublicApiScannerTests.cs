@@ -80,6 +80,7 @@
                 "UglyToad.PdfPig.Content.EmbeddedFile",
                 "UglyToad.PdfPig.Content.Hyperlink",
                 "UglyToad.PdfPig.Content.InlineImage",
+                "UglyToad.PdfPig.Content.IPageFactory",
                 "UglyToad.PdfPig.Content.IPdfImage",
                 "UglyToad.PdfPig.Content.IResourceStore",
                 "UglyToad.PdfPig.Content.Letter",

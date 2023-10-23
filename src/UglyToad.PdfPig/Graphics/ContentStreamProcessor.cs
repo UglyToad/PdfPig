@@ -48,7 +48,7 @@
         private readonly IPdfTokenScanner pdfScanner;
         private readonly IPageContentParser pageContentParser;
         private readonly ILookupFilterProvider filterProvider;
-        private readonly InternalParsingOptions parsingOptions;
+        private readonly ParsingOptions parsingOptions;
         private readonly MarkedContentStack markedContentStack = new MarkedContentStack();
 
         private Stack<CurrentGraphicsState> graphicsStack = new Stack<CurrentGraphicsState>();
@@ -91,7 +91,7 @@
             IPdfTokenScanner pdfScanner,
             IPageContentParser pageContentParser,
             ILookupFilterProvider filterProvider,
-            InternalParsingOptions parsingOptions)
+            ParsingOptions parsingOptions)
         {
             this.pageNumber = pageNumber;
             this.resourceStore = resourceStore;
@@ -179,7 +179,7 @@
                 if (parsingOptions.SkipMissingFonts)
                 {
                     parsingOptions.Logger.Warn($"Skipping a missing font with name {currentState.FontState.FontName} " +
-                                               $"since it is not present in the document and {nameof(InternalParsingOptions.SkipMissingFonts)} " +
+                                               $"since it is not present in the document and {nameof(ParsingOptions.SkipMissingFonts)} " +
                                                "is set to true. This may result in some text being skipped and not included in the output.");
 
                     return;
@@ -327,7 +327,7 @@
                 if (parsingOptions.SkipMissingFonts)
                 {
                     parsingOptions.Logger.Warn($"Skipping a missing font with name {currentState.FontState.FontName} " +
-                                               $"since it is not present in the document and {nameof(InternalParsingOptions.SkipMissingFonts)} " +
+                                               $"since it is not present in the document and {nameof(ParsingOptions.SkipMissingFonts)} " +
                                                "is set to true. This may result in some text being skipped and not included in the output.");
 
                     return;

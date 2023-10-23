@@ -6,7 +6,7 @@
     /// <summary>
     /// Configures options used by the parser when reading PDF documents.
     /// </summary>
-    public class ParsingOptions
+    public sealed class ParsingOptions
     {
         /// <summary>
         /// A default <see cref="ParsingOptions"/> with <see cref="UseLenientParsing"/> set to false.
@@ -28,15 +28,10 @@
         /// </summary>
         public bool UseLenientParsing { get; set; } = true;
 
-        private ILog logger = new NoOpLog();
         /// <summary>
         /// The <see cref="ILog"/> used to record messages raised by the parsing process.
         /// </summary>
-        public ILog Logger
-        {
-            get => logger ?? new NoOpLog();
-            set => logger = value;
-        }
+        public ILog Logger { get; set; } = new NoOpLog();
 
         /// <summary>
         /// The password to use to open the document if it is encrypted. If you need to supply multiple passwords to test against

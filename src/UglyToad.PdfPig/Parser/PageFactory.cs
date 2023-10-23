@@ -18,28 +18,28 @@
 
     internal class PageFactory : IPageFactory
     {
+        private readonly ParsingOptions parsingOptions;
         private readonly IPdfTokenScanner pdfScanner;
         private readonly IResourceStore resourceStore;
         private readonly ILookupFilterProvider filterProvider;
         private readonly IPageContentParser pageContentParser;
-        private readonly ILog log;
 
         public PageFactory(
             IPdfTokenScanner pdfScanner,
             IResourceStore resourceStore,
             ILookupFilterProvider filterProvider,
             IPageContentParser pageContentParser,
-            ILog log)
+            ParsingOptions parsingOptions)
         {
             this.resourceStore = resourceStore;
             this.filterProvider = filterProvider;
             this.pageContentParser = pageContentParser;
             this.pdfScanner = pdfScanner;
-            this.log = log;
+            this.parsingOptions = parsingOptions;
         }
 
         public Page Create(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers,
-            NamedDestinations namedDestinations, InternalParsingOptions parsingOptions)
+            NamedDestinations namedDestinations)
         {
             if (dictionary == null)
             {
@@ -80,7 +80,7 @@
             MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers);
             CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox);
 
-            var initialMatrix = OperationContextHelper.GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, log);
+            var initialMatrix = OperationContextHelper.GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, parsingOptions.Logger);
 
             ApplyTransformNormalise(initialMatrix, ref mediaBox, ref cropBox);
 
@@ -142,7 +142,7 @@
                 content = GetContent(number, bytes, cropBox, userSpaceUnit, rotation, initialMatrix, parsingOptions);
             }
 
-            var annotationProvider = new AnnotationProvider(pdfScanner, dictionary, initialMatrix, namedDestinations, log);
+            var annotationProvider = new AnnotationProvider(pdfScanner, dictionary, initialMatrix, namedDestinations, parsingOptions.Logger);
             var page = new Page(number, dictionary, mediaBox, cropBox, rotation, content, annotationProvider, pdfScanner);
 
             for (var i = 0; i < stackDepth; i++)
@@ -160,7 +160,7 @@
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
             TransformationMatrix initialMatrix,
-            InternalParsingOptions parsingOptions)
+            ParsingOptions parsingOptions)
         {
             var operations = pageContentParser.Parse(pageNumber, new ByteArrayInputBytes(contentBytes),
                 parsingOptions.Logger);
@@ -202,7 +202,7 @@
             {
                 if (cropBoxArray.Length != 4)
                 {
-                    log.Error($"The CropBox was the wrong length in the dictionary: {dictionary}. Array was: {cropBoxArray}. Using MediaBox.");
+                    parsingOptions.Logger.Error($"The CropBox was the wrong length in the dictionary: {dictionary}. Array was: {cropBoxArray}. Using MediaBox.");
 
                     cropBox = new CropBox(mediaBox.Bounds);
 
@@ -230,7 +230,7 @@
             {
                 if (mediaBoxArray.Length != 4)
                 {
-                    log.Error($"The MediaBox was the wrong length in the dictionary: {dictionary}. Array was: {mediaBoxArray}. Defaulting to US Letter.");
+                    parsingOptions.Logger.Error($"The MediaBox was the wrong length in the dictionary: {dictionary}. Array was: {mediaBoxArray}. Defaulting to US Letter.");
 
                     mediaBox = MediaBox.Letter;
 
@@ -245,7 +245,7 @@
 
                 if (mediaBox == null)
                 {
-                    log.Error($"The MediaBox was the wrong missing for page {number}. Using US Letter.");
+                    parsingOptions.Logger.Error($"The MediaBox was the wrong missing for page {number}. Using US Letter.");
 
                     // PDFBox defaults to US Letter.
                     mediaBox = MediaBox.Letter;

@@ -38,7 +38,13 @@
                     new ResourceStore(new TestPdfTokenScanner(),
                         new TestFontFactory(),
                         new TestFilterProvider(),
-                        new InternalParsingOptions(Array.Empty<string>(), true, false, true, true, new NoOpLog())))
+                        new ParsingOptions()
+                        {
+                            UseLenientParsing = true,
+                            ClipPaths = false,
+                            SkipMissingFonts = true,
+                            Logger = new NoOpLog()
+                        }))
             });
             CurrentSubpath = new PdfSubpath();
         }

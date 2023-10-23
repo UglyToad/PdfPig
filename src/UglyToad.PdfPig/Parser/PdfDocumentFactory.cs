@@ -68,13 +68,16 @@
 
         private static PdfDocument Open(IInputBytes inputBytes, ParsingOptions options = null)
         {
-            var isLenientParsing = options?.UseLenientParsing ?? true;
+            options ??= new ParsingOptions()
+            {
+                UseLenientParsing = true,
+                ClipPaths = false,
+                SkipMissingFonts = false
+            };
 
             var tokenScanner = new CoreTokenScanner(inputBytes, true);
 
             var passwords = new List<string>();
-
-            var clipPaths = options?.ClipPaths ?? false;
 
             if (options?.Password != null)
             {
@@ -91,15 +94,9 @@
                 passwords.Add(string.Empty);
             }
 
-            var finalOptions = new InternalParsingOptions(
-                passwords,
-                isLenientParsing,
-                clipPaths,
-                options?.SkipMissingFonts ?? false,
-                options?.SkipMissingFonts ?? false,
-                options?.Logger ?? new NoOpLog());
+            options.Passwords = passwords;
 
-            var document = OpenDocument(inputBytes, tokenScanner, finalOptions);
+            var document = OpenDocument(inputBytes, tokenScanner, options);
 
             return document;
         }
@@ -107,7 +104,7 @@
         private static PdfDocument OpenDocument(
             IInputBytes inputBytes,
             ISeekableTokenScanner scanner,
-            InternalParsingOptions parsingOptions)
+            ParsingOptions parsingOptions)
         {
             var filterProvider = new FilterProviderWithLookup(DefaultFilterProvider.Instance);
 
@@ -195,7 +192,7 @@
                 parsingOptions.UseLenientParsing);
 
             var pageFactory = new PageFactory(pdfScanner, resourceContainer, filterProvider,
-                new PageContentParser(new ReflectionGraphicsStateOperationFactory(), parsingOptions.UseLenientParsing), parsingOptions.Logger);
+                new PageContentParser(new ReflectionGraphicsStateOperationFactory(), parsingOptions.UseLenientParsing), parsingOptions);
 
             var catalog = CatalogFactory.Create(
                 rootReference,
