@@ -25,7 +25,7 @@
     {
         private bool isDisposed;
         private readonly Lazy<AcroForm> documentForm;
-        
+
         [NotNull]
         private readonly HeaderVersion version;
 
@@ -39,7 +39,7 @@
 
         private readonly ILookupFilterProvider filterProvider;
         private readonly BookmarksProvider bookmarksProvider;
-        private readonly InternalParsingOptions parsingOptions;
+        private readonly ParsingOptions parsingOptions;
 
         [NotNull]
         private readonly Pages pages;
@@ -87,7 +87,7 @@
             ILookupFilterProvider filterProvider,
             AcroFormFactory acroFormFactory,
             BookmarksProvider bookmarksProvider,
-            InternalParsingOptions parsingOptions)
+            ParsingOptions parsingOptions)
         {
             this.inputBytes = inputBytes;
             this.version = version ?? throw new ArgumentNullException(nameof(version));
@@ -235,7 +235,7 @@
 
             return form != null;
         }
-        
+
         /// <inheritdoc />
         /// <summary>
         /// Dispose the <see cref="T:UglyToad.PdfPig.PdfDocument" /> and close any unmanaged resources.

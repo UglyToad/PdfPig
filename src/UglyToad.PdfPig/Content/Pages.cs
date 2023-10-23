@@ -28,7 +28,7 @@
             PageTree = pageTree;
         }
 
-        internal Page GetPage(int pageNumber, NamedDestinations namedDestinations, InternalParsingOptions parsingOptions)
+        internal Page GetPage(int pageNumber, NamedDestinations namedDestinations, ParsingOptions parsingOptions)
         {
             if (pageNumber <= 0 || pageNumber > Count)
             {
@@ -74,9 +74,8 @@
                 pageNumber,
                 pageNode.NodeDictionary,
                 pageTreeMembers,
-                namedDestinations,
-                parsingOptions);
-            
+                namedDestinations);
+
             return page;
         }
 

@@ -16,7 +16,7 @@
         private readonly IPdfTokenScanner scanner;
         private readonly IFontFactory fontFactory;
         private readonly ILookupFilterProvider filterProvider;
-        private readonly InternalParsingOptions parsingOptions;
+        private readonly ParsingOptions parsingOptions;
 
         private readonly Dictionary<IndirectReference, IFont> loadedFonts = new Dictionary<IndirectReference, IFont>();
         private readonly Dictionary<NameToken, IFont> loadedDirectFonts = new Dictionary<NameToken, IFont>();
@@ -38,7 +38,7 @@
         public ResourceStore(IPdfTokenScanner scanner,
             IFontFactory fontFactory,
             ILookupFilterProvider filterProvider,
-            InternalParsingOptions parsingOptions)
+            ParsingOptions parsingOptions)
         {
             this.scanner = scanner;
             this.fontFactory = fontFactory;
@@ -58,7 +58,7 @@
             {
                 var fontDictionary = DirectObjectFinder.Get<DictionaryToken>(fontBase, scanner);
 
-                LoadFontDictionary(fontDictionary, parsingOptions);
+                LoadFontDictionary(fontDictionary);
             }
 
             if (resourceDictionary.TryGet(NameToken.Xobject, out var xobjectBase))
@@ -181,7 +181,7 @@
             namedColorSpaces.Pop();
         }
 
-        private void LoadFontDictionary(DictionaryToken fontDictionary, InternalParsingOptions parsingOptions)
+        private void LoadFontDictionary(DictionaryToken fontDictionary)
         {
             lastLoadedFont = (null, null);
 

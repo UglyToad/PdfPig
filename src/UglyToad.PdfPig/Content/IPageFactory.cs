@@ -3,12 +3,17 @@
     using Outline.Destinations;
     using Tokens;
 
-    internal interface IPageFactory
+    /// <summary>
+    /// Page factory interface.
+    /// </summary>
+    public interface IPageFactory
     {
+        /// <summary>
+        /// Create the page.
+        /// </summary>
         Page Create(int number,
             DictionaryToken dictionary,
             PageTreeMembers pageTreeMembers,
-            NamedDestinations annotationProvider,
-            InternalParsingOptions parsingOptions);
+            NamedDestinations annotationProvider);
     }
 }
