@@ -921,7 +921,8 @@ namespace UglyToad.PdfPig.Writer
                         page,
                         NameToken.XYZ,
                         new NumericToken(destination.Coordinates.Left ?? 0),
-                        new NumericToken(destination.Coordinates.Top ?? 0)
+                        new NumericToken(destination.Coordinates.Top ?? 0),
+                        new NumericToken(0)
                     });
 
                 case ExplicitDestinationType.FitPage:
