@@ -331,6 +331,23 @@
             }
         }
 
+        [Fact]
+        public void Issue724()
+        {
+            // 11194059_2017-11_de_s
+            var path = IntegrationHelpers.GetDocumentPath("11194059_2017-11_de_s.pdf");
+            using (var document = PdfDocument.Open(path))
+            {
+                // Should not throw an exception.
+                // Fixed an issue in the Type 4 function Copy() StackOperators
+                Page page1 = document.GetPage(1);
+                Assert.NotNull(page1);
+
+                Page page2 = document.GetPage(2);
+                Assert.NotNull(page2);
+            }
+        }
+
         private static byte ConvertToByte(double componentValue)
         {
             var rounded = Math.Round(componentValue * 255, MidpointRounding.AwayFromZero);
