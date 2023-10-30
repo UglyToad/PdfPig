@@ -21,13 +21,21 @@
         {
             public void Execute(ExecutionContext context)
             {
-                int n = ((int)context.Stack.Pop());
+                // Duplicate top n stack items
+                int n = (int)context.Stack.Pop();
                 if (n > 0)
                 {
-                    int size = context.Stack.Count;
                     // Need to copy to a new list to avoid ConcurrentModificationException
-                    List<object> copy = context.Stack.ToList().GetRange(size - n - 1, n);
-                    context.AddAllToStack(copy);
+                    context.AddAllToStack(context.Stack.ToList().Take(n));
+
+                    /* For reference, the PdfBox code:
+                     * https://github.com/apache/pdfbox/blob/18a1931bae5b8c1766cd4976d0fb0e28649190b5/pdfbox/src/main/java/org/apache/pdfbox/pdmodel/common/function/type4/StackOperators.java#L41C1-L50C14
+                     * int size = stack.size();
+                       //Need to copy to a new list to avoid ConcurrentModificationException
+                       List<Object> copy = new java.util.ArrayList<>(
+                       stack.subList(size - n, size));
+                       stack.addAll(copy);
+                     */
                 }
             }
         }
