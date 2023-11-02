@@ -270,7 +270,7 @@
                 "UglyToad.PdfPig.Writer.PdfWriterType",
                 "UglyToad.PdfPig.Writer.PdfPageBuilder",
                 "UglyToad.PdfPig.Writer.TokenWriter",
-                "UglyToad.PdfPig.XObjects.XObjectImage",
+                "UglyToad.PdfPig.XObjects.XObjectFactory",
                 "UglyToad.PdfPig.XObjects.XObjectImage",
                 "UglyToad.PdfPig.XObjects.XObjectType"
             };
