@@ -1,18 +1,19 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using Core;
-    using Outline.Destinations;
     using System;
     using System.Collections.Generic;
+    using Core;
+    using Outline.Destinations;
     using Tokenization.Scanner;
     using Tokens;
     using Util;
 
     internal class Pages
     {
-        private readonly IPageFactory pageFactory;
+        private readonly IPageFactory<Page> pageFactory;
         private readonly IPdfTokenScanner pdfScanner;
         private readonly Dictionary<int, PageTreeNode> pagesByNumber;
+
         public int Count => pagesByNumber.Count;
 
         /// <summary>
@@ -20,7 +21,7 @@
         /// </summary>
         public PageTreeNode PageTree { get; }
 
-        internal Pages(IPageFactory pageFactory, IPdfTokenScanner pdfScanner, PageTreeNode pageTree, Dictionary<int, PageTreeNode> pagesByNumber)
+        internal Pages(IPageFactory<Page> pageFactory, IPdfTokenScanner pdfScanner, PageTreeNode pageTree, Dictionary<int, PageTreeNode> pagesByNumber)
         {
             this.pageFactory = pageFactory ?? throw new ArgumentNullException(nameof(pageFactory));
             this.pdfScanner = pdfScanner ?? throw new ArgumentNullException(nameof(pdfScanner));
@@ -34,7 +35,7 @@
             {
                 parsingOptions.Logger.Error($"Page {pageNumber} requested but is out of range.");
 
-                throw new ArgumentOutOfRangeException(nameof(pageNumber), 
+                throw new ArgumentOutOfRangeException(nameof(pageNumber),
                     $"Page number {pageNumber} invalid, must be between 1 and {Count}.");
             }
 
@@ -49,7 +50,7 @@
             }
 
             var pageTreeMembers = new PageTreeMembers();
-            
+
             while (pageStack.Count > 0)
             {
                 currentNode = pageStack.Pop();
@@ -58,7 +59,7 @@
                 {
                     pageTreeMembers.ParentResources.Enqueue(resourcesDictionary);
                 }
-                
+
                 if (currentNode.NodeDictionary.TryGet(NameToken.MediaBox, pdfScanner, out ArrayToken mediaBox))
                 {
                     pageTreeMembers.MediaBox = new MediaBox(mediaBox.ToRectangle(pdfScanner));

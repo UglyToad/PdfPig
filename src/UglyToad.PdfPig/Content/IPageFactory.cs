@@ -6,14 +6,15 @@
     /// <summary>
     /// Page factory interface.
     /// </summary>
-    public interface IPageFactory
+    /// <typeparam name="TPage">The type of page the page factory creates.</typeparam>
+    public interface IPageFactory<out TPage>
     {
         /// <summary>
         /// Create the page.
         /// </summary>
-        Page Create(int number,
+        TPage Create(int number,
             DictionaryToken dictionary,
             PageTreeMembers pageTreeMembers,
-            NamedDestinations annotationProvider);
+            NamedDestinations namedDestinations);
     }
 }
