@@ -114,6 +114,7 @@
                 "UglyToad.PdfPig.PdfFonts.IFont",
                 "UglyToad.PdfPig.Geometry.GeometryExtensions",
                 "UglyToad.PdfPig.Geometry.UserSpaceUnit",
+                "UglyToad.PdfPig.Graphics.BaseStreamProcessor`1",
                 "UglyToad.PdfPig.Graphics.Colors.CMYKColor",
                 "UglyToad.PdfPig.Graphics.Colors.ColorSpace",
                 "UglyToad.PdfPig.Graphics.PdfPath",

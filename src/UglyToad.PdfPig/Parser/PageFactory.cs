@@ -168,13 +168,13 @@
             var context = new ContentStreamProcessor(
                 pageNumber,
                 resourceStore,
-                userSpaceUnit,
-                cropBox,
-                initialMatrix,
-                rotation,
                 pdfScanner,
                 pageContentParser,
                 filterProvider,
+                cropBox,
+                userSpaceUnit,
+                rotation,
+                initialMatrix,
                 parsingOptions);
 
             return context.Process(pageNumber, operations);
