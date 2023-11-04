@@ -144,7 +144,7 @@
             }
 
             TransformationMatrix matrix;
-            if (shadingDictionary.TryGet<ArrayToken>(NameToken.Coords, scanner, out var matrixToken))
+            if (shadingDictionary.TryGet<ArrayToken>(NameToken.Matrix, scanner, out var matrixToken))
             {
                 matrix = TransformationMatrix.FromArray(matrixToken.Data.OfType<NumericToken>().Select(n => n.Data).ToArray());
             }
