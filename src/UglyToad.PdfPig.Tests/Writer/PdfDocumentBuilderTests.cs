@@ -15,6 +15,7 @@
     using UglyToad.PdfPig.Graphics.Operations.InlineImages;
     using UglyToad.PdfPig.Outline;
     using UglyToad.PdfPig.Outline.Destinations;
+    using UglyToad.PdfPig.Graphics;
 
     public class PdfDocumentBuilderTests
     {
@@ -976,6 +977,22 @@
         }
 
         [Fact]
+        public void CanFilterClippedLetters()
+        {
+            var one = IntegrationHelpers.GetDocumentPath("XI_29_2018_06_Turkish.pdf");
+
+            using (var doc1 = PdfDocument.Open(one, new ParsingOptions { ClipPaths = true }))
+            using (var doc2 = PdfDocument.Open(one, new ParsingOptions { ClipPaths = false }))
+            {
+                var allLetters = doc2.GetPage(5).Letters.Count;
+                var filteredLetters = doc1.GetPage(5).Letters.Count;
+
+                Assert.True(filteredLetters < allLetters,
+                    "Expected filtered letter count to be lower than non-filtered"); // Filtered: 3158 letters, Non-filtered: 3184 letters
+            }
+        }
+
+        [Fact]
         public void CanCreatePageTree()
         {
             var count = 25 * 25 * 25 + 1;
@@ -1239,7 +1256,7 @@
                     bookmarks.GetNodes().OfType<UriBookmarkNode>().Select(node => node.Uri));
 
                 Assert.Equal(
-                    new[] 
+                    new[]
                     {
                         ExplicitDestinationType.XyzCoordinates,
                         ExplicitDestinationType.FitPage,
