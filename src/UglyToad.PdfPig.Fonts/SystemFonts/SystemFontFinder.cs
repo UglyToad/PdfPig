@@ -13,7 +13,7 @@ namespace UglyToad.PdfPig.Fonts.SystemFonts
     using TrueType.Parser;
 
     /// <inheritdoc />
-    public class SystemFontFinder : ISystemFontFinder
+    public sealed class SystemFontFinder : ISystemFontFinder
     {
         private static readonly IReadOnlyDictionary<string, string[]> NameSubstitutes;
         private static readonly Lazy<IReadOnlyList<SystemFontRecord>> AvailableFonts;
@@ -41,7 +41,7 @@ namespace UglyToad.PdfPig.Fonts.SystemFonts
                 {"Times-Roman", new[] {"TimesNewRomanPSMT", "TimesNewRoman", "TimesNewRomanPS", "LiberationSerif", "NimbusRomNo9L-Regu"}},
                 {"Times-Bold", new[] {"TimesNewRomanPS-BoldMT", "TimesNewRomanPS-Bold", "TimesNewRoman-Bold", "LiberationSerif-Bold", "NimbusRomNo9L-Medi"}},
                 {"Times-Italic", new[] {"TimesNewRomanPS-ItalicMT", "TimesNewRomanPS-Italic", "TimesNewRoman-Italic", "LiberationSerif-Italic", "NimbusRomNo9L-ReguItal"}},
-                {"TimesNewRomanPS-BoldItalicMT", new[] {"TimesNewRomanPS-BoldItalic", "TimesNewRoman-BoldItalic", "LiberationSerif-BoldItalic", "NimbusRomNo9L-MediItal"}},
+                {"Times-BoldItalic", new[] {"TimesNewRomanPS-BoldItalicMT", "TimesNewRomanPS-BoldItalic", "TimesNewRoman-BoldItalic", "LiberationSerif-BoldItalic", "NimbusRomNo9L-MediItal"}},
                 {"Symbol", new[] {"SymbolMT", "StandardSymL"}},
                 {"ZapfDingbats", new[] {"ZapfDingbatsITC", "Dingbats", "MS-Gothic"}}
             };
