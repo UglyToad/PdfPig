@@ -117,30 +117,22 @@
                 return cached;
             }
 
-            var matrix = GetFontMatrix();
-
-            var boundingBox = GetBoundingBoxInGlyphSpace(characterCode);
-
-            boundingBox = matrix.Transform(boundingBox);
-
             var characterIdentifier = CMap.ConvertToCid(characterCode);
+
+            // Get the bounding box in glyph space
+            var boundingBox = CidFont.GetBoundingBox(characterIdentifier);
+
+            boundingBox = CidFont.GetFontMatrix(characterIdentifier).Transform(boundingBox);
 
             var width = CidFont.GetWidthFromFont(characterIdentifier);
 
-            var advanceWidth = matrix.TransformX(width);
+            var advanceWidth = GetFontMatrix().TransformX(width); // Not sure why we don't need CidFont.GetFontMatrix(characterCode)
 
             var result = new CharacterBoundingBox(boundingBox, advanceWidth);
 
             boundingBoxCache[characterCode] = result;
 
             return result;
-        }
-
-        public PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
-        {
-            var characterIdentifier = CMap.ConvertToCid(characterCode);
-
-            return CidFont.GetBoundingBox(characterIdentifier);
         }
 
         public TransformationMatrix GetFontMatrix()
@@ -165,13 +157,17 @@
         /// <inheritdoc/>
         public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
         {
-            return CidFont.TryGetPath(characterCode, out path);
+            var characterIdentifier = CMap.ConvertToCid(characterCode);
+
+            return CidFont.TryGetPath(characterIdentifier, out path);
         }
 
         /// <inheritdoc/>
         public bool TryGetNormalisedPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
         {
-            return CidFont.TryGetNormalisedPath(characterCode, out path);
+            var characterIdentifier = CMap.ConvertToCid(characterCode);
+
+            return CidFont.TryGetNormalisedPath(characterIdentifier, out path);
         }
     }
 }

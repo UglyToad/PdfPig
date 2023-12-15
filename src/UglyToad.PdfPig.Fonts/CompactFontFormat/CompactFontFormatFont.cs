@@ -51,6 +51,19 @@
         }
 
         /// <summary>
+        /// Get the character name. Returns <c>null</c> if cannot be processed.
+        /// </summary>
+        public string GetCharacterName(int characterCode)
+        {
+            if (Encoding != null)
+            {
+                return Encoding.GetName(characterCode);
+            }
+
+            return Charset?.GetNameByStringId(characterCode);
+        }
+
+        /// <summary>
         /// Get the bounding box for the character with the given name.
         /// </summary>
         public PdfRectangle? GetCharacterBoundingBox(string characterName)
@@ -143,6 +156,14 @@
         {
             return PrivateDictionary.NominalWidthX;
         }
+
+        /// <summary>
+        /// Get the Font Matrix for the corresponding character name, if available. Return <c>null</c> if not.
+        /// </summary>
+        public virtual TransformationMatrix? GetFontMatrix(string characterName)
+        {
+            return TopDictionary.FontMatrix;
+        }
     }
 
     internal class CompactFontFormatCidFont : CompactFontFormatFont
@@ -161,6 +182,16 @@
             FontDictionaries = fontDictionaries;
             PrivateDictionaries = privateDictionaries;
             FdSelect = fdSelect;
+        }
+
+        public override TransformationMatrix? GetFontMatrix(string characterName)
+        {
+            if (!TryGetFontDictionaryForCharacter(characterName, out var dictionary))
+            {
+                return null;
+            }
+
+            return dictionary.FontMatrix;
         }
 
         protected override decimal GetDefaultWidthX(string characterName)
@@ -196,6 +227,24 @@
             }
 
             dictionary = PrivateDictionaries[fd];
+
+            return true;
+        }
+
+        private bool TryGetFontDictionaryForCharacter(string characterName,
+            out CompactFontFormatTopLevelDictionary dictionary)
+        {
+            dictionary = null;
+
+            var glyphId = Charset.GetGlyphIdByName(characterName);
+
+            var fd = FdSelect.GetFontDictionaryIndex(glyphId);
+            if (fd == -1)
+            {
+                return false;
+            }
+
+            dictionary = FontDictionaries[fd];
 
             return true;
         }

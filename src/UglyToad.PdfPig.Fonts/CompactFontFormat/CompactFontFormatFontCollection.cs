@@ -69,12 +69,9 @@
         {
             var font = FirstFont;
 
-            if (font.Encoding != null)
-            {
-                return font.Encoding.GetName(characterCode);
-            }
+            var name = font.GetCharacterName(characterCode);
 
-            return ".notdef";
+            return name ?? ".notdef";
         }
     }
 }

@@ -33,6 +33,13 @@
         public bool TryGetBoundingAdvancedWidth(int characterIdentifier, Func<int, int?> characterCodeToGlyphId, out double width)
             => font.TryGetAdvanceWidth(characterIdentifier, characterCodeToGlyphId, out width);
 
+        public bool TryGetFontMatrix(int characterCode, out TransformationMatrix? matrix)
+        {
+            // We don't have a matrix here
+            matrix = null;
+            return false;
+        }
+
         public int GetFontMatrixMultiplier() => font.GetUnitsPerEm();
 
         public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path) => font.TryGetPath(characterCode, out path);

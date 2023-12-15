@@ -7,6 +7,8 @@
 
     internal class PdfCidCompactFontFormatFont : ICidFontProgram
     {
+        private const string NotDefined = ".notdef";
+
         private readonly CompactFontFormatFontCollection fontCollection;
 
         public FontDetails Details { get; }
@@ -51,12 +53,12 @@
 
             var font = GetFont();
 
-            if (font.Encoding == null)
+            var characterName = GetCharacterName(characterIdentifier);
+
+            if (string.Equals(characterName, NotDefined, StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }
-
-            var characterName = GetCharacterName(characterIdentifier);
 
             boundingBox = font.GetCharacterBoundingBox(characterName) ?? new PdfRectangle(0, 0, 500, 0);
 
@@ -78,6 +80,19 @@
             throw new NotImplementedException();
         }
 
+        public bool TryGetFontMatrix(int characterCode, out TransformationMatrix? matrix)
+        {
+            var font = GetFont();
+            var name = font.GetCharacterName(characterCode);
+            if (name == null)
+            {
+                matrix = null;
+                return false;
+            }
+            matrix = font.GetFontMatrix(name);
+            return matrix.HasValue;
+        }
+
         public int GetFontMatrixMultiplier()
         {
             return 1000;
@@ -87,12 +102,9 @@
         {
             var font = GetFont();
 
-            if (font.Encoding != null)
-            {
-                return font.Encoding.GetName(characterCode);
-            }
+            var name = font.GetCharacterName(characterCode);
 
-            return ".notdef";
+            return name ?? NotDefined;
         }
 
         private CompactFontFormatFont GetFont()
@@ -113,12 +125,12 @@
 
             var font = GetFont();
 
-            if (font.Encoding == null)
+            var characterName = GetCharacterName(characterCode);
+
+            if (string.Equals(characterName, NotDefined, StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }
-
-            var characterName = GetCharacterName(characterCode);
 
             if (font.TryGetPath(characterName, out path))
             {

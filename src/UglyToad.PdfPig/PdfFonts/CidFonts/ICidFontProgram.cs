@@ -19,9 +19,14 @@
 
         bool TryGetBoundingAdvancedWidth(int characterIdentifier, out double width);
 
-        bool TryGetPath(int characterName, out IReadOnlyList<PdfSubpath> path);
+        bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path);
 
         bool TryGetPath(int characterCode, Func<int, int?> characterCodeToGlyphId, out IReadOnlyList<PdfSubpath> path);
+
+        /// <summary>
+        /// Try to get the font matrix if available.
+        /// </summary>
+        bool TryGetFontMatrix(int characterCode, out TransformationMatrix? matrix);
 
         int GetFontMatrixMultiplier();
     }
