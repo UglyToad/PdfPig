@@ -124,7 +124,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
 
         /// <summary>
         /// <inheritdoc/>
-        /// <para>Not implemeted.</para>
+        /// <para>Not implemented.</para>
         /// </summary>
         public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
         {
@@ -135,7 +135,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
 
         /// <summary>
         /// <inheritdoc/>
-        /// <para>Not implemeted.</para>
+        /// <para>Not implemented.</para>
         /// </summary>
         public bool TryGetNormalisedPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
         {

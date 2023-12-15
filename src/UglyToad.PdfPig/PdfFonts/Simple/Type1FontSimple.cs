@@ -267,7 +267,7 @@
         {
             if (TryGetPath(characterCode, out path))
             {
-                path = fontMatrix.Transform(path).ToList();
+                path = fontMatrix.Transform(path).ToArray();
                 return true;
             }
             return false;

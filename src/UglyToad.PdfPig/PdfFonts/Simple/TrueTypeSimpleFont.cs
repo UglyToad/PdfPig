@@ -343,7 +343,7 @@
                 return false;
             }
 
-            path = GetFontMatrix().Transform(path).ToList();
+            path = GetFontMatrix().Transform(path).ToArray();
             return true;
         }
     }
