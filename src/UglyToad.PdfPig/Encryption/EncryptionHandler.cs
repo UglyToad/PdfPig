@@ -688,7 +688,7 @@
 
             var iv = new byte[16];
 
-            using (var aes = Aes.Create("AesManaged")!)
+            using (var aes = Aes.Create())
             {
                 aes.Key = intermediateKey;
                 aes.IV = iv;
