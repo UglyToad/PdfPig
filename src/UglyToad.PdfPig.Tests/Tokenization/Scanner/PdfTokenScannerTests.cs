@@ -446,6 +446,54 @@ endobj";
             Assert.IsType<NullToken>(encryptValue);
         }
 
+        [Fact]
+        public void ReadMultipleNestedDictionary()
+        {
+            const string input =
+                """
+                                4 0 obj
+                << /Type /Font /Subtype /Type1 /Name /AF1F040+Arial /BaseFont /Arial /FirstChar 32 /LastChar 255
+                /Encoding
+                <<
+                /Type /Encoding /BaseEncoding /WinAnsiEncoding
+                /Differences [128 /Euro 130 /quotesinglbase /florin /quotedblbase /ellipsis /dagger /daggerdbl /circumflex /perthousand /Scaron /guilsinglleft /OE 142 /Zcaron 145
+                /quoteleft /quoteright /quotedblleft /quotedblright /bullet /endash /emdash /tilde /trademark /scaron /guilsinglright /oe 158 /zcaron /Ydieresis /space /exclamdown
+                /cent /sterling /currency /yen /brokenbar /section /dieresis /copyright /ordfeminine /guillemotleft /logicalnot /hyphen /registered /macron /degree /plusminus
+                /twosuperior /threesuperior /acute /mu /paragraph /periodcentered /cedilla /onesuperior /ordmasculine /guillemotright /onequarter /onehalf /threequarters
+                /questiondown /Agrave /Aacute /Acircumflex /Atilde /Adieresis /Aring /AE /Ccedilla /Egrave /Eacute /Ecircumflex /Edieresis /Igrave /Iacute /Icircumflex /Idieresis
+                /Eth /Ntilde /Ograve /Oacute /Ocircumflex /Otilde /Odieresis /multiply /Oslash /Ugrave /Uacute /Ucircumflex /Udieresis /Yacute /Thorn /germandbls /agrave /aacute
+                /acircumflex /atilde /adieresis /aring /ae /ccedilla /egrave /eacute /ecircumflex /edieresis /igrave /iacute /icircumflex /idieresis /eth /ntilde /ograve /oacute
+                /ocircumflex /otilde /odieresis /divide /oslash /ugrave /uacute /ucircumflex /udieresis /yacute /thorn /ydieresis ]
+                >>
+                /Widths [278 278 355 556 556 889 667 191 333 333 389 584 278 333 278 278 
+                556 556 556 556 556 556 556 556 556 556 278 278 584 584 584 556 
+                1015 667 667 722 722 667 611 778 722 278 500 667 556 833 722 778 
+                667 778 722 667 611 722 667 944 667 667 611 278 278 278 469 556 
+                333 556 556 500 556 556 278 556 556 222 222 500 222 833 556 556 
+                556 556 333 500 278 556 500 722 500 500 500 334 260 334 584 750 
+                556 750 222 556 333 1000 556 556 333 1000 667 333 1000 750 611 750 
+                750 222 222 333 333 350 556 1000 333 1000 500 333 944 750 500 667 
+                278 333 556 556 556 556 260 556 333 737 370 556 584 333 737 552 
+                400 549 333 333 333 576 537 278 333 333 365 556 834 834 834 611 
+                667 667 667 667 667 667 1000 722 667 667 667 667 278 278 278 278 
+                722 722 778 778 778 778 778 584 778 722 722 722 722 667 667 611 
+                556 556 556 556 556 556 889 500 556 556 556 556 278 278 278 278 
+                556 556 556 556 556 556 556 549 611 556 556 556 556 500 556 500 
+                ]
+                >>
+                 >>
+                endobj
+                """;
+
+            var scanner = GetScanner(input);
+
+            var tokens = ReadToEnd(scanner);
+
+            var dictionaryToken = tokens[0].Data as DictionaryToken;
+
+            Assert.NotNull(dictionaryToken);
+        }
+
         private static PdfTokenScanner GetScanner(string s, TestObjectLocationProvider locationProvider = null)
         {
             var input = StringBytesTestConverter.Convert(s, false);
