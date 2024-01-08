@@ -9,6 +9,7 @@
     using Core;
     using Encryption;
     using Filters;
+    using System.Linq;
     using Tokens;
 
     internal class PdfTokenScanner : IPdfTokenScanner
@@ -225,9 +226,26 @@
             else
             {
                 // Just take the last, should only ever be 1
-                Debug.Assert(readTokens.Count == 1, "Found more than 1 token in an object.");
+                if (readTokens.Count > 1)
+                {
+                    Trace.WriteLine("Found more than 1 token in an object.");
 
-                token = readTokens[readTokens.Count - 1];
+                    var trimmedDuplicatedEndTokens = readTokens
+                        .Where(x => x is not OperatorToken op || (op.Data != ">" && op.Data != "]")).ToList();
+
+                    if (trimmedDuplicatedEndTokens.Count == 1)
+                    {
+                        token = trimmedDuplicatedEndTokens[0];
+                    }
+                    else
+                    {
+                        token = readTokens[readTokens.Count - 1];
+                    }
+                }
+                else
+                {
+                    token = readTokens[readTokens.Count - 1];
+                }
             }
 
             token = encryptionHandler.Decrypt(reference, token);
