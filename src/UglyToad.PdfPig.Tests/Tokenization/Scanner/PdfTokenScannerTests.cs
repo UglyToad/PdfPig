@@ -450,8 +450,8 @@ endobj";
         public void ReadMultipleNestedDictionary()
         {
             const string input =
-                """
-                                4 0 obj
+                @"
+                4 0 obj
                 << /Type /Font /Subtype /Type1 /Name /AF1F040+Arial /BaseFont /Arial /FirstChar 32 /LastChar 255
                 /Encoding
                 <<
@@ -483,7 +483,7 @@ endobj";
                 >>
                  >>
                 endobj
-                """;
+                ";
 
             var scanner = GetScanner(input);
 
