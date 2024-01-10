@@ -117,7 +117,11 @@
             pageFactoryCache.Add(type, pageFactory);
         }
 
+#if NET6_0_OR_GREATER
+        internal void AddPageFactory<TPage, [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)] TPageFactory>() where TPageFactory : IPageFactory<TPage>
+#else
         internal void AddPageFactory<TPage, TPageFactory>() where TPageFactory : IPageFactory<TPage>
+#endif
         {
             var constructor = typeof(TPageFactory).GetConstructor(new[]
             {
