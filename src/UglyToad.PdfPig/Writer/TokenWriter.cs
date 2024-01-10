@@ -94,8 +94,10 @@
         {
             if (token == null)
             {
-                throw new ArgumentNullException(nameof(token));
+                WriteNullToken(outputStream);
+                return;
             }
+
             switch (token)
             {
                 case ArrayToken array:
@@ -305,8 +307,6 @@
         /// <summary>
         /// Write a hex value to the output stream
         /// </summary>
-        /// <param name="hex"></param>
-        /// <param name="stream"></param>
         protected void WriteHex(HexToken hex, Stream stream)
         {
             stream.WriteByte(HexStart);
@@ -317,8 +317,6 @@
         /// <summary>
         /// Write an array to the output stream, with whitespace at the end.
         /// </summary>
-        /// <param name="array"></param>
-        /// <param name="outputStream"></param>
         protected void WriteArray(ArrayToken array, Stream outputStream)
         {
             outputStream.WriteByte(ArrayStart);
@@ -337,8 +335,6 @@
         /// <summary>
         /// Write a boolean "true" or "false" to the output stream, with whitespace at the end.
         /// </summary>
-        /// <param name="boolean"></param>
-        /// <param name="outputStream"></param>
         protected void WriteBoolean(BooleanToken boolean, Stream outputStream)
         {
             var bytes = boolean.Data ? TrueBytes : FalseBytes;
@@ -349,14 +345,23 @@
         /// <summary>
         /// Write a "%comment" in the output stream, with a line break at the end.
         /// </summary>
-        /// <param name="comment"></param>
-        /// <param name="outputStream"></param>
         protected void WriteComment(CommentToken comment, Stream outputStream)
         {
             var bytes = OtherEncodings.StringAsLatin1Bytes(comment.Data);
             outputStream.WriteByte(Comment);
             outputStream.Write(bytes, 0, bytes.Length);
             WriteLineBreak(outputStream);
+        }
+
+        /// <summary>
+        /// Write "null" in the output stream with a whitespace at the end.
+        /// </summary>
+        protected void WriteNullToken(Stream outputStream)
+        {
+            var bytes = OtherEncodings.StringAsLatin1Bytes("null");
+
+            outputStream.Write(bytes, 0, bytes.Length);
+            WriteWhitespace(outputStream);
         }
 
         /// <summary>
