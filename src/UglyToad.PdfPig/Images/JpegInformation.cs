@@ -21,13 +21,19 @@
         public int BitsPerComponent { get; }
 
         /// <summary>
+        /// 1 grayscale, 3 RGB, 4 CMYK.
+        /// </summary>
+        public int NumberOfComponents { get; }
+
+        /// <summary>
         /// Create a new <see cref="JpegInformation"/>.
         /// </summary>
-        public JpegInformation(int width, int height, int bitsPerComponent)
+        public JpegInformation(int width, int height, int bitsPerComponent, int numberOfComponents)
         {
             Width = width;
             Height = height;
             BitsPerComponent = bitsPerComponent;
+            NumberOfComponents = numberOfComponents;
         }
     }
 }

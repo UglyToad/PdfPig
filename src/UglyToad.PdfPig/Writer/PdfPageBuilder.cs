@@ -21,13 +21,13 @@
     using Tokens;
     using Graphics.Operations.PathPainting;
     using Images.Png;
-    using UglyToad.PdfPig.Actions;
+    using Actions;
 
     internal class NameConflictSolver
     {
-        private string prefix;
+        private readonly string prefix;
         private int key = 0;
-        private HashSet<string> xobjectNamesUsed = new HashSet<string>();
+        private readonly HashSet<string> xobjectNamesUsed = new HashSet<string>();
 
         public NameConflictSolver(string prefix)
         {
@@ -44,8 +44,8 @@
                 i++;
             }
 
-            
-            return i != 0 ? name.Substring(0,i) : prefix;
+
+            return i != 0 ? name.Substring(0, i) : prefix;
         }
 
         public string NewName(string orginalName = null)
@@ -53,11 +53,14 @@
             var newPrefix = ExtractPrefix(orginalName);
 
             var name = $"{newPrefix}{key}";
+
             while (xobjectNamesUsed.Contains(name))
             {
                 name = $"{newPrefix}{++key}";
             }
+
             xobjectNamesUsed.Add(name);
+
             return name;
         }
 
@@ -67,11 +70,9 @@
             {
                 return NewName(name);
             }
-            else
-            {
-                xobjectNamesUsed.Add(name);
-                return name;
-            }
+
+            xobjectNamesUsed.Add(name);
+            return name;
         }
 
     }
@@ -86,14 +87,14 @@
 
         // all page data other than content streams
         internal readonly Dictionary<NameToken, IToken> pageDictionary = new Dictionary<NameToken, IToken>();
-        
+
         // streams
         internal readonly List<IPageContentStream> contentStreams;
         private IPageContentStream currentStream;
 
         // links to be resolved when all page references are available
         internal readonly List<(DictionaryToken token, PdfAction action)> links;
-        
+
         // maps fonts added using PdfDocumentBuilder to page font names
         private readonly Dictionary<Guid, NameToken> documentFonts = new Dictionary<Guid, NameToken>();
         internal int nextFontId = 1;
@@ -135,7 +136,7 @@
             PageNumber = number;
 
             currentStream = new DefaultContentStream();
-            contentStreams = new List<IPageContentStream>() {currentStream};
+            contentStreams = new List<IPageContentStream>() { currentStream };
         }
 
         internal PdfPageBuilder(int number, PdfDocumentBuilder documentBuilder, IEnumerable<CopiedContentStream> copied,
@@ -553,7 +554,7 @@
             {
                 value = NameToken.Create($"F{nextFontId++}");
                 var resources = pageDictionary.GetOrCreateDict(NameToken.Resources);
-                var fonts  = resources.GetOrCreateDict(NameToken.Font);
+                var fonts = resources.GetOrCreateDict(NameToken.Font);
                 while (fonts.ContainsKey(value))
                 {
                     value = NameToken.Create($"F{nextFontId++}");
@@ -576,7 +577,7 @@
                 return AddJpeg(stream, placementRectangle);
             }
         }
-        
+
 
         /// <summary>
         /// Adds the JPEG image represented by the input stream at the specified location.
@@ -587,7 +588,13 @@
             var info = JpegHandler.GetInformation(fileStream);
 
             if (placementRectangle.Equals(default(PdfRectangle)))
-                placementRectangle = new PdfRectangle(0, 0, info.Width, info.Height);
+            {
+                placementRectangle = new PdfRectangle(
+                    0,
+                    0,
+                    info.Width,
+                    info.Height);
+            }
 
             byte[] data;
             using (var memory = new MemoryStream())
@@ -597,6 +604,20 @@
                 data = memory.ToArray();
             }
 
+            NameToken colorSpace;
+            if (info.NumberOfComponents == 1)
+            {
+                colorSpace = NameToken.Devicegray;
+            }
+            else if (info.NumberOfComponents == 4)
+            {
+                colorSpace = NameToken.Devicecmyk;
+            }
+            else
+            {
+                colorSpace = NameToken.Devicergb;
+            }
+
             var imgDictionary = new Dictionary<NameToken, IToken>
             {
                 {NameToken.Type, NameToken.Xobject },
@@ -604,7 +625,7 @@
                 {NameToken.Width, new NumericToken(info.Width) },
                 {NameToken.Height, new NumericToken(info.Height) },
                 {NameToken.BitsPerComponent, new NumericToken(info.BitsPerComponent)},
-                {NameToken.ColorSpace, NameToken.Devicergb},
+                {NameToken.ColorSpace, colorSpace},
                 {NameToken.Filter, NameToken.DctDecode},
                 {NameToken.Length, new NumericToken(data.Length)}
             };
@@ -613,12 +634,12 @@
             var resources = pageDictionary.GetOrCreateDict(NameToken.Resources);
             var xObjects = resources.GetOrCreateDict(NameToken.Xobject);
 
-            var key = NameToken.Create( xobjectsNames.NewName());
+            var key = NameToken.Create(xobjectsNames.NewName());
             xObjects[key] = reference;
 
             currentStream.Add(Push.Value);
             // This needs to be the placement rectangle.
-            currentStream.Add(new ModifyCurrentTransformationMatrix(new []
+            currentStream.Add(new ModifyCurrentTransformationMatrix(new[]
             {
                 (decimal)placementRectangle.Width, 0,
                 0, (decimal)placementRectangle.Height,
@@ -760,7 +781,7 @@
             {
                 imgDictionary.Add(NameToken.Smask, smaskReference);
             }
-            
+
             var reference = documentBuilder.AddImage(new DictionaryToken(imgDictionary), compressed);
 
             var resources = pageDictionary.GetOrCreateDict(NameToken.Resources);
@@ -839,7 +860,7 @@
 
             // Special cases
             // Since we don't directly add font's to the pages resources, we have to go look at the document's font
-            if(srcResourceDictionary.TryGet(NameToken.Font, srcPage.pdfScanner, out DictionaryToken fontsDictionary))
+            if (srcResourceDictionary.TryGet(NameToken.Font, srcPage.pdfScanner, out DictionaryToken fontsDictionary))
             {
                 var pageFontsDictionary = resources.GetOrCreateDict(NameToken.Font);
 
@@ -1006,12 +1027,12 @@
                 var documentSpace = textMatrix.Transform(renderingMatrix.Transform(fontMatrix.Transform(rect)));
 
                 var letter = new Letter(
-                    c.ToString(), 
-                    documentSpace, 
-                    advanceRect.BottomLeft, 
-                    advanceRect.BottomRight, 
-                    width, 
-                    (double)fontSize, 
+                    c.ToString(),
+                    documentSpace,
+                    advanceRect.BottomLeft,
+                    advanceRect.BottomRight,
+                    width,
+                    (double)fontSize,
                     FontDetails.GetDefault(name),
                     TextRenderingMode.Fill,
                     GrayColor.Black,
@@ -1083,7 +1104,7 @@
 
             public DefaultContentStream() : this(new List<IGraphicsStateOperation>())
             {
-                
+
             }
             public DefaultContentStream(List<IGraphicsStateOperation> operations)
             {
@@ -1124,7 +1145,7 @@
             private readonly IndirectReferenceToken token;
             public bool ReadOnly => true;
             public bool HasContent => true;
-            
+
             public CopiedContentStream(IndirectReferenceToken indirectReferenceToken)
             {
                 token = indirectReferenceToken;
@@ -1140,7 +1161,7 @@
                 throw new NotSupportedException("Writing to a copied content stream is not supported.");
             }
 
-            public List<IGraphicsStateOperation> Operations => 
+            public List<IGraphicsStateOperation> Operations =>
                 throw new NotSupportedException("Reading raw operations is not supported from a copied content stream.");
         }
 
@@ -1183,6 +1204,6 @@
             }
         }
 
-        
+
     }
 }
