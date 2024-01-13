@@ -29,7 +29,6 @@
                 switch (marker)
                 {
                     case JpegMarker.StartOfImage:
-                    case JpegMarker.EndOfImage:
                     case JpegMarker.Restart0:
                     case JpegMarker.Restart1:
                     case JpegMarker.Restart2:
@@ -49,8 +48,9 @@
                             var bpp = stream.ReadByte();
                             var height = ReadShort(stream, shortBuffer);
                             var width = ReadShort(stream, shortBuffer);
+                            var numberOfComponents = stream.ReadByte();
 
-                            return new JpegInformation(width, height, bpp);
+                            return new JpegInformation(width, height, bpp, numberOfComponents);
                         }
                     case JpegMarker.ApplicationSpecific0:
                     case JpegMarker.ApplicationSpecific1:
