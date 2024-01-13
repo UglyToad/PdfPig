@@ -535,7 +535,7 @@
         {
             outputStream.WriteByte(StringStart);
 
-            if (stringToken.EncodedWith == StringToken.Encoding.Iso88591)
+            if (stringToken.EncodedWith == StringToken.Encoding.Iso88591 || stringToken.EncodedWith == StringToken.Encoding.PdfDocEncoding)
             {
                 // iso 88591 (or really PdfDocEncoding in non-contentstream circumstances shouldn't
                 // have these chars but seems like internally this isn't obeyed (see:
