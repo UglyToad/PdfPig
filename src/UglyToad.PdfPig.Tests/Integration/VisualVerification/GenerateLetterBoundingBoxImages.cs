@@ -1,8 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration.VisualVerification
 {
     using PdfPig.Core;
+    using SkiaSharp;
     using System;
-    using System.Drawing;
     using System.IO;
     using Xunit;
 
@@ -24,6 +24,12 @@
         private const string MOZILLA_10372_2File = "MOZILLA-10372-2";
         private const string Type3FontZeroHeight = "type3-font-zero-height";
 
+        private const string OutputPath = "Images";
+
+        private static readonly SKPaint violetPen = new SKPaint() { Color = SKColors.BlueViolet, StrokeWidth = 1 };
+        private static readonly SKPaint redPen = new SKPaint() { Color = SKColors.Crimson, StrokeWidth = 1 };
+        private static readonly SKPaint bluePen = new SKPaint() { Color = SKColors.GreenYellow, StrokeWidth = 1 };
+        
         private static string GetFilename(string name)
         {
             var documentFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Integration", "Documents"));
@@ -155,12 +161,8 @@
 
                 double scale = imageHeight / page.Height;
 
-                var violetPen = new Pen(Color.BlueViolet, 1);
-                var redPen = new Pen(Color.Crimson, 1);
-                var bluePen = new Pen(Color.GreenYellow, 1);
-
-                using (var bitmap = new Bitmap(image))
-                using (var graphics = Graphics.FromImage(bitmap))
+                using (var bitmap = SKBitmap.FromImage(image))
+                using (var graphics = new SKCanvas(bitmap))
                 {
                     foreach (var word in page.GetWords())
                     {
@@ -177,46 +179,51 @@
                         DrawRectangle(annotation.Rectangle, graphics, bluePen, imageHeight, scale);
                     }
 
+                    graphics.Flush();
+
                     var imageName = $"{file}.jpg";
 
-                    if (!Directory.Exists("Images"))
+                    if (!Directory.Exists(OutputPath))
                     {
-                        Directory.CreateDirectory("Images");
+                        Directory.CreateDirectory(OutputPath);
                     }
 
-                    var savePath = Path.Combine("Images", imageName);
+                    var savePath = Path.Combine(OutputPath, imageName);
 
-                    bitmap.Save(savePath);
+                    using (var fs = new FileStream(savePath, FileMode.Create))
+                    using (SKData d = bitmap.Encode(SKEncodedImageFormat.Jpeg, 100))
+                    {
+                        d.SaveTo(fs);
+                    }
                 }
             }
         }
 
-        private static void DrawRectangle(PdfRectangle rectangle, Graphics graphics, Pen pen,
-            int imageHeight, double scale)
+        private static void DrawRectangle(PdfRectangle rectangle, SKCanvas graphics, SKPaint pen, int imageHeight, double scale)
         {
             int GetY(PdfPoint p)
             {
                 return imageHeight - (int)(p.Y * scale);
             }
 
-            Point GetPoint(PdfPoint p)
+            SKPoint GetPoint(PdfPoint p)
             {
-                return new Point((int)(p.X * scale), GetY(p));
+                return new SKPoint((int)(p.X * scale), GetY(p));
             }
 
-            graphics.DrawLine(pen, GetPoint(rectangle.BottomLeft), GetPoint(rectangle.BottomRight));
-            graphics.DrawLine(pen, GetPoint(rectangle.BottomRight), GetPoint(rectangle.TopRight));
-            graphics.DrawLine(pen, GetPoint(rectangle.TopRight), GetPoint(rectangle.TopLeft));
-            graphics.DrawLine(pen, GetPoint(rectangle.TopLeft), GetPoint(rectangle.BottomLeft));
+            graphics.DrawLine(GetPoint(rectangle.BottomLeft), GetPoint(rectangle.BottomRight), pen);
+            graphics.DrawLine(GetPoint(rectangle.BottomRight), GetPoint(rectangle.TopRight), pen);
+            graphics.DrawLine(GetPoint(rectangle.TopRight), GetPoint(rectangle.TopLeft), pen);
+            graphics.DrawLine(GetPoint(rectangle.TopLeft), GetPoint(rectangle.BottomLeft), pen);
         }
 
-        private static Image GetCorrespondingImage(string filename)
+        private static SKImage GetCorrespondingImage(string filename)
         {
             var pdf = GetFilename(filename);
 
             pdf = pdf.Replace(".pdf", ".jpg");
 
-            return Image.FromFile(pdf);
+            return SKImage.FromEncodedData(pdf);
         }
     }
 }
