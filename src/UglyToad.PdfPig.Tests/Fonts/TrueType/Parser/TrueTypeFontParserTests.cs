@@ -1,19 +1,14 @@
 ﻿// ReSharper disable CompareOfFloatsByEqualityOperator
 namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Drawing;
-    using System.Globalization;
-    using System.Linq;
-    using System.Text;
-    using System.Text.RegularExpressions;
     using PdfPig.Core;
     using PdfPig.Fonts.TrueType;
     using PdfPig.Fonts.TrueType.Parser;
     using PdfPig.Fonts.TrueType.Tables;
-    using UglyToad.PdfPig.Fonts.TrueType.Glyphs;
-    using UglyToad.PdfPig.Graphics;
+    using System;
+    using System.Globalization;
+    using System.Text;
+    using System.Text.RegularExpressions;
     using Xunit;
 
     public class TrueTypeFontParserTests
