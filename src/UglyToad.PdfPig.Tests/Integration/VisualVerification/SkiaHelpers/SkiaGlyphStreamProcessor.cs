@@ -103,9 +103,9 @@
             TransformationMatrix textMatrix,
             TransformationMatrix transformationMatrix)
         {
-            var transformMatrix = renderingMatrix.ToSkMatrix()
-                .PostConcat(textMatrix.ToSkMatrix())
-                .PostConcat(transformationMatrix.ToSkMatrix())
+            var transformMatrix = renderingMatrix.ToSKMatrix()
+                .PostConcat(textMatrix.ToSKMatrix())
+                .PostConcat(transformationMatrix.ToSKMatrix())
                 .PostConcat(yAxisFlipMatrix);
 
             var style = textRenderingMode.ToSKPaintStyle();

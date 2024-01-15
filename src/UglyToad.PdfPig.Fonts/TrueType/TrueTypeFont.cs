@@ -137,7 +137,7 @@
         /// </summary>
         public bool TryGetPath(int characterCode, Func<int, int?> characterCodeToGlyphId, out IReadOnlyList<PdfSubpath> path)
         {
-            path = EmptyArray<PdfSubpath>.Instance;
+            path = null;
 
             if (!TryGetGlyphIndex(characterCode, characterCodeToGlyphId, out var index)
                 || TableRegister.GlyphTable == null)

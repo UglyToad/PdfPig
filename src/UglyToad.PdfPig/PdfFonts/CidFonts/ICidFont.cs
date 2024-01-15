@@ -54,6 +54,8 @@
 
         PdfVector GetDisplacementVector(int characterIdentifier);
 
+        TransformationMatrix GetFontMatrix(int characterIdentifier);
+
         /// <summary>
         /// Returns the glyph path for the given character code.
         /// </summary>

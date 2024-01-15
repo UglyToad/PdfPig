@@ -2,7 +2,7 @@
 {
     using System.Collections.Generic;
 
-    internal class CompactFontFormatFormat1Encoding : CompactFontFormatBuiltInEncoding
+    internal sealed class CompactFontFormatFormat1Encoding : CompactFontFormatBuiltInEncoding
     {
         public int NumberOfRanges { get; set; }
 
@@ -10,7 +10,7 @@
         {
             NumberOfRanges = numberOfRanges;
 
-            Add(0, 0, ".notdef");
+            Add(0, 0, NotDefined);
 
             foreach (var value in values)
             {

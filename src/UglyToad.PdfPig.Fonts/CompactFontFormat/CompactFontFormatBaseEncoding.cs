@@ -16,7 +16,7 @@
         {
             if (!codeToNameMap.TryGetValue(code, out var name))
             {
-                return ".notdef";
+                return NotDefined;
             }
 
             return name;

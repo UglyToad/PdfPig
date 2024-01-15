@@ -12,7 +12,7 @@
     /// Type 2 CID fonts contains glyph descriptions based on
     /// the TrueType font format.
     /// </summary>
-    internal class Type2CidFont : ICidFont
+    internal sealed class Type2CidFont : ICidFont
     {
         private readonly ICidFontProgram fontProgram;
         private readonly VerticalWritingMetrics verticalWritingMetrics;
@@ -35,10 +35,14 @@
         public FontDescriptor Descriptor { get; }
 
         public FontDetails Details => fontProgram?.Details ?? Descriptor?.ToDetails(BaseFont?.Data)
-                                      ?? FontDetails.GetDefault(BaseFont?.Data);
+            ?? FontDetails.GetDefault(BaseFont?.Data);
 
-        public Type2CidFont(NameToken type, NameToken subType, NameToken baseFont, CharacterIdentifierSystemInfo systemInfo,
-            FontDescriptor descriptor, ICidFontProgram fontProgram,
+        public Type2CidFont(NameToken type,
+            NameToken subType,
+            NameToken baseFont,
+            CharacterIdentifierSystemInfo systemInfo,
+            FontDescriptor descriptor,
+            ICidFontProgram fontProgram,
             VerticalWritingMetrics verticalWritingMetrics,
             IReadOnlyDictionary<int, double> widths,
             double? defaultWidth,
@@ -71,6 +75,7 @@
             {
                 return width;
             }
+
             // TODO: Read the font width from the font program.
             return GetWidthFromDictionary(characterIdentifier);
         }
@@ -117,6 +122,11 @@
             return verticalWritingMetrics.GetDisplacementVector(characterIdentifier);
         }
 
+        public TransformationMatrix GetFontMatrix(int characterIdentifier)
+        {
+            return FontMatrix;
+        }
+
         public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path) => TryGetPath(characterCode, cidToGid.GetGlyphIndex, out path);
 
         public bool TryGetPath(int characterCode, Func<int, int?> characterCodeToGlyphId, out IReadOnlyList<PdfSubpath> path)
@@ -132,18 +142,24 @@
 
         public bool TryGetNormalisedPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
         {
-            if (!TryGetPath(characterCode, out path))
-            {
-                return false;
-            }
-
-            path = FontMatrix.Transform(path).ToList();
-            return true;
+            return TryGetNormalisedPath(characterCode, cidToGid.GetGlyphIndex, out path);
         }
 
         public bool TryGetNormalisedPath(int characterCode, Func<int, int?> characterCodeToGlyphId, out IReadOnlyList<PdfSubpath> path)
         {
-            throw new NotImplementedException();
+            path = null;
+            if (fontProgram == null)
+            {
+                return false;
+            }
+
+            if (fontProgram.TryGetPath(characterCode, characterCodeToGlyphId, out path))
+            {
+                path = GetFontMatrix(characterCode).Transform(path).ToArray();
+                return true;
+            }
+
+            return false;
         }
     }
 }

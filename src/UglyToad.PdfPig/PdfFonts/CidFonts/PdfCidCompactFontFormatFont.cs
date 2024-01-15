@@ -3,9 +3,10 @@
     using System;
     using System.Collections.Generic;
     using Core;
+    using Fonts;
     using Fonts.CompactFontFormat;
 
-    internal class PdfCidCompactFontFormatFont : ICidFontProgram
+    internal sealed class PdfCidCompactFontFormatFont : ICidFontProgram
     {
         private readonly CompactFontFormatFontCollection fontCollection;
 
@@ -51,12 +52,12 @@
 
             var font = GetFont();
 
-            if (font.Encoding == null)
+            var characterName = GetCharacterName(characterIdentifier);
+
+            if (string.Equals(characterName, GlyphList.NotDefined, StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }
-
-            var characterName = GetCharacterName(characterIdentifier);
 
             boundingBox = font.GetCharacterBoundingBox(characterName) ?? new PdfRectangle(0, 0, 500, 0);
 
@@ -83,16 +84,26 @@
             return 1000;
         }
 
+        public bool TryGetFontMatrix(int characterCode, out TransformationMatrix? matrix)
+        {
+            var font = GetFont();
+            var name = font.GetCharacterName(characterCode, true);
+            if (name == null)
+            {
+                matrix = null;
+                return false;
+            }
+            matrix = font.GetFontMatrix(name);
+            return matrix.HasValue;
+        }
+
         public string GetCharacterName(int characterCode)
         {
             var font = GetFont();
 
-            if (font.Encoding != null)
-            {
-                return font.Encoding.GetName(characterCode);
-            }
+            var name = font.GetCharacterName(characterCode, true);
 
-            return ".notdef";
+            return name ?? GlyphList.NotDefined;
         }
 
         private CompactFontFormatFont GetFont()
@@ -109,16 +120,16 @@
 
         public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
         {
-            path = EmptyArray<PdfSubpath>.Instance;
+            path = null;
 
             var font = GetFont();
 
-            if (font.Encoding == null)
+            var characterName = GetCharacterName(characterCode);
+
+            if (string.Equals(characterName, GlyphList.NotDefined, StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }
-
-            var characterName = GetCharacterName(characterCode);
 
             if (font.TryGetPath(characterName, out path))
             {

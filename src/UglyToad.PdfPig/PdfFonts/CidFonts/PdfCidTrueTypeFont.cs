@@ -6,7 +6,7 @@
     using Fonts.TrueType;
     using Fonts.TrueType.Tables;
 
-    internal class PdfCidTrueTypeFont : ICidFontProgram
+    internal sealed class PdfCidTrueTypeFont : ICidFontProgram
     {
         private readonly TrueTypeFont font;
 
@@ -34,6 +34,13 @@
             => font.TryGetAdvanceWidth(characterIdentifier, characterCodeToGlyphId, out width);
 
         public int GetFontMatrixMultiplier() => font.GetUnitsPerEm();
+
+        public bool TryGetFontMatrix(int characterCode, out TransformationMatrix? matrix)
+        {
+            // We don't have a matrix here
+            matrix = null;
+            return false;
+        }
 
         public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path) => font.TryGetPath(characterCode, out path);
 

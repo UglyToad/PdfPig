@@ -13,7 +13,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
     /// <summary>
     /// A font using one of the Adobe Standard 14 fonts. Can use a custom encoding.
     /// </summary>
-    internal class Type1Standard14Font : IFont
+    internal sealed class Type1Standard14Font : IFont
     {
         private readonly AdobeFontMetrics standardFontMetrics;
         private readonly Encoding encoding;
@@ -49,7 +49,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
         public bool TryGetUnicode(int characterCode, out string value)
         {
             var name = encoding.GetName(characterCode);
-            if (string.Equals(name, ".notdef", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(name, GlyphList.NotDefined, StringComparison.OrdinalIgnoreCase))
             {
                 value = null;
                 return false;

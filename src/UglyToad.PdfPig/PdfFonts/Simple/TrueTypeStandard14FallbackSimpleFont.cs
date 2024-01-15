@@ -13,7 +13,7 @@
     /// <summary>
     /// Some TrueType fonts use both the Standard 14 descriptor and the TrueType font from disk.
     /// </summary>
-    internal class TrueTypeStandard14FallbackSimpleFont : IFont
+    internal sealed class TrueTypeStandard14FallbackSimpleFont : IFont
     {
         private static readonly TransformationMatrix DefaultTransformation =
             TransformationMatrix.FromValues(1 / 1000.0, 0, 0, 1 / 1000.0, 0, 0);
@@ -152,7 +152,7 @@
                 return false;
             }
 
-            path = GetFontMatrix().Transform(path).ToList();
+            path = GetFontMatrix().Transform(path).ToArray();
             return true;
         }
 

@@ -65,16 +65,11 @@
         /// <summary>
         /// Get the name for the character with the given character code from the font.
         /// </summary>
-        public string GetCharacterName(int characterCode)
+        public string GetCharacterName(int characterCode, bool isCid)
         {
-            var font = FirstFont;
+            var name = FirstFont.GetCharacterName(characterCode, isCid);
 
-            if (font.Encoding != null)
-            {
-                return font.Encoding.GetName(characterCode);
-            }
-
-            return ".notdef";
+            return name ?? GlyphList.NotDefined;
         }
     }
 }

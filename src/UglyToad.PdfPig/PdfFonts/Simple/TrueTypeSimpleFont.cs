@@ -12,7 +12,7 @@
     using Tokens;
     using Util.JetBrains.Annotations;
 
-    internal class TrueTypeSimpleFont : IFont
+    internal sealed class TrueTypeSimpleFont : IFont
     {
         private static readonly TransformationMatrix DefaultTransformation =
             TransformationMatrix.FromValues(1 / 1000.0, 0, 0, 1 / 1000.0, 0, 0);
@@ -230,7 +230,7 @@
                 return null;
             }
 
-            if (string.Equals(name, ".notdef", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(name, GlyphList.NotDefined, StringComparison.OrdinalIgnoreCase))
             {
                 return 0;
             }
@@ -328,7 +328,7 @@
         {
             if (font == null)
             {
-                path = EmptyArray<PdfSubpath>.Instance;
+                path = null;
                 return false;
             }
 
@@ -343,7 +343,7 @@
                 return false;
             }
 
-            path = GetFontMatrix().Transform(path).ToList();
+            path = GetFontMatrix().Transform(path).ToArray();
             return true;
         }
     }
