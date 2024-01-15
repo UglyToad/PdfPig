@@ -1239,6 +1239,12 @@
 
             // TODO - use ICC profile
 
+            for (int c = 0; c < values.Length; c++)
+            {
+                int i = 2 * c;
+                values[c] = PdfFunction.ClipToRange(values[c], Range[i], Range[i + 1]);
+            }
+
             return AlternateColorSpace.GetColor(values);
         }
 
