@@ -11,7 +11,10 @@
     /// </summary>
     public class GlyphList
     {
-        private const string NotDefined = ".notdef";
+        /// <summary>
+        /// <c>.notdef</c>.
+        /// </summary>
+        public const string NotDefined = ".notdef";
 
         private readonly IReadOnlyDictionary<string, string> nameToUnicode;
         private readonly IReadOnlyDictionary<string, string> unicodeToName;

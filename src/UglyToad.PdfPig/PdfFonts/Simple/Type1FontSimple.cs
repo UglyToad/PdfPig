@@ -15,7 +15,7 @@
     /// <summary>
     /// A font based on the Adobe Type 1 font format.
     /// </summary>
-    internal class Type1FontSimple : IFont
+    internal sealed class Type1FontSimple : IFont
     {
         private static readonly TransformationMatrix DefaultTransformationMatrix = TransformationMatrix.FromValues(0.001, 0, 0, 0.001, 0, 0);
 
@@ -197,7 +197,7 @@
                 }
                 else
                 {
-                    characterName = cffFont.GetCharacterName(characterCode);
+                    characterName = cffFont.GetCharacterName(characterCode, false);
                 }
 
                 rect = first.GetCharacterBoundingBox(characterName);
@@ -247,7 +247,7 @@
                 }
                 else
                 {
-                    characterName = cffFont.GetCharacterName(characterCode);
+                    characterName = cffFont.GetCharacterName(characterCode, false);
                 }
 
                 tempPath = first.GetCharacterPath(characterName);
@@ -267,7 +267,7 @@
         {
             if (TryGetPath(characterCode, out path))
             {
-                path = fontMatrix.Transform(path).ToList();
+                path = fontMatrix.Transform(path).ToArray();
                 return true;
             }
             return false;

@@ -8,19 +8,20 @@
 
     internal static class SkiaExtensions
     {
-        public static SKMatrix ToSkMatrix(this TransformationMatrix transformationMatrix)
+        public static SKMatrix ToSKMatrix(this TransformationMatrix transformationMatrix)
         {
             return new SKMatrix((float)transformationMatrix.A, (float)transformationMatrix.C, (float)transformationMatrix.E,
                 (float)transformationMatrix.B, (float)transformationMatrix.D, (float)transformationMatrix.F,
                 0, 0, 1);
         }
 
-        public static SKColor ToSKColor(this IColor? pdfColor, decimal alpha)
+        public static SKColor ToSKColor(this IColor pdfColor, decimal alpha)
         {
             var color = SKColors.Black;
-            if (pdfColor != null)
+            if (pdfColor != null && pdfColor is not PatternColor)
             {
                 var (r, g, b) = pdfColor.ToRGBValues();
+
                 color = new SKColor(Convert.ToByte(r * 255), Convert.ToByte(g * 255), Convert.ToByte(b * 255));
             }
 

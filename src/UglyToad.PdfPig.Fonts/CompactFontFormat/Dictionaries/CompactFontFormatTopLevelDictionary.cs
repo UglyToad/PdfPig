@@ -2,7 +2,7 @@
 {
     using Core;
 
-    internal class CompactFontFormatTopLevelDictionary
+    internal sealed class CompactFontFormatTopLevelDictionary
     {
         public const int UnsetOffset = -1;
 
@@ -30,7 +30,7 @@
 
         public CompactFontFormatCharStringType CharStringType { get; set; } = CompactFontFormatCharStringType.Type2;
 
-        public TransformationMatrix FontMatrix { get; set; } = TransformationMatrix.FromValues(0.001, 0, 0, 0.001, 0, 0);
+        public TransformationMatrix? FontMatrix { get; set; }
 
         public decimal StrokeWidth { get; set; }
 
@@ -79,7 +79,7 @@
         }
     }
 
-    internal class CidFontOperators
+    internal sealed class CidFontOperators
     {
         public RegistryOrderingSupplement Ros { get; set; }
 
@@ -100,7 +100,7 @@
         public string FontName { get; set; }
     }
 
-    internal class RegistryOrderingSupplement
+    internal sealed class RegistryOrderingSupplement
     {
         public string Registry { get; set; }
 

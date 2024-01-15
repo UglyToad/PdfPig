@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.Globalization;
 
-    internal class Type1CharstringDecryptedBytes
+    internal sealed class Type1CharstringDecryptedBytes
     {
         public IReadOnlyList<byte> Bytes { get; }
 
@@ -18,7 +18,7 @@
         {
             Bytes = bytes ?? throw new ArgumentNullException(nameof(bytes));
             Index = index;
-            Name = ".notdef";
+            Name = GlyphList.NotDefined;
             Source = SourceType.Subroutine;
         }
 
