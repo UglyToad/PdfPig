@@ -14,7 +14,7 @@
 
         public static T Parse<T>(TrueTypeHeaderTable table, TrueTypeDataBytes data, TableRegister.Builder register) where T : ITrueTypeTable
         {
-            //checksum https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6.html
+            // checksum https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6.html
             uint sum = 0;
             var nLongs = (table.Length + 3) / 4;
             data.Seek(table.Offset);
@@ -25,7 +25,7 @@
 
             if (sum != table.CheckSum)
             {
-                Trace.TraceWarning("Table with invalid checksum found in TrueType font file.");
+                Debug.WriteLine("Table with invalid checksum found in TrueType font file.");
             }
 
             if (typeof(T) == typeof(CMapTable))
