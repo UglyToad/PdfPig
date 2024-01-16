@@ -228,7 +228,7 @@
                 // Just take the last, should only ever be 1
                 if (readTokens.Count > 1)
                 {
-                    Trace.WriteLine("Found more than 1 token in an object.");
+                    Debug.WriteLine("Found more than 1 token in an object.");
 
                     var trimmedDuplicatedEndTokens = readTokens
                         .Where(x => x is not OperatorToken op || (op.Data != ">" && op.Data != "]")).ToList();
