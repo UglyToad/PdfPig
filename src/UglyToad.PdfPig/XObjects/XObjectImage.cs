@@ -45,7 +45,7 @@
         public bool IsImageMask { get; }
 
         /// <inheritdoc />
-        public IReadOnlyList<decimal> Decode { get; }
+        public IReadOnlyList<double> Decode { get; }
 
         /// <inheritdoc />
         public bool Interpolate { get; }
@@ -74,7 +74,7 @@
             bool isImageMask,
             RenderingIntent renderingIntent,
             bool interpolate,
-            IReadOnlyList<decimal> decode,
+            IReadOnlyList<double> decode,
             DictionaryToken imageDictionary,
             IReadOnlyList<byte> rawBytes,
             Lazy<IReadOnlyList<byte>> bytes,

@@ -100,7 +100,7 @@
 
             var decodeRaw = GetByKeys<ArrayToken>(NameToken.Decode, NameToken.D, false) ?? new ArrayToken(EmptyArray<IToken>.Instance);
 
-            var decode = decodeRaw.Data.OfType<NumericToken>().Select(x => x.Data).ToArray();
+            var decode = decodeRaw.Data.OfType<NumericToken>().Select(x => x.Double).ToArray();
 
             var interpolate = GetByKeys<BooleanToken>(NameToken.Interpolate, NameToken.I, false)?.Data ?? false;
 
