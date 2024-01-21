@@ -4,7 +4,7 @@
 
     internal class HeaderVersion
     {
-        public decimal Version { get; }
+        public double Version { get; }
 
         public string VersionString { get; }
 
@@ -13,7 +13,7 @@
         /// </summary>
         public long OffsetInFile { get; }
 
-        public HeaderVersion(decimal version, string versionString, long offsetInFile)
+        public HeaderVersion(double version, string versionString, long offsetInFile)
         {
             Version = version;
             VersionString = versionString;

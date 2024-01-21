@@ -31,7 +31,7 @@ namespace UglyToad.PdfPig.Writer
         private readonly Dictionary<Guid, FontStored> fonts = new Dictionary<Guid, FontStored>();
         private bool completed = false;
         private int fontId = 0;
-        private decimal version = 1.7m;
+        private double version = 1.7;
 
         private readonly static ArrayToken DefaultProcSet = new ArrayToken(new List<NameToken>
         {
@@ -85,14 +85,14 @@ namespace UglyToad.PdfPig.Writer
         public PdfDocumentBuilder()
         {
             context = new PdfStreamWriter(new MemoryStream(), true, recordVersion: x => version = x);
-            context.InitializePdf(1.7m);
+            context.InitializePdf(1.7);
         }
 
         /// <summary>
         /// Creates a document builder keeping resources in memory.
         /// </summary>
         /// <param name="version">Pdf version to use in header.</param>
-        public PdfDocumentBuilder(decimal version)
+        public PdfDocumentBuilder(double version)
         {
             context = new PdfStreamWriter(new MemoryStream(), true, recordVersion: x => version = x);
             context.InitializePdf(version);
@@ -106,7 +106,7 @@ namespace UglyToad.PdfPig.Writer
         /// <param name="type">Type of pdf stream writer to use</param>
         /// <param name="version">Pdf version to use in header.</param>
         /// <param name="tokenWriter">Token writer to use</param>
-        public PdfDocumentBuilder(Stream stream, bool disposeStream = false, PdfWriterType type = PdfWriterType.Default, decimal version = 1.7m, ITokenWriter tokenWriter = null)
+        public PdfDocumentBuilder(Stream stream, bool disposeStream = false, PdfWriterType type = PdfWriterType.Default, double version = 1.7, ITokenWriter tokenWriter = null)
         {
             switch (type)
             {

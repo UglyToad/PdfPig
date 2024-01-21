@@ -69,9 +69,9 @@
                 return HandleMissingVersion(comment, isLenientParsing, log);
             }
 
-            const int toDecimalStartLength = 4;
+            const int toDoubleStartLength = 4;
 
-            if (!decimal.TryParse(comment.Data.Substring(toDecimalStartLength),
+            if (!double.TryParse(comment.Data.Substring(toDoubleStartLength),
                 NumberStyles.Number,
                 CultureInfo.InvariantCulture,
                 out var version))
@@ -120,7 +120,7 @@
                 if (actualIndex >= 0 && content.Length - actualIndex >= versionLength)
                 {
                     var numberPart = content.Substring(actualIndex + 5, 3);
-                    if (decimal.TryParse(
+                    if (double.TryParse(
                             numberPart,
                             NumberStyles.Number,
                             CultureInfo.InvariantCulture,
@@ -152,7 +152,7 @@
             {
                 log.Warn($"Did not find a version header of the correct format, defaulting to 1.4 since lenient. Header was: {comment.Data}.");
 
-                return new HeaderVersion(1.4m, "PDF-1.4", 0);
+                return new HeaderVersion(1.4, "PDF-1.4", 0);
             }
 
             throw new PdfDocumentFormatException($"The comment which should have provided the version was in the wrong format: {comment.Data}.");

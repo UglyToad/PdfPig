@@ -52,7 +52,7 @@
         public DocumentInformation Information { get; }
 
         /// <summary>
-        /// Access to the underlying raw structure of the document. 
+        /// Access to the underlying raw structure of the document.
         /// </summary>
         [NotNull]
         public Structure Structure { get; }
@@ -65,7 +65,7 @@
         /// <summary>
         /// The version number of the PDF specification which this file conforms to, for example 1.4.
         /// </summary>
-        public decimal Version => version.Version;
+        public double Version => version.Version;
 
         /// <summary>
         /// Get the number of pages in this document.

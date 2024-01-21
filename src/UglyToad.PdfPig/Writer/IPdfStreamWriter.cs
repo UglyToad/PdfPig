@@ -50,7 +50,7 @@
         /// Initializes the PDF stream with pdf header.
         /// </summary>
         /// <param name="version">Version of PDF.</param>
-        void InitializePdf(decimal version);
+        void InitializePdf(double version);
 
         /// <summary>
         /// Completes the PDF writing trailing PDF information.

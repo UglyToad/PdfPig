@@ -13,8 +13,8 @@
     /// </summary>
     internal class PdfStreamWriter : IPdfStreamWriter
     {
-        private readonly Action<decimal> recordVersion;
-        protected const decimal DefaultVersion = 1.2m;
+        private readonly Action<double> recordVersion;
+        protected const double DefaultVersion = 1.2;
         protected Dictionary<IndirectReference, long> offsets = new Dictionary<IndirectReference, long>();
         protected bool DisposeStream { get; set; }
         protected bool Initialized { get; set; }
@@ -35,7 +35,7 @@
             Stream baseStream,
             bool disposeStream = true,
             ITokenWriter tokenWriter = null,
-            Action<decimal> recordVersion = null)
+            Action<double> recordVersion = null)
         {
             Stream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
 
@@ -81,7 +81,7 @@
             return new IndirectReferenceToken(new IndirectReference(CurrentNumber++, 0));
         }
 
-        public void InitializePdf(decimal version)
+        public void InitializePdf(double version)
         {
             recordVersion?.Invoke(version);
 
