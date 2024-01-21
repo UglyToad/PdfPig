@@ -135,7 +135,7 @@
 
         private static void Merge(IReadOnlyList<PdfDocument> files, Stream output, IReadOnlyList<IReadOnlyList<int>> pagesBundle, PdfAStandard archiveStandard = PdfAStandard.None, PdfDocumentBuilder.DocumentInformationBuilder docInfoBuilder = null)
         {
-            var maxVersion = files.Select(x=>x.Version).Max();
+            var maxVersion = files.Select(x => x.Version).Max();
             using (var document = new PdfDocumentBuilder(output, false, PdfWriterType.Default, maxVersion))
             {
                 document.ArchiveStandard = archiveStandard;

@@ -56,7 +56,7 @@
                 Assert.Equal(2, document.NumberOfPages);
                 if (checkVersion)
                 {
-                    Assert.Equal(1.5m, document.Version);
+                    Assert.Equal(1.5, document.Version);
                 }
 
                 var page1 = document.GetPage(1);

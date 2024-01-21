@@ -50,7 +50,7 @@
 
             var result = FileHeaderParser.Parse(scanner.scanner, scanner.bytes, false, log);
 
-            Assert.Equal(1.2m, result.Version);
+            Assert.Equal(1.2, result.Version);
             Assert.Equal(TestEnvironment.IsSingleByteNewLine(input) ? 7 : 9, result.OffsetInFile);
         }
 
@@ -73,7 +73,7 @@
 
             var result = FileHeaderParser.Parse(scanner.scanner, scanner.bytes, false, log);
 
-            Assert.Equal(1.2m, result.Version);
+            Assert.Equal(1.2, result.Version);
             Assert.Equal(TestEnvironment.IsSingleByteNewLine(input) ? 12 : 13, result.OffsetInFile);
         }
 
@@ -86,7 +86,7 @@
 
             var result = FileHeaderParser.Parse(scanner.scanner, scanner.bytes, true, log);
 
-            Assert.Equal(1.7m, result.Version);
+            Assert.Equal(1.7, result.Version);
             Assert.Equal(TestEnvironment.IsSingleByteNewLine(input) ? 12 : 13, result.OffsetInFile);
         }
 
@@ -100,7 +100,7 @@ three %PDF-1.6";
 
             var result = FileHeaderParser.Parse(scanner.scanner, scanner.bytes, true, log);
 
-            Assert.Equal(1.6m, result.Version);
+            Assert.Equal(1.6, result.Version);
             Assert.Equal(TestEnvironment.IsSingleByteNewLine(s) ? 14 : 15, result.OffsetInFile);
         }
 
@@ -131,7 +131,7 @@ three %PDF-1.6";
 
             var result = FileHeaderParser.Parse(scanner.scanner, scanner.bytes, true, log);
 
-            Assert.Equal(1.4m, result.Version);
+            Assert.Equal(1.4, result.Version);
         }
 
         [Fact]
@@ -156,7 +156,7 @@ three %PDF-1.6";
 
             var result = FileHeaderParser.Parse(scanner, bytes, false, log);
 
-            Assert.Equal(1.7m, result.Version);
+            Assert.Equal(1.7, result.Version);
         }
 
         [Fact]
@@ -175,7 +175,7 @@ three %PDF-1.6";
 
             Assert.Equal(0, scanner.scanner.CurrentPosition);
             Assert.Equal(128, result.OffsetInFile);
-            Assert.Equal(1.1m, result.Version);
+            Assert.Equal(1.1, result.Version);
             Assert.Equal("PDF-1.1", result.VersionString);
         }
     }
