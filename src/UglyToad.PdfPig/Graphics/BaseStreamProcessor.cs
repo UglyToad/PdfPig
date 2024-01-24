@@ -388,7 +388,7 @@
                     }
                     else
                     {
-                        bytes = OtherEncodings.StringAsLatin1Bytes(((StringToken)token).Data);
+                        bytes = ((StringToken)token).GetBytes();
                     }
 
                     ShowText(new ByteArrayInputBytes(bytes));
