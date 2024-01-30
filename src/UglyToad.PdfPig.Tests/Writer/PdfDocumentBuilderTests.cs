@@ -266,8 +266,8 @@
             page.SetStrokeColor(250, 132, 131);
             page.DrawLine(new PdfPoint(25, 70), new PdfPoint(100, 70), 3);
             page.ResetColor();
-            page.DrawRectangle(new PdfPoint(30, 200), 250, 100, 0.5m);
-            page.DrawRectangle(new PdfPoint(30, 100), 250, 100, 0.5m);
+            page.DrawRectangle(new PdfPoint(30, 200), 250, 100, 0.5);
+            page.DrawRectangle(new PdfPoint(30, 100), 250, 100, 0.5);
 
             var file = TrueTypeTestHelper.GetFileBytes("Andada-Regular.ttf");
 
@@ -493,10 +493,10 @@
             page1.AddText("incididunt ut labore et dolore magna aliqua.", 9, new PdfPoint(30, topLine.Y - letters.Max(x => x.GlyphRectangle.Height) - 5), font);
 
             var page2Letters = page2.AddText("The very hungry caterpillar ate all the apples in the garden.", 12, topLine, font);
-            var left = (decimal)page2Letters[0].GlyphRectangle.Left;
-            var bottom = (decimal)page2Letters.Min(x => x.GlyphRectangle.Bottom);
-            var right = (decimal)page2Letters[page2Letters.Count - 1].GlyphRectangle.Right;
-            var top = (decimal)page2Letters.Max(x => x.GlyphRectangle.Top);
+            var left = page2Letters[0].GlyphRectangle.Left;
+            var bottom = page2Letters.Min(x => x.GlyphRectangle.Bottom);
+            var right = page2Letters[page2Letters.Count - 1].GlyphRectangle.Right;
+            var top = page2Letters.Max(x => x.GlyphRectangle.Top);
             page2.SetStrokeColor(10, 250, 69);
             page2.DrawRectangle(new PdfPoint(left, bottom), right - left, top - bottom);
 
@@ -738,7 +738,7 @@
             page.SetTextAndFillColor(255, 0, 0);
             page.SetStrokeColor(0, 0, 255);
 
-            page.DrawRectangle(new PdfPoint(20, 100), 200, 100, 1.5m, true);
+            page.DrawRectangle(new PdfPoint(20, 100), 200, 100, 1.5, true);
 
             var file = builder.Build();
             WriteFile(nameof(CanCreateDocumentWithFilledRectangle), file);
@@ -847,8 +847,8 @@
             page.SetStrokeColor(250, 132, 131);
             page.DrawLine(new PdfPoint(25, 70), new PdfPoint(100, 70), 3);
             page.ResetColor();
-            page.DrawRectangle(new PdfPoint(30, 200), 250, 100, 0.5m);
-            page.DrawRectangle(new PdfPoint(30, 100), 250, 100, 0.5m);
+            page.DrawRectangle(new PdfPoint(30, 200), 250, 100, 0.5);
+            page.DrawRectangle(new PdfPoint(30, 100), 250, 100, 0.5);
 
             var file = TrueTypeTestHelper.GetFileBytes("Andada-Regular.ttf");
 

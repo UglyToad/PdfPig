@@ -67,8 +67,8 @@ namespace UglyToad.PdfPig.Tests.Tokenization
             var dictionary = AssertDictionaryToken(token);
 
             AssertDictionaryEntry<NameToken, string>(dictionary, NameToken.Filter, NameToken.FlateDecode.Data);
-            AssertDictionaryEntry<NumericToken, decimal>(dictionary, NameToken.S, 36);
-            AssertDictionaryEntry<NumericToken, decimal>(dictionary, NameToken.Length, 53);
+            AssertDictionaryEntry<NumericToken, double>(dictionary, NameToken.S, 36);
+            AssertDictionaryEntry<NumericToken, double>(dictionary, NameToken.Length, 53);
         }
 
         [Fact]
@@ -111,11 +111,11 @@ namespace UglyToad.PdfPig.Tests.Tokenization
             Assert.True(result);
 
             var dictionary = AssertDictionaryToken(token);
-            
+
             AssertDictionaryEntry<NameToken, string>(dictionary, NameToken.Type, "Example");
             AssertDictionaryEntry<NameToken, string>(dictionary, NameToken.Subtype, "DictionaryExample");
-            AssertDictionaryEntry<NumericToken, decimal>(dictionary, NameToken.Version, 0.01m);
-            AssertDictionaryEntry<NumericToken, decimal>(dictionary, NameToken.Create("IntegerItem"), 12m);
+            AssertDictionaryEntry<NumericToken, double>(dictionary, NameToken.Version, 0.01);
+            AssertDictionaryEntry<NumericToken, double>(dictionary, NameToken.Create("IntegerItem"), 12);
             AssertDictionaryEntry<StringToken, string>(dictionary, NameToken.Create("StringItem"), "a string");
 
             var subDictionary = GetIndex(5, dictionary);
@@ -123,13 +123,13 @@ namespace UglyToad.PdfPig.Tests.Tokenization
             Assert.Equal("Subdictionary", subDictionary.Key);
 
             var subDictionaryValue = Assert.IsType<DictionaryToken>(subDictionary.Value);
-            
-            AssertDictionaryEntry<NumericToken, decimal>(subDictionaryValue, NameToken.Create("Item1"), 0.4m);
+
+            AssertDictionaryEntry<NumericToken, double>(subDictionaryValue, NameToken.Create("Item1"), 0.4);
             AssertDictionaryEntry<BooleanToken, bool>(subDictionaryValue, NameToken.Create("Item2"), true);
             AssertDictionaryEntry<StringToken, string>(subDictionaryValue, NameToken.Create("LastItem"), "not!");
             AssertDictionaryEntry<StringToken, string>(subDictionaryValue, NameToken.Create("VeryLastItem"), "OK");
         }
-        
+
         [Fact]
         public void ExitsDictionaryParsingSingleLevel()
         {
@@ -162,7 +162,7 @@ endobj
 
             var dictionary = AssertDictionaryToken(token);
 
-            AssertDictionaryEntry<NumericToken, decimal>(dictionary, NameToken.Count, 12);
+            AssertDictionaryEntry<NumericToken, double>(dictionary, NameToken.Count, 12);
 
             var subDictionaryToken = GetIndex(1, dictionary);
 

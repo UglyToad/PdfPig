@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.PathConstruction
 {
     using System.IO;
-    using PdfPig.Core;
 
     /// <inheritdoc />
     /// <summary>
@@ -20,19 +19,19 @@
         /// <summary>
         /// The x coordinate of the end point of the line.
         /// </summary>
-        public decimal X { get; }
+        public double X { get; }
 
         /// <summary>
         /// The y coordinate of the end point of the line.
         /// </summary>
-        public decimal Y { get; }
-        
+        public double Y { get; }
+
         /// <summary>
         /// Create a new <see cref="AppendStraightLineSegment"/>.
         /// </summary>
         /// <param name="x">The x coordinate of the line's end point.</param>
         /// <param name="y">The y coordinate of the line's end point.</param>
-        public AppendStraightLineSegment(decimal x, decimal y)
+        public AppendStraightLineSegment(double x, double y)
         {
             X = x;
             Y = y;
@@ -41,15 +40,15 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.LineTo((double)X, (double)Y);
+            operationContext.LineTo(X, Y);
         }
 
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            stream.WriteDecimal(X);
+            stream.WriteDouble(X);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(Y);
+            stream.WriteDouble(Y);
             stream.WriteWhiteSpace();
             stream.WriteText(Symbol);
             stream.WriteWhiteSpace();

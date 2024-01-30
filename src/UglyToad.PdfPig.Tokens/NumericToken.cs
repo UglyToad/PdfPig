@@ -1,14 +1,15 @@
 ﻿namespace UglyToad.PdfPig.Tokens
 {
+    using System;
     using System.Globalization;
 
     /// <inheritdoc />
     /// <summary>
-    /// PDF supports integer and real numbers. Integer objects represent mathematical integers within a certain interval centered at 0. 
+    /// PDF supports integer and real numbers. Integer objects represent mathematical integers within a certain interval centered at 0.
     /// Real objects  approximate mathematical real numbers, but with limited range and precision.
     /// This token represents both types and they are used interchangeably in the specification.
     /// </summary>
-    public class NumericToken : IDataToken<decimal>
+    public class NumericToken : IDataToken<double>
     {
         /// <summary>
         /// Single instance of numeric token for -1.
@@ -73,7 +74,7 @@
         /// Single instance of numeric token for 11.
         /// </summary>
         public static readonly NumericToken Eleven = new NumericToken(11);
-        
+
         /// <summary>
         /// Single instance of numeric token for 12.
         /// </summary>
@@ -135,12 +136,12 @@
         public static readonly NumericToken OneThousand = new NumericToken(1000);
 
         /// <inheritdoc />
-        public decimal Data { get; }
+        public double Data { get; }
 
         /// <summary>
         /// Whether the number represented has a non-zero decimal part.
         /// </summary>
-        public bool HasDecimalPlaces => decimal.Floor(Data) != Data;
+        public bool HasDecimalPlaces => !Math.Floor(Data).Equals(Data);
 
         /// <summary>
         /// The value of this number as an <see langword="int"/>.
@@ -155,13 +156,32 @@
         /// <summary>
         /// The value of this number as a <see langword="double"/>.
         /// </summary>
-        public double Double => (double)Data;
+        public double Double => Data;
 
         /// <summary>
         /// Create a <see cref="NumericToken"/>.
         /// </summary>
         /// <param name="value">The number to represent.</param>
+        //[Obsolete("Use double constructor instead.")]
         public NumericToken(decimal value)
+        {
+            Data = (double)value;
+        }
+
+        /// <summary>
+        /// Create a <see cref="NumericToken"/>.
+        /// </summary>
+        /// <param name="value">The number to represent.</param>
+        public NumericToken(int value)
+        {
+            Data = value;
+        }
+
+        /// <summary>
+        /// Create a <see cref="NumericToken"/>.
+        /// </summary>
+        /// <param name="value">The number to represent.</param>
+        public NumericToken(double value)
         {
             Data = value;
         }
@@ -179,7 +199,7 @@
                 return false;
             }
 
-            return Data == other.Data;
+            return Data.Equals(other.Data);
         }
 
         /// <inheritdoc />

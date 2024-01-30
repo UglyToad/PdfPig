@@ -2,7 +2,6 @@
 {
     using System.IO;
 
-    /// <inheritdoc />
     /// <summary>
     /// Set width information for the glyph and declare that the glyph description specifies both its shape and its color for a Type 3 font.
     /// Also sets the glyph bounding box.
@@ -20,32 +19,32 @@
         /// <summary>
         /// The horizontal displacement in the glyph coordinate system.
         /// </summary>
-        public decimal HorizontalDisplacement { get; }
+        public double HorizontalDisplacement { get; }
 
         /// <summary>
         /// The vertical displacement in the glyph coordinate system. Must be 0.
         /// </summary>
-        public decimal VerticalDisplacement { get; }
+        public double VerticalDisplacement { get; }
 
         /// <summary>
         /// The lower left x coordinate of the glyph bounding box.
         /// </summary>
-        public decimal LowerLeftX { get; }
+        public double LowerLeftX { get; }
 
         /// <summary>
         /// The lower left y coordinate of the glyph bounding box.
         /// </summary>
-        public decimal LowerLeftY { get; }
+        public double LowerLeftY { get; }
 
         /// <summary>
         /// The upper right x coordinate of the glyph bounding box.
         /// </summary>
-        public decimal UpperRightX { get; }
+        public double UpperRightX { get; }
 
         /// <summary>
         /// The upper right y coordinate of the glyph bounding box.
         /// </summary>
-        public decimal UpperRightY { get; }
+        public double UpperRightY { get; }
         
         /// <summary>
         /// Create a new <see cref="Type3SetGlyphWidthAndBoundingBox"/>.
@@ -56,11 +55,11 @@
         /// <param name="lowerLeftY">The lower left y coordinate of the glyph bounding box.</param>
         /// <param name="upperRightX">The upper right x coordinate of the glyph bounding box.</param>
         /// <param name="upperRightY">The upper right y coordinate of the glyph bounding box.</param>
-        public Type3SetGlyphWidthAndBoundingBox(decimal horizontalDisplacement, decimal verticalDisplacement,
-            decimal lowerLeftX, 
-            decimal lowerLeftY, 
-            decimal upperRightX,
-            decimal upperRightY)
+        public Type3SetGlyphWidthAndBoundingBox(double horizontalDisplacement, double verticalDisplacement,
+            double lowerLeftX,
+            double lowerLeftY,
+            double upperRightX,
+            double upperRightY)
         {
             HorizontalDisplacement = horizontalDisplacement;
             VerticalDisplacement = verticalDisplacement;
@@ -78,15 +77,15 @@
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            stream.WriteDecimal(HorizontalDisplacement);
+            stream.WriteDouble(HorizontalDisplacement);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(VerticalDisplacement);
+            stream.WriteDouble(VerticalDisplacement);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(LowerLeftX);
+            stream.WriteDouble(LowerLeftX);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(LowerLeftY);
+            stream.WriteDouble(LowerLeftY);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(UpperRightX);
+            stream.WriteDouble(UpperRightX);
             stream.WriteWhiteSpace();
             stream.WriteNumberText(UpperRightY, Symbol);
         }

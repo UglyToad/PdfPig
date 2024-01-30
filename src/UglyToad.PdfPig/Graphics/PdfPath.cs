@@ -44,7 +44,7 @@
         /// <summary>
         /// Thickness in user space units of path to be stroked.
         /// </summary>
-        public decimal LineWidth { get; internal set; }
+        public double LineWidth { get; internal set; }
 
         /// <summary>
         /// The pattern to be used for stroked lines.

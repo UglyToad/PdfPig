@@ -33,7 +33,7 @@
             currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetInitializeColor();
         }
 
-        public void SetStrokingColor(IReadOnlyList<decimal> operands, NameToken patternName)
+        public void SetStrokingColor(IReadOnlyList<double> operands, NameToken patternName)
         {
             if (CurrentStrokingColorSpace is UnsupportedColorSpaceDetails)
             {
@@ -47,26 +47,26 @@
             }
             else
             {
-                currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(operands.Select(v => (double)v).ToArray());
+                currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(operands.ToArray());
             }
         }
 
-        public void SetStrokingColorGray(decimal gray)
+        public void SetStrokingColorGray(double gray)
         {
             CurrentStrokingColorSpace = DeviceGrayColorSpaceDetails.Instance;
-            currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor((double)gray);
+            currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(gray);
         }
 
-        public void SetStrokingColorRgb(decimal r, decimal g, decimal b)
+        public void SetStrokingColorRgb(double r, double g, double b)
         {
             CurrentStrokingColorSpace = DeviceRgbColorSpaceDetails.Instance;
-            currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor((double)r, (double)g, (double)b);
+            currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(r, g, b);
         }
 
-        public void SetStrokingColorCmyk(decimal c, decimal m, decimal y, decimal k)
+        public void SetStrokingColorCmyk(double c, double m, double y, double k)
         {
             CurrentStrokingColorSpace = DeviceCmykColorSpaceDetails.Instance;
-            currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor((double)c, (double)m, (double)y, (double)k);
+            currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(c, m, y, k);
         }
 
         public void SetNonStrokingColorspace(NameToken colorspace, DictionaryToken dictionary = null)
@@ -80,7 +80,7 @@
             currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetInitializeColor();
         }
 
-        public void SetNonStrokingColor(IReadOnlyList<decimal> operands, NameToken patternName)
+        public void SetNonStrokingColor(IReadOnlyList<double> operands, NameToken patternName)
         {
             if (CurrentNonStrokingColorSpace is UnsupportedColorSpaceDetails)
             {
@@ -94,26 +94,26 @@
             }
             else
             {
-                currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(operands.Select(v => (double)v).ToArray());
+                currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(operands.ToArray());
             }
         }
 
-        public void SetNonStrokingColorGray(decimal gray)
+        public void SetNonStrokingColorGray(double gray)
         {
             CurrentNonStrokingColorSpace = DeviceGrayColorSpaceDetails.Instance;
-            currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor((double)gray);
+            currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(gray);
         }
 
-        public void SetNonStrokingColorRgb(decimal r, decimal g, decimal b)
+        public void SetNonStrokingColorRgb(double r, double g, double b)
         {
             CurrentNonStrokingColorSpace = DeviceRgbColorSpaceDetails.Instance;
-            currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor((double)r, (double)g, (double)b);
+            currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(r, g, b);
         }
 
-        public void SetNonStrokingColorCmyk(decimal c, decimal m, decimal y, decimal k)
+        public void SetNonStrokingColorCmyk(double c, double m, double y, double k)
         {
             CurrentNonStrokingColorSpace = DeviceCmykColorSpaceDetails.Instance;
-            currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor((double)c, (double)m, (double)y, (double)k);
+            currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(c, m, y, k);
         }
 
         public IColorSpaceContext DeepClone()

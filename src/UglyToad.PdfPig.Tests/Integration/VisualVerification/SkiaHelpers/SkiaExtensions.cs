@@ -15,7 +15,7 @@
                 0, 0, 1);
         }
 
-        public static SKColor ToSKColor(this IColor pdfColor, decimal alpha)
+        public static SKColor ToSKColor(this IColor pdfColor, double alpha)
         {
             var color = SKColors.Black;
             if (pdfColor != null && pdfColor is not PatternColor)

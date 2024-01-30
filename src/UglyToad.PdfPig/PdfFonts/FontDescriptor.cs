@@ -53,7 +53,7 @@
         /// 900<br/>
         /// Optional
         /// </remarks>
-        public decimal FontWeight { get; }
+        public double FontWeight { get; }
 
         /// <summary>
         /// Defines various font characteristics. See <see cref="FontDescriptorFlags"/>.
@@ -75,69 +75,69 @@
         /// </summary>
         /// <example>9 o'clock is represented by 90 degrees. 3 o'clock is -90 degrees.</example>
         /// <remarks>Required</remarks>
-        public decimal ItalicAngle { get; }
+        public double ItalicAngle { get; }
 
         /// <summary>
         /// The maximum height above the baseline for any glyph from this font (except for accents).
         /// </summary>
         /// <remarks>Required (Except Type 3)</remarks>
-        public decimal Ascent { get; }
+        public double Ascent { get; }
 
         /// <summary>
         /// The maximum depth below the baseline for any glyph in the font. This is negative.
         /// </summary>
         /// <remarks>Required (Except Type 3)</remarks>
-        public decimal Descent { get; }
+        public double Descent { get; }
 
         /// <summary>
         /// The spacing between consecutive lines of text. Default 0.
         /// </summary>
         /// <remarks>Optional</remarks>
-        public decimal Leading { get; }
+        public double Leading { get; }
 
         /// <summary>
         /// The vertical distance of the top of flat capital letters from the baseline.
         /// </summary>
         /// <remarks>Required (Where Latin Characters, Except Type 3)</remarks>
-        public decimal CapHeight { get; }
+        public double CapHeight { get; }
 
         /// <summary>
         /// The x height of the font. The vertical distance of the top of flat non-ascending
         /// lowercase letters (e.g. x) from the baseline. Default 0.
         /// </summary>
         /// <remarks>Optional</remarks>
-        public decimal XHeight { get; }
+        public double XHeight { get; }
 
         /// <summary>
         /// The horizontal thickness of vertical stems of glyphs.
         /// </summary>
         /// <remarks>Required (Except Type 3)</remarks>
-        public decimal StemVertical { get; }
+        public double StemVertical { get; }
 
         /// <summary>
         /// The vertical thickness of horizontal stems of glyphs. Default 0.
         /// </summary>
         /// <remarks>Optional</remarks>
-        public decimal StemHorizontal { get; }
+        public double StemHorizontal { get; }
 
         /// <summary>
         /// The average glyph width in the font. Default 0.
         /// </summary>
         /// <remarks>Optional</remarks>
-        public decimal AverageWidth { get; }
+        public double AverageWidth { get; }
 
         /// <summary>
         /// The maximum glyph width in the font. Default 0.
         /// </summary>
         /// <remarks>Optional</remarks>
-        public decimal MaxWidth { get; }
+        public double MaxWidth { get; }
 
         /// <summary>
         /// The width for character codes whose widths are not present in the Widths
         /// array of the font dictionary. Default 0.
         /// </summary>
         /// <remarks>Optional</remarks>
-        public decimal MissingWidth { get; }
+        public double MissingWidth { get; }
 
         /// <summary>
         /// The bytes of the font program.
@@ -210,7 +210,7 @@
             /// <summary>
             /// Sets the <see cref="FontDescriptor.FontWeight"/>.
             /// </summary>
-            public decimal FontWeight { get; set; } = 400;
+            public double FontWeight { get; set; } = 400;
 
             /// <summary>
             /// Sets the <see cref="FontDescriptor.Flags"/>.
@@ -225,57 +225,57 @@
             /// <summary>
             /// Sets the <see cref="FontDescriptor.ItalicAngle"/>.
             /// </summary>
-            public decimal ItalicAngle { get; set; }
+            public double ItalicAngle { get; set; }
 
             /// <summary>
             /// Sets the <see cref="FontDescriptor.Ascent"/>.
             /// </summary>
-            public decimal Ascent { get; set; }
+            public double Ascent { get; set; }
 
             /// <summary>
             /// Sets the <see cref="FontDescriptor.Descent"/>.
             /// </summary>
-            public decimal Descent { get; set; }
+            public double Descent { get; set; }
 
             /// <summary>
             /// Sets the <see cref="FontDescriptor.Leading"/>.
             /// </summary>
-            public decimal Leading { get; set; }
+            public double Leading { get; set; }
 
             /// <summary>
             /// Sets the <see cref="FontDescriptor.CapHeight"/>.
             /// </summary>
-            public decimal CapHeight { get; set; }
+            public double CapHeight { get; set; }
 
             /// <summary>
             /// Sets the <see cref="FontDescriptor.XHeight"/>.
             /// </summary>
-            public decimal XHeight { get; set; }
+            public double XHeight { get; set; }
 
             /// <summary>
             /// Sets the <see cref="FontDescriptor.StemVertical"/>.
             /// </summary>
-            public decimal StemVertical { get; set; }
+            public double StemVertical { get; set; }
 
             /// <summary>
             /// Sets the <see cref="FontDescriptor.StemHorizontal"/>.
             /// </summary>
-            public decimal StemHorizontal { get; set; }
+            public double StemHorizontal { get; set; }
 
             /// <summary>
             /// Sets the <see cref="FontDescriptor.AverageWidth"/>.
             /// </summary>
-            public decimal AverageWidth { get; set; }
+            public double AverageWidth { get; set; }
 
             /// <summary>
             /// Sets the <see cref="FontDescriptor.MaxWidth"/>.
             /// </summary>
-            public decimal MaxWidth { get; set; }
+            public double MaxWidth { get; set; }
 
             /// <summary>
             /// Sets the <see cref="FontDescriptor.MissingWidth"/>.
             /// </summary>
-            public decimal MissingWidth { get; set; }
+            public double MissingWidth { get; set; }
 
             /// <summary>
             /// Sets the <see cref="FontDescriptor.FontFile"/>.

@@ -20,13 +20,13 @@
         /// writing positive values increase the gap between words separated by space, for vertical writing
         /// positive values decrease the gap.
         /// </summary>
-        public decimal Spacing { get; }
+        public double Spacing { get; }
 
         /// <summary>
         /// Create a new <see cref="SetWordSpacing"/>.
         /// </summary>
         /// <param name="spacing">The word spacing.</param>
-        public SetWordSpacing(decimal spacing)
+        public SetWordSpacing(double spacing)
         {
             Spacing = spacing;
         }
@@ -34,7 +34,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.SetWordSpacing((double)Spacing);
+            operationContext.SetWordSpacing(Spacing);
         }
 
         /// <inheritdoc />

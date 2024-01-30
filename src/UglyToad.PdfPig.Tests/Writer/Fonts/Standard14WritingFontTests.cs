@@ -899,7 +899,7 @@
             double maxCharacterWidth;
             {
                 var point = new PdfPoint(10, 10);
-                var characterRectangles = unicodesCharacters.Select(v => page.MeasureText($"{v}", 12m, point, font)[0].GlyphRectangle);
+                var characterRectangles = unicodesCharacters.Select(v => page.MeasureText($"{v}", 12, point, font)[0].GlyphRectangle);
                 maxCharacterHeight = characterRectangles.Max(v => v.Height);
                 maxCharacterWidth = characterRectangles.Max(v => v.Height);
             }
@@ -922,7 +922,7 @@
             var stampTextUTC = "  UTC: " + DateTime.UtcNow.ToString("yyyy-MMM-dd HH:mm");
             var stampTextLocal = "Local: " + DateTimeOffset.Now.ToString("yyyy-MMM-dd HH:mm zzz");
 
-            const decimal fontSize = 7m;
+            const double fontSize = 7;
 
             var indentFromLeft = page.PageSize.Width - cm;
             {
@@ -936,13 +936,13 @@
 
             {
                 point = new PdfPoint(indentFromLeft, point.Y);
-                var letters = page.AddText(stampTextUTC, 7m, point, courierFont);
+                var letters = page.AddText(stampTextUTC, 7, point, courierFont);
                 var maxHeight = letters.Max(v => v.GlyphRectangle.Height);
                 point = new PdfPoint(indentFromLeft, point.Y - maxHeight * 1.2);
             }
 
             {
-                var letters = page.AddText(stampTextLocal, 7m, point, courierFont);
+                var letters = page.AddText(stampTextLocal, 7, point, courierFont);
             }
         }
     }

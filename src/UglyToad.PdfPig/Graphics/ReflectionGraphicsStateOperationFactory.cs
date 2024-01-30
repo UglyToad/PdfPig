@@ -24,7 +24,7 @@ namespace UglyToad.PdfPig.Graphics
 
     internal class ReflectionGraphicsStateOperationFactory : IGraphicsStateOperationFactory
     {
-        private static readonly ListPool<decimal> DecimalListPool = new ListPool<decimal>(10);
+        private static readonly ListPool<double> DoubleListPool = new ListPool<double>(10);
 
         private readonly IReadOnlyDictionary<string, Type> operations;
 
@@ -54,9 +54,9 @@ namespace UglyToad.PdfPig.Graphics
             operations = result;
         }
 
-        private static decimal[] TokensToDecimalArray(IReadOnlyList<IToken> tokens, bool exceptLast = false)
+        private static double[] TokensToDoubleArray(IReadOnlyList<IToken> tokens, bool exceptLast = false)
         {
-            var result = DecimalListPool.Borrow();
+            var result = DoubleListPool.Borrow();
 
             for (var i = 0; i < tokens.Count - (exceptLast ? 1 : 0); i++)
             {
@@ -71,7 +71,7 @@ namespace UglyToad.PdfPig.Graphics
                         if (!(innerOperand is NumericToken innerNumeric))
                         {
                             var val = result.ToArray();
-                            DecimalListPool.Return(result);
+                            DoubleListPool.Return(result);
                             return val.ToArray();
                         }
 
@@ -82,7 +82,7 @@ namespace UglyToad.PdfPig.Graphics
                 if (!(operand is NumericToken numeric))
                 {
                     var val = result.ToArray();
-                    DecimalListPool.Return(result);
+                    DoubleListPool.Return(result);
                     return val.ToArray();
                 }
 
@@ -90,7 +90,7 @@ namespace UglyToad.PdfPig.Graphics
             }
 
             var returnValue = result.ToArray();
-            DecimalListPool.Return(result);
+            DoubleListPool.Return(result);
             return returnValue;
         }
 
@@ -104,7 +104,7 @@ namespace UglyToad.PdfPig.Graphics
             return numeric.Int;
         }
 
-        private static decimal OperandToDecimal(IToken token)
+        private static double OperandToDouble(IToken token)
         {
             if (!(token is NumericToken numeric))
             {
@@ -133,65 +133,65 @@ namespace UglyToad.PdfPig.Graphics
                     {
                         return null; // Should not happen by definition
                     }
-                    return new SetFlatnessTolerance(OperandToDecimal(operands[0]));
+                    return new SetFlatnessTolerance(OperandToDouble(operands[0]));
                 case SetLineCap.Symbol:
                     return new SetLineCap(OperandToInt(operands[0]));
                 case SetLineDashPattern.Symbol:
-                    return new SetLineDashPattern(TokensToDecimalArray(operands, true), OperandToInt(operands[operands.Count - 1]));
+                    return new SetLineDashPattern(TokensToDoubleArray(operands, true), OperandToInt(operands[operands.Count - 1]));
                 case SetLineJoin.Symbol:
                     return new SetLineJoin(OperandToInt(operands[0]));
                 case SetLineWidth.Symbol:
-                    return new SetLineWidth(OperandToDecimal(operands[0]));
+                    return new SetLineWidth(OperandToDouble(operands[0]));
                 case SetMiterLimit.Symbol:
-                    return new SetMiterLimit(OperandToDecimal(operands[0]));
+                    return new SetMiterLimit(OperandToDouble(operands[0]));
                 case AppendDualControlPointBezierCurve.Symbol:
                     if (operands.Count == 0)
                     {
                         return null;
                     }
-                    return new AppendDualControlPointBezierCurve(OperandToDecimal(operands[0]),
-                        OperandToDecimal(operands[1]),
-                        OperandToDecimal(operands[2]),
-                        OperandToDecimal(operands[3]),
-                        OperandToDecimal(operands[4]),
-                        OperandToDecimal(operands[5]));
+                    return new AppendDualControlPointBezierCurve(OperandToDouble(operands[0]),
+                        OperandToDouble(operands[1]),
+                        OperandToDouble(operands[2]),
+                        OperandToDouble(operands[3]),
+                        OperandToDouble(operands[4]),
+                        OperandToDouble(operands[5]));
                 case AppendEndControlPointBezierCurve.Symbol:
                     if (operands.Count == 0)
                     {
                         return null;
                     }
-                    return new AppendEndControlPointBezierCurve(OperandToDecimal(operands[0]),
-                        OperandToDecimal(operands[1]),
-                        OperandToDecimal(operands[2]),
-                        OperandToDecimal(operands[3]));
+                    return new AppendEndControlPointBezierCurve(OperandToDouble(operands[0]),
+                        OperandToDouble(operands[1]),
+                        OperandToDouble(operands[2]),
+                        OperandToDouble(operands[3]));
                 case AppendRectangle.Symbol:
                     if (operands.Count == 0)
                     {
                         return null;
                     }
-                    return new AppendRectangle(OperandToDecimal(operands[0]),
-                        OperandToDecimal(operands[1]),
-                        OperandToDecimal(operands[2]),
-                        OperandToDecimal(operands[3]));
+                    return new AppendRectangle(OperandToDouble(operands[0]),
+                        OperandToDouble(operands[1]),
+                        OperandToDouble(operands[2]),
+                        OperandToDouble(operands[3]));
                 case AppendStartControlPointBezierCurve.Symbol:
                     if (operands.Count == 0)
                     {
                         return null;
                     }
-                    return new AppendStartControlPointBezierCurve(OperandToDecimal(operands[0]),
-                        OperandToDecimal(operands[1]),
-                        OperandToDecimal(operands[2]),
-                        OperandToDecimal(operands[3]));
+                    return new AppendStartControlPointBezierCurve(OperandToDouble(operands[0]),
+                        OperandToDouble(operands[1]),
+                        OperandToDouble(operands[2]),
+                        OperandToDouble(operands[3]));
                 case AppendStraightLineSegment.Symbol:
-                    return new AppendStraightLineSegment(OperandToDecimal(operands[0]),
-                        OperandToDecimal(operands[1]));
+                    return new AppendStraightLineSegment(OperandToDouble(operands[0]),
+                        OperandToDouble(operands[1]));
                 case BeginNewSubpath.Symbol:
-                    return new BeginNewSubpath(OperandToDecimal(operands[0]),
-                        OperandToDecimal(operands[1]));
+                    return new BeginNewSubpath(OperandToDouble(operands[0]),
+                        OperandToDouble(operands[1]));
                 case CloseSubpath.Symbol:
                     return CloseSubpath.Value;
                 case ModifyCurrentTransformationMatrix.Symbol:
-                    return new ModifyCurrentTransformationMatrix(TokensToDecimalArray(operands));
+                    return new ModifyCurrentTransformationMatrix(TokensToDoubleArray(operands));
                 case Pop.Symbol:
                     return Pop.Value;
                 case Push.Symbol:
@@ -203,19 +203,19 @@ namespace UglyToad.PdfPig.Graphics
                 case EndText.Symbol:
                     return EndText.Value;
                 case SetCharacterSpacing.Symbol:
-                    return new SetCharacterSpacing(OperandToDecimal(operands[0]));
+                    return new SetCharacterSpacing(OperandToDouble(operands[0]));
                 case SetFontAndSize.Symbol:
-                    return new SetFontAndSize((NameToken)operands[0], OperandToDecimal(operands[1]));
+                    return new SetFontAndSize((NameToken)operands[0], OperandToDouble(operands[1]));
                 case SetHorizontalScaling.Symbol:
-                    return new SetHorizontalScaling(OperandToDecimal(operands[0]));
+                    return new SetHorizontalScaling(OperandToDouble(operands[0]));
                 case SetTextLeading.Symbol:
-                    return new SetTextLeading(OperandToDecimal(operands[0]));
+                    return new SetTextLeading(OperandToDouble(operands[0]));
                 case SetTextRenderingMode.Symbol:
                     return new SetTextRenderingMode(OperandToInt(operands[0]));
                 case SetTextRise.Symbol:
-                    return new SetTextRise(OperandToDecimal(operands[0]));
+                    return new SetTextRise(OperandToDouble(operands[0]));
                 case SetWordSpacing.Symbol:
-                    return new SetWordSpacing(OperandToDecimal(operands[0]));
+                    return new SetWordSpacing(OperandToDouble(operands[0]));
                 case CloseAndStrokePath.Symbol:
                     return CloseAndStrokePath.Value;
                 case CloseFillPathEvenOddRuleAndStroke.Symbol:
@@ -291,40 +291,40 @@ namespace UglyToad.PdfPig.Graphics
                         throw new InvalidOperationException($"Tried to create a move to next line and show text operation with operand type: {operands[0]?.GetType().Name ?? "null"}");
                     }
                 case MoveToNextLineWithOffset.Symbol:
-                    return new MoveToNextLineWithOffset(OperandToDecimal(operands[0]), OperandToDecimal(operands[1]));
+                    return new MoveToNextLineWithOffset(OperandToDouble(operands[0]), OperandToDouble(operands[1]));
                 case MoveToNextLineWithOffsetSetLeading.Symbol:
-                    return new MoveToNextLineWithOffsetSetLeading(OperandToDecimal(operands[0]), OperandToDecimal(operands[1]));
+                    return new MoveToNextLineWithOffsetSetLeading(OperandToDouble(operands[0]), OperandToDouble(operands[1]));
                 case PaintShading.Symbol:
                     return new PaintShading((NameToken)operands[0]);
                 case SetNonStrokeColor.Symbol:
-                    return new SetNonStrokeColor(TokensToDecimalArray(operands));
+                    return new SetNonStrokeColor(TokensToDoubleArray(operands));
                 case SetNonStrokeColorAdvanced.Symbol:
                     if (operands[operands.Count - 1] is NameToken scnLowerPatternName)
                     {
-                        return new SetNonStrokeColorAdvanced(operands.Take(operands.Count - 1).Select(x => ((NumericToken)x).Data).ToList(), scnLowerPatternName);
+                        return new SetNonStrokeColorAdvanced(operands.Take(operands.Count - 1).Select(x => ((NumericToken)x).Data).ToArray(), scnLowerPatternName);
                     }
                     else if (operands.All(x => x is NumericToken))
                     {
-                        return new SetNonStrokeColorAdvanced(operands.Select(x => ((NumericToken)x).Data).ToList());
+                        return new SetNonStrokeColorAdvanced(operands.Select(x => ((NumericToken)x).Data).ToArray());
                     }
 
                     var errorMessageScnLower = string.Join(", ", operands.Select(x => x.ToString()));
                     throw new PdfDocumentFormatException($"Attempted to set a non-stroke color space (scn) with invalid arguments: [{errorMessageScnLower}]");
                 case SetNonStrokeColorDeviceCmyk.Symbol:
-                    return new SetNonStrokeColorDeviceCmyk(OperandToDecimal(operands[0]),
-                        OperandToDecimal(operands[1]),
-                        OperandToDecimal(operands[2]),
-                        OperandToDecimal(operands[3]));
+                    return new SetNonStrokeColorDeviceCmyk(OperandToDouble(operands[0]),
+                        OperandToDouble(operands[1]),
+                        OperandToDouble(operands[2]),
+                        OperandToDouble(operands[3]));
                 case SetNonStrokeColorDeviceGray.Symbol:
-                    return new SetNonStrokeColorDeviceGray(OperandToDecimal(operands[0]));
+                    return new SetNonStrokeColorDeviceGray(OperandToDouble(operands[0]));
                 case SetNonStrokeColorDeviceRgb.Symbol:
-                    return new SetNonStrokeColorDeviceRgb(OperandToDecimal(operands[0]),
-                        OperandToDecimal(operands[1]),
-                        OperandToDecimal(operands[2]));
+                    return new SetNonStrokeColorDeviceRgb(OperandToDouble(operands[0]),
+                        OperandToDouble(operands[1]),
+                        OperandToDouble(operands[2]));
                 case SetNonStrokeColorSpace.Symbol:
                     return new SetNonStrokeColorSpace((NameToken)operands[0]);
                 case SetStrokeColor.Symbol:
-                    return new SetStrokeColor(TokensToDecimalArray(operands));
+                    return new SetStrokeColor(TokensToDoubleArray(operands));
                 case SetStrokeColorAdvanced.Symbol:
                     if (operands[operands.Count - 1] is NameToken scnPatternName)
                     {
@@ -338,20 +338,20 @@ namespace UglyToad.PdfPig.Graphics
                     var errorMessageScn = string.Join(", ", operands.Select(x => x.ToString()));
                     throw new PdfDocumentFormatException($"Attempted to set a stroke color space (SCN) with invalid arguments: [{errorMessageScn}]");
                 case SetStrokeColorDeviceCmyk.Symbol:
-                    return new SetStrokeColorDeviceCmyk(OperandToDecimal(operands[0]),
-                        OperandToDecimal(operands[1]),
-                        OperandToDecimal(operands[2]),
-                        OperandToDecimal(operands[3]));
+                    return new SetStrokeColorDeviceCmyk(OperandToDouble(operands[0]),
+                        OperandToDouble(operands[1]),
+                        OperandToDouble(operands[2]),
+                        OperandToDouble(operands[3]));
                 case SetStrokeColorDeviceGray.Symbol:
-                    return new SetStrokeColorDeviceGray(OperandToDecimal(operands[0]));
+                    return new SetStrokeColorDeviceGray(OperandToDouble(operands[0]));
                 case SetStrokeColorDeviceRgb.Symbol:
-                    return new SetStrokeColorDeviceRgb(OperandToDecimal(operands[0]),
-                        OperandToDecimal(operands[1]),
-                        OperandToDecimal(operands[2]));
+                    return new SetStrokeColorDeviceRgb(OperandToDouble(operands[0]),
+                        OperandToDouble(operands[1]),
+                        OperandToDouble(operands[2]));
                 case SetStrokeColorSpace.Symbol:
                     return new SetStrokeColorSpace((NameToken)operands[0]);
                 case SetTextMatrix.Symbol:
-                    return new SetTextMatrix(TokensToDecimalArray(operands));
+                    return new SetTextMatrix(TokensToDoubleArray(operands));
                 case StrokePath.Symbol:
                     return StrokePath.Value;
                 case ShowText.Symbol:
@@ -447,7 +447,7 @@ namespace UglyToad.PdfPig.Graphics
 
                     offset++;
                 }
-                else if (parameter.ParameterType == typeof(decimal[]))
+                else if (parameter.ParameterType == typeof(double[]))
                 {
                     if (operands[offset] is ArrayToken arr)
                     {
@@ -456,7 +456,7 @@ namespace UglyToad.PdfPig.Graphics
                         continue;
                     }
 
-                    var array = new List<decimal>();
+                    var array = new List<double>();
                     while (offset < operands.Count && operands[offset] is NumericToken numeric)
                     {
                         array.Add(numeric.Data);

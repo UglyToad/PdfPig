@@ -27,12 +27,12 @@
 
         public static IEnumerable<object[]> SingleElementTestData => new[]
         {
-            new object[] {"[12]", 12m},
-            new object[] {"[ 12 ]", 12m},
+            new object[] {"[12]", 12.0},
+            new object[] {"[ 12 ]", 12.0},
             new object[] {@"[ 
-2948344 ]", 2948344m},
-            new object[] { "[(Bertrand)  \t]", "Bertrand" }, 
-            new object[] { "[ <AE>\r\n]", "®" }, 
+2948344 ]", 2948344.0},
+            new object[] { "[(Bertrand)  \t]", "Bertrand" },
+            new object[] { "[ <AE>\r\n]", "®" },
         };
 
         [Theory]
@@ -82,8 +82,8 @@
 
             var array = AssertArrayToken(token);
 
-            Assert.Equal(12m, AssertDataToken<NumericToken, decimal>(0, array).Data);
-            Assert.Equal(10.453m, AssertDataToken<NumericToken, decimal>(1, array).Data);
+            Assert.Equal(12, AssertDataToken<NumericToken, double>(0, array).Data);
+            Assert.Equal(10.453, AssertDataToken<NumericToken, double>(1, array).Data);
             Assert.Equal(NameToken.Create("Fonts"), AssertDataToken<NameToken, string>(2, array).Data);
 
             var inner = AssertArrayToken(array.Data[3]);
@@ -113,13 +113,13 @@
 
             var firstFirstInner = AssertArrayToken(firstInner.Data[0]);
 
-            Assert.Equal(19m, AssertDataToken<NumericToken, decimal>(0, firstFirstInner).Data);
-            Assert.Equal(-69m, AssertDataToken<NumericToken, decimal>(1, firstFirstInner).Data);
-            
+            Assert.Equal(19, AssertDataToken<NumericToken, double>(0, firstFirstInner).Data);
+            Assert.Equal(-69, AssertDataToken<NumericToken, double>(1, firstFirstInner).Data);
+
             var secondFirstInner = AssertArrayToken(firstInner.Data[1]);
 
-            Assert.Equal(7m, AssertDataToken<NumericToken, decimal>(0, secondFirstInner).Data);
-            Assert.Equal(64.625m, AssertDataToken<NumericToken, decimal>(1, secondFirstInner).Data);
+            Assert.Equal(7, AssertDataToken<NumericToken, double>(0, secondFirstInner).Data);
+            Assert.Equal(64.625, AssertDataToken<NumericToken, double>(1, secondFirstInner).Data);
 
             Assert.Equal("More", AssertDataToken<StringToken, string>(2, array).Data);
 
@@ -129,7 +129,7 @@
 
             var firstFirstSecondInner = AssertArrayToken(firstSecondInner.Data[0]);
 
-            Assert.Equal(15m, AssertDataToken<NumericToken, decimal>(0, firstFirstSecondInner).Data);
+            Assert.Equal(15, AssertDataToken<NumericToken, double>(0, firstFirstSecondInner).Data);
         }
 
         [Fact]
@@ -145,13 +145,13 @@
 
             var array = AssertArrayToken(token);
 
-            Assert.Equal(549m, AssertDataToken<NumericToken, decimal>(0, array).Data);
-            Assert.Equal(3.14m, AssertDataToken<NumericToken, decimal>(1, array).Data);
+            Assert.Equal(549, AssertDataToken<NumericToken, double>(0, array).Data);
+            Assert.Equal(3.14, AssertDataToken<NumericToken, double>(1, array).Data);
             Assert.False(AssertDataToken<BooleanToken, bool>(2, array).Data);
             Assert.Equal("Ralph", AssertDataToken<StringToken, string>(3, array).Data);
             Assert.Equal(NameToken.Create("SomeName"), AssertDataToken<NameToken, string>(4, array).Data);
         }
-        
+
         private static ArrayToken AssertArrayToken(IToken token)
         {
             Assert.NotNull(token);

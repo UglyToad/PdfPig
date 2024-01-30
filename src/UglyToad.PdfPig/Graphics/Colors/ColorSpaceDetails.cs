@@ -106,7 +106,7 @@
         {
             if (values == null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of imputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             double gray = values[0];
@@ -168,7 +168,7 @@
         {
             if (values == null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of imputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             double r = values[0];
@@ -230,7 +230,7 @@
         {
             if (values == null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of imputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             double c = values[0];
@@ -332,7 +332,7 @@
         {
             if (values == null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of imputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             return cache.GetOrAdd(values[0], v =>
@@ -520,7 +520,7 @@
         {
             if (values == null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of imputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             // TODO - use attributes
@@ -690,7 +690,7 @@
         {
             if (values == null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of imputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             // TODO - we ignore the name for now
@@ -803,7 +803,7 @@
         }
 
         /// <summary>
-        /// Transforms the supplied A color to grayscale RGB (sRGB) using the propties of this
+        /// Transforms the supplied A color to grayscale RGB (sRGB) using the properties of this
         /// <see cref="CalGrayColorSpaceDetails"/> in the transformation process.
         /// A represents the gray component of a calibrated gray space. The component must be in the range 0.0 to 1.0.
         /// </summary>
@@ -840,7 +840,7 @@
         {
             if (values == null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of imputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             return TransformToRGB(values[0]);
@@ -944,7 +944,7 @@
         }
 
         /// <summary>
-        /// Transforms the supplied ABC color to RGB (sRGB) using the propties of this <see cref="CalRGBColorSpaceDetails"/>
+        /// Transforms the supplied ABC color to RGB (sRGB) using the propeties of this <see cref="CalRGBColorSpaceDetails"/>
         /// in the transformation process.
         /// A, B and C represent red, green and blue calibrated color values in the range 0.0 to 1.0.
         /// </summary>
@@ -981,7 +981,7 @@
         {
             if (values == null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of imputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             return TransformToRGB((values[0], values[1], values[2]));
@@ -1122,7 +1122,7 @@
         {
             if (values == null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of imputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             return TransformToRGB((values[0], values[1], values[2]));
@@ -1234,7 +1234,7 @@
         {
             if (values == null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of imputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
 
             // TODO - use ICC profile
@@ -1255,7 +1255,7 @@
             // initialize all components of the corresponding current colour to 0.0 (unless the range of valid
             // values for a given component does not include 0.0, in which case the nearest valid value shall
             // be substituted.)
-            double v = PdfFunction.ClipToRange(0.0, (double)Range[0], (double)Range[1]);
+            double v = PdfFunction.ClipToRange(0.0, Range[0], Range[1]);
             double[] init = Enumerable.Repeat(v, NumberOfColorComponents).ToArray();
             return GetColor(init);
         }

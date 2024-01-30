@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.PathConstruction
 {
     using System.IO;
-    using PdfPig.Core;
 
     /// <inheritdoc />
     /// <summary>
@@ -20,19 +19,19 @@
         /// <summary>
         /// The x coordinate for the subpath to begin at.
         /// </summary>
-        public decimal X { get; }
+        public double X { get; }
 
         /// <summary>
         /// The y coordinate for the subpath to begin at.
         /// </summary>
-        public decimal Y { get; }
-        
+        public double Y { get; }
+
         /// <summary>
         /// Create a new <see cref="BeginNewSubpath"/>.
         /// </summary>
         /// <param name="x">The x coordinate.</param>
         /// <param name="y">The y coordinate.</param>
-        public BeginNewSubpath(decimal x, decimal y)
+        public BeginNewSubpath(double x, double y)
         {
             X = x;
             Y = y;
@@ -41,15 +40,15 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.MoveTo((double)X, (double)Y);
+            operationContext.MoveTo(X, Y);
         }
 
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            stream.WriteDecimal(X);
+            stream.WriteDouble(X);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(Y);
+            stream.WriteDouble(Y);
             stream.WriteWhiteSpace();
             stream.WriteText(Symbol);
             stream.WriteNewLine();

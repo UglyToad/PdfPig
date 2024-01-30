@@ -27,7 +27,7 @@
 
                 memoryStream.WriteNewLine();
 
-                memoryStream.WriteDecimal(12);
+                memoryStream.WriteDouble(12);
                 memoryStream.WriteWhiteSpace();
                 memoryStream.WriteText(DictToken, true);
                 memoryStream.WriteText(BeginToken);

@@ -30,39 +30,39 @@
 
         public static IEnumerable<object[]> ValidNumberTestData => new []
         {
-            new object[] {"0", 0m},
-            new object[] {"1", 1m},
-            new object[] {"2", 2m},
-            new object[] {"3", 3m},
-            new object[] {"4", 4m},
-            new object[] {"5", 5m},
-            new object[] {"6", 6m},
-            new object[] {"7", 7m},
-            new object[] {"8", 8m},
-            new object[] {"9", 9m},
-            new object[] {"10", 10m},
-            new object[] {"11", 11m},
-            new object[] {"29", 29m},
-            new object[] {"-0", 0m},
-            new object[] {"-0123", -123m},
-            new object[] {"-6.9000", -6.9m},
-            new object[] {"57473.3458382", 57473.3458382m},
-            new object[] { "123", 123m},
-            new object[] { "43445", 43445m},
-            new object[] { "+17", 17m},
-            new object[] { "-98", -98m},
-            new object[] { "34.5", 34.5m},
-            new object[] { "-3.62", -3.62m},
-            new object[] { "+123.6", 123.6m},
-            new object[] { "4.", 4m},
-            new object[] { "-.002", -0.002m},
-            new object[] { "0.0", 0m},
-            new object[] {"1.57e3", 1570m}
+            new object[] {"0", 0},
+            new object[] {"1", 1},
+            new object[] {"2", 2},
+            new object[] {"3", 3},
+            new object[] {"4", 4},
+            new object[] {"5", 5},
+            new object[] {"6", 6},
+            new object[] {"7", 7},
+            new object[] {"8", 8},
+            new object[] {"9", 9},
+            new object[] {"10", 10},
+            new object[] {"11", 11},
+            new object[] {"29", 29},
+            new object[] {"-0", 0},
+            new object[] {"-0123", -123},
+            new object[] {"-6.9000", -6.9},
+            new object[] {"57473.3458382", 57473.3458382},
+            new object[] { "123", 123},
+            new object[] { "43445", 43445},
+            new object[] { "+17", 17},
+            new object[] { "-98", -98},
+            new object[] { "34.5", 34.5},
+            new object[] { "-3.62", -3.62},
+            new object[] { "+123.6", 123.6},
+            new object[] { "4.", 4},
+            new object[] { "-.002", -0.002},
+            new object[] { "0.0", 0},
+            new object[] {"1.57e3", 1570}
         };
 
         [Theory]
         [MemberData(nameof(ValidNumberTestData))]
-        public void ParsesValidNumbers(string s, decimal expected)
+        public void ParsesValidNumbers(string s, double expected)
         {
             var input = StringBytesTestConverter.Convert(s);
 
@@ -80,7 +80,7 @@
             var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
 
             Assert.True(result);
-            Assert.Equal(135.6654m, AssertNumericToken(token).Data);
+            Assert.Equal(135.6654, AssertNumericToken(token).Data);
 
             Assert.Equal('/', (char)input.Bytes.CurrentByte);
         }
@@ -93,7 +93,7 @@
             var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
 
             Assert.True(result);
-            Assert.Equal(0m, AssertNumericToken(token).Data);
+            Assert.Equal(0, AssertNumericToken(token).Data);
         }
 
         [Fact]
@@ -105,7 +105,7 @@
             var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
 
             Assert.True(result);
-            Assert.Equal(-10.25m, AssertNumericToken(token).Data);
+            Assert.Equal(-10.25, AssertNumericToken(token).Data);
         }
 
         [Fact]
@@ -116,7 +116,7 @@
             var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
 
             Assert.True(result);
-            Assert.Equal(0m, AssertNumericToken(token).Data);
+            Assert.Equal(0, AssertNumericToken(token).Data);
         }
 
         private static NumericToken AssertNumericToken(IToken token)

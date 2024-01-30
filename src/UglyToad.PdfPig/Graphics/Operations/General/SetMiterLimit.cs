@@ -20,12 +20,12 @@
         /// The miter limit. The miter limit imposes a maximum on the ratio of the miter length to the line width. 
         /// When the limit is exceeded, the join is converted from a miter to a bevel. 
         /// </summary>
-        public decimal Limit { get; }
+        public double Limit { get; }
 
         /// <summary>
         /// Create a new <see cref="SetMiterLimit"/>.
         /// </summary>
-        public SetMiterLimit(decimal limit)
+        public SetMiterLimit(double limit)
         {
             Limit = limit;
         }
