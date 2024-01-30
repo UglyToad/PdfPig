@@ -4,7 +4,6 @@
     using System.IO;
     using System.Linq;
 
-    /// <inheritdoc />
     /// <summary>
     /// Set the stroking color based on the current color space.
     /// </summary>
@@ -21,13 +20,13 @@
         /// <summary>
         /// The values for the color, 1 for grayscale, 3 for RGB, 4 for CMYK.
         /// </summary>
-        public IReadOnlyList<decimal> Operands { get; }
+        public IReadOnlyList<double> Operands { get; }
 
         /// <summary>
         /// Create a new <see cref="SetStrokeColor"/>.
         /// </summary>
         /// <param name="operands">The color operands.</param>
-        public SetStrokeColor(decimal[] operands)
+        public SetStrokeColor(double[] operands)
         {
             Operands = operands;
         }
@@ -43,7 +42,7 @@
         {
             foreach (var operand in Operands)
             {
-                stream.WriteDecimal(operand);
+                stream.WriteDouble(operand);
                 stream.WriteWhiteSpace();
             }
 

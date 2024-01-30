@@ -6,7 +6,6 @@
     using Tokens;
     using Writer;
 
-    /// <inheritdoc />
     /// <summary>
     /// Set the stroking color based on the current color space with support for Pattern, Separation, DeviceN, and ICCBased color spaces.
     /// </summary>
@@ -25,7 +24,7 @@
         /// <summary>
         /// The values for the color.
         /// </summary>
-        public IReadOnlyList<decimal> Operands { get; }
+        public IReadOnlyList<double> Operands { get; }
 
         /// <summary>
         /// The name of an entry in the Pattern subdictionary of the current resource dictionary.
@@ -36,7 +35,7 @@
         /// Create a new <see cref="SetNonStrokeColorAdvanced"/>.
         /// </summary>
         /// <param name="operands">The color operands.</param>
-        public SetNonStrokeColorAdvanced(IReadOnlyList<decimal> operands)
+        public SetNonStrokeColorAdvanced(IReadOnlyList<double> operands)
         {
             Operands = operands;
         }
@@ -46,7 +45,7 @@
         /// </summary>
         /// <param name="operands">The color operands.</param>
         /// <param name="patternName">The pattern name.</param>
-        public SetNonStrokeColorAdvanced(IReadOnlyList<decimal> operands, NameToken patternName)
+        public SetNonStrokeColorAdvanced(IReadOnlyList<double> operands, NameToken patternName)
         {
             Operands = operands;
             PatternName = patternName;
@@ -63,7 +62,7 @@
         {
             foreach (var operand in Operands)
             {
-                stream.WriteDecimal(operand);
+                stream.WriteDouble(operand);
                 stream.WriteWhiteSpace();
             }
 

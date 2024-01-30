@@ -21,13 +21,13 @@
         /// <summary>
         /// The values of the text matrix.
         /// </summary>
-        public decimal[] Value { get; }
+        public double[] Value { get; }
 
         /// <summary>
         /// Create a new <see cref="SetTextMatrix"/>.
         /// </summary>
         /// <param name="value">The values of the text matrix.</param>
-        public SetTextMatrix(decimal[] value)
+        public SetTextMatrix(double[] value)
         {
             if (value.Length != 6)
             {
@@ -49,17 +49,17 @@
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            stream.WriteDecimal(Value[0]);
+            stream.WriteDouble(Value[0]);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(Value[1]);
+            stream.WriteDouble(Value[1]);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(Value[2]);
+            stream.WriteDouble(Value[2]);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(Value[3]);
+            stream.WriteDouble(Value[3]);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(Value[4]);
+            stream.WriteDouble(Value[4]);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(Value[5]);
+            stream.WriteDouble(Value[5]);
             stream.WriteWhiteSpace();
             stream.WriteText(Symbol);
             stream.WriteNewLine();

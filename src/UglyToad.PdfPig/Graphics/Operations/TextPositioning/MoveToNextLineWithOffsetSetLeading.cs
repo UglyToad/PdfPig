@@ -21,19 +21,19 @@
         /// <summary>
         /// The x value of the offset.
         /// </summary>
-        public decimal Tx { get; }
+        public double Tx { get; }
 
         /// <summary>
         /// The y value of the offset and the inverse of the leading parameter.
         /// </summary>
-        public decimal Ty { get; }
+        public double Ty { get; }
 
         /// <summary>
         /// Create a new <see cref="MoveToNextLineWithOffsetSetLeading"/>.
         /// </summary>
         /// <param name="tx">The x value of the offset.</param>
         /// <param name="ty">The y value of the offset and the inverse of the leading parameter.</param>
-        public MoveToNextLineWithOffsetSetLeading(decimal tx, decimal ty)
+        public MoveToNextLineWithOffsetSetLeading(double tx, double ty)
         {
             Tx = tx;
             Ty = ty;
@@ -54,9 +54,9 @@
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            stream.WriteDecimal(Tx);
+            stream.WriteDouble(Tx);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(Ty);
+            stream.WriteDouble(Ty);
             stream.WriteWhiteSpace();
             stream.WriteText(Symbol);
             stream.WriteNewLine();

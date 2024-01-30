@@ -20,13 +20,13 @@
         /// <summary>
         /// The character spacing.
         /// </summary>
-        public decimal Spacing { get; }
+        public double Spacing { get; }
 
         /// <summary>
         /// Create a new <see cref="SetCharacterSpacing"/>.
         /// </summary>
         /// <param name="spacing">The character spacing.</param>
-        public SetCharacterSpacing(decimal spacing)
+        public SetCharacterSpacing(double spacing)
         {
             Spacing = spacing;
         }
@@ -34,7 +34,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.SetCharacterSpacing((double)Spacing);
+            operationContext.SetCharacterSpacing(Spacing);
         }
 
         /// <inheritdoc />

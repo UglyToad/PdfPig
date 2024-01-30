@@ -37,13 +37,13 @@
         /// <summary>
         /// Set the color to use for stroking operations using the current color space.
         /// </summary>
-        void SetStrokingColor(IReadOnlyList<decimal> operands, NameToken patternName = null);
+        void SetStrokingColor(IReadOnlyList<double> operands, NameToken patternName = null);
 
         /// <summary>
         /// Set the stroking color space to DeviceGray and set the gray level to use for stroking operations.
         /// </summary>
         /// <param name="gray">A number between 0.0 (black) and 1.0 (white).</param>
-        void SetStrokingColorGray(decimal gray);
+        void SetStrokingColorGray(double gray);
 
         /// <summary>
         /// Set the stroking color space to DeviceRGB and set the color to use for stroking operations.
@@ -51,7 +51,7 @@
         /// <param name="r">Red - A number between 0 (minimum intensity) and 1 (maximum intensity).</param>
         /// <param name="g">Green - A number between 0 (minimum intensity) and 1 (maximum intensity).</param>
         /// <param name="b">Blue - A number between 0 (minimum intensity) and 1 (maximum intensity).</param>
-        void SetStrokingColorRgb(decimal r, decimal g, decimal b);
+        void SetStrokingColorRgb(double r, double g, double b);
 
         /// <summary>
         /// Set the stroking color space to DeviceCMYK and set the color to use for stroking operations. 
@@ -60,18 +60,18 @@
         /// <param name="m">Magenta - A number between 0 (minimum concentration) and 1 (maximum concentration).</param>
         /// <param name="y">Yellow - A number between 0 (minimum concentration) and 1 (maximum concentration).</param>
         /// <param name="k">Black - A number between 0 (minimum concentration) and 1 (maximum concentration).</param>
-        void SetStrokingColorCmyk(decimal c, decimal m, decimal y, decimal k);
+        void SetStrokingColorCmyk(double c, double m, double y, double k);
 
         /// <summary>
         /// Set the color to use for nonstroking operations using the current color space.
         /// </summary>
-        void SetNonStrokingColor(IReadOnlyList<decimal> operands, NameToken patternName = null);
+        void SetNonStrokingColor(IReadOnlyList<double> operands, NameToken patternName = null);
 
         /// <summary>
         /// Set the nonstroking color space to DeviceGray and set the gray level to use for nonstroking operations.
         /// </summary>
         /// <param name="gray">A number between 0.0 (black) and 1.0 (white).</param>
-        void SetNonStrokingColorGray(decimal gray);
+        void SetNonStrokingColorGray(double gray);
 
         /// <summary>
         /// Set the nonstroking color space to DeviceRGB and set the color to use for nonstroking operations.
@@ -79,7 +79,7 @@
         /// <param name="r">Red - A number between 0 (minimum intensity) and 1 (maximum intensity).</param>
         /// <param name="g">Green - A number between 0 (minimum intensity) and 1 (maximum intensity).</param>
         /// <param name="b">Blue - A number between 0 (minimum intensity) and 1 (maximum intensity).</param>
-        void SetNonStrokingColorRgb(decimal r, decimal g, decimal b);
+        void SetNonStrokingColorRgb(double r, double g, double b);
 
         /// <summary>
         /// Set the nonstroking color space to DeviceCMYK and set the color to use for nonstroking operations.
@@ -88,6 +88,6 @@
         /// <param name="m">Magenta - A number between 0 (minimum concentration) and 1 (maximum concentration).</param>
         /// <param name="y">Yellow - A number between 0 (minimum concentration) and 1 (maximum concentration).</param>
         /// <param name="k">Black - A number between 0 (minimum concentration) and 1 (maximum concentration).</param>
-        void SetNonStrokingColorCmyk(decimal c, decimal m, decimal y, decimal k);
+        void SetNonStrokingColorCmyk(double c, double m, double y, double k);
     }
 }

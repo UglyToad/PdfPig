@@ -82,7 +82,7 @@
                 return false;
             }
 
-            decimal? GetPossibleEntry(int index)
+            double? GetPossibleEntry(int index)
             {
                 if (index >= explicitDestinationArray.Length)
                 {

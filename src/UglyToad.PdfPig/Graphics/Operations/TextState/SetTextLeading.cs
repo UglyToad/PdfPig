@@ -2,7 +2,6 @@
 {
     using System.IO;
 
-    /// <inheritdoc />
     /// <summary>
     /// Set the text leading.
     /// </summary>
@@ -19,13 +18,13 @@
         /// <summary>
         /// The text leading in unscaled text space units.
         /// </summary>
-        public decimal Leading { get; }
+        public double Leading { get; }
 
         /// <summary>
         /// Create a new <see cref="SetTextLeading"/>.
         /// </summary>
         /// <param name="leading">The text leading.</param>
-        public SetTextLeading(decimal leading)
+        public SetTextLeading(double leading)
         {
             Leading = leading;
         }
@@ -33,7 +32,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.SetTextLeading((double)Leading);
+            operationContext.SetTextLeading(Leading);
         }
 
         /// <inheritdoc />

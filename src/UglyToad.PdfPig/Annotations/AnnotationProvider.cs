@@ -6,7 +6,6 @@
     using System.Linq;
     using Core;
     using Logging;
-    using Outline;
     using Outline.Destinations;
     using Parser.Parts;
     using Tokenization.Scanner;
@@ -76,7 +75,7 @@
                     var horizontal = borderArray.GetNumeric(0).Data;
                     var vertical = borderArray.GetNumeric(1).Data;
                     var width = borderArray.GetNumeric(2).Data;
-                    var dashes = default(IReadOnlyList<decimal>);
+                    var dashes = default(IReadOnlyList<double>);
 
                     if (borderArray.Length == 4 && borderArray.Data[4] is ArrayToken dashArray)
                     {
@@ -89,7 +88,7 @@
                 var quadPointRectangles = new List<QuadPointsQuadrilateral>();
                 if (annotationDictionary.TryGet(NameToken.Quadpoints, tokenScanner, out ArrayToken quadPointsArray))
                 {
-                    var values = new List<decimal>();
+                    var values = new List<double>();
                     for (var i = 0; i < quadPointsArray.Length; i++)
                     {
                         if (!(quadPointsArray[i] is NumericToken value))
@@ -103,9 +102,9 @@
                         {
                             quadPointRectangles.Add(new QuadPointsQuadrilateral(new[]
                             {
-                                matrix.Transform(new PdfPoint(values[0], values[1])), 
-                                matrix.Transform(new PdfPoint(values[2], values[3])), 
-                                matrix.Transform(new PdfPoint(values[4], values[5])), 
+                                matrix.Transform(new PdfPoint(values[0], values[1])),
+                                matrix.Transform(new PdfPoint(values[2], values[3])),
+                                matrix.Transform(new PdfPoint(values[4], values[5])),
                                 matrix.Transform(new PdfPoint(values[6], values[7]))
                             }));
 
@@ -184,7 +183,7 @@
             {
                 return new GoToAction(destination);
             }
-            
+
             // Try get action from the dictionary.
             if (ActionProvider.TryGetAction(annotationDictionary, namedDestinations, tokenScanner, log, out var action))
             {

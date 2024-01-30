@@ -13,27 +13,27 @@
         /// <summary>
         /// The left side of the region to display.
         /// </summary>
-        public decimal? Left { get; }
+        public double? Left { get; }
 
         /// <summary>
         /// The top edge of the region to display.
         /// </summary>
-        public decimal? Top { get; }
+        public double? Top { get; }
 
         /// <summary>
         /// The right side of the region to display
         /// </summary>
-        public decimal? Right { get; }
+        public double? Right { get; }
 
         /// <summary>
         /// The bottom edge of the region to display.
         /// </summary>
-        public decimal? Bottom { get; }
+        public double? Bottom { get; }
 
         /// <summary>
         /// Create a new <see cref="ExplicitDestinationCoordinates"/>.
         /// </summary>
-        public ExplicitDestinationCoordinates(decimal? left)
+        public ExplicitDestinationCoordinates(double? left)
         {
             Left = left;
         }
@@ -41,7 +41,7 @@
         /// <summary>
         /// Create a new <see cref="ExplicitDestinationCoordinates"/>.
         /// </summary>
-        public ExplicitDestinationCoordinates(decimal? left, decimal? top)
+        public ExplicitDestinationCoordinates(double? left, double? top)
         {
             Left = left;
             Top = top;
@@ -50,7 +50,7 @@
         /// <summary>
         /// Create a new <see cref="ExplicitDestinationCoordinates"/>.
         /// </summary>
-        public ExplicitDestinationCoordinates(decimal? left, decimal? top, decimal? right, decimal? bottom)
+        public ExplicitDestinationCoordinates(double? left, double? top, double? right, double? bottom)
         {
             Left = left;
             Top = top;

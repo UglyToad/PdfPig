@@ -28,25 +28,25 @@
             {
                  FontFamily = family,
                  Stretch = stretch,
-                 FontWeight = GetDecimalOrDefault(dictionary, NameToken.FontWeight),
+                 FontWeight = GetDoubleOrDefault(dictionary, NameToken.FontWeight),
                  BoundingBox = bounding,
-                 ItalicAngle = GetDecimalOrDefault(dictionary, NameToken.ItalicAngle),
-                 Ascent = GetDecimalOrDefault(dictionary, NameToken.Ascent),
-                 Descent = GetDecimalOrDefault(dictionary, NameToken.Descent),
-                 Leading = GetDecimalOrDefault(dictionary, NameToken.Leading),
-                 CapHeight = Math.Abs(GetDecimalOrDefault(dictionary, NameToken.CapHeight)),
-                 XHeight = Math.Abs(GetDecimalOrDefault(dictionary, NameToken.Xheight)),
-                 StemVertical = GetDecimalOrDefault(dictionary, NameToken.StemV),
-                 StemHorizontal = GetDecimalOrDefault(dictionary, NameToken.StemH),
-                 AverageWidth = GetDecimalOrDefault(dictionary, NameToken.AvgWidth),
-                 MaxWidth = GetDecimalOrDefault(dictionary, NameToken.MaxWidth),
-                 MissingWidth = GetDecimalOrDefault(dictionary, NameToken.MissingWidth),
+                 ItalicAngle = GetDoubleOrDefault(dictionary, NameToken.ItalicAngle),
+                 Ascent = GetDoubleOrDefault(dictionary, NameToken.Ascent),
+                 Descent = GetDoubleOrDefault(dictionary, NameToken.Descent),
+                 Leading = GetDoubleOrDefault(dictionary, NameToken.Leading),
+                 CapHeight = Math.Abs(GetDoubleOrDefault(dictionary, NameToken.CapHeight)),
+                 XHeight = Math.Abs(GetDoubleOrDefault(dictionary, NameToken.Xheight)),
+                 StemVertical = GetDoubleOrDefault(dictionary, NameToken.StemV),
+                 StemHorizontal = GetDoubleOrDefault(dictionary, NameToken.StemH),
+                 AverageWidth = GetDoubleOrDefault(dictionary, NameToken.AvgWidth),
+                 MaxWidth = GetDoubleOrDefault(dictionary, NameToken.MaxWidth),
+                 MissingWidth = GetDoubleOrDefault(dictionary, NameToken.MissingWidth),
                  FontFile = fontFile,
                  CharSet = charSet
             }.Build();
         }
 
-        private static decimal GetDecimalOrDefault(DictionaryToken dictionary, NameToken name)
+        private static double GetDoubleOrDefault(DictionaryToken dictionary, NameToken name)
         {
             if (!dictionary.TryGet(name, out var token) || !(token is NumericToken number))
             {

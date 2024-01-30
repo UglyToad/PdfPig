@@ -170,7 +170,7 @@
         /// Flatness is a number in the range 0 to 100; a value of 0 specifies the output device’s default flatness tolerance.
         /// </summary>
         /// <param name="tolerance"></param>
-        void SetFlatnessTolerance(decimal tolerance);
+        void SetFlatnessTolerance(double tolerance);
 
         /// <summary>
         /// Set the line cap style in the graphics state.
@@ -190,12 +190,12 @@
         /// <summary>
         /// Set the line width in the graphics state.
         /// </summary>
-        void SetLineWidth(decimal width);
+        void SetLineWidth(double width);
 
         /// <summary>
         /// Set the miter limit in the graphics state.
         /// </summary>
-        void SetMiterLimit(decimal limit);
+        void SetMiterLimit(double limit);
 
         /// <summary>
         /// Move to the start of the next line.

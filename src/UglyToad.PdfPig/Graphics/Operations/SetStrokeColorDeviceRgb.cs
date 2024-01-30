@@ -2,7 +2,6 @@
 {
     using System.IO;
 
-    /// <inheritdoc />
     /// <summary>
     /// Set RGB color for stroking operations.
     /// </summary>
@@ -19,17 +18,17 @@
         /// <summary>
         /// The red level between 0 and 1.
         /// </summary>
-        public decimal R { get; }
+        public double R { get; }
 
         /// <summary>
         /// The green level between 0 and 1.
         /// </summary>
-        public decimal G { get; }
+        public double G { get; }
 
         /// <summary>
         /// The blue level between 0 and 1.
         /// </summary>
-        public decimal B { get; }
+        public double B { get; }
 
         /// <summary>
         /// Create a new <see cref="SetStrokeColorDeviceRgb"/>.
@@ -37,7 +36,7 @@
         /// <param name="r">The red level.</param>
         /// <param name="g">The green level.</param>
         /// <param name="b">The blue level.</param>
-        public SetStrokeColorDeviceRgb(decimal r, decimal g, decimal b)
+        public SetStrokeColorDeviceRgb(double r, double g, double b)
         {
             R = r;
             G = g;
@@ -53,11 +52,11 @@
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            stream.WriteDecimal(R);
+            stream.WriteDouble(R);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(G);
+            stream.WriteDouble(G);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(B);
+            stream.WriteDouble(B);
             stream.WriteWhiteSpace();
             stream.WriteText(Symbol);
             stream.WriteNewLine();

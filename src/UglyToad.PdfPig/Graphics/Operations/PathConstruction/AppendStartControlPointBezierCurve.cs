@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.PathConstruction
 {
     using System.IO;
-    using PdfPig.Core;
 
     /// <inheritdoc />
     /// <summary>
@@ -21,22 +20,22 @@
         /// <summary>
         /// The x coordinate of the second control point.
         /// </summary>
-        public decimal X2 { get; }
+        public double X2 { get; }
 
         /// <summary>
         /// The y coordinate of the second control point.
         /// </summary>
-        public decimal Y2 { get; }
+        public double Y2 { get; }
 
         /// <summary>
         /// The x coordinate of the end point of the curve.
         /// </summary>
-        public decimal X3 { get; }
+        public double X3 { get; }
 
         /// <summary>
         /// The y coordinate of the end point of the curve.
         /// </summary>
-        public decimal Y3 { get; }
+        public double Y3 { get; }
 
         /// <summary>
         /// Create a new <see cref="AppendStartControlPointBezierCurve"/>.
@@ -45,7 +44,7 @@
         /// <param name="y2">The y coordinate of the second control point.</param>
         /// <param name="x3">The x coordinate of the end point.</param>
         /// <param name="y3">The y coordinate of the end point.</param>
-        public AppendStartControlPointBezierCurve(decimal x2, decimal y2, decimal x3, decimal y3)
+        public AppendStartControlPointBezierCurve(double x2, double y2, double x3, double y3)
         {
             X2 = x2;
             Y2 = y2;
@@ -56,19 +55,19 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.BezierCurveTo((double)X2, (double)Y2, (double)X3, (double)Y3);
+            operationContext.BezierCurveTo(X2, Y2, X3, Y3);
         }
 
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            stream.WriteDecimal(X2);
+            stream.WriteDouble(X2);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(Y2);
+            stream.WriteDouble(Y2);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(X3);
+            stream.WriteDouble(X3);
             stream.WriteWhiteSpace();
-            stream.WriteDecimal(Y3);
+            stream.WriteDouble(Y3);
             stream.WriteWhiteSpace();
             stream.WriteText(Symbol);
             stream.WriteNewLine();

@@ -245,9 +245,9 @@
 
             var page = pdfBuilder.AddPage(595d, 842d); // A4
             var dataPNG = LoadPng(imageFileName, subfolderName);
-            page.DrawRectangle(borderPlacement, (decimal)imagePlacement.Width, (decimal)imagePlacement.Height, 3, true);
+            page.DrawRectangle(borderPlacement, imagePlacement.Width, imagePlacement.Height, 3, true);
             page.AddPng(dataPNG, imagePlacement);
-            page.AddText(imageFileName, 12m, labelPlacement, font);
+            page.AddText(imageFileName, 12, labelPlacement, font);
         }
 
         private static byte[] LoadPng(string name, string subfolderName = null)

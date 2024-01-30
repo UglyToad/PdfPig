@@ -97,7 +97,7 @@
                 for (int i = 0; i < sizeValuesSize; i++)
                 {
                     values.Add(new NumericToken(0));
-                    values.Add(new NumericToken((size[i] as NumericToken).Int - 1L));
+                    values.Add(new NumericToken((size[i] as NumericToken).Int - 1));
                 }
                 encode = new ArrayToken(values);
             }

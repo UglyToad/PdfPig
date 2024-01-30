@@ -16,13 +16,13 @@
         /// <summary>
         /// A number specifying the percentage of the normal width.
         /// </summary>
-        public decimal Scale { get; }
+        public double Scale { get; }
 
         /// <summary>
         /// Create a new <see cref="SetHorizontalScaling"/>.
         /// </summary>
         /// <param name="scale">The horizontal scaling percentage.</param>
-        public SetHorizontalScaling(decimal scale)
+        public SetHorizontalScaling(double scale)
         {
             Scale = scale;
         }
@@ -30,7 +30,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.SetHorizontalScaling((double)Scale);
+            operationContext.SetHorizontalScaling(Scale);
         }
 
         /// <inheritdoc />

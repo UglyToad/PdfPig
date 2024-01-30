@@ -41,9 +41,40 @@
             stream.WriteText(value.ToString("G", CultureInfo.InvariantCulture));
         }
 
+        public static void WriteDecimal(this Stream stream, double value)
+        {
+            stream.WriteText(value.ToString("G", CultureInfo.InvariantCulture));
+        }
+
+        public static void WriteDecimal(this Stream stream, int value)
+        {
+            stream.WriteText(value.ToString("G", CultureInfo.InvariantCulture));
+        }
+
+        public static void WriteDouble(this Stream stream, double value)
+        {
+            stream.WriteText(value.ToString("G", CultureInfo.InvariantCulture));
+        }
+
         public static void WriteNumberText(this Stream stream, decimal number, string text)
         {
             stream.WriteDecimal(number);
+            stream.WriteWhiteSpace();
+            stream.WriteText(text);
+            stream.WriteNewLine();
+        }
+
+        public static void WriteNumberText(this Stream stream, int number, string text)
+        {
+            stream.WriteDecimal(number);
+            stream.WriteWhiteSpace();
+            stream.WriteText(text);
+            stream.WriteNewLine();
+        }
+
+        public static void WriteNumberText(this Stream stream, double number, string text)
+        {
+            stream.WriteDouble(number);
             stream.WriteWhiteSpace();
             stream.WriteText(text);
             stream.WriteNewLine();

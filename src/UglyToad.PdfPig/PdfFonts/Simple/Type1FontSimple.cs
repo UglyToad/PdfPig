@@ -163,7 +163,7 @@
 
             if (fontDescriptor?.MissingWidth != null)
             {
-                return (double)fontDescriptor.MissingWidth;
+                return fontDescriptor.MissingWidth;
             }
 
             return boundingBox.Width;

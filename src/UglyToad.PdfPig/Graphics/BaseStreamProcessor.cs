@@ -363,7 +363,7 @@
             {
                 if (token is NumericToken number)
                 {
-                    var positionAdjustment = (double)number.Data;
+                    var positionAdjustment = number.Data;
 
                     double tx, ty;
                     if (isVertical)
@@ -509,8 +509,8 @@
                  * A conforming reader shall implicitly reset this parameter to its initial value at the beginning of execution of a
                  * transparency group XObject (see 11.6.6, "Transparency Group XObjects"). Initial value: 1.0.
                  */
-                startState.AlphaConstantNonStroking = 1.0m;
-                startState.AlphaConstantStroking = 1.0m;
+                startState.AlphaConstantNonStroking = 1.0;
+                startState.AlphaConstantStroking = 1.0;
 
                 if (formGroupToken.TryGet(NameToken.Cs, PdfScanner, out NameToken csNameToken))
                 {
@@ -687,7 +687,7 @@
                 fontArray.Data[1] is NumericToken sizeToken)
             {
                 currentGraphicsState.FontState.FromExtendedGraphicsState = true;
-                currentGraphicsState.FontState.FontSize = (double)sizeToken.Data;
+                currentGraphicsState.FontState.FontSize = sizeToken.Data;
                 ActiveExtendedGraphicsStateFont = ResourceStore.GetFontDirectly(fontReference);
             }
 
@@ -819,7 +819,7 @@
         }
 
         /// <inheritdoc/>
-        public virtual void SetFlatnessTolerance(decimal tolerance)
+        public virtual void SetFlatnessTolerance(double tolerance)
         {
             GetCurrentState().Flatness = tolerance;
         }
@@ -843,13 +843,13 @@
         }
 
         /// <inheritdoc/>
-        public virtual void SetLineWidth(decimal width)
+        public virtual void SetLineWidth(double width)
         {
             GetCurrentState().LineWidth = width;
         }
 
         /// <inheritdoc/>
-        public virtual void SetMiterLimit(decimal limit)
+        public virtual void SetMiterLimit(double limit)
         {
             GetCurrentState().MiterLimit = limit;
         }
@@ -857,7 +857,7 @@
         /// <inheritdoc/>
         public virtual void MoveToNextLineWithOffset()
         {
-            var tdOperation = new MoveToNextLineWithOffset(0, -1 * (decimal)GetCurrentState().FontState.Leading);
+            var tdOperation = new MoveToNextLineWithOffset(0, -1 * GetCurrentState().FontState.Leading);
             tdOperation.Run(this);
         }
 
