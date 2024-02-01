@@ -12,7 +12,7 @@
         /// <summary>
         /// Latin 1 Encoding: ISO 8859-1 is a single-byte encoding that can represent the first 256 Unicode characters.
         /// </summary>
-        public static Encoding Iso88591 = Encoding.GetEncoding("ISO-8859-1");
+        public static readonly Encoding Iso88591 = Encoding.GetEncoding("ISO-8859-1");
 
         /// <summary>
         /// Convert the string to bytes using the ISO 8859-1 encoding.
