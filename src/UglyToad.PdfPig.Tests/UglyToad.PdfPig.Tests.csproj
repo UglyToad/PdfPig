@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.0;net6.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.1;net6.0</TargetFrameworks>
     <IsTestProject>true</IsTestProject>
     <IsPackable>false</IsPackable>
     <DebugType>full</DebugType>
@@ -92,7 +92,7 @@
     <PackageReference Include="SkiaSharp" Version="2.88.7" />
     <PackageReference Include="xunit" Version="2.6.6" />
     <PackageReference Include="xunit.extensibility.execution" Version="2.6.6" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
