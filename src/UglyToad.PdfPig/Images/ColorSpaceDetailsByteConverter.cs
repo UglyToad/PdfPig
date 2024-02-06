@@ -51,18 +51,22 @@
 
         private static byte[] UnpackComponents(IReadOnlyList<byte> input, int bitsPerComponent)
         {
-            IEnumerable<byte> Unpack(byte b)
-            {
-                int right = (int)Math.Pow(2, bitsPerComponent) - 1;
+            int end = 8 - bitsPerComponent;
+            var unpacked = new byte[input.Count * (int)Math.Ceiling((end + 1) / (double)bitsPerComponent)];
 
+            int right = (int)Math.Pow(2, bitsPerComponent) - 1;
+
+            int u = 0;
+            foreach (byte b in input)
+            {
                 // Enumerate bits in bitsPerComponent-sized chunks from MSB to LSB, masking on the appropriate bits
-                for (int i = 8 - bitsPerComponent; i >= 0; i -= bitsPerComponent)
+                for (int i = end; i >= 0; i -= bitsPerComponent)
                 {
-                    yield return (byte)((b >> i) & right);
+                    unpacked[u++] = (byte)((b >> i) & right);
                 }
             }
 
-            return input.SelectMany(Unpack).ToArray();
+            return unpacked;
         }
 
         private static byte[] RemoveStridePadding(byte[] input, int strideWidth, int imageWidth, int imageHeight, int multiplier)
