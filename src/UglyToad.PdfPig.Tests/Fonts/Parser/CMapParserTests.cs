@@ -91,7 +91,7 @@ endbfchar";
 
             var cmap = cMapParser.Parse(input.Bytes);
 
-            Assert.Equal(1, cmap.CodespaceRanges.Count);
+            Assert.Single(cmap.CodespaceRanges);
 
             Assert.Equal(0, cmap.CodespaceRanges[0].StartInt);
             Assert.Equal(65535, cmap.CodespaceRanges[0].EndInt);
@@ -135,7 +135,7 @@ endbfchar";
 
             var cmap = cMapParser.Parse(input);
 
-            Assert.Equal(1, cmap.CodespaceRanges.Count);
+            Assert.Single(cmap.CodespaceRanges);
 
             var range = cmap.CodespaceRanges[0];
 

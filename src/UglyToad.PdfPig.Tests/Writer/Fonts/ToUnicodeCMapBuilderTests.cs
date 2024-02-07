@@ -28,7 +28,7 @@
 
             var result = new CMapParser().Parse(new ByteArrayInputBytes(cmapStream));
 
-            Assert.Equal(1, result.CodespaceRanges.Count);
+            Assert.Single(result.CodespaceRanges);
 
             var range = result.CodespaceRanges[0];
 

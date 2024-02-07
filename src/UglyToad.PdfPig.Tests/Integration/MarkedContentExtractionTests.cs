@@ -55,7 +55,7 @@ namespace UglyToad.PdfPig.Tests.Integration
 
                 int index = 8;
                 var mc = mcs[index];
-                Assert.Equal(1, mc.Children.Count);
+                Assert.Single(mc.Children);
                 Assert.Equal(index, mc.Index);
                 Assert.NotEmpty(mc.Children);
                 Assert.Equal(index, mc.Children[0].Index);
@@ -63,7 +63,7 @@ namespace UglyToad.PdfPig.Tests.Integration
 
                 index = 9;
                 mc = mcs[index];
-                Assert.Equal(1, mc.Children.Count);
+                Assert.Single(mc.Children);
                 Assert.Equal(index, mc.Index);
                 Assert.NotEmpty(mc.Children);
                 Assert.Equal(index, mc.Children[0].Index);
@@ -71,7 +71,7 @@ namespace UglyToad.PdfPig.Tests.Integration
 
                 index = 75;
                 mc = mcs[index];
-                Assert.Equal(1, mc.Children.Count);
+                Assert.Single(mc.Children);
                 Assert.Equal(index, mc.Index);
                 Assert.NotEmpty(mc.Children);
                 Assert.Equal(index, mc.Children[0].Index);
@@ -113,7 +113,7 @@ namespace UglyToad.PdfPig.Tests.Integration
 
                 Assert.Equal(33, artifact.Letters.Count);
                 Assert.Equal(8, artifact.Paths.Count);
-                Assert.Equal(0, artifact.Images.Count);
+                Assert.Empty(artifact.Images);
             }
         }
 
