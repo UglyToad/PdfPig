@@ -47,7 +47,7 @@
 
             var array = AssertArrayToken(token);
 
-            Assert.Equal(1, array.Data.Count);
+            Assert.Single(array.Data);
 
             Assert.Equal(dataValue, ((dynamic)token).Data[0].Data);
         }

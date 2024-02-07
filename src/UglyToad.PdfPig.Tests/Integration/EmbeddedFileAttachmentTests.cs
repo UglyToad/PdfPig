@@ -29,7 +29,7 @@
             {
                 Assert.True(document.Advanced.TryGetEmbeddedFiles(out var files));
 
-                Assert.Equal(1, files.Count);
+                Assert.Single(files);
 
                 Assert.Equal(20668, files[0].Bytes.Count);
             }

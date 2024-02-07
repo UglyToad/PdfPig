@@ -829,7 +829,7 @@
 
 
             Assert.NotNull(letter);                         // We should get back something.
-            Assert.Equal(1, letter.Count);                  // There should be only one letter returned after the add operation.
+            Assert.Single(letter);                          // There should be only one letter returned after the add operation.
             Assert.Equal(stringToAdd, letter[0].Value);     // Check we got back the name letter (eg. "v")
                                                             //Debug.WriteLine($"{letter[0]}");
 
