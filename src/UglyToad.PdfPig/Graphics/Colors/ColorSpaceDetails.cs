@@ -945,7 +945,6 @@
 
         /// <summary>
         /// Transforms the supplied ABC color to RGB (sRGB) using the properties of this <see cref="CalRGBColorSpaceDetails"/>
-
         /// in the transformation process.
         /// A, B and C represent red, green and blue calibrated color values in the range 0.0 to 1.0.
         /// </summary>
