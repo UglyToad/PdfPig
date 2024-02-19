@@ -314,8 +314,9 @@ namespace UglyToad.PdfPig.Writer
         /// </summary>
         /// <param name="document">Source document.</param>
         /// <param name="pageNumber">Page to copy.</param>
+        /// <param name="keepAnnotations">Flag to set whether annotation of page should be kept</param>
         /// <returns>A builder for editing the page.</returns>
-        public PdfPageBuilder AddPage(PdfDocument document, int pageNumber)
+        public PdfPageBuilder AddPage(PdfDocument document, int pageNumber, bool keepAnnotations = true)
         {
             return AddPage(document, pageNumber, null);
         }
@@ -432,6 +433,11 @@ namespace UglyToad.PdfPig.Writer
 
                 if (kvp.Key == NameToken.Annots)
                 {
+                    if (!keepAnnotations)
+                    {
+                        continue;
+                    }
+                    
                     var val = kvp.Value;
                     if (kvp.Value is IndirectReferenceToken ir)
                     {
