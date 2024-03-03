@@ -1,13 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Fonts.AdobeFontMetrics
 {
+    using Core;
     using System.Collections.Generic;
     using System.Linq;
-    using Core;
-    using Standard14Fonts;
 
     internal class AdobeFontMetricsBuilder
     {
-        public decimal AfmVersion { get; }
+        public double AfmVersion { get; }
 
         public List<string> Comments { get; }
 
@@ -37,7 +36,7 @@
         /// <summary>
         /// Angle in degrees counter-clockwise from vertical of vertical strokes of the font.
         /// </summary>
-        public decimal ItalicAngle { get; set; }
+        public double ItalicAngle { get; set; }
 
         /// <summary>
         /// Whether the font is monospaced or not.
@@ -52,12 +51,12 @@
         /// <summary>
         /// Distance from the baseline for underlining.
         /// </summary>
-        public decimal UnderlinePosition { get; set; }
+        public double UnderlinePosition { get; set; }
 
         /// <summary>
         /// The stroke width for underlining.
         /// </summary>
-        public decimal UnderlineThickness { get; set; }
+        public double UnderlineThickness { get; set; }
 
         /// <summary>
         /// Version identifier for the font program.
@@ -86,32 +85,32 @@
         /// <summary>
         /// The y-value of the top of a capital H.
         /// </summary>
-        public decimal CapHeight { get; set; }
+        public double CapHeight { get; set; }
 
         /// <summary>
         /// The y-value of the top of lowercase x.
         /// </summary>
-        public decimal XHeight { get; set; }
+        public double XHeight { get; set; }
 
         /// <summary>
         /// Generally the y-value of the top of lowercase d.
         /// </summary>
-        public decimal Ascender { get; set; }
+        public double Ascender { get; set; }
 
         /// <summary>
         /// The y-value of the bottom of lowercase p.
         /// </summary>
-        public decimal Descender { get; set; }
+        public double Descender { get; set; }
 
         /// <summary>
         /// Width of horizontal stems.
         /// </summary>
-        public decimal StdHw { get; set; }
+        public double StdHw { get; set; }
 
         /// <summary>
         /// Width of vertical stems.
         /// </summary>
-        public decimal StdVw { get; set; }
+        public double StdVw { get; set; }
 
         public int EscapeCharacter { get; set; }
 
@@ -123,7 +122,7 @@
 
         public bool IsFixedV { get; set; }
 
-        public AdobeFontMetricsBuilder(decimal afmVersion)
+        public AdobeFontMetricsBuilder(double afmVersion)
         {
             AfmVersion = afmVersion;
             Comments = new List<string>();

@@ -162,16 +162,6 @@
         /// Create a <see cref="NumericToken"/>.
         /// </summary>
         /// <param name="value">The number to represent.</param>
-        //[Obsolete("Use double constructor instead.")]
-        public NumericToken(decimal value)
-        {
-            Data = (double)value;
-        }
-
-        /// <summary>
-        /// Create a <see cref="NumericToken"/>.
-        /// </summary>
-        /// <param name="value">The number to represent.</param>
         public NumericToken(int value)
         {
             Data = value;

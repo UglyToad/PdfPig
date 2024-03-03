@@ -42,12 +42,12 @@
 
         public int AsInt()
         {
-            return (int)AsDecimal();
+            return (int)AsDouble();
         }
 
-        public decimal AsDecimal()
+        public double AsDouble()
         {
-            return decimal.Parse(Text, CultureInfo.InvariantCulture);
+            return double.Parse(Text, CultureInfo.InvariantCulture);
         }
 
         public bool AsBool()

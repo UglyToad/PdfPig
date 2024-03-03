@@ -421,7 +421,7 @@ namespace UglyToad.PdfPig.Graphics
                     throw new InvalidOperationException($"Fewer operands {operands.Count} found than required ({offset + 1}) for operator: {op.Data}.");
                 }
 
-                if (parameter.ParameterType == typeof(decimal))
+                if (parameter.ParameterType == typeof(double))
                 {
                     if (operands[offset] is NumericToken numeric)
                     {
@@ -429,7 +429,7 @@ namespace UglyToad.PdfPig.Graphics
                     }
                     else
                     {
-                        throw new InvalidOperationException($"Expected a decimal parameter for operation type {operationType.FullName}. Instead got: {operands[offset]}");
+                        throw new InvalidOperationException($"Expected a double parameter for operation type {operationType.FullName}. Instead got: {operands[offset]}");
                     }
 
                     offset++;
@@ -477,7 +477,7 @@ namespace UglyToad.PdfPig.Graphics
                     }
                     else
                     {
-                        throw new InvalidOperationException($"Expected a decimal array parameter for operation type {operationType.FullName}. Instead got: {operands[offset]}");
+                        throw new InvalidOperationException($"Expected a NameToken parameter for operation type {operationType.FullName}. Instead got: {operands[offset]}");
                     }
 
                     offset++;

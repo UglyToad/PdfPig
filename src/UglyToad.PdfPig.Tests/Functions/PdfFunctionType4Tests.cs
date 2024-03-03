@@ -16,8 +16,8 @@
             DictionaryToken dictionaryToken = new DictionaryToken(new Dictionary<NameToken, IToken>()
             {
                 { NameToken.FunctionType, new NumericToken(4) },
-                { NameToken.Domain, new ArrayToken(domain.Select(v => new NumericToken((decimal)v)).ToArray()) },
-                { NameToken.Range, new ArrayToken(range.Select(v => new NumericToken((decimal)v)).ToArray()) },
+                { NameToken.Domain, new ArrayToken(domain.Select(v => new NumericToken(v)).ToArray()) },
+                { NameToken.Range, new ArrayToken(range.Select(v => new NumericToken(v)).ToArray()) },
             });
 
             var data = Encoding.ASCII.GetBytes(function); // OtherEncodings.Iso88591.GetBytes(function);

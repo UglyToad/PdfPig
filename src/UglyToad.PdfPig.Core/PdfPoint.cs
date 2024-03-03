@@ -16,7 +16,7 @@
         /// <summary>
         /// The origin of the coordinates system.
         /// </summary>
-        public static PdfPoint Origin { get; } = new PdfPoint(0m, 0m);
+        public static PdfPoint Origin { get; } = new PdfPoint(0.0, 0.0);
 
         /// <summary>
         /// The X coordinate for this point. (Horizontal axis).
@@ -27,16 +27,6 @@
         /// The Y coordinate of this point. (Vertical axis).
         /// </summary>
         public double Y { get; }
-
-        /// <summary>
-        /// Create a new <see cref="PdfPoint"/> at this position.
-        /// </summary>
-        [DebuggerStepThrough]
-        public PdfPoint(decimal x, decimal y)
-        {
-            X = (double)x;
-            Y = (double)y;
-        }
 
         /// <summary>
         /// Create a new <see cref="PdfPoint"/> at this position.

@@ -123,27 +123,27 @@
                         }
                     case Type1Symbols.StdHorizontalStemWidth:
                         {
-                            var widths = ReadArrayValues(tokenizer, x => x.AsDecimal());
+                            var widths = ReadArrayValues(tokenizer, x => x.AsDouble());
                             var width = widths[0];
                             builder.StandardHorizontalWidth = width;
                             break;
                         }
                     case Type1Symbols.StdVerticalStemWidth:
                         {
-                            var widths = ReadArrayValues(tokenizer, x => x.AsDecimal());
+                            var widths = ReadArrayValues(tokenizer, x => x.AsDouble());
                             var width = widths[0];
                             builder.StandardVerticalWidth = width;
                             break;
                         }
                     case Type1Symbols.StemSnapHorizontalWidths:
                         {
-                            var widths = ReadArrayValues(tokenizer, x => x.AsDecimal());
+                            var widths = ReadArrayValues(tokenizer, x => x.AsDouble());
                             builder.StemSnapHorizontalWidths = widths;
                             break;
                         }
                     case Type1Symbols.StemSnapVerticalWidths:
                         {
-                            var widths = ReadArrayValues(tokenizer, x => x.AsDecimal());
+                            var widths = ReadArrayValues(tokenizer, x => x.AsDouble());
                             builder.StemSnapVerticalWidths = widths;
                             break;
                         }
@@ -603,7 +603,7 @@
             return results;
         }
 
-        private static decimal ReadNumeric(Type1Tokenizer tokenizer)
+        private static double ReadNumeric(Type1Tokenizer tokenizer)
         {
             var token = tokenizer.GetNext();
 
@@ -612,7 +612,7 @@
                 throw new InvalidOperationException($"Expected to read a numeric token, instead got: {token}.");
             }
 
-            return token.AsDecimal();
+            return token.AsDouble();
         }
 
         private static bool ReadBoolean(Type1Tokenizer tokenizer)

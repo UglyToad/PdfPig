@@ -37,7 +37,7 @@
         /// <summary>
         /// The value of Italic Angle from the top dictionary or 0.
         /// </summary>
-        public decimal ItalicAngle => TopDictionary?.ItalicAngle ?? 0;
+        public double ItalicAngle => TopDictionary?.ItalicAngle ?? 0.0;
 
         internal CompactFontFormatFont(CompactFontFormatTopLevelDictionary topDictionary, CompactFontFormatPrivateDictionary privateDictionary,
             ICompactFontFormatCharset charset,
@@ -157,7 +157,7 @@
         /// <summary>
         /// Get the default width of x for the character.
         /// </summary>
-        protected virtual decimal GetDefaultWidthX(string characterName)
+        protected virtual double GetDefaultWidthX(string characterName)
         {
             return PrivateDictionary.DefaultWidthX;
         }
@@ -165,7 +165,7 @@
         /// <summary>
         /// Get the nominal width of x for the character.
         /// </summary>
-        protected virtual decimal GetNominalWidthX(string characterName)
+        protected virtual double GetNominalWidthX(string characterName)
         {
             return PrivateDictionary.NominalWidthX;
         }
@@ -197,7 +197,7 @@
             FdSelect = fdSelect;
         }
 
-        protected override decimal GetDefaultWidthX(string characterName)
+        protected override double GetDefaultWidthX(string characterName)
         {
             if (!TryGetPrivateDictionaryForCharacter(characterName, out var dictionary))
             {
@@ -207,7 +207,7 @@
             return dictionary.DefaultWidthX;
         }
 
-        protected override decimal GetNominalWidthX(string characterName)
+        protected override double GetNominalWidthX(string characterName)
         {
             if (!TryGetPrivateDictionaryForCharacter(characterName, out var dictionary))
             {

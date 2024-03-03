@@ -11,7 +11,7 @@
         /// <summary>
         /// Version of the Adobe Font Metrics specification used to generate this file.
         /// </summary>
-        public decimal AfmVersion { get; }
+        public double AfmVersion { get; }
 
         /// <summary>
         /// Any comments in the file.
@@ -103,38 +103,38 @@
         /// <summary>
         /// Usually the y-value of the top of capital 'H'.
         /// </summary>
-        public decimal CapHeight { get; }
+        public double CapHeight { get; }
 
         /// <summary>
         /// Usually the y-value of the top of lowercase 'x'.
         /// </summary>
-        public decimal XHeight { get; }
+        public double XHeight { get; }
 
         /// <summary>
         /// Usually the y-value of the top of lowercase 'd'.
         /// </summary>
-        public decimal Ascender { get; }
+        public double Ascender { get; }
 
         /// <summary>
         /// Usually the y-value of the bottom of lowercase 'p'.
         /// </summary>
-        public decimal Descender { get; }
+        public double Descender { get; }
 
         /// <summary>
         /// Distance from the baseline for underlining.
         /// </summary>
-        public decimal UnderlinePosition { get; }
+        public double UnderlinePosition { get; }
 
         /// <summary>
         /// Width of the line for underlining.
         /// </summary>
-        public decimal UnderlineThickness { get; }
+        public double UnderlineThickness { get; }
 
         /// <summary>
         /// Angle in degrees counter-clockwise from the vertical of the vertical linea.
         /// Zero for non-italic fonts.
         /// </summary>
-        public decimal ItalicAngle { get; }
+        public double ItalicAngle { get; }
 
         /// <summary>
         /// If present all characters have this width and height.
@@ -144,12 +144,12 @@
         /// <summary>
         /// Horizontal stem width.
         /// </summary>
-        public decimal HorizontalStemWidth { get; }
+        public double HorizontalStemWidth { get; }
 
         /// <summary>
         /// Vertical stem width.
         /// </summary>
-        public decimal VerticalStemWidth { get; }
+        public double VerticalStemWidth { get; }
 
         /// <summary>
         /// Metrics for the individual characters.
@@ -159,7 +159,7 @@
         /// <summary>
         /// Create a new <see cref="AdobeFontMetrics"/>.
         /// </summary>
-        public AdobeFontMetrics(decimal afmVersion, IReadOnlyList<string> comments, int metricSets, string fontName,
+        public AdobeFontMetrics(double afmVersion, IReadOnlyList<string> comments, int metricSets, string fontName,
             string fullName,
             string familyName,
             string weight,
@@ -174,16 +174,16 @@
             bool isBaseFont,
             AdobeFontMetricsVector vVector,
             bool isFixedV,
-            decimal capHeight,
-            decimal xHeight,
-            decimal ascender,
-            decimal descender,
-            decimal underlinePosition,
-            decimal underlineThickness,
-            decimal italicAngle,
+            double capHeight,
+            double xHeight,
+            double ascender,
+            double descender,
+            double underlinePosition,
+            double underlineThickness,
+            double italicAngle,
             AdobeFontMetricsCharacterSize characterWidth,
-            decimal horizontalStemWidth,
-            decimal verticalStemWidth,
+            double horizontalStemWidth,
+            double verticalStemWidth,
             IReadOnlyDictionary<string, AdobeFontMetricsIndividualCharacterMetric> characterMetrics)
         {
             AfmVersion = afmVersion;
