@@ -592,7 +592,7 @@ namespace UglyToad.PdfPig.Writer
             }
 
             const int desiredLeafSize = 25; // allow customization at some point?
-            var numLeafs = (int)Math.Ceiling(Decimal.Divide(Pages.Count, desiredLeafSize));
+            var numLeafs = (int)Math.Ceiling(Pages.Count / (double)desiredLeafSize);
 
             var leafRefs = new List<IndirectReferenceToken>();
             var leafChildren = new List<List<IndirectReferenceToken>>();
@@ -772,7 +772,7 @@ namespace UglyToad.PdfPig.Writer
                 {
                     var currentTreeDepth = (int)Math.Ceiling(Math.Log(pagesNodes.Count, desiredLeafSize));
                     var perBranch = (int)Math.Ceiling(Math.Pow(desiredLeafSize, currentTreeDepth - 1));
-                    var branches = (int)Math.Ceiling(decimal.Divide(pagesNodes.Count, (decimal)perBranch));
+                    var branches = (int)Math.Ceiling(pagesNodes.Count / (double)perBranch);
                     for (var i = 0; i < branches; i++)
                     {
                         var part = pagesNodes.Skip(i * perBranch).Take(perBranch).ToList();
@@ -837,10 +837,10 @@ namespace UglyToad.PdfPig.Writer
         {
             return new ArrayToken(new[]
             {
-                new NumericToken((decimal)rectangle.BottomLeft.X),
-                new NumericToken((decimal)rectangle.BottomLeft.Y),
-                new NumericToken((decimal)rectangle.TopRight.X),
-                new NumericToken((decimal)rectangle.TopRight.Y)
+                new NumericToken(rectangle.BottomLeft.X),
+                new NumericToken(rectangle.BottomLeft.Y),
+                new NumericToken(rectangle.TopRight.X),
+                new NumericToken(rectangle.TopRight.Y)
             });
         }
 

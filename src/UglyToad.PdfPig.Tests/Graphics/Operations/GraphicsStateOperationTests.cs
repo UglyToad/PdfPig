@@ -99,10 +99,6 @@
                 {
                     result[i] = 0.5;
                 }
-                else if (type == typeof(decimal))
-                {
-                    result[i] = 0.5m;
-                }
                 else if (type == typeof(int))
                 {
                     result[i] = 1;
@@ -110,13 +106,6 @@
                 else if (type == typeof(double[]) || type == typeof(IReadOnlyList<double>))
                 {
                     result[i] = new double[]
-                    {
-                        1, 0, 0, 1, 2, 5
-                    };
-                }
-                else if (type == typeof(decimal[]) || type == typeof(IReadOnlyList<decimal>))
-                {
-                    result[i] = new decimal[]
                     {
                         1, 0, 0, 1, 2, 5
                     };

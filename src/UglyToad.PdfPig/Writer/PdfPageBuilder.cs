@@ -380,7 +380,7 @@
         }
 
         /// <summary>
-        /// Sets the stroke color with the exact decimal value between 0 and 1 for any following operations to the RGB value. Use <see cref="ResetColor"/> to reset.
+        /// Sets the stroke color with the exact value between 0 and 1 for any following operations to the RGB value. Use <see cref="ResetColor"/> to reset.
         /// </summary>
         /// <param name="r">Red - 0 to 1</param>
         /// <param name="g">Green - 0 to 1</param>
@@ -1063,12 +1063,12 @@
         {
             if (value < 0)
             {
-                throw new ArgumentOutOfRangeException(argument, $"Provided decimal for RGB color was less than zero: {value}.");
+                throw new ArgumentOutOfRangeException(argument, $"Provided double for RGB color was less than zero: {value}.");
             }
 
             if (value > 1)
             {
-                throw new ArgumentOutOfRangeException(argument, $"Provided decimal for RGB color was greater than one: {value}.");
+                throw new ArgumentOutOfRangeException(argument, $"Provided double for RGB color was greater than one: {value}.");
             }
 
             return value;
