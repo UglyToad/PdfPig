@@ -82,5 +82,20 @@
             var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(path, ParsingOptions.LenientParsingOff));
             Assert.Equal("Expected name as dictionary key, instead got: Collaborative", ex.Message);
         }
+
+        [Fact]
+        public void CanReadDocumentInformationIndirectRef()
+        {
+            // Issue 706
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("EBOOK-DIETETYKA-SPORTOWA_copy_1.pdf");
+
+            using (var document = PdfDocument.Open(path))
+            {
+                var information = document.Information;
+                Assert.Equal("EBOOK", information.Title);
+                Assert.Equal("Pages", information.Creator);
+                Assert.Equal("D:20190306232856Z00'00'", information.CreationDate);
+            }
+        }
     }
 }
