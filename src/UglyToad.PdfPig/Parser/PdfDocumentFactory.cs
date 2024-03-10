@@ -75,7 +75,7 @@
                 SkipMissingFonts = false
             };
 
-            var tokenScanner = new CoreTokenScanner(inputBytes, true);
+            var tokenScanner = new CoreTokenScanner(inputBytes, true, useLenientParsing: options.UseLenientParsing);
 
             var passwords = new List<string>();
 
@@ -115,7 +115,7 @@
             // We're ok with this since our intent is to lazily load the cross reference table.
             // ReSharper disable once AccessToModifiedClosure
             var locationProvider = new ObjectLocationProvider(() => crossReferenceTable, inputBytes);
-            var pdfScanner = new PdfTokenScanner(inputBytes, locationProvider, filterProvider, NoOpEncryptionHandler.Instance);
+            var pdfScanner = new PdfTokenScanner(inputBytes, locationProvider, filterProvider, NoOpEncryptionHandler.Instance, parsingOptions);
 
             var crossReferenceStreamParser = new CrossReferenceStreamParser(filterProvider);
             var crossReferenceParser = new CrossReferenceParser(parsingOptions.Logger, xrefValidator, crossReferenceStreamParser);

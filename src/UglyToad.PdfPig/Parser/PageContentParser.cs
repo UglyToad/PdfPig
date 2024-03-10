@@ -28,7 +28,7 @@
             IInputBytes inputBytes,
             ILog log)
         {
-            var scanner = new CoreTokenScanner(inputBytes, false);
+            var scanner = new CoreTokenScanner(inputBytes, false, useLenientParsing: useLenientParsing);
 
             var precedingTokens = new List<IToken>();
             var graphicsStateOperations = new List<IGraphicsStateOperation>();

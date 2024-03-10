@@ -499,7 +499,7 @@ endobj";
             var input = StringBytesTestConverter.Convert(s, false);
 
             return new PdfTokenScanner(input.Bytes, locationProvider ?? new TestObjectLocationProvider(),
-                new TestFilterProvider(), NoOpEncryptionHandler.Instance);
+                new TestFilterProvider(), NoOpEncryptionHandler.Instance, ParsingOptions.LenientParsingOff);
         }
 
         private static IReadOnlyList<ObjectToken> ReadToEnd(PdfTokenScanner scanner)

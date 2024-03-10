@@ -25,6 +25,7 @@
         private readonly IObjectLocationProvider objectLocationProvider;
         private readonly ILookupFilterProvider filterProvider;
         private readonly CoreTokenScanner coreTokenScanner;
+        private readonly ParsingOptions parsingOptions;
 
         private IEncryptionHandler encryptionHandler;
         private bool isDisposed;
@@ -52,13 +53,14 @@
         public long Length => coreTokenScanner.Length;
 
         public PdfTokenScanner(IInputBytes inputBytes, IObjectLocationProvider objectLocationProvider, ILookupFilterProvider filterProvider,
-            IEncryptionHandler encryptionHandler)
+            IEncryptionHandler encryptionHandler, ParsingOptions parsingOptions)
         {
             this.inputBytes = inputBytes;
             this.objectLocationProvider = objectLocationProvider;
             this.filterProvider = filterProvider;
             this.encryptionHandler = encryptionHandler;
-            coreTokenScanner = new CoreTokenScanner(inputBytes, true);
+            this.parsingOptions = parsingOptions;
+            coreTokenScanner = new CoreTokenScanner(inputBytes, true, useLenientParsing: parsingOptions.UseLenientParsing);
         }
 
         public void UpdateEncryptionHandler(IEncryptionHandler newHandler)
@@ -815,7 +817,7 @@
             // Read the N integers
             var bytes = new ByteArrayInputBytes(stream.Decode(filterProvider, this));
 
-            var scanner = new CoreTokenScanner(bytes, true);
+            var scanner = new CoreTokenScanner(bytes, true, useLenientParsing: parsingOptions.UseLenientParsing);
 
             var objects = new List<Tuple<long, long>>();
 
