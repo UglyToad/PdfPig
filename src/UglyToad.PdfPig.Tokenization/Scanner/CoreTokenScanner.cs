@@ -27,7 +27,8 @@
         private readonly IInputBytes inputBytes;
         private readonly bool usePdfDocEncoding;
         private readonly List<(byte firstByte, ITokenizer tokenizer)> customTokenizers = new List<(byte, ITokenizer)>();
-        
+        private readonly bool useLenientParsing;
+
         /// <summary>
         /// The offset in the input data at which the <see cref="CurrentToken"/> starts.
         /// </summary>
@@ -52,15 +53,17 @@
             IInputBytes inputBytes,
             bool usePdfDocEncoding,
             ScannerScope scope = ScannerScope.None,
-            IReadOnlyDictionary<NameToken, IReadOnlyList<NameToken>> namedDictionaryRequiredKeys = null)
+            IReadOnlyDictionary<NameToken, IReadOnlyList<NameToken>> namedDictionaryRequiredKeys = null,
+            bool useLenientParsing = false)
         {
             this.inputBytes = inputBytes ?? throw new ArgumentNullException(nameof(inputBytes));
             this.usePdfDocEncoding = usePdfDocEncoding;
             this.stringTokenizer = new StringTokenizer(usePdfDocEncoding);
             this.arrayTokenizer = new ArrayTokenizer(usePdfDocEncoding);
-            this.dictionaryTokenizer = new DictionaryTokenizer(usePdfDocEncoding);
+            this.dictionaryTokenizer = new DictionaryTokenizer(usePdfDocEncoding, useLenientParsing: useLenientParsing);
             this.scope = scope;
             this.namedDictionaryRequiredKeys = namedDictionaryRequiredKeys;
+            this.useLenientParsing = useLenientParsing;
         }
 
         /// <inheritdoc />
@@ -140,7 +143,7 @@
                                     && CurrentToken is NameToken name
                                     && namedDictionaryRequiredKeys.TryGetValue(name, out var requiredKeys))
                                 {
-                                    tokenizer = new DictionaryTokenizer(usePdfDocEncoding, requiredKeys);
+                                    tokenizer = new DictionaryTokenizer(usePdfDocEncoding, requiredKeys, useLenientParsing);
                                 }
                             }
                             else

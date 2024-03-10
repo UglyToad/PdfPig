@@ -9,6 +9,7 @@
     {
         private readonly bool usePdfDocEncoding;
         private readonly IReadOnlyList<NameToken> requiredKeys;
+        private readonly bool useLenientParsing;
 
         public bool ReadsNextByte { get; } = false;
 
@@ -22,10 +23,12 @@
         /// Can be provided to recover from errors with missing dictionary end symbols if the
         /// set of keys expected in the dictionary are known.
         /// </param>
-        public DictionaryTokenizer(bool usePdfDocEncoding, IReadOnlyList<NameToken> requiredKeys = null)
+        /// <param name="useLenientParsing">Whether to use lenient parsing.</param>
+        public DictionaryTokenizer(bool usePdfDocEncoding, IReadOnlyList<NameToken> requiredKeys = null, bool useLenientParsing = false)
         {
             this.usePdfDocEncoding = usePdfDocEncoding;
             this.requiredKeys = requiredKeys;
+            this.useLenientParsing = useLenientParsing;
         }
 
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
@@ -80,7 +83,7 @@
                 return false;
             }
 
-            var coreScanner = new CoreTokenScanner(inputBytes, usePdfDocEncoding, ScannerScope.Dictionary);
+            var coreScanner = new CoreTokenScanner(inputBytes, usePdfDocEncoding, ScannerScope.Dictionary, useLenientParsing: useLenientParsing);
 
             var tokens = new List<IToken>();
 
@@ -96,7 +99,7 @@
                 // Has enough key/values for each required key
                 if (useRequiredKeys && tokens.Count >= requiredKeys.Count * 2)
                 {
-                    var proposedDictionary = ConvertToDictionary(tokens);
+                    var proposedDictionary = ConvertToDictionary(tokens, useLenientParsing);
 
                     var isAcceptable = true;
                     foreach (var key in requiredKeys)
@@ -118,15 +121,14 @@
                 }
             }
 
-            var dictionary = ConvertToDictionary(tokens);
+            var dictionary = ConvertToDictionary(tokens, useLenientParsing);
 
             token = new DictionaryToken(dictionary);
 
             return true;
-
         }
 
-        private static Dictionary<NameToken, IToken> ConvertToDictionary(List<IToken> tokens)
+        private static Dictionary<NameToken, IToken> ConvertToDictionary(List<IToken> tokens, bool useLenientParsing)
         {
             var result = new Dictionary<NameToken, IToken>();
 
@@ -140,6 +142,13 @@
                     if (token is NameToken name)
                     {
                         key = name;
+                        continue;
+                    }
+
+                    if (useLenientParsing)
+                    {
+                        // TODO - Log warning
+                        System.Diagnostics.Debug.WriteLine($"Expected name as dictionary key, instead got: " + token);
                         continue;
                     }
 
