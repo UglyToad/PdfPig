@@ -23,11 +23,20 @@ namespace UglyToad.PdfPig.AcroForms
         public static IEnumerable<AcroFieldBase> GetFields(this AcroFieldBase fieldBase)
         {
             if (fieldBase.FieldType != AcroFieldType.Unknown)
+            {
                 yield return fieldBase;
+            }
+
             if (fieldBase is AcroNonTerminalField nonTerminalField)
+            {
                 foreach (var child in nonTerminalField.Children)
+                {
                     foreach (var item in child.GetFields())
+                    {
                         yield return item;
+                    }
+                }
+            }
         }
 
         /// <summary>

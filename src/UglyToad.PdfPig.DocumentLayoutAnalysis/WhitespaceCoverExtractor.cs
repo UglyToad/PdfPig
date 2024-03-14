@@ -76,7 +76,10 @@
         public static IReadOnlyList<PdfRectangle> GetWhitespaces(IEnumerable<PdfRectangle> boundingboxes,
             double minWidth, double minHeight, int maxRectangleCount = 40, double whitespaceFuzziness = 0.15, int maxBoundQueueSize = 0)
         {
-            if (!boundingboxes.Any()) return Array.Empty<PdfRectangle>();
+            if (!boundingboxes.Any())
+            {
+                return Array.Empty<PdfRectangle>();
+            }
 
             var obstacles = new HashSet<PdfRectangle>(boundingboxes);
             var pageBound = GetBound(obstacles);
@@ -93,11 +96,11 @@
             HashSet<PdfRectangle> obstacles, double minWidth, double minHeight, int maxRectangleCount,
             double whitespaceFuzziness, int maxBoundQueueSize)
         {
-            QueueEntries queueEntries = new QueueEntries(maxBoundQueueSize);
+            var queueEntries = new QueueEntries(maxBoundQueueSize);
             queueEntries.Enqueue(new QueueEntry(bound, obstacles, whitespaceFuzziness));
 
-            HashSet<PdfRectangle> selected = new HashSet<PdfRectangle>();
-            HashSet<QueueEntry> holdList = new HashSet<QueueEntry>();
+            var selected = new HashSet<PdfRectangle>();
+            var holdList = new HashSet<QueueEntry>();
 
             while (queueEntries.Any())
             {
@@ -105,7 +108,10 @@
 
                 if (current.IsEmptyEnough(obstacles))
                 {
-                    if (selected.Any(c => Inside(c, current.Bound))) continue;
+                    if (selected.Any(c => Inside(c, current.Bound)))
+                    {
+                        continue;
+                    }
 
                     // A check was added which impeded the algorithm from accepting
                     // rectangles which were not adjacent to an already accepted 
@@ -121,7 +127,10 @@
 
                     selected.Add(current.Bound);
 
-                    if (selected.Count >= maxRectangleCount) return selected.ToList();
+                    if (selected.Count >= maxRectangleCount)
+                    {
+                        return selected.ToList();
+                    }
 
                     obstacles.Add(current.Bound);
 
@@ -138,7 +147,9 @@
                     foreach (var overlapping in queueEntries)
                     {
                         if (OverlapsHard(current.Bound, overlapping.Bound))
+                        {
                             overlapping.AddWhitespace(current.Bound);
+                        }
                     }
 
                     continue;
@@ -147,7 +158,7 @@
                 var pivot = current.GetPivot();
                 var b = current.Bound;
 
-                List<PdfRectangle> subRectangles = new List<PdfRectangle>();
+                var subRectangles = new List<PdfRectangle>();
 
                 var rRight = new PdfRectangle(pivot.Right, b.Bottom, b.Right, b.Top);
                 if (b.Right > pivot.Right && rRight.Height > minHeight && rRight.Width > minWidth)
@@ -292,13 +303,19 @@
 
             public bool IsEmptyEnough(IEnumerable<PdfRectangle> pageObstacles)
             {
-                if (IsEmptyEnough()) return true;
+                if (IsEmptyEnough())
+                {
+                    return true;
+                }
 
                 double sum = 0;
                 foreach (var obstacle in pageObstacles)
                 {
                     var intersect = Bound.Intersect(obstacle);
-                    if (!intersect.HasValue) return false;
+                    if (!intersect.HasValue)
+                    {
+                        return false;
+                    }
 
                     double minimumArea = MinimumOverlappingArea(obstacle, Bound, whitespaceFuzziness);
 
