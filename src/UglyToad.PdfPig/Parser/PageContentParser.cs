@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using Core;
     using Graphics;
     using Graphics.Operations;
@@ -12,7 +11,7 @@
     using Tokenization.Scanner;
     using Tokens;
 
-    internal class PageContentParser : IPageContentParser
+    internal sealed class PageContentParser : IPageContentParser
     {
         private readonly IGraphicsStateOperationFactory operationFactory;
         private readonly bool useLenientParsing;
@@ -101,7 +100,7 @@
 
                             // Replace the last end image operator with one containing the full set of data.
                             graphicsStateOperations.Remove(lastEndImage);
-                            graphicsStateOperations.Add(new EndInlineImage(lastEndImage.ImageData.Concat(missingData).ToArray()));
+                            graphicsStateOperations.Add(new EndInlineImage([.. lastEndImage.ImageData, .. missingData]));
                         }
 
                         lastEndImageOffset = actualEndImageOffset;
@@ -143,7 +142,7 @@
 
                                 var nextByteSet = scanner.RecoverFromIncorrectEndImage(lastEndImageOffset.Value);
                                 graphicsStateOperations.RemoveRange(index, graphicsStateOperations.Count - index);
-                                var newEndInlineImage = new EndInlineImage(prevEndInlineImage.ImageData.Concat(nextByteSet).ToList());
+                                var newEndInlineImage = new EndInlineImage([.. prevEndInlineImage.ImageData, .. nextByteSet]);
                                 graphicsStateOperations.Add(newEndInlineImage);
                                 lastEndImageOffset = scanner.CurrentPosition - 3;
                             }
@@ -196,7 +195,7 @@
                     return true;
                 }
 
-                if (last is EndText || last is BeginInlineImageData)
+                if (last is EndText or BeginInlineImageData)
                 {
                     break;
                 }
