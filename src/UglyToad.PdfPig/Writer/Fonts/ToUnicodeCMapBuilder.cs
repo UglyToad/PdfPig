@@ -64,8 +64,8 @@
                 memoryStream.WriteNumberText(2, DefToken);
                 memoryStream.WriteNumberText(1, "begincodespacerange");
 
-                TokenWriter.WriteToken(new HexToken(new[] {'0', '0'}), memoryStream);
-                TokenWriter.WriteToken(new HexToken(new[] {'F', 'F'}), memoryStream);
+                TokenWriter.WriteToken(new HexToken(['0', '0']), memoryStream);
+                TokenWriter.WriteToken(new HexToken(['F', 'F']), memoryStream);
 
                 memoryStream.WriteNewLine();
 
@@ -80,8 +80,8 @@
                     var unicodeInt = (ushort) keyValuePair.Key;
                     var low = (byte) (unicodeInt >> 0);
                     var high = (byte) (unicodeInt >> 8);
-                    var from = Hex.GetString(new[] {keyValuePair.Value});
-                    var to = Hex.GetString(new[] {high, low});
+                    var from = Hex.GetString([keyValuePair.Value]);
+                    var to = Hex.GetString([high, low]);
 
                     TokenWriter.WriteToken(new HexToken(from.ToCharArray()), memoryStream);
                     TokenWriter.WriteToken(new HexToken(to.ToCharArray()), memoryStream);
