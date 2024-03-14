@@ -26,18 +26,7 @@
         /// </summary>
         private const int EndOfFileSearchRange = 2048;
 
-        private static readonly byte[] StartXRefBytes =
-        {
-            (byte) 's',
-            (byte) 't',
-            (byte) 'a',
-            (byte) 'r',
-            (byte) 't',
-            (byte) 'x',
-            (byte) 'r',
-            (byte) 'e',
-            (byte) 'f'
-        };
+        private static ReadOnlySpan<byte> StartXRefBytes => "startxref"u8;
 
         public static long GetFirstCrossReferenceOffset(IInputBytes bytes, ISeekableTokenScanner scanner, bool isLenientParsing)
         {

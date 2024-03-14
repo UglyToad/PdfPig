@@ -15,15 +15,15 @@
         private const byte Offset = (byte)'!';
         private const byte EmptyCharacterPadding = (byte) 'u';
 
-        private static readonly byte[] EndOfDataBytes = { (byte)'~', (byte)'>' };
+        private static ReadOnlySpan<byte> EndOfDataBytes => [(byte)'~', (byte)'>'];
 
-        private static readonly int[] PowerByIndex = {
+        private static readonly int[] PowerByIndex = [
             1,
             85,
             85 * 85,
             85 * 85 * 85,
             85 * 85 * 85 *85
-        };
+        ];
 
         /// <inheritdoc />
         public bool IsSupported { get; } = true;
