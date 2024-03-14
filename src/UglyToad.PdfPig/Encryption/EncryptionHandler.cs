@@ -209,10 +209,10 @@
 
             if (encryptionDictionary.Revision >= 3)
             {
-                return encryptionDictionary.UserBytes.Take(16).SequenceEqual(output.Take(16));
+                return encryptionDictionary.UserBytes.AsSpan(0, 16).SequenceEqual(output.AsSpan(0, 16));
             }
 
-            return encryptionDictionary.UserBytes.SequenceEqual(output);
+            return encryptionDictionary.UserBytes.AsSpan().SequenceEqual(output);
         }
 
         private static bool IsUserPasswordRevision5And6(byte[] passwordBytes, EncryptionDictionary encryptionDictionary)
@@ -270,7 +270,7 @@
 
                 // 4. Create an RC4 encryption key using the first n bytes of the output from the final MD5 hash,
                 // where n is always 5 for revision 2 but for revision 3 or greater depends on the value of the encryption dictionary's Length entry. 
-                var key = hash.Take(length).ToArray();
+                var key = hash.AsSpan(0, length).ToArray();
 
                 if (encryptionDictionary.Revision == 2)
                 {
@@ -615,7 +615,7 @@
                     {
                         for (var i = 0; i < 50; i++)
                         {
-                            input = newMd5.ComputeHash(input.Take(n).ToArray());
+                            input = newMd5.ComputeHash(input.AsSpan(0, n).ToArray());
                         }
                     }
 
