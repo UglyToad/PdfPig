@@ -163,7 +163,7 @@
         {
             if (length == 0)
             {
-                return new CompactFontFormatData(EmptyArray<byte>.Instance);
+                return new CompactFontFormatData(Array.Empty<byte>());
             }
 
             if (startLocation > dataBytes.Count - 1 || startLocation + length > dataBytes.Count)

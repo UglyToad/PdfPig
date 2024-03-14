@@ -59,7 +59,7 @@
             {
                 pageNumber.Increment();
 
-                return new PageTreeNode(nodeDictionaryInput, referenceInput, true, pageNumber.PageCount).WithChildren(EmptyArray<PageTreeNode>.Instance);
+                return new PageTreeNode(nodeDictionaryInput, referenceInput, true, pageNumber.PageCount).WithChildren(Array.Empty<PageTreeNode>());
             }
 
             //If we got here, we have to iterate till we manage to exit
@@ -138,7 +138,7 @@
                         throw new PdfDocumentFormatException($"Pages node in the document pages tree did not define a kids array: {current.nodeDictionary}.");
                     }
 
-                    kids = new ArrayToken(EmptyArray<IToken>.Instance);
+                    kids = new ArrayToken(Array.Empty<IToken>());
                 }
 
                 foreach (var kid in kids.Data)
@@ -158,7 +158,7 @@
                     if (isChildPage)
                     {
                         var kidPageNode =
-                            new PageTreeNode(kidDictionaryToken, kidRef.Data, true, pageNumber.PageCount).WithChildren(EmptyArray<PageTreeNode>.Instance);
+                            new PageTreeNode(kidDictionaryToken, kidRef.Data, true, pageNumber.PageCount).WithChildren(Array.Empty<PageTreeNode>());
                         current.nodeChildren.Add(kidPageNode);
                     }
                     else

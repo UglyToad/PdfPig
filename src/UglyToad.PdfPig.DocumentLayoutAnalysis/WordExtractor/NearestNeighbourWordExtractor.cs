@@ -46,7 +46,7 @@
         {
             if (letters == null || letters.Count == 0)
             {
-                return EmptyArray<Word>.Instance;
+                return Array.Empty<Word>();
             }
 
             if (options.GroupByOrientation)

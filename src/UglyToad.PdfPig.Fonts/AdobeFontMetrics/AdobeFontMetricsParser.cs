@@ -326,9 +326,9 @@ namespace UglyToad.PdfPig.Fonts.AdobeFontMetrics
         /// </summary>
         public const string KernPairKpy = "KPY";
 
-        private static readonly char[] IndividualCharmetricsSplit = {';'};
+        private static readonly char[] IndividualCharmetricsSplit = [';'];
 
-        private static readonly char[] CharmetricsKeySplit = {' '};
+        private static readonly char[] CharmetricsKeySplit = [' '];
         
         /// <summary>
         /// Parse the font metrics from the input bytes.

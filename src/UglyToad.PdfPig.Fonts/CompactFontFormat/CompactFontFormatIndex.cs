@@ -1,8 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CompactFontFormat
 {
+    using System;
     using System.Collections;
     using System.Collections.Generic;
-    using Core;
 
     internal class CompactFontFormatIndex : IReadOnlyList<IReadOnlyList<byte>>
     {
@@ -16,7 +16,7 @@
 
         public CompactFontFormatIndex(byte[][] bytes)
         {
-            this.bytes = bytes ?? EmptyArray<IReadOnlyList<byte>>.Instance;
+            this.bytes = bytes ?? Array.Empty<IReadOnlyList<byte>>();
         }
         
         public IEnumerator<IReadOnlyList<byte>> GetEnumerator()

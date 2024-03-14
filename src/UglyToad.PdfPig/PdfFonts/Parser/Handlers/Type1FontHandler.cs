@@ -65,7 +65,7 @@
             {
                 firstCharacter = 0;
                 lastCharacter = 0;
-                widths = EmptyArray<double>.Instance;
+                widths = [];
             }
 
             if (!dictionary.TryGet(NameToken.FontDescriptor, out var _))

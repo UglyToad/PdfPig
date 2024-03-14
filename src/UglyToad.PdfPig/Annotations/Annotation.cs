@@ -121,7 +121,7 @@
             ModifiedDate = modifiedDate;
             Flags = flags;
             Border = border;
-            QuadPoints = quadPoints ?? EmptyArray<QuadPointsQuadrilateral>.Instance;
+            QuadPoints = quadPoints ?? Array.Empty<QuadPointsQuadrilateral>();
             Action = action;
             this.normalAppearanceStream = normalAppearanceStream;
             this.rollOverAppearanceStream = rollOverAppearanceStream;

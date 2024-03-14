@@ -44,7 +44,7 @@
         {
             if (words?.Any() != true)
             {
-                return EmptyArray<TextBlock>.Instance;
+                return Array.Empty<TextBlock>();
             }
 
             return new List<TextBlock>() { new TextBlock(new XYLeaf(words).GetLines(options.WordSeparator), options.LineSeparator) };

@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Parser
 {
+    using System;
     using System.Collections.Generic;
     using Annotations;
     using Content;
@@ -42,11 +43,12 @@
 
             if (operations == null || operations.Count == 0)
             {
-                PageContent emptyContent = new PageContent(EmptyArray<IGraphicsStateOperation>.Instance,
-                    EmptyArray<Letter>.Instance,
-                    EmptyArray<PdfPath>.Instance,
-                    EmptyArray<Union<XObjectContentRecord, InlineImage>>.Instance,
-                    EmptyArray<MarkedContentElement>.Instance,
+                PageContent emptyContent = new PageContent(
+                    Array.Empty<IGraphicsStateOperation>(),
+                    Array.Empty<Letter>(),
+                    Array.Empty<PdfPath>(),
+                    Array.Empty<Union<XObjectContentRecord, InlineImage>>(),
+                    Array.Empty<MarkedContentElement>(),
                     PdfScanner,
                     FilterProvider,
                     ResourceStore);

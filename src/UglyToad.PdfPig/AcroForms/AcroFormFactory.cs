@@ -19,14 +19,14 @@
     /// </summary>
     internal class AcroFormFactory
     {
-        private static readonly HashSet<NameToken> InheritableFields = new HashSet<NameToken>
-        {
+        private static readonly HashSet<NameToken> InheritableFields =
+        [
             NameToken.Ft,
             NameToken.Ff,
             NameToken.V,
             NameToken.Dv,
             NameToken.Aa
-        };
+        ];
 
         private readonly IPdfTokenScanner tokenScanner;
         private readonly ILookupFilterProvider filterProvider;
@@ -338,16 +338,16 @@
             int? pageNumber,
             PdfRectangle? bounds)
         {
-            var selectedOptions = EmptyArray<string>.Instance;
+            var selectedOptions = Array.Empty<string>();
             if (fieldDictionary.TryGet(NameToken.V, out var valueToken))
             {
                 if (DirectObjectFinder.TryGet(valueToken, tokenScanner, out StringToken valueString))
                 {
-                    selectedOptions = new[] {valueString.Data};
+                    selectedOptions = [valueString.Data];
                 }
                 else if (DirectObjectFinder.TryGet(valueToken, tokenScanner, out HexToken valueHex))
                 {
-                    selectedOptions = new[] {valueHex.Data};
+                    selectedOptions = [valueHex.Data];
 
                 }
                 else if (DirectObjectFinder.TryGet(valueToken, tokenScanner, out ArrayToken valueArray))

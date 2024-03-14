@@ -12,7 +12,7 @@
     internal class AsciiHexDecodeFilter : IFilter
     {
         private static readonly short[] ReverseHex = 
-        {
+        [
             /*   0 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             /*  10 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             /*  20 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -24,7 +24,7 @@
             /*  80 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             /*  90 */  -1, -1, -1, -1, -1, -1, -1, 10, 11, 12,
             /* 100 */  13, 14, 15
-        };
+        ];
 
         /// <inheritdoc />
         public bool IsSupported { get; } = true;

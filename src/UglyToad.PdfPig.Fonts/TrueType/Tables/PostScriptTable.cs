@@ -160,11 +160,11 @@
             }
             else if (Math.Abs(formatType - 3) < float.Epsilon)
             {
-                glyphNames = EmptyArray<string>.Instance;
+                glyphNames = [];
             }
             else
             {
-                glyphNames = EmptyArray<string>.Instance;
+                glyphNames = [];
             }
 
             return glyphNames;

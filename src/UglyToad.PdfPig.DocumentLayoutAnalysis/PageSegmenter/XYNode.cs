@@ -49,7 +49,7 @@
             }
             else
             {
-                Children = EmptyArray<XYNode>.Instance;
+                Children = [];
             }
         }
 

@@ -13,10 +13,10 @@
     using Util;
     using Util.JetBrains.Annotations;
 
-    internal class EncryptionHandler : IEncryptionHandler
+    internal sealed class EncryptionHandler : IEncryptionHandler
     {
         private static readonly byte[] PaddingBytes =
-        {
+        [
             0x28, 0xBF, 0x4E, 0x5E,
             0x4E, 0x75, 0x8A, 0x41,
             0x64, 0x00, 0x4E, 0x56,
@@ -25,7 +25,7 @@
             0xD0, 0x68, 0x3E, 0x80,
             0x2F, 0x0C, 0xA9, 0xFE,
             0x64, 0x53, 0x69, 0x7A
-        };
+        ];
 
         private readonly HashSet<IndirectReference> previouslyDecrypted = new HashSet<IndirectReference>();
 
@@ -43,7 +43,7 @@
         {
             this.encryptionDictionary = encryptionDictionary;
 
-            passwords = passwords ?? new[] { string.Empty };
+            passwords ??= new[] { string.Empty };
 
             if (!passwords.Contains(string.Empty))
             {
@@ -75,7 +75,7 @@
             }
             else
             {
-                documentIdBytes = EmptyArray<byte>.Instance;
+                documentIdBytes = [];
             }
 
             if (encryptionDictionary == null)
@@ -179,7 +179,7 @@
 
                     // 3.   Pass the first element of the file identifier array to the hash function and finish the hash. 
                     UpdateMd5(md5, documentIdBytes);
-                    md5.TransformFinalBlock(EmptyArray<byte>.Instance, 0, 0);
+                    md5.TransformFinalBlock([], 0, 0);
 
                     var result = md5.Hash;
 
@@ -597,18 +597,18 @@
                 // with the value 0xFFFFFFFF to the MD5 hash function.
                 if (revision >= 4 && !encryptionDictionary.EncryptMetadata)
                 {
-                    UpdateMd5(md5, new byte[] { 0xFF, 0xFF, 0xFF, 0xFF });
+                    UpdateMd5(md5, [0xFF, 0xFF, 0xFF, 0xFF]);
                 }
 
                 // 7. Do the following 50 times: Take the output from the previous MD5 hash and
                 // pass the first n bytes of the output as input into a new MD5 hash,
                 // where n is the number of bytes of the encryption key as defined by the value
                 // of the encryption dictionary's Length entry. 
-                if (revision == 3 || revision == 4)
+                if (revision is 3 or 4)
                 {
                     var n = length;
 
-                    md5.TransformFinalBlock(EmptyArray<byte>.Instance, 0, 0);
+                    md5.TransformFinalBlock([], 0, 0);
 
                     var input = md5.Hash;
                     using (var newMd5 = MD5.Create())
@@ -627,7 +627,7 @@
                 }
                 else
                 {
-                    md5.TransformFinalBlock(EmptyArray<byte>.Instance, 0, 0);
+                    md5.TransformFinalBlock([], 0, 0);
 
                     var result = new byte[length];
 
@@ -722,7 +722,7 @@
                 }
                 else
                 {
-                    sha.TransformFinalBlock(EmptyArray<byte>.Instance, 0, 0);
+                    sha.TransformFinalBlock([], 0, 0);
                 }
 
                 return sha.Hash;
@@ -781,7 +781,7 @@
             // There are some details here https://web.archive.org/web/20180311160224/esec-lab.sogeti.com/posts/2011/09/14/the-undocumented-password-validation-algorithm-of-adobe-reader-x.html
             if (vector == null)
             {
-                vector = EmptyArray<byte>.Instance;
+                vector = [];
             }
             else if (vector.Length > 0 && vector.Length < 48)
             {
@@ -802,7 +802,7 @@
                 sha256.TransformBlock(password, 0, password.Length, null, 0);
                 sha256.TransformBlock(salt, 0, salt.Length, null, 0);
                 sha256.TransformBlock(vector, 0, vector.Length, null, 0);
-                sha256.TransformFinalBlock(EmptyArray<byte>.Instance, 0, 0);
+                sha256.TransformFinalBlock([], 0, 0);
                 input = sha256.Hash;
             }
 

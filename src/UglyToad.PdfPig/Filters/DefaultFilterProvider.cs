@@ -64,7 +64,7 @@
             var token = dictionary.GetObjectOrDefault(NameToken.Filter, NameToken.F);
             if (token == null)
             {
-                return EmptyArray<IFilter>.Instance;
+                return Array.Empty<IFilter>();
             }
 
             switch (token)

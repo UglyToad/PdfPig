@@ -973,7 +973,7 @@
         internal override double[] Process(params double[] values)
         {
             var (R, G, B) = colorSpaceTransformer.TransformToRGB((values[0], values[1], values[2]));
-            return new double[] { R, G, B };
+            return [R, G, B];
         }
 
         /// <inheritdoc/>

@@ -116,7 +116,7 @@
             var decodedBytes = supportsFilters ? new Lazy<IReadOnlyList<byte>>(() => streamToken.Decode(filterProvider, pdfScanner))
                 : null;
 
-            var decode = EmptyArray<double>.Instance;
+            var decode = Array.Empty<double>();
 
             if (dictionary.TryGet(NameToken.Decode, pdfScanner, out ArrayToken decodeArrayToken))
             {

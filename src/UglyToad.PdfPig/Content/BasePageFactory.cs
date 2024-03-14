@@ -183,7 +183,7 @@
 
             if (contentBytes == null || contentBytes.Count == 0)
             {
-                operations = EmptyArray<IGraphicsStateOperation>.Instance;
+                operations = Array.Empty<IGraphicsStateOperation>();
             }
             else
             {
