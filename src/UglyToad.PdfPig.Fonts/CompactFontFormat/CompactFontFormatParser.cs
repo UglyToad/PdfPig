@@ -85,7 +85,7 @@
 
             if (index.Length == 0)
             {
-                return EmptyArray<string>.Instance;
+                return [];
             }
 
             var count = index.Length - 1;

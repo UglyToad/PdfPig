@@ -166,7 +166,7 @@ namespace UglyToad.PdfPig.Fonts.SystemFonts
                 return values;
             }
 
-            return EmptyArray<string>.Instance;
+            return Array.Empty<string>();
         }
 
         private TrueTypeFont GetTrueTypeFontNamed(string name)

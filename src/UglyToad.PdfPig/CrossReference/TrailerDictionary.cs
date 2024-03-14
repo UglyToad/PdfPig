@@ -96,7 +96,7 @@
             }
             else
             {
-                Identifier = EmptyArray<IDataToken<string>>.Instance;
+                Identifier = Array.Empty<IDataToken<string>>();
             }
 
             if (dictionary.TryGet(NameToken.Encrypt, out var encryptionToken))

@@ -98,7 +98,7 @@
 
             var filters = filterProvider.GetNamedFilters(filterNames);
 
-            var decodeRaw = GetByKeys<ArrayToken>(NameToken.Decode, NameToken.D, false) ?? new ArrayToken(EmptyArray<IToken>.Instance);
+            var decodeRaw = GetByKeys<ArrayToken>(NameToken.Decode, NameToken.D, false) ?? new ArrayToken(Array.Empty<IToken>());
 
             var decode = decodeRaw.Data.OfType<NumericToken>().Select(x => x.Double).ToArray();
 

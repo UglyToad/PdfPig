@@ -76,7 +76,7 @@
         public static IReadOnlyList<PdfRectangle> GetWhitespaces(IEnumerable<PdfRectangle> boundingboxes,
             double minWidth, double minHeight, int maxRectangleCount = 40, double whitespaceFuzziness = 0.15, int maxBoundQueueSize = 0)
         {
-            if (!boundingboxes.Any()) return EmptyArray<PdfRectangle>.Instance;
+            if (!boundingboxes.Any()) return Array.Empty<PdfRectangle>();
 
             var obstacles = new HashSet<PdfRectangle>(boundingboxes);
             var pageBound = GetBound(obstacles);

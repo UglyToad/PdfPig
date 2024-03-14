@@ -516,15 +516,15 @@
             outputStream.Write(StreamEnd, 0, StreamEnd.Length);
         }
 
-        private static readonly int[] EscapeNeeded = new int[]
-        {
+        private static readonly int[] EscapeNeeded =
+        [
             '\r', '\n', '\t', '\b', '\f', '\\'
-        };
+        ];
 
-        private static readonly int[] Escaped = new int[]
-        {
+        private static readonly int[] Escaped =
+        [
             'r', 'n', 't', 'b', 'f', '\\'
-        };
+        ];
 
         /// <summary>
         /// Write string to the stream, with whitespace at the end

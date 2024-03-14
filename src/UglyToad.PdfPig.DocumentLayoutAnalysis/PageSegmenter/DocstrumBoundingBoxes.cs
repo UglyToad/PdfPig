@@ -50,7 +50,7 @@
         {
             if (words?.Any() != true)
             {
-                return EmptyArray<TextBlock>.Instance;
+                return Array.Empty<TextBlock>();
             }
 
             return GetBlocks(words.ToList(),
@@ -95,7 +95,7 @@
             words = words.Where(w => !string.IsNullOrWhiteSpace(w.Text)).ToList();
             if (words.Count == 0)
             {
-                return EmptyArray<TextBlock>.Instance;
+                return Array.Empty<TextBlock>();
             }
 
             // 1. Estimate within line and between line spacing

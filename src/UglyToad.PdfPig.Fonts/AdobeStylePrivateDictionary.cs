@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using Core;
 
     /// <summary>
     /// Holds common properties between Adobe Type 1 and Compact Font Format private dictionaries.
@@ -144,17 +143,17 @@
                 throw new ArgumentNullException(nameof(builder));
             }
 
-            BlueValues = builder.BlueValues ?? EmptyArray<int>.Instance;
-            OtherBlues = builder.OtherBlues ?? EmptyArray<int>.Instance;
-            FamilyBlues = builder.FamilyBlues ?? EmptyArray<int>.Instance;
-            FamilyOtherBlues = builder.FamilyOtherBlues ?? EmptyArray<int>.Instance;
+            BlueValues = builder.BlueValues ?? Array.Empty<int>();
+            OtherBlues = builder.OtherBlues ?? Array.Empty<int>();
+            FamilyBlues = builder.FamilyBlues ?? Array.Empty<int>();
+            FamilyOtherBlues = builder.FamilyOtherBlues ?? Array.Empty<int>();
             BlueScale = builder.BlueScale ?? DefaultBlueScale;
             BlueFuzz = builder.BlueFuzz ?? DefaultBlueFuzz;
             BlueShift = builder.BlueShift ?? DefaultBlueShift;
             StandardHorizontalWidth = builder.StandardHorizontalWidth;
             StandardVerticalWidth = builder.StandardVerticalWidth;
-            StemSnapHorizontalWidths = builder.StemSnapHorizontalWidths ?? EmptyArray<double>.Instance;
-            StemSnapVerticalWidths = builder.StemSnapVerticalWidths ?? EmptyArray<double>.Instance;
+            StemSnapHorizontalWidths = builder.StemSnapHorizontalWidths ?? Array.Empty<double>();
+            StemSnapVerticalWidths = builder.StemSnapVerticalWidths ?? Array.Empty<double>();
             ForceBold = builder.ForceBold ?? false;
             LanguageGroup = builder.LanguageGroup ?? DefaultLanguageGroup;
             ExpansionFactor = builder.ExpansionFactor ?? DefaultExpansionFactor;

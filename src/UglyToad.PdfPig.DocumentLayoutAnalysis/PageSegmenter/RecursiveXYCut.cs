@@ -48,7 +48,7 @@
         {
             if (words?.Any() != true)
             {
-                return EmptyArray<TextBlock>.Instance;
+                return Array.Empty<TextBlock>();
             }
 
             return GetBlocks(words,
@@ -77,7 +77,7 @@
             words = words.Where(w => !string.IsNullOrWhiteSpace(w.Text));
             if (!words.Any())
             {
-                return EmptyArray<TextBlock>.Instance;
+                return Array.Empty<TextBlock>();
             }
 
             XYLeaf root = new XYLeaf(words); // Create a root node.

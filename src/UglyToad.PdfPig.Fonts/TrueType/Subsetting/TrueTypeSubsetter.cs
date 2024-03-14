@@ -263,7 +263,7 @@
 
         private static HorizontalMetricsTable GetHorizontalMetricsTable(DirectoryEntry entry, TrueTypeSubsetGlyphTable glyphTable)
         {
-            return new HorizontalMetricsTable(entry.DummyHeader, glyphTable.HorizontalMetrics, EmptyArray<short>.Instance);
+            return new HorizontalMetricsTable(entry.DummyHeader, glyphTable.HorizontalMetrics, Array.Empty<short>());
         }
 
         private static byte[] GetRawInputTableBytes(byte[] font, DirectoryEntry entry)

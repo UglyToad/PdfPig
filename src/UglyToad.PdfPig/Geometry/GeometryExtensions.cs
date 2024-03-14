@@ -267,7 +267,7 @@
 
             if (points.Count() < 3) return points;
 
-            double polarAngle(PdfPoint point1, PdfPoint point2)
+            static double polarAngle(in PdfPoint point1, in PdfPoint point2)
             {
                 // This is used for grouping, we could use Math.Round()
                 return Math.Atan2(point2.Y - point1.Y, point2.X - point1.X) % Math.PI;
@@ -347,7 +347,7 @@
             }
             else
             {
-                double area(PdfPoint p1, PdfPoint p2, PdfPoint p3)
+                static double area(in PdfPoint p1, PdfPoint p2, PdfPoint p3)
                 {
                     return Math.Abs((p2.X * p1.Y - p1.X * p2.Y) + (p3.X * p2.Y - p2.X * p3.Y) + (p1.X * p3.Y - p3.X * p1.Y)) / 2.0;
                 }
@@ -881,12 +881,12 @@
         private static PdfPoint[] Intersect(BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
         {
             var ts = IntersectT(bezierCurve, p1, p2);
-            if (ts == null || ts.Length == 0) return EmptyArray<PdfPoint>.Instance;
+            if (ts == null || ts.Length == 0) return [];
 
             List<PdfPoint> points = new List<PdfPoint>();
             foreach (var t in ts)
             {
-                PdfPoint point = new PdfPoint(
+                var point = new PdfPoint(
                     BezierCurve.ValueWithT(bezierCurve.StartPoint.X,
                                            bezierCurve.FirstControlPoint.X,
                                            bezierCurve.SecondControlPoint.X,
@@ -1247,9 +1247,9 @@
                     double OneOverTwiceB = 1 / (2.0 * b);
                     double x = (-c + sqrtDetQ) * OneOverTwiceB;
                     double x0 = (-c - sqrtDetQ) * OneOverTwiceB;
-                    return new double[] { x, x0 };
+                    return [x, x0];
                 }
-                return EmptyArray<double>.Instance; // no real roots
+                return []; // no real roots
             }
 
             double aSquared = a * a;
@@ -1298,7 +1298,7 @@
                 x3 = vietTrigonometricSolution(p, q, 2) - bOver3a;
             }
 
-            return new[] {x1, x2, x3};
+            return [x1, x2, x3];
         }
 
         internal static string ToSvg(this PdfSubpath p, double height)

@@ -14,10 +14,7 @@
 
     internal class PdfTokenScanner : IPdfTokenScanner
     {
-        private static readonly byte[] EndstreamBytes =
-        {
-            (byte)'e', (byte)'n', (byte)'d', (byte)'s', (byte)'t', (byte)'r', (byte)'e', (byte)'a', (byte)'m'
-        };
+        private static ReadOnlySpan<byte> EndstreamBytes => "endstream"u8;
 
         private static readonly Regex EndsWithNumberRegex = new Regex(@"(?<=^[^\s\d]+)\d+$");
 
@@ -38,7 +35,7 @@
         /// Stores tokens encountered between obj - endobj markers for each <see cref="MoveNext"/> call.
         /// Cleared after each operation.
         /// </summary>
-        private readonly List<IToken> readTokens = new List<IToken>();
+        private readonly List<IToken> readTokens = [];
 
         // Store the previous 3 tokens and their positions so we can backtrack to find object numbers and stream dictionaries.
         private readonly long[] previousTokenPositions = new long[3];

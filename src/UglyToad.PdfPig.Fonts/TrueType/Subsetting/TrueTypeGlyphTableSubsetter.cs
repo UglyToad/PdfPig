@@ -396,7 +396,7 @@
                 Offset = offset;
                 Type = type;
                 DataLength = dataLength;
-                DependencyIndices = dependentIndices ?? EmptyArray<CompositeGlyphIndexReference>.Instance;
+                DependencyIndices = dependentIndices ?? Array.Empty<CompositeGlyphIndexReference>();
             }
 
             public GlyphRecord(int offset)
@@ -404,7 +404,7 @@
                 Offset = offset;
                 Type = GlyphType.Empty;
                 DataLength = 0;
-                DependencyIndices = EmptyArray<CompositeGlyphIndexReference>.Instance;
+                DependencyIndices = Array.Empty<CompositeGlyphIndexReference>();
             }
         }
 

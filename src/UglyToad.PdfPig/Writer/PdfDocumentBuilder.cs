@@ -835,13 +835,13 @@ namespace UglyToad.PdfPig.Writer
 
         private static ArrayToken RectangleToArray(PdfRectangle rectangle)
         {
-            return new ArrayToken(new[]
-            {
+            return new ArrayToken(
+            [
                 new NumericToken(rectangle.BottomLeft.X),
                 new NumericToken(rectangle.BottomLeft.Y),
                 new NumericToken(rectangle.TopRight.X),
                 new NumericToken(rectangle.TopRight.Y)
-            });
+            ]);
         }
 
         private IndirectReferenceToken[] CreateBookmarkTree(IReadOnlyList<BookmarkNode> nodes, Dictionary<int, IndirectReferenceToken> pageReferences, IndirectReferenceToken parent)
@@ -960,27 +960,27 @@ namespace UglyToad.PdfPig.Writer
                     });
 
                 case ExplicitDestinationType.FitBoundingBox:
-                    return new ArrayToken(new IToken[]
-                    {
+                    return new ArrayToken(
+                    [
                         page,
                         NameToken.FitB,
-                    });
+                    ]);
 
                 case ExplicitDestinationType.FitBoundingBoxHorizontally:
-                    return new ArrayToken(new IToken[]
-                    {
+                    return new ArrayToken(
+                    [
                         page,
                         NameToken.FitBH,
                         new NumericToken(destination.Coordinates.Left ?? 0)
-                    });
+                    ]);
 
                 case ExplicitDestinationType.FitBoundingBoxVertically:
-                    return new ArrayToken(new IToken[]
-                    {
+                    return new ArrayToken(
+                    [
                         page,
                         NameToken.FitBV,
                         new NumericToken(destination.Coordinates.Left ?? 0)
-                    });
+                    ]);
 
                 default:
                     throw new NotSupportedException($"{destination.Type} is not a supported bookmark destination type.");

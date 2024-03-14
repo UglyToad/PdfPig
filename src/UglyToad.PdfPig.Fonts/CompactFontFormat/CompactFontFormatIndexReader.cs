@@ -44,7 +44,7 @@
 
             if (count == 0)
             {
-                return EmptyArray<int>.Instance;
+                return [];
             }
 
             var offsetSize = data.ReadOffsize();

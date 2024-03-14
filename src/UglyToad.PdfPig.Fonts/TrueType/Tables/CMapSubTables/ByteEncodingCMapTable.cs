@@ -36,7 +36,7 @@
 
             if (length == 0)
             {
-                return new ByteEncodingCMapTable(platformId, encodingId, language, EmptyArray<byte>.Instance);
+                return new ByteEncodingCMapTable(platformId, encodingId, language, []);
             }
 
             var glyphMapping = data.ReadByteArray(length - (SizeOfShort * 3));

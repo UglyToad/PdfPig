@@ -165,9 +165,7 @@
         {
             if (contourCount == 0)
             {
-                return new Glyph(true, EmptyArray<byte>.Instance, EmptyArray<ushort>.Instance,
-                    EmptyArray<GlyphPoint>.Instance,
-                    new PdfRectangle(0, 0, 0, 0));
+                return new Glyph(true, [], [], [], new PdfRectangle(0, 0, 0, 0));
             }
 
             var endPointsOfContours = data.ReadUnsignedShortArray(contourCount);

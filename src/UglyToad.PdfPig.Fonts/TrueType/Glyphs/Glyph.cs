@@ -121,7 +121,7 @@
         #region Subpaths
         public bool TryGetGlyphPath(out IReadOnlyList<PdfSubpath> subpaths)
         {
-            subpaths = EmptyArray<PdfSubpath>.Instance;
+            subpaths = Array.Empty<PdfSubpath>();
             if (Points == null)
             {
                 return false;

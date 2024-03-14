@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
     using Core;
+    using System;
     using System.Collections.Generic;
     using Tokens;
     using UglyToad.PdfPig.Graphics;
@@ -92,7 +93,7 @@
             SubType = subType;
             AttributeOwners = attributeOwners;
             BoundingBox = boundingBox;
-            Attached = attached ?? EmptyArray<NameToken>.Instance;
+            Attached = attached ?? Array.Empty<NameToken>();
         }
 
         private bool IsAttached(NameToken edge)
