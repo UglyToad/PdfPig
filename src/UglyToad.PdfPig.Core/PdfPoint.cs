@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Core
 {
+    using System;
     using System.Diagnostics;
     using System.Globalization;
 
@@ -97,7 +98,7 @@
         /// </summary>
         public override int GetHashCode()
         {
-            return (X, Y).GetHashCode();
+            return HashCode.Combine(X, Y);
         }
 
         /// <inheritdoc />

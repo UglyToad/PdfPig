@@ -535,7 +535,7 @@
             /// <inheritdoc />
             public override int GetHashCode()
             {
-                return (From, To).GetHashCode();
+                return HashCode.Combine(From, To);
             }
         }
 
@@ -762,7 +762,7 @@
             /// <inheritdoc />
             public override int GetHashCode()
             {
-                return (StartPoint, FirstControlPoint, SecondControlPoint, EndPoint).GetHashCode();
+                return HashCode.Combine(StartPoint, FirstControlPoint, SecondControlPoint, EndPoint);
             }
         }
 

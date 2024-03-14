@@ -85,7 +85,7 @@
         /// </summary>
         public override int GetHashCode()
         {
-            return (Point1, Point2).GetHashCode();
+            return HashCode.Combine(Point1, Point2);
         }
     }
 }
