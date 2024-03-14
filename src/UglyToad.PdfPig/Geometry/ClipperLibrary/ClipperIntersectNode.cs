@@ -85,7 +85,10 @@ namespace UglyToad.PdfPig.Geometry.ClipperLibrary
         public int Compare(ClipperIntersectNode node1, ClipperIntersectNode node2)
         {
             long i = node2.Pt.Y - node1.Pt.Y;
-            if (i > 0) return 1;
+            if (i > 0)
+            {
+                return 1;
+            }
 
             return i < 0 ? -1 : 0;
         }
