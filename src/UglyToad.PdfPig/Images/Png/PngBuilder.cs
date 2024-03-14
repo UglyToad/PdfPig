@@ -106,12 +106,12 @@
 
             var imageData = Compress(rawData);
             stream.WriteChunkLength(imageData.Length);
-            stream.WriteChunkHeader(Encoding.ASCII.GetBytes("IDAT"));
+            stream.WriteChunkHeader("IDAT"u8.ToArray());
             stream.Write(imageData, 0, imageData.Length);
             stream.WriteCrc();
 
             stream.WriteChunkLength(0);
-            stream.WriteChunkHeader(Encoding.ASCII.GetBytes("IEND"));
+            stream.WriteChunkHeader("IEND"u8.ToArray());
             stream.WriteCrc();
         }
 
