@@ -28,20 +28,15 @@
     {
         public static RenderingIntent ToRenderingIntent(this string s)
         {
-            switch (s)
-            {
-                case "AbsoluteColorimetric":
-                    return RenderingIntent.AbsoluteColorimetric;
-                   case "RelativeColorimetric":
-                    return RenderingIntent.RelativeColorimetric;
-                case "Saturation":
-                    return RenderingIntent.Saturation;
-                case "Perceptual":
-                    return RenderingIntent.Perceptual;
-                default:
-                    // If the application does not recognise the name it uses RelativeColorimetric by default.
-                    return RenderingIntent.RelativeColorimetric;
-            }
+            return s switch {
+                "AbsoluteColorimetric" => RenderingIntent.AbsoluteColorimetric,
+                "RelativeColorimetric" => RenderingIntent.RelativeColorimetric,
+                "Saturation"           => RenderingIntent.Saturation,
+                "Perceptual"           => RenderingIntent.Perceptual,
+
+                // If the application does not recognise the name it uses RelativeColorimetric by default.
+                _ => RenderingIntent.RelativeColorimetric
+            };
         }
     }
 }

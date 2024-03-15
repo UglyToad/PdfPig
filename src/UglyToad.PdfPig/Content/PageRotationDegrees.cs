@@ -25,19 +25,13 @@
         {
             get
             {
-                switch (Value)
-                {
-                    case 0:
-                        return 0;
-                    case 90:
-                        return -0.5 * Math.PI;
-                    case 180:
-                        return -Math.PI;
-                    case 270:
-                        return -1.5 * Math.PI;
-                    default:
-                        throw new InvalidOperationException($"Invalid value for rotation: {Value}.");
-                }
+                return Value switch {
+                    0   => 0,
+                    90  => -0.5 * Math.PI,
+                    180 => -Math.PI,
+                    270 => -1.5 * Math.PI,
+                    _   => throw new InvalidOperationException($"Invalid value for rotation: {Value}.")
+                };
             }
         }
 
