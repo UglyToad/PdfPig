@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Images.Png
 {
-    using System.Collections.Generic;
+    using System;
 
     /// <summary>
     /// Used to calculate the Adler-32 checksum used for ZLIB data in accordance with 
@@ -14,7 +14,7 @@
         /// <summary>
         /// Calculate the Adler-32 checksum for some data.
         /// </summary>
-        public static int Calculate(IEnumerable<byte> data)
+        public static int Calculate(ReadOnlySpan<byte> data)
         {
             // s1 is the sum of all bytes.
             var s1 = 1;
