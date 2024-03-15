@@ -15,8 +15,8 @@
     {
         public static Shading Create(IToken shading, IPdfTokenScanner scanner, IResourceStore resourceStore, ILookupFilterProvider filterProvider)
         {
-            DictionaryToken shadingDictionary = null;
-            StreamToken shadingStream = null;
+            DictionaryToken? shadingDictionary = null;
+            StreamToken? shadingStream = null;
 
             if (shading is StreamToken fs)
             {
@@ -28,8 +28,7 @@
                 shadingDictionary = fd;
             }
 
-            ShadingType shadingType;
-            if (shadingDictionary.TryGet<NumericToken>(NameToken.ShadingType, scanner, out var shadingTypeToken))
+            if (shadingDictionary.TryGet<NumericToken>(NameToken.ShadingType, scanner, out ShadingType shadingTypeToken))
             {
                 // Shading types 4 to 7 shall be defined by a stream containing descriptive data characterizing
                 // the shading's gradient fill.
@@ -140,7 +139,7 @@
             else
             {
                 // Optional - Default value: [0.0 1.0 0.0 1.0].
-                domain = new double[] { 0.0, 1.0, 0.0, 1.0 };
+                domain = [0.0, 1.0, 0.0, 1.0];
             }
 
             TransformationMatrix matrix;
@@ -151,7 +150,7 @@
             else
             {
                 // Optional - Default value: the identity matrix [1 0 0 1 0 0]
-                matrix = TransformationMatrix.FromArray(new double[] { 1, 0, 0, 1, 0, 0 });
+                matrix = TransformationMatrix.FromArray([1, 0, 0, 1, 0, 0]);
             }
 
             if (!shadingDictionary.ContainsKey(NameToken.Function))
@@ -185,7 +184,7 @@
             else
             {
                 // set default values
-                domain = new double[] { 0, 1 };
+                domain = [0, 1];
             }
 
             if (!shadingDictionary.ContainsKey(NameToken.Function))
@@ -207,7 +206,7 @@
         private static RadialShading CreateRadialShading(DictionaryToken shadingDictionary, ColorSpaceDetails colorSpace,
             double[] background, PdfRectangle? bbox, bool antiAlias, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
         {
-            double[] coords = null;
+            double[]? coords = null;
             if (shadingDictionary.TryGet<ArrayToken>(NameToken.Coords, scanner, out var coordsToken))
             {
                 coords = coordsToken.Data.OfType<NumericToken>().Select(v => v.Double).ToArray();
@@ -225,7 +224,7 @@
             else
             {
                 // set default values
-                domain = new double[] { 0, 1 };
+                domain = [0, 1];
             }
 
             if (!shadingDictionary.ContainsKey(NameToken.Function))
@@ -235,7 +234,7 @@
 
             PdfFunction[] functions = GetFunctions(shadingDictionary.Data[NameToken.Function], scanner, filterProvider);
 
-            bool[] extend = new bool[] { false, false }; // Default values
+            bool[] extend = [false, false]; // Default values
             if (shadingDictionary.TryGet<ArrayToken>(NameToken.Extend, scanner, out var extendToken))
             {
                 extend = extendToken.Data.OfType<BooleanToken>().Select(v => v.Data).ToArray();
@@ -287,7 +286,7 @@
                 throw new ArgumentNullException($"{NameToken.Decode} is required for shading type '{ShadingType.FreeFormGouraud}'.");
             }
 
-            PdfFunction[] functions = null; // Optional
+            PdfFunction[]? functions = null; // Optional
             if (shadingStream.StreamDictionary.ContainsKey(NameToken.Function))
             {
                 functions = GetFunctions(shadingStream.StreamDictionary.Data[NameToken.Function], scanner, filterProvider);

@@ -47,7 +47,7 @@
             else
             {
                 // optional - Default value: the identity matrix [1 0 0 1 0 0]
-                matrix = TransformationMatrix.FromArray(new double[] { 1, 0, 0, 1, 0, 0 });
+                matrix = TransformationMatrix.FromArray([1, 0, 0, 1, 0, 0]);
             }
 
             DictionaryToken patternExtGState = null;
