@@ -59,19 +59,11 @@
             {
                 var token = trailerDictionary.Identifier[0];
 
-                switch (token)
-                {
-                    case HexToken hex:
-                        documentIdBytes = hex.Bytes.ToArray();
-                        break;
-                    case StringToken str:
-                        documentIdBytes = str.GetBytes();
-                        break;
-                    default:
-                        documentIdBytes = OtherEncodings.StringAsLatin1Bytes(token.Data);
-                        break;
-                }
-
+                documentIdBytes = token switch {
+                    HexToken hex => hex.Bytes.ToArray(),
+                    StringToken str => str.GetBytes(),
+                    _ => OtherEncodings.StringAsLatin1Bytes(token.Data)
+                };
             }
             else
             {
@@ -847,23 +839,12 @@
 
                 var sumOfFirstSixteenBytesOfX = x.Take(16).Sum(v => (long)v);
                 var mod3 = sumOfFirstSixteenBytesOfX % 3;
-
-                HashAlgorithm nextHash;
-                switch (mod3)
-                {
-                    case 0:
-                        nextHash = SHA256.Create();
-                        break;
-                    case 1:
-                        nextHash = SHA384.Create();
-                        break;
-                    case 2:
-                        nextHash = SHA512.Create();
-                        break;
-                    default:
-                        throw new PdfDocumentEncryptedException("Invalid remainder from summing first sixteen bytes of this round's hash.");
-                }
-
+                HashAlgorithm nextHash = mod3 switch {
+                    0 => SHA256.Create(),
+                    1 => SHA384.Create(),
+                    2 => SHA512.Create(),
+                    _ => throw new PdfDocumentEncryptedException("Invalid remainder from summing first sixteen bytes of this round's hash.")
+                };
                 input = nextHash.ComputeHash(x);
                 Array.Copy(input, key, 16);
                 Array.Copy(input, 16, iv, 0, 16);

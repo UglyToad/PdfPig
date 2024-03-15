@@ -57,17 +57,13 @@
                 // optional
             }
 
-            switch (patternType)
-            {
-                case 1: // Tiling
-                    return CreateTilingPattern(patternStream, patternExtGState, matrix, scanner);
-
-                case 2: // Shading
-                    return CreateShadingPattern(patternDictionary, patternExtGState, matrix, scanner, resourceStore, filterProvider);
-
-                default:
-                    throw new PdfDocumentFormatException($"Invalid Pattern type encountered in page resource dictionary: {patternType}.");
-            }
+            return patternType switch {
+                // Tiling
+                1 => CreateTilingPattern(patternStream, patternExtGState, matrix, scanner),
+                // Shading
+                2 => CreateShadingPattern(patternDictionary, patternExtGState, matrix, scanner, resourceStore, filterProvider),
+                _ => throw new PdfDocumentFormatException($"Invalid Pattern type encountered in page resource dictionary: {patternType}.")
+            };
         }
 
         private static PatternColor CreateTilingPattern(StreamToken patternStream, DictionaryToken patternExtGState,

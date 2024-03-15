@@ -25,21 +25,15 @@
                 return FontDetails.GetDefault();
             }
 
-            FontDetails WithWeightValues(bool isbold, int weight) => new FontDetails(null, isbold, weight, font.ItalicAngle != 0);
+            FontDetails WithWeightValues(bool isBold, int weight) => new FontDetails(null, isBold, weight, font.ItalicAngle != 0);
 
-            switch (font.Weight?.ToLowerInvariant())
-            {
-                case "light":
-                    return WithWeightValues(false, 300);
-                case "semibold":
-                    return WithWeightValues(true, 600);
-                case "bold":
-                    return WithWeightValues(true, FontDetails.BoldWeight);
-                case "black":
-                    return WithWeightValues(true, 900);
-                default:
-                    return WithWeightValues(false, FontDetails.DefaultWeight);
-            }
+            return (font.Weight?.ToLowerInvariant()) switch {
+                "light"    => WithWeightValues(false, 300),
+                "semibold" => WithWeightValues(true, 600),
+                "bold"     => WithWeightValues(true, FontDetails.BoldWeight),
+                "black"    => WithWeightValues(true, 900),
+                _          => WithWeightValues(false, FontDetails.DefaultWeight)
+            };
         }
 
         public TransformationMatrix GetFontTransformationMatrix() => fontCollection.GetFirstTransformationMatrix();
