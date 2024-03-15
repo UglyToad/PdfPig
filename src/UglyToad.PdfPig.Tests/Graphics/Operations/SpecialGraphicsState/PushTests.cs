@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Graphics.Operations.SpecialGraphicsState
 {
     using PdfPig.Graphics.Operations.SpecialGraphicsState;
-    using Xunit;
 
     public class PushTests
     {

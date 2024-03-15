@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
     using UglyToad.PdfPig.Core;
-    using Xunit;
 
     public class XObjectFormTests
     {

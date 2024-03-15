@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Filters
 {
-    using System.Collections.Generic;
     using PdfPig.Filters;
     using PdfPig.Tokens;
-    using Xunit;
 
     public class RunLengthFilterTests
     {

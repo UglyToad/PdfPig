@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests
 {
-    using System;
-    using System.Collections.Generic;
     using PdfPig.Core;
 
     internal class PointComparer : IEqualityComparer<PdfPoint>

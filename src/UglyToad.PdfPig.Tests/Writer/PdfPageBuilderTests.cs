@@ -1,19 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Tests.Images
 {
-    using System;
-    using System.IO;
-    using System.Linq;
     using UglyToad.PdfPig;
-    using UglyToad.PdfPig.Content;
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Fonts.Standard14Fonts;
     using UglyToad.PdfPig.Writer;
-    using Xunit;
-
+ 
     public class PdfPageBuilderTests
     {
-
-
         [Fact]
         public void CanAddPng()
         {
@@ -44,7 +37,6 @@
                 }
                 pdfBytes = pdfBuilder.Build();
             }
-
 
             File.WriteAllBytes(@"PdfPageBuilderTests_CanAddPng.pdf", pdfBytes);
 

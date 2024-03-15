@@ -2,8 +2,6 @@
 {
     using PdfPig.Core;
     using PdfPig.Geometry;
-    using System.Linq;
-    using Xunit;
 
     public class EncodingsTests
     {

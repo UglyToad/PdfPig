@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System.Linq;
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Graphics.Colors;
-    using Xunit;
 
     public class PatternColorTests
     {

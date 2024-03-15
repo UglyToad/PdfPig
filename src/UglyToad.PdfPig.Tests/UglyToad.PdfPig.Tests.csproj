@@ -9,6 +9,7 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\pdfpig.snk</AssemblyOriginatorKeyFile>
     <RuntimeFrameworkVersion Condition="'$(TargetFramework)'=='netcoreapp2.1'">2.1.30</RuntimeFrameworkVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
   <ItemGroup>
@@ -131,5 +132,8 @@
     <None Update="Dla\Documents\Random 2 Columns Lists Hyph - Justified.pdf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
   </ItemGroup>
 </Project>

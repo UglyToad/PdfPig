@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests
 {
-    using System;
     using Logging;
 
     public class TestingLog : ILog

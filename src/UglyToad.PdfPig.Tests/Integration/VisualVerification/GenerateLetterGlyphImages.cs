@@ -2,11 +2,8 @@
 {
     using PdfPig.Core;
     using SkiaSharp;
-    using System;
     using System.IO;
-    using System.Linq;
     using UglyToad.PdfPig.Tests.Integration.VisualVerification.SkiaHelpers;
-    using Xunit;
 
     public class GenerateLetterGlyphImages
     {

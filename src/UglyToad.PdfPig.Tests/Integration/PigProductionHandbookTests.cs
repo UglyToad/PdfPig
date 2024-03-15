@@ -1,11 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using Xunit;
-
     public class PigProductionHandbookTests
     {
         private static string GetFilename()

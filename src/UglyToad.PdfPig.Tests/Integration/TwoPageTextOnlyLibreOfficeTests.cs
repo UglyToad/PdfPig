@@ -1,8 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System.IO;
     using Content;
-    using Xunit;
 
     public class TwoPageTextOnlyLibreOfficeTests
     {

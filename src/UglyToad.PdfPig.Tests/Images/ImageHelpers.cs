@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Images
 {
-    using System;
     using System.IO;
     using System.IO.Compression;
     using UglyToad.PdfPig.Images.Png;

@@ -1,8 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System.Linq;
-    using Xunit;
-
     public class FarmerMacTests
     {
         private static string GetFilename()

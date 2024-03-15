@@ -1,10 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.Filters
 {
-    using System.Collections.Generic;
     using UglyToad.PdfPig.Filters;
     using UglyToad.PdfPig.Tests.Images;
     using UglyToad.PdfPig.Tokens;
-    using Xunit;
 
     public class CcittFaxDecodeFilterTests
     {

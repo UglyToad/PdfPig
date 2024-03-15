@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using Xunit;
-
     public class PopBugzilla37292Tests
     {
         private static string GetFilename()

@@ -1,8 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Dla
 {
-    using System;
-    using System.IO;
-
     internal static class DlaHelper
     {
         public static string GetDocumentPath(string name, bool isPdf = true)

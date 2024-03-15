@@ -1,11 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using Xunit;
-
     public class IntegrationDocumentTests
     {
         private static readonly Lazy<string> DocumentFolder = new Lazy<string>(() => Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Integration", "Documents")));

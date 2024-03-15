@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration;
 
-using Xunit;
-
 public class Math119FakingDataTests
 {
     [Fact]
@@ -12,7 +10,6 @@ public class Math119FakingDataTests
         var lastPage = document.GetPage(8);
 
         var words = lastPage.GetWords();
-
 
     }
 }

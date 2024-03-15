@@ -1,6 +1,4 @@
-﻿using Xunit;
-
-namespace UglyToad.PdfPig.Tests.Encryption
+﻿namespace UglyToad.PdfPig.Tests.Encryption
 {
     using PdfPig.Core;
     using PdfPig.Encryption;

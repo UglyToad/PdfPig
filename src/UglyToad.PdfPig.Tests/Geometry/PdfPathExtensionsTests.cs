@@ -1,10 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.Geometry
 {
-    using System.Linq;
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Geometry;
     using UglyToad.PdfPig.Tests.Integration;
-    using Xunit;
 
     public class PdfPathExtensionsTests
     {

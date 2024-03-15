@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts
 {
     using UglyToad.PdfPig.Tests.Dla;
-    using Xunit;
 
     public class PointSizeTests
     {

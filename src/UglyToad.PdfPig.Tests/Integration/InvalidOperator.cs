@@ -1,8 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
-    using Xunit;
-
     public class InvalidOperatorTests
     {
         [Fact]

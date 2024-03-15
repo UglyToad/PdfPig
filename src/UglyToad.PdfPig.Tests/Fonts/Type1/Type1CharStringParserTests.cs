@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts.Type1
 {
     using UglyToad.PdfPig.Core;
-    using Xunit;
     using Integration;
 
     public class Type1CharStringParserTests

@@ -1,9 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
-    using System.Linq;
     using AcroForms.Fields;
-    using Xunit;
 
     public class AcroFormsBasicFieldsTests
     {

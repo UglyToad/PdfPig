@@ -1,7 +1,5 @@
 namespace UglyToad.PdfPig.Tests.Integration
 {
-    using Xunit;
-
     public class Type3FontTests
     {
         private static string GetFilename()

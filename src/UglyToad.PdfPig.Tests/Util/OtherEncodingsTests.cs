@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Util
 {
     using PdfPig.Core;
-    using Xunit;
 
     public class OtherEncodingsTests
     {

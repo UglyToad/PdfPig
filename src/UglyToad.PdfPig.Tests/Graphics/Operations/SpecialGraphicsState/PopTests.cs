@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Graphics.Operations.SpecialGraphicsState
 {
-    using System;
     using PdfPig.Graphics;
     using PdfPig.Graphics.Operations.SpecialGraphicsState;
-    using Xunit;
 
     public class PopTests
     {

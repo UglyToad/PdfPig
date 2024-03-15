@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests
 {
-    using System.Collections.Generic;
     using UglyToad.PdfPig.Content;
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Graphics.Colors;

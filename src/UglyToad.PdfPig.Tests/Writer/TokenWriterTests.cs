@@ -1,14 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Tests.Writer
 {
-    using Integration;
     using PdfPig.Writer;
-    using System.IO;
     using UglyToad.PdfPig.Tokens;
-    using Xunit;
 
     public class TokenWriterTests
     {
-
         [Fact]
         public void EscapeSpecialCharacter()
         {

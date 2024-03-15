@@ -12,7 +12,6 @@
     using PdfPig.Tokenization.Scanner;
     using PdfPig.Tokens;
     using SkiaSharp;
-    using System.Collections.Generic;
 
     internal sealed class SkiaGlyphStreamProcessor : BaseStreamProcessor<SKPicture>
     {

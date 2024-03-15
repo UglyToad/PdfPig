@@ -1,12 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Tests.Parser.Parts.FileStructure
 {
-    using System;
-    using System.Linq;
     using PdfPig.Core;
     using PdfPig.CrossReference;
     using PdfPig.Parser.FileStructure;
     using PdfPig.Tokenization.Scanner;
-    using Xunit;
 
     public class CrossReferenceTableParserTests
     {

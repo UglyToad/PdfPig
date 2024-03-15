@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
     using Content;
-    using Xunit;
 
     public class SinglePageType1FontTests
     {

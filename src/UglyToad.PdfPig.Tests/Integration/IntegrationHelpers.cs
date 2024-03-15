@@ -1,8 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
-    using System.IO;
-
     internal static class IntegrationHelpers
     {
         public static string GetDocumentPath(string name, bool isPdf = true)

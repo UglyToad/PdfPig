@@ -1,21 +1,14 @@
 ﻿namespace UglyToad.PdfPig.Tests.Writer.Fonts
 {
-    using System;
-
-    using System.Linq;
     using PdfPig.Fonts;
     using PdfPig.Content;
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Fonts.Standard14Fonts;
     using UglyToad.PdfPig.Writer;
 
-    using Xunit;
     using System.Reflection;
-    using System.Collections.Generic;
     using UglyToad.PdfPig.Fonts.AdobeFontMetrics;
-    using System.IO;
     using System.Diagnostics;
-
 
     public class Standard14WritingFontTests
     {

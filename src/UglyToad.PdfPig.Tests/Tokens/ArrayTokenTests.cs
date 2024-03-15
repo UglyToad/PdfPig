@@ -1,8 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Tokens
 {
-    using System;
     using PdfPig.Tokens;
-    using Xunit;
 
     public class ArrayTokenTests
     {

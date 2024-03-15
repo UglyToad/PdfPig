@@ -1,10 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Dla
 {
-    using System.Collections.Generic;
-    using System.Linq;
     using UglyToad.PdfPig.DocumentLayoutAnalysis;
-    using Xunit;
-
+ 
     public class MathExtensionsTests
     {
         private static readonly DoubleComparer DoubleComparer = new DoubleComparer(3);

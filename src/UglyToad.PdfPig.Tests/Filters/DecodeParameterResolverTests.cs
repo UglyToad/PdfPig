@@ -1,10 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Filters
 {
-    using System;
-    using System.Collections.Generic;
     using PdfPig.Tokens;
     using PdfPig.Filters;
-    using Xunit;
 
     public class DecodeParameterResolverTests
     {

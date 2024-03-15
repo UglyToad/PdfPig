@@ -10,7 +10,6 @@
     using PdfPig.Tokenization.Scanner;
     using PdfPig.Tokens;
     using SkiaSharp;
-    using System.Collections.Generic;
 
     internal sealed class SkiaGlyphPageFactory : BasePageFactory<SKPicture>
     {

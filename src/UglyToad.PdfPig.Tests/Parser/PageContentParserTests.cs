@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Parser
 {
-    using System;
-    using System.IO;
     using System.Text.RegularExpressions;
     using Logging;
     using PdfPig.Core;
@@ -14,7 +12,6 @@
     using PdfPig.Graphics.Operations.TextState;
     using PdfPig.Parser;
     using PdfPig.Tokens;
-    using Xunit;
 
     public class PageContentParserTests
     {

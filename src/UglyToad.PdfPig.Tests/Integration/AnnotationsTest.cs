@@ -1,8 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
     using Actions;
-    using System.Linq;
-    using Xunit;
 
     public class AnnotationsTest
     {

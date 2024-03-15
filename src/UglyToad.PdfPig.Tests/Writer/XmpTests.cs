@@ -3,9 +3,7 @@
     using Integration;
     using PdfPig.Content;
     using PdfPig.Writer;
-    using System.Linq;
     using System.Xml.Linq;
-    using Xunit;
 
     public class XmpTests
     {

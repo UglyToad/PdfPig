@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts.CidFonts
 {
-    using System.Collections.Generic;
     using PdfFonts.CidFonts;
     using PdfPig.Geometry;
-    using Xunit;
 
     public class VerticalWritingMetricsTests
     {

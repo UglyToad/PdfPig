@@ -1,10 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts.CompactFontFormat
 {
-    using System;
-    using System.IO;
-    using System.Linq;
     using PdfPig.Fonts.CompactFontFormat;
-    using Xunit;
 
     public class CompactFontFormatParserTests
     {

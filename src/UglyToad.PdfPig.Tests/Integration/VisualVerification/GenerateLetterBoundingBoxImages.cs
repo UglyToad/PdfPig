@@ -2,9 +2,6 @@
 {
     using PdfPig.Core;
     using SkiaSharp;
-    using System;
-    using System.IO;
-    using Xunit;
 
     public class GenerateLetterBoundingBoxImages
     {

@@ -1,10 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.Writer.Fonts
 {
-    using System.Collections.Generic;
     using PdfFonts.Parser;
     using PdfPig.Core;
     using PdfPig.Writer.Fonts;
-    using Xunit;
 
     public class ToUnicodeCMapBuilderTests
     {

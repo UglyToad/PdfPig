@@ -1,11 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
     using Content;
-    using Xunit;
 
     public class MultiplePageMortalityStatisticsTests
     {

@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Filters
 {
     using PdfPig.Filters;
-    using Xunit;
 
     public class BitStreamTests
     {

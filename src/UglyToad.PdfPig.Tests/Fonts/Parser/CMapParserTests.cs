@@ -1,11 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts.Parser
 {
-    using System.Collections.Generic;
     using System.Diagnostics;
-    using System.IO;
     using PdfFonts.Parser;
     using PdfPig.Core;
-    using Xunit;
 
     public class CMapParserTests
     {

@@ -2,7 +2,6 @@
 {
     using PdfPig.Core;
     using PdfPig.Fonts.TrueType;
-    using Xunit;
 
     public class TrueTypeDataBytesTests
     {

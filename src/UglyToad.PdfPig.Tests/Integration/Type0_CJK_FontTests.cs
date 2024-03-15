@@ -1,10 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System.IO;
-    using System.Linq;
-    using Content;
-    using Xunit;
-
     public class Type0_CJK_FontTests
     {
         private static string GetFilename()
@@ -21,8 +16,7 @@
             {
                 Assert.Equal(95, document.NumberOfPages);
             }
-        }
- 
+        } 
 
         [Fact]
         public void HasCorrectChineseCharacters()

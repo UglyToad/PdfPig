@@ -1,12 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
     using System.Text;
     using UglyToad.PdfPig.Content;
-    using Xunit;
 
     public class FontDescriptorTests
     {

@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Graphics.Operations.TextState
 {
-    using System;
     using PdfPig.Graphics.Operations.TextState;
     using PdfPig.Tokens;
-    using Xunit;
 
     public class SetFontAndSizeTests
     {

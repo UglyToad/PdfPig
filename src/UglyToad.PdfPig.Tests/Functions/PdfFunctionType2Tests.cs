@@ -1,13 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Tests.Functions
 {
-    using System.Collections.Generic;
-    using System.Linq;
     using UglyToad.PdfPig.Functions;
     using UglyToad.PdfPig.Tests.Tokens;
     using UglyToad.PdfPig.Tokens;
     using UglyToad.PdfPig.Util;
-    using Xunit;
-
+ 
     public class PdfFunctionType2Tests
     {
         private static PdfFunctionType2 CreateFunction(double[] domain, double[] range, double[] c0, double[] c1, double n)

@@ -1,7 +1,5 @@
-﻿using System.IO;
-using UglyToad.PdfPig.Tests.Integration;
+﻿using UglyToad.PdfPig.Tests.Integration;
 using UglyToad.PdfPig.Writer;
-using Xunit;
 
 namespace UglyToad.PdfPig.Tests.Writer
 {

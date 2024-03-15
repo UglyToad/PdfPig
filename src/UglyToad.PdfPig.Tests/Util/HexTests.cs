@@ -1,8 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Util
 {
-    using System.Collections.Generic;
     using PdfPig.Util;
-    using Xunit;
 
     public class HexTests
     {

@@ -2,11 +2,6 @@
 {
     using Integration;
     using PdfPig.Writer;
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using Xunit;
 
     public class PdfMergerTests
     {

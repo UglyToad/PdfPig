@@ -1,13 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts.Type1
 {
-    using System;
-    using System.IO;
-    using System.Linq;
     using System.Text;
     using PdfPig.Core;
     using PdfPig.Fonts.Type1.Parser;
-    using PdfPig.Geometry;
-    using Xunit;
 
     public class Type1FontParserTests
     {

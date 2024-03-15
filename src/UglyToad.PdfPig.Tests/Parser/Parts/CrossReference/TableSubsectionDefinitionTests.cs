@@ -1,8 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Parser.Parts.CrossReference
 {
-    using System;
     using PdfPig.Parser.Parts.CrossReference;
-    using Xunit;
 
     public class TableSubsectionDefinitionTests
     {

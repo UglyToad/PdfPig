@@ -1,5 +1,4 @@
 ﻿using UglyToad.PdfPig.Tests.Integration;
-using Xunit;
 
 namespace UglyToad.PdfPig.Tests.Geometry
 {
