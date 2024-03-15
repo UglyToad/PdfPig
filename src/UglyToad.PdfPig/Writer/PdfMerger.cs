@@ -155,7 +155,7 @@
 
                     var basePageNumber = document.Pages.Count;
 
-                    if (pages == null)
+                    if (pages is null)
                     {
                         for (var i = 1; i <= existing.NumberOfPages; i++)
                         {
@@ -182,14 +182,14 @@
             PdfAction CopyLink(PdfAction action, Func<int, int?> getPageNumber)
             {
                 var link = action as AbstractGoToAction;
-                if (link == null)
+                if (link is null)
                 {
                     // copy the link if it is not a link to PDF documents
                     return action;
                 }
 
                 var newPageNumber = getPageNumber(link.Destination.PageNumber);
-                if (newPageNumber == null)
+                if (newPageNumber is null)
                 {
                     // ignore the link if the target page does not exist in the PDF document
                     return null;

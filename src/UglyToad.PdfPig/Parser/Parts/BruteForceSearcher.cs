@@ -1,10 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Parser.Parts
 {
+    using Core;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
     using System.Text;
-    using Core;
     using Util.JetBrains.Annotations;
 
     /// <summary>
@@ -22,7 +22,7 @@
         [NotNull]
         public static IReadOnlyDictionary<IndirectReference, long> GetObjectLocations(IInputBytes bytes)
         {
-            if (bytes == null)
+            if (bytes is null)
             {
                 throw new ArgumentNullException(nameof(bytes));
             }
@@ -198,7 +198,7 @@
             return long.MaxValue;
         }
 
-        private static bool IsStartObjMarker(byte[] data)
+        private static bool IsStartObjMarker(ReadOnlySpan<byte> data)
         {
             if (!ReadHelper.IsWhitespace(data[0]))
             {

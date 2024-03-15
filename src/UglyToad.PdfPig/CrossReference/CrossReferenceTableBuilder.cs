@@ -20,7 +20,7 @@
         
         public void Add(CrossReferenceTablePart part)
         {
-            if (part == null)
+            if (part is null)
             {
                 throw new ArgumentNullException(nameof(part));
             }
@@ -38,7 +38,7 @@
 
             var currentPart = parts.FirstOrDefault(x => x.Offset == firstCrossReferenceOffset);
             
-            if (currentPart == null)
+            if (currentPart is null)
             {
                 // no XRef at given position
                 log.Warn($"Did not find an XRef object at the specified startxref position {firstCrossReferenceOffset}");
@@ -73,7 +73,7 @@
                     }
 
                     currentPart = parts.FirstOrDefault(x => x.Offset == prevBytePos || x.Offset == prevBytePos + offsetCorrection);
-                    if (currentPart == null)
+                    if (currentPart is null)
                     {
                         log.Warn("Did not found XRef object pointed to by 'Prev' key at position " + prevBytePos);
                         break;

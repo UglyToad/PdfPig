@@ -50,7 +50,7 @@
         /// </summary>
         public bool Matches(byte[] code)
         {
-            if (code == null)
+            if (code is null)
             {
                 throw new ArgumentNullException(nameof(code));
             }
@@ -63,7 +63,7 @@
         /// </summary>
         public bool IsFullMatch(byte[] code, int codeLength)
         {
-            if (code == null)
+            if (code is null)
             {
                 throw new ArgumentNullException(nameof(code));
             }

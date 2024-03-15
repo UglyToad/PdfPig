@@ -87,7 +87,7 @@
                 return true;
             }
 
-            if (encoding == null)
+            if (encoding is null)
             {
                 return false;
             }
@@ -194,7 +194,7 @@
         {
             fromFont = true;
 
-            if (font == null)
+            if (font is null)
             {
                 return descriptor.BoundingBox;
             }
@@ -221,11 +221,11 @@
                 return (value & target) == target;
             }
 
-            if (descriptor == null || !unicodeValuesCache.TryGetValue(characterCode, out var unicode)
-                                   || font.TableRegister.CMapTable == null
-                                   || encoding == null
+            if (descriptor is null || !unicodeValuesCache.TryGetValue(characterCode, out var unicode)
+                                   || font.TableRegister.CMapTable is null
+                                   || encoding is null
                                    || !encoding.CodeToNameMap.TryGetValue(characterCode, out var name)
-                                   || name == null)
+                                   || name is null)
             {
                 return null;
             }
@@ -326,7 +326,7 @@
         /// <inheritdoc/>
         public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
         {
-            if (font == null)
+            if (font is null)
             {
                 path = null;
                 return false;

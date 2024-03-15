@@ -62,7 +62,7 @@
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            if (Bytes == null)
+            if (Bytes is null)
             {
                 stream.WriteText($"({Text}) {Symbol}");
                 stream.WriteNewLine();

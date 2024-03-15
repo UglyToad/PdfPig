@@ -124,7 +124,7 @@
 
         private static void AppendPart(string name, string value, StringBuilder builder)
         {
-            if (value == null)
+            if (value is null)
             {
                 return;
             }

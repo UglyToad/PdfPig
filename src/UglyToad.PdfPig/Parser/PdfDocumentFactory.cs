@@ -236,7 +236,7 @@
 
         private static EncryptionDictionary GetEncryptionDictionary(CrossReferenceTable crossReferenceTable, IPdfTokenScanner pdfTokenScanner)
         {
-            if (crossReferenceTable.Trailer.EncryptionToken == null)
+            if (crossReferenceTable.Trailer.EncryptionToken is null)
             {
                 return null;
             }

@@ -32,7 +32,7 @@
 
         public CrossReferenceStreamFieldSize(DictionaryToken dictionary)
         {
-            if (dictionary == null)
+            if (dictionary is null)
             {
                 throw new ArgumentNullException(nameof(dictionary));
             }

@@ -28,7 +28,7 @@
         /// <param name="value">The 6 transformation matrix values.</param>
         public ModifyCurrentTransformationMatrix(double[] value)
         {
-            if (value == null)
+            if (value is null)
             {
                 throw new ArgumentNullException(nameof(value));
             }

@@ -23,11 +23,6 @@
         /// </summary>
         public static string GetString(ReadOnlySpan<byte> bytes)
         {
-            if (bytes == null)
-            {
-                throw new ArgumentNullException(nameof(bytes));
-            }
-
             var stringBuilder = new StringBuilder(bytes.Length * 2);
 
             foreach (var b in bytes)

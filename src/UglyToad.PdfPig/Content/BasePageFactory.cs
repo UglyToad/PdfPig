@@ -66,7 +66,7 @@
         public TPage Create(int number, DictionaryToken dictionary, PageTreeMembers pageTreeMembers,
              NamedDestinations namedDestinations)
         {
-            if (dictionary == null)
+            if (dictionary is null)
             {
                 throw new ArgumentNullException(nameof(dictionary));
             }
@@ -131,7 +131,7 @@
 
                     var contentStream = DirectObjectFinder.Get<StreamToken>(obj, PdfScanner);
 
-                    if (contentStream == null)
+                    if (contentStream is null)
                     {
                         throw new InvalidOperationException($"Could not find the contents for object {obj}.");
                     }
@@ -150,7 +150,7 @@
             {
                 var contentStream = DirectObjectFinder.Get<StreamToken>(contents, PdfScanner);
 
-                if (contentStream == null)
+                if (contentStream is null)
                 {
                     throw new InvalidOperationException("Failed to parse the content for the page: " + number);
                 }
@@ -181,7 +181,7 @@
         {
             IReadOnlyList<IGraphicsStateOperation> operations;
 
-            if (contentBytes == null || contentBytes.Count == 0)
+            if (contentBytes is null || contentBytes.Count == 0)
             {
                 operations = Array.Empty<IGraphicsStateOperation>();
             }
@@ -293,7 +293,7 @@
             {
                 mediaBox = pageTreeMembers.MediaBox;
 
-                if (mediaBox == null)
+                if (mediaBox is null)
                 {
                     ParsingOptions.Logger.Error(
                         $"The MediaBox was the wrong missing for page {number}. Using US Letter.");

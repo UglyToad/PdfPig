@@ -82,7 +82,7 @@
         /// </summary>
         public double[] Eval(params double[] input)
         {
-            if (Functions == null || Functions.Length == 0)
+            if (Functions is null || Functions.Length == 0)
             {
                 return input;
             }

@@ -15,12 +15,12 @@
         public CryptHandler(DictionaryToken cryptDictionary,
             NameToken streamName, NameToken stringName)
         {
-            if (streamName == null)
+            if (streamName is null)
             {
                 throw new ArgumentNullException(nameof(streamName));
             }
 
-            if (stringName == null)
+            if (stringName is null)
             {
                 throw new ArgumentNullException(nameof(stringName));
             }
@@ -32,7 +32,7 @@
 
         public CryptDictionary GetNamedCryptDictionary(NameToken name)
         {
-            if (name == null)
+            if (name is null)
             {
                 throw new ArgumentNullException(nameof(name));
             }

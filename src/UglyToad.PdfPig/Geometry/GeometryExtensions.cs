@@ -70,7 +70,7 @@
         /// </param>
         private static PdfRectangle ParametricPerpendicularProjection(IReadOnlyList<PdfPoint> polygon)
         {
-            if (polygon == null || polygon.Count == 0)
+            if (polygon is null || polygon.Count == 0)
             {
                 throw new ArgumentException("ParametricPerpendicularProjection(): polygon cannot be null and must contain at least one point.", nameof(polygon));
             }
@@ -208,7 +208,7 @@
         /// <param name="points">The points.</param>
         public static PdfRectangle OrientedBoundingBox(IReadOnlyList<PdfPoint> points)
         {
-            if (points == null || points.Count < 2)
+            if (points is null || points.Count < 2)
             {
                 throw new ArgumentException("OrientedBoundingBox(): points cannot be null and must contain at least two points.", nameof(points));
             }
@@ -881,7 +881,7 @@
         private static PdfPoint[] Intersect(BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
         {
             var ts = IntersectT(bezierCurve, p1, p2);
-            if (ts == null || ts.Length == 0) return [];
+            if (ts is null || ts.Length == 0) return [];
 
             List<PdfPoint> points = new List<PdfPoint>();
             foreach (var t in ts)

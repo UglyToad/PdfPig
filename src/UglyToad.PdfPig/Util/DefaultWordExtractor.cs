@@ -38,7 +38,7 @@
                     lastX = letter.Location.X;
                 }
 
-                if (lastLetter == null)
+                if (lastLetter is null)
                 {
                     if (string.IsNullOrWhiteSpace(letter.Value))
                     {

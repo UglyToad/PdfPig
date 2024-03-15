@@ -14,7 +14,7 @@
         public static Catalog Create(IndirectReference rootReference, DictionaryToken dictionary,
             IPdfTokenScanner scanner, PageFactory pageFactory, ILog log, bool isLenientParsing)
         {
-            if (dictionary == null)
+            if (dictionary is null)
             {
                 throw new ArgumentNullException(nameof(dictionary));
             }

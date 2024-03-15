@@ -133,7 +133,7 @@ namespace UglyToad.PdfPig.Writer
             reasons = reasonsMutable;
             try
             {
-                if (fontFileBytes == null)
+                if (fontFileBytes is null)
                 {
                     reasonsMutable.Add("Provided bytes were null.");
                     return false;
@@ -147,19 +147,19 @@ namespace UglyToad.PdfPig.Writer
 
                 var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFileBytes)));
 
-                if (font.TableRegister.CMapTable == null)
+                if (font.TableRegister.CMapTable is null)
                 {
                     reasonsMutable.Add("The provided font did not contain a cmap table, used to map character codes to glyph codes.");
                     return false;
                 }
 
-                if (font.TableRegister.Os2Table == null)
+                if (font.TableRegister.Os2Table is null)
                 {
                     reasonsMutable.Add("The provided font did not contain an OS/2 table, used to fill in the font descriptor dictionary.");
                     return false;
                 }
 
-                if (font.TableRegister.PostScriptTable == null)
+                if (font.TableRegister.PostScriptTable is null)
                 {
                     reasonsMutable.Add("The provided font did not contain a post PostScript table, used to map character codes to glyph codes.");
                     return false;
@@ -248,7 +248,7 @@ namespace UglyToad.PdfPig.Writer
                 }
             }
 
-            if (builder == null)
+            if (builder is null)
             {
                 builder = new PdfPageBuilder(pages.Count + 1, this);
             }
@@ -436,7 +436,7 @@ namespace UglyToad.PdfPig.Writer
                     if (kvp.Value is IndirectReferenceToken ir)
                     {
                         ObjectToken tk = document.Structure.TokenScanner.Get(ir.Data);
-                        if (tk == null)
+                        if (tk is null)
                         {
                             // malformed
                             continue;
@@ -455,7 +455,7 @@ namespace UglyToad.PdfPig.Writer
                     foreach (var annot in arr.Data)
                     {
                         DictionaryToken tk = GetRemoteDict(annot);
-                        if (tk == null)
+                        if (tk is null)
                         {
                             // malformed
                             continue;
@@ -463,21 +463,21 @@ namespace UglyToad.PdfPig.Writer
 
                         if (tk.TryGet(NameToken.Subtype, out var st) && st is NameToken nm && nm == NameToken.Link)
                         {
-                            if (copyLink == null)
+                            if (copyLink is null)
                             {
                                 // ingore link if don't know how to copy
                                 continue;
                             }
 
                             var link = page.annotationProvider.GetAction(tk);
-                            if (link == null)
+                            if (link is null)
                             {
                                 // ignore unknown link actions
                                 continue;
                             }
 
                             var copiedLink = copyLink(link);
-                            if (copiedLink == null)
+                            if (copiedLink is null)
                             {
                                 // ignore if caller wants to skip the link
                                 continue;
@@ -513,7 +513,7 @@ namespace UglyToad.PdfPig.Writer
             void CopyResourceDict(IToken token, Dictionary<NameToken, IToken> destinationDict)
             {
                 DictionaryToken dict = GetRemoteDict(token);
-                if (dict == null)
+                if (dict is null)
                 {
                     return;
                 }
@@ -545,7 +545,7 @@ namespace UglyToad.PdfPig.Writer
 
                     var subDict = GetRemoteDict(item.Value);
                     var destSubDict = destinationDict[NameToken.Create(item.Key)] as DictionaryToken;
-                    if (destSubDict == null || subDict == null)
+                    if (destSubDict is null || subDict is null)
                     {
                         // not a dict.. just overwrite with more important one? should maybe check arrays?
                         if (item.Value is IndirectReferenceToken ir)
@@ -1144,7 +1144,7 @@ namespace UglyToad.PdfPig.Writer
 
                 foreach (var pair in CustomMetadata)
                 {
-                    if (pair.Key == null || pair.Value == null)
+                    if (pair.Key is null || pair.Value is null)
                     {
                         continue;
                     }

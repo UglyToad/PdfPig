@@ -31,7 +31,7 @@
         [NotNull]
         public static HeaderVersion Parse([NotNull] ISeekableTokenScanner scanner, IInputBytes inputBytes, bool isLenientParsing, ILog log)
         {
-            if (scanner == null)
+            if (scanner is null)
             {
                 throw new ArgumentNullException(nameof(scanner));
             }
@@ -57,7 +57,7 @@
                 comment = scanner.CurrentToken as CommentToken;
 
                 attempts++;
-            } while (comment == null);
+            } while (comment is null);
 
             return GetHeaderVersionAndResetScanner(comment, scanner, isLenientParsing, log);
         }

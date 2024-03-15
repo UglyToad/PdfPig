@@ -42,7 +42,7 @@
         /// <param name="letters">The letters contained in the word, in the correct order.</param>
         public Word(IReadOnlyList<Letter> letters)
         {
-            if (letters == null)
+            if (letters is null)
             {
                 throw new ArgumentNullException(nameof(letters));
             }

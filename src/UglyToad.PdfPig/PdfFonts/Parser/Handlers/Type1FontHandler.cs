@@ -116,7 +116,7 @@
 
             var encoding = encodingReader.Read(dictionary, descriptor, fromFont);
 
-            if (encoding == null && font != null && font.TryGetFirst(out var t1FontReplacment))
+            if (encoding is null && font != null && font.TryGetFirst(out var t1FontReplacment))
             {
                 encoding = new BuiltInEncoding(t1FontReplacment.Encoding);
             }
@@ -126,7 +126,7 @@
 
         private Union<Type1Font, CompactFontFormatFontCollection> ParseFontProgram(FontDescriptor descriptor)
         {
-            if (descriptor?.FontFile == null)
+            if (descriptor?.FontFile is null)
             {
                 return null;
             }

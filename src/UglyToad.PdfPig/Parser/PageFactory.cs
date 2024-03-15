@@ -41,7 +41,7 @@
                 namedDestinations,
                 ParsingOptions.Logger);
 
-            if (operations == null || operations.Count == 0)
+            if (operations is null || operations.Count == 0)
             {
                 PageContent emptyContent = new PageContent(
                     Array.Empty<IGraphicsStateOperation>(),

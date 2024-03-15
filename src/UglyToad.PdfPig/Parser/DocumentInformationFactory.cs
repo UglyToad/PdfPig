@@ -65,7 +65,7 @@
 
         private static string GetEntryOrDefault(DictionaryToken infoDictionary, NameToken key, IPdfTokenScanner pdfTokenScanner)
         {
-            if (infoDictionary == null)
+            if (infoDictionary is null)
             {
                 return null;
             }

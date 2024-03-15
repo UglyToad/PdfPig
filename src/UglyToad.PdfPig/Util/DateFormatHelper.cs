@@ -35,7 +35,7 @@
                 return val >= min && val <= max;
             }
 
-            if (s == null || s.Length < 4)
+            if (s is null || s.Length < 4)
             {
                 return false;
             }

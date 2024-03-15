@@ -9,7 +9,7 @@
     {
         public static byte[] Decode(byte[] inputBytes, int predictor, int colors, int bitsPerComponent, int columns)
         {
-            if (inputBytes == null)
+            if (inputBytes is null)
             {
                 throw new ArgumentNullException(nameof(inputBytes));
             }
@@ -22,8 +22,8 @@
             int bitsPerPixel = colors * bitsPerComponent;
             int bytesPerPixel = (bitsPerPixel + 7) / 8;
             int rowlength = (columns * bitsPerPixel + 7) / 8;
-            byte[] actline = new byte[rowlength];
-            byte[] lastline = new byte[rowlength];
+            var actline = new byte[rowlength];
+            var lastline = new byte[rowlength];
 
             int linepredictor = predictor;
 

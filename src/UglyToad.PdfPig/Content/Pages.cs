@@ -132,7 +132,7 @@
                 typeof(ParsingOptions)
             });
 
-            if (constructor == null)
+            if (constructor is null)
             {
                 throw new InvalidOperationException($"Could not find valid constructor for page factory of type '{typeof(TPageFactory)}'. " +
                                                     "The page factory should have a constructor with the following parameters: " +

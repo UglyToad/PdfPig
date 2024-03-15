@@ -49,7 +49,7 @@
         /// <summary>
         /// Whether this node is the root node.
         /// </summary>
-        public bool IsRoot => Parent == null;
+        public bool IsRoot => Parent is null;
 
         /// <summary>
         /// Create a new <see cref="PageTreeNode"/>.

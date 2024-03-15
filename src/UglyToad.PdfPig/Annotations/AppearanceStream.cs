@@ -53,7 +53,7 @@
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         public StreamToken Get(string state)
         {
-            if (appearanceStreamsByState == null)
+            if (appearanceStreamsByState is null)
             {
                 throw new Exception("Cannot get appearance by state when this is a stateless appearance stream");
             }

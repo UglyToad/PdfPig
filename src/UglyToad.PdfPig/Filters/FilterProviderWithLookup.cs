@@ -29,13 +29,13 @@
 
         public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary, IPdfTokenScanner scanner)
         {
-            if (dictionary == null)
+            if (dictionary is null)
             {
                 throw new ArgumentNullException(nameof(dictionary));
             }
 
             var token = dictionary.GetObjectOrDefault(NameToken.Filter, NameToken.F);
-            if (token == null)
+            if (token is null)
             {
                 return Array.Empty<IFilter>();
             }
@@ -57,7 +57,7 @@
                 case IndirectReferenceToken irt:
                     if (DirectObjectFinder.TryGet<NameToken>(irt, scanner, out var indirectName))
                     {
-                        return GetNamedFilters(new []{ indirectName });
+                        return GetNamedFilters(new[] { indirectName });
                     }
                     else if (DirectObjectFinder.TryGet<ArrayToken>(irt, scanner, out var indirectArray))
                     {

@@ -80,7 +80,7 @@
             };
 
             var os2 = font.TableRegister.Os2Table;
-            if (os2 == null)
+            if (os2 is null)
             {
                 throw new InvalidFontFormatException("Embedding TrueType font requires OS/2 table.");
             }

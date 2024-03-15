@@ -92,7 +92,7 @@
         /// <param name="outputStream">The stream to write the token to.</param>
         public void WriteToken(IToken token, Stream outputStream)
         {
-            if (token == null)
+            if (token is null)
             {
                 WriteNullToken(outputStream);
                 return;
@@ -378,7 +378,7 @@
                 WriteName(pair.Key, outputStream);
 
                 // handle scenario where PdfPig has a null value under some circumstances
-                if (pair.Value == null)
+                if (pair.Value is null)
                 {
                     WriteToken(NullToken.Instance, outputStream);
                 }

@@ -9,7 +9,7 @@
     {
         public static DictionaryToken GetFilterParameters(DictionaryToken streamDictionary, int index)
         {
-            if (streamDictionary == null)
+            if (streamDictionary is null)
             {
                 throw new ArgumentNullException(nameof(streamDictionary));
             }

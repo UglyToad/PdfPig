@@ -36,7 +36,7 @@
 
         private string ExtractPrefix(string name)
         {
-            if (name == null)
+            if (name is null)
                 return prefix;
             var i = 0;
             while (i < name.Length && (name[i] < '0' || name[i] > '9'))
@@ -431,12 +431,12 @@
         /// <returns>The letters from the input text with their corresponding size and position.</returns>
         public IReadOnlyList<Letter> MeasureText(string text, double fontSize, PdfPoint position, PdfDocumentBuilder.AddedFont font)
         {
-            if (font == null)
+            if (font is null)
             {
                 throw new ArgumentNullException(nameof(font));
             }
 
-            if (text == null)
+            if (text is null)
             {
                 throw new ArgumentNullException(nameof(text));
             }
@@ -476,12 +476,12 @@
         /// <returns>The letters from the input text with their corresponding size and position.</returns>
         public IReadOnlyList<Letter> AddText(string text, double fontSize, PdfPoint position, PdfDocumentBuilder.AddedFont font)
         {
-            if (font == null)
+            if (font is null)
             {
                 throw new ArgumentNullException(nameof(font));
             }
 
-            if (text == null)
+            if (text is null)
             {
                 throw new ArgumentNullException(nameof(text));
             }

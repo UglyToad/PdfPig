@@ -42,7 +42,7 @@
             switch (functionType)
             {
                 case 0:
-                    if (functionStream == null)
+                    if (functionStream is null)
                     {
                         throw new NotImplementedException("PdfFunctionType0 not stream");
                     }
@@ -55,7 +55,7 @@
                     return CreatePdfFunctionType3(functionDictionary, domain, range, scanner, filterProvider);
 
                 case 4:
-                    if (functionStream == null)
+                    if (functionStream is null)
                     {
                         throw new NotImplementedException("PdfFunctionType4 not stream");
                     }
@@ -68,7 +68,7 @@
 
         private static PdfFunctionType0 CreatePdfFunctionType0(StreamToken functionStream, ArrayToken domain, ArrayToken range, IPdfTokenScanner scanner)
         {
-            if (range == null)
+            if (range is null)
             {
                 throw new ArgumentException("Could not retrieve Range in type 0 function.");
             }
@@ -89,7 +89,7 @@
                 order = orderToken.Int;
             }
 
-            if (!functionStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Encode, scanner, out var encode) || encode == null)
+            if (!functionStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Encode, scanner, out var encode) || encode is null)
             {
                 // The default value is [0 (size[0]-1) 0 (size[1]-1) ...]
                 var values = new List<NumericToken>();
@@ -102,7 +102,7 @@
                 encode = new ArrayToken(values);
             }
 
-            if (!functionStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Decode, scanner, out var decode) || decode == null)
+            if (!functionStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Decode, scanner, out var decode) || decode is null)
             {
                 // if decode is null, the default values are the range values
                 decode = range;
@@ -172,7 +172,7 @@
 
         private static PdfFunctionType4 CreatePdfFunctionType4(StreamToken functionStream, ArrayToken domain, ArrayToken range, IPdfTokenScanner scanner)
         {
-            if (range == null)
+            if (range is null)
             {
                 throw new ArgumentException("Could not retrieve Range in type 4 function.");
             }

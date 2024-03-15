@@ -38,7 +38,7 @@
                                    .Where(v => v.Value.CharacterCode == code)
                                    .Select(v => v.Value)
                                    .FirstOrDefault();
-            if (characterMetric == null)
+            if (characterMetric is null)
             {
                 Debug.WriteLine($"Font '{metrics.FontName}' does NOT have character '{character}' (0x{(int)character:X}).");
                 return false;
@@ -106,7 +106,7 @@
                                     .Where(v => v.Value.CharacterCode == characterCode)
                                     .Select(v => v.Value)
                                     .FirstOrDefault();
-            if (characterMetric == null)
+            if (characterMetric is null)
             {
                 throw new NotSupportedException($"Font '{metrics.FontName}' does NOT have character '{character}' (0x{(int)character:X}).");
             }

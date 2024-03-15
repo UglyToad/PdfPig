@@ -10,7 +10,7 @@
 
         public static JpegInformation GetInformation(Stream stream)
         {
-            if (stream == null)
+            if (stream is null)
             {
                 throw new ArgumentNullException(nameof(stream));
             }

@@ -24,9 +24,9 @@
         /// <summary>
         /// Generates the result of applying a clipping path to another path.
         /// </summary>
-        public static PdfPath Clip(this PdfPath clipping, PdfPath subject, ILog log = null)
+        public static PdfPath Clip(this PdfPath clipping, PdfPath subject, ILog? log = null)
         {
-            if (clipping == null)
+            if (clipping is null)
             {
                 throw new ArgumentNullException(nameof(clipping), $"{nameof(Clip)}: the clipping path cannot be null.");
             }
@@ -36,7 +36,7 @@
                 throw new ArgumentException($"{nameof(Clip)}: the clipping path does not have the IsClipping flag set to true.", nameof(clipping));
             }
 
-            if (subject == null)
+            if (subject is null)
             {
                 throw new ArgumentNullException(nameof(subject), $"{nameof(Clip)}: the subject path cannot be null.");
             }

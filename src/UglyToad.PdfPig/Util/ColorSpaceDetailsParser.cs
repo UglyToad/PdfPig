@@ -85,7 +85,7 @@
 
                         var first = colorSpaceArray[0] as NameToken;
 
-                        if (first == null || !ColorSpaceMapper.TryMap(first, resourceStore, out var innerColorSpace)
+                        if (first is null || !ColorSpaceMapper.TryMap(first, resourceStore, out var innerColorSpace)
                             || innerColorSpace != ColorSpace.CalGray)
                         {
                             return UnsupportedColorSpaceDetails.Instance;
@@ -128,7 +128,7 @@
 
                         var first = colorSpaceArray[0] as NameToken;
 
-                        if (first == null || !ColorSpaceMapper.TryMap(first, resourceStore, out var innerColorSpace)
+                        if (first is null || !ColorSpaceMapper.TryMap(first, resourceStore, out var innerColorSpace)
                             || innerColorSpace != ColorSpace.CalRGB)
                         {
                             return UnsupportedColorSpaceDetails.Instance;
@@ -178,7 +178,7 @@
 
                         var first = colorSpaceArray[0] as NameToken;
 
-                        if (first == null || !ColorSpaceMapper.TryMap(first, resourceStore, out var innerColorSpace)
+                        if (first is null || !ColorSpaceMapper.TryMap(first, resourceStore, out var innerColorSpace)
                             || innerColorSpace != ColorSpace.Lab)
                         {
                             return UnsupportedColorSpaceDetails.Instance;
@@ -221,7 +221,7 @@
 
                         var first = colorSpaceArray[0] as NameToken;
 
-                        if (first == null || !ColorSpaceMapper.TryMap(first, resourceStore, out var innerColorSpace)
+                        if (first is null || !ColorSpaceMapper.TryMap(first, resourceStore, out var innerColorSpace)
                             || innerColorSpace != ColorSpace.ICCBased)
                         {
                             return UnsupportedColorSpaceDetails.Instance;
@@ -277,7 +277,7 @@
 
                         var first = colorSpaceArray[0] as NameToken;
 
-                        if (first == null || !ColorSpaceMapper.TryMap(first, resourceStore, out var innerColorSpace)
+                        if (first is null || !ColorSpaceMapper.TryMap(first, resourceStore, out var innerColorSpace)
                             || innerColorSpace != ColorSpace.Indexed)
                         {
                             return UnsupportedColorSpaceDetails.Instance;

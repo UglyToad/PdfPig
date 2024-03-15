@@ -72,7 +72,7 @@
                             ? graphicsStateOperations[graphicsStateOperations.Count - 1]
                             : null;
 
-                        if (lastEndImageOffset == null || lastOperation == null || !(lastOperation is EndInlineImage lastEndImage))
+                        if (lastEndImageOffset is null || lastOperation is null || !(lastOperation is EndInlineImage lastEndImage))
                         {
                             throw new PdfDocumentFormatException("Encountered End Image token outside an inline image on " +
                                                                  $"page {pageNumber} at offset in content: {scanner.CurrentPosition}.");

@@ -162,7 +162,7 @@ namespace UglyToad.PdfPig.Util
 
         public bool Equals(Matrix3x3 other)
         {
-            if (other == null)
+            if (other is null)
             { 
                 return false;
             }

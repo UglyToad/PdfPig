@@ -14,7 +14,7 @@
             var resource = resources.FirstOrDefault(x =>
                 x.EndsWith("sRGB2014.icc", StringComparison.InvariantCultureIgnoreCase));
 
-            if (resource == null)
+            if (resource is null)
             {
                 throw new InvalidOperationException("Could not find the sRGB ICC color profile stream.");
             }
