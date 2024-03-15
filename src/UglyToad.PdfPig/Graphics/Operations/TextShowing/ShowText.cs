@@ -82,7 +82,7 @@
             // as single-byte or multiple-byte character codes. 
 
             // Note: order of replacing is important. Replace slash first before brackets.
-            text = text.Replace(@"\", @"\\)");  // Escape any slash          '\'  -> '\\'
+            text = text.Replace(@"\", @"\\");  // Escape any slash          '\'  -> '\\'
             text = text.Replace("(", @"\(");    // Escape any open  brackets '('  -> '\('
             text = text.Replace(")", @"\)");    // Escape any close brackets ')'  -> '\)'
 
