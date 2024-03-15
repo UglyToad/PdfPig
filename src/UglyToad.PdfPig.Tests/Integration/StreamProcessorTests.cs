@@ -12,9 +12,6 @@
     using PdfPig.Parser;
     using PdfPig.Tokenization.Scanner;
     using PdfPig.Tokens;
-    using System.Collections.Generic;
-    using System.Linq;
-    using Xunit;
 
     public class StreamProcessorTests
     {

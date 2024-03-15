@@ -1,9 +1,7 @@
 ﻿// ReSharper disable ObjectCreationAsStatement
 namespace UglyToad.PdfPig.Tests.Fonts.Cmap
 {
-    using System;
     using PdfFonts.Cmap;
-    using Xunit;
 
     public class CidRangeTests
     {

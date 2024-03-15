@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
     using System.Globalization;
     using Content;
-    using Xunit;
 
     public class AssertablePositionData
     {

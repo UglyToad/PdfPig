@@ -3,8 +3,6 @@
     using PdfPig.Core;
     using PdfPig.Graphics.Colors;
     using SkiaSharp;
-    using System;
-    using System.Collections.Generic;
 
     internal static class SkiaExtensions
     {

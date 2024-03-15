@@ -1,10 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Dla
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using UglyToad.PdfPig.DocumentLayoutAnalysis;
-    using Xunit;
 
     public class ArraySegmentExtensionsTests
     {

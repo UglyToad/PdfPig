@@ -3,7 +3,6 @@
     using PdfFonts.Cmap;
     using PdfFonts.Parser.Parts;
     using PdfPig.Tokens;
-    using Xunit;
 
     public class BaseFontRangeParserTests
     {

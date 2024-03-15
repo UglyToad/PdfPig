@@ -1,9 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
-    using System.Collections.Generic;
     using Exceptions;
-    using Xunit;
 
     public class EncryptedDocumentTests
     {

@@ -1,8 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Dla
 {
-    using System.Linq;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
-    using Xunit;
 
     public class NearestNeighbourWordExtractorTests
     {

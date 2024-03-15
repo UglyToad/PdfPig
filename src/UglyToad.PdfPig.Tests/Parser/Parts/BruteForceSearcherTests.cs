@@ -1,12 +1,9 @@
 ﻿// ReSharper disable ObjectCreationAsStatement
 namespace UglyToad.PdfPig.Tests.Parser.Parts
 {
-    using System;
-    using System.IO;
     using Integration;
     using PdfPig.Core;
     using PdfPig.Parser.Parts;
-    using Xunit;
 
     public class BruteForceSearcherTests
     {

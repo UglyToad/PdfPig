@@ -1,14 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Tests.Graphics.Operations
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
     using System.Reflection;
     using PdfPig.Graphics.Operations;
     using PdfPig.Graphics.Operations.InlineImages;
     using PdfPig.Tokens;
-    using Xunit;
 
     public class GraphicsStateOperationTests
     {

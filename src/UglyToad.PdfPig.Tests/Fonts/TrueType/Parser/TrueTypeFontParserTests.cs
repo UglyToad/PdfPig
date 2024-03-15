@@ -5,11 +5,9 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
     using PdfPig.Fonts.TrueType;
     using PdfPig.Fonts.TrueType.Parser;
     using PdfPig.Fonts.TrueType.Tables;
-    using System;
     using System.Globalization;
     using System.Text;
     using System.Text.RegularExpressions;
-    using Xunit;
 
     public class TrueTypeFontParserTests
     {

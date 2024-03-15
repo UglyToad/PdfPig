@@ -1,8 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Functions.Type4
 {
-    using System;
     using UglyToad.PdfPig.Functions.Type4;
-    using Xunit;
 
     public class OperatorsTests
     {

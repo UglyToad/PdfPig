@@ -1,9 +1,7 @@
 namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System.Linq;
     using UglyToad.PdfPig;
     using UglyToad.PdfPig.Writer;
-    using Xunit;
 
     public class ShowTextEscapeText
     {

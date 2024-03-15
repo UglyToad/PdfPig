@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts
 {
     using PdfPig.Fonts.Standard14Fonts;
-    using Xunit;
 
     public class Standard14Tests
     {

@@ -1,10 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts.Parser
 {
-    using System;
-    using System.IO;
     using PdfPig.Core;
     using PdfPig.Fonts.AdobeFontMetrics;
-    using Xunit;
 
     public class AdobeFontMetricsParserTests
     {

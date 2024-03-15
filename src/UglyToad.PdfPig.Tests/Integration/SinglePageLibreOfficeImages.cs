@@ -1,8 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System.Linq;
-    using Xunit;
-
     public class SinglePageLibreOfficeImages
     {
         private static string GetFilePath() => IntegrationHelpers.GetDocumentPath(@"Single Page Images - from libre office.pdf");

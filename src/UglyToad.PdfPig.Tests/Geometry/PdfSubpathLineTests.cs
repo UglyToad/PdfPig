@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Geometry
 {
-    using System.Collections.Generic;
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Geometry;
-    using Xunit;
     using static UglyToad.PdfPig.Core.PdfSubpath;
 
     public class PdfSubpathLineTests

@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Functions.Type4
 {
-    using System;
     using System.Globalization;
     using UglyToad.PdfPig.Functions.Type4;
-    using Xunit;
 
     /// <summary>
     /// Testing helper class for testing type 4 functions from the PDF specification.

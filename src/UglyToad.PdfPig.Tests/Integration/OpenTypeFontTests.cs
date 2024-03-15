@@ -1,7 +1,5 @@
-﻿using System.Linq;
-using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
+﻿using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
-using Xunit;
 
 namespace UglyToad.PdfPig.Tests.Integration
 {

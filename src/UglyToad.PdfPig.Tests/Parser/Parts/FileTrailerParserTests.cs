@@ -1,10 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.Parser.Parts
 {
-    using System;
     using PdfPig.Core;
     using PdfPig.Parser.FileStructure;
     using PdfPig.Tokenization.Scanner;
-    using Xunit;
 
     public class FileTrailerFileTrailerParserTests
     {

@@ -1,8 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System.Linq;
-    using Xunit;
-
     public class OldGutnishTests
     {
         private static string GetFilename()

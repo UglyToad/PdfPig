@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts
 {
-    using System.Text;
     using PdfPig.Core;
-    using PdfPig.Geometry;
-    using Xunit;
+    using System.Text;
 
     public class CharacterPathTests
     {

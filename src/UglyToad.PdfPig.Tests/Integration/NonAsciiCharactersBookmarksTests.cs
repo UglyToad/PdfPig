@@ -1,13 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
-    using System.IO;
-    using System.Linq;
     using UglyToad.PdfPig.Content;
     using UglyToad.PdfPig.Outline;
     using UglyToad.PdfPig.Outline.Destinations;
     using UglyToad.PdfPig.Writer;
-    using Xunit;
 
     public class NonAsciiCharactersBookmarksTests
     {

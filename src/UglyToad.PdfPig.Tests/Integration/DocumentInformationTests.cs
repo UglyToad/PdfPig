@@ -2,7 +2,6 @@
 {
     using PdfPig.Core;
     using PdfPig.Tokens;
-    using Xunit;
 
     public class DocumentInformationTests
     {

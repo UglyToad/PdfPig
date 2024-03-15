@@ -1,11 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using System.Reflection;
     using PdfPig.Graphics.Operations;
-    using Xunit;
 
     public class PublicApiScannerTests
     {

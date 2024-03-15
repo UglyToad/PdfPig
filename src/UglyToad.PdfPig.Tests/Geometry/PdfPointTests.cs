@@ -1,10 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Geometry
 {
     using PdfPig.Core;
-    using System.Collections.Generic;
-    using System.Linq;
     using UglyToad.PdfPig.Geometry;
-    using Xunit;
 
     public class PdfPointTests
     {

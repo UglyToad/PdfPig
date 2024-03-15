@@ -1,8 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System.Linq;
     using Annotations;
-    using Xunit;
 
     public class CatGeneticsTests
     {

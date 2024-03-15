@@ -1,11 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.Filters
 {
-    using System;
-    using System.Collections.Generic;
     using System.Text;
     using PdfPig.Filters;
     using PdfPig.Tokens;
-    using Xunit;
 
     public class Ascii85FilterTests
     {

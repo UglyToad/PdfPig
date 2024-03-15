@@ -1,11 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Tests.Parser.Parts
 {
-    using System;
     using PdfPig.Core;
     using PdfPig.Parser.Parts;
     using PdfPig.Tokens;
     using Tokens;
-    using Xunit;
 
     public class DirectObjectFinderTests
     {

@@ -1,8 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts.TrueType
 {
-    using System;
-    using System.IO;
-
     internal static class TrueTypeTestHelper
     {
         public static byte[] GetFileBytes(string name)

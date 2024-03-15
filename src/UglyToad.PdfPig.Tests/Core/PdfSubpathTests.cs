@@ -1,8 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Core
 {
-    using System.Collections.Generic;
     using UglyToad.PdfPig.Core;
-    using Xunit;
 
     public class PdfSubpathTests
     {

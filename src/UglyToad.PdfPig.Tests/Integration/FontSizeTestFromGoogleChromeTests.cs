@@ -1,10 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
-    using System.IO;
-    using System.Linq;
     using Content;
-    using Xunit;
 
     public class FontSizeTestFromGoogleChromeTests
     {

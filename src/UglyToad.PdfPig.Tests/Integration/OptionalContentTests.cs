@@ -1,8 +1,4 @@
-﻿using System;
-using UglyToad.PdfPig.Tokens;
-using Xunit;
-
-namespace UglyToad.PdfPig.Tests.Integration
+﻿namespace UglyToad.PdfPig.Tests.Integration
 {
     public class OptionalContentTests
     {

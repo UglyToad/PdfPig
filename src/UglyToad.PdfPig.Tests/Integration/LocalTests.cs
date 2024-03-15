@@ -1,9 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    //using System;
     //using System.Diagnostics;
-    //using System.IO;
-    //using Xunit;
 
     /// <summary>
     /// A class for testing files which are not checked in to source control.

@@ -1,9 +1,6 @@
 namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System.IO;
-    using System.Linq;
     using Content;
-    using Xunit;
 
     public class Type0FontTests
     {

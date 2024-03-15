@@ -1,14 +1,11 @@
 ﻿namespace UglyToad.PdfPig.Tests.Util
 {
-    using System;
-    using System.Collections.Generic;
     using PdfPig.Util;
-    using Xunit;
-
+ 
     public class DateFormatHelperTests
     {
-        public static IEnumerable<object[]> PositiveDateData = new[]
-        {
+        public static IEnumerable<object[]> PositiveDateData =
+        [
             new object[] {"D:20190710205447+01'00'", new DateTimeOffset(2019, 7, 10, 20, 54, 47, TimeSpan.FromHours(1))},
             new object[] {"D:2017", new DateTimeOffset(2017, 1, 1, 0, 0, 0, TimeSpan.Zero)},
             new object[] {"2017", new DateTimeOffset(2017, 1, 1, 0, 0, 0, TimeSpan.Zero)},
@@ -24,7 +21,7 @@
             new object[] {"D:19970915110347-07'30'", new DateTimeOffset(1997, 9, 15, 11, 3, 47, new TimeSpan(-7, -30, 0))},
             new object[] {"D:19990209153925+11'", new DateTimeOffset(1999, 2, 9, 15, 39, 25, TimeSpan.FromHours(11))},
             new object[] {"D:19990209153925-03'", new DateTimeOffset(1999, 2, 9, 15, 39, 25, TimeSpan.FromHours(-3))},
-        };
+        ];
 
         [Theory]
         [InlineData(default(string))]

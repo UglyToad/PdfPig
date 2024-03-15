@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Encryption
 {
-    using System.Linq;
     using PdfPig.Encryption;
     using PdfPig.Tokens;
-    using Xunit;
 
     public class RC4Tests
     {

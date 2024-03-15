@@ -1,14 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
-    using System.IO;
-    using System.Linq;
     using System.Text;
     using System.Xml;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.Export;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
     using UglyToad.PdfPig.Util;
-    using Xunit;
 
     public class AltoXmlTextExporterTests
     {

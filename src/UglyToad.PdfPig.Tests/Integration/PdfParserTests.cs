@@ -1,14 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
     using System.IO.Compression;
-    using System.Linq;
     using System.Text;
     using PdfPig.Filters;
     using PdfPig.Tokens;
-    using Xunit;
 
     /*
      * catalog

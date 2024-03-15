@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using UglyToad.PdfPig.Fonts.SystemFonts;
+﻿using UglyToad.PdfPig.Fonts.SystemFonts;
 using UglyToad.PdfPig.Tests.Dla;
-using Xunit;
 
 namespace UglyToad.PdfPig.Tests.Fonts.SystemFonts
 {

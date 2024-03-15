@@ -1,13 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Tests.Fonts.Cmap
 {
-    using System;
-    using System.Linq;
     using PdfFonts.Cmap;
     using PdfPig.Tokens;
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.PdfFonts.Parser.Parts;
     using UglyToad.PdfPig.Tokenization.Scanner;
-    using Xunit;
 
     public class CodespaceRangeTests
     {

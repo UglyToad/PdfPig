@@ -1,11 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
     using System.Globalization;
     using System.IO;
-    using System.Linq;
     using Content;
-    using Xunit;
 
     public class SinglePageFormContentIText1Tests
     {

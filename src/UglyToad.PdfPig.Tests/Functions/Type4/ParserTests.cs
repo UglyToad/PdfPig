@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Functions.Type4
 {
-    using Xunit;
-
     public class ParserTests
     {
         /// <summary>

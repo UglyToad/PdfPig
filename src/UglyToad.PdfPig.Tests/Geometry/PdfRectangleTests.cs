@@ -3,8 +3,6 @@
     using Content;
     using PdfPig.Geometry;
     using PdfPig.Core;
-    using Xunit;
-    using System.Collections.Generic;
     using System.Drawing;
 
     public class PdfRectangleTests

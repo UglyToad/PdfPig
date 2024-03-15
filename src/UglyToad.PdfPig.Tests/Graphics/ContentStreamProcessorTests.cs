@@ -4,7 +4,6 @@
     using PdfPig.Core;
     using PdfPig.Geometry;
     using PdfPig.Graphics;
-    using Xunit;
 
     public class ContentStreamProcessorTests
     {

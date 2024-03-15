@@ -5,14 +5,10 @@
     using DocumentLayoutAnalysis.ReadingOrderDetector;
     using PdfPig.Core;
     using PdfPig.Util;
-    using System;
-    using System.IO;
-    using System.Linq;
     using System.Text;
     using System.Text.RegularExpressions;
     using System.Xml;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.Export.PAGE;
-    using Xunit;
 
     public class PageXmlTextExporterTests
     {

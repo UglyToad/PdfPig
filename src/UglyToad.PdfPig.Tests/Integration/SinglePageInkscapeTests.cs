@@ -1,10 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using Xunit;
-
     public class SinglePageInkscapeTests
     {
         private static string GetFilename()

@@ -1,17 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Tests.Writer
 {
-    using System.IO;
-    using System.Linq;
     using Content;
     using Integration;
     using PdfPig.Core;
     using PdfPig.Fonts.Standard14Fonts;
     using PdfPig.Tokens;
     using PdfPig.Writer;
-    using System.Collections.Generic;
     using Tests.Fonts.TrueType;
-    using Xunit;
-    using System;
     using UglyToad.PdfPig.Graphics.Operations.InlineImages;
     using UglyToad.PdfPig.Outline;
     using UglyToad.PdfPig.Outline.Destinations;

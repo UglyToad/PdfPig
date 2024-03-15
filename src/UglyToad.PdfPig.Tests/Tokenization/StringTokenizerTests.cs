@@ -3,7 +3,6 @@
     using PdfPig.Core;
     using PdfPig.Tokenization;
     using PdfPig.Tokens;
-    using Xunit;
 
     public class StringTokenizerTests
     {

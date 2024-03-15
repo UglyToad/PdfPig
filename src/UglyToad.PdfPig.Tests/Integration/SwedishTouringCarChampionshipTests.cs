@@ -2,7 +2,6 @@
 {
     using Content;
     using UglyToad.PdfPig.Images.Png;
-    using Xunit;
 
     public class SwedishTouringCarChampionshipTests
     {

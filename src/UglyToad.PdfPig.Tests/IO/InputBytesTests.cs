@@ -1,10 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.IO
 {
-    using System.IO;
-    using System.Linq;
     using PdfPig.Core;
-    using Xunit;
-
+ 
     public class InputBytesTests
     {
         private const string TestData = @"123456789";

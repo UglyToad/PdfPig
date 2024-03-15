@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Tests.Util
 {
-    using Xunit;
     using PdfPig.Util;
 
     public class Matrix3x3Tests

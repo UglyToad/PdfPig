@@ -1,10 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Images
 {
-    using System.Collections.Generic;
-    using System.Linq;
     using UglyToad.PdfPig.Graphics.Colors;
     using UglyToad.PdfPig.Images.Png;
-    using Xunit;
 
     public class PngFromPdfImageFactoryTests
     {

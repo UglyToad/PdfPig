@@ -1,11 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.Dla
 {
-    using System.Collections.Generic;
-    using System.Linq;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
-    using Xunit;
-
+ 
     public class RecursiveXYCutTests
     {
         public static IEnumerable<object[]> DataExtract => new[]

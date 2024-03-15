@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Graphics.Operations.General
 {
     using PdfPig.Graphics.Operations.General;
-    using Xunit;
 
     public class SetMiterLimitTests
     {

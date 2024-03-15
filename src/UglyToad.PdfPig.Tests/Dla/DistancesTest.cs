@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Dla
 {
-    using System.Collections.Generic;
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.DocumentLayoutAnalysis;
-    using Xunit;
 
     public class DistancesTest
     {

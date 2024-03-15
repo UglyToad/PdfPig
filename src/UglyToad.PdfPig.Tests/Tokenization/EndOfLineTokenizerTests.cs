@@ -2,7 +2,6 @@
 {
     using PdfPig.Tokenization;
     using PdfPig.Tokens;
-    using Xunit;
 
     public class EndOfLineTokenizerTests
     {

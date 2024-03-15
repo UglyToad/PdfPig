@@ -9,9 +9,6 @@
     using PdfPig.Parser;
     using PdfPig.Tokenization.Scanner;
     using PdfPig.Tokens;
-    using System;
-    using System.Collections.Generic;
-    using Xunit;
 
     public class PageFactoryTests
     {

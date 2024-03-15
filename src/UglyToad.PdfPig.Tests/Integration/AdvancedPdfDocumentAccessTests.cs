@@ -1,8 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
     using PdfPig.Tokens;
-    using System.Collections.Generic;
-    using Xunit;
 
     public class AdvancedPdfDocumentAccessTests
     {

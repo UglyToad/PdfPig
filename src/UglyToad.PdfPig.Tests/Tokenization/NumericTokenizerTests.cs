@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.Tokenization
 {
-    using System.Collections.Generic;
     using PdfPig.Tokenization;
     using PdfPig.Tokens;
-    using Xunit;
 
     public class NumericTokenizerTests
     {

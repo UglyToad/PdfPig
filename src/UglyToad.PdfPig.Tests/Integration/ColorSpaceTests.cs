@@ -1,12 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
-    using System;
-    using System.IO;
-    using System.Linq;
     using UglyToad.PdfPig.Content;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
     using UglyToad.PdfPig.Graphics.Colors;
-    using Xunit;
 
     public class ColorSpaceTests
     {

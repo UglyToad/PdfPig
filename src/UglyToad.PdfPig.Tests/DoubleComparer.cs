@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace UglyToad.PdfPig.Tests
+﻿namespace UglyToad.PdfPig.Tests
 {
     internal class DoubleComparer : IEqualityComparer<double>
     {
