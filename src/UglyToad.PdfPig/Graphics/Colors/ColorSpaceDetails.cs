@@ -538,7 +538,7 @@
             for (var i = 0; i < decoded.Count; i += NumberOfColorComponents)
             {
                 int key = 0;
-                double[] comps = new double[NumberOfColorComponents];
+                var comps = new double[NumberOfColorComponents];
                 for (int n = 0; n < NumberOfColorComponents; n++)
                 {
                     byte b = decoded[i + n];
@@ -832,7 +832,7 @@
         internal override double[] Process(params double[] values)
         {
             var (R, _, _) = colorSpaceTransformer.TransformToRGB((values[0], values[0], values[0]));
-            return new double[] { R };
+            return [R];
         }
 
         /// <inheritdoc/>
@@ -1114,7 +1114,7 @@
             double Z = WhitePoint[2] * g(N);
 
             var (R, G, B) = colorSpaceTransformer.TransformToRGB((X, Y, Z));
-            return new double[] { R, G, B };
+            return [R, G, B];
         }
 
         /// <inheritdoc/>

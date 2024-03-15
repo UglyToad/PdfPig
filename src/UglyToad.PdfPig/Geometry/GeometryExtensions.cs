@@ -169,7 +169,7 @@
                     if (A < Amin)
                     {
                         Amin = A;
-                        MBR = new[] { R0X, R0Y, R1X, R1Y, R2X, R2Y, R3X, R3Y };
+                        MBR = [R0X, R0Y, R1X, R1Y, R2X, R2Y, R3X, R3Y];
                     }
                 }
 
