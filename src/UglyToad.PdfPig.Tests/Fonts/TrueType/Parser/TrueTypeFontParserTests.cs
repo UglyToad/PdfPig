@@ -96,7 +96,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
 
             foreach (var s in data)
             {
-                var parts = s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                var parts = s.Split(' ').Where(x => x.Length > 0).ToArray();
 
                 var name = parts[0];
 

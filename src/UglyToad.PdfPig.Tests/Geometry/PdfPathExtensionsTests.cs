@@ -21,14 +21,14 @@
 
                     foreach (var c in words.Where(w => path.Contains(w.BoundingBox)).ToList())
                     {
-                        Assert.Equal("in", c.Text.Split("_").Last());
+                        Assert.Equal("in", c.Text.Split('_').Last());
                         words.Remove(c);
                     }
                 }
 
                 foreach (var w in words)
                 {
-                    Assert.NotEqual("in", w.Text.Split("_").Last());
+                    Assert.NotEqual("in", w.Text.Split('_').Last());
                 }
             }
         }

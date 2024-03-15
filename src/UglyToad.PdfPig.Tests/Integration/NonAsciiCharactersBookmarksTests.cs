@@ -16,7 +16,7 @@
             builder.AddPage(PageSize.A4);
 
             // Set bookmark items.
-            var inputs = words.Split(" ", StringSplitOptions.RemoveEmptyEntries);
+            var inputs = words.Split(' ').Where(x => x.Length > 0).ToArray();
             builder.Bookmarks = new Bookmarks(inputs.Select(x => new DocumentBookmarkNode(x,
                 0,
                 new ExplicitDestination(1,
