@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Images.Png
 {
+    using System;
     using System.Collections.Generic;
 
     /// <summary>
@@ -36,7 +37,7 @@
         /// <summary>
         /// Calculate the CRC32 for data.
         /// </summary>
-        public static uint Calculate(byte[] data)
+        public static uint Calculate(ReadOnlySpan<byte> data)
         {
             var crc32 = uint.MaxValue;
             for (var i = 0; i < data.Length; i++)
