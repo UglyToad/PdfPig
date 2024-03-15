@@ -50,7 +50,7 @@
         {
             string AppendIfNotNull(string val, string label, string result)
             {
-                if (val == null)
+                if (val is null)
                 {
                     return result;
                 }

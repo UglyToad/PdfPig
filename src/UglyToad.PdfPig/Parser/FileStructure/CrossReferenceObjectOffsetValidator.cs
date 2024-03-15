@@ -54,7 +54,7 @@
         
         private static bool ValidateXrefOffsets(IInputBytes bytes, IReadOnlyDictionary<IndirectReference, long> objectOffsets, ILog log)
         {
-            if (objectOffsets == null)
+            if (objectOffsets is null)
             {
                 return true;
             }

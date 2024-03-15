@@ -111,7 +111,7 @@ namespace UglyToad.PdfPig.Writer.Xmp
             {
                 var value = mapper.ValueFunc(builder);
 
-                if (value == null)
+                if (value is null)
                 {
                     continue;
                 }

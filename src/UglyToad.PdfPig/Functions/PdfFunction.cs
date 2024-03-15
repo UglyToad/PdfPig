@@ -84,7 +84,7 @@
             {
                 if (numberOfOutputValues == -1)
                 {
-                    if (RangeValues == null)
+                    if (RangeValues is null)
                     {
                         numberOfOutputValues = 0;
                     }

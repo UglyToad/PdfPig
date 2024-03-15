@@ -104,7 +104,7 @@
         /// <inheritdoc/>
         public override IColor GetColor(params double[] values)
         {
-            if (values == null || values.Length != NumberOfColorComponents)
+            if (values is null || values.Length != NumberOfColorComponents)
             {
                 throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
@@ -166,7 +166,7 @@
         /// <inheritdoc/>
         public override IColor GetColor(params double[] values)
         {
-            if (values == null || values.Length != NumberOfColorComponents)
+            if (values is null || values.Length != NumberOfColorComponents)
             {
                 throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
@@ -228,7 +228,7 @@
         /// <inheritdoc/>
         public override IColor GetColor(params double[] values)
         {
-            if (values == null || values.Length != NumberOfColorComponents)
+            if (values is null || values.Length != NumberOfColorComponents)
             {
                 throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
@@ -330,7 +330,7 @@
         /// <inheritdoc/>
         public override IColor GetColor(params double[] values)
         {
-            if (values == null || values.Length != NumberOfColorComponents)
+            if (values is null || values.Length != NumberOfColorComponents)
             {
                 throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
@@ -518,7 +518,7 @@
         /// <inheritdoc/>
         public override IColor GetColor(params double[] values)
         {
-            if (values == null || values.Length != NumberOfColorComponents)
+            if (values is null || values.Length != NumberOfColorComponents)
             {
                 throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
@@ -688,7 +688,7 @@
         /// <inheritdoc/>
         public override IColor GetColor(params double[] values)
         {
-            if (values == null || values.Length != NumberOfColorComponents)
+            if (values is null || values.Length != NumberOfColorComponents)
             {
                 throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
@@ -838,7 +838,7 @@
         /// <inheritdoc/>
         public override IColor GetColor(params double[] values)
         {
-            if (values == null || values.Length != NumberOfColorComponents)
+            if (values is null || values.Length != NumberOfColorComponents)
             {
                 throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
@@ -979,7 +979,7 @@
         /// <inheritdoc/>
         public override IColor GetColor(params double[] values)
         {
-            if (values == null || values.Length != NumberOfColorComponents)
+            if (values is null || values.Length != NumberOfColorComponents)
             {
                 throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
@@ -1120,7 +1120,7 @@
         /// <inheritdoc/>
         public override IColor GetColor(params double[] values)
         {
-            if (values == null || values.Length != NumberOfColorComponents)
+            if (values is null || values.Length != NumberOfColorComponents)
             {
                 throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }
@@ -1232,7 +1232,7 @@
         /// <inheritdoc/>
         public override IColor GetColor(params double[] values)
         {
-            if (values == null || values.Length != NumberOfColorComponents)
+            if (values is null || values.Length != NumberOfColorComponents)
             {
                 throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
             }

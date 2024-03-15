@@ -74,7 +74,7 @@
         public static IToken CopyToken(IPdfStreamWriter writer, IToken tokenToCopy, IPdfTokenScanner tokenScanner,
             IDictionary<IndirectReference, IndirectReferenceToken> referencesFromDocument, Dictionary<IndirectReference, IndirectReferenceToken> callstack=null)
         {
-            if (callstack == null)
+            if (callstack is null)
             {
                 callstack = new Dictionary<IndirectReference, IndirectReferenceToken>();
             }
@@ -111,7 +111,7 @@
                             return newReferenceToken;
                         }
 
-                        if (callstack.ContainsKey(referenceToken.Data) && callstack[referenceToken.Data] == null)
+                        if (callstack.ContainsKey(referenceToken.Data) && callstack[referenceToken.Data] is null)
                         {
                             newReferenceToken = writer.ReserveObjectNumber();
                             callstack[referenceToken.Data] = newReferenceToken;
@@ -166,7 +166,7 @@
 
         internal static IEnumerable<(DictionaryToken, IReadOnlyList<DictionaryToken>)> WalkTree(PageTreeNode node, List<DictionaryToken> parents=null)
         {
-            if (parents == null)
+            if (parents is null)
             {
                 parents = new List<DictionaryToken>();
             }

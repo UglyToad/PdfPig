@@ -77,7 +77,7 @@
         {
             destination = null;
 
-            if (explicitDestinationArray == null || explicitDestinationArray.Length == 0)
+            if (explicitDestinationArray is null || explicitDestinationArray.Length == 0)
             {
                 return false;
             }
@@ -111,7 +111,7 @@
                     return false;
                 }
                 var page = pages.GetPageByReference(pageIndirectReferenceToken.Data);
-                if (page?.PageNumber == null)
+                if (page?.PageNumber is null)
                 {
                     return false;
                 }
@@ -136,7 +136,7 @@
             {
                 destTypeToken = explicitDestinationArray[1] as NameToken;
             }
-            if (destTypeToken == null)
+            if (destTypeToken is null)
             {
                 var errorMessage = $"Missing name token as second argument to explicit destination: {explicitDestinationArray}.";
 

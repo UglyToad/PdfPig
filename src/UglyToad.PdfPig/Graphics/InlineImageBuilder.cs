@@ -30,7 +30,7 @@
             RenderingIntent defaultRenderingIntent,
             IResourceStore resourceStore)
         {
-            if (Properties == null || Bytes == null)
+            if (Properties is null || Bytes is null)
             {
                 throw new InvalidOperationException($"Inline image builder not completely defined before calling {nameof(CreateInlineImage)}.");
             }
@@ -54,7 +54,7 @@
             {
                 colorSpaceName = GetByKeys<NameToken>(NameToken.ColorSpace, NameToken.Cs, false);
 
-                if (colorSpaceName == null)
+                if (colorSpaceName is null)
                 {
                     var colorSpaceArray = GetByKeys<ArrayToken>(NameToken.ColorSpace, NameToken.Cs, true);
 
@@ -82,7 +82,7 @@
 
             var filterName = GetByKeys<NameToken>(NameToken.Filter, NameToken.F, false);
 
-            if (filterName == null)
+            if (filterName is null)
             {
                 var filterArray = GetByKeys<ArrayToken>(NameToken.Filter, NameToken.F, false);
 

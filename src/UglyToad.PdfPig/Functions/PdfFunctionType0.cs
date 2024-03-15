@@ -254,7 +254,7 @@
         /// <returns>an array with all samples.</returns>
         private int[][] GetSamples()
         {
-            if (samples == null)
+            if (samples is null)
             {
                 int arraySize = 1;
                 int nIn = NumberOfInputParameters;

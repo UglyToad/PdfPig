@@ -28,11 +28,12 @@
                 shadingDictionary = fd;
             }
 
-            if (shadingDictionary.TryGet<NumericToken>(NameToken.ShadingType, scanner, out ShadingType shadingTypeToken))
+            ShadingType shadingType;
+            if (shadingDictionary.TryGet<NumericToken>(NameToken.ShadingType, scanner, out var shadingTypeToken))
             {
                 // Shading types 4 to 7 shall be defined by a stream containing descriptive data characterizing
                 // the shading's gradient fill.
-                if (shadingTypeToken.Int >= 4 && shadingStream == null)
+                if (shadingTypeToken.Int >= 4 && shadingStream is null)
                 {
                     throw new ArgumentNullException(nameof(shadingStream), $"Shading type '{(ShadingType)shadingTypeToken.Int}' is not properly defined. Shading types 4 to 7 shall be defined by a stream.");
                 }

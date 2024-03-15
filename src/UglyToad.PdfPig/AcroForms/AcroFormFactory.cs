@@ -213,7 +213,7 @@
             var fieldFlags = (uint) (fieldFlagsToken?.Long ?? 0);
 
             AcroFieldBase result;
-            if (fieldType == null)
+            if (fieldType is null)
             {
                 result = new AcroNonTerminalField(fieldDictionary, "Non-Terminal Field", fieldFlags, information, AcroFieldType.Unknown, children);
             }
@@ -562,7 +562,7 @@
                     continue;
                 }
 
-                if (selectedOptionIndices == null)
+                if (selectedOptionIndices is null)
                 {
                     return true;
                 }

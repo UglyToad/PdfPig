@@ -19,12 +19,12 @@
         /// </summary>
         public static byte[] Convert(ColorSpaceDetails details, IReadOnlyList<byte> decoded, int bitsPerComponent, int imageWidth, int imageHeight)
         {
-            if (decoded == null)
+            if (decoded is null)
             {
                 return [];
             }
 
-            if (details == null)
+            if (details is null)
             {
                 return decoded.ToArray();
             }

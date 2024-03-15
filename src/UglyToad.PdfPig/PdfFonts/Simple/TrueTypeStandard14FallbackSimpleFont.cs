@@ -37,7 +37,7 @@
             this.font = font;
             this.overrides = overrides;
             Name = name;
-            Details = fontMetrics == null ? FontDetails.GetDefault(Name?.Data) : new FontDetails(Name?.Data,
+            Details = fontMetrics is null ? FontDetails.GetDefault(Name?.Data) : new FontDetails(Name?.Data,
                 fontMetrics.Weight == "Bold",
                 fontMetrics.Weight == "Bold" ? 700 : FontDetails.DefaultWeight,
                 fontMetrics.ItalicAngle != 0);
@@ -137,7 +137,7 @@
         public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
         {
             path = null;
-            if (font == null)
+            if (font is null)
             {
                 return false;
             }

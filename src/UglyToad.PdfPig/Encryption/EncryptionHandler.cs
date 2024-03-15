@@ -70,7 +70,7 @@
                 documentIdBytes = [];
             }
 
-            if (encryptionDictionary == null)
+            if (encryptionDictionary is null)
             {
                 return;
             }
@@ -329,7 +329,7 @@
 
         public IToken Decrypt(IndirectReference reference, IToken token)
         {
-            if (token == null)
+            if (token is null)
             {
                 throw new ArgumentNullException(nameof(token));
             }
@@ -728,7 +728,7 @@
 
         private static byte[] GetPaddedPassword(byte[] password)
         {
-            if (password == null || password.Length == 0)
+            if (password is null || password.Length == 0)
             {
                 return PaddingBytes;
             }
@@ -771,7 +771,7 @@
         private static byte[] ComputeStupidIsoHash(byte[] password, byte[] salt, byte[] vector)
         {
             // There are some details here https://web.archive.org/web/20180311160224/esec-lab.sogeti.com/posts/2011/09/14/the-undocumented-password-validation-algorithm-of-adobe-reader-x.html
-            if (vector == null)
+            if (vector is null)
             {
                 vector = [];
             }

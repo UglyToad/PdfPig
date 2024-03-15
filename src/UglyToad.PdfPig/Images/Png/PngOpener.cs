@@ -15,7 +15,7 @@
 
         public static Png Open(Stream stream, PngOpenerSettings settings)
         {
-            if (stream == null)
+            if (stream is null)
             {
                 throw new ArgumentNullException(nameof(stream));
             }

@@ -57,7 +57,7 @@
 
         private Encoding ReadEncodingDictionary(DictionaryToken encodingDictionary, Encoding fontEncoding)
         {
-            if (encodingDictionary == null)
+            if (encodingDictionary is null)
             {
                 return null;
             }

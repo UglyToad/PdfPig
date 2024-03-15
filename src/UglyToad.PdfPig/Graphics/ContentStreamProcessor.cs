@@ -136,7 +136,7 @@
             }
 
             // If we did not create a letter for a combined diacritic, create one here.
-            if (letter == null)
+            if (letter is null)
             {
                 letter = new Letter(
                     unicode,
@@ -167,7 +167,7 @@
 
         public override void BeginSubpath()
         {
-            if (CurrentPath == null)
+            if (CurrentPath is null)
             {
                 CurrentPath = new PdfPath();
             }
@@ -178,7 +178,7 @@
 
         public override PdfPoint? CloseSubpath()
         {
-            if (CurrentSubpath == null)
+            if (CurrentSubpath is null)
             {
                 return null;
             }
@@ -200,7 +200,7 @@
 
         public void AddCurrentSubpath() // Not an override
         {
-            if (CurrentSubpath == null)
+            if (CurrentSubpath is null)
             {
                 return;
             }
@@ -211,7 +211,7 @@
 
         public override void StrokePath(bool close)
         {
-            if (CurrentPath == null)
+            if (CurrentPath is null)
             {
                 return;
             }
@@ -228,7 +228,7 @@
 
         public override void FillPath(FillingRule fillingRule, bool close)
         {
-            if (CurrentPath == null)
+            if (CurrentPath is null)
             {
                 return;
             }
@@ -245,7 +245,7 @@
 
         public override void FillStrokePath(FillingRule fillingRule, bool close)
         {
-            if (CurrentPath == null)
+            if (CurrentPath is null)
             {
                 return;
             }
@@ -271,7 +271,7 @@
 
         public override void BezierCurveTo(double x2, double y2, double x3, double y3)
         {
-            if (CurrentSubpath == null)
+            if (CurrentSubpath is null)
             {
                 return;
             }
@@ -290,7 +290,7 @@
 
         public override void BezierCurveTo(double x1, double y1, double x2, double y2, double x3, double y3)
         {
-            if (CurrentSubpath == null)
+            if (CurrentSubpath is null)
             {
                 return;
             }
@@ -310,7 +310,7 @@
 
         public override void LineTo(double x, double y)
         {
-            if (CurrentSubpath == null)
+            if (CurrentSubpath is null)
             {
                 return;
             }
@@ -333,7 +333,7 @@
 
         public override void EndPath()
         {
-            if (CurrentPath == null)
+            if (CurrentPath is null)
             {
                 return;
             }
@@ -403,7 +403,7 @@
 
         public override void ModifyClippingIntersect(FillingRule clippingRule)
         {
-            if (CurrentPath == null)
+            if (CurrentPath is null)
             {
                 return;
             }
@@ -417,7 +417,7 @@
                 currentClipping.SetClipping(clippingRule);
 
                 var newClippings = CurrentPath.Clip(currentClipping, ParsingOptions.Logger);
-                if (newClippings == null)
+                if (newClippings is null)
                 {
                     ParsingOptions.Logger.Warn("Empty clipping path found. Clipping path not updated.");
                 }

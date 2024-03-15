@@ -86,7 +86,7 @@ namespace UglyToad.PdfPig.Writer
             var tokenWriter = new NoTextTokenWriter();
             using (var document = new PdfDocumentBuilder(output, false, PdfWriterType.Default, file.Version, tokenWriter: tokenWriter))
             {
-                if (pagesBundle == null)
+                if (pagesBundle is null)
                 {
                     for (var i = 1; i <= file.NumberOfPages; i++)
                     {

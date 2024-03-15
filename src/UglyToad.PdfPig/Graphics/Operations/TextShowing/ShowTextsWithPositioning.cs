@@ -36,7 +36,7 @@
         /// <param name="array">The array elements.</param>
         public ShowTextsWithPositioning(IReadOnlyList<IToken> array)
         {
-            if (array == null)
+            if (array is null)
             {
                 throw new ArgumentNullException(nameof(array));
             }

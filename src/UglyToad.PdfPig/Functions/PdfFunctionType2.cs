@@ -40,7 +40,7 @@
             // exponential interpolation
             double xToN = Math.Pow(input[0], N); // x^exponent
 
-            double[] result = new double[Math.Min(C0.Length, C1.Length)];
+            var result = new double[Math.Min(C0.Length, C1.Length)];
             for (int j = 0; j < result.Length; j++)
             {
                 double c0j = ((NumericToken)C0[j]).Double;

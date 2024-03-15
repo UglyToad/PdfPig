@@ -115,7 +115,7 @@
                 {
                     node = node.Walk(ReadBit());
 
-                    if (node == null)
+                    if (node is null)
                     {
                         goto mode;
                     }
@@ -224,7 +224,7 @@
                 {
                     node = node.Walk(ReadBit());
 
-                    if (node == null)
+                    if (node is null)
                     {
                         goto eof;
                     }
@@ -347,7 +347,7 @@
                 var bit = ReadBit();
                 node = node.Walk(bit);
 
-                if (node == null)
+                if (node is null)
                 {
                     throw new InvalidOperationException("Unknown code in Huffman RLE stream");
                 }
@@ -495,7 +495,7 @@
                     var isSet = ((path >> bitPos) & 1) == 1;
                     var next = current.Walk(isSet);
 
-                    if (next == null)
+                    if (next is null)
                     {
                         next = new Node();
 
@@ -531,7 +531,7 @@
                     var isSet = ((path >> bitPos) & 1) == 1;
                     var next = current.Walk(isSet);
 
-                    if (next == null)
+                    if (next is null)
                     {
                         if (i == depth - 1)
                         {

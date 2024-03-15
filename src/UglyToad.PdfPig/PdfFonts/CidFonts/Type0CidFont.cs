@@ -85,7 +85,7 @@
                 return defaultWidth.Value;
             }
 
-            if (Descriptor == null)
+            if (Descriptor is null)
             {
                 return 1000;
             }
@@ -101,7 +101,7 @@
                 throw new ArgumentException($"The provided character identifier was negative: {characterIdentifier}.");
             }
 
-            if (fontProgram == null)
+            if (fontProgram is null)
             {
                 return Descriptor?.BoundingBox ?? new PdfRectangle(0, 0, 1000, 1.0 / scale);
             }
@@ -138,7 +138,7 @@
 
         public TransformationMatrix GetFontMatrix(int characterIdentifier)
         {
-            if (fontProgram == null)
+            if (fontProgram is null)
             {
                 return FontMatrix;
             }
@@ -149,7 +149,7 @@
         public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
         {
             path = null;
-            if (fontProgram == null)
+            if (fontProgram is null)
             {
                 return false;
             }
@@ -160,7 +160,7 @@
         public bool TryGetPath(int characterCode, Func<int, int?> characterCodeToGlyphId, out IReadOnlyList<PdfSubpath> path)
         {
             path = null;
-            if (fontProgram == null)
+            if (fontProgram is null)
             {
                 return false;
             }
@@ -171,7 +171,7 @@
         public bool TryGetNormalisedPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
         {
             path = null;
-            if (fontProgram == null)
+            if (fontProgram is null)
             {
                 return false;
             }
@@ -188,7 +188,7 @@
         public bool TryGetNormalisedPath(int characterCode, Func<int, int?> characterCodeToGlyphId, out IReadOnlyList<PdfSubpath> path)
         {
             path = null;
-            if (fontProgram == null)
+            if (fontProgram is null)
             {
                 return false;
             }

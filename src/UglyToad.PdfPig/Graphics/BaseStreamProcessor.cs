@@ -213,7 +213,7 @@
                 ? ActiveExtendedGraphicsStateFont
                 : ResourceStore.GetFont(currentState.FontState.FontName);
 
-            if (font == null)
+            if (font is null)
             {
                 if (ParsingOptions.SkipMissingFonts)
                 {
@@ -248,7 +248,7 @@
 
                 var foundUnicode = font.TryGetUnicode(code, out var unicode);
 
-                if (!foundUnicode || unicode == null)
+                if (!foundUnicode || unicode is null)
                 {
                     ParsingOptions.Logger.Warn(
                         $"We could not find the corresponding character with code {code} in font {font.Name}.");
@@ -342,7 +342,7 @@
             var horizontalScaling = textState.HorizontalScaling / 100.0;
             var font = ResourceStore.GetFont(textState.FontName);
 
-            if (font == null)
+            if (font is null)
             {
                 if (ParsingOptions.SkipMissingFonts)
                 {
@@ -766,7 +766,7 @@
         /// <inheritdoc/>
         public virtual void SetInlineImageProperties(IReadOnlyDictionary<NameToken, IToken> properties)
         {
-            if (InlineImageBuilder == null)
+            if (InlineImageBuilder is null)
             {
                 ParsingOptions.Logger.Error(
                     "Begin inline image data (ID) command encountered without a corresponding begin inline image (BI) command.");
@@ -779,7 +779,7 @@
         /// <inheritdoc/>
         public virtual void EndInlineImage(IReadOnlyList<byte> bytes)
         {
-            if (InlineImageBuilder == null)
+            if (InlineImageBuilder is null)
             {
                 ParsingOptions.Logger.Error(
                     "End inline image (EI) command encountered without a corresponding begin inline image (BI) command.");

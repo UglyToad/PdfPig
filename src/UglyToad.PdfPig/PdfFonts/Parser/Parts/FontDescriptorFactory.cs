@@ -11,7 +11,7 @@
     {
         public static FontDescriptor Generate(DictionaryToken dictionary, IPdfTokenScanner pdfScanner)
         {
-            if (dictionary == null)
+            if (dictionary is null)
             {
                 throw new ArgumentNullException(nameof(dictionary));
             }

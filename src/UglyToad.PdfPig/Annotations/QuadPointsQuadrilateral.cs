@@ -23,7 +23,7 @@
         /// </summary>
         public QuadPointsQuadrilateral(IReadOnlyList<PdfPoint> points)
         {
-            if (points == null)
+            if (points is null)
             {
                 throw new ArgumentNullException(nameof(points));
             }

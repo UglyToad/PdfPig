@@ -133,7 +133,7 @@
 
                 current = DirectObjectFinder.Get<DictionaryToken>(nextReference, pdfScanner);
 
-                if (current == null)
+                if (current is null)
                 {
                     break;
                 }

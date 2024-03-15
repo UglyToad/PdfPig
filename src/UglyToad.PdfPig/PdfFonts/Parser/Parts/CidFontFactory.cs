@@ -90,14 +90,14 @@
 
         private ICidFontProgram ReadDescriptorFile(FontDescriptor descriptor)
         {
-            if (descriptor?.FontFile == null)
+            if (descriptor?.FontFile is null)
             {
                 return null;
             }
 
             var fontFileStream = DirectObjectFinder.Get<StreamToken>(descriptor.FontFile.ObjectKey, pdfScanner);
 
-            if (fontFileStream == null)
+            if (fontFileStream is null)
             {
                 return null;
             }

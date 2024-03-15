@@ -56,7 +56,7 @@
         /// <param name="dictionary">The parsed dictionary from the document.</param>
         internal TrailerDictionary(DictionaryToken dictionary)
         {
-            if (dictionary == null)
+            if (dictionary is null)
             {
                 throw new ArgumentNullException(nameof(dictionary));
             }

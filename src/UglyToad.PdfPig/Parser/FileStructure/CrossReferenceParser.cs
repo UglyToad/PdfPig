@@ -262,7 +262,7 @@
 
             var streamObjectToken = (ObjectToken)pdfScanner.CurrentToken;
 
-            if (streamObjectToken == null || !(streamObjectToken.Data is StreamToken objectStream))
+            if (streamObjectToken is null || !(streamObjectToken.Data is StreamToken objectStream))
             {
                 log.Error($"When reading a cross reference stream object found a non-stream object: {streamObjectToken?.Data}");
 

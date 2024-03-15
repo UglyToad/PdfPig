@@ -122,7 +122,7 @@
 
         private static string GetText(PageContent content)
         {
-            if (content?.Letters == null)
+            if (content?.Letters is null)
             {
                 return string.Empty;
             }

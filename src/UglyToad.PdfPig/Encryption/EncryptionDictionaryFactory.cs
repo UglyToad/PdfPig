@@ -11,7 +11,7 @@
     {
         public static EncryptionDictionary Read(DictionaryToken encryptionDictionary, IPdfTokenScanner tokenScanner)
         {
-            if (encryptionDictionary == null)
+            if (encryptionDictionary is null)
             {
                 throw new ArgumentNullException(nameof(encryptionDictionary));
             }

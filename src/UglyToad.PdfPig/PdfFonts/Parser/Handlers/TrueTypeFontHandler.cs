@@ -57,7 +57,7 @@
                 // Can use the AFM descriptor despite not being Type 1!
                 var standard14Font = Standard14.GetAdobeFontMetrics(baseFont.Data);
 
-                if (standard14Font == null)
+                if (standard14Font is null)
                 {
                     throw new InvalidFontFormatException($"The provided TrueType font dictionary did not have a /FirstChar and did not match a Standard 14 font: {dictionary}.");
                 }
@@ -66,7 +66,7 @@
 
                 var thisEncoding = encodingReader.Read(dictionary);
 
-                if (thisEncoding == null)
+                if (thisEncoding is null)
                 {
                     thisEncoding = new AdobeFontMetricsEncoding(standard14Font);
                 }
@@ -97,7 +97,7 @@
 
             var font = ParseTrueTypeFont(descriptor, out var actualHandler);
 
-            if (font == null && actualHandler != null)
+            if (font is null && actualHandler != null)
             {
                 return actualHandler.Generate(dictionary);
             }
@@ -126,7 +126,7 @@
 
             Encoding encoding = encodingReader.Read(dictionary, descriptor);
 
-            if (encoding == null && font?.TableRegister?.CMapTable != null
+            if (encoding is null && font?.TableRegister?.CMapTable != null
                                  && font.TableRegister.PostScriptTable?.GlyphNames != null)
             {
                 var postscript = font.TableRegister.PostScriptTable;
@@ -161,7 +161,7 @@
         {
             actualHandler = null;
 
-            if (descriptor.FontFile == null)
+            if (descriptor.FontFile is null)
             {
                 try
                 {

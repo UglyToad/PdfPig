@@ -20,7 +20,7 @@
 
         private static FontDetails GetDetails(CompactFontFormatFont font)
         {
-            if (font == null)
+            if (font is null)
             {
                 return FontDetails.GetDefault();
             }
@@ -82,7 +82,7 @@
         {
             var font = GetFont();
             var name = font.GetCharacterName(characterCode, true);
-            if (name == null)
+            if (name is null)
             {
                 matrix = null;
                 return false;

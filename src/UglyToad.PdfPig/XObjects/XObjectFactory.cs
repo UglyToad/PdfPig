@@ -25,7 +25,7 @@
             ILookupFilterProvider filterProvider,
             IResourceStore resourceStore)
         {
-            if (xObject == null)
+            if (xObject is null)
             {
                 throw new ArgumentNullException(nameof(xObject));
             }

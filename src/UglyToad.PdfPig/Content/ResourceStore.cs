@@ -200,7 +200,7 @@
 
                     var fontObject = DirectObjectFinder.Get<DictionaryToken>(objectKey, scanner);
 
-                    if (fontObject == null)
+                    if (fontObject is null)
                     {
                         //This is a valid use case
                         continue;
@@ -269,7 +269,7 @@
         {
             namedToken = default(ResourceColorSpace);
 
-            if (name == null)
+            if (name is null)
             {
                 throw new ArgumentNullException(nameof(name));
             }
@@ -286,7 +286,7 @@
 
         public ColorSpaceDetails GetColorSpaceDetails(NameToken name, DictionaryToken dictionary)
         {
-            if (dictionary == null)
+            if (dictionary is null)
             {
                 dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>());
             }

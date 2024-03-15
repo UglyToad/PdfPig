@@ -6,7 +6,7 @@
     {
         public static void Fill<T>(T[] array, int start, int end, T value)
         {
-            if (array == null)
+            if (array is null)
             {
                 throw new ArgumentNullException(nameof(array));
             }

@@ -56,13 +56,13 @@
         /// <inheritdoc />
         public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary)
         {
-            if (dictionary == null)
+            if (dictionary is null)
             {
                 throw new ArgumentNullException(nameof(dictionary));
             }
 
             var token = dictionary.GetObjectOrDefault(NameToken.Filter, NameToken.F);
-            if (token == null)
+            if (token is null)
             {
                 return Array.Empty<IFilter>();
             }
@@ -89,7 +89,7 @@
         /// <inheritdoc />
         public IReadOnlyList<IFilter> GetNamedFilters(IReadOnlyList<NameToken> names)
         {
-            if (names == null)
+            if (names is null)
             {
                 throw new ArgumentNullException(nameof(names));
             }

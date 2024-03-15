@@ -38,7 +38,7 @@
 
         public static int GetInt(this DictionaryToken token, NameToken name)
         {
-            if (token == null)
+            if (token is null)
             {
                 throw new ArgumentNullException(nameof(token));
             }
@@ -50,7 +50,7 @@
 
         public static int GetIntOrDefault(this DictionaryToken token, NameToken name, int defaultValue = 0)
         {
-            if (token == null)
+            if (token is null)
             {
                 throw new ArgumentNullException(nameof(token));
             }
@@ -62,7 +62,7 @@
 
         public static int GetIntOrDefault(this DictionaryToken token, NameToken first, NameToken second, int defaultValue = 0)
         {
-            if (token == null)
+            if (token is null)
             {
                 throw new ArgumentNullException(nameof(token));
             }
@@ -74,7 +74,7 @@
 
         public static long? GetLongOrDefault(this DictionaryToken token, NameToken name)
         {
-            if (token == null)
+            if (token is null)
             {
                 throw new ArgumentNullException(nameof(token));
             }
@@ -86,7 +86,7 @@
 
         public static bool GetBooleanOrDefault(this DictionaryToken token, NameToken name, bool defaultValue)
         {
-            if (token == null)
+            if (token is null)
             {
                 throw new ArgumentNullException(nameof(token));
             }
@@ -99,7 +99,7 @@
         [CanBeNull]
         public static NameToken GetNameOrDefault(this DictionaryToken token, NameToken name)
         {
-            if (token == null)
+            if (token is null)
             {
                 throw new ArgumentNullException(nameof(token));
             }
@@ -142,7 +142,7 @@
     {
         public static NumericToken GetNumeric(this ArrayToken array, int index)
         {
-            if (array == null)
+            if (array is null)
             {
                 throw new ArgumentNullException(nameof(array));
             }
@@ -162,7 +162,7 @@
 
         public static PdfRectangle ToRectangle(this ArrayToken array, IPdfTokenScanner tokenScanner)
         {
-            if (array == null)
+            if (array is null)
             {
                 throw new ArgumentNullException(nameof(array));
             }
@@ -180,7 +180,7 @@
 
         public static PdfRectangle ToIntRectangle(this ArrayToken array, IPdfTokenScanner tokenScanner)
         {
-            if (array == null)
+            if (array is null)
             {
                 throw new ArgumentNullException(nameof(array));
             }

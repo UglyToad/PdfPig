@@ -30,12 +30,12 @@
 
         public static long GetFirstCrossReferenceOffset(IInputBytes bytes, ISeekableTokenScanner scanner, bool isLenientParsing)
         {
-            if (bytes == null)
+            if (bytes is null)
             {
                 throw new ArgumentNullException(nameof(bytes));
             }
 
-            if (scanner == null)
+            if (scanner is null)
             {
                 throw new ArgumentNullException(nameof(scanner));
             }
@@ -68,7 +68,7 @@
                 }
             }
 
-            if (numeric == null)
+            if (numeric is null)
             {
                 throw new PdfDocumentFormatException($"Could not find the numeric value following 'startxref'. Searching from position {startXrefPosition}.");
             }

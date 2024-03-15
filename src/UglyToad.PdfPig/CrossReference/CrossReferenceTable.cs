@@ -44,7 +44,7 @@
             TrailerDictionary trailer,
             IReadOnlyList<CrossReferenceOffset> crossReferenceOffsets)
         {
-            if (objectOffsets == null)
+            if (objectOffsets is null)
             {
                 throw new ArgumentNullException(nameof(objectOffsets));
             }

@@ -133,7 +133,7 @@
             var resource = resources.FirstOrDefault(x =>
                 x.EndsWith("CMap." + name, StringComparison.InvariantCultureIgnoreCase));
 
-            if (resource == null)
+            if (resource is null)
             {
                 return false;
             }
@@ -141,7 +141,7 @@
             byte[] bytes;
             using (var stream = typeof(CMapParser).Assembly.GetManifestResourceStream(resource))
             {
-                if (stream == null)
+                if (stream is null)
                 {
                     return false;
                 }

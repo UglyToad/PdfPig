@@ -37,7 +37,7 @@
 
         public static CMap Parse(IInputBytes bytes)
         {
-            if (bytes == null)
+            if (bytes is null)
             {
                 throw new ArgumentNullException(nameof(bytes));
             }

@@ -193,7 +193,7 @@
 
             var encodingName = dictionary.GetNameOrDefault(NameToken.Encoding);
 
-            if (encodingName == null)
+            if (encodingName is null)
             {
                 return (null, false);
             }

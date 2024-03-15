@@ -99,7 +99,7 @@
         public bool TryGetBytes(out IReadOnlyList<byte> bytes)
         {
             bytes = null;
-            if (bytesFactory == null)
+            if (bytesFactory is null)
             {
                 return false;
             }

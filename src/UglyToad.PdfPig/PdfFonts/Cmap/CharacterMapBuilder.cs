@@ -115,17 +115,17 @@
 
         private static IReadOnlyList<T> Combine<T>(IReadOnlyList<T> a, IReadOnlyList<T> b)
         {
-            if (a == null && b == null)
+            if (a is null && b is null)
             {
                 return new T[0];
             }
 
-            if (a == null)
+            if (a is null)
             {
                 return b;
             }
 
-            if (b == null)
+            if (b is null)
             {
                 return a;
             }

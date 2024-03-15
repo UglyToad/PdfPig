@@ -40,7 +40,7 @@ namespace UglyToad.PdfPig.Graphics
                 {
                     var symbol = assemblyType.GetField("Symbol");
 
-                    if (symbol == null)
+                    if (symbol is null)
                     {
                         throw new InvalidOperationException("An operation type was defined without the public const Symbol being declared. Type was: " + assemblyType.FullName);
                     }

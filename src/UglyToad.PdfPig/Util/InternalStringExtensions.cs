@@ -11,9 +11,9 @@
                 throw new ArgumentOutOfRangeException(nameof(offset), $"Offset cannot be negative: {offset}");
             }
 
-            if (value == null)
+            if (value is null)
             {
-                if (start == null && offset == 0)
+                if (start is null && offset == 0)
                 {
                     return true;
                 }

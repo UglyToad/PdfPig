@@ -66,7 +66,7 @@
 
         public double GetWidthFromFont(int characterIdentifier)
         {
-            if (fontProgram == null)
+            if (fontProgram is null)
             {
                 return GetWidthFromDictionary(characterIdentifier);
             }
@@ -97,7 +97,7 @@
 
         public PdfRectangle GetBoundingBox(int characterIdentifier)
         {
-            if (fontProgram == null)
+            if (fontProgram is null)
             {
                 return Descriptor.BoundingBox;
             }
@@ -132,7 +132,7 @@
         public bool TryGetPath(int characterCode, Func<int, int?> characterCodeToGlyphId, out IReadOnlyList<PdfSubpath> path)
         {
             path = null;
-            if (fontProgram == null)
+            if (fontProgram is null)
             {
                 return false;
             }
@@ -148,7 +148,7 @@
         public bool TryGetNormalisedPath(int characterCode, Func<int, int?> characterCodeToGlyphId, out IReadOnlyList<PdfSubpath> path)
         {
             path = null;
-            if (fontProgram == null)
+            if (fontProgram is null)
             {
                 return false;
             }

@@ -73,7 +73,7 @@
             IReadOnlyList<CidRange> cidRanges, 
             IReadOnlyList<CidCharacterMapping> cidCharacterMappings)
         {
-            if (cidCharacterMappings == null)
+            if (cidCharacterMappings is null)
             {
                 throw new ArgumentNullException(nameof(cidCharacterMappings));
             }

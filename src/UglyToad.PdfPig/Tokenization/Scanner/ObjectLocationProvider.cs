@@ -55,7 +55,7 @@
                 return true;
             }
 
-            if (bruteForcedOffsets == null)
+            if (bruteForcedOffsets is null)
             {
                 bruteForcedOffsets = BruteForceSearcher.GetObjectLocations(bytes);
             }
@@ -75,7 +75,7 @@
 
         public void Cache(ObjectToken objectToken, bool force = false)
         {
-            if (objectToken == null)
+            if (objectToken is null)
             {
                 throw new ArgumentNullException();
             }
