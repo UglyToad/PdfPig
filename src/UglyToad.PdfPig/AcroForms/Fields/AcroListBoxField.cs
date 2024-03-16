@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using Core;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <inheritdoc />
     /// <summary>

@@ -2,7 +2,6 @@
 {
     using System.IO;
     using Tokens;
-    using Util.JetBrains.Annotations;
     using Writer;
 
     /// <inheritdoc />

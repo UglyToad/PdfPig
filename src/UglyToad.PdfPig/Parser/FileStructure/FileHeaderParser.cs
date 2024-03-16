@@ -8,7 +8,6 @@
     using Logging;
     using Tokenization.Scanner;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// Used to retrieve the version header from the PDF file.

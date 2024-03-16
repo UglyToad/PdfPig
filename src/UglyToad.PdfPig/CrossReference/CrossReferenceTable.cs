@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using Core;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// The cross-reference table contains information that enables random access to PDF objects within the file by object number

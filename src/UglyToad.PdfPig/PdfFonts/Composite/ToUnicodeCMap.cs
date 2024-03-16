@@ -4,7 +4,6 @@
     using System.Diagnostics.CodeAnalysis;
     using Cmap;
     using Core;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// Defines the information content (actual text) of the font

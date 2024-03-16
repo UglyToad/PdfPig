@@ -2,7 +2,6 @@
 {
     using System.Collections.Generic;
     using Geometry;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// Glyphs from fonts which support vertical writing mode define displacement and position vectors.

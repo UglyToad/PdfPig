@@ -3,7 +3,6 @@
     using System;
     using Outline.Destinations;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// The root of the document's object hierarchy. Contains references to objects defining the contents,

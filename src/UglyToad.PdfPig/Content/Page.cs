@@ -3,15 +3,14 @@
     using System;
     using System.Collections.Generic;
     using System.Text;
+    using System.Linq;
     using Annotations;
     using Geometry;
     using Graphics.Operations;
     using Tokens;
     using Util;
-    using Util.JetBrains.Annotations;
     using Tokenization.Scanner;
     using Graphics;
-    using System.Linq;
 
     /// <summary>
     /// Contains the content and provides access to methods of a single page in the <see cref="PdfDocument"/>.

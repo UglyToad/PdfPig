@@ -3,7 +3,6 @@
     using System;
     using System.Diagnostics.CodeAnalysis;
     using Core;
-    using JetBrains.Annotations;
     using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;

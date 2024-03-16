@@ -5,7 +5,6 @@
     using Core;
     using PdfPig.Core;
     using Tokens;
-    using Util.JetBrains.Annotations;
     using XObjects;
 
     /// <summary>

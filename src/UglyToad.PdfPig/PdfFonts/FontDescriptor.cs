@@ -2,7 +2,6 @@
 {
     using Core;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// Specifies metrics and attributes of a simple font or CID Font for the whole font rather than per-glyph.

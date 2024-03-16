@@ -5,7 +5,6 @@
     using Tokenization.Scanner;
     using Tokens;
     using Util;
-    using Util.JetBrains.Annotations;
 
     internal static class FontDescriptorFactory
     {

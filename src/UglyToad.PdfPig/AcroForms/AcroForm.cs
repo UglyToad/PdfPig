@@ -6,7 +6,6 @@
     using Core;
     using Fields;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// A collection of interactive fields for gathering data from a user through dropdowns, textboxes, checkboxes, etc.

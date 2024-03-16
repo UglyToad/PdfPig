@@ -4,7 +4,6 @@
     using System.Globalization;
     using System.IO;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <inheritdoc />
     /// <summary>

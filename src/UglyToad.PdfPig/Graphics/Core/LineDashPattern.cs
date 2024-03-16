@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// The line dash pattern controls the pattern of dashes and gaps used to stroke paths.
