@@ -68,6 +68,7 @@
                 "UglyToad.PdfPig.Annotations.AnnotationFlags",
                 "UglyToad.PdfPig.Annotations.AnnotationType",
                 "UglyToad.PdfPig.Annotations.AppearanceStream",
+                "UglyToad.PdfPig.Annotations.AnnotationProvider",
                 "UglyToad.PdfPig.Annotations.QuadPointsQuadrilateral",
                 "UglyToad.PdfPig.Content.ArtifactMarkedContentElement",
                 "UglyToad.PdfPig.Content.BasePageFactory`1",

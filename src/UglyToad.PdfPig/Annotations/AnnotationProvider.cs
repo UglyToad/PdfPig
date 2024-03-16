@@ -12,7 +12,10 @@
     using Tokens;
     using Util;
 
-    internal class AnnotationProvider
+    /// <summary>
+    /// Annotation provider.
+    /// </summary>
+    public class AnnotationProvider
     {
         private readonly IPdfTokenScanner tokenScanner;
         private readonly DictionaryToken pageDictionary;
@@ -20,8 +23,14 @@
         private readonly ILog log;
         private readonly TransformationMatrix matrix;
 
-        public AnnotationProvider(IPdfTokenScanner tokenScanner, DictionaryToken pageDictionary,
-            TransformationMatrix matrix, NamedDestinations namedDestinations, ILog log)
+        /// <summary>
+        /// Create a <see cref="AnnotationProvider"/>.
+        /// </summary>
+        public AnnotationProvider(IPdfTokenScanner tokenScanner,
+            DictionaryToken pageDictionary,
+            TransformationMatrix matrix,
+            NamedDestinations namedDestinations,
+            ILog log)
         {
             this.matrix = matrix;
             this.tokenScanner = tokenScanner ?? throw new ArgumentNullException(nameof(tokenScanner));
@@ -30,6 +39,9 @@
             this.log = log;
         }
 
+        /// <summary>
+        /// Get the annotations.
+        /// </summary>
         public IEnumerable<Annotation> GetAnnotations()
         {
             var lookupAnnotations = new Dictionary<IndirectReference, Annotation>();
@@ -43,7 +55,7 @@
             {
                 if (!DirectObjectFinder.TryGet(token, tokenScanner, out DictionaryToken annotationDictionary))
                 {
-                        continue;
+                    continue;
                 }
 
                 Annotation replyTo = null;
@@ -56,20 +68,23 @@
                 var type = annotationDictionary.Get<NameToken>(NameToken.Subtype, tokenScanner);
                 var annotationType = type.ToAnnotationType();
                 var action = GetAction(annotationDictionary);
-                var rectangle = matrix.Transform(annotationDictionary.Get<ArrayToken>(NameToken.Rect, tokenScanner).ToRectangle(tokenScanner));
+                var rectangle = matrix.Transform(annotationDictionary.Get<ArrayToken>(NameToken.Rect, tokenScanner)
+                    .ToRectangle(tokenScanner));
                 var contents = GetNamedString(NameToken.Contents, annotationDictionary);
                 var name = GetNamedString(NameToken.Nm, annotationDictionary);
                 // As indicated in PDF reference 8.4.1, the modified date can be anything, but is usually a date formatted according to sec. 3.8.3
                 var modifiedDate = GetNamedString(NameToken.M, annotationDictionary);
 
                 var flags = (AnnotationFlags)0;
-                if (annotationDictionary.TryGet(NameToken.F, out var flagsToken) && DirectObjectFinder.TryGet(flagsToken, tokenScanner, out NumericToken flagsNumericToken))
+                if (annotationDictionary.TryGet(NameToken.F, out var flagsToken) &&
+                    DirectObjectFinder.TryGet(flagsToken, tokenScanner, out NumericToken flagsNumericToken))
                 {
                     flags = (AnnotationFlags)flagsNumericToken.Int;
                 }
 
                 var border = AnnotationBorder.Default;
-                if (annotationDictionary.TryGet(NameToken.Border, out var borderToken) && DirectObjectFinder.TryGet(borderToken, tokenScanner, out ArrayToken borderArray)
+                if (annotationDictionary.TryGet(NameToken.Border, out var borderToken) &&
+                    DirectObjectFinder.TryGet(borderToken, tokenScanner, out ArrayToken borderArray)
                     && borderArray.Length >= 3)
                 {
                     var horizontal = borderArray.GetNumeric(0).Data;
@@ -147,7 +162,7 @@
                 var annotation = new Annotation(
                     annotationDictionary,
                     annotationType,
-                    rectangle, 
+                    rectangle,
                     contents,
                     name,
                     modifiedDate,
