@@ -3,15 +3,15 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using System.IO;
+    using System.Linq;
     using System.Text.RegularExpressions;
     using Core;
     using Encryption;
     using Filters;
-    using System.Linq;
     using Tokens;
-    using System.Diagnostics.CodeAnalysis;
 
     internal class PdfTokenScanner : IPdfTokenScanner
     {

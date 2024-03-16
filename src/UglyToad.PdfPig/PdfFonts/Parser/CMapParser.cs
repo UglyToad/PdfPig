@@ -1,15 +1,15 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Parser
 {
     using System;
+    using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Linq;
     using Cmap;
     using Core;
     using Parts;
-    using System.Collections.Generic;
     using Tokenization.Scanner;
     using Tokens;
-    using System.Diagnostics.CodeAnalysis;
 
     internal class CMapParser
     {

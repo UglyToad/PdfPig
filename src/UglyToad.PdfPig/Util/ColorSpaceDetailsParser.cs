@@ -1,13 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Util
 {
-    using Content;
-    using Core;
-    using Filters;
-    using Graphics.Colors;
-    using Parser.Parts;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+    using Content;
+    using Filters;
+    using Graphics.Colors;
+    using Parser.Parts;
     using System.Linq;
     using Tokenization.Scanner;
     using Tokens;

@@ -1,9 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using Graphics.Colors;
-    using PdfFonts;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+    using Graphics.Colors;
+    using PdfFonts;
     using Tokens;
 
     /// <summary>

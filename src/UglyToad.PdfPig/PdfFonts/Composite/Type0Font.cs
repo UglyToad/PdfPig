@@ -1,12 +1,12 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Composite
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using CidFonts;
     using Cmap;
     using Core;
     using Geometry;
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics.CodeAnalysis;
     using Tokens;
     using Debug = System.Diagnostics.Debug;
 

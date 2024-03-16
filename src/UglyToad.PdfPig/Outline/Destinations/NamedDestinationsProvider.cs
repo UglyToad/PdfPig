@@ -1,10 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Outline.Destinations
 {
+    using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using Content;
     using Logging;
     using Parser.Parts;
-    using System.Collections.Generic;
-    using System.Diagnostics.CodeAnalysis;
     using Tokenization.Scanner;
     using Tokens;
 
