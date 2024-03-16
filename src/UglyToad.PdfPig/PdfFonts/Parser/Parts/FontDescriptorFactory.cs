@@ -58,7 +58,7 @@
 
         private static NameToken GetFontName(DictionaryToken dictionary, IPdfTokenScanner scanner)
         {
-            if (!dictionary.TryGet(NameToken.FontName, scanner, out NameToken name))
+            if (!dictionary.TryGet(NameToken.FontName, scanner, out NameToken? name))
             {
                 name = NameToken.Create(string.Empty);
             }
@@ -113,7 +113,7 @@
             return boxArray.ToRectangle(pdfScanner);
         }
 
-        private static string GetCharSet(DictionaryToken dictionary)
+        private static string? GetCharSet(DictionaryToken dictionary)
         {
             if (!dictionary.TryGet(NameToken.CharSet, out var set) || !(set is NameToken setName))
             {
@@ -123,8 +123,7 @@
             return setName.Data;
         }
 
-        [CanBeNull]
-        private static DescriptorFontFile GetFontFile(DictionaryToken dictionary)
+        private static DescriptorFontFile? GetFontFile(DictionaryToken dictionary)
         {
             if (dictionary.TryGet(NameToken.FontFile, out var value))
             {

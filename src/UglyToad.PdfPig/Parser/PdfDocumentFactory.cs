@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Linq;
     using AcroForms;
@@ -13,7 +14,6 @@
     using Filters;
     using Fonts.SystemFonts;
     using Graphics;
-    using Logging;
     using Outline;
     using Parts;
     using Parts.CrossReference;
@@ -26,14 +26,14 @@
 
     internal static class PdfDocumentFactory
     {
-        public static PdfDocument Open(byte[] fileBytes, ParsingOptions options = null)
+        public static PdfDocument Open(byte[] fileBytes, ParsingOptions? options = null)
         {
             var inputBytes = new ByteArrayInputBytes(fileBytes);
 
             return Open(inputBytes, options);
         }
 
-        public static PdfDocument Open(string filename, ParsingOptions options = null)
+        public static PdfDocument Open(string filename, ParsingOptions? options = null)
         {
             if (!File.Exists(filename))
             {
@@ -43,7 +43,7 @@
             return Open(File.ReadAllBytes(filename), options);
         }
 
-        internal static PdfDocument Open(Stream stream, ParsingOptions options)
+        internal static PdfDocument Open(Stream stream, ParsingOptions? options)
         {
             var initialPosition = stream.Position;
 
@@ -66,7 +66,7 @@
             }
         }
 
-        private static PdfDocument Open(IInputBytes inputBytes, ParsingOptions options = null)
+        private static PdfDocument Open(IInputBytes inputBytes, ParsingOptions? options = null)
         {
             options ??= new ParsingOptions()
             {
@@ -79,12 +79,12 @@
 
             var passwords = new List<string>();
 
-            if (options?.Password != null)
+            if (options.Password != null)
             {
                 passwords.Add(options.Password);
             }
 
-            if (options?.Passwords != null)
+            if (options.Passwords != null)
             {
                 passwords.AddRange(options.Passwords.Where(x => x != null));
             }
@@ -108,7 +108,7 @@
         {
             var filterProvider = new FilterProviderWithLookup(DefaultFilterProvider.Instance);
 
-            CrossReferenceTable crossReferenceTable = null;
+            CrossReferenceTable? crossReferenceTable = null;
 
             var xrefValidator = new XrefOffsetValidator(parsingOptions.Logger);
 
@@ -219,12 +219,15 @@
                 parsingOptions);
         }
 
-        private static (IndirectReference, DictionaryToken) ParseTrailer(CrossReferenceTable crossReferenceTable, bool isLenientParsing, IPdfTokenScanner pdfTokenScanner,
-            out EncryptionDictionary encryptionDictionary)
+        private static (IndirectReference, DictionaryToken) ParseTrailer(
+            CrossReferenceTable crossReferenceTable,
+            bool isLenientParsing,
+            IPdfTokenScanner pdfTokenScanner,
+            [NotNullWhen(true)] out EncryptionDictionary? encryptionDictionary)
         {
             encryptionDictionary = GetEncryptionDictionary(crossReferenceTable, pdfTokenScanner);
 
-            var rootDictionary = DirectObjectFinder.Get<DictionaryToken>(crossReferenceTable.Trailer.Root, pdfTokenScanner);
+            var rootDictionary = DirectObjectFinder.Get<DictionaryToken>(crossReferenceTable.Trailer.Root, pdfTokenScanner)!;
 
             if (!rootDictionary.ContainsKey(NameToken.Type) && isLenientParsing)
             {
@@ -234,16 +237,16 @@
             return (crossReferenceTable.Trailer.Root, rootDictionary);
         }
 
-        private static EncryptionDictionary GetEncryptionDictionary(CrossReferenceTable crossReferenceTable, IPdfTokenScanner pdfTokenScanner)
+        private static EncryptionDictionary? GetEncryptionDictionary(CrossReferenceTable crossReferenceTable, IPdfTokenScanner pdfTokenScanner)
         {
             if (crossReferenceTable.Trailer.EncryptionToken is null)
             {
                 return null;
             }
 
-            if (!DirectObjectFinder.TryGet(crossReferenceTable.Trailer.EncryptionToken, pdfTokenScanner, out DictionaryToken encryptionDictionaryToken))
+            if (!DirectObjectFinder.TryGet(crossReferenceTable.Trailer.EncryptionToken, pdfTokenScanner, out DictionaryToken? encryptionDictionaryToken))
             {
-                if (DirectObjectFinder.TryGet(crossReferenceTable.Trailer.EncryptionToken, pdfTokenScanner, out NullToken _))
+                if (DirectObjectFinder.TryGet(crossReferenceTable.Trailer.EncryptionToken, pdfTokenScanner, out NullToken? _))
                 {
                     return null;
                 }

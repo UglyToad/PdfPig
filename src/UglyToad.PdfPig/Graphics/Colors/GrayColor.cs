@@ -41,15 +41,15 @@ namespace UglyToad.PdfPig.Graphics.Colors
         }
 
         /// <inheritdoc />
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            return Equals(obj as GrayColor);
+            return obj is GrayColor other && Equals(other);
         }
 
         /// <inheritdoc />
         public bool Equals(GrayColor other)
         {
-            return other != null &&
+            return other != null! &&
                    Gray == other.Gray;
         }
 

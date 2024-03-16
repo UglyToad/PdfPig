@@ -3,7 +3,6 @@
     using Core;
     using Graphics.Colors;
     using PdfFonts;
-    using System.Diagnostics;
 
     /// <summary>
     /// A glyph or combination of glyphs (characters) drawn by a PDF content stream.
@@ -55,7 +54,7 @@
         /// <summary>
         /// The name of the font.
         /// </summary>
-        public string FontName => Font?.Name;
+        public string? FontName => Font?.Name;
 
         /// <summary>
         /// Details about the font for this letter.

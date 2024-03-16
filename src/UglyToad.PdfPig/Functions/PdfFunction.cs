@@ -12,12 +12,12 @@
         /// <summary>
         /// The function dictionary.
         /// </summary>
-        public DictionaryToken FunctionDictionary { get; }
+        public DictionaryToken? FunctionDictionary { get; }
 
         /// <summary>
         /// The function stream.
         /// </summary>
-        public StreamToken FunctionStream { get; }
+        public StreamToken? FunctionStream { get; }
 
         private int numberOfInputValues = -1;
         private int numberOfOutputValues = -1;
@@ -25,7 +25,7 @@
         /// <summary>
         /// This class represents a function in a PDF document.
         /// </summary>
-        public PdfFunction(DictionaryToken function, ArrayToken domain, ArrayToken range)
+        public PdfFunction(DictionaryToken function, ArrayToken domain, ArrayToken? range)
         {
             FunctionDictionary = function;
             DomainValues = domain;
@@ -35,7 +35,7 @@
         /// <summary>
         /// This class represents a function in a PDF document.
         /// </summary>
-        public PdfFunction(StreamToken function, ArrayToken domain, ArrayToken range)
+        public PdfFunction(StreamToken function, ArrayToken domain, ArrayToken? range)
         {
             FunctionStream = function;
             DomainValues = domain;
@@ -58,7 +58,7 @@
         /// Returns the function's dictionary. If <see cref="FunctionDictionary"/> is defined, it will be returned.
         /// If not, the <see cref="FunctionStream"/>'s StreamDictionary will be returned.
         /// </summary>
-        public DictionaryToken GetDictionary()
+        public DictionaryToken? GetDictionary()
         {
             if (FunctionStream != null)
             {
@@ -106,7 +106,7 @@
         /// <returns>The range for this component.</returns>
         public PdfRange GetRangeForOutput(int n)
         {
-            return new PdfRange(RangeValues.Data.OfType<NumericToken>().Select(t => t.Double), n);
+            return new PdfRange(RangeValues!.Data.OfType<NumericToken>().Select(t => t.Double), n);
         }
 
         /// <summary>
@@ -154,7 +154,7 @@
         /// Returns all ranges for the output values as <see cref="ArrayToken"/>. Required for type 0 and type 4 functions.
         /// </summary>
         /// <returns>the ranges array.</returns>
-        protected ArrayToken RangeValues { get; }
+        protected ArrayToken? RangeValues { get; }
 
         /// <summary>
         /// Returns all domains for the input values as <see cref="ArrayToken"/>. Required for all function types.
@@ -169,7 +169,7 @@
         /// <returns>the clipped values</returns>
         protected double[] ClipToRange(double[] inputValues)
         {
-            ArrayToken rangesArray = RangeValues;
+            ArrayToken rangesArray = RangeValues!;
             double[] result;
             if (rangesArray != null && rangesArray.Length > 0)
             {

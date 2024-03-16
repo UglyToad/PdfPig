@@ -1,10 +1,11 @@
-﻿namespace UglyToad.PdfPig.PdfFonts.Cmap
+﻿#nullable disable
+
+namespace UglyToad.PdfPig.PdfFonts.Cmap
 {
-    using System;
+    using Core;
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
-    using Core;
 
     /// <summary>
     /// A mutable class used when parsing and generating a <see cref="CMap"/>.
@@ -36,14 +37,17 @@
         /// </remarks>
         public string Name { get; set; }
 
+#nullable enable
+
         /// <summary>
         /// Defines the version of this CIDFont file.
         /// </summary>
         /// <remarks>
         /// Defined as optional.
         /// </remarks>
-        public string Version { get; set; }
+        public string? Version { get; set; }
 
+#nullable disable
         /// <summary>
         /// Defines changes to the internal structure of Character Map files
         /// or operator semantics.
@@ -92,7 +96,7 @@
 
             if (SystemInfoBuilder.HasOrdering && SystemInfoBuilder.HasRegistry && SystemInfoBuilder.HasSupplement)
             {
-                return new CharacterIdentifierSystemInfo(SystemInfoBuilder.Registry, SystemInfoBuilder.Ordering, SystemInfoBuilder.Supplement);
+                return new CharacterIdentifierSystemInfo(SystemInfoBuilder.Registry!, SystemInfoBuilder.Ordering!, SystemInfoBuilder.Supplement);
             }
 
             return CharacterIdentifierSystemInfo;

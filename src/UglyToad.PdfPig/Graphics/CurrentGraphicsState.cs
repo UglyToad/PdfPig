@@ -1,4 +1,6 @@
-﻿// ReSharper disable RedundantDefaultMemberInitializer
+﻿#nullable disable
+
+// ReSharper disable RedundantDefaultMemberInitializer
 namespace UglyToad.PdfPig.Graphics
 {
     using Colors;

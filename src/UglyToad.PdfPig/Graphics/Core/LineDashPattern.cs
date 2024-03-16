@@ -19,7 +19,6 @@
         /// <summary>
         /// The numbers that specify the lengths of alternating dashes and gaps.
         /// </summary>
-        [NotNull]
         public IReadOnlyList<double> Array { get; }
 
         /// <summary>
@@ -27,7 +26,7 @@
         /// </summary>
         /// <param name="phase">The phase. <see cref="Phase"/>.</param>
         /// <param name="array">The array. <see cref="Array"/>.</param>
-        public LineDashPattern(int phase, [NotNull]IReadOnlyList<double> array)
+        public LineDashPattern(int phase, IReadOnlyList<double> array)
         {
             Phase = phase;
             Array = array ?? throw new ArgumentNullException(nameof(array));

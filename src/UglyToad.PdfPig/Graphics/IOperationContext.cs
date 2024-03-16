@@ -132,7 +132,7 @@
         /// <summary>
         /// Indicate that a marked content region is started.
         /// </summary>
-        void BeginMarkedContent(NameToken name, NameToken propertyDictionaryName, DictionaryToken properties);
+        void BeginMarkedContent(NameToken name, NameToken? propertyDictionaryName, DictionaryToken? properties);
 
         /// <summary>
         /// Indicates that the current marked content region is complete.

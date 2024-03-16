@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using Content;
     using Core;
     using Filters;
@@ -37,14 +38,14 @@
         /// </summary>
         /// <param name="embeddedFiles">The set of embedded files in this document.</param>
         /// <returns><see langword="true"/> if this document contains more than zero embedded files, otherwise <see langword="false"/>.</returns>
-        public bool TryGetEmbeddedFiles(out IReadOnlyList<EmbeddedFile> embeddedFiles)
+        public bool TryGetEmbeddedFiles([NotNullWhen(true)] out IReadOnlyList<EmbeddedFile>? embeddedFiles)
         {
             GuardDisposed();
 
             embeddedFiles = null;
 
-            if (!catalog.CatalogDictionary.TryGet(NameToken.Names, pdfScanner, out DictionaryToken namesDictionary)
-                || !namesDictionary.TryGet(NameToken.EmbeddedFiles, pdfScanner, out DictionaryToken embeddedFileNamesDictionary))
+            if (!catalog.CatalogDictionary.TryGet(NameToken.Names, pdfScanner, out DictionaryToken? namesDictionary)
+                || !namesDictionary.TryGet(NameToken.EmbeddedFiles, pdfScanner, out DictionaryToken? embeddedFileNamesDictionary))
             {
                 return false;
             }
@@ -60,15 +61,15 @@
 
             foreach (var keyValuePair in embeddedFileNames)
             {
-                if (!DirectObjectFinder.TryGet(keyValuePair.Value, pdfScanner, out DictionaryToken fileDescriptorDictionaryToken)
-                    || !fileDescriptorDictionaryToken.TryGet(NameToken.Ef, pdfScanner, out DictionaryToken efDictionary)
-                    || !efDictionary.TryGet(NameToken.F, pdfScanner, out StreamToken fileStreamToken))
+                if (!DirectObjectFinder.TryGet(keyValuePair.Value, pdfScanner, out DictionaryToken? fileDescriptorDictionaryToken)
+                    || !fileDescriptorDictionaryToken.TryGet(NameToken.Ef, pdfScanner, out DictionaryToken? efDictionary)
+                    || !efDictionary.TryGet(NameToken.F, pdfScanner, out StreamToken? fileStreamToken))
                 {
                     continue;
                 }
 
                 var fileSpecification = string.Empty;
-                if (fileDescriptorDictionaryToken.TryGet(NameToken.F, pdfScanner, out IDataToken<string> fileSpecificationToken))
+                if (fileDescriptorDictionaryToken.TryGet(NameToken.F, pdfScanner, out IDataToken<string>? fileSpecificationToken))
                 {
                     fileSpecification = fileSpecificationToken.Data;
                 }

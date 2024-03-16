@@ -164,7 +164,7 @@
 
             long firstObjectNumber = 0;
             long currentObjNum = 0;
-            var items = new List<XrefSeries.OffsetAndGeneration>
+            var items = new List<XrefSeries.OffsetAndGeneration?>
             {
                 // Zero entry
                 null
@@ -181,7 +181,7 @@
                 else
                 {
                     sets.Add(new XrefSeries(firstObjectNumber, items));
-                    items = new List<XrefSeries.OffsetAndGeneration>
+                    items = new List<XrefSeries.OffsetAndGeneration?>
                     {
                         new XrefSeries.OffsetAndGeneration(item.Value, item.Key.Generation)
                     };
@@ -661,9 +661,9 @@
         {
             public long First { get; }
 
-            public IReadOnlyList<OffsetAndGeneration> Offsets { get; }
+            public IReadOnlyList<OffsetAndGeneration?> Offsets { get; }
 
-            public XrefSeries(long first, IReadOnlyList<OffsetAndGeneration> offsets)
+            public XrefSeries(long first, IReadOnlyList<OffsetAndGeneration?> offsets)
             {
                 First = first;
                 Offsets = offsets;

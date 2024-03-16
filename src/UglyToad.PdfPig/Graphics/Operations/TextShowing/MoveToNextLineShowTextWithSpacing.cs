@@ -3,7 +3,6 @@
     using System.IO;
     using TextPositioning;
     using TextState;
-    using Util.JetBrains.Annotations;
 
     /// <inheritdoc />
     /// <summary>
@@ -32,14 +31,12 @@
         /// <summary>
         /// The bytes of the text.
         /// </summary>
-        [CanBeNull]
-        public byte[] Bytes { get; }
+        public byte[]? Bytes { get; }
 
         /// <summary>
         /// The text to show.
         /// </summary>
-        [CanBeNull]
-        public string Text { get; }
+        public string? Text { get; }
 
         /// <summary>
         /// Create a new <see cref="MoveToNextLineShowTextWithSpacing"/>.
@@ -73,7 +70,7 @@
             var setWordSpacing = new SetWordSpacing(WordSpacing);
             var setCharacterSpacing = new SetCharacterSpacing(CharacterSpacing);
             var moveToNextLine = MoveToNextLine.Value;
-            var showText = Text != null ? new ShowText(Text) : new ShowText(Bytes);
+            var showText = Text != null ? new ShowText(Text) : new ShowText(Bytes!);
 
             setWordSpacing.Run(operationContext);
             setCharacterSpacing.Run(operationContext);

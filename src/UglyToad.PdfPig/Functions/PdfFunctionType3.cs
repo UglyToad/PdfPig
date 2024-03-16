@@ -17,7 +17,7 @@
         /// <summary>
         /// Stitching function
         /// </summary>
-        internal PdfFunctionType3(DictionaryToken function, ArrayToken domain, ArrayToken range, IReadOnlyList<PdfFunction> functionsArray, ArrayToken bounds, ArrayToken encode)
+        internal PdfFunctionType3(DictionaryToken function, ArrayToken domain, ArrayToken? range, IReadOnlyList<PdfFunction> functionsArray, ArrayToken bounds, ArrayToken encode)
             : base(function, domain, range)
         {
             if (functionsArray is null || functionsArray.Count == 0)
@@ -59,7 +59,7 @@
             // This function is known as a "stitching" function. Based on the input, it decides which child function to call.
             // All functions in the array are 1-value-input functions
             // See PDF Reference section 3.9.3.
-            PdfFunction function = null;
+            PdfFunction? function = null;
             double x = input[0];
             PdfRange domain = GetDomainForInput(0);
             // clip input value to domain

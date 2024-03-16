@@ -14,7 +14,6 @@
         /// <summary>
         /// The catalog dictionary containing assorted information.
         /// </summary>
-        [NotNull]
         public DictionaryToken CatalogDictionary { get; }
 
         internal NamedDestinations NamedDestinations { get; }

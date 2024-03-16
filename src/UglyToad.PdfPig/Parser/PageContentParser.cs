@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using Core;
     using Graphics;
     using Graphics.Operations;
@@ -68,7 +69,7 @@
                     if (op.Data == "EI")
                     {
                         // Check an end image operation was the last thing that happened.
-                        IGraphicsStateOperation lastOperation = graphicsStateOperations.Count > 0
+                        IGraphicsStateOperation? lastOperation = graphicsStateOperations.Count > 0
                             ? graphicsStateOperations[graphicsStateOperations.Count - 1]
                             : null;
 
@@ -109,7 +110,7 @@
                     }
                     else
                     {
-                        IGraphicsStateOperation operation;
+                        IGraphicsStateOperation? operation;
                         try
                         {
                             operation = operationFactory.Create(op, precedingTokens);
@@ -174,7 +175,7 @@
             return graphicsStateOperations;
         }
 
-        private static bool TryGetLastEndImage(List<IGraphicsStateOperation> graphicsStateOperations, out EndInlineImage endImage, out int index)
+        private static bool TryGetLastEndImage(List<IGraphicsStateOperation> graphicsStateOperations, [NotNullWhen(true)] out EndInlineImage? endImage, out int index)
         {
             index = -1;
             endImage = null;

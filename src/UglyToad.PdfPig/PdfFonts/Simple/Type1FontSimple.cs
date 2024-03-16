@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Simple
 {
-    using System.Collections.Generic;
-    using System.Linq;
     using Cmap;
     using Composite;
     using Core;
@@ -9,8 +7,10 @@
     using Fonts.CompactFontFormat;
     using Fonts.Encodings;
     using Fonts.Type1;
+    using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
+    using System.Linq;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// A font based on the Adobe Type 1 font format.
@@ -31,8 +31,7 @@
 
         private readonly Encoding encoding;
 
-        [CanBeNull]
-        private readonly Union<Type1Font, CompactFontFormatFontCollection> fontProgram;
+        private readonly Union<Type1Font, CompactFontFormatFontCollection>? fontProgram;
 
         private readonly ToUnicodeCMap toUnicodeCMap;
 
@@ -44,7 +43,13 @@
 
         public FontDetails Details { get; }
 
-        public Type1FontSimple(NameToken name, int firstChar, int lastChar, double[] widths, FontDescriptor fontDescriptor, Encoding encoding,
+        public Type1FontSimple(
+            NameToken name,
+            int firstChar,
+            int lastChar,
+            double[] widths,
+            FontDescriptor fontDescriptor,
+            Encoding encoding,
             CMap toUnicodeCMap,
             Union<Type1Font, CompactFontFormatFontCollection> fontProgram)
         {
@@ -83,7 +88,7 @@
             return bytes.CurrentByte;
         }
 
-        public bool TryGetUnicode(int characterCode, out string value)
+        public bool TryGetUnicode(int characterCode, [NotNullWhen(true)] out string? value)
         {
             if (toUnicodeCMap.CanMapToUnicode)
             {
@@ -218,10 +223,10 @@
         }
 
         /// <inheritdoc/>
-        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        public bool TryGetPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             path = null;
-            IReadOnlyList<PdfSubpath> tempPath = null;
+            IReadOnlyList<PdfSubpath>? tempPath = null;
             if (characterCode < firstChar || characterCode > lastChar)
             {
                 return false;
@@ -263,7 +268,7 @@
         }
 
         /// <inheritdoc/>
-        public bool TryGetNormalisedPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        public bool TryGetNormalisedPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             if (TryGetPath(characterCode, out path))
             {

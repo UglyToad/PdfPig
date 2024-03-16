@@ -9,6 +9,7 @@
     using System.Collections.Generic;
     using Tokenization.Scanner;
     using Tokens;
+    using System.Diagnostics.CodeAnalysis;
 
     internal class CMapParser
     {
@@ -30,7 +31,7 @@
 
             var builder = new CharacterMapBuilder();
 
-            IToken previousToken = null;
+            IToken? previousToken = null;
             while (scanner.MoveNext())
             {
                 var token = scanner.CurrentToken;
@@ -124,7 +125,7 @@
             return builder.Build();
         }
 
-        public bool TryParseExternal(string name, out CMap result)
+        public bool TryParseExternal(string name, [NotNullWhen(true)] out CMap? result)
         {
             result = null;
 

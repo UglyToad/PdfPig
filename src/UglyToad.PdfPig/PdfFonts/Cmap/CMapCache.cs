@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using Core;
     using Parser;
 
@@ -12,7 +13,7 @@
 
         private static readonly CMapParser CMapParser = new CMapParser();
 
-        public static bool TryGet(string name, out CMap result)
+        public static bool TryGet(string name, [NotNullWhen(true)] out CMap? result)
         {
             result = null;
 

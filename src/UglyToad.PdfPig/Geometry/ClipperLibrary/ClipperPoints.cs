@@ -117,7 +117,7 @@ namespace UglyToad.PdfPig.Geometry.ClipperLibrary
 
         public static bool operator !=(ClipperIntPoint a, ClipperIntPoint b) => a.X != b.X || a.Y != b.Y;
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj == null)
             {

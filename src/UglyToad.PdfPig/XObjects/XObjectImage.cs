@@ -2,13 +2,13 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using Content;
     using Core;
     using Graphics.Colors;
     using Graphics.Core;
     using Images.Png;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <inheritdoc />
     /// <summary>
@@ -16,8 +16,7 @@
     /// </summary>
     public class XObjectImage : IPdfImage
     {
-        [CanBeNull]
-        private readonly Lazy<IReadOnlyList<byte>> bytesFactory;
+        private readonly Lazy<IReadOnlyList<byte>>? bytesFactory;
 
         /// <inheritdoc />
         public PdfRectangle Bounds { get; }
@@ -54,14 +53,13 @@
         public bool IsInlineImage { get; } = false;
 
         /// <inheritdoc />
-        [NotNull]
         public DictionaryToken ImageDictionary { get; }
 
         /// <inheritdoc />
         public IReadOnlyList<byte> RawBytes { get; }
 
         /// <inheritdoc />
-        public ColorSpaceDetails ColorSpaceDetails { get; }
+        public ColorSpaceDetails? ColorSpaceDetails { get; }
 
         /// <summary>
         /// Creates a new <see cref="XObjectImage"/>.
@@ -77,8 +75,8 @@
             IReadOnlyList<double> decode,
             DictionaryToken imageDictionary,
             IReadOnlyList<byte> rawBytes,
-            Lazy<IReadOnlyList<byte>> bytes,
-            ColorSpaceDetails colorSpaceDetails)
+            Lazy<IReadOnlyList<byte>>? bytes,
+            ColorSpaceDetails? colorSpaceDetails)
         {
             Bounds = bounds;
             WidthInSamples = widthInSamples;
@@ -96,7 +94,7 @@
         }
 
         /// <inheritdoc />
-        public bool TryGetBytes(out IReadOnlyList<byte> bytes)
+        public bool TryGetBytes([NotNullWhen(true)] out IReadOnlyList<byte>? bytes)
         {
             bytes = null;
             if (bytesFactory is null)
@@ -110,7 +108,7 @@
         }
 
         /// <inheritdoc />
-        public bool TryGetPng(out byte[] bytes) => PngFromPdfImageFactory.TryGenerate(this, out bytes);
+        public bool TryGetPng([NotNullWhen(true)] out byte[]? bytes) => PngFromPdfImageFactory.TryGenerate(this, out bytes);
 
         /// <inheritdoc />
         public override string ToString()

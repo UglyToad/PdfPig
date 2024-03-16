@@ -1,4 +1,6 @@
-﻿namespace UglyToad.PdfPig.Parser.Parts
+﻿#nullable disable
+
+namespace UglyToad.PdfPig.Parser.Parts
 {
     using System;
     using System.Collections.Generic;
@@ -7,7 +9,8 @@
 
     internal static class NameTreeParser
     {
-        public static IReadOnlyDictionary<string, TResult> FlattenNameTreeToDictionary<TResult>(DictionaryToken nameTreeNodeDictionary,
+        public static IReadOnlyDictionary<string, TResult> FlattenNameTreeToDictionary<TResult>(
+            DictionaryToken nameTreeNodeDictionary,
             IPdfTokenScanner pdfScanner,
             Func<IToken, TResult> valuesFactory) where TResult : class
         {
@@ -18,7 +21,8 @@
             return result;
         }
 
-        public static void FlattenNameTree<TResult>(DictionaryToken nameTreeNodeDictionary,
+        public static void FlattenNameTree<TResult>(
+            DictionaryToken nameTreeNodeDictionary,
             IPdfTokenScanner pdfScanner,
             Func<IToken, TResult> valuesFactory,
             Dictionary<string, TResult> result) where TResult : class

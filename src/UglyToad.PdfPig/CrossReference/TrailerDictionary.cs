@@ -3,10 +3,8 @@
     using System;
     using System.Collections.Generic;
     using Core;
-    using Exceptions;
     using Tokens;
     using Util;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// Contains information for interpreting the cross-reference table.
@@ -47,8 +45,7 @@
         /// <summary>
         /// The document's encryption dictionary.
         /// </summary>
-        [CanBeNull]
-        public IToken EncryptionToken { get; }
+        public IToken? EncryptionToken { get; }
 
         /// <summary>
         /// Create a new <see cref="TrailerDictionary"/>.

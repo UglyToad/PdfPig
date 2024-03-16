@@ -45,7 +45,7 @@ namespace UglyToad.PdfPig.Util
                 }
             }
 
-            result = default(V);
+            result = default!;
 
             return false;
         }

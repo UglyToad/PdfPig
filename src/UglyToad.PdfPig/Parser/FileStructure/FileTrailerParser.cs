@@ -53,7 +53,7 @@
                 throw new InvalidOperationException($"The start xref position we found was not correct. Found {startXrefPosition} but it was occupied by token {scanner.CurrentToken}.");
             }
 
-            NumericToken numeric = null;
+            NumericToken? numeric = null;
             while (scanner.MoveNext())
             {
                 if (scanner.CurrentToken is NumericToken token)

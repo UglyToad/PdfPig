@@ -19,7 +19,6 @@
         /// <summary>
         /// The corresponding byte offset for each keyed object in this document.
         /// </summary>
-        [NotNull]
         public IReadOnlyDictionary<IndirectReference, long> ObjectOffsets => objectOffsets;
 
         /// <summary>
@@ -30,14 +29,12 @@
         /// <summary>
         /// The trailer dictionary.
         /// </summary>
-        [NotNull]
         public TrailerDictionary Trailer { get; }
 
         /// <summary>
         /// The byte offsets of each cross-reference table or stream in this document and the previous
         /// table or stream they link to if applicable.
         /// </summary>
-        [NotNull]
         public IReadOnlyList<CrossReferenceOffset> CrossReferenceOffsets { get; }
 
         internal CrossReferenceTable(CrossReferenceType type, IReadOnlyDictionary<IndirectReference, long> objectOffsets, 

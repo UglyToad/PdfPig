@@ -2,7 +2,6 @@
 {
     using System.IO;
     using TextPositioning;
-    using Util.JetBrains.Annotations;
 
     /// <inheritdoc />
     /// <summary>
@@ -21,14 +20,12 @@
         /// <summary>
         /// The text to show as a <see cref="string"/>.
         /// </summary>
-        [CanBeNull]
-        public string Text { get; }
+        public string? Text { get; }
 
         /// <summary>
         /// The text to show as hex bytes.
         /// </summary>
-        [CanBeNull]
-        public byte[] Bytes { get; }
+        public byte[]? Bytes { get; }
 
         /// <summary>
         /// Create a new <see cref="MoveToNextLineShowText"/>.
@@ -53,7 +50,7 @@
         {
             var move = MoveToNextLine.Value;
 
-            var showText = Text != null ? new ShowText(Text) : new ShowText(Bytes);
+            var showText = Text != null ? new ShowText(Text) : new ShowText(Bytes!);
 
             move.Run(operationContext);
             showText.Run(operationContext);

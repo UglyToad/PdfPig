@@ -20,7 +20,7 @@
         internal PdfFunctionType4(StreamToken function, ArrayToken domain, ArrayToken range)
             : base(function, domain, range)
         {
-            byte[] bytes = FunctionStream.Data.ToArray();
+            byte[] bytes = FunctionStream!.Data.ToArray();
             string str = OtherEncodings.Iso88591.GetString(bytes);
             this.instructions = InstructionSequenceBuilder.Parse(str);
         }

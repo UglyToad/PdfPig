@@ -29,7 +29,7 @@
             }
 
             ShadingType shadingType;
-            if (shadingDictionary.TryGet<NumericToken>(NameToken.ShadingType, scanner, out var shadingTypeToken))
+            if (shadingDictionary!.TryGet<NumericToken>(NameToken.ShadingType, scanner, out var shadingTypeToken))
             {
                 // Shading types 4 to 7 shall be defined by a stream containing descriptive data characterizing
                 // the shading's gradient fill.
@@ -45,17 +45,17 @@
                 throw new ArgumentNullException($"'{NameToken.ShadingType}' is required for shading.");
             }
 
-            ColorSpaceDetails colorSpace = null;
-            if (shadingDictionary.TryGet<NameToken>(NameToken.ColorSpace, scanner, out var colorSpaceToken))
+            ColorSpaceDetails? colorSpace = null;
+            if (shadingDictionary!.TryGet<NameToken>(NameToken.ColorSpace, scanner, out var colorSpaceToken))
             {
                 colorSpace = resourceStore.GetColorSpaceDetails(colorSpaceToken, shadingDictionary);
             }
-            else if (shadingDictionary.TryGet<ArrayToken>(NameToken.ColorSpace, scanner, out var colorSpaceSToken))
+            else if (shadingDictionary!.TryGet<ArrayToken>(NameToken.ColorSpace, scanner, out var colorSpaceSToken))
             {
                 var first = colorSpaceSToken.Data[0];
                 if (first is NameToken firstColorSpaceName)
                 {
-                    colorSpace = resourceStore.GetColorSpaceDetails(firstColorSpaceName, shadingDictionary);
+                    colorSpace = resourceStore.GetColorSpaceDetails(firstColorSpaceName, shadingDictionary!);
                 }
                 else
                 {
@@ -67,45 +67,45 @@
                 throw new ArgumentNullException($"'{NameToken.ColorSpace}' is required for shading.");
             }
 
-            double[] background = null;
-            if (shadingDictionary.TryGet<ArrayToken>(NameToken.Background, scanner, out var backgroundToken))
+            double[]? background = null;
+            if (shadingDictionary!.TryGet<ArrayToken>(NameToken.Background, scanner, out var backgroundToken))
             {
                 // Optional
                 background = backgroundToken.Data.OfType<NumericToken>().Select(v => v.Double).ToArray();
             }
 
             PdfRectangle? bbox = null;
-            if (shadingDictionary.TryGet<ArrayToken>(NameToken.Bbox, scanner, out var bboxToken))
+            if (shadingDictionary!.TryGet<ArrayToken>(NameToken.Bbox, scanner, out var bboxToken))
             {
                 // Optional
                 bbox = bboxToken.ToRectangle(scanner);
             }
 
             // Optional
-            bool antiAlias = shadingDictionary.TryGet<BooleanToken>(NameToken.AntiAlias, scanner, out var antiAliasToken) && antiAliasToken.Data; // Default value: false.
+            bool antiAlias = shadingDictionary!.TryGet<BooleanToken>(NameToken.AntiAlias, scanner, out var antiAliasToken) && antiAliasToken.Data; // Default value: false.
 
             switch (shadingType)
             {
                 case ShadingType.FunctionBased:
-                    return CreateFunctionBasedShading(shadingDictionary, colorSpace, background, bbox, antiAlias, scanner, filterProvider);
+                    return CreateFunctionBasedShading(shadingDictionary!, colorSpace, background, bbox, antiAlias, scanner, filterProvider);
 
                 case ShadingType.Axial:
-                    return CreateAxialShading(shadingDictionary, colorSpace, background, bbox, antiAlias, scanner, filterProvider);
+                    return CreateAxialShading(shadingDictionary!, colorSpace, background, bbox, antiAlias, scanner, filterProvider);
 
                 case ShadingType.Radial:
-                    return CreateRadialShading(shadingDictionary, colorSpace, background, bbox, antiAlias, scanner, filterProvider);
+                    return CreateRadialShading(shadingDictionary!, colorSpace, background, bbox, antiAlias, scanner, filterProvider);
 
                 case ShadingType.FreeFormGouraud:
-                    return CreateFreeFormGouraudShadedTriangleMeshesShading(shadingStream, colorSpace, background, bbox, antiAlias, scanner, filterProvider);
+                    return CreateFreeFormGouraudShadedTriangleMeshesShading(shadingStream!, colorSpace, background, bbox, antiAlias, scanner, filterProvider);
 
                 case ShadingType.LatticeFormGouraud:
-                    return CreateLatticeFormGouraudShadedTriangleMeshesShading(shadingStream, colorSpace, background, bbox, antiAlias, scanner, filterProvider);
+                    return CreateLatticeFormGouraudShadedTriangleMeshesShading(shadingStream!, colorSpace, background, bbox, antiAlias, scanner, filterProvider);
 
                 case ShadingType.CoonsPatch:
-                    return CreateCoonsPatchMeshesShading(shadingStream, colorSpace, background, bbox, antiAlias, scanner, filterProvider);
+                    return CreateCoonsPatchMeshesShading(shadingStream!, colorSpace, background, bbox, antiAlias, scanner, filterProvider);
 
                 case ShadingType.TensorProductPatch:
-                    return CreateTensorProductPatchMeshesShading(shadingStream, colorSpace, background, bbox, antiAlias, scanner, filterProvider);
+                    return CreateTensorProductPatchMeshesShading(shadingStream!, colorSpace, background, bbox, antiAlias, scanner, filterProvider);
 
                 default:
                     throw new PdfDocumentFormatException($"Invalid Shading type encountered in page resource dictionary: '{shadingType}'.");
@@ -114,7 +114,7 @@
 
         private static PdfFunction[] GetFunctions(IToken functionToken, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
         {
-            if (DirectObjectFinder.TryGet(functionToken, scanner, out ArrayToken fa))
+            if (DirectObjectFinder.TryGet(functionToken, scanner, out ArrayToken? fa))
             {
                 var functionArray = new PdfFunction[fa.Length];
                 for (int i = 0; i < fa.Length; i++)
@@ -130,9 +130,9 @@
         }
 
         private static FunctionBasedShading CreateFunctionBasedShading(DictionaryToken shadingDictionary, ColorSpaceDetails colorSpace,
-            double[] background, PdfRectangle? bbox, bool antiAlias, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
+            double[]? background, PdfRectangle? bbox, bool antiAlias, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
         {
-            double[] domain = null;
+            double[]? domain = null;
             if (shadingDictionary.TryGet<ArrayToken>(NameToken.Domain, scanner, out var domainToken))
             {
                 domain = domainToken.Data.OfType<NumericToken>().Select(v => v.Double).ToArray();
@@ -165,9 +165,9 @@
         }
 
         private static AxialShading CreateAxialShading(DictionaryToken shadingDictionary, ColorSpaceDetails colorSpace,
-            double[] background, PdfRectangle? bbox, bool antiAlias, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
+            double[]? background, PdfRectangle? bbox, bool antiAlias, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
         {
-            double[] coords = null;
+            double[]? coords = null;
             if (shadingDictionary.TryGet<ArrayToken>(NameToken.Coords, scanner, out var coordsToken))
             {
                 coords = coordsToken.Data.OfType<NumericToken>().Select(v => v.Double).ToArray();
@@ -177,7 +177,7 @@
                 throw new ArgumentNullException($"{NameToken.Coords} is required for shading type '{ShadingType.Axial}'.");
             }
 
-            double[] domain = null;
+            double[]? domain = null;
             if (shadingDictionary.TryGet<ArrayToken>(NameToken.Domain, scanner, out var domainToken))
             {
                 domain = domainToken.Data.OfType<NumericToken>().Select(v => v.Double).ToArray();
@@ -195,7 +195,7 @@
 
             PdfFunction[] functions = GetFunctions(shadingDictionary.Data[NameToken.Function], scanner, filterProvider);
 
-            bool[] extend = new bool[] { false, false }; // Default values
+            bool[] extend = [false, false]; // Default values
             if (shadingDictionary.TryGet<ArrayToken>(NameToken.Extend, scanner, out var extendToken))
             {
                 extend = extendToken.Data.OfType<BooleanToken>().Select(v => v.Data).ToArray();
@@ -205,7 +205,7 @@
         }
 
         private static RadialShading CreateRadialShading(DictionaryToken shadingDictionary, ColorSpaceDetails colorSpace,
-            double[] background, PdfRectangle? bbox, bool antiAlias, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
+            double[]? background, PdfRectangle? bbox, bool antiAlias, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
         {
             double[]? coords = null;
             if (shadingDictionary.TryGet<ArrayToken>(NameToken.Coords, scanner, out var coordsToken))
@@ -217,7 +217,7 @@
                 throw new ArgumentNullException($"{NameToken.Coords} is required for shading type '{ShadingType.Radial}'.");
             }
 
-            double[] domain = null;
+            double[]? domain = null;
             if (shadingDictionary.TryGet<ArrayToken>(NameToken.Domain, scanner, out var domainToken))
             {
                 domain = domainToken.Data.OfType<NumericToken>().Select(v => v.Double).ToArray();
@@ -245,7 +245,7 @@
         }
 
         private static FreeFormGouraudShading CreateFreeFormGouraudShadedTriangleMeshesShading(StreamToken shadingStream,
-            ColorSpaceDetails colorSpace, double[] background, PdfRectangle? bbox, bool antiAlias, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
+            ColorSpaceDetails colorSpace, double[]? background, PdfRectangle? bbox, bool antiAlias, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
         {
             int bitsPerCoordinate;
             if (shadingStream.StreamDictionary.TryGet<NumericToken>(NameToken.BitsPerCoordinate, scanner, out var bitsPerCoordinateToken))
@@ -298,7 +298,7 @@
         }
 
         private static LatticeFormGouraudShading CreateLatticeFormGouraudShadedTriangleMeshesShading(StreamToken shadingStream,
-            ColorSpaceDetails colorSpace, double[] background, PdfRectangle? bbox, bool antiAlias, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
+            ColorSpaceDetails colorSpace, double[]? background, PdfRectangle? bbox, bool antiAlias, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
         {
             int bitsPerCoordinate;
             if (shadingStream.StreamDictionary.TryGet<NumericToken>(NameToken.BitsPerCoordinate, scanner, out var bitsPerCoordinateToken))
@@ -340,7 +340,7 @@
                 throw new ArgumentNullException($"{NameToken.Decode} is required for shading type '{ShadingType.LatticeFormGouraud}'.");
             }
 
-            PdfFunction[] functions = null; // Optional
+            PdfFunction[]? functions = null; // Optional
             if (shadingStream.StreamDictionary.ContainsKey(NameToken.Function))
             {
                 functions = GetFunctions(shadingStream.StreamDictionary.Data[NameToken.Function], scanner, filterProvider);
@@ -351,7 +351,7 @@
         }
 
         private static CoonsPatchMeshesShading CreateCoonsPatchMeshesShading(StreamToken shadingStream,
-            ColorSpaceDetails colorSpace, double[] background, PdfRectangle? bbox, bool antiAlias, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
+            ColorSpaceDetails colorSpace, double[]? background, PdfRectangle? bbox, bool antiAlias, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
         {
             int bitsPerCoordinate;
             if (shadingStream.StreamDictionary.TryGet<NumericToken>(NameToken.BitsPerCoordinate, scanner, out var bitsPerCoordinateToken))
@@ -393,7 +393,7 @@
                 throw new ArgumentNullException($"{NameToken.Decode} is required for shading type '{ShadingType.CoonsPatch}'.");
             }
 
-            PdfFunction[] functions = null; // Optional
+            PdfFunction[]? functions = null; // Optional
             if (shadingStream.StreamDictionary.ContainsKey(NameToken.Function))
             {
                 functions = GetFunctions(shadingStream.StreamDictionary.Data[NameToken.Function], scanner, filterProvider);
@@ -404,7 +404,7 @@
         }
 
         private static TensorProductPatchMeshesShading CreateTensorProductPatchMeshesShading(StreamToken shadingStream,
-            ColorSpaceDetails colorSpace, double[] background, PdfRectangle? bbox, bool antiAlias, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
+            ColorSpaceDetails colorSpace, double[]? background, PdfRectangle? bbox, bool antiAlias, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
         {
             int bitsPerCoordinate;
             if (shadingStream.StreamDictionary.TryGet<NumericToken>(NameToken.BitsPerCoordinate, scanner, out var bitsPerCoordinateToken))
@@ -446,7 +446,7 @@
                 throw new ArgumentNullException($"{NameToken.Decode} is required for shading type '{ShadingType.TensorProductPatch}'.");
             }
 
-            PdfFunction[] functions = null; // Optional
+            PdfFunction[]? functions = null; // Optional
             if (shadingStream.StreamDictionary.ContainsKey(NameToken.Function))
             {
                 functions = GetFunctions(shadingStream.StreamDictionary.Data[NameToken.Function], scanner, filterProvider);

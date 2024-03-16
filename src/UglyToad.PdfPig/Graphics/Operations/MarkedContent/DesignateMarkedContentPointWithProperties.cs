@@ -30,15 +30,13 @@
         /// The name of the property dictionary in the Properties subdictionary of the current resource dictionary.
         /// Can be <see langword="null"/> if the property dictionary is provided inline.
         /// </summary>
-        [CanBeNull]
-        public NameToken PropertyDictionaryName { get; }
+        public NameToken? PropertyDictionaryName { get; }
 
         /// <summary>
         /// The marked-content point properties.
         /// Can be <see langword="null"/> if a name of the property dictionary is provided instead.
         /// </summary>
-        [CanBeNull]
-        public DictionaryToken Properties { get; }
+        public DictionaryToken? Properties { get; }
 
         /// <summary>
         /// Create a new <see cref="DesignateMarkedContentPointWithProperties"/>.
@@ -80,7 +78,7 @@
             }
             else
             {
-                TokenWriter.WriteToken(Properties, stream);
+                TokenWriter.WriteToken(Properties!, stream);
             }
 
             stream.WriteWhiteSpace();

@@ -19,7 +19,7 @@
         /// The value of the text in this text field.
         /// This can be <see langword="null"/> if no value has been set.
         /// </summary>
-        public string Value { get; }
+        public string? Value { get; }
 
         /// <summary>
         /// The optional maximum length of the text field.
@@ -50,7 +50,7 @@
         /// <param name="bounds">The location of this field on the page.</param>
         public AcroTextField(DictionaryToken dictionary, string fieldType, AcroTextFieldFlags fieldFlags,
             AcroFieldCommonInformation information, 
-            string value,
+            string? value,
             int? maxLength,
             int? pageNumber,
             PdfRectangle? bounds) : 

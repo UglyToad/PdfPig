@@ -741,12 +741,12 @@
         /// The intersection of the line formed by <paramref name="pl1"/> and <paramref name="pl2"/>
         /// intersects the rectangle.
         /// </summary>
-        private static PdfPoint[] Intersect(PdfRectangle rectangle, PdfPoint pl1, PdfPoint pl2)
+        private static PdfPoint[]? Intersect(PdfRectangle rectangle, PdfPoint pl1, PdfPoint pl2)
         {
             var clipper = new Clipper();
             clipper.AddPath(rectangle.ToClipperPolygon().ToList(), ClipperPolyType.Clip, true);
 
-            clipper.AddPath(new List<ClipperIntPoint>() { pl1.ToClipperIntPoint(), pl2.ToClipperIntPoint() }, ClipperPolyType.Subject, false);
+            clipper.AddPath([pl1.ToClipperIntPoint(), pl2.ToClipperIntPoint()], ClipperPolyType.Subject, false);
 
             var solutions = new ClipperPolyTree();
             if (clipper.Execute(ClipperClipType.Intersection, solutions))
@@ -759,11 +759,11 @@
                 {
                     var solution = solutions.Children[0];
 
-                    return new[]
-                    {
+                    return
+                    [
                         new PdfPoint(solution.Contour[0].X / ClippingExtensions.Factor, solution.Contour[0].Y / ClippingExtensions.Factor),
                         new PdfPoint(solution.Contour[1].X / ClippingExtensions.Factor, solution.Contour[1].Y / ClippingExtensions.Factor)
-                    };
+                    ];
                 }
                 else
                 {
@@ -906,7 +906,7 @@
         /// Get the t values that are the intersections of the line and the curve.
         /// </summary>
         /// <returns>List of t values where the <see cref="BezierCurve"/> and the <see cref="PdfLine"/> intersect.</returns>
-        public static double[] IntersectT(this BezierCurve bezierCurve, PdfLine line)
+        public static double[]? IntersectT(this BezierCurve bezierCurve, PdfLine line)
         {
             return IntersectT(bezierCurve, line.Point1, line.Point2);
         }
@@ -915,12 +915,12 @@
         /// Get the t values that are the intersections of the line and the curve.
         /// </summary>
         /// <returns>List of t values where the <see cref="BezierCurve"/> and the <see cref="Line"/> intersect.</returns>
-        public static double[] IntersectT(this BezierCurve bezierCurve, Line line)
+        public static double[]? IntersectT(this BezierCurve bezierCurve, Line line)
         {
             return IntersectT(bezierCurve, line.From, line.To);
         }
 
-        private static double[] IntersectT(BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
+        private static double[]? IntersectT(BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
         {
             // if the bounding boxes do not intersect, they cannot intersect
             var bezierBbox = bezierCurve.GetBoundingRectangle();

@@ -1,18 +1,17 @@
 ﻿namespace UglyToad.PdfPig.AcroForms
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using Content;
     using Core;
     using CrossReference;
     using Fields;
     using Filters;
     using Parser.Parts;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using Tokenization.Scanner;
     using Tokens;
     using Util;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// Extracts the <see cref="AcroForm"/> from the document, if available.
@@ -43,15 +42,14 @@
         /// Retrieve the <see cref="AcroForm"/> from the document, if applicable.
         /// </summary>
         /// <returns>The <see cref="AcroForm"/> if the document contains one.</returns>
-        [CanBeNull]
-        public AcroForm GetAcroForm(Catalog catalog)
+        public AcroForm? GetAcroForm(Catalog catalog)
         {
             if (!catalog.CatalogDictionary.TryGet(NameToken.AcroForm, out var acroRawToken) )
             {
                 return null;
             }
 
-            if (!DirectObjectFinder.TryGet(acroRawToken, tokenScanner, out DictionaryToken acroDictionary))
+            if (!DirectObjectFinder.TryGet(acroRawToken, tokenScanner, out DictionaryToken? acroDictionary))
             {
                 var fieldsRefs = new List<IndirectReferenceToken>();
 
@@ -59,12 +57,12 @@
                 foreach (var reference in crossReferenceTable.ObjectOffsets.Keys)
                 {
                     var referenceToken = new IndirectReferenceToken(reference);
-                    if (!DirectObjectFinder.TryGet(referenceToken, tokenScanner, out DictionaryToken dict))
+                    if (!DirectObjectFinder.TryGet(referenceToken, tokenScanner, out DictionaryToken? dict))
                     {
                         continue;
                     }
 
-                    if (dict.TryGet(NameToken.Kids, tokenScanner, out ArrayToken _) && dict.TryGet(NameToken.T, tokenScanner, out StringToken _))
+                    if (dict.TryGet(NameToken.Kids, tokenScanner, out ArrayToken? _) && dict.TryGet(NameToken.T, tokenScanner, out StringToken? _))
                     {
                         fieldsRefs.Add(referenceToken);
                     }
@@ -82,40 +80,40 @@
             }
             
             var signatureFlags = (SignatureFlags)0;
-            if (acroDictionary.TryGetOptionalTokenDirect(NameToken.SigFlags, tokenScanner, out NumericToken signatureToken))
+            if (acroDictionary.TryGetOptionalTokenDirect(NameToken.SigFlags, tokenScanner, out NumericToken? signatureToken))
             {
                 signatureFlags = (SignatureFlags)signatureToken.Int;
             }
 
             var needAppearances = false;
-            if (acroDictionary.TryGetOptionalTokenDirect(NameToken.NeedAppearances, tokenScanner, out BooleanToken appearancesToken))
+            if (acroDictionary.TryGetOptionalTokenDirect(NameToken.NeedAppearances, tokenScanner, out BooleanToken? appearancesToken))
             {
                 needAppearances = appearancesToken.Data;
             }
 
-            var calculationOrder = default(ArrayToken);
+            ArrayToken? calculationOrder;
             acroDictionary.TryGetOptionalTokenDirect(NameToken.Co, tokenScanner, out calculationOrder);
 
-            var formResources = default(DictionaryToken);
+            DictionaryToken? formResources = default;
             acroDictionary.TryGetOptionalTokenDirect(NameToken.Dr, tokenScanner, out formResources);
 
-            var da = default(string);
-            if (acroDictionary.TryGetOptionalTokenDirect(NameToken.Da, tokenScanner, out StringToken daToken))
+            string? da = default;
+            if (acroDictionary.TryGetOptionalTokenDirect(NameToken.Da, tokenScanner, out StringToken? daToken))
             {
                 da = daToken.Data;
             }
-            else if (acroDictionary.TryGetOptionalTokenDirect(NameToken.Da, tokenScanner, out HexToken daHexToken))
+            else if (acroDictionary.TryGetOptionalTokenDirect(NameToken.Da, tokenScanner, out HexToken? daHexToken))
             {
                 da = daHexToken.Data;
             }
 
             var q = default(int?);
-            if (acroDictionary.TryGetOptionalTokenDirect(NameToken.Q, tokenScanner, out NumericToken qToken))
+            if (acroDictionary.TryGetOptionalTokenDirect(NameToken.Q, tokenScanner, out NumericToken? qToken))
             {
                 q = qToken.Int;
             }
             
-            if (!acroDictionary.TryGet(NameToken.Fields, tokenScanner, out ArrayToken fieldsArray))
+            if (!acroDictionary.TryGet(NameToken.Fields, tokenScanner, out ArrayToken? fieldsArray))
             {
                 return null;
             }
@@ -146,12 +144,12 @@
 
             fieldDictionary = combinedFieldDictionary;
 
-            fieldDictionary.TryGet(NameToken.Ft, tokenScanner, out NameToken fieldType);
-            fieldDictionary.TryGet(NameToken.Ff, tokenScanner, out NumericToken fieldFlagsToken);
+            fieldDictionary.TryGet(NameToken.Ft, tokenScanner, out NameToken? fieldType);
+            fieldDictionary.TryGet(NameToken.Ff, tokenScanner, out NumericToken? fieldFlagsToken);
 
             var kids = new List<(bool hasParent, DictionaryToken dictionary)>();
 
-            if (fieldDictionary.TryGetOptionalTokenDirect(NameToken.Kids, tokenScanner, out ArrayToken kidsToken))
+            if (fieldDictionary.TryGetOptionalTokenDirect(NameToken.Kids, tokenScanner, out ArrayToken? kidsToken))
             {
                 foreach (var kid in kidsToken.Data)
                 {
@@ -185,13 +183,13 @@
             var information = new AcroFieldCommonInformation(parentReferenceToken?.Data, partialFieldName, alternateFieldName, mappingName);
 
             int? pageNumber = null;
-            if (fieldDictionary.TryGet(NameToken.P, tokenScanner, out IndirectReferenceToken pageReference))
+            if (fieldDictionary.TryGet(NameToken.P, tokenScanner, out IndirectReferenceToken? pageReference))
             {
                 pageNumber = catalog.Pages.GetPageByReference(pageReference.Data)?.PageNumber;
             }
 
             PdfRectangle? bounds = null;
-            if (fieldDictionary.TryGet(NameToken.Rect, tokenScanner, out ArrayToken rectArray) && rectArray.Length == 4)
+            if (fieldDictionary.TryGet(NameToken.Rect, tokenScanner, out ArrayToken? rectArray) && rectArray.Length == 4)
             {
                 bounds = rectArray.ToRectangle(tokenScanner);
             }
@@ -303,22 +301,22 @@
             var textValue = default(string);
             if (fieldDictionary.TryGet(NameToken.V, out var textValueToken))
             {
-                if (DirectObjectFinder.TryGet(textValueToken, tokenScanner, out StringToken valueStringToken))
+                if (DirectObjectFinder.TryGet(textValueToken, tokenScanner, out StringToken? valueStringToken))
                 {
                     textValue = valueStringToken.Data;
                 }
-                else if (DirectObjectFinder.TryGet(textValueToken, tokenScanner, out HexToken valueHexToken))
+                else if (DirectObjectFinder.TryGet(textValueToken, tokenScanner, out HexToken? valueHexToken))
                 {
                     textValue = valueHexToken.Data;
                 }
-                else if (DirectObjectFinder.TryGet(textValueToken, tokenScanner, out StreamToken valueStreamToken))
+                else if (DirectObjectFinder.TryGet(textValueToken, tokenScanner, out StreamToken? valueStreamToken))
                 {
                     textValue = OtherEncodings.BytesAsLatin1String(valueStreamToken.Decode(filterProvider, tokenScanner).ToArray());
                 }
             }
 
             var maxLength = default(int?);
-            if (fieldDictionary.TryGetOptionalTokenDirect(NameToken.MaxLen, tokenScanner, out NumericToken maxLenToken))
+            if (fieldDictionary.TryGetOptionalTokenDirect(NameToken.MaxLen, tokenScanner, out NumericToken? maxLenToken))
             {
                 maxLength = maxLenToken.Int;
             }
@@ -341,27 +339,27 @@
             var selectedOptions = Array.Empty<string>();
             if (fieldDictionary.TryGet(NameToken.V, out var valueToken))
             {
-                if (DirectObjectFinder.TryGet(valueToken, tokenScanner, out StringToken valueString))
+                if (DirectObjectFinder.TryGet(valueToken, tokenScanner, out StringToken? valueString))
                 {
                     selectedOptions = [valueString.Data];
                 }
-                else if (DirectObjectFinder.TryGet(valueToken, tokenScanner, out HexToken valueHex))
+                else if (DirectObjectFinder.TryGet(valueToken, tokenScanner, out HexToken? valueHex))
                 {
                     selectedOptions = [valueHex.Data];
 
                 }
-                else if (DirectObjectFinder.TryGet(valueToken, tokenScanner, out ArrayToken valueArray))
+                else if (DirectObjectFinder.TryGet(valueToken, tokenScanner, out ArrayToken? valueArray))
                 {
                     selectedOptions = new string[valueArray.Length];
                     for (var i = 0; i < valueArray.Length; i++)
                     {
                         var valueOptToken = valueArray.Data[i];
 
-                        if (DirectObjectFinder.TryGet(valueOptToken, tokenScanner, out StringToken valueOptString))
+                        if (DirectObjectFinder.TryGet(valueOptToken, tokenScanner, out StringToken? valueOptString))
                         {
                             selectedOptions[i] = valueOptString.Data;
                         }
-                        else if (DirectObjectFinder.TryGet(valueOptToken, tokenScanner, out HexToken valueOptHex))
+                        else if (DirectObjectFinder.TryGet(valueOptToken, tokenScanner, out HexToken? valueOptHex))
                         {
                             selectedOptions[i] = valueOptHex.Data;
                         }
@@ -370,7 +368,7 @@
             }
 
             var selectedIndices = default(int[]);
-            if (fieldDictionary.TryGetOptionalTokenDirect(NameToken.I, tokenScanner, out ArrayToken indicesArray))
+            if (fieldDictionary.TryGetOptionalTokenDirect(NameToken.I, tokenScanner, out ArrayToken? indicesArray))
             {
                 selectedIndices = new int[indicesArray.Length];
                 for (var i = 0; i < indicesArray.Data.Count; i++)
@@ -382,24 +380,24 @@
             }
 
             var options = new List<AcroChoiceOption>();
-            if (fieldDictionary.TryGetOptionalTokenDirect(NameToken.Opt, tokenScanner, out ArrayToken optionsArrayToken))
+            if (fieldDictionary.TryGetOptionalTokenDirect(NameToken.Opt, tokenScanner, out ArrayToken? optionsArrayToken))
             {
                 for (var i = 0; i < optionsArrayToken.Data.Count; i++)
                 {
                     var optionToken = optionsArrayToken.Data[i];
-                    if (DirectObjectFinder.TryGet(optionToken, tokenScanner, out StringToken optionStringToken))
+                    if (DirectObjectFinder.TryGet(optionToken, tokenScanner, out StringToken? optionStringToken))
                     {
                         var name = optionStringToken.Data;
                         var isSelected = IsChoiceSelected(selectedOptions, selectedIndices, i, name);
                         options.Add(new AcroChoiceOption(i, isSelected, optionStringToken.Data));
                     }
-                    else if (DirectObjectFinder.TryGet(optionToken, tokenScanner, out HexToken optionHexToken))
+                    else if (DirectObjectFinder.TryGet(optionToken, tokenScanner, out HexToken? optionHexToken))
                     {
                         var name = optionHexToken.Data;
                         var isSelected = IsChoiceSelected(selectedOptions, selectedIndices, i, name);
                         options.Add(new AcroChoiceOption(i, isSelected, optionHexToken.Data));
                     }
-                    else if (DirectObjectFinder.TryGet(optionToken, tokenScanner, out ArrayToken optionArrayToken))
+                    else if (DirectObjectFinder.TryGet(optionToken, tokenScanner, out ArrayToken? optionArrayToken))
                     {
                         if (optionArrayToken.Length != 2)
                         {
@@ -407,11 +405,11 @@
                         }
 
                         string exportValue;
-                        if (DirectObjectFinder.TryGet(optionArrayToken.Data[0], tokenScanner, out StringToken exportValueStringToken))
+                        if (DirectObjectFinder.TryGet(optionArrayToken.Data[0], tokenScanner, out StringToken? exportValueStringToken))
                         {
                             exportValue = exportValueStringToken.Data;
                         }
-                        else if (DirectObjectFinder.TryGet(optionArrayToken.Data[0], tokenScanner, out HexToken exportValueHexToken))
+                        else if (DirectObjectFinder.TryGet(optionArrayToken.Data[0], tokenScanner, out HexToken? exportValueHexToken))
                         {
                             exportValue = exportValueHexToken.Data;
                         }
@@ -421,11 +419,11 @@
                         }
 
                         string name;
-                        if (DirectObjectFinder.TryGet(optionArrayToken.Data[1], tokenScanner, out StringToken nameStringToken))
+                        if (DirectObjectFinder.TryGet(optionArrayToken.Data[1], tokenScanner, out StringToken? nameStringToken))
                         {
                             name = nameStringToken.Data;
                         }
-                        else if (DirectObjectFinder.TryGet(optionArrayToken.Data[1], tokenScanner, out HexToken nameHexToken))
+                        else if (DirectObjectFinder.TryGet(optionArrayToken.Data[1], tokenScanner, out HexToken? nameHexToken))
                         {
                             name = nameHexToken.Data;
                         }
@@ -458,7 +456,7 @@
             }
 
             var topIndex = default(int?);
-            if (fieldDictionary.TryGetOptionalTokenDirect(NameToken.Ti, tokenScanner, out NumericToken topIndexToken))
+            if (fieldDictionary.TryGetOptionalTokenDirect(NameToken.Ti, tokenScanner, out NumericToken? topIndexToken))
             {
                 topIndex = topIndexToken.Int;
             }
@@ -475,10 +473,10 @@
         private (bool isChecked, NameToken stateName) GetCheckedState(DictionaryToken fieldDictionary, bool inheritsValue)
         {
             var isChecked = false;
-            if (!fieldDictionary.TryGetOptionalTokenDirect(NameToken.V, tokenScanner, out NameToken valueToken))
+            if (!fieldDictionary.TryGetOptionalTokenDirect(NameToken.V, tokenScanner, out NameToken? valueToken))
             {
-                if (fieldDictionary.TryGetOptionalTokenDirect(NameToken.As, tokenScanner, out NameToken appearanceStateName)
-                    && fieldDictionary.TryGetOptionalTokenDirect(NameToken.Ap, tokenScanner, out DictionaryToken _))
+                if (fieldDictionary.TryGetOptionalTokenDirect(NameToken.As, tokenScanner, out NameToken? appearanceStateName)
+                    && fieldDictionary.TryGetOptionalTokenDirect(NameToken.Ap, tokenScanner, out DictionaryToken? _))
                 {
                     // Issue #267 - Use the set appearance instead, this might not work for 3 state checkboxes.
                     isChecked = !string.Equals(
@@ -490,7 +488,7 @@
                 }
                 valueToken = NameToken.Off;
             }
-            else if (inheritsValue && fieldDictionary.TryGet(NameToken.As, tokenScanner, out NameToken appearanceStateName))
+            else if (inheritsValue && fieldDictionary.TryGet(NameToken.As, tokenScanner, out NameToken? appearanceStateName))
             {
                 // The parent field's V entry holds a name object corresponding to the 
                 // appearance state of whichever child field is currently in the on state.
@@ -546,7 +544,7 @@
             return (new DictionaryToken(inheritedDictionary), inheritsValue);
         }
 
-        private static bool IsChoiceSelected(IReadOnlyList<string> selectedOptionNames, IReadOnlyList<int> selectedOptionIndices, int index, string name)
+        private static bool IsChoiceSelected(IReadOnlyList<string> selectedOptionNames, IReadOnlyList<int>? selectedOptionIndices, int index, string name)
         {
             if (selectedOptionNames.Count == 0)
             {

@@ -22,7 +22,6 @@
         /// <summary>
         /// The raw PDF dictionary which is the root form object.
         /// </summary>
-        [NotNull]
         public DictionaryToken Dictionary { get; }
 
         /// <summary>

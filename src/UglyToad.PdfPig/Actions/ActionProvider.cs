@@ -1,11 +1,11 @@
 ﻿namespace UglyToad.PdfPig.Actions
 {
+    using System.Diagnostics.CodeAnalysis;
     using Core;
     using Logging;
-    using Outline;
+    using Outline.Destinations;
     using Tokenization.Scanner;
     using Tokens;
-    using Outline.Destinations;
     using Util;
 
     internal static class ActionProvider
@@ -13,20 +13,21 @@
         /// <summary>
         /// Get an action (A) from dictionary. If GoTo, GoToR or GoToE, also fetches the action destination.
         /// </summary>
-        internal static bool TryGetAction(DictionaryToken dictionary,
+        internal static bool TryGetAction(
+            DictionaryToken dictionary,
             NamedDestinations namedDestinations,
             IPdfTokenScanner pdfScanner,
             ILog log,
-            out PdfAction result)
+            [NotNullWhen(true)] out PdfAction? result)
         {
             result = null;
 
-            if (!dictionary.TryGet(NameToken.A, pdfScanner, out DictionaryToken actionDictionary))
+            if (!dictionary.TryGet(NameToken.A, pdfScanner, out DictionaryToken? actionDictionary))
             {
                 return false;
             }
 
-            if (!actionDictionary.TryGet(NameToken.S, pdfScanner, out NameToken actionType))
+            if (!actionDictionary.TryGet(NameToken.S, pdfScanner, out NameToken? actionType))
             {
                 throw new PdfDocumentFormatException($"No action type (/S) specified for action: {actionDictionary}.");
             }
@@ -81,7 +82,7 @@
                         fileSpecification = null;
                     }
 
-                    result = new GoToEAction(destination, fileSpecification);
+                    result = new GoToEAction(destination, fileSpecification!);
                     return true;
                 }
             }

@@ -56,7 +56,7 @@
             var mXYZ = new Matrix3x3(
                 Xr, Xg, Xb,
                 Yr, Yg, Yb,
-                Zr, Zg, Zb).Inverse();
+                Zr, Zg, Zb).Inverse()!;
 
             var S = mXYZ.Multiply(destinationWorkingSpace.ReferenceWhite);
 
@@ -69,7 +69,7 @@
                 Sr * Yr, Sg * Yg, Sb * Yb,
                 Sr * Zr, Sg * Zg, Sb * Zb);
 
-            transformationMatrix = M.Inverse();
+            transformationMatrix = M.Inverse()!;
         }
 
         /// <summary>

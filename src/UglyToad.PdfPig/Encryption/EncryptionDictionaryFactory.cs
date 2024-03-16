@@ -20,25 +20,25 @@
 
             var code = EncryptionAlgorithmCode.Unrecognized;
 
-            if (encryptionDictionary.TryGetOptionalTokenDirect(NameToken.V, tokenScanner, out NumericToken vNum))
+            if (encryptionDictionary.TryGetOptionalTokenDirect(NameToken.V, tokenScanner, out NumericToken? vNum))
             {
                 code = (EncryptionAlgorithmCode) vNum.Int;
             }
 
             var length = default(int?);
             
-            if (encryptionDictionary.TryGetOptionalTokenDirect(NameToken.Length, tokenScanner, out NumericToken lengthToken))
+            if (encryptionDictionary.TryGetOptionalTokenDirect(NameToken.Length, tokenScanner, out NumericToken? lengthToken))
             {
                 length = lengthToken.Int;
             }
 
             var revision = default(int);
-            if (encryptionDictionary.TryGetOptionalTokenDirect(NameToken.R, tokenScanner, out NumericToken revisionToken))
+            if (encryptionDictionary.TryGetOptionalTokenDirect(NameToken.R, tokenScanner, out NumericToken? revisionToken))
             {
                 revision = revisionToken.Int;
             }
 
-            byte[] ownerBytes = null;
+            byte[]? ownerBytes = null;
             if (encryptionDictionary.TryGet(NameToken.O, out IToken ownerToken))
             {
                 if (ownerToken is StringToken ownerString)
@@ -51,7 +51,7 @@
                 }
             }
             
-            byte[] userBytes = null;
+            byte[]? userBytes = null;
             if (encryptionDictionary.TryGet(NameToken.U, out IToken userToken))
             {
                 if (userToken is StringToken userString)
@@ -66,22 +66,25 @@
             
             var access = default(UserAccessPermissions);
 
-            if (encryptionDictionary.TryGetOptionalTokenDirect(NameToken.P, tokenScanner, out NumericToken accessToken))
+            if (encryptionDictionary.TryGetOptionalTokenDirect(NameToken.P, tokenScanner, out NumericToken? accessToken))
             {
                 // This can be bigger than an integer.
                 access = (UserAccessPermissions) accessToken.Long;
             }
 
-            byte[] userEncryptionBytes = null, ownerEncryptionBytes = null;
+            byte[]? userEncryptionBytes = null;
+            byte[]? ownerEncryptionBytes = null;
             if (revision >= 5)
             {
                 ownerEncryptionBytes = GetEncryptionBytesOrDefault(encryptionDictionary, tokenScanner, false);
                 userEncryptionBytes = GetEncryptionBytesOrDefault(encryptionDictionary, tokenScanner, true);
             }
 
-            encryptionDictionary.TryGetOptionalTokenDirect(NameToken.EncryptMetaData, tokenScanner, out BooleanToken encryptMetadata);
+            encryptionDictionary.TryGetOptionalTokenDirect(NameToken.EncryptMetaData, tokenScanner, out BooleanToken? encryptMetadata);
 
-            return new EncryptionDictionary(filter.Data, code, length, revision, ownerBytes, userBytes, 
+            return new EncryptionDictionary(filter.Data, code, length, revision,
+                ownerBytes,
+                userBytes, 
                 ownerEncryptionBytes,
                 userEncryptionBytes,
                 access, 
@@ -89,15 +92,15 @@
                 encryptMetadata?.Data ?? true);
         }
 
-        private static byte[] GetEncryptionBytesOrDefault(DictionaryToken encryptionDictionary, IPdfTokenScanner tokenScanner, bool isUser)
+        private static byte[]? GetEncryptionBytesOrDefault(DictionaryToken encryptionDictionary, IPdfTokenScanner tokenScanner, bool isUser)
         {
             var name = isUser ? NameToken.Ue : NameToken.Oe;
-            if (encryptionDictionary.TryGet(name, tokenScanner, out StringToken stringToken))
+            if (encryptionDictionary.TryGet(name, tokenScanner, out StringToken? stringToken))
             {
                 return OtherEncodings.StringAsLatin1Bytes(stringToken.Data);
             }
 
-            if (encryptionDictionary.TryGet(name, tokenScanner, out HexToken hexToken))
+            if (encryptionDictionary.TryGet(name, tokenScanner, out HexToken? hexToken))
             {
                 return hexToken.Bytes.ToArray();
             }

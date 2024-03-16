@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using AcroForms;
     using Content;
@@ -15,7 +16,6 @@
     using Tokens;
     using Outline;
     using Outline.Destinations;
-    using Util.JetBrains.Annotations;
 
     /// <inheritdoc />
     /// <summary>
@@ -26,35 +26,24 @@
         private bool isDisposed;
         private readonly Lazy<AcroForm> documentForm;
 
-        [NotNull]
         private readonly HeaderVersion version;
-
         private readonly IInputBytes inputBytes;
-
-        [CanBeNull]
-        private readonly EncryptionDictionary encryptionDictionary;
-
-        [NotNull]
+        private readonly EncryptionDictionary? encryptionDictionary;
         private readonly IPdfTokenScanner pdfScanner;
-
         private readonly ILookupFilterProvider filterProvider;
         private readonly BookmarksProvider bookmarksProvider;
         private readonly ParsingOptions parsingOptions;
-
-        [NotNull]
         private readonly Pages pages;
         private readonly NamedDestinations namedDestinations;
 
         /// <summary>
         /// The metadata associated with this document.
         /// </summary>
-        [NotNull]
         public DocumentInformation Information { get; }
 
         /// <summary>
         /// Access to the underlying raw structure of the document.
         /// </summary>
-        [NotNull]
         public Structure Structure { get; }
 
         /// <summary>
@@ -77,12 +66,13 @@
         /// </summary>
         public bool IsEncrypted => encryptionDictionary != null;
 
-        internal PdfDocument(IInputBytes inputBytes,
+        internal PdfDocument(
+            IInputBytes inputBytes,
             HeaderVersion version,
             CrossReferenceTable crossReferenceTable,
             Catalog catalog,
             DocumentInformation information,
-            EncryptionDictionary encryptionDictionary,
+            EncryptionDictionary? encryptionDictionary,
             IPdfTokenScanner pdfScanner,
             ILookupFilterProvider filterProvider,
             AcroFormFactory acroFormFactory,
@@ -102,7 +92,7 @@
             namedDestinations = catalog.NamedDestinations;
             Structure = new Structure(catalog, crossReferenceTable, pdfScanner);
             Advanced = new AdvancedPdfDocumentAccess(pdfScanner, filterProvider, catalog);
-            documentForm = new Lazy<AcroForm>(() => acroFormFactory.GetAcroForm(catalog));
+            documentForm = new Lazy<AcroForm>(() => acroFormFactory.GetAcroForm(catalog)!);
         }
 
         /// <summary>
@@ -111,7 +101,7 @@
         /// <param name="fileBytes">The bytes of the PDF file.</param>
         /// <param name="options">Optional parameters controlling parsing.</param>
         /// <returns>A <see cref="PdfDocument"/> providing access to the file contents.</returns>
-        public static PdfDocument Open(byte[] fileBytes, ParsingOptions options = null) => PdfDocumentFactory.Open(fileBytes, options);
+        public static PdfDocument Open(byte[] fileBytes, ParsingOptions? options = null) => PdfDocumentFactory.Open(fileBytes, options);
 
         /// <summary>
         /// Opens a file and creates a <see cref="PdfDocument"/> for reading from the provided file path.
@@ -119,7 +109,7 @@
         /// <param name="filePath">The full path to the file location of the PDF file.</param>
         /// <param name="options">Optional parameters controlling parsing.</param>
         /// <returns>A <see cref="PdfDocument"/> providing access to the file contents.</returns>
-        public static PdfDocument Open(string filePath, ParsingOptions options = null) => PdfDocumentFactory.Open(filePath, options);
+        public static PdfDocument Open(string filePath, ParsingOptions? options = null) => PdfDocumentFactory.Open(filePath, options);
 
         /// <summary>
         /// Creates a <see cref="PdfDocument"/> for reading from the provided stream.
@@ -131,7 +121,7 @@
         /// </param>
         /// <param name="options">Optional parameters controlling parsing.</param>
         /// <returns>A <see cref="PdfDocument"/> providing access to the file contents.</returns>
-        public static PdfDocument Open(Stream stream, ParsingOptions options = null) => PdfDocumentFactory.Open(stream, options);
+        public static PdfDocument Open(Stream stream, ParsingOptions? options = null) => PdfDocumentFactory.Open(stream, options);
 
         /// <summary>
         /// TODO
@@ -177,7 +167,7 @@
             }
             catch (Exception ex)
             {
-                if (IsEncrypted)
+                if (IsEncrypted && encryptionDictionary != null)
                 {
                     throw new PdfDocumentEncryptedException("Document was encrypted which may have caused error when retrieving page.", encryptionDictionary, ex);
                 }
@@ -209,7 +199,7 @@
             {
                 if (IsEncrypted)
                 {
-                    throw new PdfDocumentEncryptedException("Document was encrypted which may have caused error when retrieving page.", encryptionDictionary, ex);
+                    throw new PdfDocumentEncryptedException("Document was encrypted which may have caused error when retrieving page.", encryptionDictionary!, ex);
                 }
 
                 throw;
@@ -245,7 +235,7 @@
         /// <remarks>This will throw a <see cref="ObjectDisposedException"/> if called on a disposed <see cref="PdfDocument"/>.</remarks>
         /// <param name="metadata">The metadata stream if it exists.</param>
         /// <returns><see langword="true"/> if the metadata is present, <see langword="false"/> otherwise.</returns>
-        public bool TryGetXmpMetadata(out XmpMetadata metadata)
+        public bool TryGetXmpMetadata([NotNullWhen(true)] out XmpMetadata? metadata)
         {
             if (isDisposed)
             {
@@ -254,7 +244,7 @@
 
             metadata = null;
 
-            if (!Structure.Catalog.CatalogDictionary.TryGet(NameToken.Metadata, pdfScanner, out StreamToken xmpStreamToken))
+            if (!Structure.Catalog.CatalogDictionary.TryGet(NameToken.Metadata, pdfScanner, out StreamToken? xmpStreamToken))
             {
                 return false;
             }
@@ -268,7 +258,7 @@
         /// Gets the bookmarks if this document contains some.
         /// </summary>
         /// <remarks>This will throw a <see cref="ObjectDisposedException"/> if called on a disposed <see cref="PdfDocument"/>.</remarks>
-        public bool TryGetBookmarks(out Bookmarks bookmarks)
+        public bool TryGetBookmarks([NotNullWhen(true)] out Bookmarks? bookmarks)
         {
             if (isDisposed)
             {
@@ -276,12 +266,8 @@
             }
 
             bookmarks = bookmarksProvider.GetBookmarks(Structure.Catalog);
-            if (bookmarks != null)
-            {
-                return true;
-            }
 
-            return false;
+            return bookmarks != null;
         }
 
         /// <summary>

@@ -1,11 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Parser.Parts
 {
-    using Core;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
     using System.Text;
-    using Util.JetBrains.Annotations;
+    using Core;
 
     /// <summary>
     /// Brute force search for all objects in the document.
@@ -19,7 +18,6 @@
         /// </summary>
         /// <param name="bytes">The bytes of the document.</param>
         /// <returns>The object keys and offsets for the objects in this document.</returns>
-        [NotNull]
         public static IReadOnlyDictionary<IndirectReference, long> GetObjectLocations(IInputBytes bytes)
         {
             if (bytes is null)

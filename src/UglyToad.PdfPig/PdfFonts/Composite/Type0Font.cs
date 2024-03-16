@@ -6,8 +6,8 @@
     using Geometry;
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using Tokens;
-    using Util.JetBrains.Annotations;
     using Debug = System.Diagnostics.Debug;
 
     /// <summary>
@@ -15,7 +15,7 @@
     /// </summary>
     internal sealed class Type0Font : IFont, IVerticalWritingSupported
     {
-        private readonly CMap ucs2CMap;
+        private readonly CMap? ucs2CMap;
         // ReSharper disable once NotAccessedField.Local
         private readonly bool isChineseJapaneseOrKorean;
         private readonly Dictionary<int, CharacterBoundingBox> boundingBoxCache
@@ -23,24 +23,24 @@
 
         public NameToken Name => BaseFont;
 
-        [NotNull]
         public NameToken BaseFont { get; }
 
-        [NotNull]
         public ICidFont CidFont { get; }
 
-        [NotNull]
         public CMap CMap { get; }
 
-        [NotNull]
         public ToUnicodeCMap ToUnicode { get; }
 
         public bool IsVertical => CMap.WritingMode == WritingMode.Vertical;
 
         public FontDetails Details { get; }
 
-        public Type0Font(NameToken baseFont, ICidFont cidFont, CMap cmap, CMap toUnicodeCMap,
-            CMap ucs2CMap,
+        public Type0Font(
+            NameToken baseFont,
+            ICidFont cidFont,
+            CMap cmap,
+            CMap? toUnicodeCMap,
+            CMap? ucs2CMap,
             bool isChineseJapaneseOrKorean)
         {
             this.ucs2CMap = ucs2CMap;
@@ -65,15 +65,14 @@
             return code;
         }
 
-        public bool TryGetUnicode(int characterCode, out string value)
+        public bool TryGetUnicode(int characterCode, [NotNullWhen(true)] out string? value)
         {
             value = null;
 
             var HaveCMap = ToUnicode.CanMapToUnicode;
             if (HaveCMap == false)
             {
-                var HaveUnicode2CMap = (ucs2CMap is null == false);
-                if (HaveUnicode2CMap)
+                if (ucs2CMap != null)
                 {
                     // Have both ucs2Map and CMap convert to unicode by
                     // characterCode  ----by CMAP---> CID ---ucs2Map---> Unicode
@@ -88,10 +87,10 @@
                     {
                         return value != null;
                     }
-                }
-                if (HaveUnicode2CMap) // 2022-12-24 @fnatzke left as fall-back. Possible?
-                {
-                    // characterCode ---ucs2Map---> Unicode      (?) @fnatzke possible?
+                
+                    // 2022-12-24 @fnatzke left as fall-back. Possible?
+                
+                    // characterCode ---ucs2Map---> Unicode (?) @fnatzke possible?
                     if (ucs2CMap.TryConvertToUnicode(characterCode, out value))
                     {
                         return value != null;
@@ -157,7 +156,7 @@
         }
 
         /// <inheritdoc/>
-        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        public bool TryGetPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             var characterIdentifier = CMap.ConvertToCid(characterCode);
 
@@ -165,7 +164,7 @@
         }
 
         /// <inheritdoc/>
-        public bool TryGetNormalisedPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        public bool TryGetNormalisedPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             var characterIdentifier = CMap.ConvertToCid(characterCode);
 

@@ -20,18 +20,18 @@ namespace UglyToad.PdfPig.Content
         /// <summary>
         /// The name of the optional content group, suitable for presentation in a viewer application's user interface.
         /// </summary>
-        public string Name { get; }
+        public string? Name { get; }
 
         /// <summary>
         /// A single name or an array containing any combination of names.
         /// <para>Default value is 'View'.</para>
         /// </summary>
-        public IReadOnlyList<string> Intent { get; }
+        public IReadOnlyList<string>? Intent { get; }
 
         /// <summary>
         /// A usage dictionary describing the nature of the content controlled by the group.
         /// </summary>
-        public IReadOnlyDictionary<string, IToken> Usage { get; }
+        public IReadOnlyDictionary<string, IToken>? Usage { get; }
 
         /// <summary>
         /// Underlying <see cref="MarkedContentElement"/>.
@@ -43,11 +43,11 @@ namespace UglyToad.PdfPig.Content
             MarkedContent = markedContentElement;
 
             // Type - Required
-            if (markedContentElement.Properties.TryGet(NameToken.Type, pdfTokenScanner, out NameToken type))
+            if (markedContentElement.Properties.TryGet(NameToken.Type, pdfTokenScanner, out NameToken? type))
             {
                 Type = type.Data;
             }
-            else if (markedContentElement.Properties.TryGet(NameToken.Type, pdfTokenScanner, out StringToken typeStr))
+            else if (markedContentElement.Properties.TryGet(NameToken.Type, pdfTokenScanner, out StringToken? typeStr))
             {
                 Type = typeStr.Data;
             }
@@ -60,11 +60,11 @@ namespace UglyToad.PdfPig.Content
             {
                 case "OCG": // Optional content group dictionary
                     // Name - Required
-                    if (markedContentElement.Properties.TryGet(NameToken.Name, pdfTokenScanner, out NameToken name))
+                    if (markedContentElement.Properties.TryGet(NameToken.Name, pdfTokenScanner, out NameToken? name))
                     {
                         Name = name.Data;
                     }
-                    else if (markedContentElement.Properties.TryGet(NameToken.Name, pdfTokenScanner, out StringToken nameStr))
+                    else if (markedContentElement.Properties.TryGet(NameToken.Name, pdfTokenScanner, out StringToken? nameStr))
                     {
                         Name = nameStr.Data;
                     }
@@ -74,15 +74,15 @@ namespace UglyToad.PdfPig.Content
                     }
 
                     // Intent - Optional
-                    if (markedContentElement.Properties.TryGet(NameToken.Intent, pdfTokenScanner, out NameToken intentName))
+                    if (markedContentElement.Properties.TryGet(NameToken.Intent, pdfTokenScanner, out NameToken? intentName))
                     {
-                        Intent = new string[] { intentName.Data };
+                        Intent = [intentName.Data];
                     }
-                    else if (markedContentElement.Properties.TryGet(NameToken.Intent, pdfTokenScanner, out StringToken intentStr))
+                    else if (markedContentElement.Properties.TryGet(NameToken.Intent, pdfTokenScanner, out StringToken? intentStr))
                     {
-                        Intent = new string[] { intentStr.Data };
+                        Intent = [intentStr.Data];
                     }
-                    else if (markedContentElement.Properties.TryGet(NameToken.Intent, pdfTokenScanner, out ArrayToken intentArray))
+                    else if (markedContentElement.Properties.TryGet(NameToken.Intent, pdfTokenScanner, out ArrayToken? intentArray))
                     {
                         List<string> intentList = new List<string>();
                         foreach (var token in intentArray.Data)
@@ -105,11 +105,11 @@ namespace UglyToad.PdfPig.Content
                     else
                     {
                         // Default value is 'View'.
-                        Intent = new string[] { "View" };
+                        Intent = ["View"];
                     }
 
                     // Usage - Optional
-                    if (markedContentElement.Properties.TryGet(NameToken.Usage, pdfTokenScanner, out DictionaryToken usage))
+                    if (markedContentElement.Properties.TryGet(NameToken.Usage, pdfTokenScanner, out DictionaryToken? usage))
                     {
                         this.Usage = usage.Data;
                     }
@@ -117,25 +117,25 @@ namespace UglyToad.PdfPig.Content
 
                 case "OCMD":
                     // OCGs - Optional
-                    if (markedContentElement.Properties.TryGet(NameToken.Ocgs, pdfTokenScanner, out DictionaryToken ocgsD))
+                    if (markedContentElement.Properties.TryGet(NameToken.Ocgs, pdfTokenScanner, out DictionaryToken? ocgsD))
                     {
                         // dictionary or array
                         throw new NotImplementedException($"{NameToken.Ocgs}");
                     }
-                    else if (markedContentElement.Properties.TryGet(NameToken.Ocgs, pdfTokenScanner, out ArrayToken ocgsA))
+                    else if (markedContentElement.Properties.TryGet(NameToken.Ocgs, pdfTokenScanner, out ArrayToken? ocgsA))
                     {
                         // dictionary or array
                         throw new NotImplementedException($"{NameToken.Ocgs}");
                     }
 
                     // P - Optional
-                    if (markedContentElement.Properties.TryGet(NameToken.P, pdfTokenScanner, out NameToken p))
+                    if (markedContentElement.Properties.TryGet(NameToken.P, pdfTokenScanner, out NameToken? p))
                     {
                         throw new NotImplementedException($"{NameToken.P}");
                     }
 
                     // VE - Optional
-                    if (markedContentElement.Properties.TryGet(NameToken.VE, pdfTokenScanner, out ArrayToken ve))
+                    if (markedContentElement.Properties.TryGet(NameToken.VE, pdfTokenScanner, out ArrayToken? ve))
                     {
                         throw new NotImplementedException($"{NameToken.VE}");
                     }

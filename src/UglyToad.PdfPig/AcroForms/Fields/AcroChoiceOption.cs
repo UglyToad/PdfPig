@@ -23,7 +23,7 @@
         /// <summary>
         /// The value of the option when the form is exported.
         /// </summary>
-        public string ExportValue { get; }
+        public string? ExportValue { get; }
 
         /// <summary>
         /// Whether the field defined an export value for this option.
@@ -33,7 +33,7 @@
         /// <summary>
         /// Create a new <see cref="AcroChoiceOption"/>.
         /// </summary>
-        public AcroChoiceOption(int index, bool isSelected, string name, string exportValue = null)
+        public AcroChoiceOption(int index, bool isSelected, string name, string? exportValue = null)
         {
             Index = index;
             IsSelected = isSelected;

@@ -147,11 +147,11 @@
                 Height = height;
             }
 
-            public override bool Equals(object obj)
+            public override bool Equals(object? obj)
             {
-                return obj is WidthHeight height &&
-                       Math.Round(Width) == Math.Round(height.Width) &&
-                       Math.Round(Height) == Math.Round(height.Height);
+                return obj is WidthHeight other &&
+                       Math.Round(Width) == Math.Round(other.Width) &&
+                       Math.Round(Height) == Math.Round(other.Height);
             }
 
             public override int GetHashCode()

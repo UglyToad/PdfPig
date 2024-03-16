@@ -21,7 +21,6 @@
         /// <summary>
         /// The XObject stream.
         /// </summary>
-        [NotNull]
         public StreamToken Stream { get; }
 
         /// <summary>

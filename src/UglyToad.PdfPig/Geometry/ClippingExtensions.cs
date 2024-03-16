@@ -24,7 +24,7 @@
         /// <summary>
         /// Generates the result of applying a clipping path to another path.
         /// </summary>
-        public static PdfPath Clip(this PdfPath clipping, PdfPath subject, ILog? log = null)
+        public static PdfPath? Clip(this PdfPath clipping, PdfPath subject, ILog? log = null)
         {
             if (clipping is null)
             {

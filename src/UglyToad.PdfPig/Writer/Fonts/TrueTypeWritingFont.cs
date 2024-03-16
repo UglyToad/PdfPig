@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using System.Linq;
     using Core;
     using PdfFonts;
@@ -47,7 +46,7 @@
             return TransformationMatrix.FromValues(1.0 / unitsPerEm, 0, 0, 1.0 / unitsPerEm, 0, 0);
         }
 
-        public IndirectReferenceToken  WriteFont(IPdfStreamWriter writer, IndirectReferenceToken reservedIndirect=null)
+        public IndirectReferenceToken  WriteFont(IPdfStreamWriter writer, IndirectReferenceToken? reservedIndirect = null)
         {
             var newEncoding = new TrueTypeSubsetEncoding(characterMapping.Keys.ToList());
             var subsetBytes = TrueTypeSubsetter.Subset(fontFileBytes.ToArray(), newEncoding);

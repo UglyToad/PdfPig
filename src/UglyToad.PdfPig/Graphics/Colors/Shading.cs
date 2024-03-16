@@ -35,7 +35,7 @@
         /// the shading, to fill those portions of the area to be painted
         /// that lie outside the bounds of the shading object.
         /// </summary>
-        public double[] Background { get; }
+        public double[]? Background { get; }
 
         /// <summary>
         /// The shading's bounding box. The coordinates shall be interpreted
@@ -62,7 +62,7 @@
         /// Create a new <see cref="Shading"/>.
         /// </summary>
         protected internal Shading(ShadingType shadingType, bool antiAlias, DictionaryToken shadingDictionary,
-            ColorSpaceDetails colorSpace, PdfRectangle? bbox, double[] background)
+            ColorSpaceDetails colorSpace, PdfRectangle? bbox, double[]? background)
         {
             ShadingType = shadingType;
             AntiAlias = antiAlias;
@@ -75,7 +75,7 @@
         /// <summary>
         /// The shading's function(s), if any.
         /// </summary>
-        public abstract PdfFunction[] Functions { get; }
+        public abstract PdfFunction[]? Functions { get; }
 
         /// <summary>
         /// Convert the input values using the functions of the shading.
@@ -157,7 +157,7 @@
         /// Create a new <see cref="FunctionBasedShading"/>.
         /// </summary>
         public FunctionBasedShading(bool antiAlias, DictionaryToken shadingDictionary,
-            ColorSpaceDetails colorSpace, PdfRectangle? bbox, double[] background, double[] domain,
+            ColorSpaceDetails colorSpace, PdfRectangle? bbox, double[]? background, double[] domain,
             TransformationMatrix matrix, PdfFunction[] functions)
             : base(ShadingType.FunctionBased, antiAlias, shadingDictionary, colorSpace, bbox, background)
         {
@@ -207,7 +207,7 @@
         /// Create a new <see cref="AxialShading"/>.
         /// </summary>
         public AxialShading(bool antiAlias, DictionaryToken shadingDictionary,
-            ColorSpaceDetails colorSpace, PdfRectangle? bbox, double[] background,
+            ColorSpaceDetails colorSpace, PdfRectangle? bbox, double[]? background,
             double[] coords, double[] domain, PdfFunction[] functions, bool[] extend)
             : base(ShadingType.Axial, antiAlias, shadingDictionary, colorSpace, bbox, background)
         {
@@ -267,7 +267,7 @@
         /// Create a new <see cref="RadialShading"/>.
         /// </summary>
         public RadialShading(bool antiAlias, DictionaryToken shadingDictionary,
-            ColorSpaceDetails colorSpace, PdfRectangle? bbox, double[] background,
+            ColorSpaceDetails colorSpace, PdfRectangle? bbox, double[]? background,
             double[] coords, double[] domain, PdfFunction[] functions, bool[] extend)
             : base(ShadingType.Radial, antiAlias, shadingDictionary, colorSpace, bbox, background)
         {
@@ -327,14 +327,14 @@
         /// to the nearest valid value.
         /// This entry shall not be used with an Indexed colour space.
         /// </summary>
-        public override PdfFunction[] Functions { get; }
+        public override PdfFunction[]? Functions { get; }
 
         /// <summary>
         /// Create a new <see cref="FreeFormGouraudShading"/>.
         /// </summary>
         public FreeFormGouraudShading(bool antiAlias, StreamToken shadingStream,
-            ColorSpaceDetails colorSpace, PdfRectangle? bbox, double[] background,
-            int bitsPerCoordinate, int bitsPerComponent, int bitsPerFlag, double[] decode, PdfFunction[] functions)
+            ColorSpaceDetails colorSpace, PdfRectangle? bbox, double[]? background,
+            int bitsPerCoordinate, int bitsPerComponent, int bitsPerFlag, double[] decode, PdfFunction[]? functions)
             : base(ShadingType.FreeFormGouraud, antiAlias, shadingStream.StreamDictionary, colorSpace, bbox, background)
         {
             BitsPerCoordinate = bitsPerCoordinate;
@@ -390,14 +390,14 @@
         /// component is out of range, it shall be adjusted to the nearest valid value.
         /// This entry shall not be used with an Indexed colour space.
         /// </summary>
-        public override PdfFunction[] Functions { get; }
+        public override PdfFunction[]? Functions { get; }
 
         /// <summary>
         /// Create a new <see cref="LatticeFormGouraudShading"/>.
         /// </summary>
         public LatticeFormGouraudShading(bool antiAlias, StreamToken shadingStream,
-            ColorSpaceDetails colorSpace, PdfRectangle? bbox, double[] background,
-            int bitsPerCoordinate, int bitsPerComponent, int verticesPerRow, double[] decode, PdfFunction[] functions)
+            ColorSpaceDetails colorSpace, PdfRectangle? bbox, double[]? background,
+            int bitsPerCoordinate, int bitsPerComponent, int verticesPerRow, double[] decode, PdfFunction[]? functions)
             : base(ShadingType.LatticeFormGouraud, antiAlias, shadingStream.StreamDictionary, colorSpace, bbox, background)
         {
             BitsPerCoordinate = bitsPerCoordinate;
@@ -455,14 +455,14 @@
         /// shall be adjusted to the nearest valid value.
         /// This entry shall not be used with an Indexed colour space.
         /// </summary>
-        public override PdfFunction[] Functions { get; }
+        public override PdfFunction[]? Functions { get; }
 
         /// <summary>
         /// Create a new <see cref="CoonsPatchMeshesShading"/>.
         /// </summary>
         public CoonsPatchMeshesShading(bool antiAlias, StreamToken shadingStream,
-            ColorSpaceDetails colorSpace, PdfRectangle? bbox, double[] background,
-            int bitsPerCoordinate, int bitsPerComponent, int bitsPerFlag, double[] decode, PdfFunction[] functions)
+            ColorSpaceDetails colorSpace, PdfRectangle? bbox, double[]? background,
+            int bitsPerCoordinate, int bitsPerComponent, int bitsPerFlag, double[] decode, PdfFunction[]? functions)
             : base(ShadingType.CoonsPatch, antiAlias, shadingStream.StreamDictionary, colorSpace, bbox, background)
         {
             BitsPerCoordinate = bitsPerCoordinate;
@@ -520,14 +520,14 @@
         /// shall be adjusted to the nearest valid value.
         /// This entry shall not be used with an Indexed colour space.
         /// </summary>
-        public override PdfFunction[] Functions { get; }
+        public override PdfFunction[]? Functions { get; }
 
         /// <summary>
         /// Create a new <see cref="TensorProductPatchMeshesShading"/>.
         /// </summary>
         public TensorProductPatchMeshesShading(bool antiAlias, StreamToken shadingStream,
-            ColorSpaceDetails colorSpace, PdfRectangle? bbox, double[] background,
-            int bitsPerCoordinate, int bitsPerComponent, int bitsPerFlag, double[] decode, PdfFunction[] functions)
+            ColorSpaceDetails colorSpace, PdfRectangle? bbox, double[]? background,
+            int bitsPerCoordinate, int bitsPerComponent, int bitsPerFlag, double[] decode, PdfFunction[]? functions)
             : base(ShadingType.TensorProductPatch, antiAlias, shadingStream.StreamDictionary, colorSpace, bbox, background)
         {
             BitsPerCoordinate = bitsPerCoordinate;

@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using Core;
     using Graphics.Colors;
     using Graphics.Core;
@@ -85,17 +86,17 @@
         /// This is not defined where <see cref="IsImageMask"/> is <see langword="true"/> and is optional where the image is JPXEncoded for <see cref="XObjectImage"/>.
         /// </para>
         /// </summary>
-        ColorSpaceDetails ColorSpaceDetails { get; }
+        ColorSpaceDetails? ColorSpaceDetails { get; }
 
         /// <summary>
         /// Get the decoded bytes of the image if applicable. For JPEG images and some other types the
         /// <see cref="RawBytes"/> should be used directly.
         /// </summary>
-        bool TryGetBytes(out IReadOnlyList<byte> bytes);
+        bool TryGetBytes([NotNullWhen(true)] out IReadOnlyList<byte>? bytes);
 
         /// <summary>
         /// Try to convert the image to PNG. Doesn't support conversion of JPG to PNG.
         /// </summary>
-        bool TryGetPng(out byte[] bytes);
+        bool TryGetPng([NotNullWhen(true)] out byte[]? bytes);
     }
 }

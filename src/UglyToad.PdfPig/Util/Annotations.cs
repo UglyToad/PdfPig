@@ -34,58 +34,6 @@ SOFTWARE. */
     namespace JetBrains.Annotations
     {
         /// <summary>
-        /// Indicates that the value of the marked element could be <c>null</c> sometimes,
-        /// so the check for <c>null</c> is necessary before its usage.
-        /// </summary>
-        /// <example><code>
-        /// [CanBeNull] object Test() => null;
-        /// 
-        /// void UseTest() {
-        ///   var p = Test();
-        ///   var s = p.ToString(); // Warning: Possible 'System.NullReferenceException'
-        /// }
-        /// </code></example>
-        [AttributeUsage(
-          AttributeTargets.Method | AttributeTargets.Parameter | AttributeTargets.Property |
-          AttributeTargets.Delegate | AttributeTargets.Field | AttributeTargets.Event |
-          AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.GenericParameter)]
-        internal sealed class CanBeNullAttribute : Attribute { }
-
-        /// <summary>
-        /// Indicates that the value of the marked element could never be <c>null</c>.
-        /// </summary>
-        /// <example><code>
-        /// [NotNull] object Foo() {
-        ///   return null; // Warning: Possible 'null' assignment
-        /// }
-        /// </code></example>
-        [AttributeUsage(
-          AttributeTargets.Method | AttributeTargets.Parameter | AttributeTargets.Property |
-          AttributeTargets.Delegate | AttributeTargets.Field | AttributeTargets.Event |
-          AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.GenericParameter)]
-        internal sealed class NotNullAttribute : Attribute { }
-
-        /// <summary>
-        /// Can be appplied to symbols of types derived from IEnumerable as well as to symbols of Task
-        /// and Lazy classes to indicate that the value of a collection item, of the Task.Result property
-        /// or of the Lazy.Value property can never be null.
-        /// </summary>
-        [AttributeUsage(
-          AttributeTargets.Method | AttributeTargets.Parameter | AttributeTargets.Property |
-          AttributeTargets.Delegate | AttributeTargets.Field)]
-        internal sealed class ItemNotNullAttribute : Attribute { }
-
-        /// <summary>
-        /// Can be appplied to symbols of types derived from IEnumerable as well as to symbols of Task
-        /// and Lazy classes to indicate that the value of a collection item, of the Task.Result property
-        /// or of the Lazy.Value property can be null.
-        /// </summary>
-        [AttributeUsage(
-          AttributeTargets.Method | AttributeTargets.Parameter | AttributeTargets.Property |
-          AttributeTargets.Delegate | AttributeTargets.Field)]
-        internal sealed class ItemCanBeNullAttribute : Attribute { }
-
-        /// <summary>
         /// Indicates that the marked method builds string by format pattern and (optional) arguments.
         /// Parameter, which contains format string, should be given in constructor. The format string
         /// should be in <see cref="string.Format(IFormatProvider,string,object[])"/>-like form.
@@ -106,12 +54,12 @@ SOFTWARE. */
             /// <param name="formatParameterName">
             /// Specifies which parameter of an annotated method should be treated as format-string
             /// </param>
-            public StringFormatMethodAttribute([NotNull] string formatParameterName)
+            public StringFormatMethodAttribute(string formatParameterName)
             {
                 FormatParameterName = formatParameterName;
             }
 
-            [NotNull] public string FormatParameterName { get; private set; }
+            public string FormatParameterName { get; private set; }
         }
 
         /// <summary>
@@ -123,12 +71,12 @@ SOFTWARE. */
           AllowMultiple = true)]
         internal sealed class ValueProviderAttribute : Attribute
         {
-            public ValueProviderAttribute([NotNull] string name)
+            public ValueProviderAttribute(string name)
             {
                 Name = name;
             }
 
-            [NotNull] public string Name { get; private set; }
+            public string Name { get; private set; }
         }
 
         /// <summary>
@@ -187,12 +135,12 @@ SOFTWARE. */
         internal sealed class NotifyPropertyChangedInvocatorAttribute : Attribute
         {
             public NotifyPropertyChangedInvocatorAttribute() { }
-            public NotifyPropertyChangedInvocatorAttribute([NotNull] string parameterName)
+            public NotifyPropertyChangedInvocatorAttribute(string parameterName)
             {
                 ParameterName = parameterName;
             }
 
-            [CanBeNull] public string ParameterName { get; private set; }
+            public string? ParameterName { get; private set; }
         }
 
         /// <summary>
@@ -242,16 +190,16 @@ SOFTWARE. */
         [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
         internal sealed class ContractAnnotationAttribute : Attribute
         {
-            public ContractAnnotationAttribute([NotNull] string contract)
+            public ContractAnnotationAttribute(string contract)
               : this(contract, false) { }
 
-            public ContractAnnotationAttribute([NotNull] string contract, bool forceFullStates)
+            public ContractAnnotationAttribute(string contract, bool forceFullStates)
             {
                 Contract = contract;
                 ForceFullStates = forceFullStates;
             }
 
-            [NotNull] public string Contract { get; private set; }
+            public string Contract { get; private set; }
 
             public bool ForceFullStates { get; private set; }
         }
@@ -316,12 +264,12 @@ SOFTWARE. */
         [BaseTypeRequired(typeof(Attribute))]
         internal sealed class BaseTypeRequiredAttribute : Attribute
         {
-            public BaseTypeRequiredAttribute([NotNull] Type baseType)
+            public BaseTypeRequiredAttribute(Type baseType)
             {
                 BaseType = baseType;
             }
 
-            [NotNull] public Type BaseType { get; private set; }
+            public Type BaseType { get; private set; }
         }
 
         /// <summary>
@@ -419,12 +367,12 @@ SOFTWARE. */
         {
             public PublicAPIAttribute() { }
 
-            public PublicAPIAttribute([NotNull] string comment)
+            public PublicAPIAttribute(string comment)
             {
                 Comment = comment;
             }
 
-            [CanBeNull] public string Comment { get; private set; }
+            public string? Comment { get; private set; }
         }
 
         /// <summary>
@@ -457,12 +405,12 @@ SOFTWARE. */
         {
             public MustUseReturnValueAttribute() { }
 
-            public MustUseReturnValueAttribute([NotNull] string justification)
+            public MustUseReturnValueAttribute(string justification)
             {
                 Justification = justification;
             }
 
-            [CanBeNull] public string Justification { get; private set; }
+            public string? Justification { get; private set; }
         }
 
         /// <summary>
@@ -494,12 +442,12 @@ SOFTWARE. */
         {
             public PathReferenceAttribute() { }
 
-            public PathReferenceAttribute([NotNull, PathReference] string basePath)
+            public PathReferenceAttribute([PathReference] string basePath)
             {
                 BasePath = basePath;
             }
 
-            [CanBeNull] public string BasePath { get; private set; }
+            public string? BasePath { get; private set; }
         }
 
         /// <summary>
@@ -563,7 +511,7 @@ SOFTWARE. */
             /// Allows specifying a macro that will be executed for a <see cref="SourceTemplateAttribute">source template</see>
             /// parameter when the template is expanded.
             /// </summary>
-            [CanBeNull] public string Expression { get; set; }
+            public string? Expression { get; set; }
 
             /// <summary>
             /// Allows specifying which occurrence of the target parameter becomes editable when the template is deployed.
@@ -579,73 +527,73 @@ SOFTWARE. */
             /// Identifies the target parameter of a <see cref="SourceTemplateAttribute">source template</see> if the
             /// <see cref="MacroAttribute"/> is applied on a template method.
             /// </summary>
-            [CanBeNull] public string Target { get; set; }
+            public string? Target { get; set; }
         }
 
         [AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = true)]
         internal sealed class AspMvcAreaMasterLocationFormatAttribute : Attribute
         {
-            public AspMvcAreaMasterLocationFormatAttribute([NotNull] string format)
+            public AspMvcAreaMasterLocationFormatAttribute(string format)
             {
                 Format = format;
             }
 
-            [NotNull] public string Format { get; private set; }
+           public string Format { get; private set; }
         }
 
         [AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = true)]
         internal sealed class AspMvcAreaPartialViewLocationFormatAttribute : Attribute
         {
-            public AspMvcAreaPartialViewLocationFormatAttribute([NotNull] string format)
+            public AspMvcAreaPartialViewLocationFormatAttribute(string format)
             {
                 Format = format;
             }
 
-            [NotNull] public string Format { get; private set; }
+            public string Format { get; private set; }
         }
 
         [AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = true)]
         internal sealed class AspMvcAreaViewLocationFormatAttribute : Attribute
         {
-            public AspMvcAreaViewLocationFormatAttribute([NotNull] string format)
+            public AspMvcAreaViewLocationFormatAttribute(string format)
             {
                 Format = format;
             }
 
-            [NotNull] public string Format { get; private set; }
+            public string Format { get; private set; }
         }
 
         [AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = true)]
         internal sealed class AspMvcMasterLocationFormatAttribute : Attribute
         {
-            public AspMvcMasterLocationFormatAttribute([NotNull] string format)
+            public AspMvcMasterLocationFormatAttribute(string format)
             {
                 Format = format;
             }
 
-            [NotNull] public string Format { get; private set; }
+            public string Format { get; private set; }
         }
 
         [AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = true)]
         internal sealed class AspMvcPartialViewLocationFormatAttribute : Attribute
         {
-            public AspMvcPartialViewLocationFormatAttribute([NotNull] string format)
+            public AspMvcPartialViewLocationFormatAttribute(string format)
             {
                 Format = format;
             }
 
-            [NotNull] public string Format { get; private set; }
+            public string Format { get; private set; }
         }
 
         [AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = true)]
         internal sealed class AspMvcViewLocationFormatAttribute : Attribute
         {
-            public AspMvcViewLocationFormatAttribute([NotNull] string format)
+            public AspMvcViewLocationFormatAttribute(string format)
             {
                 Format = format;
             }
 
-            [NotNull] public string Format { get; private set; }
+            public string Format { get; private set; }
         }
 
         /// <summary>
@@ -659,12 +607,12 @@ SOFTWARE. */
         {
             public AspMvcActionAttribute() { }
 
-            public AspMvcActionAttribute([NotNull] string anonymousProperty)
+            public AspMvcActionAttribute(string anonymousProperty)
             {
                 AnonymousProperty = anonymousProperty;
             }
 
-            [CanBeNull] public string AnonymousProperty { get; private set; }
+            public string? AnonymousProperty { get; private set; }
         }
 
         /// <summary>
@@ -677,12 +625,12 @@ SOFTWARE. */
         {
             public AspMvcAreaAttribute() { }
 
-            public AspMvcAreaAttribute([NotNull] string anonymousProperty)
+            public AspMvcAreaAttribute(string anonymousProperty)
             {
                 AnonymousProperty = anonymousProperty;
             }
 
-            [CanBeNull] public string AnonymousProperty { get; private set; }
+            public string? AnonymousProperty { get; private set; }
         }
 
         /// <summary>
@@ -696,12 +644,12 @@ SOFTWARE. */
         {
             public AspMvcControllerAttribute() { }
 
-            public AspMvcControllerAttribute([NotNull] string anonymousProperty)
+            public AspMvcControllerAttribute(string anonymousProperty)
             {
                 AnonymousProperty = anonymousProperty;
             }
 
-            [CanBeNull] public string AnonymousProperty { get; private set; }
+            public string? AnonymousProperty { get; private set; }
         }
 
         /// <summary>
@@ -799,23 +747,23 @@ SOFTWARE. */
         {
             public HtmlElementAttributesAttribute() { }
 
-            public HtmlElementAttributesAttribute([NotNull] string name)
+            public HtmlElementAttributesAttribute(string name)
             {
                 Name = name;
             }
 
-            [CanBeNull] public string Name { get; private set; }
+            public string? Name { get; private set; }
         }
 
         [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Field | AttributeTargets.Property)]
         internal sealed class HtmlAttributeValueAttribute : Attribute
         {
-            public HtmlAttributeValueAttribute([NotNull] string name)
+            public HtmlAttributeValueAttribute(string name)
             {
                 Name = name;
             }
 
-            [NotNull] public string Name { get; private set; }
+            public string Name { get; private set; }
         }
 
         /// <summary>
@@ -954,15 +902,15 @@ SOFTWARE. */
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
         internal sealed class AspChildControlTypeAttribute : Attribute
         {
-            public AspChildControlTypeAttribute([NotNull] string tagName, [NotNull] Type controlType)
+            public AspChildControlTypeAttribute(string tagName, Type controlType)
             {
                 TagName = tagName;
                 ControlType = controlType;
             }
 
-            [NotNull] public string TagName { get; private set; }
+            public string TagName { get; private set; }
 
-            [NotNull] public Type ControlType { get; private set; }
+            public Type ControlType { get; private set; }
         }
 
         [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method)]
@@ -977,12 +925,12 @@ SOFTWARE. */
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
         internal sealed class AspRequiredAttributeAttribute : Attribute
         {
-            public AspRequiredAttributeAttribute([NotNull] string attribute)
+            public AspRequiredAttributeAttribute(string attribute)
             {
                 Attribute = attribute;
             }
 
-            [NotNull] public string Attribute { get; private set; }
+            public string Attribute { get; private set; }
         }
 
         [AttributeUsage(AttributeTargets.Property)]
@@ -999,54 +947,54 @@ SOFTWARE. */
         [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
         internal sealed class RazorImportNamespaceAttribute : Attribute
         {
-            public RazorImportNamespaceAttribute([NotNull] string name)
+            public RazorImportNamespaceAttribute(string name)
             {
                 Name = name;
             }
 
-            [NotNull] public string Name { get; private set; }
+            public string Name { get; private set; }
         }
 
         [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
         internal sealed class RazorInjectionAttribute : Attribute
         {
-            public RazorInjectionAttribute([NotNull] string type, [NotNull] string fieldName)
+            public RazorInjectionAttribute(string type, string fieldName)
             {
                 Type = type;
                 FieldName = fieldName;
             }
 
-            [NotNull] public string Type { get; private set; }
+            public string Type { get; private set; }
 
-            [NotNull] public string FieldName { get; private set; }
+            public string FieldName { get; private set; }
         }
 
         [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
         internal sealed class RazorDirectiveAttribute : Attribute
         {
-            public RazorDirectiveAttribute([NotNull] string directive)
+            public RazorDirectiveAttribute(string directive)
             {
                 Directive = directive;
             }
 
-            [NotNull] public string Directive { get; private set; }
+            public string Directive { get; private set; }
         }
 
         [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
         internal sealed class RazorPageBaseTypeAttribute : Attribute
         {
-            public RazorPageBaseTypeAttribute([NotNull] string baseType)
+            public RazorPageBaseTypeAttribute(string baseType)
             {
                 BaseType = baseType;
             }
-            public RazorPageBaseTypeAttribute([NotNull] string baseType, string pageName)
+            public RazorPageBaseTypeAttribute(string baseType, string pageName)
             {
                 BaseType = baseType;
                 PageName = pageName;
             }
 
-            [NotNull] public string BaseType { get; private set; }
-            [CanBeNull] public string PageName { get; private set; }
+            public string BaseType { get; private set; }
+            public string? PageName { get; private set; }
         }
 
         [AttributeUsage(AttributeTargets.Method)]

@@ -69,7 +69,7 @@ namespace UglyToad.PdfPig.Util
         ///
         /// If an inverse matrix does not exist, null is returned.
         /// </summary>
-        public Matrix3x3 Inverse()
+        public Matrix3x3? Inverse()
         {
             var determinant = GetDeterminant();
 
@@ -154,10 +154,9 @@ namespace UglyToad.PdfPig.Util
                 m13, m23, m33);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            var other = obj as Matrix3x3;
-            return Equals(other);
+            return obj is Matrix3x3 other && Equals(other);
         }
 
         public bool Equals(Matrix3x3 other)

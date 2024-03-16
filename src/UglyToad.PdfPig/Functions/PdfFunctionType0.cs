@@ -12,7 +12,7 @@
         /// <summary>
         /// The samples of the function.
         /// </summary>
-        private int[][] samples;
+        private int[][]? samples;
 
         /// <summary>
         /// Stitching function
@@ -262,7 +262,7 @@
                 ArrayToken sizes = Size;
                 for (int i = 0; i < nIn; i++)
                 {
-                    arraySize *= (sizes[i] as NumericToken).Int;
+                    arraySize *= ((NumericToken)sizes[i]).Int;
                 }
                 samples = new int[arraySize][];
                 int bitsPerSample = BitsPerSample;
@@ -270,7 +270,7 @@
                 // PDF spec 1.7 p.171:
                 // Each sample value is represented as a sequence of BitsPerSample bits. 
                 // Successive values are adjacent in the bit stream; there is no padding at byte boundaries.
-                var bits = new BitArray(FunctionStream.Data.ToArray());
+                var bits = new BitArray(FunctionStream!.Data.ToArray());
 
                 for (int i = 0; i < arraySize; i++)
                 {
@@ -311,10 +311,9 @@
             for (int i = 0; i < numberOfInputValues; i++)
             {
                 PdfRange domain = GetDomainForInput(i);
-                PdfRange? encodeValues = GetEncodeForParameter(i);
+                PdfRange encodeValues = GetEncodeForParameter(i)!.Value;
                 input[i] = ClipToRange(input[i], domain.Min, domain.Max);
-                input[i] = Interpolate(input[i], domain.Min, domain.Max,
-                        encodeValues.Value.Min, encodeValues.Value.Max);
+                input[i] = Interpolate(input[i], domain.Min, domain.Max, encodeValues.Min, encodeValues.Max);
                 input[i] = ClipToRange(input[i], 0, sizeValues[i] - 1);
                 inputPrev[i] = (int)Math.Floor(input[i]);
                 inputNext[i] = (int)Math.Ceiling(input[i]);

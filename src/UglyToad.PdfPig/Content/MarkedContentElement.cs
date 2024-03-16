@@ -60,31 +60,32 @@
         /// <summary>
         /// The natural language specification.
         /// </summary>
-        public string Language { get; }
+        public string? Language { get; }
 
         /// <summary>
         /// The replacement text.
         /// </summary>
-        public string ActualText { get; }
+        public string? ActualText { get; }
 
         /// <summary>
         /// The alternate description.
         /// </summary>
-        public string AlternateDescription { get; }
+        public string? AlternateDescription { get; }
 
         /// <summary>
         /// The abbreviation expansion text.
         /// </summary>
-        public string ExpandedForm { get; }
+        public string? ExpandedForm { get; }
         
         /// <summary>
         /// Create a new <see cref="MarkedContentElement"/>.
         /// </summary>
-        public MarkedContentElement(int markedContentIdentifier, NameToken tag, DictionaryToken properties, 
-            string language,
-            string actualText,
-            string alternateDescription,
-            string expandedForm,
+        public MarkedContentElement(int markedContentIdentifier, NameToken tag,
+            DictionaryToken properties, 
+            string? language,
+            string? actualText,
+            string? alternateDescription,
+            string? expandedForm,
             bool isArtifact, 
             IReadOnlyList<MarkedContentElement> children,
             IReadOnlyList<Letter> letters,

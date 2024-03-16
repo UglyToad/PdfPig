@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Annotations
 {
     using System.Collections.Generic;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// A border for a PDF <see cref="Annotation"/> object.
@@ -31,13 +30,12 @@
         /// <summary>
         /// The dash pattern for the border lines if provided. Optional.
         /// </summary>
-        [CanBeNull]
-        public IReadOnlyList<double> LineDashPattern { get; }
+        public IReadOnlyList<double>? LineDashPattern { get; }
 
         /// <summary>
         /// Create a new <see cref="AnnotationBorder"/>.
         /// </summary>
-        public AnnotationBorder(double horizontalCornerRadius, double verticalCornerRadius, double borderWidth, IReadOnlyList<double> lineDashPattern)
+        public AnnotationBorder(double horizontalCornerRadius, double verticalCornerRadius, double borderWidth, IReadOnlyList<double>? lineDashPattern)
         {
             HorizontalCornerRadius = horizontalCornerRadius;
             VerticalCornerRadius = verticalCornerRadius;

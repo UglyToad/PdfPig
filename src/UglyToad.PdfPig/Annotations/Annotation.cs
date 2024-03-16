@@ -5,22 +5,20 @@
     using Core;
     using Actions;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// An annotation on a page in a PDF document.
     /// </summary>
     public class Annotation
     {
-        internal readonly AppearanceStream normalAppearanceStream;
-        internal readonly AppearanceStream rollOverAppearanceStream;
-        internal readonly AppearanceStream downAppearanceStream;
-        internal readonly string appearanceState;
+        internal readonly AppearanceStream? normalAppearanceStream;
+        internal readonly AppearanceStream? rollOverAppearanceStream;
+        internal readonly AppearanceStream? downAppearanceStream;
+        internal readonly string? appearanceState;
 
         /// <summary>
         /// The underlying PDF dictionary which this annotation was created from.
         /// </summary>
-        [NotNull]
         public DictionaryToken AnnotationDictionary { get; }
 
         /// <summary>
@@ -36,20 +34,17 @@
         /// <summary>
         /// The annotation text, or if the annotation does not display text, a description of the annotation's contents. Optional.
         /// </summary>
-        [CanBeNull]
-        public string Content { get; }
+        public string? Content { get; }
 
         /// <summary>
         /// The name of this annotation which should be unique per page. Optional.
         /// </summary>
-        [CanBeNull]
-        public string Name { get; }
+        public string? Name { get; }
 
         /// <summary>
         /// The date and time the annotation was last modified, can be in any format. Optional.
         /// </summary>
-        [CanBeNull]
-        public string ModifiedDate { get; }
+        public string? ModifiedDate { get; }
 
         /// <summary>
         /// Flags defining the appearance and behaviour of this annotation.
@@ -71,7 +66,7 @@
         /// <summary>
         /// Action for this annotation, if any (can be null)
         /// </summary>
-        public PdfAction Action { get; }
+        public PdfAction? Action { get; }
 
         /// <summary>
         /// Indicates if a normal appearance is present for this annotation
@@ -91,7 +86,7 @@
         /// <summary>
         /// The <see cref="Annotation"/> this annotation was in reply to. Can be <see langword="null" />
         /// </summary>
-        public Annotation InReplyTo { get; }
+        public Annotation? InReplyTo { get; }
 
         /// <summary>
         /// Create a new <see cref="Annotation"/>.
@@ -100,18 +95,18 @@
             DictionaryToken annotationDictionary,
             AnnotationType type,
             PdfRectangle rectangle,
-            string content,
-            string name,
-            string modifiedDate,
+            string? content,
+            string? name,
+            string? modifiedDate,
             AnnotationFlags flags,
             AnnotationBorder border,
             IReadOnlyList<QuadPointsQuadrilateral> quadPoints,
-            PdfAction action,
-            AppearanceStream normalAppearanceStream,
-            AppearanceStream rollOverAppearanceStream,
-            AppearanceStream downAppearanceStream,
-            string appearanceState,
-            Annotation inReplyTo)
+            PdfAction? action,
+            AppearanceStream? normalAppearanceStream,
+            AppearanceStream? rollOverAppearanceStream,
+            AppearanceStream? downAppearanceStream,
+            string? appearanceState,
+            Annotation? inReplyTo)
         {
             AnnotationDictionary = annotationDictionary ?? throw new ArgumentNullException(nameof(annotationDictionary));
             Type = type;

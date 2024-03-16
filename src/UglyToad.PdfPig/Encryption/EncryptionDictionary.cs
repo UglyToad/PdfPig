@@ -1,9 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Encryption
 {
     using System;
+    using System.Diagnostics.CodeAnalysis;
     using Exceptions;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     internal class EncryptionDictionary
     {
@@ -15,21 +15,19 @@
 
         public int Revision { get; }
 
-        public byte[] OwnerBytes { get; }
+        public byte[]? OwnerBytes { get; }
 
-        public byte[] UserBytes { get; }
+        public byte[]? UserBytes { get; }
 
         /// <summary>
         /// Required if <see cref="Revision"/> is 5 or above. A 32-byte string, based on the owner and user passwords that is used in computing the encryption key.
         /// </summary>
-        [CanBeNull]
-        public byte[] OwnerEncryptionBytes { get; }
+        public byte[]? OwnerEncryptionBytes { get; }
 
         /// <summary>
         /// Required if <see cref="Revision"/> is 5 or above. A 32-byte string, based on the user password that is used in computing the encryption key.
         /// </summary>
-        [CanBeNull]
-        public byte[] UserEncryptionBytes { get; }
+        public byte[]? UserEncryptionBytes { get; }
 
         public UserAccessPermissions UserAccessPermissions { get; }
 
@@ -42,10 +40,10 @@
         public EncryptionDictionary(string filter, EncryptionAlgorithmCode encryptionAlgorithmCode, 
             int? keyLength, 
             int revision, 
-            byte[] ownerBytes, 
-            byte[] userBytes, 
-            byte[] ownerEncryptionBytes,
-            byte[] userEncryptionBytes,
+            byte[]? ownerBytes, 
+            byte[]? userBytes, 
+            byte[]? ownerEncryptionBytes,
+            byte[]? userEncryptionBytes,
             UserAccessPermissions userAccessPermissions, 
             DictionaryToken dictionary, 
             bool encryptMetadata)
@@ -63,7 +61,7 @@
             EncryptMetadata = encryptMetadata;
         }
 
-        public bool TryGetCryptHandler(out CryptHandler cryptHandler)
+        public bool TryGetCryptHandler([NotNullWhen(true)] out CryptHandler? cryptHandler)
         {
             cryptHandler = null;
 

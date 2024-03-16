@@ -5,7 +5,9 @@
 
     internal interface IEncodingReader
     {
-        Encoding Read(DictionaryToken fontDictionary, FontDescriptor descriptor = null,
-            Encoding fontEncoding = null);
+        Encoding? Read(
+            DictionaryToken fontDictionary,
+            FontDescriptor? descriptor = null,
+            Encoding? fontEncoding = null);
     }
 }

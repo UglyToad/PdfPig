@@ -1,8 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextShowing
 {
-    using System.IO;
     using PdfPig.Core;
-    using Util.JetBrains.Annotations;
+    using System.IO;
 
     /// <inheritdoc />
     /// <summary>
@@ -34,14 +33,12 @@
         /// <summary>
         /// The text string to show.
         /// </summary>
-        [CanBeNull]
-        public string Text { get; }
+        public string? Text { get; }
 
         /// <summary>
         /// The bytes of the string to show.
         /// </summary>
-        [CanBeNull]
-        public byte[] Bytes { get; }
+        public byte[]? Bytes { get; }
 
         /// <summary>
         /// Create a new <see cref="ShowText"/>.
@@ -67,7 +64,7 @@
             operationContext.ShowText(input);
         }
 
-        string EscapeText(string text)
+        string? EscapeText(string? text)
         {
             if (text is null) return null;
             // Fix Issue 350 from PDF Spec 1.7 (page 408) on handling 'special characters' of '(', ')' and '\'.

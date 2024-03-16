@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using UglyToad.PdfPig.Core;
@@ -30,7 +31,7 @@ namespace UglyToad.PdfPig.Writer
         /// <param name="outputStream"></param>
         protected override void WriteStream(StreamToken streamToken, Stream outputStream)
         {
-            StreamToken outputStreamToken;
+            StreamToken? outputStreamToken;
             if (!WritingPageContents && !IsFormStream(streamToken))
             {
                 outputStreamToken = streamToken;
@@ -62,7 +63,7 @@ namespace UglyToad.PdfPig.Writer
         /// <param name="outputStreamToken"></param>
         /// <returns>true if any text operation found (and we have a valid <paramref name="outputStreamToken"/> without the text operations),
         /// false if no text operation found (in which case <paramref name="outputStreamToken"/> is null)</returns>
-        private bool TryGetStreamWithoutText(StreamToken streamToken, out StreamToken outputStreamToken)
+        private bool TryGetStreamWithoutText(StreamToken streamToken, [NotNullWhen(true)] out StreamToken? outputStreamToken)
         {
             var filterProvider = new FilterProviderWithLookup(DefaultFilterProvider.Instance);
             IReadOnlyList<byte> bytes;

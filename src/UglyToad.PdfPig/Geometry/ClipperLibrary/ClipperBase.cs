@@ -73,6 +73,7 @@
 
 //use_lines: Enables open path clipping. Adds a very minor cost to performance.
 
+#nullable disable
 
 namespace UglyToad.PdfPig.Geometry.ClipperLibrary
 {

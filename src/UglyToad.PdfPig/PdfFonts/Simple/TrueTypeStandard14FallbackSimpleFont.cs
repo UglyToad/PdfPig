@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using Core;
     using Fonts;
@@ -23,7 +24,7 @@
         private readonly TrueTypeFont font;
         private readonly MetricOverrides overrides;
 
-        public NameToken Name { get; }
+        public NameToken? Name { get; }
 
         public bool IsVertical { get; } = false;
 
@@ -49,7 +50,7 @@
             return bytes.CurrentByte;
         }
 
-        public bool TryGetUnicode(int characterCode, out string value)
+        public bool TryGetUnicode(int characterCode, [NotNullWhen(true)] out string? value)
         {
             value = null;
 
@@ -134,7 +135,7 @@
         }
 
         /// <inheritdoc/>
-        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        public bool TryGetPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             path = null;
             if (font is null)
@@ -145,7 +146,7 @@
         }
 
         /// <inheritdoc/>
-        public bool TryGetNormalisedPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        public bool TryGetNormalisedPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             if (!TryGetPath(characterCode, out path))
             {
@@ -160,11 +161,11 @@
         {
             public int? FirstCharacterCode { get; }
 
-            public IReadOnlyList<double> Widths { get; }
+            public IReadOnlyList<double>? Widths { get; }
 
             public bool HasOverriddenMetrics { get; }
 
-            public MetricOverrides(int? firstCharacterCode, IReadOnlyList<double> widths)
+            public MetricOverrides(int? firstCharacterCode, IReadOnlyList<double>? widths)
             {
                 FirstCharacterCode = firstCharacterCode;
                 Widths = widths;
@@ -183,7 +184,7 @@
 
                 var index = characterCode - FirstCharacterCode.Value;
 
-                if (index < 0 || index >= Widths.Count)
+                if (index < 0 || index >= Widths!.Count)
                 {
                     return false;
                 }

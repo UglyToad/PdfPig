@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Util
 {
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
 
     internal static class Diacritics
@@ -39,7 +40,7 @@
             return false;
         }
 
-        public static bool TryCombineDiacriticWithPreviousLetter(string diacritic, string previous, out string result)
+        public static bool TryCombineDiacriticWithPreviousLetter(string diacritic, string previous, [NotNullWhen(true)] out string? result)
         {
             result = null;
 

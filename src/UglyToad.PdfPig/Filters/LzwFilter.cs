@@ -1,4 +1,6 @@
-﻿namespace UglyToad.PdfPig.Filters
+﻿#nullable disable
+
+namespace UglyToad.PdfPig.Filters
 {
     using System;
     using System.Collections.Generic;
@@ -10,7 +12,7 @@
     /// The LZW (Lempel-Ziv-Welch) filter is a variable-length, adaptive compression method
     /// that has been adopted as one of the standard compression methods in the Tag Image File Format (TIFF) standard. 
     /// </summary>
-    internal class LzwFilter : IFilter
+    internal sealed class LzwFilter : IFilter
     {
         private const int DefaultColors = 1;
         private const int DefaultBitsPerComponent = 8;
@@ -146,7 +148,7 @@
 
             for (var i = 0; i < 256; i++)
             {
-                table[i] = new[] { (byte)i };
+                table[i] = [(byte)i];
             }
 
             table[ClearTable] = null;

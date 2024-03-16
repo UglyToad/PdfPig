@@ -143,14 +143,9 @@
         }
 
         /// <inheritdoc />
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (obj is TilingPatternColor color)
-            {
-                return Equals(color);
-            }
-
-            return false;
+            return obj is TilingPatternColor other && Equals(other);
         }
 
         /// <inheritdoc/>
@@ -210,14 +205,9 @@
         }
 
         /// <inheritdoc />
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (obj is ShadingPatternColor color)
-            {
-                return Equals(color);
-            }
-
-            return false;
+            return obj is ShadingPatternColor other && Equals(other);
         }
 
         /// <inheritdoc/>

@@ -131,7 +131,7 @@
                     }
                 }
                 #endregion
-                if (!current.nodeDictionary.TryGet(NameToken.Kids, pdfTokenScanner, out ArrayToken kids))
+                if (!current.nodeDictionary.TryGet(NameToken.Kids, pdfTokenScanner, out ArrayToken? kids))
                 {
                     if (!isLenientParsing)
                     {
@@ -148,7 +148,7 @@
                         throw new PdfDocumentFormatException($"Kids array contained invalid entry (must be indirect reference): {kid}.");
                     }
 
-                    if (!DirectObjectFinder.TryGet(kidRef, pdfTokenScanner, out DictionaryToken kidDictionaryToken))
+                    if (!DirectObjectFinder.TryGet(kidRef, pdfTokenScanner, out DictionaryToken? kidDictionaryToken))
                     {
                         throw new PdfDocumentFormatException($"Could not find dictionary associated with reference in pages kids array: {kidRef}.");
                     }
@@ -181,7 +181,7 @@
                 action();
             }
 
-            foreach (var child in firstPage.Children.ToRecursiveOrderList(x => x.Children).Where(child => child.IsPage))
+            foreach (var child in firstPage.Children!.ToRecursiveOrderList(x => x.Children!).Where(child => child.IsPage))
             {
                 pageNumber.Increment();
                 child.PageNumber = pageNumber.PageCount;
@@ -194,22 +194,28 @@
         {
             var isPage = false;
 
-            if (!nodeDictionary.TryGet(NameToken.Type, pdfTokenScanner, out NameToken type))
+            if (!nodeDictionary.TryGet(NameToken.Type, pdfTokenScanner, out NameToken? type))
             {
                 if (!isLenientParsing) { throw new PdfDocumentFormatException($"Node in the document pages tree did not define a type: {nodeDictionary}."); }
 
-                if (!nodeDictionary.TryGet(NameToken.Kids, pdfTokenScanner, out ArrayToken _)) { isPage = true; }
+                if (!nodeDictionary.TryGet(NameToken.Kids, pdfTokenScanner, out ArrayToken? _)) { isPage = true; }
             }
             else
             {
                 isPage = type.Equals(NameToken.Page);
 
-                if (!isPage && !type.Equals(NameToken.Pages) && !isLenientParsing) { throw new PdfDocumentFormatException($"Node in the document pages tree defined invalid type: {nodeDictionary}."); }
+                if (!isPage && !type.Equals(NameToken.Pages) && !isLenientParsing)
+                {
+                    throw new PdfDocumentFormatException($"Node in the document pages tree defined invalid type: {nodeDictionary}.");
+                }
             }
 
             if (!isLenientParsing && !isRoot)
             {
-                if (!nodeDictionary.TryGet(NameToken.Parent, pdfTokenScanner, out IndirectReferenceToken parentReferenceToken)) { throw new PdfDocumentFormatException($"Could not find parent indirect reference token on pages tree node: {nodeDictionary}."); }
+                if (!nodeDictionary.TryGet(NameToken.Parent, pdfTokenScanner, out IndirectReferenceToken? parentReferenceToken))
+                {
+                    throw new PdfDocumentFormatException($"Could not find parent indirect reference token on pages tree node: {nodeDictionary}.");
+                }
 
                 if (!parentReferenceToken.Data.Equals(parentReference)) { throw new PdfDocumentFormatException($"Pages tree node parent reference {parentReferenceToken.Data} did not match actual parent {parentReference}."); }
             }
@@ -230,7 +236,7 @@
                 return;
             }
 
-            foreach (var child in node.Children)
+            foreach (var child in node.Children!)
             {
                 PopulatePageByNumberDictionary(child, result);
             }

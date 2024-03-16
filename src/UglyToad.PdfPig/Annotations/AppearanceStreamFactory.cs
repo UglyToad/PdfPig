@@ -1,12 +1,13 @@
 ﻿namespace UglyToad.PdfPig.Annotations
 {
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using Tokenization.Scanner;
     using Tokens;
 
     internal static class AppearanceStreamFactory
     {
-        public static bool TryCreate(DictionaryToken appearanceDictionary, NameToken name, IPdfTokenScanner tokenScanner, out AppearanceStream appearanceStream)
+        public static bool TryCreate(DictionaryToken appearanceDictionary, NameToken name, IPdfTokenScanner tokenScanner, [NotNullWhen(true)] out AppearanceStream? appearanceStream)
         {
             if (appearanceDictionary.TryGet(name, out IndirectReferenceToken appearanceReference))
             {
@@ -24,7 +25,7 @@
                         stateRef is IndirectReferenceToken appearanceRef)
                     {
                         var streamToken = tokenScanner.Get(appearanceRef.Data)?.Data as StreamToken;
-                        dict[state] = streamToken;
+                        dict[state] = streamToken!;
                     }
                 }
 

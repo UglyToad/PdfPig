@@ -87,7 +87,6 @@
         /// <summary>
         /// Access to members whose future locations within the API will change without warning.
         /// </summary>
-        [NotNull]
         public Experimental ExperimentalAccess { get; }
 
         internal Page(int number, DictionaryToken dictionary, MediaBox mediaBox, CropBox cropBox, PageRotationDegrees rotation, PageContent content,
@@ -215,12 +214,12 @@
                 // TO DO
                 //var annots = GetAnnotations().ToList();
 
-                return mcesOptional.GroupBy(oc => oc.Name).ToDictionary(g => g.Key, g => g.ToList() as IReadOnlyList<OptionalContentGroupElement>);
+                return mcesOptional.GroupBy(oc => oc.Name).ToDictionary(g => g.Key!, g => (IReadOnlyList<OptionalContentGroupElement>)g.ToList());
             }
 
-            private void GetOptionalContentsRecursively(IReadOnlyList<MarkedContentElement> markedContentElements, ref List<OptionalContentGroupElement> mcesOptional)
+            private void GetOptionalContentsRecursively(IReadOnlyList<MarkedContentElement>? markedContentElements, ref List<OptionalContentGroupElement> mcesOptional)
             {
-                if (markedContentElements.Count == 0)
+                if (markedContentElements is null || markedContentElements.Count == 0)
                 {
                     return;
                 }

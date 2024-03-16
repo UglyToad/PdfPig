@@ -11,6 +11,7 @@
     using Filters;
     using System.Linq;
     using Tokens;
+    using System.Diagnostics.CodeAnalysis;
 
     internal class PdfTokenScanner : IPdfTokenScanner
     {
@@ -41,7 +42,7 @@
         private readonly long[] previousTokenPositions = new long[3];
         private readonly IToken[] previousTokens = new IToken[3];
 
-        public IToken CurrentToken { get; private set; }
+        public IToken? CurrentToken { get; private set; }
 
         private IndirectReference? callingObject;
 
@@ -49,8 +50,12 @@
 
         public long Length => coreTokenScanner.Length;
 
-        public PdfTokenScanner(IInputBytes inputBytes, IObjectLocationProvider objectLocationProvider, ILookupFilterProvider filterProvider,
-            IEncryptionHandler encryptionHandler, ParsingOptions parsingOptions)
+        public PdfTokenScanner(
+            IInputBytes inputBytes,
+            IObjectLocationProvider objectLocationProvider,
+            ILookupFilterProvider filterProvider,
+            IEncryptionHandler encryptionHandler,
+            ParsingOptions parsingOptions)
         {
             this.inputBytes = inputBytes;
             this.objectLocationProvider = objectLocationProvider;
@@ -257,14 +262,14 @@
             return true;
         }
 
-        private bool TryReadStream(long startStreamTokenOffset, bool getLength, out StreamToken stream)
+        private bool TryReadStream(long startStreamTokenOffset, bool getLength, [NotNullWhen(true)] out StreamToken? stream)
         {
             stream = null;
 
             DictionaryToken streamDictionaryToken = GetStreamDictionary();
 
             // Get the expected length from the stream dictionary if present.
-            long? length = getLength ? GetStreamLength(streamDictionaryToken) : default(long?);
+            long? length = getLength ? GetStreamLength(streamDictionaryToken) : default;
 
             if (!getLength && streamDictionaryToken.TryGet(NameToken.Length, out NumericToken inlineLengthToken))
             {
@@ -473,7 +478,7 @@
             return true;
         }
 
-        private static bool TryReadUsingLength(IInputBytes inputBytes, long? length, long startDataOffset, out byte[] data)
+        private static bool TryReadUsingLength(IInputBytes inputBytes, long? length, long startDataOffset, [NotNullWhen(true)] out byte[]? data)
         {
             data = null;
 
@@ -610,7 +615,7 @@
                     // Keep a copy of the read tokens here since this list must be empty prior to move next.
                     var oldData = new List<IToken>(readTokens);
                     readTokens.Clear();
-                    if (MoveNext() && ((ObjectToken)CurrentToken).Data is NumericToken lengthToken)
+                    if (MoveNext() && ((ObjectToken)CurrentToken!).Data is NumericToken lengthToken)
                     {
                         length = lengthToken.Long;
                     }
@@ -703,7 +708,7 @@
 
             if (!objectLocationProvider.TryGetOffset(reference, out var offset))
             {
-                return null;
+                return null!;
             }
 
             // Negative offsets refer to a stream with that number.
@@ -726,7 +731,7 @@
                 return BruteForceFileToFindReference(reference);
             }
 
-            var found = (ObjectToken)CurrentToken;
+            var found = (ObjectToken)CurrentToken!;
 
             if (found.Number.Equals(reference))
             {
@@ -754,7 +759,7 @@
 
                 while (MoveNext())
                 {
-                    objectLocationProvider.Cache((ObjectToken)CurrentToken, true);
+                    objectLocationProvider.Cache((ObjectToken)CurrentToken!, true);
                 }
 
                 if (!objectLocationProvider.TryGetCached(reference, out var objectToken))
@@ -779,7 +784,7 @@
             if (!(streamObject.Data is StreamToken stream))
             {
                 throw new PdfDocumentFormatException("Requested a stream object by reference but the requested stream object " +
-                                                     $"was not a stream: {reference}, {streamObject.Data}.");
+                                                     $"was not a stream: {reference}, {streamObject?.Data}.");
             }
 
             var objects = ParseObjectStream(stream, offset);

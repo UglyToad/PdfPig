@@ -42,12 +42,12 @@ namespace UglyToad.PdfPig.AcroForms
         /// <summary>
         /// Get string values of field.
         /// </summary>
-        public static KeyValuePair<string, string> GetFieldValue(this AcroFieldBase fieldBase)
+        public static KeyValuePair<string?, string?> GetFieldValue(this AcroFieldBase fieldBase)
         {
             return fieldBase switch
             {
                 AcroTextField textField => new(textField.Information.PartialName, textField.Value),
-                AcroCheckboxField checkboxField => new(checkboxField.Information.PartialName, checkboxField.IsChecked.ToString()),
+                AcroCheckboxField checkboxField => new(checkboxField.Information.PartialName, checkboxField.IsChecked.ToString())!,
                 _ => new(fieldBase.Information.PartialName, ""),
             };
         }

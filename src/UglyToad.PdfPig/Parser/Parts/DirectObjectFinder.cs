@@ -1,14 +1,16 @@
 ﻿namespace UglyToad.PdfPig.Parser.Parts
 {
+    using System.Diagnostics.CodeAnalysis;
     using Core;
     using Tokenization.Scanner;
     using Tokens;
 
     internal static class DirectObjectFinder
     {
-        public static bool TryGet<T>(IToken token, IPdfTokenScanner scanner, out T tokenResult) where T : IToken
+        public static bool TryGet<T>(IToken? token, IPdfTokenScanner scanner, [NotNullWhen(true)] out T? tokenResult) 
+            where T : class, IToken
         {
-            tokenResult = default(T);
+            tokenResult = null;
             if (token is T t)
             {
                 tokenResult = t;
@@ -43,7 +45,8 @@
             return false;
         }
 
-        public static T Get<T>(IndirectReference reference, IPdfTokenScanner scanner) where T : class, IToken
+        public static T? Get<T>(IndirectReference reference, IPdfTokenScanner scanner) 
+            where T : class, IToken
         {
             var temp = scanner.Get(reference);
             if (temp is null || temp.Data is NullToken)
@@ -79,6 +82,7 @@
             throw new PdfDocumentFormatException($"Could not find the object number {reference} with type {typeof(T).Name} instead, it was found with type {temp.GetType().Name}.");
         }
 
+#nullable disable
         public static T Get<T>(IToken token, IPdfTokenScanner scanner) where T : class, IToken
         {
             if (token is T result)
@@ -93,5 +97,6 @@
 
             throw new PdfDocumentFormatException($"Could not find the object {token} with type {typeof(T).Name} instead, it was found with type {token.GetType().Name}.");
         }
+#nullable enable
     }
 }

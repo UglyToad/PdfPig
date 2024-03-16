@@ -114,7 +114,7 @@ namespace UglyToad.PdfPig.Graphics
             return numeric.Data;
         }
 
-        public IGraphicsStateOperation Create(OperatorToken op, IReadOnlyList<IToken> operands)
+        public IGraphicsStateOperation? Create(OperatorToken op, IReadOnlyList<IToken> operands)
         {
             switch (op.Data)
             {

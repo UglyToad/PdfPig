@@ -1,9 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Annotations
 {
-    using Actions;
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using Actions;
     using Core;
     using Logging;
     using Outline.Destinations;
@@ -46,21 +46,21 @@
         {
             var lookupAnnotations = new Dictionary<IndirectReference, Annotation>();
 
-            if (!pageDictionary.TryGet(NameToken.Annots, tokenScanner, out ArrayToken annotationsArray))
+            if (!pageDictionary.TryGet(NameToken.Annots, tokenScanner, out ArrayToken? annotationsArray))
             {
                 yield break;
             }
 
             foreach (var token in annotationsArray.Data)
             {
-                if (!DirectObjectFinder.TryGet(token, tokenScanner, out DictionaryToken annotationDictionary))
+                if (!DirectObjectFinder.TryGet(token, tokenScanner, out DictionaryToken? annotationDictionary))
                 {
                     continue;
                 }
 
-                Annotation replyTo = null;
-                if (annotationDictionary.TryGet(NameToken.Irt, out IndirectReferenceToken referencedAnnotation)
-                    && lookupAnnotations.TryGetValue(referencedAnnotation.Data, out var linkedAnnotation))
+                Annotation? replyTo = null;
+                if (annotationDictionary.TryGet(NameToken.Irt, out IndirectReferenceToken? referencedAnnotation)
+                    && lookupAnnotations.TryGetValue(referencedAnnotation!.Data, out var linkedAnnotation))
                 {
                     replyTo = linkedAnnotation;
                 }
@@ -77,14 +77,14 @@
 
                 var flags = (AnnotationFlags)0;
                 if (annotationDictionary.TryGet(NameToken.F, out var flagsToken) &&
-                    DirectObjectFinder.TryGet(flagsToken, tokenScanner, out NumericToken flagsNumericToken))
+                    DirectObjectFinder.TryGet(flagsToken, tokenScanner, out NumericToken? flagsNumericToken))
                 {
                     flags = (AnnotationFlags)flagsNumericToken.Int;
                 }
 
                 var border = AnnotationBorder.Default;
                 if (annotationDictionary.TryGet(NameToken.Border, out var borderToken) &&
-                    DirectObjectFinder.TryGet(borderToken, tokenScanner, out ArrayToken borderArray)
+                    DirectObjectFinder.TryGet(borderToken, tokenScanner, out ArrayToken? borderArray)
                     && borderArray.Length >= 3)
                 {
                     var horizontal = borderArray.GetNumeric(0).Data;
@@ -101,7 +101,7 @@
                 }
 
                 var quadPointRectangles = new List<QuadPointsQuadrilateral>();
-                if (annotationDictionary.TryGet(NameToken.Quadpoints, tokenScanner, out ArrayToken quadPointsArray))
+                if (annotationDictionary.TryGet(NameToken.Quadpoints, tokenScanner, out ArrayToken? quadPointsArray))
                 {
                     var values = new List<double>();
                     for (var i = 0; i < quadPointsArray.Length; i++)
@@ -128,14 +128,14 @@
                     }
                 }
 
-                AppearanceStream normalAppearanceStream = null;
-                AppearanceStream downAppearanceStream = null;
-                AppearanceStream rollOverAppearanceStream = null;
+                AppearanceStream? normalAppearanceStream = null;
+                AppearanceStream? downAppearanceStream = null;
+                AppearanceStream? rollOverAppearanceStream = null;
 
                 if (annotationDictionary.TryGet(NameToken.Ap, out DictionaryToken appearanceDictionary))
                 {
                     // The normal appearance of this annotation
-                    if (AppearanceStreamFactory.TryCreate(appearanceDictionary, NameToken.N, tokenScanner, out AppearanceStream stream))
+                    if (AppearanceStreamFactory.TryCreate(appearanceDictionary, NameToken.N, tokenScanner, out AppearanceStream? stream))
                     {
                         normalAppearanceStream = stream;
                     }
@@ -153,7 +153,7 @@
                     }
                 }
 
-                string appearanceState = null;
+                string? appearanceState = null;
                 if (annotationDictionary.TryGet(NameToken.As, out NameToken appearanceStateToken))
                 {
                     appearanceState = appearanceStateToken.Data;
@@ -185,7 +185,7 @@
             }
         }
 
-        internal PdfAction GetAction(DictionaryToken annotationDictionary)
+        internal PdfAction? GetAction(DictionaryToken annotationDictionary)
         {
             // If this annotation returns a direct destination, turn it into a GoTo action.
             if (DestinationProvider.TryGetDestination(annotationDictionary,
@@ -209,9 +209,9 @@
             return null;
         }
 
-        private string GetNamedString(NameToken name, DictionaryToken dictionary)
+        private string? GetNamedString(NameToken name, DictionaryToken dictionary)
         {
-            string content = null;
+            string? content = null;
             if (dictionary.TryGet(name, out var contentToken))
             {
                 if (contentToken is StringToken contentString)
@@ -222,7 +222,7 @@
                 {
                     content = contentHex.Data;
                 }
-                else if (DirectObjectFinder.TryGet(contentToken, tokenScanner, out StringToken indirectContentString))
+                else if (DirectObjectFinder.TryGet(contentToken, tokenScanner, out StringToken? indirectContentString))
                 {
                     content = indirectContentString.Data;
                 }

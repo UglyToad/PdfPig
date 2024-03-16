@@ -55,7 +55,7 @@
 
         public static FontDescriptor GetFontDescriptor(IPdfTokenScanner pdfScanner, DictionaryToken dictionary)
         {
-            if (!dictionary.TryGet(NameToken.FontDescriptor, pdfScanner, out DictionaryToken parsed))
+            if (!dictionary.TryGet(NameToken.FontDescriptor, pdfScanner, out DictionaryToken? parsed))
             {
                 throw new InvalidFontFormatException($"No font descriptor indirect reference found in the TrueType font: {dictionary}.");
             }

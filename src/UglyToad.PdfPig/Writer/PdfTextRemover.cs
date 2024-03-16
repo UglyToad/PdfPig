@@ -19,7 +19,7 @@ namespace UglyToad.PdfPig.Writer
         /// <param name="filePath">Path to PDF</param>
         /// <param name="pagesBundle">List of pages to emit; if null all pages are emitted</param>
         /// </summary>
-        public static byte[] RemoveText(string filePath, IReadOnlyList<int> pagesBundle = null)
+        public static byte[] RemoveText(string filePath, IReadOnlyList<int>? pagesBundle = null)
         {
             using (var output = new MemoryStream())
             {
@@ -34,7 +34,7 @@ namespace UglyToad.PdfPig.Writer
         /// <param name="filePath">Path to PDF</param>
         /// <param name="pagesBundle">List of pages to emit; if null all pages are emitted</param>
         /// </summary>
-        public static void RemoveText(Stream output, string filePath, IReadOnlyList<int> pagesBundle = null)
+        public static void RemoveText(Stream output, string filePath, IReadOnlyList<int>? pagesBundle = null)
         {
             using (var stream = File.OpenRead(filePath))
             {
@@ -48,7 +48,7 @@ namespace UglyToad.PdfPig.Writer
         /// <param name="pagesBundle">List of pages to emit; if null all pages are emitted</param>
         /// <returns>PDF without text (as a byte array)</returns>
         /// </summary>
-        public static byte[] RemoveText(byte[] file, IReadOnlyList<int> pagesBundle = null)
+        public static byte[] RemoveText(byte[] file, IReadOnlyList<int>? pagesBundle = null)
         {
             _ = file ?? throw new ArgumentNullException(nameof(file));
 
@@ -66,7 +66,7 @@ namespace UglyToad.PdfPig.Writer
         /// <param name="output">Must be writable</param>
         /// <param name="pagesBundle">List of pages to emit; if null all pages are emitted</param>
         /// </summary>
-        public static void RemoveText(Stream stream, Stream output, IReadOnlyList<int> pagesBundle = null)
+        public static void RemoveText(Stream stream, Stream output, IReadOnlyList<int>? pagesBundle = null)
         {
             _ = stream ?? throw new ArgumentNullException(nameof(stream));
             _ = output ?? throw new ArgumentNullException(nameof(output));
@@ -81,7 +81,7 @@ namespace UglyToad.PdfPig.Writer
         /// <param name="output">Must be writable</param>
         /// <param name="pagesBundle">List of pages to emit; if null all pages are emitted</param>
         /// </summary>
-        public static void RemoveText(PdfDocument file, Stream output, IReadOnlyList<int> pagesBundle = null)
+        public static void RemoveText(PdfDocument file, Stream output, IReadOnlyList<int>? pagesBundle = null)
         {
             var tokenWriter = new NoTextTokenWriter();
             using (var document = new PdfDocumentBuilder(output, false, PdfWriterType.Default, file.Version, tokenWriter: tokenWriter))

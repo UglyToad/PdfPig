@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using Core;
 
     /// <summary>
@@ -19,15 +20,15 @@
 
         bool TryGetBoundingAdvancedWidth(int characterIdentifier, out double width);
 
-        bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path);
+        bool TryGetPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path);
 
-        bool TryGetPath(int characterCode, Func<int, int?> characterCodeToGlyphId, out IReadOnlyList<PdfSubpath> path);
+        bool TryGetPath(int characterCode, Func<int, int?> characterCodeToGlyphId, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path);
 
         int GetFontMatrixMultiplier();
 
         /// <summary>
         /// Try to get the font matrix if available.
         /// </summary>
-        bool TryGetFontMatrix(int characterCode, out TransformationMatrix? matrix);
+        bool TryGetFontMatrix(int characterCode, [NotNullWhen(true)] out TransformationMatrix? matrix);
     }
 }

@@ -21,7 +21,13 @@
         /// <summary>
         /// Merge two PDF documents together with the pages from <paramref name="file1"/> followed by <paramref name="file2"/>.
         /// </summary>
-        public static byte[] Merge(string file1, string file2, IReadOnlyList<int> file1Selection = null, IReadOnlyList<int> file2Selection = null, PdfAStandard archiveStandard = PdfAStandard.None, PdfDocumentBuilder.DocumentInformationBuilder docInfoBuilder = null)
+        public static byte[] Merge(
+            string file1,
+            string file2,
+            IReadOnlyList<int>? file1Selection = null,
+            IReadOnlyList<int>? file2Selection = null,
+            PdfAStandard archiveStandard = PdfAStandard.None,
+            PdfDocumentBuilder.DocumentInformationBuilder? docInfoBuilder = null)
         {
             using (var output = new MemoryStream())
             {
@@ -33,7 +39,14 @@
         /// <summary>
         /// Merge two PDF documents together with the pages from <paramref name="file1"/> followed by <paramref name="file2"/> into the output stream.
         /// </summary>
-        public static void Merge(string file1, string file2, Stream output, IReadOnlyList<int> file1Selection = null, IReadOnlyList<int> file2Selection = null, PdfAStandard archiveStandard = PdfAStandard.None, PdfDocumentBuilder.DocumentInformationBuilder docInfoBuilder = null)
+        public static void Merge(
+            string file1,
+            string file2,
+            Stream output,
+            IReadOnlyList<int>? file1Selection = null,
+            IReadOnlyList<int>? file2Selection = null,
+            PdfAStandard archiveStandard = PdfAStandard.None,
+            PdfDocumentBuilder.DocumentInformationBuilder? docInfoBuilder = null)
         {
             _ = file1 ?? throw new ArgumentNullException(nameof(file1));
             _ = file2 ?? throw new ArgumentNullException(nameof(file2));
@@ -58,7 +71,7 @@
         /// <summary>
         /// Merge multiple PDF documents together with the pages in the order the file paths are provided.
         /// </summary>
-        public static byte[] Merge(PdfAStandard archiveStandard, PdfDocumentBuilder.DocumentInformationBuilder docInfoBuilder, params string[] filePaths)
+        public static byte[] Merge(PdfAStandard archiveStandard, PdfDocumentBuilder.DocumentInformationBuilder? docInfoBuilder, params string[] filePaths)
         {
             using (var output = new MemoryStream())
             {
@@ -78,7 +91,7 @@
         /// <summary>
         /// Merge multiple PDF documents together with the pages in the order the file paths are provided into the output stream
         /// </summary>
-        public static void Merge(Stream output, PdfAStandard archiveStandard, PdfDocumentBuilder.DocumentInformationBuilder docInfoBuilder, params string[] filePaths)
+        public static void Merge(Stream output, PdfAStandard archiveStandard, PdfDocumentBuilder.DocumentInformationBuilder? docInfoBuilder, params string[] filePaths)
         {
             var streams = new List<Stream>(filePaths.Length);
             try
@@ -103,7 +116,11 @@
         /// <summary>
         /// Merge the set of PDF documents.
         /// </summary>
-        public static byte[] Merge(IReadOnlyList<byte[]> files, IReadOnlyList<IReadOnlyList<int>> pagesBundle = null, PdfAStandard archiveStandard = PdfAStandard.None, PdfDocumentBuilder.DocumentInformationBuilder docInfoBuilder = null)
+        public static byte[] Merge(
+            IReadOnlyList<byte[]> files,
+            IReadOnlyList<IReadOnlyList<int>>? pagesBundle = null,
+            PdfAStandard archiveStandard = PdfAStandard.None,
+            PdfDocumentBuilder.DocumentInformationBuilder? docInfoBuilder = null)
         {
             _ = files ?? throw new ArgumentNullException(nameof(files));
 
@@ -125,7 +142,12 @@
         /// <param name="archiveStandard"></param>
         /// <param name="docInfoBuilder"></param>
         /// </summary>
-        public static void Merge(IReadOnlyList<Stream> streams, Stream output, IReadOnlyList<IReadOnlyList<int>> pagesBundle = null, PdfAStandard archiveStandard = PdfAStandard.None, PdfDocumentBuilder.DocumentInformationBuilder docInfoBuilder = null)
+        public static void Merge(
+            IReadOnlyList<Stream> streams,
+            Stream output,
+            IReadOnlyList<IReadOnlyList<int>?>? pagesBundle = null,
+            PdfAStandard archiveStandard = PdfAStandard.None,
+            PdfDocumentBuilder.DocumentInformationBuilder? docInfoBuilder = null)
         {
             _ = streams ?? throw new ArgumentNullException(nameof(streams));
             _ = output ?? throw new ArgumentNullException(nameof(output));
@@ -133,7 +155,12 @@
             Merge(streams.Select(f => PdfDocument.Open(f)).ToArray(), output, pagesBundle, archiveStandard, docInfoBuilder);
         }
 
-        private static void Merge(IReadOnlyList<PdfDocument> files, Stream output, IReadOnlyList<IReadOnlyList<int>> pagesBundle, PdfAStandard archiveStandard = PdfAStandard.None, PdfDocumentBuilder.DocumentInformationBuilder docInfoBuilder = null)
+        private static void Merge(
+            IReadOnlyList<PdfDocument> files,
+            Stream output,
+            IReadOnlyList<IReadOnlyList<int>?>? pagesBundle,
+            PdfAStandard archiveStandard = PdfAStandard.None,
+            PdfDocumentBuilder.DocumentInformationBuilder? docInfoBuilder = null)
         {
             var maxVersion = files.Select(x => x.Version).Max();
             using (var document = new PdfDocumentBuilder(output, false, PdfWriterType.Default, maxVersion))
@@ -147,7 +174,7 @@
                 foreach (var fileIndex in Enumerable.Range(0, files.Count))
                 {
                     var existing = files[fileIndex];
-                    IReadOnlyList<int> pages = null;
+                    IReadOnlyList<int>? pages = null;
                     if (pagesBundle != null && fileIndex < pagesBundle.Count)
                     {
                         pages = pagesBundle[fileIndex];
@@ -179,7 +206,7 @@
                 }
             }
 
-            PdfAction CopyLink(PdfAction action, Func<int, int?> getPageNumber)
+            PdfAction? CopyLink(PdfAction action, Func<int, int?> getPageNumber)
             {
                 var link = action as AbstractGoToAction;
                 if (link is null)
@@ -197,22 +224,13 @@
 
                 var newDestination = new ExplicitDestination(newPageNumber.Value, link.Destination.Type, link.Destination.Coordinates);
 
-                switch (action)
-                {
-                    case GoToAction goToAction:
-                        return new GoToAction(newDestination);
-
-                    case GoToEAction goToEAction:
-                        return new GoToEAction(newDestination, goToEAction.FileSpecification);
-
-                    case GoToRAction goToRAction:
-                        return new GoToRAction(newDestination, goToRAction.Filename);
-
-                    default:
-                        return action;
-                }
+                return action switch {
+                    GoToAction goToAction   => new GoToAction(newDestination),
+                    GoToEAction goToEAction => new GoToEAction(newDestination, goToEAction.FileSpecification),
+                    GoToRAction goToRAction => new GoToRAction(newDestination, goToRAction.Filename),
+                    _ => action
+                };
             }
         }
-
     }
 }

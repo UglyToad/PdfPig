@@ -38,7 +38,7 @@
         /// <summary>
         /// Create a new <see cref="FontDetails"/>.
         /// </summary>
-        public FontDetails(string name, bool isBold, int weight, bool isItalic)
+        public FontDetails(string? name, bool isBold, int weight, bool isItalic)
         {
             Name = name ?? string.Empty;
             IsBold = isBold;
@@ -46,7 +46,7 @@
             IsItalic = isItalic;
         }
 
-        internal static FontDetails GetDefault(string name = null) => new FontDetails(name ?? string.Empty,
+        internal static FontDetails GetDefault(string? name = null) => new FontDetails(name ?? string.Empty,
             false,
             DefaultWeight,
             false);
