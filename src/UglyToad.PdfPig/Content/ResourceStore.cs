@@ -237,7 +237,7 @@
                 return lastLoadedFont.font;
             }
 
-            IFont font;
+            IFont? font;
             if (currentResourceState.TryGetValue(name, out var reference))
             {
                 loadedFonts.TryGetValue(reference, out font);
@@ -302,7 +302,7 @@
             }
 
             // Named color spaces
-            if (loadedNamedColorSpaceDetails.TryGetValue(name, out ColorSpaceDetails csdLoaded))
+            if (loadedNamedColorSpaceDetails.TryGetValue(name, out ColorSpaceDetails? csdLoaded))
             {
                 return csdLoaded;
             }

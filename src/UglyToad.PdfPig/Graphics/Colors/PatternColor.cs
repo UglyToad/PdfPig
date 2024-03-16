@@ -149,8 +149,13 @@
         }
 
         /// <inheritdoc/>
-        public bool Equals(TilingPatternColor other)
+        public bool Equals(TilingPatternColor? other)
         {
+            if (other is null)
+            {
+                return this is null;
+            }
+
             return PatternType.Equals(other.PatternType) &&
                 Matrix.Equals(other.Matrix) &&
                 ExtGState.Equals(other.ExtGState) &&
@@ -211,8 +216,13 @@
         }
 
         /// <inheritdoc/>
-        public bool Equals(ShadingPatternColor other)
+        public bool Equals(ShadingPatternColor? other)
         {
+            if (other is null)
+            {
+                return this is null;
+            }
+
             return PatternType.Equals(other.PatternType) &&
                    Matrix.Equals(other.Matrix) &&
                    ExtGState.Equals(other.ExtGState) &&

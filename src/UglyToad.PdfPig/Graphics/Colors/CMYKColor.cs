@@ -67,10 +67,14 @@ namespace UglyToad.PdfPig.Graphics.Colors
         }
 
         /// <inheritdoc />
-        public bool Equals(CMYKColor other)
+        public bool Equals(CMYKColor? other)
         {
-            return other != null! &&
-                   C == other.C &&
+            if (other is null)
+            {
+                return this is null;
+            }
+
+            return C == other.C &&
                    M == other.M &&
                    Y == other.Y &&
                    K == other.K;

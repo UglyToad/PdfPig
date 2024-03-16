@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using Core;
 
@@ -109,7 +110,7 @@
         /// <param name="code">Character code</param>
         /// <param name="result">Unicode characters(may be more than one, e.g "fi" ligature)</param>
         /// <returns><see langword="true"/> if this character map contains an entry for this code, <see langword="false"/> otherwise.</returns>
-        public bool TryConvertToUnicode(int code, out string result)
+        public bool TryConvertToUnicode(int code, [NotNullWhen(true)] out string? result)
         {
             var found = BaseFontCharacterMap.TryGetValue(code, out result);
 

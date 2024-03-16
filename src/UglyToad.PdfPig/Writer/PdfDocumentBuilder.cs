@@ -345,7 +345,7 @@ namespace UglyToad.PdfPig.Writer
                 existingTrees.Add(document, pagesInfos);
             }
 
-            if (!pagesInfos.TryGetValue(pageNumber, out PageInfo pageInfo))
+            if (!pagesInfos.TryGetValue(pageNumber, out PageInfo? pageInfo))
             {
                 throw new KeyNotFoundException($"Page {pageNumber} was not found in the source document.");
             }

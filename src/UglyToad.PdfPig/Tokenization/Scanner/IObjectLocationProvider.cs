@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tokenization.Scanner
 {
+    using System.Diagnostics.CodeAnalysis;
     using Core;
     using Tokens;
 
@@ -9,7 +10,7 @@
 
         void UpdateOffset(IndirectReference reference, long offset);
 
-        bool TryGetCached(IndirectReference reference, out ObjectToken objectToken);
+        bool TryGetCached(IndirectReference reference, [NotNullWhen(true)] out ObjectToken? objectToken);
 
         void Cache(ObjectToken objectToken, bool force = false);
     }

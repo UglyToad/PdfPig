@@ -47,10 +47,14 @@ namespace UglyToad.PdfPig.Graphics.Colors
         }
 
         /// <inheritdoc />
-        public bool Equals(GrayColor other)
+        public bool Equals(GrayColor? other)
         {
-            return other != null! &&
-                   Gray == other.Gray;
+            if (other is null)
+            {
+                return this is null;
+            }
+
+            return Gray == other.Gray;
         }
 
         /// <inheritdoc />

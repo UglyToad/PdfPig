@@ -62,12 +62,16 @@
         /// <summary>
         /// Whether 2 RGB colors are equal across all channels.
         /// </summary>
-        public bool Equals(RGBColor other)
+        public bool Equals(RGBColor? other)
         {
-            return other != null! &&
-                   R == other.R &&
-                   G == other.G &&
-                   B == other.B;
+            if (other is null)
+            {
+                return this is null;
+            }
+
+            return R == other.R
+                && G == other.G
+                && B == other.B;
         }
 
         /// <inheritdoc />

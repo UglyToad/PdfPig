@@ -551,7 +551,7 @@
 
         private NameToken GetAddedFont(PdfDocumentBuilder.AddedFont font)
         {
-            if (!documentFonts.TryGetValue(font.Id, out NameToken value))
+            if (!documentFonts.TryGetValue(font.Id, out NameToken? value))
             {
                 value = NameToken.Create($"F{nextFontId++}");
                 var resources = pageDictionary.GetOrCreateDict(NameToken.Resources);

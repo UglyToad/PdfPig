@@ -545,7 +545,7 @@
                     comps[n] = b / 255.0;
                 }
 
-                if (!cache.TryGetValue(key, out double[] colors))
+                if (!cache.TryGetValue(key, out double[]? colors))
                 {
                     colors = Process(comps);
                     cache[key] = colors;
@@ -709,7 +709,7 @@
             for (var i = 0; i < values.Count; i += 3)
             {
                 byte b = values[i++];
-                if (!cache.TryGetValue(b, out double[] colors))
+                if (!cache.TryGetValue(b, out double[]? colors))
                 {
                     colors = Process(b / 255.0);
                     cache[b] = colors;
