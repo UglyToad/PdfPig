@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using Core;
     using CrossReference;
     using Parser.Parts;
@@ -68,7 +69,7 @@
             offsets[reference] = offset;
         }
 
-        public bool TryGetCached(IndirectReference reference, out ObjectToken objectToken)
+        public bool TryGetCached(IndirectReference reference, [NotNullWhen(true)] out ObjectToken? objectToken)
         {
             return cache.TryGetValue(reference, out objectToken);
         }
