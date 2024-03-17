@@ -64,6 +64,7 @@
         /// <summary>
         /// Whether the document content is encrypted.
         /// </summary>
+        [MemberNotNullWhen(true, nameof(encryptionDictionary))]
         public bool IsEncrypted => encryptionDictionary != null;
 
         internal PdfDocument(
@@ -167,7 +168,7 @@
             }
             catch (Exception ex)
             {
-                if (IsEncrypted && encryptionDictionary != null)
+                if (IsEncrypted)
                 {
                     throw new PdfDocumentEncryptedException("Document was encrypted which may have caused error when retrieving page.", encryptionDictionary, ex);
                 }
