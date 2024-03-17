@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace UglyToad.PdfPig.Util
 {
-    internal class Matrix3x3 : IEnumerable<double>, IEquatable<Matrix3x3>
+    internal sealed class Matrix3x3 : IEnumerable<double>, IEquatable<Matrix3x3>
     {
         /// <summary>
         /// The identity matrix. The result of multiplying a matrix with
@@ -69,14 +69,14 @@ namespace UglyToad.PdfPig.Util
         ///
         /// If an inverse matrix does not exist, null is returned.
         /// </summary>
-        public Matrix3x3? Inverse()
+        public Matrix3x3 Inverse()
         {
             var determinant = GetDeterminant();
 
             // No inverse matrix exists when determinant is zero
             if (determinant == 0)
             {
-                return null;
+                throw new InvalidOperationException("May not inverse a matrix with a determinant of 0.");
             }
 
             var transposed = Transpose();
@@ -159,10 +159,10 @@ namespace UglyToad.PdfPig.Util
             return obj is Matrix3x3 other && Equals(other);
         }
 
-        public bool Equals(Matrix3x3? other)
+        public bool Equals(Matrix3x3 other)
         {
             if (other is null)
-            { 
+            {
                 return false;
             }
 
