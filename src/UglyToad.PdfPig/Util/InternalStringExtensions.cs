@@ -4,7 +4,7 @@
 
     internal static class InternalStringExtensions
     {
-        public static bool StartsWithOffset(this string value, string start, int offset)
+        public static bool StartsWithOffset(this string value, ReadOnlySpan<char> start, int offset)
         {
             if (offset < 0)
             {
@@ -13,7 +13,7 @@
 
             if (value is null)
             {
-                if (start is null && offset == 0)
+                if (start.Length is 0 && offset == 0)
                 {
                     return true;
                 }
@@ -26,7 +26,7 @@
                 return false;
             }
 
-            return value.Substring(offset).StartsWith(start);
+            return value.AsSpan(offset).StartsWith(start, StringComparison.Ordinal);
         }
     }
 }
