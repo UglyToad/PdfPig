@@ -1,9 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Writer
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Text;
-
     /// <summary>
     /// Type of pdf writer to use.
     /// </summary>
