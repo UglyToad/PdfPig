@@ -689,6 +689,8 @@
             coreTokenScanner.DeregisterCustomTokenizer(tokenizer);
         }
 
+#nullable disable
+
         public ObjectToken Get(IndirectReference reference)
         {
             if (isDisposed)
@@ -708,7 +710,7 @@
 
             if (!objectLocationProvider.TryGetOffset(reference, out var offset))
             {
-                return null!;
+                return null;
             }
 
             // Negative offsets refer to a stream with that number.
@@ -740,6 +742,8 @@
 
             return BruteForceFileToFindReference(reference);
         }
+
+#nullable enable
 
         public void ReplaceToken(IndirectReference reference, IToken token)
         {
