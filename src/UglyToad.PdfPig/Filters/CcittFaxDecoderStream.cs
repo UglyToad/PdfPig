@@ -3,7 +3,6 @@
     using System;
     using System.IO;
     using IO;
-    using Util;
 
     /// <summary>
     /// CCITT Modified Huffman RLE, Group 3 (T4) and Group 4 (T6) fax compression.
@@ -426,7 +425,7 @@
         {
             if (decodedLength < 0)
             {
-                ArrayHelper.Fill(b, off, off + len, (byte)0x0);
+                b.AsSpan(off, len).Fill(0x0);
                 return len;
             }
 
@@ -436,7 +435,7 @@
 
                 if (decodedLength < 0)
                 {
-                    ArrayHelper.Fill(b, off, off + len, (byte)0x0);
+                    b.AsSpan(off, len).Fill(0x0);
                     return len;
                 }
             }

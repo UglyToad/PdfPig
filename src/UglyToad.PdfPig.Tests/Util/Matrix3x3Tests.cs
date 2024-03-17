@@ -106,15 +106,14 @@
         }
 
         [Fact]
-        public void InverseReturnsNullIfNotPossible()
+        public void InverseThrowsNotPossible()
         {
             var matrix = new Matrix3x3(
                 1, 2, 3,
                 4, 5, 6,
                 7, 8, 9);
 
-            var inverse = matrix.Inverse();
-            Assert.Null(inverse);
+            Assert.Throws<InvalidOperationException>(() => matrix.Inverse());
         }
     }
 }

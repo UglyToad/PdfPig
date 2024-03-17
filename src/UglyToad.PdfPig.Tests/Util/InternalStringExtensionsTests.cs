@@ -15,7 +15,7 @@ namespace UglyToad.PdfPig.Tests.Util
         [InlineData("pineapple", "apple", 4, true)]
         public void StartsWithOffset(string input, string start, int offset, bool expected)
         {
-            var result = input.StartsWithOffset(start, offset);
+            var result = input.StartsWithOffset(start.AsSpan(), offset);
 
             Assert.Equal(expected, result);
         }
@@ -23,7 +23,7 @@ namespace UglyToad.PdfPig.Tests.Util
         [Fact]
         public void StartsWithOffset_NegativeOffset_Throws()
         {
-            Action action = () => "any".StartsWithOffset("x", -1);
+            Action action = () => "any".StartsWithOffset("x".AsSpan(), -1);
 
             Assert.Throws<ArgumentOutOfRangeException>(action);
         }

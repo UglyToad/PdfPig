@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Util
 {
     using System;
+    using System.Globalization;
 
     /// <summary>
     /// Helper class for dates.
@@ -53,7 +54,7 @@
                     return false;
                 }
 
-                if (!int.TryParse(s.Substring(location, 4), out var year))
+                if (!int.TryParse(s.AsSpanOrSubstring(location, 4), NumberStyles.Integer, CultureInfo.InvariantCulture, out var year))
                 {
                     return false;
                 }
@@ -72,7 +73,7 @@
                     return true;
                 }
 
-                if (!int.TryParse(s.Substring(location, 2), out var month)
+                if (!int.TryParse(s.AsSpanOrSubstring(location, 2), NumberStyles.Integer, CultureInfo.InvariantCulture, out var month)
                     || !IsWithinRange(month, 1, 12))
                 {
                     return false;
@@ -92,7 +93,7 @@
                     return true;
                 }
 
-                if (!int.TryParse(s.Substring(location, 2), out var day)
+                if (!int.TryParse(s.AsSpanOrSubstring(location, 2), NumberStyles.Integer, CultureInfo.InvariantCulture, out var day)
                     || !IsWithinRange(day, 1, 31))
                 {
                     return false;
@@ -112,7 +113,7 @@
                     return true;
                 }
 
-                if (!int.TryParse(s.Substring(location, 2), out var hour)
+                if (!int.TryParse(s.AsSpanOrSubstring(location, 2), NumberStyles.Integer, CultureInfo.InvariantCulture, out var hour)
                     || !IsWithinRange(hour, 0, 23))
                 {
                     return false;
@@ -132,7 +133,7 @@
                     return true;
                 }
 
-                if (!int.TryParse(s.Substring(location, 2), out var minute)
+                if (!int.TryParse(s.AsSpanOrSubstring(location, 2), NumberStyles.Integer, CultureInfo.InvariantCulture, out var minute)
                     || !IsWithinRange(minute, 0, 59))
                 {
                     return false;
@@ -152,7 +153,7 @@
                     return true;
                 }
 
-                if (!int.TryParse(s.Substring(location, 2), out var second)
+                if (!int.TryParse(s.AsSpanOrSubstring(location, 2), NumberStyles.Integer, CultureInfo.InvariantCulture, out var second)
                     || !IsWithinRange(second, 0, 59))
                 {
                     return false;
@@ -189,7 +190,7 @@
                     return true;
                 }
 
-                if (!HasRemainingCharacters(location, 3) || !int.TryParse(s.Substring(location, 2), out var hoursOffset)
+                if (!HasRemainingCharacters(location, 3) || !int.TryParse(s.AsSpanOrSubstring(location, 2), NumberStyles.Integer, CultureInfo.InvariantCulture, out var hoursOffset)
                                                          || s[location + 2] != '\''
                                                          || !IsWithinRange(hoursOffset, 0, 23))
                 {
@@ -205,7 +206,7 @@
                     return true;
                 }
 
-                if (!HasRemainingCharacters(location, 3) || !int.TryParse(s.Substring(location, 2), out var minutesOffset)
+                if (!HasRemainingCharacters(location, 3) || !int.TryParse(s.AsSpanOrSubstring(location, 2), NumberStyles.Integer, CultureInfo.InvariantCulture, out var minutesOffset)
                                                          || s[location + 2] != '\''
                                                          || !IsWithinRange(minutesOffset, 0, 59))
                 {

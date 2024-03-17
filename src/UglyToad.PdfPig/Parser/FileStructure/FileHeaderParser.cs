@@ -8,6 +8,7 @@
     using Logging;
     using Tokenization.Scanner;
     using Tokens;
+    using UglyToad.PdfPig.Util;
 
     /// <summary>
     /// Used to retrieve the version header from the PDF file.
@@ -70,7 +71,7 @@
 
             const int toDoubleStartLength = 4;
 
-            if (!double.TryParse(comment.Data.Substring(toDoubleStartLength),
+            if (!double.TryParse(comment.Data.AsSpanOrSubstring(toDoubleStartLength),
                 NumberStyles.Number,
                 CultureInfo.InvariantCulture,
                 out var version))
@@ -118,7 +119,7 @@
 
                 if (actualIndex >= 0 && content.Length - actualIndex >= versionLength)
                 {
-                    var numberPart = content.Substring(actualIndex + 5, 3);
+                    var numberPart = content.AsSpanOrSubstring(actualIndex + 5, 3);
                     if (double.TryParse(
                             numberPart,
                             NumberStyles.Number,
