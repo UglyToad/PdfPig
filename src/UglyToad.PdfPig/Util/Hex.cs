@@ -23,6 +23,9 @@
         /// </summary>
         public static string GetString(ReadOnlySpan<byte> bytes)
         {
+#if NET6_0_OR_GREATER
+            return Convert.ToHexString(bytes); 
+#else
             var stringBuilder = new StringBuilder(bytes.Length * 2);
 
             foreach (var b in bytes)
@@ -31,6 +34,7 @@
             }
 
             return stringBuilder.ToString();
+#endif
         }
 
         private static int GetHighNibble(byte b)
