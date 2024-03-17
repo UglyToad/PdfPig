@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Outline.Destinations
 {
+    using System.Diagnostics.CodeAnalysis;
     using Logging;
     using Tokenization.Scanner;
     using Tokens;
@@ -18,13 +19,20 @@
         /// to enforce a check for indirect page references (which is not allowed for GoToR)</param>
         /// <param name="destination"></param>
         /// <returns></returns>
-        internal static bool TryGetDestination(DictionaryToken dictionary, NameToken destinationToken, NamedDestinations namedDestinations, IPdfTokenScanner pdfScanner, ILog log, bool isRemoteDestination, out ExplicitDestination destination)
+        internal static bool TryGetDestination(
+            DictionaryToken dictionary,
+            NameToken destinationToken,
+            NamedDestinations namedDestinations,
+            IPdfTokenScanner pdfScanner,
+            ILog log,
+            bool isRemoteDestination,
+            [NotNullWhen(true)] out ExplicitDestination? destination)
         {
-            if (dictionary.TryGet(destinationToken, pdfScanner, out ArrayToken destArray))
+            if (dictionary.TryGet(destinationToken, pdfScanner, out ArrayToken? destArray))
             {
                 return namedDestinations.TryGetExplicitDestination(destArray, log, isRemoteDestination, out destination);
             }
-            if (dictionary.TryGet(destinationToken, pdfScanner, out IDataToken<string> destStringToken))
+            if (dictionary.TryGet(destinationToken, pdfScanner, out IDataToken<string>? destStringToken))
             {
                 return namedDestinations.TryGet(destStringToken.Data, out destination);
             }

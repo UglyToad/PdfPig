@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Writer.Fonts
 {
-    using System.IO;
     using Core;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     internal interface IWritingFont
     {
@@ -17,7 +15,7 @@
 
         TransformationMatrix GetFontMatrix();
 
-        IndirectReferenceToken WriteFont(IPdfStreamWriter writer, [CanBeNull]IndirectReferenceToken reservedIndirect=null);
+        IndirectReferenceToken WriteFont(IPdfStreamWriter writer, IndirectReferenceToken? reservedIndirect = null);
 
         byte GetValueForCharacter(char character);
     }

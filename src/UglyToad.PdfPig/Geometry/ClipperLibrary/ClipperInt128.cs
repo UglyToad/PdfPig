@@ -123,7 +123,7 @@ namespace UglyToad.PdfPig.Geometry.ClipperLibrary
             return !(val1 == val2);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (!(obj is ClipperInt128 i128))
             {

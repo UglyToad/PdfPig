@@ -1,4 +1,6 @@
-﻿namespace UglyToad.PdfPig.IO
+﻿#nullable disable
+
+namespace UglyToad.PdfPig.IO
 {
     using System;
     using System.Collections.Generic;

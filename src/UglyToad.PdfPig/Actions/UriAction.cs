@@ -1,4 +1,6 @@
-﻿namespace UglyToad.PdfPig.Actions
+﻿#nullable disable
+
+namespace UglyToad.PdfPig.Actions
 {
     /// <summary>
     /// Action to open a URI

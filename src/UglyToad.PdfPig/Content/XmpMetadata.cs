@@ -8,7 +8,6 @@
     using Filters;
     using Tokenization.Scanner;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// Wraps an XML based Extensible Metadata Platform (XMP) document. These XML documents are embedded in PDFs to provide metadata
@@ -22,7 +21,6 @@
         /// <summary>
         /// The underlying <see cref="StreamToken"/> for this metadata.
         /// </summary>
-        [NotNull]
         public StreamToken MetadataStreamToken { get; }
 
         internal XmpMetadata(StreamToken stream, ILookupFilterProvider filterProvider, IPdfTokenScanner pdfTokenScanner)

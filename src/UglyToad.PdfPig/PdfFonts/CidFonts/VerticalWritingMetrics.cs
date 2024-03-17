@@ -2,7 +2,6 @@
 {
     using System.Collections.Generic;
     using Geometry;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// Glyphs from fonts which support vertical writing mode define displacement and position vectors.
@@ -19,27 +18,24 @@
         /// <summary>
         /// Overrides displacement vector y components for glyphs specified by CID code.
         /// </summary>
-        [NotNull]
         public IReadOnlyDictionary<int, double> IndividualVerticalWritingDisplacements { get; }
 
         /// <summary>
         /// Overrides position vector (x and y) components for glyphs specified by CID code.
         /// </summary>
-        [NotNull]
         public IReadOnlyDictionary<int, PdfVector> IndividualVerticalWritingPositions { get; }
 
         /// <summary>
         /// Create new <see cref="VerticalWritingMetrics"/>.
         /// </summary>
-        public VerticalWritingMetrics(VerticalVectorComponents defaultVerticalWritingMetrics, 
-            [CanBeNull] IReadOnlyDictionary<int, double> individualVerticalWritingDisplacements, 
-            [CanBeNull] IReadOnlyDictionary<int, PdfVector> individualVerticalWritingPositions)
+        public VerticalWritingMetrics(
+            VerticalVectorComponents defaultVerticalWritingMetrics, 
+            IReadOnlyDictionary<int, double>? individualVerticalWritingDisplacements, 
+            IReadOnlyDictionary<int, PdfVector>? individualVerticalWritingPositions)
         {
             DefaultVerticalWritingMetrics = defaultVerticalWritingMetrics;
-            IndividualVerticalWritingDisplacements = individualVerticalWritingDisplacements
-                                                     ?? new Dictionary<int, double>(0);
-            IndividualVerticalWritingPositions = individualVerticalWritingPositions
-                                                 ?? new Dictionary<int, PdfVector>(0);
+            IndividualVerticalWritingDisplacements = individualVerticalWritingDisplacements ?? new Dictionary<int, double>(0);
+            IndividualVerticalWritingPositions = individualVerticalWritingPositions ?? new Dictionary<int, PdfVector>(0);
         }
 
         /// <summary>

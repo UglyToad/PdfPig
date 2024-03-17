@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using Core;
     using Graphics.Colors;
     using Parser.Parts;
@@ -33,7 +34,7 @@
 
         private readonly Dictionary<NameToken, PatternColor> patternsProperties = new Dictionary<NameToken, PatternColor>();
 
-        private (NameToken name, IFont font) lastLoadedFont;
+        private (NameToken? name, IFont? font) lastLoadedFont;
 
         public ResourceStore(IPdfTokenScanner scanner,
             IFontFactory fontFactory,
@@ -81,7 +82,7 @@
                 }
             }
 
-            if (resourceDictionary.TryGet(NameToken.ExtGState, scanner, out DictionaryToken extGStateDictionaryToken))
+            if (resourceDictionary.TryGet(NameToken.ExtGState, scanner, out DictionaryToken? extGStateDictionaryToken))
             {
                 foreach (var pair in extGStateDictionaryToken.Data)
                 {
@@ -92,17 +93,17 @@
                 }
             }
 
-            if (resourceDictionary.TryGet(NameToken.ColorSpace, scanner, out DictionaryToken colorSpaceDictionary))
+            if (resourceDictionary.TryGet(NameToken.ColorSpace, scanner, out DictionaryToken? colorSpaceDictionary))
             {
                 foreach (var nameColorSpacePair in colorSpaceDictionary.Data)
                 {
                     var name = NameToken.Create(nameColorSpacePair.Key);
 
-                    if (DirectObjectFinder.TryGet(nameColorSpacePair.Value, scanner, out NameToken colorSpaceName))
+                    if (DirectObjectFinder.TryGet(nameColorSpacePair.Value, scanner, out NameToken? colorSpaceName))
                     {
                         namedColorSpaces[name] = new ResourceColorSpace(colorSpaceName);
                     }
-                    else if (DirectObjectFinder.TryGet(nameColorSpacePair.Value, scanner, out ArrayToken colorSpaceArray))
+                    else if (DirectObjectFinder.TryGet(nameColorSpacePair.Value, scanner, out ArrayToken? colorSpaceArray))
                     {
                         if (colorSpaceArray.Length == 0)
                         {
@@ -125,7 +126,7 @@
                 }
             }
 
-            if (resourceDictionary.TryGet(NameToken.Pattern, scanner, out DictionaryToken patternDictionary))
+            if (resourceDictionary.TryGet(NameToken.Pattern, scanner, out DictionaryToken? patternDictionary))
             {
                 // NB: in PDF, all patterns shall be local to the context in which they are defined.
                 foreach (var namePatternPair in patternDictionary.Data)
@@ -135,13 +136,13 @@
                 }
             }
 
-            if (resourceDictionary.TryGet(NameToken.Properties, scanner, out DictionaryToken markedContentPropertiesList))
+            if (resourceDictionary.TryGet(NameToken.Properties, scanner, out DictionaryToken? markedContentPropertiesList))
             {
                 foreach (var pair in markedContentPropertiesList.Data)
                 {
                     var key = NameToken.Create(pair.Key);
 
-                    if (!DirectObjectFinder.TryGet(pair.Value, scanner, out DictionaryToken namedProperties))
+                    if (!DirectObjectFinder.TryGet(pair.Value, scanner, out DictionaryToken? namedProperties))
                     {
                         continue;
                     }
@@ -150,16 +151,16 @@
                 }
             }
 
-            if (resourceDictionary.TryGet(NameToken.Shading, scanner, out DictionaryToken shadingList))
+            if (resourceDictionary.TryGet(NameToken.Shading, scanner, out DictionaryToken? shadingList))
             {
                 foreach (var pair in shadingList.Data)
                 {
                     var key = NameToken.Create(pair.Key);
-                    if (DirectObjectFinder.TryGet(pair.Value, scanner, out DictionaryToken namedPropertiesDictionary))
+                    if (DirectObjectFinder.TryGet(pair.Value, scanner, out DictionaryToken? namedPropertiesDictionary))
                     {
                         shadingsProperties[key] = ShadingParser.Create(namedPropertiesDictionary, scanner, this, filterProvider);
                     }
-                    else if (DirectObjectFinder.TryGet(pair.Value, scanner, out StreamToken namedPropertiesStream))
+                    else if (DirectObjectFinder.TryGet(pair.Value, scanner, out StreamToken? namedPropertiesStream))
                     {
                         // Shading types 4 to 7 shall be defined by a stream containing descriptive data characterizing
                         // the shading's gradient fill.
@@ -229,14 +230,14 @@
             }
         }
 
-        public IFont GetFont(NameToken name)
+        public IFont? GetFont(NameToken name)
         {
             if (lastLoadedFont.name == name)
             {
                 return lastLoadedFont.font;
             }
 
-            IFont font;
+            IFont? font;
             if (currentResourceState.TryGetValue(name, out var reference))
             {
                 loadedFonts.TryGetValue(reference, out font);
@@ -255,7 +256,7 @@
         {
             lastLoadedFont = (null, null);
 
-            if (!DirectObjectFinder.TryGet(fontReferenceToken, scanner, out DictionaryToken fontDictionaryToken))
+            if (!DirectObjectFinder.TryGet(fontReferenceToken, scanner, out DictionaryToken? fontDictionaryToken))
             {
                 throw new PdfDocumentFormatException($"The requested font reference token {fontReferenceToken} wasn't a font.");
             }
@@ -265,7 +266,7 @@
             return font;
         }
 
-        public bool TryGetNamedColorSpace(NameToken name, out ResourceColorSpace namedToken)
+        public bool TryGetNamedColorSpace(NameToken? name, out ResourceColorSpace namedToken)
         {
             namedToken = default(ResourceColorSpace);
 
@@ -284,13 +285,10 @@
             return true;
         }
 
-        public ColorSpaceDetails GetColorSpaceDetails(NameToken name, DictionaryToken dictionary)
-        {
-            if (dictionary is null)
-            {
-                dictionary = new DictionaryToken(new Dictionary<NameToken, IToken>());
-            }
-
+        public ColorSpaceDetails GetColorSpaceDetails(NameToken? name, DictionaryToken? dictionary)
+        {            
+            dictionary ??= new DictionaryToken(new Dictionary<NameToken, IToken>());
+            
             // Null color space for images
             if (name is null)
             {
@@ -299,12 +297,12 @@
 
             if (name.TryMapToColorSpace(out ColorSpace colorspaceActual))
             {
-                // TODO - We need to find a way to store profile that have an actual dictionnary, e.g. ICC profiles - without parsing them again
+                // TODO - We need to find a way to store profile that have an actual dictionary, e.g. ICC profiles - without parsing them again
                 return ColorSpaceDetailsParser.GetColorSpaceDetails(colorspaceActual, dictionary, scanner, this, filterProvider);
             }
 
             // Named color spaces
-            if (loadedNamedColorSpaceDetails.TryGetValue(name, out ColorSpaceDetails csdLoaded))
+            if (loadedNamedColorSpaceDetails.TryGetValue(name, out ColorSpaceDetails? csdLoaded))
             {
                 return csdLoaded;
             }
@@ -327,7 +325,7 @@
             throw new InvalidOperationException($"Could not find color space for token '{name}'.");
         }
 
-        public bool TryGetXObject(NameToken name, out StreamToken stream)
+        public bool TryGetXObject(NameToken name, [NotNullWhen(true)] out StreamToken? stream)
         {
             stream = null;
             if (!currentResourceState.TryGetValue(name, out var indirectReference))
@@ -343,7 +341,7 @@
             return extendedGraphicsStates[name];
         }
 
-        public DictionaryToken GetMarkedContentPropertiesDictionary(NameToken name)
+        public DictionaryToken? GetMarkedContentPropertiesDictionary(NameToken name)
         {
             return markedContentProperties.TryGetValue(name, out var result) ? result : null;
         }

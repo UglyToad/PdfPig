@@ -1,8 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
+    using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using Graphics.Colors;
     using PdfFonts;
-    using System.Collections.Generic;
     using Tokens;
 
     /// <summary>
@@ -24,12 +25,12 @@
         /// <summary>
         /// Get the font corresponding to the name.
         /// </summary>
-        IFont GetFont(NameToken name);
+        IFont? GetFont(NameToken name);
 
         /// <summary>
         /// Try getting the XObject corresponding to the name.
         /// </summary>
-        bool TryGetXObject(NameToken name, out StreamToken stream);
+        bool TryGetXObject(NameToken name, [NotNullWhen(true)] out StreamToken? stream);
 
         /// <summary>
         /// Get the extended graphics state dictionary corresponding to the name.
@@ -49,12 +50,12 @@
         /// <summary>
         /// Get the color space details corresponding to the name.
         /// </summary>
-        ColorSpaceDetails GetColorSpaceDetails(NameToken name, DictionaryToken dictionary);
+        ColorSpaceDetails GetColorSpaceDetails(NameToken? name, DictionaryToken? dictionary);
 
         /// <summary>
         /// Get the marked content properties dictionary corresponding to the name.
         /// </summary>
-        DictionaryToken GetMarkedContentPropertiesDictionary(NameToken name);
+        DictionaryToken? GetMarkedContentPropertiesDictionary(NameToken name);
 
         /// <summary>
         /// Get all <see cref="PatternColor"/> as a dictionary. Keys are the <see cref="PatternColor"/> names.

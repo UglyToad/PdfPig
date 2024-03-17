@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using Core;
     using Geometry;
@@ -38,7 +39,8 @@
 
         public IReadOnlyDictionary<int, double> Widths { get; }
 
-        public Type0CidFont(ICidFontProgram fontProgram,
+        public Type0CidFont(
+            ICidFontProgram fontProgram,
             NameToken type,
             NameToken subType,
             NameToken baseFont,
@@ -146,7 +148,7 @@
             return fontProgram.TryGetFontMatrix(characterIdentifier, out var m) ? m.Value : FontMatrix;
         }
 
-        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        public bool TryGetPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             path = null;
             if (fontProgram is null)
@@ -157,7 +159,7 @@
             return fontProgram.TryGetPath(characterCode, out path);
         }
         
-        public bool TryGetPath(int characterCode, Func<int, int?> characterCodeToGlyphId, out IReadOnlyList<PdfSubpath> path)
+        public bool TryGetPath(int characterCode, Func<int, int?> characterCodeToGlyphId, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             path = null;
             if (fontProgram is null)
@@ -168,7 +170,7 @@
             return fontProgram.TryGetPath(characterCode, characterCodeToGlyphId, out path);
         }
 
-        public bool TryGetNormalisedPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        public bool TryGetNormalisedPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             path = null;
             if (fontProgram is null)
@@ -185,7 +187,7 @@
             return false;
         }
 
-        public bool TryGetNormalisedPath(int characterCode, Func<int, int?> characterCodeToGlyphId, out IReadOnlyList<PdfSubpath> path)
+        public bool TryGetNormalisedPath(int characterCode, Func<int, int?> characterCodeToGlyphId, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             path = null;
             if (fontProgram is null)

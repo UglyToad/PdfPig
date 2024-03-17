@@ -13,8 +13,8 @@
 
         private readonly ILog log;
 
-        private List<long> bfSearchXRefTablesOffsets;
-        private List<long> bfSearchXRefStreamsOffsets;
+        private List<long>? bfSearchXRefTablesOffsets;
+        private List<long>? bfSearchXRefStreamsOffsets;
 
         public XrefOffsetValidator(ILog log)
         {
@@ -78,9 +78,7 @@
             log.Error($"Can\'t find the object xref table/stream at offset {objectOffset}");
 
             return 0;
-        }
-
-       
+        }       
 
         private long BruteForceSearchForXref(long xrefOffset, ISeekableTokenScanner scanner, IInputBytes reader)
         {
@@ -110,23 +108,23 @@
                 if (Math.Abs(differenceTable) > Math.Abs(differenceStream))
                 {
                     newOffset = newOffsetStream;
-                    bfSearchXRefStreamsOffsets.Remove(newOffsetStream);
+                    bfSearchXRefStreamsOffsets!.Remove(newOffsetStream);
                 }
                 else
                 {
                     newOffset = newOffsetTable;
-                    bfSearchXRefTablesOffsets.Remove(newOffsetTable);
+                    bfSearchXRefTablesOffsets!.Remove(newOffsetTable);
                 }
             }
             else if (newOffsetTable > -1)
             {
                 newOffset = newOffsetTable;
-                bfSearchXRefTablesOffsets.Remove(newOffsetTable);
+                bfSearchXRefTablesOffsets!.Remove(newOffsetTable);
             }
             else if (newOffsetStream > -1)
             {
                 newOffset = newOffsetStream;
-                bfSearchXRefStreamsOffsets.Remove(newOffsetStream);
+                bfSearchXRefStreamsOffsets!.Remove(newOffsetStream);
             }
             return newOffset;
         }

@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using Core;
     using Filters;
@@ -9,7 +10,6 @@
     using Graphics.Core;
     using Tokens;
     using Images.Png;
-    using UglyToad.PdfPig.Util.JetBrains.Annotations;
 
     /// <inheritdoc />
     /// <summary>
@@ -17,7 +17,7 @@
     /// </summary>
     public class InlineImage : IPdfImage
     {
-        private readonly Lazy<IReadOnlyList<byte>> bytesFactory;
+        private readonly Lazy<IReadOnlyList<byte>>? bytesFactory;
 
         /// <inheritdoc />
         public PdfRectangle Bounds { get; }
@@ -41,7 +41,6 @@
         public bool IsInlineImage { get; } = true;
 
         /// <inheritdoc />
-        [NotNull]
         public DictionaryToken ImageDictionary { get; }
 
         /// <inheritdoc />
@@ -105,7 +104,7 @@
         }
 
         /// <inheritdoc />
-        public bool TryGetBytes(out IReadOnlyList<byte> bytes)
+        public bool TryGetBytes([NotNullWhen(true)] out IReadOnlyList<byte>? bytes)
         {
             bytes = null;
             if (bytesFactory is null)
@@ -119,7 +118,7 @@
         }
 
         /// <inheritdoc />
-        public bool TryGetPng(out byte[] bytes) => PngFromPdfImageFactory.TryGenerate(this, out bytes);
+        public bool TryGetPng([NotNullWhen(true)] out byte[]? bytes) => PngFromPdfImageFactory.TryGenerate(this, out bytes);
 
         /// <inheritdoc />
         public override string ToString()

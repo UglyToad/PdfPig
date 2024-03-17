@@ -1,4 +1,6 @@
-﻿namespace UglyToad.PdfPig.Encryption
+﻿#nullable disable
+
+namespace UglyToad.PdfPig.Encryption
 {
     using System;
     using System.Collections.Generic;
@@ -11,7 +13,6 @@
     using Exceptions;
     using Tokens;
     using Util;
-    using Util.JetBrains.Annotations;
 
     internal sealed class EncryptionHandler : IEncryptionHandler
     {
@@ -28,22 +29,16 @@
         ];
 
         private readonly HashSet<IndirectReference> previouslyDecrypted = new HashSet<IndirectReference>();
-
-        [CanBeNull]
         private readonly EncryptionDictionary encryptionDictionary;
-
-        [CanBeNull]
         private readonly CryptHandler cryptHandler;
-
         private readonly byte[] encryptionKey;
-
         private readonly bool useAes;
 
         public EncryptionHandler(EncryptionDictionary encryptionDictionary, TrailerDictionary trailerDictionary, IReadOnlyList<string> passwords)
         {
             this.encryptionDictionary = encryptionDictionary;
 
-            passwords ??= new[] { string.Empty };
+            passwords ??= [string.Empty];
 
             if (!passwords.Contains(string.Empty))
             {
@@ -268,7 +263,7 @@
                 {
                     // 5. (Revision 2 only) Decrypt the value of the encryption dictionary's owner entry, 
                     // using an RC4 encryption function with the encryption key computed in step 1 - 4.
-                    userPassword = RC4.Encrypt(key, encryptionDictionary.OwnerBytes);
+                    userPassword = RC4.Encrypt(key, encryptionDictionary.OwnerBytes!);
                 }
                 else
                 {
@@ -282,12 +277,12 @@
 
                         if (i == 0)
                         {
-                            output = encryptionDictionary.OwnerBytes;
+                            output = encryptionDictionary.OwnerBytes!;
                         }
 
                         // Decrypt the value of the encryption dictionary's owner entry (first iteration) 
                         // or the output from the previous iteration using an RC4 encryption function. 
-                        output = RC4.Encrypt(keyIter, output);
+                        output = RC4.Encrypt(keyIter, output!);
                     }
 
                     userPassword = output;
@@ -648,14 +643,14 @@
 
                 if (encryptionDictionary.Revision == 6)
                 {
-                    intermediateKey = ComputeStupidIsoHash(password, ownerKeySalt, encryptionDictionary.UserBytes);
+                    intermediateKey = ComputeStupidIsoHash(password, ownerKeySalt, encryptionDictionary.UserBytes!);
                 }
                 else
                 {
-                    intermediateKey = ComputeSha256Hash(password, ownerKeySalt, encryptionDictionary.UserBytes);
+                    intermediateKey = ComputeSha256Hash(password, ownerKeySalt, encryptionDictionary.UserBytes!);
                 }
 
-                encryptedFileKey = encryptionDictionary.OwnerEncryptionBytes;
+                encryptedFileKey = encryptionDictionary.OwnerEncryptionBytes!;
             }
             else
             {

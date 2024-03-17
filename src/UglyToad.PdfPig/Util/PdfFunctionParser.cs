@@ -14,14 +14,14 @@
         public static PdfFunction Create(IToken function, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
         {
             DictionaryToken functionDictionary;
-            StreamToken functionStream = null;
+            StreamToken? functionStream = null;
 
-            if (DirectObjectFinder.TryGet(function, scanner, out StreamToken fs))
+            if (DirectObjectFinder.TryGet(function, scanner, out StreamToken? fs))
             {
                 functionDictionary = fs.StreamDictionary;
                 functionStream = new StreamToken(fs.StreamDictionary, fs.Decode(filterProvider, scanner));
             }
-            else if (DirectObjectFinder.TryGet(function, scanner, out DictionaryToken fd))
+            else if (DirectObjectFinder.TryGet(function, scanner, out DictionaryToken? fd))
             {
                 functionDictionary = fd;
             }
@@ -30,14 +30,14 @@
                 throw new ArgumentException(nameof(function));
             }
 
-            if (!functionDictionary.TryGet(NameToken.Domain, scanner, out ArrayToken domain))
+            if (!functionDictionary.TryGet(NameToken.Domain, scanner, out ArrayToken? domain))
             {
                 throw new ArgumentNullException(NameToken.Domain);
             }
 
-            functionDictionary.TryGet(NameToken.Range, scanner, out ArrayToken range);
+            functionDictionary.TryGet(NameToken.Range, scanner, out ArrayToken? range);
 
-            int functionType = (functionDictionary.Data[NameToken.FunctionType] as NumericToken).Int;
+            int functionType = ((NumericToken)functionDictionary.Data[NameToken.FunctionType]).Int;
 
             switch (functionType)
             {
@@ -46,7 +46,7 @@
                     {
                         throw new NotImplementedException("PdfFunctionType0 not stream");
                     }
-                    return CreatePdfFunctionType0(functionStream, domain, range, scanner);
+                    return CreatePdfFunctionType0(functionStream, domain, range!, scanner);
 
                 case 2:
                     return CreatePdfFunctionType2(functionDictionary, domain, range, scanner);
@@ -59,7 +59,7 @@
                     {
                         throw new NotImplementedException("PdfFunctionType4 not stream");
                     }
-                    return CreatePdfFunctionType4(functionStream, domain, range, scanner);
+                    return CreatePdfFunctionType4(functionStream, domain, range!, scanner);
 
                 default:
                     throw new IOException("Error: Unknown function type " + functionType);
@@ -97,7 +97,7 @@
                 for (int i = 0; i < sizeValuesSize; i++)
                 {
                     values.Add(new NumericToken(0));
-                    values.Add(new NumericToken((size[i] as NumericToken).Int - 1));
+                    values.Add(new NumericToken(((NumericToken)size[i]).Int - 1));
                 }
                 encode = new ArrayToken(values);
             }
@@ -111,19 +111,19 @@
             return new PdfFunctionType0(functionStream, domain, range, size, bps.Int, order, encode, decode);
         }
 
-        private static PdfFunctionType2 CreatePdfFunctionType2(DictionaryToken functionDictionary, ArrayToken domain, ArrayToken range, IPdfTokenScanner scanner)
+        private static PdfFunctionType2 CreatePdfFunctionType2(DictionaryToken functionDictionary, ArrayToken domain, ArrayToken? range, IPdfTokenScanner scanner)
         {
-            if (!functionDictionary.TryGet(NameToken.C0, scanner, out ArrayToken array0) || array0.Length == 0)
+            if (!functionDictionary.TryGet(NameToken.C0, scanner, out ArrayToken? array0) || array0.Length == 0)
             {
                 array0 = new ArrayToken(new List<NumericToken>() { new NumericToken(0) }); // Default value: [0.0].
             }
 
-            if (!functionDictionary.TryGet(NameToken.C1, scanner, out ArrayToken array1) || array1.Length == 0)
+            if (!functionDictionary.TryGet(NameToken.C1, scanner, out ArrayToken? array1) || array1.Length == 0)
             {
                 array1 = new ArrayToken(new List<NumericToken>() { new NumericToken(1) }); // Default value: [1.0].
             }
 
-            if (!functionDictionary.TryGet(NameToken.N, scanner, out NumericToken exp))
+            if (!functionDictionary.TryGet(NameToken.N, scanner, out NumericToken? exp))
             {
                 throw new ArgumentNullException(NameToken.N);
             }
@@ -131,7 +131,12 @@
             return new PdfFunctionType2(functionDictionary, domain, range, array0, array1, exp.Double);
         }
 
-        private static PdfFunctionType3 CreatePdfFunctionType3(DictionaryToken functionDictionary, ArrayToken domain, ArrayToken range, IPdfTokenScanner scanner, ILookupFilterProvider filterProvider)
+        private static PdfFunctionType3 CreatePdfFunctionType3(
+            DictionaryToken functionDictionary,
+            ArrayToken domain,
+            ArrayToken? range,
+            IPdfTokenScanner scanner,
+            ILookupFilterProvider filterProvider)
         {
             var functions = new List<PdfFunction>();
             if (functionDictionary.TryGet<ArrayToken>(NameToken.Functions, scanner, out var functionsToken))

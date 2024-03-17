@@ -5,7 +5,6 @@
     using Core;
     using PdfPig.Core;
     using Tokens;
-    using Util.JetBrains.Annotations;
     using XObjects;
 
     /// <summary>
@@ -21,7 +20,6 @@
         /// <summary>
         /// The XObject stream.
         /// </summary>
-        [NotNull]
         public StreamToken Stream { get; }
 
         /// <summary>

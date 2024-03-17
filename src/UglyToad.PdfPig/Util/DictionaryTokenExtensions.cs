@@ -1,16 +1,15 @@
 ﻿namespace UglyToad.PdfPig.Util
 {
     using System;
+    using System.Diagnostics.CodeAnalysis;
     using Core;
-    using JetBrains.Annotations;
     using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
 
     internal static class DictionaryTokenExtensions
     {
-        [CanBeNull]
-        public static IToken GetObjectOrDefault(this DictionaryToken token, NameToken name)
+        public static IToken? GetObjectOrDefault(this DictionaryToken token, NameToken name)
         {
             if (token.TryGet(name, out var obj))
             {
@@ -20,8 +19,7 @@
             return null;
         }
 
-        [CanBeNull]
-        public static IToken GetObjectOrDefault(this DictionaryToken token, NameToken first, NameToken second)
+        public static IToken? GetObjectOrDefault(this DictionaryToken token, NameToken first, NameToken second)
         {
             if (token.TryGet(first, out var obj))
             {
@@ -96,8 +94,7 @@
             return boolean?.Data ?? defaultValue;
         }
 
-        [CanBeNull]
-        public static NameToken GetNameOrDefault(this DictionaryToken token, NameToken name)
+        public static NameToken? GetNameOrDefault(this DictionaryToken token, NameToken name)
         {
             if (token is null)
             {
@@ -107,10 +104,11 @@
             return token.GetObjectOrDefault(name) as NameToken;
         }
 
-        public static bool TryGetOptionalTokenDirect<T>(this DictionaryToken token, NameToken name, IPdfTokenScanner scanner, out T result) where T : IToken
+        public static bool TryGetOptionalTokenDirect<T>(this DictionaryToken token, NameToken name, IPdfTokenScanner scanner, [NotNullWhen(true)] out T? result)
+            where T : class, IToken
         {
-            result = default(T);
-            if (token.TryGet(name, out var appearancesToken) && DirectObjectFinder.TryGet(appearancesToken, scanner, out T innerResult))
+            result = null;
+            if (token.TryGet(name, out var appearancesToken) && DirectObjectFinder.TryGet(appearancesToken, scanner, out T? innerResult))
             {
                 result = innerResult;
                 return true;
@@ -119,16 +117,16 @@
             return false;
         }
 
-        public static bool TryGetOptionalStringDirect(this DictionaryToken token, NameToken name, IPdfTokenScanner scanner, out string result)
+        public static bool TryGetOptionalStringDirect(this DictionaryToken token, NameToken name, IPdfTokenScanner scanner, [NotNullWhen(true)] out string? result)
         {
-            result = default(string);
-            if (token.TryGetOptionalTokenDirect(name, scanner, out StringToken stringToken))
+            result = null;
+            if (token.TryGetOptionalTokenDirect(name, scanner, out StringToken? stringToken))
             {
                 result = stringToken.Data;
                 return true;
             }
 
-            if (token.TryGetOptionalTokenDirect(name, scanner, out HexToken hexToken))
+            if (token.TryGetOptionalTokenDirect(name, scanner, out HexToken? hexToken))
             {
                 result = hexToken.Data;
                 return true;
@@ -172,7 +170,8 @@
                 throw new PdfDocumentFormatException($"Cannot convert array to rectangle, expected 4 values instead got: {array.Data.Count}.");
             }
 
-            return new PdfRectangle(DirectObjectFinder.Get<NumericToken>(array[0], tokenScanner).Double,
+            return new PdfRectangle(
+                DirectObjectFinder.Get<NumericToken>(array[0], tokenScanner).Double,
                 DirectObjectFinder.Get<NumericToken>(array[1], tokenScanner).Double,
                 DirectObjectFinder.Get<NumericToken>(array[2], tokenScanner).Double,
                 DirectObjectFinder.Get<NumericToken>(array[3], tokenScanner).Double);
@@ -190,7 +189,8 @@
                 throw new PdfDocumentFormatException($"Cannot convert array to rectangle, expected 4 values instead got: {array.Data.Count}.");
             }
 
-            return new PdfRectangle(DirectObjectFinder.Get<NumericToken>(array[0], tokenScanner).Int,
+            return new PdfRectangle(
+                DirectObjectFinder.Get<NumericToken>(array[0], tokenScanner).Int,
                 DirectObjectFinder.Get<NumericToken>(array[1], tokenScanner).Int,
                 DirectObjectFinder.Get<NumericToken>(array[2], tokenScanner).Int,
                 DirectObjectFinder.Get<NumericToken>(array[3], tokenScanner).Int);

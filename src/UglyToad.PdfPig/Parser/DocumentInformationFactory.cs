@@ -60,10 +60,10 @@
                 return DocumentInformation.Default;
             }
 
-            throw new PdfDocumentFormatException($"Unknown document information token was found {token.GetType().Name}");
+            throw new PdfDocumentFormatException($"Unknown document information token was found {token?.GetType().Name}");
         }
 
-        private static string GetEntryOrDefault(DictionaryToken infoDictionary, NameToken key, IPdfTokenScanner pdfTokenScanner)
+        private static string? GetEntryOrDefault(DictionaryToken infoDictionary, NameToken key, IPdfTokenScanner pdfTokenScanner)
         {
             if (infoDictionary is null)
             {
@@ -77,12 +77,12 @@
 
             if (value is IndirectReferenceToken idr)
             {
-                if (DirectObjectFinder.TryGet(idr, pdfTokenScanner, out StringToken strI))
+                if (DirectObjectFinder.TryGet(idr, pdfTokenScanner, out StringToken? strI))
                 {
                     return strI.Data;
                 }
 
-                if (DirectObjectFinder.TryGet(idr, pdfTokenScanner, out HexToken hexI))
+                if (DirectObjectFinder.TryGet(idr, pdfTokenScanner, out HexToken? hexI))
                 {
                     return hexI.Data;
                 }

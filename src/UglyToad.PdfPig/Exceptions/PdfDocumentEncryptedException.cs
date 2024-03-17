@@ -11,7 +11,7 @@
     [Serializable]
     public class PdfDocumentEncryptedException : Exception
     {
-        internal EncryptionDictionary Dictionary { get; }
+        internal EncryptionDictionary? Dictionary { get; }
 
         /// <inheritdoc />
         public PdfDocumentEncryptedException()

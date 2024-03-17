@@ -1,8 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using Core;
     using System;
     using System.Collections.Generic;
+    using Core;
     using Tokens;
     using UglyToad.PdfPig.Graphics;
 
@@ -26,12 +26,12 @@
         /// The artifact's subtype. Standard values are Header, Footer, and Watermark. 
         /// Additional values may be specified for this entry, provided they comply with the naming conventions.
         /// </summary>
-        public string SubType { get; }
+        public string? SubType { get; }
 
         /// <summary>
         /// The artifact's attribute owners.
         /// </summary>
-        public string AttributeOwners { get; }
+        public string? AttributeOwners { get; }
 
         /// <summary>
         /// The artifact's bounding box.
@@ -64,13 +64,13 @@
         public bool IsRightAttached => IsAttached(NameToken.Right);
 
         internal ArtifactMarkedContentElement(int markedContentIdentifier, NameToken tag, DictionaryToken properties,
-            string language,
-            string actualText,
-            string alternateDescription,
-            string expandedForm,
+            string? language,
+            string? actualText,
+            string? alternateDescription,
+            string? expandedForm,
             ArtifactType artifactType,
-            string subType,
-            string attributeOwners,
+            string? subType,
+            string? attributeOwners,
             PdfRectangle? boundingBox,
             IReadOnlyList<NameToken> attached,
             IReadOnlyList<MarkedContentElement> children,

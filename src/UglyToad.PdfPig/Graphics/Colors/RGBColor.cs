@@ -53,26 +53,25 @@
         public (double r, double g, double b) ToRGBValues() => (R, G, B);
 
         /// <inheritdoc />
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (obj is RGBColor color)
-            {
-                return Equals(color);
-            }
-
-            return false;
+            return obj is RGBColor other && Equals(other);
         }
 
         /// <inheritdoc />
         /// <summary>
         /// Whether 2 RGB colors are equal across all channels.
         /// </summary>
-        public bool Equals(RGBColor other)
+        public bool Equals(RGBColor? other)
         {
-            return other != null &&
-                   R == other.R &&
-                   G == other.G &&
-                   B == other.B;
+            if (other is null)
+            {
+                return this is null;
+            }
+
+            return R == other.R
+                && G == other.G
+                && B == other.B;
         }
 
         /// <inheritdoc />

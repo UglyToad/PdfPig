@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Outline.Destinations
 {
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using Content;
     using Logging;
     using Tokens;
@@ -31,12 +32,12 @@
             this.pages = pages;
         }
 
-        internal bool TryGet(string name, out ExplicitDestination destination)
+        internal bool TryGet(string name, [NotNullWhen(true)] out ExplicitDestination? destination)
         {
             return namedDestinations.TryGetValue(name, out destination);
         }
 
-        internal bool TryGetExplicitDestination(ArrayToken explicitDestinationArray, ILog log, bool isRemoteDestination, out ExplicitDestination destination)
+        internal bool TryGetExplicitDestination(ArrayToken explicitDestinationArray, ILog log, bool isRemoteDestination, [NotNullWhen(true)] out ExplicitDestination? destination)
         {
             return NamedDestinationsProvider.TryGetExplicitDestination(explicitDestinationArray, pages, log, isRemoteDestination, out destination);
         }

@@ -2,8 +2,8 @@
 {
     internal class CharacterIdentifierSystemInfoBuilder
     {
-        private string registry;
-        public string Registry
+        private string? registry;
+        public string? Registry
         {
             get => registry;
             set
@@ -15,8 +15,9 @@
 
         public bool HasRegistry { get; private set; }
 
-        private string ordering;
-        public string Ordering
+        private string? ordering;
+
+        public string? Ordering
         {
             get => ordering;
             set

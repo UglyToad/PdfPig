@@ -1,13 +1,13 @@
 ﻿namespace UglyToad.PdfPig.Parser.FileStructure
 {
     using System;
+    using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using Content;
     using Core;
     using Logging;
     using Tokenization.Scanner;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// Used to retrieve the version header from the PDF file.
@@ -28,8 +28,7 @@
     /// </remarks>
     internal static class FileHeaderParser
     {
-        [NotNull]
-        public static HeaderVersion Parse([NotNull] ISeekableTokenScanner scanner, IInputBytes inputBytes, bool isLenientParsing, ILog log)
+        public static HeaderVersion Parse(ISeekableTokenScanner scanner, IInputBytes inputBytes, bool isLenientParsing, ILog log)
         {
             if (scanner is null)
             {
@@ -40,7 +39,7 @@
 
             const int junkTokensTolerance = 30;
             var attempts = 0;
-            CommentToken comment;
+            CommentToken? comment;
             do
             {
                 if (attempts == junkTokensTolerance || !scanner.MoveNext())
@@ -91,7 +90,7 @@
             return result;
         }
 
-        private static bool TryBruteForceVersionLocation(long startPosition, IInputBytes inputBytes, out HeaderVersion headerVersion)
+        private static bool TryBruteForceVersionLocation(long startPosition, IInputBytes inputBytes, [NotNullWhen(true)] out HeaderVersion? headerVersion)
         {
             headerVersion = null;
 

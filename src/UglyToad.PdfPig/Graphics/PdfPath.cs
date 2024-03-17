@@ -29,7 +29,7 @@
         /// <summary>
         /// The fill color.
         /// </summary>
-        public IColor FillColor { get; internal set; }
+        public IColor? FillColor { get; internal set; }
 
         /// <summary>
         /// Returns true if the path is stroked.
@@ -39,7 +39,7 @@
         /// <summary>
         /// The stroke color.
         /// </summary>
-        public IColor StrokeColor { get; internal set; }
+        public IColor? StrokeColor { get; internal set; }
 
         /// <summary>
         /// Thickness in user space units of path to be stroked.

@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using Core;
     using Fonts;
     using Fonts.CompactFontFormat;
@@ -18,7 +19,7 @@
             Details = GetDetails(fontCollection?.FirstFont);
         }
 
-        private static FontDetails GetDetails(CompactFontFormatFont font)
+        private static FontDetails GetDetails(CompactFontFormatFont? font)
         {
             if (font is null)
             {
@@ -78,7 +79,7 @@
             return 1000;
         }
 
-        public bool TryGetFontMatrix(int characterCode, out TransformationMatrix? matrix)
+        public bool TryGetFontMatrix(int characterCode, [NotNullWhen(true)] out TransformationMatrix? matrix)
         {
             var font = GetFont();
             var name = font.GetCharacterName(characterCode, true);
@@ -112,7 +113,7 @@
             return fontCollection.FirstFont;
         }
 
-        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        public bool TryGetPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             path = null;
 

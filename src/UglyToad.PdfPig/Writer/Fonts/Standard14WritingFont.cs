@@ -69,7 +69,7 @@
             return TransformationMatrix.FromValues(1 / 1000.0, 0, 0, 1 / 1000.0, 0, 0);
         }
 
-        public IndirectReferenceToken WriteFont(IPdfStreamWriter writer, IndirectReferenceToken reservedIndirect = null)
+        public IndirectReferenceToken WriteFont(IPdfStreamWriter writer, IndirectReferenceToken? reservedIndirect = null)
         {
             var encoding = NameToken.StandardEncoding;
             if (string.Equals(metrics.FontName, "Symbol", StringComparison.OrdinalIgnoreCase)

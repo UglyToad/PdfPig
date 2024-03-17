@@ -71,7 +71,7 @@
             if (!dictionary.TryGet(NameToken.FontDescriptor, out var _))
             {
                 if (dictionary.TryGet(NameToken.BaseFont, out var baseFontToken) &&
-                    DirectObjectFinder.TryGet(baseFontToken, pdfScanner, out NameToken baseFontName))
+                    DirectObjectFinder.TryGet(baseFontToken, pdfScanner, out NameToken? baseFontName))
                 {
                     var metrics = Standard14.GetAdobeFontMetrics(baseFontName.Data);
 
@@ -87,7 +87,7 @@
 
             var name = FontDictionaryAccessHelper.GetName(pdfScanner, dictionary, descriptor);
 
-            CMap toUnicodeCMap = null;
+            CMap? toUnicodeCMap = null;
             if (dictionary.TryGet(NameToken.ToUnicode, out var toUnicodeObj))
             {
                 var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, pdfScanner);
@@ -116,15 +116,15 @@
 
             var encoding = encodingReader.Read(dictionary, descriptor, fromFont);
 
-            if (encoding is null && font != null && font.TryGetFirst(out var t1FontReplacment))
+            if (encoding is null && font != null && font.TryGetFirst(out var t1FontReplacement))
             {
-                encoding = new BuiltInEncoding(t1FontReplacment.Encoding);
+                encoding = new BuiltInEncoding(t1FontReplacement.Encoding);
             }
 
-            return new Type1FontSimple(name, firstCharacter, lastCharacter, widths, descriptor, encoding, toUnicodeCMap, font);
+            return new Type1FontSimple(name, firstCharacter, lastCharacter, widths, descriptor, encoding!, toUnicodeCMap!, font!);
         }
 
-        private Union<Type1Font, CompactFontFormatFontCollection> ParseFontProgram(FontDescriptor descriptor)
+        private Union<Type1Font, CompactFontFormatFontCollection>? ParseFontProgram(FontDescriptor descriptor)
         {
             if (descriptor?.FontFile is null)
             {

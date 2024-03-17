@@ -15,9 +15,9 @@
         /// <summary>
         /// The color space data.
         /// </summary>
-        public IToken Data { get; }
+        public IToken? Data { get; }
 
-        internal ResourceColorSpace(NameToken name, IToken data)
+        internal ResourceColorSpace(NameToken name, IToken? data)
         {
             Name = name;
             Data = data;

@@ -34,8 +34,8 @@
                     throw new InvalidFontFormatException("bfrange ended unexpectedly after the high source code.");
                 }
 
-                List<byte> destinationBytes = null;
-                ArrayToken destinationArray = null;
+                List<byte>? destinationBytes = null;
+                ArrayToken? destinationArray = null;
 
                 switch (scanner.CurrentToken)
                 {
@@ -91,11 +91,11 @@
                         done = true;
                     }
 
-                    builder.AddBaseFontCharacter(startCode, destinationBytes);
+                    builder.AddBaseFontCharacter(startCode, destinationBytes!);
 
                     Increment(startCode, startCode.Count - 1);
 
-                    Increment(destinationBytes, destinationBytes.Count - 1);
+                    Increment(destinationBytes!, destinationBytes!.Count - 1);
                 }
             }
         }

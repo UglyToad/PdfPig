@@ -6,7 +6,6 @@
     using CrossReference;
     using Tokenization.Scanner;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// Provides access to explore and retrieve the underlying PDF objects from the document.
@@ -16,13 +15,11 @@
         /// <summary>
         /// The root of the document's hierarchy providing access to the page tree as well as other information.
         /// </summary>
-        [NotNull]
         public Catalog Catalog { get; }
         
         /// <summary>
         /// The cross-reference table enables direct access to objects by number.
         /// </summary>
-        [NotNull]
         public CrossReferenceTable CrossReferenceTable { get; }
 
         /// <summary>

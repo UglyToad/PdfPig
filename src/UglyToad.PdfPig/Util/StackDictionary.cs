@@ -3,6 +3,7 @@ namespace UglyToad.PdfPig.Util
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
 
     internal class StackDictionary<K, V>
     {
@@ -30,7 +31,7 @@ namespace UglyToad.PdfPig.Util
             }
         }
 
-        public bool TryGetValue(K key, out V result)
+        public bool TryGetValue(K key, [NotNullWhen(true)] out V result)
         {
             if (values.Count == 0)
             {
@@ -39,13 +40,13 @@ namespace UglyToad.PdfPig.Util
 
             for (var i = values.Count - 1; i >= 0; i--)
             {
-                if (values[i].TryGetValue(key, out result))
+                if (values[i].TryGetValue(key, out result!))
                 {
                     return true;
                 }
             }
 
-            result = default(V);
+            result = default!;
 
             return false;
         }

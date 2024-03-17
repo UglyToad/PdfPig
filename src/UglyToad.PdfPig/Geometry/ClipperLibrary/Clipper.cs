@@ -70,6 +70,8 @@
 *                                                                              *
 *******************************************************************************/
 
+#nullable disable
+
 namespace UglyToad.PdfPig.Geometry.ClipperLibrary
 {
     using System;

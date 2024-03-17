@@ -2,7 +2,6 @@
 {
     using Core;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// Specifies metrics and attributes of a simple font or CID Font for the whole font rather than per-glyph.
@@ -30,7 +29,7 @@
         /// The preferred font family.
         /// </summary>
         /// <remarks>Optional</remarks>
-        public string FontFamily { get; }
+        public string? FontFamily { get; }
 
         /// <summary>
         /// The font stretch value.
@@ -143,15 +142,13 @@
         /// The bytes of the font program.
         /// </summary>
         /// <remarks>Optional</remarks>
-        [CanBeNull]
-        public DescriptorFontFile FontFile { get; }
+        public DescriptorFontFile? FontFile { get; }
 
         /// <summary>
         /// The character names defined in a font subset.
         /// </summary>
         /// <remarks>Optional</remarks>
-        [CanBeNull]
-        public string CharSet { get; }
+        public string? CharSet { get; }
 
         /// <summary>
         /// Create a new <see cref="FontDescriptor"/>.
@@ -179,7 +176,7 @@
             CharSet = builder.CharSet;
         }
 
-        internal FontDetails ToDetails(string name = null)
+        internal FontDetails ToDetails(string? name = null)
         {
             return new FontDetails(name ?? FontName ?? string.Empty,
                 FontWeight > 500,
@@ -200,7 +197,7 @@
             /// <summary>
             /// Sets the <see cref="FontDescriptor.FontFamily"/>.
             /// </summary>
-            public string FontFamily { get; set; }
+            public string? FontFamily { get; set; }
 
             /// <summary>
             /// Sets the <see cref="FontDescriptor.Stretch"/>.
@@ -280,14 +277,12 @@
             /// <summary>
             /// Sets the <see cref="FontDescriptor.FontFile"/>.
             /// </summary>
-            [CanBeNull]
-            public DescriptorFontFile FontFile { get; set; }
+            public DescriptorFontFile? FontFile { get; set; }
 
             /// <summary>
             /// Sets the <see cref="FontDescriptor.CharSet"/>.
             /// </summary>
-            [CanBeNull]
-            public string CharSet { get; set; }
+            public string? CharSet { get; set; }
 
             /// <summary>
             /// Create a new <see cref="Builder"/>.

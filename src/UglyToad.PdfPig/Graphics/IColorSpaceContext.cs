@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
-    using Colors;
     using System.Collections.Generic;
+    using Colors;
     using Tokens;
     using UglyToad.PdfPig.Core;
 
@@ -25,19 +25,19 @@
         /// </summary>
         /// <param name="colorspace">The color space name.</param>
         /// <param name="dictionary">The color space dictionary. Default value is null.</param>
-        void SetStrokingColorspace(NameToken colorspace, DictionaryToken dictionary = null);
+        void SetStrokingColorspace(NameToken colorspace, DictionaryToken? dictionary = null);
 
         /// <summary>
         /// Set the current color space to use for nonstroking operations and initialize the nonstroking color.
         /// </summary>
         /// <param name="colorspace">The color space name.</param>
         /// <param name="dictionary">The color space dictionary. Default value is null.</param>
-        void SetNonStrokingColorspace(NameToken colorspace, DictionaryToken dictionary = null);
+        void SetNonStrokingColorspace(NameToken colorspace, DictionaryToken? dictionary = null);
 
         /// <summary>
         /// Set the color to use for stroking operations using the current color space.
         /// </summary>
-        void SetStrokingColor(IReadOnlyList<double> operands, NameToken patternName = null);
+        void SetStrokingColor(IReadOnlyList<double> operands, NameToken? patternName = null);
 
         /// <summary>
         /// Set the stroking color space to DeviceGray and set the gray level to use for stroking operations.
@@ -65,7 +65,7 @@
         /// <summary>
         /// Set the color to use for nonstroking operations using the current color space.
         /// </summary>
-        void SetNonStrokingColor(IReadOnlyList<double> operands, NameToken patternName = null);
+        void SetNonStrokingColor(IReadOnlyList<double> operands, NameToken? patternName = null);
 
         /// <summary>
         /// Set the nonstroking color space to DeviceGray and set the gray level to use for nonstroking operations.

@@ -18,14 +18,15 @@
         /// <summary>
         /// Inline image properties.
         /// </summary>
-        public IReadOnlyDictionary<NameToken, IToken> Properties { get; internal set; }
+        public IReadOnlyDictionary<NameToken, IToken>? Properties { get; internal set; }
 
         /// <summary>
         /// Inline image bytes.
         /// </summary>
-        public IReadOnlyList<byte> Bytes { get; internal set; }
+        public IReadOnlyList<byte>? Bytes { get; internal set; }
 
-        internal InlineImage CreateInlineImage(TransformationMatrix transformationMatrix, ILookupFilterProvider filterProvider,
+        internal InlineImage CreateInlineImage(TransformationMatrix transformationMatrix,
+            ILookupFilterProvider filterProvider,
             IPdfTokenScanner tokenScanner,
             RenderingIntent defaultRenderingIntent,
             IResourceStore resourceStore)
@@ -48,7 +49,7 @@
 
             var bitsPerComponent = GetByKeys<NumericToken>(NameToken.BitsPerComponent, NameToken.Bpc, !isMask)?.Int ?? 1;
 
-            NameToken colorSpaceName = null;
+            NameToken? colorSpaceName = null;
 
             if (!isMask)
             {
@@ -110,8 +111,11 @@
                 details);
         }
 
+#nullable disable
+
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        private T GetByKeys<T>(NameToken name1, NameToken name2, bool required) where T : IToken
+        private T GetByKeys<T>(NameToken name1, NameToken name2, bool required)
+            where T : class, IToken
         {
             if (Properties.TryGetValue(name1, out var val) && val is T result)
             {
@@ -131,7 +135,7 @@
                 throw new PdfDocumentFormatException($"Inline image dictionary missing required entry {name1}/{name2}.");
             }
 
-            return default(T);
+            return null;
         }
     }
 }

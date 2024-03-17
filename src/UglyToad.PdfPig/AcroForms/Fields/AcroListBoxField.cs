@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using Core;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <inheritdoc />
     /// <summary>
@@ -20,20 +19,17 @@
         /// <summary>
         /// The options to be presented to the user.
         /// </summary>
-        [NotNull]
         public IReadOnlyList<AcroChoiceOption> Options { get; }
 
         /// <summary>
         /// The names of any currently selected options.
         /// </summary>
-        [NotNull]
         public IReadOnlyList<string> SelectedOptions { get; }
 
         /// <summary>
         /// For multiple select lists with duplicate names gives the indices of the selected options.
         /// </summary>
-        [CanBeNull]
-        public IReadOnlyList<int> SelectedOptionIndices { get; }
+        public IReadOnlyList<int>? SelectedOptionIndices { get; }
 
         /// <summary>
         /// For scrollable list boxes gives the index of the first visible option.
@@ -62,7 +58,7 @@
         public AcroListBoxField(DictionaryToken dictionary, string fieldType, AcroChoiceFieldFlags fieldFlags,
             AcroFieldCommonInformation information, IReadOnlyList<AcroChoiceOption> options,
             IReadOnlyList<string> selectedOptions, 
-            IReadOnlyList<int> selectedOptionIndices,
+            IReadOnlyList<int>? selectedOptionIndices,
             int? topIndex,
             int? pageNumber,
             PdfRectangle? bounds) : 

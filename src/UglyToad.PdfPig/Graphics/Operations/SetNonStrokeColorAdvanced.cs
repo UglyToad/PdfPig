@@ -29,7 +29,7 @@
         /// <summary>
         /// The name of an entry in the Pattern subdictionary of the current resource dictionary.
         /// </summary>
-        public NameToken PatternName { get; }
+        public NameToken? PatternName { get; }
 
         /// <summary>
         /// Create a new <see cref="SetNonStrokeColorAdvanced"/>.

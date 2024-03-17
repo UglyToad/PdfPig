@@ -1,51 +1,52 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Simple
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
+    using System.Linq;
     using Cmap;
     using Composite;
     using Core;
     using Fonts;
     using Fonts.Encodings;
     using Fonts.TrueType;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     internal sealed class TrueTypeSimpleFont : IFont
     {
         private static readonly TransformationMatrix DefaultTransformation =
             TransformationMatrix.FromValues(1 / 1000.0, 0, 0, 1 / 1000.0, 0, 0);
 
-        private readonly FontDescriptor descriptor;
+        private readonly FontDescriptor? descriptor;
 
-        private readonly Dictionary<int, CharacterBoundingBox> boundingBoxCache
-            = new Dictionary<int, CharacterBoundingBox>();
+        private readonly Dictionary<int, CharacterBoundingBox> boundingBoxCache = new();
 
         private readonly Dictionary<int, string> unicodeValuesCache = new Dictionary<int, string>();
 
-        [CanBeNull] private readonly Encoding encoding;
+        private readonly Encoding? encoding;
 
-        [CanBeNull] private readonly TrueTypeFont font;
+        private readonly TrueTypeFont? font;
 
         private readonly int firstCharacter;
 
         private readonly double[] widths;
 
+#nullable disable
         public NameToken Name { get; }
+#nullable enable
 
         public bool IsVertical { get; }
 
         public FontDetails Details { get; }
 
-        [NotNull]
         public ToUnicodeCMap ToUnicode { get; set; }
 
-        public TrueTypeSimpleFont(NameToken name,
-            FontDescriptor descriptor,
-            [CanBeNull] CMap toUnicodeCMap,
-            [CanBeNull] Encoding encoding,
-            [CanBeNull] TrueTypeFont font,
+        public TrueTypeSimpleFont(
+            NameToken name,
+            FontDescriptor? descriptor,
+            CMap? toUnicodeCMap,
+            Encoding? encoding,
+            TrueTypeFont? font,
             int firstCharacter,
             double[] widths)
         {
@@ -58,6 +59,7 @@
             Name = name;
             IsVertical = false;
             ToUnicode = new ToUnicodeCMap(toUnicodeCMap);
+
             Details = descriptor?.ToDetails(Name?.Data)
                       ?? FontDetails.GetDefault(Name?.Data);
         }
@@ -68,7 +70,7 @@
             return bytes.CurrentByte;
         }
 
-        public bool TryGetUnicode(int characterCode, out string value)
+        public bool TryGetUnicode(int characterCode, [NotNullWhen(true)] out string? value)
         {
             value = null;
 
@@ -196,7 +198,7 @@
 
             if (font is null)
             {
-                return descriptor.BoundingBox;
+                return descriptor!.BoundingBox;
             }
 
             if (font.TryGetBoundingBox(characterCode, CharacterCodeToGlyphId, out var bounds))
@@ -216,13 +218,13 @@
 
         private int? CharacterCodeToGlyphId(int characterCode)
         {
-            bool HasFlag(FontDescriptorFlags value, FontDescriptorFlags target)
+            static bool HasFlag(FontDescriptorFlags value, FontDescriptorFlags target)
             {
                 return (value & target) == target;
             }
 
             if (descriptor is null || !unicodeValuesCache.TryGetValue(characterCode, out var unicode)
-                                   || font.TableRegister.CMapTable is null
+                                   || font!.TableRegister.CMapTable is null
                                    || encoding is null
                                    || !encoding.CodeToNameMap.TryGetValue(characterCode, out var name)
                                    || name is null)
@@ -317,14 +319,14 @@
 
             if (index < 0 || index >= widths.Length)
             {
-                return descriptor.MissingWidth;
+                return descriptor!.MissingWidth;
             }
 
             return widths[index];
         }
 
         /// <inheritdoc/>
-        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        public bool TryGetPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             if (font is null)
             {
@@ -336,7 +338,7 @@
         }
 
         /// <inheritdoc/>
-        public bool TryGetNormalisedPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        public bool TryGetNormalisedPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             if (!TryGetPath(characterCode, out path))
             {

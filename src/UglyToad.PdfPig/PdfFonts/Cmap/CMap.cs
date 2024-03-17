@@ -2,9 +2,9 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using Core;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// The CMap (character code map) maps character codes to character identifiers (CIDs).
@@ -27,28 +27,23 @@
         /// <summary>
         /// The version number of the CIDFont file.
         /// </summary>
-        [CanBeNull]
-        public string Version { get; }
+        public string? Version { get; }
 
-        [NotNull]
         public IReadOnlyDictionary<int, string> BaseFontCharacterMap { get; }
 
         /// <summary>
         /// Describes the set of valid input character codes.
         /// </summary>
-        [NotNull]
         public IReadOnlyList<CodespaceRange> CodespaceRanges { get; }
 
         /// <summary>
         /// Associates ranges of character codes with their corresponding CID values.
         /// </summary>
-        [NotNull]
         public IReadOnlyList<CidRange> CidRanges { get; }
 
         /// <summary>
         /// Overrides CID mappings for single character codes.
         /// </summary>
-        [NotNull]
         public IReadOnlyDictionary<int, CidCharacterMapping> CidCharacterMappings { get; }
 
         /// <summary>
@@ -67,7 +62,8 @@
         private readonly int minCodeLength = 4;
         private readonly int maxCodeLength;
 
-        public CMap(CharacterIdentifierSystemInfo info, int type, int wMode, string name, string version, 
+        public CMap(CharacterIdentifierSystemInfo info, int type, int wMode, string name,
+            string? version, 
             IReadOnlyDictionary<int, string> baseFontCharacterMap, 
             IReadOnlyList<CodespaceRange> codespaceRanges, 
             IReadOnlyList<CidRange> cidRanges, 
@@ -114,7 +110,7 @@
         /// <param name="code">Character code</param>
         /// <param name="result">Unicode characters(may be more than one, e.g "fi" ligature)</param>
         /// <returns><see langword="true"/> if this character map contains an entry for this code, <see langword="false"/> otherwise.</returns>
-        public bool TryConvertToUnicode(int code, out string result)
+        public bool TryConvertToUnicode(int code, [NotNullWhen(true)] out string? result)
         {
             var found = BaseFontCharacterMap.TryGetValue(code, out result);
 

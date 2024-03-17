@@ -42,7 +42,7 @@
             var width = dictionary.Get<NumericToken>(NameToken.Width, pdfScanner).Int;
             var height = dictionary.Get<NumericToken>(NameToken.Height, pdfScanner).Int;
 
-            var isImageMask = dictionary.TryGet(NameToken.ImageMask, pdfScanner, out BooleanToken isMaskToken)
+            var isImageMask = dictionary.TryGet(NameToken.ImageMask, pdfScanner, out BooleanToken? isMaskToken)
                          && isMaskToken.Data;
 
             var isJpxDecode = dictionary.TryGet(NameToken.Filter, out var token)
@@ -52,7 +52,7 @@
             int bitsPerComponent = 0;
             if (!isImageMask && !isJpxDecode)
             {
-                if (!dictionary.TryGet(NameToken.BitsPerComponent, pdfScanner, out NumericToken bitsPerComponentToken))
+                if (!dictionary.TryGet(NameToken.BitsPerComponent, pdfScanner, out NumericToken? bitsPerComponentToken))
                 {
                     throw new PdfDocumentFormatException($"No bits per component defined for image: {dictionary}.");
                 }
@@ -70,18 +70,18 @@
                 intent = renderingIntentToken.Data.ToRenderingIntent();
             }
 
-            var interpolate = dictionary.TryGet(NameToken.Interpolate, pdfScanner, out BooleanToken interpolateToken)
+            var interpolate = dictionary.TryGet(NameToken.Interpolate, pdfScanner, out BooleanToken? interpolateToken)
                               && interpolateToken.Data;
 
-            DictionaryToken filterDictionary = xObject.Stream.StreamDictionary;
+            DictionaryToken? filterDictionary = xObject.Stream.StreamDictionary;
             if (xObject.Stream.StreamDictionary.TryGet(NameToken.Filter, out var filterToken)
                 && filterToken is IndirectReferenceToken)
             {
-                if (filterDictionary.TryGet(NameToken.Filter, pdfScanner, out ArrayToken filterArray))
+                if (filterDictionary.TryGet(NameToken.Filter, pdfScanner, out ArrayToken? filterArray))
                 {
                     filterDictionary = filterDictionary.With(NameToken.Filter, filterArray);
                 }
-                else if (filterDictionary.TryGet(NameToken.Filter, pdfScanner, out NameToken filterNameToken))
+                else if (filterDictionary.TryGet(NameToken.Filter, pdfScanner, out NameToken? filterNameToken))
                 {
                     filterDictionary = filterDictionary.With(NameToken.Filter, filterNameToken);
                 }
@@ -118,21 +118,21 @@
 
             var decode = Array.Empty<double>();
 
-            if (dictionary.TryGet(NameToken.Decode, pdfScanner, out ArrayToken decodeArrayToken))
+            if (dictionary.TryGet(NameToken.Decode, pdfScanner, out ArrayToken? decodeArrayToken))
             {
                 decode = decodeArrayToken.Data.OfType<NumericToken>()
                     .Select(x => x.Double)
                     .ToArray();
             }
 
-            ColorSpaceDetails details = null;
+            ColorSpaceDetails? details = null;
             if (!isImageMask)
             {
-                if (dictionary.TryGet(NameToken.ColorSpace, pdfScanner, out NameToken colorSpaceNameToken))
+                if (dictionary.TryGet(NameToken.ColorSpace, pdfScanner, out NameToken? colorSpaceNameToken))
                 {
                     details = resourceStore.GetColorSpaceDetails(colorSpaceNameToken, dictionary);
                 }
-                else if (dictionary.TryGet(NameToken.ColorSpace, pdfScanner, out ArrayToken colorSpaceArrayToken)
+                else if (dictionary.TryGet(NameToken.ColorSpace, pdfScanner, out ArrayToken? colorSpaceArrayToken)
                     && colorSpaceArrayToken.Length > 0 && colorSpaceArrayToken.Data[0] is NameToken firstColorSpaceName)
                 {
                     details = resourceStore.GetColorSpaceDetails(firstColorSpaceName, dictionary);

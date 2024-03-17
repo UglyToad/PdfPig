@@ -61,16 +61,20 @@ namespace UglyToad.PdfPig.Graphics.Colors
         }
 
         /// <inheritdoc />
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            return Equals(obj as CMYKColor);
+            return obj is CMYKColor other && Equals(other);
         }
 
         /// <inheritdoc />
-        public bool Equals(CMYKColor other)
+        public bool Equals(CMYKColor? other)
         {
-            return other != null &&
-                   C == other.C &&
+            if (other is null)
+            {
+                return this is null;
+            }
+
+            return C == other.C &&
                    M == other.M &&
                    Y == other.Y &&
                    K == other.K;
@@ -79,12 +83,7 @@ namespace UglyToad.PdfPig.Graphics.Colors
         /// <inheritdoc />
         public override int GetHashCode()
         {
-            var hashCode = -492570696;
-            hashCode = hashCode * -1521134295 + C.GetHashCode();
-            hashCode = hashCode * -1521134295 + M.GetHashCode();
-            hashCode = hashCode * -1521134295 + Y.GetHashCode();
-            hashCode = hashCode * -1521134295 + K.GetHashCode();
-            return hashCode;
+            return HashCode.Combine(C, M, Y, K);
         }
 
         /// <summary>

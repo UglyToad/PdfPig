@@ -41,9 +41,9 @@
             var lastCharacter = FontDictionaryAccessHelper.GetLastCharacter(dictionary);
             var widths = FontDictionaryAccessHelper.GetWidths(scanner, dictionary);
             
-            Encoding encoding = encodingReader.Read(dictionary);
+            Encoding? encoding = encodingReader.Read(dictionary);
 
-            CMap toUnicodeCMap = null;
+            CMap? toUnicodeCMap = null;
             if (dictionary.TryGet(NameToken.ToUnicode, out var toUnicodeObj))
             {
                 var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, scanner);
@@ -58,13 +58,14 @@
 
             var name = GetFontName(dictionary);
 
-            return new Type3Font(name, boundingBox, fontMatrix, encoding, firstCharacter,
-                lastCharacter, widths, toUnicodeCMap);
+            return new Type3Font(name, boundingBox, fontMatrix, encoding!,
+                firstCharacter,
+                lastCharacter, widths, toUnicodeCMap!);
         }
 
         private NameToken GetFontName(DictionaryToken dictionary)
         {
-            if (dictionary.TryGet(NameToken.Name, scanner, out NameToken fontName))
+            if (dictionary.TryGet(NameToken.Name, scanner, out NameToken? fontName))
             {
                 return fontName;
             }

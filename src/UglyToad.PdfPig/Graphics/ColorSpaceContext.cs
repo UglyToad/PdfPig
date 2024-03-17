@@ -22,7 +22,7 @@
             this.resourceStore = resourceStore ?? throw new ArgumentNullException(nameof(resourceStore));
         }
 
-        public void SetStrokingColorspace(NameToken colorspace, DictionaryToken dictionary = null)
+        public void SetStrokingColorspace(NameToken colorspace, DictionaryToken? dictionary = null)
         {
             CurrentStrokingColorSpace = resourceStore.GetColorSpaceDetails(colorspace, dictionary);
             if (CurrentStrokingColorSpace is UnsupportedColorSpaceDetails)
@@ -33,7 +33,7 @@
             currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetInitializeColor();
         }
 
-        public void SetStrokingColor(IReadOnlyList<double> operands, NameToken patternName)
+        public void SetStrokingColor(IReadOnlyList<double> operands, NameToken? patternName)
         {
             if (CurrentStrokingColorSpace is UnsupportedColorSpaceDetails)
             {
@@ -69,7 +69,7 @@
             currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(c, m, y, k);
         }
 
-        public void SetNonStrokingColorspace(NameToken colorspace, DictionaryToken dictionary = null)
+        public void SetNonStrokingColorspace(NameToken colorspace, DictionaryToken? dictionary = null)
         {
             CurrentNonStrokingColorSpace = resourceStore.GetColorSpaceDetails(colorspace, dictionary);
             if (CurrentNonStrokingColorSpace is UnsupportedColorSpaceDetails)
@@ -80,7 +80,7 @@
             currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetInitializeColor();
         }
 
-        public void SetNonStrokingColor(IReadOnlyList<double> operands, NameToken patternName)
+        public void SetNonStrokingColor(IReadOnlyList<double> operands, NameToken? patternName)
         {
             if (CurrentNonStrokingColorSpace is UnsupportedColorSpaceDetails)
             {

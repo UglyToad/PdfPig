@@ -38,8 +38,10 @@ namespace UglyToad.PdfPig.Writer.Xmp
         private const string PdfAIdentificationExtensionPrefix = "pdfaid";
         private const string PdfAIdentificationExtensionNamespace = "http://www.aiim.org/pdfa/ns/id/";
         
-        public static StreamToken GenerateXmpStream(PdfDocumentBuilder.DocumentInformationBuilder builder, double version,
-            PdfAStandard standard, XDocument additionalXmpMetadata)
+        public static StreamToken GenerateXmpStream(
+            PdfDocumentBuilder.DocumentInformationBuilder builder, 
+            double version,
+            PdfAStandard standard, XDocument? additionalXmpMetadata)
         {
             XNamespace xmpMeta = XmpMetaNamespace;
             XNamespace rdf = RdfNamespace;
@@ -84,7 +86,7 @@ namespace UglyToad.PdfPig.Writer.Xmp
                         pdfAIdContainer
                     )
                 )
-            ), additionalXmpMetadata);
+            ), additionalXmpMetadata!);
 
             var xml = document.ToString(SaveOptions.None).Replace("\r\n", "\n");
             xml = $"<?xpacket begin=\"\ufeff\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?>\n{xml}\n<?xpacket end=\"r\"?>";
@@ -226,13 +228,13 @@ namespace UglyToad.PdfPig.Writer.Xmp
             return li;
         }
 
-        private class SchemaMapper
+        private sealed class SchemaMapper
         {
             public string Name { get; }
 
-            public Func<PdfDocumentBuilder.DocumentInformationBuilder, string> ValueFunc { get; }
+            public Func<PdfDocumentBuilder.DocumentInformationBuilder, string?> ValueFunc { get; }
 
-            public SchemaMapper(string name, Func<PdfDocumentBuilder.DocumentInformationBuilder, string> valueFunc)
+            public SchemaMapper(string name, Func<PdfDocumentBuilder.DocumentInformationBuilder, string?> valueFunc)
             {
                 Name = name;
                 ValueFunc = valueFunc;

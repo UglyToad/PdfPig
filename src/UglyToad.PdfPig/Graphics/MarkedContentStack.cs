@@ -17,7 +17,7 @@
         private readonly Stack<MarkedContentElementActiveBuilder> builderStack = new Stack<MarkedContentElementActiveBuilder>();
 
         private int number = -1;
-        private MarkedContentElementActiveBuilder top;
+        private MarkedContentElementActiveBuilder? top;
 
         public bool CanPop => top != null;
 
@@ -32,7 +32,7 @@
             builderStack.Push(top);
         }
 
-        public MarkedContentElement Pop(IPdfTokenScanner pdfScanner)
+        public MarkedContentElement? Pop(IPdfTokenScanner pdfScanner)
         {
             var builder = builderStack.Pop();
             
@@ -116,7 +116,7 @@
             public MarkedContentElement Build(IPdfTokenScanner pdfScanner)
             {
                 var mcid = -1;
-                if (properties.TryGet(NameToken.Mcid, pdfScanner, out NumericToken mcidToken))
+                if (properties.TryGet(NameToken.Mcid, pdfScanner, out NumericToken? mcidToken))
                 {
                     mcid = mcidToken.Int;
                 }
@@ -142,7 +142,7 @@
                 }
 
                 var artifactType = ArtifactMarkedContentElement.ArtifactType.Unknown;
-                if (properties.TryGet(NameToken.Type, pdfScanner, out IDataToken<string> typeToken)
+                if (properties.TryGet(NameToken.Type, pdfScanner, out IDataToken<string>? typeToken)
                     && Enum.TryParse(typeToken.Data, true, out ArtifactMarkedContentElement.ArtifactType parsedType))
                 {
                     artifactType = parsedType;
@@ -152,12 +152,12 @@
                 var attributeOwners = GetOptional(NameToken.O, pdfScanner);
 
                 var boundingBox = default(PdfRectangle?);
-                if (properties.TryGet(NameToken.Bbox, pdfScanner, out ArrayToken arrayToken))
+                if (properties.TryGet(NameToken.Bbox, pdfScanner, out ArrayToken? arrayToken))
                 {
-                    NumericToken left = null;
-                    NumericToken bottom = null;
-                    NumericToken right = null;
-                    NumericToken top = null;
+                    NumericToken? left = null;
+                    NumericToken? bottom = null;
+                    NumericToken? right = null;
+                    NumericToken? top = null;
 
                     if (arrayToken.Length == 4)
                     {
@@ -192,7 +192,8 @@
                     }
                 }
 
-                return new ArtifactMarkedContentElement(mcid, name, properties, language,
+                return new ArtifactMarkedContentElement(mcid, name,properties,
+                    language,
                     actualText,
                     alternateDescription,
                     expandedForm,
@@ -208,10 +209,10 @@
                     number);
             }
 
-            private string GetOptional(NameToken optionName, IPdfTokenScanner pdfScanner)
+            private string? GetOptional(NameToken optionName, IPdfTokenScanner pdfScanner)
             {
                 var result = default(string);
-                if (properties.TryGet(optionName, pdfScanner, out IDataToken<string> token))
+                if (properties.TryGet(optionName, pdfScanner, out IDataToken<string>? token))
                 {
                     result = token.Data;
                 }

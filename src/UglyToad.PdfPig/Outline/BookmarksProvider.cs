@@ -25,19 +25,19 @@
         /// <summary>
         /// Extract bookmarks, if any.
         /// </summary>
-        public Bookmarks GetBookmarks(Catalog catalog)
+        public Bookmarks? GetBookmarks(Catalog catalog)
         {
-            if (!catalog.CatalogDictionary.TryGet(NameToken.Outlines, pdfScanner, out DictionaryToken outlinesDictionary))
+            if (!catalog.CatalogDictionary.TryGet(NameToken.Outlines, pdfScanner, out DictionaryToken? outlinesDictionary))
             {
                 return null;
             }
 
-            if (outlinesDictionary.TryGet(NameToken.Type, pdfScanner, out NameToken typeName) && typeName != NameToken.Outlines)
+            if (outlinesDictionary.TryGet(NameToken.Type, pdfScanner, out NameToken? typeName) && typeName != NameToken.Outlines)
             {
                 log?.Error($"Outlines (bookmarks) dictionary did not have correct type specified: {typeName}.");
             }
 
-            if (!outlinesDictionary.TryGet(NameToken.First, pdfScanner, out DictionaryToken next))
+            if (!outlinesDictionary.TryGet(NameToken.First, pdfScanner, out DictionaryToken? next))
             {
                 return null;
             }
@@ -78,7 +78,7 @@
             }
 
             var children = new List<BookmarkNode>();
-            if (nodeDictionary.TryGet(NameToken.First, pdfScanner, out DictionaryToken firstChild))
+            if (nodeDictionary.TryGet(NameToken.First, pdfScanner, out DictionaryToken? firstChild))
             {
                 ReadBookmarksRecursively(firstChild, level + 1, true, seen, namedDestinations, children);
             }

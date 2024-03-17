@@ -39,7 +39,7 @@
 
             var subtype = dictionary.GetNameOrDefault(NameToken.Subtype);
 
-            if (handlers.TryGetValue(subtype, out var handler))
+            if (subtype != null && handlers.TryGetValue(subtype, out var handler))
             {
                 return handler.Generate(dictionary);
             }

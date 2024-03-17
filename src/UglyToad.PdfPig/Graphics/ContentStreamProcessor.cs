@@ -1,4 +1,6 @@
-﻿namespace UglyToad.PdfPig.Graphics
+﻿#nullable disable
+
+namespace UglyToad.PdfPig.Graphics
 {
     using System;
     using System.Collections.Generic;
@@ -30,8 +32,7 @@
         /// <summary>
         /// Stores a link to each image (either inline or XObject) as it is encountered in the content stream.
         /// </summary>
-        private readonly List<Union<XObjectContentRecord, InlineImage>> images =
-            new List<Union<XObjectContentRecord, InlineImage>>();
+        private readonly List<Union<XObjectContentRecord, InlineImage>> images = new();
 
         /// <summary>
         /// Stores each marked content as it is encountered in the content stream.
@@ -362,7 +363,7 @@
         {
             AddCurrentSubpath();
 
-            if (CurrentPath.IsClipping)
+            if (CurrentPath!.IsClipping)
             {
                 EndPath();
                 return;
@@ -413,7 +414,7 @@
 
             if (ParsingOptions.ClipPaths)
             {
-                var currentClipping = GetCurrentState().CurrentClippingPath;
+                var currentClipping = GetCurrentState().CurrentClippingPath!;
                 currentClipping.SetClipping(clippingRule);
 
                 var newClippings = CurrentPath.Clip(currentClipping, ParsingOptions.Logger);

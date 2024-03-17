@@ -15,7 +15,7 @@ namespace UglyToad.PdfPig.Writer
             PdfDocumentBuilder.DocumentInformationBuilder documentInformationBuilder,
             PdfAStandard archiveStandard,
             double version,
-            XDocument xmpMetadata)
+            XDocument? xmpMetadata)
         {
             catalog[NameToken.OutputIntents] = OutputIntentsFactory.GetOutputIntentsArray(writerFunc);
             var xmpStream = XmpWriter.GenerateXmpStream(documentInformationBuilder, version, archiveStandard, xmpMetadata);

@@ -143,19 +143,19 @@
         }
 
         /// <inheritdoc />
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (obj is TilingPatternColor color)
-            {
-                return Equals(color);
-            }
-
-            return false;
+            return obj is TilingPatternColor other && Equals(other);
         }
 
         /// <inheritdoc/>
-        public bool Equals(TilingPatternColor other)
+        public bool Equals(TilingPatternColor? other)
         {
+            if (other is null)
+            {
+                return this is null;
+            }
+
             return PatternType.Equals(other.PatternType) &&
                 Matrix.Equals(other.Matrix) &&
                 ExtGState.Equals(other.ExtGState) &&
@@ -210,19 +210,19 @@
         }
 
         /// <inheritdoc />
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (obj is ShadingPatternColor color)
-            {
-                return Equals(color);
-            }
-
-            return false;
+            return obj is ShadingPatternColor other && Equals(other);
         }
 
         /// <inheritdoc/>
-        public bool Equals(ShadingPatternColor other)
+        public bool Equals(ShadingPatternColor? other)
         {
+            if (other is null)
+            {
+                return this is null;
+            }
+
             return PatternType.Equals(other.PatternType) &&
                    Matrix.Equals(other.Matrix) &&
                    ExtGState.Equals(other.ExtGState) &&

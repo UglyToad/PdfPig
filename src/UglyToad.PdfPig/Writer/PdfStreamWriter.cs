@@ -13,7 +13,7 @@
     /// </summary>
     internal class PdfStreamWriter : IPdfStreamWriter
     {
-        private readonly Action<double> recordVersion;
+        private readonly Action<double>? recordVersion;
         protected const double DefaultVersion = 1.2;
         protected Dictionary<IndirectReference, long> offsets = new Dictionary<IndirectReference, long>();
         protected bool DisposeStream { get; set; }
@@ -34,8 +34,8 @@
         internal PdfStreamWriter(
             Stream baseStream,
             bool disposeStream = true,
-            ITokenWriter tokenWriter = null,
-            Action<double> recordVersion = null)
+            ITokenWriter? tokenWriter = null,
+            Action<double>? recordVersion = null)
         {
             Stream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
 
@@ -96,7 +96,7 @@
             Initialized = true;
         }
 
-        public void CompletePdf(IndirectReferenceToken catalogReference, IndirectReferenceToken documentInformationReference = null)
+        public void CompletePdf(IndirectReferenceToken catalogReference, IndirectReferenceToken? documentInformationReference = null)
         {
             TokenWriter.WriteCrossReferenceTable(offsets, catalogReference.Data, Stream, documentInformationReference?.Data);
         }
@@ -115,7 +115,7 @@
                 Stream?.Dispose();
             }
             
-            Stream = null;
+            Stream = null!;
         }
     }
 }

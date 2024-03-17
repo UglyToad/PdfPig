@@ -1,9 +1,8 @@
 ﻿namespace UglyToad.PdfPig.AcroForms.Fields
 {
-    using System;
     using Core;
+    using System;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// A field in an interactive <see cref="AcroForm"/>.
@@ -13,13 +12,11 @@
         /// <summary>
         /// The raw PDF dictionary for this field.
         /// </summary>
-        [NotNull]
         public DictionaryToken Dictionary { get; }
 
         /// <summary>
         /// The <see cref="string"/> representing the type of this field in PDF format.
         /// </summary>
-        [NotNull]
         public string RawFieldType { get; }
 
         /// <summary>
@@ -35,7 +32,6 @@
         /// <summary>
         /// The optional information common to all types of field.
         /// </summary>
-        [NotNull]
         public AcroFieldCommonInformation Information { get; }
 
         /// <summary>

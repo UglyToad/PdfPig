@@ -30,7 +30,7 @@ namespace UglyToad.PdfPig.Graphics
 
         public ReflectionGraphicsStateOperationFactory()
         {
-            var assemblyTypes = Assembly.GetAssembly(typeof(ReflectionGraphicsStateOperationFactory)).GetTypes();
+            var assemblyTypes = Assembly.GetAssembly(typeof(ReflectionGraphicsStateOperationFactory))!.GetTypes();
 
             var result = new Dictionary<string, Type>();
 
@@ -45,7 +45,7 @@ namespace UglyToad.PdfPig.Graphics
                         throw new InvalidOperationException("An operation type was defined without the public const Symbol being declared. Type was: " + assemblyType.FullName);
                     }
 
-                    var value = symbol.GetValue(null).ToString();
+                    var value = symbol.GetValue(null)!.ToString()!;
 
                     result[value] = assemblyType;
                 }
@@ -114,7 +114,7 @@ namespace UglyToad.PdfPig.Graphics
             return numeric.Data;
         }
 
-        public IGraphicsStateOperation Create(OperatorToken op, IReadOnlyList<IToken> operands)
+        public IGraphicsStateOperation? Create(OperatorToken op, IReadOnlyList<IToken> operands)
         {
             switch (op.Data)
             {
@@ -388,7 +388,7 @@ namespace UglyToad.PdfPig.Graphics
                     return new ShowTextsWithPositioning(array);
             }
 
-            if (!operations.TryGetValue(op.Data, out Type operationType))
+            if (!operations.TryGetValue(op.Data, out Type? operationType))
             {
                 return null;
             }
@@ -405,7 +405,7 @@ namespace UglyToad.PdfPig.Graphics
 
             if (constructor.IsPrivate)
             {
-                return (IGraphicsStateOperation)operationType.GetField("Value").GetValue(null);
+                return (IGraphicsStateOperation)operationType.GetField("Value")?.GetValue(null)!;
             }
 
             var parameters = constructor.GetParameters();

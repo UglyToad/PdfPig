@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Outline.Destinations
 {
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using Content;
     using Logging;
     using Parser.Parts;
@@ -9,11 +10,11 @@
 
     internal static class NamedDestinationsProvider
     {
-        internal static NamedDestinations Read(DictionaryToken catalogDictionary, IPdfTokenScanner pdfScanner, Pages pages, ILog log)
+        internal static NamedDestinations Read(DictionaryToken catalogDictionary, IPdfTokenScanner pdfScanner, Pages pages, ILog? log)
         {
             var destinationsByName = new Dictionary<string, ExplicitDestination>();
 
-            if (catalogDictionary.TryGet(NameToken.Dests, pdfScanner, out DictionaryToken destinations))
+            if (catalogDictionary.TryGet(NameToken.Dests, pdfScanner, out DictionaryToken? destinations))
             {
                 /*
                  * In PDF 1.1, the correspondence between name objects and destinations is defined by the /Dests entry in the document catalog.
@@ -30,7 +31,7 @@
                     }
                 }
             }
-            else if (catalogDictionary.TryGet(NameToken.Names, pdfScanner, out DictionaryToken names)
+            else if (catalogDictionary.TryGet(NameToken.Names, pdfScanner, out DictionaryToken? names)
                      && names.TryGet(NameToken.Dests, pdfScanner, out destinations))
             {
                 /*
@@ -47,23 +48,29 @@
                     }
 
                     return null;
-                }, destinationsByName);
+                }, destinationsByName!);
             }
 
             return new NamedDestinations(destinationsByName, pages);
         }
 
-        private static bool TryReadExplicitDestination(IToken value, IPdfTokenScanner pdfScanner, Pages pages, ILog log, bool isRemoteDestination, out ExplicitDestination destination)
+        private static bool TryReadExplicitDestination(
+            IToken value,
+            IPdfTokenScanner pdfScanner,
+            Pages pages,
+            ILog? log,
+            bool isRemoteDestination,
+            [NotNullWhen(true)] out ExplicitDestination? destination)
         {
             destination = null;
 
-            if (DirectObjectFinder.TryGet(value, pdfScanner, out ArrayToken valueArray)
+            if (DirectObjectFinder.TryGet(value, pdfScanner, out ArrayToken? valueArray)
                 && TryGetExplicitDestination(valueArray, pages, log, isRemoteDestination, out destination))
             {
                 return true;
             }
 
-            if (DirectObjectFinder.TryGet(value, pdfScanner, out DictionaryToken valueDictionary)
+            if (DirectObjectFinder.TryGet(value, pdfScanner, out DictionaryToken? valueDictionary)
                 && valueDictionary.TryGet(NameToken.D, pdfScanner, out valueArray)
                 && TryGetExplicitDestination(valueArray, pages, log, isRemoteDestination, out destination))
             {
@@ -73,7 +80,12 @@
             return false;
         }
 
-        internal static bool TryGetExplicitDestination(ArrayToken explicitDestinationArray, Pages pages, ILog log, bool isRemoteDestination, out ExplicitDestination destination)
+        internal static bool TryGetExplicitDestination(
+            ArrayToken explicitDestinationArray,
+            Pages pages,
+            ILog? log,
+            bool isRemoteDestination, 
+            [NotNullWhen(true)] out ExplicitDestination? destination)
         {
             destination = null;
 
@@ -131,7 +143,7 @@
                 return false;
             }
 
-            NameToken destTypeToken = null;
+            NameToken? destTypeToken = null;
             if (explicitDestinationArray.Length > 1)
             {
                 destTypeToken = explicitDestinationArray[1] as NameToken;

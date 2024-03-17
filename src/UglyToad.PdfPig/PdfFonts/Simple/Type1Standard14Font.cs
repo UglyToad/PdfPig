@@ -1,13 +1,14 @@
 ﻿//// ReSharper disable CompareOfFloatsByEqualityOperator
 namespace UglyToad.PdfPig.PdfFonts.Simple
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Diagnostics.CodeAnalysis;
     using Core;
     using Fonts;
     using Fonts.AdobeFontMetrics;
     using Fonts.Encodings;
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
     using Tokens;
 
     /// <summary>
@@ -26,7 +27,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
 
         private readonly TransformationMatrix fontMatrix = TransformationMatrix.FromValues(0.001, 0, 0, 0.001, 0, 0);
 
-        public Type1Standard14Font(AdobeFontMetrics standardFontMetrics, Encoding overrideEncoding = null)
+        public Type1Standard14Font(AdobeFontMetrics standardFontMetrics, Encoding? overrideEncoding = null)
         {
             this.standardFontMetrics = standardFontMetrics ?? throw new ArgumentNullException(nameof(standardFontMetrics));
             encoding = overrideEncoding ?? new AdobeFontMetricsEncoding(standardFontMetrics);
@@ -46,7 +47,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
             return bytes.CurrentByte;
         }
 
-        public bool TryGetUnicode(int characterCode, out string value)
+        public bool TryGetUnicode(int characterCode, [NotNullWhen(true)] out string? value)
         {
             var name = encoding.GetName(characterCode);
             if (string.Equals(name, GlyphList.NotDefined, StringComparison.OrdinalIgnoreCase))
@@ -124,9 +125,9 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
 
         /// <summary>
         /// <inheritdoc/>
-        /// <para>Not implemeted.</para>
+        /// <para>Not implemented.</para>
         /// </summary>
-        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        public bool TryGetPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             // https://github.com/apache/pdfbox/blob/trunk/pdfbox/src/main/java/org/apache/pdfbox/pdmodel/font/Standard14Fonts.java
             path = null;
@@ -137,7 +138,7 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
         /// <inheritdoc/>
         /// <para>Not implemeted.</para>
         /// </summary>
-        public bool TryGetNormalisedPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        public bool TryGetNormalisedPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             return TryGetPath(characterCode, out path);
         }

@@ -1,11 +1,12 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Simple
-{
+{    
+    using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using Cmap;
     using Composite;
     using Core;
     using Fonts;
     using Fonts.Encodings;
-    using System.Collections.Generic;
     using Tokens;
 
     internal class Type3Font : IFont
@@ -49,7 +50,7 @@
             return bytes.CurrentByte;
         }
 
-        public bool TryGetUnicode(int characterCode, out string value)
+        public bool TryGetUnicode(int characterCode, [NotNullWhen(true)] out string? value)
         {
             if (toUnicodeCMap.CanMapToUnicode)
             {
@@ -93,7 +94,7 @@
         /// <inheritdoc/>
         /// <para>Type 3 fonts do not use vector paths. Always returns <c>false</c>.</para>
         /// </summary>
-        public bool TryGetPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        public bool TryGetPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             path = null;
             return false;
@@ -103,7 +104,7 @@
         /// <inheritdoc/>
         /// <para>Type 3 fonts do not use vector paths. Always returns <c>false</c>.</para>
         /// </summary>
-        public bool TryGetNormalisedPath(int characterCode, out IReadOnlyList<PdfSubpath> path)
+        public bool TryGetNormalisedPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             return TryGetPath(characterCode, out path);
         }

@@ -10,7 +10,7 @@
     ///
     /// Ported from https://github.com/apache/pdfbox/blob/e644c29279e276bde14ce7a33bdeef0cb1001b3e/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxDecoderStream.java
     /// </summary>
-    internal class CcittFaxDecoderStream : StreamWrapper
+    internal sealed class CcittFaxDecoderStream : StreamWrapper
     {
         // See TIFF 6.0 Specification, Section 10: "Modified Huffman Compression", page 43.
 
@@ -450,8 +450,8 @@
 
         private class Node
         {
-            public Node Left { get; set; }
-            public Node Right { get; set; }
+            public Node? Left { get; set; }
+            public Node? Right { get; set; }
 
             public int Value { get; set; }
 
@@ -472,7 +472,7 @@
 
             public Node Walk(bool next)
             {
-                return next ? Right : Left;
+                return next ? Right! : Left!;
             }
 
             public override string ToString()

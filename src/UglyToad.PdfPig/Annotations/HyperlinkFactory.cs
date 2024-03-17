@@ -25,15 +25,15 @@
                 }
 
                 // Must be a link annotation with an action of type /URI.
-                if (!annotation.AnnotationDictionary.TryGet(NameToken.A, pdfScanner, out DictionaryToken actionDictionary)
-                    || !actionDictionary.TryGet(NameToken.S, pdfScanner, out NameToken actionType)
+                if (!annotation.AnnotationDictionary.TryGet(NameToken.A, pdfScanner, out DictionaryToken? actionDictionary)
+                    || !actionDictionary.TryGet(NameToken.S, pdfScanner, out NameToken? actionType)
                     || actionType != NameToken.Uri)
                 {
                     continue;
                 }
 
                 // (Required) The uniform resource identifier to resolve, encoded in 7-bit ASCII. 
-                if (!actionDictionary.TryGet(NameToken.Uri, pdfScanner, out IDataToken<string> uriStringToken))
+                if (!actionDictionary.TryGet(NameToken.Uri, pdfScanner, out IDataToken<string>? uriStringToken))
                 {
                     continue;
                 }

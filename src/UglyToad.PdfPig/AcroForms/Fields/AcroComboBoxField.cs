@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using Core;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <inheritdoc />
     /// <summary>
@@ -21,20 +20,17 @@
         /// <summary>
         /// The options to be presented to the user.
         /// </summary>
-        [NotNull]
         public IReadOnlyList<AcroChoiceOption> Options { get; }
 
         /// <summary>
         /// The names of any currently selected options.
         /// </summary>
-        [NotNull]
         public IReadOnlyList<string> SelectedOptions { get; }
 
         /// <summary>
         /// For multiple select lists with duplicate names gives the indices of the selected options.
         /// </summary>
-        [CanBeNull]
-        public IReadOnlyList<int> SelectedOptionIndices { get; }
+        public IReadOnlyList<int>? SelectedOptionIndices { get; }
 
         /// <inheritdoc />
         /// <summary>
@@ -49,10 +45,13 @@
         /// <param name="selectedOptions">The names of the selected options.</param>
         /// <param name="pageNumber">The number of the page this field appears on.</param>
         /// <param name="bounds">The location of this field on the page.</param>
-        public AcroComboBoxField(DictionaryToken dictionary, string fieldType, AcroChoiceFieldFlags fieldFlags,
+        public AcroComboBoxField(
+            DictionaryToken dictionary,
+            string fieldType, 
+            AcroChoiceFieldFlags fieldFlags,
             AcroFieldCommonInformation information, IReadOnlyList<AcroChoiceOption> options, 
             IReadOnlyList<string> selectedOptions, 
-            IReadOnlyList<int> selectedOptionIndices,
+            IReadOnlyList<int>? selectedOptionIndices,
             int? pageNumber,
             PdfRectangle? bounds) :
             base(dictionary, fieldType, (uint)fieldFlags, AcroFieldType.ComboBox, information,

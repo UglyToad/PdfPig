@@ -57,6 +57,6 @@
         /// </summary>
         /// <param name="catalogReference">Indirect reference of catalog.</param>
         /// <param name="documentInformationReference">Reference to document information (optional)</param>
-        void CompletePdf(IndirectReferenceToken catalogReference, IndirectReferenceToken documentInformationReference=null);
+        void CompletePdf(IndirectReferenceToken catalogReference, IndirectReferenceToken? documentInformationReference = null);
     }
 }

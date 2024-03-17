@@ -1,12 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Writer
 {
-    using Content;
-    using Core;
-    using Parser.Parts;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
+    using Content;
+    using Core;
+    using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -72,13 +72,10 @@
         /// <param name="callstack">Call stack of indirect references</param>
         /// <returns>A reference of the token that was copied. With all the reference updated</returns>
         public static IToken CopyToken(IPdfStreamWriter writer, IToken tokenToCopy, IPdfTokenScanner tokenScanner,
-            IDictionary<IndirectReference, IndirectReferenceToken> referencesFromDocument, Dictionary<IndirectReference, IndirectReferenceToken> callstack=null)
+            IDictionary<IndirectReference, IndirectReferenceToken> referencesFromDocument, Dictionary<IndirectReference, IndirectReferenceToken?>? callstack = null)
         {
-            if (callstack is null)
-            {
-                callstack = new Dictionary<IndirectReference, IndirectReferenceToken>();
-            }
-
+            callstack ??= [];
+         
             // This token need to be deep copied, because they could contain reference. So we have to update them.
             switch (tokenToCopy)
             {
@@ -127,9 +124,9 @@
                         // referencesFromDocument.Add(referenceToken.Data, newReferenceToken);
                         // 
                         var tokenObject = DirectObjectFinder.Get<IToken>(referenceToken.Data, tokenScanner);
-                        if (tokenObject is null) //NullToken allowed
+                        if (tokenObject is null) // NullToken allowed
                         {
-                            return null;
+                            return null!;
                         }
 
                         Debug.Assert(!(tokenObject is IndirectReferenceToken));
@@ -137,7 +134,7 @@
 
                         if (callstack[referenceToken.Data] != null)
                         {
-                            return writer.WriteToken(result, callstack[referenceToken.Data]);
+                            return writer.WriteToken(result, callstack[referenceToken.Data]!);
                         }
 
                         newReferenceToken = writer.WriteToken(result);
@@ -164,7 +161,7 @@
             return tokenToCopy;
         }
 
-        internal static IEnumerable<(DictionaryToken, IReadOnlyList<DictionaryToken>)> WalkTree(PageTreeNode node, List<DictionaryToken> parents=null)
+        internal static IEnumerable<(DictionaryToken, IReadOnlyList<DictionaryToken>)> WalkTree(PageTreeNode node, List<DictionaryToken>? parents = null)
         {
             if (parents is null)
             {
@@ -179,7 +176,7 @@
 
             parents = parents.ToList();
             parents.Add(node.NodeDictionary);
-            foreach (var child in node.Children)
+            foreach (var child in node.Children!)
             {
                 foreach (var item in WalkTree(child, parents))
                 {

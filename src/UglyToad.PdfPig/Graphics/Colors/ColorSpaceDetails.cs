@@ -8,7 +8,6 @@
     using UglyToad.PdfPig.Content;
     using UglyToad.PdfPig.Functions;
     using UglyToad.PdfPig.Util;
-    using UglyToad.PdfPig.Util.JetBrains.Annotations;
 
     /// <summary>
     /// Contains more document-specific information about the <see cref="ColorSpace"/>.
@@ -58,7 +57,7 @@
         /// <summary>
         /// Get the color that initialize the current stroking or nonstroking colour.
         /// </summary>
-        public abstract IColor GetInitializeColor();
+        public abstract IColor? GetInitializeColor();
 
         /// <summary>
         /// Transform image bytes.
@@ -106,7 +105,7 @@
         {
             if (values is null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
             }
 
             double gray = values[0];
@@ -168,7 +167,7 @@
         {
             if (values is null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
             }
 
             double r = values[0];
@@ -230,7 +229,7 @@
         {
             if (values is null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
             }
 
             double c = values[0];
@@ -332,7 +331,7 @@
         {
             if (values is null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
             }
 
             return cache.GetOrAdd(values[0], v =>
@@ -345,7 +344,7 @@
         internal byte[] UnwrapIndexedColorSpaceBytes(IReadOnlyList<byte> input)
         {
             var multiplier = 1;
-            Func<byte, IEnumerable<byte>> transformer = null;
+            Func<byte, IEnumerable<byte>>? transformer = null;
             switch (BaseType)
             {
                 case ColorSpace.DeviceRGB:
@@ -520,7 +519,7 @@
         {
             if (values is null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
             }
 
             // TODO - use attributes
@@ -546,7 +545,7 @@
                     comps[n] = b / 255.0;
                 }
 
-                if (!cache.TryGetValue(key, out double[] colors))
+                if (!cache.TryGetValue(key, out double[]? colors))
                 {
                     colors = Process(comps);
                     cache[key] = colors;
@@ -582,17 +581,17 @@
             /// <summary>
             /// Colorants - dictionary - Required if Subtype is NChannel and the colour space includes spot colorants; otherwise optional.
             /// </summary>
-            public DictionaryToken Colorants { get; }
+            public DictionaryToken? Colorants { get; }
 
             /// <summary>
             /// Process - dictionary - Required if Subtype is NChannel and the colour space includes components of a process colour space, otherwise optional.
             /// </summary>
-            public DictionaryToken Process { get; }
+            public DictionaryToken? Process { get; }
 
             /// <summary>
             /// MixingHints - dictionary - Optional
             /// </summary>
-            public DictionaryToken MixingHints { get; }
+            public DictionaryToken? MixingHints { get; }
 
             /// <summary>
             /// Create a new <see cref="DeviceNColorSpaceAttributes"/>.
@@ -608,7 +607,7 @@
             /// <summary>
             /// Create a new <see cref="DeviceNColorSpaceAttributes"/>.
             /// </summary>
-            public DeviceNColorSpaceAttributes(NameToken subtype, DictionaryToken colorants, DictionaryToken process, DictionaryToken mixingHints)
+            public DeviceNColorSpaceAttributes(NameToken subtype, DictionaryToken? colorants, DictionaryToken? process, DictionaryToken? mixingHints)
             {
                 Subtype = subtype;
                 Colorants = colorants;
@@ -690,7 +689,7 @@
         {
             if (values is null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
             }
 
             // TODO - we ignore the name for now
@@ -710,7 +709,7 @@
             for (var i = 0; i < values.Count; i += 3)
             {
                 byte b = values[i++];
-                if (!cache.TryGetValue(b, out double[] colors))
+                if (!cache.TryGetValue(b, out double[]? colors))
                 {
                     colors = Process(b / 255.0);
                     cache[b] = colors;
@@ -770,7 +769,7 @@
         /// <summary>
         /// Create a new <see cref="CalGrayColorSpaceDetails"/>.
         /// </summary>
-        public CalGrayColorSpaceDetails([NotNull] IReadOnlyList<double> whitePoint, [CanBeNull] IReadOnlyList<double> blackPoint, double? gamma)
+        public CalGrayColorSpaceDetails(IReadOnlyList<double> whitePoint, IReadOnlyList<double>? blackPoint, double? gamma)
             : base(ColorSpace.CalGray)
         {
             WhitePoint = whitePoint ?? throw new ArgumentNullException(nameof(whitePoint));
@@ -782,7 +781,7 @@
             BlackPoint = blackPoint ?? new[] { 0.0, 0, 0 }.ToArray();
             if (BlackPoint.Count != 3)
             {
-                throw new ArgumentOutOfRangeException(nameof(blackPoint), blackPoint, $"Must consist of exactly three numbers, but was passed {blackPoint.Count}.");
+                throw new ArgumentOutOfRangeException(nameof(blackPoint), blackPoint, $"Must consist of exactly three numbers, but was passed {blackPoint?.Count ?? 0}.");
             }
 
             Gamma = gamma ?? 1.0;
@@ -840,7 +839,7 @@
         {
             if (values is null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
             }
 
             return TransformToRGB(values[0]);
@@ -901,7 +900,7 @@
         /// <summary>
         /// Create a new <see cref="CalRGBColorSpaceDetails"/>.
         /// </summary>
-        public CalRGBColorSpaceDetails([NotNull] IReadOnlyList<double> whitePoint, [CanBeNull] IReadOnlyList<double> blackPoint, [CanBeNull] IReadOnlyList<double> gamma, [CanBeNull] IReadOnlyList<double> matrix)
+        public CalRGBColorSpaceDetails(IReadOnlyList<double> whitePoint, IReadOnlyList<double>? blackPoint, IReadOnlyList<double>? gamma, IReadOnlyList<double>? matrix)
             : base(ColorSpace.CalRGB)
         {
             WhitePoint = whitePoint ?? throw new ArgumentNullException(nameof(whitePoint));
@@ -910,22 +909,22 @@
                 throw new ArgumentOutOfRangeException(nameof(whitePoint), whitePoint, $"Must consist of exactly three numbers, but was passed {whitePoint.Count}.");
             }
 
-            BlackPoint = blackPoint ?? new[] { 0.0, 0, 0 }.ToArray();
+            BlackPoint = blackPoint ?? new[] { 0.0, 0, 0 };
             if (BlackPoint.Count != 3)
             {
-                throw new ArgumentOutOfRangeException(nameof(blackPoint), blackPoint, $"Must consist of exactly three numbers, but was passed {blackPoint.Count}.");
+                throw new ArgumentOutOfRangeException(nameof(blackPoint), blackPoint, $"Must consist of exactly three numbers, but was passed {blackPoint!.Count}.");
             }
 
-            Gamma = gamma ?? new[] { 1.0, 1, 1 }.ToArray();
+            Gamma = gamma ?? new[] { 1.0, 1, 1 };
             if (Gamma.Count != 3)
             {
-                throw new ArgumentOutOfRangeException(nameof(gamma), gamma, $"Must consist of exactly three numbers, but was passed {gamma.Count}.");
+                throw new ArgumentOutOfRangeException(nameof(gamma), gamma, $"Must consist of exactly three numbers, but was passed {gamma!.Count}.");
             }
 
-            Matrix = matrix ?? new[] { 1.0, 0, 0, 0, 1, 0, 0, 0, 1 }.ToArray();
+            Matrix = matrix ?? new[] { 1.0, 0, 0, 0, 1, 0, 0, 0, 1 };
             if (Matrix.Count != 9)
             {
-                throw new ArgumentOutOfRangeException(nameof(matrix), matrix, $"Must consist of exactly nine numbers, but was passed {matrix.Count}.");
+                throw new ArgumentOutOfRangeException(nameof(matrix), matrix, $"Must consist of exactly nine numbers, but was passed {matrix!.Count}.");
             }
 
             colorSpaceTransformer =
@@ -981,7 +980,7 @@
         {
             if (values is null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
             }
 
             return TransformToRGB((values[0], values[1], values[2]));
@@ -1037,7 +1036,7 @@
         /// <summary>
         /// Create a new <see cref="LabColorSpaceDetails"/>.
         /// </summary>
-        public LabColorSpaceDetails([NotNull] IReadOnlyList<double> whitePoint, [CanBeNull] IReadOnlyList<double> blackPoint, [CanBeNull] IReadOnlyList<double> matrix)
+        public LabColorSpaceDetails(IReadOnlyList<double> whitePoint, IReadOnlyList<double>? blackPoint, IReadOnlyList<double>? matrix)
             : base(ColorSpace.Lab)
         {
             WhitePoint = whitePoint?.Select(v => v).ToArray() ?? throw new ArgumentNullException(nameof(whitePoint));
@@ -1049,13 +1048,13 @@
             BlackPoint = blackPoint?.Select(v => v).ToArray() ?? new[] { 0.0, 0.0, 0.0 };
             if (BlackPoint.Count != 3)
             {
-                throw new ArgumentOutOfRangeException(nameof(blackPoint), blackPoint, $"Must consist of exactly three numbers, but was passed {blackPoint.Count}.");
+                throw new ArgumentOutOfRangeException(nameof(blackPoint), blackPoint, $"Must consist of exactly three numbers, but was passed {blackPoint!.Count}.");
             }
 
             Matrix = matrix?.Select(v => v).ToArray() ?? new[] { -100.0, 100.0, -100.0, 100.0 };
             if (Matrix.Count != 4)
             {
-                throw new ArgumentOutOfRangeException(nameof(matrix), matrix, $"Must consist of exactly four numbers, but was passed {matrix.Count}.");
+                throw new ArgumentOutOfRangeException(nameof(matrix), matrix, $"Must consist of exactly four numbers, but was passed {matrix!.Count}.");
             }
 
             colorSpaceTransformer = new CIEBasedColorSpaceTransformer((WhitePoint[0], WhitePoint[1], WhitePoint[2]), RGBWorkingSpace.sRGB);
@@ -1122,7 +1121,7 @@
         {
             if (values is null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
             }
 
             return TransformToRGB((values[0], values[1], values[2]));
@@ -1176,7 +1175,6 @@
         /// must be substituted.
         /// </para>
         /// </summary>
-        [NotNull]
         public ColorSpaceDetails AlternateColorSpace { get; }
 
         /// <summary>
@@ -1184,20 +1182,20 @@
         /// specifies the minimum and maximum valid values of the corresponding color components. These
         /// values must match the information in the ICC profile. Default value: [0.0 1.0  0.0 1.0  ...].
         /// </summary>
-        [NotNull]
         public IReadOnlyList<double> Range { get; }
 
         /// <summary>
         /// An optional metadata stream that contains metadata for the color space.
         /// </summary>
-        [CanBeNull]
-        public XmpMetadata Metadata { get; }
+        public XmpMetadata? Metadata { get; }
 
         /// <summary>
         /// Create a new <see cref="ICCBasedColorSpaceDetails"/>.
         /// </summary>
-        internal ICCBasedColorSpaceDetails(int numberOfColorComponents, [CanBeNull] ColorSpaceDetails alternateColorSpaceDetails,
-            [CanBeNull] IReadOnlyList<double> range, [CanBeNull] XmpMetadata metadata)
+        internal ICCBasedColorSpaceDetails(int numberOfColorComponents,
+            ColorSpaceDetails? alternateColorSpaceDetails,
+            IReadOnlyList<double>? range,
+            XmpMetadata? metadata)
             : base(ColorSpace.ICCBased)
         {
             if (numberOfColorComponents != 1 && numberOfColorComponents != 3 && numberOfColorComponents != 4)
@@ -1207,8 +1205,8 @@
 
             NumberOfColorComponents = numberOfColorComponents;
             AlternateColorSpace = alternateColorSpaceDetails ??
-                (NumberOfColorComponents == 1 ? (ColorSpaceDetails)DeviceGrayColorSpaceDetails.Instance :
-                NumberOfColorComponents == 3 ? (ColorSpaceDetails)DeviceRgbColorSpaceDetails.Instance : (ColorSpaceDetails)DeviceCmykColorSpaceDetails.Instance);
+                (NumberOfColorComponents == 1 ? DeviceGrayColorSpaceDetails.Instance :
+                NumberOfColorComponents == 3 ? DeviceRgbColorSpaceDetails.Instance : DeviceCmykColorSpaceDetails.Instance);
 
             BaseType = AlternateColorSpace.BaseType;
             Range = range ??
@@ -1216,7 +1214,7 @@
             if (Range.Count != 2 * numberOfColorComponents)
             {
                 throw new ArgumentOutOfRangeException(nameof(range), range,
-                    $"Must consist of exactly {2 * numberOfColorComponents} (2 x NumberOfColorComponents), but was passed {range.Count}");
+                    $"Must consist of exactly {2 * numberOfColorComponents} (2 x NumberOfColorComponents), but was passed {range?.Count ?? 0}");
             }
             Metadata = metadata;
         }
@@ -1234,7 +1232,7 @@
         {
             if (values is null || values.Length != NumberOfColorComponents)
             {
-                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values.Length}", nameof(values));
+                throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
             }
 
             // TODO - use ICC profile
@@ -1293,13 +1291,12 @@
         /// Valid for Uncoloured Tiling Patterns. Wwill throw a <see cref="InvalidOperationException"/> otherwise.
         /// </para>
         /// </summary>
-        internal override int BaseNumberOfColorComponents => UnderlyingColourSpace.NumberOfColorComponents;
+        internal override int BaseNumberOfColorComponents => UnderlyingColourSpace!.NumberOfColorComponents;
 
         /// <summary>
         /// The underlying color space for Uncoloured Tiling Patterns.
         /// </summary>
-        [CanBeNull]
-        public ColorSpaceDetails UnderlyingColourSpace { get; }
+        public ColorSpaceDetails? UnderlyingColourSpace { get; }
 
         /// <summary>
         /// Create a new <see cref="PatternColorSpaceDetails"/>.
@@ -1349,7 +1346,7 @@
         /// <inheritdoc/>
         /// </summary>
         /// <returns>Always returns <c>null</c>.</returns>
-        public override IColor GetInitializeColor()
+        public override IColor? GetInitializeColor()
         {
             return null;
         }
@@ -1409,7 +1406,7 @@
         }
 
         /// <inheritdoc/>
-        public override IColor GetInitializeColor()
+        public override IColor? GetInitializeColor()
         {
             throw new InvalidOperationException("UnsupportedColorSpaceDetails");
         }

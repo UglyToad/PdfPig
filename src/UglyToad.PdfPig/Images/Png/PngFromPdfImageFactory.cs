@@ -1,18 +1,19 @@
 ﻿namespace UglyToad.PdfPig.Images.Png
 {
+    using System.Diagnostics.CodeAnalysis;
     using Content;
     using Graphics.Colors;
     using UglyToad.PdfPig.Core;
 
     internal static class PngFromPdfImageFactory
     {
-        public static bool TryGenerate(IPdfImage image, out byte[] bytes)
+        public static bool TryGenerate(IPdfImage image, [NotNullWhen(true)] out byte[]? bytes)
         {
             bytes = null;
 
             var hasValidDetails = image.ColorSpaceDetails != null && !(image.ColorSpaceDetails is UnsupportedColorSpaceDetails);
 
-            var isColorSpaceSupported = hasValidDetails && image.ColorSpaceDetails.BaseType != ColorSpace.Pattern;
+            var isColorSpaceSupported = hasValidDetails && image.ColorSpaceDetails!.BaseType != ColorSpace.Pattern;
 
             if (!isColorSpaceSupported || !image.TryGetBytes(out var bytesPure))
             {
@@ -21,10 +22,10 @@
 
             try
             {
-                bytesPure = ColorSpaceDetailsByteConverter.Convert(image.ColorSpaceDetails, bytesPure,
+                bytesPure = ColorSpaceDetailsByteConverter.Convert(image.ColorSpaceDetails!, bytesPure,
                     image.BitsPerComponent, image.WidthInSamples, image.HeightInSamples);
 
-                var numberOfComponents = image.ColorSpaceDetails.BaseNumberOfColorComponents;
+                var numberOfComponents = image.ColorSpaceDetails!.BaseNumberOfColorComponents;
 
                 var is3Byte = numberOfComponents == 3;
 

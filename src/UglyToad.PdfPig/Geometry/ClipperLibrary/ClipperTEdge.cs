@@ -69,6 +69,9 @@
 * Code modified for PdfPig                                                     *
 *                                                                              *
 *******************************************************************************/
+
+#nullable disable
+
 namespace UglyToad.PdfPig.Geometry.ClipperLibrary
 {
     internal class ClipperTEdge

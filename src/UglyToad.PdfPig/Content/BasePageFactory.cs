@@ -79,7 +79,7 @@
             }
 
             var rotation = new PageRotationDegrees(pageTreeMembers.Rotation);
-            if (dictionary.TryGet(NameToken.Rotate, PdfScanner, out NumericToken rotateToken))
+            if (dictionary.TryGet(NameToken.Rotate, PdfScanner, out NumericToken? rotateToken))
             {
                 rotation = new PageRotationDegrees(rotateToken.Int);
             }
@@ -94,7 +94,7 @@
                 stackDepth++;
             }
 
-            if (dictionary.TryGet(NameToken.Resources, PdfScanner, out DictionaryToken resources))
+            if (dictionary.TryGet(NameToken.Resources, PdfScanner, out DictionaryToken? resources))
             {
                 ResourceStore.LoadResourceDictionary(resources);
                 stackDepth++;
@@ -177,7 +177,7 @@
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
             TransformationMatrix initialMatrix,
-            IReadOnlyList<byte> contentBytes)
+            IReadOnlyList<byte>? contentBytes)
         {
             IReadOnlyList<IGraphicsStateOperation> operations;
 
@@ -192,7 +192,8 @@
                     ParsingOptions.Logger);
             }
 
-            return ProcessPage(pageNumber,
+            return ProcessPage(
+                pageNumber,
                 dictionary,
                 namedDestinations,
                 mediaBox,
@@ -246,7 +247,7 @@
         {
             CropBox cropBox;
             if (dictionary.TryGet(NameToken.CropBox, out var cropBoxObject) &&
-                DirectObjectFinder.TryGet(cropBoxObject, PdfScanner, out ArrayToken cropBoxArray))
+                DirectObjectFinder.TryGet(cropBoxObject, PdfScanner, out ArrayToken? cropBoxArray))
             {
                 if (cropBoxArray.Length != 4)
                 {
@@ -275,7 +276,7 @@
         {
             MediaBox mediaBox;
             if (dictionary.TryGet(NameToken.MediaBox, out var mediaBoxObject)
-                && DirectObjectFinder.TryGet(mediaBoxObject, PdfScanner, out ArrayToken mediaBoxArray))
+                && DirectObjectFinder.TryGet(mediaBoxObject, PdfScanner, out ArrayToken? mediaBoxArray))
             {
                 if (mediaBoxArray.Length != 4)
                 {

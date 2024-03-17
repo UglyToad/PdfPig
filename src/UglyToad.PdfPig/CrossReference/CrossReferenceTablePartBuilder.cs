@@ -12,7 +12,7 @@
 
         public long Previous { get; set; }
 
-        public DictionaryToken Dictionary { get; set; }
+        public DictionaryToken? Dictionary { get; set; }
 
         public CrossReferenceType XRefType { get; set; }
 
@@ -30,7 +30,7 @@
 
         public CrossReferenceTablePart Build()
         {
-            return new CrossReferenceTablePart(objects, Offset, Previous, Dictionary, XRefType, TiedToPreviousAtOffset);
+            return new CrossReferenceTablePart(objects, Offset, Previous, Dictionary!, XRefType, TiedToPreviousAtOffset);
         }
     }
 }

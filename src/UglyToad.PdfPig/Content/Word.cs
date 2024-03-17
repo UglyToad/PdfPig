@@ -29,7 +29,7 @@
         /// <summary>
         /// The name of the font for the word.
         /// </summary>
-        public string FontName { get; }
+        public string? FontName { get; }
 
         /// <summary>
         /// The letters contained in the word.

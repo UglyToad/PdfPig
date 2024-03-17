@@ -3,7 +3,6 @@
     using System;
     using Outline.Destinations;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <summary>
     /// The root of the document's object hierarchy. Contains references to objects defining the contents,
@@ -14,7 +13,6 @@
         /// <summary>
         /// The catalog dictionary containing assorted information.
         /// </summary>
-        [NotNull]
         public DictionaryToken CatalogDictionary { get; }
 
         internal NamedDestinations NamedDestinations { get; }

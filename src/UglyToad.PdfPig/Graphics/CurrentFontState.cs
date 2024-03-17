@@ -1,7 +1,9 @@
-﻿// ReSharper disable RedundantDefaultMemberInitializer
+﻿#nullable disable
+
+// ReSharper disable RedundantDefaultMemberInitializer
+
 namespace UglyToad.PdfPig.Graphics
 {
-    using Core;
     using Operations.SpecialGraphicsState;
     using PdfPig.Core;
     using Tokens;

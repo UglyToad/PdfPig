@@ -4,7 +4,6 @@
     using System.Globalization;
     using System.IO;
     using Tokens;
-    using Util.JetBrains.Annotations;
 
     /// <inheritdoc />
     /// <summary>
@@ -25,7 +24,6 @@
         /// <summary>
         /// The name of the font as defined in the resource dictionary.
         /// </summary>
-        [NotNull]
         public NameToken Font { get; }
 
         /// <summary>
