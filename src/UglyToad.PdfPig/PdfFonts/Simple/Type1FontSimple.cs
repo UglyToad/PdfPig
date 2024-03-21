@@ -90,14 +90,13 @@
 
         public bool TryGetUnicode(int characterCode, [NotNullWhen(true)] out string? value)
         {
-            if (toUnicodeCMap.CanMapToUnicode)
+            value = null;
+            if (toUnicodeCMap.CanMapToUnicode && toUnicodeCMap.TryGet(characterCode, out value))
             {
-                return toUnicodeCMap.TryGet(characterCode, out value);
+                return true;
             }
 
-            value = null;
-
-            if (encoding == null)
+            if (encoding is null)
             {
                 try
                 {
@@ -132,7 +131,7 @@
                 return false;
             }
 
-            return true;
+            return value is not null;
         }
 
         public CharacterBoundingBox GetBoundingBox(int characterCode)
