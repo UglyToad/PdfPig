@@ -52,16 +52,29 @@
 
         public bool TryGetUnicode(int characterCode, [NotNullWhen(true)] out string? value)
         {
-            if (toUnicodeCMap.CanMapToUnicode)
+            value = null;
+
+            if (toUnicodeCMap.CanMapToUnicode && toUnicodeCMap.TryGet(characterCode, out value))
             {
-                return toUnicodeCMap.TryGet(characterCode, out value);
+                return true;
             }
 
-            var name = encoding.GetName(characterCode);
+            if (encoding is null)
+            {
+                return false;
+            }
 
-            value = GlyphList.AdobeGlyphList.NameToUnicode(name);
+            try
+            {
+                var name = encoding.GetName(characterCode);
+                value = GlyphList.AdobeGlyphList.NameToUnicode(name);
+            }
+            catch
+            {
+                return false;
+            }
 
-            return true;
+            return value is not null;
         }
 
         public CharacterBoundingBox GetBoundingBox(int characterCode)
