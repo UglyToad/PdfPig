@@ -1,10 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Tokenization
 {
-    using System.Collections.Generic;
     using Core;
     using Tokens;
 
-    internal class HexTokenizer : ITokenizer
+    internal sealed class HexTokenizer : ITokenizer
     {
         public bool ReadsNextByte { get; } = false;
 
@@ -16,8 +15,8 @@
             {
                 return false;
             }
-            
-            var characters = new List<char>();
+
+            using var charBuffer = new ArrayPoolBufferWriter<char>();
 
             while (inputBytes.MoveNext())
             {
@@ -38,10 +37,10 @@
                     return false;
                 }
 
-                characters.Add((char)current);
+                charBuffer.Write((char)current);
             }
 
-            token = new HexToken(characters);
+            token = new HexToken(charBuffer.WrittenSpan);
 
             return true;
         }
