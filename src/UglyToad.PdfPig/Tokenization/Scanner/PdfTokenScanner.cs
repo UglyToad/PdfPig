@@ -825,7 +825,7 @@
 
             var scanner = new CoreTokenScanner(bytes, true, useLenientParsing: parsingOptions.UseLenientParsing);
 
-            var objects = new List<Tuple<long, long>>();
+            var objects = new List<(long, long)>();
 
             for (var i = 0; i < numberOfObjects.Int; i++)
             {
@@ -834,7 +834,7 @@
                 scanner.MoveNext();
                 var byteOffset = (NumericToken)scanner.CurrentToken;
 
-                objects.Add(Tuple.Create(objectNumber.Long, byteOffset.Long));
+                objects.Add((objectNumber.Long, byteOffset.Long));
             }
 
             var results = new List<ObjectToken>();
