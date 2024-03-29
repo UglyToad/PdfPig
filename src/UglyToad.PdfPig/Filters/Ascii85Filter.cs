@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
+    using Core;
     using Tokens;
 
     /// <inheritdoc />
@@ -35,77 +35,74 @@
 
             var index = 0;
 
-            using (var stream = new MemoryStream())
-            using (var writer = new BinaryWriter(stream))
+            using var writer = new ArrayPoolBufferWriter<byte>();
+           
+            for (var i = 0; i < input.Count; i++)
             {
-                for (var i = 0; i < input.Count; i++)
+                var value = input[i];
+
+                if (IsWhiteSpace(value))
                 {
-                    var value = input[i];
+                    continue;
+                }
 
-                    if (IsWhiteSpace(value))
-                    {
-                        continue;
-                    }
-
-                    if (value == EndOfDataBytes[0])
-                    {
-                        if (i == input.Count - 1 || input[i + 1] == EndOfDataBytes[1])
-                        {
-                            if (index > 0)
-                            {
-                                WriteData(asciiBuffer, index, writer);
-                            }
-
-                            index = 0;
-
-                            // The end
-                            break;
-                        }
-
-                        // TODO: this shouldn't be possible?
-                    }
-
-                    if (value == EmptyBlock)
+                if (value == EndOfDataBytes[0])
+                {
+                    if (i == input.Count - 1 || input[i + 1] == EndOfDataBytes[1])
                     {
                         if (index > 0)
                         {
-                            throw new InvalidOperationException("Encountered z within a 5 character block");
-                        }
-
-                        for (int j = 0; j < 4; j++)
-                        {
-                            writer.Write((byte)0);
+                            WriteData(asciiBuffer, index, writer);
                         }
 
                         index = 0;
 
-                        // We've completed our block.
-                    }
-                    else
-                    {
-                        asciiBuffer[index] = (byte) (value - Offset);
-                        index++;
+                        // The end
+                        break;
                     }
 
-                    if (index == 5)
-                    {
-                        WriteData(asciiBuffer, index, writer);
-                        index = 0;
-                    }
+                    // TODO: this shouldn't be possible?
                 }
 
-                if (index > 0)
+                if (value == EmptyBlock)
+                {
+                    if (index > 0)
+                    {
+                        throw new InvalidOperationException("Encountered z within a 5 character block");
+                    }
+
+                    for (int j = 0; j < 4; j++)
+                    {
+                        writer.Write(0);
+                    }
+
+                    index = 0;
+
+                    // We've completed our block.
+                }
+                else
+                {
+                    asciiBuffer[index] = (byte) (value - Offset);
+                    index++;
+                }
+
+                if (index == 5)
                 {
                     WriteData(asciiBuffer, index, writer);
+                    index = 0;
                 }
-
-                writer.Flush();
-
-                return stream.ToArray();
             }
+
+            if (index > 0)
+            {
+                WriteData(asciiBuffer, index, writer);
+            }
+
+            return writer.WrittenSpan.ToArray();
+            
         }
 
-        private static void WriteData(byte[] ascii, int index, BinaryWriter writer)
+        private static void WriteData(Span<byte> ascii, int index, ArrayPoolBufferWriter<byte> writer)
         {
             if (index < 2)
             {
