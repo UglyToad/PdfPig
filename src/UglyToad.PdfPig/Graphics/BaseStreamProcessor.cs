@@ -382,10 +382,10 @@
                 }
                 else
                 {
-                    IReadOnlyList<byte> bytes;
+                    byte[] bytes;
                     if (token is HexToken hex)
                     {
-                        bytes = hex.Bytes;
+                        bytes = [.. hex.Bytes];
                     }
                     else
                     {
