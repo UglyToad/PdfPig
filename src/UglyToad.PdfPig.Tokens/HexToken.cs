@@ -10,8 +10,7 @@ namespace UglyToad.PdfPig.Tokens
     /// </summary>
     public class HexToken : IDataToken<string>
     {
-        private static readonly Dictionary<char, byte> HexMap = new Dictionary<char, byte>
-        {
+        private static readonly Dictionary<char, byte> HexMap = new() {
             {'0', 0x00 },
             {'1', 0x01 },
             {'2', 0x02 },
@@ -42,29 +41,37 @@ namespace UglyToad.PdfPig.Tokens
         /// </summary>
         public string Data { get; }
 
+        private readonly byte[] _bytes;
+
         /// <summary>
         /// The bytes of the hex data.
         /// </summary>
-        public IReadOnlyList<byte> Bytes { get; }
+        public ReadOnlySpan<byte> Bytes => _bytes;
+
+        /// <summary>
+        /// The memory of the hex data.
+        /// </summary>
+        public ReadOnlyMemory<byte> Memory => _bytes;
 
         /// <summary>
         /// Create a new <see cref="HexToken"/> from the provided hex characters.
         /// </summary>
         /// <param name="characters">A set of hex characters 0-9, A - F, a - f representing a string.</param>
-        public HexToken(IReadOnlyList<char> characters)
+        public HexToken(ReadOnlySpan<char> characters)
         {
             if (characters == null)
             {
                 throw new ArgumentNullException(nameof(characters));
             }
 
-            var bytes = new List<byte>();
+            var bytes = new byte[characters.Length / 2];
+            int index = 0;
 
-            for (var i = 0; i < characters.Count; i += 2)
+            for (var i = 0; i < characters.Length; i += 2)
             {
                 char high = characters[i];
                 char low;
-                if (i == characters.Count - 1)
+                if (i == characters.Length - 1)
                 {
                     low = '0';
                 }
@@ -73,14 +80,14 @@ namespace UglyToad.PdfPig.Tokens
                     low = characters[i + 1];
                 }
 
-                var b = Convert(high, low);
-                bytes.Add(b);
+                var b = ConvertPair(high, low);
+                bytes[index++] = b;
             }
 
             // Handle UTF-16BE format strings.
-            if (bytes.Count >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF)
+            if (bytes.Length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF)
             {
-                Data = Encoding.BigEndianUnicode.GetString(bytes.ToArray(), 2, bytes.Count - 2);
+                Data = Encoding.BigEndianUnicode.GetString(bytes, 2, bytes.Length - 2);
             }
             else
             {
@@ -97,7 +104,7 @@ namespace UglyToad.PdfPig.Tokens
                 Data = builder.ToString();
             }
 
-            Bytes = bytes;
+            _bytes = bytes;
         }
 
         /// <summary>
@@ -106,7 +113,7 @@ namespace UglyToad.PdfPig.Tokens
         /// <param name="high">The high nibble.</param>
         /// <param name="low">The low nibble.</param>
         /// <returns>The byte.</returns>
-        public static byte Convert(char high, char low)
+        public static byte ConvertPair(char high, char low)
         {
             var highByte = HexMap[high];
             var lowByte = HexMap[low];
@@ -129,7 +136,7 @@ namespace UglyToad.PdfPig.Tokens
             var bytes = token.Bytes;
 
             var value = bytes[0] & 0xFF;
-            if (bytes.Count == 2)
+            if (bytes.Length == 2)
             {
                 value <<= 8;
                 value += bytes[1] & 0xFF;
@@ -159,7 +166,11 @@ namespace UglyToad.PdfPig.Tokens
         /// </summary>
         public string GetHexString()
         {
+#if NET8_0_OR_GREATER
+            return Convert.ToHexString(Bytes);
+#else
             return BitConverter.ToString(Bytes.ToArray()).Replace("-", string.Empty);
+#endif
         }
     }
 }

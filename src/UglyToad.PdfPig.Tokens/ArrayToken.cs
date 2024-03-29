@@ -10,7 +10,7 @@
     /// PDF arrays may be heterogeneous; that is, an array's elements may be any combination of numbers, strings,
     /// dictionaries, or any other objects, including other arrays.
     /// </summary>
-    public class ArrayToken : IDataToken<IReadOnlyList<IToken>>
+    public sealed class ArrayToken : IDataToken<IReadOnlyList<IToken>>
     {
         /// <summary>
         /// The tokens contained in this array.
