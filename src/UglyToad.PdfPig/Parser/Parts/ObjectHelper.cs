@@ -24,7 +24,7 @@
             int result = ReadHelper.ReadInt(bytes);
             if (result < 0 || result > GenerationNumberThreshold)
             {
-                throw new FormatException("Generation Number '" + result + "' has more than 5 digits");
+                throw new FormatException($"Generation Number '{result}' has more than 5 digits");
             }
 
             return result;

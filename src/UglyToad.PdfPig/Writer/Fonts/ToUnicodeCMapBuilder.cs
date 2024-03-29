@@ -16,7 +16,7 @@
 
         private static readonly TokenWriter TokenWriter = new TokenWriter();
 
-        public static IReadOnlyList<byte> ConvertToCMapStream(IReadOnlyDictionary<char, byte> unicodeToCharacterCode)
+        public static byte[] ConvertToCMapStream(IReadOnlyDictionary<char, byte> unicodeToCharacterCode)
         {
             using (var memoryStream = new MemoryStream())
             {
