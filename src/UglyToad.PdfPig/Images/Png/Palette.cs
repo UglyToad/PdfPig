@@ -1,6 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Images.Png
 {
-    internal class Palette
+    using System;
+
+    internal sealed class Palette
     {
         public bool HasAlphaValues { get; private set; }
 
@@ -9,7 +11,7 @@
         /// <summary>
         /// Creates a palette object. Input palette data length from PLTE chunk must be a multiple of 3.
         /// </summary>
-        public Palette(byte[] data)
+        public Palette(ReadOnlySpan<byte> data)
         {
             Data = new byte[data.Length * 4 / 3];
             var dataIndex = 0;
