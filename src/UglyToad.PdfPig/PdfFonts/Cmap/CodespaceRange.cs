@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Cmap
 {
     using System;
-    using System.Collections.Generic;
 
     /// <summary>
     ///  A codespace range is specified by a pair of codes of some particular length giving the lower and upper bounds of that range.
@@ -11,12 +10,12 @@
         /// <summary>
         /// The lower-bound of this range.
         /// </summary>
-        public IReadOnlyList<byte> Start { get; }
+        public ReadOnlyMemory<byte> Start { get; }
 
         /// <summary>
         /// The upper-bound of this range.
         /// </summary>
-        public IReadOnlyList<byte> End { get; }
+        public ReadOnlyMemory<byte> End { get; }
 
         /// <summary>
         /// The lower-bound of this range as an integer.
@@ -36,13 +35,13 @@
         /// <summary>
         /// Creates a new instance of <see cref="CodespaceRange"/>.
         /// </summary>
-        public CodespaceRange(IReadOnlyList<byte> start, IReadOnlyList<byte> end)
+        public CodespaceRange(ReadOnlyMemory<byte> start, ReadOnlyMemory<byte> end)
         {
             Start = start;
             End = end;
-            StartInt = start.ToInt(start.Count);
-            EndInt = end.ToInt(end.Count);
-            CodeLength = start.Count;
+            StartInt = start.Span.ToInt();
+            EndInt = end.Span.ToInt();
+            CodeLength = start.Length;
         }
 
         /// <summary>
@@ -74,7 +73,7 @@
                 return false;
             }
 
-            var value = code.ToInt(codeLength);
+            var value = ((ReadOnlySpan<byte>)code).Slice(0, codeLength).ToInt();
             if (value >= StartInt && value <= EndInt)
             {
                 return true;

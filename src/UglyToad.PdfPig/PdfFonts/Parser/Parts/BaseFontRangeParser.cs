@@ -34,7 +34,7 @@
                     throw new InvalidFontFormatException("bfrange ended unexpectedly after the high source code.");
                 }
 
-                List<byte>? destinationBytes = null;
+                byte[]? destinationBytes = null;
                 ArrayToken? destinationArray = null;
 
                 switch (scanner.CurrentToken)
@@ -43,7 +43,7 @@
                         destinationArray = arrayToken;
                         break;
                     case HexToken hexToken:
-                        destinationBytes = hexToken.Bytes.ToList();
+                        destinationBytes = [.. hexToken.Bytes];
                         break;
                     case NumericToken _:
                         throw new NotImplementedException("From the spec it seems this possible but the meaning is unclear...");
@@ -52,7 +52,7 @@
                 }
 
                 var done = false;
-                var startCode = new List<byte>(lowSourceCode.Bytes);
+                var startCode = lowSourceCode.Bytes.ToArray();
                 var endCode = highSourceCode.Bytes;
 
                 if (destinationArray != null)
@@ -76,7 +76,7 @@
                             builder.AddBaseFontCharacter(startCode, hex.Bytes);
                         }
                         
-                        Increment(startCode, startCode.Count - 1);
+                        Increment(startCode, startCode.Length - 1);
 
                         arrayIndex++;
                     }
@@ -93,14 +93,14 @@
 
                     builder.AddBaseFontCharacter(startCode, destinationBytes!);
 
-                    Increment(startCode, startCode.Count - 1);
+                    Increment(startCode, startCode.Length - 1);
 
-                    Increment(destinationBytes!, destinationBytes!.Count - 1);
+                    Increment(destinationBytes!, destinationBytes!.Length - 1);
                 }
             }
         }
 
-        private static void Increment(IList<byte> data, int position)
+        private static void Increment(Span<byte> data, int position)
         {
             if (position > 0 && (data[position] & 0xFF) == 255)
             {
@@ -113,9 +113,9 @@
             }
         }
 
-        private static int Compare(IReadOnlyList<byte> first, IReadOnlyList<byte> second)
+        private static int Compare(ReadOnlySpan<byte> first, ReadOnlySpan<byte> second)
         {
-            for (var i = 0; i < first.Count; i++)
+            for (var i = 0; i < first.Length; i++)
             {
                 if (first[i] == second[i])
                 {
