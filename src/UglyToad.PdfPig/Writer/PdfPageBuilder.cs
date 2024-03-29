@@ -702,7 +702,9 @@
             var png = Png.Open(pngStream);
 
             if (placementRectangle.Equals(default(PdfRectangle)))
+            {
                 placementRectangle = new PdfRectangle(0, 0, png.Width, png.Height);
+            }
 
             byte[] data;
             var pixelBuffer = new byte[3];

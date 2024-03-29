@@ -362,7 +362,10 @@
         private static double BoundAngle180(double angle)
         {
             angle = (angle + 180) % 360;
-            if (angle < 0) angle += 360;
+            if (angle < 0)
+            {
+                angle += 360;
+            }
             return angle - 180;
         }
 
