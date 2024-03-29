@@ -14,7 +14,7 @@
         private const int Password = 5839;
         private const int CharstringEncryptionKey = 4330;
 
-        public (Type1PrivateDictionary, Type1CharStrings) Parse(IReadOnlyList<byte> bytes, bool isLenientParsing)
+        public (Type1PrivateDictionary, Type1CharStrings) Parse(ReadOnlySpan<byte> bytes, bool isLenientParsing)
         {
             if (!IsBinary(bytes))
             {
@@ -23,7 +23,7 @@
 
             var decrypted = Decrypt(bytes, EexecEncryptionKey, EexecRandomBytes);
 
-            if (decrypted.Count == 0)
+            if (decrypted.Length == 0)
             {
                 var defaultPrivateDictionary = new Type1PrivateDictionary(new Type1PrivateDictionary.Builder());
                 var defaultCharstrings = new Type1CharStrings(new Dictionary<string, Type1CharStrings.CommandSequence>(),
@@ -32,7 +32,7 @@
                 return (defaultPrivateDictionary, defaultCharstrings);
             }
 
-            var tokenizer = new Type1Tokenizer(new ByteArrayInputBytes(decrypted));
+            var tokenizer = new Type1Tokenizer(new ByteArrayInputBytes([.. decrypted]));
 
             /*
              * After 4 random characters follows the /Private dictionary and the /CharString dictionary.
@@ -315,9 +315,9 @@
         /// The first byte must not be whitespace.
         /// One of the first four ciphertext bytes must not be an ASCII hex character.
         /// </summary>
-        private static bool IsBinary(IReadOnlyList<byte> bytes)
+        private static bool IsBinary(ReadOnlySpan<byte> bytes)
         {
-            if (bytes.Count < 4)
+            if (bytes.Length < 4)
             {
                 return true;
             }
@@ -340,13 +340,14 @@
             return false;
         }
 
-        private static IReadOnlyList<byte> ConvertHexToBinary(IReadOnlyList<byte> bytes)
+        private static ReadOnlySpan<byte> ConvertHexToBinary(ReadOnlySpan<byte> bytes)
         {
-            var result = new List<byte>(bytes.Count / 2);
+            var result = new byte[bytes.Length / 2];
+            int index = 0;
 
             var last = '\0';
             var offset = 0;
-            for (var i = 0; i < bytes.Count; i++)
+            for (var i = 0; i < bytes.Length; i++)
             {
                 var c = (char)bytes[i];
                 if (!ReadHelper.IsHex(c))
@@ -357,7 +358,7 @@
 
                 if (offset == 1)
                 {
-                    result.Add(HexToken.Convert(last, c));
+                    result[index++] = HexToken.ConvertPair(last, c);
                     offset = 0;
                 }
                 else
@@ -371,7 +372,7 @@
             return result;
         }
 
-        private static IReadOnlyList<byte> Decrypt(IReadOnlyList<byte> bytes, int key, int randomBytes)
+        private static ReadOnlySpan<byte> Decrypt(ReadOnlySpan<byte> bytes, int key, int randomBytes)
         {
             /*
              * We start with three constants R = 55665, c1 = 52845 and c2 = 22719.
@@ -388,17 +389,17 @@
                 return bytes;
             }
 
-            if (randomBytes > bytes.Count || bytes.Count == 0)
+            if (randomBytes > bytes.Length || bytes.Length == 0)
             {
-                return new byte[0];
+                return [];
             }
 
             const int c1 = 52845;
             const int c2 = 22719;
 
-            var plainBytes = new byte[bytes.Count - randomBytes];
+            var plainBytes = new byte[bytes.Length - randomBytes];
 
-            for (var i = 0; i < bytes.Count; i++)
+            for (var i = 0; i < bytes.Length; i++)
             {
                 var cipher = bytes[i] & 0xFF;
                 var plain = cipher ^ key >> 8;
@@ -681,13 +682,13 @@
                     throw new InvalidOperationException($"Found an unexpected token instead of subroutine charstring: {charstring}.");
                 }
 
-                if (!isLenientParsing && charstringToken.Data.Count != byteLength)
+                if (!isLenientParsing && charstringToken.Data.Length != byteLength)
                 {
                     throw new InvalidOperationException($"The subroutine charstring {charstringToken} did not have the expected length of {byteLength}.");
                 }
 
-                var subroutine = Decrypt(charstringToken.Data, CharstringEncryptionKey, lenIv);
-                subroutines.Add(new Type1CharstringDecryptedBytes(subroutine, index));
+                var subroutine = Decrypt(charstringToken.Data.Span, CharstringEncryptionKey, lenIv);
+                subroutines.Add(new Type1CharstringDecryptedBytes([.. subroutine], index));
                 ReadTillPut(tokenizer);
             }
 
@@ -732,14 +733,14 @@
                     throw new InvalidOperationException($"Got wrong type of token, expected charstring, instead got: {charstring}.");
                 }
 
-                if (!isLenientParsing && charstringToken.Data.Count != charstringLength)
+                if (!isLenientParsing && charstringToken.Data.Length != charstringLength)
                 {
                     throw new InvalidOperationException($"The charstring {charstringToken} did not have the expected length of {charstringLength}.");
                 }
 
-                var data = Decrypt(charstringToken.Data, CharstringEncryptionKey, lenIv);
+                var data = Decrypt(charstringToken.Data.Span, CharstringEncryptionKey, lenIv);
 
-                results.Add(new Type1CharstringDecryptedBytes(name, data, i));
+                results.Add(new Type1CharstringDecryptedBytes(name, [.. data], i));
 
                 ReadTillDef(tokenizer);
             }
