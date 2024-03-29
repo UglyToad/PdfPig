@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Core
 {
-    using System.Collections.Generic;
-    using System.Linq;
+    using System;
     using System.Text;
 
     /// <summary>
@@ -30,31 +29,8 @@
         /// <summary>
         /// Convert the bytes to string using the ISO 8859-1 encoding.
         /// </summary>
-        public static string BytesAsLatin1String(IReadOnlyList<byte> bytes)
+        public static string BytesAsLatin1String(ReadOnlySpan<byte> bytes)
         {
-            if (bytes == null)
-            {
-                return null;
-            }
-
-            if (bytes is byte[] arr)
-            {
-                return BytesAsLatin1String(arr);
-            }
-
-            return BytesAsLatin1String(bytes.ToArray());
-        }
-
-        /// <summary>
-        /// Convert the bytes to string using the ISO 8859-1 encoding.
-        /// </summary>
-        public static string BytesAsLatin1String(byte[] bytes)
-        {
-            if (bytes == null)
-            {
-                return null;
-            }
-
             return Iso88591.GetString(bytes);
         }
     }
