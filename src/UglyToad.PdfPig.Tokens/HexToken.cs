@@ -2,13 +2,12 @@ namespace UglyToad.PdfPig.Tokens
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Text;
 
     /// <summary>
     /// A token containing string data where the string is encoded as hexadecimal.
     /// </summary>
-    public class HexToken : IDataToken<string>
+    public sealed class HexToken : IDataToken<string>
     {
         private static readonly Dictionary<char, byte> HexMap = new() {
             {'0', 0x00 },
