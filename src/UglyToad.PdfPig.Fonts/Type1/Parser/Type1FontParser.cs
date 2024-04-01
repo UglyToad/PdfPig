@@ -39,7 +39,7 @@
                 var (ascii, binary) = ReadPfbHeader(inputBytes);
 
                 eexecPortion = binary;
-                inputBytes = new ByteArrayInputBytes(ascii);
+                inputBytes = new MemoryInputBytes(ascii);
             }
 
             var scanner = new CoreTokenScanner(inputBytes, false);

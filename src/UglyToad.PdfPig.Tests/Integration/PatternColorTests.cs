@@ -80,7 +80,7 @@
                 Assert.NotNull(tillingColor.PatternStream);
                 Assert.Equal(1897.47, tillingColor.XStep);
                 Assert.Equal(2012.23, tillingColor.YStep);
-                Assert.Equal(142, tillingColor.Data.Count);
+                Assert.Equal(142, tillingColor.Data.Length);
 
                 Assert.Equal(new PdfPoint(-18.6026, -1992.51), tillingColor.BBox.BottomLeft);
                 Assert.Equal(new PdfPoint(1878.86, 19.7278), tillingColor.BBox.TopRight);

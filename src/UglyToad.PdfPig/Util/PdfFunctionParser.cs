@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using UglyToad.PdfPig.Filters;
     using UglyToad.PdfPig.Functions;
     using UglyToad.PdfPig.Parser.Parts;
@@ -19,7 +20,7 @@
             if (DirectObjectFinder.TryGet(function, scanner, out StreamToken? fs))
             {
                 functionDictionary = fs.StreamDictionary;
-                functionStream = new StreamToken(fs.StreamDictionary, fs.Decode(filterProvider, scanner));
+                functionStream = new StreamToken(fs.StreamDictionary, fs.Decode(filterProvider, scanner).ToArray());
             }
             else if (DirectObjectFinder.TryGet(function, scanner, out DictionaryToken? fd))
             {

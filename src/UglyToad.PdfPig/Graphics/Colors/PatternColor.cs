@@ -122,14 +122,14 @@
         /// <summary>
         /// Content containing the painting operators needed to paint one instance of the cell.
         /// </summary>
-        public IReadOnlyList<byte> Data { get; }
+        public ReadOnlyMemory<byte> Data { get; }
 
         /// <summary>
         /// Create a new <see cref="TilingPatternColor"/>.
         /// </summary>
         public TilingPatternColor(TransformationMatrix matrix, DictionaryToken extGState, StreamToken patternStream,
             PatternPaintType paintType, PatternTilingType tilingType, PdfRectangle bbox, double xStep, double yStep,
-            DictionaryToken resources, IReadOnlyList<byte> data)
+            DictionaryToken resources, ReadOnlyMemory<byte> data)
             : base(PatternType.Tiling, patternStream.StreamDictionary, extGState, matrix)
         {
             PatternStream = patternStream;
@@ -165,7 +165,7 @@
                 XStep.Equals(other.XStep) &&
                 YStep.Equals(other.YStep) &&
                 Resources.Equals(other.Resources) &&
-                Data.SequenceEqual(other.Data);
+                Data.Span.SequenceEqual(other.Data.Span);
         }
 
         /// <inheritdoc />

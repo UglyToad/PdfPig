@@ -29,7 +29,7 @@
 
                 Assert.Single(files);
 
-                Assert.Equal(20668, files[0].Bytes.Count);
+                Assert.Equal(20668, files[0].Memory.Length);
             }
         }
     }

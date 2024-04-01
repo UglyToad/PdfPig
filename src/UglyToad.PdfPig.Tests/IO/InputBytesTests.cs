@@ -11,7 +11,7 @@
         {
             var bytes = OtherEncodings.StringAsLatin1Bytes(TestData);
 
-            var array = new ByteArrayInputBytes(bytes);
+            var array = new MemoryInputBytes(bytes);
 
             using (var memoryStream = new MemoryStream(bytes))
             {
@@ -220,7 +220,7 @@
             Assert.False(stream.MoveNext());
         }
 
-        private static ByteArrayInputBytes StringToBytes(string str) => new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(str));
+        private static MemoryInputBytes StringToBytes(string str) => new MemoryInputBytes(OtherEncodings.StringAsLatin1Bytes(str));
         private static StreamInputBytes StringToStream(string str) => new StreamInputBytes(new MemoryStream(OtherEncodings.StringAsLatin1Bytes(str)));
     }
 }

@@ -52,28 +52,25 @@ namespace UglyToad.PdfPig.Writer.Xmp
 
             // Dublin Core Schema
             AddElementsForSchema(rdfDescriptionElement, DublinCorePrefix, DublinCoreNamespace, builder,
-                new List<SchemaMapper>
-                {
+                [
                     new SchemaMapper("format", b => "application/pdf"),
                     new SchemaMapper("creator", b => b.Author),
                     new SchemaMapper("description", b => b.Subject),
                     new SchemaMapper("title", b => b.Title)
-                });
+                ]);
 
             // XMP Basic Schema
             AddElementsForSchema(rdfDescriptionElement, XmpBasicPrefix, XmpBasicNamespace, builder,
-                new List<SchemaMapper>
-                {
+                [
                     new SchemaMapper("CreatorTool", b => b.Creator)
-                });
+                ]);
 
             // Adobe PDF Schema
             AddElementsForSchema(rdfDescriptionElement, AdobePdfPrefix, AdobePdfNamespace, builder,
-                new List<SchemaMapper>
-                {
+                [
                     new SchemaMapper("PDFVersion", b => version.ToString("F1", CultureInfo.InvariantCulture)),
                     new SchemaMapper("Producer", b => b.Producer)
-                });
+                ]);
 
             var pdfAIdContainer = GetVersionAndConformanceLevelIdentificationElement(rdf, emptyRdfAbout, standard);
 

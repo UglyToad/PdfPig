@@ -176,7 +176,7 @@
                 {
                     if (range.IsFullMatch(result, byteCount))
                     {
-                        return ByteArrayToInt(result, byteCount);
+                        return ByteArrayToInt(result.AsSpan(0, byteCount));
                     }
                 }
                 if (byteCount < maxCodeLength)
@@ -198,10 +198,10 @@
             return bytes.CurrentByte;
         }
 
-        private static int ByteArrayToInt(byte[] data, int dataLen)
+        private static int ByteArrayToInt(ReadOnlySpan<byte> data)
         {
             int code = 0;
-            for (int i = 0; i < dataLen; ++i)
+            for (int i = 0; i < data.Length; ++i)
             {
                 code <<= 8;
                 code |= (data[i] & 0xFF);

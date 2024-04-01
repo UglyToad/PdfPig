@@ -73,11 +73,9 @@
 
                 if (DirectObjectFinder.TryGet<StreamToken>(toUnicodeValue, scanner, out var toUnicodeStream))
                 {
-                    var decodedUnicodeCMap = toUnicodeStream?.Decode(filterProvider, scanner);
-
-                    if (decodedUnicodeCMap != null)
+                    if (toUnicodeStream?.Decode(filterProvider, scanner) is ReadOnlyMemory<byte> decodedUnicodeCMap)
                     {
-                        toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap));
+                        toUnicodeCMap = CMapCache.Parse(new MemoryInputBytes(decodedUnicodeCMap));
                     }
                 }
                 else if (DirectObjectFinder.TryGet<NameToken>(toUnicodeValue, scanner, out var toUnicodeName)
@@ -165,7 +163,7 @@
             {
                 var decoded = stream.Decode(filterProvider, scanner);
 
-                var cmap = CMapCache.Parse(new ByteArrayInputBytes(decoded));
+                var cmap = CMapCache.Parse(new MemoryInputBytes(decoded));
 
                 result = cmap ?? throw new InvalidOperationException($"Could not read CMap from stream in the dictionary: {dictionary}");
             }

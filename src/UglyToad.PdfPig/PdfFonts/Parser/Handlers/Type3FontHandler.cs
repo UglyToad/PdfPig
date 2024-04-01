@@ -7,6 +7,7 @@
     using Fonts.Encodings;
     using PdfPig.Parser.Parts;
     using Simple;
+    using System;
     using Tokenization.Scanner;
     using Tokens;
     using Util;
@@ -48,11 +49,9 @@
             {
                 var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, scanner);
 
-                var decodedUnicodeCMap = toUnicode?.Decode(filterProvider, scanner);
-
-                if (decodedUnicodeCMap != null)
+                if (toUnicode?.Decode(filterProvider, scanner) is ReadOnlyMemory<byte> decodedUnicodeCMap)
                 {
-                    toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap));
+                    toUnicodeCMap = CMapCache.Parse(new MemoryInputBytes(decodedUnicodeCMap));
                 }
             }
 

@@ -23,7 +23,7 @@
         /// <summary>
         /// Inline image bytes.
         /// </summary>
-        public IReadOnlyList<byte>? Bytes { get; internal set; }
+        public ReadOnlyMemory<byte> Bytes { get; internal set; }
 
         internal InlineImage CreateInlineImage(TransformationMatrix transformationMatrix,
             ILookupFilterProvider filterProvider,
@@ -31,7 +31,7 @@
             RenderingIntent defaultRenderingIntent,
             IResourceStore resourceStore)
         {
-            if (Properties is null || Bytes is null)
+            if (Properties is null)
             {
                 throw new InvalidOperationException($"Inline image builder not completely defined before calling {nameof(CreateInlineImage)}.");
             }

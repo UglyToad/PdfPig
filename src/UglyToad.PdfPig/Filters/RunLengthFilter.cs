@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
+    using System;
     using System.Collections.Generic;
     using System.IO;
     using Tokens;
@@ -17,15 +18,16 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public byte[] Decode(IReadOnlyList<byte> input, DictionaryToken streamDictionary, int filterIndex)
+        public byte[] Decode(ReadOnlyMemory<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
+            var inputSpan = input.Span;
             using (var memoryStream = new MemoryStream())
             using (var writer = new BinaryWriter(memoryStream))
             {
                 var i = 0;
-                while (i < input.Count)
+                while (i < inputSpan.Length)
                 {
-                    var runLength = input[i];
+                    var runLength = inputSpan[i];
 
                     if (runLength == EndOfDataLength)
                     {
@@ -41,7 +43,7 @@
                         {
                             i++;
 
-                            writer.Write(input[i]);
+                            writer.Write(inputSpan[i]);
 
                             rangeToWriteLiterally--;
                         }
@@ -54,7 +56,7 @@
                     {
                         var numberOfTimesToCopy = 257 - runLength;
 
-                        var byteToCopy = input[i + 1];
+                        var byteToCopy = inputSpan[i + 1];
 
                         for (int j = 0; j < numberOfTimesToCopy; j++)
                         {

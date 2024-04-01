@@ -17,7 +17,7 @@
                 {
                     var dict = new Dictionary<NameToken, IToken>();
                     dict[NameToken.Length] = new NumericToken(0);
-                    var replaced = new StreamToken(new DictionaryToken(dict), new List<byte>());
+                    var replaced = new StreamToken(new DictionaryToken(dict), []);
                     return replaced;
                 });
 
@@ -35,7 +35,7 @@
             {
                 var dict = new Dictionary<NameToken, IToken>();
                 dict[NameToken.Length] = new NumericToken(0);
-                var replacement = new StreamToken(new DictionaryToken(dict), new List<byte>());
+                var replacement = new StreamToken(new DictionaryToken(dict), []);
 
                 var pg = document.Structure.Catalog.Pages.GetPageNode(1).NodeDictionary;
                 var contents = pg.Data[NameToken.Contents] as IndirectReferenceToken;

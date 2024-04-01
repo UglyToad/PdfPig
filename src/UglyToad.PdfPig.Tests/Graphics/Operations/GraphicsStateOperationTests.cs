@@ -39,7 +39,7 @@
                 }
                 else if (operationType == typeof(EndInlineImage))
                 {
-                    operation = new EndInlineImage(new List<byte>());
+                    operation = new EndInlineImage([]);
                 }
                 else if (operationType == typeof(BeginInlineImageData))
                 {

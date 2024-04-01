@@ -125,25 +125,19 @@ namespace UglyToad.PdfPig.Writer
         /// <param name="fontFileBytes">The bytes of a TrueType font file.</param>
         /// <param name="reasons">Any reason messages explaining why the file can't be used, if applicable.</param>
         /// <returns><see langword="true"/> if the file can be used, <see langword="false"/> otherwise.</returns>
-        public bool CanUseTrueTypeFont(IReadOnlyList<byte> fontFileBytes, out IReadOnlyList<string> reasons)
+        public bool CanUseTrueTypeFont(ReadOnlyMemory<byte> fontFileBytes, out IReadOnlyList<string> reasons)
         {
             var reasonsMutable = new List<string>();
             reasons = reasonsMutable;
             try
             {
-                if (fontFileBytes is null)
-                {
-                    reasonsMutable.Add("Provided bytes were null.");
-                    return false;
-                }
-
-                if (fontFileBytes.Count == 0)
+                if (fontFileBytes.IsEmpty)
                 {
                     reasonsMutable.Add("Provided bytes were empty.");
                     return false;
                 }
 
-                var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFileBytes)));
+                var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new MemoryInputBytes(fontFileBytes)));
 
                 if (font.TableRegister.CMapTable is null)
                 {
@@ -177,11 +171,11 @@ namespace UglyToad.PdfPig.Writer
         /// </summary>
         /// <param name="fontFileBytes">The bytes of a TrueType font.</param>
         /// <returns>An identifier which can be passed to <see cref="PdfPageBuilder.AddText"/>.</returns>
-        public AddedFont AddTrueTypeFont(IReadOnlyList<byte> fontFileBytes)
+        public AddedFont AddTrueTypeFont(ReadOnlyMemory<byte> fontFileBytes)
         {
             try
             {
-                var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFileBytes)));
+                var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new MemoryInputBytes(fontFileBytes)));
                 var id = Guid.NewGuid();
                 var added = new AddedFont(id, context.ReserveObjectNumber());
                 fonts[id] = new FontStored(added, new TrueTypeWritingFont(font, fontFileBytes));
@@ -246,10 +240,7 @@ namespace UglyToad.PdfPig.Writer
                 }
             }
 
-            if (builder is null)
-            {
-                builder = new PdfPageBuilder(pages.Count + 1, this);
-            }
+            builder ??= new PdfPageBuilder(pages.Count + 1, this);
 
             builder.PageSize = new PdfRectangle(0, 0, width, height);
             pages[builder.PageNumber] = builder;

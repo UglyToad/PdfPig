@@ -70,13 +70,13 @@
                 var page = document.GetPage(1);
                 foreach (var image in page.GetImages())
                 {
-                    if (image.TryGetBytes(out var bytes))
+                    if (image.TryGetMemory(out var bytes))
                     {
-                        Assert.NotNull(bytes);
+                        Assert.False(bytes.IsEmpty);
                     }
                     else
                     {
-                        Assert.NotNull(image.RawBytes);
+                        Assert.False(image.RawMemory.IsEmpty);
                     }
                 }
             }

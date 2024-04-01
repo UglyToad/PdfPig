@@ -21,7 +21,7 @@
             if (shading is StreamToken fs)
             {
                 shadingDictionary = fs.StreamDictionary;
-                shadingStream = new StreamToken(fs.StreamDictionary, fs.Decode(filterProvider, scanner));
+                shadingStream = new StreamToken(fs.StreamDictionary, fs.Decode(filterProvider, scanner).ToArray());
             }
             else if (shading is DictionaryToken fd)
             {
@@ -125,7 +125,7 @@
             }
             else
             {
-                return new PdfFunction[] { PdfFunctionParser.Create(functionToken, scanner, filterProvider) };
+                return [PdfFunctionParser.Create(functionToken, scanner, filterProvider)];
             }
         }
 

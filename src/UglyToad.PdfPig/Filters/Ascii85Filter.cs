@@ -29,17 +29,18 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public byte[] Decode(IReadOnlyList<byte> input, DictionaryToken streamDictionary, int filterIndex)
+        public byte[] Decode(ReadOnlyMemory<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
+            var inputSpan = input.Span;
             var asciiBuffer = new byte[5];
 
             var index = 0;
 
             using var writer = new ArrayPoolBufferWriter<byte>();
            
-            for (var i = 0; i < input.Count; i++)
+            for (var i = 0; i < inputSpan.Length; i++)
             {
-                var value = input[i];
+                var value = inputSpan[i];
 
                 if (IsWhiteSpace(value))
                 {
@@ -48,7 +49,7 @@
 
                 if (value == EndOfDataBytes[0])
                 {
-                    if (i == input.Count - 1 || input[i + 1] == EndOfDataBytes[1])
+                    if (i == inputSpan.Length - 1 || inputSpan[i + 1] == EndOfDataBytes[1])
                     {
                         if (index > 0)
                         {

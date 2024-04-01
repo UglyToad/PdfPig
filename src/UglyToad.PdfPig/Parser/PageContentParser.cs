@@ -101,7 +101,7 @@
 
                             // Replace the last end image operator with one containing the full set of data.
                             graphicsStateOperations.Remove(lastEndImage);
-                            graphicsStateOperations.Add(new EndInlineImage([.. lastEndImage.ImageData, .. missingData]));
+                            graphicsStateOperations.Add(new EndInlineImage([.. lastEndImage.ImageData.Span, .. missingData.AsSpan()]));
                         }
 
                         lastEndImageOffset = actualEndImageOffset;
@@ -143,7 +143,7 @@
 
                                 var nextByteSet = scanner.RecoverFromIncorrectEndImage(lastEndImageOffset.Value);
                                 graphicsStateOperations.RemoveRange(index, graphicsStateOperations.Count - index);
-                                var newEndInlineImage = new EndInlineImage([.. prevEndInlineImage.ImageData, .. nextByteSet]);
+                                var newEndInlineImage = new EndInlineImage([.. prevEndInlineImage.ImageData.Span, .. nextByteSet]);
                                 graphicsStateOperations.Add(newEndInlineImage);
                                 lastEndImageOffset = scanner.CurrentPosition - 3;
                             }

@@ -4,29 +4,36 @@
     using System.Collections;
     using System.Collections.Generic;
 
-    internal class CompactFontFormatIndex : IReadOnlyList<IReadOnlyList<byte>>
+    internal class CompactFontFormatIndex : IReadOnlyList<ReadOnlyMemory<byte>>
     {
-        private readonly IReadOnlyList<IReadOnlyList<byte>> bytes;
+        private readonly byte[][] bytes;
 
-        public int Count => bytes.Count;
+        public int Count => bytes.Length;
 
-        public IReadOnlyList<byte> this[int index] => bytes[index];
+        public ReadOnlyMemory<byte> this[int index] => bytes[index];
 
-        public static CompactFontFormatIndex None { get; } = new CompactFontFormatIndex(new byte[0][]);
+        public static CompactFontFormatIndex None { get; } = new CompactFontFormatIndex([]);
 
         public CompactFontFormatIndex(byte[][] bytes)
         {
-            this.bytes = bytes ?? Array.Empty<IReadOnlyList<byte>>();
+            this.bytes = bytes ?? [];
         }
         
-        public IEnumerator<IReadOnlyList<byte>> GetEnumerator()
+        public IEnumerator<ReadOnlyMemory<byte>> GetEnumerator()
         {
-            return bytes.GetEnumerator();
+            foreach (var item in bytes)
+            {
+                yield return new ReadOnlyMemory<byte>(item);
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return GetEnumerator();
+            foreach (var item in bytes)
+            {
+                yield return new ReadOnlyMemory<byte>(item);
+            }
+
         }
     }
 }

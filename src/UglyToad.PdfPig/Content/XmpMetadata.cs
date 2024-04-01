@@ -1,11 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Xml.Linq;
     using Core;
     using Filters;
+    using System;
+    using System.Xml.Linq;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -34,9 +32,9 @@
         /// Get the decoded bytes for the metadata stream. This can be interpreted as a sequence of plain-text bytes.
         /// </summary>
         /// <returns>The bytes for the metadata object with any filters removed.</returns>
-        public IReadOnlyList<byte> GetXmlBytes()
+        public ReadOnlySpan<byte> GetXmlBytes()
         {
-            return MetadataStreamToken.Decode(filterProvider, pdfTokenScanner);
+            return MetadataStreamToken.Decode(filterProvider, pdfTokenScanner).Span;
         }
 
         /// <summary>
@@ -45,7 +43,7 @@
         /// <returns>The <see cref="XDocument"/> for the XMP XML.</returns>
         public XDocument GetXDocument()
         {
-            return XDocument.Parse(OtherEncodings.BytesAsLatin1String(GetXmlBytes().ToArray()));
+            return XDocument.Parse(OtherEncodings.BytesAsLatin1String(GetXmlBytes()));
         }
     }
 }

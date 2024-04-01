@@ -53,7 +53,7 @@ startxref
         [Fact]
         public void SearcherFindsCorrectObjects()
         {
-            var input = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(TestData));
+            var input = new MemoryInputBytes(OtherEncodings.StringAsLatin1Bytes(TestData));
 
             var locations = BruteForceSearcher.GetObjectLocations(input);
 
@@ -99,7 +99,7 @@ endobj
 
 %%EOF";
 
-            var bytes = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(s));
+            var bytes = new MemoryInputBytes(OtherEncodings.StringAsLatin1Bytes(s));
 
             var locations = BruteForceSearcher.GetObjectLocations(bytes);
 
@@ -130,7 +130,7 @@ endobj
 << /IsEmpty false >>
 endobj";
 
-            var bytes = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(s));
+            var bytes = new MemoryInputBytes(OtherEncodings.StringAsLatin1Bytes(s));
 
             var locations = BruteForceSearcher.GetObjectLocations(bytes);
 
@@ -174,7 +174,7 @@ endobj";
         [Fact]
         public void BruteForceSearcherBytesFileOffsetsCorrect()
         {
-            var bytes = new ByteArrayInputBytes(File.ReadAllBytes(IntegrationHelpers.GetDocumentPath("Single Page Simple - from inkscape.pdf")));
+            var bytes = new MemoryInputBytes(File.ReadAllBytes(IntegrationHelpers.GetDocumentPath("Single Page Simple - from inkscape.pdf")));
 
             var locations = BruteForceSearcher.GetObjectLocations(bytes);
 
@@ -197,7 +197,7 @@ endobj";
         [Fact]
         public void BruteForceSearcherFileOffsetsCorrectOpenOffice()
         {
-            var bytes = new ByteArrayInputBytes(File.ReadAllBytes(IntegrationHelpers.GetDocumentPath("Single Page Simple - from open office.pdf")));
+            var bytes = new MemoryInputBytes(File.ReadAllBytes(IntegrationHelpers.GetDocumentPath("Single Page Simple - from open office.pdf")));
 
             var locations = BruteForceSearcher.GetObjectLocations(bytes);
 
@@ -224,7 +224,7 @@ endobj";
         [Fact]
         public void BruteForceSearcherCorrectlyFindsAllObjectsWhenOffset()
         {
-            var input = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(TestData));
+            var input = new MemoryInputBytes(OtherEncodings.StringAsLatin1Bytes(TestData));
 
             input.Seek(593);
 

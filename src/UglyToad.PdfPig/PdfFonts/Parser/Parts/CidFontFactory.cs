@@ -109,7 +109,7 @@
             {
                 case DescriptorFontFile.FontFileType.TrueType:
                     {
-                        var input = new TrueTypeDataBytes(new ByteArrayInputBytes(fontFile));
+                        var input = new TrueTypeDataBytes(new MemoryInputBytes(fontFile));
                         var ttf = TrueTypeFontParser.Parse(input);
                         return new PdfCidTrueTypeFont(ttf);
                     }
@@ -136,7 +136,7 @@
                         if (subtypeName == NameToken.OpenType)
                         {
                             var bytes = str.Decode(filterProvider, pdfScanner);
-                            var ttf = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(bytes)));
+                            var ttf = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new MemoryInputBytes(bytes)));
                             return new PdfCidTrueTypeFont(ttf);
                         }
 
@@ -292,7 +292,7 @@
 
             var bytes = stream.Decode(filterProvider, pdfScanner);
 
-            return new CharacterIdentifierToGlyphIndexMap(bytes);
+            return new CharacterIdentifierToGlyphIndexMap(bytes.Span);
         }
 
         private string SafeKeyAccess(DictionaryToken dictionary, NameToken keyName)

@@ -34,13 +34,8 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public byte[] Decode(IReadOnlyList<byte> input, DictionaryToken streamDictionary, int filterIndex)
+        public byte[] Decode(ReadOnlyMemory<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
-            if (input is null)
-            {
-                throw new ArgumentNullException(nameof(input));
-            }
-
             var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
             var predictor = parameters.GetIntOrDefault(NameToken.Predictor, -1);

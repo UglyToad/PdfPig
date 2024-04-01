@@ -1,8 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Encryption
 {
+    using System;
+
     internal static class RC4
     {
-        public static byte[] Encrypt(byte[] key, byte[] data)
+        public static byte[] Encrypt(ReadOnlySpan<byte> key, ReadOnlySpan<byte> data)
         {
             // Key-scheduling algorithm
             var s = new byte[256];

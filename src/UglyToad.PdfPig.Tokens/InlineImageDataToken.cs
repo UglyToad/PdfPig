@@ -1,20 +1,20 @@
 ﻿namespace UglyToad.PdfPig.Tokens
 {
-    using System.Collections.Generic;
+    using System;
 
     /// <summary>
     /// Inline image data is used to embed images in PDF content streams. The content is wrapped by ID and ED tags in a BI operation.
     /// </summary>
-    public class InlineImageDataToken : IDataToken<IReadOnlyList<byte>>
+    public sealed class InlineImageDataToken : IDataToken<ReadOnlyMemory<byte>>
     {
         /// <inheritdoc />
-        public IReadOnlyList<byte> Data { get; }
+        public ReadOnlyMemory<byte> Data { get; }
 
         /// <summary>
         /// Create a new <see cref="InlineImageDataToken"/>.
         /// </summary>
         /// <param name="data"></param>
-        public InlineImageDataToken(IReadOnlyList<byte> data)
+        public InlineImageDataToken(ReadOnlyMemory<byte> data)
         {
             Data = data;
         }
@@ -32,21 +32,7 @@
                 return false;
             }
 
-            if (Data.Count != other.Data.Count)
-            {
-                return false;
-            }
-
-
-            for (var index = 0; index < Data.Count; ++index)
-            {
-                if (Data[index] != other.Data[index])
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return Data.Span.SequenceEqual(other.Data.Span);
         }
     }
 }

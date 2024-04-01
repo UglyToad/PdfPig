@@ -20,20 +20,25 @@
         public string FileSpecification { get; }
 
         /// <summary>
+        /// The decrypted memory of the file.
+        /// </summary>
+        public ReadOnlyMemory<byte> Memory { get; }
+
+        /// <summary>
         /// The decrypted bytes of the file.
         /// </summary>
-        public IReadOnlyList<byte> Bytes { get; }
+        public ReadOnlySpan<byte> Bytes => Memory.Span;
 
         /// <summary>
         /// The underlying embedded file stream.
         /// </summary>
         public StreamToken Stream { get; }
         
-        internal EmbeddedFile(string name, string fileSpecification, IReadOnlyList<byte> bytes, StreamToken stream)
+        internal EmbeddedFile(string name, string fileSpecification, ReadOnlyMemory<byte> bytes, StreamToken stream)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             FileSpecification = fileSpecification;
-            Bytes = bytes ?? throw new ArgumentNullException(nameof(bytes));
+            Memory = bytes;
             Stream = stream ?? throw new ArgumentNullException(nameof(stream));
         }
 

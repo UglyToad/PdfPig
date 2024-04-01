@@ -18,7 +18,7 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public byte[] Decode(IReadOnlyList<byte> input, DictionaryToken streamDictionary, int filterIndex)
+        public byte[] Decode(ReadOnlyMemory<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
             var decodeParms = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
@@ -38,7 +38,7 @@
 
             var k = decodeParms.GetIntOrDefault(NameToken.K, 0);
             var encodedByteAlign = decodeParms.GetBooleanOrDefault(NameToken.EncodedByteAlign, false);
-            var compressionType = DetermineCompressionType(input, k);
+            var compressionType = DetermineCompressionType(input.Span, k);
             using (var stream = new CcittFaxDecoderStream(new MemoryStream(input.ToArray()), cols, compressionType, encodedByteAlign))
             {
                 var arraySize = (cols + 7) / 8 * rows;
@@ -56,13 +56,13 @@
             }
         }
 
-        private static CcittFaxCompressionType DetermineCompressionType(IReadOnlyList<byte> input, int k)
+        private static CcittFaxCompressionType DetermineCompressionType(ReadOnlySpan<byte> input, int k)
         {
             if (k == 0)
             {
                 var compressionType = CcittFaxCompressionType.Group3_1D; // Group 3 1D
 
-                if (input.Count < 20)
+                if (input.Length < 20)
                 {
                     throw new InvalidOperationException("The format is invalid");
                 }
@@ -110,7 +110,7 @@
             decoderStream.Close();
         }
 
-        private static void InvertBitmap(byte[] bufferData)
+        private static void InvertBitmap(Span<byte> bufferData)
         {
             for (int i = 0, c = bufferData.Length; i < c; i++)
             {

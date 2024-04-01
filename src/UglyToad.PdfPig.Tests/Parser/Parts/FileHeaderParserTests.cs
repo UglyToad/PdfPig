@@ -147,7 +147,7 @@ three %PDF-1.6";
         {
             var input = OtherEncodings.StringAsLatin1Bytes("%PDF-1.7\r\n%âãÏÓ\r\n1 0 obj\r\n<</Lang(en-US)>>\r\nendobj");
 
-            var bytes = new ByteArrayInputBytes(input);
+            var bytes = new MemoryInputBytes(input);
 
             var scanner = new CoreTokenScanner(bytes, true, ScannerScope.None);
 

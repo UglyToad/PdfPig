@@ -15,7 +15,7 @@
         /// <summary>
         /// Create a new <see cref="TrueTypeDataBytes"/>.
         /// </summary>
-        public TrueTypeDataBytes(byte[] bytes) : this(new ByteArrayInputBytes(bytes)) { }
+        public TrueTypeDataBytes(byte[] bytes) : this(new MemoryInputBytes(bytes)) { }
 
         /// <summary>
         /// Create a new <see cref="TrueTypeDataBytes"/>.
@@ -102,7 +102,7 @@
             byte[] data = new byte[bytesToRead];
             if (ReadBuffered(data, bytesToRead))
             {
-                result = encoding.GetString(data, 0, data.Length);
+                result = encoding.GetString(data);
                 return true;
             }
 

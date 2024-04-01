@@ -43,11 +43,11 @@ namespace UglyToad.PdfPig.Writer
 
             WriteDictionary(outputStreamToken.StreamDictionary, outputStream);
             WriteLineBreak(outputStream);
-            outputStream.Write(StreamStart, 0, StreamStart.Length);
+            outputStream.Write(StreamStart);
             WriteLineBreak(outputStream);
-            outputStream.Write(outputStreamToken.Data.ToArray(), 0, outputStreamToken.Data.Count);
+            outputStream.Write(outputStreamToken.Data.Span);
             WriteLineBreak(outputStream);
-            outputStream.Write(StreamEnd, 0, StreamEnd.Length);
+            outputStream.Write(StreamEnd);
         }
 
         private static bool IsFormStream(StreamToken streamToken)
@@ -66,7 +66,7 @@ namespace UglyToad.PdfPig.Writer
         private bool TryGetStreamWithoutText(StreamToken streamToken, [NotNullWhen(true)] out StreamToken? outputStreamToken)
         {
             var filterProvider = new FilterProviderWithLookup(DefaultFilterProvider.Instance);
-            IReadOnlyList<byte> bytes;
+            ReadOnlyMemory<byte> bytes;
             try
             {
                 bytes = streamToken.Decode(filterProvider);
@@ -81,7 +81,7 @@ namespace UglyToad.PdfPig.Writer
             IReadOnlyList<IGraphicsStateOperation> operations;
             try
             {
-                operations = pageContentParser.Parse(Page, new ByteArrayInputBytes(bytes), new NoOpLog());
+                operations = pageContentParser.Parse(Page, new MemoryInputBytes(bytes), new NoOpLog());
             }
             catch (Exception)
             {

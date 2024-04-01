@@ -23,7 +23,7 @@
             this.privateDictionaryReader = privateDictionaryReader;
         }
 
-        public CompactFontFormatFont Parse(CompactFontFormatData data, string name, IReadOnlyList<byte> topDictionaryIndex, IReadOnlyList<string> stringIndex,
+        public CompactFontFormatFont Parse(CompactFontFormatData data, string name, ReadOnlySpan<byte> topDictionaryIndex, IReadOnlyList<string> stringIndex,
             CompactFontFormatIndex globalSubroutineIndex)
         {
             var individualData = new CompactFontFormatData(topDictionaryIndex.ToArray());

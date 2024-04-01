@@ -706,25 +706,19 @@
                 placementRectangle = new PdfRectangle(0, 0, png.Width, png.Height);
             }
 
-            byte[] data;
-            var pixelBuffer = new byte[3];
-            using (var memoryStream = new MemoryStream())
+            var data = new byte[png.Width * png.Height * 3];
+            int pixelIndex = 0;
+          
+            for (var rowIndex = 0; rowIndex < png.Height; rowIndex++)
             {
-                for (var rowIndex = 0; rowIndex < png.Height; rowIndex++)
+                for (var colIndex = 0; colIndex < png.Width; colIndex++)
                 {
-                    for (var colIndex = 0; colIndex < png.Width; colIndex++)
-                    {
-                        var pixel = png.GetPixel(colIndex, rowIndex);
+                    var pixel = png.GetPixel(colIndex, rowIndex);
 
-                        pixelBuffer[0] = pixel.R;
-                        pixelBuffer[1] = pixel.G;
-                        pixelBuffer[2] = pixel.B;
-
-                        memoryStream.Write(pixelBuffer, 0, pixelBuffer.Length);
-                    }
+                    data[pixelIndex++] = pixel.R;
+                    data[pixelIndex++] = pixel.G;
+                    data[pixelIndex++] = pixel.B;
                 }
-
-                data = memoryStream.ToArray();
             }
 
             var widthToken = new NumericToken(png.Width);
@@ -795,12 +789,12 @@
 
             currentStream.Add(Push.Value);
             // This needs to be the placement rectangle.
-            currentStream.Add(new ModifyCurrentTransformationMatrix(new[]
-            {
+            currentStream.Add(new ModifyCurrentTransformationMatrix(
+            [
                 placementRectangle.Width, 0,
                 0, placementRectangle.Height,
                 placementRectangle.BottomLeft.X, placementRectangle.BottomLeft.Y
-            }));
+            ]));
             currentStream.Add(new InvokeNamedXObject(key));
             currentStream.Add(Pop.Value);
 

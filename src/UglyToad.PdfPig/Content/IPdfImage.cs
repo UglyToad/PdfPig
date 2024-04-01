@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
+    using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using Core;
@@ -34,9 +35,9 @@
         int BitsPerComponent { get; }
 
         /// <summary>
-        /// The encoded bytes of the image with all filters still applied.
+        /// The encoded memory of the image with all filters still applied.
         /// </summary>
-        IReadOnlyList<byte> RawBytes { get; }
+        ReadOnlyMemory<byte> RawMemory { get; }
 
         /// <summary>
         /// The color rendering intent to be used when rendering the image.
@@ -90,9 +91,9 @@
 
         /// <summary>
         /// Get the decoded bytes of the image if applicable. For JPEG images and some other types the
-        /// <see cref="RawBytes"/> should be used directly.
+        /// <see cref="RawMemory"/> should be used directly.
         /// </summary>
-        bool TryGetBytes([NotNullWhen(true)] out IReadOnlyList<byte>? bytes);
+        bool TryGetMemory(out ReadOnlyMemory<byte> bytes);
 
         /// <summary>
         /// Try to convert the image to PNG. Doesn't support conversion of JPG to PNG.
