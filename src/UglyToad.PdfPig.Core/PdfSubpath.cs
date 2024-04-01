@@ -176,7 +176,7 @@
         }
 
         /// <summary>
-        /// Add a <see cref="BezierCurve"/> to the path.
+        /// Add a <see cref="CubicBezierCurve"/> to the path.
         /// </summary>
         public void BezierCurveTo(double x1, double y1, double x2, double y2, double x3, double y3)
         {
@@ -187,7 +187,29 @@
                 shoeLaceSum += (x3 - x2) * (y3 + y2);
 
                 var to = new PdfPoint(x3, y3);
-                commands.Add(new BezierCurve(currentPosition.Value, new PdfPoint(x1, y1), new PdfPoint(x2, y2), to));
+                commands.Add(new CubicBezierCurve(currentPosition.Value, new PdfPoint(x1, y1), new PdfPoint(x2, y2), to));
+                currentPosition = to;
+            }
+            else
+            {
+                // PDF Reference 1.7 p226
+                throw new ArgumentNullException("BezierCurveTo(): currentPosition is null.");
+            }
+        }
+
+        /// <summary>
+        /// Add a <see cref="QuadraticBezierCurve"/> to the path.
+        /// <para>Only used in fonts.</para>
+        /// </summary>
+        public void BezierCurveTo(double x1, double y1, double x2, double y2)
+        {
+            if (currentPosition.HasValue)
+            {
+                shoeLaceSum += (x1 - currentPosition.Value.X) * (y1 + currentPosition.Value.Y);
+                shoeLaceSum += (x2 - x1) * (y2 + y1);
+
+                var to = new PdfPoint(x2, y2);
+                commands.Add(new QuadraticBezierCurve(currentPosition.Value, new PdfPoint(x1, y1), to));
                 currentPosition = to;
             }
             else
@@ -540,14 +562,127 @@
         }
 
         /// <summary>
-        /// Draw a Bezier curve given by the start, control and end points.
+        /// Draw a quadratic Bezier-curve given by the start, control and end points.
+        /// <para>Only used in fonts.</para>
         /// </summary>
-        public class BezierCurve : IPathCommand
+        public sealed class QuadraticBezierCurve : BezierCurve
         {
             /// <summary>
-            /// The start point of the Bezier curve.
+            /// Create a quadratic Bezier-curve at the provided points.
+            /// <para>Only used in fonts.</para>
             /// </summary>
-            public PdfPoint StartPoint { get; }
+            public QuadraticBezierCurve(PdfPoint startPoint, PdfPoint controlPoint, PdfPoint endPoint)
+                : base(startPoint, endPoint)
+            {
+                ControlPoint = controlPoint;
+            }
+
+            /// <summary>
+            /// The control point of the curve.
+            /// </summary>
+            public PdfPoint ControlPoint { get; }
+
+            /// <inheritdoc/>
+            public override void WriteSvg(StringBuilder builder, double height)
+            {
+                builder.Append($"C {ControlPoint.X} {height - ControlPoint.Y}, {EndPoint.X} {height - EndPoint.Y} ");
+            }
+
+            /// <inheritdoc/>
+            protected internal override bool TrySolve(bool isX, double currentMin, double currentMax, out (double min, double max) solutions)
+            {
+                solutions = default((double, double));
+
+                // Given k points the general form is:
+                // P = (1-t)^(k - i - 1)*t^(i)*P_i
+                // 
+                // For 3 points this gives:
+                // P = (1-t)^2*P_1 + 2(1-t)*t*P_2 + t^2*P_3
+                // The differential is:
+                // P' = 2(1-t)(P_2 - P_1) + 2t(P_3 - P_2)
+
+                var p1 = isX ? StartPoint.X : StartPoint.Y;
+                var p2 = isX ? ControlPoint.X : ControlPoint.Y;
+                var p3 = isX ? EndPoint.X : EndPoint.Y;
+
+                var t = (p1 - p2) / (p1 - 2.0 * p2 + p3);
+
+                if (t >= 0 && t <= 1)
+                {
+                    var sol = ValueWithT(p1, p2, p3, t);
+                    if (sol < currentMin)
+                    {
+                        currentMin = sol;
+                    }
+
+                    if (sol > currentMax)
+                    {
+                        currentMax = sol;
+                    }
+                }
+
+                solutions = (currentMin, currentMax);
+
+                return true;
+            }
+
+            /// <inheritdoc />
+            public override IReadOnlyList<Line> ToLines(int n)
+            {
+                if (n < 1)
+                {
+                    throw new ArgumentException("BezierCurve.ToLines(): n must be greater than 0.");
+                }
+
+                List<Line> lines = new List<Line>();
+                var previousPoint = StartPoint;
+
+                for (int p = 1; p <= n; p++)
+                {
+                    double t = p / (double)n;
+                    var currentPoint = new PdfPoint(ValueWithT(StartPoint.X, ControlPoint.X, EndPoint.X, t),
+                        ValueWithT(StartPoint.Y, ControlPoint.Y, EndPoint.Y, t));
+                    lines.Add(new Line(previousPoint, currentPoint));
+                    previousPoint = currentPoint;
+                }
+
+                return lines;
+            }
+
+            /// <inheritdoc />
+            public override bool Equals(object obj)
+            {
+                if (obj is QuadraticBezierCurve curve)
+                {
+                    return StartPoint.Equals(curve.StartPoint) &&
+                           ControlPoint.Equals(curve.ControlPoint) &&
+                           EndPoint.Equals(curve.EndPoint);
+                }
+
+                return false;
+            }
+
+            /// <inheritdoc />
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(StartPoint, ControlPoint, EndPoint);
+            }
+        }
+
+        /// <summary>
+        /// Draw a cubic Bezier-curve given by the start, control and end points.
+        /// </summary>
+        public sealed class CubicBezierCurve : BezierCurve
+        {
+            /// <summary>
+            /// Create a cubic Bezier-curve at the provided points.
+            /// </summary>
+            public CubicBezierCurve(PdfPoint startPoint, PdfPoint firstControlPoint, PdfPoint secondControlPoint, PdfPoint endPoint)
+                : base(startPoint, endPoint)
+            {
+                FirstControlPoint = firstControlPoint;
+                SecondControlPoint = secondControlPoint;
+            }
 
             /// <summary>
             /// The first control point of the curve.
@@ -559,71 +694,16 @@
             /// </summary>
             public PdfPoint SecondControlPoint { get; }
 
-            /// <summary>
-            /// The end point of the curve.
-            /// </summary>
-            public PdfPoint EndPoint { get; }
-
-            /// <summary>
-            /// Create a Bezier curve at the provided points.
-            /// </summary>
-            public BezierCurve(PdfPoint startPoint, PdfPoint firstControlPoint, PdfPoint secondControlPoint, PdfPoint endPoint)
+            /// <inheritdoc/>
+            public override void WriteSvg(StringBuilder builder, double height)
             {
-                StartPoint = startPoint;
-                FirstControlPoint = firstControlPoint;
-                SecondControlPoint = secondControlPoint;
-                EndPoint = endPoint;
+                builder.Append($"C {FirstControlPoint.X} {height - FirstControlPoint.Y}, {SecondControlPoint.X} {height - SecondControlPoint.Y}, {EndPoint.X} {height - EndPoint.Y} ");
             }
 
-            /// <inheritdoc />
-            public PdfRectangle? GetBoundingRectangle()
+            /// <inheritdoc/>
+            protected internal override bool TrySolve(bool isX, double currentMin, double currentMax, out (double min, double max) solutions)
             {
-                // Optimised
-                double minX;
-                double maxX;
-                if (StartPoint.X <= EndPoint.X)
-                {
-                    minX = StartPoint.X;
-                    maxX = EndPoint.X;
-                }
-                else
-                {
-                    minX = EndPoint.X;
-                    maxX = StartPoint.X;
-                }
-
-                double minY;
-                double maxY;
-                if (StartPoint.Y <= EndPoint.Y)
-                {
-                    minY = StartPoint.Y;
-                    maxY = EndPoint.Y;
-                }
-                else
-                {
-                    minY = EndPoint.Y;
-                    maxY = StartPoint.Y;
-                }
-
-                if (TrySolveQuadratic(true, minX, maxX, out var xSolutions))
-                {
-                    minX = xSolutions.min;
-                    maxX = xSolutions.max;
-                }
-
-                if (TrySolveQuadratic(false, minY, maxY, out var ySolutions))
-                {
-                    minY = ySolutions.min;
-                    maxY = ySolutions.max;
-                }
-
-                return new PdfRectangle(minX, minY, maxX, maxY);
-            }
-
-            /// <inheritdoc />
-            public void WriteSvg(StringBuilder builder, double height)
-            {
-                builder.Append($"C {FirstControlPoint.X} { height - FirstControlPoint.Y}, { SecondControlPoint.X} {height - SecondControlPoint.Y}, {EndPoint.X} {height - EndPoint.Y} ");
+                return TrySolveQuadratic(isX, currentMin, currentMax, out solutions);
             }
 
             private bool TrySolveQuadratic(bool isX, double currentMin, double currentMax, out (double min, double max) solutions)
@@ -705,27 +785,8 @@
                 return true;
             }
 
-            /// <summary>
-            /// Calculate the value of the Bezier curve at t.
-            /// </summary>
-            public static double ValueWithT(double p1, double p2, double p3, double p4, double t)
-            {
-                // P = (1−t)^3*P_1 + 3(1−t)^2*t*P_2 + 3(1−t)*t^2*P_3 + t^3*P_4
-                var oneMinusT = 1 - t;
-                var p = ((oneMinusT * oneMinusT * oneMinusT) * p1)
-                        + (3 * (oneMinusT * oneMinusT) * t * p2)
-                        + (3 * oneMinusT * (t * t) * p3)
-                        + ((t * t * t) * p4);
-
-                return p;
-            }
-
-            /// <summary>
-            /// Converts the bezier curve into approximated lines.
-            /// </summary>
-            /// <param name="n">Number of lines required (minimum is 1).</param>
-            /// <returns></returns>
-            public IReadOnlyList<Line> ToLines(int n)
+            /// <inheritdoc />
+            public override IReadOnlyList<Line> ToLines(int n)
             {
                 if (n < 1)
                 {
@@ -749,7 +810,7 @@
             /// <inheritdoc />
             public override bool Equals(object obj)
             {
-                if (obj is BezierCurve curve)
+                if (obj is CubicBezierCurve curve)
                 {
                     return StartPoint.Equals(curve.StartPoint) &&
                            FirstControlPoint.Equals(curve.FirstControlPoint) &&
@@ -764,6 +825,119 @@
             {
                 return HashCode.Combine(StartPoint, FirstControlPoint, SecondControlPoint, EndPoint);
             }
+        }
+
+        /// <summary>
+        /// Draw a Bezier-curve given by the start, control and end points.
+        /// </summary>
+        public abstract class BezierCurve : IPathCommand
+        {
+            /// <summary>
+            /// The start point of the Bezier-curve.
+            /// </summary>
+            public PdfPoint StartPoint { get; }
+
+            /// <summary>
+            /// The end point of the curve.
+            /// </summary>
+            public PdfPoint EndPoint { get; }
+
+            /// <summary>
+            /// Create a Bezier-curve at the provided points.
+            /// </summary>
+            protected BezierCurve(PdfPoint startPoint, PdfPoint endPoint)
+            {
+                StartPoint = startPoint;
+                EndPoint = endPoint;
+            }
+
+            /// <inheritdoc />
+            public PdfRectangle? GetBoundingRectangle()
+            {
+                // Optimised
+                double minX;
+                double maxX;
+                if (StartPoint.X <= EndPoint.X)
+                {
+                    minX = StartPoint.X;
+                    maxX = EndPoint.X;
+                }
+                else
+                {
+                    minX = EndPoint.X;
+                    maxX = StartPoint.X;
+                }
+
+                double minY;
+                double maxY;
+                if (StartPoint.Y <= EndPoint.Y)
+                {
+                    minY = StartPoint.Y;
+                    maxY = EndPoint.Y;
+                }
+                else
+                {
+                    minY = EndPoint.Y;
+                    maxY = StartPoint.Y;
+                }
+
+                if (TrySolve(true, minX, maxX, out var xSolutions))
+                {
+                    minX = xSolutions.min;
+                    maxX = xSolutions.max;
+                }
+
+                if (TrySolve(false, minY, maxY, out var ySolutions))
+                {
+                    minY = ySolutions.min;
+                    maxY = ySolutions.max;
+                }
+
+                return new PdfRectangle(minX, minY, maxX, maxY);
+            }
+
+            /// <inheritdoc />
+            public abstract void WriteSvg(StringBuilder builder, double height);
+
+            /// <summary>
+            /// TODO
+            /// </summary>
+            protected internal abstract bool TrySolve(bool isX, double currentMin, double currentMax, out (double min, double max) solutions);
+
+            /// <summary>
+            /// Calculate the value of the Quadratic Bezier-curve at t.
+            /// </summary>
+            public static double ValueWithT(double p1, double p2, double p3, double t)
+            {
+                // P = (1−t)^2*P_1 + 2(1−t)*t*P_2 + t^2*P_3
+                var oneMinusT = 1 - t;
+                var p = ((oneMinusT * oneMinusT) * p1)
+                        + (2 * (oneMinusT) * t * p2)
+                        + ((t * t) * p3);
+
+                return p;
+            }
+
+            /// <summary>
+            /// Calculate the value of the Cubic Bezier-curve at t.
+            /// </summary>
+            public static double ValueWithT(double p1, double p2, double p3, double p4, double t)
+            {
+                // P = (1−t)^3*P_1 + 3(1−t)^2*t*P_2 + 3(1−t)*t^2*P_3 + t^3*P_4
+                var oneMinusT = 1 - t;
+                var p = ((oneMinusT * oneMinusT * oneMinusT) * p1)
+                        + (3 * (oneMinusT * oneMinusT) * t * p2)
+                        + (3 * oneMinusT * (t * t) * p3)
+                        + ((t * t * t) * p4);
+
+                return p;
+            }
+
+            /// <summary>
+            /// Converts the bezier curve into approximated lines.
+            /// </summary>
+            /// <param name="n">Number of lines required (minimum is 1).</param>
+            public abstract IReadOnlyList<Line> ToLines(int n);
         }
 
         /// <summary>

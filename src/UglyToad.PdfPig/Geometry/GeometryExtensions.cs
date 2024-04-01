@@ -804,11 +804,11 @@
 
         #region Path Bezier Curve
         /// <summary>
-        /// Split a bezier curve into 2 bezier curves, at tau.
+        /// Split a cubic bezier-curve into 2 bezier-curves, at tau.
         /// </summary>
-        /// <param name="bezierCurve">The original bezier curve.</param>
+        /// <param name="bezierCurve">The original cubic bezier-curve.</param>
         /// <param name="tau">The t value were to split the curve, usually between 0 and 1, but not necessary.</param>
-        public static (BezierCurve, BezierCurve) Split(this BezierCurve bezierCurve, double tau)
+        public static (CubicBezierCurve, CubicBezierCurve) Split(this CubicBezierCurve bezierCurve, double tau)
         {
             // De Casteljau Algorithm
             PdfPoint[][] points = new PdfPoint[4][];
@@ -835,29 +835,29 @@
                 }
             }
 
-            return (new BezierCurve(points[0][0], points[1][0], points[2][0], points[3][0]),
-                    new BezierCurve(points[3][0], points[2][1], points[1][2], points[0][3]));
+            return (new CubicBezierCurve(points[0][0], points[1][0], points[2][0], points[3][0]),
+                    new CubicBezierCurve(points[3][0], points[2][1], points[1][2], points[0][3]));
         }
 
         /// <summary>
         /// Checks if the curve and the line are intersecting.
-        /// <para>Avoid using this method as it is not optimised. Use <see cref="Intersect(BezierCurve, PdfLine)"/> instead.</para>
+        /// <para>Avoid using this method as it is not optimised. Use <see cref="Intersect(CubicBezierCurve, PdfLine)"/> instead.</para>
         /// </summary>
-        public static bool IntersectsWith(this BezierCurve bezierCurve, PdfLine line)
+        public static bool IntersectsWith(this CubicBezierCurve bezierCurve, PdfLine line)
         {
             return IntersectsWith(bezierCurve, line.Point1, line.Point2);
         }
 
         /// <summary>
         /// Checks if the curve and the line are intersecting.
-        /// <para>Avoid using this method as it is not optimised. Use <see cref="Intersect(BezierCurve, Line)"/> instead.</para>
+        /// <para>Avoid using this method as it is not optimised. Use <see cref="Intersect(CubicBezierCurve, Line)"/> instead.</para>
         /// </summary>
-        public static bool IntersectsWith(this BezierCurve bezierCurve, Line line)
+        public static bool IntersectsWith(this CubicBezierCurve bezierCurve, Line line)
         {
             return IntersectsWith(bezierCurve, line.From, line.To);
         }
 
-        private static bool IntersectsWith(BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
+        private static bool IntersectsWith(CubicBezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
         {
             return Intersect(bezierCurve, p1, p2).Length > 0;
         }
@@ -865,7 +865,7 @@
         /// <summary>
         /// Get the <see cref="PdfPoint"/>s that are the intersections of the line and the curve.
         /// </summary>
-        public static PdfPoint[] Intersect(this BezierCurve bezierCurve, PdfLine line)
+        public static PdfPoint[] Intersect(this CubicBezierCurve bezierCurve, PdfLine line)
         {
             return Intersect(bezierCurve, line.Point1, line.Point2);
         }
@@ -873,12 +873,12 @@
         /// <summary>
         /// Get the <see cref="PdfPoint"/>s that are the intersections of the line and the curve.
         /// </summary>
-        public static PdfPoint[] Intersect(this BezierCurve bezierCurve, Line line)
+        public static PdfPoint[] Intersect(this CubicBezierCurve bezierCurve, Line line)
         {
             return Intersect(bezierCurve, line.From, line.To);
         }
 
-        private static PdfPoint[] Intersect(BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
+        private static PdfPoint[] Intersect(CubicBezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
         {
             var ts = IntersectT(bezierCurve, p1, p2);
             if (ts is null || ts.Length == 0) return [];
@@ -905,8 +905,8 @@
         /// <summary>
         /// Get the t values that are the intersections of the line and the curve.
         /// </summary>
-        /// <returns>List of t values where the <see cref="BezierCurve"/> and the <see cref="PdfLine"/> intersect.</returns>
-        public static double[]? IntersectT(this BezierCurve bezierCurve, PdfLine line)
+        /// <returns>List of t values where the <see cref="CubicBezierCurve"/> and the <see cref="PdfLine"/> intersect.</returns>
+        public static double[]? IntersectT(this CubicBezierCurve bezierCurve, PdfLine line)
         {
             return IntersectT(bezierCurve, line.Point1, line.Point2);
         }
@@ -914,13 +914,13 @@
         /// <summary>
         /// Get the t values that are the intersections of the line and the curve.
         /// </summary>
-        /// <returns>List of t values where the <see cref="BezierCurve"/> and the <see cref="Line"/> intersect.</returns>
-        public static double[]? IntersectT(this BezierCurve bezierCurve, Line line)
+        /// <returns>List of t values where the <see cref="CubicBezierCurve"/> and the <see cref="Line"/> intersect.</returns>
+        public static double[]? IntersectT(this CubicBezierCurve bezierCurve, Line line)
         {
             return IntersectT(bezierCurve, line.From, line.To);
         }
 
-        private static double[]? IntersectT(BezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
+        private static double[]? IntersectT(CubicBezierCurve bezierCurve, PdfPoint p1, PdfPoint p2)
         {
             // if the bounding boxes do not intersect, they cannot intersect
             var bezierBbox = bezierCurve.GetBoundingRectangle();

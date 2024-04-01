@@ -182,16 +182,14 @@
                         }
                         else if (contour[j + 1].IsOnCurve)
                         {
-                            var pPrevious = contour[j - 1];
                             var pNext = contour[j + 1];
-                            subpath.BezierCurveTo(pPrevious.X, pPrevious.Y, pNow.X, pNow.Y, pNext.X, pNext.Y);
+                            subpath.BezierCurveTo(pNow.X, pNow.Y, pNext.X, pNext.Y);
                             ++j;
                         }
                         else
                         {
-                            var pPrevious = contour[j - 1];
                             var pmid = midValue(pNow, contour[j + 1]);
-                            subpath.BezierCurveTo(pPrevious.X, pPrevious.Y, pNow.X, pNow.Y, pmid.X, pmid.Y);
+                            subpath.BezierCurveTo(pNow.X, pNow.Y, pmid.X, pmid.Y);
                         }
                     }
                     subpath.CloseSubpath();

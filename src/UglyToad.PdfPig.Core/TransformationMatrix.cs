@@ -295,12 +295,18 @@
                     var to = Transform(line.To);
                     trSubpath.LineTo(to.X, to.Y);
                 }
-                else if (c is BezierCurve curve)
+                else if (c is CubicBezierCurve cubic)
                 {
-                    var first = Transform(curve.FirstControlPoint);
-                    var second = Transform(curve.SecondControlPoint);
-                    var end = Transform(curve.EndPoint);
+                    var first = Transform(cubic.FirstControlPoint);
+                    var second = Transform(cubic.SecondControlPoint);
+                    var end = Transform(cubic.EndPoint);
                     trSubpath.BezierCurveTo(first.X, first.Y, second.X, second.Y, end.X, end.Y);
+                }
+                else if (c is QuadraticBezierCurve quadratic)
+                {
+                    var control = Transform(quadratic.ControlPoint);
+                    var end = Transform(quadratic.EndPoint);
+                    trSubpath.BezierCurveTo(control.X, control.Y, end.X, end.Y);
                 }
                 else if (c is Close)
                 {
