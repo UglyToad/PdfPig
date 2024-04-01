@@ -24,7 +24,7 @@
             var input = StringToByteArray(Tika2121LegacySerifBookLetterBHex);
 
             var result = Type2CharStringParser.Parse(
-                new[] { input },
+                [new ReadOnlyMemory<byte>(input)],
                 EmptySubroutinesSelector,
                 NameCharset.Instance);
 

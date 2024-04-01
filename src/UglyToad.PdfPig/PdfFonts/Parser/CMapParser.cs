@@ -155,7 +155,7 @@
                 }
             }
 
-            result = Parse(new ByteArrayInputBytes(bytes));
+            result = Parse(new MemoryInputBytes(bytes));
 
             return true;
         }

@@ -67,7 +67,7 @@
         /// <summary>
         /// Calculate the combined CRC32 for data.
         /// </summary>
-        public static uint Calculate(byte[] data, byte[] data2)
+        public static uint Calculate(ReadOnlySpan<byte> data, ReadOnlySpan<byte> data2)
         {
             var crc32 = uint.MaxValue;
             for (var i = 0; i < data.Length; i++)

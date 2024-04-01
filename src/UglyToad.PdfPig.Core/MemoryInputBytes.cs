@@ -1,53 +1,28 @@
 ﻿namespace UglyToad.PdfPig.Core
 {
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics;
-    using System.Linq;
 
     /// <inheritdoc />
     /// <summary>
     /// Input bytes from a byte array.
     /// </summary>
-    public class ByteArrayInputBytes : IInputBytes
+    public class MemoryInputBytes : IInputBytes
     {
         private readonly int upperBound;
-        private readonly byte[] bytes;
+        private readonly ReadOnlyMemory<byte> memory;
 
         /// <summary>
-        /// Create a new <see cref="ByteArrayInputBytes"/>.
+        /// Create a new <see cref="MemoryInputBytes"/>.
         /// </summary>
         [DebuggerStepThrough]
-        public ByteArrayInputBytes(IReadOnlyList<byte> bytes)
+        public MemoryInputBytes(ReadOnlyMemory<byte> memory)
         {
-            if (bytes == null)
-            {
-                throw new ArgumentNullException(nameof(bytes));
-            }
+            this.memory = memory;
 
-            if (bytes is byte[] arr)
-            {
-                this.bytes = arr;
-            }
-            else
-            {
-                this.bytes = bytes.ToArray();
-            }
-
-            upperBound = this.bytes.Length - 1;
+            upperBound = this.memory.Length - 1;
 
             currentOffset = -1;
-        }
-
-        /// <summary>
-        /// Create a new <see cref="ByteArrayInputBytes"/>.
-        /// </summary>
-        [DebuggerStepThrough]
-        public ByteArrayInputBytes(byte[] bytes)
-        {
-            this.bytes = bytes ?? throw new ArgumentNullException(nameof(bytes));
-            currentOffset = -1;
-            upperBound = bytes.Length - 1;
         }
 
         private int currentOffset;
@@ -63,7 +38,7 @@
             }
 
             currentOffset++;
-            CurrentByte = bytes[currentOffset];
+            CurrentByte = memory.Span[currentOffset];
             return true;
         }
 
@@ -71,7 +46,7 @@
         public byte CurrentByte { get; private set; }
 
         /// <inheritdoc />
-        public long Length => bytes.Length;
+        public long Length => memory.Span.Length;
 
         /// <inheritdoc />
         public byte? Peek()
@@ -81,7 +56,7 @@
                 return null;
             }
 
-            return bytes[currentOffset + 1];
+            return memory.Span[currentOffset + 1];
         }
 
         /// <inheritdoc />
@@ -94,7 +69,7 @@
         public void Seek(long position)
         {
             currentOffset = (int)position - 1;
-            CurrentByte = currentOffset < 0 ? (byte)0 : bytes[currentOffset];
+            CurrentByte = currentOffset < 0 ? (byte)0 : memory.Span[currentOffset];
         }
 
         /// <inheritdoc />
@@ -121,12 +96,12 @@
                 return 0;
             }
 
-            var viableLength = (bytes.Length - currentOffset - 1);
+            var viableLength = (memory.Length - currentOffset - 1);
             var readLength = viableLength < bytesToRead ? viableLength : bytesToRead;
             var startFrom = currentOffset + 1;
 
-            Array.Copy(bytes, startFrom, buffer, 0, readLength);
-            
+            memory.Span.Slice(startFrom, readLength).CopyTo(buffer);
+
             if (readLength > 0)
             {
                 currentOffset += readLength;

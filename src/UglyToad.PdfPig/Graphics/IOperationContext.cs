@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
     using PdfPig.Core;
+    using System;
     using System.Collections.Generic;
     using Tokens;
     using UglyToad.PdfPig.Graphics.Core;
@@ -158,7 +159,7 @@
         /// <summary>
         /// Indicates that the current inline image is complete.
         /// </summary>
-        void EndInlineImage(IReadOnlyList<byte> bytes);
+        void EndInlineImage(ReadOnlyMemory<byte> bytes);
 
         /// <summary>
         /// Modify the clipping rule of the current path.

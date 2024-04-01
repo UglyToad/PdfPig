@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Writer.Fonts
 {
+    using System;
     using System.Collections.Generic;
     using System.IO;
     using Graphics.Operations;
@@ -83,8 +84,8 @@
                     var from = Hex.GetString([keyValuePair.Value]);
                     var to = Hex.GetString([high, low]);
 
-                    TokenWriter.WriteToken(new HexToken(from.ToCharArray()), memoryStream);
-                    TokenWriter.WriteToken(new HexToken(to.ToCharArray()), memoryStream);
+                    TokenWriter.WriteToken(new HexToken(from.AsSpan()), memoryStream);
+                    TokenWriter.WriteToken(new HexToken(to.AsSpan()), memoryStream);
 
                     memoryStream.WriteNewLine();
                 }

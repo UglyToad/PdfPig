@@ -24,13 +24,13 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
         private const byte CntrmaskByte = 20;
         private const byte VstemhmByte = 23;
 
-        private static readonly HashSet<byte> HintingCommandBytes = new HashSet<byte>
-        {
+        private static readonly HashSet<byte> HintingCommandBytes =
+        [
             HstemByte,
             VstemByte,
             HstemhmByte,
             VstemhmByte
-        };
+        ];
 
         private static readonly IReadOnlyDictionary<byte, LazyType2Command> SingleByteCommandStore = new Dictionary<byte, LazyType2Command>
         {
@@ -712,7 +712,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
             return SingleByteCommandStore[identifier.CommandId];
         }
 
-        public static Type2CharStrings Parse(IReadOnlyList<IReadOnlyList<byte>> charStringBytes,
+        public static Type2CharStrings Parse(IReadOnlyList<ReadOnlyMemory<byte>> charStringBytes,
             CompactFontFormatSubroutinesSelector subroutinesSelector, ICompactFontFormatCharset charset)
         {
             if (charStringBytes == null)
@@ -731,14 +731,15 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 var charString = charStringBytes[i];
                 var name = charset.GetNameByGlyphId(i);
                 var (globalSubroutines, localSubroutines) = subroutinesSelector.GetSubroutines(i);
-                var sequence = ParseSingle(charString.ToList(), localSubroutines, globalSubroutines);
+                var sequence = ParseSingle([.. charString.Span], localSubroutines, globalSubroutines);
                 charStrings[name] = sequence;
             }
 
             return new Type2CharStrings(charStrings);
         }
 
-        private static Type2CharStrings.CommandSequence ParseSingle(List<byte> bytes,
+        private static Type2CharStrings.CommandSequence ParseSingle(
+            List<byte> bytes,
             CompactFontFormatIndex localSubroutines,
             CompactFontFormatIndex globalSubroutines)
         {
@@ -843,7 +844,7 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 var index = precedingNumber + bias;
                 var subroutineBytes = isLocal ? localSubroutines[index] : globalSubroutines[index];
                 bytes.RemoveRange(i - 1, 2);
-                bytes.InsertRange(i - 1, subroutineBytes);
+                bytes.InsertRange(i - 1, [.. subroutineBytes.Span]);
 
                 // Remove the subroutine index
                 precedingValues.RemoveAt(precedingValues.Count - 1);

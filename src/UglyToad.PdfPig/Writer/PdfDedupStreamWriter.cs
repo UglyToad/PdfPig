@@ -73,20 +73,7 @@
         {
             public bool Equals(byte[] x, byte[] y)
             {
-                if (x.Length != y.Length)
-                {
-                    return false;
-                }
-
-                for (var i = 0; i < x.Length; i++)
-                {
-                    if (x[i] != y[i])
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
+                return x.AsSpan().SequenceEqual(y.AsSpan());
             }
 
             public int GetHashCode(byte[] obj)

@@ -85,7 +85,7 @@ EndCharMetrics";
         {
             var helvetica = GetResourceBytes("UglyToad.PdfPig.Fonts.Resources.AdobeFontMetrics.Helvetica.afm");
 
-            var input = new ByteArrayInputBytes(helvetica);
+            var input = new MemoryInputBytes(helvetica);
 
             var metrics = AdobeFontMetricsParser.Parse(input, false);
 

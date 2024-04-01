@@ -115,11 +115,9 @@
                 {
                     var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, pdfScanner);
 
-                    var decodedUnicodeCMap = toUnicode.Decode(filterProvider, pdfScanner);
-
-                    if (decodedUnicodeCMap != null)
+                    if (toUnicode.Decode(filterProvider, pdfScanner) is ReadOnlyMemory<byte> decodedUnicodeCMap)
                     {
-                        toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap));
+                        toUnicodeCMap = CMapCache.Parse(new MemoryInputBytes(decodedUnicodeCMap));
                     }
                 }
                 catch (Exception ex)
@@ -211,7 +209,7 @@
                     }
                 }
 
-                var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontFile)));
+                var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new MemoryInputBytes(fontFile)));
 
                 return font;
             }

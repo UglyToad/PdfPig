@@ -59,11 +59,11 @@
 
         private void Run(byte[] bytes, bool checkHeaderChecksum, bool checkWholeFileChecksum)
         {
-            var inputBytes = new ByteArrayInputBytes(bytes);
+            var inputBytes = new MemoryInputBytes(bytes);
 
             var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(inputBytes));
 
-            inputBytes = new ByteArrayInputBytes(bytes);
+            inputBytes = new MemoryInputBytes(bytes);
 
             foreach (var header in font.TableHeaders)
             {

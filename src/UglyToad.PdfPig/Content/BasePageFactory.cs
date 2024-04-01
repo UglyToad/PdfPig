@@ -118,7 +118,7 @@
             }
             else if (DirectObjectFinder.TryGet<ArrayToken>(contents, PdfScanner, out var array))
             {
-                var bytes = new List<byte>();
+                using var bytes = new ArrayPoolBufferWriter<byte>();
 
                 for (var i = 0; i < array.Data.Count; i++)
                 {
@@ -136,15 +136,15 @@
                         throw new InvalidOperationException($"Could not find the contents for object {obj}.");
                     }
 
-                    bytes.AddRange(contentStream.Decode(FilterProvider, PdfScanner));
+                    bytes.Write(contentStream.Decode(FilterProvider, PdfScanner).Span);
 
                     if (i < array.Data.Count - 1)
                     {
-                        bytes.Add((byte)'\n');
+                        bytes.Write((byte)'\n');
                     }
                 }
 
-                page = ProcessPageInternal(number, dictionary, namedDestinations, mediaBox, cropBox, userSpaceUnit, rotation, initialMatrix, bytes);
+                page = ProcessPageInternal(number, dictionary, namedDestinations, mediaBox, cropBox, userSpaceUnit, rotation, initialMatrix, bytes.WrittenSpan.ToArray());
             }
             else
             {
@@ -177,18 +177,18 @@
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
             TransformationMatrix initialMatrix,
-            IReadOnlyList<byte>? contentBytes)
+            ReadOnlyMemory<byte> contentBytes)
         {
             IReadOnlyList<IGraphicsStateOperation> operations;
 
-            if (contentBytes is null || contentBytes.Count == 0)
+            if (contentBytes.IsEmpty)
             {
                 operations = Array.Empty<IGraphicsStateOperation>();
             }
             else
             {
                 operations = PageContentParser.Parse(pageNumber,
-                    new ByteArrayInputBytes(contentBytes),
+                    new MemoryInputBytes(contentBytes),
                     ParsingOptions.Logger);
             }
 

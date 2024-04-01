@@ -118,7 +118,7 @@ endbfchar";
         {
             Debug.WriteLine("Parsing: " + resourceName);
             
-            var input = new ByteArrayInputBytes(ReadResourceBytes(resourceName));
+            var input = new MemoryInputBytes(ReadResourceBytes(resourceName));
 
             var cmap = cMapParser.Parse(input);
 
@@ -128,7 +128,7 @@ endbfchar";
         [Fact]
         public void CanParseIdentityHorizontalCMap()
         {
-            var input = new ByteArrayInputBytes(ReadResourceBytes("UglyToad.PdfPig.Resources.CMap.Identity-H"));
+            var input = new MemoryInputBytes(ReadResourceBytes("UglyToad.PdfPig.Resources.CMap.Identity-H"));
 
             var cmap = cMapParser.Parse(input);
 

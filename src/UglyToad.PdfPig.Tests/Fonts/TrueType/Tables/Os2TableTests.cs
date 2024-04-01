@@ -14,7 +14,7 @@
         {
             var fontBytes = TrueTypeTestHelper.GetFileBytes(fontFile);
 
-            var parsed = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new ByteArrayInputBytes(fontBytes)));
+            var parsed = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new MemoryInputBytes(fontBytes)));
 
             var os2 = parsed.TableRegister.Os2Table;
             var os2Header = parsed.TableHeaders.Single(x => x.Value.Tag == TrueTypeHeaderTable.Os2);

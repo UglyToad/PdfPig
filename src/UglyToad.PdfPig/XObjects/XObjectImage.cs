@@ -16,7 +16,7 @@
     /// </summary>
     public class XObjectImage : IPdfImage
     {
-        private readonly Lazy<IReadOnlyList<byte>>? bytesFactory;
+        private readonly Lazy<ReadOnlyMemory<byte>>? memoryFactory;
 
         /// <inheritdoc />
         public PdfRectangle Bounds { get; }
@@ -56,7 +56,7 @@
         public DictionaryToken ImageDictionary { get; }
 
         /// <inheritdoc />
-        public IReadOnlyList<byte> RawBytes { get; }
+        public ReadOnlyMemory<byte> RawMemory { get; }
 
         /// <inheritdoc />
         public ColorSpaceDetails? ColorSpaceDetails { get; }
@@ -74,8 +74,8 @@
             bool interpolate,
             IReadOnlyList<double> decode,
             DictionaryToken imageDictionary,
-            IReadOnlyList<byte> rawBytes,
-            Lazy<IReadOnlyList<byte>>? bytes,
+            ReadOnlyMemory<byte> rawMemory,
+            Lazy<ReadOnlyMemory<byte>>? bytes,
             ColorSpaceDetails? colorSpaceDetails)
         {
             Bounds = bounds;
@@ -88,21 +88,21 @@
             Interpolate = interpolate;
             Decode = decode;
             ImageDictionary = imageDictionary ?? throw new ArgumentNullException(nameof(imageDictionary));
-            RawBytes = rawBytes;
+            RawMemory = rawMemory;
             ColorSpaceDetails = colorSpaceDetails;
-            bytesFactory = bytes;
+            memoryFactory = bytes;
         }
 
         /// <inheritdoc />
-        public bool TryGetBytes([NotNullWhen(true)] out IReadOnlyList<byte>? bytes)
+        public bool TryGetMemory(out ReadOnlyMemory<byte> bytes)
         {
             bytes = null;
-            if (bytesFactory is null)
+            if (memoryFactory is null)
             {
                 return false;
             }
 
-            bytes = bytesFactory.Value;
+            bytes = memoryFactory.Value;
 
             return true;
         }

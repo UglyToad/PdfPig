@@ -35,6 +35,7 @@
                     var dataPNG = LoadPng("4-16bitRGBA.png");
                     page4.AddPng(dataPNG, new PdfRectangle(0, 0, 595, 842));
                 }
+
                 pdfBytes = pdfBuilder.Build();
             }
 
@@ -85,10 +86,6 @@
                     Assert.Equal(8, image1.BitsPerComponent);
                 }
             }
-            
-            
-
-
         }
 
 

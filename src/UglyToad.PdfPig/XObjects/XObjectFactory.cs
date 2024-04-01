@@ -113,7 +113,7 @@
 
             var streamToken = new StreamToken(dictionary, xObject.Stream.Data);
 
-            var decodedBytes = supportsFilters ? new Lazy<IReadOnlyList<byte>>(() => streamToken.Decode(filterProvider, pdfScanner))
+            var decodedBytes = supportsFilters ? new Lazy<ReadOnlyMemory<byte>>(() => streamToken.Decode(filterProvider, pdfScanner))
                 : null;
 
             var decode = Array.Empty<double>();

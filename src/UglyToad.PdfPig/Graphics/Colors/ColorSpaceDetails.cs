@@ -62,7 +62,7 @@
         /// <summary>
         /// Transform image bytes.
         /// </summary>
-        internal abstract IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded);
+        internal abstract ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded);
 
         /// <summary>
         /// Convert to byte.
@@ -130,7 +130,7 @@
         }
 
         /// <inheritdoc/>
-        internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded)
+        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
         {
             return decoded;
         }
@@ -192,7 +192,7 @@
         }
 
         /// <inheritdoc/>
-        internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded)
+        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
         {
             return decoded;
         }
@@ -255,7 +255,7 @@
         }
 
         /// <inheritdoc/>
-        internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded)
+        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
         {
             return decoded;
         }
@@ -322,8 +322,16 @@
         /// <inheritdoc/>
         internal override double[] Process(params double[] values)
         {
-            var csBytes = UnwrapIndexedColorSpaceBytes(new[] { (byte)values[0] });
-            return BaseColorSpace.Process(csBytes.Select(b => b / 255.0).ToArray());
+            var csBytes = UnwrapIndexedColorSpaceBytes([(byte)values[0]]);
+
+            var scaledCsBytes = new double[csBytes.Length];
+
+            for (int i = 0; i < csBytes.Length; i++)
+            {
+                scaledCsBytes[i] = csBytes[i] / 255.0;
+            }
+
+            return BaseColorSpace.Process(scaledCsBytes);
         }
 
         /// <inheritdoc/>
@@ -336,12 +344,20 @@
 
             return cache.GetOrAdd(values[0], v =>
             {
-                var csBytes = UnwrapIndexedColorSpaceBytes(new[] { (byte)v });
-                return BaseColorSpace.GetColor(csBytes.Select(b => b / 255.0).ToArray());
+                var csBytes = UnwrapIndexedColorSpaceBytes([(byte)v]);
+
+                var scaledCsBytes = new double[csBytes.Length];
+
+                for (int i = 0; i < csBytes.Length; i++)
+                {
+                    scaledCsBytes[i] = csBytes[i] / 255.0;
+                }
+
+                return BaseColorSpace.GetColor(scaledCsBytes);
             });
         }
 
-        internal byte[] UnwrapIndexedColorSpaceBytes(IReadOnlyList<byte> input)
+        internal ReadOnlySpan<byte> UnwrapIndexedColorSpaceBytes(ReadOnlySpan<byte> input)
         {
             var multiplier = 1;
             Func<byte, IEnumerable<byte>>? transformer = null;
@@ -404,7 +420,7 @@
 
             if (transformer != null)
             {
-                var result = new byte[input.Count * multiplier];
+                var result = new byte[input.Length * multiplier];
                 var i = 0;
                 foreach (var b in input)
                 {
@@ -417,7 +433,7 @@
                 return result;
             }
 
-            return input.ToArray();
+            return input;
         }
 
         /// <inheritdoc/>
@@ -434,7 +450,7 @@
         /// Unwrap then transform using base color space details.
         /// </para>
         /// </summary>
-        internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded)
+        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
         {
             var unwraped = UnwrapIndexedColorSpaceBytes(decoded);
             return BaseColorSpace.Transform(unwraped);
@@ -530,11 +546,11 @@
         }
 
         /// <inheritdoc/>
-        internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded)
+        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
         {
             var cache = new Dictionary<int, double[]>();
             var transformed = new List<byte>();
-            for (var i = 0; i < decoded.Count; i += NumberOfColorComponents)
+            for (var i = 0; i < decoded.Length; i += NumberOfColorComponents)
             {
                 int key = 0;
                 var comps = new double[NumberOfColorComponents];
@@ -702,11 +718,11 @@
         }
 
         /// <inheritdoc/>
-        internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> values)
+        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> values)
         {
             var cache = new Dictionary<int, double[]>();
             var transformed = new List<byte>();
-            for (var i = 0; i < values.Count; i += 3)
+            for (var i = 0; i < values.Length; i += 3)
             {
                 byte b = values[i++];
                 if (!cache.TryGetValue(b, out double[]? colors))
@@ -721,7 +737,7 @@
                 }
             }
 
-            return transformed;
+            return transformed.ToArray();
         }
 
         /// <inheritdoc/>
@@ -813,15 +829,16 @@
         }
 
         /// <inheritdoc/>
-        internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded)
+        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
         {
-            var transformed = new List<byte>();
-            for (var i = 0; i < decoded.Count; i++)
+            var transformed = new byte[decoded.Length];
+
+            for (var i = 0; i < decoded.Length; i++)
             {
                 var component = decoded[i] / 255.0;
                 var rgbPixel = Process(component);
                 // We only need one component here 
-                transformed.Add(ConvertToByte(rgbPixel[0]));
+                transformed[i] = ConvertToByte(rgbPixel[0]);
             }
 
             return transformed;
@@ -954,15 +971,17 @@
         }
 
         /// <inheritdoc/>
-        internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded)
+        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
         {
-            var transformed = new List<byte>();
-            for (var i = 0; i < decoded.Count; i += 3)
+            var transformed = new byte[decoded.Length];
+            int index = 0;
+
+            for (var i = 0; i < decoded.Length; i += 3)
             {
                 var rgbPixel = Process(decoded[i] / 255.0, decoded[i + 1] / 255.0, decoded[i + 2] / 255.0);
-                transformed.Add(ConvertToByte(rgbPixel[0]));
-                transformed.Add(ConvertToByte(rgbPixel[1]));
-                transformed.Add(ConvertToByte(rgbPixel[2]));
+                transformed[index++] = ConvertToByte(rgbPixel[0]);
+                transformed[index++] = ConvertToByte(rgbPixel[1]);
+                transformed[index++] = ConvertToByte(rgbPixel[2]);
             }
 
             return transformed;
@@ -1074,15 +1093,17 @@
         }
 
         /// <inheritdoc/>
-        internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded)
+        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
         {
-            var transformed = new List<byte>();
-            for (var i = 0; i < decoded.Count; i += 3)
+            var transformed = new byte[decoded.Length];
+            int index = 0;
+
+            for (var i = 0; i < decoded.Length; i += 3)
             {
                 var rgbPixel = Process(decoded[i] / 255.0, decoded[i + 1] / 255.0, decoded[i + 2] / 255.0);
-                transformed.Add(ConvertToByte(rgbPixel[0]));
-                transformed.Add(ConvertToByte(rgbPixel[1]));
-                transformed.Add(ConvertToByte(rgbPixel[2]));
+                transformed[index++] = ConvertToByte(rgbPixel[0]);
+                transformed[index++] = ConvertToByte(rgbPixel[1]);
+                transformed[index++] = ConvertToByte(rgbPixel[2]);
             }
 
             return transformed;
@@ -1259,7 +1280,7 @@
         }
 
         /// <inheritdoc/>
-        internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded)
+        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
         {
             // TODO - use ICC profile
 
@@ -1288,7 +1309,7 @@
         /// <summary>
         /// <inheritdoc/>
         /// <para>
-        /// Valid for Uncoloured Tiling Patterns. Wwill throw a <see cref="InvalidOperationException"/> otherwise.
+        /// Valid for Uncoloured Tiling Patterns. Will throw a <see cref="InvalidOperationException"/> otherwise.
         /// </para>
         /// </summary>
         internal override int BaseNumberOfColorComponents => UnderlyingColourSpace!.NumberOfColorComponents;
@@ -1357,7 +1378,7 @@
         /// Cannot be called for <see cref="PatternColorSpaceDetails"/>, will throw a <see cref="InvalidOperationException"/>.
         /// </para>
         /// </summary>
-        internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded)
+        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
         {
             throw new InvalidOperationException("PatternColorSpaceDetails");
         }
@@ -1412,7 +1433,7 @@
         }
 
         /// <inheritdoc/>
-        internal override IReadOnlyList<byte> Transform(IReadOnlyList<byte> decoded)
+        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
         {
             throw new InvalidOperationException("UnsupportedColorSpaceDetails");
         }

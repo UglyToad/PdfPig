@@ -32,7 +32,7 @@
                 return (defaultPrivateDictionary, defaultCharstrings);
             }
 
-            var tokenizer = new Type1Tokenizer(new ByteArrayInputBytes([.. decrypted]));
+            var tokenizer = new Type1Tokenizer(new MemoryInputBytes(new ReadOnlyMemory<byte>([.. decrypted])));
 
             /*
              * After 4 random characters follows the /Private dictionary and the /CharString dictionary.

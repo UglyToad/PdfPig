@@ -59,7 +59,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var input = new ByteArrayInputBytes(Text != null ? OtherEncodings.StringAsLatin1Bytes(Text) : Bytes);
+            var input = new MemoryInputBytes(Text != null ? OtherEncodings.StringAsLatin1Bytes(Text) : Bytes);
 
             operationContext.ShowText(input);
         }

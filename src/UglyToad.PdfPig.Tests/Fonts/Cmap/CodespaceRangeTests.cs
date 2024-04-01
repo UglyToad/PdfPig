@@ -104,7 +104,7 @@
         public void ColorspaceParserError()
         {
             var parser = new CodespaceRangeParser();
-            var byteArrayInput = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes("1 begincodespacerange\nendcodespacerange"));
+            var byteArrayInput = new MemoryInputBytes(OtherEncodings.StringAsLatin1Bytes("1 begincodespacerange\nendcodespacerange"));
             var tokenScanner = new CoreTokenScanner(byteArrayInput, false);
 
             Assert.True(tokenScanner.MoveNext());

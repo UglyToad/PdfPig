@@ -1,5 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Core
 {
+    using System;
+    using System.Buffers.Binary;
     using System.IO;
 
     /// <summary>
@@ -16,15 +18,11 @@
         /// </summary>
         public static void WriteUInt(this Stream stream, uint value)
         {
-            var buffer = new[]
-                {
-                    (byte) (value >> 24),
-                    (byte) (value >> 16),
-                    (byte) (value >> 8),
-                    (byte) value
-                };
+            Span<byte> buffer = stackalloc byte[4];
 
-            stream.Write(buffer, 0, 4);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer, value);
+
+            stream.Write(buffer);
         }
 
         /// <summary>
@@ -36,13 +34,12 @@
         /// </summary>
         public static void WriteUShort(this Stream stream, ushort value)
         {
-            var buffer = new[]
-            {
-                    (byte) (value >> 8),
-                    (byte) value
-                };
+            ReadOnlySpan<byte> buffer = [
+                (byte) (value >> 8),
+                (byte) value
+            ];
 
-            stream.Write(buffer, 0, 2);
+            stream.Write(buffer);
         }
 
         /// <summary>
@@ -54,13 +51,12 @@
         /// </summary>
         public static void WriteShort(this Stream stream, short value)
         {
-            var buffer = new[]
-            {
+            ReadOnlySpan<byte> buffer = [
                 (byte) (value >> 8),
                 (byte) value
-            };
+            ];
 
-            stream.Write(buffer, 0, 2);
+            stream.Write(buffer);
         }
     }
 }

@@ -121,7 +121,7 @@
                     }
 
                     resource.CopyTo(memory);
-                    bytes = new ByteArrayInputBytes(memory.ToArray());
+                    bytes = new MemoryInputBytes(memory.ToArray());
                 }
 
                 Standard14Cache[fontName] = AdobeFontMetricsParser.Parse(bytes, true);

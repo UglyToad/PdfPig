@@ -30,27 +30,28 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public byte[] Decode(IReadOnlyList<byte> input, DictionaryToken streamDictionary, int filterIndex)
+        public byte[] Decode(ReadOnlyMemory<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
+            var inputSpan = input.Span;
             var pair = new byte[2];
             var index = 0;
 
             using (var memoryStream = new MemoryStream())
             using (var binaryWriter = new BinaryWriter(memoryStream))
             {
-                for (var i = 0; i < input.Count; i++)
+                for (var i = 0; i < inputSpan.Length; i++)
                 {
-                    if (input[i] == '>')
+                    if (inputSpan[i] == '>')
                     {
                         break;
                     }
 
-                    if (IsWhitespace(input[i]) || input[i] == '<')
+                    if (IsWhitespace(inputSpan[i]) || inputSpan[i] == '<')
                     {
                         continue;
                     }
 
-                    pair[index] = input[i];
+                    pair[index] = inputSpan[i];
                     index++;
 
                     if (index == 2)
@@ -76,7 +77,7 @@
             }
         }
 
-        private static void WriteHexToByte(byte[] hexBytes, BinaryWriter writer)
+        private static void WriteHexToByte(ReadOnlySpan<byte> hexBytes, BinaryWriter writer)
         {
             var first = ReverseHex[hexBytes[0]];
             var second = ReverseHex[hexBytes[1]];

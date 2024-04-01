@@ -424,9 +424,7 @@ namespace UglyToad.PdfPig.Encryption
                                 continue;
                             }
 
-                            if (keyValuePair.Value is StringToken || keyValuePair.Value is ArrayToken
-                                                                  || keyValuePair.Value is DictionaryToken
-                                                                  || keyValuePair.Value is HexToken)
+                            if (keyValuePair.Value is StringToken or ArrayToken or DictionaryToken or HexToken)
                             {
                                 var inner = DecryptInternal(reference, keyValuePair.Value);
                                 dictionary = dictionary.With(keyValuePair.Key, inner);
@@ -455,7 +453,7 @@ namespace UglyToad.PdfPig.Encryption
             return token;
         }
 
-        private static StringToken GetStringTokenFromDecryptedData(byte[] data)
+        private static StringToken GetStringTokenFromDecryptedData(ReadOnlySpan<byte> data)
         {
             if (data.Length >= 2)
             {

@@ -8,7 +8,7 @@
     {
         public static Result Convert(string s, bool readFirst = true)
         {
-            var input = new ByteArrayInputBytes(Encoding.UTF8.GetBytes(s));
+            var input = new MemoryInputBytes(Encoding.UTF8.GetBytes(s));
 
             byte initialByte = 0;
             if (readFirst)
@@ -33,7 +33,7 @@
 
         internal static (CoreTokenScanner scanner, IInputBytes bytes) Scanner(string s)
         {
-            var inputBytes = new ByteArrayInputBytes(OtherEncodings.StringAsLatin1Bytes(s));
+            var inputBytes = new MemoryInputBytes(OtherEncodings.StringAsLatin1Bytes(s));
             var result = new CoreTokenScanner(inputBytes, true);
 
             return (result, inputBytes);

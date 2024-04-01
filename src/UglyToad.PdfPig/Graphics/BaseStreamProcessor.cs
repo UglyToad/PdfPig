@@ -392,7 +392,7 @@
                         bytes = ((StringToken)token).GetBytes();
                     }
 
-                    ShowText(new ByteArrayInputBytes(bytes));
+                    ShowText(new MemoryInputBytes(bytes));
                 }
             }
         }
@@ -568,7 +568,7 @@
             var contentStream = formStream.Decode(FilterProvider, PdfScanner);
 
             var operations = PageContentParser.Parse(PageNumber,
-                new ByteArrayInputBytes(contentStream),
+                new MemoryInputBytes(contentStream),
                 ParsingOptions.Logger);
 
             // 3. We don't respect clipping currently.
@@ -616,8 +616,7 @@
                    && operations.OfType<InvokeNamedXObject>()?.Any(o => o.Name == xObjectName) ==
                    true // operations contain another form with same name
                    && ResourceStore.TryGetXObject(xObjectName, out var result)
-                   && result.Data.SequenceEqual(formStream
-                       .Data); // The form contained in the operations has identical data to current form
+                   && result.Data.Span.SequenceEqual(formStream.Data.Span); // The form contained in the operations has identical data to current form
         }
 
         /// <inheritdoc/>
@@ -776,7 +775,7 @@
         }
 
         /// <inheritdoc/>
-        public virtual void EndInlineImage(IReadOnlyList<byte> bytes)
+        public virtual void EndInlineImage(ReadOnlyMemory<byte> bytes)
         {
             if (InlineImageBuilder is null)
             {

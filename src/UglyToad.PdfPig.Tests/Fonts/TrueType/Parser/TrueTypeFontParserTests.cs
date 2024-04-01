@@ -16,7 +16,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
         {
             var bytes = TrueTypeTestHelper.GetFileBytes("Roboto-Regular");
 
-            var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
+            var input = new TrueTypeDataBytes(new MemoryInputBytes(bytes));
 
             var font = TrueTypeFontParser.Parse(input);
 
@@ -90,7 +90,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
 
             var bytes = TrueTypeTestHelper.GetFileBytes("Roboto-Regular");
 
-            var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
+            var input = new TrueTypeDataBytes(new MemoryInputBytes(bytes));
 
             var font = TrueTypeFontParser.Parse(input);
 
@@ -122,7 +122,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
         {
             var bytes = TrueTypeTestHelper.GetFileBytes("google-simple-doc");
 
-            var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
+            var input = new TrueTypeDataBytes(new MemoryInputBytes(bytes));
 
             var font = TrueTypeFontParser.Parse(input);
 
@@ -134,7 +134,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
         {
             var bytes = TrueTypeTestHelper.GetFileBytes("Andada-Regular");
 
-            var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
+            var input = new TrueTypeDataBytes(new MemoryInputBytes(bytes));
 
             var font = TrueTypeFontParser.Parse(input);
 
@@ -162,7 +162,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
         {
             var bytes = TrueTypeTestHelper.GetFileBytes("PMingLiU");
 
-            var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
+            var input = new TrueTypeDataBytes(new MemoryInputBytes(bytes));
 
             var font = TrueTypeFontParser.Parse(input);
 
@@ -176,7 +176,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
 
             var bytes = TrueTypeTestHelper.GetFileBytes("Roboto-Regular");
 
-            var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
+            var input = new TrueTypeDataBytes(new MemoryInputBytes(bytes));
 
             var font = TrueTypeFontParser.Parse(input);
 
@@ -221,7 +221,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
         {
             var bytes = TrueTypeTestHelper.GetFileBytes("issue-258-corrupt-name-table");
 
-            var input = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
+            var input = new TrueTypeDataBytes(new MemoryInputBytes(bytes));
 
             var font = TrueTypeFontParser.Parse(input);
 

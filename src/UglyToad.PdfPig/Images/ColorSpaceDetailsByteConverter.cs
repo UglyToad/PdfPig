@@ -3,7 +3,6 @@
     using Content;
     using Graphics.Colors;
     using System;
-    using System.Collections.Generic;
     using System.Linq;
 
     /// <summary>
@@ -12,21 +11,21 @@
     public static class ColorSpaceDetailsByteConverter
     {
         /// <summary>
-        /// Converts the output bytes (if available) of <see cref="IPdfImage.TryGetBytes"/>
+        /// Converts the output bytes (if available) of <see cref="IPdfImage.TryGetMemory"/>
         /// to actual pixel values using the <see cref="IPdfImage.ColorSpaceDetails"/>. For most images this doesn't
         /// change the data but for <see cref="ColorSpace.Indexed"/> it will convert the bytes which are indexes into the
         /// real pixel data into the real pixel data.
         /// </summary>
-        public static byte[] Convert(ColorSpaceDetails details, IReadOnlyList<byte> decoded, int bitsPerComponent, int imageWidth, int imageHeight)
+        public static ReadOnlySpan<byte> Convert(ColorSpaceDetails details, ReadOnlySpan<byte> decoded, int bitsPerComponent, int imageWidth, int imageHeight)
         {
-            if (decoded is null)
+            if (decoded.IsEmpty)
             {
                 return [];
             }
 
             if (details is null)
             {
-                return decoded.ToArray();
+                return decoded;
             }
 
             if (bitsPerComponent != 8)
@@ -37,7 +36,7 @@
 
             // Remove padding bytes when the stride width differs from the image width
             var bytesPerPixel = details.NumberOfColorComponents;
-            var strideWidth = decoded.Count / imageHeight / bytesPerPixel;
+            var strideWidth = decoded.Length / imageHeight / bytesPerPixel;
             if (strideWidth != imageWidth)
             {
                 decoded = RemoveStridePadding(decoded.ToArray(), strideWidth, imageWidth, imageHeight, bytesPerPixel);
@@ -45,13 +44,13 @@
 
             decoded = details.Transform(decoded);
 
-            return decoded.ToArray();
+            return decoded;
         }
 
-        private static byte[] UnpackComponents(IReadOnlyList<byte> input, int bitsPerComponent)
+        private static byte[] UnpackComponents(ReadOnlySpan<byte> input, int bitsPerComponent)
         {
             int end = 8 - bitsPerComponent;
-            var unpacked = new byte[input.Count * (int)Math.Ceiling((end + 1) / (double)bitsPerComponent)];
+            var unpacked = new byte[input.Length * (int)Math.Ceiling((end + 1) / (double)bitsPerComponent)];
 
             int right = (int)Math.Pow(2, bitsPerComponent) - 1;
 

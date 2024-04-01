@@ -210,7 +210,7 @@
                         // Special case handling for inline images.
                         var imageData = ReadInlineImageData();
                         isInInlineImage = false;
-                        CurrentToken = new InlineImageDataToken(imageData);
+                        CurrentToken = new InlineImageDataToken(new ReadOnlyMemory<byte>([..imageData]));
                         hasBytePreRead = false;
                         return true;
                     }
@@ -287,7 +287,7 @@
             return data;
         }
 
-        private IReadOnlyList<byte> ReadInlineImageData()
+        private List<byte> ReadInlineImageData()
         {
             // The ID operator should be followed by a single white-space character, and the next character is interpreted
             // as the first byte of image data. 
@@ -305,7 +305,6 @@
         {
             const byte lastPlainText = 127;
             const byte space = 32;
-
 
             var imageData = new List<byte>();
             byte prevByte = 0;

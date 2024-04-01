@@ -28,7 +28,7 @@
     {
         public static PdfDocument Open(byte[] fileBytes, ParsingOptions? options = null)
         {
-            var inputBytes = new ByteArrayInputBytes(fileBytes);
+            var inputBytes = new MemoryInputBytes(fileBytes);
 
             return Open(inputBytes, options);
         }

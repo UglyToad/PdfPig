@@ -135,7 +135,7 @@ namespace UglyToad.PdfPig.Fonts.SystemFonts
 
             if (name.Contains(","))
             {
-                result = GetTrueTypeFontNamed(name.Replace(",", "-"));
+                result = GetTrueTypeFontNamed(name.Replace(',', '-'));
 
                 if (result != null)
                 {
@@ -237,7 +237,7 @@ namespace UglyToad.PdfPig.Fonts.SystemFonts
 
             var bytes = File.ReadAllBytes(fileName);
 
-            var data = new TrueTypeDataBytes(new ByteArrayInputBytes(bytes));
+            var data = new TrueTypeDataBytes(new MemoryInputBytes(bytes));
 
             if (readNameFirst)
             {

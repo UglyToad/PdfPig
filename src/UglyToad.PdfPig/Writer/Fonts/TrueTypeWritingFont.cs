@@ -14,7 +14,7 @@
     internal class TrueTypeWritingFont : IWritingFont
     {
         private readonly TrueTypeFont font;
-        private readonly IReadOnlyList<byte> fontFileBytes;
+        private readonly ReadOnlyMemory<byte> fontFileBytes;
 
         private readonly object mappingLock = new object();
         private readonly Dictionary<char, byte> characterMapping = new Dictionary<char, byte>();
@@ -24,7 +24,7 @@
 
         public string Name => font.Name;
 
-        public TrueTypeWritingFont(TrueTypeFont font, IReadOnlyList<byte> fontFileBytes)
+        public TrueTypeWritingFont(TrueTypeFont font, ReadOnlyMemory<byte> fontFileBytes)
         {
             this.font = font;
             this.fontFileBytes = fontFileBytes;

@@ -1,9 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations
 {
+    using PdfPig.Core;
     using System;
     using System.Globalization;
     using System.IO;
-    using PdfPig.Core;
+    using UglyToad.PdfPig.Util;
 
     internal static class OperationWriteHelper
     {
@@ -20,9 +21,10 @@
             }
         }
 
-        public static void WriteHex(this Stream stream, byte[] bytes)
+        public static void WriteHex(this Stream stream, ReadOnlySpan<byte> bytes)
         {
-            var text = BitConverter.ToString(bytes).Replace("-", string.Empty);
+            var text = Hex.GetString(bytes);
+
             stream.WriteText($"<{text}>");
         }
 

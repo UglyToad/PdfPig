@@ -566,7 +566,7 @@
                 Assert.Equal(expectedBounds.BottomLeft, image.Bounds.BottomLeft);
                 Assert.Equal(expectedBounds.TopRight, image.Bounds.TopRight);
 
-                Assert.Equal(imageBytes, image.RawBytes);
+                Assert.Equal(imageBytes, image.RawMemory.ToArray());
             }
         }
 
@@ -622,9 +622,9 @@
 
                 Assert.Equal(expectedBounds3, image3.Bounds);
 
-                Assert.Equal(imageBytes, image1.RawBytes);
-                Assert.Equal(imageBytes, image2.RawBytes);
-                Assert.Equal(imageBytes, image3.RawBytes);
+                Assert.Equal(imageBytes, image1.RawMemory.ToArray());
+                Assert.Equal(imageBytes, image2.RawMemory.ToArray());
+                Assert.Equal(imageBytes, image3.RawMemory.ToArray());
             }
         }
 

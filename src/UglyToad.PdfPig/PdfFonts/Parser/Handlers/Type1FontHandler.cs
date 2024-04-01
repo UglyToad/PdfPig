@@ -11,6 +11,7 @@
     using Fonts.Type1.Parser;
     using PdfPig.Parser.Parts;
     using Simple;
+    using System;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -92,11 +93,9 @@
             {
                 var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, pdfScanner);
 
-                var decodedUnicodeCMap = toUnicode?.Decode(filterProvider, pdfScanner);
-
-                if (decodedUnicodeCMap != null)
+                if (toUnicode?.Decode(filterProvider, pdfScanner) is ReadOnlyMemory<byte> decodedUnicodeCMap)
                 {
-                    toUnicodeCMap = CMapCache.Parse(new ByteArrayInputBytes(decodedUnicodeCMap));
+                    toUnicodeCMap = CMapCache.Parse(new MemoryInputBytes(decodedUnicodeCMap));
                 }
             }
 
@@ -156,7 +155,7 @@
                 var length1 = stream.StreamDictionary.Get<NumericToken>(NameToken.Length1, pdfScanner);
                 var length2 = stream.StreamDictionary.Get<NumericToken>(NameToken.Length2, pdfScanner);
 
-                var font = Type1FontParser.Parse(new ByteArrayInputBytes(bytes), length1.Int, length2.Int);
+                var font = Type1FontParser.Parse(new MemoryInputBytes(bytes), length1.Int, length2.Int);
 
                 return Union<Type1Font, CompactFontFormatFontCollection>.One(font);
             }

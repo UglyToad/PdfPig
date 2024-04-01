@@ -24,7 +24,7 @@
 
             Assert.NotNull(str);
 
-            var result = new CMapParser().Parse(new ByteArrayInputBytes(cmapStream));
+            var result = new CMapParser().Parse(new MemoryInputBytes(cmapStream));
 
             Assert.Single(result.CodespaceRanges);
 

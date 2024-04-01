@@ -17,7 +17,7 @@
 
         public int BitsPerComponent { get; set; } = 8;
 
-        public IReadOnlyList<byte> RawBytes { get; }
+        public ReadOnlyMemory<byte> RawMemory { get; }
 
         public RenderingIntent RenderingIntent { get; set; } = RenderingIntent.RelativeColorimetric;
 
@@ -33,12 +33,12 @@
 
         public ColorSpaceDetails ColorSpaceDetails { get; set; }
 
-        public IReadOnlyList<byte> DecodedBytes { get; set; }
+        public ReadOnlyMemory<byte> DecodedBytes { get; set; }
 
-        public bool TryGetBytes(out IReadOnlyList<byte> bytes)
+        public bool TryGetMemory(out ReadOnlyMemory<byte> bytes)
         {
             bytes = DecodedBytes;
-            return bytes != null;
+            return !bytes.IsEmpty;
         }
 
         public bool TryGetPng(out byte[] bytes) => PngFromPdfImageFactory.TryGenerate(this, out bytes);

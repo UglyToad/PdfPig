@@ -27,7 +27,7 @@
         /// <summary>
         /// Adds transparency values from tRNS chunk.
         /// </summary>
-        public void SetAlphaValues(byte[] bytes)
+        public void SetAlphaValues(ReadOnlySpan<byte> bytes)
         {
             HasAlphaValues = true;
 

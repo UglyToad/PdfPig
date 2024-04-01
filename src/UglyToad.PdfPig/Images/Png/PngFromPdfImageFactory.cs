@@ -15,10 +15,12 @@
 
             var isColorSpaceSupported = hasValidDetails && image.ColorSpaceDetails!.BaseType != ColorSpace.Pattern;
 
-            if (!isColorSpaceSupported || !image.TryGetBytes(out var bytesPure))
+            if (!isColorSpaceSupported || !image.TryGetMemory(out var imageMemory))
             {
                 return false;
             }
+
+            var bytesPure = imageMemory.Span;
 
             try
             {
@@ -33,8 +35,8 @@
 
                 var requiredSize = (image.WidthInSamples * image.HeightInSamples * numberOfComponents);
 
-                var actualSize = bytesPure.Count;
-                var isCorrectlySized = bytesPure.Count == requiredSize ||
+                var actualSize = bytesPure.Length;
+                var isCorrectlySized = bytesPure.Length == requiredSize ||
                     // Spec, p. 37: "...error if the stream contains too much data, with the exception that
                     // there may be an extra end-of-line marker..."
                     (actualSize == requiredSize + 1 && bytesPure[actualSize - 1] == ReadHelper.AsciiLineFeed) ||
@@ -43,11 +45,6 @@
                     (actualSize == requiredSize + 2 &&
                         bytesPure[actualSize - 2] == ReadHelper.AsciiCarriageReturn &&
                         bytesPure[actualSize - 1] == ReadHelper.AsciiLineFeed);
-
-                if (!isCorrectlySized)
-                {
-                    return false;
-                }
 
                 if (image.ColorSpaceDetails.BaseType == ColorSpace.DeviceCMYK || numberOfComponents == 4)
                 {
