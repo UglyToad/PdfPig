@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Outline
 {
-    using Destinations;
     using System;
     using System.Collections.Generic;
 

@@ -55,8 +55,7 @@
 
                 var colorSpaceDetails = GetColorSpaceDetails(colorSpace, imageDictionary.Without(NameToken.Filter).Without(NameToken.F), scanner, resourceStore, filterProvider, true);
 
-                var decodeRaw = imageDictionary.GetObjectOrDefault(NameToken.Decode, NameToken.D) as ArrayToken
-                    ?? new ArrayToken(Array.Empty<IToken>());
+                var decodeRaw = imageDictionary.GetObjectOrDefault(NameToken.Decode, NameToken.D) as ArrayToken ?? new ArrayToken([]);
                 var decode = decodeRaw.Data.OfType<NumericToken>().Select(x => x.Double).ToArray();
 
                 return IndexedColorSpaceDetails.Stencil(colorSpaceDetails, decode);
@@ -341,7 +340,7 @@
 
                         if (DirectObjectFinder.TryGet(fourth, scanner, out HexToken? tableHexToken))
                         {
-                            tableBytes = tableHexToken.Bytes;
+                            tableBytes = [.. tableHexToken.Bytes];
                         }
                         else if (DirectObjectFinder.TryGet(fourth, scanner, out StreamToken? tableStreamToken))
                         {

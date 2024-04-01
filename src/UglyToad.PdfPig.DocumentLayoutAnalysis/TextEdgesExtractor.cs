@@ -17,12 +17,12 @@
         /// <summary>
         /// Functions used to define left, middle and right edges.
         /// </summary>
-        private static readonly Tuple<EdgeType, Func<PdfRectangle, double>>[] edgesFuncs = new Tuple<EdgeType, Func<PdfRectangle, double>>[]
-        {
+        private static readonly Tuple<EdgeType, Func<PdfRectangle, double>>[] edgesFuncs =
+        [
             Tuple.Create<EdgeType, Func<PdfRectangle, double>>(EdgeType.Left,   x => Math.Round(x.Left, 0)),                // use BoundingBox's left coordinate
             Tuple.Create<EdgeType, Func<PdfRectangle, double>>(EdgeType.Mid, x => Math.Round(x.Left + x.Width / 2, 0)),     // use BoundingBox's mid coordinate
             Tuple.Create<EdgeType, Func<PdfRectangle, double>>(EdgeType.Right,  x => Math.Round(x.Right, 0))                // use BoundingBox's right coordinate
-        };
+        ];
 
         /// <summary>
         /// Get the text edges.

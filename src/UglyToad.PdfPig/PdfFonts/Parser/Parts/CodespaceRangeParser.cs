@@ -44,7 +44,7 @@
                     throw new InvalidOperationException("Codespace range contains an unexpected token: " + tokenScanner.CurrentToken);
                 }
 
-                ranges.Add(new CodespaceRange(start.Bytes, end.Bytes));
+                ranges.Add(new CodespaceRange(start.Memory, end.Memory));
             }
 
             builder.CodespaceRanges = ranges;

@@ -32,7 +32,7 @@
             // Sometimes the entire PFB file including the header bytes can be included which prevents parsing in the normal way.
             var isEntirePfbFile = inputBytes.Peek() == PfbFileIndicator;
 
-            IReadOnlyList<byte> eexecPortion = new byte[0];
+            ReadOnlySpan<byte> eexecPortion = [];
 
             if (isEntirePfbFile)
             {
@@ -77,7 +77,7 @@
             
             try
             {
-                var tempEexecPortion = new List<byte>();
+                using var tempEexecPortion = new ArrayPoolBufferWriter<byte>();
                 var tokenSet = new PreviousTokenSet();
                 tokenSet.Add(scanner.CurrentToken);
                 while (scanner.MoveNext())
@@ -100,7 +100,7 @@
                                     {
                                         for (int i = 0; i < offset; i++)
                                         {
-                                            tempEexecPortion.Add((byte)ClearToMark[i]);
+                                            tempEexecPortion.Write((byte)ClearToMark[i]);
                                         }
                                     }
 
@@ -117,7 +117,7 @@
                                     continue;
                                 }
 
-                                tempEexecPortion.Add(inputBytes.CurrentByte);
+                                tempEexecPortion.Write(inputBytes.CurrentByte);
                             }
                         }
                         else
@@ -131,7 +131,7 @@
 
                 if (!isEntirePfbFile)
                 {
-                    eexecPortion = tempEexecPortion;
+                    eexecPortion = tempEexecPortion.WrittenSpan.ToArray();
                 }
             }
             finally

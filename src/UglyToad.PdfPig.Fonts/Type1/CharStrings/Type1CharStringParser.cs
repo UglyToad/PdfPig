@@ -1,13 +1,13 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.CharStrings
 {
+    using System;
+    using System.Collections.Generic;
     using Commands;
     using Commands.Arithmetic;
     using Commands.Hint;
     using Commands.PathConstruction;
     using Commands.StartFinishOutline;
     using Core;
-    using System;
-    using System.Collections.Generic;
 
     /// <summary>
     /// Decodes a set of CharStrings to their corresponding Type 1 BuildChar operations.
@@ -73,11 +73,11 @@
             return new Type1CharStrings(charStringResults, charStringIndexToName, subroutineResults);
         }
 
-        private static IReadOnlyList<Union<double, LazyType1Command>> ParseSingle(IReadOnlyList<byte> charStringBytes)
+        private static IReadOnlyList<Union<double, LazyType1Command>> ParseSingle(ReadOnlySpan<byte> charStringBytes)
         {
             var interpreted = new List<Union<double, LazyType1Command>>();
 
-            for (var i = 0; i < charStringBytes.Count; i++)
+            for (var i = 0; i < charStringBytes.Length; i++)
             {
                 var b = charStringBytes[i];
 
@@ -104,7 +104,7 @@
             return interpreted;
         }
 
-        private static int InterpretNumber(byte b, IReadOnlyList<byte> bytes, ref int i)
+        private static int InterpretNumber(byte b, ReadOnlySpan<byte> bytes, ref int i)
         {
             if (b >= 32 && b <= 246)
             {
@@ -128,7 +128,7 @@
             return result;
         }
 
-        public static LazyType1Command GetCommand(byte v, IReadOnlyList<byte> bytes, ref int i)
+        public static LazyType1Command GetCommand(byte v, ReadOnlySpan<byte> bytes, ref int i)
         {
             switch (v)
             {

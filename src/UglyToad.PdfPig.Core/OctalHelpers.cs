@@ -42,7 +42,7 @@
         /// <summary>
         /// Read an integer from octal digits.
         /// </summary>
-        public static int FromOctalDigits(short[] octal)
+        public static int FromOctalDigits(ReadOnlySpan<short> octal)
         {
             int sum = 0;
             for (int i = octal.Length - 1; i >= 0; i--)

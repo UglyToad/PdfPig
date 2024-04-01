@@ -152,7 +152,7 @@
             {
                 var data = new byte[minCodeLength];
                 bytes.Read(data);
-                return data.ToInt(minCodeLength);
+                return ((ReadOnlySpan<byte>)data).Slice(0, minCodeLength).ToInt();
             }
 
             byte[] result = new byte[maxCodeLength];

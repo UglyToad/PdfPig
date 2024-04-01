@@ -402,7 +402,7 @@ namespace UglyToad.PdfPig.Encryption
 
                         var decrypted = DecryptData(data, reference);
 
-                        token = new HexToken(Hex.GetString(decrypted).ToCharArray());
+                        token = new HexToken(Hex.GetString(decrypted).AsSpan());
 
                         break;
                     }

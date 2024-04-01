@@ -67,30 +67,13 @@
                 }
             }
 
-            Tuple<string, PdfRectangle> data;
-            switch (tempTextOrientation)
-            {
-                case TextOrientation.Horizontal:
-                    data = GetBoundingBoxH(letters);
-                    break;
-
-                case TextOrientation.Rotate180:
-                    data = GetBoundingBox180(letters);
-                    break;
-
-                case TextOrientation.Rotate90:
-                    data = GetBoundingBox90(letters);
-                    break;
-
-                case TextOrientation.Rotate270:
-                    data = GetBoundingBox270(letters);
-                    break;
-
-                case TextOrientation.Other:
-                default:
-                    data = GetBoundingBoxOther(letters);
-                    break;
-            }
+            var data = tempTextOrientation switch {
+                TextOrientation.Horizontal => GetBoundingBoxH(letters),
+                TextOrientation.Rotate180  => GetBoundingBox180(letters),
+                TextOrientation.Rotate90   => GetBoundingBox90(letters),
+                TextOrientation.Rotate270  => GetBoundingBox270(letters),
+                _ => GetBoundingBoxOther(letters),
+            };
 
             Text = data.Item1;
             BoundingBox = data.Item2;
@@ -100,7 +83,7 @@
         }
 
         #region Bounding box
-        private Tuple<string, PdfRectangle> GetBoundingBoxH(IReadOnlyList<Letter> letters)
+        private (string, PdfRectangle) GetBoundingBoxH(IReadOnlyList<Letter> letters)
         {
             var builder = new StringBuilder();
 
@@ -136,10 +119,10 @@
                 }
             }
 
-            return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(blX, blY, trX, trY));
+            return new(builder.ToString(), new PdfRectangle(blX, blY, trX, trY));
         }
 
-        private Tuple<string, PdfRectangle> GetBoundingBox180(IReadOnlyList<Letter> letters)
+        private (string, PdfRectangle) GetBoundingBox180(IReadOnlyList<Letter> letters)
         {
             var builder = new StringBuilder();
 
@@ -175,10 +158,10 @@
                 }
             }
 
-            return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(blX, blY, trX, trY));
+            return (builder.ToString(), new PdfRectangle(blX, blY, trX, trY));
         }
 
-        private Tuple<string, PdfRectangle> GetBoundingBox90(IReadOnlyList<Letter> letters)
+        private (string, PdfRectangle) GetBoundingBox90(IReadOnlyList<Letter> letters)
         {
             var builder = new StringBuilder();
 
@@ -214,12 +197,12 @@
                 }
             }
 
-            return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(
+            return new (builder.ToString(), new PdfRectangle(
                 new PdfPoint(t, l), new PdfPoint(t, r),
                 new PdfPoint(b, l), new PdfPoint(b, r)));
         }
 
-        private Tuple<string, PdfRectangle> GetBoundingBox270(IReadOnlyList<Letter> letters)
+        private (string, PdfRectangle) GetBoundingBox270(IReadOnlyList<Letter> letters)
         {
             var builder = new StringBuilder();
 
@@ -255,12 +238,12 @@
                 }
             }
 
-            return new Tuple<string, PdfRectangle>(builder.ToString(), new PdfRectangle(
+            return new(builder.ToString(), new PdfRectangle(
                 new PdfPoint(t, l), new PdfPoint(t, r),
                 new PdfPoint(b, l), new PdfPoint(b, r)));
         }
 
-        private Tuple<string, PdfRectangle> GetBoundingBoxOther(IReadOnlyList<Letter> letters)
+        private (string, PdfRectangle) GetBoundingBoxOther(IReadOnlyList<Letter> letters)
         {
             var builder = new StringBuilder();
             for (var i = 0; i < letters.Count; i++)
@@ -270,7 +253,7 @@
 
             if (letters.Count == 1)
             {
-                return new Tuple<string, PdfRectangle>(builder.ToString(), letters[0].GlyphRectangle);
+                return new(builder.ToString(), letters[0].GlyphRectangle);
             }
             else
             {
@@ -367,7 +350,7 @@
                     obb = obb3;
                 }
 
-                return new Tuple<string, PdfRectangle>(builder.ToString(), obb);
+                return new(builder.ToString(), obb);
             }
         }
         #endregion
@@ -379,7 +362,10 @@
         private static double BoundAngle180(double angle)
         {
             angle = (angle + 180) % 360;
-            if (angle < 0) angle += 360;
+            if (angle < 0)
+            {
+                angle += 360;
+            }
             return angle - 180;
         }
 

@@ -1,16 +1,15 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.Parser
 {
     using System;
-    using System.Collections.Generic;
     using System.Globalization;
 
-    internal class Type1DataToken : Type1Token
+    internal sealed class Type1DataToken : Type1Token
     {
-        public IReadOnlyList<byte> Data { get; }
+        public ReadOnlyMemory<byte> Data { get; }
 
         public override bool IsPrivateDictionary { get; } = false;
 
-        public Type1DataToken(TokenType type, IReadOnlyList<byte> data) : base(string.Empty, type)
+        public Type1DataToken(TokenType type, ReadOnlyMemory<byte> data) : base(string.Empty, type)
         {
             if (type != TokenType.Charstring)
             {
@@ -22,7 +21,7 @@
 
         public override string ToString()
         {
-            return $"Token[type = {Type}, data = {Data.Count} bytes]";
+            return $"Token[type = {Type}, data = {Data.Length} bytes]";
         }
     }
 

@@ -1,12 +1,13 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Type1.CharStrings
 {
     using System;
-    using System.Collections.Generic;
     using System.Globalization;
 
     internal sealed class Type1CharstringDecryptedBytes
     {
-        public IReadOnlyList<byte> Bytes { get; }
+        private readonly byte[] bytes;
+
+        public ReadOnlySpan<byte> Bytes => bytes;
 
         public int Index { get; }
 
@@ -14,17 +15,17 @@
 
         public SourceType Source { get; }
 
-        public Type1CharstringDecryptedBytes(IReadOnlyList<byte> bytes, int index)
+        public Type1CharstringDecryptedBytes(byte[] bytes, int index)
         {
-            Bytes = bytes ?? throw new ArgumentNullException(nameof(bytes));
+            this.bytes = bytes ?? throw new ArgumentNullException(nameof(bytes));
             Index = index;
             Name = GlyphList.NotDefined;
             Source = SourceType.Subroutine;
         }
 
-        public Type1CharstringDecryptedBytes(string name, IReadOnlyList<byte> bytes, int index)
+        public Type1CharstringDecryptedBytes(string name, byte[] bytes, int index)
         {
-            Bytes = bytes ?? throw new ArgumentNullException(nameof(bytes));
+            this.bytes = bytes ?? throw new ArgumentNullException(nameof(bytes));
             Index = index;
             Name = name ?? index.ToString(CultureInfo.InvariantCulture);
             Source = SourceType.Charstring;
@@ -38,7 +39,7 @@
 
         public override string ToString()
         {
-            return $"{Name} {Source} {Index} {Bytes.Count} bytes";
+            return $"{Name} {Source} {Index} {Bytes.Length} bytes";
         }
     }
 }

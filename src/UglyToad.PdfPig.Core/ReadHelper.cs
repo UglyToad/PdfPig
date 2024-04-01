@@ -5,6 +5,10 @@
     using System.Globalization;
     using System.Text;
 
+#if NET8_0_OR_GREATER
+    using System.Text.Unicode;
+#endif
+
     /// <summary>
     /// Helper methods for reading from PDF files.
     /// </summary>
@@ -20,8 +24,8 @@
         /// </summary>
         public const byte AsciiCarriageReturn = 13;
 
-        private static readonly HashSet<int> EndOfNameCharacters = new HashSet<int>
-        {
+        private static readonly HashSet<int> EndOfNameCharacters =
+        [
             ' ',
             AsciiCarriageReturn,
             AsciiLineFeed,
@@ -35,7 +39,7 @@
             '(',
             0,
             '\f'
-        };
+        ];
 
         private static readonly int MaximumNumberStringLength = long.MaxValue.ToString("D").Length;
 
@@ -269,7 +273,11 @@
         /// </summary>
         public static bool IsHex(char ch)
         {
+#if NET8_0_OR_GREATER
+            return char.IsAsciiHexDigit(ch);
+#else
             return char.IsDigit(ch) || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
+#endif
         }
 
         /// <summary>
@@ -277,6 +285,9 @@
         /// </summary>
         public static bool IsValidUtf8(byte[] input)
         {
+#if NET8_0_OR_GREATER
+            return Utf8.IsValid(input);
+#else
             try
             {
                 var d = Encoding.UTF8.GetDecoder();
@@ -290,6 +301,7 @@
             {
                 return false;
             }
+#endif
         }
 
         private static StringBuilder ReadStringNumber(IInputBytes reader)
