@@ -41,21 +41,21 @@
                     {
                         skPath.LineTo((float)line.To.X, (float)line.To.Y);
                     }
-                    else if (c is PdfSubpath.BezierCurve curve)
+                    else if (c is PdfSubpath.CubicBezierCurve curve)
                     {
-                        if (curve.StartPoint.Equals(curve.FirstControlPoint)) // TODO - This needs to be fixed in PdfPig
-                        {
-                            // Quad curve
-                            skPath.QuadTo((float)curve.SecondControlPoint.X, (float)curve.SecondControlPoint.Y,
-                                (float)curve.EndPoint.X, (float)curve.EndPoint.Y);
-                        }
-                        else
-                        {
-                            // Cubic curve
-                            skPath.CubicTo((float)curve.FirstControlPoint.X, (float)curve.FirstControlPoint.Y,
-                                (float)curve.SecondControlPoint.X, (float)curve.SecondControlPoint.Y,
-                                (float)curve.EndPoint.X, (float)curve.EndPoint.Y);
-                        }
+                        skPath.CubicTo((float)curve.FirstControlPoint.X,
+                            (float)curve.FirstControlPoint.Y,
+                            (float)curve.SecondControlPoint.X,
+                            (float)curve.SecondControlPoint.Y,
+                            (float)curve.EndPoint.X,
+                            (float)curve.EndPoint.Y);
+                    }
+                    else if (c is PdfSubpath.QuadraticBezierCurve quadratic)
+                    {
+                        skPath.QuadTo((float)quadratic.ControlPoint.X,
+                            (float)quadratic.ControlPoint.Y,
+                            (float)quadratic.EndPoint.X,
+                            (float)quadratic.EndPoint.Y);
                     }
                     else if (c is PdfSubpath.Close)
                     {

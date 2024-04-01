@@ -24,7 +24,7 @@
 
         private const string OutputPath = "ImagesGlyphs";
 
-        private const float Scale = 2.5f;
+        private const float Scale = 10f;
 
         private static readonly SKMatrix ScaleMatrix = SKMatrix.CreateScale(Scale, Scale);
 
@@ -123,6 +123,12 @@
         public void veraPDF_Issue1010_3()
         {
             Run("FontMatrix-raw");
+        }
+
+        [Fact]
+        public void JudgementDocument()
+        {
+            Run("Judgement Document");
         }
 
         [Fact]
