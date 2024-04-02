@@ -31,10 +31,10 @@
 
         public override void Flush() => inner.Flush();
 
-        public void WriteChunkHeader(byte[] header)
+        public void WriteChunkHeader(ReadOnlySpan<byte> header)
         {
             written.Clear();
-            Write(header, 0, header.Length);
+            Write(header);
         }
 
         public void WriteChunkLength(int length)
@@ -53,6 +53,20 @@
             written.AddRange(buffer.Skip(offset).Take(count));
             inner.Write(buffer, offset, count);
         }
+
+#if NET8_0_OR_GREATER
+        public override void Write(ReadOnlySpan<byte> buffer)
+        {
+            written.AddRange(buffer);
+            inner.Write(buffer);
+        }
+#else
+        public void Write(ReadOnlySpan<byte> buffer)
+        {
+            written.AddRange(buffer.ToArray());
+            inner.Write(buffer);
+        }
+#endif
 
         public void WriteCrc()
         {

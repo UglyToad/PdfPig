@@ -8,9 +8,9 @@
     /// </summary>
     internal readonly struct ImageHeader
     {
-        internal static readonly byte[] HeaderBytes = {
+        internal static ReadOnlySpan<byte> HeaderBytes => [
             73, 72, 68, 82
-        };
+        ];
 
         private static readonly IReadOnlyDictionary<ColorType, HashSet<byte>> PermittedBitDepths = new Dictionary<ColorType, HashSet<byte>>
         {

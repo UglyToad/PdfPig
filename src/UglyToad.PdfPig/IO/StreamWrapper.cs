@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.IO
 {
+    using System;
     using System.IO;
 
     internal class StreamWrapper : Stream
@@ -35,6 +36,13 @@
         {
             Stream.Write(buffer, offset, count);
         }
+
+#if NET6_0_OR_GREATER
+        public override void Write(ReadOnlySpan<byte> buffer)
+        {
+            Stream.Write(buffer);
+        }
+#endif
 
         public override bool CanRead => Stream.CanRead;
 

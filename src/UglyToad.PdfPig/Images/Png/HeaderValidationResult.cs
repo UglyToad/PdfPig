@@ -1,8 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Images.Png
 {
+    using System;
+
     internal readonly struct HeaderValidationResult
     {
-        public static readonly byte[] ExpectedHeader = {
+        public static ReadOnlySpan<byte> ExpectedHeader => [
             137,
             80,
             78,
@@ -11,7 +13,7 @@
             10,
             26,
             10
-        };
+        ];
 
         public int Byte1 { get; }
 
