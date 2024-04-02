@@ -2,10 +2,8 @@
 {
     using Fonts;
     using System;
-    using System.Collections.Generic;
     using System.IO;
     using System.IO.Compression;
-    using System.Linq;
     using Tokens;
     using Util;
 
@@ -20,7 +18,7 @@
     /// See section 3.3.3 of the spec (version 1.7) for details on the FlateDecode filter.
     /// The flate decode filter may have a predictor function to further compress the stream.
     /// </remarks>
-    internal class FlateFilter : IFilter
+    internal sealed class FlateFilter : IFilter
     {
         // Defaults are from table 3.7 in the spec (version 1.7)
         private const int DefaultColors = 1;
@@ -34,7 +32,7 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public byte[] Decode(ReadOnlyMemory<byte> input, DictionaryToken streamDictionary, int filterIndex)
+        public byte[] Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
             var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 

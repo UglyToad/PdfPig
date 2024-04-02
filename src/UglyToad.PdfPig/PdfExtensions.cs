@@ -63,7 +63,7 @@
             var transform = stream.Data;
             for (var i = 0; i < filters.Count; i++)
             {
-                transform = filters[i].Decode(transform, stream.StreamDictionary, i);
+                transform = filters[i].Decode(transform.Span, stream.StreamDictionary, i);
             }
 
             return transform;
@@ -79,7 +79,7 @@
             var transform = stream.Data;
             for (var i = 0; i < filters.Count; i++)
             {
-                transform = filters[i].Decode(transform, stream.StreamDictionary, i);
+                transform = filters[i].Decode(transform.Span, stream.StreamDictionary, i);
             }
 
             return transform;

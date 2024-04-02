@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
     using System;
-    using System.Collections.Generic;
     using System.IO;
-    using System.Linq;
     using Tokens;
     using Util;
 
@@ -12,13 +10,13 @@
     ///
     /// Ported from https://github.com/apache/pdfbox/blob/714156a15ea6fcfe44ac09345b01e192cbd74450/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxFilter.java
     /// </summary>
-    internal class CcittFaxDecodeFilter : IFilter
+    internal sealed class CcittFaxDecodeFilter : IFilter
     {
         /// <inheritdoc />
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public byte[] Decode(ReadOnlyMemory<byte> input, DictionaryToken streamDictionary, int filterIndex)
+        public byte[] Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
             var decodeParms = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
@@ -38,7 +36,7 @@
 
             var k = decodeParms.GetIntOrDefault(NameToken.K, 0);
             var encodedByteAlign = decodeParms.GetBooleanOrDefault(NameToken.EncodedByteAlign, false);
-            var compressionType = DetermineCompressionType(input.Span, k);
+            var compressionType = DetermineCompressionType(input, k);
             using (var stream = new CcittFaxDecoderStream(new MemoryStream(input.ToArray()), cols, compressionType, encodedByteAlign))
             {
                 var arraySize = (cols + 7) / 8 * rows;

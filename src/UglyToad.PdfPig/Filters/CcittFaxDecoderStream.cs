@@ -329,7 +329,7 @@
 
             if (index != columns)
             {
-                throw new InvalidOperationException("Sum of run-lengths does not equal scan line width: " + index + " > " + columns);
+                throw new InvalidOperationException($"Sum of run-lengths does not equal scan line width: {index} > {columns}");
             }
 
             decodedLength = (index + 7) / 8;

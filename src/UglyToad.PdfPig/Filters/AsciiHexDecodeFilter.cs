@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
     using System;
-    using System.Collections.Generic;
     using System.IO;
     using Tokens;
 
@@ -9,7 +8,7 @@
     /// <summary>
     /// Encodes/decodes data using the ASCII hexadecimal encoding where each byte is represented by two ASCII characters.
     /// </summary>
-    internal class AsciiHexDecodeFilter : IFilter
+    internal sealed class AsciiHexDecodeFilter : IFilter
     {
         private static readonly short[] ReverseHex = 
         [
@@ -30,28 +29,27 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public byte[] Decode(ReadOnlyMemory<byte> input, DictionaryToken streamDictionary, int filterIndex)
+        public byte[] Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
-            var inputSpan = input.Span;
-            var pair = new byte[2];
+            Span<byte> pair = stackalloc byte[2];
             var index = 0;
 
             using (var memoryStream = new MemoryStream())
             using (var binaryWriter = new BinaryWriter(memoryStream))
             {
-                for (var i = 0; i < inputSpan.Length; i++)
+                for (var i = 0; i < input.Length; i++)
                 {
-                    if (inputSpan[i] == '>')
+                    if (input[i] == '>')
                     {
                         break;
                     }
 
-                    if (IsWhitespace(inputSpan[i]) || inputSpan[i] == '<')
+                    if (IsWhitespace(input[i]) || input[i] == '<')
                     {
                         continue;
                     }
 
-                    pair[index] = inputSpan[i];
+                    pair[index] = input[i];
                     index++;
 
                     if (index == 2)
