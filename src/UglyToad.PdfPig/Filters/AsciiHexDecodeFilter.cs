@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
     using System;
-    using System.IO;
+    using Core;
     using Tokens;
 
     /// <inheritdoc />
@@ -34,48 +34,45 @@
             Span<byte> pair = stackalloc byte[2];
             var index = 0;
 
-            using (var memoryStream = new MemoryStream())
-            using (var binaryWriter = new BinaryWriter(memoryStream))
+            using var writer = new ArrayPoolBufferWriter<byte>(input.Length);
+
+            for (var i = 0; i < input.Length; i++)
             {
-                for (var i = 0; i < input.Length; i++)
+                if (input[i] == '>')
                 {
-                    if (input[i] == '>')
-                    {
-                        break;
-                    }
-
-                    if (IsWhitespace(input[i]) || input[i] == '<')
-                    {
-                        continue;
-                    }
-
-                    pair[index] = input[i];
-                    index++;
-
-                    if (index == 2)
-                    {
-                        WriteHexToByte(pair, binaryWriter);
-
-                        index = 0;
-                    }
+                    break;
                 }
 
-                if (index > 0)
+                if (IsWhitespace(input[i]) || input[i] == '<')
                 {
-                    if (index == 1)
-                    {
-                        pair[1] = (byte) '0';
-                    }
-
-                    WriteHexToByte(pair, binaryWriter);
+                    continue;
                 }
 
-                binaryWriter.Flush();
-                return memoryStream.ToArray();
+                pair[index] = input[i];
+                index++;
+
+                if (index == 2)
+                {
+                    WriteHexToByte(pair, writer);
+
+                    index = 0;
+                }
             }
+
+            if (index > 0)
+            {
+                if (index == 1)
+                {
+                    pair[1] = (byte)'0';
+                }
+
+                WriteHexToByte(pair, writer);
+            }
+
+            return writer.WrittenSpan.ToArray();
         }
 
-        private static void WriteHexToByte(ReadOnlySpan<byte> hexBytes, BinaryWriter writer)
+        private static void WriteHexToByte(ReadOnlySpan<byte> hexBytes, ArrayPoolBufferWriter<byte> writer)
         {
             var first = ReverseHex[hexBytes[0]];
             var second = ReverseHex[hexBytes[1]];
