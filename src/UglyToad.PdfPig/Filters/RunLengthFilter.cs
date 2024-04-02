@@ -55,10 +55,8 @@
 
                     var byteToCopy = input[i + 1];
 
-                    for (int j = 0; j < numberOfTimesToCopy; j++)
-                    {
-                        output.Write(byteToCopy);
-                    }
+                    output.GetSpan(numberOfTimesToCopy).Slice(0, numberOfTimesToCopy).Fill(byteToCopy);
+                    output.Advance(numberOfTimesToCopy);
 
                     // Move to the single byte after the byte to copy.
                     i += 2;
