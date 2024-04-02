@@ -115,13 +115,13 @@
 
                         if (values.Count == 8)
                         {
-                            quadPointRectangles.Add(new QuadPointsQuadrilateral(new[]
-                            {
+                            quadPointRectangles.Add(new QuadPointsQuadrilateral(
+                            [
                                 matrix.Transform(new PdfPoint(values[0], values[1])),
                                 matrix.Transform(new PdfPoint(values[2], values[3])),
                                 matrix.Transform(new PdfPoint(values[4], values[5])),
                                 matrix.Transform(new PdfPoint(values[6], values[7]))
-                            }));
+                            ]));
 
                             values.Clear();
                         }
