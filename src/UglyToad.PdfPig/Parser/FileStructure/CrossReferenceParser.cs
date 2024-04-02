@@ -312,7 +312,7 @@
 
             bytes.Seek(lastOffset);
 
-            var buffer = new byte[5];
+            Span<byte> buffer = stackalloc byte[5];
 
             while (bytes.Read(buffer) == buffer.Length)
             {
@@ -347,9 +347,8 @@
 
                 bytes.Seek(lastOffset);
             }
+
             bytes.Read(buffer);
-
-
 
             return false;
         }

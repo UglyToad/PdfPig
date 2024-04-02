@@ -7,7 +7,7 @@
     /// <summary>
     /// Input bytes from a stream.
     /// </summary>
-    public class StreamInputBytes : IInputBytes
+    public sealed class StreamInputBytes : IInputBytes
     {
         private readonly Stream stream;
         private readonly bool shouldDispose;
@@ -106,30 +106,15 @@
         }
 
         /// <inheritdoc />
-        public int Read(byte[] buffer, int? length = null)
+        public int Read(Span<byte> buffer)
         {
-            var bytesToRead = buffer.Length;
-            if (length.HasValue)
-            {
-                if (length.Value < 0)
-                {
-                    throw new ArgumentOutOfRangeException($"Cannot use a negative length: {length.Value}.");
-                }
-
-                if (length.Value > bytesToRead)
-                {
-                    throw new ArgumentOutOfRangeException($"Cannot read more bytes {length.Value} than there is space in the buffer {buffer.Length}.");
-                }
-
-                bytesToRead = length.Value;
-            }
-
-            if (bytesToRead == 0)
+            if (buffer.IsEmpty)
             {
                 return 0;
             }
 
-            var read = stream.Read(buffer, 0, bytesToRead);
+            int read = stream.Read(buffer);
+
             if (read > 0)
             {
                 CurrentByte = buffer[read - 1];

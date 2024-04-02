@@ -7,7 +7,7 @@
     /// <summary>
     /// Input bytes from a byte array.
     /// </summary>
-    public class MemoryInputBytes : IInputBytes
+    public sealed class MemoryInputBytes : IInputBytes
     {
         private readonly int upperBound;
         private readonly ReadOnlyMemory<byte> memory;
@@ -73,31 +73,15 @@
         }
 
         /// <inheritdoc />
-        public int Read(byte[] buffer, int? length = null)
+        public int Read(Span<byte> buffer)
         {
-            var bytesToRead = buffer.Length;
-            if (length.HasValue)
-            {
-                if (length.Value < 0)
-                {
-                    throw new ArgumentOutOfRangeException($"Cannot use a negative length: {length.Value}.");
-                }
-
-                if (length.Value > bytesToRead)
-                {
-                    throw new ArgumentOutOfRangeException($"Cannot read more bytes {length.Value} than there is space in the buffer {buffer.Length}.");
-                }
-
-                bytesToRead = length.Value;
-            }
-
-            if (bytesToRead == 0)
+            if (buffer.IsEmpty)
             {
                 return 0;
             }
 
             var viableLength = (memory.Length - currentOffset - 1);
-            var readLength = viableLength < bytesToRead ? viableLength : bytesToRead;
+            var readLength = viableLength < buffer.Length ? viableLength : buffer.Length;
             var startFrom = currentOffset + 1;
 
             memory.Span.Slice(startFrom, readLength).CopyTo(buffer);
