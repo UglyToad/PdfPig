@@ -103,13 +103,13 @@
 
             // Slide a window of bufferLength bytes across the file allowing for the fact the version could get split by
             // the window (so always ensure an overlap of versionLength bytes between the end of the previous and start of the next buffer).
-            var buffer = new byte[bufferLength];
+            Span<byte> buffer = stackalloc byte[bufferLength];
 
             var currentOffset = startPosition;
             int readLength;
             do
             {
-                readLength = inputBytes.Read(buffer, bufferLength);
+                readLength = inputBytes.Read(buffer);
 
                 var content = OtherEncodings.BytesAsLatin1String(buffer);
 

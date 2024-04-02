@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Fonts.TrueType
 {
     using System;
+    using System.Buffers.Binary;
     using System.Text;
     using Core;
 
@@ -9,7 +10,6 @@
     /// </summary>
     public class TrueTypeDataBytes
     {
-        private readonly byte[] internalBuffer = new byte[16];
         private readonly IInputBytes inputBytes;
 
         /// <summary>
@@ -50,9 +50,11 @@
         /// </summary>
         public short ReadSignedShort()
         {
-            ReadBuffered(internalBuffer, 2);
+            Span<byte> buffer = stackalloc byte[2];
 
-            return unchecked((short)((internalBuffer[0] << 8) + (internalBuffer[1] << 0)));
+            ReadBuffered(buffer);
+
+            return unchecked((short)((buffer[0] << 8) + (buffer[1] << 0)));
         }
 
         /// <summary>
@@ -60,9 +62,11 @@
         /// </summary>
         public ushort ReadUnsignedShort()
         {
-            ReadBuffered(internalBuffer, 2);
+            Span<byte> buffer = stackalloc byte[2];
 
-            return (ushort)((internalBuffer[0] << 8) + (internalBuffer[1] << 0));
+            ReadBuffered(buffer);
+
+            return (ushort)((buffer[0] << 8) + (buffer[1] << 0));
         }
 
         /// <summary>
@@ -70,9 +74,11 @@
         /// </summary>
         public byte ReadByte()
         {
-            ReadBuffered(internalBuffer, 1);
+            Span<byte> buffer = stackalloc byte[1];
 
-            return internalBuffer[0];
+            ReadBuffered(buffer);
+
+            return buffer[0];
         }
 
         /// <summary>
@@ -99,8 +105,11 @@
                 return false;
             }
 
-            byte[] data = new byte[bytesToRead];
-            if (ReadBuffered(data, bytesToRead))
+            Span<byte> data = bytesToRead <= 64
+                ? stackalloc byte[bytesToRead]
+                : new byte[bytesToRead];
+
+            if (ReadBuffered(data))
             {
                 result = encoding.GetString(data);
                 return true;
@@ -114,9 +123,11 @@
         /// </summary>
         public uint ReadUnsignedInt()
         {
-            ReadBuffered(internalBuffer, 4);
+            Span<byte> buffer = stackalloc byte[4];
 
-            return (uint)(((long)internalBuffer[0] << 24) + ((long)internalBuffer[1] << 16) + (internalBuffer[2] << 8) + (internalBuffer[3] << 0));
+            ReadBuffered(buffer);
+            
+            return BinaryPrimitives.ReadUInt32BigEndian(buffer);
         }
 
         /// <summary>
@@ -124,9 +135,11 @@
         /// </summary>
         public int ReadSignedInt()
         {
-            ReadBuffered(internalBuffer, 4);
+            Span<byte> buffer = stackalloc byte[4];
 
-            return (internalBuffer[0] << 24) + (internalBuffer[1] << 16) + (internalBuffer[2] << 8) + (internalBuffer[3] << 0);
+            ReadBuffered(buffer);
+
+            return BinaryPrimitives.ReadInt32BigEndian(buffer);
         }
 
         /// <summary>
@@ -175,9 +188,11 @@
         /// </summary>
         public int ReadSignedByte()
         {
-            ReadBuffered(internalBuffer, 1);
+            Span<byte> buffer = stackalloc byte[1];
 
-            var signedByte = internalBuffer[0];
+            ReadBuffered(buffer);
+
+            var signedByte = buffer[0];
 
             return signedByte < 127 ? signedByte : signedByte - 256;
         }
@@ -204,7 +219,7 @@
         {
             var result = new byte[length];
 
-            ReadBuffered(result, length);
+            ReadBuffered(result);
 
             return result;
         }
@@ -244,15 +259,9 @@
             return $"@: {Position} of {inputBytes.Length} bytes.";
         }
 
-        private bool ReadBuffered(byte[] buffer, int length)
+        private bool ReadBuffered(Span<byte> buffer)
         {
-            var read = inputBytes.Read(buffer, length);
-            if (read < length)
-            {
-                return false;
-            }
-
-            return true;
+            return inputBytes.Read(buffer) == buffer.Length;
         }
     }
 }
