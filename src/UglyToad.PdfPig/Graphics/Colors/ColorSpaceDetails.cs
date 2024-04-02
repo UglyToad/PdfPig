@@ -4,6 +4,7 @@
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Runtime.InteropServices;
     using Tokens;
     using UglyToad.PdfPig.Content;
     using UglyToad.PdfPig.Functions;
@@ -572,7 +573,12 @@
                     transformed.Add(ConvertToByte(colors[c]));
                 }
             }
+
+#if NET8_0_OR_GREATER
+            return CollectionsMarshal.AsSpan(transformed);
+#else
             return transformed.ToArray();
+#endif
         }
 
         /// <inheritdoc/>
@@ -721,7 +727,7 @@
         internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> values)
         {
             var cache = new Dictionary<int, double[]>();
-            var transformed = new List<byte>();
+            var transformed = new List<byte>(values.Length * 3);
             for (var i = 0; i < values.Length; i += 3)
             {
                 byte b = values[i++];
@@ -737,7 +743,11 @@
                 }
             }
 
+#if NET8_0_OR_GREATER
+            return CollectionsMarshal.AsSpan(transformed);
+#else
             return transformed.ToArray();
+#endif
         }
 
         /// <inheritdoc/>
