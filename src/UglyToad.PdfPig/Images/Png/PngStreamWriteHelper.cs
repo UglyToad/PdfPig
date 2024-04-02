@@ -1,14 +1,13 @@
 ﻿namespace UglyToad.PdfPig.Images.Png
 {
     using System;
-    using System.Collections.Generic;
+    using System.Buffers.Binary;
     using System.IO;
-    using System.Linq;
 
-    internal class PngStreamWriteHelper : Stream
+    internal sealed class PngStreamWriteHelper : Stream
     {
         private readonly Stream inner;
-        private readonly List<byte> written = new List<byte>();
+        private readonly Crc32 crc = new();
 
         public override bool CanRead => inner.CanRead;
 
@@ -33,7 +32,7 @@
 
         public void WriteChunkHeader(ReadOnlySpan<byte> header)
         {
-            written.Clear();
+            crc.Reset();
             Write(header);
         }
 
@@ -50,28 +49,33 @@
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            written.AddRange(buffer.Skip(offset).Take(count));
+            crc.Append(buffer.AsSpan(offset, count));
             inner.Write(buffer, offset, count);
         }
 
 #if NET8_0_OR_GREATER
         public override void Write(ReadOnlySpan<byte> buffer)
         {
-            written.AddRange(buffer);
+            crc.Append(buffer);
             inner.Write(buffer);
         }
 #else
         public void Write(ReadOnlySpan<byte> buffer)
         {
-            written.AddRange(buffer.ToArray());
+            crc.Append(buffer);
             inner.Write(buffer);
         }
 #endif
 
         public void WriteCrc()
         {
-            var result = (int)Crc32.Calculate(written);
-            StreamHelper.WriteBigEndianInt32(inner, result);
+            Span<byte> buffer = stackalloc byte[4];
+
+            var result = crc.GetCurrentHashAsUInt32();
+
+            BinaryPrimitives.WriteUInt32BigEndian(buffer, result);
+
+            inner.Write(buffer);
         }
     }
 }
