@@ -8,7 +8,7 @@
     /// A QuadPoints quadrilateral is four points defining the region for an annotation to use.
     /// An annotation may cover multiple quadrilaterals.
     /// </summary>
-    public class QuadPointsQuadrilateral
+    public readonly struct QuadPointsQuadrilateral
     {
         /// <summary>
         /// The 4 points defining this quadrilateral.
@@ -21,16 +21,16 @@
         /// <summary>
         /// Create a new <see cref="QuadPointsQuadrilateral"/>.
         /// </summary>
-        public QuadPointsQuadrilateral(IReadOnlyList<PdfPoint> points)
+        public QuadPointsQuadrilateral(PdfPoint[] points)
         {
             if (points is null)
             {
                 throw new ArgumentNullException(nameof(points));
             }
 
-            if (points.Count != 4)
+            if (points.Length != 4)
             {
-                throw new ArgumentException($"Quadpoints quadrilateral should only contain 4 points, instead got {points.Count} points.");
+                throw new ArgumentException($"Quadpoints quadrilateral should only contain 4 points, instead got {points.Length} points.");
             }
 
             Points = points;
