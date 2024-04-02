@@ -1,12 +1,11 @@
 ﻿namespace UglyToad.PdfPig.Images.Png
 {
     using System;
-    using System.Collections.Generic;
 
     /// <summary>
     /// 32-bit Cyclic Redundancy Code used by the PNG for checking the data is intact.
     /// </summary>
-    internal static class Crc32
+    internal class Crc32
     {
         private const uint Polynomial = 0xEDB88320;
 
@@ -50,21 +49,6 @@
         }
 
         /// <summary>
-        /// Calculate the CRC32 for data.
-        /// </summary>
-        public static uint Calculate(List<byte> data)
-        {
-            var crc32 = uint.MaxValue;
-            for (var i = 0; i < data.Count; i++)
-            {
-                var index = (crc32 ^ data[i]) & 0xFF;
-                crc32 = (crc32 >> 8) ^ Lookup[index];
-            }
-
-            return crc32 ^ uint.MaxValue;
-        }
-
-        /// <summary>
         /// Calculate the combined CRC32 for data.
         /// </summary>
         public static uint Calculate(ReadOnlySpan<byte> data, ReadOnlySpan<byte> data2)
@@ -83,6 +67,31 @@
             }
 
             return crc32 ^ uint.MaxValue;
+        }
+
+
+        private uint state = uint.MaxValue;
+
+        /// <summary>
+        /// Calculate the CRC32 for data.
+        /// </summary>
+        public void Append(ReadOnlySpan<byte> data)
+        {
+            for (var i = 0; i < data.Length; i++)
+            {
+                var index = (state ^ data[i]) & 0xFF;
+                state = (state >> 8) ^ Lookup[index];
+            }
+        }
+
+        public uint GetCurrentHashAsUInt32()
+        {
+            return state ^ uint.MaxValue;
+        }
+
+        public void Reset()
+        {
+            state = uint.MaxValue;
         }
     }
 }
