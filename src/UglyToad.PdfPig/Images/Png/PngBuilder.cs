@@ -80,7 +80,7 @@
         /// </summary>
         public void Save(Stream outputStream)
         {
-            outputStream.Write(HeaderValidationResult.ExpectedHeader, 0, HeaderValidationResult.ExpectedHeader.Length);
+            outputStream.Write(HeaderValidationResult.ExpectedHeader);
 
             var stream = new PngStreamWriteHelper(outputStream);
 
@@ -106,12 +106,12 @@
 
             var imageData = Compress(rawData);
             stream.WriteChunkLength(imageData.Length);
-            stream.WriteChunkHeader("IDAT"u8.ToArray());
-            stream.Write(imageData, 0, imageData.Length);
+            stream.WriteChunkHeader("IDAT"u8);
+            stream.Write(imageData);
             stream.WriteCrc();
 
             stream.WriteChunkLength(0);
-            stream.WriteChunkHeader("IEND"u8.ToArray());
+            stream.WriteChunkHeader("IEND"u8);
             stream.WriteCrc();
         }
 
