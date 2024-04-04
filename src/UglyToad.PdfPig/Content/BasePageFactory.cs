@@ -118,7 +118,7 @@
             }
             else if (DirectObjectFinder.TryGet<ArrayToken>(contents, PdfScanner, out var array))
             {
-                using var bytes = new ArrayPoolBufferWriter<byte>();
+                using var bytes = new ArrayPoolBufferWriter<byte>(1024 * 64);
 
                 for (var i = 0; i < array.Data.Count; i++)
                 {
@@ -144,7 +144,7 @@
                     }
                 }
 
-                page = ProcessPageInternal(number, dictionary, namedDestinations, mediaBox, cropBox, userSpaceUnit, rotation, initialMatrix, bytes.WrittenSpan.ToArray());
+                page = ProcessPageInternal(number, dictionary, namedDestinations, mediaBox, cropBox, userSpaceUnit, rotation, initialMatrix, bytes.WrittenMemory);
             }
             else
             {
