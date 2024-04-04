@@ -40,6 +40,11 @@
         ReadOnlyMemory<byte> RawMemory { get; }
 
         /// <summary>
+        /// The encoded memory span of the image with all filters still applied.
+        /// </summary>
+        ReadOnlySpan<byte> RawBytes { get; }
+
+        /// <summary>
         /// The color rendering intent to be used when rendering the image.
         /// </summary>
         RenderingIntent RenderingIntent { get; }
@@ -90,10 +95,10 @@
         ColorSpaceDetails? ColorSpaceDetails { get; }
 
         /// <summary>
-        /// Get the decoded bytes of the image if applicable. For JPEG images and some other types the
+        /// Get the decoded memory of the image if applicable. For JPEG images and some other types the
         /// <see cref="RawMemory"/> should be used directly.
         /// </summary>
-        bool TryGetMemory(out ReadOnlyMemory<byte> bytes);
+        bool TryGetMemory(out ReadOnlyMemory<byte> memory);
 
         /// <summary>
         /// Try to convert the image to PNG. Doesn't support conversion of JPG to PNG.
