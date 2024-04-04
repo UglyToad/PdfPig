@@ -59,6 +59,9 @@
         public ReadOnlyMemory<byte> RawMemory { get; }
 
         /// <inheritdoc />
+        public ReadOnlySpan<byte> RawBytes => RawMemory.Span;
+
+        /// <inheritdoc />
         public ColorSpaceDetails? ColorSpaceDetails { get; }
 
         /// <summary>

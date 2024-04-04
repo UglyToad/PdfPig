@@ -52,6 +52,9 @@
         public ReadOnlyMemory<byte> RawMemory { get; }
 
         /// <inheritdoc />
+        public ReadOnlySpan<byte> RawBytes => RawMemory.Span;
+
+        /// <inheritdoc />
         public ColorSpaceDetails ColorSpaceDetails { get; }
 
         /// <summary>
@@ -61,7 +64,7 @@
             RenderingIntent renderingIntent,
             bool interpolate,
             IReadOnlyList<double> decode,
-            ReadOnlyMemory<byte> bytes,
+            ReadOnlyMemory<byte> rawMemory,
             IReadOnlyList<IFilter> filters,
             DictionaryToken streamDictionary,
             ColorSpaceDetails colorSpaceDetails)
@@ -75,8 +78,7 @@
             RenderingIntent = renderingIntent;
             Interpolate = interpolate;
             ImageDictionary = streamDictionary;
-
-            RawMemory = bytes;
+            RawMemory = rawMemory;
             ColorSpaceDetails = colorSpaceDetails;
 
             var supportsFilters = true;
@@ -91,14 +93,14 @@
 
             memoryFactory = supportsFilters ? new Lazy<ReadOnlyMemory<byte>>(() =>
             {
-                var b = bytes.ToArray();
+                var b = rawMemory.Span;
                 for (var i = 0; i < filters.Count; i++)
                 {
                     var filter = filters[i];
                     b = filter.Decode(b, streamDictionary, i);
                 }
 
-                return b;
+                return b.ToArray();
             }) : null;
         }
 
