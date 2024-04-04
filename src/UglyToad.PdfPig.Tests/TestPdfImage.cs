@@ -19,6 +19,8 @@
 
         public ReadOnlyMemory<byte> RawMemory { get; }
 
+        public ReadOnlySpan<byte> RawBytes => RawMemory.Span;
+
         public RenderingIntent RenderingIntent { get; set; } = RenderingIntent.RelativeColorimetric;
 
         public bool IsImageMask { get; set; }
