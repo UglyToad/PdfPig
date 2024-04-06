@@ -9,6 +9,13 @@
     {
         private static readonly ListPool<byte> ListPool = new ListPool<byte>(10);
 
+        static NameTokenizer()
+        {
+#if NET6_0_OR_GREATER
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+#endif
+        }
+
         public bool ReadsNextByte { get; } = true;
 
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
@@ -79,7 +86,6 @@
                         escapeActive = false;
                         postEscapeRead = 0;
                     }
-
                 }
                 else if (ReadHelper.IsEndOfName(b))
                 {

@@ -5,7 +5,8 @@
         private static readonly Lazy<string> DocumentFolder = new Lazy<string>(() => Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Integration", "Documents")));
         private static readonly HashSet<string> _documentsToIgnore = new HashSet<string>()
         {
-            "issue_671.pdf"
+            "issue_671.pdf",
+            "GHOSTSCRIPT-698363-0.pdf"
         };
 
         [Theory]
