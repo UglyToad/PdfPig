@@ -53,7 +53,7 @@
             inner.Write(buffer, offset, count);
         }
 
-#if NET8_0_OR_GREATER
+#if NET6_0_OR_GREATER
         public override void Write(ReadOnlySpan<byte> buffer)
         {
             crc.Append(buffer);
