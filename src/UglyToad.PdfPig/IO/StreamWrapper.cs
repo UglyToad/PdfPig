@@ -27,6 +27,13 @@
             Stream.SetLength(value);
         }
 
+#if NET6_0_OR_GREATER
+        public override int Read(Span<byte> buffer)
+        {
+            return Stream.Read(buffer);
+        }
+#endif
+
         public override int Read(byte[] buffer, int offset, int count)
         {
             return Stream.Read(buffer, offset, count);
