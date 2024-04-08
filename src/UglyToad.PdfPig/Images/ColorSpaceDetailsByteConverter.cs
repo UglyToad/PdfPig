@@ -11,7 +11,7 @@
     public static class ColorSpaceDetailsByteConverter
     {
         /// <summary>
-        /// Converts the output bytes (if available) of <see cref="IPdfImage.TryGetMemory"/>
+        /// Converts the output bytes (if available) of <see cref="IPdfImage.TryGetBytesAsMemory"/>
         /// to actual pixel values using the <see cref="IPdfImage.ColorSpaceDetails"/>. For most images this doesn't
         /// change the data but for <see cref="ColorSpace.Indexed"/> it will convert the bytes which are indexes into the
         /// real pixel data into the real pixel data.

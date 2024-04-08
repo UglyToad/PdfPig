@@ -97,7 +97,7 @@
         }
 
         /// <inheritdoc />
-        public bool TryGetMemory(out ReadOnlyMemory<byte> bytes)
+        public bool TryGetBytesAsMemory(out ReadOnlyMemory<byte> bytes)
         {
             bytes = null;
             if (memoryFactory is null)

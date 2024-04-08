@@ -37,7 +37,7 @@
 
         public ReadOnlyMemory<byte> DecodedBytes { get; set; }
 
-        public bool TryGetMemory(out ReadOnlyMemory<byte> bytes)
+        public bool TryGetBytesAsMemory(out ReadOnlyMemory<byte> bytes)
         {
             bytes = DecodedBytes;
             return !bytes.IsEmpty;

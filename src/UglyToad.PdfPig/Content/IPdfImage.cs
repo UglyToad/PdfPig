@@ -98,7 +98,7 @@
         /// Get the decoded memory of the image if applicable. For JPEG images and some other types the
         /// <see cref="RawMemory"/> should be used directly.
         /// </summary>
-        bool TryGetMemory(out ReadOnlyMemory<byte> memory);
+        bool TryGetBytesAsMemory(out ReadOnlyMemory<byte> memory);
 
         /// <summary>
         /// Try to convert the image to PNG. Doesn't support conversion of JPG to PNG.

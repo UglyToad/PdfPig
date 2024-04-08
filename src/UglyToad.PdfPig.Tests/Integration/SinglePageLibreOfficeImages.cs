@@ -70,7 +70,7 @@
                 var page = document.GetPage(1);
                 foreach (var image in page.GetImages())
                 {
-                    if (image.TryGetMemory(out var bytes))
+                    if (image.TryGetBytesAsMemory(out var bytes))
                     {
                         Assert.False(bytes.IsEmpty);
                     }
