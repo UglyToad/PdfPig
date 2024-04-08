@@ -99,7 +99,7 @@
                 {
                     foreach (var image in page.GetImages())
                     {
-                        if (!image.TryGetMemory(out _))
+                        if (!image.TryGetBytesAsMemory(out _))
                         {
                             continue;
                         }

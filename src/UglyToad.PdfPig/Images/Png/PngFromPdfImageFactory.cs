@@ -15,7 +15,7 @@
 
             var isColorSpaceSupported = hasValidDetails && image.ColorSpaceDetails!.BaseType != ColorSpace.Pattern;
 
-            if (!isColorSpaceSupported || !image.TryGetMemory(out var imageMemory))
+            if (!isColorSpaceSupported || !image.TryGetBytesAsMemory(out var imageMemory))
             {
                 return false;
             }
