@@ -20,7 +20,7 @@
             if (DirectObjectFinder.TryGet(pattern, scanner, out StreamToken? fs))
             {
                 patternDictionary = fs.StreamDictionary;
-                patternStream = new StreamToken(fs.StreamDictionary, fs.Decode(filterProvider, scanner).ToArray());
+                patternStream = new StreamToken(fs.StreamDictionary, fs.Decode(filterProvider, scanner));
             }
             else if (DirectObjectFinder.TryGet(pattern, scanner, out DictionaryToken? fd))
             {

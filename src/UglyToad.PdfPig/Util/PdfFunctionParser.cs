@@ -20,7 +20,7 @@
             if (DirectObjectFinder.TryGet(function, scanner, out StreamToken? fs))
             {
                 functionDictionary = fs.StreamDictionary;
-                functionStream = new StreamToken(fs.StreamDictionary, fs.Decode(filterProvider, scanner).ToArray());
+                functionStream = new StreamToken(fs.StreamDictionary, fs.Decode(filterProvider, scanner));
             }
             else if (DirectObjectFinder.TryGet(function, scanner, out DictionaryToken? fd))
             {
