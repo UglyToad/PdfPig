@@ -3,7 +3,7 @@
     /// <summary>
     /// A ligature in an Adobe Font Metrics individual character.
     /// </summary>
-    public class AdobeFontMetricsLigature
+    public readonly struct AdobeFontMetricsLigature
     {
         /// <summary>
         /// The character to join with to form a ligature.
