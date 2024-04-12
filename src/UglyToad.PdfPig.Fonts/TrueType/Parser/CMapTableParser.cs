@@ -87,7 +87,7 @@
             return new CMapTable(tableVersionNumber, header, tables);
         }
 
-        private class SubTableHeaderEntry
+        private readonly struct SubTableHeaderEntry
         {
             public TrueTypeCMapPlatform PlatformId { get; }
 
