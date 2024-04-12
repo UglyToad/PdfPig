@@ -16,22 +16,22 @@
         /// <summary>
         /// Top left point of the rectangle.
         /// </summary>
-        public PdfPoint TopLeft { get; }
+        public readonly PdfPoint TopLeft { get; }
 
         /// <summary>
         /// Top right point of the rectangle.
         /// </summary>
-        public PdfPoint TopRight { get; }
+        public readonly PdfPoint TopRight { get; }
 
         /// <summary>
         /// Bottom right point of the rectangle.
         /// </summary>
-        public PdfPoint BottomRight { get; }
+        public readonly PdfPoint BottomRight { get; }
 
         /// <summary>
         /// Bottom left point of the rectangle.
         /// </summary>
-        public PdfPoint BottomLeft { get; }
+        public readonly PdfPoint BottomLeft { get; }
 
         /// <summary>
         /// Centroid point of the rectangle.
