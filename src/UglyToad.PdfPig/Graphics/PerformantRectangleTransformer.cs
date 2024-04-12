@@ -10,7 +10,7 @@
         /// <summary>
         /// Transform the rectangle using the matrices.
         /// </summary>
-        public static PdfRectangle Transform(TransformationMatrix first, TransformationMatrix second, TransformationMatrix third, PdfRectangle rectangle)
+        public static PdfRectangle Transform(in TransformationMatrix first, in TransformationMatrix second, in TransformationMatrix third, PdfRectangle rectangle)
         {
             var tl = rectangle.TopLeft;
             var tr = rectangle.TopRight;

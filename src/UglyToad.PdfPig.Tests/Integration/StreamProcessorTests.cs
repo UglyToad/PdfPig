@@ -148,9 +148,9 @@
                 int code,
                 string unicode,
                 long currentOffset,
-                TransformationMatrix renderingMatrix,
-                TransformationMatrix textMatrix,
-                TransformationMatrix transformationMatrix,
+                in TransformationMatrix renderingMatrix,
+                in TransformationMatrix textMatrix,
+                in TransformationMatrix transformationMatrix,
                 CharacterBoundingBox characterBoundingBox)
             {
                 _letters.Add(unicode);

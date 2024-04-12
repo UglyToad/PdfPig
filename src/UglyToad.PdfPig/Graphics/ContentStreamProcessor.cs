@@ -95,9 +95,9 @@ namespace UglyToad.PdfPig.Graphics
             int code,
             string unicode,
             long currentOffset,
-            TransformationMatrix renderingMatrix,
-            TransformationMatrix textMatrix,
-            TransformationMatrix transformationMatrix,
+            in TransformationMatrix renderingMatrix,
+            in TransformationMatrix textMatrix,
+            in TransformationMatrix transformationMatrix,
             CharacterBoundingBox characterBoundingBox)
         {
             var transformedGlyphBounds = PerformantRectangleTransformer

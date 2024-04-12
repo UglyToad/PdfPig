@@ -69,9 +69,9 @@
             int code,
             string unicode,
             long currentOffset,
-            TransformationMatrix renderingMatrix,
-            TransformationMatrix textMatrix,
-            TransformationMatrix transformationMatrix,
+            in TransformationMatrix renderingMatrix,
+            in TransformationMatrix textMatrix,
+            in TransformationMatrix transformationMatrix,
             CharacterBoundingBox characterBoundingBox)
         {
             if (textRenderingMode == TextRenderingMode.Neither)
@@ -98,9 +98,9 @@
             IColor strokingColor,
             IColor nonStrokingColor,
             TextRenderingMode textRenderingMode,
-            TransformationMatrix renderingMatrix,
-            TransformationMatrix textMatrix,
-            TransformationMatrix transformationMatrix)
+            in TransformationMatrix renderingMatrix,
+            in TransformationMatrix textMatrix,
+            in TransformationMatrix transformationMatrix)
         {
             var transformMatrix = renderingMatrix.ToSKMatrix()
                 .PostConcat(textMatrix.ToSKMatrix())

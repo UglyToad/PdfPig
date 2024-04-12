@@ -25,7 +25,8 @@
         /// </summary>
         public ReadOnlyMemory<byte> Bytes { get; internal set; }
 
-        internal InlineImage CreateInlineImage(TransformationMatrix transformationMatrix,
+        internal InlineImage CreateInlineImage(
+            in TransformationMatrix transformationMatrix,
             ILookupFilterProvider filterProvider,
             IPdfTokenScanner tokenScanner,
             RenderingIntent defaultRenderingIntent,
