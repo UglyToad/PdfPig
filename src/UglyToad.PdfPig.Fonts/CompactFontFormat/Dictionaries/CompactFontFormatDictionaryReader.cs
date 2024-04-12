@@ -165,7 +165,7 @@
                 // the exponent is missing, just append "0" to avoid an exception
                 // not sure if 0 is the correct value, but it seems to fit
                 // see PDFBOX-1522
-                sb.Append("0");
+                sb.Append('0');
             }
 
             if (sb.Length == 0)
