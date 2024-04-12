@@ -1,8 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Core
 {
     using System;
+    using System.Buffers.Text;
     using System.Collections.Generic;
-    using System.Globalization;
     using System.Text;
 
 #if NET8_0_OR_GREATER
@@ -41,7 +41,7 @@
             '\f'
         ];
 
-        private static readonly int MaximumNumberStringLength = long.MaxValue.ToString("D").Length;
+        private const int MaximumNumberStringLength = 20; // max length of a formatted Int64 value
 
         /// <summary>
         /// Read a string from the input until a newline.
@@ -134,7 +134,7 @@
         /// </remarks>
         public static bool IsWhitespace(byte c)
         {
-            return c == 0 || c == 32 || c == AsciiLineFeed || c == AsciiCarriageReturn || c == 9 || c == 12;
+            return c is 0 or 32 or AsciiLineFeed or AsciiCarriageReturn or 9 or 12;
         }
 
         /// <summary>
@@ -198,25 +198,20 @@
         public static long ReadLong(IInputBytes bytes)
         {
             SkipSpaces(bytes);
-            long retval;
 
-            StringBuilder longBuffer = ReadStringNumber(bytes);
+            ReadOnlySpan<byte> longBuffer = ReadNumberAsUtf8Bytes(bytes);
 
-            try
+            if (Utf8Parser.TryParse(longBuffer, out long result, out _))
             {
-                retval = long.Parse(longBuffer.ToString(), CultureInfo.InvariantCulture);
+                return result;
             }
-            catch (FormatException e)
+            else
             {
-                var bytesToReverse = OtherEncodings.StringAsLatin1Bytes(longBuffer.ToString());
-                bytes.Seek(bytes.CurrentOffset - bytesToReverse.Length);
+                bytes.Seek(bytes.CurrentOffset - longBuffer.Length);
 
-                throw new InvalidOperationException($"Error: Expected a long type at offset {bytes.CurrentOffset}, instead got \'{longBuffer}\'", e);
+                throw new InvalidOperationException($"Error: Expected a long type at offset {bytes.CurrentOffset}, instead got \'{OtherEncodings.BytesAsLatin1String(longBuffer)}\'");
             }
-
-            return retval;
         }
-
         
         /// <summary>
         /// Whether the given value is a digit or not.
@@ -231,28 +226,25 @@
         /// </summary>
         public static int ReadInt(IInputBytes bytes)
         {
-            if (bytes == null)
+            if (bytes is null)
             {
                 throw new ArgumentNullException(nameof(bytes));
             }
 
             SkipSpaces(bytes);
-            int result;
 
-            var intBuffer = ReadStringNumber(bytes);
+            ReadOnlySpan<byte> intBuffer = ReadNumberAsUtf8Bytes(bytes);
 
-            try
+            if (Utf8Parser.TryParse(intBuffer, out int result, out _))
             {
-                result = int.Parse(intBuffer.ToString(), CultureInfo.InvariantCulture);
+                return result;
             }
-            catch (Exception e)
+            else
             {
-                bytes.Seek(bytes.CurrentOffset - OtherEncodings.StringAsLatin1Bytes(intBuffer.ToString()).Length);
-
-                throw new PdfDocumentFormatException($"Error: Expected an integer type at offset {bytes.CurrentOffset}", e);
+                bytes.Seek(bytes.CurrentOffset - intBuffer.Length);
+                
+                throw new PdfDocumentFormatException($"Error: Expected an integer type at offset {bytes.CurrentOffset}, instead got \'{OtherEncodings.BytesAsLatin1String(intBuffer)}\'");
             }
-
-            return result;
         }
         
         /// <summary>
@@ -304,24 +296,26 @@
 #endif
         }
 
-        private static StringBuilder ReadStringNumber(IInputBytes reader)
+        private static byte[] ReadNumberAsUtf8Bytes(IInputBytes reader)
         {
-            byte lastByte;
-            StringBuilder buffer = new StringBuilder();
+            Span<byte> buffer = stackalloc byte[MaximumNumberStringLength]; // 20 bytes
+            int position = 0;
 
+            byte lastByte;
+            
             while (reader.MoveNext() && (lastByte = reader.CurrentByte) != ' ' &&
                    lastByte != AsciiLineFeed &&
                    lastByte != AsciiCarriageReturn &&
-                   lastByte != 60 && //see sourceforge bug 1714707
+                   lastByte != 60 && // see sourceforge bug 1714707
                    lastByte != '[' && // PDFBOX-1845
                    lastByte != '(' && // PDFBOX-2579
                    lastByte != 0)
             {
-                buffer.Append((char)lastByte);
+                buffer[position++] = lastByte;
 
-                if (buffer.Length > MaximumNumberStringLength)
+                if (position > MaximumNumberStringLength)
                 {
-                    throw new InvalidOperationException($"Number \'{buffer}\' is getting too long, stop reading at offset {reader.CurrentOffset}");
+                    throw new InvalidOperationException($"Number \'{OtherEncodings.BytesAsLatin1String(buffer.Slice(0, position))}\' is getting too long, stop reading at offset {reader.CurrentOffset}");
                 }
             }
 
@@ -330,7 +324,7 @@
                 reader.Seek(reader.CurrentOffset - 1);
             }
 
-            return buffer;
+            return buffer.Slice(0, position).ToArray();
         }
     }
 }
