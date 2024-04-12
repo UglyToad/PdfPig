@@ -1,8 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Encodings
 {
-    using Core;
-
-    internal class MacExpertEncoding : Encoding
+    internal sealed class MacExpertEncoding : Encoding
     {
         /// <summary>
         /// Table of octal character codes and their corresponding names.

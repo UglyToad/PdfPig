@@ -1,8 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Encodings
 {
-    using Core;
-    using System.Diagnostics;
-
     /// <summary>
     /// The Mac Roman encoding.
     /// </summary>

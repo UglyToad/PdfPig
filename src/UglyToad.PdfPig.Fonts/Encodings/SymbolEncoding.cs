@@ -3,7 +3,7 @@
     /// <summary>
     /// Symbol encoding.
     /// </summary>
-    public class SymbolEncoding : Encoding
+    public sealed class SymbolEncoding : Encoding
     {
         /// <summary>
         /// EncodingTable for Symbol

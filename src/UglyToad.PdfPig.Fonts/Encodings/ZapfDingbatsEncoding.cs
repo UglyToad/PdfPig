@@ -3,7 +3,7 @@
     /// <summary>
     /// Zapf Dingbats encoding.
     /// </summary>
-    public class ZapfDingbatsEncoding : Encoding
+    public sealed class ZapfDingbatsEncoding : Encoding
     {
         /// <summary>
         /// EncodingTable for ZapfDingbats
