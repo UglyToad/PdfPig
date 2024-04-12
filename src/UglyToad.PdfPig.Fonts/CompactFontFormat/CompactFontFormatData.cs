@@ -1,10 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Fonts.CompactFontFormat
 {
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Text;
-    using Core;
 
     /// <summary>
     /// Provides access to the raw bytes of this Compact Font Format file with utility methods for reading data types from it.
@@ -37,14 +35,7 @@
         /// </summary>
         public string ReadString(int length, Encoding encoding)
         {
-            var bytes = new byte[length];
-
-            for (var i = 0; i < bytes.Length; i++)
-            {
-                bytes[i] = ReadByte();
-            }
-
-            return encoding.GetString(bytes);
+            return encoding.GetString(ReadSpan(length));
         }
 
         /// <summary>
@@ -84,6 +75,20 @@
             }
 
             return value;
+        }
+
+        internal ReadOnlySpan<byte> ReadSpan(int count)
+        {
+            if (Position + count >= dataBytes.Length)
+            {
+                throw new IndexOutOfRangeException($"Cannot read past end of data. Attempted to read to {Position + count} when the underlying data is {dataBytes.Length} bytes long.");
+            }
+
+            var result = dataBytes.Span.Slice(Position + 1, count);
+
+            Position += count;
+
+            return result;
         }
 
         /// <summary>
