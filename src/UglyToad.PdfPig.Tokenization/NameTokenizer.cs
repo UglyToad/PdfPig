@@ -5,10 +5,12 @@
     using Core;
     using Tokens;
 
+#if NET8_0_OR_GREATER
+    using System.Text.Unicode;
+#endif
+
     internal class NameTokenizer : ITokenizer
     {
-        private static readonly ListPool<byte> ListPool = new ListPool<byte>(10);
-
         public bool ReadsNextByte { get; } = true;
 
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
@@ -20,11 +22,11 @@
                 return false;
             }
 
-            var bytes = ListPool.Borrow();
+            using var bytes = new ArrayPoolBufferWriter<byte>();
 
             bool escapeActive = false;
             int postEscapeRead = 0;
-            var escapedChars = new char[2];
+            Span<char> escapedChars = stackalloc char[2];
 
             while (inputBytes.MoveNext())
             {
@@ -43,10 +45,12 @@
 
                         if (postEscapeRead == 2)
                         {
-                            var hex = new string(escapedChars);
+                            int high = escapedChars[0] <= '9' ? escapedChars[0] - '0' : char.ToUpper(escapedChars[0]) - 'A' + 10;
+                            int low = escapedChars[1] <= '9' ? escapedChars[1] - '0' : char.ToUpper(escapedChars[1]) - 'A' + 10;
 
-                            var characterToWrite = (byte)Convert.ToInt32(hex, 16);
-                            bytes.Add(characterToWrite);
+                            byte characterToWrite = (byte)(high * 16 + low);
+
+                            bytes.Write(characterToWrite);
 
                             escapeActive = false;
                             postEscapeRead = 0;
@@ -54,11 +58,11 @@
                     }
                     else
                     {
-                        bytes.Add((byte)'#');
+                        bytes.Write((byte)'#');
 
                         if (postEscapeRead == 1)
                         {
-                            bytes.Add((byte)escapedChars[0]);
+                            bytes.Write((byte)escapedChars[0]);
                         }
 
                         if (ReadHelper.IsEndOfName(b))
@@ -75,7 +79,7 @@
                             continue;
                         }
 
-                        bytes.Add(b);
+                        bytes.Write(b);
                         escapeActive = false;
                         postEscapeRead = 0;
                     }
@@ -87,18 +91,22 @@
                 }
                 else
                 {
-                    bytes.Add(b);
+                    bytes.Write(b);
                 }
             }
 
-            var byteArray = bytes.ToArray();
+#if NET8_0_OR_GREATER
+            var byteArray = bytes.WrittenSpan;
+            bool isValidUtf8 = Utf8.IsValid(byteArray);
+#else
+            var byteArray = bytes.WrittenSpan.ToArray();
+            bool isValidUtf8 = ReadHelper.IsValidUtf8(byteArray);
+#endif
 
-            ListPool.Return(bytes);
-
-            var str = ReadHelper.IsValidUtf8(byteArray)
+            var str = isValidUtf8
                 ? Encoding.UTF8.GetString(byteArray)
                 : Encoding.GetEncoding("windows-1252").GetString(byteArray);
-
+            
             token = NameToken.Create(str);
 
             return true;
