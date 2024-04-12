@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using Charsets;
     using CharStrings;
     using Core;
@@ -23,7 +22,7 @@
             this.privateDictionaryReader = privateDictionaryReader;
         }
 
-        public CompactFontFormatFont Parse(CompactFontFormatData data, string name, ReadOnlySpan<byte> topDictionaryIndex, IReadOnlyList<string> stringIndex,
+        public CompactFontFormatFont Parse(CompactFontFormatData data, string name, ReadOnlySpan<byte> topDictionaryIndex, ReadOnlySpan<string> stringIndex,
             CompactFontFormatIndex globalSubroutineIndex)
         {
             var individualData = new CompactFontFormatData(topDictionaryIndex.ToArray());
@@ -127,8 +126,10 @@
             return new CompactFontFormatFont(topDictionary, privateDictionary, charset, Union<Type1CharStrings, Type2CharStrings>.Two(charStrings), fontEncoding);
         }
 
-        private static ICompactFontFormatCharset ReadCharset(CompactFontFormatData data, CompactFontFormatTopLevelDictionary topDictionary,
-        CompactFontFormatIndex charStringIndex, IReadOnlyList<string> stringIndex)
+        private static ICompactFontFormatCharset ReadCharset(CompactFontFormatData data,
+            CompactFontFormatTopLevelDictionary topDictionary,
+            CompactFontFormatIndex charStringIndex,
+            ReadOnlySpan<string> stringIndex)
         {
             data.Seek(topDictionary.CharSetOffset);
 
@@ -180,13 +181,13 @@
             }
         }
 
-        private static string ReadString(int index, IReadOnlyList<string> stringIndex)
+        private static string ReadString(int index, ReadOnlySpan<string> stringIndex)
         {
             if (index >= 0 && index <= 390)
             {
                 return CompactFontFormatStandardStrings.GetName(index);
             }
-            if (index - 391 < stringIndex.Count)
+            if (index - 391 < stringIndex.Length)
             {
                 return stringIndex[index - 391];
             }
@@ -213,9 +214,10 @@
             }
         }
 
-        private CompactFontFormatCidFont ReadCidFont(CompactFontFormatData data, CompactFontFormatTopLevelDictionary topLevelDictionary,
+        private CompactFontFormatCidFont ReadCidFont(CompactFontFormatData data,
+            CompactFontFormatTopLevelDictionary topLevelDictionary,
             int numberOfGlyphs,
-            IReadOnlyList<string> stringIndex,
+            ReadOnlySpan<string> stringIndex,
             CompactFontFormatPrivateDictionary privateDictionary,
             ICompactFontFormatCharset charset,
             CompactFontFormatIndex globalSubroutines,

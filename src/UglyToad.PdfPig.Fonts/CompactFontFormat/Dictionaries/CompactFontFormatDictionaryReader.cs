@@ -10,9 +10,9 @@
     {
         private readonly List<Operand> operands = new List<Operand>();
 
-        public abstract TResult Read(CompactFontFormatData data, IReadOnlyList<string> stringIndex);
+        public abstract TResult Read(CompactFontFormatData data, ReadOnlySpan<string> stringIndex);
 
-        protected TBuilder ReadDictionary(TBuilder builder, CompactFontFormatData data, IReadOnlyList<string> stringIndex)
+        protected TBuilder ReadDictionary(TBuilder builder, CompactFontFormatData data, ReadOnlySpan<string> stringIndex)
         {
             while (data.CanRead())
             {
@@ -176,9 +176,9 @@
             return hasExponent ? double.Parse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture) : double.Parse(sb.ToString(), CultureInfo.InvariantCulture);
         }
 
-        protected abstract void ApplyOperation(TBuilder builder, List<Operand> operands, OperandKey operandKey, IReadOnlyList<string> stringIndex);
+        protected abstract void ApplyOperation(TBuilder builder, List<Operand> operands, OperandKey operandKey, ReadOnlySpan<string> stringIndex);
 
-        protected static string GetString(List<Operand> operands, IReadOnlyList<string> stringIndex)
+        protected static string GetString(List<Operand> operands, ReadOnlySpan<string> stringIndex)
         {
             if (operands.Count == 0)
             {
@@ -198,7 +198,7 @@
             }
 
             var stringIndexIndex = index - 391;
-            if (stringIndexIndex >= 0 && stringIndexIndex < stringIndex.Count)
+            if (stringIndexIndex >= 0 && stringIndexIndex < stringIndex.Length)
             {
                 return stringIndex[stringIndexIndex];
             }
