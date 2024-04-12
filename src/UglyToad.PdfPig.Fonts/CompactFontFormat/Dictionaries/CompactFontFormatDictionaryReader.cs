@@ -124,7 +124,7 @@
                             exponentMissing = false;
                             break;
                         case 0xa:
-                            sb.Append(".");
+                            sb.Append('.');
                             break;
                         case 0xb:
                             if (hasExponent)
@@ -132,7 +132,7 @@
                                 // avoid duplicates
                                 break;
                             }
-                            sb.Append("E");
+                            sb.Append('E');
                             exponentMissing = true;
                             hasExponent = true;
                             break;
@@ -149,7 +149,7 @@
                         case 0xd:
                             break;
                         case 0xe:
-                            sb.Append("-");
+                            sb.Append('-');
                             break;
                         case 0xf:
                             done = true;
