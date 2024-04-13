@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Util
 {
     using System;
-    using System.Text;
 
     /**
      * Utility functions for hex encoding.
@@ -17,7 +16,18 @@
          *
          */
         private static readonly char[] HexChars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
-        
+
+        public static void GetUtf8Chars(ReadOnlySpan<byte> bytes, Span<byte> utf8Chars)
+        {
+            int position = 0;
+
+            foreach (var b in bytes)
+            {
+                utf8Chars[position++] = (byte)HexChars[GetHighNibble(b)];
+                utf8Chars[position++] = (byte)HexChars[GetLowNibble(b)];
+            }
+        }
+
         /// <summary>
         /// Returns a hex string for the given byte array.
         /// </summary>
@@ -26,14 +36,16 @@
 #if NET6_0_OR_GREATER
             return Convert.ToHexString(bytes); 
 #else
-            var stringBuilder = new StringBuilder(bytes.Length * 2);
+            var chars = new char[bytes.Length * 2];
+            int position = 0;
 
             foreach (var b in bytes)
             {
-                stringBuilder.Append(HexChars[GetHighNibble(b)]).Append(HexChars[GetLowNibble(b)]);
+                chars[position++] = HexChars[GetHighNibble(b)];
+                chars[position++] = HexChars[GetLowNibble(b)];
             }
 
-            return stringBuilder.ToString();
+            return new string(chars);
 #endif
         }
 

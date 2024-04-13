@@ -1,10 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations
 {
-    using PdfPig.Core;
     using System;
     using System.Globalization;
     using System.IO;
-    using UglyToad.PdfPig.Util;
+    using PdfPig.Core;
+    using Util;
 
     internal static class OperationWriteHelper
     {
@@ -23,9 +23,15 @@
 
         public static void WriteHex(this Stream stream, ReadOnlySpan<byte> bytes)
         {
-            var text = Hex.GetString(bytes);
+            Span<byte> hex = bytes.Length <= 64
+                ? stackalloc byte[bytes.Length * 2]
+                : new byte[bytes.Length * 2];
 
-            stream.WriteText($"<{text}>");
+            Hex.GetUtf8Chars(bytes, hex);
+
+            stream.WriteByte((byte)'<');
+            stream.Write(hex);
+            stream.WriteByte((byte)'>');
         }
 
         public static void WriteWhiteSpace(this Stream stream)
