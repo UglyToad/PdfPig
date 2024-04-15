@@ -11,6 +11,13 @@
 
     internal class NameTokenizer : ITokenizer
     {
+        static NameTokenizer()
+        {
+#if NET6_0_OR_GREATER
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+#endif
+        }
+
         public bool ReadsNextByte { get; } = true;
 
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
