@@ -199,7 +199,7 @@
         {
             SkipSpaces(bytes);
 
-            Span<byte> buffer = stackalloc byte[19]; // max ulong32 length
+            Span<byte> buffer = stackalloc byte[19]; // max formatted uint64 length
 
             ReadNumberAsUtf8Bytes(bytes, buffer, out int bytesRead);
 
@@ -237,7 +237,7 @@
 
             SkipSpaces(bytes);
 
-            Span<byte> buffer = stackalloc byte[10]; // max uint32 length
+            Span<byte> buffer = stackalloc byte[10]; // max formatted uint32 length
 
             ReadNumberAsUtf8Bytes(bytes, buffer, out int bytesRead);
 
