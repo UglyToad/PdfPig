@@ -199,17 +199,21 @@
         {
             SkipSpaces(bytes);
 
-            ReadOnlySpan<byte> longBuffer = ReadNumberAsUtf8Bytes(bytes);
+            Span<byte> buffer = stackalloc byte[19]; // max ulong32 length
 
-            if (Utf8Parser.TryParse(longBuffer, out long result, out _))
+            ReadNumberAsUtf8Bytes(bytes, buffer, out int bytesRead);
+
+            ReadOnlySpan<byte> longBytes = buffer.Slice(0, bytesRead);
+
+            if (Utf8Parser.TryParse(longBytes, out long result, out _))
             {
                 return result;
             }
             else
             {
-                bytes.Seek(bytes.CurrentOffset - longBuffer.Length);
+                bytes.Seek(bytes.CurrentOffset - bytesRead);
 
-                throw new InvalidOperationException($"Error: Expected a long type at offset {bytes.CurrentOffset}, instead got \'{OtherEncodings.BytesAsLatin1String(longBuffer)}\'");
+                throw new InvalidOperationException($"Error: Expected a long type at offset {bytes.CurrentOffset}, instead got \'{OtherEncodings.BytesAsLatin1String(longBytes)}\'");
             }
         }
         
@@ -233,17 +237,21 @@
 
             SkipSpaces(bytes);
 
-            ReadOnlySpan<byte> intBuffer = ReadNumberAsUtf8Bytes(bytes);
+            Span<byte> buffer = stackalloc byte[10]; // max uint32 length
 
-            if (Utf8Parser.TryParse(intBuffer, out int result, out _))
+            ReadNumberAsUtf8Bytes(bytes, buffer, out int bytesRead);
+
+            var intBytes = buffer.Slice(0, bytesRead);
+
+            if (Utf8Parser.TryParse(intBytes, out int result, out _))
             {
                 return result;
             }
             else
             {
-                bytes.Seek(bytes.CurrentOffset - intBuffer.Length);
+                bytes.Seek(bytes.CurrentOffset - bytesRead);
                 
-                throw new PdfDocumentFormatException($"Error: Expected an integer type at offset {bytes.CurrentOffset}, instead got \'{OtherEncodings.BytesAsLatin1String(intBuffer)}\'");
+                throw new PdfDocumentFormatException($"Error: Expected an integer type at offset {bytes.CurrentOffset}, instead got \'{OtherEncodings.BytesAsLatin1String(intBytes)}\'");
             }
         }
         
@@ -296,9 +304,8 @@
 #endif
         }
 
-        private static byte[] ReadNumberAsUtf8Bytes(IInputBytes reader)
+        private static void ReadNumberAsUtf8Bytes(IInputBytes reader, scoped Span<byte> buffer, out int bytesRead)
         {
-            Span<byte> buffer = stackalloc byte[MaximumNumberStringLength]; // 20 bytes
             int position = 0;
 
             byte lastByte;
@@ -311,12 +318,12 @@
                    lastByte != '(' && // PDFBOX-2579
                    lastByte != 0)
             {
-                buffer[position++] = lastByte;
-
-                if (position > MaximumNumberStringLength)
+                if (position >= buffer.Length)
                 {
                     throw new InvalidOperationException($"Number \'{OtherEncodings.BytesAsLatin1String(buffer.Slice(0, position))}\' is getting too long, stop reading at offset {reader.CurrentOffset}");
                 }
+
+                buffer[position++] = lastByte;                
             }
 
             if (!reader.IsAtEnd())
@@ -324,7 +331,7 @@
                 reader.Seek(reader.CurrentOffset - 1);
             }
 
-            return buffer.Slice(0, position).ToArray();
+            bytesRead = position;
         }
     }
 }
