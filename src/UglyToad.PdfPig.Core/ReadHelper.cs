@@ -41,8 +41,6 @@
             '\f'
         ];
 
-        private const int MaximumNumberStringLength = 20; // max length of a formatted Int64 value
-
         /// <summary>
         /// Read a string from the input until a newline.
         /// </summary>
