@@ -3,7 +3,7 @@
     /// <summary>
     /// Windows ANSI encoding.
     /// </summary>
-    public class WinAnsiEncoding : Encoding
+    public sealed class WinAnsiEncoding : Encoding
     {
         /// <summary>
         /// The encoding table is taken from the Appendix of the specification.

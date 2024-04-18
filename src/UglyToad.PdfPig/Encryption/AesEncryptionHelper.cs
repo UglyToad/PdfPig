@@ -26,6 +26,9 @@
                 aes.Key = finalKey;
                 aes.IV = iv;
 
+#if NET8_0_OR_GREATER
+                return aes.DecryptCbc(data.AsSpan(iv.Length), iv, PaddingMode.PKCS7);
+#else
                 var buffer = new byte[256];
 
                 using (var decryptor = aes.CreateDecryptor(aes.Key, aes.IV))
@@ -49,6 +52,7 @@
                         return output.ToArray();
                     }
                 }
+#endif
             }
         }
     }

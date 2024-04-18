@@ -8,7 +8,7 @@
     /// <summary>
     /// Created by combining a base encoding with the differences.
     /// </summary>
-    public class DifferenceBasedEncoding : Encoding
+    public sealed class DifferenceBasedEncoding : Encoding
     {
         /// <inheritdoc />
         public override string EncodingName { get; } = "Difference Encoding";

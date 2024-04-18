@@ -989,7 +989,7 @@
             return this;
         }
 
-        private List<Letter> DrawLetters(NameToken? name, string text, IWritingFont font, TransformationMatrix fontMatrix, double fontSize, TransformationMatrix textMatrix)
+        private List<Letter> DrawLetters(NameToken? name, string text, IWritingFont font, in TransformationMatrix fontMatrix, double fontSize, TransformationMatrix textMatrix)
         {
             var horizontalScaling = 1;
             var rise = 0;

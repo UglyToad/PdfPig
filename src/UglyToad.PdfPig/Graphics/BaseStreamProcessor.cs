@@ -120,7 +120,7 @@
             CropBox cropBox,
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
-            TransformationMatrix initialMatrix,
+            in TransformationMatrix initialMatrix,
             ParsingOptions parsingOptions)
         {
             this.PageNumber = pageNumber;
@@ -325,9 +325,9 @@
             int code,
             string unicode,
             long currentOffset,
-            TransformationMatrix renderingMatrix,
-            TransformationMatrix textMatrix,
-            TransformationMatrix transformationMatrix,
+            in TransformationMatrix renderingMatrix,
+            in TransformationMatrix textMatrix,
+            in TransformationMatrix transformationMatrix,
             CharacterBoundingBox characterBoundingBox);
 
         /// <inheritdoc/>

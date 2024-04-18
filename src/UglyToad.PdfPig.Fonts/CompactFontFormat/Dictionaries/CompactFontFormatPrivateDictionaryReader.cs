@@ -5,7 +5,7 @@
 
     internal class CompactFontFormatPrivateDictionaryReader : CompactFontFormatDictionaryReader<CompactFontFormatPrivateDictionary, CompactFontFormatPrivateDictionary.Builder>
     {
-        public override CompactFontFormatPrivateDictionary Read(CompactFontFormatData data, IReadOnlyList<string> stringIndex)
+        public override CompactFontFormatPrivateDictionary Read(CompactFontFormatData data, ReadOnlySpan<string> stringIndex)
         {
             var builder = new CompactFontFormatPrivateDictionary.Builder();
 
@@ -14,7 +14,7 @@
             return builder.Build();
         }
 
-        protected override void ApplyOperation(CompactFontFormatPrivateDictionary.Builder dictionary, List<Operand> operands, OperandKey operandKey, IReadOnlyList<string> stringIndex)
+        protected override void ApplyOperation(CompactFontFormatPrivateDictionary.Builder dictionary, List<Operand> operands, OperandKey operandKey, ReadOnlySpan<string> stringIndex)
         {
             switch (operandKey.Byte0)
             {

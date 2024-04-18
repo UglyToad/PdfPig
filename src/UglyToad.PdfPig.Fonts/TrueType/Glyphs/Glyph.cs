@@ -39,7 +39,7 @@
 
         public static IGlyphDescription Empty(PdfRectangle bounds)
         {
-            return new Glyph(true, new byte[0], new ushort[0], new GlyphPoint[0], bounds);
+            return new Glyph(true, [], [], [], bounds);
         }
 
         public IGlyphDescription DeepClone()

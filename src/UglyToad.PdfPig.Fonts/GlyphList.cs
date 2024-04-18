@@ -5,6 +5,7 @@
     using System.Globalization;
     using System.Text;
     using Encodings;
+    using UglyToad.PdfPig.Util;
 
     /// <summary>
     /// A list which maps PostScript glyph names to unicode values.
@@ -117,7 +118,7 @@
                 var foundUnicode = true;
                 for (int chPos = 3; chPos + 4 <= nameLength; chPos += 4)
                 {
-                    if (!int.TryParse(name.Substring(chPos, 4), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var codePoint))
+                    if (!int.TryParse(name.AsSpanOrSubstring(chPos, 4), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var codePoint))
                     {
                         foundUnicode = false;
                         break;
@@ -138,10 +139,10 @@
 
                 unicode = uniStr.ToString();
             }
-            else if (name.StartsWith("u") && name.Length == 5)
+            else if (name.StartsWith("u", StringComparison.Ordinal) && name.Length == 5)
             {
                 // test for an alternate Unicode name representation uXXXX
-                var codePoint = int.Parse(name.Substring(1), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                var codePoint = int.Parse(name.AsSpanOrSubstring(1), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
 
                 if (codePoint > 0xD7FF && codePoint < 0xE000)
                 {

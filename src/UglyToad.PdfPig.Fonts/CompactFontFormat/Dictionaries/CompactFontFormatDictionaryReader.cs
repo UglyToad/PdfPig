@@ -10,9 +10,9 @@
     {
         private readonly List<Operand> operands = new List<Operand>();
 
-        public abstract TResult Read(CompactFontFormatData data, IReadOnlyList<string> stringIndex);
+        public abstract TResult Read(CompactFontFormatData data, ReadOnlySpan<string> stringIndex);
 
-        protected TBuilder ReadDictionary(TBuilder builder, CompactFontFormatData data, IReadOnlyList<string> stringIndex)
+        protected TBuilder ReadDictionary(TBuilder builder, CompactFontFormatData data, ReadOnlySpan<string> stringIndex)
         {
             while (data.CanRead())
             {
@@ -124,7 +124,7 @@
                             exponentMissing = false;
                             break;
                         case 0xa:
-                            sb.Append(".");
+                            sb.Append('.');
                             break;
                         case 0xb:
                             if (hasExponent)
@@ -132,7 +132,7 @@
                                 // avoid duplicates
                                 break;
                             }
-                            sb.Append("E");
+                            sb.Append('E');
                             exponentMissing = true;
                             hasExponent = true;
                             break;
@@ -149,7 +149,7 @@
                         case 0xd:
                             break;
                         case 0xe:
-                            sb.Append("-");
+                            sb.Append('-');
                             break;
                         case 0xf:
                             done = true;
@@ -165,7 +165,7 @@
                 // the exponent is missing, just append "0" to avoid an exception
                 // not sure if 0 is the correct value, but it seems to fit
                 // see PDFBOX-1522
-                sb.Append("0");
+                sb.Append('0');
             }
 
             if (sb.Length == 0)
@@ -176,9 +176,9 @@
             return hasExponent ? double.Parse(sb.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture) : double.Parse(sb.ToString(), CultureInfo.InvariantCulture);
         }
 
-        protected abstract void ApplyOperation(TBuilder builder, List<Operand> operands, OperandKey operandKey, IReadOnlyList<string> stringIndex);
+        protected abstract void ApplyOperation(TBuilder builder, List<Operand> operands, OperandKey operandKey, ReadOnlySpan<string> stringIndex);
 
-        protected static string GetString(List<Operand> operands, IReadOnlyList<string> stringIndex)
+        protected static string GetString(List<Operand> operands, ReadOnlySpan<string> stringIndex)
         {
             if (operands.Count == 0)
             {
@@ -198,7 +198,7 @@
             }
 
             var stringIndexIndex = index - 391;
-            if (stringIndexIndex >= 0 && stringIndexIndex < stringIndex.Count)
+            if (stringIndexIndex >= 0 && stringIndexIndex < stringIndex.Length)
             {
                 return stringIndex[stringIndexIndex];
             }

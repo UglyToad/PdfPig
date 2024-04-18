@@ -3,7 +3,7 @@
     /// <summary>
     /// The standard PDF encoding.
     /// </summary>
-    public class StandardEncoding : Encoding
+    public sealed class StandardEncoding : Encoding
     {
         private static readonly (int, string)[] EncodingTable =
         {

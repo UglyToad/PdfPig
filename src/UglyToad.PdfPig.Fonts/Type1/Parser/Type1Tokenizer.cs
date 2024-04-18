@@ -169,7 +169,7 @@
                         switch (c1)
                         {
                             case 'n':
-                            case 'r': stringBuffer.Append("\n"); break;
+                            case 'r': stringBuffer.Append('\n'); break;
                             case 't': stringBuffer.Append('\t'); break;
                             case 'b': stringBuffer.Append('\b'); break;
                             case 'f': stringBuffer.Append('\f'); break;
@@ -180,14 +180,14 @@
                         // octal \ddd
                         if (char.IsDigit(c1))
                         {
-                            var rawOctal = new string(new[] { c1, GetNext(), GetNext() });
+                            var rawOctal = new string([c1, GetNext(), GetNext()]);
                             var code = Convert.ToInt32(rawOctal, 8);
                             stringBuffer.Append((char)code);
                         }
                         break;
                     case '\r':
                     case '\n':
-                        stringBuffer.Append("\n");
+                        stringBuffer.Append('\n');
                         break;
                     default:
                         stringBuffer.Append(c);

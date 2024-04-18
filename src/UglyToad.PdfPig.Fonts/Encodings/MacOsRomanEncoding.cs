@@ -1,12 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Fonts.Encodings
 {
-    using Core;
-
     /// <inheritdoc />
     /// <summary>
     /// Similar to the <see cref="T:UglyToad.PdfPig.Fonts.Encodings.MacRomanEncoding" /> with 15 additional entries.
     /// </summary>
-    public class MacOsRomanEncoding : MacRomanEncoding
+    public sealed class MacOsRomanEncoding : MacRomanEncoding
     {
         private static readonly (int, string)[] EncodingTable =
         {

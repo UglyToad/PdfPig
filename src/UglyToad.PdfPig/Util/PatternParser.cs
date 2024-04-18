@@ -67,7 +67,7 @@
         }
 
         private static PatternColor CreateTilingPattern(StreamToken patternStream, DictionaryToken patternExtGState,
-            TransformationMatrix matrix, IPdfTokenScanner scanner)
+            in TransformationMatrix matrix, IPdfTokenScanner scanner)
         {
             if (!patternStream.StreamDictionary.TryGet<NumericToken>(NameToken.PaintType, scanner, out var paintTypeToken))
             {
@@ -113,7 +113,7 @@
         }
 
         private static PatternColor CreateShadingPattern(DictionaryToken patternDictionary, DictionaryToken? patternExtGState,
-            TransformationMatrix matrix, IPdfTokenScanner scanner, IResourceStore resourceStore,
+            in TransformationMatrix matrix, IPdfTokenScanner scanner, IResourceStore resourceStore,
             ILookupFilterProvider filterProvider)
         {
             IToken shadingToken = patternDictionary.Data[NameToken.Shading];

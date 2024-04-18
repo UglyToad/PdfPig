@@ -176,7 +176,7 @@
             CropBox cropBox,
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
-            TransformationMatrix initialMatrix,
+            in TransformationMatrix initialMatrix,
             ReadOnlyMemory<byte> contentBytes)
         {
             IReadOnlyList<IGraphicsStateOperation> operations;
@@ -315,7 +315,7 @@
         /// <param name="transformationMatrix"></param>
         /// <param name="mediaBox"></param>
         /// <param name="cropBox"></param>
-        protected static void ApplyTransformNormalise(TransformationMatrix transformationMatrix, ref MediaBox mediaBox, ref CropBox cropBox)
+        protected static void ApplyTransformNormalise(in TransformationMatrix transformationMatrix, ref MediaBox mediaBox, ref CropBox cropBox)
         {
             if (transformationMatrix != TransformationMatrix.Identity)
             {

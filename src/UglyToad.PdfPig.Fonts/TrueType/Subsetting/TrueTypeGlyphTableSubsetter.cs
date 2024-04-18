@@ -65,7 +65,7 @@
 
             var compositeIndicesToReplace = new List<(uint offset, ushort newIndex)>();
 
-            using (var stream = new MemoryStream())
+            using (var writer = new ArrayPoolBufferWriter<byte>())
             {
                 for (var i = 0; i < glyphsToCopy.Count; i++)
                 {
@@ -102,7 +102,7 @@
                     }
 
                     // Record the glyph location.
-                    glyphLocations.Add((uint)stream.Position);
+                    glyphLocations.Add((uint)writer.WrittenCount);
 
                     var advanceWidth = advanceWidthTable.HorizontalMetrics[glyphsToCopyOriginalIndex[i]];
                     advanceWidths.Add(advanceWidth);
@@ -123,19 +123,19 @@
                         glyphBytes[offset] = (byte)(newIndex >> 8);
                         glyphBytes[offset + 1] = (byte)newIndex;
                     }
-                    
-                    stream.Write(glyphBytes, 0, glyphBytes.Length);
+
+                    writer.Write(glyphBytes);
 
                     // Each glyph description must start at a 4 byte boundary.
                     var remainder = glyphBytes.Length % 4;
                     var bytesToPad = remainder == 0 ? 0 : 4 - remainder;
                     for (var j = 0; j < bytesToPad; j++)
                     {
-                        stream.WriteByte(0);
+                        writer.Write(0);
                     }
                 }
 
-                var output = stream.ToArray();
+                var output = writer.WrittenSpan.ToArray();
 
                 glyphLocations.Add((uint)output.Length);
                 var offsets = glyphLocations.ToArray();

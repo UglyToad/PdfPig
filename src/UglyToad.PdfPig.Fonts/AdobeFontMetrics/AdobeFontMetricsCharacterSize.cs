@@ -4,7 +4,7 @@
     /// The x and y components of the width vector of the font's characters.
     /// Presence implies that IsFixedPitch is true.
     /// </summary>
-    public class AdobeFontMetricsCharacterSize
+    public readonly struct AdobeFontMetricsCharacterSize
     {
         /// <summary>
         /// The horizontal width.
