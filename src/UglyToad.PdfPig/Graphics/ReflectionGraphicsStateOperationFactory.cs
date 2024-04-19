@@ -24,8 +24,6 @@ namespace UglyToad.PdfPig.Graphics
 
     internal class ReflectionGraphicsStateOperationFactory : IGraphicsStateOperationFactory
     {
-        private static readonly ListPool<double> DoubleListPool = new ListPool<double>(10);
-
         private readonly IReadOnlyDictionary<string, Type> operations;
 
         public ReflectionGraphicsStateOperationFactory()
@@ -56,7 +54,7 @@ namespace UglyToad.PdfPig.Graphics
 
         private static double[] TokensToDoubleArray(IReadOnlyList<IToken> tokens, bool exceptLast = false)
         {
-            var result = DoubleListPool.Borrow();
+            using var result = new ArrayPoolBufferWriter<double>(16);
 
             for (var i = 0; i < tokens.Count - (exceptLast ? 1 : 0); i++)
             {
@@ -70,28 +68,22 @@ namespace UglyToad.PdfPig.Graphics
 
                         if (!(innerOperand is NumericToken innerNumeric))
                         {
-                            var val = result.ToArray();
-                            DoubleListPool.Return(result);
-                            return val.ToArray();
+                            return result.WrittenSpan.ToArray();
                         }
 
-                        result.Add(innerNumeric.Data);
+                        result.Write(innerNumeric.Data);
                     }
                 }
 
                 if (!(operand is NumericToken numeric))
                 {
-                    var val = result.ToArray();
-                    DoubleListPool.Return(result);
-                    return val.ToArray();
+                    return result.WrittenSpan.ToArray();
                 }
 
-                result.Add(numeric.Data);
+                result.Write(numeric.Data);
             }
 
-            var returnValue = result.ToArray();
-            DoubleListPool.Return(result);
-            return returnValue;
+            return result.WrittenSpan.ToArray();
         }
 
         private static int OperandToInt(IToken token)
