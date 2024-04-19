@@ -463,8 +463,11 @@
             }
             else
             {
-                var bytes = OtherEncodings.StringAsLatin1Bytes(number.Data.ToString("G", CultureInfo.InvariantCulture));
-                outputStream.Write(bytes);
+                Span<byte> buffer = stackalloc byte[32]; // matches dotnet Number.CharStackBufferSize
+
+                Utf8Formatter.TryFormat(number.Data, buffer, out int bytesWritten);
+
+                outputStream.Write(buffer.Slice(0, bytesWritten));
             }
 
             WriteWhitespace(outputStream);
