@@ -3,6 +3,7 @@
     using Core;
     using Graphics.Operations;
     using System;
+    using System.Buffers;
     using System.Buffers.Text;
     using System.Collections.Generic;
     using System.Globalization;
@@ -425,26 +426,27 @@
              * This is recommended for characters whose codes are outside the range 33 (!) to 126 (~).
              */
 
-            var sb = new StringBuilder();
+            using var sb = new ArrayPoolBufferWriter<byte>((name.Length * 2) + 1);
+
+            Span<byte> hexBuffer = stackalloc byte[2];
 
             foreach (var c in name)
             {
                 if (c < 33 || c > 126 || DelimiterChars.Contains(c))
                 {
-                    var str = Hex.GetString([(byte)c]);
-                    sb.Append('#');
-                    sb.Append(str);
+                    Hex.GetUtf8Chars([(byte)c], hexBuffer);
+
+                    sb.Write((byte)'#');
+                    sb.Write(hexBuffer);
                 }
                 else
                 {
-                    sb.Append(c);
+                    sb.Write((byte)c); // between 33 and 126 (ASCII is 0 - 128)
                 }
             }
 
-            var bytes = OtherEncodings.StringAsLatin1Bytes(sb.ToString());
-
             outputStream.WriteByte(NameStart);
-            outputStream.Write(bytes);
+            outputStream.Write(sb.WrittenSpan);
             WriteWhitespace(outputStream);
         }
 
