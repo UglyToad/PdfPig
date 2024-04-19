@@ -139,42 +139,42 @@
             {
                 case 0:
                     {
-                        var glyphToNamesAndStringId = new List<(int glyphId, int stringId, string name)>();
+                        using var glyphToNamesAndStringId = new ArrayPoolBufferWriter<(int glyphId, int stringId, string name)>();
 
                         for (var glyphId = 1; glyphId < charStringIndex.Count; glyphId++)
                         {
                             var stringId = data.ReadSid();
-                            glyphToNamesAndStringId.Add((glyphId, stringId, ReadString(stringId, stringIndex)));
+                            glyphToNamesAndStringId.Write((glyphId, stringId, ReadString(stringId, stringIndex)));
                         }
 
-                        return new CompactFontFormatFormat0Charset(glyphToNamesAndStringId);
+                        return new CompactFontFormatFormat0Charset(glyphToNamesAndStringId.WrittenSpan);
                     }
                 case 1:
                 case 2:
                     {
-                        var glyphToNamesAndStringId = new List<(int glyphId, int stringId, string name)>();
+                        using var glyphToNamesAndStringId = new ArrayPoolBufferWriter<(int glyphId, int stringId, string name)>();
 
                         for (var glyphId = 1; glyphId < charStringIndex.Count; glyphId++)
                         {
                             var firstSid = data.ReadSid();
                             var numberInRange = format == 1 ? data.ReadCard8() : data.ReadCard16();
 
-                            glyphToNamesAndStringId.Add((glyphId, firstSid, ReadString(firstSid, stringIndex)));
+                            glyphToNamesAndStringId.Write((glyphId, firstSid, ReadString(firstSid, stringIndex)));
                             for (var i = 0; i < numberInRange; i++)
                             {
                                 glyphId++;
                                 var sid = firstSid + i + 1;
-                                glyphToNamesAndStringId.Add((glyphId, sid, ReadString(sid, stringIndex)));
+                                glyphToNamesAndStringId.Write((glyphId, sid, ReadString(sid, stringIndex)));
                             }
                         }
 
                         if (format == 1)
                         {
 
-                            return new CompactFontFormatFormat1Charset(glyphToNamesAndStringId);
+                            return new CompactFontFormatFormat1Charset(glyphToNamesAndStringId.WrittenSpan);
                         }
 
-                        return new CompactFontFormatFormat2Charset(glyphToNamesAndStringId);
+                        return new CompactFontFormatFormat2Charset(glyphToNamesAndStringId.WrittenSpan);
                     }
                 default:
                     throw new InvalidOperationException($"Unrecognized format for the Charset table in a CFF font. Got: {format}.");

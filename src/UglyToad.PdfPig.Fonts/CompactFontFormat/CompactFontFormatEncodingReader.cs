@@ -5,6 +5,7 @@
     using Charsets;
     using Encodings;
     using Fonts;
+    using UglyToad.PdfPig.Core;
 
     internal static class CompactFontFormatEncodingReader
     {
@@ -36,13 +37,13 @@
         {
             var numberOfCodes = data.ReadCard8();
 
-            var values = new List<(int code, int sid, string str)>();
+            using var values = new ArrayPoolBufferWriter<(int code, int sid, string str)>();
             for (var i = 1; i <= numberOfCodes; i++)
             {
                 var code = data.ReadCard8();
                 var sid = charset.GetStringIdByGlyphId(i);
                 var str = ReadString(sid, stringIndex);
-                values.Add((code, sid, str));
+                values.Write((code, sid, str));
             }
 
             IReadOnlyList<CompactFontFormatBuiltInEncoding.Supplement> supplements = [];
@@ -51,7 +52,7 @@
                 supplements = ReadSupplement(data, stringIndex);
             }
 
-            return new CompactFontFormatFormat0Encoding(values, supplements);
+            return new CompactFontFormatFormat0Encoding(values.WrittenSpan, supplements);
         }
 
         private static CompactFontFormatFormat1Encoding ReadFormat1Encoding(CompactFontFormatData data, ICompactFontFormatCharset charset, ReadOnlySpan<string> stringIndex, byte format)
