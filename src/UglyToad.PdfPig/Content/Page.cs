@@ -125,6 +125,27 @@
                 return string.Empty;
             }
 
+#if NET6_0_OR_GREATER
+            int length = 0;
+
+            for (var i = 0; i < content.Letters.Count; i++)
+            {
+                length += content.Letters[i].Value.Length;
+            }
+
+            return string.Create(length, content, static (buffer, content) => {
+                int position = 0;
+
+                for (var i = 0; i < content.Letters.Count; i++)
+                {
+                    var value = content.Letters[i].Value;
+
+                    value.AsSpan().CopyTo(buffer[position..]);
+
+                    position += value.Length;
+                }
+            });
+#else
             var builder = new StringBuilder();
             for (var i = 0; i < content.Letters.Count; i++)
             {
@@ -132,6 +153,7 @@
             }
 
             return builder.ToString();
+#endif
         }
 
         /// <summary>
