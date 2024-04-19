@@ -139,60 +139,32 @@
         /// <summary>
         /// Create a new <see cref="OperatorToken"/>.
         /// </summary>
-        public static OperatorToken Create(string data)
+        public static OperatorToken Create(ReadOnlySpan<char> data)
         {
-            if (data == null)
-            {
-                throw new ArgumentNullException(nameof(data));
-            }
-
-            switch (data)
-            {
-                case "BT":
-                    return Bt;
-                case "eexec":
-                    return Eexec;
-                case "endobj":
-                    return EndObject;
-                case "endstream":
-                    return EndStream;
-                case "ET":
-                    return Et;
-                case "def":
-                    return Def;
-                case "dict":
-                    return Dict;
-                case "for":
-                    return For;
-                case "dup":
-                    return Dup;
-                case "n":
-                    return N;
-                case "obj":
-                    return StartObject;
-                case "put":
-                    return Put;
-                case "Q":
-                    return QPop;
-                case "q":
-                    return QPush;
-                case "R":
-                    return R;
-                case "re":
-                    return Re;
-                case "readonly":
-                    return Readonly;
-                case "stream":
-                    return StartStream;
-                case "Tf":
-                    return Tf;
-                case "W*":
-                    return WStar;
-                case "xref":
-                    return Xref;
-                default:
-                    return new OperatorToken(data);
-            }
+            return data switch {
+                "BT" => Bt,
+                "eexec" => Eexec,
+                "endobj" => EndObject,
+                "endstream" => EndStream,
+                "ET" => Et,
+                "def" => Def,
+                "dict" => Dict,
+                "for" => For,
+                "dup" => Dup,
+                "n" => N,
+                "obj" => StartObject,
+                "put" => Put,
+                "Q" => QPop,
+                "q" => QPush,
+                "R" => R,
+                "re" => Re,
+                "readonly" => Readonly,
+                "stream" => StartStream,
+                "Tf" => Tf,
+                "W*" => WStar,
+                "xref" => Xref,
+                _ => new OperatorToken(data.ToString())
+            };
         }
 
         /// <inheritdoc />

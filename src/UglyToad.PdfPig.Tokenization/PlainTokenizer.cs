@@ -4,23 +4,23 @@
     using System.Text;
     using Tokens;
 
-    internal class PlainTokenizer : ITokenizer
+    internal sealed class PlainTokenizer : ITokenizer
     {
-        private readonly StringBuilder stringBuilder = new StringBuilder();
-
         public bool ReadsNextByte { get; } = true;
 
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
         {
-            token = null;
-
             if (ReadHelper.IsWhitespace(currentByte))
             {
+                token = null;
+
                 return false;
             }
 
-            var builder = stringBuilder;
+            using var builder = new ValueStringBuilder(stackalloc char[16]);
+
             builder.Append((char)currentByte);
+            
             while (inputBytes.MoveNext())
             {
                 if (ReadHelper.IsWhitespace(inputBytes.CurrentByte))
@@ -28,10 +28,7 @@
                     break;
                 }
 
-                if (inputBytes.CurrentByte == '<' || inputBytes.CurrentByte == '['
-                    || inputBytes.CurrentByte == '/' || inputBytes.CurrentByte == ']'
-                    || inputBytes.CurrentByte == '>' || inputBytes.CurrentByte == '('
-                    || inputBytes.CurrentByte == ')')
+                if (inputBytes.CurrentByte is (byte)'<' or (byte)'[' or (byte)'/' or (byte)']' or (byte)'>' or (byte)'(' or (byte)')')
                 {
                     break;
                 }
@@ -39,24 +36,14 @@
                 builder.Append((char) inputBytes.CurrentByte);
             }
 
-            var text = builder.ToString();
-            builder.Clear();
+            var text = builder.AsSpan();
 
-            switch (text)
-            {
-                case "true":
-                    token = BooleanToken.True;
-                    break;
-                case "false":
-                    token = BooleanToken.False;
-                    break;
-                case "null":
-                    token = NullToken.Instance;
-                    break;
-                default:
-                    token = OperatorToken.Create(text);
-                    break;
-            }
+            token = text switch {
+                "true"  => BooleanToken.True,
+                "false" => BooleanToken.False,
+                "null"  => NullToken.Instance,
+                _       => OperatorToken.Create(text),
+            };
 
             return true;
         }
