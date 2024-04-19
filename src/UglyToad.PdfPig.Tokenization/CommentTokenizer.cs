@@ -1,10 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Tokenization
 {
-    using System.Text;
     using Core;
+    using System.Text;
     using Tokens;
 
-    internal class CommentTokenizer : ITokenizer
+    internal sealed class CommentTokenizer : ITokenizer
     {
         public bool ReadsNextByte { get; } = true;
 
@@ -17,7 +17,7 @@
                 return false;
             }
 
-            var builder = new StringBuilder();
+            using var builder = new ValueStringBuilder();
 
             while (inputBytes.MoveNext() && !ReadHelper.IsEndOfLine(inputBytes.CurrentByte))
             {

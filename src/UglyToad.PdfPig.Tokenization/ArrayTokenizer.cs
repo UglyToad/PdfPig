@@ -5,7 +5,7 @@
     using Scanner;
     using Tokens;
 
-    internal class ArrayTokenizer : ITokenizer
+    internal sealed class ArrayTokenizer : ITokenizer
     {
         private readonly bool usePdfDocEncoding;
 

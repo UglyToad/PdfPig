@@ -6,7 +6,7 @@
     /// <summary>
     /// Read an <see cref="EndOfLineToken"/>.
     /// </summary>
-    public class EndOfLineTokenizer : ITokenizer
+    public sealed class EndOfLineTokenizer : ITokenizer
     {
         /// <inheritdoc />
         public bool ReadsNextByte { get; } = false;
