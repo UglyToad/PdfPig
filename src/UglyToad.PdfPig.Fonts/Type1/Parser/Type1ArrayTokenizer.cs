@@ -9,10 +9,12 @@
     using Tokenization;
 
     /// <inheritdoc />
-    public class Type1ArrayTokenizer : ITokenizer
+    public sealed class Type1ArrayTokenizer : ITokenizer
     {
         /// <inheritdoc />
         public bool ReadsNextByte { get; } = false;
+
+        private static readonly string[] Space = [" "];
 
         /// <inheritdoc />
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
@@ -36,7 +38,7 @@
                 builder.Append((char) inputBytes.CurrentByte);
             }
 
-            var parts = builder.ToString().Split(new[] {" "}, StringSplitOptions.RemoveEmptyEntries);
+            var parts = builder.ToString().Split(Space, StringSplitOptions.RemoveEmptyEntries);
 
             var tokens = new List<IToken>();
 
@@ -50,7 +52,7 @@
                     }
                     else
                     {
-                        tokens.Add(OperatorToken.Create(part));
+                        tokens.Add(OperatorToken.Create(part.AsSpan()));
                     }
 
                     continue;
@@ -68,8 +70,7 @@
                     continue;
                 }
 
-                tokens.Add(OperatorToken.Create(part));
-
+                tokens.Add(OperatorToken.Create(part.AsSpan()));
             }
 
             token = new ArrayToken(tokens);
