@@ -639,9 +639,9 @@
 
             outputStream.WriteText(new string('0', 10));
             outputStream.WriteWhiteSpace();
-            outputStream.WriteText("65535");
+            outputStream.WriteText("65535"u8);
             outputStream.WriteWhiteSpace();
-            outputStream.WriteText("f");
+            outputStream.WriteText("f"u8);
             outputStream.WriteWhiteSpace();
             outputStream.WriteNewLine();
         }

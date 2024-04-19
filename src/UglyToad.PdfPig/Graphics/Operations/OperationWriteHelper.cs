@@ -1,24 +1,48 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations
 {
-    using System;
-    using System.Globalization;
-    using System.IO;
     using PdfPig.Core;
+    using System;
+    using System.Buffers.Text;
+    using System.IO;
+    using System.Text;
     using Util;
 
     internal static class OperationWriteHelper
     {
-        private static readonly byte WhiteSpace = OtherEncodings.StringAsLatin1Bytes(" ")[0];
-        private static readonly byte NewLine = OtherEncodings.StringAsLatin1Bytes("\n")[0];
+        private const byte WhiteSpace = (byte)' ';
+        private const byte NewLine = (byte)'\n';
 
         public static void WriteText(this Stream stream, string text, bool appendWhitespace = false)
         {
+#if NET8_0_OR_GREATER
+            if (Ascii.IsValid(text))
+            {
+                Span<byte> buffer = text.Length <= 64
+                    ? stackalloc byte[text.Length]
+                    : new byte[text.Length];
+
+                Ascii.FromUtf16(text, buffer, out _);
+
+                stream.Write(buffer);
+            }
+            else
+            {
+                var bytes = OtherEncodings.StringAsLatin1Bytes(text);
+                stream.Write(bytes);
+            }
+#else
             var bytes = OtherEncodings.StringAsLatin1Bytes(text);
             stream.Write(bytes, 0, bytes.Length);
+#endif
             if (appendWhitespace)
             {
-                stream.WriteWhiteSpace();
+                stream.WriteByte(WhiteSpace);
             }
+        }
+
+        public static void WriteText(this Stream stream, ReadOnlySpan<byte> asciiBytes)
+        {
+            stream.Write(asciiBytes);
         }
 
         public static void WriteHex(this Stream stream, ReadOnlySpan<byte> bytes)
@@ -46,7 +70,11 @@
 
         public static void WriteDouble(this Stream stream, double value)
         {
-            stream.WriteText(value.ToString("G", CultureInfo.InvariantCulture));
+            Span<byte> buffer = stackalloc byte[32]; // matches dotnet Number.CharStackBufferSize
+
+            Utf8Formatter.TryFormat(value, buffer, out int bytesWritten);
+
+            stream.Write(buffer.Slice(0, bytesWritten));
         }
 
         public static void WriteNumberText(this Stream stream, int number, string text)
@@ -54,6 +82,14 @@
             stream.WriteDouble(number);
             stream.WriteWhiteSpace();
             stream.WriteText(text);
+            stream.WriteNewLine();
+        }
+
+        public static void WriteNumberText(this Stream stream, int number, ReadOnlySpan<byte> asciiBytes)
+        {
+            stream.WriteDouble(number);
+            stream.WriteWhiteSpace();
+            stream.WriteText(asciiBytes);
             stream.WriteNewLine();
         }
 

@@ -87,11 +87,8 @@
 
             WriteString($"%PDF-{version.ToString("0.0", CultureInfo.InvariantCulture)}", Stream);
 
-            Stream.WriteText("%");
-            Stream.WriteByte(169);
-            Stream.WriteByte(205);
-            Stream.WriteByte(196);
-            Stream.WriteByte(210);
+            Stream.WriteText("%"u8);
+            Stream.Write([169, 205, 196, 210]);
             Stream.WriteNewLine();
             Initialized = true;
         }
