@@ -634,7 +634,7 @@
                     throw new ArgumentException("BezierCurve.ToLines(): n must be greater than 0.");
                 }
 
-                List<Line> lines = new List<Line>();
+                var lines = new Line[n];
                 var previousPoint = StartPoint;
 
                 for (int p = 1; p <= n; p++)
@@ -642,7 +642,7 @@
                     double t = p / (double)n;
                     var currentPoint = new PdfPoint(ValueWithT(StartPoint.X, ControlPoint.X, EndPoint.X, t),
                         ValueWithT(StartPoint.Y, ControlPoint.Y, EndPoint.Y, t));
-                    lines.Add(new Line(previousPoint, currentPoint));
+                    lines[p - 1] = new Line(previousPoint, currentPoint);
                     previousPoint = currentPoint;
                 }
 
@@ -793,7 +793,7 @@
                     throw new ArgumentException("BezierCurve.ToLines(): n must be greater than 0.");
                 }
 
-                List<Line> lines = new List<Line>();
+                var lines = new Line[n];
                 var previousPoint = StartPoint;
 
                 for (int p = 1; p <= n; p++)
@@ -801,7 +801,7 @@
                     double t = p / (double)n;
                     var currentPoint = new PdfPoint(ValueWithT(StartPoint.X, FirstControlPoint.X, SecondControlPoint.X, EndPoint.X, t),
                                                     ValueWithT(StartPoint.Y, FirstControlPoint.Y, SecondControlPoint.Y, EndPoint.Y, t));
-                    lines.Add(new Line(previousPoint, currentPoint));
+                    lines[p - 1] = new Line(previousPoint, currentPoint);
                     previousPoint = currentPoint;
                 }
                 return lines;

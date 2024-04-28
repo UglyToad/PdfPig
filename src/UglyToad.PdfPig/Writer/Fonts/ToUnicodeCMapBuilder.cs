@@ -63,18 +63,18 @@
 
                 TokenWriter.WriteToken(NameToken.CmapType, memoryStream);
                 memoryStream.WriteNumberText(2, DefToken);
-                memoryStream.WriteNumberText(1, "begincodespacerange");
+                memoryStream.WriteNumberText(1, "begincodespacerange"u8);
 
                 TokenWriter.WriteToken(new HexToken(['0', '0']), memoryStream);
                 TokenWriter.WriteToken(new HexToken(['F', 'F']), memoryStream);
 
                 memoryStream.WriteNewLine();
 
-                memoryStream.WriteText("endcodespacerange");
+                memoryStream.WriteText("endcodespacerange"u8);
 
                 memoryStream.WriteNewLine();
 
-                memoryStream.WriteNumberText(unicodeToCharacterCode.Count, "beginbfchar");
+                memoryStream.WriteNumberText(unicodeToCharacterCode.Count, "beginbfchar"u8);
                 
                 foreach (var keyValuePair in unicodeToCharacterCode)
                 {
@@ -90,23 +90,23 @@
                     memoryStream.WriteNewLine();
                 }
 
-                memoryStream.WriteText("endbfchar");
+                memoryStream.WriteText("endbfchar"u8);
 
                 memoryStream.WriteNewLine();
 
-                memoryStream.WriteText("endcmap");
+                memoryStream.WriteText("endcmap"u8);
 
                 memoryStream.WriteNewLine();
 
-                memoryStream.WriteText("CMapName currentdict /CMap defineresource pop");
+                memoryStream.WriteText("CMapName currentdict /CMap defineresource pop"u8);
 
                 memoryStream.WriteNewLine();
 
-                memoryStream.WriteText("end");
+                memoryStream.WriteText("end"u8);
 
                 memoryStream.WriteNewLine();
 
-                memoryStream.WriteText("end");
+                memoryStream.WriteText("end"u8);
 
                 memoryStream.WriteNewLine();
 

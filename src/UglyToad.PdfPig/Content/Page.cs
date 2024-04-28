@@ -51,7 +51,7 @@
         /// <summary>
         /// The set of <see cref="Letter"/>s drawn by the PDF content.
         /// </summary>
-        public IReadOnlyList<Letter> Letters => Content?.Letters ?? new Letter[0];
+        public IReadOnlyList<Letter> Letters => Content.Letters;
 
         /// <summary>
         /// The full text of all characters on the page in the order they are presented in the PDF content.
@@ -88,13 +88,19 @@
         /// </summary>
         public Experimental ExperimentalAccess { get; }
 
-        internal Page(int number, DictionaryToken dictionary, MediaBox mediaBox, CropBox cropBox, PageRotationDegrees rotation, PageContent content,
+        internal Page(int number, DictionaryToken dictionary, MediaBox mediaBox, CropBox cropBox, PageRotationDegrees rotation,
+            PageContent content,
             AnnotationProvider annotationProvider,
             IPdfTokenScanner pdfScanner)
         {
             if (number <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(number), "Page number cannot be 0 or negative.");
+            }
+
+            if (content is null)
+            {
+                throw new ArgumentNullException(nameof(content));
             }
 
             Dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
@@ -125,6 +131,27 @@
                 return string.Empty;
             }
 
+#if NET6_0_OR_GREATER
+            int length = 0;
+
+            for (var i = 0; i < content.Letters.Count; i++)
+            {
+                length += content.Letters[i].Value.Length;
+            }
+
+            return string.Create(length, content, static (buffer, content) => {
+                int position = 0;
+
+                for (var i = 0; i < content.Letters.Count; i++)
+                {
+                    var value = content.Letters[i].Value;
+
+                    value.AsSpan().CopyTo(buffer[position..]);
+
+                    position += value.Length;
+                }
+            });
+#else
             var builder = new StringBuilder();
             for (var i = 0; i < content.Letters.Count; i++)
             {
@@ -132,6 +159,7 @@
             }
 
             return builder.ToString();
+#endif
         }
 
         /// <summary>

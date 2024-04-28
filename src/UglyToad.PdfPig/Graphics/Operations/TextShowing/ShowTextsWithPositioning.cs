@@ -62,7 +62,7 @@
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            stream.WriteText("[");
+            stream.WriteText("["u8);
             for (var i = 0; i < Array.Count; i++)
             {
                 TokenWriter.WriteToken(Array[i], stream);
@@ -72,7 +72,7 @@
                     stream.WriteWhiteSpace();
                 }
             }
-            stream.WriteText("]");
+            stream.WriteText("]"u8);
             stream.WriteWhiteSpace();
             stream.WriteText(Symbol);
             stream.WriteNewLine();

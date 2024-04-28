@@ -3,6 +3,7 @@
     using Core;
     using Graphics.Operations;
     using System;
+    using System.Buffers;
     using System.Buffers.Text;
     using System.Collections.Generic;
     using System.Globalization;
@@ -17,31 +18,31 @@
     /// </summary>
     public class TokenWriter : ITokenWriter
     {
-        private static readonly byte ArrayStart = GetByte("[");
-        private static readonly byte ArrayEnd = GetByte("]");
+        private const byte ArrayStart = (byte)'[';
+        private const byte ArrayEnd = (byte)']';
 
-        private static readonly byte[] DictionaryStart = OtherEncodings.StringAsLatin1Bytes("<<");
-        private static readonly byte[] DictionaryEnd = OtherEncodings.StringAsLatin1Bytes(">>");
+        private static ReadOnlySpan<byte> DictionaryStart => "<<"u8;
+        private static ReadOnlySpan<byte> DictionaryEnd => ">>"u8;
 
-        private static readonly byte Comment = GetByte("%");
+        private const byte Comment = (byte)'%';
 
-        private static readonly byte[] Eof = OtherEncodings.StringAsLatin1Bytes("%%EOF");
+        private static ReadOnlySpan<byte> Eof => "%%EOF"u8;
 
         private static ReadOnlySpan<byte> FalseBytes => "false"u8;
 
-        private static readonly byte HexStart = GetByte("<");
-        private static readonly byte HexEnd = GetByte(">");
+        private static readonly byte HexStart = (byte)'<';
+        private static readonly byte HexEnd = (byte)'>';
 
-        private static readonly byte InUseEntry = GetByte("n");
+        private const byte InUseEntry = (byte)'n';
 
-        private static readonly byte NameStart = GetByte("/");
+        private const byte NameStart = (byte)'/';
 
         private static ReadOnlySpan<byte> Null => "null"u8;
 
         private static ReadOnlySpan<byte> ObjStart => "obj"u8;
         private static ReadOnlySpan<byte> ObjEnd => "endobj"u8;
 
-        private static readonly byte RByte = GetByte("R");
+        private const byte RByte = (byte)'R';
 
         private static ReadOnlySpan<byte> StartXref => "startxref"u8;
 
@@ -55,15 +56,15 @@
         /// </summary>
         protected static ReadOnlySpan<byte> StreamEnd => "endstream"u8;
 
-        private static readonly byte StringStart = GetByte("(");
+        private const byte StringStart = (byte)'(';
 
-        private static readonly byte StringEnd = GetByte(")");
+        private const byte StringEnd = (byte)')';
 
         private static ReadOnlySpan<byte> Trailer => "trailer"u8;
 
         private static ReadOnlySpan<byte> TrueBytes => "true"u8;
 
-        private static readonly byte Whitespace = GetByte(" ");
+        private static readonly byte Whitespace = (byte)' ';
 
         private static ReadOnlySpan<byte> Xref => "xref"u8;
 
@@ -369,7 +370,7 @@
         /// <param name="outputStream"></param>
         protected void WriteDictionary(DictionaryToken dictionary, Stream outputStream)
         {
-            outputStream.Write(DictionaryStart, 0, DictionaryStart.Length);
+            outputStream.Write(DictionaryStart);
 
             foreach (var pair in dictionary.Data)
             {
@@ -386,7 +387,7 @@
                 }
             }
 
-            outputStream.Write(DictionaryEnd, 0, DictionaryEnd.Length);
+            outputStream.Write(DictionaryEnd);
         }
 
         /// <summary>
@@ -425,26 +426,27 @@
              * This is recommended for characters whose codes are outside the range 33 (!) to 126 (~).
              */
 
-            var sb = new StringBuilder();
+            using var sb = new ArrayPoolBufferWriter<byte>((name.Length * 2) + 1);
+
+            Span<byte> hexBuffer = stackalloc byte[2];
 
             foreach (var c in name)
             {
                 if (c < 33 || c > 126 || DelimiterChars.Contains(c))
                 {
-                    var str = Hex.GetString([(byte)c]);
-                    sb.Append('#');
-                    sb.Append(str);
+                    Hex.GetUtf8Chars([(byte)c], hexBuffer);
+
+                    sb.Write((byte)'#');
+                    sb.Write(hexBuffer);
                 }
                 else
                 {
-                    sb.Append(c);
+                    sb.Write((byte)c); // between 33 and 126 (ASCII is 0 - 128)
                 }
             }
 
-            var bytes = OtherEncodings.StringAsLatin1Bytes(sb.ToString());
-
             outputStream.WriteByte(NameStart);
-            outputStream.Write(bytes);
+            outputStream.Write(sb.WrittenSpan);
             WriteWhitespace(outputStream);
         }
 
@@ -461,8 +463,11 @@
             }
             else
             {
-                var bytes = OtherEncodings.StringAsLatin1Bytes(number.Data.ToString("G", CultureInfo.InvariantCulture));
-                outputStream.Write(bytes);
+                Span<byte> buffer = stackalloc byte[32]; // matches dotnet Number.CharStackBufferSize
+
+                Utf8Formatter.TryFormat(number.Data, buffer, out int bytesWritten);
+
+                outputStream.Write(buffer.Slice(0, bytesWritten));
             }
 
             WriteWhitespace(outputStream);
@@ -639,23 +644,11 @@
 
             outputStream.WriteText(new string('0', 10));
             outputStream.WriteWhiteSpace();
-            outputStream.WriteText("65535");
+            outputStream.WriteText("65535"u8);
             outputStream.WriteWhiteSpace();
-            outputStream.WriteText("f");
+            outputStream.WriteText("f"u8);
             outputStream.WriteWhiteSpace();
             outputStream.WriteNewLine();
-        }
-
-        private static byte GetByte(string value)
-        {
-            var bytes = OtherEncodings.StringAsLatin1Bytes(value);
-
-            if (bytes.Length > 1)
-            {
-                throw new InvalidOperationException();
-            }
-
-            return bytes[0];
         }
 
         private class XrefSeries

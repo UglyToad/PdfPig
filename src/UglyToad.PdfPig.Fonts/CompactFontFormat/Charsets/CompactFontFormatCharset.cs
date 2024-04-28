@@ -10,13 +10,8 @@
 
         public bool IsCidCharset { get; } = false;
 
-        protected CompactFontFormatCharset(IReadOnlyList<(int glyphId, int stringId, string name)> data)
+        protected CompactFontFormatCharset(ReadOnlySpan<(int glyphId, int stringId, string name)> data)
         {
-            if (data == null)
-            {
-                throw new ArgumentNullException(nameof(data));
-            }
-
             var dictionary = new Dictionary<int, (int stringId, string name)>
             {
                 {0, (0, ".notdef")}

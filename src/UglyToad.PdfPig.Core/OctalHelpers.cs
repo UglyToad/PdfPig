@@ -42,14 +42,6 @@
             return sum;
         }
 
-        /// <summary>
-        /// Interpret an int as octal.
-        /// </summary>
-        public static int FromOctalInt(int input)
-        {
-            return Convert.ToInt32($"{input}", 8);
-        }
-
         private static int QuickPower(int x, int pow)
         {
             int ret = 1;

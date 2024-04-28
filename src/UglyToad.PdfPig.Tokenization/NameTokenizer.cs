@@ -9,7 +9,7 @@
     using System.Text.Unicode;
 #endif
 
-    internal class NameTokenizer : ITokenizer
+    internal sealed class NameTokenizer : ITokenizer
     {
         static NameTokenizer()
         {
