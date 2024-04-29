@@ -1,11 +1,11 @@
 ﻿namespace UglyToad.PdfPig.Writer
 {
+    using Core;
+    using Graphics.Operations;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
     using System.IO;
-    using Core;
-    using Graphics.Operations;
     using Tokens;
 
     /// <summary>
@@ -85,8 +85,8 @@
         {
             recordVersion?.Invoke(version);
 
-            WriteString($"%PDF-{version.ToString("0.0", CultureInfo.InvariantCulture)}", Stream);
-
+            Stream.WriteText($"%PDF-{version.ToString("0.0", CultureInfo.InvariantCulture)}");
+            Stream.WriteNewLine();
             Stream.WriteText("%"u8);
             Stream.Write([169, 205, 196, 210]);
             Stream.WriteNewLine();
@@ -98,12 +98,6 @@
             TokenWriter.WriteCrossReferenceTable(offsets, catalogReference.Data, Stream, documentInformationReference?.Data);
         }
 
-        private static void WriteString(string text, Stream stream)
-        {
-            var bytes = OtherEncodings.StringAsLatin1Bytes(text);
-            stream.Write(bytes, 0, bytes.Length);
-            stream.WriteNewLine();
-        }
 
         public void Dispose()
         {
