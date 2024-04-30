@@ -5,7 +5,7 @@
 
 namespace System.Diagnostics.CodeAnalysis;
 
-#if NETSTANDARD2_0 || NETFRAMEWORK
+#if !NET
 internal sealed class DoesNotReturnAttribute : Attribute { }
 
 [AttributeUsage(AttributeTargets.Parameter, Inherited = false)]

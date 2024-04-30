@@ -139,7 +139,7 @@
         /// </summary>
         /// <typeparam name="TPage"></typeparam>
         /// <typeparam name="TPageFactory"></typeparam>
-#if NET6_0_OR_GREATER
+#if NET
         public void AddPageFactory<TPage, [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)] TPageFactory>() where TPageFactory : IPageFactory<TPage>
 #else
         public void AddPageFactory<TPage, TPageFactory>() where TPageFactory : IPageFactory<TPage>
