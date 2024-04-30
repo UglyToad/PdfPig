@@ -221,8 +221,7 @@
                      */
                         var paddedOffset = OtherEncodings.StringAsLatin1Bytes(offset.Offset.ToString("D10", CultureInfo.InvariantCulture));
                         outputStream.Write(paddedOffset);
-
-                        WriteWhitespace(outputStream);
+                        outputStream.WriteWhiteSpace();
 
                         var generation = OtherEncodings.StringAsLatin1Bytes(offset.Generation.ToString("D5", CultureInfo.InvariantCulture));
                         outputStream.Write(generation);
@@ -289,10 +288,10 @@
         public void WriteObject(long objectNumber, int generation, byte[] data, Stream outputStream)
         {
             WriteLong(objectNumber, outputStream);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
 
             WriteInt(generation, outputStream);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
 
             outputStream.Write(ObjStart);
             WriteLineBreak(outputStream);
@@ -321,7 +320,7 @@
         protected void WriteArray(ArrayToken array, Stream outputStream)
         {
             outputStream.WriteByte(ArrayStart);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
 
             for (var i = 0; i < array.Data.Count; i++)
             {
@@ -330,7 +329,7 @@
             }
 
             outputStream.WriteByte(ArrayEnd);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
         }
 
         /// <summary>
@@ -340,7 +339,7 @@
         {
             var bytes = boolean.Data ? TrueBytes : FalseBytes;
             outputStream.Write(bytes);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
         }
 
         /// <summary>
@@ -360,7 +359,7 @@
         protected void WriteNullToken(Stream outputStream)
         {
             outputStream.Write("null"u8);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
         }
 
         /// <summary>
@@ -398,13 +397,13 @@
         protected virtual void WriteIndirectReference(IndirectReferenceToken reference, Stream outputStream)
         {
             WriteLong(reference.Data.ObjectNumber, outputStream);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
 
             WriteInt(reference.Data.Generation, outputStream);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
 
             outputStream.WriteByte(RByte);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
         }
 
         /// <summary>
@@ -447,7 +446,7 @@
 
             outputStream.WriteByte(NameStart);
             outputStream.Write(sb.WrittenSpan);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
         }
 
         /// <summary>
@@ -484,10 +483,10 @@
         protected virtual void WriteObject(ObjectToken objectToken, Stream outputStream)
         {
             WriteLong(objectToken.Number.ObjectNumber, outputStream);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
 
             WriteInt(objectToken.Number.Generation, outputStream);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
 
             outputStream.Write(ObjStart);
             WriteLineBreak(outputStream);
@@ -590,7 +589,7 @@
             }
 
             outputStream.WriteByte(StringEnd);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
         }
 
         /// <summary>
