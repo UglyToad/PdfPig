@@ -219,11 +219,11 @@
                      * n is a literal keyword identifying this as an in-use entry
                      * eol is a 2-character end-of-line sequence ('\r\n' or ' \n')
                      */
-                        var paddedOffset = OtherEncodings.StringAsLatin1Bytes(offset.Offset.ToString("D10", CultureInfo.InvariantCulture));
+                        var paddedOffset = Encoding.ASCII.GetBytes(offset.Offset.ToString("D10", CultureInfo.InvariantCulture));
                         outputStream.Write(paddedOffset);
                         outputStream.WriteWhiteSpace();
 
-                        var generation = OtherEncodings.StringAsLatin1Bytes(offset.Generation.ToString("D5", CultureInfo.InvariantCulture));
+                        var generation = Encoding.ASCII.GetBytes(offset.Generation.ToString("D5", CultureInfo.InvariantCulture));
                         outputStream.Write(generation);
 
                         WriteWhitespace(outputStream);
@@ -347,9 +347,8 @@
         /// </summary>
         protected void WriteComment(CommentToken comment, Stream outputStream)
         {
-            var bytes = OtherEncodings.StringAsLatin1Bytes(comment.Data);
             outputStream.WriteByte(Comment);
-            outputStream.Write(bytes);
+            outputStream.WriteText(comment.Data);
             WriteLineBreak(outputStream);
         }
 
