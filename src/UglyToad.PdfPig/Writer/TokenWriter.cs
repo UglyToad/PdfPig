@@ -64,7 +64,7 @@
 
         private static ReadOnlySpan<byte> TrueBytes => "true"u8;
 
-        private const byte Space = (byte)' ';
+        private const byte Whitespace = (byte)' ';
 
         private static ReadOnlySpan<byte> Xref => "xref"u8;
 
@@ -630,7 +630,7 @@
         /// <param name="outputStream"></param>
         protected virtual void WriteWhitespace(Stream outputStream)
         {
-            outputStream.WriteByte(Space);
+            outputStream.WriteByte(Whitespace);
         }
 
         private void WriteFirstXrefEmptyEntry(Stream outputStream)

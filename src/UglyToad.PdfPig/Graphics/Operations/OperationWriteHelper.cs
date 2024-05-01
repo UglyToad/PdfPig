@@ -9,7 +9,7 @@
 
     internal static class OperationWriteHelper
     {
-        private const byte Space = (byte)' ';
+        private const byte Whitespace = (byte)' ';
         private const byte NewLine = (byte)'\n';
 
         public static void WriteText(this Stream stream, string text, bool appendWhitespace = false)
@@ -36,7 +36,7 @@
 #endif
             if (appendWhitespace)
             {
-                stream.WriteByte(Space);
+                stream.WriteByte(Whitespace);
             }
         }
 
@@ -46,7 +46,7 @@
 
             if (appendWhitespace)
             {
-                stream.WriteByte(Space);
+                stream.WriteByte(Whitespace);
             }
         }
 
@@ -65,7 +65,7 @@
 
         public static void WriteWhiteSpace(this Stream stream)
         {
-            stream.WriteByte(Space);
+            stream.WriteByte(Whitespace);
         }
 
         public static void WriteNewLine(this Stream stream)
@@ -85,7 +85,7 @@
         public static void WriteNumberText(this Stream stream, int number, string text)
         {
             stream.WriteDouble(number);
-            stream.WriteByte(Space);
+            stream.WriteByte(Whitespace);
             stream.WriteText(text);
             stream.WriteNewLine();
         }
@@ -93,7 +93,7 @@
         public static void WriteNumberText(this Stream stream, int number, ReadOnlySpan<byte> asciiBytes)
         {
             stream.WriteDouble(number);
-            stream.WriteByte(Space);
+            stream.WriteByte(Whitespace);
             stream.WriteText(asciiBytes);
             stream.WriteNewLine();
         }
@@ -101,7 +101,7 @@
         public static void WriteNumberText(this Stream stream, double number, string text)
         {
             stream.WriteDouble(number);
-            stream.WriteByte(Space);
+            stream.WriteByte(Whitespace);
             stream.WriteText(text);
             stream.WriteNewLine();
         }
