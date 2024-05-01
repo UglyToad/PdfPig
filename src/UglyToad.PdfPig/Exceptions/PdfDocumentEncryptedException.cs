@@ -1,14 +1,18 @@
 ﻿namespace UglyToad.PdfPig.Exceptions
 {
     using System;
+#if !NET
     using System.Runtime.Serialization;
+#endif
     using Encryption;
 
     /// <inheritdoc />
     /// <summary>
     /// The document is encrypted and cannot be decrypted.
     /// </summary>
+#if !NET
     [Serializable]
+#endif
     public class PdfDocumentEncryptedException : Exception
     {
         internal EncryptionDictionary? Dictionary { get; }
@@ -38,11 +42,13 @@
             Dictionary = dictionary;
         }
 
+#if !NET
         /// <inheritdoc />
         protected PdfDocumentEncryptedException(
             SerializationInfo info,
             StreamingContext context) : base(info, context)
         {
         }
+#endif
     }
 }
