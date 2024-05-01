@@ -1,9 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Writer.Fonts
 {
-    using Graphics.Operations;
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using Graphics.Operations;
     using Tokens;
     using Util;
 
