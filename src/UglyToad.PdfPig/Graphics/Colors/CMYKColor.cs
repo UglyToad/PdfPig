@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace UglyToad.PdfPig.Graphics.Colors
+﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
     /// <summary>
     /// A color with cyan, magenta, yellow and black (K) components.

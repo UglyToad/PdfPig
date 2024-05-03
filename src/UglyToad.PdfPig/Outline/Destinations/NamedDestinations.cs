@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Outline.Destinations
 {
-    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using Content;
     using Logging;

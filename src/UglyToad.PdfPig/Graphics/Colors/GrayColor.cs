@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace UglyToad.PdfPig.Graphics.Colors
+﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
     /// <summary>
     /// A grayscale color with a single gray component.

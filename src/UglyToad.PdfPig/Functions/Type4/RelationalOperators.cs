@@ -1,8 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Functions.Type4
 {
-    using System;
-    using System.Collections.Generic;
-
     /// <summary>
     /// Provides the relational operators such as "eq" and "le".
     /// </summary>

@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextPositioning
 {
-    using System;
     using System.IO;
     using PdfPig.Core;
 

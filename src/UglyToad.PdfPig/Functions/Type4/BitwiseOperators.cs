@@ -1,8 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Functions.Type4
 {
-    using System;
-    using System.Collections.Generic;
-
     internal sealed class BitwiseOperators
     {
         private BitwiseOperators()

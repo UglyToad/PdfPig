@@ -1,8 +1,7 @@
 namespace UglyToad.PdfPig.AcroForms
 {
-    using System.Collections.Generic;
     using System.Linq;
-    using UglyToad.PdfPig.AcroForms.Fields;
+    using Fields;
 
     /// <summary>
     /// Extensions for AcroForm.

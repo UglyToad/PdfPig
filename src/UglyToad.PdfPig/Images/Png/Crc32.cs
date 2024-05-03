@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Images.Png
 {
-    using System;
-
     /// <summary>
     /// 32-bit Cyclic Redundancy Code used by the PNG for checking the data is intact.
     /// </summary>

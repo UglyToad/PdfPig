@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Annotations
 {
-    using System.Collections.Generic;
-
     /// <summary>
     /// A border for a PDF <see cref="Annotation"/> object.
     /// </summary>

@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.CidFonts
 {
-    using System;
-
     /// <summary>
     /// Specifies mapping from character identifiers to glyph indices.
     /// Can either be defined as a name in which case it must be Identity or a stream which defines the mapping.

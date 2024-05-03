@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
-    using System;
     using UglyToad.PdfPig.Util;
 
     /// <summary>

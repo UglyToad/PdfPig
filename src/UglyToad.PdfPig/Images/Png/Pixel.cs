@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Images.Png
 {
-    using System;
-
     /// <summary>
     /// A pixel in a <see cref="Png"/> image.
     /// </summary>

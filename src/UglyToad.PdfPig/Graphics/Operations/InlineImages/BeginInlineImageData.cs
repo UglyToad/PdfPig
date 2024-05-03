@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.InlineImages
 {
-    using System;
-    using System.Collections.Generic;
     using System.IO;
     using Tokens;
     using UglyToad.PdfPig.Writer;

@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Images
 {
-    using System;
     using System.IO;
 
     internal static class JpegHandler

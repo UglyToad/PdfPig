@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Writer
 {
-    using System;
     using System.IO;
     using Tokens;
 

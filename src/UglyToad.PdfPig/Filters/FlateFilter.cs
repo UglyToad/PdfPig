@@ -1,9 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
-    using Fonts;
-    using System;
     using System.IO;
     using System.IO.Compression;
+    using Fonts;
     using Tokens;
     using Util;
 

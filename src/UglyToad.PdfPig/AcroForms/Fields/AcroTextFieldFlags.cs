@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.AcroForms.Fields
 {
-    using System;
-
     /// <summary>
     /// Flags specifying various characteristics of a text type field in an <see cref="AcroFieldBase"/>.
     /// </summary>

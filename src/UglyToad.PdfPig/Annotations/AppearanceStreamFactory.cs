@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Annotations
 {
-    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using Tokenization.Scanner;
     using Tokens;

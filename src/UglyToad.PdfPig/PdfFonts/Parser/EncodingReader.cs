@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Parser
 {
-    using System;
-    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using Fonts;
     using Fonts.Encodings;

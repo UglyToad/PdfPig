@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Parser.Parts.CrossReference
 {
-    using System;
     using System.Globalization;
     using Core;
     using Logging;

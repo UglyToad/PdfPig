@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.AcroForms.Fields
 {
     using Core;
-    using System;
     using Tokens;
 
     /// <summary>

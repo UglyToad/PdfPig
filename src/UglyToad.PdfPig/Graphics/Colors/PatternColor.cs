@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
-    using System;
-    using System.Collections.Generic;
     using System.Linq;
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Tokens;

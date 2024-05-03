@@ -1,8 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using System;
-
-    internal class HeaderVersion
+    internal sealed class HeaderVersion
     {
         public double Version { get; }
 

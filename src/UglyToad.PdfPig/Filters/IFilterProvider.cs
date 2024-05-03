@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
-    using System.Collections.Generic;
     using Tokenization.Scanner;
     using Tokens;
 

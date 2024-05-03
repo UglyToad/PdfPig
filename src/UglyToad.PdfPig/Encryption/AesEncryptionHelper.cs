@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Encryption
 {
-    using System;
     using System.IO;
     using System.Security.Cryptography;
 

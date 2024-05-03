@@ -1,8 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Functions.Type4
 {
-    using System;
-    using System.Collections;
-    using System.Collections.Generic;
     using System.Linq;
 
     internal sealed class ExecutionContext

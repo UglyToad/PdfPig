@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
-    using System.Collections.Generic;
     using Operations;
     using Tokens;
 

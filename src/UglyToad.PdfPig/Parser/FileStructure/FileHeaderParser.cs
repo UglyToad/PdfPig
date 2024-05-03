@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Parser.FileStructure
 {
-    using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using Content;

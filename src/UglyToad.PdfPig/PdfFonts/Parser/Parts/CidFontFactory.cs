@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Parser.Parts
 {
-    using System;
-    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using CidFonts;
     using Core;
@@ -11,10 +9,10 @@
     using Fonts.TrueType;
     using Fonts.TrueType.Parser;
     using Geometry;
+    using Logging;
     using PdfPig.Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
-    using UglyToad.PdfPig.Logging;
     using Util;
 
     internal class CidFontFactory

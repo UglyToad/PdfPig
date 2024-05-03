@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Functions
 {
-    using System;
     using UglyToad.PdfPig.Tokens;
 
     /// <summary>

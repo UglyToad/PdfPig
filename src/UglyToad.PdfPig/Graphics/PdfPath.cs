@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
-    using System.Collections.Generic;
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Graphics.Colors;
     using UglyToad.PdfPig.Graphics.Core;

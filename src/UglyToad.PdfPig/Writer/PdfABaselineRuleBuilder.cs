@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Xml.Linq;
+﻿using System.Xml.Linq;
 using UglyToad.PdfPig.Tokens;
 using UglyToad.PdfPig.Writer.Colors;
 using UglyToad.PdfPig.Writer.Xmp;

@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Parser.Handlers
 {
-    using System;
     using System.Diagnostics.CodeAnalysis;
     using CidFonts;
     using Cmap;

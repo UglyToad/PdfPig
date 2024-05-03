@@ -2,8 +2,6 @@
 {
     using Core;
     using Graphics.Operations;
-    using System;
-    using System.Collections.Generic;
     using System.Globalization;
     using System.IO;
     using Tokens;

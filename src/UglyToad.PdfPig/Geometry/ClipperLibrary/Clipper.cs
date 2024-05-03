@@ -74,9 +74,6 @@
 
 namespace UglyToad.PdfPig.Geometry.ClipperLibrary
 {
-    using System;
-    using System.Collections.Generic;
-
     internal class Clipper : ClipperBase
     {
         //InitOptions that can be passed to the constructor ...

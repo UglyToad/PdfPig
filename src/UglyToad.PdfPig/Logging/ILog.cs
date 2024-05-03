@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Logging
 {
-    using System;
-
     /// <summary>
     /// Logs internal messages from the PDF parsing process. Consumers can provide their own implementation
     /// in the <see cref="ParsingOptions"/> to intercept log messages.

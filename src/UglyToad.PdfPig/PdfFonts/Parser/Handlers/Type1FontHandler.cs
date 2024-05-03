@@ -11,7 +11,6 @@
     using Fonts.Type1.Parser;
     using PdfPig.Parser.Parts;
     using Simple;
-    using System;
     using Tokenization.Scanner;
     using Tokens;
 

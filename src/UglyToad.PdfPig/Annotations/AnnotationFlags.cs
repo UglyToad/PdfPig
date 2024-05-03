@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Annotations
 {
-    using System;
-
     /// <summary>
     /// Specifies characteristics of an annotation in a PDF or FDF document.
     /// </summary>

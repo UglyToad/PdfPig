@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Parser.FileStructure
 {
-    using System;
-    using System.Collections.Generic;
     using Core;
     using Logging;
     using Tokenization.Scanner;

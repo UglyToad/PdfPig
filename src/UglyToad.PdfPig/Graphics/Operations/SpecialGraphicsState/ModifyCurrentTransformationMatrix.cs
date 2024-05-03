@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState
 {
-    using System;
     using System.IO;
 
     /// <inheritdoc />

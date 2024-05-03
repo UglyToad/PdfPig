@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Util
 {
-    using System;
-
     internal static class InternalStringExtensions
     {
         public static bool StartsWithOffset(this string value, ReadOnlySpan<char> start, int offset)

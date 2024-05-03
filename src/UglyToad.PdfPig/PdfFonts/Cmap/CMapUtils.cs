@@ -1,8 +1,5 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Cmap
 {
-    using System;
-    using System.Collections.Generic;
-
     internal static class CMapUtils
     {
         public static int ToInt(this ReadOnlySpan<byte> data)

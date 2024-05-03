@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Functions
 {
-    using System;
     using System.Linq;
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Functions.Type4;

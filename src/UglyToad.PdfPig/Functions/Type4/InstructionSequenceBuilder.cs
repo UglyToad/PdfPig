@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Functions.Type4
 {
-    using System.Collections.Generic;
     using System.Globalization;
 
     /// <summary>

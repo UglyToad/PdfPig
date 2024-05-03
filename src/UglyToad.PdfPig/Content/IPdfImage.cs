@@ -1,12 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using System;
-    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using Core;
     using Graphics.Colors;
     using Graphics.Core;
-    using UglyToad.PdfPig.Tokens;
+    using Tokens;
     using XObjects;
 
     /// <summary>

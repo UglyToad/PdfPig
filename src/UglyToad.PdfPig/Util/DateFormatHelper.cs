@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Util
 {
-    using System;
     using System.Globalization;
 
     /// <summary>

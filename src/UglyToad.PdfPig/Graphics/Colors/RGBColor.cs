@@ -1,8 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
-    using System;
-    using System.Collections.Generic;
-
     /// <summary>
     /// A color with red, green and blue components.
     /// </summary>

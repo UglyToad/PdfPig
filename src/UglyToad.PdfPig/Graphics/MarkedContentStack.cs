@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
-    using System;
-    using System.Collections.Generic;
     using Content;
     using Filters;
     using PdfPig.Core;

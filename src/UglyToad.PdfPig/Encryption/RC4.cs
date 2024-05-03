@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Encryption
 {
-    using System;
-
     internal static class RC4
     {
         public static byte[] Encrypt(ReadOnlySpan<byte> key, ReadOnlySpan<byte> data)

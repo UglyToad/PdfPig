@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Writer.Colors
 {
-    using System;
-    using System.Collections.Generic;
     using Tokens;
 
     internal static class OutputIntentsFactory

@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Cmap
 {
-    using System;
-
     /// <summary>
     /// Associates the beginning and end of a range of character codes with the starting CID for the range.
     /// </summary>

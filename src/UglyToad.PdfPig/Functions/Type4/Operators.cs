@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Functions.Type4
 {
-    using System.Collections.Generic;
-
     /// <summary>
     /// This class provides all the supported operators.
     /// </summary>

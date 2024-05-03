@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Writer
 {
-    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using Filters;

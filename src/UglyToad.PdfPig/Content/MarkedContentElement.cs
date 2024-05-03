@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using System;
-    using System.Collections.Generic;
+    using Graphics;
     using Tokens;
-    using UglyToad.PdfPig.Graphics;
 
     /// <summary>
     /// A marked content element can be used to provide application specific data in the

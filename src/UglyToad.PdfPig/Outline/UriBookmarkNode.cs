@@ -1,8 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Outline
 {
-    using System;
-    using System.Collections.Generic;
-
     /// <inheritdoc />
     /// <summary>
     /// A node in the <see cref="Bookmarks" /> of a PDF document which corresponds

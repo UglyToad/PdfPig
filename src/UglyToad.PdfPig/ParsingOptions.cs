@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig
 {
-    using System.Collections.Generic;
     using Logging;
 
     /// <summary>

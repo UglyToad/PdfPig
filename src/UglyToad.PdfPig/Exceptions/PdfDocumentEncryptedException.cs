@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Exceptions
 {
-    using System;
 #if !NET
     using System.Runtime.Serialization;
 #endif

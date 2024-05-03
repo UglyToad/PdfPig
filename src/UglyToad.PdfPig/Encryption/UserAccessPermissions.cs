@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Encryption
 {
-    using System;
-
     [Flags]
     internal enum UserAccessPermissions : long
     {

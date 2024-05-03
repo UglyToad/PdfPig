@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Util
 {
-    using System;
-
     /**
      * Utility functions for hex encoding.
      *

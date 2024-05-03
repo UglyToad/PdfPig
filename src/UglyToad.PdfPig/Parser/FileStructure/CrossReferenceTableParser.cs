@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Parser.FileStructure
 {
-    using System;
     using System.Linq;
     using CrossReference;
     using Core;

@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
-    using System;
     using Colors;
     using Core;
     using PdfPig.Core;

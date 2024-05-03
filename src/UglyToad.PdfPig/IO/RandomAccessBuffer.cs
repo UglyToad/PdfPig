@@ -2,8 +2,6 @@
 
 namespace UglyToad.PdfPig.IO
 {
-    using System;
-    using System.Collections.Generic;
     using System.IO;
 
     internal class RandomAccessBuffer : IDisposable

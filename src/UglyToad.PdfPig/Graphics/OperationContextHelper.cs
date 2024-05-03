@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
-    using System;
     using System.Linq;
     using Content;
     using Geometry;

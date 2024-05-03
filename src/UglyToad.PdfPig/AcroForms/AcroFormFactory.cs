@@ -1,14 +1,12 @@
 ﻿namespace UglyToad.PdfPig.AcroForms
 {
+    using System.Linq;
     using Content;
     using Core;
     using CrossReference;
     using Fields;
     using Filters;
     using Parser.Parts;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using Tokenization.Scanner;
     using Tokens;
     using Util;

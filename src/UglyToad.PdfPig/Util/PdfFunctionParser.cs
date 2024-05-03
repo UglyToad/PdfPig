@@ -1,9 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Util
 {
-    using System;
-    using System.Collections.Generic;
     using System.IO;
-    using System.Linq;
     using UglyToad.PdfPig.Filters;
     using UglyToad.PdfPig.Functions;
     using UglyToad.PdfPig.Parser.Parts;

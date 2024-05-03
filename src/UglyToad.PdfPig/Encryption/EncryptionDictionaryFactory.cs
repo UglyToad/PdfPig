@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Encryption
 {
-    using System;
-    using System.Linq;
     using Core;
     using Tokenization.Scanner;
     using Tokens;

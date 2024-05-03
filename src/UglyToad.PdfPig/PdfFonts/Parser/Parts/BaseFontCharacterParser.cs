@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Parser.Parts
 {
-    using System;
     using Cmap;
     using Tokenization.Scanner;
     using Tokens;

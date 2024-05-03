@@ -74,8 +74,6 @@
 
 namespace UglyToad.PdfPig.Geometry.ClipperLibrary
 {
-    using System.Collections.Generic;
-
     internal class ClipperIntersectNode
     {
         internal ClipperTEdge Edge1;

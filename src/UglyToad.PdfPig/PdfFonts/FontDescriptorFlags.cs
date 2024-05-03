@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts
 {
-    using System;
-
     /// <summary>
     /// Specifies various characteristics of a font.
     /// </summary>

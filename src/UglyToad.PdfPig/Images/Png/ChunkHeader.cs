@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Images.Png
 {
-    using System;
-
     /// <summary>
     /// The header for a data chunk in a PNG file.
     /// </summary>

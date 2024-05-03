@@ -74,8 +74,6 @@
 
 namespace UglyToad.PdfPig.Geometry.ClipperLibrary
 {
-    using System.Collections.Generic;
-
     internal class ClipperPolyTree : ClipperPolyNode
     {
         internal List<ClipperPolyNode> AllPolys = new List<ClipperPolyNode>();

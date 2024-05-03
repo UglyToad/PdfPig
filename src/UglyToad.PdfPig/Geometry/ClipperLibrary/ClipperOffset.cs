@@ -71,9 +71,6 @@
 *******************************************************************************/
 namespace UglyToad.PdfPig.Geometry.ClipperLibrary
 {
-    using System;
-    using System.Collections.Generic;
-
     internal class ClipperOffset
     {
         private const double DefArcTolerance = 0.25;

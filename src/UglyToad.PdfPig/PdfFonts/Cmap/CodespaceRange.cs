@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Cmap
 {
-    using System;
-
     /// <summary>
     ///  A codespace range is specified by a pair of codes of some particular length giving the lower and upper bounds of that range.
     /// </summary>

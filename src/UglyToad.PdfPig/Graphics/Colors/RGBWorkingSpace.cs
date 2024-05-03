@@ -2,8 +2,6 @@
 
 namespace UglyToad.PdfPig.Graphics.Colors
 {
-    using System;
-
     // The RGB working space specifications below were obtained from: http://www.brucelindbloom.com/index.html?WorkingSpaceInfo.html
     internal class RGBWorkingSpace
     {

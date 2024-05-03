@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
-    using System;
     using System.IO;
     using Tokens;
     using Util;

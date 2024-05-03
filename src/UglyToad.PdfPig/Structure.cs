@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig
 {
-    using System;
     using Content;
     using Core;
     using CrossReference;

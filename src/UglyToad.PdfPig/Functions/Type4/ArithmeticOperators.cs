@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Functions.Type4
 {
-    using System;
-
     /// <summary>
     /// Provides the arithmetic operators such as "add" and "sub".
     /// </summary>

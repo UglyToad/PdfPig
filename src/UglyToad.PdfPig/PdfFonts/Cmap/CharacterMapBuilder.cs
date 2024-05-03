@@ -2,11 +2,9 @@
 
 namespace UglyToad.PdfPig.PdfFonts.Cmap
 {
-    using Core;
-    using System;
-    using System.Collections.Generic;
     using System.Linq;
     using System.Text;
+    using Core;
 
     /// <summary>
     /// A mutable class used when parsing and generating a <see cref="CMap"/>.

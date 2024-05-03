@@ -77,8 +77,6 @@
 
 namespace UglyToad.PdfPig.Geometry.ClipperLibrary
 {
-    using System.Collections.Generic;
-
     internal class ClipperBase
     {
         internal const double Horizontal = -3.4E+38;

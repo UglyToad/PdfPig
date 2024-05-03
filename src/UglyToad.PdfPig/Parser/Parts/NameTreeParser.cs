@@ -2,8 +2,6 @@
 
 namespace UglyToad.PdfPig.Parser.Parts
 {
-    using System;
-    using System.Collections.Generic;
     using Tokenization.Scanner;
     using Tokens;
 

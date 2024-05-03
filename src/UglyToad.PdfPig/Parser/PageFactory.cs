@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Parser
 {
-    using System;
-    using System.Collections.Generic;
     using Annotations;
     using Content;
     using Core;

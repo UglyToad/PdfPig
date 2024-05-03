@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
-    using System;
-    using System.Collections.Generic;
     using System.Linq;
     using Core;
     using Parser.Parts;

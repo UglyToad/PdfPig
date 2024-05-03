@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.IO
 {
-    using System;
     using System.IO;
 
     internal class StreamWrapper : Stream

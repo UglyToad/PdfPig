@@ -1,11 +1,10 @@
 ﻿namespace UglyToad.PdfPig.Functions
 {
-    using System;
     using System.Collections;
     using System.IO;
     using System.Linq;
-    using UglyToad.PdfPig.Core;
-    using UglyToad.PdfPig.Tokens;
+    using Core;
+    using Tokens;
 
     internal sealed class PdfFunctionType0 : PdfFunction
     {

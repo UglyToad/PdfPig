@@ -7,7 +7,6 @@
     using Fonts.Encodings;
     using PdfPig.Parser.Parts;
     using Simple;
-    using System;
     using Tokenization.Scanner;
     using Tokens;
     using Util;

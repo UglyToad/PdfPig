@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Images.Png
 {
-    using System;
-
     /// <summary>
     /// Describes the interpretation of the image data.
     /// </summary>

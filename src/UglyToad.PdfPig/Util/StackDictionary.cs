@@ -1,8 +1,6 @@
 ﻿// ReSharper disable InconsistentNaming
 namespace UglyToad.PdfPig.Util
 {
-    using System;
-    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
 
     internal class StackDictionary<K, V>

@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.CidFonts
 {
-    using System.Collections.Generic;
     using Geometry;
 
     /// <summary>

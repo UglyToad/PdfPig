@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
 using UglyToad.PdfPig.Core;
 using UglyToad.PdfPig.Filters;
 using UglyToad.PdfPig.Graphics.Operations.TextShowing;

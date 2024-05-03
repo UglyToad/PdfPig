@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextShowing
 {
-    using System;
-    using System.Collections.Generic;
     using System.IO;
     using Tokens;
     using Writer;

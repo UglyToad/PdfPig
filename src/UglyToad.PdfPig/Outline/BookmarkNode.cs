@@ -1,8 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Outline
 {
-    using System;
-    using System.Collections.Generic;
-
     /// <summary>
     /// A node in the <see cref="Bookmarks"/> (also known as outlines) of a PDF document.
     /// </summary>

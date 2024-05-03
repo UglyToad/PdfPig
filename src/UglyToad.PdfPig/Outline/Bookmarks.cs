@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace UglyToad.PdfPig.Outline
+﻿namespace UglyToad.PdfPig.Outline
 {
     /// <summary>
     /// The bookmarks in a PDF document.

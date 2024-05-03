@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using UglyToad.PdfPig.Tokenization.Scanner;
+﻿using UglyToad.PdfPig.Tokenization.Scanner;
 using UglyToad.PdfPig.Tokens;
 
 namespace UglyToad.PdfPig.Content

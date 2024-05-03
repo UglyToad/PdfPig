@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Content
 {
-    using System;
-    using System.Collections.Generic;
     using Tokens;
 
     /// <summary>

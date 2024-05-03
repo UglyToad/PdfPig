@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
-    using System;
-
     internal ref struct BitStream
     {
         private readonly ReadOnlySpan<byte> data;

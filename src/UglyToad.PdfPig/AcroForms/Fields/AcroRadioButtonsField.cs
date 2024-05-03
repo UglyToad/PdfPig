@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.AcroForms.Fields
 {
-    using System.Collections.Generic;
     using Tokens;
 
     /// <inheritdoc />

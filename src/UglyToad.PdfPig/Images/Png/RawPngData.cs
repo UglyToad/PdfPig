@@ -1,8 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Images.Png
 {
-    using System;
-
-/// <summary>
+    /// <summary>
     /// Provides convenience methods for indexing into a raw byte array to extract pixel values.
     /// </summary>
     internal sealed class RawPngData

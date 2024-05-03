@@ -2,8 +2,6 @@
 
 namespace UglyToad.PdfPig.Graphics
 {
-    using System;
-    using System.Collections.Generic;
     using Colors;
     using Content;
     using Filters;

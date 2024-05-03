@@ -1,7 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Images.Png
 {
-    using System.Collections.Generic;
-
     internal static class Adam7
     {
         /// <summary>

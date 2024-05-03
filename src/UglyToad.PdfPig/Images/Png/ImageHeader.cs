@@ -1,8 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Images.Png
 {
-    using System;
-    using System.Collections.Generic;
-
     /// <summary>
     /// The high level information about the image.
     /// </summary>

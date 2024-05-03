@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextState
 {
-    using System;
     using System.Globalization;
     using System.IO;
     using Tokens;

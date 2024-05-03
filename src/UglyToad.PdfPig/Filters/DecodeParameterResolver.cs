@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
-    using System;
-    using System.Collections.Generic;
     using Tokens;
-    using UglyToad.PdfPig.Util;
+    using Util;
 
     internal static class DecodeParameterResolver
     {

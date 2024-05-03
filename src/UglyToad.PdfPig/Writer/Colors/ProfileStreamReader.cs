@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Writer.Colors
 {
-    using System;
     using System.IO;
     using System.Linq;
     using PdfFonts.Parser;

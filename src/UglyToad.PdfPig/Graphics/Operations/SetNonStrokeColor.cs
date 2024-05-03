@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations
 {
-    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
 

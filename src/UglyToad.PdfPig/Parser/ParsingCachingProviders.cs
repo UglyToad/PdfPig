@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Parser
 {
-    using System;
     using Content;
 
     /// <summary>
