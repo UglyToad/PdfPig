@@ -5,7 +5,7 @@
     using Core;
     using Tokens;
 
-#if NET8_0_OR_GREATER
+#if NET
     using System.Text.Unicode;
 #endif
 
@@ -13,7 +13,7 @@
     {
         static NameTokenizer()
         {
-#if NET6_0_OR_GREATER
+#if NET
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 #endif
         }

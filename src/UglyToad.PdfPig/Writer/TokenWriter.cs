@@ -64,7 +64,7 @@
 
         private static ReadOnlySpan<byte> TrueBytes => "true"u8;
 
-        private static readonly byte Whitespace = (byte)' ';
+        private const byte Whitespace = (byte)' ';
 
         private static ReadOnlySpan<byte> Xref => "xref"u8;
 
@@ -219,12 +219,11 @@
                      * n is a literal keyword identifying this as an in-use entry
                      * eol is a 2-character end-of-line sequence ('\r\n' or ' \n')
                      */
-                        var paddedOffset = OtherEncodings.StringAsLatin1Bytes(offset.Offset.ToString("D10", CultureInfo.InvariantCulture));
+                        var paddedOffset = Encoding.ASCII.GetBytes(offset.Offset.ToString("D10", CultureInfo.InvariantCulture));
                         outputStream.Write(paddedOffset);
+                        outputStream.WriteWhiteSpace();
 
-                        WriteWhitespace(outputStream);
-
-                        var generation = OtherEncodings.StringAsLatin1Bytes(offset.Generation.ToString("D5", CultureInfo.InvariantCulture));
+                        var generation = Encoding.ASCII.GetBytes(offset.Generation.ToString("D5", CultureInfo.InvariantCulture));
                         outputStream.Write(generation);
 
                         WriteWhitespace(outputStream);
@@ -289,10 +288,10 @@
         public void WriteObject(long objectNumber, int generation, byte[] data, Stream outputStream)
         {
             WriteLong(objectNumber, outputStream);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
 
             WriteInt(generation, outputStream);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
 
             outputStream.Write(ObjStart);
             WriteLineBreak(outputStream);
@@ -321,7 +320,7 @@
         protected void WriteArray(ArrayToken array, Stream outputStream)
         {
             outputStream.WriteByte(ArrayStart);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
 
             for (var i = 0; i < array.Data.Count; i++)
             {
@@ -330,7 +329,7 @@
             }
 
             outputStream.WriteByte(ArrayEnd);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
         }
 
         /// <summary>
@@ -340,7 +339,7 @@
         {
             var bytes = boolean.Data ? TrueBytes : FalseBytes;
             outputStream.Write(bytes);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
         }
 
         /// <summary>
@@ -348,9 +347,8 @@
         /// </summary>
         protected void WriteComment(CommentToken comment, Stream outputStream)
         {
-            var bytes = OtherEncodings.StringAsLatin1Bytes(comment.Data);
             outputStream.WriteByte(Comment);
-            outputStream.Write(bytes);
+            outputStream.WriteText(comment.Data);
             WriteLineBreak(outputStream);
         }
 
@@ -360,7 +358,7 @@
         protected void WriteNullToken(Stream outputStream)
         {
             outputStream.Write("null"u8);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
         }
 
         /// <summary>
@@ -398,13 +396,13 @@
         protected virtual void WriteIndirectReference(IndirectReferenceToken reference, Stream outputStream)
         {
             WriteLong(reference.Data.ObjectNumber, outputStream);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
 
             WriteInt(reference.Data.Generation, outputStream);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
 
             outputStream.WriteByte(RByte);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
         }
 
         /// <summary>
@@ -447,7 +445,7 @@
 
             outputStream.WriteByte(NameStart);
             outputStream.Write(sb.WrittenSpan);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
         }
 
         /// <summary>
@@ -484,10 +482,10 @@
         protected virtual void WriteObject(ObjectToken objectToken, Stream outputStream)
         {
             WriteLong(objectToken.Number.ObjectNumber, outputStream);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
 
             WriteInt(objectToken.Number.Generation, outputStream);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
 
             outputStream.Write(ObjStart);
             WriteLineBreak(outputStream);
@@ -590,7 +588,7 @@
             }
 
             outputStream.WriteByte(StringEnd);
-            WriteWhitespace(outputStream);
+            outputStream.WriteWhiteSpace();
         }
 
         /// <summary>

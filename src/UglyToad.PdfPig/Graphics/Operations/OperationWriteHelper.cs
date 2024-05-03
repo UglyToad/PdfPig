@@ -9,7 +9,7 @@
 
     internal static class OperationWriteHelper
     {
-        private const byte WhiteSpace = (byte)' ';
+        private const byte Whitespace = (byte)' ';
         private const byte NewLine = (byte)'\n';
 
         public static void WriteText(this Stream stream, string text, bool appendWhitespace = false)
@@ -36,13 +36,18 @@
 #endif
             if (appendWhitespace)
             {
-                stream.WriteByte(WhiteSpace);
+                stream.WriteByte(Whitespace);
             }
         }
 
-        public static void WriteText(this Stream stream, ReadOnlySpan<byte> asciiBytes)
+        public static void WriteText(this Stream stream, ReadOnlySpan<byte> asciiBytes, bool appendWhitespace = false)
         {
             stream.Write(asciiBytes);
+
+            if (appendWhitespace)
+            {
+                stream.WriteByte(Whitespace);
+            }
         }
 
         public static void WriteHex(this Stream stream, ReadOnlySpan<byte> bytes)
@@ -60,7 +65,7 @@
 
         public static void WriteWhiteSpace(this Stream stream)
         {
-            stream.WriteByte(WhiteSpace);
+            stream.WriteByte(Whitespace);
         }
 
         public static void WriteNewLine(this Stream stream)
@@ -80,7 +85,7 @@
         public static void WriteNumberText(this Stream stream, int number, string text)
         {
             stream.WriteDouble(number);
-            stream.WriteWhiteSpace();
+            stream.WriteByte(Whitespace);
             stream.WriteText(text);
             stream.WriteNewLine();
         }
@@ -88,7 +93,7 @@
         public static void WriteNumberText(this Stream stream, int number, ReadOnlySpan<byte> asciiBytes)
         {
             stream.WriteDouble(number);
-            stream.WriteWhiteSpace();
+            stream.WriteByte(Whitespace);
             stream.WriteText(asciiBytes);
             stream.WriteNewLine();
         }
@@ -96,7 +101,7 @@
         public static void WriteNumberText(this Stream stream, double number, string text)
         {
             stream.WriteDouble(number);
-            stream.WriteWhiteSpace();
+            stream.WriteByte(Whitespace);
             stream.WriteText(text);
             stream.WriteNewLine();
         }

@@ -576,7 +576,7 @@
                 }
             }
 
-#if NET8_0_OR_GREATER
+#if NET
             return CollectionsMarshal.AsSpan(transformed);
 #else
             return transformed.ToArray();
@@ -745,7 +745,7 @@
                 }
             }
 
-#if NET8_0_OR_GREATER
+#if NET
             return CollectionsMarshal.AsSpan(transformed);
 #else
             return transformed.ToArray();

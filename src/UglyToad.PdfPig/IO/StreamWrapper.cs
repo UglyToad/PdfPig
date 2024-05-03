@@ -27,7 +27,7 @@
             Stream.SetLength(value);
         }
 
-#if NET6_0_OR_GREATER
+#if NET
         public override int Read(Span<byte> buffer)
         {
             return Stream.Read(buffer);
@@ -44,7 +44,7 @@
             Stream.Write(buffer, offset, count);
         }
 
-#if NET6_0_OR_GREATER
+#if NET
         public override void Write(ReadOnlySpan<byte> buffer)
         {
             Stream.Write(buffer);

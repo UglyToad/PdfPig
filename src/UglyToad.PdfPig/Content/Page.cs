@@ -131,7 +131,7 @@
                 return string.Empty;
             }
 
-#if NET6_0_OR_GREATER
+#if NET
             int length = 0;
 
             for (var i = 0; i < content.Letters.Count; i++)
