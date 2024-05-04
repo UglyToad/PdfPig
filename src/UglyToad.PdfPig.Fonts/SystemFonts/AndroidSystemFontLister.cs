@@ -1,33 +1,17 @@
 ﻿namespace UglyToad.PdfPig.Fonts.SystemFonts
 {
-    using System;
+#if NET
     using System.Collections.Generic;
     using System.IO;
 
-    internal sealed class MacSystemFontLister : ISystemFontLister
+    internal sealed class AndroidSystemFontLister : ISystemFontLister
     {
         public IEnumerable<SystemFontRecord> GetAllFonts()
         {
             var directories = new List<string>
             {
-                "/Library/Fonts/", // local
-                "/System/Library/Fonts/", // system
-                "/Network/Library/Fonts/" // network
+                "/system/fonts",
             };
-
-            try
-            {
-                var folder = Environment.GetEnvironmentVariable("$HOME");
-
-                if (!string.IsNullOrWhiteSpace(folder))
-                {
-                    directories.Add($"{folder}/Library/Fonts");
-                }
-            }
-            catch
-            {
-                // ignored
-            }
 
             foreach (var directory in directories)
             {
@@ -47,7 +31,7 @@
 
                 try
                 {
-                    files = Directory.GetFiles(directory);
+                    files = Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories);
                 }
                 catch
                 {
@@ -64,4 +48,5 @@
             }
         }
     }
+#endif
 }
