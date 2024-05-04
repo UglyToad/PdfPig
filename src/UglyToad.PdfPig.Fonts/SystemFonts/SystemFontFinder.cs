@@ -89,6 +89,12 @@ namespace UglyToad.PdfPig.Fonts.SystemFonts
             {
                 lister = new LinuxSystemFontLister();
             }
+#if NET
+            else if (OperatingSystem.IsAndroid())
+            {
+              lister = new AndroidSystemFontLister();
+            }
+#endif
             else
             {
                 throw new NotSupportedException($"Unsupported operating system: {RuntimeInformation.OSDescription}.");

@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.IO;
 
-    internal class WindowsSystemFontLister : ISystemFontLister
+    internal sealed class WindowsSystemFontLister : ISystemFontLister
     {
         public IEnumerable<SystemFontRecord> GetAllFonts()
         {
