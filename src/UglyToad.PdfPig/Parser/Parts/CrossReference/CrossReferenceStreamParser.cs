@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Parser.Parts.CrossReference
 {
-    using System.Collections.Generic;
     using Core;
     using Filters;
     using PdfPig.CrossReference;
@@ -45,7 +44,10 @@
             var objectNumbers = GetObjectNumbers(stream.StreamDictionary);
 
             var lineNumber = 0;
-            var lineBuffer = new byte[fieldSizes.LineLength];
+            Span<byte> lineBuffer = fieldSizes.LineLength <= 64
+                ? stackalloc byte[fieldSizes.LineLength]
+                : new byte[fieldSizes.LineLength];
+
             foreach (var objectNumber in objectNumbers)
             {
                 if (lineNumber >= lineCount)
@@ -84,7 +86,7 @@
         }
 
         private static void ReadNextStreamObject(int type, long objectNumber, CrossReferenceStreamFieldSize fieldSizes,
-            CrossReferenceTablePartBuilder builder, byte[] lineBuffer)
+            CrossReferenceTablePartBuilder builder, ReadOnlySpan<byte> lineBuffer)
         {
             switch (type)
             {
