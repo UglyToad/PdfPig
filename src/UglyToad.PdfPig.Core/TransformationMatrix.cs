@@ -1,9 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Core
 {
-    using System;
-    using System.Collections.Generic;
     using System.Diagnostics.Contracts;
-    using System.Linq;
     using static UglyToad.PdfPig.Core.PdfSubpath;
 
     /// <summary>
@@ -201,7 +198,7 @@
         /// Create a new <see cref="TransformationMatrix"/>.
         /// </summary>
         /// <param name="value">The 9 values of the matrix.</param>
-        public TransformationMatrix(double[] value) : this(value[0], value[1], value[2], value[3], value[4], value[5], value[6], value[7], value[8])
+        public TransformationMatrix(ReadOnlySpan<double> value) : this(value[0], value[1], value[2], value[3], value[4], value[5], value[6], value[7], value[8])
         {
         }
 
@@ -373,7 +370,7 @@
         /// </summary>
         /// <param name="values">Either all 9 values of the matrix, 6 values in the default PDF order or the 4 values of the top left square.</param>
         /// <returns></returns>
-        public static TransformationMatrix FromArray(double[] values)
+        public static TransformationMatrix FromArray(ReadOnlySpan<double> values)
         {
             if (values.Length == 9)
             {
@@ -394,7 +391,7 @@
                     0, 0, 1);
             }
 
-            throw new ArgumentException("The array must either define all 9 elements of the matrix or all 6 key elements. Instead array was: " + values);
+            throw new ArgumentException("The array must either define all 9 elements of the matrix or all 6 key elements. Instead array was: " + string.Join(", ", values.ToArray()));
         }
 
         /// <summary>
