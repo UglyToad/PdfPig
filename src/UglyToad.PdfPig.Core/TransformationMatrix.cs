@@ -135,53 +135,27 @@
                     throw new ArgumentOutOfRangeException(nameof(col), "Cannot access negative columns in a matrix.");
                 }
 
-                switch (row)
-                {
-                    case 0:
-                    {
-                        switch (col)
-                        {
-                            case 0:
-                                return A;
-                            case 1:
-                                return B;
-                            case 2:
-                                return row1;
-                            default:
-                                    throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.");
-                        }
-                    }
-                    case 1:
-                    {
-                        switch (col)
-                        {
-                            case 0:
-                                return C;
-                            case 1:
-                                return D;
-                            case 2:
-                                return row2;
-                            default:
-                                    throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.");
-                        }
-                    }
-                    case 2:
-                    {
-                        switch (col)
-                        {
-                            case 0:
-                                return E;
-                            case 1:
-                                return F;
-                            case 2:
-                                return row3;
-                            default:
-                                    throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.");
-                        }
-                    }
-                    default:
-                        throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.");
-                }
+                return row switch {
+                    0 => col switch {
+                        0 => A,
+                        1 => B,
+                        2 => row1,
+                        _ => throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.")
+                    },
+                    1 => col switch {
+                        0 => C,
+                        1 => D,
+                        2 => row2,
+                        _ => throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.")
+                    },
+                    2 => col switch {
+                        0 => E,
+                        1 => F,
+                        2 => row3,
+                        _ => throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.")
+                    },
+                    _ => throw new ArgumentOutOfRangeException($"Trying to access {row}, {col} which was not in the value array.")
+                };
             }
         }
 
@@ -521,17 +495,19 @@
         /// <inheritdoc />
         public override int GetHashCode()
         {
-            var hashCode = 472622392;
-            hashCode = hashCode * -1521134295 + row1.GetHashCode();
-            hashCode = hashCode * -1521134295 + row2.GetHashCode();
-            hashCode = hashCode * -1521134295 + row3.GetHashCode();
-            hashCode = hashCode * -1521134295 + A.GetHashCode();
-            hashCode = hashCode * -1521134295 + B.GetHashCode();
-            hashCode = hashCode * -1521134295 + C.GetHashCode();
-            hashCode = hashCode * -1521134295 + D.GetHashCode();
-            hashCode = hashCode * -1521134295 + E.GetHashCode();
-            hashCode = hashCode * -1521134295 + F.GetHashCode();
-            return hashCode;
+            var hashCode = new HashCode();
+
+            hashCode.Add(row1);
+            hashCode.Add(row2);
+            hashCode.Add(row3);
+            hashCode.Add(A);
+            hashCode.Add(B);
+            hashCode.Add(C);
+            hashCode.Add(D);
+            hashCode.Add(E);
+            hashCode.Add(F);
+
+            return hashCode.ToHashCode();
         }
 
         /// <inheritdoc />
