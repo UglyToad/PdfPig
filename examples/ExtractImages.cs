@@ -15,9 +15,9 @@
                 {
                     foreach (var image in page.GetImages())
                     {
-                        if (!image.TryGetBytes(out var b))
+                        if (!image.TryGetBytesAsMemory(out var b))
                         {
-                            b = image.RawBytes;
+                            b = image.RawMemory;
                         }
 
                         var type = string.Empty;
@@ -31,7 +31,7 @@
                                 break;
                         }
 
-                        Console.WriteLine($"Image with {b.Count} bytes of type '{type}' on page {page.Number}. Location: {image.Bounds}.");
+                        Console.WriteLine($"Image with {b.Length} bytes of type '{type}' on page {page.Number}. Location: {image.Bounds}.");
                     }
                 }
             }
