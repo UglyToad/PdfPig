@@ -374,7 +374,7 @@
         /// <param name="matrix">The matrix to multiply</param>
         /// <returns>The resulting matrix.</returns>
         [Pure]
-        public TransformationMatrix Multiply(TransformationMatrix matrix)
+        public TransformationMatrix Multiply(in TransformationMatrix matrix)
         {
             var a = (A * matrix.A) + (B * matrix.C) + (row1 * matrix.E);
             var b = (A * matrix.B) + (B * matrix.D) + (row1 * matrix.F);
