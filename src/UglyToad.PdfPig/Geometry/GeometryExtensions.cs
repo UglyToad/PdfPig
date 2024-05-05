@@ -469,10 +469,19 @@
         /// Gets the axis-aligned rectangle that completely containing the original rectangle, with no rotation.
         /// </summary>
         /// <param name="rectangle"></param>
-        public static PdfRectangle Normalise(this PdfRectangle rectangle)
+        public static PdfRectangle Normalise(this in PdfRectangle rectangle)
         {
-            var points = new[] { rectangle.BottomLeft, rectangle.BottomRight, rectangle.TopLeft, rectangle.TopRight };
-            return new PdfRectangle(points.Min(p => p.X), points.Min(p => p.Y), points.Max(p => p.X), points.Max(p => p.Y));
+            var bottomLeft = rectangle.BottomLeft;
+            var bottomRight = rectangle.BottomRight;
+            var topLeft = rectangle.TopLeft;
+            var topRight = rectangle.TopRight;
+
+            var minX = Math.Min(Math.Min(bottomLeft.X, bottomRight.X), Math.Min(topLeft.X, topRight.X));
+            var minY = Math.Min(Math.Min(bottomLeft.Y, bottomRight.Y), Math.Min(topLeft.Y, topRight.Y));
+            var maxX = Math.Max(Math.Max(bottomLeft.X, bottomRight.X), Math.Max(topLeft.X, topRight.X));
+            var maxY = Math.Max(Math.Max(bottomLeft.Y, bottomRight.Y), Math.Max(topLeft.Y, topRight.Y));
+
+            return new PdfRectangle(minX, minY, maxX, maxY);
         }
 
         /// <summary>
