@@ -4,6 +4,7 @@
     using Content;
     using DocumentLayoutAnalysis;
     using System;
+    using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using System.Linq;
     using System.Xml;
@@ -377,6 +378,9 @@
         /// <summary>
         /// Deserialize an <see cref="AltoDocument"/> from a given Alto format XML document.
         /// </summary>
+#if NET6_0_OR_GREATER
+        [RequiresUnreferencedCode("Members from AltoDocument may be trimmed if not referenced directly")]
+#endif
         public static AltoDocument Deserialize(string xmlPath)
         {
             var serializer = new XmlSerializer(typeof(AltoDocument));
