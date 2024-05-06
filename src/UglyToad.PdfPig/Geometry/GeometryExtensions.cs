@@ -1,10 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Geometry
 {
-    using Core;
-    using System;
-    using System.Collections.Generic;
     using System.Linq;
     using System.Text;
+    using Core;
     using UglyToad.PdfPig.Geometry.ClipperLibrary;
     using UglyToad.PdfPig.Graphics;
     using static UglyToad.PdfPig.Core.PdfSubpath;
@@ -83,7 +81,7 @@
                 return new PdfRectangle(polygon[0], polygon[1]);
             }
 
-            double[] MBR = new double[8];
+            Span<double> mrb = stackalloc double[8];
 
             double Amin = double.PositiveInfinity;
             int j = 1;
@@ -169,7 +167,7 @@
                     if (A < Amin)
                     {
                         Amin = A;
-                        MBR = [R0X, R0Y, R1X, R1Y, R2X, R2Y, R3X, R3Y];
+                        mrb = [R0X, R0Y, R1X, R1Y, R2X, R2Y, R3X, R3Y];
                     }
                 }
 
@@ -180,10 +178,10 @@
                 if (k == polygon.Count) break;
             }
 
-            return new PdfRectangle(new PdfPoint(MBR[4], MBR[5]),
-                                    new PdfPoint(MBR[6], MBR[7]),
-                                    new PdfPoint(MBR[2], MBR[3]),
-                                    new PdfPoint(MBR[0], MBR[1]));
+            return new PdfRectangle(new PdfPoint(mrb[4], mrb[5]),
+                                    new PdfPoint(mrb[6], mrb[7]),
+                                    new PdfPoint(mrb[2], mrb[3]),
+                                    new PdfPoint(mrb[0], mrb[1]));
         }
 
         /// <summary>
@@ -471,10 +469,19 @@
         /// Gets the axis-aligned rectangle that completely containing the original rectangle, with no rotation.
         /// </summary>
         /// <param name="rectangle"></param>
-        public static PdfRectangle Normalise(this PdfRectangle rectangle)
+        public static PdfRectangle Normalise(this in PdfRectangle rectangle)
         {
-            var points = new[] { rectangle.BottomLeft, rectangle.BottomRight, rectangle.TopLeft, rectangle.TopRight };
-            return new PdfRectangle(points.Min(p => p.X), points.Min(p => p.Y), points.Max(p => p.X), points.Max(p => p.Y));
+            var bottomLeft = rectangle.BottomLeft;
+            var bottomRight = rectangle.BottomRight;
+            var topLeft = rectangle.TopLeft;
+            var topRight = rectangle.TopRight;
+
+            var minX = Math.Min(Math.Min(bottomLeft.X, bottomRight.X), Math.Min(topLeft.X, topRight.X));
+            var minY = Math.Min(Math.Min(bottomLeft.Y, bottomRight.Y), Math.Min(topLeft.Y, topRight.Y));
+            var maxX = Math.Max(Math.Max(bottomLeft.X, bottomRight.X), Math.Max(topLeft.X, topRight.X));
+            var maxY = Math.Max(Math.Max(bottomLeft.Y, bottomRight.Y), Math.Max(topLeft.Y, topRight.Y));
+
+            return new PdfRectangle(minX, minY, maxX, maxY);
         }
 
         /// <summary>

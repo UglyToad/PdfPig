@@ -1,33 +1,29 @@
 ﻿namespace UglyToad.PdfPig.Images.Png
 {
-    using System.Collections.Generic;
-
     internal static class Adam7
     {
         /// <summary>
         /// For a given pass number (1 indexed) the scanline indexes of the lines included in that pass in the 8x8 grid.
         /// </summary>
-        private static readonly IReadOnlyDictionary<int, int[]> PassToScanlineGridIndex = new Dictionary<int, int[]>
-        {
-            { 1, [0] },
-            { 2, [0] },
-            { 3, [4] },
-            { 4, [0, 4] },
-            { 5, [2, 6] },
-            { 6, [0, 2, 4, 6] },
-            { 7, [1, 3, 5, 7] }
-        };
+        private static readonly int[][] PassToScanlineGridIndex = [
+            [0],
+            [0],
+            [4],
+            [0, 4],
+            [2, 6],
+            [0, 2, 4, 6],
+            [1, 3, 5, 7]
+        ];
 
-        private static readonly IReadOnlyDictionary<int, int[]> PassToScanlineColumnIndex = new Dictionary<int, int[]>
-        {
-            { 1, [0] },
-            { 2, [4] },
-            { 3, [0, 4] },
-            { 4, [2, 6] },
-            { 5, [0, 2, 4, 6] },
-            { 6, [1, 3, 5, 7] },
-            { 7, [0, 1, 2, 3, 4, 5, 6, 7] }
-        };
+        private static readonly int[][] PassToScanlineColumnIndex = [
+            [0],
+            [4],
+            [0, 4],
+            [2, 6],
+            [0, 2, 4, 6],
+            [1, 3, 5, 7],
+            [0, 1, 2, 3, 4, 5, 6, 7]
+        ];
 
         /*
          * To go from raw image data to interlaced:
@@ -50,7 +46,7 @@
 
         public static int GetNumberOfScanlinesInPass(ImageHeader header, int pass)
         {
-            var indices = PassToScanlineGridIndex[pass + 1];
+            var indices = PassToScanlineGridIndex[pass];
 
             var mod = header.Height % 8;
 
@@ -75,7 +71,7 @@
 
         public static int GetPixelsPerScanlineInPass(ImageHeader header, int pass)
         {
-            var indices = PassToScanlineColumnIndex[pass + 1];
+            var indices = PassToScanlineColumnIndex[pass];
 
             var mod = header.Width % 8;
 
@@ -100,8 +96,8 @@
 
         public static (int x, int y) GetPixelIndexForScanlineInPass(ImageHeader header, int pass, int scanlineIndex, int indexInScanline)
         {
-            var columnIndices = PassToScanlineColumnIndex[pass + 1];
-            var rows = PassToScanlineGridIndex[pass + 1];
+            var columnIndices = PassToScanlineColumnIndex[pass];
+            var rows = PassToScanlineGridIndex[pass];
 
             var actualRow = scanlineIndex % rows.Length;
             var actualCol = indexInScanline % columnIndices.Length;
