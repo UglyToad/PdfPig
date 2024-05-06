@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@master
 
       - name: Set up dotnet core
-        uses: actions/setup-dotnet@v2
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: | 
             2.1.x
@@ -21,7 +21,7 @@ jobs:
             8.0.x
 
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.2
+        uses: microsoft/setup-msbuild@v2
 
       # Build the release build
       - name: Build the solution
