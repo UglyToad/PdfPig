@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
 using UglyToad.PdfPig.Core;
 using UglyToad.PdfPig.Filters;
-using UglyToad.PdfPig.Graphics.Operations.TextShowing;
-using UglyToad.PdfPig.Graphics.Operations;
 using UglyToad.PdfPig.Graphics;
+using UglyToad.PdfPig.Graphics.Operations;
+using UglyToad.PdfPig.Graphics.Operations.TextShowing;
 using UglyToad.PdfPig.Logging;
 using UglyToad.PdfPig.Parser;
 using UglyToad.PdfPig.Tokens;
@@ -17,7 +14,7 @@ namespace UglyToad.PdfPig.Writer
     /// <summary>
     /// Derived class of <see cref="TokenWriter"/> that does not write <see cref="ShowText"/> or <see cref="ShowTextsWithPositioning"/> operations in streams
     /// </summary>
-    internal class NoTextTokenWriter : TokenWriter
+    internal sealed class NoTextTokenWriter : TokenWriter
     {
         /// <summary>
         /// Set this value prior to processing page to get the right page number in log messages
