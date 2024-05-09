@@ -1,5 +1,3 @@
-using UglyToad.PdfPig.Tokenization;
-
 namespace UglyToad.PdfPig.Graphics
 {
     using Operations;
@@ -9,6 +7,7 @@ namespace UglyToad.PdfPig.Graphics
     using Operations.InlineImages;
     using Operations.MarkedContent;
     using Operations.PathConstruction;
+    using Operations.PathPainting;
     using Operations.SpecialGraphicsState;
     using Operations.TextObjects;
     using Operations.TextPositioning;
@@ -16,41 +15,97 @@ namespace UglyToad.PdfPig.Graphics
     using Operations.TextState;
     using PdfPig.Core;
     using System;
+#if NET8_0_OR_GREATER
+    using System.Collections.Frozen;
+#endif
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
     using Tokens;
-    using Operations.PathPainting;
 
-    internal class ReflectionGraphicsStateOperationFactory : IGraphicsStateOperationFactory
+    internal sealed class ReflectionGraphicsStateOperationFactory : IGraphicsStateOperationFactory
     {
-        private readonly IReadOnlyDictionary<string, Type> operations;
-
-        public ReflectionGraphicsStateOperationFactory()
-        {
-            var assemblyTypes = Assembly.GetAssembly(typeof(ReflectionGraphicsStateOperationFactory))!.GetTypes();
-
-            var result = new Dictionary<string, Type>();
-
-            foreach (var assemblyType in assemblyTypes)
+        private static readonly IReadOnlyDictionary<string, Type> operations =
+            new Dictionary<string, Type>
             {
-                if (!assemblyType.IsInterface && typeof(IGraphicsStateOperation).IsAssignableFrom(assemblyType))
-                {
-                    var symbol = assemblyType.GetField("Symbol");
-
-                    if (symbol is null)
-                    {
-                        throw new InvalidOperationException("An operation type was defined without the public const Symbol being declared. Type was: " + assemblyType.FullName);
-                    }
-
-                    var value = symbol.GetValue(null)!.ToString()!;
-
-                    result[value] = assemblyType;
-                }
+                { SetStrokeColorAdvanced.Symbol, typeof(SetStrokeColorAdvanced) },
+                { SetStrokeColorSpace.Symbol, typeof(SetStrokeColorSpace) },
+                { SetCharacterSpacing.Symbol, typeof(SetCharacterSpacing) },
+                { ModifyCurrentTransformationMatrix.Symbol, typeof(ModifyCurrentTransformationMatrix) },
+                { SetStrokeColorDeviceCmyk.Symbol, typeof(SetStrokeColorDeviceCmyk) },
+                { EndCompatibilitySection.Symbol, typeof(EndCompatibilitySection) },
+                { CloseFillPathEvenOddRuleAndStroke.Symbol, typeof(CloseFillPathEvenOddRuleAndStroke) },
+                { SetStrokeColor.Symbol, typeof(SetStrokeColor) },
+                { SetLineDashPattern.Symbol, typeof(SetLineDashPattern) },
+                { DesignateMarkedContentPointWithProperties.Symbol, typeof(DesignateMarkedContentPointWithProperties) },
+                { SetStrokeColorDeviceRgb.Symbol, typeof(SetStrokeColorDeviceRgb) },
+                { BeginMarkedContent.Symbol, typeof(BeginMarkedContent) },
+                { BeginNewSubpath.Symbol, typeof(BeginNewSubpath) },
+                { EndMarkedContent.Symbol, typeof(EndMarkedContent) },
+                { SetNonStrokeColorDeviceCmyk.Symbol, typeof(SetNonStrokeColorDeviceCmyk) },
+                { InvokeNamedXObject.Symbol, typeof(InvokeNamedXObject) },
+                { EndPath.Symbol, typeof(EndPath) },
+                { SetGraphicsStateParametersFromDictionary.Symbol, typeof(SetGraphicsStateParametersFromDictionary) },
+                { FillPathEvenOddRule.Symbol, typeof(FillPathEvenOddRule) },
+                { Type3SetGlyphWidth.Symbol, typeof(Type3SetGlyphWidth) },
+                { Push.Symbol, typeof(Push) },
+                { Pop.Symbol, typeof(Pop) },
+                { DesignateMarkedContentPoint.Symbol, typeof(DesignateMarkedContentPoint) },
+                { SetNonStrokeColorAdvanced.Symbol, typeof(SetNonStrokeColorAdvanced) },
+                { MoveToNextLineShowTextWithSpacing.Symbol, typeof(MoveToNextLineShowTextWithSpacing) },
+                { SetHorizontalScaling.Symbol, typeof(SetHorizontalScaling) },
+                { BeginCompatibilitySection.Symbol, typeof(BeginCompatibilitySection) },
+                { SetFlatnessTolerance.Symbol, typeof(SetFlatnessTolerance) },
+                { EndInlineImage.Symbol, typeof(EndInlineImage) },
+                { MoveToNextLineWithOffset.Symbol, typeof(MoveToNextLineWithOffset) },
+                { SetTextLeading.Symbol, typeof(SetTextLeading) },
+                { BeginText.Symbol, typeof(BeginText) },
+                { BeginMarkedContentWithProperties.Symbol, typeof(BeginMarkedContentWithProperties) },
+                { AppendDualControlPointBezierCurve.Symbol, typeof(AppendDualControlPointBezierCurve) },
+                { CloseFillPathNonZeroWindingAndStroke.Symbol, typeof(CloseFillPathNonZeroWindingAndStroke) },
+                { StrokePath.Symbol, typeof(StrokePath) },
+                { MoveToNextLine.Symbol, typeof(MoveToNextLine) },
+                { ShowText.Symbol, typeof(ShowText) },
+                { FillPathNonZeroWindingAndStroke.Symbol, typeof(FillPathNonZeroWindingAndStroke) },
+                { AppendEndControlPointBezierCurve.Symbol, typeof(AppendEndControlPointBezierCurve) },
+                { AppendStartControlPointBezierCurve.Symbol, typeof(AppendStartControlPointBezierCurve) },
+                { SetNonStrokeColor.Symbol, typeof(SetNonStrokeColor) },
+                { CloseAndStrokePath.Symbol, typeof(CloseAndStrokePath) },
+                { BeginInlineImageData.Symbol, typeof(BeginInlineImageData) },
+                { ModifyClippingByNonZeroWindingIntersect.Symbol, typeof(ModifyClippingByNonZeroWindingIntersect) },
+                { MoveToNextLineShowText.Symbol, typeof(MoveToNextLineShowText) },
+                { SetLineCap.Symbol, typeof(SetLineCap) },
+                { FillPathNonZeroWinding.Symbol, typeof(FillPathNonZeroWinding) },
+                { FillPathEvenOddRuleAndStroke.Symbol, typeof(FillPathEvenOddRuleAndStroke) },
+                { SetFontAndSize.Symbol, typeof(SetFontAndSize) },
+                { SetColorRenderingIntent.Symbol, typeof(SetColorRenderingIntent) },
+                { PaintShading.Symbol, typeof(PaintShading) },
+                { SetMiterLimit.Symbol, typeof(SetMiterLimit) },
+                { AppendRectangle.Symbol, typeof(AppendRectangle) },
+                { SetNonStrokeColorSpace.Symbol, typeof(SetNonStrokeColorSpace) },
+                { MoveToNextLineWithOffsetSetLeading.Symbol, typeof(MoveToNextLineWithOffsetSetLeading) },
+                { CloseSubpath.Symbol, typeof(CloseSubpath) },
+                { SetStrokeColorDeviceGray.Symbol, typeof(SetStrokeColorDeviceGray) },
+                { SetWordSpacing.Symbol, typeof(SetWordSpacing) },
+                { BeginInlineImage.Symbol, typeof(BeginInlineImage) },
+                { SetNonStrokeColorDeviceRgb.Symbol, typeof(SetNonStrokeColorDeviceRgb) },
+                { SetTextMatrix.Symbol, typeof(SetTextMatrix) },
+                { SetTextRise.Symbol, typeof(SetTextRise) },
+                { Type3SetGlyphWidthAndBoundingBox.Symbol, typeof(Type3SetGlyphWidthAndBoundingBox) },
+                { ModifyClippingByEvenOddIntersect.Symbol, typeof(ModifyClippingByEvenOddIntersect) },
+                { AppendStraightLineSegment.Symbol, typeof(AppendStraightLineSegment) },
+                { EndText.Symbol, typeof(EndText) },
+                { FillPathNonZeroWindingCompatibility.Symbol, typeof(FillPathNonZeroWindingCompatibility) },
+                { ShowTextsWithPositioning.Symbol, typeof(ShowTextsWithPositioning) },
+                { SetLineJoin.Symbol, typeof(SetLineJoin) },
+                { SetLineWidth.Symbol, typeof(SetLineWidth) },
+                { SetNonStrokeColorDeviceGray.Symbol, typeof(SetNonStrokeColorDeviceGray) },
+                { SetTextRenderingMode.Symbol, typeof(SetTextRenderingMode) },
             }
-
-            operations = result;
-        }
+#if NET8_0_OR_GREATER
+            .ToFrozenDictionary()
+#endif
+            ;
 
         private static double[] TokensToDoubleArray(IReadOnlyList<IToken> tokens, bool exceptLast = false)
         {

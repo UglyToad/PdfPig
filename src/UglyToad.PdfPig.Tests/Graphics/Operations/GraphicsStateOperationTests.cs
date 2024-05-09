@@ -4,6 +4,7 @@
     using PdfPig.Graphics.Operations;
     using PdfPig.Graphics.Operations.InlineImages;
     using PdfPig.Tokens;
+    using UglyToad.PdfPig.Graphics;
 
     public class GraphicsStateOperationTests
     {
@@ -61,6 +62,26 @@
                     operation.Write(memoryStream);
                 }
             }
+        }
+
+        // Test that ReflectionGraphicsStateOperationFactory.operations contains all supported graphics operations
+        [Fact]
+        public void ReflectionGraphicsStateOperationFactoryKnowsAllOperations()
+        {
+            var operationsField = typeof(ReflectionGraphicsStateOperationFactory).GetField("operations", BindingFlags.NonPublic | BindingFlags.Static);
+            var operationDictionary = operationsField.GetValue(null) as IReadOnlyDictionary<string, Type>;
+            Assert.NotNull(operationDictionary);
+
+            var allOperations = GetOperationTypes();
+            Assert.Equal(allOperations.Count(), operationDictionary.Count);
+
+            var mapped = allOperations.Select(o =>
+            {
+                var symbol = o.GetField("Symbol").GetValue(null)!.ToString()!;
+                return new KeyValuePair<string, Type>(symbol, o);
+            });
+
+            Assert.Equivalent(operationDictionary, mapped, strict: true);
         }
 
         private static IEnumerable<Type> GetOperationTypes()
