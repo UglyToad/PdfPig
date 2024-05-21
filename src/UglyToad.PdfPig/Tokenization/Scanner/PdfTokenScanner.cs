@@ -7,6 +7,7 @@
     using System.Globalization;
     using System.IO;
     using System.Linq;
+    using System.Text;
     using System.Text.RegularExpressions;
     using Core;
     using Encryption;
@@ -320,7 +321,7 @@
             int endStreamPosition = 0;
             int commonPartPosition = 0;
 
-            const string commonPart = "end";
+            const string endWordPart = "end";
             const string streamPart = "stream";
             const string objPart = "obj";
 
@@ -330,150 +331,129 @@
                 return true;
             }
 
-            // Track any 'endobj' or 'endstream' operators we see.
-            var observedEndLocations = new List<PossibleStreamEndLocation>();
+            long streamDataStart = inputBytes.CurrentOffset;
 
-            // Begin reading the stream.
-            using (var memoryStream = new MemoryStream())
-            using (var binaryWrite = new BinaryWriter(memoryStream))
+            PossibleStreamEndLocation? possibleEndLocation = null;
+
+
+            while (inputBytes.MoveNext())
             {
-                while (inputBytes.MoveNext())
+                if (length.HasValue && read == length)
                 {
-                    if (length.HasValue && read == length)
-                    {
-                        // TODO: read ahead and check we're at the end...
-                        // break;
-                    }
+                    // TODO: read ahead and check we're at the end...
+                    // break;
+                }
 
-                    // We are reading 'end' (possibly).
-                    if (commonPartPosition < commonPart.Length && inputBytes.CurrentByte == commonPart[commonPartPosition])
+                // We are reading 'end' (possibly).
+                if (commonPartPosition < endWordPart.Length && inputBytes.CurrentByte == endWordPart[commonPartPosition])
+                {
+                    commonPartPosition++;
+                }
+                else if (commonPartPosition == endWordPart.Length)
+                {
+                    // We are reading 'stream' after 'end'
+                    if (inputBytes.CurrentByte == streamPart[endStreamPosition])
                     {
-                        commonPartPosition++;
-                    }
-                    else if (commonPartPosition == commonPart.Length)
-                    {
-                        // We are reading 'stream' after 'end'
-                        if (inputBytes.CurrentByte == streamPart[endStreamPosition])
+                        endObjPosition = 0;
+                        endStreamPosition++;
+
+                        // We've finished reading 'endstream', add it to the end tokens we've seen.
+                        if (endStreamPosition == streamPart.Length && (!inputBytes.MoveNext() || ReadHelper.IsWhitespace(inputBytes.CurrentByte)))
                         {
-                            endObjPosition = 0;
-                            endStreamPosition++;
+                            var token = new PossibleStreamEndLocation(inputBytes.CurrentOffset - OperatorToken.EndStream.Data.Length, OperatorToken.EndStream);
 
-                            // We've finished reading 'endstream', add it to the end tokens we've seen.
-                            if (endStreamPosition == streamPart.Length && (!inputBytes.MoveNext() || ReadHelper.IsWhitespace(inputBytes.CurrentByte)))
+                            possibleEndLocation = token;
+
+                            if (length.HasValue && read > length)
                             {
-                                var token = new PossibleStreamEndLocation(inputBytes.CurrentOffset - OperatorToken.EndStream.Data.Length, OperatorToken.EndStream);
-
-                                observedEndLocations.Add(token);
-
-                                if (length.HasValue && read > length)
-                                {
-                                    break;
-                                }
-
-                                endStreamPosition = 0;
+                                break;
                             }
-                        }
-                        else if (inputBytes.CurrentByte == objPart[endObjPosition])
-                        {
-                            // We are reading 'obj' after 'end'
 
                             endStreamPosition = 0;
-                            endObjPosition++;
-
-                            // We have finished reading 'endobj'.
-                            if (endObjPosition == objPart.Length)
-                            {
-                                // If we saw an 'endstream' or 'endobj' previously we've definitely hit the end now.
-                                if (observedEndLocations.Count > 0)
-                                {
-                                    var lastEndToken = observedEndLocations[observedEndLocations.Count - 1];
-
-                                    inputBytes.Seek(lastEndToken.Offset + lastEndToken.Type.Data.Length + 1);
-
-                                    break;
-                                }
-
-                                var token = new PossibleStreamEndLocation(inputBytes.CurrentOffset - OperatorToken.EndObject.Data.Length, OperatorToken.EndObject);
-                                observedEndLocations.Add(token);
-
-                                if (read > length)
-                                {
-                                    break;
-                                }
-                            }
                         }
-                        else
-                        {
-                            // We were reading 'end' but then we had a character mismatch.
-                            // Reset all the counters.
+                    }
+                    else if (inputBytes.CurrentByte == objPart[endObjPosition])
+                    {
+                        // We are reading 'obj' after 'end'
 
-                            endStreamPosition = 0;
-                            endObjPosition = 0;
-                            commonPartPosition = 0;
+                        endStreamPosition = 0;
+                        endObjPosition++;
+
+                        // We have finished reading 'endobj'.
+                        if (endObjPosition == objPart.Length)
+                        {
+                            // If we saw an 'endstream' or 'endobj' previously we've definitely hit the end now.
+                            if (possibleEndLocation != null)
+                            {
+                                var lastEndToken = possibleEndLocation.Value;
+
+                                inputBytes.Seek(lastEndToken.Offset + lastEndToken.Type.Data.Length + 1);
+
+                                break;
+                            }
+
+                            var token = new PossibleStreamEndLocation(inputBytes.CurrentOffset - OperatorToken.EndObject.Data.Length, OperatorToken.EndObject);
+
+                            possibleEndLocation = token;
+
+                            if (read > length)
+                            {
+                                break;
+                            }
                         }
                     }
                     else
                     {
-                        // For safety reset every counter in case we had a partial read.
+                        // We were reading 'end' but then we had a character mismatch.
+                        // Reset all the counters.
 
                         endStreamPosition = 0;
                         endObjPosition = 0;
-                        commonPartPosition = (inputBytes.CurrentByte == commonPart[0]) ? 1 : 0;
+                        commonPartPosition = 0;
                     }
-
-                    binaryWrite.Write(inputBytes.CurrentByte);
-
-                    read++;
-                }
-
-                binaryWrite.Flush();
-
-                if (observedEndLocations.Count == 0)
-                {
-                    return false;
-                }
-
-                memoryStream.Seek(0, SeekOrigin.Begin);
-                if (length.HasValue && memoryStream.Length >= length)
-                {
-                    // Use the declared length to copy just the data we want.
-                    byte[] data = new byte[length.Value];
-
-                    memoryStream.Read(data, 0, (int)length.Value);
-
-                    stream = new StreamToken(streamDictionaryToken, data);
                 }
                 else
                 {
-                    // Work out where '\r\nendobj' or '\r\nendstream' occurs and read everything up to that.
-                    var lastEnd = observedEndLocations[observedEndLocations.Count - 1];
+                    // For safety reset every counter in case we had a partial read.
 
-                    var dataLength = lastEnd.Offset - startDataOffset;
-
-                    var current = inputBytes.CurrentOffset;
-
-                    // 3 characters, 'e', '\n' and possibly '\r'
-                    inputBytes.Seek(lastEnd.Offset - 3);
-                    inputBytes.MoveNext();
-
-                    if (inputBytes.CurrentByte == '\r')
-                    {
-                        dataLength -= 3;
-                    }
-                    else
-                    {
-                        dataLength -= 2;
-                    }
-
-                    inputBytes.Seek(current);
-
-                    byte[] data = new byte[dataLength];
-
-                    memoryStream.Read(data, 0, (int)dataLength);
-
-                    stream = new StreamToken(streamDictionaryToken, data);
+                    endStreamPosition = 0;
+                    endObjPosition = 0;
+                    commonPartPosition = (inputBytes.CurrentByte == endWordPart[0]) ? 1 : 0;
                 }
+
+                read++;
             }
+
+            long streamDataEnd = inputBytes.CurrentOffset + 1;
+
+            if (possibleEndLocation == null)
+                return false;
+
+            var lastEnd = possibleEndLocation;
+
+            var dataLength = lastEnd.Value.Offset - startDataOffset;
+
+            // 3 characters, 'e', '\n' and possibly '\r'
+            inputBytes.Seek(lastEnd.Value.Offset - 3);
+            inputBytes.MoveNext();
+
+            if (inputBytes.CurrentByte == '\r')
+            {
+                dataLength -= 3;
+            }
+            else
+            {
+                dataLength -= 2;
+            }
+
+            Span<byte> data = new byte[dataLength];
+
+            inputBytes.Seek(streamDataStart);
+            inputBytes.Read(data);
+
+            inputBytes.Seek(streamDataEnd);
+
+            stream = new StreamToken(streamDictionaryToken, data.ToArray());
 
             return true;
         }
