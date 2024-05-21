@@ -1,7 +1,4 @@
-﻿//TODO: https://blog.cerbero.io/cve-2010-0188-pdfformtiff/
-// https://beta-v1.malva.re/file/f1e966769e544b4b67f203ca51909b9d/report
-
-namespace UglyToad.PdfPig.Tokenization.Scanner
+﻿namespace UglyToad.PdfPig.Tokenization.Scanner
 {
     using System;
     using System.Collections.Generic;
