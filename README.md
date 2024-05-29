@@ -12,6 +12,9 @@ This project aims to port [PDFBox](https://github.com/apache/pdfbox) to C#.
 
 **Migrating to 0.1.6 from 0.1.x?** Use this guide: [migration to 0.1.6](https://github.com/UglyToad/PdfPig/wiki/Migration-to-0.1.6).
 
+## Wiki
+Check out our [wiki](https://github.com/UglyToad/PdfPig/wiki) for more examples and detailed guides on the API.
+
 ## Installation
 
 The package is available via the releases tab or from Nuget:
@@ -26,20 +29,25 @@ While the version is below 1.0.0 minor versions will change the public API witho
 
 ## Get Started
 
+See the [wiki](https://github.com/UglyToad/PdfPig/wiki) for more examples 
+
+### Read words in a page
 The simplest usage at this stage is to open a document, reading the words from every page:
 
-    using (PdfDocument document = PdfDocument.Open(@"C:\Documents\document.pdf"))
-    {
-        foreach (Page page in document.GetPages())
-        {
-            string pageText = page.Text;
+```cs
+using (PdfDocument document = PdfDocument.Open(@"C:\Documents\document.pdf"))
+{
+	foreach (Page page in document.GetPages())
+	{
+		string pageText = page.Text;
 
-            foreach (Word word in page.GetWords())
-            {
-                Console.WriteLine(word.Text);
-            }
-        }
-    }
+		foreach (Word word in page.GetWords())
+		{
+			Console.WriteLine(word.Text);
+		}
+	}
+}
+```
 
 An example of the output of this is shown below:
 
@@ -47,20 +55,23 @@ An example of the output of this is shown below:
 
 Where for the PDF text ("Write something in") shown at the top the 3 words (in pink) are detected and each word contains the individual letters with glyph bounding boxes.
 
+### Ceate PDF Document
 To create documents use the class `PdfDocumentBuilder`. The Standard 14 fonts provide a quick way to get started:
 
-    PdfDocumentBuilder builder = new PdfDocumentBuilder();
+```cs
+PdfDocumentBuilder builder = new PdfDocumentBuilder();
 
-    PdfPageBuilder page = builder.AddPage(PageSize.A4);
+PdfPageBuilder page = builder.AddPage(PageSize.A4);
 
-    // Fonts must be registered with the document builder prior to use to prevent duplication.
-    PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
+// Fonts must be registered with the document builder prior to use to prevent duplication.
+PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
 
-    page.AddText("Hello World!", 12, new PdfPoint(25, 700), font);
+page.AddText("Hello World!", 12, new PdfPoint(25, 700), font);
 
-    byte[] documentBytes = builder.Build();
+byte[] documentBytes = builder.Build();
 
-    File.WriteAllBytes(@"C:\git\newPdf.pdf", documentBytes);
+File.WriteAllBytes(@"C:\git\newPdf.pdf", documentBytes);
+```
 
 The output is a 1 page PDF document with the text "Hello World!" in Helvetica near the top of the page:
 
@@ -68,25 +79,90 @@ The output is a 1 page PDF document with the text "Hello World!" in Helvetica ne
 
 Each font must be registered with the PdfDocumentBuilder prior to use enable pages to share the font resources. Only Standard 14 fonts and TrueType fonts (.ttf) are supported.
 
+### Advanced Document Extraction
+In this example a more advanced document extraction is performed. PdfDocumentBuilder is used to create a copy of the pdf with debug information (bounding boxes and reading order) added.
+
+
+```cs
+//using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
+//using UglyToad.PdfPig.DocumentLayoutAnalysis.ReadingOrderDetector;
+//using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
+//using UglyToad.PdfPig.Fonts.Standard14Fonts;
+
+var sourcePdfPath = "";
+var outputPath = "";
+var pageNumber = 1;
+using (var document = PdfDocument.Open(sourcePdfPath))
+{
+	var builder = new PdfDocumentBuilder { };
+	PdfDocumentBuilder.AddedFont font = builder.AddStandard14Font(Standard14Font.Helvetica);
+	var pageBuilder = builder.AddPage(document, pageNumber);
+	pageBuilder.SetStrokeColor(0, 255, 0);
+	var page = document.GetPage(pageNumber);
+	foreach (var word in page.GetWords())
+	{
+
+		var letters = page.Letters; // no preprocessing
+
+		// 1. Extract words
+		var wordExtractor = NearestNeighbourWordExtractor.Instance;
+
+		var words = wordExtractor.GetWords(letters);
+
+		// 2. Segment page
+		var pageSegmenter = DocstrumBoundingBoxes.Instance;
+
+		var textBlocks = pageSegmenter.GetBlocks(words);
+
+		// 3. Postprocessing
+		var readingOrder = UnsupervisedReadingOrderDetector.Instance;
+		var orderedTextBlocks = readingOrder.Get(textBlocks);
+
+		// 4. Add debug info - Bounding boxes and reading order
+		foreach (var block in orderedTextBlocks)
+		{
+			var bbox = block.BoundingBox;
+			pageBuilder.DrawRectangle(bbox.BottomLeft, bbox.Width, bbox.Height);
+			pageBuilder.AddText(block.ReadingOrder.ToString(), 8, bbox, font);
+		}
+	}
+
+	// 5. Write result to a file
+	byte[] fileBytes = builder.Build();
+	File.WriteAllBytes(outputPath, fileBytes); // save to file
+}
+```
+
+![Image shows a PDF document created by the above code block with the bounding boxes and reading order of the words displayed](/documentation/boundingBoxes_ReadingOrder.png)
+
+See [Document Layout Analysis](https://github.com/UglyToad/PdfPig/wiki/Document-Layout-Analysis) for more information on advanced document analysing.
+
+See [Export](https://github.com/UglyToad/PdfPig/wiki/Document-Layout-Analysis#export) for more advanced tooling to analyse document layouts.
+
+
 ## Usage
+
+### PdfDocument
 
 The `PdfDocument` class provides access to the contents of a document loaded either from file or passed in as bytes. To open from a file use the `PdfDocument.Open` static method:
 
-    using UglyToad.PdfPig;
-    using UglyToad.PdfPig.Content;
+```cs
+using UglyToad.PdfPig;
+using UglyToad.PdfPig.Content;
 
-    using (PdfDocument document = PdfDocument.Open(@"C:\my-file.pdf"))
-    {
-        int pageCount = document.NumberOfPages;
+using (PdfDocument document = PdfDocument.Open(@"C:\my-file.pdf"))
+{
+	int pageCount = document.NumberOfPages;
 
-        // Page number starts from 1, not 0.
-        Page page = document.GetPage(1);
+	// Page number starts from 1, not 0.
+	Page page = document.GetPage(1);
 
-        decimal widthInPoints = page.Width;
-        decimal heightInPoints = page.Height;
+	decimal widthInPoints = page.Width;
+	decimal heightInPoints = page.Height;
 
-        string text = page.Text;
-    }
+	string text = page.Text;
+}
+```
 
 `PdfDocument` should only be used in a `using` statement since it implements `IDisposable` (unless the consumer disposes of it elsewhere).
 
@@ -96,10 +172,12 @@ Encrypted documents can be opened by PdfPig. To provide an owner or user passwor
 
 You can also provide a list of passwords to try:
 
-    using (PdfDocument document = PdfDocument.Open(@"C:\file.pdf", new ParsingOptions
-    {
-        Passwords = new List<string> { "One", "Two" }
-    }))
+```cs
+using (PdfDocument document = PdfDocument.Open(@"C:\file.pdf", new ParsingOptions
+{
+	Passwords = new List<string> { "One", "Two" }
+}))
+```
 
 The document contains the version of the PDF specification it complies with, accessed by `document.Version`:
 
@@ -133,8 +211,10 @@ This creates a new `PdfPageBuilder` with the specified size. The first added pag
 
 To draw lines and rectangles use the methods:
 
-    void DrawLine(PdfPoint from, PdfPoint to, decimal lineWidth = 1)
-    void DrawRectangle(PdfPoint position, decimal width, decimal height, decimal lineWidth = 1)
+```cs
+void DrawLine(PdfPoint from, PdfPoint to, decimal lineWidth = 1)
+void DrawRectangle(PdfPoint position, decimal width, decimal height, decimal lineWidth = 1)
+```
 
 The line width can be varied and defaults to 1. Rectangles are unfilled and the fill color cannot be changed at present.
 
@@ -150,8 +230,10 @@ Which does not change the state of the page, unlike `AddText`.
 
 Changing the RGB color of text, lines and rectangles is supported using:
 
-    void SetStrokeColor(byte r, byte g, byte b)
-    void SetTextAndFillColor(byte r, byte g, byte b)
+```cs
+void SetStrokeColor(byte r, byte g, byte b)
+void SetTextAndFillColor(byte r, byte g, byte b)
+```
 
 Which take RGB values between 0 and 255. The color will remain active for all operations called after these methods until reset is called using:
 
@@ -163,14 +245,16 @@ Which resets the color for stroke, fill and text drawing to black.
 
 The `PdfDocument` provides access to the document metadata as `DocumentInformation` defined in the PDF file. These tend not to be provided therefore most of these entries will be `null`:
 
-    PdfDocument document = PdfDocument.Open(fileName);
+```
+PdfDocument document = PdfDocument.Open(fileName);
 
-    // The name of the program used to convert this document to PDF.
-    string producer = document.Information.Producer;
+// The name of the program used to convert this document to PDF.
+string producer = document.Information.Producer;
 
-    // The title given to the document
-    string title = document.Information.Title;
-    // etc...
+// The title given to the document
+string title = document.Information.Title;
+// etc...
+```
 
 ### Document Structure (0.0.3)
 
@@ -180,8 +264,10 @@ The document now has a Structure member:
 
 This provides access to tokenized PDF document content:
 
-    Catalog catalog = structure.Catalog;
-    DictionaryToken pagesDictionary = catalog.PagesDictionary;
+```cs
+Catalog catalog = structure.Catalog;
+DictionaryToken pagesDictionary = catalog.PagesDictionary;
+```
 
 The pages dictionary is the root of the pages tree within a PDF document. The structure also exposes a `GetObject(IndirectReference reference)` method which allows random access to any object in the PDF as long as its identifier number is known. This is an identifier of the form `69 0 R` where 69 is the object number and 0 is the generation.
 
@@ -189,9 +275,12 @@ The pages dictionary is the root of the pages tree within a PDF document. The st
 
 The `Page` contains the page width and height in points as well as mapping to the `PageSize` enum:
 
-    PageSize size = Page.Size;
 
-    bool isA4 = size == PageSize.A4;
+```cs
+PageSize size = Page.Size;
+
+bool isA4 = size == PageSize.A4;
+```
 
 `Page` provides access to the text of the page:
 
@@ -259,6 +348,8 @@ This will return `false` if the document does not contain a form.
 
 The fields can be accessed using the `AcroForm`'s `Fields` property. Since the form is defined at the document level this will return fields from all pages in the document. Fields are of the types defined by the enum `AcroFieldType`, for example `PushButton`, `Checkbox`, `Text`, etc.
 
+Please note the forms are readonly and values cannot be changed or added using PdfPig.
+
 ### Hyperlinks (0.1.0)
 
 A page has a method to extract hyperlinks (annotations of link type):
@@ -269,12 +360,15 @@ A page has a method to extract hyperlinks (annotations of link type):
 
 The classes used to work with TrueType fonts in the PDF file are now available for public consumption. Given an input file:
 
-    using UglyToad.PdfPig.Fonts.TrueType;
-    using UglyToad.PdfPig.Fonts.TrueType.Parser;
 
-    byte[] fontBytes = System.IO.File.ReadAllBytes(@"C:\font.ttf");
-    TrueTypeDataBytes input = new TrueTypeDataBytes(fontBytes);
-    TrueTypeFont font = TrueTypeFontParser.Parse(input);
+```cs
+using UglyToad.PdfPig.Fonts.TrueType;
+using UglyToad.PdfPig.Fonts.TrueType.Parser;
+
+byte[] fontBytes = System.IO.File.ReadAllBytes(@"C:\font.ttf");
+TrueTypeDataBytes input = new TrueTypeDataBytes(fontBytes);
+TrueTypeFont font = TrueTypeFontParser.Parse(input);
+```
 
 The parsed font can then be inspected.
 
@@ -282,24 +376,30 @@ The parsed font can then be inspected.
 
 PDF files may contain other files entirely embedded inside them for document annotations. The list of embedded files and their byte content may be accessed:
 
-    if (document.Advanced.TryGetEmbeddedFiles(out IReadOnlyList<EmbeddedFile> files)
-        && files.Count > 0)
-    {
-        var firstFile = files[0];
-        string name = firstFile.Name;
-        IReadOnlyList<byte> bytes = firstFile.Bytes;
-    }
+```cs
+if (document.Advanced.TryGetEmbeddedFiles(out IReadOnlyList<EmbeddedFile> files)
+    && files.Count > 0)
+{
+    var firstFile = files[0];
+    string name = firstFile.Name;
+    IReadOnlyList<byte> bytes = firstFile.Bytes;
+}
+```
 
 ### Merging (0.1.2)
 
 You can merge 2 or more existing PDF files using the `PdfMerger` class:
 
-    var resultFileBytes = PdfMerger.Merge(filePath1, filePath2);
-    File.WriteAllBytes(@"C:\pdfs\outputfilename.pdf", resultFileBytes);
+```cs
+var resultFileBytes = PdfMerger.Merge(filePath1, filePath2);
+File.WriteAllBytes(@"C:\pdfs\outputfilename.pdf", resultFileBytes);
+```
 
 ## API Reference
 
 If you wish to generate doxygen documentation, run `doxygen doxygen-docs` and open `docs/doxygen/html/index.html`.
+
+See also the [wiki](https://github.com/UglyToad/PdfPig/wiki) for a detailed documentation on parts of the API
 
 ## Issues
 
