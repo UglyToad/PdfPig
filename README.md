@@ -135,9 +135,9 @@ using (var document = PdfDocument.Open(sourcePdfPath))
 
 ![Image shows a PDF document created by the above code block with the bounding boxes and reading order of the words displayed](/documentation/boundingBoxes_ReadingOrder.png)
 
-See (Document Layout Analysis)[https://github.com/UglyToad/PdfPig/wiki/Document-Layout-Analysis] for more information on advanced document analysing.
+See [Document Layout Analysis](https://github.com/UglyToad/PdfPig/wiki/Document-Layout-Analysis) for more information on advanced document analysing.
 
-See (Export)[https://github.com/UglyToad/PdfPig/wiki/Document-Layout-Analysis#export] for more advanced tooling to analyse document layouts.
+See [Export](https://github.com/UglyToad/PdfPig/wiki/Document-Layout-Analysis#export) for more advanced tooling to analyse document layouts.
 
 
 ## Usage
