@@ -348,7 +348,7 @@ This will return `false` if the document does not contain a form.
 
 The fields can be accessed using the `AcroForm`'s `Fields` property. Since the form is defined at the document level this will return fields from all pages in the document. Fields are of the types defined by the enum `AcroFieldType`, for example `PushButton`, `Checkbox`, `Text`, etc.
 
-Please not the forms are readonly and cannot be set using PdfPig.
+Please note the forms are readonly and values cannot be changed or added using PdfPig.
 
 ### Hyperlinks (0.1.0)
 
