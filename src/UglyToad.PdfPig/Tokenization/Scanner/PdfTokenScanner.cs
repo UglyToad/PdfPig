@@ -446,14 +446,14 @@
                 dataLength -= 2;
             }
 
-            Span<byte> data = new byte[dataLength];
+            Memory<byte> data = new byte[dataLength];
 
             inputBytes.Seek(streamDataStart);
-            inputBytes.Read(data);
+            inputBytes.Read(data.Span);
 
             inputBytes.Seek(streamDataEnd);
 
-            stream = new StreamToken(streamDictionaryToken, data.ToArray());
+            stream = new StreamToken(streamDictionaryToken, data);
 
             return true;
         }
