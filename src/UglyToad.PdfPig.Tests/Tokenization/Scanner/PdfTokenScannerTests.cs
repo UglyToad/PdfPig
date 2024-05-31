@@ -257,6 +257,44 @@ A¡¬àð‰É©ˆ°‘¼›‚%¥×s³®í»š}%§X{{tøNåÝž¶ö¢ÖÞ¾�
         }
 
         [Fact]
+        public void ReadsStreamObjectWithInvalidLength()
+        {
+            string invalidLengthStream = "ABCD" + new string('e', 3996);
+
+            string s = $@"
+352 0 obj
+<< /S 1273 /Filter /FlateDecode /Length 353 0 R >> 
+stream
+{invalidLengthStream}
+endstream
+endobj
+353 0 obj
+1479
+endobj";
+
+            var locationProvider = new TestObjectLocationProvider();
+            // Mark location of "353 0 obj"
+            locationProvider.Offsets[new IndirectReference(353, 0)] = 1643;
+
+            var scanner = GetScanner(s, locationProvider);
+
+            var tokens = ReadToEnd(scanner);
+
+            Assert.Equal(2, tokens.Count);
+
+            var stream = Assert.IsType<StreamToken>(tokens[0].Data);
+
+            var data = stream.Data.ToArray();
+
+            var str = Encoding.UTF8.GetString(data);
+
+            Assert.Equal(data.Length, invalidLengthStream.Length);
+            Assert.StartsWith("ABCDeeeee", str);
+
+            Assert.Equal(2, locationProvider.Offsets[new IndirectReference(352, 0)]);
+        }
+
+        [Fact]
         public void ReadsSimpleStreamObject()
         {
             // Length of the bytes as found by Encoding.UTF8.GetBytes is 45
