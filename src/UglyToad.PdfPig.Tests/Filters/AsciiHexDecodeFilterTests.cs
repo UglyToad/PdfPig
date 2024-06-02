@@ -18,7 +18,7 @@
 
             var decoded = new AsciiHexDecodeFilter().Decode(input, dictionary, 1);
 
-            var decodedText = Encoding.ASCII.GetString(decoded);
+            var decodedText = Encoding.ASCII.GetString(decoded.ToArray());
 
             Assert.Equal(text, decodedText);
         }
@@ -33,7 +33,7 @@
 
             var decoded = new AsciiHexDecodeFilter().Decode(input, dictionary, 1);
 
-            var decodedText = Encoding.ASCII.GetString(decoded);
+            var decodedText = Encoding.ASCII.GetString(decoded.ToArray());
 
             Assert.Equal(text, decodedText);
         }
@@ -49,7 +49,7 @@
 
             var decoded = new AsciiHexDecodeFilter().Decode(input, dictionary, 1);
 
-            var decodedText = Encoding.ASCII.GetString(decoded);
+            var decodedText = Encoding.ASCII.GetString(decoded.ToArray());
 
             Assert.Equal(text, decodedText);
         }
@@ -63,7 +63,7 @@
 
             var decoded = new AsciiHexDecodeFilter().Decode(input, dictionary, 1);
 
-            var decodedText = Encoding.ASCII.GetString(decoded);
+            var decodedText = Encoding.ASCII.GetString(decoded.ToArray());
 
             Assert.Equal(text, decodedText);
         }
@@ -88,7 +88,7 @@
             var decoded = new AsciiHexDecodeFilter().Decode(input, dictionary, 1);
 
 #pragma warning disable SYSLIB0001
-            var decodedText = Encoding.UTF7.GetString(decoded);
+            var decodedText = Encoding.UTF7.GetString(decoded.ToArray());
 #pragma warning restore SYSLIB0001
 
             Assert.Equal("®P", decodedText);
@@ -103,7 +103,7 @@
 
             var decoded = new AsciiHexDecodeFilter().Decode(input, dictionary, 1);
 
-            var decodedText = Encoding.ASCII.GetString(decoded);
+            var decodedText = Encoding.ASCII.GetString(decoded.ToArray());
 
             Assert.Equal(text, decodedText);
         }

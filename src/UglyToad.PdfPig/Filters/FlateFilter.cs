@@ -32,7 +32,7 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public byte[] Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, int filterIndex)
+        public ReadOnlyMemory<byte> Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
             var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
@@ -52,9 +52,7 @@
                 var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
                 var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
 
-                var result = PngPredictor.Decode(decompressed, predictor, colors, bitsPerComponent, columns);
-
-                return result;
+                return PngPredictor.Decode(decompressed, predictor, colors, bitsPerComponent, columns);
             }
             catch
             {
@@ -64,7 +62,7 @@
             return bytes;
         }
 
-        private byte[] Decompress(byte[] input)
+        private static byte[] Decompress(byte[] input)
         {
             using (var memoryStream = new MemoryStream(input))
             using (var output = new MemoryStream())

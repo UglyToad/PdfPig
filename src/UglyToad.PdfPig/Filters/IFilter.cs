@@ -20,6 +20,6 @@
         /// <param name="streamDictionary">The dictionary of the <see cref="StreamToken"/> (or other dictionary types, e.g. inline images) containing these bytes.</param>
         /// <param name="filterIndex">The position of this filter in the pipeline used to encode data.</param>
         /// <returns>The decoded bytes.</returns>
-        byte[] Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, int filterIndex);
+        ReadOnlyMemory<byte> Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, int filterIndex);
     }
 }

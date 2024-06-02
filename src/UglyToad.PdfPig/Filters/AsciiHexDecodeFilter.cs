@@ -29,7 +29,7 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public byte[] Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, int filterIndex)
+        public ReadOnlyMemory<byte> Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
             Span<byte> pair = stackalloc byte[2];
             var index = 0;
@@ -69,7 +69,7 @@
                 WriteHexToByte(pair, writer);
             }
 
-            return writer.WrittenSpan.ToArray();
+            return writer.WrittenMemory;
         }
 
         private static void WriteHexToByte(ReadOnlySpan<byte> hexBytes, ArrayPoolBufferWriter<byte> writer)

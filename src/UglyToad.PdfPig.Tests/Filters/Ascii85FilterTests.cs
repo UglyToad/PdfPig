@@ -22,7 +22,7 @@ O<DJ+*.@<*K0@<6L(Df-\0Ec5e;DffZ(EZee.Bl.9pF""AGXBPCsi + DGm >@3BB / F * &OCAfu2 
 
             var result = filter.Decode(bytes, dictionary, 0);
 
-            var text = Encoding.ASCII.GetString(result);
+            var text = Encoding.ASCII.GetString(result.ToArray());
 
             Assert.Equal("Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, " +
                          "that by a perseverance of delight in the continued and indefatigable generation of knowledge, " +
@@ -37,7 +37,7 @@ O<DJ+*.@<*K0@<6L(Df-\0Ec5e;DffZ(EZee.Bl.9pF""AGXBPCsi + DGm >@3BB / F * &OCAfu2 
 
             var result = filter.Decode(bytes, dictionary, 1);
 
-            var text = Encoding.ASCII.GetString(result);
+            var text = Encoding.ASCII.GetString(result.ToArray());
 
             Assert.Equal("Man \0\0\0\0is d", text);
         }
@@ -104,7 +104,7 @@ Li?EZek1DKKT1F`2DD/TboKAKY](@:s.m/h%oBC'mC/$>""*cF*)G6@;Q?_DIdZpC&~>";
 
             var result = filter.Decode(Encoding.ASCII.GetBytes(input), dictionary, 0);
 
-            var text = Encoding.ASCII.GetString(result);
+            var text = Encoding.ASCII.GetString(result.ToArray());
             
             Assert.Equal(PdfContent.Replace("\r\n", "\n"), text);
         }
@@ -124,7 +124,7 @@ Li?EZek1DKKT1F`2DD/TboKAKY](@:s.m/h%oBC'mC/$>""*cF*)G6@;Q?_DIdZpC&";
 
             var result = filter.Decode(Encoding.ASCII.GetBytes(input), dictionary, 0);
 
-            var text = Encoding.ASCII.GetString(result);
+            var text = Encoding.ASCII.GetString(result.ToArray());
 
             Assert.Equal(PdfContent.Replace("\r\n", "\n"), text);
         }
