@@ -1,10 +1,10 @@
-﻿#if NETFRAMEWORK || NETSTANDARD2_0
+﻿#if !NET
 
 namespace System.Text;
 
 internal static class EncodingExtensions
 {
-    public static string GetString(this Encoding encoding, ReadOnlySpan<byte> bytes)
+    internal static string GetString(this Encoding encoding, ReadOnlySpan<byte> bytes)
     {
         if (bytes.IsEmpty)
         {

@@ -29,7 +29,7 @@ namespace UglyToad.PdfPig.Filters
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public byte[] Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, int filterIndex)
+        public ReadOnlyMemory<byte> Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
             var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
@@ -45,14 +45,10 @@ namespace UglyToad.PdfPig.Filters
                 var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
                 var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
 
-                var result = PngPredictor.Decode(decompressed, predictor, colors, bitsPerComponent, columns);
-
-                return result;
+                return PngPredictor.Decode(decompressed, predictor, colors, bitsPerComponent, columns);
             }
 
-            var data = Decode(input, earlyChange == 1);
-
-            return data;
+            return Decode(input, earlyChange == 1);
         }
 
         private static byte[] Decode(ReadOnlySpan<byte> input, bool isEarlyChange)
