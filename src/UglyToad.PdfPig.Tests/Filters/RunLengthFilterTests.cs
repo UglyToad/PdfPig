@@ -35,7 +35,7 @@
                 10, 19
             };
 
-            Assert.Equal(expectedResult, decoded);
+            Assert.Equal(expectedResult, decoded.ToArray());
         }
 
         [Fact]
@@ -61,7 +61,7 @@
                 128, 50
             };
 
-            Assert.Equal(expectedResult, decoded);
+            Assert.Equal(expectedResult, decoded.ToArray());
         }
     }
 }

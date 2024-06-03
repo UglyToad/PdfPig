@@ -32,7 +32,7 @@
 
             var expectedBytes = ImageHelpers.LoadFileBytes("ccittfax-decoded.bin");
             var decodedBytes = filter.Decode(encodedBytes, new DictionaryToken(dictionary), 0);
-            Assert.Equal(expectedBytes, decodedBytes);
+            Assert.Equal(expectedBytes, decodedBytes.ToArray());
         }
     }
 }
