@@ -17,7 +17,7 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public byte[] Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, int filterIndex)
+        public ReadOnlyMemory<byte> Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
             using var output = new ArrayPoolBufferWriter<byte>(input.Length);
 
@@ -63,7 +63,7 @@
                 }
             }
 
-            return output.WrittenSpan.ToArray();
+            return output.WrittenMemory;
         }
     }
 }

@@ -93,14 +93,14 @@
 
             memoryFactory = supportsFilters ? new Lazy<ReadOnlyMemory<byte>>(() =>
             {
-                var b = rawMemory.Span;
+                var b = RawMemory;
                 for (var i = 0; i < filters.Count; i++)
                 {
                     var filter = filters[i];
-                    b = filter.Decode(b, streamDictionary, i);
+                    b = filter.Decode(b.Span, streamDictionary, i);
                 }
 
-                return b.ToArray();
+                return b;
             }) : null;
         }
 

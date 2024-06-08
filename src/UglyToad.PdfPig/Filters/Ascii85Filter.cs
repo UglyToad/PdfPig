@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
     using System;
-    using System.Collections.Generic;
     using Core;
     using Tokens;
 
@@ -9,7 +8,7 @@
     /// <summary>
     /// ASCII 85 (Base85) is a binary to text encoding using 5 ASCII characters per 4 bytes of data.
     /// </summary>
-    internal class Ascii85Filter : IFilter
+    internal sealed class Ascii85Filter : IFilter
     {
         private const byte EmptyBlock = (byte)'z';
         private const byte Offset = (byte)'!';
@@ -29,7 +28,7 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public byte[] Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, int filterIndex)
+        public ReadOnlyMemory<byte> Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
             var asciiBuffer = new byte[5];
 
@@ -98,8 +97,7 @@
                 WriteData(asciiBuffer, index, writer);
             }
 
-            return writer.WrittenSpan.ToArray();
-            
+            return writer.WrittenMemory;
         }
 
         private static void WriteData(Span<byte> ascii, int index, ArrayPoolBufferWriter<byte> writer)
