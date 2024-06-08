@@ -125,20 +125,16 @@
         public static PdfDocument Open(Stream stream, ParsingOptions? options = null) => PdfDocumentFactory.Open(stream, options);
 
         /// <summary>
-        /// TODO
+        /// Add a page factory.
         /// </summary>
-        /// <typeparam name="TPage"></typeparam>
-        /// <param name="pageFactory"></param>
         public void AddPageFactory<TPage>(IPageFactory<TPage> pageFactory)
         {
             pages.AddPageFactory(pageFactory);
         }
 
         /// <summary>
-        /// TODO
+        /// Add a page factory.
         /// </summary>
-        /// <typeparam name="TPage"></typeparam>
-        /// <typeparam name="TPageFactory"></typeparam>
 #if NET
         public void AddPageFactory<TPage, [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors)] TPageFactory>() where TPageFactory : IPageFactory<TPage>
 #else
