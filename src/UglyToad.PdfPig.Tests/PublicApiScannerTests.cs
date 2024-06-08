@@ -250,6 +250,7 @@
                 "UglyToad.PdfPig.Outline.Destinations.NamedDestinations",
                 "UglyToad.PdfPig.ParsingOptions",
                 "UglyToad.PdfPig.Parser.IPageContentParser",
+                "UglyToad.PdfPig.Parser.Parts.DirectObjectFinder",
                 "UglyToad.PdfPig.PdfDocument",
                 "UglyToad.PdfPig.PdfExtensions",
                 "UglyToad.PdfPig.Rendering.IPageImageRenderer",

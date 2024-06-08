@@ -5,8 +5,14 @@
     using Tokenization.Scanner;
     using Tokens;
 
-    internal static class DirectObjectFinder
+    /// <summary>
+    /// Direct object finder.
+    /// </summary>
+    public static class DirectObjectFinder
     {
+        /// <summary>
+        /// Try and get the token value, using the <see cref="IPdfTokenScanner"/> if it is a <see cref="IndirectReferenceToken"/>.
+        /// </summary>
         public static bool TryGet<T>(IToken? token, IPdfTokenScanner scanner, [NotNullWhen(true)] out T? tokenResult) 
             where T : class, IToken
         {
@@ -45,6 +51,9 @@
             return false;
         }
 
+        /// <summary>
+        /// Get the token value.
+        /// </summary>
         public static T? Get<T>(IndirectReference reference, IPdfTokenScanner scanner) 
             where T : class, IToken
         {
@@ -83,6 +92,9 @@
         }
 
 #nullable disable
+        /// <summary>
+        /// Get the token value, using the <see cref="IPdfTokenScanner"/> if it is a <see cref="IndirectReferenceToken"/>.
+        /// </summary>
         public static T Get<T>(IToken token, IPdfTokenScanner scanner) where T : class, IToken
         {
             if (token is T result)
