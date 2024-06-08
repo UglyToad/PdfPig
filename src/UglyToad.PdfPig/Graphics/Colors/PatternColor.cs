@@ -245,54 +245,54 @@
     }
 
     /// <summary>
-    /// TODO
+    /// Pattern types.
     /// </summary>
     public enum PatternType : byte
     {
         /// <summary>
-        /// TODO
+        /// Tiling pattern type.
         /// </summary>
         Tiling = 1,
 
         /// <summary>
-        /// TODO
+        /// Shading pattern type.
         /// </summary>
         Shading = 2
     }
 
     /// <summary>
-    /// TODO
+    /// Pattern paint types.
     /// </summary>
     public enum PatternPaintType : byte
     {
         /// <summary>
-        /// TODO
+        /// Coloured pattern paint type.
         /// </summary>
         Coloured = 1,
 
         /// <summary>
-        /// TODO
+        /// Uncoloured pattern paint type.
         /// </summary>
         Uncoloured = 2
     }
 
     /// <summary>
-    /// TODO
+    /// Pattern tiling types.
     /// </summary>
     public enum PatternTilingType : byte
     {
         /// <summary>
-        /// TODO
+        /// Constant spacing pattern tiling type.
         /// </summary>
         ConstantSpacing = 1,
 
         /// <summary>
-        /// TODO
+        /// No distortion pattern tiling type.
         /// </summary>
         NoDistortion = 2,
 
         /// <summary>
-        /// TODO
+        /// Constant spacing faster tiling pattern tiling type.
         /// </summary>
         ConstantSpacingFasterTiling = 3
     }
