@@ -95,6 +95,9 @@
         /// </summary>
         /// <param name="document">The document to extract page layouts from.</param>
         /// <param name="includePaths">Draw PdfPaths present in the page.</param>
+#if NET6_0_OR_GREATER
+        [RequiresUnreferencedCode("Members from AltoDocument may be trimmed if not referenced directly")]
+#endif
         public string Get(PdfDocument document, bool includePaths = false)
         {
             var altoDocument = CreateAltoDocument("unknown");
@@ -106,6 +109,9 @@
         /// Get the Alto (XML) string of the page layout. Excludes <see cref="T:UglyToad.PdfPig.Geometry.PdfSubpath" />s.
         /// </summary>
         /// <param name="page">The page to export the XML layout for.</param>
+#if NET6_0_OR_GREATER
+        [RequiresUnreferencedCode("Members from PageXmlDocument may be trimmed if not referenced directly")]
+#endif
         public string Get(Page page) => Get(page, false);
 
         /// <summary>
@@ -113,6 +119,9 @@
         /// </summary>
         /// <param name="page">The page to export the XML layout for.</param>
         /// <param name="includePaths">Whether the output should include the PdfPaths present in the page.</param>
+#if NET6_0_OR_GREATER
+        [RequiresUnreferencedCode("Members from AltoDocument may be trimmed if not referenced directly")]
+#endif
         public string Get(Page page, bool includePaths)
         {
             var document = CreateAltoDocument("unknown");
@@ -356,6 +365,9 @@
             };
         }
 
+#if NET6_0_OR_GREATER
+        [RequiresUnreferencedCode("Members from AltoDocument may be trimmed if not referenced directly")]
+#endif
         private string Serialize(AltoDocument altoDocument)
         {
             var serializer = new XmlSerializer(typeof(AltoDocument));
