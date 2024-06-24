@@ -405,6 +405,27 @@
             }
         }
 
+        private sealed class PdfPointXYComparer : IComparer<PdfPoint>
+        {
+            public static readonly PdfPointXYComparer Instance = new();
+
+            public int Compare(PdfPoint p1, PdfPoint p2)
+            {
+                int comp = p1.X.CompareTo(p2.X);
+                return comp == 0 ? p1.Y.CompareTo(p2.Y) : comp;
+            }
+        }
+
+        private sealed class PdfPointYComparer : IComparer<PdfPoint>
+        {
+            public static readonly PdfPointYComparer Instance = new();
+
+            public int Compare(PdfPoint p1, PdfPoint p2)
+            {
+                return p1.Y.CompareTo(p2.Y);
+            }
+        }
+
         /// <summary>
         /// Get the structural blocking parameters.
         /// </summary>
@@ -446,28 +467,23 @@
             }
 
             // Get middle points
-            var ps = new[] { j.Point1, j.Point2, Aj.Value, Bj.Value };
+            PdfPoint[] ps = [j.Point1, j.Point2, Aj.Value, Bj.Value];
 
             if (dXj != 0)
             {
-                ps = ps.OrderBy(p => p.X).ThenBy(p => p.Y).ToArray();
+                Array.Sort(ps, PdfPointXYComparer.Instance);
             }
             else if (dYj != 0)
             {
-                ps = ps.OrderBy(p => p.Y).ToArray();
+                Array.Sort(ps, PdfPointYComparer.Instance);
             }
 
             PdfPoint Cj = ps[1];
             PdfPoint Dj = ps[2];
 
-            bool overlap = true;
             // Cj and Dj should be contained within both j and [Aj,Bj] if overlapped
-            if (!PointInLine(j.Point1, j.Point2, Cj) || !PointInLine(j.Point1, j.Point2, Dj) ||
-                !PointInLine(Aj.Value, Bj.Value, Cj) || !PointInLine(Aj.Value, Bj.Value, Dj))
-            {
-                // nonoverlapped
-                overlap = false;
-            }
+            bool overlap = !(!PointInLine(j.Point1, j.Point2, Cj) || !PointInLine(j.Point1, j.Point2, Dj) ||
+                             !PointInLine(Aj.Value, Bj.Value, Cj) || !PointInLine(Aj.Value, Bj.Value, Dj));
 
             double pj = Distances.Euclidean(Cj, Dj);
 
