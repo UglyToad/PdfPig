@@ -467,6 +467,19 @@
             }
 
             // Get middle points
+
+#if NET6_0_OR_GREATER
+            Span<PdfPoint> ps = stackalloc PdfPoint[] { j.Point1, j.Point2, Aj.Value, Bj.Value };
+
+            if (dXj != 0)
+            {
+                ps.Sort(PdfPointXYComparer.Instance);
+            }
+            else if (dYj != 0)
+            {
+                ps.Sort(PdfPointYComparer.Instance);
+            }
+#else
             PdfPoint[] ps = [j.Point1, j.Point2, Aj.Value, Bj.Value];
 
             if (dXj != 0)
@@ -477,6 +490,7 @@
             {
                 Array.Sort(ps, PdfPointYComparer.Instance);
             }
+#endif
 
             PdfPoint Cj = ps[1];
             PdfPoint Dj = ps[2];
