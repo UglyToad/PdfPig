@@ -89,16 +89,56 @@
                 array[i] = new KdTreeElement<T>(i, elementsPointFunc(el), el);
             }
 
+#if NET6_0_OR_GREATER
+            Root = BuildTree(new Span<KdTreeElement<T>>(array));
+#else
             Root = BuildTree(new ArraySegment<KdTreeElement<T>>(array));
+#endif
         }
 
+#if NET6_0_OR_GREATER
+        private KdTreeNode<T> BuildTree(Span<KdTreeElement<T>> P, int depth = 0)
+        {
+            if (P.Length == 0)
+            {
+                return null;
+            }
+
+            if (P.Length == 1)
+            {
+                return new KdTreeLeaf<T>(P[0], depth);
+            }
+
+            if (depth % 2 == 0)
+            {
+                P.Sort(kdTreeComparerX);
+            }
+            else
+            {
+                P.Sort(kdTreeComparerY);
+            }
+
+            if (P.Length == 2)
+            {
+                return new KdTreeNode<T>(new KdTreeLeaf<T>(P[0], depth + 1), null, P[1], depth);
+            }
+
+            int median = P.Length / 2;
+
+            KdTreeNode<T> vLeft = BuildTree(P.Slice(0, median), depth + 1);
+            KdTreeNode<T> vRight = BuildTree(P.Slice(median + 1), depth + 1);
+
+            return new KdTreeNode<T>(vLeft, vRight, P[median], depth);
+        }
+#else
         private KdTreeNode<T> BuildTree(ArraySegment<KdTreeElement<T>> P, int depth = 0)
         {
             if (P.Count == 0)
             {
                 return null;
             }
-            else if (P.Count == 1)
+
+            if (P.Count == 1)
             {
                 return new KdTreeLeaf<T>(P.GetAt(0), depth);
             }
@@ -124,6 +164,7 @@
 
             return new KdTreeNode<T>(vLeft, vRight, P.GetAt(median), depth);
         }
+#endif
 
         #region NN
         /// <summary>
