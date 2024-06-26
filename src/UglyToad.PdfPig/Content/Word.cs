@@ -9,7 +9,7 @@
     /// <summary>
     /// A word.
     /// </summary>
-    public class Word
+    public class Word : IBoundingBox
     {
         /// <summary>
         /// The text of the word.

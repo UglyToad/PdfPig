@@ -26,29 +26,29 @@
             {
                 var page = document.GetPage(1);
 
-                var images = page.GetImages().OrderBy(x => x.Bounds.Width).ToList();
+                var images = page.GetImages().OrderBy(x => x.BoundingBox.Width).ToList();
 
                 var pdfPigSquare = images[0];
 
-                Assert.Equal(148.3d, pdfPigSquare.Bounds.Width, doubleComparer);
-                Assert.Equal(148.3d, pdfPigSquare.Bounds.Height, doubleComparer);
-                Assert.Equal(60.1d, pdfPigSquare.Bounds.Left, doubleComparer);
-                Assert.Equal(765.8d, pdfPigSquare.Bounds.Top, doubleComparer);
+                Assert.Equal(148.3d, pdfPigSquare.BoundingBox.Width, doubleComparer);
+                Assert.Equal(148.3d, pdfPigSquare.BoundingBox.Height, doubleComparer);
+                Assert.Equal(60.1d, pdfPigSquare.BoundingBox.Left, doubleComparer);
+                Assert.Equal(765.8d, pdfPigSquare.BoundingBox.Top, doubleComparer);
 
 
                 var pdfPigSquished = images[1];
 
-                Assert.Equal(206.8d, pdfPigSquished.Bounds.Width, doubleComparer);
-                Assert.Equal(83.2d, pdfPigSquished.Bounds.Height, doubleComparer);
-                Assert.Equal(309.8d, pdfPigSquished.Bounds.Left, doubleComparer);
-                Assert.Equal(552.1d, pdfPigSquished.Bounds.Top, doubleComparer);
+                Assert.Equal(206.8d, pdfPigSquished.BoundingBox.Width, doubleComparer);
+                Assert.Equal(83.2d, pdfPigSquished.BoundingBox.Height, doubleComparer);
+                Assert.Equal(309.8d, pdfPigSquished.BoundingBox.Left, doubleComparer);
+                Assert.Equal(552.1d, pdfPigSquished.BoundingBox.Top, doubleComparer);
 
                 var birthdayPigs = images[2];
 
-                Assert.Equal(391d, birthdayPigs.Bounds.Width, doubleComparer);
-                Assert.Equal(267.1d, birthdayPigs.Bounds.Height, doubleComparer);
-                Assert.Equal(102.2d, birthdayPigs.Bounds.Left, doubleComparer);
-                Assert.Equal(426.3d, birthdayPigs.Bounds.Top, doubleComparer);
+                Assert.Equal(391d, birthdayPigs.BoundingBox.Width, doubleComparer);
+                Assert.Equal(267.1d, birthdayPigs.BoundingBox.Height, doubleComparer);
+                Assert.Equal(102.2d, birthdayPigs.BoundingBox.Left, doubleComparer);
+                Assert.Equal(426.3d, birthdayPigs.BoundingBox.Top, doubleComparer);
             }
         }
 

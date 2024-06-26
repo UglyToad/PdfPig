@@ -51,7 +51,7 @@
 
             if (images?.Any() == true)
             {
-                bboxes.AddRange(images.Where(w => w.Bounds.Width > 0 && w.Bounds.Height > 0).Select(o => o.Bounds));
+                bboxes.AddRange(images.Where(w => w.BoundingBox.Width > 0 && w.BoundingBox.Height > 0).Select(o => o.BoundingBox));
             }
 
             return GetWhitespaces(bboxes,

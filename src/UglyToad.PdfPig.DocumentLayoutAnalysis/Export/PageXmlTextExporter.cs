@@ -273,7 +273,7 @@
         private PageXmlDocument.PageXmlImageRegion ToPageXmlImageRegion(IPdfImage pdfImage, PageXmlData data, double pageWidth, double pageHeight)
         {
             data.RegionsCount++;
-            var bbox = pdfImage.Bounds;
+            var bbox = pdfImage.BoundingBox;
             return new PageXmlDocument.PageXmlImageRegion()
             {
                 Coords = ToCoords(bbox, pageWidth, pageHeight),

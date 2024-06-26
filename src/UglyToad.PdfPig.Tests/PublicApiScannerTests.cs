@@ -80,6 +80,7 @@
                 "UglyToad.PdfPig.Content.InlineImage",
                 "UglyToad.PdfPig.Content.IPageFactory`1",
                 "UglyToad.PdfPig.Content.IPdfImage",
+                "UglyToad.PdfPig.Content.IBoundingBox",
                 "UglyToad.PdfPig.Content.IResourceStore",
                 "UglyToad.PdfPig.Content.Letter",
                 "UglyToad.PdfPig.Content.MarkedContentElement",

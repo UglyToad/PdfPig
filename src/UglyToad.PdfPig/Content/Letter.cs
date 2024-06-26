@@ -7,7 +7,7 @@
     /// <summary>
     /// A glyph or combination of glyphs (characters) drawn by a PDF content stream.
     /// </summary>
-    public class Letter
+    public class Letter : IBoundingBox
     {
         /// <summary>
         /// The text for this letter or unicode character.
@@ -45,6 +45,11 @@
         /// The width of the glyph may also be more or less than the <see cref="Width"/> allocated for the character in the PDF content.
         /// </summary>
         public PdfRectangle GlyphRectangle { get; }
+
+        /// <summary>
+        /// Gets the Bounding Box: The rectangle completely containing this object
+        /// </summary>
+        public PdfRectangle BoundingBox => GlyphRectangle;
 
         /// <summary>
         /// Size as defined in the PDF file. This is not equivalent to font size in points but is relative to other font sizes on the page.

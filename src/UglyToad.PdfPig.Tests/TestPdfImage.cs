@@ -9,7 +9,7 @@
 
     public class TestPdfImage : IPdfImage
     {
-        public PdfRectangle Bounds { get; set; }
+        public PdfRectangle BoundingBox { get; set; }
 
         public int WidthInSamples { get; set; }
 

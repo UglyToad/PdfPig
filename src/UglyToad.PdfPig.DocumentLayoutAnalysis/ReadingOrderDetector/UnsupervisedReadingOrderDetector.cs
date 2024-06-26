@@ -2,7 +2,9 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Collections.ObjectModel;
     using System.Linq;
+    using UglyToad.PdfPig.Content;
 
     /// <summary>
     /// Algorithm that retrieve the blocks' reading order using spatial reasoning (Allen’s interval relations) and possibly the rendering order (TextSequence).
@@ -59,7 +61,7 @@
         /// </summary>
         public double T { get; }
 
-        private Func<TextBlock, TextBlock, double, bool> getBeforeInMethod;
+        private Func<IBoundingBox, IBoundingBox, double, bool> getBeforeInMethod;
 
         /// <summary>
         /// Algorithm that retrieve the blocks' reading order using spatial reasoning (Allen’s interval relations) and possibly the rendering order (TextSequence).
@@ -75,53 +77,60 @@
             this.SpatialReasoningRule = spatialReasoningRule;
             this.UseRenderingOrder = useRenderingOrder;
 
+            getBeforeInMethod = GetBeforeInMethod();
+        }
+
+        private Func<IBoundingBox, IBoundingBox, double, bool> GetBeforeInMethod()
+        {
             switch (SpatialReasoningRule)
             {
                 case SpatialReasoningRules.ColumnWise:
                     if (UseRenderingOrder)
                     {
-                        getBeforeInMethod = (TextBlock a, TextBlock b, double t) => GetBeforeInReadingVertical(a, b, t) || GetBeforeInRendering(a, b);
+                        // Important note: GetBeforeInRendering will return false if type is not TextBox meaning it's result gets ignored 
+                        return (IBoundingBox a, IBoundingBox b, double t) => GetBeforeInReadingVertical(a, b, t)
+                                                    || GetBeforeInRendering(a, b);
                     }
                     else
                     {
-                        getBeforeInMethod = GetBeforeInReadingVertical;
+                        return GetBeforeInReadingVertical;
                     }
-                    break;
-
                 case SpatialReasoningRules.RowWise:
                     if (UseRenderingOrder)
                     {
-                        getBeforeInMethod = (TextBlock a, TextBlock b, double t) => GetBeforeInReadingHorizontal(a, b, t) || GetBeforeInRendering(a, b);
+                        return (IBoundingBox a, IBoundingBox b, double t) => GetBeforeInReadingHorizontal(a, b, t)
+                                                    || GetBeforeInRendering(a, b);
                     }
                     else
                     {
-                        getBeforeInMethod = GetBeforeInReadingHorizontal;
+                        return GetBeforeInReadingHorizontal;
                     }
-                    break;
-
                 case SpatialReasoningRules.Basic:
                 default:
                     if (UseRenderingOrder)
                     {
-                        getBeforeInMethod = (TextBlock a, TextBlock b, double t) => GetBeforeInReading(a, b, t) || GetBeforeInRendering(a, b);
+                        return (IBoundingBox a, IBoundingBox b, double t) => GetBeforeInReading(a, b, t)
+                                                    || GetBeforeInRendering(a, b);
                     }
                     else
                     {
-                        getBeforeInMethod = GetBeforeInReading;
+                        return GetBeforeInReading;
                     }
-                    break;
             }
         }
 
         /// <summary>
-        /// Gets the blocks in reading order and sets the <see cref="TextBlock.ReadingOrder"/>.
+        /// Gets the blocks ordered in reading order. 
+        /// If blocks are of type <see cref="TextBlock"/> it will also set the <see cref="TextBlock.ReadingOrder"/>.
         /// </summary>
-        /// <param name="textBlocks">The <see cref="TextBlock"/>s to order.</param>
-        public IEnumerable<TextBlock> Get(IReadOnlyList<TextBlock> textBlocks)
+        /// <param name="inBlocks">The blocks to order.</param>
+        public IEnumerable<TBlock> Get<TBlock>(IEnumerable<TBlock> inBlocks)
+            where TBlock : IBoundingBox
         {
+            IReadOnlyList<TBlock> blocks = new ReadOnlyCollection<TBlock>(inBlocks.ToList());
             int readingOrder = 0;
 
-            var graph = BuildGraph(textBlocks, T);
+            var graph = BuildGraph(blocks, T);
 
             while (graph.Count > 0)
             {
@@ -135,14 +144,18 @@
                     g.Value.Remove(index);
                 }
 
-                var block = textBlocks[index];
-                block.SetReadingOrder(readingOrder++);
+                var block = blocks[index];
+                if(block is TextBlock textBlock)
+                {
+                    textBlock.SetReadingOrder(readingOrder++);
+                }
 
                 yield return block;
             }
         }
 
-        private Dictionary<int, List<int>> BuildGraph(IReadOnlyList<TextBlock> textBlocks, double T)
+        private Dictionary<int, List<int>> BuildGraph<TBlock>(IReadOnlyList<TBlock> blocks, double T)
+             where TBlock : IBoundingBox
         {
             // We incorporate both relations into a single partial ordering of blocks by specifying a 
             // directed graph with an edge between every pair of blocks for which at least one of the 
@@ -150,18 +163,18 @@
 
             var graph = new Dictionary<int, List<int>>();
 
-            for (int i = 0; i < textBlocks.Count; i++)
+            for (int i = 0; i < blocks.Count; i++)
             {
                 graph.Add(i, new List<int>());
             }
 
-            for (int i = 0; i < textBlocks.Count; i++)
+            for (int i = 0; i < blocks.Count; i++)
             {
-                var a = textBlocks[i];
-                for (int j = 0; j < textBlocks.Count; j++)
+                var a = blocks[i];
+                for (int j = 0; j < blocks.Count; j++)
                 {
                     if (i == j) continue;
-                    var b = textBlocks[j];
+                    var b = blocks[j];
 
                     if (getBeforeInMethod(a, b, T))
                     {
@@ -173,11 +186,22 @@
             return graph;
         }
 
-        private static bool GetBeforeInRendering(TextBlock a, TextBlock b)
+        /// <summary>
+        /// Get's before in Rendering order. This only works on <see cref="TextBlock"/>
+        /// </summary>
+        /// <param name="alpha"></param>
+        /// <param name="bravo"></param>
+        /// <returns>Text Before in rendering. False if type is not <see cref="TextBlock"/></returns>
+        private static bool GetBeforeInRendering(IBoundingBox alpha, IBoundingBox bravo)
         {
-            var avgTextSequenceA = a.TextLines.SelectMany(tl => tl.Words).SelectMany(w => w.Letters).Select(l => l.TextSequence).Average();
-            var avgTextSequenceB = b.TextLines.SelectMany(tl => tl.Words).SelectMany(w => w.Letters).Select(l => l.TextSequence).Average();
-            return avgTextSequenceA < avgTextSequenceB;
+            if (alpha is TextBlock a && bravo is TextBlock b)
+            {
+                var avgTextSequenceA = a.TextLines.SelectMany(tl => tl.Words).SelectMany(w => w.Letters).Select(l => l.TextSequence).Average();
+                var avgTextSequenceB = b.TextLines.SelectMany(tl => tl.Words).SelectMany(w => w.Letters).Select(l => l.TextSequence).Average();
+                return avgTextSequenceA < avgTextSequenceB;
+            }
+ 
+            return false;
         }
 
         /// <summary>
@@ -186,17 +210,17 @@
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <param name="T">The tolerance parameter T.</param>
-        private static bool GetBeforeInReading(TextBlock a, TextBlock b, double T)
+        private static bool GetBeforeInReading(IBoundingBox a, IBoundingBox b, double T)
         {
             IntervalRelations xRelation = IntervalRelationsHelper.GetRelationX(a.BoundingBox, b.BoundingBox, T);
             IntervalRelations yRelation = IntervalRelationsHelper.GetRelationY(a.BoundingBox, b.BoundingBox, T);
 
             return xRelation == IntervalRelations.Precedes ||
-                   yRelation == IntervalRelations.Precedes ||
-                   xRelation == IntervalRelations.Meets ||
-                   yRelation == IntervalRelations.Meets ||
-                   xRelation == IntervalRelations.Overlaps ||
-                   yRelation == IntervalRelations.Overlaps;
+                    yRelation == IntervalRelations.Precedes ||
+                    xRelation == IntervalRelations.Meets ||
+                    yRelation == IntervalRelations.Meets ||
+                    xRelation == IntervalRelations.Overlaps ||
+                    yRelation == IntervalRelations.Overlaps;
         }
 
         /// <summary>
@@ -205,7 +229,7 @@
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <param name="T">The tolerance parameter T.</param>
-        private static bool GetBeforeInReadingVertical(TextBlock a, TextBlock b, double T)
+        private static bool GetBeforeInReadingVertical(IBoundingBox a, IBoundingBox b, double T)
         {
             IntervalRelations xRelation = IntervalRelationsHelper.GetRelationX(a.BoundingBox, b.BoundingBox, T);
             IntervalRelations yRelation = IntervalRelationsHelper.GetRelationY(a.BoundingBox, b.BoundingBox, T);
@@ -213,20 +237,20 @@
             return xRelation == IntervalRelations.Precedes ||
                 xRelation == IntervalRelations.Meets ||
                 (xRelation == IntervalRelations.Overlaps && (yRelation == IntervalRelations.Precedes ||
-                                                             yRelation == IntervalRelations.Meets ||
-                                                             yRelation == IntervalRelations.Overlaps)) ||
+                                                                yRelation == IntervalRelations.Meets ||
+                                                                yRelation == IntervalRelations.Overlaps)) ||
                 ((yRelation == IntervalRelations.Precedes || yRelation == IntervalRelations.Meets || yRelation == IntervalRelations.Overlaps) &&
                                                             (xRelation == IntervalRelations.Precedes ||
-                                                             xRelation == IntervalRelations.Meets ||
-                                                             xRelation == IntervalRelations.Overlaps ||
-                                                             xRelation == IntervalRelations.Starts ||
-                                                             xRelation == IntervalRelations.FinishesI ||
-                                                             xRelation == IntervalRelations.Equals ||
-                                                             xRelation == IntervalRelations.During ||
-                                                             xRelation == IntervalRelations.DuringI ||
-                                                             xRelation == IntervalRelations.Finishes ||
-                                                             xRelation == IntervalRelations.StartsI ||
-                                                             xRelation == IntervalRelations.OverlapsI));
+                                                                xRelation == IntervalRelations.Meets ||
+                                                                xRelation == IntervalRelations.Overlaps ||
+                                                                xRelation == IntervalRelations.Starts ||
+                                                                xRelation == IntervalRelations.FinishesI ||
+                                                                xRelation == IntervalRelations.Equals ||
+                                                                xRelation == IntervalRelations.During ||
+                                                                xRelation == IntervalRelations.DuringI ||
+                                                                xRelation == IntervalRelations.Finishes ||
+                                                                xRelation == IntervalRelations.StartsI ||
+                                                                xRelation == IntervalRelations.OverlapsI));
         }
 
         /// <summary>
@@ -235,29 +259,28 @@
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <param name="T">The tolerance parameter T.</param>
-        private static bool GetBeforeInReadingHorizontal(TextBlock a, TextBlock b, double T)
+        private static bool GetBeforeInReadingHorizontal(IBoundingBox a, IBoundingBox b, double T)
         {
             IntervalRelations xRelation = IntervalRelationsHelper.GetRelationX(a.BoundingBox, b.BoundingBox, T);
             IntervalRelations yRelation = IntervalRelationsHelper.GetRelationY(a.BoundingBox, b.BoundingBox, T);
 
             return yRelation == IntervalRelations.Precedes ||
-                   yRelation == IntervalRelations.Meets ||
+                    yRelation == IntervalRelations.Meets ||
                     (yRelation == IntervalRelations.Overlaps && (xRelation == IntervalRelations.Precedes ||
-                                                                 xRelation == IntervalRelations.Meets ||
-                                                                 xRelation == IntervalRelations.Overlaps)) ||
+                                                                    xRelation == IntervalRelations.Meets ||
+                                                                    xRelation == IntervalRelations.Overlaps)) ||
                     ((xRelation == IntervalRelations.Precedes || xRelation == IntervalRelations.Meets || xRelation == IntervalRelations.Overlaps) &&
                                                                 (yRelation == IntervalRelations.Precedes ||
-                                                                 yRelation == IntervalRelations.Meets ||
-                                                                 yRelation == IntervalRelations.Overlaps ||
-                                                                 yRelation == IntervalRelations.Starts ||
-                                                                 yRelation == IntervalRelations.FinishesI ||
-                                                                 yRelation == IntervalRelations.Equals ||
-                                                                 yRelation == IntervalRelations.During ||
-                                                                 yRelation == IntervalRelations.DuringI ||
-                                                                 yRelation == IntervalRelations.Finishes ||
-                                                                 yRelation == IntervalRelations.StartsI ||
-                                                                 yRelation == IntervalRelations.OverlapsI));
+                                                                    yRelation == IntervalRelations.Meets ||
+                                                                    yRelation == IntervalRelations.Overlaps ||
+                                                                    yRelation == IntervalRelations.Starts ||
+                                                                    yRelation == IntervalRelations.FinishesI ||
+                                                                    yRelation == IntervalRelations.Equals ||
+                                                                    yRelation == IntervalRelations.During ||
+                                                                    yRelation == IntervalRelations.DuringI ||
+                                                                    yRelation == IntervalRelations.Finishes ||
+                                                                    yRelation == IntervalRelations.StartsI ||
+                                                                    yRelation == IntervalRelations.OverlapsI));
         }
-
     }
 }
