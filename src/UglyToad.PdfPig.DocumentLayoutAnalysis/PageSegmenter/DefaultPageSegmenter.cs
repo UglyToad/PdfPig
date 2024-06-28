@@ -47,7 +47,30 @@
                 return Array.Empty<TextBlock>();
             }
 
-            return new List<TextBlock>() { new TextBlock(new XYLeaf(words).GetLines(options.WordSeparator), options.LineSeparator) };
+            var lineSegmenter = CreateLineSegmenterFn(options);
+            var lines = lineSegmenter(words, options.WordSeparator).ToArray();
+            return new List<TextBlock>() { new TextBlock(lines, options.LineSeparator) };
+        }
+
+        private static Func<IEnumerable<Word>, string, IEnumerable<TextLine>> CreateLineSegmenterFn(
+            DefaultPageSegmenterOptions options)
+        {
+            Func<IEnumerable<Word>, string, IEnumerable<TextLine>> lineSegmenter;
+            if (options.LineSegmenter != null)
+            {
+                lineSegmenter = options.LineSegmenter;
+            }
+            else if (options.DefaultLineSegementerTolerenace != 0d)
+            {
+                var lineSegementerWTolerance = new DefaultLineSegmenter(options.DefaultLineSegementerTolerenace);
+                lineSegmenter = lineSegementerWTolerance.GetLines;
+            }
+            else
+            {
+                lineSegmenter = DefaultLineSegmenter.Instance.GetLines;
+            }
+
+            return lineSegmenter;
         }
 
         /// <summary>
@@ -72,6 +95,17 @@
             /// <para>Default value is '\n' (new line).</para>
             /// </summary>
             public string LineSeparator { get; set; } = "\n";
+
+            /// <summary>
+            /// The tolerance on the default Line segmenter
+            /// </summary>
+            public double DefaultLineSegementerTolerenace = 0d;
+
+            /// <summary>
+            /// The line segmenter function called to convert the words into lines. 
+            /// <para>The second parameter passed to the function will be the <see cref="WordSeparator"/>.</para>
+            /// </summary>
+            public Func<IEnumerable<Word>, string, IEnumerable<TextLine>> LineSegmenter { get; set; } = null;
         }
     }
 }

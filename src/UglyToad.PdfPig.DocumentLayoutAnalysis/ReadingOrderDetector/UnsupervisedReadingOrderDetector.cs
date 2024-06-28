@@ -186,18 +186,17 @@
             return graph;
         }
 
+
         /// <summary>
-        /// Get's before in Rendering order. This only works on <see cref="TextBlock"/>
+        /// Gets before in Rendering order. This only works on classes that implement <see cref="ILettersBlock"/>
         /// </summary>
-        /// <param name="alpha"></param>
-        /// <param name="bravo"></param>
-        /// <returns>Text Before in rendering. False if type is not <see cref="TextBlock"/></returns>
+        /// <returns>Text Before in rendering. False if type does not implement <see cref="ILettersBlock"/></returns>
         private static bool GetBeforeInRendering(IBoundingBox alpha, IBoundingBox bravo)
         {
-            if (alpha is TextBlock a && bravo is TextBlock b)
+            if (alpha is ILettersBlock a && bravo is ILettersBlock b)
             {
-                var avgTextSequenceA = a.TextLines.SelectMany(tl => tl.Words).SelectMany(w => w.Letters).Select(l => l.TextSequence).Average();
-                var avgTextSequenceB = b.TextLines.SelectMany(tl => tl.Words).SelectMany(w => w.Letters).Select(l => l.TextSequence).Average();
+                var avgTextSequenceA = a.Letters.Average(x => x.TextSequence);
+                var avgTextSequenceB = b.Letters.Average(x => x.TextSequence);
                 return avgTextSequenceA < avgTextSequenceB;
             }
  

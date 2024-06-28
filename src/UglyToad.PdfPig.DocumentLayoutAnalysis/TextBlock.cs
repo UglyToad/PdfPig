@@ -9,8 +9,13 @@
     /// <summary>
     /// A block of text.
     /// </summary>
-    public class TextBlock: IBoundingBox
+    public class TextBlock: ILettersBlock
     {
+        /// <summary>
+        /// The letters contained in this TextBlock
+        /// </summary>
+        public IReadOnlyList<Letter> Letters { get; }
+
         /// <summary>
         /// The separator used between lines in the block.
         /// </summary>
@@ -63,6 +68,7 @@
             ReadingOrder = -1;
 
             TextLines = lines;
+            Letters = lines.SelectMany(tl => tl.Words).SelectMany(w => w.Letters).ToList().AsReadOnly();
 
             if (lines.Count == 1)
             {

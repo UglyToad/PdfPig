@@ -3,16 +3,27 @@
     using Core;
     using Graphics.Colors;
     using PdfFonts;
+    using System.Collections.Generic;
 
     /// <summary>
     /// A glyph or combination of glyphs (characters) drawn by a PDF content stream.
     /// </summary>
-    public class Letter : IBoundingBox
+    public class Letter : ILettersBlock
     {
+        /// <summary>
+        /// This letter as as List of Letters in order to implement ILettersBlock interface
+        /// </summary>
+        public IReadOnlyList<Letter> Letters => [this];
+
         /// <summary>
         /// The text for this letter or unicode character.
         /// </summary>
         public string Value { get; }
+
+        /// <summary>
+        /// The text of the this letter or unicode character. Same as <see cref="Letter.Value"/>
+        /// </summary>
+        public string Text => Value;
 
         /// <summary>
         /// Text orientation of the letter.
@@ -101,6 +112,7 @@
         /// Sequence number of the ShowText operation that printed this letter.
         /// </summary>
         public int TextSequence { get; }
+
 
         /// <summary>
         /// Create a new letter to represent some text drawn by the Tj operator.

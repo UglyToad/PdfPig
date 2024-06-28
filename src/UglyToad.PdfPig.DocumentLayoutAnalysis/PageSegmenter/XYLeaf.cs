@@ -5,7 +5,6 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using UglyToad.PdfPig.DocumentLayoutAnalysis.ReadingOrderDetector;
     using UglyToad.PdfPig.Geometry;
 
     /// <summary>
@@ -36,15 +35,7 @@
             return null;
         }
 
-        /// <summary>
-        /// Gets the lines of the leaf.
-        /// </summary>
-        public IReadOnlyList<TextLine> GetLines(string wordSeparator)
-        {
-            return Words.GroupBy(x => x.BoundingBox.Bottom)
-                .Select(x => new TextLine(x.OrderByReadingOrder(), wordSeparator))
-                .OrderByReadingOrder();
-        }
+
 
         /// <summary>
         /// Create a new <see cref="XYLeaf"/>.

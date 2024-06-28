@@ -51,12 +51,36 @@
                 return Array.Empty<TextBlock>();
             }
 
+            var lineSegmenter = CreateLineSegmenterFn(options);
+
             return GetBlocks(words,
                 options.MinimumWidth,
                 options.DominantFontWidthFunc,
                 options.DominantFontHeightFunc,
                 options.WordSeparator,
-                options.LineSeparator);
+                options.LineSeparator,
+                lineSegmenter);
+        }
+
+        private static Func<IEnumerable<Word>, string, IEnumerable<TextLine>> CreateLineSegmenterFn(
+            RecursiveXYCutOptions options)
+        {
+            Func<IEnumerable<Word>, string, IEnumerable<TextLine>> lineSegmenter;
+            if (options.LineSegmenter != null)
+            {
+                lineSegmenter = options.LineSegmenter;
+            }
+            else if (options.DefaultLineSegementerTolerenace != 0d)
+            {
+                var lineSegementerWTolerance = new DefaultLineSegmenter(options.DefaultLineSegementerTolerenace);
+                lineSegmenter = lineSegementerWTolerance.GetLines;
+            }
+            else
+            {
+                lineSegmenter = DefaultLineSegmenter.Instance.GetLines;
+            }
+
+            return lineSegmenter;
         }
 
         /// <summary>
@@ -68,10 +92,12 @@
         /// <param name="dominantFontHeightFunc">The function that determines the dominant font height.</param>
         /// <param name="wordSeparator"></param>
         /// <param name="lineSeparator"></param>
+        /// <param name="lineSegmenter"></param>
         private IReadOnlyList<TextBlock> GetBlocks(IEnumerable<Word> words, double minimumWidth,
             Func<IEnumerable<Letter>, double> dominantFontWidthFunc,
             Func<IEnumerable<Letter>, double> dominantFontHeightFunc,
-            string wordSeparator, string lineSeparator)
+            string wordSeparator, string lineSeparator,
+            Func<IEnumerable<Word>, string, IEnumerable<TextLine>> lineSegmenter)
         {
             // Filter out white spaces
             words = words.Where(w => !string.IsNullOrWhiteSpace(w.Text));
@@ -85,7 +111,8 @@
 
             if (node.IsLeaf)
             {
-                return new List<TextBlock> { new TextBlock((node as XYLeaf).GetLines(wordSeparator), lineSeparator) };
+                var lines = lineSegmenter((node as XYLeaf).Words, wordSeparator).ToList();
+                return new List<TextBlock> { new TextBlock(lines, lineSeparator) };
             }
             else
             {
@@ -93,7 +120,7 @@
 
                 if (leaves.Count > 0)
                 {
-                    return leaves.ConvertAll(l => new TextBlock(l.GetLines(wordSeparator), lineSeparator));
+                    return leaves.ConvertAll(l => new TextBlock(lineSegmenter(l.Words, wordSeparator).ToList(), lineSeparator));
                 }
             }
 
@@ -397,6 +424,19 @@
                     }
                     return mode * 1.5;
                 };
+
+
+            /// <summary>
+            /// The tolerance on the default Line segmenter
+            /// </summary>
+            public double DefaultLineSegementerTolerenace = 0d;
+
+            /// <summary>
+            /// The line segmenter function called to convert the words into lines. 
+            /// <para>The second parameter passed to the function will be the <see cref="WordSeparator"/>.</para>
+            /// </summary>
+            public Func<IEnumerable<Word>, string, IEnumerable<TextLine>> LineSegmenter { get; set; } = null;
+
         }
     }
 }

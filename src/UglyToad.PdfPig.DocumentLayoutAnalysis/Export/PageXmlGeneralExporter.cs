@@ -112,6 +112,11 @@
                 return ToPageXmlTextRegion(textblock, pageWidth, pageHeight);
             }
 
+            if (block is ILettersBlock blockOfLetters)
+            {
+                return ToPageXmlSimpleTextRegion(blockOfLetters.BoundingBox, blockOfLetters.Text, pageWidth, pageHeight);
+            }
+
             if (block is IPdfImage imageBlock)
             {
                 return ToImageRegion(imageBlock.BoundingBox, pageWidth, pageHeight);
