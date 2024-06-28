@@ -29,6 +29,32 @@
             Assert.Equal(100, ordered[1].BoundingBox.Left);
         }
 
+        class MyTestBlock : IBoundingBox
+        {
+            public PdfRectangle BoundingBox { get; set; }
+        }
+
+        [Fact]
+        public void WorksWithAnyTypeThatImplementsIBoundingBox()
+        {
+            var left = new MyTestBlock() {
+                BoundingBox= new PdfRectangle(new PdfPoint(0, 0), new PdfPoint(10, 10))
+            };
+            var right = new MyTestBlock()
+            {
+                BoundingBox = new PdfRectangle(new PdfPoint(100, 0), new PdfPoint(110, 10))
+            };
+
+            // We deliberately submit in the wrong order
+            var textBlocks = new List<MyTestBlock>() { right, left };
+
+            var unsupervisedReadingOrderDetector = new UnsupervisedReadingOrderDetector(5, UnsupervisedReadingOrderDetector.SpatialReasoningRules.RowWise);
+            var orderedBlocks = unsupervisedReadingOrderDetector.Get(textBlocks);
+
+            var ordered = orderedBlocks.ToList();
+            Assert.Equal(0, ordered[0].BoundingBox.Left);
+            Assert.Equal(100, ordered[1].BoundingBox.Left);
+        }
 
         [Fact]
         public void DocumentTest()
