@@ -3,6 +3,7 @@
     using System.Linq;
     using System.Text;
     using Core;
+    using System.Buffers;
     using UglyToad.PdfPig.Geometry.ClipperLibrary;
     using UglyToad.PdfPig.Graphics;
     using static UglyToad.PdfPig.Core.PdfSubpath;
@@ -66,17 +67,19 @@
         /// The vertices of P are assumed to be in strict cyclic sequential order, either clockwise or
         /// counter-clockwise relative to the origin P0.
         /// </param>
-        private static PdfRectangle ParametricPerpendicularProjection(IReadOnlyList<PdfPoint> polygon)
+        private static PdfRectangle ParametricPerpendicularProjection(ReadOnlySpan<PdfPoint> polygon)
         {
-            if (polygon is null || polygon.Count == 0)
+            if (polygon.Length == 0)
             {
                 throw new ArgumentException("ParametricPerpendicularProjection(): polygon cannot be null and must contain at least one point.", nameof(polygon));
             }
-            else if (polygon.Count == 1)
+
+            if (polygon.Length == 1)
             {
                 return new PdfRectangle(polygon[0], polygon[0]);
             }
-            else if (polygon.Count == 2)
+
+            if (polygon.Length == 2)
             {
                 return new PdfRectangle(polygon[0], polygon[1]);
             }
@@ -110,7 +113,7 @@
                 double uX;
                 double uY;
 
-                for (j = 0; j < polygon.Count; j++)
+                for (j = 0; j < polygon.Length; j++)
                 {
                     Pj = polygon[j];
                     uX = Pj.X - Pk.X;
@@ -167,15 +170,23 @@
                     if (A < Amin)
                     {
                         Amin = A;
-                        mrb = [R0X, R0Y, R1X, R1Y, R2X, R2Y, R3X, R3Y];
+
+                        mrb[0] = R0X;
+                        mrb[1] = R0Y;
+                        mrb[2] = R1X;
+                        mrb[3] = R1Y;
+                        mrb[4] = R2X;
+                        mrb[5] = R2Y;
+                        mrb[6] = R3X;
+                        mrb[7] = R3Y;
                     }
                 }
 
                 k++;
                 j = k + 1;
 
-                if (j == polygon.Count) j = 0;
-                if (k == polygon.Count) break;
+                if (j == polygon.Length) j = 0;
+                if (k == polygon.Length) break;
             }
 
             return new PdfRectangle(new PdfPoint(mrb[4], mrb[5]),
@@ -191,12 +202,27 @@
         /// <param name="points">The points.</param>
         public static PdfRectangle MinimumAreaRectangle(IEnumerable<PdfPoint> points)
         {
+            if (points is null)
+            {
+                throw new ArgumentException("MinimumAreaRectangle(): points cannot be null.", nameof(points));
+            }
+
+            return MinimumAreaRectangle(points.ToArray());
+        }
+
+        /// <summary>
+        /// Algorithm to find the (oriented) minimum area rectangle (MAR) by first finding the convex hull of the points
+        /// and then finding its MAR.
+        /// </summary>
+        /// <param name="points">The points.</param>
+        public static PdfRectangle MinimumAreaRectangle(PdfPoint[] points)
+        {
             if (points?.Any() != true)
             {
                 throw new ArgumentException("MinimumAreaRectangle(): points cannot be null and must contain at least one point.", nameof(points));
             }
 
-            return ParametricPerpendicularProjection(GrahamScan(points.Distinct()).ToList());
+            return ParametricPerpendicularProjection(GrahamScan(points.Distinct()).ToArray());
         }
 
         /// <summary>
@@ -256,14 +282,37 @@
         /// <summary>
         /// Algorithm to find the convex hull of the set of points with time complexity O(n log n).
         /// </summary>
-        public static IEnumerable<PdfPoint> GrahamScan(IEnumerable<PdfPoint> points)
+        public static IReadOnlyCollection<PdfPoint> GrahamScan(IEnumerable<PdfPoint> points)
         {
-            if (points?.Any() != true)
+            return GrahamScan(points.ToArray());
+        }
+
+        private sealed class PdfPointXYComparer : IComparer<PdfPoint>
+        {
+            public static readonly PdfPointXYComparer Instance = new();
+
+            public int Compare(PdfPoint p1, PdfPoint p2)
             {
-                throw new ArgumentException("GrahamScan(): points cannot be null and must contain at least one point.", nameof(points));
+                int comp = p1.X.CompareTo(p2.X);
+                return comp == 0 ? p1.Y.CompareTo(p2.Y) : comp;
+            }
+        }
+
+        /// <summary>
+        /// Algorithm to find the convex hull of the set of points with time complexity O(n log n).
+        /// </summary>
+        public static IReadOnlyCollection<PdfPoint> GrahamScan(PdfPoint[] points)
+        {
+            if (points is null || points.Length == 0)
+            {
+                throw new ArgumentException("GrahamScan(): points cannot be null and must contain at least one point.",
+                    nameof(points));
             }
 
-            if (points.Count() < 3) return points;
+            if (points.Length < 3)
+            {
+                return points;
+            }
 
             static double polarAngle(in PdfPoint point1, in PdfPoint point2)
             {
@@ -271,52 +320,64 @@
                 return Math.Atan2(point2.Y - point1.Y, point2.X - point1.X) % Math.PI;
             }
 
-            var stack = new Stack<PdfPoint>();
-            var sortedPoints = points.OrderBy(p => p.X).ThenBy(p => p.Y).ToList();
-            var P0 = sortedPoints[0];
-            var groups = sortedPoints.Skip(1).GroupBy(p => polarAngle(P0, p)).OrderBy(g => g.Key);
+            Array.Sort(points, PdfPointXYComparer.Instance);
 
-            sortedPoints = new List<PdfPoint>();
-            foreach (var group in groups)
+            var P0 = points[0];
+            var groups = points.Skip(1).GroupBy(p => polarAngle(P0, p)).OrderBy(g => g.Key).ToArray();
+
+            var sortedPoints = ArrayPool<PdfPoint>.Shared.Rent(groups.Length);
+
+            try
             {
-                if (group.Count() == 1)
+                for (int i = 0; i < groups.Length; i++)
                 {
-                    sortedPoints.Add(group.First());
-                }
-                else
-                {
-                    // if more than one point has the same angle, 
-                    // remove all but the one that is farthest from P0
-                    sortedPoints.Add(group.OrderByDescending(p =>
+                    var group = groups[i];
+                    if (group.Count() == 1)
                     {
-                        double dx = p.X - P0.X;
-                        double dy = p.Y - P0.Y;
-                        return dx * dx + dy * dy;
-                    }).First());
+                        sortedPoints[i] = group.First();
+                    }
+                    else
+                    {
+                        // if more than one point has the same angle, 
+                        // remove all but the one that is farthest from P0
+                        sortedPoints[i] = group.OrderByDescending(p =>
+                        {
+                            double dx = p.X - P0.X;
+                            double dy = p.Y - P0.Y;
+                            return dx * dx + dy * dy;
+                        }).First();
+                    }
                 }
-            }
 
-            if (sortedPoints.Count < 2)
-            {
-                return new[] { P0, sortedPoints[0] };
-            }
-
-            stack.Push(P0);
-            stack.Push(sortedPoints[0]);
-            stack.Push(sortedPoints[1]);
-
-            for (int i = 2; i < sortedPoints.Count; i++)
-            {
-                var point = sortedPoints[i];
-                while (stack.Count > 1 && !ccw(stack.ElementAt(1), stack.Peek(), point))
+                if (groups.Length < 2)
                 {
-                    stack.Pop();
+                    return [P0, sortedPoints[0]];
                 }
-                stack.Push(point);
-            }
 
-            return stack;
+                var stack = new Stack<PdfPoint>();
+                stack.Push(P0);
+                stack.Push(sortedPoints[0]);
+                stack.Push(sortedPoints[1]);
+
+                for (int i = 2; i < groups.Length; i++)
+                {
+                    var point = sortedPoints[i];
+                    while (stack.Count > 1 && !ccw(stack.ElementAt(1), stack.Peek(), point))
+                    {
+                        stack.Pop();
+                    }
+
+                    stack.Push(point);
+                }
+
+                return stack;
+            }
+            finally
+            {
+                ArrayPool<PdfPoint>.Shared.Return(sortedPoints);
+            }
         }
+
         #endregion
 
         #region PdfRectangle
@@ -431,10 +492,10 @@
                 if (IntersectsWith(rectangle.BottomLeft, rectangle.BottomRight, other.BottomLeft, other.BottomRight)) return true;
                 if (IntersectsWith(rectangle.BottomLeft, rectangle.BottomRight, other.BottomRight, other.TopRight)) return true;
                 if (IntersectsWith(rectangle.BottomLeft, rectangle.BottomRight, other.TopRight, other.TopLeft)) return true;
-                if (IntersectsWith(rectangle.BottomLeft, rectangle.BottomRight,other.TopLeft, other.BottomLeft)) return true;
+                if (IntersectsWith(rectangle.BottomLeft, rectangle.BottomRight, other.TopLeft, other.BottomLeft)) return true;
 
                 if (IntersectsWith(rectangle.BottomRight, rectangle.TopRight, other.BottomLeft, other.BottomRight)) return true;
-                if (IntersectsWith(rectangle.BottomRight, rectangle.TopRight,other.BottomRight, other.TopRight)) return true;
+                if (IntersectsWith(rectangle.BottomRight, rectangle.TopRight, other.BottomRight, other.TopRight)) return true;
                 if (IntersectsWith(rectangle.BottomRight, rectangle.TopRight, other.TopRight, other.TopLeft)) return true;
                 if (IntersectsWith(rectangle.BottomRight, rectangle.TopRight, other.TopLeft, other.BottomLeft)) return true;
 
@@ -469,7 +530,7 @@
         /// Gets the axis-aligned rectangle that completely containing the original rectangle, with no rotation.
         /// </summary>
         /// <param name="rectangle"></param>
-        public static PdfRectangle Normalise(this in PdfRectangle rectangle)
+        public static PdfRectangle Normalise(this PdfRectangle rectangle)
         {
             var bottomLeft = rectangle.BottomLeft;
             var bottomRight = rectangle.BottomRight;
