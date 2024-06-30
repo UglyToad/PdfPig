@@ -5,7 +5,7 @@
     /// <summary>
     /// Interface for classes with a bounding box
     /// </summary>
-    public interface IBlock
+    public interface IBoundingBox
     {
         /// <summary>
         /// Gets the Bounding Box: The rectangle completely containing this object
@@ -16,7 +16,7 @@
     /// <summary>
     /// Interface for classes with a bounding box and text
     /// </summary>
-    public interface ILettersBlock : IBlock
+    public interface ILettersBlock : IBoundingBox
     {
         /// <summary>
         /// The text of the block

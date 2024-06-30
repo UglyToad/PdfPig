@@ -12,7 +12,7 @@
     /// <summary>
     /// An image in a PDF document, may be an <see cref="InlineImage"/> or a PostScript image XObject (<see cref="XObjectImage"/>).
     /// </summary>
-    public interface IPdfImage : IBlock
+    public interface IPdfImage : IBoundingBox
     {
         /// <summary>
         /// The width of the image in samples.
