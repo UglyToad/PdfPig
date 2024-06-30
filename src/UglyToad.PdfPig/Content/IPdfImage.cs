@@ -12,13 +12,8 @@
     /// <summary>
     /// An image in a PDF document, may be an <see cref="InlineImage"/> or a PostScript image XObject (<see cref="XObjectImage"/>).
     /// </summary>
-    public interface IPdfImage
+    public interface IPdfImage : IBlock
     {
-        /// <summary>
-        /// The placement rectangle of the image in PDF coordinates.
-        /// </summary>
-        PdfRectangle Bounds { get; }
-
         /// <summary>
         /// The width of the image in samples.
         /// </summary>

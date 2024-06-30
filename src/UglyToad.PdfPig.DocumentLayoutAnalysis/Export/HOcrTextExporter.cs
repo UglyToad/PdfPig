@@ -273,7 +273,7 @@
         private string GetCode(IPdfImage pdfImage, double pageHeight, int level)
         {
             imageCount++;
-            var bbox = pdfImage.Bounds;
+            var bbox = pdfImage.BoundingBox;
             return GetIndent(level) + "<span class='ocr_image' id='image_" + pageCount + "_"
                             + imageCount + "' title='" + GetCode(bbox, pageHeight) + "' />";
         }

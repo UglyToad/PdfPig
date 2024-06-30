@@ -7,12 +7,22 @@
     /// <summary>
     /// A glyph or combination of glyphs (characters) drawn by a PDF content stream.
     /// </summary>
-    public class Letter
+    public class Letter : ILettersBlock
     {
+        /// <summary>
+        /// This letter as as List of Letters in order to implement ILettersBlock interface
+        /// </summary>
+        public IReadOnlyList<Letter> Letters => [this];
+
         /// <summary>
         /// The text for this letter or unicode character.
         /// </summary>
         public string Value { get; }
+
+        /// <summary>
+        /// The text of the this letter or unicode character. Same as <see cref="Letter.Value"/>
+        /// </summary>
+        public string Text => Value;
 
         /// <summary>
         /// Text orientation of the letter.
@@ -45,6 +55,11 @@
         /// The width of the glyph may also be more or less than the <see cref="Width"/> allocated for the character in the PDF content.
         /// </summary>
         public PdfRectangle GlyphRectangle { get; }
+
+        /// <summary>
+        /// Gets the Bounding Box: The rectangle completely containing this object. Same as <see cref="GlyphRectangle"/>
+        /// </summary>
+        public PdfRectangle BoundingBox => GlyphRectangle;
 
         /// <summary>
         /// Size as defined in the PDF file. This is not equivalent to font size in points but is relative to other font sizes on the page.

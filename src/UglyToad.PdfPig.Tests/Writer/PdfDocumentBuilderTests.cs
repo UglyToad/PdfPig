@@ -563,8 +563,8 @@
 
                 Assert.NotNull(image);
 
-                Assert.Equal(expectedBounds.BottomLeft, image.Bounds.BottomLeft);
-                Assert.Equal(expectedBounds.TopRight, image.Bounds.TopRight);
+                Assert.Equal(expectedBounds.BottomLeft, image.BoundingBox.BottomLeft);
+                Assert.Equal(expectedBounds.TopRight, image.BoundingBox.TopRight);
 
                 Assert.Equal(imageBytes, image.RawMemory.ToArray());
             }
@@ -609,10 +609,10 @@
                 Assert.Equal(2, page1Images.Count);
 
                 var image1 = page1Images[0];
-                Assert.Equal(expectedBounds1, image1.Bounds);
+                Assert.Equal(expectedBounds1, image1.BoundingBox);
 
                 var image2 = page1Images[1];
-                Assert.Equal(expectedBounds2, image2.Bounds);
+                Assert.Equal(expectedBounds2, image2.BoundingBox);
 
                 var page2Doc = document.GetPage(2);
 
@@ -620,7 +620,7 @@
 
                 Assert.NotNull(image3);
 
-                Assert.Equal(expectedBounds3, image3.Bounds);
+                Assert.Equal(expectedBounds3, image3.BoundingBox);
 
                 Assert.Equal(imageBytes, image1.RawMemory.ToArray());
                 Assert.Equal(imageBytes, image2.RawMemory.ToArray());
@@ -696,8 +696,8 @@
 
                 Assert.NotNull(image);
 
-                Assert.Equal(expectedBounds.BottomLeft, image.Bounds.BottomLeft);
-                Assert.Equal(expectedBounds.TopRight, image.Bounds.TopRight);
+                Assert.Equal(expectedBounds.BottomLeft, image.BoundingBox.BottomLeft);
+                Assert.Equal(expectedBounds.TopRight, image.BoundingBox.TopRight);
 
                 Assert.True(image.TryGetPng(out var png));
                 Assert.NotNull(png);
