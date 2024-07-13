@@ -389,14 +389,19 @@
         /// <param name="includeBorder">If set to false, will return false if the point belongs to the border.</param>
         public static bool Contains(this PdfRectangle rectangle, PdfPoint point, bool includeBorder = false)
         {
+            if (Math.Abs(rectangle.Area) < epsilon)
+            {
+                return false;
+            }
+
             if (Math.Abs(rectangle.Rotation) < epsilon)
             {
                 if (includeBorder)
                 {
                     return point.X >= rectangle.Left &&
-                              point.X <= rectangle.Right &&
-                              point.Y >= rectangle.Bottom &&
-                              point.Y <= rectangle.Top;
+                           point.X <= rectangle.Right &&
+                           point.Y >= rectangle.Bottom &&
+                           point.Y <= rectangle.Top;
                 }
 
                 return point.X > rectangle.Left &&
@@ -404,30 +409,29 @@
                        point.Y > rectangle.Bottom &&
                        point.Y < rectangle.Top;
             }
-            else
+
+            static double area(in PdfPoint p1, PdfPoint p2, PdfPoint p3)
             {
-                static double area(in PdfPoint p1, PdfPoint p2, PdfPoint p3)
-                {
-                    return Math.Abs((p2.X * p1.Y - p1.X * p2.Y) + (p3.X * p2.Y - p2.X * p3.Y) + (p1.X * p3.Y - p3.X * p1.Y)) / 2.0;
-                }
-
-                var area1 = area(rectangle.BottomLeft, point, rectangle.TopLeft);
-                var area2 = area(rectangle.TopLeft, point, rectangle.TopRight);
-                var area3 = area(rectangle.TopRight, point, rectangle.BottomRight);
-                var area4 = area(rectangle.BottomRight, point, rectangle.BottomLeft);
-
-                var sum = area1 + area2 + area3 + area4; // sum is always greater or equal to area
-
-                if (sum - rectangle.Area > epsilon) return false;
-
-                if (area1 < epsilon || area2 < epsilon || area3 < epsilon || area4 < epsilon)
-                {
-                    // point is on the rectangle
-                    return includeBorder;
-                }
-
-                return true;
+                return Math.Abs((p2.X * p1.Y - p1.X * p2.Y) + (p3.X * p2.Y - p2.X * p3.Y) +
+                                (p1.X * p3.Y - p3.X * p1.Y)) / 2.0;
             }
+
+            var area1 = area(rectangle.BottomLeft, point, rectangle.TopLeft);
+            var area2 = area(rectangle.TopLeft, point, rectangle.TopRight);
+            var area3 = area(rectangle.TopRight, point, rectangle.BottomRight);
+            var area4 = area(rectangle.BottomRight, point, rectangle.BottomLeft);
+
+            var sum = area1 + area2 + area3 + area4; // sum is always greater or equal to area
+
+            if (sum - rectangle.Area > epsilon) return false;
+
+            if (area1 < epsilon || area2 < epsilon || area3 < epsilon || area4 < epsilon)
+            {
+                // point is on the rectangle
+                return includeBorder;
+            }
+
+            return true;
         }
 
         /// <summary>
