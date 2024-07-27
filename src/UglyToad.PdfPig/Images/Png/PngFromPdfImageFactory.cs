@@ -46,6 +46,11 @@
                         bytesPure[actualSize - 2] == ReadHelper.AsciiCarriageReturn &&
                         bytesPure[actualSize - 1] == ReadHelper.AsciiLineFeed);
 
+                if (!isCorrectlySized)
+                {
+                    return false;
+                }
+
                 if (image.ColorSpaceDetails.BaseType == ColorSpace.DeviceCMYK || numberOfComponents == 4)
                 {
                     int i = 0;
