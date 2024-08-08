@@ -137,8 +137,14 @@
 
         private TextOrientation GetTextOrientation()
         {
-            if (System.Math.Abs(StartBaseLine.Y - EndBaseLine.Y) < 10e-5)
+            if (Math.Abs(StartBaseLine.Y - EndBaseLine.Y) < 10e-5)
             {
+                if (Math.Abs(StartBaseLine.X - EndBaseLine.X) < 10e-5)
+                {
+                    // Start and End point are the same
+                    return GetTextOrientationRot();
+                }
+
                 if (StartBaseLine.X > EndBaseLine.X)
                 {
                     return TextOrientation.Rotate180;
@@ -147,8 +153,14 @@
                 return TextOrientation.Horizontal;
             }
 
-            if (System.Math.Abs(StartBaseLine.X - EndBaseLine.X) < 10e-5)
+            if (Math.Abs(StartBaseLine.X - EndBaseLine.X) < 10e-5)
             {
+                if (Math.Abs(StartBaseLine.Y - EndBaseLine.Y) < 10e-5)
+                {
+                    // Start and End point are the same
+                    return GetTextOrientationRot();
+                }
+
                 if (StartBaseLine.Y > EndBaseLine.Y)
                 {
                     return TextOrientation.Rotate90;
@@ -158,6 +170,35 @@
             }
 
             return TextOrientation.Other;
+        }
+
+        private TextOrientation GetTextOrientationRot()
+        {
+            double rotation = GlyphRectangle.Rotation;
+            int rotationInt = (int)Math.Round(rotation, MidpointRounding.AwayFromZero);
+
+            if (Math.Abs(rotation - rotationInt) >= 10e-5)
+            {
+                return TextOrientation.Other;
+            }
+
+            switch (rotationInt)
+            {
+                case 0:
+                    return TextOrientation.Horizontal;
+
+                case -90:
+                    return TextOrientation.Rotate90;
+
+                case 180:
+                case -180:
+                    return TextOrientation.Rotate180;
+
+                case 90:
+                    return TextOrientation.Rotate270;
+            }
+
+            throw new Exception($"Could not find TextOrientation for rotation '{rotation}'.");
         }
 
         /// <summary>
