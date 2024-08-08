@@ -142,7 +142,7 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
 
             Assert.Equal("Andada Regular", name);
 
-            Assert.Equal(1.001999, font.TableRegister.HeaderTable.Revision, new DoubleComparer(5));
+            Assert.Equal(1.001999, font.TableRegister.HeaderTable.Revision, new DoubleComparer(0.00001));
 
             Assert.Equal(11, font.TableRegister.HeaderTable.Flags);
 
