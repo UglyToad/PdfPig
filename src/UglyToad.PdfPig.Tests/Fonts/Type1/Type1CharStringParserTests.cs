@@ -8,7 +8,7 @@
         [Fact]
         public void CorrectBoundingBoxesFlexPoints()
         {
-            var pointComparer = new PointComparer(new DoubleComparer(3));
+            var pointComparer = new PointComparer(new DoubleComparer(0.001));
 
             var filePath = IntegrationHelpers.GetDocumentPath("data.pdf");
 
