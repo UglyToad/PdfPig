@@ -3,12 +3,11 @@
     using Content;
     using PdfPig.Geometry;
     using PdfPig.Core;
-    using System.Drawing;
 
     public class PdfRectangleTests
     {
-        private static readonly DoubleComparer DoubleComparer = new DoubleComparer(3);
-        private static readonly DoubleComparer PreciseDoubleComparer = new DoubleComparer(6);
+        private static readonly DoubleComparer DoubleComparer = new DoubleComparer(0.001);
+        private static readonly DoubleComparer PreciseDoubleComparer = new DoubleComparer(0.000001);
         private static readonly PointComparer PointComparer = new PointComparer(DoubleComparer);
         private static readonly PdfRectangle UnitRectangle = new PdfRectangle(new PdfPoint(0, 0), new PdfPoint(1, 1));
 
@@ -1460,6 +1459,11 @@
                     new PdfPoint(79.72935886126837, 162.40175959739133),
                     new PdfPoint(36.31110596050322, 137.33421959739135),
                     new PdfPoint(61.57811596050321, 93.57047452204044)
+                },
+                new double[]
+                {
+                    50.135079999999988, // width
+                    50.53402 // height
                 }
             },
             new object[]
@@ -1475,6 +1479,11 @@
                     new PdfPoint(355.93382538513987, -509.2927859424674),
                     new PdfPoint(291.2932316380764, -201.33455131845915),
                     new PdfPoint(123.95226520870021, -236.45950727688313)
+                },
+                new double[]
+                {
+                    314.66916060000005,
+                    170.98760649999997
                 }
             },
             new object[]
@@ -1490,6 +1499,11 @@
                     new PdfPoint(748.3932365836752, 221.98391118471883),
                     new PdfPoint(-70.46470122718794, 247.50297212341658),
                     new PdfPoint(-79.61250178788342, -46.03248047926875)
+                },
+                new double[]
+                {
+                    819.255482,
+                    293.67796
                 }
             },
             new object[]
@@ -1505,6 +1519,11 @@
                     new PdfPoint(-62.47760759065051, 323.00991498515555),
                     new PdfPoint(227.9582036948802, 613.4457262706862),
                     new PdfPoint(-120.22754499429334, 961.6314749598598)
+                },
+                new double[]
+                {
+                    410.73826331883026,
+                    492.4090080212593
                 }
             },
             new object[]
@@ -1520,6 +1539,11 @@
                     new PdfPoint(956.4918489990248, 290.16467735562713),
                     new PdfPoint(1243.8589223186318, 2.797604036020175),
                     new PdfPoint(1163.8416408097196, -77.21967747289204)
+                },
+                new double[]
+                {
+                    406.39841246805167,
+                    113.16152473412956
                 }
             }
         };
@@ -1646,7 +1670,7 @@
             Assert.Equal(new PdfPoint(-1, 1), rotated.TopRight);
 
             Assert.Equal(1, rotated.Width, PreciseDoubleComparer);
-            Assert.Equal(-1, rotated.Height, PreciseDoubleComparer);
+            Assert.Equal(1, rotated.Height, PreciseDoubleComparer);
             Assert.Equal(90, rotated.Rotation, PreciseDoubleComparer);
         }
 
@@ -1662,20 +1686,28 @@
             Assert.Equal(new PdfPoint(0, -1), rotated.TopLeft);
             Assert.Equal(new PdfPoint(-1, -1), rotated.TopRight);
 
-            Assert.Equal(-1, rotated.Width, PreciseDoubleComparer);
-            Assert.Equal(-1, rotated.Height, PreciseDoubleComparer);
+            Assert.Equal(1, rotated.Width, PreciseDoubleComparer);
+            Assert.Equal(1, rotated.Height, PreciseDoubleComparer);
             Assert.Equal(180, rotated.Rotation, PreciseDoubleComparer);
         }
 
         [Theory]
         [MemberData(nameof(RotateData))]
-        public void Rotate(double[][] data, PdfPoint[] expected)
+        public void Rotate(double[][] data, PdfPoint[] expected, double[] expectedSize)
         {
             var points = data[0];
             var angle = data[1][0];
 
+            double width = expectedSize[0];
+            double height = expectedSize[1];
+
             var rect = new PdfRectangle(points[0], points[1], points[2], points[3]);
+            Assert.Equal(width, rect.Width, PreciseDoubleComparer);
+            Assert.Equal(height, rect.Height, PreciseDoubleComparer);
+
             var rectR = TransformationMatrix.GetRotationMatrix(angle).Transform(rect);
+            Assert.Equal(width, rectR.Width, PreciseDoubleComparer);
+            Assert.Equal(height, rectR.Height, PreciseDoubleComparer);
 
             Assert.Equal(expected[0], rectR.BottomRight, PointComparer);
             Assert.Equal(expected[1], rectR.TopRight, PointComparer);

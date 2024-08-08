@@ -20,7 +20,7 @@
         [Fact]
         public void ImagesHaveCorrectDimensionsAndLocations()
         {
-            var doubleComparer = new DoubleComparer(1);
+            var doubleComparer = new DoubleComparer(0.1);
 
             using (var document = PdfDocument.Open(GetFilePath(), ParsingOptions.LenientParsingOff))
             {

@@ -4,8 +4,8 @@
 
     public class PdfSubpathTests
     {
-        private static readonly DoubleComparer DoubleComparer = new DoubleComparer(3);
-        private static readonly DoubleComparer PreciseDoubleComparer = new DoubleComparer(6);
+        private static readonly DoubleComparer DoubleComparer = new DoubleComparer(0.001);
+        private static readonly DoubleComparer PreciseDoubleComparer = new DoubleComparer(0.000001);
         private static readonly PointComparer PointComparer = new PointComparer(DoubleComparer);
 
         #region data
