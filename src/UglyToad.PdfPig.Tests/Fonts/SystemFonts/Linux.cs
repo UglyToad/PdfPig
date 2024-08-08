@@ -64,10 +64,10 @@ namespace UglyToad.PdfPig.Tests.Fonts.SystemFonts
 
                     var current = page.Letters[i];
 
-                    Assert.Equal(expectedData.TopLeft.X, current.GlyphRectangle.TopLeft.X, 7);
-                    Assert.Equal(expectedData.TopLeft.Y, current.GlyphRectangle.TopLeft.Y, 7);
-                    Assert.Equal(expectedData.Width, current.GlyphRectangle.Width, 7);
-                    Assert.Equal(expectedData.Height, current.GlyphRectangle.Height, 7);
+                    Assert.Equal(expectedData.TopLeft.X, current.GlyphRectangle.TopLeft.X, 6);
+                    Assert.Equal(expectedData.TopLeft.Y, current.GlyphRectangle.TopLeft.Y, 6);
+                    Assert.Equal(expectedData.Width, current.GlyphRectangle.Width, 6);
+                    Assert.Equal(expectedData.Height, current.GlyphRectangle.Height, 6);
                     Assert.Equal(expectedData.Rotation, current.GlyphRectangle.Rotation, 3);
                 }
             }

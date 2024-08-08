@@ -11,32 +11,32 @@
     /// The Y-axis extends vertically upwards and the X-axis horizontally to the right.
     /// Unless otherwise specified on a per-page basis, units in PDF space are equivalent to a typographic point (1/72 inch).
     /// </remarks>
-    public struct PdfRectangle
+    public readonly struct PdfRectangle
     {
         /// <summary>
         /// Top left point of the rectangle.
         /// </summary>
-        public readonly PdfPoint TopLeft { get; }
+        public PdfPoint TopLeft { get; }
 
         /// <summary>
         /// Top right point of the rectangle.
         /// </summary>
-        public readonly PdfPoint TopRight { get; }
+        public PdfPoint TopRight { get; }
 
         /// <summary>
         /// Bottom right point of the rectangle.
         /// </summary>
-        public readonly PdfPoint BottomRight { get; }
+        public PdfPoint BottomRight { get; }
 
         /// <summary>
         /// Bottom left point of the rectangle.
         /// </summary>
-        public readonly PdfPoint BottomLeft { get; }
+        public PdfPoint BottomLeft { get; }
 
         /// <summary>
         /// Centroid point of the rectangle.
         /// </summary>
-        public readonly PdfPoint Centroid
+        public PdfPoint Centroid
         {
             get
             {
@@ -46,47 +46,23 @@
             }
         }
 
-        private double width;
         /// <summary>
         /// Width of the rectangle.
         /// <para>A positive number.</para>
         /// </summary>
-        public double Width
-        {
-            get
-            {
-                if (double.IsNaN(width))
-                {
-                    GetWidthHeight();
-                }
+        public double Width { get; }
 
-                return width;
-            }
-        }
-
-        private double height;
         /// <summary>
         /// Height of the rectangle.
         /// <para>A positive number.</para>
         /// </summary>
-        public double Height
-        {
-            get
-            {
-                if (double.IsNaN(height))
-                {
-                    GetWidthHeight();
-                }
-
-                return height;
-            }
-        }
+        public double Height { get; }
 
         /// <summary>
         /// Rotation angle of the rectangle. Counterclockwise, in degrees.
         /// <para>-180 ≤ θ ≤ 180</para>
         /// </summary>
-        public readonly double Rotation => GetT() * 180 / Math.PI;
+        public double Rotation => GetT() * 180 / Math.PI;
 
         /// <summary>
         /// Area of the rectangle.
@@ -96,22 +72,22 @@
         /// <summary>
         /// Left. This value is only valid if the rectangle is not rotated, check <see cref="Rotation"/>.
         /// </summary>
-        public readonly double Left => TopLeft.X < TopRight.X ? TopLeft.X : TopRight.X;
+        public double Left => TopLeft.X < TopRight.X ? TopLeft.X : TopRight.X;
 
         /// <summary>
         /// Top. This value is only valid if the rectangle is not rotated, check <see cref="Rotation"/>.
         /// </summary>
-        public readonly double Top => TopLeft.Y > BottomLeft.Y ? TopLeft.Y : BottomLeft.Y;
+        public double Top => TopLeft.Y > BottomLeft.Y ? TopLeft.Y : BottomLeft.Y;
 
         /// <summary>
         /// Right. This value is only valid if the rectangle is not rotated, check <see cref="Rotation"/>.
         /// </summary>
-        public readonly double Right => BottomRight.X > BottomLeft.X ? BottomRight.X : BottomLeft.X;
+        public double Right => BottomRight.X > BottomLeft.X ? BottomRight.X : BottomLeft.X;
 
         /// <summary>
         /// Bottom. This value is only valid if the rectangle is not rotated, check <see cref="Rotation"/>.
         /// </summary>
-        public readonly double Bottom => BottomRight.Y < TopRight.Y ? BottomRight.Y : TopRight.Y;
+        public double Bottom => BottomRight.Y < TopRight.Y ? BottomRight.Y : TopRight.Y;
 
         /// <summary>
         /// Create a new <see cref="PdfRectangle"/>.
@@ -155,8 +131,8 @@
             BottomLeft = bottomLeft;
             BottomRight = bottomRight;
 
-            width = double.NaN;
-            height = double.NaN;
+            Width = Math.Sqrt((BottomLeft.X - BottomRight.X) * (BottomLeft.X - BottomRight.X) + (BottomLeft.Y - BottomRight.Y) * (BottomLeft.Y - BottomRight.Y));
+            Height = Math.Sqrt((BottomLeft.X - TopLeft.X) * (BottomLeft.X - TopLeft.X) + (BottomLeft.Y - TopLeft.Y) * (BottomLeft.Y - TopLeft.Y));
         }
 
         /// <summary>
@@ -165,7 +141,7 @@
         /// <param name="dx">The distance to move the rectangle in the x direction relative to its current location.</param>
         /// <param name="dy">The distance to move the rectangle in the y direction relative to its current location.</param>
         /// <returns>A new rectangle shifted on the y axis by the given delta value.</returns>
-        public readonly PdfRectangle Translate(double dx, double dy)
+        public PdfRectangle Translate(double dx, double dy)
         {
             return new PdfRectangle(TopLeft.Translate(dx, dy), TopRight.Translate(dx, dy),
                                     BottomLeft.Translate(dx, dy), BottomRight.Translate(dx, dy));
@@ -174,7 +150,7 @@
         /// <summary>
         /// -π ≤ θ ≤ π
         /// </summary>
-        private readonly double GetT()
+        private double GetT()
         {
             if (!BottomRight.Equals(BottomLeft))
             {
@@ -183,24 +159,6 @@
 
             // handle the case where both bottom points are identical
             return Math.Atan2(TopLeft.Y - BottomLeft.Y, TopLeft.X - BottomLeft.X) - Math.PI / 2;
-        }
-
-        private void GetWidthHeight()
-        {
-            var t = GetT();
-            var cos = Math.Cos(t);
-            var sin = Math.Sin(t);
-
-            var inverseRotation = new TransformationMatrix(
-                cos, -sin, 0,
-                sin, cos, 0,
-                0, 0, 1);
-
-            // Using Abs as a proxy for Euclidean distance in 1D 
-            // as it might happen that points have negative coordinates.
-            var bl = inverseRotation.Transform(BottomLeft);
-            width = Math.Abs(inverseRotation.Transform(BottomRight).X - bl.X);
-            height = Math.Abs(inverseRotation.Transform(TopLeft).Y - bl.Y);
         }
 
         /// <inheritdoc />
