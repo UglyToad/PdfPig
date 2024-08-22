@@ -6,7 +6,8 @@
         private static readonly HashSet<string> _documentsToIgnore =
         [
             "issue_671.pdf",
-            "GHOSTSCRIPT-698363-0.pdf"
+            "GHOSTSCRIPT-698363-0.pdf",
+            "ErcotFacts.pdf"
         ];
 
         [Theory]

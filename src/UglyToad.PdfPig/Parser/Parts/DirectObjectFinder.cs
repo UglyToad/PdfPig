@@ -32,6 +32,11 @@
             {
                 var temp = scanner.Get(reference.Data);
 
+                if (temp is null)
+                {
+                    return false;
+                }
+
                 if (temp.Data is T tTemp)
                 {
                     tokenResult = tTemp;

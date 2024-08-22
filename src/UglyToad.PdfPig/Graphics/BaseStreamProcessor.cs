@@ -665,6 +665,11 @@
 
             var state = ResourceStore.GetExtendedGraphicsStateDictionary(stateName);
 
+            if (state is null)
+            {
+                return;
+            }
+
             if (state.TryGet(NameToken.Lw, PdfScanner, out NumericToken? lwToken))
             {
                 currentGraphicsState.LineWidth = lwToken.Data;
