@@ -41,6 +41,25 @@
         }
 
         [Fact]
+        public void BitsPerComponents16()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("MOZILLA-3136-0.pdf");
+
+            using (var document = PdfDocument.Open(path))
+            {
+                var page1 = document.GetPage(3);
+                var images1 = page1.GetImages().ToArray();
+
+                var image9 = images1[9];
+
+                Assert.Equal(16 , image9.BitsPerComponent);
+
+                Assert.True(image9.TryGetPng(out byte[] bytes_3_9));
+                File.WriteAllBytes(Path.Combine(OutputFolder, "MOZILLA-3136-0_3_9_16bits.png"), bytes_3_9);
+            }
+        }
+
+        [Fact]
         public void DeviceNColorSpaceImages()
         {
             var path = IntegrationHelpers.GetDocumentPath("DeviceN_CS_test.pdf");
