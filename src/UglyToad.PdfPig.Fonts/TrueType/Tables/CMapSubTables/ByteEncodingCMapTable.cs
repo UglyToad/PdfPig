@@ -46,7 +46,7 @@
 
         public int CharacterCodeToGlyphIndex(int characterCode)
         {
-            if (characterCode < 0 || characterCode >= GlyphMappingLength)
+            if (characterCode < 0 || characterCode >= glyphMapping.Length)
             {
                 return 0;
             }
