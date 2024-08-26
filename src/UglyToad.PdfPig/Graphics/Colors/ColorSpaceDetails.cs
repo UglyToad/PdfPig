@@ -728,18 +728,19 @@
         /// <inheritdoc/>
         internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> values)
         {
-            var cache = new Dictionary<int, double[]>(values.Length * 3);
-            var transformed = new List<byte>(values.Length * 3);
-            for (var i = 0; i < values.Length; i += 3)
+            var colorCache = new Dictionary<int, double[]>(values.Length);
+            var transformed = new List<byte>(values.Length);
+
+            for (var i = 0; i < values.Length; ++i)
             {
-                byte b = values[i++];
-                if (!cache.TryGetValue(b, out double[]? colors))
+                byte b = values[i];
+                if (!colorCache.TryGetValue(b, out double[]? colors))
                 {
                     colors = Process(b / 255.0);
-                    cache[b] = colors;
+                    colorCache[b] = colors;
                 }
 
-                for (int c = 0; c < colors.Length; c++)
+                for (int c = 0; c < colors.Length; ++c)
                 {
                     transformed.Add(ConvertToByte(colors[c]));
                 }

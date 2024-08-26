@@ -101,7 +101,7 @@
             {
                 var page1 = document.GetPage(1);
                 var images = page1.GetImages().ToArray();
-                var image1page1 = images.ElementAt(0);
+                var image1page1 = images[0];
                 var separationCs = image1page1.ColorSpaceDetails as SeparationColorSpaceDetails;
                 Assert.NotNull(separationCs);
                 Assert.True(separationCs.AlternateColorSpace is DeviceCmykColorSpaceDetails);
@@ -113,6 +113,39 @@
                         File.WriteAllBytes(Path.Combine(OutputFolder, $"MOZILLA-7375-0_1_{i}.png"), png);
                     }
                 }
+            }
+        }
+
+        [Fact]
+        public void SeparationColorSpace()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("MOZILLA-3136-0.pdf");
+
+            using (var document = PdfDocument.Open(path))
+            {
+                var page = document.GetPage(4);
+                var images = page.GetImages().ToArray();
+
+                var image4 = images[4];
+
+                var separation = image4.ColorSpaceDetails as SeparationColorSpaceDetails;
+                Assert.NotNull(separation);
+
+                Assert.True(image4.TryGetPng(out var png4));
+
+                File.WriteAllBytes(Path.Combine(OutputFolder, "MOZILLA-3136-0_4_separation.png"), png4);
+
+                // Green dolphin image 
+                // "Colorized TIFF (should appear only in GWG Green separation)"
+                var image9 = images[9];
+
+                var indexedCs = image9.ColorSpaceDetails as IndexedColorSpaceDetails;
+                Assert.NotNull(indexedCs);
+                Assert.Equal(ColorSpace.Separation, indexedCs.BaseColorSpace.Type);
+
+                Assert.True(image9.TryGetPng(out var png9));
+
+                File.WriteAllBytes(Path.Combine(OutputFolder, "MOZILLA-3136-0_9_separation.png"), png9);
             }
         }
 
@@ -217,7 +250,7 @@
                 File.WriteAllBytes(Path.Combine(OutputFolder, "MOZILLA-10225-0_341_0.png"), bytes341_0);
             }
         }
-
+        
         [Fact]
         public void SeparationLabColorSpace()
         {
