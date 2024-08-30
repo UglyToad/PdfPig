@@ -28,7 +28,7 @@
             parts.Add(part);
         }
 
-        public CrossReferenceTable Build(long firstCrossReferenceOffset, long offsetCorrection, ILog log)
+        public CrossReferenceTable Build(long firstCrossReferenceOffset, long offsetCorrection, bool isLenientParsing, ILog log)
         {
             CrossReferenceType type = CrossReferenceType.Table;
             DictionaryToken trailerDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>());
@@ -118,7 +118,7 @@
                 }
             }
 
-            return new CrossReferenceTable(type, objectOffsets, new TrailerDictionary(trailerDictionary), 
+            return new CrossReferenceTable(type, objectOffsets, new TrailerDictionary(trailerDictionary, isLenientParsing), 
                 parts.Select(x =>
                 {
                     var prev = x.GetPreviousOffset();
