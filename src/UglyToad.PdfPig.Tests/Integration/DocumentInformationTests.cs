@@ -96,5 +96,23 @@
                 Assert.Equal("D:20190306232856Z00'00'", information.CreationDate);
             }
         }
+
+        [Fact]
+        public void CanReadDocumentInfromationDirectory()
+        {
+            // Issue 884
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("info_dictionary.pdf");
+
+            // Lenient Parsing On -> can process
+            using (var document = PdfDocument.Open(path))
+            {
+                var information = document.Information;
+                Assert.Equal("SumatraPDF 3.2", information.Producer);
+            }
+
+            // Lenient Parsing Off -> throws
+            var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(path, ParsingOptions.LenientParsingOff));
+            Assert.Equal("The info token in the trailer dictionary should only contain indirect references, instead got: <Producer, (SumatraPDF 3.2)>.", ex.Message);
+        }
     }
 }

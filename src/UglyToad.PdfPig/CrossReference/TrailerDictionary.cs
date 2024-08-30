@@ -35,7 +35,7 @@
         /// <summary>
         /// The object reference for the document's information dictionary if it contains one.
         /// </summary>
-        public IndirectReference? Info { get; }
+        public IToken? Info { get; }
 
         /// <summary>
         /// A list containing two-byte string tokens which act as file identifiers.
@@ -51,7 +51,8 @@
         /// Create a new <see cref="TrailerDictionary"/>.
         /// </summary>
         /// <param name="dictionary">The parsed dictionary from the document.</param>
-        internal TrailerDictionary(DictionaryToken dictionary)
+        /// <param name="isLenientParsing">Indicates if the parsing is in lenient mode</param>
+        internal TrailerDictionary(DictionaryToken dictionary, bool isLenientParsing)
         {
             if (dictionary is null)
             {
@@ -68,9 +69,13 @@
 
             Root = rootReference.Data;
 
-            if (dictionary.TryGet(NameToken.Info, out IndirectReferenceToken reference))
+            if (dictionary.TryGet(NameToken.Info, out var infoToken))
             {
-                Info = reference.Data;
+                if (!isLenientParsing && infoToken is not IndirectReferenceToken)
+                {
+                    throw new PdfDocumentFormatException($"The info token in the trailer dictionary should only contain indirect references, instead got: {infoToken}.");
+                }
+                Info = infoToken;
             }
 
             if (dictionary.TryGet(NameToken.Id, out ArrayToken arr))

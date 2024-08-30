@@ -17,12 +17,17 @@
         /// </summary>
         public static DocumentInformation Create(IPdfTokenScanner pdfTokenScanner, TrailerDictionary trailer, bool isLenientParsing)
         {
-            if (!trailer.Info.HasValue)
+            var token = trailer.Info;
+            if (token is IndirectReferenceToken reference)
+            {
+                token = DirectObjectFinder.Get<IToken>(reference.Data, pdfTokenScanner);
+            }
+
+            if (token == null)
             {
                 return DocumentInformation.Default;
             }
-
-            var token = DirectObjectFinder.Get<IToken>(trailer.Info.Value, pdfTokenScanner);
+            
             if (token is DictionaryToken infoParsed)
             {
                 var title = GetEntryOrDefault(infoParsed, NameToken.Title, pdfTokenScanner);
