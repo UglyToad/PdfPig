@@ -3,6 +3,8 @@
     using System;
     using System.Linq;
     using Core;
+    using System.Diagnostics;
+    using System.Threading;
     using Tokenization.Scanner;
     using Tokens;
     using Util;
@@ -97,7 +99,7 @@
             var name = isUser ? NameToken.Ue : NameToken.Oe;
             if (encryptionDictionary.TryGet(name, tokenScanner, out StringToken? stringToken))
             {
-                return OtherEncodings.StringAsLatin1Bytes(stringToken.Data);
+                return stringToken.GetBytes();
             }
 
             if (encryptionDictionary.TryGet(name, tokenScanner, out HexToken? hexToken))
