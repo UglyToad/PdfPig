@@ -143,15 +143,19 @@
 
                 foreach (var kid in kids.Data)
                 {
+                    DictionaryToken? kidDictionaryToken = null;
                     if (!(kid is IndirectReferenceToken kidRef))
                     {
                         throw new PdfDocumentFormatException($"Kids array contained invalid entry (must be indirect reference): {kid}.");
                     }
-
-                    if (!DirectObjectFinder.TryGet(kidRef, pdfTokenScanner, out DictionaryToken? kidDictionaryToken))
+                    if (!DirectObjectFinder.TryGet(kidRef, pdfTokenScanner, out kidDictionaryToken))
                     {
-                        throw new PdfDocumentFormatException($"Could not find dictionary associated with reference in pages kids array: {kidRef}.");
+                        if (!isLenientParsing)
+                        {
+                            throw new PdfDocumentFormatException($"Could not find dictionary associated with reference in pages kids array: {kidRef}.");
+                        }
                     }
+                    kidDictionaryToken ??= new DictionaryToken(new Dictionary<NameToken, IToken>());
 
                     bool isChildPage = CheckIfIsPage(kidDictionaryToken, current.reference, false, pdfTokenScanner, isLenientParsing);
 
