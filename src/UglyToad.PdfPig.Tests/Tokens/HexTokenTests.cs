@@ -9,6 +9,8 @@
         [InlineData("61", "a")]
         [InlineData("0061", "a")]
         [InlineData("7465787420736f", "text so")]
+        [InlineData("6170", "ap")]
+        [InlineData("617", "ap")]
         public void MapsCorrectlyToString(string input, string expected)
         {
             var token = new HexToken(input.ToCharArray());

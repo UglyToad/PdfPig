@@ -63,7 +63,10 @@ namespace UglyToad.PdfPig.Tokens
                 throw new ArgumentNullException(nameof(characters));
             }
 
-            var bytes = new byte[characters.Length / 2];
+            // if the final character is missing, it is considered to be a 0, as per 7.3.4.3
+            // adding 1 to the characters array length ensure the size of the byte array is correct
+            // in all situations
+            var bytes = new byte[(characters.Length+1) / 2];
             int index = 0;
 
             for (var i = 0; i < characters.Length; i += 2)
