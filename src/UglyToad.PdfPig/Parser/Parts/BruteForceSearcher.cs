@@ -82,6 +82,31 @@
                             currentOffset++;
                         }
                     }
+                    else if (ReadHelper.IsWhitespace(bytes.CurrentByte))
+                    {
+                        var next = bytes.Peek();
+                        if (next.HasValue && next.Value == 'o')
+                        {
+                            if (ReadHelper.IsString(bytes, " obj"))
+                            {
+                                currentlyInObject = false;
+                                currentOffset--;
+                                loopProtection = 0;
+                            }
+                            else
+                            {
+                                bytes.MoveNext();
+                                currentOffset++;
+                                loopProtection = 0;
+                            }
+                        }
+                        else
+                        {
+                            bytes.MoveNext();
+                            currentOffset++;
+                            loopProtection = 0;
+                        }
+                    }
                     else
                     {
                         bytes.MoveNext();
