@@ -72,7 +72,7 @@
 
             // Lenient Parsing Off -> throws
             var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(path, ParsingOptions.LenientParsingOff));
-            Assert.Equal("Pages entry is null", ex.Message);
+            Assert.Equal("Could not find dictionary associated with reference in pages kids array: 3 0.", ex.Message);
         }
     }
 }
