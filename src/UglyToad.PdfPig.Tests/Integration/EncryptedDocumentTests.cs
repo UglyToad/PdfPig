@@ -53,6 +53,15 @@
                 Assert.NotNull(document.Information.Producer);
             }
         }
+        
+        [Fact]
+        public void CanReadDocumentWithEmptyStringEncryptedWithAESEncryptionAndOnlyIV()
+        {
+            using (var document = PdfDocument.Open(IntegrationHelpers.GetSpecificTestDocumentPath("r4_aes_empty_string.pdf")))
+            {
+                Assert.Empty(document.Information.Producer);
+            }
+        }
 
         private static string GetPath() => IntegrationHelpers.GetSpecificTestDocumentPath(FileName);
     }
