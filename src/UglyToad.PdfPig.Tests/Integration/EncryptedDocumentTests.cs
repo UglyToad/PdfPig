@@ -45,6 +45,15 @@
             }
         }
 
+        [Fact]
+        public void CanReadDocumentWithUEAsString()
+        {
+            using (var document = PdfDocument.Open(IntegrationHelpers.GetSpecificTestDocumentPath("string_encryption_key.pdf")))
+            {
+                Assert.NotNull(document.Information.Producer);
+            }
+        }
+
         private static string GetPath() => IntegrationHelpers.GetSpecificTestDocumentPath(FileName);
     }
 }
