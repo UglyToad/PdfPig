@@ -46,6 +46,18 @@
                 pagesDictionary = DirectObjectFinder.Get<DictionaryToken>(value, scanner);
             }
 
+            if (pagesDictionary == null)
+            {
+                if (isLenientParsing)
+                {
+                    pagesDictionary = new DictionaryToken(new Dictionary<NameToken, IToken>());
+                }
+                else
+                {
+                    throw new PdfDocumentFormatException($"Pages entry is null");
+                }
+            }
+
             var pages = PagesFactory.Create(pagesReference, pagesDictionary, scanner, pageFactory, log, isLenientParsing);
             var namedDestinations = NamedDestinationsProvider.Read(dictionary, scanner, pages, null);
 
