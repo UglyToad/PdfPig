@@ -27,7 +27,12 @@
                 aes.IV = iv;
 
 #if NET8_0_OR_GREATER
-                return aes.DecryptCbc(data.AsSpan(iv.Length), iv, PaddingMode.PKCS7);
+                var encryptedData = data.AsSpan(iv.Length);
+                if (encryptedData.IsEmpty)
+                {
+                    return [];
+                }
+                return aes.DecryptCbc(encryptedData, iv, PaddingMode.PKCS7);
 #else
                 var buffer = new byte[256];
 
