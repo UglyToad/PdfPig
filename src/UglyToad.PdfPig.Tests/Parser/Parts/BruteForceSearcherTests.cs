@@ -233,6 +233,41 @@ endobj";
             Assert.Equal(TestDataOffsets, locations.Values);
         }
 
+        [Fact]
+        public void BruteForceSearcherFindsAllObjectsWhenMissingEndObj()
+        {
+            const string s = @"%PDF-1.7
+abcd
+
+1 0 obj
+<< /Type /Any >>
+
+2 0 obj
+<< /Type /Any >>
+
+%AZ 0 obj
+11 0 obj
+769
+endobj
+
+%%EOF";
+
+            var bytes = new MemoryInputBytes(OtherEncodings.StringAsLatin1Bytes(s));
+
+            var locations = BruteForceSearcher.GetObjectLocations(bytes);
+
+            Assert.Equal(3, locations.Count);
+
+            var expectedLocations = new long[]
+            {
+                s.IndexOf("1 0 obj", StringComparison.OrdinalIgnoreCase),
+                s.IndexOf("2 0 obj", StringComparison.OrdinalIgnoreCase),
+                s.IndexOf("11 0 obj", StringComparison.OrdinalIgnoreCase)
+            };
+
+            Assert.Equal(expectedLocations, locations.Values);
+        }
+
         private static string GetStringAt(IInputBytes bytes, long location)
         {
             bytes.Seek(location);
