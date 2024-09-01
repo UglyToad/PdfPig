@@ -156,7 +156,7 @@
 
                 currentlyInObject = true;
 
-                currentOffset++;
+                currentOffset += objBuffer.Length;
 
                 bytes.Seek(currentOffset);
                 loopProtection = 0;
