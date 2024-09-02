@@ -5,6 +5,7 @@
     using CrossReference;
     using Core;
     using Parts.CrossReference;
+    using System.Text.RegularExpressions;
     using Tokenization;
     using Tokenization.Scanner;
     using Tokens;
@@ -14,6 +15,8 @@
         private const string InUseEntry = "n";
         private const string FreeEntry = "f";
         
+        private static readonly Regex XrefWithNumberRegex = new Regex(@$"{OperatorToken.Xref.Data}(\d+)");
+
         public static CrossReferenceTablePart Parse(ISeekableTokenScanner scanner, long offset, bool isLenientParsing)
         {
             var builder = new CrossReferenceTablePartBuilder
@@ -31,9 +34,22 @@
 
             if (scanner.CurrentToken is OperatorToken operatorToken)
             {
-                if (operatorToken.Data == "xref")
+                if (operatorToken.Data == OperatorToken.Xref.Data)
                 {
                     scanner.MoveNext();
+                }
+                else if (isLenientParsing)
+                {
+                    var match = XrefWithNumberRegex.Match(operatorToken.Data);
+                    if (match.Success)
+                    {
+                        scanner.Seek(scanner.CurrentPosition - operatorToken.Data.Length + "xref".Length);
+                        scanner.MoveNext();
+                    }
+                    else
+                    {
+                        throw new PdfDocumentFormatException($"Unexpected operator in xref position: {operatorToken}.");
+                    }
                 }
                 else
                 {
@@ -104,6 +120,13 @@
             builder.Dictionary = ParseTrailer(scanner, isLenientParsing);
 
             return builder.Build();
+        }
+
+        public static bool IsCrossReferenceMarker(ISeekableTokenScanner scanner, bool isLenientParsing)
+        {
+            return (scanner.CurrentToken is OperatorToken operatorToken
+                    && (operatorToken.Data == "xref"
+                        || (isLenientParsing && XrefWithNumberRegex.IsMatch(operatorToken.Data))));
         }
 
         private static int ProcessTokens(ReadOnlySpan<IToken> tokens, CrossReferenceTablePartBuilder builder, bool isLenientParsing,
