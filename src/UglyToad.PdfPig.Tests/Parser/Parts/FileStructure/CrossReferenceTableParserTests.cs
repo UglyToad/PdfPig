@@ -283,6 +283,35 @@ trailer
             Assert.Equal(2, result.ObjectOffsets.Count);
         }
 
+        [Fact]
+        public void ParseEntriesAfterDeclaredCountIfLenient()
+        {
+            const string data = @"xref
+0 5
+0000000003 65535 f
+0000000090 00000 n
+0000000081 00000 n
+0000000223 00000 n
+0000000331 00000 n
+0000000127 00000 n
+0000000409 00000 f
+0000000418 00000 n
+
+trailer
+<< >>";
+            // Strict parsing
+            var input = StringBytesTestConverter.Scanner(data);
+            var act = () => CrossReferenceTableParser.Parse(input.scanner, 0, false);
+            var ex = Assert.Throws<PdfDocumentFormatException>(act);
+            Assert.Equal("Found a line with 2 unexpected entries in the cross reference table: 127, 0.", ex.Message);
+
+            // Lenient Parsing
+            input = StringBytesTestConverter.Scanner(data);
+            var result = CrossReferenceTableParser.Parse(input.scanner, 0, true);
+
+            Assert.Equal(6, result.ObjectOffsets.Count);
+        }
+
         private static CoreTokenScanner GetReader(string input)
         {
             return StringBytesTestConverter.Scanner(input).scanner;

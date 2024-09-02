@@ -126,7 +126,11 @@
                     }
                 }
 
-                throw new PdfDocumentFormatException($"Found a line with 2 unexpected entries in the cross reference table: {tokens[0]}, {tokens[1]}.");
+                if (!isLenientParsing)
+                {
+                    throw new PdfDocumentFormatException($"Found a line with 2 unexpected entries in the cross reference table: {tokens[0]}, {tokens[1]}.");
+                }
+                
             }
             
             if (tokens.Length <= 2)
