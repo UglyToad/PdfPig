@@ -113,7 +113,7 @@
                         {
                             try
                             {
-                                TryParseCrossReferenceStream(streamOffset, pdfScanner, tiedToTableAtOffset, out streamPart);
+                                TryParseCrossReferenceStream(streamOffset, pdfScanner, tiedToTableAtOffset, true, out streamPart);
                             }
                             catch (InvalidOperationException ex)
                             {
@@ -157,7 +157,7 @@
                     tokenScanner.Seek(previousCrossReferenceLocation);
 
                     // parse xref stream
-                    if (!TryParseCrossReferenceStream(previousCrossReferenceLocation, pdfScanner, null, out var tablePart))
+                    if (!TryParseCrossReferenceStream(previousCrossReferenceLocation, pdfScanner, null, false, out var tablePart))
                     {
                         if (!TryBruteForceXrefTableLocate(bytes, previousCrossReferenceLocation, out var actualOffset))
                         {
@@ -253,26 +253,40 @@
             long objByteOffset,
             IPdfTokenScanner pdfScanner,
             long? fromTableAtOffset,
+            bool throwIfFailed,
             [NotNullWhen(true)] out CrossReferenceTablePart? xrefTablePart)
         {
             xrefTablePart = null;
-
-            pdfScanner.Seek(objByteOffset);
-
-            pdfScanner.MoveNext();
-
-            var streamObjectToken = (ObjectToken)pdfScanner.CurrentToken;
-
-            if (streamObjectToken is null || !(streamObjectToken.Data is StreamToken objectStream))
+            try
             {
-                log.Error($"When reading a cross reference stream object found a non-stream object: {streamObjectToken?.Data}");
+                pdfScanner.Seek(objByteOffset);
+
+                pdfScanner.MoveNext();
+
+                var streamObjectToken = (ObjectToken)pdfScanner.CurrentToken;
+
+                if (streamObjectToken is null || !(streamObjectToken.Data is StreamToken objectStream))
+                {
+                    log.Error($"When reading a cross reference stream object found a non-stream object: {streamObjectToken?.Data}");
+
+                    return false;
+                }
+            
+                xrefTablePart = crossReferenceStreamParser.Parse(objByteOffset, fromTableAtOffset, objectStream);
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                if (throwIfFailed)
+                {
+                    throw;
+                }
+
+                log.Debug($"Failed trying to parse cross reference stream object due to an unexpected error: {e.Message}");
 
                 return false;
             }
-            
-            xrefTablePart = crossReferenceStreamParser.Parse(objByteOffset, fromTableAtOffset, objectStream);
-
-            return true;
         }
 
         private bool TryBruteForceXrefTableLocate(IInputBytes bytes, long expectedOffset, 

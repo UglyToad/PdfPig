@@ -1,0 +1,56 @@
+%PDF-1.4
+1 0 obj
+ << /Type /XObject
+    /Subtype /Image
+    /Width 2362
+    /Height 3504
+    /Filter [/DCTDecode]
+    /ColorSpace /DeviceRGB
+    /BitsPerComponent 8
+    /Length 4
+ >>
+stream
+aaaa
+endstream
+endobj
+
+2 0 obj
+<</Type/Catalog/Pages 3 0 R>>
+endobj
+
+3 0 obj
+<</Kids[4 0 R]/Count 1/Type/Pages/MediaBox[0 0 595 792]>>
+endobj
+
+4 0 obj
+<</Type/Page/Parent 3 0 R/Contents 5 0 R/Resources<<>>>>
+endobj
+
+6 0 obj
+<</Length 58>>
+stream
+q
+BT
+/ 96 Tf
+1 0 0 1 36 684 Tm
+(Hello World!) Tj
+ET
+Q
+
+endstream
+endobj
+
+xref
+0 6
+0000000000 65536 f 
+0000000010 00000 n 
+0000000229 00000 n 
+0000000279 00000 n 
+0000000357 00000 n 
+0000000434 00000 n 
+
+trailer
+<</Size 6/Root 2 0 R>>
+startxref
+0
+%%EOF
