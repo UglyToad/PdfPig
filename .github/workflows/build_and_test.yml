@@ -28,4 +28,4 @@ jobs:
         run: dotnet build -c Release src/UglyToad.PdfPig.sln
 
       - name: Run the tests
-        run: dotnet test src/UglyToad.PdfPig.sln
+        run: dotnet test -c Release src/UglyToad.PdfPig.sln
