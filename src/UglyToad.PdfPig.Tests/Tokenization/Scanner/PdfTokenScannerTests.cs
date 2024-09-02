@@ -528,12 +528,200 @@ endobj";
             Assert.NotNull(dictionaryToken);
         }
 
-        private static PdfTokenScanner GetScanner(string s, TestObjectLocationProvider locationProvider = null)
+        [Fact]
+        public void ReadsDictionaryWithoutEndObjBeforeNextObject()
+        {
+            const string input = @"1 0 obj
+<</Type /XRef>>
+2 0 obj
+<</Length 15>>
+endobj";
+
+            var scanner = GetScanner(input);
+
+            var tokens = ReadToEnd(scanner);
+
+            Assert.Equal(2, tokens.Count);
+
+            var dictionaryToken = Assert.IsType<DictionaryToken>(tokens[0].Data);
+            var typeValue = dictionaryToken.Data["Type"];
+            Assert.IsType<NameToken>(typeValue);
+
+            dictionaryToken = tokens[1].Data as DictionaryToken;
+            Assert.NotNull(dictionaryToken);
+            typeValue = dictionaryToken.Data["Length"];
+            Assert.IsType<NumericToken>(typeValue);
+        }
+
+        [Fact]
+        public void ReadsStreamWithoutEndObjBeforeNextObject()
+        {
+            const string input = @"1 0 obj
+<</Length 4>>
+stream
+aaaa
+endstream
+2 0 obj
+<</Length 15>>
+endobj";
+
+            var scanner = GetScanner(input);
+
+            var tokens = ReadToEnd(scanner);
+
+            Assert.Equal(2, tokens.Count);
+
+            Assert.IsType<StreamToken>(tokens[0].Data);
+
+            var dictionaryToken = Assert.IsType<DictionaryToken>(tokens[1].Data);
+            var typeValue = dictionaryToken.Data["Length"];
+            Assert.IsType<NumericToken>(typeValue);
+        }
+
+        [Theory]
+        [InlineData("startxref")]
+        [InlineData("xref")]
+        public void ReadsStreamWithoutEndObjBeforeToken(string token)
+        {
+            string input = @$"1 0 obj
+<</Length 4>>
+stream
+aaaa
+endstream
+{token}";
+
+            var scanner = GetScanner(input);
+
+            var tokens = ReadToEnd(scanner);
+
+            Assert.Single(tokens);
+
+            Assert.IsType<StreamToken>(tokens[0].Data);
+        }
+
+        [Theory]
+        [InlineData("startxref")]
+        [InlineData("xref")]
+        public void ReadsDictionaryWithoutEndObjBeforeToken(string token)
+        {
+            string input = @$"1 0 obj
+<</Type /XRef>>
+{token}";
+
+            var scanner = GetScanner(input);
+
+            var tokens = ReadToEnd(scanner);
+
+            Assert.Single(tokens);
+
+            var dictionaryToken = Assert.IsType<DictionaryToken>(tokens[0].Data);
+            var typeValue = dictionaryToken.Data["Type"];
+            Assert.IsType<NameToken>(typeValue);
+        }
+
+        [Fact]
+        public void ReadsStreamWithoutEndStreamBeforeEndObj()
+        {
+            const string input = @"1 0 obj
+<</Length 4>>
+stream
+aaaa
+endobj
+2 0 obj
+<</Length 15>>
+endobj";
+
+            var scanner = GetScanner(input);
+
+            var tokens = ReadToEnd(scanner);
+
+            Assert.Equal(2, tokens.Count);
+
+            Assert.IsType<StreamToken>(tokens[0].Data);
+
+            var dictionaryToken = Assert.IsType<DictionaryToken>(tokens[1].Data);
+            var lengthValue = dictionaryToken.Data["Length"];
+            Assert.IsType<NumericToken>(lengthValue);
+        }
+
+        [Theory]
+        [InlineData(">>")]
+        [InlineData("randomstring")]
+        public void ReadsIndirectObjectsDictionaryWithContentBeforeEndObj(string addedContent)
+        {
+            string input = @$"1 0 obj
+<</Type /XRef>>
+{addedContent}endobj
+2 0 obj
+<</Length 15>>
+endobj";
+
+            var strictScanner = GetScanner(input);
+            
+            var tokens = ReadToEnd(strictScanner);
+            Assert.Empty(tokens);
+
+
+            var lenientScanner = GetScanner(input, useLenientParsing: true);
+            tokens = ReadToEnd(lenientScanner);
+
+            Assert.Equal(2, tokens.Count);
+
+            var dictionaryToken = Assert.IsType<DictionaryToken>(tokens[0].Data);
+            var typeValue = dictionaryToken.Data["Type"];
+            Assert.IsType<NameToken>(typeValue);
+
+            dictionaryToken = Assert.IsType<DictionaryToken>(tokens[1].Data);
+            var lengthValue = dictionaryToken.Data["Length"];
+            Assert.IsType<NumericToken>(lengthValue);
+        }
+
+        [Theory]
+        [InlineData(">>")]
+        [InlineData("randomstring")]
+        public void ReadsIndirectObjectsStreamWithAddedContentBeforeStream(string addedContent)
+        {
+            string input = @$"1 0 obj
+<</length 4>>
+{addedContent}stream
+aaaa
+endstream
+endobj
+2 0 obj
+<</Length 15>>
+endobj";
+
+            var strictScanner = GetScanner(input);
+            
+            var tokens = ReadToEnd(strictScanner);
+            Assert.Equal(2, tokens.Count);
+            // this is linked to the parsing choosing the last token parsed in obj.
+            // It can probably be challenged against taking the first one.
+            var operatorToken = Assert.IsType<OperatorToken>(tokens[0].Data);
+            Assert.Equal("endstream", operatorToken.Data);
+
+            var dictionaryToken = Assert.IsType<DictionaryToken>(tokens[1].Data);
+            var lengthValue = dictionaryToken.Data["Length"];
+            Assert.IsType<NumericToken>(lengthValue);
+
+            var lenientScanner = GetScanner(input, useLenientParsing:true);
+            tokens = ReadToEnd(lenientScanner);
+
+            Assert.Equal(2, tokens.Count);
+
+            Assert.IsType<StreamToken>(tokens[0].Data);
+
+            dictionaryToken = Assert.IsType<DictionaryToken>(tokens[1].Data);
+            lengthValue = dictionaryToken.Data["Length"];
+            Assert.IsType<NumericToken>(lengthValue);
+        }
+
+        private static PdfTokenScanner GetScanner(string s, TestObjectLocationProvider locationProvider = null, bool useLenientParsing = false)
         {
             var input = StringBytesTestConverter.Convert(s, false);
 
             return new PdfTokenScanner(input.Bytes, locationProvider ?? new TestObjectLocationProvider(),
-                new TestFilterProvider(), NoOpEncryptionHandler.Instance, ParsingOptions.LenientParsingOff);
+                new TestFilterProvider(), NoOpEncryptionHandler.Instance, useLenientParsing ? new ParsingOptions() : ParsingOptions.LenientParsingOff);
         }
 
         private static IReadOnlyList<ObjectToken> ReadToEnd(PdfTokenScanner scanner)
