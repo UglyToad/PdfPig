@@ -195,7 +195,7 @@
                     }
                 
                     // This should never happen.
-                    Debug.Assert(false, "Encountered a '{' operator before the end of the previous object.");
+                    Debug.Assert(false, $"Encountered a '{coreTokenScanner.CurrentToken}' operator before the end of the previous object.");
                     return false;
                 }
 
