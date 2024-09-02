@@ -117,6 +117,11 @@
         /// </summary>
         public static readonly OperatorToken Xref = new OperatorToken("xref");
 
+        /// <summary>
+        /// Cross reference section offset.
+        /// </summary>
+        public static readonly OperatorToken StartXref = new OperatorToken("startxref");
+
         /// <inheritdoc />
         public string Data { get; }
 
@@ -163,6 +168,7 @@
                 "Tf" => Tf,
                 "W*" => WStar,
                 "xref" => Xref,
+                "startxref" => StartXref,
                 _ => new OperatorToken(data.ToString())
             };
         }
