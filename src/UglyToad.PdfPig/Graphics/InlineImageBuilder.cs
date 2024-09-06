@@ -1,14 +1,18 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Xml.Linq;
     using Content;
     using Core;
     using Filters;
     using PdfPig.Core;
     using Tokenization.Scanner;
     using Tokens;
+    using UglyToad.PdfPig.Graphics.Colors;
+    using UglyToad.PdfPig.XObjects;
 
     /// <summary>
     /// Inline Image Builder.
@@ -49,8 +53,33 @@
             var isMask = maskToken?.Data == true;
 
             var bitsPerComponent = GetByKeys<NumericToken>(NameToken.BitsPerComponent, NameToken.Bpc, !isMask)?.Int ?? 1;
-
             NameToken? colorSpaceName = null;
+
+            var imgDic = new DictionaryToken(Properties ?? new Dictionary<NameToken, IToken>());
+
+            XObjectImage? softMaskImage = null;
+            if (imgDic.TryGet(NameToken.Smask, tokenScanner, out StreamToken? sMaskToken))
+            {
+                if (!sMaskToken.StreamDictionary.TryGet(NameToken.Subtype, out NameToken softMaskSubType) || !softMaskSubType.Equals(NameToken.Image))
+                {
+                    throw new Exception("The SMask dictionary does not contain a 'Subtype' entry, or its value is not 'Image'.");
+                }
+
+                if (!sMaskToken.StreamDictionary.TryGet(NameToken.ColorSpace, out NameToken softMaskColorSpace) || !softMaskColorSpace.Equals(NameToken.Devicegray))
+                {
+                    throw new Exception("The SMask dictionary does not contain a 'ColorSpace' entry, or its value is not 'Devicegray'.");
+                }
+
+                if (sMaskToken.StreamDictionary.ContainsKey(NameToken.Mask) || sMaskToken.StreamDictionary.ContainsKey(NameToken.Smask))
+                {
+                    throw new Exception("The SMask dictionary contains a 'Mask' or 'Smask' entry.");
+                }
+
+                XObjectContentRecord softMaskImageRecord = new XObjectContentRecord(XObjectType.Image, sMaskToken, TransformationMatrix.Identity,
+                    defaultRenderingIntent, DeviceGrayColorSpaceDetails.Instance);
+
+                softMaskImage = XObjectFactory.ReadImage(softMaskImageRecord, tokenScanner, filterProvider, resourceStore);
+            }
 
             if (!isMask)
             {
@@ -73,8 +102,6 @@
                     colorSpaceName = firstColorSpaceName;
                 }
             }
-
-            var imgDic = new DictionaryToken(Properties ?? new Dictionary<NameToken, IToken>());
 
             var details = resourceStore.GetColorSpaceDetails(colorSpaceName, imgDic);
 
@@ -106,7 +133,7 @@
 
             return new InlineImage(bounds, width, height, bitsPerComponent,
                 isMask, renderingIntent, interpolate, decode, Bytes,
-                filterProvider, filterNames, imgDic, details);
+                filterProvider, filterNames, imgDic, details, softMaskImage);
         }
 
 #nullable disable
