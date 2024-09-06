@@ -71,9 +71,17 @@ namespace UglyToad.PdfPig.Graphics
         public double AlphaConstantNonStroking { get; set; } = 1;
 
         /// <summary>
-        /// Should soft mask and alpha constant values be interpreted as shape (<see langword="true"/>) or opacity (<see langword="false"/>) values?
+        /// Should soft mask and alpha constant values be interpreted as shape
+        /// (<see langword="true"/>) or opacity (<see langword="false"/>) values?
         /// </summary>
         public bool AlphaSource { get; set; } = false;
+
+        /// <summary>
+        /// A soft-mask dictionary specifying the mask shape or mask opacity values
+        /// that shall be used in the transparent imaging model, or the name None if
+        /// no such mask is specified.
+        /// </summary>
+        public SoftMask SoftMask { get; set; }
 
         /// <summary>
         /// Maps positions from user coordinates to device coordinates.
@@ -94,6 +102,11 @@ namespace UglyToad.PdfPig.Graphics
         /// The current active non-stroking color for text and fill.
         /// </summary>
         public IColor CurrentNonStrokingColor { get; set; }
+
+        /// <summary>
+        /// The current blend mode.
+        /// </summary>
+        public BlendMode BlendMode { get; set; } = BlendMode.Normal;
 
         #region Device Dependent
 
@@ -151,6 +164,8 @@ namespace UglyToad.PdfPig.Graphics
                 CurrentNonStrokingColor = CurrentNonStrokingColor,
                 CurrentClippingPath = CurrentClippingPath,
                 ColorSpaceContext = ColorSpaceContext?.DeepClone(),
+                BlendMode = BlendMode,
+                SoftMask = SoftMask
             };
         }
     }
