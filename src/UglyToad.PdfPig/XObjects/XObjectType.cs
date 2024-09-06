@@ -3,7 +3,7 @@
     /// <summary>
     /// XObject type.
     /// </summary>
-    public enum XObjectType
+    public enum XObjectType : byte
     {
         /// <summary>
         /// Image.
