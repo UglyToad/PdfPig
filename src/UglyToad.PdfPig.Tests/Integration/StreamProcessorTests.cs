@@ -140,9 +140,7 @@
             }
 
             public override void RenderGlyph(IFont font,
-                IColor strokingColor,
-                IColor nonStrokingColor,
-                TextRenderingMode textRenderingMode,
+                CurrentGraphicsState currentState,
                 double fontSize,
                 double pointSize,
                 int code,
