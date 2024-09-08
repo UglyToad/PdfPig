@@ -61,9 +61,8 @@
         }
 
         public override void RenderGlyph(IFont font,
-            IColor strokingColor,
-            IColor nonStrokingColor,
-            TextRenderingMode textRenderingMode,
+            CurrentGraphicsState currentState,
+            ParsingOptions parsingOptions,
             double fontSize,
             double pointSize,
             int code,
@@ -74,6 +73,7 @@
             in TransformationMatrix transformationMatrix,
             CharacterBoundingBox characterBoundingBox)
         {
+            var textRenderingMode = currentState.FontState.TextRenderingMode;
             if (textRenderingMode == TextRenderingMode.Neither)
             {
                 return;
@@ -85,7 +85,7 @@
             if (font.TryGetNormalisedPath(code, out var path))
             {
                 var skPath = path.ToSKPath();
-                ShowVectorFontGlyph(skPath, strokingColor, nonStrokingColor, textRenderingMode, renderingMatrix,
+                ShowVectorFontGlyph(skPath,  currentState.CurrentStrokingColor!,  currentState.CurrentNonStrokingColor!, textRenderingMode, renderingMatrix,
                     textMatrix, transformationMatrix);
             }
             else

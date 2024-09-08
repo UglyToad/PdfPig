@@ -282,9 +282,8 @@
                 var boundingBox = font.GetBoundingBox(code);
 
                 RenderGlyph(font,
-                    currentState.CurrentStrokingColor!,
-                    currentState.CurrentNonStrokingColor!,
-                    currentState.FontState.TextRenderingMode,
+                    currentState,
+                    ParsingOptions,
                     fontSize,
                     pointSize,
                     code,
@@ -317,9 +316,8 @@
         /// Render glyph implement.
         /// </summary>
         public abstract void RenderGlyph(IFont font,
-            IColor strokingColor,
-            IColor nonStrokingColor,
-            TextRenderingMode textRenderingMode,
+            CurrentGraphicsState currentState, 
+            ParsingOptions parsingOptions,
             double fontSize,
             double pointSize,
             int code,

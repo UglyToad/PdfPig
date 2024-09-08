@@ -87,9 +87,8 @@ namespace UglyToad.PdfPig.Graphics
         }
 
         public override void RenderGlyph(IFont font,
-            IColor strokingColor,
-            IColor nonStrokingColor,
-            TextRenderingMode textRenderingMode,
+            CurrentGraphicsState currentState,
+            ParsingOptions parsingOptions,
             double fontSize,
             double pointSize,
             int code,
@@ -108,6 +107,13 @@ namespace UglyToad.PdfPig.Graphics
                     textMatrix,
                     transformationMatrix,
                     new PdfRectangle(0, 0, characterBoundingBox.Width, 0));
+
+            if (parsingOptions.ClipPaths)
+            {
+                var currentClipping = currentState.CurrentClippingPath;
+                if (currentClipping?.IntersectsWith(transformedGlyphBounds) == false)
+                    return;
+            }
 
             Letter letter = null;
             if (Diacritics.IsInCombiningDiacriticRange(unicode) && currentOffset > 0 && letters.Count > 0)
@@ -147,9 +153,9 @@ namespace UglyToad.PdfPig.Graphics
                     transformedPdfBounds.Width,
                     fontSize,
                     font.Details,
-                    textRenderingMode,
-                    strokingColor,
-                    nonStrokingColor,
+                     currentState.FontState.TextRenderingMode,
+                     currentState.CurrentStrokingColor!,
+                     currentState.CurrentNonStrokingColor!,
                     pointSize,
                     TextSequence);
             }
