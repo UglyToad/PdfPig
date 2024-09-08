@@ -88,7 +88,6 @@ namespace UglyToad.PdfPig.Graphics
 
         public override void RenderGlyph(IFont font,
             CurrentGraphicsState currentState,
-            ParsingOptions parsingOptions,
             double fontSize,
             double pointSize,
             int code,
@@ -108,7 +107,7 @@ namespace UglyToad.PdfPig.Graphics
                     transformationMatrix,
                     new PdfRectangle(0, 0, characterBoundingBox.Width, 0));
 
-            if (parsingOptions.ClipPaths)
+            if (ParsingOptions.ClipPaths)
             {
                 var currentClipping = currentState.CurrentClippingPath;
                 if (currentClipping?.IntersectsWith(transformedGlyphBounds) == false)

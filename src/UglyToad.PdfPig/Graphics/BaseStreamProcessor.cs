@@ -283,7 +283,6 @@
 
                 RenderGlyph(font,
                     currentState,
-                    ParsingOptions,
                     fontSize,
                     pointSize,
                     code,
@@ -317,7 +316,6 @@
         /// </summary>
         public abstract void RenderGlyph(IFont font,
             CurrentGraphicsState currentState, 
-            ParsingOptions parsingOptions,
             double fontSize,
             double pointSize,
             int code,

@@ -141,7 +141,6 @@
 
             public override void RenderGlyph(IFont font,
                 CurrentGraphicsState currentState,
-                ParsingOptions parsingOptions,
                 double fontSize,
                 double pointSize,
                 int code,
