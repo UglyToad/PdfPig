@@ -300,14 +300,14 @@ trailer
 trailer
 << >>";
             // Strict parsing
-            var input = StringBytesTestConverter.Scanner(data);
-            var act = () => CrossReferenceTableParser.Parse(input.scanner, 0, false);
+            var input = GetReader(data);
+            var act = () => CrossReferenceTableParser.Parse(input, 0, false);
             var ex = Assert.Throws<PdfDocumentFormatException>(act);
             Assert.Equal("Found a line with 2 unexpected entries in the cross reference table: 127, 0.", ex.Message);
 
             // Lenient Parsing
-            input = StringBytesTestConverter.Scanner(data);
-            var result = CrossReferenceTableParser.Parse(input.scanner, 0, true);
+            input = GetReader(data);
+            var result = CrossReferenceTableParser.Parse(input, 0, true);
 
             Assert.Equal(6, result.ObjectOffsets.Count);
         }
