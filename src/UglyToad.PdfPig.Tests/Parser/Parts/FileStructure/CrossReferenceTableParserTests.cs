@@ -312,6 +312,30 @@ trailer
             Assert.Equal(6, result.ObjectOffsets.Count);
         }
 
+        [Fact]
+        public void ParsesMissingWhitespaceAfterXref()
+        {
+            var data = @"xref15 2
+0000000190 00000 n
+0000000250 00032 n
+
+trailer
+<<>>";
+            var input = GetReader(data);
+
+            // Strict parsing
+            var act = () => CrossReferenceTableParser.Parse(input, 0, false);
+            
+            var ex = Assert.Throws<PdfDocumentFormatException>(act);
+            Assert.Equal("Unexpected operator in xref position: xref15.", ex.Message);
+
+            // Lenient Parsing
+            input = GetReader(data);
+            var result = CrossReferenceTableParser.Parse(input, 0, true);
+
+            Assert.Equal(2, result.ObjectOffsets.Count);
+        }
+
         private static CoreTokenScanner GetReader(string input)
         {
             return StringBytesTestConverter.Scanner(input).scanner;

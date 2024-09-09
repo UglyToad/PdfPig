@@ -5,7 +5,6 @@
     using CrossReference;
     using Core;
     using Parts.CrossReference;
-    using System.Text.RegularExpressions;
     using Tokenization;
     using Tokenization.Scanner;
     using Tokens;
@@ -14,8 +13,6 @@
     {
         private const string InUseEntry = "n";
         private const string FreeEntry = "f";
-        
-        private static readonly Regex XrefWithNumberRegex = new Regex(@$"{OperatorToken.Xref.Data}(\d+)");
 
         public static CrossReferenceTablePart Parse(ISeekableTokenScanner scanner, long offset, bool isLenientParsing)
         {
@@ -40,10 +37,9 @@
                 }
                 else if (isLenientParsing)
                 {
-                    var match = XrefWithNumberRegex.Match(operatorToken.Data);
-                    if (match.Success)
+                    if (operatorToken.Data.StartsWith(OperatorToken.Xref.Data))
                     {
-                        scanner.Seek(scanner.CurrentPosition - operatorToken.Data.Length + "xref".Length);
+                        scanner.Seek(scanner.CurrentPosition - operatorToken.Data.Length + OperatorToken.Xref.Data.Length);
                         scanner.MoveNext();
                     }
                     else
@@ -125,8 +121,10 @@
         public static bool IsCrossReferenceMarker(ISeekableTokenScanner scanner, bool isLenientParsing)
         {
             return (scanner.CurrentToken is OperatorToken operatorToken
-                    && (operatorToken.Data == "xref"
-                        || (isLenientParsing && XrefWithNumberRegex.IsMatch(operatorToken.Data))));
+                    && (operatorToken.Data == OperatorToken.Xref.Data
+                        || (isLenientParsing 
+                            && operatorToken.Data.StartsWith(OperatorToken.Xref.Data)
+                            && int.TryParse(operatorToken.Data.Substring(OperatorToken.Xref.Data.Length), out _))));
         }
 
         private static int ProcessTokens(ReadOnlySpan<IToken> tokens, CrossReferenceTablePartBuilder builder, bool isLenientParsing,
