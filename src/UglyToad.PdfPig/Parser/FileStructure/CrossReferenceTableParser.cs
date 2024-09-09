@@ -13,7 +13,7 @@
     {
         private const string InUseEntry = "n";
         private const string FreeEntry = "f";
-        
+
         public static CrossReferenceTablePart Parse(ISeekableTokenScanner scanner, long offset, bool isLenientParsing)
         {
             var builder = new CrossReferenceTablePartBuilder
@@ -31,9 +31,21 @@
 
             if (scanner.CurrentToken is OperatorToken operatorToken)
             {
-                if (operatorToken.Data == "xref")
+                if (operatorToken.Data == OperatorToken.Xref.Data)
                 {
                     scanner.MoveNext();
+                }
+                else if (isLenientParsing)
+                {
+                    if (operatorToken.Data.StartsWith(OperatorToken.Xref.Data))
+                    {
+                        scanner.Seek(scanner.CurrentPosition - operatorToken.Data.Length + OperatorToken.Xref.Data.Length);
+                        scanner.MoveNext();
+                    }
+                    else
+                    {
+                        throw new PdfDocumentFormatException($"Unexpected operator in xref position: {operatorToken}.");
+                    }
                 }
                 else
                 {
@@ -104,6 +116,15 @@
             builder.Dictionary = ParseTrailer(scanner, isLenientParsing);
 
             return builder.Build();
+        }
+
+        public static bool IsCrossReferenceMarker(ISeekableTokenScanner scanner, bool isLenientParsing)
+        {
+            return (scanner.CurrentToken is OperatorToken operatorToken
+                    && (operatorToken.Data == OperatorToken.Xref.Data
+                        || (isLenientParsing 
+                            && operatorToken.Data.StartsWith(OperatorToken.Xref.Data)
+                            && int.TryParse(operatorToken.Data.Substring(OperatorToken.Xref.Data.Length), out _))));
         }
 
         private static int ProcessTokens(ReadOnlySpan<IToken> tokens, CrossReferenceTablePartBuilder builder, bool isLenientParsing,

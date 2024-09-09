@@ -59,7 +59,7 @@
 
                 tokenScanner.MoveNext();
 
-                if (tokenScanner.CurrentToken is OperatorToken tableToken && tableToken.Data == "xref")
+                if (CrossReferenceTableParser.IsCrossReferenceMarker(tokenScanner, isLenientParsing))
                 {
                     missedAttempts = 0;
                     log.Debug("Element was cross reference table.");
