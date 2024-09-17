@@ -461,11 +461,7 @@
             }
             else
             {
-                Span<byte> buffer = stackalloc byte[32]; // matches dotnet Number.CharStackBufferSize
-
-                Utf8Formatter.TryFormat(number.Data, buffer, out int bytesWritten);
-
-                outputStream.Write(buffer.Slice(0, bytesWritten));
+                outputStream.WriteDouble(number.Data);
             }
 
             WriteWhitespace(outputStream);
