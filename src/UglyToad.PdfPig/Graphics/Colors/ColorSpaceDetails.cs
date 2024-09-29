@@ -63,7 +63,7 @@
         /// <summary>
         /// Transform image bytes.
         /// </summary>
-        internal abstract ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded);
+        internal abstract Span<byte> Transform(Span<byte> decoded);
 
         /// <summary>
         /// Convert to byte.
@@ -131,7 +131,7 @@
         }
 
         /// <inheritdoc/>
-        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
+        internal override Span<byte> Transform(Span<byte> decoded)
         {
             return decoded;
         }
@@ -193,7 +193,7 @@
         }
 
         /// <inheritdoc/>
-        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
+        internal override Span<byte> Transform(Span<byte> decoded)
         {
             return decoded;
         }
@@ -256,7 +256,7 @@
         }
 
         /// <inheritdoc/>
-        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
+        internal override Span<byte> Transform(Span<byte> decoded)
         {
             return decoded;
         }
@@ -360,80 +360,82 @@
             });
         }
 
-        internal ReadOnlySpan<byte> UnwrapIndexedColorSpaceBytes(ReadOnlySpan<byte> input)
+        internal Span<byte> UnwrapIndexedColorSpaceBytes(Span<byte> input)
         {
-            var multiplier = 1;
-            Func<byte, ReadOnlyMemory<byte>>? transformer = null;
             switch (BaseType)
             {
                 case ColorSpace.DeviceRGB:
                 case ColorSpace.CalRGB:
                 case ColorSpace.Lab:
-                    transformer = x =>
+                {
+                    Span<byte> result = new byte[input.Length * 3];
+                    var i = 0;
+                    foreach (var x in input)
                     {
-                        var r = new byte[3];
-                        for (var i = 0; i < 3; i++)
+                        for (var j = 0; j < 3; ++j)
                         {
-                            r[i] = ColorTable[x * 3 + i];
+                            result[i++] = ColorTable[x * 3 + j];
                         }
+                    }
 
-                        return r;
-                    };
-                    multiplier = 3;
-                    break;
+                    return result;
+                }
 
                 case ColorSpace.DeviceCMYK:
-                    transformer = x =>
+                {
+                    Span<byte> result = new byte[input.Length * 4];
+                    var i = 0;
+                    foreach (var x in input)
                     {
-                        var r = new byte[4];
-                        for (var i = 0; i < 4; i++)
+                        for (var j = 0; j < 4; ++j)
                         {
-                            r[i] = ColorTable[x * 4 + i];
+                            result[i++] = ColorTable[x * 4 + j];
                         }
+                    }
 
-                        return r;
-                    };
-
-                    multiplier = 4;
-                    break;
+                    return result;
+                }
 
                 case ColorSpace.DeviceGray:
                 case ColorSpace.CalGray:
                 case ColorSpace.Separation:
-                    transformer = x => new[] { ColorTable[x] };
-                    multiplier = 1;
-                    break;
+                {
+                    for (var i = 0; i < input.Length; ++i)
+                    {
+                        ref byte b = ref input[i];
+                        b = ColorTable[b];
+                    }
+
+                    return input;
+                }
 
                 case ColorSpace.DeviceN:
                 case ColorSpace.ICCBased:
-                    transformer = x =>
+                {
+                    int i = 0;
+                    if (BaseColorSpace.NumberOfColorComponents == 1)
                     {
-                        var r = new byte[BaseColorSpace.NumberOfColorComponents];
-                        for (var i = 0; i < BaseColorSpace.NumberOfColorComponents; i++)
+                        // In place
+                        for (i = 0; i < input.Length; ++i)
                         {
-                            r[i] = ColorTable[x * BaseColorSpace.NumberOfColorComponents + i];
+                            ref byte b = ref input[i];
+                            b = ColorTable[b];
                         }
 
-                        return r;
-                    };
-
-                    multiplier = BaseColorSpace.NumberOfColorComponents;
-                    break;
-            }
-
-            if (transformer != null)
-            {
-                var result = new byte[input.Length * multiplier];
-                var i = 0;
-                foreach (var b in input)
-                {
-                    foreach (var newByte in transformer(b).Span)
-                    {
-                        result[i++] = newByte;
+                        return input;
                     }
-                }
 
-                return result;
+                    Span<byte> result = new byte[input.Length * BaseColorSpace.NumberOfColorComponents];
+                    foreach (var x in input)
+                    {
+                        for (var j = 0; j < BaseColorSpace.NumberOfColorComponents; ++j)
+                        {
+                            result[i++] = ColorTable[x * BaseColorSpace.NumberOfColorComponents + j];
+                        }
+                    }
+
+                    return result;
+                }
             }
 
             return input;
@@ -453,7 +455,7 @@
         /// Unwrap then transform using base color space details.
         /// </para>
         /// </summary>
-        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
+        internal override Span<byte> Transform(Span<byte> decoded)
         {
             var unwraped = UnwrapIndexedColorSpaceBytes(decoded);
             return BaseColorSpace.Transform(unwraped);
@@ -549,7 +551,7 @@
         }
 
         /// <inheritdoc/>
-        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
+        internal override Span<byte> Transform(Span<byte> decoded)
         {
             var cache = new Dictionary<int, double[]>();
             var transformed = new List<byte>();
@@ -726,7 +728,7 @@
         }
 
         /// <inheritdoc/>
-        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> values)
+        internal override Span<byte> Transform(Span<byte> values)
         {
             var colorCache = new Dictionary<int, double[]>(values.Length);
             var transformed = new List<byte>(values.Length);
@@ -842,7 +844,7 @@
         }
 
         /// <inheritdoc/>
-        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
+        internal override Span<byte> Transform(Span<byte> decoded)
         {
             var transformed = new byte[decoded.Length];
 
@@ -984,7 +986,7 @@
         }
 
         /// <inheritdoc/>
-        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
+        internal override Span<byte> Transform(Span<byte> decoded)
         {
             var transformed = new byte[decoded.Length];
             int index = 0;
@@ -1106,7 +1108,7 @@
         }
 
         /// <inheritdoc/>
-        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
+        internal override Span<byte> Transform(Span<byte> decoded)
         {
             var transformed = new byte[decoded.Length];
             int index = 0;
@@ -1293,7 +1295,7 @@
         }
 
         /// <inheritdoc/>
-        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
+        internal override Span<byte> Transform(Span<byte> decoded)
         {
             // TODO - use ICC profile
 
@@ -1391,7 +1393,7 @@
         /// Cannot be called for <see cref="PatternColorSpaceDetails"/>, will throw a <see cref="InvalidOperationException"/>.
         /// </para>
         /// </summary>
-        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
+        internal override Span<byte> Transform(Span<byte> decoded)
         {
             throw new InvalidOperationException("PatternColorSpaceDetails");
         }
@@ -1446,7 +1448,7 @@
         }
 
         /// <inheritdoc/>
-        internal override ReadOnlySpan<byte> Transform(ReadOnlySpan<byte> decoded)
+        internal override Span<byte> Transform(Span<byte> decoded)
         {
             throw new InvalidOperationException("UnsupportedColorSpaceDetails");
         }
