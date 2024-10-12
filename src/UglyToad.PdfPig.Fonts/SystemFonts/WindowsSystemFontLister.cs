@@ -8,8 +8,6 @@
     {
         public IEnumerable<SystemFontRecord> GetAllFonts()
         {
-            // TODO: Could use System.Drawing InstalledFontCollection to do this?
-
             var winDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
 
             var fonts = Path.Combine(winDir, "Fonts");

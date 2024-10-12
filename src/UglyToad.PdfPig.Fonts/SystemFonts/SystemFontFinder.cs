@@ -92,7 +92,11 @@ namespace UglyToad.PdfPig.Fonts.SystemFonts
 #if NET
             else if (OperatingSystem.IsAndroid())
             {
-              lister = new AndroidSystemFontLister();
+                lister = new AndroidSystemFontLister();
+            }
+            else if (OperatingSystem.IsBrowser())
+            {
+                lister = new BrowserSystemFontLister();
             }
 #endif
             else
