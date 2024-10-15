@@ -1,6 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Tests.Filters
 {
-    using PdfPig.Filters;
+    using PdfPig.Filters.Lzw;
 
     public class BitStreamTests
     {

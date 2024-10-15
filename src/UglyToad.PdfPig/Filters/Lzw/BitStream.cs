@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Filters
+﻿namespace UglyToad.PdfPig.Filters.Lzw
 {
     using System;
 
@@ -53,9 +53,9 @@
             }
 
             // 'And' out the leading bits.
-            var firstBitOfDataWithinInt = (sizeof(int) * 8) - numberOfBits;
+            var firstBitOfDataWithinInt = sizeof(int) * 8 - numberOfBits;
             result &= (int)(0xffffffff >> firstBitOfDataWithinInt);
-            
+
             currentWithinByteBitOffset = endWithinByteBitOffset;
 
             return result;
