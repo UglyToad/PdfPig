@@ -97,6 +97,7 @@
                 "UglyToad.PdfPig.CrossReference.CrossReferenceType",
                 "UglyToad.PdfPig.CrossReference.TrailerDictionary",
                 "UglyToad.PdfPig.Exceptions.PdfDocumentEncryptedException",
+                "UglyToad.PdfPig.Filters.BaseFilterProvider",
                 "UglyToad.PdfPig.Filters.DefaultFilterProvider",
                 "UglyToad.PdfPig.Filters.IFilter",
                 "UglyToad.PdfPig.Filters.IFilterProvider",

@@ -85,6 +85,7 @@
             }
         }
 
+        /// <inheritdoc />
         public byte[] Encode(Stream input, DictionaryToken streamDictionary, int index)
         {
             const int headerLength = 2;
