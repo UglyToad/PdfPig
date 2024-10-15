@@ -3,7 +3,11 @@
     using System;
     using Tokens;
 
-    internal sealed class JpxDecodeFilter : IFilter
+    /// <summary>
+    /// JPX Filter (JPEG2000) for image data.
+    /// <para>This filter is not implemented and will not be used during parsing.</para>
+    /// </summary>
+    public sealed class JpxDecodeFilter : IFilter
     {
         /// <inheritdoc />
         public bool IsSupported { get; } = false;

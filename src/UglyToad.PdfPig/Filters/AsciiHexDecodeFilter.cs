@@ -4,11 +4,10 @@
     using Core;
     using Tokens;
 
-    /// <inheritdoc />
     /// <summary>
     /// Encodes/decodes data using the ASCII hexadecimal encoding where each byte is represented by two ASCII characters.
     /// </summary>
-    internal sealed class AsciiHexDecodeFilter : IFilter
+    public sealed class AsciiHexDecodeFilter : IFilter
     {
         private static readonly short[] ReverseHex = 
         [

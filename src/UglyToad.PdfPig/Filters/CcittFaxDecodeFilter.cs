@@ -8,10 +8,11 @@
 
     /// <summary>
     /// Decodes image data that has been encoded using either Group 3 or Group 4.
-    ///
+    /// <para>
     /// Ported from https://github.com/apache/pdfbox/blob/714156a15ea6fcfe44ac09345b01e192cbd74450/pdfbox/src/main/java/org/apache/pdfbox/filter/CCITTFaxFilter.java
+    /// </para>
     /// </summary>
-    internal sealed class CcittFaxDecodeFilter : IFilter
+    public sealed class CcittFaxDecodeFilter : IFilter
     {
         /// <inheritdoc />
         public bool IsSupported { get; } = true;

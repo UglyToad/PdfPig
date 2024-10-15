@@ -2,14 +2,13 @@
 {
     using System;
     using Tokens;
-    using UglyToad.PdfPig.Core;
+    using Core;
 
-    /// <inheritdoc />
     /// <summary>
     /// The Run Length filter encodes data in a simple byte-oriented format based on run length.
     /// The encoded data is a sequence of runs, where each run consists of a length byte followed by 1 to 128 bytes of data.
     /// </summary>
-    internal sealed class RunLengthFilter : IFilter
+    public sealed class RunLengthFilter : IFilter
     {
         private const byte EndOfDataLength = 128;
 
