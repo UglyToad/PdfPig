@@ -3,6 +3,7 @@
     using System;
     using System.IO;
     using Tokens;
+    using CcittFax;
     using Util;
 
     /// <summary>

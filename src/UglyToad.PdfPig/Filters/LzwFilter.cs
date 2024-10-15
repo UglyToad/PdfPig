@@ -4,6 +4,7 @@ namespace UglyToad.PdfPig.Filters
 {
     using System;
     using System.Collections.Generic;
+    using Lzw;
     using Tokens;
     using Util;
 
