@@ -106,7 +106,7 @@
             ISeekableTokenScanner scanner,
             ParsingOptions parsingOptions)
         {
-            var filterProvider = new FilterProviderWithLookup(DefaultFilterProvider.Instance);
+            var filterProvider = new FilterProviderWithLookup(parsingOptions.FilterProvider ?? DefaultFilterProvider.Instance);
 
             CrossReferenceTable? crossReferenceTable = null;
 

@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig
 {
+    using Filters;
     using System.Collections.Generic;
     using Logging;
 
@@ -50,5 +51,10 @@
         /// forms and images when missing.
         /// </summary>
         public bool SkipMissingFonts { get; set; } = false;
+
+        /// <summary>
+        /// Filter provider to use while parsing the document. The <see cref="DefaultFilterProvider"/> will be used if set to <c>null</c>.
+        /// </summary>
+        public IFilterProvider? FilterProvider { get; set; } = null;
     }
 }

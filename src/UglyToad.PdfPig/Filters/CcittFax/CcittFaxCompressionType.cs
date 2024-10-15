@@ -3,7 +3,7 @@
     /// <summary>
     /// Specifies the compression type to use with <see cref="T:UglyToad.PdfPig.Filters.CcittFaxDecoderStream" />.
     /// </summary>
-    internal enum CcittFaxCompressionType
+    internal enum CcittFaxCompressionType : byte
     {
         /// <summary>
         /// Modified Huffman (MH) - Group 3 variation (T2)
