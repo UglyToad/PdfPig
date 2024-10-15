@@ -5,9 +5,8 @@
     using System.Linq;
     using Core;
     using Tokens;
-    using UglyToad.PdfPig.Util;
+    using Util;
 
-    /// <inheritdoc />
     /// <summary>
     /// The default implementation of the <see cref="T:UglyToad.PdfPig.Filters.IFilterProvider" />.
     /// </summary>
@@ -34,22 +33,22 @@
 
             filterInstances = new Dictionary<string, IFilter>
             {
-                {NameToken.Ascii85Decode.Data, ascii85},
-                {NameToken.Ascii85DecodeAbbreviation.Data, ascii85},
-                {NameToken.AsciiHexDecode.Data, asciiHex},
-                {NameToken.AsciiHexDecodeAbbreviation.Data, asciiHex},
-                {NameToken.CcittfaxDecode.Data, ccitt},
-                {NameToken.CcittfaxDecodeAbbreviation.Data, ccitt},
-                {NameToken.DctDecode.Data, dct},
-                {NameToken.DctDecodeAbbreviation.Data, dct},
-                {NameToken.FlateDecode.Data, flate},
-                {NameToken.FlateDecodeAbbreviation.Data, flate},
-                {NameToken.Jbig2Decode.Data, jbig2},
-                {NameToken.JpxDecode.Data, jpx},
-                {NameToken.RunLengthDecode.Data, runLength},
-                {NameToken.RunLengthDecodeAbbreviation.Data, runLength},
-                {NameToken.LzwDecode, lzw},
-                {NameToken.LzwDecodeAbbreviation, lzw}
+                { NameToken.Ascii85Decode.Data, ascii85 },
+                { NameToken.Ascii85DecodeAbbreviation.Data, ascii85 },
+                { NameToken.AsciiHexDecode.Data, asciiHex },
+                { NameToken.AsciiHexDecodeAbbreviation.Data, asciiHex },
+                { NameToken.CcittfaxDecode.Data, ccitt },
+                { NameToken.CcittfaxDecodeAbbreviation.Data, ccitt },
+                { NameToken.DctDecode.Data, dct },
+                { NameToken.DctDecodeAbbreviation.Data, dct },
+                { NameToken.FlateDecode.Data, flate },
+                { NameToken.FlateDecodeAbbreviation.Data, flate },
+                { NameToken.Jbig2Decode.Data, jbig2 },
+                { NameToken.JpxDecode.Data, jpx },
+                { NameToken.RunLengthDecode.Data, runLength },
+                { NameToken.RunLengthDecodeAbbreviation.Data, runLength },
+                {NameToken.LzwDecode, lzw },
+                {NameToken.LzwDecodeAbbreviation, lzw }
             };
         }
 

@@ -7,7 +7,6 @@
     using Tokens;
     using Util;
 
-    /// <inheritdoc />
     /// <summary>
     /// The Flate filter is based on the public-domain zlib/deflate compression method, a variable-length Lempel-Ziv 
     /// adaptive compression method cascaded with adaptive Huffman coding. 
@@ -18,7 +17,7 @@
     /// See section 3.3.3 of the spec (version 1.7) for details on the FlateDecode filter.
     /// The flate decode filter may have a predictor function to further compress the stream.
     /// </remarks>
-    internal sealed class FlateFilter : IFilter
+    public sealed class FlateFilter : IFilter
     {
         // Defaults are from table 3.7 in the spec (version 1.7)
         private const int DefaultColors = 1;

@@ -3,7 +3,11 @@
     using System;
     using Tokens;
 
-    internal sealed class Jbig2DecodeFilter : IFilter
+    /// <summary>
+    /// JBIG2 Filter for monochrome image data.
+    /// <para>This filter is not implemented and will not be used during parsing.</para>
+    /// </summary>
+    public sealed class Jbig2DecodeFilter : IFilter
     {
         /// <inheritdoc />
         public bool IsSupported { get; } = false;

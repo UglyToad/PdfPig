@@ -3,7 +3,11 @@
     using System;
     using Tokens;
 
-    internal sealed class DctDecodeFilter : IFilter
+    /// <summary>
+    /// DST (Discrete Cosine Transform) Filter indicates data is encoded in JPEG format.
+    /// <para>This filter is not implemented and will not be used during parsing.</para>
+    /// </summary>
+    public sealed class DctDecodeFilter : IFilter
     {
         /// <inheritdoc />
         public bool IsSupported { get; } = false;
