@@ -219,7 +219,7 @@
         private AltoDocument.AltoIllustration ToAltoIllustration(IPdfImage pdfImage, double height)
         {
             illustrationCount++;
-            var rectangle = pdfImage.Bounds;
+            var rectangle = pdfImage.BoundingBox;
 
             return new AltoDocument.AltoIllustration
             {
