@@ -82,8 +82,8 @@ namespace UglyToad.PdfPig.Encryption
 
                 cryptHandler = cryptHandlerLocal;
 
-                useAes = cryptHandlerLocal?.StreamDictionary?.Name == CryptDictionary.Method.AesV2
-                    || cryptHandlerLocal?.StreamDictionary?.Name == CryptDictionary.Method.AesV3;
+                useAes = cryptHandlerLocal.StreamDictionary.Name == CryptDictionary.Method.AesV2
+                    || cryptHandlerLocal.StreamDictionary.Name == CryptDictionary.Method.AesV3;
             }
 
             var charset = OtherEncodings.Iso88591;
@@ -96,7 +96,18 @@ namespace UglyToad.PdfPig.Encryption
 
             var length = encryptionDictionary.EncryptionAlgorithmCode == EncryptionAlgorithmCode.Rc4OrAes40BitKey
                 ? 5
-                : encryptionDictionary.KeyLength.GetValueOrDefault() / 8;
+                : encryptionDictionary.KeyLength switch
+                {
+                    // this is as per the PDF specification, (PDF_ISO_32000-2, 7.6.2 Application of encryption, table 20, indicating Length default value is 40)
+                    null when encryptionDictionary.EncryptionAlgorithmCode == EncryptionAlgorithmCode.Rc4OrAesGreaterThan40BitKey => 40,
+                    null when encryptionDictionary.EncryptionAlgorithmCode == EncryptionAlgorithmCode.UnpublishedAlgorithm40To128BitKey => 40,
+                    // this is based on a specific use case encountered and tested, in link with the pdf specification (PDF_ISO_32000-2, 7.6.5.3 Public-key encryption algorithms, table 25, CFM comments)
+                    null when cryptHandler?.StreamDictionary.Name == CryptDictionary.Method.AesV2 => 128,
+                    // this is speculation, in link with the pdf spec, in link with the pdf specification (PDF_ISO_32000-2, 7.6.5.3 Public-key encryption algorithms, table 25, CFM comments)
+                    null when cryptHandler?.StreamDictionary.Name == CryptDictionary.Method.AesV3 => 256,
+                    // other use cases
+                    _ => encryptionDictionary.KeyLength.GetValueOrDefault()
+                } / 8;
 
             var foundPassword = false;
 

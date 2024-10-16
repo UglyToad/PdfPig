@@ -63,6 +63,15 @@
             }
         }
 
+        [Fact]
+        public void CanReadDocumentWithNoKeyLengthAndRevision4()
+        {
+            using (var document = PdfDocument.Open(IntegrationHelpers.GetSpecificTestDocumentPath("r4_aesv2_no_length")))
+            {
+                Assert.Empty(document.Information.Producer);
+            }
+        }
+
         private static string GetPath() => IntegrationHelpers.GetSpecificTestDocumentPath(FileName);
     }
 }
