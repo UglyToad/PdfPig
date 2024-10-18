@@ -9,7 +9,7 @@
     /// Defines the information content (actual text) of the font
     /// as opposed to the display format.
     /// </summary>
-    internal class ToUnicodeCMap
+    internal sealed class ToUnicodeCMap
     {
         private readonly CMap? cMap;
 
@@ -45,9 +45,9 @@
             return cMap.TryConvertToUnicode(code, out value);
         }
 
-        public int ReadCode(IInputBytes inputBytes)
+        public int ReadCode(IInputBytes inputBytes, bool useLenientParsing)
         {
-            return cMap!.ReadCode(inputBytes);
+            return cMap!.ReadCode(inputBytes, useLenientParsing);
         }
     }
 }
