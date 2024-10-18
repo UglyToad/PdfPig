@@ -21,6 +21,8 @@
         private readonly Dictionary<int, CharacterBoundingBox> boundingBoxCache
             = new Dictionary<int, CharacterBoundingBox>();
 
+        private readonly bool useLenientParsing;
+
         public NameToken Name => BaseFont;
 
         public NameToken BaseFont { get; }
@@ -41,6 +43,7 @@
             CMap cmap,
             CMap? toUnicodeCMap,
             CMap? ucs2CMap,
+            ParsingOptions parsingOptions,
             bool isChineseJapaneseOrKorean)
         {
             this.ucs2CMap = ucs2CMap;
@@ -52,13 +55,15 @@
             ToUnicode = new ToUnicodeCMap(toUnicodeCMap);
             Details = cidFont.Details?.WithName(Name.Data)
                       ?? FontDetails.GetDefault(Name.Data);
+
+            useLenientParsing = parsingOptions.UseLenientParsing;
         }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)
         {
             var current = bytes.CurrentOffset;
 
-            var code = CMap.ReadCode(bytes);
+            var code = CMap.ReadCode(bytes, useLenientParsing);
 
             codeLength = (int)(bytes.CurrentOffset - current);
 

@@ -10,7 +10,7 @@
     /// The CMap (character code map) maps character codes to character identifiers (CIDs).
     /// The set of characters which a CMap refers to is the "character set" (charset).
     /// </summary>
-    internal class CMap
+    internal sealed class CMap
     {
         public CharacterIdentifierSystemInfo Info { get; }
 
@@ -140,13 +140,12 @@
             return 0;
         }
 
-
         public override string ToString()
         {
             return Name;
         }
 
-        public int ReadCode(IInputBytes bytes)
+        public int ReadCode(IInputBytes bytes, bool useLenientParsing)
         {
             if (hasEmptyCodespace)
             {
@@ -166,7 +165,7 @@
                     break;
                 }
 
-                result[i] = ReadByte(bytes);
+                result[i] = ReadByte(bytes, useLenientParsing);
             }
 
             for (int i = minCodeLength - 1; i < maxCodeLength; i++)
@@ -181,17 +180,23 @@
                 }
                 if (byteCount < maxCodeLength)
                 {
-                    result[byteCount] = ReadByte(bytes);
+                    result[byteCount] = ReadByte(bytes, useLenientParsing);
                 }
             }
 
             throw new PdfDocumentFormatException($"CMap is invalid, min code length was {minCodeLength}, max was {maxCodeLength}.");
         }
 
-        private static byte ReadByte(IInputBytes bytes)
+        private static byte ReadByte(IInputBytes bytes, bool useLenientParsing)
         {
             if (!bytes.MoveNext())
             {
+                if (useLenientParsing)
+                {
+                    // See issue #692
+                    return 0;
+                }
+
                 throw new InvalidOperationException("Read byte called on input bytes which was at end of byte set. Current offset: " + bytes.CurrentOffset);
             }
 
@@ -208,6 +213,5 @@
             }
             return code;
         }
-
     }
 }

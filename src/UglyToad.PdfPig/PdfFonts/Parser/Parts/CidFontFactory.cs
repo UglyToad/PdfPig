@@ -17,7 +17,7 @@
     using UglyToad.PdfPig.Logging;
     using Util;
 
-    internal class CidFontFactory
+    internal sealed class CidFontFactory
     {
         private readonly ILookupFilterProvider filterProvider;
         private readonly IPdfTokenScanner pdfScanner;
@@ -46,7 +46,7 @@
                 defaultWidth = defaultWidthToken.Double;
             }
 
-            var verticalWritingMetrics = ReadVerticalDisplacements(dictionary);
+            var verticalWritingMetrics = ReadVerticalDisplacements(dictionary, pdfScanner);
 
             FontDescriptor? descriptor = null;
             if (TryGetFontDescriptor(dictionary, out var descriptorDictionary))
@@ -190,7 +190,7 @@
             return widths;
         }
 
-        private static VerticalWritingMetrics ReadVerticalDisplacements(DictionaryToken dict)
+        private static VerticalWritingMetrics ReadVerticalDisplacements(DictionaryToken dict, IPdfTokenScanner pdfScanner)
         {
             var verticalDisplacements = new Dictionary<int, double>();
             var positionVectors = new Dictionary<int, PdfVector>();
@@ -210,22 +210,21 @@
             }
 
             // vertical metrics for individual CIDs.
-            if (dict.TryGet(NameToken.W2, out var w2Token) && w2Token is ArrayToken w2)
+            if (dict.TryGet(NameToken.W2, pdfScanner, out ArrayToken? w2))
             {
                 for (var i = 0; i < w2.Data.Count; i++)
                 {
-                    var c = (NumericToken)w2.Data[i];
+                    var c = DirectObjectFinder.Get<NumericToken>(w2.Data[i], pdfScanner);
                     var next = w2.Data[++i];
-
-                    if (next is ArrayToken array)
+                    if (DirectObjectFinder.TryGet(next, pdfScanner, out ArrayToken? array))
                     {
                         for (var j = 0; j < array.Data.Count; j++)
                         {
                             var cid = c.Int + j;
                             // ReSharper disable InconsistentNaming
-                            var w1y = (NumericToken)array.Data[j];
-                            var v1x = (NumericToken)array.Data[++j];
-                            var v1y = (NumericToken)array.Data[++j];
+                            var w1y = DirectObjectFinder.Get<NumericToken>(array.Data[j], pdfScanner);
+                            var v1x = DirectObjectFinder.Get<NumericToken>(array.Data[++j], pdfScanner);
+                            var v1y = DirectObjectFinder.Get<NumericToken>(array.Data[++j], pdfScanner);
 
                             verticalDisplacements[cid] = w1y.Double;
 
@@ -236,9 +235,9 @@
                     {
                         var first = c.Int;
                         var last = ((NumericToken)next).Int;
-                        var w1y = (NumericToken)w2.Data[++i];
-                        var v1x = (NumericToken)w2.Data[++i];
-                        var v1y = (NumericToken)w2.Data[++i];
+                        var w1y = DirectObjectFinder.Get<NumericToken>(w2.Data[++i], pdfScanner);
+                        var v1x = DirectObjectFinder.Get<NumericToken>(w2.Data[++i], pdfScanner);
+                        var v1y = DirectObjectFinder.Get<NumericToken>(w2.Data[++i], pdfScanner);
                         // ReSharper restore InconsistentNaming
 
                         for (var cid = first; cid <= last; cid++)
@@ -250,7 +249,7 @@
                     }
                 }
             }
-
+            
             return new VerticalWritingMetrics(dw2, verticalDisplacements, positionVectors);
         }
 

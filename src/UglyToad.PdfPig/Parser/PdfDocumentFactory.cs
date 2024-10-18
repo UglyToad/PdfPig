@@ -166,7 +166,7 @@
                 cidFontFactory,
                 filterProvider,
                 pdfScanner,
-                parsingOptions.Logger);
+                parsingOptions);
 
             var type1Handler = new Type1FontHandler(pdfScanner, filterProvider, encodingReader);
 

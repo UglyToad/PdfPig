@@ -5,6 +5,36 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue693()
+        {
+            var doc = IntegrationHelpers.GetDocumentPath("reference-2-numeric-error.pdf");
+
+            using (var document = PdfDocument.Open(doc, new ParsingOptions() { UseLenientParsing = true, SkipMissingFonts = true }))
+            {
+                var page1 = document.GetPage(1);
+                Assert.Equal(1269, page1.Letters.Count);
+            }
+        }
+
+        [Fact]
+        public void Issue692()
+        {
+            var doc = IntegrationHelpers.GetDocumentPath("cmap-parsing-exception.pdf");
+
+            using (var document = PdfDocument.Open(doc, new ParsingOptions() { UseLenientParsing = true, SkipMissingFonts = true }))
+            {
+                var page1 = document.GetPage(1);
+                Assert.Equal(796, page1.Letters.Count);
+            }
+
+            using (var document = PdfDocument.Open(doc, new ParsingOptions() { UseLenientParsing = false, SkipMissingFonts = false }))
+            {
+                var ex = Assert.Throws<InvalidOperationException>(() => document.GetPage(1));
+                Assert.StartsWith("Read byte called on input bytes which was at end of byte set.", ex.Message);
+            }
+        }
+
+        [Fact]
         public void Issue874()
         {
             var doc = IntegrationHelpers.GetDocumentPath("ErcotFacts.pdf");

@@ -15,23 +15,25 @@
     using Tokens;
     using Util;
 
-    internal class Type0FontHandler : IFontHandler
+    internal sealed class Type0FontHandler : IFontHandler
     {
         private readonly CidFontFactory cidFontFactory;
         private readonly ILookupFilterProvider filterProvider;
         private readonly IPdfTokenScanner scanner;
         private readonly ILog logger;
+        private readonly ParsingOptions parsingOptions;
 
         public Type0FontHandler(
             CidFontFactory cidFontFactory,
             ILookupFilterProvider filterProvider,
             IPdfTokenScanner scanner,
-            ILog logger)
+            ParsingOptions parsingOptions)
         {
             this.cidFontFactory = cidFontFactory;
             this.filterProvider = filterProvider;
             this.scanner = scanner;
-            this.logger = logger;
+            logger = parsingOptions.Logger;
+            this.parsingOptions = parsingOptions;
         }
 
         public IFont Generate(DictionaryToken dictionary)
@@ -91,7 +93,7 @@
                 }
             }
 
-            var font = new Type0Font(baseFont!, cidFont, cMap, toUnicodeCMap, ucs2CMap, isChineseJapaneseOrKorean);
+            var font = new Type0Font(baseFont!, cidFont, cMap, toUnicodeCMap, ucs2CMap, parsingOptions, isChineseJapaneseOrKorean);
 
             return font;
         }

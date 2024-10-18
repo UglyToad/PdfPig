@@ -7,7 +7,8 @@
         [
             "issue_671.pdf",
             "GHOSTSCRIPT-698363-0.pdf",
-            "ErcotFacts.pdf"
+            "ErcotFacts.pdf",
+            "cmap-parsing-exception.pdf"
         ];
 
         [Theory]
