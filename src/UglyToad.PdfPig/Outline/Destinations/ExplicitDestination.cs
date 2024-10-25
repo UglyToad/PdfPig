@@ -7,6 +7,7 @@
     {
         /// <summary>
         /// The page number (1-based) of the destination.
+        /// <para>A value of <c>0</c> means no page destination was available (i.e. an invalid explicit destination).</para>
         /// </summary>
         public int PageNumber { get; }
 
