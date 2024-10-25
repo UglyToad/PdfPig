@@ -5,6 +5,19 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue736()
+        {
+            var doc = IntegrationHelpers.GetDocumentPath("Approved_Document_B__fire_safety__volume_2_-_Buildings_other_than_dwellings__2019_edition_incorporating_2020_and_2022_amendments.pdf");
+
+            using (var document = PdfDocument.Open(doc, new ParsingOptions() { UseLenientParsing = true, SkipMissingFonts = true }))
+            {
+                Assert.True(document.TryGetBookmarks(out var bookmarks));
+                Assert.Single(bookmarks.Roots);
+                Assert.Equal(36, bookmarks.Roots[0].Children.Count);
+            }
+        }
+
+        [Fact]
         public void Issue693()
         {
             var doc = IntegrationHelpers.GetDocumentPath("reference-2-numeric-error.pdf");

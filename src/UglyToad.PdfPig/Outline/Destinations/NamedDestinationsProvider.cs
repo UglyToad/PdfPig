@@ -136,11 +136,11 @@
             }
             else
             {
-                var errorMessage = $"{nameof(TryGetExplicitDestination)} No page number given in 'Dest': '{explicitDestinationArray}'.";
+                var errorMessage = $"{nameof(TryGetExplicitDestination)} No page number given in 'Dest': '{explicitDestinationArray}', defaulting to 0.";
 
                 log?.Error(errorMessage);
 
-                return false;
+                pageNumber = 0;
             }
 
             NameToken? destTypeToken = null;
@@ -148,6 +148,7 @@
             {
                 destTypeToken = explicitDestinationArray[1] as NameToken;
             }
+
             if (destTypeToken is null)
             {
                 var errorMessage = $"Missing name token as second argument to explicit destination: {explicitDestinationArray}.";
