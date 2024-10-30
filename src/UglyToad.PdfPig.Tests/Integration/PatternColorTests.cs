@@ -12,7 +12,7 @@
             {
                 var page = document.GetPage(1);
 
-                var annotationStamp = page.ExperimentalAccess.GetAnnotations().ElementAt(14);
+                var annotationStamp = page.GetAnnotations().ElementAt(14);
                 Assert.Equal(Annotations.AnnotationType.Stamp, annotationStamp.Type);
                 Assert.True(annotationStamp.HasNormalAppearance);
 
@@ -28,7 +28,7 @@
             using (var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("output_w3c_csswg_drafts_issues2023.pdf")))
             {
                 var page = document.GetPage(1);
-                var path = page.ExperimentalAccess.Paths.Single();
+                var path = page.Paths.Single();
                 var color = path.FillColor;
                 Assert.Equal(ColorSpace.Pattern, color.ColorSpace);
 
@@ -55,7 +55,7 @@
             using (var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("22060_A1_01_Plans-1.pdf")))
             {
                 var page = document.GetPage(1);
-                var filledPath = page.ExperimentalAccess.Paths.Where(p => p.IsFilled).ToArray();
+                var filledPath = page.Paths.Where(p => p.IsFilled).ToArray();
                 var pattern = filledPath[0].FillColor;
                 Assert.Equal(ColorSpace.Pattern, pattern.ColorSpace);
 
@@ -100,7 +100,7 @@
             {
                 // page 53
                 var page = document.GetPage(53);
-                var strokedPath = page.ExperimentalAccess.Paths.Where(p => p.StrokeColor?.ColorSpace == ColorSpace.Pattern).ToArray();
+                var strokedPath = page.Paths.Where(p => p.StrokeColor?.ColorSpace == ColorSpace.Pattern).ToArray();
                 Assert.Equal(5, strokedPath.Length);
                 foreach (var p in strokedPath)
                 {
@@ -114,7 +114,7 @@
 
                 // page 307
                 page = document.GetPage(307);
-                strokedPath = page.ExperimentalAccess.Paths.Where(p => p.StrokeColor?.ColorSpace == ColorSpace.Pattern).ToArray();
+                strokedPath = page.Paths.Where(p => p.StrokeColor?.ColorSpace == ColorSpace.Pattern).ToArray();
                 Assert.Equal(2, strokedPath.Length);
                 foreach (var p in strokedPath)
                 {

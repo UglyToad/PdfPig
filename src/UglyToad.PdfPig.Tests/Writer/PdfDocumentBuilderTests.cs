@@ -115,16 +115,16 @@
                 output.AddPage(existing, 1);
                 results = output.Build();
                 var pg = existing.GetPage(1);
-                var annots = pg.ExperimentalAccess.GetAnnotations().ToList();
-                annotCount = annots.Count;
+                var annots = pg.GetAnnotations().ToArray();
+                annotCount = annots.Length;
                 Assert.Contains(annots, x => x.Type == Annotations.AnnotationType.Link);
             }
 
             using (var rewritten = PdfDocument.Open(results, ParsingOptions.LenientParsingOff))
             {
                 var pg = rewritten.GetPage(1);
-                var annots = pg.ExperimentalAccess.GetAnnotations().ToList();
-                Assert.Equal(annotCount - 1, annots.Count);
+                var annots = pg.GetAnnotations().ToArray();
+                Assert.Equal(annotCount - 1, annots.Length);
                 Assert.DoesNotContain(annots, x => x.Type == Annotations.AnnotationType.Link);
             }
         }

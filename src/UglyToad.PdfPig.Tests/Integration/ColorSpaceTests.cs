@@ -285,7 +285,7 @@
             {
                 var page1 = document.GetPage(1);
 
-                var background = page1.ExperimentalAccess.Paths[0];
+                var background = page1.Paths[0];
                 Assert.True(background.IsFilled);
 
                 var (r, g, b) = background.FillColor.ToRGBValues();
@@ -327,7 +327,7 @@
             using (var document = PdfDocument.Open(path))
             {
                 Page page1 = document.GetPage(1);
-                var paths1 = page1.ExperimentalAccess.Paths.Where(p => p.IsFilled).ToArray();
+                var paths1 = page1.Paths.Where(p => p.IsFilled).ToArray();
                 var reflexRed = paths1[0].FillColor.ToRGBValues(); // 'Reflex Red' Separation color space
                 Assert.Equal(0.930496, reflexRed.r, 6);
                 Assert.Equal(0.111542, reflexRed.g, 6);
@@ -341,7 +341,7 @@
                 Assert.Equal("w", firstLetter.Value);
                 Assert.Equal((0, 0, 1), firstLetter.Color.ToRGBValues()); // Blue
 
-                var paths2 = page2.ExperimentalAccess.Paths;
+                var paths2 = page2.Paths;
                 var filledPath = paths2.Where(p => p.IsFilled).ToArray();
                 var filledRects = filledPath.Where(p => p.Count == 1 && p[0].IsDrawnAsRectangle).ToArray();
 

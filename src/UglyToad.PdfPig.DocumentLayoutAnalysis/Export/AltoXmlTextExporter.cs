@@ -184,7 +184,7 @@
 
             if (includePaths)
             {
-                altoPage.PrintSpace.GraphicalElements = page.ExperimentalAccess.Paths
+                altoPage.PrintSpace.GraphicalElements = page.Paths
                     .Select(p => ToAltoGraphicalElement(p, page.Height))
                     .ToArray();
             }

@@ -11,7 +11,7 @@
 
             using (var doc = PdfDocument.Open(pdf))
             {
-                var annots = doc.GetPage(1).ExperimentalAccess.GetAnnotations().ToArray();
+                var annots = doc.GetPage(1).GetAnnotations().ToArray();
                 Assert.Equal(5, annots.Length);
                 Assert.All(annots, a => Assert.NotNull(a.Action));
                 Assert.All(annots, a => Assert.IsType<GoToAction>(a.Action));
@@ -25,7 +25,7 @@
             var pdf = IntegrationHelpers.GetSpecificTestDocumentPath("appearances");
             using (var doc = PdfDocument.Open(pdf))
             {
-                var annotations = doc.GetPage(1).ExperimentalAccess.GetAnnotations().ToArray();
+                var annotations = doc.GetPage(1).GetAnnotations().ToArray();
                 var annotation = Assert.Single(annotations);
 
                 Assert.True(annotation.HasDownAppearance);

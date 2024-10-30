@@ -193,7 +193,7 @@
 
             if (includePaths)
             {
-                foreach (var path in page.ExperimentalAccess.Paths)
+                foreach (var path in page.Paths)
                 {
                     hocr += "\n" + GetCode(path, page.Height, true, level + 1);
                 }
