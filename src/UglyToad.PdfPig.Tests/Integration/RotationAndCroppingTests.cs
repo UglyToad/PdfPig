@@ -32,7 +32,7 @@
             {
                 var page = document.GetPage(1);
                 Assert.Equal(612, page.Height);
-                Assert.Equal(224, page.ExperimentalAccess.Paths.Count);
+                Assert.Equal(224, page.Paths.Count);
             }
         }
 

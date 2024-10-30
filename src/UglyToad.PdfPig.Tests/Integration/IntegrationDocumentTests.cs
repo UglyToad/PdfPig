@@ -24,7 +24,7 @@
                 {
                     var page = document.GetPage(i + 1);
 
-                    Assert.NotNull(page.ExperimentalAccess.GetAnnotations().ToList());
+                    Assert.NotNull(page.GetAnnotations().ToArray());
                 }
             }
         }
@@ -45,7 +45,7 @@
                 {
                     var page = document.GetPage(i + 1);
 
-                    Assert.NotNull(page.ExperimentalAccess.GetAnnotations().ToList());
+                    Assert.NotNull(page.GetAnnotations().ToArray());
                 }
             }
         }

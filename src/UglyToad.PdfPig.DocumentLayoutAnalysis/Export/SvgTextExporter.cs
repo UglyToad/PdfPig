@@ -69,7 +69,7 @@
         {
             var builder = new StringBuilder($"<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" width='{Math.Round(page.Width, Rounding)}' height='{Math.Round(page.Height, Rounding)}'>\n<g transform=\"scale(1, 1) translate(0, 0)\">\n");
 
-            foreach (var path in page.ExperimentalAccess.Paths)
+            foreach (var path in page.Paths)
             {
                 if (!path.IsClipping)
                 {

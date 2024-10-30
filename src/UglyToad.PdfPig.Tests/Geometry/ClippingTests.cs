@@ -11,7 +11,7 @@ namespace UglyToad.PdfPig.Tests.Geometry
                 new ParsingOptions { ClipPaths = true }))
             {
                 var page = document.GetPage(45);
-                Assert.Equal(28, page.ExperimentalAccess.Paths.Count);
+                Assert.Equal(28, page.Paths.Count);
             }
         }
     }

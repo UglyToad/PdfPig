@@ -240,7 +240,7 @@
 
             if (includePaths)
             {
-                foreach (var path in page.ExperimentalAccess.Paths)
+                foreach (var path in page.Paths)
                 {
                     var graphicalElement = ToPageXmlLineDrawingRegion(path, data, page.Width, page.Height);
 

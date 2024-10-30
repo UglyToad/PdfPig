@@ -28,7 +28,7 @@
             {
                 var page = document.GetPage(1);
 
-                var annotations = page.ExperimentalAccess.GetAnnotations().ToList();
+                var annotations = page.GetAnnotations().ToArray();
 
                 Assert.NotEmpty(annotations);
 

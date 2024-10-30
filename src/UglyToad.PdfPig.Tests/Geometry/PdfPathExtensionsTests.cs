@@ -15,7 +15,7 @@
                 var page = document.GetPage(1);
                 var words = page.GetWords().ToList();
 
-                foreach (var path in page.ExperimentalAccess.Paths)
+                foreach (var path in page.Paths)
                 {
                     Assert.NotEqual(FillingRule.NonZeroWinding, path.FillingRule); // allow none and even-odd
 

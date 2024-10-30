@@ -194,7 +194,7 @@
             using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
             {
                 Assert.Equal(2, document.GetPages().Sum(
-                    page => page.ExperimentalAccess.GetAnnotations().Count(x => x.Type == Annotations.AnnotationType.Link)));
+                    page => page.GetAnnotations().Count(x => x.Type == Annotations.AnnotationType.Link)));
             }
         }
 
@@ -209,7 +209,7 @@
             using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
             {
                 Assert.Equal(1, document.GetPages().Sum(
-                    page => page.ExperimentalAccess.GetAnnotations().Count(x => x.Type == Annotations.AnnotationType.Link)));
+                    page => page.GetAnnotations().Count(x => x.Type == Annotations.AnnotationType.Link)));
             }
         }
 

@@ -171,7 +171,7 @@
                         DrawRectangle(letter.GlyphRectangle, graphics, violetPen, imageHeight, scale);
                     }
 
-                    foreach (var annotation in page.ExperimentalAccess.GetAnnotations())
+                    foreach (var annotation in page.GetAnnotations())
                     {
                         DrawRectangle(annotation.Rectangle, graphics, bluePen, imageHeight, scale);
                     }
