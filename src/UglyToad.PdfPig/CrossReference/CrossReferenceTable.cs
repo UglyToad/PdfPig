@@ -49,7 +49,7 @@
             Trailer = trailer ?? throw new ArgumentNullException(nameof(trailer));
             CrossReferenceOffsets = crossReferenceOffsets ?? throw new ArgumentNullException(nameof(crossReferenceOffsets));
 
-            var result = new Dictionary<IndirectReference, long>();
+            var result = new Dictionary<IndirectReference, long>(capacity: objectOffsets.Count);
             foreach (var objectOffset in objectOffsets)
             {
                 result[objectOffset.Key] = objectOffset.Value;

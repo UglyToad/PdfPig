@@ -24,11 +24,11 @@
                 return true;
             }
 
-            var builderOffsets = new Dictionary<IndirectReference, long>();
-            
             var bruteForceOffsets = BruteForceSearcher.GetObjectLocations(bytes);
             if (bruteForceOffsets.Count > 0)
             {
+                var builderOffsets = new Dictionary<IndirectReference, long>();
+
                 // find all object streams
                 foreach (var entry in crossReferenceTable.ObjectOffsets)
                 {
@@ -39,11 +39,11 @@
                         // TODO: more validation of streams.
                         builderOffsets[entry.Key] = entry.Value;
                     }
+                }
 
-                    foreach (var item in bruteForceOffsets)
-                    {
-                        builderOffsets[item.Key] = item.Value;
-                    }
+                foreach (var item in bruteForceOffsets)
+                {
+                    builderOffsets[item.Key] = item.Value;
                 }
 
                 actualOffsets = builderOffsets;

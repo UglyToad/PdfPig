@@ -6,7 +6,7 @@
     /// <summary>
     /// Used to uniquely identify and refer to objects in the PDF file.
     /// </summary>
-    public readonly struct IndirectReference
+    public readonly struct IndirectReference : IEquatable<IndirectReference>
     {
         /// <summary>
         /// A positive integer object number.
@@ -31,15 +31,15 @@
         }
 
         /// <inheritdoc />
+        public bool Equals(IndirectReference other)
+        {
+            return other.ObjectNumber == ObjectNumber && other.Generation == Generation;
+        }
+
+        /// <inheritdoc />
         public override bool Equals(object obj)
         {
-            if (obj is IndirectReference reference)
-            {
-                return reference.ObjectNumber == ObjectNumber
-                       && reference.Generation == Generation;
-            }
-
-            return false;
+            return obj is IndirectReference other && Equals(other);
         }
 
         /// <inheritdoc />
