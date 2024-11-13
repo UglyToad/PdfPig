@@ -27,7 +27,8 @@
             var bruteForceOffsets = BruteForceSearcher.GetObjectLocations(bytes);
             if (bruteForceOffsets.Count > 0)
             {
-                var builderOffsets = new Dictionary<IndirectReference, long>();
+                // Pre-allocate capacity for at least the bruteForceOffsets, since we'll be adding all of them
+                var builderOffsets = new Dictionary<IndirectReference, long>(bruteForceOffsets.Count);
 
                 // find all object streams
                 foreach (var entry in crossReferenceTable.ObjectOffsets)
