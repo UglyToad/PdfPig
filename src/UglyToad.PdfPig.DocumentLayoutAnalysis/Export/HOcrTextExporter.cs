@@ -4,6 +4,7 @@
     using Core;
     using DocumentLayoutAnalysis;
     using System;
+    using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
     using UglyToad.PdfPig.Graphics;
@@ -118,6 +119,9 @@
         /// Get the hOCR (HTML) string of the page layout. Excludes PdfPaths.
         /// </summary>
         /// <param name="page">The page.</param>
+#if NET6_0_OR_GREATER
+        [RequiresUnreferencedCode("'RequiresUnreferencedCodeAttribute' annotations must match across all interface implementations or overrides.")]
+#endif
         public string Get(Page page)
         {
             return Get(page, false);

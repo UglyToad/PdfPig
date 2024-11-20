@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using System.Text;
     using System.Xml;
@@ -65,6 +66,9 @@
         /// <summary>
         /// Get the page contents as an SVG.
         /// </summary>
+#if NET6_0_OR_GREATER
+        [RequiresUnreferencedCode("'RequiresUnreferencedCodeAttribute' annotations must match across all interface implementations or overrides.")]
+#endif
         public string Get(Page page)
         {
             var builder = new StringBuilder($"<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" width='{Math.Round(page.Width, Rounding)}' height='{Math.Round(page.Height, Rounding)}'>\n<g transform=\"scale(1, 1) translate(0, 0)\">\n");
