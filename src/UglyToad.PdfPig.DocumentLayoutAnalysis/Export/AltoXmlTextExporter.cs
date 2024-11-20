@@ -110,7 +110,7 @@
         /// </summary>
         /// <param name="page">The page to export the XML layout for.</param>
 #if NET6_0_OR_GREATER
-        [RequiresUnreferencedCode("Members from PageXmlDocument may be trimmed if not referenced directly")]
+        [RequiresUnreferencedCode("Members from AltoDocument may be trimmed if not referenced directly")]
 #endif
         public string Get(Page page) => Get(page, false);
 
