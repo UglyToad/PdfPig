@@ -10,6 +10,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C55738D2-3165-4D03-9CE2-10A2E2EEC465}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		Directory.Build.targets = Directory.Build.targets
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UglyToad.PdfPig.Fonts", "UglyToad.PdfPig.Fonts\UglyToad.PdfPig.Fonts.csproj", "{BBC8F94C-6E94-43FF-AB2E-47FF3C2B999F}"
