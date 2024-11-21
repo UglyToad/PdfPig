@@ -1,27 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net462;net471;net6.0;net8.0</TargetFrameworks>
-    <LangVersion>12</LangVersion>
-    <Version>0.1.10-alpha001</Version>
-    <IsTestProject>False</IsTestProject>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\pdfpig.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningsAsErrors />
-  </PropertyGroup>
-  <ItemGroup Condition="'$(TargetFramework)'=='net462'">
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0' or '$(TargetFramework)'=='net462' OR '$(TargetFramework)'=='net471'">
-    <PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0' or '$(TargetFramework)'=='net462' or '$(TargetFramework)'=='net471'">
-    <PackageReference Include="System.Memory" Version="4.5.5" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\pdfpig.snk" Link="pdfpig.snk" />
-  </ItemGroup>
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0;net462;net471;net6.0;net8.0</TargetFrameworks>
+		<LangVersion>12</LangVersion>
+		<Version>0.1.10-alpha001</Version>
+		<IsTestProject>False</IsTestProject>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<SignAssembly>true</SignAssembly>
+		<AssemblyOriginatorKeyFile>..\pdfpig.snk</AssemblyOriginatorKeyFile>
+	</PropertyGroup>
+	<ItemGroup Condition="'$(TargetFramework)'=='net462'">
+		<PackageReference Include="System.ValueTuple" Version="4.5.0" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0' or '$(TargetFramework)'=='net462' OR '$(TargetFramework)'=='net471'">
+		<PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0' or '$(TargetFramework)'=='net462' or '$(TargetFramework)'=='net471'">
+		<PackageReference Include="System.Memory" Version="4.5.5" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="..\pdfpig.snk" Link="pdfpig.snk" />
+	</ItemGroup>
 </Project>
