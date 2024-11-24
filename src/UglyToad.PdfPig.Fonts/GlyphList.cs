@@ -152,6 +152,13 @@
 
                 unicode = char.ConvertFromUtf32(codePoint);
             }
+            else if (name.StartsWith("c", StringComparison.OrdinalIgnoreCase) && name.Length >= 3 && name.Length <= 4)
+            {
+                // name representation cXXX
+                var codePoint = int.Parse(name.AsSpanOrSubstring(1), NumberStyles.Integer, CultureInfo.InvariantCulture);
+                System.Diagnostics.Debug.Assert(codePoint > 0);
+                unicode = char.ConvertFromUtf32(codePoint);
+            }
             else
             {
                 return null;
