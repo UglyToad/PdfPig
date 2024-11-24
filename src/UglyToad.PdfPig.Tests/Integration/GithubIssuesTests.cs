@@ -1,9 +1,32 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
     using Content;
+    using DocumentLayoutAnalysis.PageSegmenter;
+    using DocumentLayoutAnalysis.WordExtractor;
 
     public class GithubIssuesTests
     {
+        [Fact]
+        public void Issue943()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("MOZILLA-10225-0.pdf");
+
+            using (var document = PdfDocument.Open(path))
+            {
+                var page = document.GetPage(1);
+                Assert.NotNull(page);
+
+                var letters = page.Letters;
+                Assert.NotNull(letters);
+
+                var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
+                var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
+
+                Assert.Equal("Rocket and Spacecraft Propulsion", blocks[0].TextLines[0].Text);
+                Assert.Equal("Principles, Practice and New Developments (Second Edition)", blocks[0].TextLines[1].Text);
+            }
+        }
+
         [Fact]
         public void Issue736()
         {
