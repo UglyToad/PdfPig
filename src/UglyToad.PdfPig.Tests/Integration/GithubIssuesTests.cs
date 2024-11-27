@@ -7,6 +7,41 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue945()
+        {
+            // Odd ligatures names
+            var path = IntegrationHelpers.GetDocumentPath("MOZILLA-3136-0.pdf");
+            using (var document = PdfDocument.Open(path))
+            {
+                var page = document.GetPage(2);
+                Assert.Contains("ff", page.Letters.Select(l => l.Value));
+            }
+
+            path = IntegrationHelpers.GetDocumentPath("68-1990-01_A.pdf");
+            using (var document = PdfDocument.Open(path))
+            {
+                var page = document.GetPage(7);
+                Assert.Contains("fi", page.Letters.Select(l => l.Value));
+            }
+
+            path = IntegrationHelpers.GetDocumentPath("TIKA-2054-0.pdf");
+            using (var document = PdfDocument.Open(path))
+            {
+                var page = document.GetPage(3);
+                Assert.Contains("fi", page.Letters.Select(l => l.Value));
+
+                page = document.GetPage(4);
+                Assert.Contains("ff", page.Letters.Select(l => l.Value));
+
+                page = document.GetPage(6);
+                Assert.Contains("fl", page.Letters.Select(l => l.Value));
+
+                page = document.GetPage(16);
+                Assert.Contains("ffi", page.Letters.Select(l => l.Value));
+            }
+        }
+
+        [Fact]
         public void Issue943()
         {
             var path = IntegrationHelpers.GetDocumentPath("MOZILLA-10225-0.pdf");

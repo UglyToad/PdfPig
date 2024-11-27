@@ -57,7 +57,7 @@
         {
             var list = new GlyphList(new Dictionary<string, string>
             {
-                {"Boris", "B"}
+                { "Boris", "B" }
             });
 
             var result = list.NameToUnicode("Boris.Special");
@@ -70,7 +70,7 @@
         {
             var list = new GlyphList(new Dictionary<string, string>
             {
-                {"B", "X"}
+                { "B", "X" }
             });
 
             var result = list.NameToUnicode("uni0042");
@@ -83,12 +83,27 @@
         {
             var list = new GlyphList(new Dictionary<string, string>
             {
-                {"E", "Æ"}
+                { "E", "Æ" }
             });
 
             var result = list.NameToUnicode("u0045");
 
             Assert.Equal("E", result);
+        }
+
+
+        [Fact(Skip = "TODO - String don't match")]
+        public void NameToUnicodeConvertAglSpecification()
+        {
+            // https://github.com/adobe-type-tools/agl-specification?tab=readme-ov-file#3-examples
+            var list = new GlyphList(new Dictionary<string, string>
+            {
+                { "Lcommaaccent", "\u013B" }
+            });
+
+            var result = list.NameToUnicode("Lcommaaccent_uni20AC0308_u1040C.alternate");
+
+            Assert.Equal("\u013B\u20AC\u0308\u1040C", result);
         }
     }
 }

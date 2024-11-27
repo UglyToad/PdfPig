@@ -13,7 +13,7 @@
     public class GlyphList
     {
         /// <summary>
-        /// <c>.notdef</c>.
+        /// <c>.notdef</c> name.
         /// </summary>
         public const string NotDefined = ".notdef";
 
@@ -37,7 +37,7 @@
         public static GlyphList AdditionalGlyphList => LazyAdditionalGlyphList.Value;
 
         private static readonly Lazy<GlyphList> LazyZapfDingbatsGlyphList = new Lazy<GlyphList>(() => GlyphListFactory.Get("zapfdingbats"));
-
+        
         /// <summary>
         /// Zapf Dingbats.
         /// </summary>
@@ -84,6 +84,7 @@
 
         /// <summary>
         /// Get the unicode value for the glyph name.
+        /// See <see href="https://github.com/adobe-type-tools/agl-specification"/>.
         /// </summary>
         public string NameToUnicode(string name)
         {
@@ -103,25 +104,47 @@
             }
 
             string unicode;
-            // Remove suffixes
+            // 1. Drop all the characters from the glyph name starting with the first occurrence of a period (U+002E FULL STOP), if any.
             if (name.IndexOf('.') > 0)
             {
                 unicode = NameToUnicode(name.Substring(0, name.IndexOf('.')));
             }
-            else if (name.StartsWith("uni") && name.Length == 7)
+            // 2. Split the remaining string into a sequence of components, using underscore (U+005F LOW LINE) as the delimiter.
+            else if (name.IndexOf('_') > 0)
+            {
+                /*
+                 * MOZILLA-3136-0.pdf
+                 * 68-1990-01_A.pdf
+                 * TIKA-2054-0.pdf
+                 */
+                var sb = new StringBuilder();
+                foreach (var s in name.Split('_'))
+                {
+                    sb.Append(NameToUnicode(s));
+                }
+
+                unicode = sb.ToString();
+            }
+            // Otherwise, if the component is of the form ‘uni’ (U+0075, U+006E, and U+0069) followed by a sequence of uppercase hexadecimal
+            // digits (0–9 and A–F, meaning U+0030 through U+0039 and U+0041 through U+0046), if the length of that sequence is a multiple
+            // of four, and if each group of four digits represents a value in the ranges 0000 through D7FF or E000 through FFFF, then
+            // interpret each as a Unicode scalar value and map the component to the string made of those scalar values. Note that the range
+            // and digit-length restrictions mean that the ‘uni’ glyph name prefix can be used only with UVs in the Basic Multilingual Plane (BMP).
+            else if (name.StartsWith("uni") && (name.Length - 3) % 4 == 0)
             {
                 // test for Unicode name in the format uniXXXX where X is hex
                 int nameLength = name.Length;
 
                 var uniStr = new StringBuilder();
 
-                var foundUnicode = true;
                 for (int chPos = 3; chPos + 4 <= nameLength; chPos += 4)
                 {
-                    if (!int.TryParse(name.AsSpanOrSubstring(chPos, 4), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var codePoint))
+                    if (!int.TryParse(name.AsSpanOrSubstring(chPos, 4),
+                            NumberStyles.HexNumber,
+                            CultureInfo.InvariantCulture,
+                            out var codePoint))
                     {
-                        foundUnicode = false;
-                        break;
+                        return null;
                     }
 
                     if (codePoint > 0xD7FF && codePoint < 0xE000)
@@ -132,33 +155,30 @@
                     uniStr.Append((char)codePoint);
                 }
 
-                if (!foundUnicode)
-                {
-                    return null;
-                }
-
                 unicode = uniStr.ToString();
             }
-            else if (name.StartsWith("u", StringComparison.Ordinal) && name.Length == 5)
+            // Otherwise, if the component is of the form ‘u’ (U+0075) followed by a sequence of four to six uppercase hexadecimal digits (0–9
+            // and A–F, meaning U+0030 through U+0039 and U+0041 through U+0046), and those digits represents a value in the ranges 0000 through
+            // D7FF or E000 through 10FFFF, then interpret it as a Unicode scalar value and map the component to the string made of this scalar value.
+            else if (name.StartsWith("u", StringComparison.Ordinal) && name.Length >= 5 && name.Length <= 7)
             {
-                // test for an alternate Unicode name representation uXXXX
                 var codePoint = int.Parse(name.AsSpanOrSubstring(1), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
 
                 if (codePoint > 0xD7FF && codePoint < 0xE000)
                 {
-                    throw new InvalidFontFormatException(
-                        $"Unicode character name with disallowed code area: {name}");
+                    throw new InvalidFontFormatException($"Unicode character name with disallowed code area: {name}");
                 }
 
                 unicode = char.ConvertFromUtf32(codePoint);
             }
+            // Ad-hoc special cases
             else if (name.StartsWith("c", StringComparison.OrdinalIgnoreCase) && name.Length >= 3 && name.Length <= 4)
             {
                 // name representation cXXX
                 var codePoint = int.Parse(name.AsSpanOrSubstring(1), NumberStyles.Integer, CultureInfo.InvariantCulture);
-                System.Diagnostics.Debug.Assert(codePoint > 0);
                 unicode = char.ConvertFromUtf32(codePoint);
             }
+            // Otherwise, map the component to an empty string.
             else
             {
                 return null;
