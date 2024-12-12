@@ -83,7 +83,7 @@
 
         private ushort[] MergeContourEndPoints(IGlyphDescription glyph)
         {
-            var destinationLastEndPoint = EndPointsOfContours[EndPointsOfContours.Length - 1] + 1;
+            var destinationLastEndPoint = (EndPointsOfContours.Length > 0 ? EndPointsOfContours[EndPointsOfContours.Length - 1] : 0) + 1;
 
             var endPoints = new ushort[EndPointsOfContours.Length + glyph.EndPointsOfContours.Length];
 
