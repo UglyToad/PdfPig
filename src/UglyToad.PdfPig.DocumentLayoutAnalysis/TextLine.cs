@@ -9,8 +9,13 @@
     /// <summary>
     /// A line of text.
     /// </summary>
-    public class TextLine
+    public class TextLine : ILettersBlock
     {
+        /// <summary>
+        /// The letters contained in this TextLine
+        /// </summary>
+        public IReadOnlyList<Letter> Letters { get; }
+
         /// <summary>
         /// The separator used between words in the line.
         /// </summary>
@@ -56,6 +61,7 @@
             Separator = separator;
 
             Words = words;
+            Letters = words.SelectMany(w => w.Letters).ToList().AsReadOnly();
 
             if (Words.Count == 1)
             {
