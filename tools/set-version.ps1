@@ -9,7 +9,7 @@ $projs = Get-ChildItem "$root/../src" -Recurse | Where-Object { $_.extension -eq
 $projs | ForEach-Object {
   $xml = New-Object XML
   $xml.Load($_.FullName)
-  $xml.Project.PropertyGroup[0].Version = $version
+  $xml.Project.PropertyGroup.Version = $version
   $xml.Save($_.FullName)
 }
 
