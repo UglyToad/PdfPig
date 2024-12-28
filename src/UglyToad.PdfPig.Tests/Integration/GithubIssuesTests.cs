@@ -3,9 +3,32 @@
     using Content;
     using DocumentLayoutAnalysis.PageSegmenter;
     using DocumentLayoutAnalysis.WordExtractor;
+    using PdfPig.Core;
 
     public class GithubIssuesTests
     {
+        [Fact]
+        public void Issue959()
+        {
+            // Lenient parsing ON
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("algo.pdf");
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                for (int i = 1; i <= document.NumberOfPages; ++i)
+                {
+                    var page = document.GetPage(i);
+                    Assert.NotNull(page);
+                    Assert.Equal(i, page.Number);
+                }
+            }
+
+            // Lenient parsing OFF
+            var exception = Assert.Throws<PdfDocumentFormatException>(() =>
+                PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = false }));
+
+            Assert.Equal("The cross references formed an infinite loop.", exception.Message);
+        }
+
         [Fact]
         public void Issue945()
         {
