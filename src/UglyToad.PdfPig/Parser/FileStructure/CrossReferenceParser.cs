@@ -226,6 +226,12 @@
 
                 if (prevSet.Contains(previousCrossReferenceLocation))
                 {
+                    if (isLenientParsing)
+                    {
+                        log.Error("The cross references formed an infinite loop.");
+                        break;
+                    }
+
                     throw new PdfDocumentFormatException("The cross references formed an infinite loop.");
                 }
 
