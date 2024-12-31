@@ -29,7 +29,7 @@
         /// <inheritdoc />
         public ReadOnlyMemory<byte> Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, int filterIndex)
         {
-            var asciiBuffer = new byte[5];
+            Span<byte> asciiBuffer = stackalloc byte[5];
 
             var index = 0;
 
@@ -96,7 +96,7 @@
                 WriteData(asciiBuffer, index, writer);
             }
 
-            return writer.WrittenMemory;
+            return writer.WrittenMemory.ToArray();
         }
 
         private static void WriteData(Span<byte> ascii, int index, ArrayPoolBufferWriter<byte> writer)

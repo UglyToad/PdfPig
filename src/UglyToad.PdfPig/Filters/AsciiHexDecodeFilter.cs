@@ -68,7 +68,7 @@
                 WriteHexToByte(pair, writer);
             }
 
-            return writer.WrittenMemory;
+            return writer.WrittenMemory.ToArray();
         }
 
         private static void WriteHexToByte(ReadOnlySpan<byte> hexBytes, ArrayPoolBufferWriter<byte> writer)

@@ -62,7 +62,7 @@
                 }
             }
 
-            return output.WrittenMemory;
+            return output.WrittenMemory.ToArray();
         }
     }
 }
