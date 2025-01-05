@@ -42,6 +42,9 @@
                 fontMetrics.Weight == "Bold",
                 fontMetrics.Weight == "Bold" ? 700 : FontDetails.DefaultWeight,
                 fontMetrics.ItalicAngle != 0);
+
+            // Assumption is ZapfDingbats is not possible here. We need to change the behaviour if not the case
+            System.Diagnostics.Debug.Assert(!(encoding is ZapfDingbatsEncoding || Details.Name.Contains("ZapfDingbats")));
         }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)

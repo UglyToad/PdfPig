@@ -62,6 +62,9 @@
 
             Details = descriptor?.ToDetails(Name?.Data)
                       ?? FontDetails.GetDefault(Name?.Data);
+
+            // Assumption is ZapfDingbats is not possible here. We need to change the behaviour if not the case
+            System.Diagnostics.Debug.Assert(!(encoding is ZapfDingbatsEncoding || Details.Name.Contains("ZapfDingbats")));
         }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)
