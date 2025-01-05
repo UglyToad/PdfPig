@@ -5,6 +5,17 @@
     public class ZapfDingbatsTests
     {
         [Fact]
+        public void TrueTypeSimpleFont1()
+        {
+            using (var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("capas")))
+            {
+                var page = document.GetPage(18);
+                // ZapfDingbats characters are spaces
+                Assert.Contains(" ", page.Letters.Select(l => l.Value));
+            }
+        }
+
+        [Fact]
         public void Type1Standard14Font1()
         {
             using (var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("TIKA-469-0")))
@@ -17,7 +28,6 @@
         [Fact]
         public void Type1Standard14Font2()
         {
-            // This document does not actually contain circular references
             using (var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("MOZILLA-LINK-5251-1")))
             {
                 var page = document.GetPage(1);
@@ -33,7 +43,6 @@
         [Fact]
         public void Type1FontSimple1()
         {
-            // This document does not actually contain circular references
             using (var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("MOZILLA-2775-1")))
             {
                 var page = document.GetPage(11);
@@ -44,7 +53,6 @@
         [Fact]
         public void Type1FontSimple2()
         {
-            // This document does not actually contain circular references
             using (var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("PDFBOX-492-4.jar-8")))
             {
                 var page = document.GetPage(1);

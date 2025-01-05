@@ -31,6 +31,8 @@
 
         private readonly double[] widths;
 
+        private readonly bool isZapfDingbats;
+
 #nullable disable
         public NameToken Name { get; }
 #nullable enable
@@ -63,8 +65,7 @@
             Details = descriptor?.ToDetails(Name?.Data)
                       ?? FontDetails.GetDefault(Name?.Data);
 
-            // Assumption is ZapfDingbats is not possible here. We need to change the behaviour if not the case
-            System.Diagnostics.Debug.Assert(!(encoding is ZapfDingbatsEncoding || Details.Name.Contains("ZapfDingbats")));
+            isZapfDingbats = encoding is ZapfDingbatsEncoding || Details.Name.Contains("ZapfDingbats");
         }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)
@@ -100,12 +101,22 @@
             // If the font is a simple font that uses one of the predefined encodings MacRomanEncoding, MacExpertEncoding, or WinAnsiEncoding...
 
             //  Map the character code to a character name.
-            var encodedCharacterName = encoding.GetName(characterCode);
+            var name = encoding.GetName(characterCode);
 
             // Look up the character name in the Adobe Glyph List or additional Glyph List.
             try
             {
-                value = GlyphList.AdobeGlyphList.NameToUnicode(encodedCharacterName);
+                if (isZapfDingbats)
+                {
+                    value = GlyphList.ZapfDingbats.NameToUnicode(name);
+
+                    if (value is not null)
+                    {
+                        return true;
+                    }
+                }
+
+                value = GlyphList.AdobeGlyphList.NameToUnicode(name);
             }
             catch
             {
