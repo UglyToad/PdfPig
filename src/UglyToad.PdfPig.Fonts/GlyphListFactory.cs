@@ -4,48 +4,55 @@
     using System.Collections.Generic;
     using System.Globalization;
     using System.IO;
+    using System.Linq;
     using Util;
 
-    internal class GlyphListFactory
+    internal static class GlyphListFactory
     {
-        public static GlyphList Get(string listName)
+#if NET
+        private const char Semicolon = ';';
+#else
+        private static readonly char[] Semicolon = [';'];
+#endif
+
+        public static GlyphList Get(params string[] listNames)
         {
-            using (var resource =
-                typeof(GlyphListFactory).Assembly.GetManifestResourceStream(
-                    $"UglyToad.PdfPig.Fonts.Resources.GlyphList.{listName}"))
+            var result = new Dictionary<string, string>(listNames.Any(n => string.Equals("glyphlist", n, StringComparison.OrdinalIgnoreCase)) ? 4300 : 0);
+
+            foreach (var listName in listNames)
             {
-                if (resource == null)
+                using (var resource =
+                       typeof(GlyphListFactory).Assembly.GetManifestResourceStream(
+                           $"UglyToad.PdfPig.Fonts.Resources.GlyphList.{listName}"))
                 {
-                    throw new ArgumentException($"No embedded glyph list resource was found with the name {listName}.");
-                }
+                    if (resource == null)
+                    {
+                        throw new ArgumentException($"No embedded glyph list resource was found with the name {listName}.");
+                    }
 
-                int? capacity = null;
-                // Prevent too much wasted memory capacity for Adobe GlyphList
-                if (string.Equals("glyphlist", listName, StringComparison.OrdinalIgnoreCase))
-                {
-                    capacity = 4300;
+                    ReadInternal(resource, result);
                 }
-
-                return ReadInternal(resource, capacity);
             }
+
+#if NET
+            result.TrimExcess();
+#endif
+            return new GlyphList(result);
         }
 
         public static GlyphList Read(Stream stream)
         {
-            return ReadInternal(stream);
+            var result = new Dictionary<string, string>();
+            ReadInternal(stream, result);
+            return new GlyphList(result);
         }
 
-        private static readonly char[] Semicolon = [';'];
-
-        private static GlyphList ReadInternal(Stream stream, int? defaultDictionaryCapacity = 0)
+        private static void ReadInternal(Stream stream, Dictionary<string, string> result)
         {
             if (stream == null)
             {
                 throw new ArgumentNullException(nameof(stream));
             }
-
-            var result = defaultDictionaryCapacity.HasValue ? new Dictionary<string, string>(defaultDictionaryCapacity.Value) : [];
-
 
             using (var reader = new StreamReader(stream))
             {
@@ -62,7 +69,7 @@
                     {
                         continue;
                     }
-
+                    
                     var parts = line.Split(Semicolon, StringSplitOptions.RemoveEmptyEntries);
 
                     if (parts.Length != 2)
@@ -86,11 +93,10 @@
                         value += char.ConvertFromUtf32(code);
                     }
 
+                    System.Diagnostics.Debug.Assert(!result.ContainsKey(key));
                     result[key] = value;
                 }
             }
-
-            return new GlyphList(result);
         }
     }
 }

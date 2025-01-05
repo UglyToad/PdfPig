@@ -102,8 +102,7 @@
             // Look up the character name in the Adobe Glyph List or additional Glyph List.
             try
             {
-                value = GlyphList.AdobeGlyphList.NameToUnicode(encodedCharacterName)
-                        ?? GlyphList.AdditionalGlyphList.NameToUnicode(encodedCharacterName);
+                value = GlyphList.AdobeGlyphList.NameToUnicode(encodedCharacterName);
             }
             catch
             {
