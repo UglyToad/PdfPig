@@ -87,7 +87,10 @@
 
         private static Span<byte> RemoveStridePadding(Span<byte> input, int strideWidth, int imageWidth, int imageHeight, int multiplier)
         {
-            Span<byte> result = new byte[imageWidth * imageHeight * multiplier];
+            int size = imageWidth * imageHeight * multiplier;
+            Span<byte> result = size < input.Length ? input.Slice(0, size) : new byte[size];
+            // See PDFBOX-492-4.jar-8.pdf, page 2 for size > input.Length
+
             for (int y = 0; y < imageHeight; y++)
             {
                 int sourceIndex = y * strideWidth;
