@@ -22,19 +22,12 @@
 
         private readonly Dictionary<string, string> oddNameToUnicodeCache = new Dictionary<string, string>();
 
-        private static readonly Lazy<GlyphList> LazyAdobeGlyphList = new Lazy<GlyphList>(() => GlyphListFactory.Get("glyphlist"));
+        private static readonly Lazy<GlyphList> LazyAdobeGlyphList = new Lazy<GlyphList>(() => GlyphListFactory.Get("glyphlist", "additional"));
 
         /// <summary>
-        /// The Adobe Glyph List.
+        /// The Adobe Glyph List (includes an extension to the Adobe Glyph List.).
         /// </summary>
         public static GlyphList AdobeGlyphList => LazyAdobeGlyphList.Value;
-
-        private static readonly Lazy<GlyphList> LazyAdditionalGlyphList = new Lazy<GlyphList>(() => GlyphListFactory.Get("additional"));
-
-        /// <summary>
-        /// An extension to the Adobe Glyph List.
-        /// </summary>
-        public static GlyphList AdditionalGlyphList => LazyAdditionalGlyphList.Value;
 
         private static readonly Lazy<GlyphList> LazyZapfDingbatsGlyphList = new Lazy<GlyphList>(() => GlyphListFactory.Get("zapfdingbats"));
         
@@ -103,7 +96,7 @@
                 return result;
             }
 
-            string unicode;
+            string? unicode;
             // 1. Drop all the characters from the glyph name starting with the first occurrence of a period (U+002E FULL STOP), if any.
             if (name.IndexOf('.') > 0)
             {
