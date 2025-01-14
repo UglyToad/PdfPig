@@ -68,6 +68,10 @@ namespace UglyToad.PdfPig.Content
                     {
                         Name = nameStr.Data;
                     }
+                    else if (markedContentElement.Properties.TryGet(NameToken.Name, pdfTokenScanner, out HexToken? nameHex))
+                    {
+                        Name = nameHex.Data;
+                    }
                     else
                     {
                         throw new ArgumentException($"Cannot parse optional content's {nameof(Name)} from {nameof(markedContentElement.Properties)}. This is a required field.", nameof(markedContentElement.Properties));
