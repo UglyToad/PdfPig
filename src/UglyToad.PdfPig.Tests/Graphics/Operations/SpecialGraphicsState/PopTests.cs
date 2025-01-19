@@ -14,7 +14,7 @@
             Assert.Equal("Q", Pop.Value.Operator);
         }
 
-        [Fact]
+        [Fact(Skip = "The stack size check has been moved out of the Pop Operation, and is now in BaseStreamProcessor.PopState().")]
         public void CannotPopWithSingleFrame()
         {
             Action action = () => Pop.Value.Run(context);

@@ -195,7 +195,21 @@
         /// <inheritdoc/>
         public virtual void PopState()
         {
-            GraphicsStack.Pop();
+            if (StackSize > 1)
+            {
+                GraphicsStack.Pop();
+            }
+            else
+            {
+                const string error = "Cannot execute a pop of the graphics state stack, it would leave the stack empty.";
+                ParsingOptions.Logger.Error(error);
+
+                if (!ParsingOptions.UseLenientParsing)
+                {
+                    throw new InvalidOperationException(error);
+                }
+            }
+
             ActiveExtendedGraphicsStateFont = null;
         }
 
