@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.XObjects
 {
     using System;
-    using System.Collections.Generic;
     using System.Linq;
     using Content;
     using Core;
@@ -21,7 +20,8 @@
         /// <summary>
         /// Read the XObject image.
         /// </summary>
-        public static XObjectImage ReadImage(XObjectContentRecord xObject, IPdfTokenScanner pdfScanner,
+        public static XObjectImage ReadImage(XObjectContentRecord xObject,
+            IPdfTokenScanner pdfScanner,
             ILookupFilterProvider filterProvider,
             IResourceStore resourceStore)
         {
@@ -42,11 +42,14 @@
             var width = dictionary.Get<NumericToken>(NameToken.Width, pdfScanner).Int;
             var height = dictionary.Get<NumericToken>(NameToken.Height, pdfScanner).Int;
 
-            var isImageMask = dictionary.TryGet(NameToken.ImageMask, pdfScanner, out BooleanToken? isMaskToken)
-                         && isMaskToken.Data;
+            bool isImageMask = false;
+            if (dictionary.TryGet(NameToken.ImageMask, pdfScanner, out BooleanToken? isMaskToken))
+            {
+                dictionary = dictionary.With(NameToken.ImageMask, isMaskToken);
+                isImageMask = isMaskToken.Data;
+            }
 
-            var isJpxDecode = dictionary.TryGet(NameToken.Filter, out var token)
-                && token is NameToken filterName
+            var isJpxDecode = dictionary.TryGet(NameToken.Filter, pdfScanner, out NameToken filterName)
                 && filterName.Equals(NameToken.JpxDecode);
 
             int bitsPerComponent = 0;
@@ -65,7 +68,7 @@
             }
 
             var intent = xObject.DefaultRenderingIntent;
-            if (dictionary.TryGet(NameToken.Intent, out NameToken renderingIntentToken))
+            if (dictionary.TryGet(NameToken.Intent, pdfScanner, out NameToken renderingIntentToken))
             {
                 intent = renderingIntentToken.Data.ToRenderingIntent();
             }
@@ -73,35 +76,26 @@
             var interpolate = dictionary.TryGet(NameToken.Interpolate, pdfScanner, out BooleanToken? interpolateToken)
                               && interpolateToken.Data;
 
-            DictionaryToken? filterDictionary = xObject.Stream.StreamDictionary;
-            if (xObject.Stream.StreamDictionary.TryGet(NameToken.Filter, out var filterToken)
-                && filterToken is IndirectReferenceToken)
+            if (dictionary.TryGet(NameToken.Filter, out var filterToken) && filterToken is IndirectReferenceToken)
             {
-                if (filterDictionary.TryGet(NameToken.Filter, pdfScanner, out ArrayToken? filterArray))
+                if (dictionary.TryGet(NameToken.Filter, pdfScanner, out ArrayToken? filterArray))
                 {
-                    filterDictionary = filterDictionary.With(NameToken.Filter, filterArray);
+                    dictionary = dictionary.With(NameToken.Filter, filterArray);
                 }
-                else if (filterDictionary.TryGet(NameToken.Filter, pdfScanner, out NameToken? filterNameToken))
+                else if (dictionary.TryGet(NameToken.Filter, pdfScanner, out NameToken? filterNameToken))
                 {
-                    filterDictionary = filterDictionary.With(NameToken.Filter, filterNameToken);
-                }
-                else
-                {
-                    filterDictionary = null;
+                    dictionary = dictionary.With(NameToken.Filter, filterNameToken);
                 }
             }
 
-            var supportsFilters = filterDictionary != null;
-            if (filterDictionary != null)
+            var supportsFilters = true;
+            var filters = filterProvider.GetFilters(dictionary, pdfScanner);
+            foreach (var filter in filters)
             {
-                var filters = filterProvider.GetFilters(filterDictionary, pdfScanner);
-                foreach (var filter in filters)
+                if (!filter.IsSupported)
                 {
-                    if (!filter.IsSupported)
-                    {
-                        supportsFilters = false;
-                        break;
-                    }
+                    supportsFilters = false;
+                    break;
                 }
             }
 
@@ -109,6 +103,18 @@
             if (decodeParams is IndirectReferenceToken refToken)
             {
                 dictionary = dictionary.With(NameToken.DecodeParms, pdfScanner.Get(refToken.Data).Data);
+            }
+
+            var jbig2GlobalsParams = dictionary.GetObjectOrDefault(NameToken.Jbig2Globals);
+            if (jbig2GlobalsParams is IndirectReferenceToken jbig2RefToken)
+            {
+                dictionary = dictionary.With(NameToken.Jbig2Globals, pdfScanner.Get(jbig2RefToken.Data).Data);
+            }
+
+            var imParams = dictionary.GetObjectOrDefault(NameToken.Im);
+            if (imParams is IndirectReferenceToken imRefToken)
+            {
+                dictionary = dictionary.With(NameToken.Im, pdfScanner.Get(imRefToken.Data).Data);
             }
 
             var streamToken = new StreamToken(dictionary, xObject.Stream.Data);
