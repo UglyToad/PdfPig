@@ -16,7 +16,7 @@
             return code;
         }
 
-        public static void PutAll<TKey, TValue>(this Dictionary<TKey, TValue> target, IReadOnlyDictionary<TKey, TValue> source)
+        public static void PutAll<TKey, TValue>(this Dictionary<TKey, TValue> target, IReadOnlyDictionary<TKey, TValue> source) where TKey : notnull
         {
             foreach (var pair in source)
             {
