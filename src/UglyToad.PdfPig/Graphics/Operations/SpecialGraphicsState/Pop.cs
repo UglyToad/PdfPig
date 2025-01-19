@@ -1,6 +1,5 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.SpecialGraphicsState
 {
-    using System;
     using System.IO;
 
     /// <inheritdoc />
@@ -29,15 +28,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            var currentStackSize = operationContext.StackSize;
-            if (currentStackSize > 1)
-            {
-                operationContext.PopState();
-            }
-            else
-            {
-                throw new InvalidOperationException("Cannot execute a pop of the graphics state stack, it would leave the stack empty.");
-            }
+            operationContext.PopState();
         }
 
         /// <inheritdoc />

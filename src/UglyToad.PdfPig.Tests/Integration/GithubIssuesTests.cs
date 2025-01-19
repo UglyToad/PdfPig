@@ -8,10 +8,34 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue973()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("JD5008.pdf");
+
+            // Lenient parsing ON
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(2);
+                Assert.NotNull(page);
+                Assert.Equal(2, page.Number);
+                Assert.NotEmpty(page.Letters);
+            }
+
+            // Lenient parsing OFF
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = false }))
+            {
+                var exception = Assert.Throws<InvalidOperationException>(() => document.GetPage(2));
+                Assert.Equal("Cannot execute a pop of the graphics state stack, it would leave the stack empty.", exception.Message);
+            }
+        }
+
+
+        [Fact]
         public void Issue959()
         {
-            // Lenient parsing ON
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("algo.pdf");
+
+            // Lenient parsing ON
             using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
             {
                 for (int i = 1; i <= document.NumberOfPages; ++i)
