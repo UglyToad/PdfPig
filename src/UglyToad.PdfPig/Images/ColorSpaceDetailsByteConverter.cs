@@ -34,7 +34,7 @@
             if (bitsPerComponent != 8)
             {
                 // Unpack components such that they occupy one byte each
-                data = UnpackComponents(data, bitsPerComponent);
+                data = UnpackComponents(data, bitsPerComponent, details.Type);
             }
 
             // Remove padding bytes when the stride width differs from the image width
@@ -48,7 +48,7 @@
             return details.Transform(data);
         }
 
-        private static Span<byte> UnpackComponents(Span<byte> input, int bitsPerComponent)
+        private static Span<byte> UnpackComponents(Span<byte> input, int bitsPerComponent, ColorSpace colorSpace)
         {
             if (bitsPerComponent == 16) // Example with MOZILLA-3136-0.pdf (page 3)
             {
@@ -72,6 +72,24 @@
             int right = (int)Math.Pow(2, bitsPerComponent) - 1;
 
             int u = 0;
+
+            // TODO - 1bpc + DeviceGray is required for JBIG2 but needs to be investigated
+            // Why is this required? This does not belong here imo
+            if (bitsPerComponent == 1 && colorSpace != ColorSpace.Indexed)
+            {
+                foreach (byte b in input)
+                {
+                    // Enumerate bits in bitsPerComponent-sized chunks from MSB to LSB, masking on the appropriate bits
+                    for (int i = end; i >= 0; --i)
+                    {
+                        unpacked[u++] = (byte)((b >> i) & right) == 1 ? byte.MinValue : byte.MaxValue;
+                    }
+                }
+
+                return unpacked;
+            }
+
+            // Default method
             foreach (byte b in input)
             {
                 // Enumerate bits in bitsPerComponent-sized chunks from MSB to LSB, masking on the appropriate bits
