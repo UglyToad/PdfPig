@@ -8,6 +8,24 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue982()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("PDFBOX-659-0.pdf");
+
+            using (var document = PdfDocument.Open(path))
+            {
+                for (int p = 1; p <= document.NumberOfPages; ++p)
+                {
+                    var page = document.GetPage(p);
+                    foreach (var pdfImage in page.GetImages())
+                    {
+                        Assert.True(pdfImage.TryGetPng(out _));
+                    }
+                }
+            }
+        }
+
+        [Fact]
         public void Issue973()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("JD5008.pdf");
@@ -25,10 +43,10 @@
             using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = false }))
             {
                 var exception = Assert.Throws<InvalidOperationException>(() => document.GetPage(2));
-                Assert.Equal("Cannot execute a pop of the graphics state stack, it would leave the stack empty.", exception.Message);
+                Assert.Equal("Cannot execute a pop of the graphics state stack, it would leave the stack empty.",
+                    exception.Message);
             }
         }
-
 
         [Fact]
         public void Issue959()

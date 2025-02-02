@@ -6,6 +6,8 @@
     using CcittFax;
     using Util;
 
+    // Filter updated from original port because of issue #982
+
     /// <summary>
     /// Decodes image data that has been encoded using either Group 3 or Group 4.
     /// <para>
@@ -62,11 +64,6 @@
             {
                 var compressionType = CcittFaxCompressionType.Group3_1D; // Group 3 1D
 
-                if (input.Length < 20)
-                {
-                    throw new InvalidOperationException("The format is invalid");
-                }
-
                 if (input[0] != 0 || (input[1] >> 4 != 1 && input[1] != 1))
                 {
                     // leading EOL (0b000000000001) not found, search further and
@@ -114,7 +111,8 @@
         {
             for (int i = 0, c = bufferData.Length; i < c; i++)
             {
-                bufferData[i] = (byte)(~bufferData[i] & 0xFF);
+                ref byte b = ref bufferData[i];
+                b = (byte)(~b & 0xFF);
             }
         }
     }
