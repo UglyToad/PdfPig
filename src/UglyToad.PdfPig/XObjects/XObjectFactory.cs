@@ -8,6 +8,7 @@
     using Graphics;
     using Graphics.Colors;
     using Graphics.Core;
+    using Images;
     using Tokenization.Scanner;
     using Tokens;
     using Util;
@@ -52,19 +53,36 @@
             var isJpxDecode = dictionary.TryGet(NameToken.Filter, pdfScanner, out NameToken filterName)
                 && filterName.Equals(NameToken.JpxDecode);
 
-            int bitsPerComponent = 0;
-            if (!isImageMask && !isJpxDecode)
-            {
-                if (!dictionary.TryGet(NameToken.BitsPerComponent, pdfScanner, out NumericToken? bitsPerComponentToken))
-                {
-                    throw new PdfDocumentFormatException($"No bits per component defined for image: {dictionary}.");
-                }
-
-                bitsPerComponent = bitsPerComponentToken.Int;
-            }
-            else if (isImageMask)
+            int bitsPerComponent;
+            if (isImageMask)
             {
                 bitsPerComponent = 1;
+            }
+            else
+            {
+                if (isJpxDecode)
+                {
+                    // Optional for JPX
+                    if (dictionary.TryGet(NameToken.BitsPerComponent, pdfScanner, out NumericToken? bitsPerComponentToken))
+                    {
+                        bitsPerComponent = bitsPerComponentToken.Int;
+                        System.Diagnostics.Debug.Assert(bitsPerComponent == Jpeg2000Helper.GetJp2BitsPerComponent(xObject.Stream.Data.Span));
+                    }
+                    else
+                    {
+                        bitsPerComponent = Jpeg2000Helper.GetJp2BitsPerComponent(xObject.Stream.Data.Span);
+                        System.Diagnostics.Debug.Assert(new int[] { 1, 2, 4, 8, 16 }.Contains(bitsPerComponent));
+                    }
+                }
+                else
+                {
+                    if (!dictionary.TryGet(NameToken.BitsPerComponent, pdfScanner, out NumericToken? bitsPerComponentToken))
+                    {
+                        throw new PdfDocumentFormatException($"No bits per component defined for image: {dictionary}.");
+                    }
+
+                    bitsPerComponent = bitsPerComponentToken.Int;
+                }
             }
 
             var intent = xObject.DefaultRenderingIntent;

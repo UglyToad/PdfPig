@@ -132,6 +132,78 @@
     <None Update="Dla\Documents\Random 2 Columns Lists Hyph - Justified.pdf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Images\Files\Jpx\1310ba77-4dbf-4d8d-a8f4-5ba59d1221a7.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\2cee5bb6-f845-4ac1-8156-a899075c0b46.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\33fb977a-e3da-48da-ad51-89af637ab736.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\371028e4-aea3-4e1d-b76b-47b763922e2f.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\804344c3-2c63-4e9c-b7c2-8c64a14d885b.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\82811cfb-9a70-475d-8338-f20df0acd052.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\82828826-f624-4f22-8421-f8c4adac43a3.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\8e95baf6-874e-431c-9cbc-d735ccabac0c.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\91a217c9-79bb-4a4b-934b-1362344f6b89.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\99a9ea0e-c407-4336-96a0-85023f46c231.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\9ac01df9-6623-4d14-89fd-e9934d1a6c7e.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\9d5c783a-c001-40e9-91b9-630c71804a77.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\9df64d7b-4003-4d0d-8f68-b5f88de781b7.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\a6105bfd-3ace-4d6b-b2dc-f9ce4022832b.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\b650c344-bc4d-427a-94af-cfed04136f67.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\c390b9c7-a562-42bf-a592-7a7b29819a6a.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\d6b4b35c-0ceb-47fe-aba8-4360acb49fcb.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\deff000e-a14a-40fd-bf39-88ce11745260.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\e29266a2-201a-4ad6-9725-ca1b7c22224d.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\eae2cabb-f520-4be5-932f-fb19fce5b2f2.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\eb62f062-6567-48b2-b04d-6d90de120f07.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\ed5c585f-590e-4585-9ce7-25976f589ca8.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\ef0af08b-04d1-4a3e-a9d8-7916b9826f5d.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\Files\Jpx\fd42e6a0-5c7a-4eb2-b0e3-474cfde067a6.jp2">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
