@@ -8,6 +8,23 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue987()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("zeroheightdemo.pdf");
+
+            using (var document = PdfDocument.Open(path))
+            {
+                var page = document.GetPage(1);
+                var words = page.GetWords().ToArray();
+                foreach (var word in words)
+                {
+                    Assert.True(word.BoundingBox.Width > 0);
+                    Assert.True(word.BoundingBox.Height > 0);
+                }
+            }
+        }
+        
+        [Fact]
         public void Issue982()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("PDFBOX-659-0.pdf");

@@ -100,18 +100,20 @@ namespace UglyToad.PdfPig.Graphics
         {
             var transformedGlyphBounds = PerformantRectangleTransformer
                 .Transform(renderingMatrix, textMatrix, transformationMatrix, characterBoundingBox.GlyphBounds);
-
+            
             var transformedPdfBounds = PerformantRectangleTransformer
                 .Transform(renderingMatrix,
                     textMatrix,
                     transformationMatrix,
-                    new PdfRectangle(0, 0, characterBoundingBox.Width, 0));
+                    new PdfRectangle(0, 0, characterBoundingBox.Width, UserSpaceUnit.PointMultiples));
 
             if (ParsingOptions.ClipPaths)
             {
                 var currentClipping = currentState.CurrentClippingPath;
                 if (currentClipping?.IntersectsWith(transformedGlyphBounds) == false)
+                {
                     return;
+                }
             }
 
             Letter letter = null;
@@ -141,20 +143,26 @@ namespace UglyToad.PdfPig.Graphics
                 }
             }
 
+            // The bbox is assumed to be valid if the width or the height is greater than 0.
+            // The whitespace letter can have a 0 height and still be a valid bbox.
+            // This could change in the future (i.e. AND instead of OR).
+            bool isBboxValid = transformedGlyphBounds.Width > double.Epsilon ||
+                               transformedGlyphBounds.Height > double.Epsilon;
+
             // If we did not create a letter for a combined diacritic, create one here.
             if (letter is null)
             {
                 letter = new Letter(
                     unicode,
-                    transformedGlyphBounds,
+                    isBboxValid ? transformedGlyphBounds : transformedPdfBounds,
                     transformedPdfBounds.BottomLeft,
                     transformedPdfBounds.BottomRight,
                     transformedPdfBounds.Width,
                     fontSize,
                     font.Details,
-                     currentState.FontState.TextRenderingMode,
-                     currentState.CurrentStrokingColor!,
-                     currentState.CurrentNonStrokingColor!,
+                    currentState.FontState.TextRenderingMode,
+                    currentState.CurrentStrokingColor!,
+                    currentState.CurrentNonStrokingColor!,
                     pointSize,
                     TextSequence);
             }
