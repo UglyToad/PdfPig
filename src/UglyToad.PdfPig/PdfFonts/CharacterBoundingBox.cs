@@ -5,7 +5,7 @@
     /// <summary>
     /// Character bounding box.
     /// </summary>
-    public class CharacterBoundingBox
+    public sealed class CharacterBoundingBox
     {
         /// <summary>
         /// The glyph bounds.
@@ -13,7 +13,7 @@
         public PdfRectangle GlyphBounds { get; }
 
         /// <summary>
-        /// THe width.
+        /// The width.
         /// </summary>
         public double Width { get; }
 
