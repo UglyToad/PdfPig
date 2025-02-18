@@ -9,7 +9,7 @@
     /// <summary>
     /// A TrueType font.
     /// </summary>
-    public class TrueTypeFont
+    public sealed class TrueTypeFont
     {
         /// <summary>
         /// The font version number.
@@ -107,8 +107,12 @@
         {
             boundingBox = default(PdfRectangle);
 
-            if (!TryGetGlyphIndex(characterCode, characterCodeToGlyphId, out var index)
-                || TableRegister.GlyphTable == null)
+            if (TableRegister.GlyphTable == null)
+            {
+                return false;
+            }
+
+            if (!TryGetGlyphIndex(characterCode, characterCodeToGlyphId, out var index))
             {
                 return false;
             }
@@ -139,8 +143,12 @@
         {
             path = null;
 
-            if (!TryGetGlyphIndex(characterCode, characterCodeToGlyphId, out var index)
-                || TableRegister.GlyphTable == null)
+            if (TableRegister.GlyphTable == null)
+            {
+                return false;
+            }
+
+            if (!TryGetGlyphIndex(characterCode, characterCodeToGlyphId, out var index))
             {
                 return false;
             }
