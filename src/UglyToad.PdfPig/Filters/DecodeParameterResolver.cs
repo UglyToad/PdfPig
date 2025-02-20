@@ -5,8 +5,18 @@
     using Tokens;
     using UglyToad.PdfPig.Util;
 
-    internal static class DecodeParameterResolver
+    /// <summary>
+    /// Decode parameter resolver.
+    /// </summary>
+    public static class DecodeParameterResolver
     {
+        /// <summary>
+        /// Get the filter parameters from a stream dictionary.
+        /// </summary>
+        /// <param name="streamDictionary">The stream dictionary.</param>
+        /// <param name="index">If the filter element is an <see cref="ArrayToken"/>, the index in the array to take the dictionary from.</param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         public static DictionaryToken GetFilterParameters(DictionaryToken streamDictionary, int index)
         {
             if (streamDictionary is null)
