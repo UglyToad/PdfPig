@@ -19,7 +19,7 @@
         private readonly Lazy<ReadOnlyMemory<byte>>? memoryFactory;
 
         /// <inheritdoc />
-        public PdfRectangle Bounds { get; }
+        public PdfRectangle BoundingBox { get; }
 
         /// <inheritdoc />
         public int WidthInSamples { get; }
@@ -69,7 +69,7 @@
             DictionaryToken streamDictionary,
             ColorSpaceDetails colorSpaceDetails)
         {
-            Bounds = bounds;
+            BoundingBox = bounds;
             WidthInSamples = widthInSamples;
             HeightInSamples = heightInSamples;
             Decode = decode;
@@ -124,7 +124,7 @@
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"Inline Image (w {Bounds.Width}, h {Bounds.Height})";
+            return $"Inline Image (w {BoundingBox.Width}, h {BoundingBox.Height})";
         }
     }
 }
