@@ -15,7 +15,7 @@
         /// </summary>
         /// <param name="reference">The object number for the object to tokenize.</param>
         /// <returns>The tokenized object.</returns>
-        ObjectToken Get(IndirectReference reference);
+        ObjectToken? Get(IndirectReference reference);
 
         /// <summary>
         /// Adds the token to an internal cache that will be returned instead of

@@ -5,9 +5,7 @@
     using System.Diagnostics;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
-    using System.IO;
     using System.Linq;
-    using System.Text;
     using System.Text.RegularExpressions;
     using Core;
     using Encryption;
@@ -714,10 +712,8 @@
 
             coreTokenScanner.DeregisterCustomTokenizer(tokenizer);
         }
-
-#nullable disable
-
-        public ObjectToken Get(IndirectReference reference)
+        
+        public ObjectToken? Get(IndirectReference reference)
         {
             if (isDisposed)
             {
@@ -768,8 +764,6 @@
 
             return BruteForceFileToFindReference(reference);
         }
-
-#nullable enable
 
         public void ReplaceToken(IndirectReference reference, IToken token)
         {

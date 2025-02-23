@@ -20,7 +20,7 @@ O<DJ+*.@<*K0@<6L(Df-\0Ec5e;DffZ(EZee.Bl.9pF""AGXBPCsi + DGm >@3BB / F * &OCAfu2 
             l(DId<j@<? 3r@:F % a + D58'ATD4$Bl@l3De:,-DJs`8ARoFb/0JMK@qB4^F!,R<AKZ&-DfTqBG%G
                 > uD.RTpAKYo'+CT/5+Cei#DII?(E,9)oF*2M7/c~>");
 
-            var result = filter.Decode(bytes, dictionary, 0);
+            var result = filter.Decode(bytes, dictionary, TestFilterProvider.Instance, 0);
 
 #if !NET
             string text = Encoding.ASCII.GetString(result.ToArray());
@@ -39,7 +39,7 @@ O<DJ+*.@<*K0@<6L(Df-\0Ec5e;DffZ(EZee.Bl.9pF""AGXBPCsi + DGm >@3BB / F * &OCAfu2 
         {
             var bytes = Encoding.ASCII.GetBytes("9jqo^zBlbD-");
 
-            var result = filter.Decode(bytes, dictionary, 1);
+            var result = filter.Decode(bytes, dictionary, TestFilterProvider.Instance, 1);
 
 #if !NET
             string text = Encoding.ASCII.GetString(result.ToArray());
@@ -55,7 +55,7 @@ O<DJ+*.@<*K0@<6L(Df-\0Ec5e;DffZ(EZee.Bl.9pF""AGXBPCsi + DGm >@3BB / F * &OCAfu2 
         {
             var bytes = Encoding.ASCII.GetBytes("qjzqo^");
 
-            Action action = () => filter.Decode(bytes, dictionary, 0);
+            Action action = () => filter.Decode(bytes, dictionary, TestFilterProvider.Instance, 0);
 
             Assert.Throws<InvalidOperationException>(action);
         }
@@ -65,7 +65,7 @@ O<DJ+*.@<*K0@<6L(Df-\0Ec5e;DffZ(EZee.Bl.9pF""AGXBPCsi + DGm >@3BB / F * &OCAfu2 
         {
             var bytes = Encoding.ASCII.GetBytes("9jqo^B");
 
-            Action action = () => filter.Decode(bytes, dictionary, 1);
+            Action action = () => filter.Decode(bytes, dictionary, TestFilterProvider.Instance, 1);
 
             Assert.Throws<ArgumentOutOfRangeException>(action);
         }
@@ -110,7 +110,7 @@ T()<(%'A;f?Ma+CT;%+E_a:A0>K&EZek1D/aN,F)u&6DBNA*A0>f4BOu4*+EM76E,9eK+B3(_<%9""p.
 F*22=@:F%a+=SF4C'moi+=Li?EZeh0FD)e-@<>p#@;]TuBl.9kATKCFGA(],AKYo5BOu4*+CT;%+C#7pF_Pr+@VfTuDf0B:+=SF4C'moi+=
 Li?EZek1DKKT1F`2DD/TboKAKY](@:s.m/h%oBC'mC/$>""*cF*)G6@;Q?_DIdZpC&~>";
 
-            var result = filter.Decode(Encoding.ASCII.GetBytes(input), dictionary, 0);
+            var result = filter.Decode(Encoding.ASCII.GetBytes(input), dictionary, TestFilterProvider.Instance, 0);
 
 #if !NET
             string text = Encoding.ASCII.GetString(result.ToArray());
@@ -134,7 +134,7 @@ T()<(%'A;f?Ma+CT;%+E_a:A0>K&EZek1D/aN,F)u&6DBNA*A0>f4BOu4*+EM76E,9eK+B3(_<%9""p.
 F*22=@:F%a+=SF4C'moi+=Li?EZeh0FD)e-@<>p#@;]TuBl.9kATKCFGA(],AKYo5BOu4*+CT;%+C#7pF_Pr+@VfTuDf0B:+=SF4C'moi+=
 Li?EZek1DKKT1F`2DD/TboKAKY](@:s.m/h%oBC'mC/$>""*cF*)G6@;Q?_DIdZpC&";
 
-            var result = filter.Decode(Encoding.ASCII.GetBytes(input), dictionary, 0);
+            var result = filter.Decode(Encoding.ASCII.GetBytes(input), dictionary, TestFilterProvider.Instance, 0);
 
 #if !NET
             string text = Encoding.ASCII.GetString(result.ToArray());
@@ -154,7 +154,7 @@ Li?EZek1DKKT1F`2DD/TboKAKY](@:s.m/h%oBC'mC/$>""*cF*)G6@;Q?_DIdZpC&";
                 {
                     var bytes = Encoding.ASCII.GetBytes("9jqo^zBlbD-");
 
-                    var result = filter.Decode(bytes, dictionary, 1);
+                    var result = filter.Decode(bytes, dictionary, TestFilterProvider.Instance, 1);
 
 #if !NET
                     string text = Encoding.ASCII.GetString(result.ToArray());
@@ -176,7 +176,7 @@ T()<(%'A;f?Ma+CT;%+E_a:A0>K&EZek1D/aN,F)u&6DBNA*A0>f4BOu4*+EM76E,9eK+B3(_<%9""p.
 F*22=@:F%a+=SF4C'moi+=Li?EZeh0FD)e-@<>p#@;]TuBl.9kATKCFGA(],AKYo5BOu4*+CT;%+C#7pF_Pr+@VfTuDf0B:+=SF4C'moi+=
 Li?EZek1DKKT1F`2DD/TboKAKY](@:s.m/h%oBC'mC/$>""*cF*)G6@;Q?_DIdZpC&~>";
 
-                    var result = filter.Decode(Encoding.ASCII.GetBytes(input), dictionary, 0);
+                    var result = filter.Decode(Encoding.ASCII.GetBytes(input), dictionary, TestFilterProvider.Instance, 0);
 
 #if !NET
                     string text = Encoding.ASCII.GetString(result.ToArray());
