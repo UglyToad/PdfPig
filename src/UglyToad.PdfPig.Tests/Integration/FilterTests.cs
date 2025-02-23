@@ -62,7 +62,7 @@
         {
             public bool IsSupported => false;
 
-            public ReadOnlyMemory<byte> Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, int filterIndex)
+            public ReadOnlyMemory<byte> Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
             {
                 throw new NotImplementedException();
             }

@@ -65,7 +65,8 @@
             bool interpolate,
             IReadOnlyList<double> decode,
             ReadOnlyMemory<byte> rawMemory,
-            IReadOnlyList<IFilter> filters,
+            ILookupFilterProvider filterProvider,
+            IReadOnlyList<NameToken> filterNames,
             DictionaryToken streamDictionary,
             ColorSpaceDetails colorSpaceDetails)
         {
@@ -81,6 +82,8 @@
             RawMemory = rawMemory;
             ColorSpaceDetails = colorSpaceDetails;
 
+            var filters = filterProvider.GetNamedFilters(filterNames);
+            
             var supportsFilters = true;
             foreach (var filter in filters)
             {
@@ -97,7 +100,7 @@
                 for (var i = 0; i < filters.Count; i++)
                 {
                     var filter = filters[i];
-                    b = filter.Decode(b.Span, streamDictionary, i);
+                    b = filter.Decode(b.Span, streamDictionary, filterProvider, i);
                 }
 
                 return b;

@@ -62,7 +62,7 @@
             var transform = stream.Data;
             for (var i = 0; i < filters.Count; i++)
             {
-                transform = filters[i].Decode(transform.Span, stream.StreamDictionary, i);
+                transform = filters[i].Decode(transform.Span, stream.StreamDictionary, filterProvider, i);
             }
 
             return transform;
@@ -78,7 +78,7 @@
             var transform = stream.Data;
             for (var i = 0; i < filters.Count; i++)
             {
-                transform = filters[i].Decode(transform.Span, stream.StreamDictionary, i);
+                transform = filters[i].Decode(transform.Span, stream.StreamDictionary, filterProvider, i);
             }
 
             return transform;
@@ -88,12 +88,12 @@
         /// Returns an equivalent token where any indirect references of child objects are
         /// recursively traversed and resolved.
         /// </summary>
-        internal static T Resolve<T>(this T token, IPdfTokenScanner scanner) where T : IToken
+        internal static T? Resolve<T>(this T? token, IPdfTokenScanner scanner) where T : IToken
         {
-            return (T)ResolveInternal(token, scanner);
+            return (T?)ResolveInternal(token, scanner);
         }
 
-        private static IToken ResolveInternal(this IToken token, IPdfTokenScanner scanner)
+        private static IToken? ResolveInternal(this IToken? token, IPdfTokenScanner scanner)
         {
             if (token is StreamToken stream)
             {
@@ -105,7 +105,7 @@
                 var resolvedItems = new Dictionary<NameToken, IToken>();
                 foreach (var kvp in dict.Data)
                 {
-                    var value = kvp.Value is IndirectReferenceToken reference ? scanner.Get(reference.Data).Data : kvp.Value;
+                    var value = kvp.Value is IndirectReferenceToken reference ? scanner.Get(reference.Data)?.Data : kvp.Value;
                     resolvedItems[NameToken.Create(kvp.Key)] = ResolveInternal(value, scanner);
                 }
 
@@ -117,14 +117,13 @@
                 var resolvedItems = new List<IToken>();
                 for (int i = 0; i < arr.Length; i++)
                 {
-                    var value = arr.Data[i] is IndirectReferenceToken reference ? scanner.Get(reference.Data).Data : arr.Data[i];
+                    var value = arr.Data[i] is IndirectReferenceToken reference ? scanner.Get(reference.Data)?.Data : arr.Data[i];
                     resolvedItems.Add(ResolveInternal(value, scanner));
                 }
                 return new ArrayToken(resolvedItems);
             }
 
-            var val = token is IndirectReferenceToken tokenReference ? scanner.Get(tokenReference.Data).Data : token;
-            return val;
+            return token is IndirectReferenceToken tokenReference ? scanner.Get(tokenReference.Data)?.Data : token;
         }
     }
 }

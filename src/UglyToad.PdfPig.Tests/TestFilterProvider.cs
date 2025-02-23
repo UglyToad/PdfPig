@@ -6,6 +6,8 @@
 
     internal class TestFilterProvider : ILookupFilterProvider
     {
+        public static readonly TestFilterProvider Instance = new TestFilterProvider();
+
         public IReadOnlyList<IFilter> GetFilters(DictionaryToken dictionary)
         {
             return new List<IFilter>();

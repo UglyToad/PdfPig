@@ -98,18 +98,15 @@
                 filterNames.Add(filterName);
             }
 
-            var filters = filterProvider.GetNamedFilters(filterNames);
-
             var decodeRaw = GetByKeys<ArrayToken>(NameToken.Decode, NameToken.D, false) ?? new ArrayToken(Array.Empty<IToken>());
 
             var decode = decodeRaw.Data.OfType<NumericToken>().Select(x => x.Double).ToArray();
 
             var interpolate = GetByKeys<BooleanToken>(NameToken.Interpolate, NameToken.I, false)?.Data ?? false;
 
-            return new InlineImage(bounds, width, height, bitsPerComponent, isMask, renderingIntent, interpolate, decode, Bytes,
-                filters,
-                imgDic,
-                details);
+            return new InlineImage(bounds, width, height, bitsPerComponent,
+                isMask, renderingIntent, interpolate, decode, Bytes,
+                filterProvider, filterNames, imgDic, details);
         }
 
 #nullable disable
