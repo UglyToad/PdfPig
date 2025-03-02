@@ -35,7 +35,7 @@
         /// <summary>
         /// Get the extended graphics state dictionary corresponding to the name.
         /// </summary>
-        DictionaryToken GetExtendedGraphicsStateDictionary(NameToken name);
+        DictionaryToken? GetExtendedGraphicsStateDictionary(NameToken name);
 
         /// <summary>
         /// Get the font from the <see cref="IndirectReferenceToken"/>.

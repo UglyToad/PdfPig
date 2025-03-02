@@ -336,8 +336,14 @@
             return DirectObjectFinder.TryGet(new IndirectReferenceToken(indirectReference), scanner, out stream);
         }
 
-        public DictionaryToken GetExtendedGraphicsStateDictionary(NameToken name)
+        public DictionaryToken? GetExtendedGraphicsStateDictionary(NameToken name)
         {
+            if (parsingOptions.UseLenientParsing && !extendedGraphicsStates.ContainsKey(name))
+            {
+                parsingOptions.Logger.Error($"The graphic state dictionary does not contain the key '{name}'.");
+                return null;
+            }
+
             return extendedGraphicsStates[name];
         }
 
