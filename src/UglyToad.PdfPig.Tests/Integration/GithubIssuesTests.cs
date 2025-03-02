@@ -8,6 +8,33 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue953()
+        {
+            // NB: We actually do not fix issue 953 here, but another bug found with the same document.
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("FailedToParseContentForPage32.pdf");
+
+            // Lenient parsing ON + Skip missing fonts
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true, SkipMissingFonts = true}))
+            {
+                var page = document.GetPage(33);
+                Assert.Equal(33, page.Number);
+                Assert.Equal(792, page.Height);
+                Assert.Equal(612, page.Width);
+            }
+
+            // Lenient parsing ON + Do not Skip missing fonts
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true, SkipMissingFonts = false }))
+            {
+                var pageException = Assert.Throws<InvalidOperationException>(() =>  document.GetPage(33));
+                Assert.Equal("Could not find the font with name /TT4 in the resource store. It has not been loaded yet.", pageException.Message);
+            }
+
+            var docException = Assert.Throws<PdfDocumentFormatException>(() =>
+                PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = false, SkipMissingFonts = false }));
+            Assert.Equal("Could not find dictionary associated with reference in pages kids array: 102 0.", docException.Message);
+        }
+
+        [Fact]
         public void Issue987()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("zeroheightdemo.pdf");

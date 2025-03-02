@@ -5,7 +5,7 @@ namespace UglyToad.PdfPig.Util
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
 
-    internal class StackDictionary<K, V> where K : notnull
+    internal sealed class StackDictionary<K, V> where K : notnull
     {
         private readonly List<Dictionary<K, V>> values = new List<Dictionary<K, V>>();
 
@@ -13,6 +13,11 @@ namespace UglyToad.PdfPig.Util
         {
             get
             {
+                if (values.Count == 0)
+                {
+                    throw new InvalidOperationException($"Cannot get item from empty stack, call {nameof(Push)} before use.");
+                }
+
                 if (TryGetValue(key, out var result))
                 {
                     return result;
@@ -35,7 +40,8 @@ namespace UglyToad.PdfPig.Util
         {
             if (values.Count == 0)
             {
-                throw new InvalidOperationException($"Cannot get item from empty stack, call {nameof(Push)} before use.");
+                result = default!;
+                return false;
             }
 
             for (var i = values.Count - 1; i >= 0; i--)
