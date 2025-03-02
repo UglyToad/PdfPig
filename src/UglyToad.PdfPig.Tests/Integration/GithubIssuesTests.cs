@@ -35,6 +35,20 @@
         }
 
         [Fact]
+        public void Issue953_IntOverflow()
+        {
+            // There is an integer overflow in Docstrum. We might want to fix that later on.
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("FailedToParseContentForPage32.pdf");
+
+            // Lenient parsing ON + Skip missing fonts
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true, SkipMissingFonts = true }))
+            {
+                var page = document.GetPage(13);
+                Assert.Throws<OverflowException>(() => DocstrumBoundingBoxes.Instance.GetBlocks(page.GetWords()));
+            }
+        }
+
+        [Fact]
         public void Issue987()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("zeroheightdemo.pdf");
