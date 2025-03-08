@@ -19,21 +19,21 @@ jobs:
 
       - name: Restore cached part 1
         id: restore-cache-p1
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: archive/part1-archive.7z
           key: ${{ runner.os }}-part-1
 
       - name: Restore cached part 2
         id: restore-cache-p2
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: archive/part2-archive.7z
           key: ${{ runner.os }}-part-2
 
       - name: Restore cached part 3
         id: restore-cache-p3
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: archive/part3-archive.7z
           key: ${{ runner.os }}-part-3
