@@ -60,11 +60,11 @@
                     if (dictionary.TryGet(NameToken.BitsPerComponent, out NumericToken? bitsPerComponentToken))
                     {
                         bitsPerComponent = bitsPerComponentToken.Int;
-                        System.Diagnostics.Debug.Assert(bitsPerComponent == Jpeg2000Helper.GetJp2BitsPerComponent(xObject.Stream.Data.Span));
+                        System.Diagnostics.Debug.Assert(bitsPerComponent == Jpeg2000Helper.GetBitsPerComponent(xObject.Stream.Data.Span));
                     }
                     else
                     {
-                        bitsPerComponent = Jpeg2000Helper.GetJp2BitsPerComponent(xObject.Stream.Data.Span);
+                        bitsPerComponent = Jpeg2000Helper.GetBitsPerComponent(xObject.Stream.Data.Span);
                         System.Diagnostics.Debug.Assert(new int[] { 1, 2, 4, 8, 16 }.Contains(bitsPerComponent));
                     }
                 }

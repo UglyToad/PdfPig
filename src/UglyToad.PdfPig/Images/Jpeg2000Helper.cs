@@ -8,7 +8,7 @@
         /// <summary>
         /// Get bits per component values for Jp2 (Jpx) encoded images (first component).
         /// </summary>
-        public static byte GetJp2BitsPerComponent(ReadOnlySpan<byte> jp2Bytes)
+        public static byte GetBitsPerComponent(ReadOnlySpan<byte> jp2Bytes)
         {
             // Ensure the input has at least 12 bytes for the signature box
             if (jp2Bytes.Length < 12)
@@ -18,16 +18,21 @@
 
             // Verify the JP2 signature box
             uint length = BinaryPrimitives.ReadUInt32BigEndian(jp2Bytes.Slice(0, 4));
-            uint type = BinaryPrimitives.ReadUInt32BigEndian(jp2Bytes.Slice(4, 4));
-            uint magic = BinaryPrimitives.ReadUInt32BigEndian(jp2Bytes.Slice(8, 4));
-
-            if (length != 0x0000000C || type != 0x6A502020 || magic != 0x0D0A870A)
+            if (length == 0xFF4FFF51)
             {
-                throw new InvalidOperationException("Invalid JP2 signature box.");
+                // J2K format detected (SOC marker) (See GHOSTSCRIPT-688999-2.pdf)
+                return ParseCodestream(jp2Bytes);
             }
 
-            // Proceed to parse JP2 boxes
-            return ParseBoxes(jp2Bytes.Slice(12));
+            uint type = BinaryPrimitives.ReadUInt32BigEndian(jp2Bytes.Slice(4, 4));
+            uint magic = BinaryPrimitives.ReadUInt32BigEndian(jp2Bytes.Slice(8, 4));
+            if (length == 0x0000000C && type == 0x6A502020 && magic == 0x0D0A870A)
+            {
+                // JP2 format detected
+                return ParseBoxes(jp2Bytes.Slice(12));
+            }
+
+            throw new InvalidOperationException("Invalid JP2 or J2K signature.");
         }
 
         private static byte ParseBoxes(ReadOnlySpan<byte> jp2Bytes)
@@ -37,7 +42,7 @@
             {
                 if (offset + 8 > jp2Bytes.Length)
                 {
-                    throw new InvalidOperationException("Invalid JP2 box structure.");
+                    throw new InvalidOperationException("Invalid JP2 or J2K box structure.");
                 }
 
                 // Read box length and type
@@ -55,7 +60,7 @@
                 offset += (int)(boxLength > 0 ? boxLength : 8); // Box length of 0 means the rest of the file
             }
 
-            throw new InvalidOperationException("Codestream box not found in JP2 file.");
+            throw new InvalidOperationException("Codestream box not found in JP2 or J2K file.");
         }
 
         private static byte ParseCodestream(ReadOnlySpan<byte> codestream)
