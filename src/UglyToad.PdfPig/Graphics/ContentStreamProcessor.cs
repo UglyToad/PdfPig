@@ -4,7 +4,6 @@ namespace UglyToad.PdfPig.Graphics
 {
     using System;
     using System.Collections.Generic;
-    using Colors;
     using Content;
     using Filters;
     using Geometry;
@@ -212,7 +211,7 @@ namespace UglyToad.PdfPig.Graphics
             return point;
         }
 
-        public void AddCurrentSubpath() // Not an override
+        private void AddCurrentSubpath()
         {
             if (CurrentSubpath is null)
             {
@@ -385,16 +384,12 @@ namespace UglyToad.PdfPig.Graphics
             var currentState = GetCurrentState();
             if (CurrentPath.IsStroked)
             {
-                CurrentPath.LineDashPattern = currentState.LineDashPattern;
-                CurrentPath.StrokeColor = currentState.CurrentStrokingColor;
-                CurrentPath.LineWidth = currentState.LineWidth;
-                CurrentPath.LineCapStyle = currentState.CapStyle;
-                CurrentPath.LineJoinStyle = currentState.JoinStyle;
+                CurrentPath.SetStrokeDetails(currentState);
             }
 
             if (CurrentPath.IsFilled)
             {
-                CurrentPath.FillColor = currentState.CurrentNonStrokingColor;
+                CurrentPath.SetFillDetails(currentState);
             }
 
             if (ParsingOptions.ClipPaths)

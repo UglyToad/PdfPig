@@ -6,7 +6,9 @@
     using UglyToad.PdfPig.Graphics.Core;
 
     /// <summary>
-    /// A path is made up of one or more disconnected subpaths, each comprising a sequence of connected segments. The topology of the path is unrestricted: it may be concave or convex, may contain multiple subpaths representing disjoint areas, and may intersect itself in arbitrary ways.
+    /// A path is made up of one or more disconnected subpaths, each comprising a sequence of connected segments.
+    /// The topology of the path is unrestricted: it may be concave or convex, may contain multiple subpaths representing
+    /// disjoint areas, and may intersect itself in arbitrary ways.
     /// <para>A path shall be composed of straight and curved line segments, which may connect to one another or may be disconnected.</para>
     /// </summary>
     public class PdfPath : List<PdfSubpath>
@@ -29,7 +31,7 @@
         /// <summary>
         /// The fill color.
         /// </summary>
-        public IColor? FillColor { get; internal set; }
+        public IColor? FillColor { get; private set; }
 
         /// <summary>
         /// Returns true if the path is stroked.
@@ -39,31 +41,31 @@
         /// <summary>
         /// The stroke color.
         /// </summary>
-        public IColor? StrokeColor { get; internal set; }
+        public IColor? StrokeColor { get; private set; }
 
         /// <summary>
         /// Thickness in user space units of path to be stroked.
         /// </summary>
-        public double LineWidth { get; internal set; }
+        public double LineWidth { get; private set; }
 
         /// <summary>
         /// The pattern to be used for stroked lines.
         /// </summary>
-        public LineDashPattern? LineDashPattern { get; internal set; }
+        public LineDashPattern? LineDashPattern { get; private set; }
 
         /// <summary>
         /// The cap style to be used for stroked lines.
         /// </summary>
-        public LineCapStyle LineCapStyle { get; internal set; }
+        public LineCapStyle LineCapStyle { get; private set; }
 
         /// <summary>
         /// The join style to be used for stroked lines.
         /// </summary>
-        public LineJoinStyle LineJoinStyle { get; internal set; }
+        public LineJoinStyle LineJoinStyle { get; private set; }
 
         /// <summary>
-        /// Set the clipping mode for this path and IsClipping to true.
-        /// <para>IsFilled and IsStroked flags will be set to false.</para>
+        /// Set the clipping mode for this path and <c>IsClipping</c> to <c>true</c>.
+        /// <para><c>IsFilled</c> and <c>IsStroked</c> flags will be set to <c>false</c>.</para>
         /// </summary>
         public void SetClipping(FillingRule fillingRule)
         {
@@ -74,7 +76,7 @@
         }
 
         /// <summary>
-        /// Set the filling rule for this path and IsFilled to true.
+        /// Set the filling rule for this path and <c>IsFilled</c> to <c>true</c>.
         /// </summary>
         public void SetFilled(FillingRule fillingRule)
         {
@@ -83,11 +85,33 @@
         }
 
         /// <summary>
-        /// Set IsStroked to true.
+        /// Set <c>IsStroked</c> to <c>true</c>.
         /// </summary>
         public void SetStroked()
         {
             IsStroked = true;
+        }
+
+        /// <summary>
+        /// Set the path stroke details, i.e. <c>LineDashPattern</c>, <c>StrokeColor</c>, <c>LineWidth</c>, <c>LineCapStyle</c> and <c>LineJoinStyle</c>.
+        /// </summary>
+        /// <param name="graphicsState">The current graphics state.</param>
+        public void SetStrokeDetails(CurrentGraphicsState graphicsState)
+        {
+            LineDashPattern = graphicsState.LineDashPattern;
+            StrokeColor = graphicsState.CurrentStrokingColor;
+            LineWidth = graphicsState.LineWidth;
+            LineCapStyle = graphicsState.CapStyle;
+            LineJoinStyle = graphicsState.JoinStyle;
+        }
+
+        /// <summary>
+        /// Set the path fill details, i.e. <c>FillColor</c>.
+        /// </summary>
+        /// <param name="graphicsState">The current graphics state.</param>
+        public void SetFillDetails(CurrentGraphicsState graphicsState)
+        {
+            FillColor = graphicsState.CurrentNonStrokingColor;
         }
 
         /// <summary>
