@@ -145,15 +145,8 @@
         /// </summary>
         protected static PdfPath GetInitialClipping(CropBox cropBox)
         {
-            var cropBoxBounds = cropBox.Bounds;
-
-            // initiate CurrentClippingPath to cropBox
-            var clippingSubpath = new PdfSubpath();
-            clippingSubpath.Rectangle(cropBoxBounds.BottomLeft.X,
-                cropBoxBounds.BottomLeft.Y,
-                cropBoxBounds.Width,
-                cropBoxBounds.Height);
-            var clippingPath = new PdfPath() { clippingSubpath };
+            // Initiate CurrentClippingPath to cropBox
+            var clippingPath = cropBox.Bounds.ToPdfPath();
             clippingPath.SetClipping(FillingRule.EvenOdd);
             return clippingPath;
         }
@@ -581,7 +574,14 @@
                 new MemoryInputBytes(contentStream),
                 ParsingOptions.Logger);
 
-            // 3. We don't respect clipping currently.
+            // 3. Clip according to the form dictionary's BBox entry.
+            if (formStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Bbox, PdfScanner, out var bboxToken))
+            {
+                var points = bboxToken.Data.OfType<NumericToken>().Select(x => x.Double).ToArray();
+                PdfRectangle bbox = new PdfRectangle(points[0], points[1], points[2], points[3]);
+                PdfRectangle transformedBox = startState.CurrentTransformationMatrix.Transform(bbox);
+                ClipToRectangle(transformedBox, FillingRule.EvenOdd); // TODO - Check that Even Odd is valid
+            }
 
             // 4. Paint the objects.
             bool hasCircularReference = HasFormXObjectCircularReference(formStream, xObjectName, operations);
@@ -667,6 +667,9 @@
 
         /// <inheritdoc/>
         public abstract void ModifyClippingIntersect(FillingRule clippingRule);
+
+        /// <inheritdoc/>
+        protected abstract void ClipToRectangle(PdfRectangle rectangle, FillingRule clippingRule);
 
         /// <inheritdoc/>
         public virtual void SetNamedGraphicsState(NameToken stateName)

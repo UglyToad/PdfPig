@@ -382,6 +382,19 @@
 
         #region PdfRectangle
         /// <summary>
+        /// Converts a <see cref="PdfRectangle"/> into its <see cref="PdfPath"/> representation.
+        /// </summary>
+        public static PdfPath ToPdfPath(this PdfRectangle rectangle)
+        {
+            var clippingSubpath = new PdfSubpath();
+            clippingSubpath.Rectangle(rectangle.BottomLeft.X,
+                rectangle.BottomLeft.Y,
+                rectangle.Width,
+                rectangle.Height);
+            return new PdfPath() { clippingSubpath };
+        }
+
+        /// <summary>
         /// Whether the point is located inside the rectangle.
         /// </summary>
         /// <param name="rectangle">The rectangle that should contain the point.</param>
