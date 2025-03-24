@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Core
 {
     /// <summary>
-    /// TODO.
+    /// The blend mode.
     /// </summary>
     public enum BlendMode : byte
     {
@@ -9,8 +9,9 @@
 
         /// <summary>
         /// Default.
+        /// <para>Same as Compatible.</para>
         /// </summary>
-        Normal = 0, // aka Compatible
+        Normal = 0,
         Multiply = 1,
         Screen = 2,
         Darken = 3,

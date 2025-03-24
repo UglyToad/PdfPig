@@ -8,6 +8,9 @@
     using UglyToad.PdfPig.Tokens;
     using UglyToad.PdfPig.Util;
 
+    /// <summary>
+    /// TODO.
+    /// </summary>
     public sealed class SoftMask
     {
         /// <summary>
@@ -144,9 +147,20 @@
         }
     }
 
-    public enum SoftMaskType
+    /// <summary>
+    /// The soft mask type.
+    /// <para>Alpha or Luminosity.</para>
+    /// </summary>
+    public enum SoftMaskType : byte
     {
+        /// <summary>
+        /// TODO.
+        /// </summary>
         Alpha = 0,
-        Luminosity
+
+        /// <summary>
+        /// TODO.
+        /// </summary>
+        Luminosity = 1
     }
 }

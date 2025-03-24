@@ -115,7 +115,6 @@
             }) : null;
 
             SoftMaskImage = softMaskImage;
-
         }
 
         /// <inheritdoc />
