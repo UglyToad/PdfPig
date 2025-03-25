@@ -781,6 +781,24 @@
         }
 
         [Fact]
+        public void CanCopyIssue1017()
+        {
+            using (var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("_citUR2jB1_ay56u6vELzk.pdf")))
+            {
+                using (var pdfWriter = new PdfDocumentBuilder())
+                {
+                    var page = document.GetPage(1);
+                    
+                    var newPage = pdfWriter.AddPage(page.Width, page.Height);
+                    newPage.CopyFrom(page);
+                    
+                    var b = pdfWriter.Build();
+                    Assert.NotEmpty(b);
+                }
+            }
+        }
+
+        [Fact]
         public void CanCopyPage()
         {
 
