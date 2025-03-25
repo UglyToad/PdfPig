@@ -974,13 +974,16 @@
 
                         gstateName = newName;
                     }
-
-                    if (!(gstate.Value is IndirectReferenceToken fontReferenceToken))
+                    
+                    // According to PDF spec 32000-1:2008, section 8.4.5, ExtGState can contain both direct values and indirect references
+                    if (gstate.Value is IndirectReferenceToken fontReferenceToken)
                     {
-                        throw new PdfDocumentFormatException($"Expected a IndirectReferenceToken for the XObject, got a {gstate.Value.GetType().Name}");
+                        pageGstateDictionary[gstateName] = documentBuilder.CopyToken(srcPage.pdfScanner, fontReferenceToken);
                     }
-
-                    pageGstateDictionary[gstateName] = documentBuilder.CopyToken(srcPage.pdfScanner, fontReferenceToken);
+                    else
+                    {
+                        pageGstateDictionary[gstateName] = documentBuilder.CopyToken(srcPage.pdfScanner, gstate.Value);
+                    }
                 }
             }
 
