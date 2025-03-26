@@ -158,7 +158,7 @@
 
             return PatternType.Equals(other.PatternType) &&
                 Matrix.Equals(other.Matrix) &&
-                ExtGState.Equals(other.ExtGState) &&
+                ((ExtGState is null && other.ExtGState is null) || ExtGState?.Equals(other.ExtGState) == true) &&
                 PaintType.Equals(other.PaintType) &&
                 TilingType.Equals(other.TilingType) &&
                 BBox.Equals(other.BBox) &&
@@ -225,7 +225,7 @@
 
             return PatternType.Equals(other.PatternType) &&
                    Matrix.Equals(other.Matrix) &&
-                   ExtGState.Equals(other.ExtGState) &&
+                   ((ExtGState is null && other.ExtGState is null) || ExtGState?.Equals(other.ExtGState) == true) &&
                    Shading.Equals(other.Shading);
         }
 
