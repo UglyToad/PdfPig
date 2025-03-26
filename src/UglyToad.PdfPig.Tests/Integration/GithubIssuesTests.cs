@@ -8,6 +8,29 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue1016()
+        {
+            // Doc has letters with Shading pattern color
+
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("colorcomparecrash.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true, SkipMissingFonts = true }))
+            {
+                var page = document.GetPage(1);
+
+                var letters = page.Letters;
+
+                var firstLetter = letters[0];
+                Assert.NotNull(firstLetter.Color);
+
+                var secondLetter = letters[1];
+                Assert.NotNull(secondLetter.Color);
+
+                Assert.True(firstLetter.Color.Equals(secondLetter.Color));
+            }
+        }
+
+        [Fact]
         public void Issue953()
         {
             // NB: We actually do not fix issue 953 here, but another bug found with the same document.
