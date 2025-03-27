@@ -495,22 +495,19 @@
                         $"Invalid Transparency Group XObject, '{NameToken.S}' token is not set or not equal to '{NameToken.Transparency}'.");
                 }
 
-                /* blend mode
-                 * A conforming reader shall implicitly reset this parameter to its initial value at the beginning of execution of a
-                 * transparency group XObject (see 11.6.6, "Transparency Group XObjects"). Initial value: Normal.
-                 */
-                //startState.BlendMode = BlendMode.Normal;
+                // Blend mode
+                // A conforming reader shall implicitly reset this parameter to its initial value at the beginning of execution of a
+                // transparency group XObject (see 11.6.6, "Transparency Group XObjects"). Initial value: Normal.
+                startState.BlendMode = BlendMode.Normal;
 
-                /* soft mask
-                 * A conforming reader shall implicitly reset this parameter implicitly reset to its initial value at the beginning
-                 * of execution of a transparency group XObject (see 11.6.6, "Transparency Group XObjects"). Initial value: None.
-                 */
-                // TODO
+                // Soft mask
+                // A conforming reader shall implicitly reset this parameter implicitly reset to its initial value at the beginning
+                // of execution of a transparency group XObject (see 11.6.6, "Transparency Group XObjects"). Initial value: None.
+                startState.SoftMask = null;
 
-                /* alpha constant
-                 * A conforming reader shall implicitly reset this parameter to its initial value at the beginning of execution of a
-                 * transparency group XObject (see 11.6.6, "Transparency Group XObjects"). Initial value: 1.0.
-                 */
+                // Alpha constant
+                // A conforming reader shall implicitly reset this parameter to its initial value at the beginning of execution of a
+                // transparency group XObject (see 11.6.6, "Transparency Group XObjects"). Initial value: 1.0.
                 startState.AlphaConstantNonStroking = 1.0;
                 startState.AlphaConstantStroking = 1.0;
 
@@ -764,6 +761,49 @@
                 // (Optional) A flag specifying whether to apply automatic stroke adjustment
                 // (see Section 6.5.4, “Automatic Stroke Adjustment”).
                 currentGraphicsState.StrokeAdjustment = saToken.Data;
+            }
+
+            // (PDF 1.4, array is deprecated in PDF 2.0) The current blend mode that shall be
+            // used in the transparent imaging model (see 11.3.5, "Blend mode"). A PDF reader
+            // shall implicitly reset this parameter to its initial value at the (array is
+            // deprecated beginning of execution of a transparency group XObject
+            // (see 11.6.6, in PDF 2.0) "Transparency group XObjects"). The value shall be
+            // either a name object, designating one of the standard blend modes listed in
+            // "Table 134 — Standard separable blend modes" and "Table 135 — Standard
+            // non-separable blend modes" in 11.3.5, "Blend mode", or an array of such names.
+            // In the latter case, the PDF reader shall use the first blend mode in the array
+            // that it recognises (or Normal if it recognises none of them).
+            //
+            // Initial value: Normal.
+            if (state.TryGet(NameToken.Bm, PdfScanner, out NameToken? bmToken))
+            {
+                currentGraphicsState.BlendMode = bmToken.Data.ToBlendMode() ?? BlendMode.Normal;
+            }
+            else if (state.TryGet(NameToken.Bm, PdfScanner, out ArrayToken? bmArrayToken))
+            {
+                // The PDF reader shall use the first blend mode in the array that it
+                // recognises (or Normal if it recognises none of them).
+
+                currentGraphicsState.BlendMode = BlendMode.Normal;
+
+                foreach (var token in bmArrayToken.Data.OfType<NameToken>())
+                {
+                    var bm = token.Data.ToBlendMode();
+                    if (bm.HasValue)
+                    {
+                        currentGraphicsState.BlendMode = bm.Value;
+                        break;
+                    }
+                }
+            }
+
+            if (state.TryGet(NameToken.Smask, PdfScanner, out NameToken? smToken) && smToken.Equals(NameToken.None))
+            {
+                currentGraphicsState.SoftMask = null;
+            }
+            else if (state.TryGet(NameToken.Smask, PdfScanner, out DictionaryToken? smDictToken))
+            {
+                currentGraphicsState.SoftMask = SoftMask.Parse(smDictToken, PdfScanner, FilterProvider);
             }
         }
 

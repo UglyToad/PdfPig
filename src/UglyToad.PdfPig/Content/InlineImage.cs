@@ -57,10 +57,17 @@
         /// <inheritdoc />
         public ColorSpaceDetails ColorSpaceDetails { get; }
 
+        /// <inheritdoc />
+        public IPdfImage? SoftMaskImage { get; }
+
         /// <summary>
         /// Create a new <see cref="InlineImage"/>.
         /// </summary>
-        internal InlineImage(PdfRectangle bounds, int widthInSamples, int heightInSamples, int bitsPerComponent, bool isImageMask,
+        internal InlineImage(PdfRectangle bounds,
+            int widthInSamples,
+            int heightInSamples,
+            int bitsPerComponent,
+            bool isImageMask,
             RenderingIntent renderingIntent,
             bool interpolate,
             IReadOnlyList<double> decode,
@@ -68,7 +75,8 @@
             ILookupFilterProvider filterProvider,
             IReadOnlyList<NameToken> filterNames,
             DictionaryToken streamDictionary,
-            ColorSpaceDetails colorSpaceDetails)
+            ColorSpaceDetails colorSpaceDetails,
+            IPdfImage? softMaskImage)
         {
             Bounds = bounds;
             WidthInSamples = widthInSamples;
@@ -105,6 +113,8 @@
 
                 return b;
             }) : null;
+
+            SoftMaskImage = softMaskImage;
         }
 
         /// <inheritdoc />
