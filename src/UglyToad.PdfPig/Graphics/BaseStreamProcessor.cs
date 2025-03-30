@@ -576,7 +576,7 @@
             {
                 var points = bboxToken.Data.OfType<NumericToken>().Select(x => x.Double).ToArray();
                 PdfRectangle bbox = new PdfRectangle(points[0], points[1], points[2], points[3]);
-                PdfRectangle transformedBox = startState.CurrentTransformationMatrix.Transform(bbox);
+                PdfRectangle transformedBox = startState.CurrentTransformationMatrix.Transform(bbox).Normalise();
                 ClipToRectangle(transformedBox, FillingRule.EvenOdd); // TODO - Check that Even Odd is valid
             }
 
