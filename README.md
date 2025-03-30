@@ -53,7 +53,7 @@ An example of the output of this is shown below:
 
 Where for the PDF text ("Write something in") shown at the top the 3 words (in pink) are detected and each word contains the individual letters with glyph bounding boxes.
 
-### Ceate PDF Document
+### Create PDF Document
 To create documents use the class `PdfDocumentBuilder`. The Standard 14 fonts provide a quick way to get started:
 
 ```cs
@@ -75,10 +75,10 @@ The output is a 1 page PDF document with the text "Hello World!" in Helvetica ne
 
 ![Image shows a PDF document in Google Chrome's PDF viewer. The text "Hello World!" is visible](https://raw.githubusercontent.com/UglyToad/Pdf/master/documentation/builder-output.png)
 
-Each font must be registered with the PdfDocumentBuilder prior to use enable pages to share the font resources. Only Standard 14 fonts and TrueType fonts (.ttf) are supported.
+Each font must be registered with the `PdfDocumentBuilder` prior to use enable pages to share the font resources. Only Standard 14 fonts and TrueType fonts (.ttf) are supported.
 
 ### Advanced Document Extraction
-In this example a more advanced document extraction is performed. PdfDocumentBuilder is used to create a copy of the pdf with debug information (bounding boxes and reading order) added.
+In this example a more advanced document extraction is performed. `PdfDocumentBuilder` is used to create a copy of the pdf with debug information (bounding boxes and reading order) added.
 
 
 ```cs
@@ -284,7 +284,7 @@ bool isA4 = size == PageSize.A4;
 
     string text = page.Text;
 
-There is a method which provides access to the words. This uses basic heuristics and is not reliable or well-tested:
+There is a method which provides access to the words. The default method uses basic heuristics. For advanced cases, You can also implement your own `IWordExtractor` or use the `NearestNeighbourWordExtractor`:
 
     IEnumerable<Word> words = page.GetWords();
 
@@ -297,6 +297,8 @@ Consult the PDF specification for the meaning of individual operators.
 There is also an API for retrieving the PDF image objects per page:
 
     IEnumerable<XObjectImage> images = page.GetImages();
+
+Please read the [wiki on Images](https://github.com/UglyToad/PdfPig/wiki/Images).
 
 ### Letter
 
