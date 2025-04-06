@@ -1,13 +1,13 @@
 ﻿namespace UglyToad.PdfPig.Encryption
 {
     using System;
-    using System.IO;
     using System.Security.Cryptography;
 
     internal static class AesEncryptionHelper
     {
         public static byte[] Encrypt256()
         {
+            // See https://stackoverflow.com/questions/73779169/cryptographicexception-bad-pkcs7-padding-invalid-length-0-cannot-decrypt-sa
             throw new NotImplementedException();
         }
 
@@ -27,35 +27,28 @@
                 aes.IV = iv;
 
 #if NET8_0_OR_GREATER
-                var encryptedData = data.AsSpan(iv.Length);
-                if (encryptedData.IsEmpty)
+                if (data.Length <= iv.Length)
                 {
+                    aes.Clear();
                     return [];
                 }
-                return aes.DecryptCbc(encryptedData, iv, PaddingMode.PKCS7);
+
+                var encryptedData = data.AsSpan(iv.Length);
+                var output = aes.DecryptCbc(encryptedData, iv, PaddingMode.PKCS7);
+                aes.Clear();
+                return output;
 #else
-                var buffer = new byte[256];
+                if (data.Length <= iv.Length)
+                {
+                    aes.Clear();
+                    return [];
+                }
 
                 using (var decryptor = aes.CreateDecryptor(aes.Key, aes.IV))
-                using (var input = new MemoryStream(data))
-                using (var output = new MemoryStream())
                 {
-                    input.Seek(iv.Length, SeekOrigin.Begin);
-                    using (var cryptoStream = new CryptoStream(input, decryptor, CryptoStreamMode.Read))
-                    {
-                        int read;
-                        do
-                        {
-                            read = cryptoStream.Read(buffer, 0, buffer.Length);
-
-                            if (read > 0)
-                            {
-                                output.Write(buffer, 0, read);
-                            }
-                        } while (read > 0);
-
-                        return output.ToArray();
-                    }
+                    var output = decryptor.TransformFinalBlock(data, iv.Length, data.Length - iv.Length);
+                    aes.Clear();
+                    return output;
                 }
 #endif
             }
