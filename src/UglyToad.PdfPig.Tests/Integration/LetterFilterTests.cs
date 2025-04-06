@@ -1,13 +1,21 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
+    using PdfPig.Fonts.SystemFonts;
     using System.Linq;
 
     public class LetterFilterTests
     {
-        [Fact]
+        [SkippableFact]
         public void CanFilterClippedLetters()
         {
             var one = IntegrationHelpers.GetDocumentPath("ClipPathLetterFilter-Test1.pdf");
+
+            // The 'TimesNewRomanPSMT' font is used by this particular document. Thus, results cannot be trusted on
+            // platforms where this font isn't generally available (e.g. OSX, Linux, etc.), so we skip it!
+            var font = SystemFontFinder.Instance.GetTrueTypeFont("TimesNewRomanPSMT");
+            var font1 = SystemFontFinder.Instance.GetTrueTypeFont("TimesNewRomanPS-BoldMT");
+            var font2 = SystemFontFinder.Instance.GetTrueTypeFont("TimesNewRomanPS-ItalicMT");
+            Skip.If(font is null || font1 is null || font2 is null, "Skipped because the font TimesNewRomanPSMT or a font from TimesNewRoman family could not be found in the execution environment.");
 
             using (var doc1 = PdfDocument.Open(one, new ParsingOptions { ClipPaths = true }))
             using (var doc2 = PdfDocument.Open(one, new ParsingOptions { ClipPaths = false }))
