@@ -1252,18 +1252,18 @@
                     bookmarks.GetNodes().OfType<UriBookmarkNode>().Select(node => node.Uri));
 
                 Assert.Equal(
-                    new[] 
+                    new byte[] 
                     {
-                        ExplicitDestinationType.XyzCoordinates,
-                        ExplicitDestinationType.FitPage,
-                        ExplicitDestinationType.FitRectangle,
-                        ExplicitDestinationType.FitBoundingBox,
-                        ExplicitDestinationType.FitBoundingBoxHorizontally,
-                        ExplicitDestinationType.FitBoundingBoxVertically,
-                        ExplicitDestinationType.FitHorizontally,
-                        ExplicitDestinationType.FitVertically,
+                        (byte)ExplicitDestinationType.XyzCoordinates,
+                        (byte)ExplicitDestinationType.FitPage,
+                        (byte)ExplicitDestinationType.FitRectangle,
+                        (byte)ExplicitDestinationType.FitBoundingBox,
+                        (byte)ExplicitDestinationType.FitBoundingBoxHorizontally,
+                        (byte)ExplicitDestinationType.FitBoundingBoxVertically,
+                        (byte)ExplicitDestinationType.FitHorizontally,
+                        (byte)ExplicitDestinationType.FitVertically,
                     },
-                    bookmarks.GetNodes().OfType<DocumentBookmarkNode>().Select(node => node.Destination.Type));
+                    bookmarks.GetNodes().OfType<DocumentBookmarkNode>().Select(node => (byte)node.Destination.Type));
             }
         }
 
