@@ -3,7 +3,7 @@
     /// <summary>
     /// The display type for opening an <see cref="ExplicitDestination"/>.
     /// </summary>
-    public enum ExplicitDestinationType
+    public enum ExplicitDestinationType : byte
     {
         /// <summary>
         /// Display the page with the given top left coordinates and 
