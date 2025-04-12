@@ -8,7 +8,7 @@
     /// <summary>
     /// A supbpath is made up of a sequence of connected segments.
     /// </summary>
-    public class PdfSubpath
+    public sealed class PdfSubpath
     {
         private readonly List<IPathCommand> commands = new List<IPathCommand>();
 
@@ -416,8 +416,10 @@
         /// <summary>
         /// Close the current <see cref="PdfSubpath"/>.
         /// </summary>
-        public class Close : IPathCommand
+        public sealed class Close : IPathCommand
         {
+            private static readonly int _hash = typeof(Close).GetHashCode();
+
             /// <inheritdoc />
             public PdfRectangle? GetBoundingRectangle()
             {
@@ -439,15 +441,14 @@
             /// <inheritdoc />
             public override int GetHashCode()
             {
-                // ReSharper disable once BaseObjectGetHashCodeCallInGetHashCode
-                return base.GetHashCode();
+                return _hash;
             }
         }
 
         /// <summary>
         /// Move drawing of the current <see cref="PdfSubpath"/> to the specified location.
         /// </summary>
-        public class Move : IPathCommand
+        public sealed class Move : IPathCommand
         {
             /// <summary>
             /// The location to move to.
@@ -497,7 +498,7 @@
         /// <summary>
         /// Draw a straight line between two points.
         /// </summary>
-        public class Line : IPathCommand
+        public sealed class Line : IPathCommand
         {
             /// <summary>
             /// The start of the line.
