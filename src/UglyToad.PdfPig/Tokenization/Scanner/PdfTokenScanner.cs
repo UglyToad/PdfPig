@@ -835,10 +835,12 @@
             }
 
             if (!stream.StreamDictionary.TryGet(NameToken.First, out var firstToken)
-            || !(firstToken is NumericToken))
+            || !(firstToken is NumericToken firstTokenNum))
             {
                 throw new PdfDocumentFormatException($"Object stream dictionary did not provide first object offset {stream.StreamDictionary}.");
             }
+
+            long firstTokenOffset = firstTokenNum.Long;
 
             // Read the N integers
             var bytes = new MemoryInputBytes(stream.Decode(filterProvider, this));
@@ -854,7 +856,7 @@
                 scanner.MoveNext();
                 var byteOffset = (NumericToken)scanner.CurrentToken;
 
-                objects.Add((objectNumber.Long, byteOffset.Long));
+                objects.Add((objectNumber.Long, firstTokenOffset + byteOffset.Long));
             }
 
             var results = new List<ObjectToken>();
@@ -862,6 +864,16 @@
             for (var i = 0; i < objects.Count; i++)
             {
                 var obj = objects[i];
+
+                // Check item offset is in [currentPosition - 1; currentPosition + 1]
+                bool isBetween = ((obj.Item2 - (scanner.CurrentPosition - 1)) | ((scanner.CurrentPosition + 1) - obj.Item2)) >= 0;
+                if (!isBetween)
+                {
+                    // TODO - Not sure if it belongs here but fixes issue 1013.
+                    // It is not clear what happens with this specific document 'document_with_failed_fonts.pdf'
+                    // I could not find where the same logic is applied in pdfbox.
+                    scanner.Seek(obj.Item2);
+                }
 
                 scanner.MoveNext();
 

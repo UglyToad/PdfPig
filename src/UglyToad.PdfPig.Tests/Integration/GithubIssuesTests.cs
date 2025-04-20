@@ -8,6 +8,29 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue1013()
+        {
+            // NB: We actually do not fix issue 953 here, but another bug found with the same document.
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("document_with_failed_fonts.pdf");
+
+            // Lenient parsing ON + Skip missing fonts
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true, SkipMissingFonts = true }))
+            {
+                var page2 = document.GetPage(2);
+                Assert.NotEmpty(page2.Letters);
+
+                var words2 = NearestNeighbourWordExtractor.Instance.GetWords(page2.Letters).ToArray();
+                Assert.Equal("Doplňující", words2[0].Text);
+
+                var page3 = document.GetPage(3);
+                Assert.NotEmpty(page3.Letters);
+
+                var words3 = NearestNeighbourWordExtractor.Instance.GetWords(page3.Letters).ToArray();
+                Assert.Equal("Vinohradská", words3[8].Text);
+            }
+        }
+
+        [Fact]
         public void Issue1016()
         {
             // Doc has letters with Shading pattern color
