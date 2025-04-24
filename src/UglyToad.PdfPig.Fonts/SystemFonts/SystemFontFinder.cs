@@ -98,6 +98,10 @@ namespace UglyToad.PdfPig.Fonts.SystemFonts
             {
                 lister = new BrowserSystemFontLister();
             }
+            else if (OperatingSystem.IsMacCatalyst())
+            {
+                lister = new MacSystemFontLister();
+            }
 #endif
             else
             {
