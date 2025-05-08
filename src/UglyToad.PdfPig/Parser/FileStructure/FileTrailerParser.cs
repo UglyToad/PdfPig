@@ -76,55 +76,61 @@
             return numeric.Long;
         }
 
-        private static long GetStartXrefPosition(IInputBytes bytes, int offsetFromEnd)
+        private static long GetStartXrefPosition(IInputBytes bytes, int chunkSize)
         {
-            int startXref = 0;
-            int startXrefsCount = 0;
+            // Initialize startpos to the end to get the loop below started
+            var startPos = bytes.Length;
 
-            var index = 0;
-
-            var fileLength = bytes.Length;
-            var multiple = 1;
-
-            var actualStartOffset = Math.Max(0, fileLength - (offsetFromEnd * multiple));
             do
             {
-                multiple *= 2;
-                bytes.Seek(actualStartOffset);
+                // Make a sliding-window search region where each subsequent search will look further
+                // back and not search in the already searched chunks. Make sure to search just beyond
+                // the chunk to account for the possibility of startxref crossing chunk-boundaries.
+                // The start-position is inclusive and the end-position is exclusive for the chunk.
+                // Each search will look in an increasingly bigger chunk, doubling every time.
+                var endPos = Math.Min(startPos + StartXRefBytes.Length, bytes.Length);
+                startPos = Math.Max(0, endPos - chunkSize);
+                chunkSize *= 2;
+
+                // Prepare to search this region; mark startXrefPos as "not found".
+                bytes.Seek(startPos);
+                var startXrefPos = -1L;
+                var index = 0;
 
                 // Starting scanning the file bytes.
-                while (bytes.MoveNext())
+                while (bytes.CurrentOffset < endPos && bytes.MoveNext())
                 {
                     if (bytes.CurrentByte == StartXRefBytes[index])
                     {
                         // We might be reading "startxref".
-                        index++;
+                        if (++index == StartXRefBytes.Length)
+                        {
+                            // Set this "startxref" (position from the start of the document to the first 's').
+                            startXrefPos = (int)bytes.CurrentOffset - StartXRefBytes.Length;
+
+                            // Continue scanning to make sure we find the last startxref in case there are more
+                            // that just one, which can be the case for incrementally updated PDFs with multiple
+                            // generations of sections.
+                            index = 0;
+                        }
                     }
                     else
                     {
-                        index = 0;
-                    }
-
-                    if (index == StartXRefBytes.Length)
-                    {
-                        // Set this "startxref" (position from the start of the document to the first 's').
-                        startXref = (int)bytes.CurrentOffset - StartXRefBytes.Length;
-                        startXrefsCount++;
-
-                        // Continue scanning in case there are further "startxref"s. Not sure if this ever happens.
+                        // Not a match for "startxref" so set index back to 0
                         index = 0;
                     }
                 }
 
-                actualStartOffset = Math.Max(0, fileLength - (offsetFromEnd * multiple));
-            } while (startXrefsCount == 0 && actualStartOffset > 0);
+                // If we found a startxref then we're done.
+                if (startXrefPos >= 0)
+                {
+                    return startXrefPos;
+                }
 
-            if (startXrefsCount == 0)
-            {
-                throw new PdfDocumentFormatException($"Could not find the startxref within the last {offsetFromEnd} characters.");
-            }
+            } while (startPos > 0); // Keep on searching until we've read from the very start.
 
-            return startXref;
+            // No startxref position was found.
+            throw new PdfDocumentFormatException($"Could not find the startxref");
         }
     }
 }
