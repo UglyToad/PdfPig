@@ -37,7 +37,7 @@
 
         public ReadOnlyMemory<byte> DecodedBytes { get; set; }
 
-        public IPdfImage? SoftMaskImage { get; }
+        public IPdfImage? MaskImage { get; }
 
         public bool TryGetBytesAsMemory(out ReadOnlyMemory<byte> bytes)
         {

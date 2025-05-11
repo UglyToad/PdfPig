@@ -95,9 +95,10 @@
         ColorSpaceDetails? ColorSpaceDetails { get; }
 
         /// <summary>
-        /// Soft-mask image.
+        /// The image mask.
+        /// <para>Either a Soft-mask or a Stencil mask.</para>
         /// </summary>
-        IPdfImage? SoftMaskImage { get; }
+        IPdfImage? MaskImage { get; }
 
         /// <summary>
         /// Get the decoded memory of the image if applicable. For JPEG images and some other types the

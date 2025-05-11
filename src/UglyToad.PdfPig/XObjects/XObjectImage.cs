@@ -65,7 +65,7 @@
         public ColorSpaceDetails? ColorSpaceDetails { get; }
 
         /// <inheritdoc />
-        public IPdfImage? SoftMaskImage { get; }
+        public IPdfImage? MaskImage { get; }
 
         /// <summary>
         /// Creates a new <see cref="XObjectImage"/>.
@@ -98,7 +98,7 @@
             RawMemory = rawMemory;
             ColorSpaceDetails = colorSpaceDetails;
             memoryFactory = bytes;
-            SoftMaskImage = softMaskImage;
+            MaskImage = softMaskImage;
         }
 
         /// <inheritdoc />

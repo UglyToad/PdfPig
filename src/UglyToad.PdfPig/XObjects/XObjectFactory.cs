@@ -63,12 +63,30 @@
                     throw new Exception("The SMask dictionary contains a 'Mask' or 'Smask' entry.");
                 }
 
-                var renderingIntent = xObject.DefaultRenderingIntent; // Ignored
-
-                XObjectContentRecord softMaskImageRecord = new XObjectContentRecord(XObjectType.Image, sMaskToken, TransformationMatrix.Identity,
-                    renderingIntent, DeviceGrayColorSpaceDetails.Instance);
+                XObjectContentRecord softMaskImageRecord = new XObjectContentRecord(XObjectType.Image,
+                    sMaskToken,
+                    TransformationMatrix.Identity,
+                    xObject.DefaultRenderingIntent, // Ignored
+                    DeviceGrayColorSpaceDetails.Instance);
 
                 softMaskImage = ReadImage(softMaskImageRecord, pdfScanner, filterProvider, resourceStore);
+            }
+            else if (dictionary.TryGet(NameToken.Mask, out StreamToken maskStream))
+            {
+                if (maskStream.StreamDictionary.ContainsKey(NameToken.ColorSpace))
+                {
+                    throw new Exception("The SMask dictionary contains a 'ColorSpace'.");
+                }
+
+                // Stencil masking
+                XObjectContentRecord maskImageRecord = new XObjectContentRecord(XObjectType.Image,
+                    maskStream,
+                    TransformationMatrix.Identity,
+                    xObject.DefaultRenderingIntent,
+                    null);
+
+                softMaskImage = ReadImage(maskImageRecord, pdfScanner, filterProvider, resourceStore);
+                System.Diagnostics.Debug.Assert(softMaskImage.ColorSpaceDetails?.IsStencil == true);
             }
 
             var isJpxDecode = dictionary.TryGet(NameToken.Filter, out NameToken filterName) && filterName.Equals(NameToken.JpxDecode);
@@ -125,9 +143,7 @@
                 }
             }
 
-            var streamToken = new StreamToken(dictionary, xObject.Stream.Data);
-
-            var decodedBytes = supportsFilters ? new Lazy<ReadOnlyMemory<byte>>(() => streamToken.Decode(filterProvider, pdfScanner))
+            var decodedBytes = supportsFilters ? new Lazy<ReadOnlyMemory<byte>>(() => xObject.Stream.Decode(filterProvider, pdfScanner))
                 : null;
 
             var decode = Array.Empty<double>();
