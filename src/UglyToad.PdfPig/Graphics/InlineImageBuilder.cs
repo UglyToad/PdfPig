@@ -55,7 +55,7 @@
             var bitsPerComponent = GetByKeys<NumericToken>(NameToken.BitsPerComponent, NameToken.Bpc, !isMask)?.Int ?? 1;
             NameToken? colorSpaceName = null;
 
-            var imgDic = new DictionaryToken(Properties ?? new Dictionary<NameToken, IToken>());
+            var imgDic = new DictionaryToken(Properties ?? new Dictionary<NameToken, IToken>()).Resolve(tokenScanner);
 
             XObjectImage? softMaskImage = null;
             if (imgDic.TryGet(NameToken.Smask, tokenScanner, out StreamToken? sMaskToken))
