@@ -43,7 +43,8 @@
             ILookupFilterProvider filterProvider,
             bool cannotRecurse = false)
         {
-            if (imageDictionary.GetObjectOrDefault(NameToken.ImageMask, NameToken.Im) != null ||
+            if ((imageDictionary.TryGet(NameToken.ImageMask, scanner, out BooleanToken isImageMask) && isImageMask.Data) ||
+                (imageDictionary.TryGet(NameToken.Im, scanner, out BooleanToken isImMask) && isImMask.Data) ||
                 filterProvider.GetFilters(imageDictionary, scanner).OfType<CcittFaxDecodeFilter>().Any())
             {
                 if (cannotRecurse)
