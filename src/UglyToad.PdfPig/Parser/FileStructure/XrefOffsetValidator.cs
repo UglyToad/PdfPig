@@ -7,12 +7,16 @@
     using Tokenization.Scanner;
     using Tokens;
 
-    internal class XrefOffsetValidator
+    internal sealed class XrefOffsetValidator
     {
-        private static readonly long MinimumSearchOffset = 6;
+        private const long MinimumSearchOffset = 6;
+
+        private static ReadOnlySpan<byte> XRefBytes => "xref"u8;
+        private static ReadOnlySpan<byte> SpaceObjBytes => " obj"u8;
 
         private readonly ILog log;
 
+        private List<long>? bfSearchStartXRefTablesOffsets;
         private List<long>? bfSearchXRefTablesOffsets;
         private List<long>? bfSearchXRefStreamsOffsets;
 
@@ -90,16 +94,18 @@
 
             BfSearchForXRefStreams(reader);
 
-            if (bfSearchXRefTablesOffsets != null)
+            if (bfSearchXRefTablesOffsets != null && bfSearchXRefTablesOffsets.Count > 0)
             {
                 // TODO to be optimized, this won't work in every case
                 newOffsetTable = SearchNearestValue(bfSearchXRefTablesOffsets, xrefOffset);
             }
-            if (bfSearchXRefStreamsOffsets != null)
+            
+            if (bfSearchXRefStreamsOffsets != null && bfSearchXRefStreamsOffsets.Count > 0)
             {
                 // TODO to be optimized, this won't work in every case
                 newOffsetStream = SearchNearestValue(bfSearchXRefStreamsOffsets, xrefOffset);
             }
+            
             // choose the nearest value
             if (newOffsetTable > -1 && newOffsetStream > -1)
             {
@@ -126,7 +132,89 @@
                 newOffset = newOffsetStream;
                 bfSearchXRefStreamsOffsets!.Remove(newOffsetStream);
             }
+            else
+            {
+                log.Warn("Trying to repair xref offset by looking for all startxref.");
+                if (TryBruteForceSearchForXrefFromStartxref(xrefOffset, scanner, reader, out long newOffsetFromStartxref))
+                {
+                    newOffset = newOffsetFromStartxref;
+                }
+            }
+            
             return newOffset;
+        }
+
+        private bool TryBruteForceSearchForXrefFromStartxref(long xrefOffset, ISeekableTokenScanner scanner, IInputBytes reader, out long newOffset)
+        {
+            newOffset = -1;
+            BruteForceSearchForStartxref(reader);
+            long newStartXRefOffset = SearchNearestValue(bfSearchStartXRefTablesOffsets, xrefOffset);
+            if (newStartXRefOffset < reader.Length)
+            {
+                long tempNewOffset = -1;
+                var startOffset = scanner.CurrentPosition;
+                scanner.Seek(newStartXRefOffset + 9);
+
+                if (scanner.MoveNext() && scanner.CurrentToken is NumericToken token)
+                {
+                    tempNewOffset = token.Long;
+                }
+
+                if (tempNewOffset > -1)
+                {
+                    scanner.Seek(tempNewOffset);
+                    scanner.MoveNext();
+                    if (ReferenceEquals(scanner.CurrentToken, OperatorToken.Xref))
+                    {
+                        newOffset = tempNewOffset;
+                    }
+
+                    if (CheckXRefStreamOffset(tempNewOffset, scanner, true))
+                    {
+                        newOffset = tempNewOffset;
+                    }
+                }
+
+                scanner.Seek(startOffset);
+            }
+
+            return newOffset != -1;
+        }
+
+        private void BruteForceSearchForStartxref(IInputBytes bytes)
+        {
+            if (bfSearchStartXRefTablesOffsets != null)
+            {
+                return;
+            }
+
+            // a pdf may contain more than one startxref entry
+            bfSearchStartXRefTablesOffsets = new List<long>();
+
+            var startOffset = bytes.CurrentOffset;
+
+            bytes.Seek(MinimumSearchOffset);
+
+            // search for startxref
+            while (bytes.MoveNext() && !bytes.IsAtEnd())
+            {
+                if (ReadHelper.IsString(bytes, FileTrailerParser.StartXRefBytes))
+                {
+                    var newOffset = bytes.CurrentOffset;
+
+                    bytes.Seek(newOffset - 1);
+
+                    if (ReadHelper.IsWhitespace(bytes.CurrentByte))
+                    {
+                        bfSearchStartXRefTablesOffsets.Add(newOffset);
+                    }
+
+                    bytes.Seek(newOffset + 9);
+                }
+
+            }
+
+            bytes.Seek(startOffset);
         }
 
         private void BruteForceSearchForTables(IInputBytes bytes)
@@ -146,7 +234,7 @@
             // search for xref tables
             while (bytes.MoveNext() && !bytes.IsAtEnd())
             {
-                if (ReadHelper.IsString(bytes, "xref"))
+                if (ReadHelper.IsString(bytes, XRefBytes))
                 {
                     var newOffset = bytes.CurrentOffset;
 
@@ -180,11 +268,9 @@
             bytes.Seek(MinimumSearchOffset);
 
             // search for XRef streams
-            var objString = " obj";
-
             while (bytes.MoveNext() && !bytes.IsAtEnd())
             {
-                if (!ReadHelper.IsString(bytes, "xref"))
+                if (!ReadHelper.IsString(bytes, XRefBytes))
                 {
                     continue;
                 }
@@ -209,7 +295,7 @@
 
                         for (int j = 0; j < 10; j++)
                         {
-                            if (ReadHelper.IsString(bytes, objString))
+                            if (ReadHelper.IsString(bytes, SpaceObjBytes))
                             {
                                 long tempOffset = currentOffset - 1;
 
@@ -224,7 +310,7 @@
                                     bytes.Seek(tempOffset);
 
                                     // is the digit preceded by a space?
-                                    if (ReadHelper.IsSpace(bytes.CurrentByte))
+                                    if (ReadHelper.IsWhitespace(bytes.CurrentByte))
                                     {
                                         int length = 0;
                                         bytes.Seek(--tempOffset);

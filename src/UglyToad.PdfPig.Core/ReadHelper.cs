@@ -189,7 +189,34 @@
 
             return found;
         }
-        
+
+
+        /// <summary>
+        /// Whether the given string is at this position in the input.
+        /// Resets to the current offset once read.
+        /// </summary>
+        public static bool IsString(IInputBytes bytes, ReadOnlySpan<byte> s)
+        {
+            bool found = true;
+
+            var startOffset = bytes.CurrentOffset;
+
+            foreach (var c in s)
+            {
+                if (bytes.CurrentByte != c)
+                {
+                    found = false;
+                    break;
+                }
+
+                bytes.MoveNext();
+            }
+
+            bytes.Seek(startOffset);
+
+            return found;
+        }
+
         /// <summary>
         /// Read a long from the input.
         /// </summary>
@@ -251,14 +278,6 @@
                 
                 throw new PdfDocumentFormatException($"Error: Expected an integer type at offset {bytes.CurrentOffset}, instead got \'{OtherEncodings.BytesAsLatin1String(intBytes)}\'");
             }
-        }
-        
-        /// <summary>
-        /// Whether the given character is a space.
-        /// </summary>
-        public static bool IsSpace(int c)
-        {
-            return c == ' ';
         }
 
         /// <summary>
