@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Parser.FileStructure
 {
     using System;
-    using System.Collections.Generic;
     using Core;
     using Tokenization.Scanner;
     using Tokens;
@@ -26,7 +25,7 @@
         /// </summary>
         private const int EndOfFileSearchRange = 2048;
 
-        private static ReadOnlySpan<byte> StartXRefBytes => "startxref"u8;
+        internal static ReadOnlySpan<byte> StartXRefBytes => "startxref"u8;
 
         public static long GetFirstCrossReferenceOffset(IInputBytes bytes, ISeekableTokenScanner scanner, bool isLenientParsing)
         {

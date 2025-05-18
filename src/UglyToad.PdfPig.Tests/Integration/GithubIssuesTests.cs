@@ -8,6 +8,21 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue1040()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("pdfpig-issue-1040.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true}))
+            {
+                var page1 = document.GetPage(1);
+                Assert.NotEmpty(page1.Letters);
+
+                var page2 = document.GetPage(2);
+                Assert.NotEmpty(page2.Letters);
+            }
+        }
+        
+        [Fact]
         public void Issue1013()
         {
             // NB: We actually do not fix issue 953 here, but another bug found with the same document.
