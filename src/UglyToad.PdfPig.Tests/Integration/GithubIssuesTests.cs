@@ -8,6 +8,21 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue822()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("FileData_7.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                for (int p = 1; p <= document.NumberOfPages; p++)
+                {
+                    var page = document.GetPage(p);
+                    Assert.NotNull(page.Letters);
+                }
+            }
+        }
+        
+        [Fact]
         public void Issue1040()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("pdfpig-issue-1040.pdf");
