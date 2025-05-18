@@ -8,6 +8,26 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue554()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("2022.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                for (int p = 1; p <= document.NumberOfPages; p++)
+                {
+                    var page = document.GetPage(p);
+                    Assert.NotNull(page.Letters);
+
+                    if (p < document.NumberOfPages)
+                    {
+                        Assert.NotEmpty(page.Letters);
+                    }
+                }
+            }
+        }
+
+        [Fact]
         public void Issue822()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("FileData_7.pdf");

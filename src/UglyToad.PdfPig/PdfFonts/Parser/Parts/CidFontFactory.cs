@@ -109,6 +109,13 @@
             {
                 case DescriptorFontFile.FontFileType.TrueType:
                     {
+                        if (IsTrueTypeCff(fontFile.Span))
+                        {
+                            logger.Warn("The CID TrueType font has the signature of a CFF font. Using CID CFF instead.");
+                            var font = CompactFontFormatParser.Parse(new CompactFontFormatData(fontFile));
+                            return new PdfCidCompactFontFormatFont(font);
+                        }
+                        
                         var input = new TrueTypeDataBytes(new MemoryInputBytes(fontFile));
                         var ttf = TrueTypeFontParser.Parse(input);
                         return new PdfCidTrueTypeFont(ttf);
@@ -327,6 +334,26 @@
             }
 
             return string.Empty;
+        }
+
+        private static bool IsTrueTypeCff(ReadOnlySpan<byte> data)
+        {
+            if (data.Length < 4)
+            {
+                return false;
+            }
+            
+            // See https://docs.fileformat.com/font/cff/
+            // https://adobe-type-tools.github.io/font-tech-notes/pdfs/5176.CFF.pdf
+            byte major = data[0]; // Major version
+            byte minor = data[1]; // Minor version
+            byte hdrSize = data[2]; // Header size 
+            byte offSize = data[3]; // Absolute offset
+
+            return major == 0x01 &&
+                   minor == 0x00 &&
+                   hdrSize >= 0x04 &&
+                   offSize >= 0x01 && offSize <= 0x04;
         }
     }
 }

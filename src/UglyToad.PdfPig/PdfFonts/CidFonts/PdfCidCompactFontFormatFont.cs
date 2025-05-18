@@ -28,7 +28,8 @@
 
             FontDetails WithWeightValues(bool isBold, int weight) => new FontDetails(null, isBold, weight, font.ItalicAngle != 0);
 
-            return (font.Weight?.ToLowerInvariant()) switch {
+            return (font.Weight?.ToLowerInvariant()) switch
+            {
                 "light"    => WithWeightValues(false, 300),
                 "semibold" => WithWeightValues(true, 600),
                 "bold"     => WithWeightValues(true, FontDetails.BoldWeight),
@@ -61,17 +62,34 @@
 
         public bool TryGetBoundingBox(int characterIdentifier, Func<int, int?> characterCodeToGlyphId, out PdfRectangle boundingBox)
         {
-            throw new NotImplementedException();
+            var font = GetFont();
+
+            int? glyphId = characterCodeToGlyphId.Invoke(characterIdentifier);
+
+            string name = glyphId.HasValue
+                ? GetCharacterName(glyphId.Value)
+                : GetCharacterName(characterIdentifier);
+
+            PdfRectangle? tempBbox = font.GetCharacterBoundingBox(name);
+            if (tempBbox.HasValue)
+            {
+                boundingBox = tempBbox.Value;
+                return true;
+            }
+
+            boundingBox = default;
+            return false;
         }
 
         public bool TryGetBoundingAdvancedWidth(int characterIdentifier, Func<int, int?> characterCodeToGlyphId, out double width)
         {
-            throw new NotImplementedException();
+            return TryGetBoundingAdvancedWidth(characterIdentifier, out width);
         }
 
         public bool TryGetBoundingAdvancedWidth(int characterIdentifier, out double width)
         {
-            throw new NotImplementedException();
+            width = double.NaN;
+            return false;
         }
 
         public int GetFontMatrixMultiplier()
@@ -136,7 +154,25 @@
 
         public bool TryGetPath(int characterCode, Func<int, int?> characterCodeToGlyphId, out IReadOnlyList<PdfSubpath> path)
         {
-            throw new NotImplementedException();
+            path = null;
+
+            int? glyphId = characterCodeToGlyphId.Invoke(characterCode);
+
+            string characterName = glyphId.HasValue
+                ? GetCharacterName(glyphId.Value)
+                : GetCharacterName(characterCode);
+
+            if (string.Equals(characterName, GlyphList.NotDefined, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (GetFont().TryGetPath(characterName, out path))
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }
