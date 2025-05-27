@@ -8,6 +8,15 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue1047()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("Hang.pdf");
+
+            var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }));
+            Assert.Equal("The cross reference was not found.", ex.Message);
+        }
+
+        [Fact]
         public void Issue1048()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("InvalidCast.pdf");

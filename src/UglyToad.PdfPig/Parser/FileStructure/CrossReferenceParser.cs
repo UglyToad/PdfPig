@@ -10,7 +10,7 @@
     using Tokenization.Scanner;
     using Tokens;
 
-    internal class CrossReferenceParser
+    internal sealed class CrossReferenceParser
     {
         private readonly ILog log;
         private readonly XrefOffsetValidator offsetValidator;
@@ -151,8 +151,6 @@
                 {
                     log.Debug("Element was cross reference stream.");
 
-                    missedAttempts = 0;
-
                     // Unread the numeric token.
                     tokenScanner.Seek(previousCrossReferenceLocation);
 
@@ -168,6 +166,8 @@
                         missedAttempts++;
                         continue;
                     }
+
+                    missedAttempts = 0;
 
                     table.Add(tablePart);
 
