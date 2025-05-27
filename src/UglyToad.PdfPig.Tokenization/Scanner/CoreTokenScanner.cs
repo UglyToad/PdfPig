@@ -113,7 +113,7 @@
 
                 if (tokenizer == null)
                 {
-                    if (ReadHelper.IsWhitespace(currentByte))
+                    if (ReadHelper.IsWhitespace(currentByte) || char.IsControl(c))
                     {
                         isSkippingSymbol = false;
                         continue;
