@@ -8,6 +8,24 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue1048()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("InvalidCast.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                Assert.NotNull(page.Letters);
+
+                var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
+                var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
+
+                Assert.Single(blocks);
+                Assert.Equal("hey, i'm a bug.", blocks[0].Text);
+            }
+        }
+
+        [Fact]
         public void Issue554()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("2022.pdf");
