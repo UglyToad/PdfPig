@@ -53,6 +53,16 @@
 
             if (offsets.TryGetValue(reference, out offset))
             {
+                if (offset + reference.ObjectNumber == 0)
+                {
+                    // We have a case where 'offset' and
+                    // 'reference.ObjectNumber' have the same value
+                    // and opposite signs.
+                    // This results in an infinite recursion in
+                    // PdfTokenScanner.GetObjectFromStream() where 
+                    // `var streamObjectNumber = offset * -1;`
+                    throw new PdfDocumentFormatException("Avoiding infinite recursion in ObjectLocationProvider.TryGetOffset() as 'offset' and 'reference.ObjectNumber' have the same value and opposite signs.");
+                }
                 return true;
             }
 

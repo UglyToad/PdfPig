@@ -8,6 +8,14 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue1050()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("SpookyPass.pdf");
+            var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }));
+            Assert.Equal("Avoiding infinite recursion in ObjectLocationProvider.TryGetOffset() as 'offset' and 'reference.ObjectNumber' have the same value and opposite signs.", ex.Message);
+        }
+
+        [Fact]
         public void Issue1047()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("Hang.pdf");

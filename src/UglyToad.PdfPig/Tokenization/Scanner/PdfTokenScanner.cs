@@ -805,7 +805,7 @@
 
             var streamObject = Get(new IndirectReference(streamObjectNumber, 0));
 
-            if (!(streamObject.Data is StreamToken stream))
+            if (!(streamObject?.Data is StreamToken stream))
             {
                 throw new PdfDocumentFormatException("Requested a stream object by reference but the requested stream object " +
                                                      $"was not a stream: {reference}, {streamObject?.Data}.");
