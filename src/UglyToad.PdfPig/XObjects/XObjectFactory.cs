@@ -144,7 +144,7 @@
             }
             
             var streamToken = new StreamToken(dictionary, xObject.Stream.Data); // Needed as Resolve(pdfScanner) was called on the dictionary
-            var decodedBytes = supportsFilters ? new Lazy<ReadOnlyMemory<byte>>(() => streamToken.Decode(filterProvider, pdfScanner))
+            var decodedBytes = supportsFilters ? new Lazy<Memory<byte>>(() => streamToken.Decode(filterProvider, pdfScanner))
                 : null;
 
             var decode = Array.Empty<double>();

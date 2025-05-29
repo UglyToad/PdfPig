@@ -5,16 +5,16 @@
     /// <summary>
     /// Inline image data is used to embed images in PDF content streams. The content is wrapped by ID and ED tags in a BI operation.
     /// </summary>
-    public sealed class InlineImageDataToken : IDataToken<ReadOnlyMemory<byte>>
+    public sealed class InlineImageDataToken : IDataToken<Memory<byte>>
     {
         /// <inheritdoc />
-        public ReadOnlyMemory<byte> Data { get; }
+        public Memory<byte> Data { get; }
 
         /// <summary>
         /// Create a new <see cref="InlineImageDataToken"/>.
         /// </summary>
         /// <param name="data"></param>
-        public InlineImageDataToken(ReadOnlyMemory<byte> data)
+        public InlineImageDataToken(Memory<byte> data)
         {
             Data = data;
         }

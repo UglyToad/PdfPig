@@ -15,7 +15,7 @@
         /// change the data but for <see cref="ColorSpace.Indexed"/> it will convert the bytes which are indexes into the
         /// real pixel data into the real pixel data.
         /// </summary>
-        public static ReadOnlySpan<byte> Convert(ColorSpaceDetails details, ReadOnlySpan<byte> decoded, int bitsPerComponent, int imageWidth, int imageHeight)
+        public static Span<byte> Convert(ColorSpaceDetails details, Span<byte> decoded, int bitsPerComponent, int imageWidth, int imageHeight)
         {
             if (decoded.IsEmpty)
             {
@@ -27,25 +27,22 @@
                 return decoded;
             }
 
-            // TODO - We should aim at removing this alloc.
-            // The decoded input variable needs to become a Span<byte>
-            Span<byte> data = decoded.ToArray();
 
             if (bitsPerComponent != 8)
             {
                 // Unpack components such that they occupy one byte each
-                data = UnpackComponents(data, bitsPerComponent, details.Type);
+                decoded = UnpackComponents(decoded, bitsPerComponent, details.Type);
             }
 
             // Remove padding bytes when the stride width differs from the image width
             var bytesPerPixel = details.NumberOfColorComponents;
-            var strideWidth = data.Length / imageHeight / bytesPerPixel;
+            var strideWidth = decoded.Length / imageHeight / bytesPerPixel;
             if (strideWidth != imageWidth)
             {
-                data = RemoveStridePadding(data, strideWidth, imageWidth, imageHeight, bytesPerPixel);
+                decoded = RemoveStridePadding(decoded, strideWidth, imageWidth, imageHeight, bytesPerPixel);
             }
 
-            return details.Transform(data);
+            return details.Transform(decoded);
         }
 
         private static Span<byte> UnpackComponents(Span<byte> input, int bitsPerComponent, ColorSpace colorSpace)
@@ -101,7 +98,6 @@
 
             return unpacked;
         }
-
 
         private static Span<byte> RemoveStridePadding(Span<byte> input, int strideWidth, int imageWidth, int imageHeight, int multiplier)
         {

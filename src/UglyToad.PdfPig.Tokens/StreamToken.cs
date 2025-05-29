@@ -6,7 +6,7 @@
     /// A stream consists of a dictionary followed by zero or more bytes bracketed between the keywords stream and endstream.
     /// The bytes may be compressed by application of zero or more filters which are run in the order specified in the <see cref="StreamDictionary"/>.
     /// </summary>
-    public class StreamToken : IDataToken<ReadOnlyMemory<byte>>
+    public sealed class StreamToken : IDataToken<Memory<byte>>
     {
         /// <summary>
         /// The dictionary specifying the length of the stream, any applied compression filters and additional information.
@@ -16,7 +16,7 @@
         /// <summary>
         /// The compressed byte data of the stream.
         /// </summary>
-        public ReadOnlyMemory<byte> Data { get; }
+        public Memory<byte> Data { get; }
 
         /// <summary>
         /// Create a new <see cref="StreamToken"/>.
@@ -34,7 +34,7 @@
         /// </summary>
         /// <param name="streamDictionary">The stream dictionary.</param>
         /// <param name="data">The stream data.</param>
-        public StreamToken(DictionaryToken streamDictionary, ReadOnlyMemory<byte> data)
+        public StreamToken(DictionaryToken streamDictionary, Memory<byte> data)
         {
             StreamDictionary = streamDictionary ?? throw new ArgumentNullException(nameof(streamDictionary));
             Data = data;

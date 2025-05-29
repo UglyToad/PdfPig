@@ -16,14 +16,16 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public ReadOnlyMemory<byte> Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
+        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
         {
             using var output = new ArrayPoolBufferWriter<byte>(input.Length);
 
+            Span<byte> inputSpan = input.Span;
+            
             var i = 0;
             while (i < input.Length)
             {
-                var runLength = input[i];
+                var runLength = inputSpan[i];
 
                 if (runLength == EndOfDataLength)
                 {
@@ -39,7 +41,7 @@
                     {
                         i++;
 
-                        output.Write(input[i]);
+                        output.Write(inputSpan[i]);
 
                         rangeToWriteLiterally--;
                     }
@@ -52,7 +54,7 @@
                 {
                     var numberOfTimesToCopy = 257 - runLength;
 
-                    var byteToCopy = input[i + 1];
+                    var byteToCopy = inputSpan[i + 1];
 
                     output.GetSpan(numberOfTimesToCopy).Slice(0, numberOfTimesToCopy).Fill(byteToCopy);
                     output.Advance(numberOfTimesToCopy);

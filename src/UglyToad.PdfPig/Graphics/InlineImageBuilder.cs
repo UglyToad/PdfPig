@@ -1,10 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Xml.Linq;
     using Content;
     using Core;
     using Filters;
@@ -27,7 +25,7 @@
         /// <summary>
         /// Inline image bytes.
         /// </summary>
-        public ReadOnlyMemory<byte> Bytes { get; internal set; }
+        public Memory<byte> Bytes { get; internal set; }
 
         internal InlineImage CreateInlineImage(
             in TransformationMatrix transformationMatrix,

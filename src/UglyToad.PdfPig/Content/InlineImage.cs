@@ -16,7 +16,7 @@
     /// </summary>
     public class InlineImage : IPdfImage
     {
-        private readonly Lazy<ReadOnlyMemory<byte>>? memoryFactory;
+        private readonly Lazy<Memory<byte>>? memoryFactory;
 
         /// <inheritdoc />
         public PdfRectangle Bounds { get; }
@@ -49,10 +49,10 @@
         public bool Interpolate { get; }
 
         /// <inheritdoc />
-        public ReadOnlyMemory<byte> RawMemory { get; }
+        public Memory<byte> RawMemory { get; }
 
         /// <inheritdoc />
-        public ReadOnlySpan<byte> RawBytes => RawMemory.Span;
+        public Span<byte> RawBytes => RawMemory.Span;
 
         /// <inheritdoc />
         public ColorSpaceDetails ColorSpaceDetails { get; }
@@ -71,7 +71,7 @@
             RenderingIntent renderingIntent,
             bool interpolate,
             IReadOnlyList<double> decode,
-            ReadOnlyMemory<byte> rawMemory,
+            Memory<byte> rawMemory,
             ILookupFilterProvider filterProvider,
             IReadOnlyList<NameToken> filterNames,
             DictionaryToken streamDictionary,
@@ -103,13 +103,13 @@
                 }
             }
 
-            memoryFactory = supportsFilters ? new Lazy<ReadOnlyMemory<byte>>(() =>
+            memoryFactory = supportsFilters ? new Lazy<Memory<byte>>(() =>
             {
                 var b = RawMemory;
                 for (var i = 0; i < filters.Count; i++)
                 {
                     var filter = filters[i];
-                    b = filter.Decode(b.Span, streamDictionary, filterProvider, i);
+                    b = filter.Decode(b, streamDictionary, filterProvider, i);
                 }
 
                 return b;
@@ -119,7 +119,7 @@
         }
 
         /// <inheritdoc />
-        public bool TryGetBytesAsMemory(out ReadOnlyMemory<byte> bytes)
+        public bool TryGetBytesAsMemory(out Memory<byte> bytes)
         {
             bytes = null;
             if (memoryFactory is null)

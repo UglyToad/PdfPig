@@ -833,7 +833,7 @@
         }
 
         /// <inheritdoc/>
-        public virtual void EndInlineImage(ReadOnlyMemory<byte> bytes)
+        public virtual void EndInlineImage(Memory<byte> bytes)
         {
             if (InlineImageBuilder is null)
             {
