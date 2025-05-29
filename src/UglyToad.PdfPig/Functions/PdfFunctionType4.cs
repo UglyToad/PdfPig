@@ -1,7 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Functions
 {
     using System;
-    using System.Linq;
+    using System.Text;
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Functions.Type4;
     using UglyToad.PdfPig.Tokens;
@@ -20,8 +20,7 @@
         internal PdfFunctionType4(StreamToken function, ArrayToken domain, ArrayToken range)
             : base(function, domain, range)
         {
-            byte[] bytes = FunctionStream!.Data.ToArray();
-            string str = OtherEncodings.Iso88591.GetString(bytes);
+            string str = OtherEncodings.Iso88591.GetString(FunctionStream!.Data.Span);
             this.instructions = InstructionSequenceBuilder.Parse(str);
         }
 

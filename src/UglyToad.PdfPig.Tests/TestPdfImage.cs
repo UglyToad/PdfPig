@@ -17,9 +17,9 @@
 
         public int BitsPerComponent { get; set; } = 8;
 
-        public ReadOnlyMemory<byte> RawMemory { get; }
+        public Memory<byte> RawMemory { get; }
 
-        public ReadOnlySpan<byte> RawBytes => RawMemory.Span;
+        public Span<byte> RawBytes => RawMemory.Span;
 
         public RenderingIntent RenderingIntent { get; set; } = RenderingIntent.RelativeColorimetric;
 
@@ -35,11 +35,11 @@
 
         public ColorSpaceDetails ColorSpaceDetails { get; set; }
 
-        public ReadOnlyMemory<byte> DecodedBytes { get; set; }
+        public Memory<byte> DecodedBytes { get; set; }
 
         public IPdfImage? MaskImage { get; }
 
-        public bool TryGetBytesAsMemory(out ReadOnlyMemory<byte> bytes)
+        public bool TryGetBytesAsMemory(out Memory<byte> bytes)
         {
             bytes = DecodedBytes;
             return !bytes.IsEmpty;

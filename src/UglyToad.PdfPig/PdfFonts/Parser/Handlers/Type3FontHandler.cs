@@ -49,7 +49,7 @@
             {
                 var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, scanner);
 
-                if (toUnicode?.Decode(filterProvider, scanner) is ReadOnlyMemory<byte> decodedUnicodeCMap)
+                if (toUnicode?.Decode(filterProvider, scanner) is { } decodedUnicodeCMap)
                 {
                     toUnicodeCMap = CMapCache.Parse(new MemoryInputBytes(decodedUnicodeCMap));
                 }

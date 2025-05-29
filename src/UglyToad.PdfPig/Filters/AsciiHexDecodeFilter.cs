@@ -28,26 +28,27 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public ReadOnlyMemory<byte> Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
+        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
         {
             Span<byte> pair = stackalloc byte[2];
+            Span<byte> inputSpan = input.Span;
             var index = 0;
 
             using var writer = new ArrayPoolBufferWriter<byte>(input.Length);
 
             for (var i = 0; i < input.Length; i++)
             {
-                if (input[i] == '>')
+                if (inputSpan[i] == '>')
                 {
                     break;
                 }
 
-                if (IsWhitespace(input[i]) || input[i] == '<')
+                if (IsWhitespace(inputSpan[i]) || inputSpan[i] == '<')
                 {
                     continue;
                 }
 
-                pair[index] = input[i];
+                pair[index] = inputSpan[i];
                 index++;
 
                 if (index == 2)
@@ -86,7 +87,7 @@
                 throw new InvalidOperationException("Invalid character encountered in hex encoded stream: " + (char)hexBytes[0]);
             }
 
-            var value = (byte) (first * 16 + second);
+            var value = (byte)(first * 16 + second);
 
             writer.Write(value);
         }

@@ -115,7 +115,7 @@
                 {
                     var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, pdfScanner);
 
-                    if (toUnicode.Decode(filterProvider, pdfScanner) is ReadOnlyMemory<byte> decodedUnicodeCMap)
+                    if (toUnicode?.Decode(filterProvider, pdfScanner) is { } decodedUnicodeCMap)
                     {
                         toUnicodeCMap = CMapCache.Parse(new MemoryInputBytes(decodedUnicodeCMap));
                     }

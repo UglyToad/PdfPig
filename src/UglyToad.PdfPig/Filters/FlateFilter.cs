@@ -5,6 +5,7 @@
     using System.IO;
     using System.IO.Compression;
     using Tokens;
+    using UglyToad.PdfPig.Core;
     using Util;
 
     /// <summary>
@@ -31,16 +32,15 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public ReadOnlyMemory<byte> Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
+        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
         {
             var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
             var predictor = parameters.GetIntOrDefault(NameToken.Predictor, -1);
 
-            var bytes = input.ToArray();
             try
             {
-                var decompressed = Decompress(bytes);
+                var decompressed = Decompress(input);
 
                 if (predictor == -1)
                 {
@@ -58,12 +58,12 @@
                 // ignored.
             }
 
-            return bytes;
+            return input;
         }
 
-        private static byte[] Decompress(byte[] input)
+        private static byte[] Decompress(Memory<byte> input)
         {
-            using (var memoryStream = new MemoryStream(input))
+            using (var memoryStream = MemoryHelper.AsReadOnlyMemoryStream(input))
             using (var output = new MemoryStream())
             {
                 // The first 2 bytes are the header which DeflateStream does not support.

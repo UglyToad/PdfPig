@@ -1,9 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Filters
 {
     using System;
-    using System.IO;
-    using Tokens;
     using CcittFax;
+    using Core;
+    using Tokens;
     using Util;
 
     // Filter updated from original port because of issue #982
@@ -20,7 +20,10 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public ReadOnlyMemory<byte> Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
+        public Memory<byte> Decode(Memory<byte> input,
+            DictionaryToken streamDictionary,
+            IFilterProvider filterProvider,
+            int filterIndex)
         {
             var decodeParms = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
@@ -40,8 +43,9 @@
 
             var k = decodeParms.GetIntOrDefault(NameToken.K, 0);
             var encodedByteAlign = decodeParms.GetBooleanOrDefault(NameToken.EncodedByteAlign, false);
-            var compressionType = DetermineCompressionType(input, k);
-            using (var stream = new CcittFaxDecoderStream(new MemoryStream(input.ToArray()), cols, compressionType, encodedByteAlign))
+            var compressionType = DetermineCompressionType(input.Span, k);
+
+            using (var stream = new CcittFaxDecoderStream(MemoryHelper.AsReadOnlyMemoryStream(input), cols, compressionType, encodedByteAlign))
             {
                 var arraySize = (cols + 7) / 8 * rows;
                 var decompressed = new byte[arraySize];
@@ -109,7 +113,7 @@
 
         private static void InvertBitmap(Span<byte> bufferData)
         {
-            for (int i = 0, c = bufferData.Length; i < c; i++)
+            for (int i = 0; i < bufferData.Length; i++)
             {
                 ref byte b = ref bufferData[i];
                 b = (byte)(~b & 0xFF);

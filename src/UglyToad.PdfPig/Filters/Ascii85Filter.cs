@@ -11,33 +11,35 @@
     {
         private const byte EmptyBlock = (byte)'z';
         private const byte Offset = (byte)'!';
-        private const byte EmptyCharacterPadding = (byte) 'u';
+        private const byte EmptyCharacterPadding = (byte)'u';
 
         private static ReadOnlySpan<byte> EndOfDataBytes => [(byte)'~', (byte)'>'];
 
-        private static readonly int[] PowerByIndex = [
+        private static readonly int[] PowerByIndex =
+        [
             1,
             85,
             85 * 85,
             85 * 85 * 85,
-            85 * 85 * 85 *85
+            85 * 85 * 85 * 85
         ];
 
         /// <inheritdoc />
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public ReadOnlyMemory<byte> Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
+        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
         {
             Span<byte> asciiBuffer = stackalloc byte[5];
+            Span<byte> inputSpan = input.Span;
 
             var index = 0;
 
             using var writer = new ArrayPoolBufferWriter<byte>();
-           
-            for (var i = 0; i < input.Length; i++)
+
+            for (var i = 0; i < inputSpan.Length; i++)
             {
-                var value = input[i];
+                var value = inputSpan[i];
 
                 if (IsWhiteSpace(value))
                 {
@@ -46,7 +48,7 @@
 
                 if (value == EndOfDataBytes[0])
                 {
-                    if (i == input.Length - 1 || input[i + 1] == EndOfDataBytes[1])
+                    if (i == inputSpan.Length - 1 || inputSpan[i + 1] == EndOfDataBytes[1])
                     {
                         if (index > 0)
                         {
@@ -80,7 +82,7 @@
                 }
                 else
                 {
-                    asciiBuffer[index] = (byte) (value - Offset);
+                    asciiBuffer[index] = (byte)(value - Offset);
                     index++;
                 }
 
@@ -111,7 +113,7 @@
             {
                 ascii[i] = EmptyCharacterPadding - Offset;
             }
-            
+
             int value = 0;
             value += ascii[0] * PowerByIndex[4];
             value += ascii[1] * PowerByIndex[3];
@@ -123,28 +125,23 @@
 
             if (index > 2)
             {
-                writer.Write((byte) (value >> 16));
+                writer.Write((byte)(value >> 16));
             }
 
             if (index > 3)
             {
-                writer.Write((byte) (value >> 8));
+                writer.Write((byte)(value >> 8));
             }
 
             if (index > 4)
             {
-                writer.Write((byte) value);
+                writer.Write((byte)value);
             }
         }
 
         private static bool IsWhiteSpace(byte b)
         {
-            if (b == '\r' || b == '\n' || b == ' ')
-            {
-                return true;
-            }
-
-            return false;
+            return b == '\r' || b == '\n' || b == ' ';
         }
     }
 }

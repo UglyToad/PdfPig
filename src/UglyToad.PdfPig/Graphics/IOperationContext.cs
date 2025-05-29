@@ -159,7 +159,7 @@
         /// <summary>
         /// Indicates that the current inline image is complete.
         /// </summary>
-        void EndInlineImage(ReadOnlyMemory<byte> bytes);
+        void EndInlineImage(Memory<byte> bytes);
 
         /// <summary>
         /// Modify the clipping rule of the current path.

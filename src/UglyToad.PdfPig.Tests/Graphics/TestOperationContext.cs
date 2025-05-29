@@ -180,7 +180,7 @@
         {
         }
 
-        public void EndInlineImage(ReadOnlyMemory<byte> bytes)
+        public void EndInlineImage(Memory<byte> bytes)
         {
         }
 

@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.InlineImages
 {
     using System;
-    using System.Collections.Generic;
     using System.IO;
 
     /// <inheritdoc />
@@ -18,7 +17,7 @@
         /// <summary>
         /// The raw data for the inline image which should be interpreted according to the corresponding <see cref="BeginInlineImageData.Dictionary"/>.
         /// </summary>
-        public ReadOnlyMemory<byte> ImageData { get; }
+        public Memory<byte> ImageData { get; }
         
         /// <inheritdoc />
         public string Operator => Symbol;
@@ -27,7 +26,7 @@
         /// Create a new <see cref="EndInlineImage"/> operation.
         /// </summary>
         /// <param name="imageData">The raw byte data of this image.</param>
-        public EndInlineImage(ReadOnlyMemory<byte> imageData)
+        public EndInlineImage(Memory<byte> imageData)
         {
             ImageData = imageData;
         }
