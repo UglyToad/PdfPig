@@ -40,18 +40,10 @@
 
             try
             {
-                var decompressed = Decompress(input);
-
-                if (predictor == -1)
-                {
-                    return decompressed;
-                }
-
                 var colors = Math.Min(parameters.GetIntOrDefault(NameToken.Colors, DefaultColors), 32);
                 var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
                 var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
-
-                return PngPredictor.Decode(decompressed, predictor, colors, bitsPerComponent, columns);
+                return Decompress(input, predictor, colors, bitsPerComponent, columns);
             }
             catch
             {
@@ -61,10 +53,9 @@
             return input;
         }
 
-        private static byte[] Decompress(Memory<byte> input)
+        private static Memory<byte> Decompress(Memory<byte> input, int predictor, int colors, int bitsPerComponent, int columns)
         {
             using (var memoryStream = MemoryHelper.AsReadOnlyMemoryStream(input))
-            using (var output = new MemoryStream())
             {
                 // The first 2 bytes are the header which DeflateStream does not support.
                 memoryStream.ReadByte();
@@ -73,8 +64,17 @@
                 try
                 {
                     using (var deflate = new DeflateStream(memoryStream, CompressionMode.Decompress))
+                    using (var output = new MemoryStream((int)(input.Length * 1.5)))
+                    using (var f = PngPredictor.WrapPredictor(output, predictor, colors, bitsPerComponent, columns))
                     {
-                        deflate.CopyTo(output);
+                        deflate.CopyTo(f);
+                        f.Flush();
+
+                        if (output.TryGetBuffer(out var segment))
+                        {
+                            return segment.AsMemory();
+                        }
+
                         return output.ToArray();
                     }
                 }
