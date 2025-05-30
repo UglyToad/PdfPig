@@ -8,6 +8,24 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue1054()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("MOZILLA-11518-0.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                for (int p = 1; p <= document.NumberOfPages; p++)
+                {
+                    var page = document.GetPage(p);
+                    foreach (var image in page.GetImages())
+                    {
+                        Assert.NotNull(image);
+                    }
+                }
+            }
+        }
+
+        [Fact]
         public void Issue1050()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("SpookyPass.pdf");

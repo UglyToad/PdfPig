@@ -73,10 +73,16 @@
             }
             else if (dictionary.TryGet(NameToken.Mask, out StreamToken maskStream))
             {
-                if (maskStream.StreamDictionary.ContainsKey(NameToken.ColorSpace))
-                {
-                    throw new Exception("The SMask dictionary contains a 'ColorSpace'.");
-                }
+                /* As per Pdf Specifications:
+                 *  "The image dictionary shall not contain a ColorSpace entry because sample values represent masking properties (1 bit per sample) rather than colours."
+                 *
+                 * TODO - We assume here lenient parsing, but we should actually get the value from parsing options. See Issue #1054
+                 *
+                 * if (maskStream.StreamDictionary.ContainsKey(NameToken.ColorSpace))
+                 * {
+                 *      throw new Exception("The SMask dictionary contains a 'ColorSpace'.");
+                 * }
+                 */
 
                 // Stencil masking
                 XObjectContentRecord maskImageRecord = new XObjectContentRecord(XObjectType.Image,
