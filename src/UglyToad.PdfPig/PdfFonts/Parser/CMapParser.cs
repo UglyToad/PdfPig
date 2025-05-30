@@ -11,7 +11,7 @@
     using Tokenization.Scanner;
     using Tokens;
 
-    internal class CMapParser
+    internal sealed class CMapParser
     {
         private static readonly BaseFontRangeParser BaseFontRangeParser = new BaseFontRangeParser();
         private static readonly BaseFontCharacterParser BaseFontCharacterParser = new BaseFontCharacterParser();
@@ -139,7 +139,7 @@
                 return false;
             }
 
-            byte[] bytes;
+            ReadOnlyMemory<byte> bytes;
             using (var stream = typeof(CMapParser).Assembly.GetManifestResourceStream(resource))
             {
                 if (stream is null)
@@ -150,8 +150,7 @@
                 using (var memoryStream = new MemoryStream())
                 {
                     stream.CopyTo(memoryStream);
-
-                    bytes = memoryStream.ToArray();
+                    bytes = memoryStream.AsMemory();
                 }
             }
 
