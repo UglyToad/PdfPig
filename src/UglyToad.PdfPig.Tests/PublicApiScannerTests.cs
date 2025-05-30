@@ -278,6 +278,7 @@
                 "UglyToad.PdfPig.Util.DefaultWordExtractor",
                 "UglyToad.PdfPig.Util.DateFormatHelper",
                 "UglyToad.PdfPig.Util.DictionaryTokenExtensions",
+                "UglyToad.PdfPig.Util.Diacritics",
                 "UglyToad.PdfPig.Util.WhitespaceSizeStatistics",
                 "UglyToad.PdfPig.Writer.ITokenWriter",
                 "UglyToad.PdfPig.Writer.PdfAStandard",
