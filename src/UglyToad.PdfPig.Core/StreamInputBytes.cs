@@ -32,17 +32,17 @@
         {
             if (stream == null)
             {
-                throw new ArgumentNullException();
+                throw new ArgumentNullException(nameof(stream));
             }
 
             if (!stream.CanRead)
             {
-                throw new ArgumentException("The provided stream did not support reading.");
+                throw new ArgumentException("The provided stream did not support reading.", nameof(stream));
             }
 
             if (!stream.CanSeek)
             {
-                throw new ArgumentException("The provided stream did not support seeking.");
+                throw new ArgumentException("The provided stream did not support seeking.", nameof(stream));
             }
 
             this.stream = stream;

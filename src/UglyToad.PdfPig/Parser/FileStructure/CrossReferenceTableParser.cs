@@ -8,6 +8,7 @@
     using Tokenization;
     using Tokenization.Scanner;
     using Tokens;
+    using UglyToad.PdfPig.Util;
 
     internal static class CrossReferenceTableParser
     {
@@ -124,7 +125,7 @@
                     && (operatorToken.Data == OperatorToken.Xref.Data
                         || (isLenientParsing 
                             && operatorToken.Data.StartsWith(OperatorToken.Xref.Data)
-                            && int.TryParse(operatorToken.Data.Substring(OperatorToken.Xref.Data.Length), out _))));
+                            && int.TryParse(operatorToken.Data.AsSpanOrSubstring(OperatorToken.Xref.Data.Length), out _))));
         }
 
         private static int ProcessTokens(ReadOnlySpan<IToken> tokens, CrossReferenceTablePartBuilder builder, bool isLenientParsing,

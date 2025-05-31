@@ -11,7 +11,7 @@
     /// The Y-axis extends vertically upwards and the X-axis horizontally to the right.
     /// Unless otherwise specified on a per-page basis, units in PDF space are equivalent to a typographic point (1/72 inch).
     /// </remarks>
-    public readonly struct PdfRectangle
+    public readonly struct PdfRectangle : IEquatable<PdfRectangle>
     {
         /// <summary>
         /// Top left point of the rectangle.
@@ -165,6 +165,39 @@
         public override string ToString()
         {
             return $"[{TopLeft}, {Width.ToString(CultureInfo.InvariantCulture)}, {Height.ToString(CultureInfo.InvariantCulture)}]";
+        }
+
+        /// <inheritdoc />
+        public bool Equals(PdfRectangle other)
+        {
+            return TopLeft.Equals(other.TopLeft) &&
+                   TopRight.Equals(other.TopRight) &&
+                   BottomRight.Equals(other.BottomRight) &&
+                   BottomLeft.Equals(other.BottomLeft);
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            return obj is PdfRectangle other && Equals(other);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(TopLeft, TopRight, BottomRight, BottomLeft);
+        }
+
+        /// <inheritdoc/>
+        public static bool operator ==(PdfRectangle left, PdfRectangle right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <inheritdoc/>
+        public static bool operator !=(PdfRectangle left, PdfRectangle right)
+        {
+            return !(left == right);
         }
     }
 }

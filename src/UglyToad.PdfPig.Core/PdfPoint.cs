@@ -12,7 +12,7 @@
     /// The Y-axis extends vertically upwards and the X-axis horizontally to the right.
     /// Unless otherwise specified on a per-page basis, units in PDF space are equivalent to a typographic point (1/72 inch).
     /// </remarks>
-    public readonly struct PdfPoint
+    public readonly struct PdfPoint : IEquatable<PdfPoint>
     {
         /// <summary>
         /// The origin of the coordinates system.
@@ -83,14 +83,17 @@
         /// <summary>
         /// Returns a value indicating whether this <see cref="PdfPoint"/> is equal to a specified <see cref="PdfPoint"/> .
         /// </summary>
-        /// <param name="obj"></param>
         public override bool Equals(object obj)
         {
-            if (obj is PdfPoint point)
-            {
-                return point.X == X && point.Y == Y;
-            }
-            return false;
+            return obj is PdfPoint other && Equals(other);
+        }
+
+        /// <summary>
+        /// Returns a value indicating whether this <see cref="PdfPoint"/> is equal to a specified <see cref="PdfPoint"/> .
+        /// </summary>
+        public bool Equals(PdfPoint other)
+        {
+            return X.Equals(other.X) && Y.Equals(other.Y);
         }
 
         /// <summary>
@@ -105,6 +108,18 @@
         public override string ToString()
         {
             return $"(x:{X.ToString(CultureInfo.InvariantCulture)}, y:{Y.ToString(CultureInfo.InvariantCulture)})";
+        }
+
+        /// <inheritdoc/>
+        public static bool operator ==(PdfPoint left, PdfPoint right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <inheritdoc/>
+        public static bool operator !=(PdfPoint left, PdfPoint right)
+        {
+            return !(left == right);
         }
     }
 }

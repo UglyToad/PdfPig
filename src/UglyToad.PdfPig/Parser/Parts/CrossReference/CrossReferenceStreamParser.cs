@@ -137,7 +137,7 @@
             }
         }
 
-        private static IEnumerable<long> GetObjectNumbers(DictionaryToken dictionary)
+        private static ReadOnlySpan<long> GetObjectNumbers(DictionaryToken dictionary)
         {
             //  The number one greater than the highest object number used in this section or in any section for which this is an update.
             if (!dictionary.TryGet(NameToken.Size, out var sizeToken) || !(sizeToken is NumericToken sizeNumeric))
@@ -170,7 +170,11 @@
                 }
             }
 
-            return objNums;
+#if NET
+            return System.Runtime.InteropServices.CollectionsMarshal.AsSpan(objNums);
+#else
+            return objNums.ToArray();
+#endif
         }
     }
 }

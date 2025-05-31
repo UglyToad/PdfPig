@@ -64,7 +64,7 @@
 
         private static HeaderVersion GetHeaderVersionAndResetScanner(CommentToken comment, ISeekableTokenScanner scanner, bool isLenientParsing, ILog log)
         {
-            if (comment.Data.IndexOf("PDF-1.", StringComparison.OrdinalIgnoreCase) != 0 && comment.Data.IndexOf("FDF-1.", StringComparison.OrdinalIgnoreCase) != 0)
+            if (!comment.Data.StartsWith("PDF-1.", StringComparison.OrdinalIgnoreCase) && !comment.Data.StartsWith("FDF-1.", StringComparison.OrdinalIgnoreCase))
             {
                 return HandleMissingVersion(comment, isLenientParsing, log);
             }

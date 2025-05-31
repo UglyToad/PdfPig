@@ -88,7 +88,7 @@
         {
             if (objectToken is null)
             {
-                throw new ArgumentNullException();
+                throw new ArgumentNullException(nameof(objectToken));
             }
 
             // Don't cache incorrect locations.

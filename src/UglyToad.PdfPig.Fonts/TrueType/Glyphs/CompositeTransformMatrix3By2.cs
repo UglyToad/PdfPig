@@ -22,7 +22,7 @@ namespace UglyToad.PdfPig.Fonts.TrueType.Glyphs
             r2c1 = r2C1;
         }
 
-        public static CompositeTransformMatrix3By2 Identity { get; } = new CompositeTransformMatrix3By2(1, 0, 0, 1, 0, 0);
+        public static readonly CompositeTransformMatrix3By2 Identity = new CompositeTransformMatrix3By2(1, 0, 0, 1, 0, 0);
         public static CompositeTransformMatrix3By2 CreateTranslation(double x, double y) => new CompositeTransformMatrix3By2(1, 0, 0, 1, x, y);
 
         public CompositeTransformMatrix3By2 WithTranslation(double x, double y)
