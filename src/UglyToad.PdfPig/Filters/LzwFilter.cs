@@ -2,6 +2,7 @@
 
 namespace UglyToad.PdfPig.Filters
 {
+    using Core;
     using System;
     using System.Collections.Generic;
     using Lzw;
@@ -131,12 +132,7 @@ namespace UglyToad.PdfPig.Filters
 
                 result.Flush();
 
-                if (output.TryGetBuffer(out var segment))
-                {
-                    return segment.AsMemory();
-                }
-                
-                return output.ToArray();
+                return output.AsMemory();
             }
         }
 

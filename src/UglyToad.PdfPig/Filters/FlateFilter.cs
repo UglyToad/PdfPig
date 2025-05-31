@@ -70,12 +70,7 @@
                         deflate.CopyTo(f);
                         f.Flush();
 
-                        if (output.TryGetBuffer(out var segment))
-                        {
-                            return segment.AsMemory();
-                        }
-
-                        return output.ToArray();
+                        return output.AsMemory();
                     }
                 }
                 catch (InvalidDataException ex)
