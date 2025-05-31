@@ -148,7 +148,7 @@
         {
             newOffset = -1;
             BruteForceSearchForStartxref(reader);
-            long newStartXRefOffset = SearchNearestValue(bfSearchStartXRefTablesOffsets, xrefOffset);
+            long newStartXRefOffset = SearchNearestValue(bfSearchStartXRefTablesOffsets!, xrefOffset);
             if (newStartXRefOffset < reader.Length)
             {
                 long tempNewOffset = -1;

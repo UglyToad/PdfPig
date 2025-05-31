@@ -5,7 +5,7 @@
     using System.IO;
     using Tokens;
 
-    internal class PdfDedupStreamWriter : PdfStreamWriter
+    internal sealed class PdfDedupStreamWriter : PdfStreamWriter
     {
         private readonly Dictionary<byte[], IndirectReferenceToken> hashes = new Dictionary<byte[], IndirectReferenceToken>(new FNVByteComparison());
 
@@ -69,7 +69,7 @@
             base.Dispose();
         }
 
-        class FNVByteComparison : IEqualityComparer<byte[]>
+        private sealed class FNVByteComparison : IEqualityComparer<byte[]>
         {
             public bool Equals(byte[] x, byte[] y)
             {
@@ -91,7 +91,7 @@
         /// <summary>
         /// A hash combiner that is implemented with the Fowler/Noll/Vo algorithm (FNV-1a). This is a mutable struct for performance reasons.
         /// </summary>
-        struct FnvHash
+        private struct FnvHash
         {
             /// <summary>
             /// The starting point of the FNV hash.
@@ -113,9 +113,10 @@
             /// </summary>
             public static FnvHash Create()
             {
-                var result = new FnvHash();
-                result.HashCode = Offset;
-                return result;
+                return new FnvHash
+                {
+                    HashCode = Offset
+                };
             }
 
             /// <summary>

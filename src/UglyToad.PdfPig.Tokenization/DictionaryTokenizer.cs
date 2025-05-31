@@ -183,7 +183,7 @@
             return result;
         }
 
-        private static IToken PeekNext(IReadOnlyList<IToken> tokens, int currentIndex)
+        private static IToken PeekNext(List<IToken> tokens, int currentIndex)
         {
             if (tokens.Count - 1 < currentIndex + 1)
             {

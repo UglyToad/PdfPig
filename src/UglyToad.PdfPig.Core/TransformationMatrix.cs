@@ -6,7 +6,7 @@
     /// <summary>
     /// Specifies the conversion from the transformed coordinate space to the original untransformed coordinate space.
     /// </summary>
-    public readonly struct TransformationMatrix
+    public readonly struct TransformationMatrix : IEquatable<TransformationMatrix>
     {
         /// <summary>
         /// The default <see cref="TransformationMatrix"/>.
@@ -465,12 +465,21 @@
         /// <inheritdoc />
         public override bool Equals(object obj)
         {
-            if (!(obj is TransformationMatrix m))
-            {
-                return false;
-            }
+            return obj is TransformationMatrix other && Equals(other);
+        }
 
-            return Equals(this, m);
+        /// <inheritdoc />
+        public bool Equals(TransformationMatrix other)
+        {
+            return row1.Equals(other.row1) &&
+                   row2.Equals(other.row2) &&
+                   row3.Equals(other.row3) &&
+                   A.Equals(other.A) &&
+                   B.Equals(other.B) &&
+                   C.Equals(other.C) &&
+                   D.Equals(other.D) &&
+                   E.Equals(other.E) &&
+                   F.Equals(other.F);
         }
 
         /// <summary>
@@ -478,25 +487,13 @@
         /// </summary>
         public static bool Equals(TransformationMatrix a, TransformationMatrix b)
         {
-            for (var i = 0; i < Rows; i++)
-            {
-                for (var j = 0; j < Columns; j++)
-                {
-                    if (a[i, j] != b[i, j])
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
+            return a.Equals(b);
         }
 
         /// <inheritdoc />
         public override int GetHashCode()
         {
             var hashCode = new HashCode();
-
             hashCode.Add(row1);
             hashCode.Add(row2);
             hashCode.Add(row3);
@@ -506,7 +503,6 @@
             hashCode.Add(D);
             hashCode.Add(E);
             hashCode.Add(F);
-
             return hashCode.ToHashCode();
         }
 

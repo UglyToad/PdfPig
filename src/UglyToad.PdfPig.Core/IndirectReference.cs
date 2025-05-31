@@ -53,5 +53,17 @@
         {
             return $"{ObjectNumber} {Generation}";
         }
+        
+        /// <inheritdoc/>
+        public static bool operator ==(IndirectReference left, IndirectReference right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <inheritdoc/>
+        public static bool operator !=(IndirectReference left, IndirectReference right)
+        {
+            return !(left == right);
+        }
     }
 }

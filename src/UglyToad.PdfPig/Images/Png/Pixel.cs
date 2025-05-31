@@ -5,7 +5,7 @@
     /// <summary>
     /// A pixel in a <see cref="Png"/> image.
     /// </summary>
-    internal readonly struct Pixel
+    internal readonly struct Pixel : IEquatable<Pixel>
     {
         /// <summary>
         /// The red value for the pixel.
@@ -103,6 +103,18 @@
         public override string ToString()
         {
             return $"({R}, {G}, {B}, {A})";
+        }
+
+        /// <inheritdoc/>
+        public static bool operator ==(Pixel left, Pixel right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <inheritdoc/>
+        public static bool operator !=(Pixel left, Pixel right)
+        {
+            return !(left == right);
         }
     }
 }

@@ -6,7 +6,7 @@
     /// Parser for PDF Type 4 functions. This implements a small subset of the PostScript
     /// language but is no full PostScript interpreter.
     /// </summary>
-    internal sealed class Parser
+    internal static class Parser
     {
         /// <summary>
         /// Used to indicate the parsers current state.
@@ -14,11 +14,6 @@
         internal enum State
         {
             NEWLINE, WHITESPACE, COMMENT, TOKEN
-        }
-
-        private Parser()
-        {
-            //nop
         }
 
         /// <summary>

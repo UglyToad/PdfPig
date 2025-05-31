@@ -317,6 +317,9 @@
         /// </summary>
         public ReadOnlySpan<byte> ColorTable => colorTable;
 
+        /// <summary>
+        /// Create a new <see cref="IndexedColorSpaceDetails"/>.
+        /// </summary>
         public IndexedColorSpaceDetails(ColorSpaceDetails baseColorSpaceDetails, byte hiVal, byte[] colorTable)
             : this(baseColorSpaceDetails, hiVal, colorTable, false)
         { }

@@ -10,7 +10,7 @@
     /// The Y-axis extends vertically upwards and the X-axis horizontally to the right.
     /// Unless otherwise specified on a per-page basis, units in PDF space are equivalent to a typographic point (1/72 inch).
     /// </remarks>
-    public readonly struct PdfLine
+    public readonly struct PdfLine : IEquatable<PdfLine>
     {
         /// <summary>
         /// Length of the line.
@@ -70,14 +70,17 @@
         /// <summary>
         /// Returns a value indicating whether this <see cref="PdfLine"/> is equal to a specified <see cref="PdfLine"/> .
         /// </summary>
-        /// <param name="obj"></param>
         public override bool Equals(object obj)
         {
-            if (obj is PdfLine line)
-            {
-                return line.Point1.Equals(Point1) && line.Point2.Equals(Point2);
-            }
-            return false;
+            return obj is PdfLine other && Equals(other);
+        }
+
+        /// <summary>
+        /// Returns a value indicating whether this <see cref="PdfLine"/> is equal to a specified <see cref="PdfLine"/> .
+        /// </summary>
+        public bool Equals(PdfLine other)
+        {
+            return Point1.Equals(other.Point1) && Point2.Equals(other.Point2);
         }
 
         /// <summary>
@@ -86,6 +89,18 @@
         public override int GetHashCode()
         {
             return HashCode.Combine(Point1, Point2);
+        }
+
+        /// <inheritdoc/>
+        public static bool operator ==(PdfLine left, PdfLine right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <inheritdoc/>
+        public static bool operator !=(PdfLine left, PdfLine right)
+        {
+            return !(left == right);
         }
     }
 }

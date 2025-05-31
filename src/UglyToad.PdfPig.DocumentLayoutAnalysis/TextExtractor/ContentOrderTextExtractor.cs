@@ -187,7 +187,7 @@
             /// <summary>
             /// When parsing PDF files with tables containing multiple lines in a cell or "merged" cells,
             /// the separate words can appear out of horizontal order. This option can better predict the
-            //  spaces between the words. Default <see langword="false"/>.
+            ///  spaces between the words. Default <see langword="false"/>.
             /// </summary>
             public bool NegativeGapAsWhitespace { get; set; }
         }
