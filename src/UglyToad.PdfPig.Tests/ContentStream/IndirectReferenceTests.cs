@@ -31,6 +31,44 @@
         }
 
         [Fact]
+        public void IndirectReferenceHashTest()
+        {
+            var reference0 = new IndirectReference(1574, 690);
+            Assert.Equal(1574, reference0.ObjectNumber);
+            Assert.Equal(690, reference0.Generation);
+
+            var reference1 = new IndirectReference(-1574, 690);
+            Assert.Equal(-1574, reference1.ObjectNumber);
+            Assert.Equal(690, reference1.Generation);
+
+            var reference2 = new IndirectReference(58949797283757, 16);
+            Assert.Equal(58949797283757, reference2.ObjectNumber);
+            Assert.Equal(16, reference2.Generation);
+
+            var reference3 = new IndirectReference(-58949797283757, ushort.MaxValue);
+            Assert.Equal(-58949797283757, reference3.ObjectNumber);
+            Assert.Equal(ushort.MaxValue, reference3.Generation);
+
+            var reference4 = new IndirectReference(140737488355327, ushort.MaxValue);
+            Assert.Equal(140737488355327, reference4.ObjectNumber);
+            Assert.Equal(ushort.MaxValue, reference4.Generation);
+
+            var reference5 = new IndirectReference(-140737488355327, ushort.MaxValue);
+            Assert.Equal(-140737488355327, reference5.ObjectNumber);
+            Assert.Equal(ushort.MaxValue, reference5.Generation);
+
+            var ex0 = Assert.Throws<ArgumentOutOfRangeException>(() => new IndirectReference(140737488355328, 0));
+            Assert.StartsWith("Object number must be between -140,737,488,355,327 and 140,737,488,355,327.", ex0.Message);
+            var ex1 = Assert.Throws<ArgumentOutOfRangeException>(() => new IndirectReference(-140737488355328, 0));
+            Assert.StartsWith("Object number must be between -140,737,488,355,327 and 140,737,488,355,327.", ex1.Message);
+            
+            var ex2 = Assert.Throws<ArgumentOutOfRangeException>(() => new IndirectReference(1574, -1));
+            Assert.StartsWith("Generation number must not be a negative value, and less or equal to 65,535.", ex2.Message);
+            var ex3 = Assert.Throws<ArgumentOutOfRangeException>(() => new IndirectReference(1574, ushort.MaxValue + 1));
+            Assert.StartsWith("Generation number must not be a negative value, and less or equal to 65,535.", ex3.Message);
+        }
+
+        [Fact]
         public void TwoIndirectReferenceNotEqual()
         {
             var reference1 = new IndirectReference(1574, 690);
