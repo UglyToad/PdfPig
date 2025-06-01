@@ -94,8 +94,6 @@
             long objectGen = objectKey.Generation;
             var originOffset = bytes.CurrentOffset;
 
-            var objectString = ObjectHelper.CreateObjectString(objectNr, objectGen);
-
             try
             {
                 if (offset >= bytes.Length)
@@ -111,7 +109,7 @@
                     bytes.MoveNext();
                 }
 
-                if (ReadHelper.IsString(bytes, objectString))
+                if (ReadHelper.IsString(bytes, ObjectHelper.CreateObjectString(objectNr, objectGen)))
                 {
                     // everything is ok, return origin object key
                     bytes.Seek(originOffset);
