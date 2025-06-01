@@ -20,6 +20,12 @@
 
         public void Add(long objectId, int generationNumber, long offset)
         {
+            if (generationNumber > ushort.MaxValue)
+            {
+                // We skip invalid generation number
+                return;
+            }
+
             IndirectReference objKey = new IndirectReference(objectId, generationNumber);
 
             if (!objects.ContainsKey(objKey))

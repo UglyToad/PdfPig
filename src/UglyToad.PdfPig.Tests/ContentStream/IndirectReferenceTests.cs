@@ -63,9 +63,20 @@
             Assert.StartsWith("Object number must be between -140,737,488,355,327 and 140,737,488,355,327.", ex1.Message);
             
             var ex2 = Assert.Throws<ArgumentOutOfRangeException>(() => new IndirectReference(1574, -1));
-            Assert.StartsWith("Generation number must not be a negative value, and less or equal to 65,535.", ex2.Message);
-            var ex3 = Assert.Throws<ArgumentOutOfRangeException>(() => new IndirectReference(1574, ushort.MaxValue + 1));
-            Assert.StartsWith("Generation number must not be a negative value, and less or equal to 65,535.", ex3.Message);
+            Assert.StartsWith("Generation number must not be a negative value.", ex2.Message);
+            
+            // We make sure object number is still correct even if generation is not
+            var reference6 = new IndirectReference(1574, int.MaxValue);
+            Assert.Equal(1574, reference6.ObjectNumber);
+            
+            var reference7 = new IndirectReference(-1574, ushort.MaxValue + 10);
+            Assert.Equal(-1574, reference7.ObjectNumber);
+
+            var reference9 = new IndirectReference(-140737488355327, ushort.MaxValue + 10);
+            Assert.Equal(-140737488355327, reference9.ObjectNumber);
+
+            var reference10 = new IndirectReference(140737488355327, ushort.MaxValue * 10);
+            Assert.Equal(140737488355327, reference10.ObjectNumber);
         }
 
         [Fact]
