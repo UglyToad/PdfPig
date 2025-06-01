@@ -39,9 +39,10 @@
         [DebuggerStepThrough]
         public IndirectReference(long objectNumber, int generation)
         {
-            if (generation < 0 || generation > ushort.MaxValue)
+            if (generation < 0)
             {
-               throw new ArgumentOutOfRangeException(nameof(generation), "Generation number must not be a negative value, and less or equal to 65,535.");
+                // Note: We do not check generation for max value and let it overflow
+                throw new ArgumentOutOfRangeException(nameof(generation), "Generation number must not be a negative value.");
             }
 
             if (objectNumber < -MAX_OBJECT_NUMBER || objectNumber > MAX_OBJECT_NUMBER)

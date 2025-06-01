@@ -745,6 +745,7 @@
 
             if (offset == 0 && reference.Generation > ushort.MaxValue)
             {
+                // TODO - To remove as should not happen anymore
                 return new ObjectToken(offset, reference, NullToken.Instance);
             }
 
