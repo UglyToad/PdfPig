@@ -119,6 +119,13 @@
 
                         namedColorSpaces[name] = new ResourceColorSpace(arrayNamedColorSpace, colorSpaceArray);
                     }
+                    else if (parsingOptions.UseLenientParsing &&
+                             DirectObjectFinder.TryGet(nameColorSpacePair.Value, scanner, out DictionaryToken? dict) &&
+                             dict.TryGet(NameToken.ColorSpace, scanner, out NameToken? csName))
+                    {
+                        // See issue #1061
+                        namedColorSpaces[name] = new ResourceColorSpace(csName);
+                    }
                     else
                     {
                         throw new PdfDocumentFormatException($"Invalid ColorSpace token encountered in page resource dictionary: {nameColorSpacePair.Value}.");
