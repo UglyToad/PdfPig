@@ -191,8 +191,7 @@
                 crossReferenceTable.Trailer,
                 parsingOptions.UseLenientParsing);
 
-            var pageFactory = new PageFactory(pdfScanner, resourceContainer, filterProvider,
-                new PageContentParser(new ReflectionGraphicsStateOperationFactory(), parsingOptions.UseLenientParsing), parsingOptions);
+            var pageFactory = new PageFactory(pdfScanner, resourceContainer, filterProvider, parsingOptions);
 
             var catalog = CatalogFactory.Create(
                 rootReference,

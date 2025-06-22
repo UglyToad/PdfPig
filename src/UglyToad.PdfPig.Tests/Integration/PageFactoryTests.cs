@@ -1,10 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
     using Content;
+    using Logging;
     using Outline.Destinations;
     using PdfPig.Core;
     using PdfPig.Filters;
     using PdfPig.Geometry;
+    using PdfPig.Graphics;
     using PdfPig.Graphics.Operations;
     using PdfPig.Parser;
     using PdfPig.Tokenization.Scanner;
@@ -244,15 +246,14 @@
 
         public sealed class PageInformationFactory : BasePageFactory<PageInformation>
         {
+            // ctor with no IPageContentParser
             public PageInformationFactory(
                 IPdfTokenScanner pdfScanner,
                 IResourceStore resourceStore,
                 ILookupFilterProvider filterProvider,
-                IPageContentParser pageContentParser,
                 ParsingOptions parsingOptions)
-                : base(pdfScanner, resourceStore, filterProvider, pageContentParser, parsingOptions)
-            {
-            }
+                : base(pdfScanner, resourceStore, filterProvider, NoOpPageContentParser.Instance, parsingOptions)
+            { }
 
             protected override PageInformation ProcessPage(int pageNumber,
                 DictionaryToken dictionary,
@@ -269,6 +270,105 @@
                 var viewBox = mediaBox.Bounds.Intersect(cropBox.Bounds) ?? cropBox.Bounds;
 
                 return new PageInformation(pageNumber, rotation, viewBox.Width, viewBox.Height, userSpaceUnit);
+            }
+
+            private sealed class NoOpPageContentParser : IPageContentParser
+            {
+                public static readonly NoOpPageContentParser Instance = new NoOpPageContentParser();
+
+                public IReadOnlyList<IGraphicsStateOperation> Parse(int pageNumber, IInputBytes inputBytes, ILog log)
+                {
+                    return [];
+                }
+            }
+        }
+
+        #endregion
+
+        #region PageFactory different ctor
+
+        [Fact]
+        public void DifferentPageFactoryCtorSignature()
+        {
+            var file = IntegrationHelpers.GetDocumentPath("Gamebook");
+
+            using (var document = PdfDocument.Open(file))
+            {
+                document.AddPageFactory<int, PageFactoryWithIPageContentParser>();
+                Assert.Equal(5, document.GetPage<int>(1));
+            }
+
+            using (var document = PdfDocument.Open(file))
+            {
+                document.AddPageFactory<int, PageFactoryWithoutIPageContentParser>();
+                Assert.Equal(4, document.GetPage<int>(1));
+            }
+        }
+
+        public sealed class PageFactoryWithIPageContentParser : BasePageFactory<int>
+        {
+            public PageFactoryWithIPageContentParser(
+                IPdfTokenScanner pdfScanner,
+                IResourceStore resourceStore,
+                ILookupFilterProvider filterProvider,
+                IPageContentParser contentParser,
+                ParsingOptions parsingOptions)
+                : base(pdfScanner,
+                    resourceStore,
+                    filterProvider,
+                    contentParser,
+                    parsingOptions)
+            {
+                if (PageContentParser is null)
+                {
+                    throw new ArgumentNullException(nameof(PageContentParser));
+                }
+            }
+
+            protected override int ProcessPage(int pageNumber,
+                DictionaryToken dictionary,
+                NamedDestinations namedDestinations,
+                MediaBox mediaBox,
+                CropBox cropBox,
+                UserSpaceUnit userSpaceUnit,
+                PageRotationDegrees rotation,
+                TransformationMatrix initialMatrix,
+                IReadOnlyList<IGraphicsStateOperation> operations)
+            {
+                return 5;
+            }
+        }
+        
+        public sealed class PageFactoryWithoutIPageContentParser : BasePageFactory<int>
+        {
+            public PageFactoryWithoutIPageContentParser(
+                IPdfTokenScanner pdfScanner,
+                IResourceStore resourceStore,
+                ILookupFilterProvider filterProvider,
+                ParsingOptions parsingOptions)
+                : base(pdfScanner,
+                    resourceStore,
+                    filterProvider,
+                    new PageContentParser(ReflectionGraphicsStateOperationFactory.Instance, parsingOptions.UseLenientParsing),
+                    parsingOptions)
+            {
+                if (PageContentParser is null)
+                {
+                    throw new ArgumentNullException(nameof(PageContentParser));
+                }
+            }
+
+            protected override int ProcessPage(int pageNumber,
+                DictionaryToken dictionary,
+                NamedDestinations namedDestinations,
+                MediaBox mediaBox,
+                CropBox cropBox,
+                UserSpaceUnit userSpaceUnit,
+                PageRotationDegrees rotation,
+                TransformationMatrix initialMatrix,
+                IReadOnlyList<IGraphicsStateOperation> operations)
+            {
+                return 4;
             }
         }
 

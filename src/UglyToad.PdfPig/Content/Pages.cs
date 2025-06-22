@@ -123,30 +123,56 @@
         internal void AddPageFactory<TPage, TPageFactory>() where TPageFactory : IPageFactory<TPage>
 #endif
         {
-            var constructor = typeof(TPageFactory).GetConstructor(new[]
-            {
+            bool hasPageContentParser = true;
+            // Try to get the ctor that has a IPageContentParser
+            var constructor = typeof(TPageFactory).GetConstructor([
                 typeof(IPdfTokenScanner),
                 typeof(IResourceStore),
                 typeof(ILookupFilterProvider),
                 typeof(IPageContentParser),
                 typeof(ParsingOptions)
-            });
+            ]);
+
+            if (constructor is null)
+            {
+                // If not found, try to get the ctor that does not have a IPageContentParser
+                hasPageContentParser = false;
+                constructor = typeof(TPageFactory).GetConstructor([
+                    typeof(IPdfTokenScanner),
+                    typeof(IResourceStore),
+                    typeof(ILookupFilterProvider),
+                    typeof(ParsingOptions)
+                ]);
+            }
 
             if (constructor is null)
             {
                 throw new InvalidOperationException($"Could not find valid constructor for page factory of type '{typeof(TPageFactory)}'. " +
-                                                    "The page factory should have a constructor with the following parameters: " +
-                                                    $"{typeof(IPdfTokenScanner)}, {typeof(IResourceStore)}, {typeof(ILookupFilterProvider)}, {typeof(IPageContentParser)}, {typeof(ParsingOptions)}.");
+                                                    "The page factory should have a constructor with either of the following parameters: " +
+                                                    $"({typeof(IPdfTokenScanner)}, {typeof(IResourceStore)}, {typeof(ILookupFilterProvider)}, {typeof(IPageContentParser)}, {typeof(ParsingOptions)}) or " +
+                                                    $"({typeof(IPdfTokenScanner)}, {typeof(IResourceStore)}, {typeof(ILookupFilterProvider)}, {typeof(ParsingOptions)}).");
             }
 
-            var instance = constructor.Invoke(new object[]
+            object instance;
+            if (hasPageContentParser)
             {
-                defaultPageFactory.PdfScanner,
-                defaultPageFactory.ResourceStore,
-                defaultPageFactory.FilterProvider,
-                defaultPageFactory.PageContentParser,
-                defaultPageFactory.ParsingOptions
-            });
+                instance = constructor.Invoke([
+                    defaultPageFactory.PdfScanner,
+                    defaultPageFactory.ResourceStore,
+                    defaultPageFactory.FilterProvider,
+                    defaultPageFactory.PageContentParser,
+                    defaultPageFactory.ParsingOptions
+                ]);
+            }
+            else
+            {
+                instance = constructor.Invoke([
+                    defaultPageFactory.PdfScanner,
+                    defaultPageFactory.ResourceStore,
+                    defaultPageFactory.FilterProvider,
+                    defaultPageFactory.ParsingOptions
+                ]);
+            }
 
             if (instance is not IPageFactory<TPage> pageFactory)
             {

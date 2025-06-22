@@ -19,11 +19,13 @@
             IPdfTokenScanner pdfScanner,
             IResourceStore resourceStore,
             ILookupFilterProvider filterProvider,
-            IPageContentParser pageContentParser,
             ParsingOptions parsingOptions)
-            : base(pdfScanner, resourceStore, filterProvider, pageContentParser, parsingOptions)
-        {
-        }
+            : base(pdfScanner,
+                resourceStore,
+                filterProvider,
+                new PageContentParser(ReflectionGraphicsStateOperationFactory.Instance, parsingOptions.UseLenientParsing),
+                parsingOptions)
+        { }
 
         protected override Page ProcessPage(int pageNumber,
             DictionaryToken dictionary,
