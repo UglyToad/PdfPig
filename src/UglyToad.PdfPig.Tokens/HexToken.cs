@@ -171,7 +171,7 @@ namespace UglyToad.PdfPig.Tokens
 #if NET8_0_OR_GREATER
             return Convert.ToHexString(Bytes);
 #else
-            return BitConverter.ToString(Bytes.ToArray()).Replace("-", string.Empty);
+            return BitConverter.ToString(_bytes).Replace("-", string.Empty);
 #endif
         }
     }
