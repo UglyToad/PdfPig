@@ -31,7 +31,7 @@
         /// <summary>
         /// The bytes of the text.
         /// </summary>
-        public byte[]? Bytes { get; }
+        public ReadOnlyMemory<byte> Bytes { get; }
 
         /// <summary>
         /// The text to show.
@@ -57,7 +57,7 @@
         /// <param name="wordSpacing">The word spacing.</param>
         /// <param name="characterSpacing">The character spacing.</param>
         /// <param name="hexBytes">The bytes of the text to show.</param>
-        public MoveToNextLineShowTextWithSpacing(double wordSpacing, double characterSpacing, byte[] hexBytes)
+        public MoveToNextLineShowTextWithSpacing(double wordSpacing, double characterSpacing, ReadOnlyMemory<byte> hexBytes)
         {
             WordSpacing = wordSpacing;
             CharacterSpacing = characterSpacing;
@@ -86,9 +86,9 @@
             stream.WriteDouble(CharacterSpacing);
             stream.WriteWhiteSpace();
 
-            if (Bytes != null)
+            if (!Bytes.IsEmpty)
             {
-                stream.WriteHex(Bytes);
+                stream.WriteHex(Bytes.Span);
             }
             else
             {

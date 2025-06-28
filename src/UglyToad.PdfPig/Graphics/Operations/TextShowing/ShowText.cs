@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextShowing
 {
     using PdfPig.Core;
+    using System;
     using System.IO;
 
     /// <inheritdoc />
@@ -38,7 +39,7 @@
         /// <summary>
         /// The bytes of the string to show.
         /// </summary>
-        public byte[]? Bytes { get; }
+        public ReadOnlyMemory<byte> Bytes { get; }
 
         /// <summary>
         /// Create a new <see cref="ShowText"/>.
@@ -51,7 +52,7 @@
         /// <summary>
         /// Create a new <see cref="ShowText"/>.
         /// </summary>
-        public ShowText(byte[] hexBytes)
+        public ShowText(ReadOnlyMemory<byte> hexBytes)
         {
             Bytes = hexBytes;
         }
@@ -60,7 +61,6 @@
         public void Run(IOperationContext operationContext)
         {
             var input = new MemoryInputBytes(Text != null ? OtherEncodings.StringAsLatin1Bytes(Text) : Bytes);
-
             operationContext.ShowText(input);
         }
 
@@ -89,10 +89,9 @@
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-             
-            if (Bytes != null)
+            if (!Bytes.IsEmpty)
             {
-                stream.WriteHex(Bytes);
+                stream.WriteHex(Bytes.Span);
             }
             else
             {

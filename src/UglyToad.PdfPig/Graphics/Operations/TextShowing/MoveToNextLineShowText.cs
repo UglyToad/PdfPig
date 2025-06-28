@@ -25,7 +25,7 @@
         /// <summary>
         /// The text to show as hex bytes.
         /// </summary>
-        public byte[]? Bytes { get; }
+        public ReadOnlyMemory<byte> Bytes { get; }
 
         /// <summary>
         /// Create a new <see cref="MoveToNextLineShowText"/>.
@@ -40,7 +40,7 @@
         /// Create a new <see cref="MoveToNextLineShowText"/>.
         /// </summary>
         /// <param name="hexBytes">The bytes of the text to show.</param>
-        public MoveToNextLineShowText(byte[] hexBytes)
+        public MoveToNextLineShowText(ReadOnlyMemory<byte> hexBytes)
         {
             Bytes = hexBytes;
         }
@@ -50,7 +50,7 @@
         {
             var move = MoveToNextLine.Value;
 
-            var showText = Text != null ? new ShowText(Text) : new ShowText(Bytes!);
+            var showText = Text != null ? new ShowText(Text) : new ShowText(Bytes);
 
             move.Run(operationContext);
             showText.Run(operationContext);
@@ -59,14 +59,14 @@
         /// <inheritdoc />
         public void Write(Stream stream)
         {
-            if (Bytes is null)
+            if (Bytes.IsEmpty)
             {
                 stream.WriteText($"({Text}) {Symbol}");
                 stream.WriteNewLine();
             }
             else
             {
-                stream.WriteHex(Bytes);
+                stream.WriteHex(Bytes.Span);
                 stream.WriteWhiteSpace();
                 stream.WriteText(Symbol);
                 stream.WriteNewLine();

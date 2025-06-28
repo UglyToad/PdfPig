@@ -343,14 +343,29 @@ namespace UglyToad.PdfPig.Graphics
                     {
                         return new MoveToNextLineShowText(snl.Data);
                     }
-                    else if (operands[0] is HexToken hnl)
+
+                    if (operands[0] is HexToken hnl)
                     {
-                        return new MoveToNextLineShowText(hnl.Bytes.ToArray());
+                        return new MoveToNextLineShowText(hnl.Memory);
                     }
-                    else
+
+                    throw new InvalidOperationException($"Tried to create a move to next line and show text operation with operand type: {operands[0]?.GetType().Name ?? "null"}");
+                case MoveToNextLineShowTextWithSpacing.Symbol:
+                    var wordSpacing = (NumericToken)operands[0];
+                    var charSpacing = (NumericToken)operands[1];
+                    var text = operands[2];
+
+                    if (text is StringToken stringToken)
                     {
-                        throw new InvalidOperationException($"Tried to create a move to next line and show text operation with operand type: {operands[0]?.GetType().Name ?? "null"}");
+                        return new MoveToNextLineShowTextWithSpacing(wordSpacing.Double, charSpacing.Double, stringToken.Data);
                     }
+
+                    if (text is HexToken hexToken)
+                    {
+                        return new MoveToNextLineShowTextWithSpacing(wordSpacing.Double, charSpacing.Double, hexToken.Memory);
+                    }
+
+                    throw new InvalidOperationException($"Tried to create a MoveToNextLineShowTextWithSpacing operation with operand type: {operands[2]?.GetType().Name ?? "null"}");
                 case MoveToNextLineWithOffset.Symbol:
                     return new MoveToNextLineWithOffset(OperandToDouble(operands[0]), OperandToDouble(operands[1]));
                 case MoveToNextLineWithOffsetSetLeading.Symbol:
@@ -364,7 +379,8 @@ namespace UglyToad.PdfPig.Graphics
                     {
                         return new SetNonStrokeColorAdvanced(operands.Take(operands.Count - 1).Select(x => ((NumericToken)x).Data).ToArray(), scnLowerPatternName);
                     }
-                    else if (operands.All(x => x is NumericToken))
+                    
+                    if (operands.All(x => x is NumericToken))
                     {
                         return new SetNonStrokeColorAdvanced(operands.Select(x => ((NumericToken)x).Data).ToArray());
                     }
@@ -425,14 +441,13 @@ namespace UglyToad.PdfPig.Graphics
                     {
                         return new ShowText(s.Data);
                     }
-                    else if (operands[0] is HexToken h)
+                    
+                    if (operands[0] is HexToken h)
                     {
-                        return new ShowText(h.Bytes.ToArray());
+                        return new ShowText(h.Memory);
                     }
-                    else
-                    {
-                        throw new InvalidOperationException($"Tried to create a show text operation with operand type: {operands[0]?.GetType().Name ?? "null"}");
-                    }
+                    
+                    throw new InvalidOperationException($"Tried to create a show text operation with operand type: {operands[0]?.GetType().Name ?? "null"}");
                 case ShowTextsWithPositioning.Symbol:
                     if (operands.Count == 0)
                     {
