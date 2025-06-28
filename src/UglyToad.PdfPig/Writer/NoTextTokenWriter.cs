@@ -74,7 +74,7 @@ namespace UglyToad.PdfPig.Writer
                 return false;
             }
 
-            var pageContentParser = new PageContentParser(new ReflectionGraphicsStateOperationFactory());
+            var pageContentParser = new PageContentParser(ReflectionGraphicsStateOperationFactory.Instance);
             IReadOnlyList<IGraphicsStateOperation> operations;
             try
             {

@@ -23,8 +23,21 @@ namespace UglyToad.PdfPig.Graphics
     using System.Reflection;
     using Tokens;
 
-    internal sealed class ReflectionGraphicsStateOperationFactory : IGraphicsStateOperationFactory
+    /// <summary>
+    /// Reflection based graphics state operation factory.
+    /// </summary>
+    public sealed class ReflectionGraphicsStateOperationFactory : IGraphicsStateOperationFactory
     {
+        /// <summary>
+        /// The single instance of the <see cref="ReflectionGraphicsStateOperationFactory"/>.
+        /// </summary>
+        public static readonly ReflectionGraphicsStateOperationFactory Instance = new ReflectionGraphicsStateOperationFactory();
+
+        private ReflectionGraphicsStateOperationFactory()
+        {
+            // private
+        }
+        
         private static readonly IReadOnlyDictionary<string, Type> operations =
             new Dictionary<string, Type>
             {
@@ -161,6 +174,7 @@ namespace UglyToad.PdfPig.Graphics
             return numeric.Data;
         }
 
+        /// <inheritdoc/>
         public IGraphicsStateOperation? Create(OperatorToken op, IReadOnlyList<IToken> operands)
         {
             switch (op.Data)
