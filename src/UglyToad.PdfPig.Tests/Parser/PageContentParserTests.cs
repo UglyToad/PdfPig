@@ -15,7 +15,7 @@
 
     public class PageContentParserTests
     {
-        private readonly PageContentParser parser = new PageContentParser(new ReflectionGraphicsStateOperationFactory());
+        private readonly PageContentParser parser = new PageContentParser(ReflectionGraphicsStateOperationFactory.Instance);
         private readonly ILog log = new NoOpLog();
 
         [Fact]

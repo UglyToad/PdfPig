@@ -12,17 +12,44 @@
     using Tokenization.Scanner;
     using Tokens;
 
-    internal sealed class PageContentParser : IPageContentParser
+    /// <summary>
+    /// Provides functionality to parse the content of a PDF page, extracting graphics state operations
+    /// from the input data. This class is responsible for interpreting the PDF content stream and
+    /// converting it into a collection of operations.
+    /// </summary>
+    public sealed class PageContentParser : IPageContentParser
     {
         private readonly IGraphicsStateOperationFactory operationFactory;
         private readonly bool useLenientParsing;
 
+        /// <summary>
+        /// Initialises a new instance of the <see cref="PageContentParser"/> class.
+        /// </summary>
+        /// <param name="operationFactory">
+        /// The factory responsible for creating graphics state operations.
+        /// </param>
+        /// <param name="useLenientParsing">
+        /// A value indicating whether lenient parsing should be used. Defaults to <c>false</c>.
+        /// </param>
         public PageContentParser(IGraphicsStateOperationFactory operationFactory, bool useLenientParsing = false)
         {
             this.operationFactory = operationFactory;
             this.useLenientParsing = useLenientParsing;
         }
 
+        /// <summary>
+        /// Parses the content of a PDF page and extracts a collection of graphics state operations.
+        /// </summary>
+        /// <param name="pageNumber">The number of the page being parsed.</param>
+        /// <param name="inputBytes">The input bytes representing the content of the page.</param>
+        /// <param name="log">The logger instance for recording parsing-related information.</param>
+        /// <returns>A read-only list of graphics state operations extracted from the page content.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="inputBytes"/> or <paramref name="log"/> is <c>null</c>.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown if the parsing process encounters an invalid or unsupported token.
+        /// </exception>
         public IReadOnlyList<IGraphicsStateOperation> Parse(
             int pageNumber,
             IInputBytes inputBytes,
