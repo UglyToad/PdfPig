@@ -59,10 +59,21 @@
         {
             var filters = filterProvider.GetFilters(stream.StreamDictionary);
 
+            double totalMaxEstSize = stream.Data.Length * 100;
+
             var transform = stream.Data;
             for (var i = 0; i < filters.Count; i++)
             {
-                transform = filters[i].Decode(transform, stream.StreamDictionary, filterProvider, i);
+                var filter = filters[i];
+                totalMaxEstSize *= GetEstimatedSizeMultiplier(filter);
+                
+                transform = filter.Decode(transform, stream.StreamDictionary, filterProvider, i);
+
+                if (i < filters.Count - 1 && transform.Length > totalMaxEstSize)
+                {
+                    // Try to prevent malicious decompression, leading to OOM issues
+                    throw new PdfDocumentFormatException($"Decoded stream size exceeds the estimated maximum size. Current decoded stream length: {transform.Length}, {i + 1} filters applied out of {filters.Count}.");
+                }
             }
 
             return transform;
@@ -75,13 +86,36 @@
         {
             var filters = filterProvider.GetFilters(stream.StreamDictionary, scanner);
 
+            double totalMaxEstSize = stream.Data.Length * 100;
+
             var transform = stream.Data;
             for (var i = 0; i < filters.Count; i++)
             {
-                transform = filters[i].Decode(transform, stream.StreamDictionary, filterProvider, i);
+                var filter = filters[i];
+                totalMaxEstSize *= GetEstimatedSizeMultiplier(filter);
+                
+                transform = filter.Decode(transform, stream.StreamDictionary, filterProvider, i);
+                
+                if (i < filters.Count - 1 && transform.Length > totalMaxEstSize)
+                {
+                    // Try to prevent malicious decompression, leading to OOM issues
+                    throw new PdfDocumentFormatException($"Decoded stream size exceeds the estimated maximum size. Current decoded stream length: {transform.Length}, {i + 1} filters applied out of {filters.Count}.");
+                }
             }
 
             return transform;
+        }
+
+        private static double GetEstimatedSizeMultiplier(IFilter filter)
+        {
+            return filter switch
+            {
+                AsciiHexDecodeFilter => 0.5,
+                Ascii85Filter => 0.8,
+                FlateFilter or RunLengthFilter => 3,
+                LzwFilter => 2,
+                _ => 1000
+            };
         }
 
         /// <summary>
