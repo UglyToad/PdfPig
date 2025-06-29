@@ -8,6 +8,18 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue1067()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("GHOSTSCRIPT-691770-0.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var ex = Assert.Throws<PdfDocumentFormatException>(() => document.GetPage(1));
+                Assert.StartsWith("Decoded stream size exceeds the estimated maximum size.", ex.Message);
+            }
+        }
+
+        [Fact]
         public void Issue1054()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("MOZILLA-11518-0.pdf");
