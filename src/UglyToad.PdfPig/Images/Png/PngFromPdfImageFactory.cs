@@ -7,36 +7,40 @@
 
     internal static class PngFromPdfImageFactory
     {
-        private static bool TryGenerateSoftMask(IPdfImage image, [NotNullWhen(true)] out ReadOnlySpan<byte> bytes)
+        private static bool TryGenerateSoftMask(IPdfImage image, [NotNullWhen(true)] out ReadOnlySpan<byte> maskBytes)
         {
-            bytes = ReadOnlySpan<byte>.Empty;
+            maskBytes = ReadOnlySpan<byte>.Empty;
 
-            if (image.MaskImage is null)
+            var mask = image.MaskImage;
+
+            if (mask is null)
             {
                 return false;
             }
 
             // Because we cannot resize images directly in PdfPig, we only
             // apply the mask if it has the same size as the image
-            if (image.HeightInSamples != image.MaskImage.HeightInSamples ||
-                image.WidthInSamples != image.MaskImage.WidthInSamples)
+            if (image.HeightInSamples != mask.HeightInSamples ||
+                image.WidthInSamples != mask.WidthInSamples)
             {
                 return false;
             }
 
-            if (!image.TryGetBytesAsMemory(out var imageMemory))
+            if (!mask.TryGetBytesAsMemory(out var maskMemory))
             {
                 return false;
             }
 
             try
             {
-                bytes = ColorSpaceDetailsByteConverter.Convert(image.ColorSpaceDetails!,
-                    imageMemory.Span,
-                    image.BitsPerComponent,
-                    image.WidthInSamples,
-                    image.HeightInSamples);
-                return IsCorrectlySized(image, bytes);
+                maskBytes = ColorSpaceDetailsByteConverter.Convert(
+                    mask.ColorSpaceDetails!,
+                    maskMemory.Span,
+                    mask.BitsPerComponent,
+                    mask.WidthInSamples,
+                    mask.HeightInSamples);
+
+                return IsCorrectlySized(mask, maskBytes);
             }
             catch (Exception)
             {
