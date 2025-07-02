@@ -104,6 +104,30 @@
         }
 
         [Fact]
+        public void CanExtractPngFromPdfWithIndexedImageData8bpc()
+        {
+            var documetFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Images", "Files"));
+
+            var pdfPath = Path.Combine(documetFolder, "Pdf",  "indexed-png-with-mask.pdf");
+
+            using (PdfDocument document = PdfDocument.Open(pdfPath))
+            {
+                var page = document.GetPage(1);
+
+                var img = page.GetImages().First();
+
+                var result = img.TryGetPng(out var bytes);
+
+                if (result)
+                {
+                    var outputPath = Path.Combine(documetFolder, "Pdf", "indexed-png-with-mask.png");
+
+                    File.WriteAllBytes(outputPath, bytes);
+                }
+            }
+        }
+
+        [Fact]
         public void CanGeneratePngFromIndexedImageData1bpc()
         {
             // Indices for a 3x3 RGB image, each index is represented by a single bit
