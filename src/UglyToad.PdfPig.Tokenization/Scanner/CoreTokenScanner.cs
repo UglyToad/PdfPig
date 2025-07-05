@@ -43,6 +43,14 @@
 
         private bool hasBytePreRead;
         private bool isInInlineImage;
+        /// <summary>
+        /// '%' only identifies comments outside of PDF streams and strings, inside these we should ignore it.
+        /// </summary>
+        /// <remarks>
+        /// PDFBox skips all of a line following a comment character inside streams, see:
+        /// https://github.com/apache/pdfbox/blob/0e1c42dace1c3a2631d5309f662de5628b80fda6/pdfbox/src/main/java/org/apache/pdfbox/pdfparser/BaseParser.java#L1319
+        /// </remarks>
+        private readonly bool isStream;
 
         /// <summary>
         /// Create a new <see cref="CoreTokenScanner"/> from the input.
@@ -52,7 +60,8 @@
             bool usePdfDocEncoding,
             ScannerScope scope = ScannerScope.None,
             IReadOnlyDictionary<NameToken, IReadOnlyList<NameToken>> namedDictionaryRequiredKeys = null,
-            bool useLenientParsing = false)
+            bool useLenientParsing = false,
+            bool isStream = false)
         {
             this.inputBytes = inputBytes ?? throw new ArgumentNullException(nameof(inputBytes));
             this.usePdfDocEncoding = usePdfDocEncoding;
@@ -62,6 +71,7 @@
             this.scope = scope;
             this.namedDictionaryRequiredKeys = namedDictionaryRequiredKeys;
             this.useLenientParsing = useLenientParsing;
+            this.isStream = isStream;
         }
 
         /// <inheritdoc />
@@ -94,12 +104,24 @@
         {
             var endAngleBracesRead = 0;
 
+            bool isSkippingLine = false;
             bool isSkippingSymbol = false;
             while ((hasBytePreRead && !inputBytes.IsAtEnd()) || inputBytes.MoveNext())
             {
                 hasBytePreRead = false;
                 var currentByte = inputBytes.CurrentByte;
                 var c = (char) currentByte;
+
+                if (isSkippingLine)
+                {
+                    if (ReadHelper.IsEndOfLine(c))
+                    {
+                        isSkippingLine = false;
+                        continue;
+                    }
+
+                    continue;
+                }
 
                 ITokenizer tokenizer = null;
                 foreach (var customTokenizer in customTokenizers)
@@ -116,6 +138,12 @@
                     if (ReadHelper.IsWhitespace(currentByte) || char.IsControl(c))
                     {
                         isSkippingSymbol = false;
+                        continue;
+                    }
+
+                    if (currentByte == (byte)'%' && isStream)
+                    {
+                        isSkippingLine = true;
                         continue;
                     }
 
