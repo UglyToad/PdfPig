@@ -831,7 +831,7 @@
             // We need to relocate the resources, and we have to make sure that none of the resources collide with 
             // the already written operation's resources
 
-            var resources = pageDictionary.GetOrCreateDict(NameToken.Resources);
+            var resources = pageDictionary.GetOrCreateDict(NameToken.Resources, srcPage.pdfScanner);
 
             foreach (var set in srcResourceDictionary.Data)
             {
@@ -858,7 +858,7 @@
             // Since we don't directly add font's to the pages resources, we have to go look at the document's font
             if (srcResourceDictionary.TryGet(NameToken.Font, srcPage.pdfScanner, out DictionaryToken? fontsDictionary))
             {
-                var pageFontsDictionary = resources.GetOrCreateDict(NameToken.Font);
+                var pageFontsDictionary = resources.GetOrCreateDict(NameToken.Font, srcPage.pdfScanner);
 
                 foreach (var fontSet in fontsDictionary.Data)
                 {
@@ -903,7 +903,7 @@
             // Since we don't directly add xobjects's to the pages resources, we have to go look at the document's xobjects
             if (srcResourceDictionary.TryGet(NameToken.Xobject, srcPage.pdfScanner, out DictionaryToken? xobjectsDictionary))
             {
-                var pageXobjectsDictionary = resources.GetOrCreateDict(NameToken.Xobject);
+                var pageXobjectsDictionary = resources.GetOrCreateDict(NameToken.Xobject, srcPage.pdfScanner);
 
                 foreach (var xobjectSet in xobjectsDictionary.Data)
                 {
@@ -945,7 +945,7 @@
             // Since we don't directly add xobjects's to the pages resources, we have to go look at the document's xobjects
             if (srcResourceDictionary.TryGet(NameToken.ExtGState, srcPage.pdfScanner, out DictionaryToken? gsDictionary))
             {
-                var pageGstateDictionary = resources.GetOrCreateDict(NameToken.ExtGState);
+                var pageGstateDictionary = resources.GetOrCreateDict(NameToken.ExtGState, srcPage.pdfScanner);
 
                 foreach (var gstate in gsDictionary.Data)
                 {
