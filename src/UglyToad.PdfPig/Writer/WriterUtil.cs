@@ -12,13 +12,36 @@
 
 	internal static class WriterUtil
     {
-        public static Dictionary<string, IToken> GetOrCreateDict(this Dictionary<NameToken, IToken> dict,  NameToken key)
+        public static Dictionary<string, IToken> GetOrCreateDict<T>(
+            this Dictionary<T, IToken> dict,
+            T key,
+            IPdfTokenScanner? sourceScanner = null) where T : notnull
         {
             if (dict.TryGetValue(key, out var item))
             {
-                if (!(item is DictionaryToken dt))
+                var chainCount = 0;
+                var itemChain = item;
+                while (itemChain is IndirectReferenceToken ir && chainCount < 100)
                 {
-                    throw new ApplicationException("Expected dictionary token, got " + item.GetType());
+                    if (sourceScanner == null)
+                    {
+                        break;
+                    }
+
+                    itemChain = sourceScanner.Get(ir.Data);
+
+                    chainCount++;
+
+                    if (itemChain is ObjectToken ot)
+                    {
+                        itemChain = ot.Data;
+                    }
+                }
+
+                if (itemChain is not DictionaryToken dt)
+                {
+                    throw new InvalidOperationException(
+                        $"While trying to copy token called {key} which should have been a dictionary token we found a token of type {item.GetType()}");
                 }
 
                 if (dt.Data is Dictionary<string, IToken> mutable)
@@ -37,30 +60,6 @@
             return created;
         }
 
-        public static Dictionary<string, IToken> GetOrCreateDict(this Dictionary<string, IToken> dict,  string key)
-        {
-            if (dict.TryGetValue(key, out var item))
-            {
-                if (!(item is DictionaryToken dt))
-                {
-                    throw new ApplicationException("Expected dictionary token, got " + item.GetType());
-                }
-
-                if (dt.Data is Dictionary<string, IToken> mutable)
-                {
-                    return mutable;
-                }
-
-                mutable = dt.Data.
-                    ToDictionary(x => x.Key, x => x.Value);
-                dict[key] = DictionaryToken.With(mutable);
-                return mutable;
-            }
-
-            var created = new Dictionary<string, IToken>();
-            dict[key] = DictionaryToken.With(created);
-            return created;
-        }
         /// <summary>
         /// The purpose of this method is to resolve indirect reference. That mean copy the reference's content to the new document's stream
         /// and replace the indirect reference with the correct/new one
