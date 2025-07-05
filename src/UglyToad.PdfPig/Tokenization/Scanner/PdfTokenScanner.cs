@@ -846,7 +846,11 @@
             // Read the N integers
             var bytes = new MemoryInputBytes(stream.Decode(filterProvider, this));
 
-            var scanner = new CoreTokenScanner(bytes, true, useLenientParsing: parsingOptions.UseLenientParsing);
+            var scanner = new CoreTokenScanner(
+                bytes,
+                true,
+                useLenientParsing: parsingOptions.UseLenientParsing,
+                isStream: true);
 
             var objects = new List<(long, long)>();
 

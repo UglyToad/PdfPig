@@ -191,8 +191,76 @@ endobj";
             AssertCorrectToken<NameToken, string>(tokens[3], "F1");
             AssertCorrectToken<NumericToken, double>(tokens[4], 8);
             AssertCorrectToken<OperatorToken, string>(tokens[5], "Tf");
-
         }
+
+        [Fact]
+        public void SkipsCommentsInStreams()
+        {
+            const string content = 
+                """
+                % 641 0 obj
+                <<
+                /Type /Encoding
+                /Differences [16/quotedblleft/quotedblright 21/endash 27/ff/fi/fl/ffi 39/quoteright/parenleft/parenright 43/plus/comma/hyphen/period/slash/zero/one/two/three/four/five/six/seven/eight/nine/colon 64/at/A/B/C/D/E/F/G/H/I/J/K/L/M/N/O/P/Q/R/S/T/U/V/W/X/Y/Z/bracketleft 93/bracketright 97/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t/u/v/w/x/y/z/braceleft 125/braceright 225/aacute 232/egrave/eacute 252/udieresis]
+                >>
+                % 315 0 obj
+                <<
+                /Type /Font
+                /Subtype /Type1
+                /BaseFont /IXNPPI+CMEX10
+                /FontDescriptor 661 0 R
+                /FirstChar 80
+                /LastChar 88
+                /Widths 644 0 R
+                /ToUnicode 699 0 R
+                >>
+                % 306 0 obj
+                <<
+                /Type /Font
+                /Subtype /Type1
+                /BaseFont /MSNKTF+CMMI10
+                /FontDescriptor 663 0 R
+                /FirstChar 58
+                /LastChar 119
+                /Widths 651 0 R
+                /ToUnicode 700 0 R
+                >>
+                """;
+
+            var tokens = new List<IToken>();
+
+            var scanner = new CoreTokenScanner(
+                StringBytesTestConverter.Convert(content, false).Bytes,
+                true,
+                isStream: true);
+
+            while (scanner.MoveNext())
+            {
+                tokens.Add(scanner.CurrentToken);
+            }
+
+            Assert.Equal(3, tokens.Count);
+
+            Assert.All(tokens, x => Assert.IsType<DictionaryToken>(x));
+
+            tokens.Clear();
+
+            var nonStreamScanner = new CoreTokenScanner(
+                StringBytesTestConverter.Convert(content, false).Bytes,
+                true,
+                isStream: false);
+
+            while (nonStreamScanner.MoveNext())
+            {
+                tokens.Add(nonStreamScanner.CurrentToken);
+            }
+
+            Assert.Equal(6, tokens.Count);
+
+            Assert.Equal(3, tokens.OfType<CommentToken>().Count());
+            Assert.Equal(3, tokens.OfType<DictionaryToken>().Count());
+        }
+
         private static void AssertCorrectToken<T, TData>(IToken token, TData expected) where T : IDataToken<TData>
         {
             var cast = Assert.IsType<T>(token);
