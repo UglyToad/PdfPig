@@ -252,6 +252,7 @@ A¡¬àð‰É©ˆ°‘¼›‚%¥×s³®í»š}%§X{{tøNåÝž¶ö¢ÖÞ¾�
             var str = Encoding.UTF8.GetString(stream.Data.ToArray());
 
             Assert.StartsWith("H‰œUkLSgþÚh¹IÝÅl", str);
+            Assert.EndsWith("oäO ôkÆ)", str);
 
             Assert.Equal(2, locationProvider.Offsets[new IndirectReference(352, 0)]);
         }
@@ -289,7 +290,7 @@ endobj";
             var str = Encoding.UTF8.GetString(data);
 
             Assert.Equal(data.Length, invalidLengthStream.Length);
-            Assert.StartsWith("ABCDeeeee", str);
+            Assert.Equal(invalidLengthStream, str);
 
             Assert.Equal(2, locationProvider.Offsets[new IndirectReference(352, 0)]);
         }
@@ -297,47 +298,108 @@ endobj";
         [Fact]
         public void ReadsSimpleStreamObject()
         {
-            // Length of the bytes as found by Encoding.UTF8.GetBytes is 45
-            const string s = @"
-574387 0    obj
-<< /Length 45 >>
-stream
-À“Éððr¥8»P£ØêÁi½®Û(éhŽ‘ú
-endstream
-endobj";
+            const string s =
+                """
+                574387 0    obj
+                << /Length 45 >>
+                stream
+                À“Éððr¥8»P£ØêÁi½®Û(éhŽ‘ú
+                endstream
+                endobj
+                """;
             
             var scanner = GetScanner(s);
 
-            var token = ReadToEnd(scanner)[0];
+            var tokens = ReadToEnd(scanner);
+
+            var str = GetStreamDataString(tokens);
+
+            Assert.Equal("À“Éððr¥8»P£ØêÁi½®Û(éhŽ‘ú", str);
+        }
+
+        [Fact]
+        public void ReadsSimpleStreamContent()
+        {
+            const string s =
+                """
+                1 0 obj
+                << /Name /Bob >>
+                stream
+                123456
+                endstream
+                endobj
+                """;
+
+            var scanner = GetScanner(s);
+
+            var tokens = ReadToEnd(scanner);
+
+            var token = Assert.Single(tokens);
 
             var stream = Assert.IsType<StreamToken>(token.Data);
 
             var bytes = stream.Data.ToArray();
-            Assert.Equal(45, bytes.Length);
+            Assert.Equal(6, bytes.Length);
 
-            var outputString = Encoding.UTF8.GetString(bytes);
+            var outputString = Encoding.ASCII.GetString(bytes);
 
-            Assert.Equal("À“Éððr¥8»P£ØêÁi½®Û(éhŽ‘ú", outputString);
+            Assert.Equal("123456", outputString);
+        }
+
+        [Fact]
+        public void ReadsStreamContentWithNoLinebreak()
+        {
+            const string s =
+                """
+                1 0 obj
+                << /Name /Bob >>
+                stream
+                123456endstream
+                endobj
+                """;
+
+            var scanner = GetScanner(s);
+
+            var tokens = ReadToEnd(scanner);
+
+            var token = Assert.Single(tokens);
+
+            var stream = Assert.IsType<StreamToken>(token.Data);
+
+            var bytes = stream.Data.ToArray();
+            Assert.Equal(6, bytes.Length);
+
+            var outputString = Encoding.ASCII.GetString(bytes);
+
+            Assert.Equal("123456", outputString);
         }
 
         [Fact]
         public void ReadsStreamWithIndirectLength()
         {
-            const string s = @"5 0 obj 52 endobj
+            const string s =
+                """
+                5 0 obj
+                52
+                 endobj
 
+                12 0 obj
 
+                << /Length 5 0 R /S 1245 >>
 
-12 0 obj
+                stream
+                %¥×³®í»š}%§X{{tøNåÝž¶ö¢ÖÞ¾–~´¼
+                endstream
+                endobj
+                """;
 
-<< /Length 5 0 R /S 1245 >>
-
-stream
-%¥×³®í»š}%§X{{tøNåÝž¶ö¢ÖÞ¾–~´¼
-endstream
-endobj";
-            var locationProvider = new TestObjectLocationProvider();
-
-            locationProvider.Offsets[new IndirectReference(5, 0)] = 0;
+            var locationProvider = new TestObjectLocationProvider
+            {
+                Offsets =
+                {
+                    [new IndirectReference(5, 0)] = 0
+                }
+            };
 
             var scanner = GetScanner(s, locationProvider);
 
@@ -356,54 +418,44 @@ endobj";
         [Fact]
         public void ReadsStreamWithMissingLength()
         {
-            const string s = @"
-12655 0 obj
-
-<< /S 1245 >>
-
-stream
-%¥×³®í»š}%§X{{tøNåÝž¶ö¢ÖÞgrehtyyy$&%&£$££(*¾–~´¼
-endstream
-endobj";
+            const string s =
+                """
+                12655 0 obj
+                << /S 1245 >>
+                stream
+                %¥×³®í»š}%§X{{tøNåendÝž¶ö¢ÖÞgrehtyyy$&%&£$££(*¾–~´¼
+                endstream
+                endobj
+                """;
 
             var scanner = GetScanner(s);
 
-            var token = ReadToEnd(scanner)[0];
+            var tokens = ReadToEnd(scanner);
 
-            Assert.Equal(12655, token.Number.ObjectNumber);
+            var str = GetStreamDataString(tokens);
 
-            var stream = Assert.IsType<StreamToken>(token.Data);
-
-            Assert.Equal("1245", stream.StreamDictionary.Data["S"].ToString());
-
-            Assert.Equal("%¥×³®í»š}%§X{{tøNåÝž¶ö¢ÖÞgrehtyyy$&%&£$££(*¾–~´¼", Encoding.UTF8.GetString(stream.Data.ToArray()));
+            Assert.Equal("%¥×³®í»š}%§X{{tøNåendÝž¶ö¢ÖÞgrehtyyy$&%&£$££(*¾–~´¼", str);
         }
 
         [Fact]
         public void ReadsStreamWithoutBreakBeforeEndstream()
         {
-            const string s = @"
-1 0 obj
-12
-endobj
-
-7 0 obj
-<< /Length 288
-   /Filter /FlateDecode >>
-stream
-xœ]‘ËjÃ0E÷ÿÃ,ÓEð#NÒ€1¤N^ôA~€-]A-YYøï+Ï4¡t#qfîFWQY*­Dïv5:è”–§ñjB‹½Òa¤ •p7¤K	ƒÈûëyr8Tº!ÏÃ  úð‚ÉÙVG9¶ø@Å7+Ñ*ÝÃê³¬¹T_ùÆµƒ8Š$vËÌ—Æ¼6BDöu%½B¹yí$—Ù ¤\Hx71JœL#Ð6ºÇ0Èã¸€ü|.Â µüßõÏ""WÛ‰¯Æ.êÄ«ã8;¤iL°!Ø %Ã‰`K°ßì¸ÃöÜáÜ)	[‚#CFðÄ°#(yƒg^ÿ¶æò
-ÿž“¸Zë#¢?¢h–P”Æû?šÑï÷ø¯‰Šendstream
-endobj
-
-9 0 obj
-16
-endobj";
+            const string s =
+                """
+                7 0 obj
+                << /Filter 0 >>
+                stream
+                ABCendcow233endendstream
+                endobj
+                """;
 
             var scanner = GetScanner(s);
 
-            var token = ReadToEnd(scanner)[1];
+            var tokens = ReadToEnd(scanner);
 
-            Assert.Equal(7, token.Number.ObjectNumber);
+            var str = GetStreamDataString(tokens);
+
+            Assert.Equal("ABCendcow233end", str);
         }
 
         [Fact]
@@ -422,6 +474,10 @@ endobj";
             var scanner = GetScanner(s);
 
             var tokens = ReadToEnd(scanner);
+
+            var dataStr = GetStreamDataString(tokens);
+
+            Assert.Equal("012", dataStr);
         }
 
         [Fact]
@@ -432,17 +488,11 @@ endobj";
                 1974 0 obj
                 <<
                 /Filter /FlateDecode
-                /Length 1975 0 R
                 >>
                 stream
-                xœ]ÔÏnÚ@€ñ'ð;øØ"Œg	!Ué…Cÿ¨´ ö:B*Æ2äÀÛw¿™MZõ'þ°½ë›]<ï>ïÆÓ­^|Ÿ/Ý>Ýêá4ösº^^ç.ÕÇôr«e[÷§îVÎüØSµÈ7ïï×[:ïÆáRm6ÕâGþðz›ïõ‡Oýå˜>V‹osŸæÓøRøõ¼Ïçû×iúÎi¼ÕMµÝÖ}òƒ¾¦¯‡sª~ÛÃ®ÏŸŸn÷‡|Ïß+~Þ§T·~¾ŒÉt—>]§C—æÃø’ªM»ÜÖ›U³­ÒØÿ÷ÙJã–ãðïµ~†&msh	­Y„ –K‚4BK0‚yÈ¿rXVzÂš°Žà}$<zÐðDxò`þÐáAGÂ1‚:BÏða{B{$$BŠ°&
-                „!ÂSÒä¿ýCC€BÂ£e…PHx´x-Ã
-                R<˜º@!á!>,âW@!á!¼œ@!áÑ2uBÂC=@!á¡þP(¤xðU
-                R< (¤xø°PHx(SW(4<”—S(4<´#@¡á¡ÌT¡Ð²><@¡á¡Œ¢PhxSW(4<”õ¡Phxè‘ …†Ç’£PhY|Q
-                …†GëÃB¡e}à¡Phx˜¿
-                †‡B¡áÑú°Phx´ÆÔ
-                +,ƒÂÂ#/× °²>3(¬xð.……‡¡nPXx˜_……‡ùC¡°²>x}ƒÂÂCx9ƒÂŠ¯oPXxˆ…š&ùPø!ÙÚ¯€ÂŠÿ•……‡ ¶jbky
-                y‡yÛJØlØßw±îužóæ›¦ï\ìY§1½ï«Óeâ.ÿùz°gAendstream
+                ABC123endstream33093872end337772A
+                
+                3093AAendstream
                 endstream
                 endobj
                 """;
@@ -450,6 +500,25 @@ endobj";
             var scanner = GetScanner(s);
 
             var tokens = ReadToEnd(scanner);
+
+            var str = GetStreamDataString(tokens);
+
+            Assert.Equal(
+                """
+                ABC123endstream33093872end337772A
+                
+                3093AA
+                """,
+                str);
+        }
+
+        private string GetStreamDataString(IReadOnlyList<ObjectToken> tokens)
+        {
+            var token = Assert.Single(tokens);
+
+            var stream = Assert.IsType<StreamToken>(token.Data);
+
+            return Encoding.UTF8.GetString(stream.Data.ToArray());
         }
 
         [Fact]

@@ -400,7 +400,7 @@
                             // Token is at end of stream or is followed by whitespace
                             if (!inputBytes.MoveNext() || ReadHelper.IsWhitespace(inputBytes.CurrentByte))
                             {
-                                var location = inputBytes.CurrentOffset - EndstreamBytes.Length;
+                                var location = inputBytes.CurrentOffset - EndstreamBytes.Length - 1;
                                 endLocations.Push(new EndLoc(true, location, !isEndData));
                                 isEndData = true;
 
@@ -411,6 +411,12 @@
 
                                 endStreamPosition = 0;
                                 commonPartPosition = 0;
+                            }
+                            else
+                            {
+                                endStreamPosition = 0;
+                                commonPartPosition = 0;
+                                isEndData = false;
                             }
                         }
                     }
@@ -443,6 +449,10 @@
                                 break;
                             }
                         }
+                    }
+                    else if (inputBytes.CurrentByte == endWordPart[0])
+                    {
+                        commonPartPosition = 1;
                     }
                     else
                     {
@@ -488,20 +498,22 @@
 
             var dataLength = endLoc.Offset - startDataOffset;
 
-            // 3 characters, 'e', '\n' and possibly '\r'
-            inputBytes.Seek(endLoc.Offset - 3);
-            inputBytes.MoveNext();
+            inputBytes.Seek(endLoc.Offset - 1);
 
-            if (inputBytes.CurrentByte == '\r')
+            var adjustment = 0;
+            bool isWhitespace;
+            do
             {
-                dataLength -= 3;
-            }
-            else
-            {
-                dataLength -= 2;
-            }
+                inputBytes.MoveNext();
+                isWhitespace = ReadHelper.IsWhitespace(inputBytes.CurrentByte);
+                if (isWhitespace)
+                {
+                    adjustment++;
+                }
+                inputBytes.Seek(endLoc.Offset - 1 - adjustment);
+            } while (isWhitespace);
 
-            Memory<byte> data = new byte[dataLength];
+            Memory<byte> data = new byte[dataLength - adjustment];
 
             inputBytes.Seek(streamDataStart);
             inputBytes.Read(data.Span);
