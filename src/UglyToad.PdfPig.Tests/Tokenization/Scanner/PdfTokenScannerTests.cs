@@ -407,6 +407,49 @@ endobj";
         }
 
         [Fact]
+        public void ReadsStreamWithDoubleEndstreamSimple()
+        {
+            const string s =
+                """
+                250 0 obj
+                << /Filter /FlateDecode >>
+                stream
+                012endstream
+                endstream
+                endobj
+                """;
+
+            var scanner = GetScanner(s);
+
+            var tokens = ReadToEnd(scanner);
+        }
+
+        [Fact]
+        public void ReadsStreamWithDoubleEndstream()
+        {
+            const string s =
+                """
+                1974 0 obj
+                <<
+                /Filter /FlateDecode
+                /Length 1975 0 R
+                >>
+                stream
+                xœ]ÔÏnÚ@€ñ'ð;øØ"Œg	!Ué…Cÿ¨´ ö:B*Æ2äÀÛw¿™MZõ'þ°½ë›]<ï>ïÆÓ­^|Ÿ/Ý>Ýêá4ösº^^ç.ÕÇôr«e[÷§îVÎüØSµÈ7ïï×[:ïÆáRm6ÕâGþðz›ïõ‡Oýå˜>V‹osŸæÓøRøõ¼Ïçû×iúÎi¼ÕMµÝÖ}òƒ¾¦¯‡sª~ÛÃ®ÏŸŸn÷‡|Ïß+~Þ§T·~¾ŒÉt—>]§C—æÃø’ªM»ÜÖ›U³­ÒØÿ÷ÙJã–ãðïµ~†&msh	­Y„ –K‚4BK0‚yÈ¿rXVzÂš°Žà}$<zÐðDxò`þÐáAGÂ1‚:BÏða{B{$$BŠ°&                „!ÂSÒä¿ýCC€BÂ£e…PHx´x-Ã
+                R<˜º@!á!>,âW@!á!¼œ@!áÑ2uBÂC=@!á¡þP(¤xðU
+                R< (¤xø°PHx(SW(4<”—S(4<´#@¡á¡ÌT¡Ð²><@¡á¡Œ¢PhxSW(4<”õ¡Phxè‘ …†Ç’£PhY|Q
+                …†GëÃB¡e}à¡Phx˜¿                †‡B¡áÑú°Phx´ÆÔ
+                +,ƒÂÂ#/× °²>3(¬xð.……‡¡nPXx˜_……‡ùC¡°²>x}ƒÂÂCx9ƒÂŠ¯oPXxˆ…š&ùPø!ÙÚ¯€ÂŠÿ•……‡ ¶jbky                y‡yÛJØlØßw±îužóæ›¦ï\ìY§1½ï«Óeâ.ÿùz°gAendstream
+                endstream
+                endobj
+                """;
+
+            var scanner = GetScanner(s);
+
+            var tokens = ReadToEnd(scanner);
+        }
+
+        [Fact]
         public void ReadsStringsWithMissingEndBracket()
         {
             const string input = @"5 0 obj
