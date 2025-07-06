@@ -268,6 +268,12 @@
                     {
                         token = trimmedDuplicatedEndTokens[0];
                     }
+                    else if (readTokens[0] is StreamToken str
+                             && readTokens.Skip(1).All(x => x is OperatorToken op && op.Equals(OperatorToken.EndStream)))
+                    {
+                        // If a stream token is followed by "endstream" operator tokens just skip the following duplicated tokens.
+                        token = str;
+                    }
                     else
                     {
                         token = readTokens[readTokens.Count - 1];
