@@ -377,17 +377,11 @@
 
             long streamDataStart = inputBytes.CurrentOffset;
 
-            PossibleStreamEndLocation? possibleEndLocation = null;
-
-
+            // Negative indicates endobj.
+            bool isEndData = false;
+            Stack<EndLoc> endLocations = new Stack<EndLoc>();
             while (inputBytes.MoveNext())
             {
-                if (length.HasValue && read == length)
-                {
-                    // TODO: read ahead and check we're at the end...
-                    // break;
-                }
-
                 // We are reading 'end' (possibly).
                 if (commonPartPosition < endWordPart.Length && inputBytes.CurrentByte == endWordPart[commonPartPosition])
                 {
@@ -401,44 +395,48 @@
                         endObjPosition = 0;
                         endStreamPosition++;
 
-                        // We've finished reading 'endstream', add it to the end tokens we've seen.
-                        if (endStreamPosition == streamPart.Length && (!inputBytes.MoveNext() || ReadHelper.IsWhitespace(inputBytes.CurrentByte)))
+                        if (endStreamPosition == streamPart.Length)
                         {
-                            var token = new PossibleStreamEndLocation(inputBytes.CurrentOffset - OperatorToken.EndStream.Data.Length, OperatorToken.EndStream);
-
-                            possibleEndLocation = token;
-
-                            if (length.HasValue && read > length)
+                            // Token is at end of stream or is followed by whitespace
+                            if (!inputBytes.MoveNext() || ReadHelper.IsWhitespace(inputBytes.CurrentByte))
                             {
-                                break;
-                            }
+                                var location = inputBytes.CurrentOffset - EndstreamBytes.Length;
+                                endLocations.Push(new EndLoc(true, location, !isEndData));
+                                isEndData = true;
 
-                            endStreamPosition = 0;
+                                if (length.HasValue && read > length)
+                                {
+                                    break;
+                                }
+
+                                endStreamPosition = 0;
+                                commonPartPosition = 0;
+                            }
                         }
                     }
                     else if (inputBytes.CurrentByte == objPart[endObjPosition])
                     {
                         // We are reading 'obj' after 'end'
-
                         endStreamPosition = 0;
                         endObjPosition++;
 
                         // We have finished reading 'endobj'.
                         if (endObjPosition == objPart.Length)
                         {
+                            var hasPreviousEndToken = endLocations.Count > 0;
                             // If we saw an 'endstream' or 'endobj' previously we've definitely hit the end now.
-                            if (possibleEndLocation != null)
+                            if (hasPreviousEndToken)
                             {
-                                var lastEndToken = possibleEndLocation.Value;
+                                var lastEndTokenLocation = endLocations.Peek();
 
-                                inputBytes.Seek(lastEndToken.Offset + lastEndToken.Type.Data.Length + 1);
+                                var correction = lastEndTokenLocation.IsEndStream ? EndstreamBytes.Length : "endobj".Length;
+                                inputBytes.Seek(lastEndTokenLocation.Offset + correction + 1);
 
                                 break;
                             }
 
-                            var token = new PossibleStreamEndLocation(inputBytes.CurrentOffset - OperatorToken.EndObject.Data.Length, OperatorToken.EndObject);
-
-                            possibleEndLocation = token;
+                            endLocations.Push(new EndLoc(false, inputBytes.CurrentOffset, !isEndData));
+                            isEndData = true;
 
                             if (read > length)
                             {
@@ -454,6 +452,7 @@
                         endStreamPosition = 0;
                         endObjPosition = 0;
                         commonPartPosition = 0;
+                        isEndData = false;
                     }
                 }
                 else
@@ -463,6 +462,11 @@
                     endStreamPosition = 0;
                     endObjPosition = 0;
                     commonPartPosition = (inputBytes.CurrentByte == endWordPart[0]) ? 1 : 0;
+
+                    if (commonPartPosition == 0 && !ReadHelper.IsWhitespace(inputBytes.CurrentByte))
+                    {
+                        isEndData = false;
+                    }
                 }
 
                 read++;
@@ -470,15 +474,22 @@
 
             long streamDataEnd = inputBytes.CurrentOffset + 1;
 
-            if (possibleEndLocation == null)
+            if (endLocations.Count == 0)
+            {
                 return false;
+            }
 
-            var lastEnd = possibleEndLocation;
+            // Read until the first endstream or obj token indicator preceded by data.
+            EndLoc endLoc;
+            do
+            {
+                endLoc = endLocations.Pop();
+            } while (!endLoc.HasDataPreceding && endLocations.Count > 0);
 
-            var dataLength = lastEnd.Value.Offset - startDataOffset;
+            var dataLength = endLoc.Offset - startDataOffset;
 
             // 3 characters, 'e', '\n' and possibly '\r'
-            inputBytes.Seek(lastEnd.Value.Offset - 3);
+            inputBytes.Seek(endLoc.Offset - 3);
             inputBytes.MoveNext();
 
             if (inputBytes.CurrentByte == '\r')
@@ -901,6 +912,22 @@
         {
             inputBytes?.Dispose();
             isDisposed = true;
+        }
+
+        private record EndLoc
+        {
+            public bool IsEndStream { get; }
+
+            public long Offset { get; }
+
+            public bool HasDataPreceding { get; }
+
+            public EndLoc(bool isEndStream, long offset, bool hasDataPreceding)
+            {
+                IsEndStream = isEndStream;
+                Offset = offset;
+                HasDataPreceding = hasDataPreceding;
+            }
         }
     }
 }
