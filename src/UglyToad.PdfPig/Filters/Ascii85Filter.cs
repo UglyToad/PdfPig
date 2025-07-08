@@ -2,6 +2,7 @@
 {
     using System;
     using Core;
+    using System.Text;
     using Tokens;
 
     /// <summary>
@@ -13,7 +14,7 @@
         private const byte Offset = (byte)'!';
         private const byte EmptyCharacterPadding = (byte)'u';
 
-        private static ReadOnlySpan<byte> EndOfDataBytes => [(byte)'~', (byte)'>'];
+        private static ReadOnlySpan<byte> EndOfDataBytes => "~>"u8;
 
         private static readonly int[] PowerByIndex =
         [
@@ -52,7 +53,7 @@
                     {
                         if (index > 0)
                         {
-                            WriteData(asciiBuffer, index, writer);
+                            WriteData(asciiBuffer, index, writer, true);
                         }
 
                         index = 0;
@@ -88,24 +89,36 @@
 
                 if (index == 5)
                 {
-                    WriteData(asciiBuffer, index, writer);
+                    WriteData(asciiBuffer, index, writer, false);
                     index = 0;
                 }
             }
 
             if (index > 0)
             {
-                WriteData(asciiBuffer, index, writer);
+                WriteData(asciiBuffer, index, writer, true);
             }
 
             return writer.WrittenMemory.ToArray();
         }
 
-        private static void WriteData(Span<byte> ascii, int index, ArrayPoolBufferWriter<byte> writer)
+        private static void WriteData(
+            Span<byte> ascii,
+            int index,
+            ArrayPoolBufferWriter<byte> writer,
+            bool isAtEnd)
         {
             if (index < 2)
             {
-                throw new ArgumentOutOfRangeException(nameof(index), "Cannot convert a block padded by 4 'u' characters.");
+                if (isAtEnd)
+                {
+                    return;
+                }
+
+                var bufferTxt = Encoding.ASCII.GetString(ascii);
+                var soFar = Encoding.ASCII.GetString(writer.GetSpan());
+                throw new ArgumentOutOfRangeException(nameof(index),
+                    $"Cannot convert a this block because we're not at the end of the stream. Chunk: '{bufferTxt}'. Content: '{soFar}'");
             }
 
             // Write any empty padding if the block ended early.

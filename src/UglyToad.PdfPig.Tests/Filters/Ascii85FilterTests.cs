@@ -34,10 +34,39 @@ O<DJ+*.@<*K0@<6L(Df-\0Ec5e;DffZ(EZee.Bl.9pF""AGXBPCsi + DGm >@3BB / F * &OCAfu2 
                 text);
         }
 
-        [Fact]
-        public void ReplacesZWithEmptyBytes()
+        [Theory]
+        [InlineData("BE", "h")]
+        [InlineData("BOq", "he")]
+        [InlineData("BOtu", "hel")]
+        [InlineData("BOu!r", "hell")]
+        [InlineData("BOu!rDZ", "hello")]
+        [InlineData("BOu!rD]f", "hello ")]
+        [InlineData("BOu!rD]j6", "hello w")]
+        [InlineData("BOu!rD]j7B", "hello wo")]
+        [InlineData("BOu!rD]j7BEW", "hello wor")]
+        [InlineData("BOu!rD]j7BEbk", "hello worl")]
+        [InlineData("BOu!rD]j7BEbo7", "hello world")]
+        [InlineData("BOu!rD]j7BEbo80", "hello world!")]
+        public void DecodesHelloWorld(string encoded, string decoded)
         {
-            var bytes = Encoding.ASCII.GetBytes("9jqo^zBlbD-");
+            var result = filter.Decode(
+                Encoding.ASCII.GetBytes(encoded),
+                dictionary,
+                TestFilterProvider.Instance,
+                0);
+
+            Assert.Equal(decoded, Encoding.ASCII.GetString(result.ToArray()));
+        }
+
+        [Theory]
+        [InlineData("9jqo^zBlbD-", "Man \0\0\0\0is d")]
+        [InlineData("", "")]
+        [InlineData("z", "\0\0\0\0")]
+        [InlineData("zz", "\0\0\0\0\0\0\0\0")]
+        [InlineData("zzz", "\0\0\0\0\0\0\0\0\0\0\0\0")]
+        public void ReplacesZWithEmptyBytes(string encoded, string decoded)
+        {
+            var bytes = Encoding.ASCII.GetBytes(encoded);
 
             var result = filter.Decode(bytes, dictionary, TestFilterProvider.Instance, 1);
 
@@ -47,7 +76,7 @@ O<DJ+*.@<*K0@<6L(Df-\0Ec5e;DffZ(EZee.Bl.9pF""AGXBPCsi + DGm >@3BB / F * &OCAfu2 
             string text = Encoding.ASCII.GetString(result.Span);
 #endif
 
-            Assert.Equal("Man \0\0\0\0is d", text);
+            Assert.Equal(decoded, text);
         }
         
         [Fact]
@@ -60,14 +89,17 @@ O<DJ+*.@<*K0@<6L(Df-\0Ec5e;DffZ(EZee.Bl.9pF""AGXBPCsi + DGm >@3BB / F * &OCAfu2 
             Assert.Throws<InvalidOperationException>(action);
         }
 
-        [Fact]
-        public void SingleCharacterLastThrows()
+        [Theory]
+        [InlineData("@rH:%B", "cool")]
+        [InlineData("A~>", "")]
+        [InlineData("@rH:%A~>", "cool")]
+        public void SingleCharacterLastIgnores(string encoded, string decoded)
         {
-            var bytes = Encoding.ASCII.GetBytes("9jqo^B");
+            var bytes = Encoding.ASCII.GetBytes(encoded);
 
-            Action action = () => filter.Decode(bytes, dictionary, TestFilterProvider.Instance, 1);
+            var result = filter.Decode(bytes, dictionary, TestFilterProvider.Instance, 1);
 
-            Assert.Throws<ArgumentOutOfRangeException>(action);
+            Assert.Equal(decoded, Encoding.ASCII.GetString(result.ToArray()));
         }
 
         private const string PdfContent = @"1 0 obj
