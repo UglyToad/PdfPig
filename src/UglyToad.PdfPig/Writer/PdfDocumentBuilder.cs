@@ -501,9 +501,12 @@ namespace UglyToad.PdfPig.Writer
                 {
                     return;
                 }
+
                 foreach (var item in dict.Data)
                 {
-                    if (!destinationDict.ContainsKey(NameToken.Create(item.Key)))
+                    var key = NameToken.Create(item.Key);
+
+                    if (!destinationDict.ContainsKey(key))
                     {
                         if (item.Value is IndirectReferenceToken ir)
                         {
@@ -512,43 +515,55 @@ namespace UglyToad.PdfPig.Writer
                             if (obj.Data is StreamToken)
                             {
                                 // rare case, have seen /SubType as stream token, can't make direct
-                                destinationDict[NameToken.Create(item.Key)] = WriterUtil.CopyToken(context, item.Value, document.Structure.TokenScanner, refs);
+                                destinationDict[key] = WriterUtil.CopyToken(context, item.Value, document.Structure.TokenScanner, refs);
                             }
                             else
                             {
-                                destinationDict[NameToken.Create(item.Key)] = WriterUtil.CopyToken(context, obj.Data, document.Structure.TokenScanner, refs);
+                                destinationDict[key] = WriterUtil.CopyToken(context, obj.Data, document.Structure.TokenScanner, refs);
                             }
                         }
                         else
                         {
-                            destinationDict[NameToken.Create(item.Key)] = WriterUtil.CopyToken(context, item.Value, document.Structure.TokenScanner, refs);
+                            destinationDict[key] = WriterUtil.CopyToken(context, item.Value, document.Structure.TokenScanner, refs);
                         }
 
                         continue;
                     }
 
                     var subDict = GetRemoteDict(item.Value);
-                    var destSubDict = destinationDict[NameToken.Create(item.Key)] as DictionaryToken;
+                    var destSubDict = destinationDict[key] as DictionaryToken;
                     if (destSubDict is null || subDict is null)
                     {
                         // not a dict.. just overwrite with more important one? should maybe check arrays?
                         if (item.Value is IndirectReferenceToken ir)
                         {
                             // convert indirect to direct as PdfPageBuilder needs to modify resource entries
-                            destinationDict[NameToken.Create(item.Key)] = WriterUtil.CopyToken(context, document.Structure.TokenScanner.Get(ir.Data).Data, document.Structure.TokenScanner, refs);
+                            destinationDict[key] = WriterUtil.CopyToken(context, document.Structure.TokenScanner.Get(ir.Data).Data, document.Structure.TokenScanner, refs);
                         }
                         else
                         {
-                            destinationDict[NameToken.Create(item.Key)] = WriterUtil.CopyToken(context, item.Value, document.Structure.TokenScanner, refs);
+                            destinationDict[key] = WriterUtil.CopyToken(context, item.Value, document.Structure.TokenScanner, refs);
                         }
                         continue;
                     }
+
+                    var mutableSubDict = new Dictionary<NameToken, IToken>();
+                    foreach (var kvp in destSubDict.Data)
+                    {
+                        mutableSubDict[NameToken.Create(kvp.Key)] = kvp.Value;
+                    }
+
                     foreach (var subItem in subDict.Data)
                     {
-                        // last copied most important important
-                        destinationDict[NameToken.Create(subItem.Key)] = WriterUtil.CopyToken(context, subItem.Value,
-                            document.Structure.TokenScanner, refs);
+                        // last copied most important
+                        mutableSubDict[NameToken.Create(subItem.Key)] = WriterUtil.CopyToken(
+                            context,
+                            subItem.Value,
+                            document.Structure.TokenScanner,
+                            refs);
                     }
+
+                    destinationDict[key] = new DictionaryToken(mutableSubDict);
                 }
             }
 
