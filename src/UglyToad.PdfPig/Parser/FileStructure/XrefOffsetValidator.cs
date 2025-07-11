@@ -6,6 +6,7 @@
     using Logging;
     using Tokenization.Scanner;
     using Tokens;
+    using Util;
 
     internal sealed class XrefOffsetValidator
     {
@@ -231,22 +232,24 @@
 
             bytes.Seek(MinimumSearchOffset);
 
+            var buffer = new CircularByteBuffer(XRefBytes.Length + 1);
+
             // search for xref tables
             while (bytes.MoveNext() && !bytes.IsAtEnd())
             {
-                if (ReadHelper.IsString(bytes, XRefBytes))
+                if (ReadHelper.IsWhitespace(bytes.CurrentByte))
                 {
-                    var newOffset = bytes.CurrentOffset;
+                    // Normalize whitespace
+                    buffer.Add((byte)' ');
+                }
+                else
+                {
+                    buffer.Add(bytes.CurrentByte);
+                }
 
-                    bytes.Seek(newOffset - 1);
-
-                    // ensure that we don't read "startxref" instead of "xref"
-                    if (ReadHelper.IsWhitespace(bytes.CurrentByte))
-                    {
-                        bfSearchXRefTablesOffsets.Add(newOffset);
-                    }
-
-                    bytes.Seek(newOffset + 4);
+                if (buffer.IsCurrentlyEqual(" xref"))
+                {
+                    bfSearchXRefTablesOffsets.Add(bytes.CurrentOffset - 4);
                 }
             }
 
