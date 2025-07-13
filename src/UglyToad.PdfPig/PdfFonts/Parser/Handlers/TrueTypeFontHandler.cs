@@ -71,7 +71,8 @@
                     if (dictionary.TryGet(NameToken.LastChar, pdfScanner, out NumericToken? lastCharToken)
                         && dictionary.TryGet(NameToken.Widths, pdfScanner, out ArrayToken? widthsArrayLoc))
                     {
-                        firstChar = lastCharToken.Int - widthsArrayLoc.Length;
+                        // If the widths array contains widths for characters 0 - 3 it will contain 4 entries but last char is 3.
+                        firstChar = (lastCharToken.Int - widthsArrayLoc.Length) + 1;
                         isStandard14 = false;
                     }
                     else
