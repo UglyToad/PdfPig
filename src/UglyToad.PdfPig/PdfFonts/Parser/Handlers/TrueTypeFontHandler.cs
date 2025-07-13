@@ -49,13 +49,18 @@
 
         public IFont Generate(DictionaryToken dictionary)
         {
-            if (!dictionary.TryGetOptionalTokenDirect(NameToken.FirstChar, pdfScanner, out NumericToken? firstCharacterToken)
+            int? firstChar = null;
+            if (!dictionary.TryGetOptionalTokenDirect(NameToken.FirstChar,
+                    pdfScanner,
+                    out NumericToken? firstCharacterToken)
                 || !dictionary.TryGet<IToken>(NameToken.FontDescriptor, pdfScanner, out _)
-                || !dictionary.TryGet(NameToken.Widths, out IToken _))
+                || !dictionary.TryGet(NameToken.Widths, out _))
             {
+                var isStandard14 = true;
                 if (!dictionary.TryGetOptionalTokenDirect(NameToken.BaseFont, pdfScanner, out NameToken? baseFont))
                 {
-                    throw new InvalidFontFormatException($"The provided TrueType font dictionary did not contain a /FirstChar or a /BaseFont entry: {dictionary}.");
+                    throw new InvalidFontFormatException(
+                        $"The provided TrueType font dictionary did not contain a /FirstChar or a /BaseFont entry: {dictionary}.");
                 }
 
                 // Can use the AFM descriptor despite not being Type 1!
@@ -63,37 +68,52 @@
 
                 if (standard14Font is null)
                 {
-                    throw new InvalidFontFormatException($"The provided TrueType font dictionary did not have a /FirstChar and did not match a Standard 14 font: {dictionary}.");
+                    if (dictionary.TryGet(NameToken.LastChar, pdfScanner, out NumericToken? lastCharToken)
+                        && dictionary.TryGet(NameToken.Widths, pdfScanner, out ArrayToken? widthsArrayLoc))
+                    {
+                        firstChar = lastCharToken.Int - widthsArrayLoc.Length;
+                        isStandard14 = false;
+                    }
+                    else
+                    {
+                        throw new InvalidFontFormatException(
+                            $"The provided TrueType font dictionary did not have a /FirstChar and did not match a Standard 14 font: {dictionary}.");
+                    }
                 }
 
-                var fileSystemFont = systemFontFinder.GetTrueTypeFont(baseFont.Data);
-
-                var thisEncoding = encodingReader.Read(dictionary);
-
-                if (thisEncoding is null)
+                if (isStandard14)
                 {
-                    thisEncoding = new AdobeFontMetricsEncoding(standard14Font);
+                    var fileSystemFont = systemFontFinder.GetTrueTypeFont(baseFont.Data);
+
+                    var thisEncoding = encodingReader.Read(dictionary);
+
+                    if (thisEncoding is null)
+                    {
+                        thisEncoding = new AdobeFontMetricsEncoding(standard14Font);
+                    }
+
+                    double[]? widthsOverride = null;
+
+                    if (dictionary.TryGet(NameToken.FirstChar, pdfScanner, out firstCharacterToken))
+                    {
+                        firstChar = firstCharacterToken.Int;
+                    }
+
+                    if (dictionary.TryGet(NameToken.Widths, pdfScanner, out ArrayToken? widthsArray))
+                    {
+                        widthsOverride = widthsArray.Data.OfType<NumericToken>()
+                            .Select(x => x.Double).ToArray();
+                    }
+
+                    return new TrueTypeStandard14FallbackSimpleFont(baseFont,
+                        standard14Font!,
+                        thisEncoding,
+                        fileSystemFont,
+                        new TrueTypeStandard14FallbackSimpleFont.MetricOverrides(firstChar, widthsOverride));
                 }
-
-                int? firstChar = null;
-                double[]? widthsOverride = null;
-
-                if (dictionary.TryGet(NameToken.FirstChar, pdfScanner, out firstCharacterToken))
-                {
-                    firstChar = firstCharacterToken.Int;
-                }
-
-                if (dictionary.TryGet(NameToken.Widths, pdfScanner, out ArrayToken? widthsArray))
-                {
-                    widthsOverride = widthsArray.Data.OfType<NumericToken>()
-                        .Select(x => x.Double).ToArray();
-                }
-
-                return new TrueTypeStandard14FallbackSimpleFont(baseFont, standard14Font, thisEncoding, fileSystemFont,
-                    new TrueTypeStandard14FallbackSimpleFont.MetricOverrides(firstChar, widthsOverride));
             }
 
-            var firstCharacter = firstCharacterToken.Int;
+            var firstCharacter = firstChar ?? firstCharacterToken!.Int;
 
             var widths = FontDictionaryAccessHelper.GetWidths(pdfScanner, dictionary);
 
