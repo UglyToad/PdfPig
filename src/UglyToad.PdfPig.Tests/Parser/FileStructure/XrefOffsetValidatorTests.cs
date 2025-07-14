@@ -9,7 +9,7 @@ public class XrefOffsetValidatorTests
     [Fact]
     public void FindsTwoXrefs()
     {
-        const string content =
+        var content =
             """
             %PDF-1.7
             %âãÏÓ
@@ -36,6 +36,11 @@ public class XrefOffsetValidatorTests
             %%EOF
             """;
 
+        if (Environment.NewLine == "\n")
+        {
+            content = content.Replace("\n", "\r\n");
+        }
+
         var ib = StringBytesTestConverter.Convert(content, false);
 
         var results = XrefOffsetValidator.BruteForceSearchForTables(ib.Bytes);
@@ -47,7 +52,7 @@ public class XrefOffsetValidatorTests
     [Fact]
     public void FindsXrefsFromRealFileTruncated()
     {
-        const string content =
+        var content =
             """
             %PDF-1.5
             %âãÏÓ
@@ -102,6 +107,11 @@ public class XrefOffsetValidatorTests
             116
             %%EOF
             """;
+
+        if (Environment.NewLine == "\n")
+        {
+            content = content.Replace("\n", "\r\n");
+        }
 
         var ib = StringBytesTestConverter.Convert(content, false);
 
