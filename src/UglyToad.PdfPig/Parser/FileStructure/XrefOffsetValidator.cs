@@ -91,7 +91,10 @@
             long newOffsetTable = -1;
             long newOffsetStream = -1;
 
-            BruteForceSearchForTables(reader);
+            if (bfSearchXRefTablesOffsets == null)
+            {
+                bfSearchXRefTablesOffsets = BruteForceSearchForTables(reader);
+            }
 
             BfSearchForXRefStreams(reader);
 
@@ -218,15 +221,10 @@
             bytes.Seek(startOffset);
         }
 
-        private void BruteForceSearchForTables(IInputBytes bytes)
+        public static List<long> BruteForceSearchForTables(IInputBytes bytes)
         {
-            if (bfSearchXRefTablesOffsets != null)
-            {
-                return;
-            }
-
             // a pdf may contain more than one xref entry
-            bfSearchXRefTablesOffsets = new List<long>();
+            var resultOffsets = new List<long>();
 
             var startOffset = bytes.CurrentOffset;
 
@@ -249,11 +247,13 @@
 
                 if (buffer.IsCurrentlyEqual(" xref"))
                 {
-                    bfSearchXRefTablesOffsets.Add(bytes.CurrentOffset - 4);
+                    resultOffsets.Add(bytes.CurrentOffset - 4);
                 }
             }
 
             bytes.Seek(startOffset);
+
+            return resultOffsets;
         }
 
         private void BfSearchForXRefStreams(IInputBytes bytes)
