@@ -3,7 +3,6 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Diagnostics.CodeAnalysis;
     using Core;
     using Fonts;
@@ -84,36 +83,31 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
 
         public CharacterBoundingBox GetBoundingBox(int characterCode)
         {
-            var boundingBox = GetBoundingBoxInGlyphSpace(characterCode);
+            var (boundingBox, advanceWidth) = GetBoundingBoxInGlyphSpace(characterCode);
 
             boundingBox = fontMatrix.Transform(boundingBox);
+            advanceWidth = fontMatrix.TransformX(advanceWidth);
 
-            return new CharacterBoundingBox(boundingBox, boundingBox.Width);
+            return new CharacterBoundingBox(boundingBox, advanceWidth);
         }
 
-        private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
+        private (PdfRectangle bounds, double advanceWidth) GetBoundingBoxInGlyphSpace(int characterCode)
         {
             var name = encoding.GetName(characterCode);
 
             if (!standardFontMetrics.CharacterMetrics.TryGetValue(name, out var metrics))
             {
-                return new PdfRectangle(0, 0, 250, 0);
+                return (new PdfRectangle(0, 0, 250, 0), 250);
             }
 
             var x = metrics.Width.X;
-            var y = metrics.Width.Y;
 
             if (metrics.Width.X == 0 && metrics.BoundingBox.Width > 0)
             {
                 x = metrics.BoundingBox.Width;
             }
 
-            if (metrics.Width.Y == 0 && metrics.BoundingBox.Height > 0)
-            {
-                y = metrics.BoundingBox.Height;
-            }
-
-            return new PdfRectangle(0, 0, x, y);
+            return (metrics.BoundingBox, x);
         }
 
         public TransformationMatrix GetFontMatrix()
