@@ -1,9 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Util;
+
 using System;
-using System.Collections.Generic;
 using System.Text;
 
-internal class CircularByteBuffer(int size)
+internal sealed class CircularByteBuffer(int size)
 {
     private readonly byte[] buffer = new byte[size];
 
