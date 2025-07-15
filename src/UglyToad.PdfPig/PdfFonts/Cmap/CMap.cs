@@ -147,6 +147,8 @@
 
         public int ReadCode(IInputBytes bytes, bool useLenientParsing)
         {
+            var myPosition = bytes.CurrentOffset;
+
             if (hasEmptyCodespace)
             {
                 var data = new byte[minCodeLength];
@@ -184,7 +186,20 @@
                 }
             }
 
-            throw new PdfDocumentFormatException($"CMap is invalid, min code length was {minCodeLength}, max was {maxCodeLength}.");
+            // If we encounter invalid inputs we read min bytes and convert directly to an integer.
+            if (useLenientParsing)
+            {
+                bytes.Seek(myPosition);
+                for (var i = 0; i < minCodeLength; i++)
+                {
+                    result[i] = ReadByte(bytes, useLenientParsing);
+                }
+
+                // https://github.com/apache/pdfbox/blob/f81c7c5a06126db68aa985a0e755cdbffed7d270/fontbox/src/main/java/org/apache/fontbox/cmap/CMap.java#L207
+                return ByteArrayToInt(result.AsSpan(0, minCodeLength));
+            }
+
+            throw new PdfDocumentFormatException($"CMap is invalid, min code length was {minCodeLength}, max was {maxCodeLength}. Bytes: {BitConverter.ToString(result)}.");
         }
 
         private static byte ReadByte(IInputBytes bytes, bool useLenientParsing)
