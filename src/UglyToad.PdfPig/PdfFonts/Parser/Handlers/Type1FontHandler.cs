@@ -20,13 +20,18 @@
         private readonly IPdfTokenScanner pdfScanner;
         private readonly ILookupFilterProvider filterProvider;
         private readonly IEncodingReader encodingReader;
+        private readonly bool isLenientParsing;
 
-        public Type1FontHandler(IPdfTokenScanner pdfScanner, ILookupFilterProvider filterProvider,
-            IEncodingReader encodingReader)
+        public Type1FontHandler(
+            IPdfTokenScanner pdfScanner,
+            ILookupFilterProvider filterProvider,
+            IEncodingReader encodingReader,
+            bool isLenientParsing)
         {
             this.pdfScanner = pdfScanner;
             this.filterProvider = filterProvider;
             this.encodingReader = encodingReader;
+            this.isLenientParsing = isLenientParsing;
         }
 
         public IFont Generate(DictionaryToken dictionary)
@@ -69,12 +74,26 @@
                 widths = [];
             }
 
-            if (!dictionary.TryGet(NameToken.FontDescriptor, out var _))
+            if (!dictionary.TryGet(NameToken.FontDescriptor, out _))
             {
-                if (dictionary.TryGet(NameToken.BaseFont, out var baseFontToken) &&
-                    DirectObjectFinder.TryGet(baseFontToken, pdfScanner, out NameToken? baseFontName))
+                if (dictionary.TryGet(NameToken.BaseFont, pdfScanner, out NameToken? baseFontToken))
                 {
-                    var metrics = Standard14.GetAdobeFontMetrics(baseFontName.Data);
+                    var metrics = Standard14.GetAdobeFontMetrics(baseFontToken.Data);
+
+                    if (metrics == null)
+                    {
+                        if (isLenientParsing)
+                        {
+                            // We can support a fallback here to return content.
+                            // https://github.com/apache/pdfbox/blob/f81c7c5a06126db68aa985a0e755cdbffed7d270/pdfbox/src/main/java/org/apache/pdfbox/pdmodel/font/FontMapperImpl.java#L304
+                            metrics = Standard14.GetAdobeFontMetrics(Standard14Font.TimesRoman);
+                        }
+                        else
+                        {
+                            throw new PdfDocumentFormatException(
+                                $"Type 1 Standard 14 font with name {baseFontToken} requested, this is an invalid name.");
+                        }
+                    }
 
                     var overrideEncoding = encodingReader.Read(dictionary);
 

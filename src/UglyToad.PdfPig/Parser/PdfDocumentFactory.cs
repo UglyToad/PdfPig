@@ -168,7 +168,11 @@
                 pdfScanner,
                 parsingOptions);
 
-            var type1Handler = new Type1FontHandler(pdfScanner, filterProvider, encodingReader);
+            var type1Handler = new Type1FontHandler(
+                pdfScanner,
+                filterProvider,
+                encodingReader,
+                parsingOptions.UseLenientParsing);
 
             var trueTypeHandler = new TrueTypeFontHandler(parsingOptions.Logger,
                 pdfScanner,
