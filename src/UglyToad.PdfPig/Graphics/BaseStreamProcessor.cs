@@ -511,21 +511,22 @@
                 startState.AlphaConstantNonStroking = 1.0;
                 startState.AlphaConstantStroking = 1.0;
 
+                // TODO: the /CS colorspace of the transparency group should not affect the main colorspace, only the transparent imaging model.
                 if (formGroupToken.TryGet(NameToken.Cs, PdfScanner, out NameToken? csNameToken))
                 {
-                    startState.ColorSpaceContext!.SetNonStrokingColorspace(csNameToken);
+                    // startState.ColorSpaceContext!.SetNonStrokingColorspace(csNameToken);
                 }
                 else if (formGroupToken.TryGet(NameToken.Cs, PdfScanner, out ArrayToken? csArrayToken)
                          && csArrayToken.Length > 0)
                 {
-                    if (csArrayToken.Data[0] is NameToken firstColorSpaceName)
-                    {
-                        startState.ColorSpaceContext!.SetNonStrokingColorspace(firstColorSpaceName, formGroupToken);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("Invalid color space in Transparency Group XObjects.");
-                    }
+                    //if (csArrayToken.Data[0] is NameToken firstColorSpaceName)
+                    //{
+                    //    startState.ColorSpaceContext!.SetNonStrokingColorspace(firstColorSpaceName, formGroupToken);
+                    //}
+                    //else
+                    //{
+                    //    throw new InvalidOperationException("Invalid color space in Transparency Group XObjects.");
+                    //}
                 }
 
                 bool isolated = false;
