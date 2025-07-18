@@ -1,8 +1,6 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Parser.Parts
 {
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using Cmap;
     using Fonts;
     using Tokenization.Scanner;
@@ -20,6 +18,13 @@
                 // The start of the input code range.
                 if (!scanner.TryReadToken(out HexToken lowSourceCode))
                 {
+                    // Allow a miscount.
+                    if (scanner.CurrentToken is OperatorToken ot &&
+                        ot.Data.Equals("endbfrange", StringComparison.OrdinalIgnoreCase))
+                    {
+                        break;
+                    }
+
                     throw new InvalidFontFormatException($"bfrange was missing the low source code: {scanner.CurrentToken}");
                 }
 
