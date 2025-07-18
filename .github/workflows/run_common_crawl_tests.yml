@@ -1,0 +1,58 @@
+name: Run Common Crawl Tests
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up dotnet core
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "8.0.x"
+          
+      - name: Restore corpus cache 0000, 0001
+        id: restore-corpus
+        uses: actions/cache@v4
+        with:
+          path: corpus/
+          key: ${{ runner.os }}-pdf-corpus-0000-0001
+
+      - name: Download corpus if cache missed 0000, 0001
+        if: steps.restore-corpus.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p corpus/zipfiles
+          cd corpus/zipfiles
+          echo "Downloading 0000.zip"
+          wget -nv https://digitalcorpora.s3.amazonaws.com/corpora/files/CC-MAIN-2021-31-PDF-UNTRUNCATED/zipfiles/0000-0999/0000.zip -O 0000.zip
+          wget -nv https://digitalcorpora.s3.amazonaws.com/corpora/files/CC-MAIN-2021-31-PDF-UNTRUNCATED/zipfiles/0000-0999/0001.zip -O 0001.zip
+          cd ..
+          unzip 'zipfiles/*.zip' -d extracted
+          run: rm -f zipfiles/*.zip
+
+      - name: Remove unwanted test files
+        run: |
+          skip_files=(
+            "corpus/extracted/0000399.pdf"
+            "corpus/extracted/0000819.pdf"
+            "corpus/extracted/0000920.pdf"
+            "corpus/extracted/0000300.pdf"
+            "corpus/extracted/0001589.pdf"
+            "corpus/extracted/0001957.pdf"
+          )
+
+          for file in "${skip_files[@]}"; do
+            if [ -f "$file" ]; then
+              echo "Removing $file"
+              rm "$file"
+            fi
+          done
+
+      - name: Run tests against corpus
+        run: dotnet run --project tools/UglyToad.PdfPig.ConsoleRunner/UglyToad.PdfPig.ConsoleRunner.csproj "corpus/extracted"
