@@ -140,16 +140,42 @@
             contentStreams = new List<IPageContentStream>() { currentStream };
         }
 
-        internal PdfPageBuilder(int number, PdfDocumentBuilder documentBuilder, IEnumerable<CopiedContentStream> copied,
-            Dictionary<NameToken, IToken> pageDict, List<(DictionaryToken token, PdfAction action)> links)
+        internal PdfPageBuilder(
+            int number,
+            PdfDocumentBuilder documentBuilder,
+            IEnumerable<CopiedContentStream> copied,
+            Dictionary<NameToken, IToken> pageDict,
+            List<(DictionaryToken token, PdfAction action)> links)
         {
             this.documentBuilder = documentBuilder ?? throw new ArgumentNullException(nameof(documentBuilder));
             this.links = links;
             PageNumber = number;
             pageDictionary = pageDict;
-            contentStreams = new List<IPageContentStream>();
-            contentStreams.AddRange(copied);
-            currentStream = new DefaultContentStream();
+            contentStreams = new List<IPageContentStream>(copied);
+
+            var writeableContentStream = new DefaultContentStream();
+            if (contentStreams.Count > 0)
+            {
+                var lastGlobalTransform = contentStreams.LastOrDefault(x => x.GlobalTransform.HasValue);
+
+                if (lastGlobalTransform?.GlobalTransform != null)
+                {
+                    var inverse = lastGlobalTransform.GlobalTransform.Value.Inverse();
+                    writeableContentStream.Add(
+                        new ModifyCurrentTransformationMatrix(
+                            [
+                                inverse.A,
+                                inverse.B,
+                                inverse.C,
+                                inverse.D,
+                                inverse.E,
+                                inverse.F
+                            ]
+                        ));
+                }
+            }
+
+            currentStream = writeableContentStream;
             contentStreams.Add(currentStream);
         }
 
@@ -987,6 +1013,22 @@
                 }
             }
 
+            // Reset the graphics state to what we'd expect to be able to write our content in the correct locations.
+            var globalTransform = PdfContentTransformationReader.GetGlobalTransform(operations);
+            if (globalTransform.HasValue)
+            {
+                var inverse = globalTransform.Value.Inverse();
+                operations.Add(new ModifyCurrentTransformationMatrix(
+                    [
+                        inverse.A,
+                        inverse.B,
+                        inverse.C,
+                        inverse.D,
+                        inverse.E,
+                        inverse.F
+                    ]));
+            }
+
             destinationStream.Operations.AddRange(operations);
 
             return this;
@@ -1090,9 +1132,18 @@
         internal interface IPageContentStream : IContentStream
         {
             bool ReadOnly { get; }
+
             bool HasContent { get; }
+
             void Add(IGraphicsStateOperation operation);
+
             IndirectReferenceToken Write(IPdfStreamWriter writer);
+
+            /// <summary>
+            /// If this content stream applied any global transform to the graphics state this will
+            /// tell you which one is currently active at the end of this stream being applied.
+            /// </summary>
+            TransformationMatrix? GlobalTransform { get; }
         }
 
         internal class DefaultContentStream : IPageContentStream
@@ -1109,7 +1160,10 @@
             }
 
             public bool ReadOnly => false;
+
             public bool HasContent => operations.Any();
+
+            public TransformationMatrix? GlobalTransform => null;
 
             public void Add(IGraphicsStateOperation operation)
             {
@@ -1139,11 +1193,18 @@
         internal class CopiedContentStream : IPageContentStream
         {
             private readonly IndirectReferenceToken token;
+
             public bool ReadOnly => true;
+
             public bool HasContent => true;
 
-            public CopiedContentStream(IndirectReferenceToken indirectReferenceToken)
+            public TransformationMatrix? GlobalTransform { get; }
+
+            public CopiedContentStream(
+                IndirectReferenceToken indirectReferenceToken,
+                TransformationMatrix? globalTransform)
             {
+                GlobalTransform = globalTransform;
                 token = indirectReferenceToken;
             }
 
