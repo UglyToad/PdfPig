@@ -92,7 +92,6 @@
                     null);
 
                 softMaskImage = ReadImage(maskImageRecord, pdfScanner, filterProvider, resourceStore);
-                System.Diagnostics.Debug.Assert(softMaskImage.ColorSpaceDetails?.IsStencil == true);
             }
 
             var isJpxDecode = dictionary.TryGet(NameToken.Filter, out NameToken filterName) && filterName.Equals(NameToken.JpxDecode);

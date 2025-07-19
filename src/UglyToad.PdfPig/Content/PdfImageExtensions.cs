@@ -10,13 +10,7 @@
         /// </summary>
         public static bool NeedsReverseDecode(this IPdfImage pdfImage)
         {
-            if (pdfImage.ColorSpaceDetails?.IsStencil == true)
-            {
-                // Stencil color space already takes care of reversing.
-                return false;
-            }
-
-            return pdfImage.Decode.Count >= 2 && pdfImage.Decode[0] == 1 && pdfImage.Decode[1] == 0;
+            return pdfImage.Decode?.Count >= 2 && pdfImage.Decode[0] == 1 && pdfImage.Decode[1] == 0;
         }
     }
 }

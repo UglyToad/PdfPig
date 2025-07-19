@@ -159,13 +159,28 @@
                 else
                 {
                     int i = 0;
-                    for (int col = 0; col < image.HeightInSamples; col++)
+                    if (!image.NeedsReverseDecode()) // TODO - Need to properly implement decode for other numberOfComponents
                     {
-                        for (int row = 0; row < image.WidthInSamples; row++)
+                        for (int col = 0; col < image.HeightInSamples; col++)
                         {
-                            byte a = getAlphaChannel(i);
-                            byte pixel = bytesPure[i++];
-                            builder.SetPixel(new Pixel(pixel, pixel, pixel, a, false), row, col);
+                            for (int row = 0; row < image.WidthInSamples; row++)
+                            {
+                                byte a = getAlphaChannel(i);
+                                byte pixel = bytesPure[i++];
+                                builder.SetPixel(new Pixel(pixel, pixel, pixel, a, false), row, col);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (int col = 0; col < image.HeightInSamples; col++)
+                        {
+                            for (int row = 0; row < image.WidthInSamples; row++)
+                            {
+                                byte a = getAlphaChannel(i);
+                                byte pixel = (byte)(255 - bytesPure[i++]); // Inverse decode
+                                builder.SetPixel(new Pixel(pixel, pixel, pixel, a, false), row, col);
+                            }
                         }
                     }
                 }

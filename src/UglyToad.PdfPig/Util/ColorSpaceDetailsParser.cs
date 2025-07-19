@@ -54,11 +54,7 @@
                 }
 
                 var colorSpaceDetails = GetColorSpaceDetails(colorSpace, imageDictionary.Without(NameToken.Filter).Without(NameToken.F), scanner, resourceStore, filterProvider, true);
-
-                var decodeRaw = imageDictionary.GetObjectOrDefault(NameToken.Decode, NameToken.D) as ArrayToken ?? new ArrayToken([]);
-                var decode = decodeRaw.Data.OfType<NumericToken>().Select(static x => x.Double).ToArray();
-
-                return IndexedColorSpaceDetails.Stencil(colorSpaceDetails, decode);
+                return IndexedColorSpaceDetails.Stencil(colorSpaceDetails);
             }
 
             if (!colorSpace.HasValue)
