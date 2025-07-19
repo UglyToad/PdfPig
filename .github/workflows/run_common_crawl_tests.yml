@@ -34,7 +34,7 @@ jobs:
           wget -nv https://digitalcorpora.s3.amazonaws.com/corpora/files/CC-MAIN-2021-31-PDF-UNTRUNCATED/zipfiles/0000-0999/0001.zip -O 0001.zip
           cd ..
           unzip 'zipfiles/*.zip' -d extracted
-          run: rm -f zipfiles/*.zip
+          # run: rm -f zipfiles/*.zip
 
       - name: Remove unwanted test files
         run: |
