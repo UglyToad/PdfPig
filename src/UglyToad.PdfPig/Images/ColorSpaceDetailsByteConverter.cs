@@ -79,7 +79,7 @@
                     // Enumerate bits in bitsPerComponent-sized chunks from MSB to LSB, masking on the appropriate bits
                     for (int i = end; i >= 0; --i)
                     {
-                        unpacked[u++] = (byte)((b >> i) & right) == 1 ? byte.MinValue : byte.MaxValue;
+                        unpacked[u++] = (byte)((b >> i) & right) == 1 ? byte.MaxValue : byte.MinValue;
                     }
                 }
 
