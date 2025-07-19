@@ -11,11 +11,16 @@ namespace UglyToad.PdfPig.Writer
     using Core;
     using Fonts;
     using Actions;
+    using Filters;
+    using Graphics;
+    using Logging;
     using PdfPig.Fonts.TrueType;
     using PdfPig.Fonts.Standard14Fonts;
     using PdfPig.Fonts.TrueType.Parser;
     using Outline;
     using Outline.Destinations;
+    using Parser;
+    using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -342,6 +347,7 @@ namespace UglyToad.PdfPig.Writer
             }
 
             var page = document.GetPage(pageNumber);
+            var pcp = new PageContentParser(ReflectionGraphicsStateOperationFactory.Instance, true);
 
             // copy content streams
             var streams = new List<PdfPageBuilder.CopiedContentStream>();
@@ -352,23 +358,54 @@ namespace UglyToad.PdfPig.Writer
                 var prev = context.AttemptDeduplication;
                 context.AttemptDeduplication = false;
                 context.WritingPageContents = true;
+
+                var contentReferences = new List<IndirectReferenceToken>();
+
                 if (contentsToken is ArrayToken array)
                 {
                     foreach (var item in array.Data)
                     {
                         if (item is IndirectReferenceToken ir)
                         {
-                            streams.Add(new PdfPageBuilder.CopiedContentStream(
-                                (IndirectReferenceToken)WriterUtil.CopyToken(context, ir, document.Structure.TokenScanner, refs)));
+                            contentReferences.Add(ir);
                         }
 
                     }
                 }
                 else if (contentsToken is IndirectReferenceToken ir)
                 {
-                    streams.Add(new PdfPageBuilder.CopiedContentStream(
-                        (IndirectReferenceToken)WriterUtil.CopyToken(context, ir, document.Structure.TokenScanner, refs)));
+                    contentReferences.Add(ir);
                 }
+
+                foreach (var indirectReferenceToken in contentReferences)
+                {
+                    // Detect any globally applied transforms to the graphics state from the content stream.
+                    TransformationMatrix? globalTransform = null;
+
+                    try
+                    {
+                        // If we don't manage to do this it's not the end of the world.
+                        if (DirectObjectFinder.TryGet<StreamToken>(indirectReferenceToken, document.Structure.TokenScanner, out var contentStream))
+                        {
+                            var contentBytes = contentStream.Decode(DefaultFilterProvider.Instance);
+                            var parsedOperations = pcp.Parse(0, new MemoryInputBytes(contentBytes), new NoOpLog());
+                            globalTransform = PdfContentTransformationReader.GetGlobalTransform(parsedOperations);
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore and continue writing.
+                    }
+
+                    var updatedIndirect = (IndirectReferenceToken)WriterUtil.CopyToken(
+                        context,
+                        indirectReferenceToken,
+                        document.Structure.TokenScanner,
+                        refs);
+
+                    streams.Add(new PdfPageBuilder.CopiedContentStream(updatedIndirect, globalTransform));
+                }
+
                 context.AttemptDeduplication = prev;
                 context.WritingPageContents = false;
             }
