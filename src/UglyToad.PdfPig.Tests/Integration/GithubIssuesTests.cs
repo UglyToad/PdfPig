@@ -8,6 +8,27 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue1096()
+        {
+            // Ensure no StackOverflowException
+            // (already fixed by https://github.com/UglyToad/PdfPig/pull/1097)
+            
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("issue_1096.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                for (int p = 1; p <= document.NumberOfPages; p++)
+                {
+                    var page = document.GetPage(p);
+                    foreach (var image in page.GetImages())
+                    {
+                        Assert.NotNull(image);
+                    }
+                }
+            }
+        }
+
+        [Fact]
         public void Issue1067()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("GHOSTSCRIPT-691770-0.pdf");

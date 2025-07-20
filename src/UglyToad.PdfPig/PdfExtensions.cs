@@ -122,12 +122,12 @@
         /// Returns an equivalent token where any indirect references of child objects are
         /// recursively traversed and resolved.
         /// </summary>
-        internal static T? Resolve<T>(this T? token, IPdfTokenScanner scanner, List<long>? visited = null) where T : IToken
+        internal static T? Resolve<T>(this T? token, IPdfTokenScanner scanner, List<IndirectReference>? visited = null) where T : IToken
         {
             return (T?)ResolveInternal(token, scanner, visited ?? []);
         }
 
-        private static IToken? ResolveInternal(this IToken? token, IPdfTokenScanner scanner, List<long> visited)
+        private static IToken? ResolveInternal(this IToken? token, IPdfTokenScanner scanner, List<IndirectReference> visited)
         {
             if (token is StreamToken stream)
             {
@@ -142,12 +142,12 @@
                     var value = kvp.Value;
                     if (kvp.Value is IndirectReferenceToken reference)
                     {
-                        if (visited.Contains(reference.Data.ObjectNumber))
+                        if (visited.Contains(reference.Data))
                         {
                             continue;
                         }
                         value = scanner.Get(reference.Data)?.Data;
-                        visited.Add(reference.Data.ObjectNumber);
+                        visited.Add(reference.Data);
                     }
                     resolvedItems[NameToken.Create(kvp.Key)] = ResolveInternal(value, scanner, visited);
                 }
