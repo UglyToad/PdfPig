@@ -122,6 +122,8 @@
 
             var version = FileHeaderParser.Parse(scanner, inputBytes, parsingOptions.UseLenientParsing, parsingOptions.Logger);
 
+            var fpp = FirstPassParser.Parse(inputBytes, scanner, parsingOptions.Logger);
+
             var crossReferenceOffset = FileTrailerParser.GetFirstCrossReferenceOffset(
                 inputBytes,
                 scanner,
