@@ -307,11 +307,11 @@ namespace UglyToad.PdfPig.Writer
         /// </summary>
         /// <param name="document">Source document.</param>
         /// <param name="pageNumber">Page to copy.</param>
-        /// <param name="keepAnnotations">Flag to set whether annotation of page should be kept</param>
+        /// <param name="options">Control how copying for the page occurs.</param>
         /// <returns>A builder for editing the page.</returns>
-        public PdfPageBuilder AddPage(PdfDocument document, int pageNumber, bool keepAnnotations = true)
+        public PdfPageBuilder AddPage(PdfDocument document, int pageNumber)
         {
-            return AddPage(document, pageNumber, null);
+            return AddPage(document, pageNumber, new AddPageOptions());
         }
 
         /// <summary>
@@ -319,9 +319,9 @@ namespace UglyToad.PdfPig.Writer
         /// </summary>
         /// <param name="document">Source document.</param>
         /// <param name="pageNumber">Page to copy.</param>
-        /// <param name="copyLink">If set, links are copied based on the result of the delegate.</param>
+        /// <param name="options">Control how copying for the page occurs.</param>
         /// <returns>A builder for editing the page.</returns>
-        public PdfPageBuilder AddPage(PdfDocument document, int pageNumber, Func<PdfAction, PdfAction?>? copyLink)
+        public PdfPageBuilder AddPage(PdfDocument document, int pageNumber, AddPageOptions options)
         {
             if (!existingCopies.TryGetValue(document.Structure.TokenScanner, out var refs))
             {
@@ -454,7 +454,7 @@ namespace UglyToad.PdfPig.Writer
 
                 if (kvp.Key == NameToken.Annots)
                 {
-                    if (!keepAnnotations)
+                    if (!options.KeepAnnotations)
                     {
                         continue;
                     }
@@ -490,7 +490,7 @@ namespace UglyToad.PdfPig.Writer
 
                         if (tk.TryGet(NameToken.Subtype, out var st) && st is NameToken nm && nm == NameToken.Link)
                         {
-                            if (copyLink is null)
+                            if (options.CopyLinkFunc is null)
                             {
                                 // ignore link if don't know how to copy
                                 continue;
@@ -503,7 +503,7 @@ namespace UglyToad.PdfPig.Writer
                                 continue;
                             }
 
-                            var copiedLink = copyLink(link);
+                            var copiedLink = options.CopyLinkFunc(link);
                             if (copiedLink is null)
                             {
                                 // ignore if caller wants to skip the link
@@ -1247,6 +1247,22 @@ namespace UglyToad.PdfPig.Writer
             }
 
             context.Dispose();
+        }
+
+        /// <summary>
+        /// Options for how a page should be copied to the current builder when using AddPage.
+        /// </summary>
+        public class AddPageOptions
+        {
+            /// <summary>
+            /// Whether to preserve annotation objects in the copied page.
+            /// </summary>
+            public bool KeepAnnotations { get; set; } = true;
+
+            /// <summary>
+            /// Intercept how actions are copied from the source to destination page.
+            /// </summary>
+            public Func<PdfAction, PdfAction?>? CopyLinkFunc { get; set; }
         }
     }
 }

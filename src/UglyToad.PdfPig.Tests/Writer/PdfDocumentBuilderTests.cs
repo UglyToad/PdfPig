@@ -139,7 +139,10 @@
             using (var existing = PdfDocument.Open(contents, ParsingOptions.LenientParsingOff))
             using (var output = new PdfDocumentBuilder())
             {
-                output.AddPage(existing, 1, false);
+                output.AddPage(existing, 1, new PdfDocumentBuilder.AddPageOptions
+                {
+                    KeepAnnotations = false
+                });
                 results = output.Build();
                 var pg = existing.GetPage(1);
                 var annots = pg.ExperimentalAccess.GetAnnotations().ToList();
