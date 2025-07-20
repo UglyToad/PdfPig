@@ -130,6 +130,31 @@
         }
 
         [Fact]
+        public void CanFastAddPageAndStripAllAnnots()
+        {
+            var first = IntegrationHelpers.GetDocumentPath("outline.pdf");
+            var contents = File.ReadAllBytes(first);
+
+            byte[] results = null;
+            using (var existing = PdfDocument.Open(contents, ParsingOptions.LenientParsingOff))
+            using (var output = new PdfDocumentBuilder())
+            {
+                output.AddPage(existing, 1, false);
+                results = output.Build();
+                var pg = existing.GetPage(1);
+                var annots = pg.ExperimentalAccess.GetAnnotations().ToList();
+                Assert.NotEmpty(annots);
+            }
+
+            using (var rewritten = PdfDocument.Open(results, ParsingOptions.LenientParsingOff))
+            {
+                var pg = rewritten.GetPage(1);
+                var annots = pg.ExperimentalAccess.GetAnnotations().ToList();
+                Assert.Empty(annots);
+            }
+        }
+
+        [Fact]
         public void CanReadSingleBlankPage()
         {
             var result = CreateSingleBlankPage();
