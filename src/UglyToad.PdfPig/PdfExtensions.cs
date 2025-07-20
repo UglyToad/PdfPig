@@ -66,7 +66,7 @@
             {
                 var filter = filters[i];
                 totalMaxEstSize *= GetEstimatedSizeMultiplier(filter);
-                
+
                 transform = filter.Decode(transform, stream.StreamDictionary, filterProvider, i);
 
                 if (i < filters.Count - 1 && transform.Length > totalMaxEstSize)
@@ -93,9 +93,9 @@
             {
                 var filter = filters[i];
                 totalMaxEstSize *= GetEstimatedSizeMultiplier(filter);
-                
+
                 transform = filter.Decode(transform, stream.StreamDictionary, filterProvider, i);
-                
+
                 if (i < filters.Count - 1 && transform.Length > totalMaxEstSize)
                 {
                     // Try to prevent malicious decompression, leading to OOM issues
@@ -122,16 +122,16 @@
         /// Returns an equivalent token where any indirect references of child objects are
         /// recursively traversed and resolved.
         /// </summary>
-        internal static T? Resolve<T>(this T? token, IPdfTokenScanner scanner) where T : IToken
+        internal static T? Resolve<T>(this T? token, IPdfTokenScanner scanner, List<long>? visited = null) where T : IToken
         {
-            return (T?)ResolveInternal(token, scanner);
+            return (T?)ResolveInternal(token, scanner, visited ?? []);
         }
 
-        private static IToken? ResolveInternal(this IToken? token, IPdfTokenScanner scanner)
+        private static IToken? ResolveInternal(this IToken? token, IPdfTokenScanner scanner, List<long> visited)
         {
             if (token is StreamToken stream)
             {
-                return new StreamToken(Resolve(stream.StreamDictionary, scanner), stream.Data);
+                return new StreamToken(Resolve(stream.StreamDictionary, scanner, visited), stream.Data);
             }
 
             if (token is DictionaryToken dict)
@@ -139,8 +139,17 @@
                 var resolvedItems = new Dictionary<NameToken, IToken>();
                 foreach (var kvp in dict.Data)
                 {
-                    var value = kvp.Value is IndirectReferenceToken reference ? scanner.Get(reference.Data)?.Data : kvp.Value;
-                    resolvedItems[NameToken.Create(kvp.Key)] = ResolveInternal(value, scanner);
+                    var value = kvp.Value;
+                    if (kvp.Value is IndirectReferenceToken reference)
+                    {
+                        if (visited.Contains(reference.Data.ObjectNumber))
+                        {
+                            continue;
+                        }
+                        value = scanner.Get(reference.Data)?.Data;
+                        visited.Add(reference.Data.ObjectNumber);
+                    }
+                    resolvedItems[NameToken.Create(kvp.Key)] = ResolveInternal(value, scanner, visited);
                 }
 
                 return new DictionaryToken(resolvedItems);
@@ -152,7 +161,7 @@
                 for (int i = 0; i < arr.Length; i++)
                 {
                     var value = arr.Data[i] is IndirectReferenceToken reference ? scanner.Get(reference.Data)?.Data : arr.Data[i];
-                    resolvedItems.Add(ResolveInternal(value, scanner));
+                    resolvedItems.Add(ResolveInternal(value, scanner, visited));
                 }
                 return new ArrayToken(resolvedItems);
             }
