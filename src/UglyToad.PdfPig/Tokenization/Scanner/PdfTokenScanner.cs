@@ -164,8 +164,6 @@
                         return true;
                     }
 
-                    // This should never happen.
-                    Debug.Assert(false, "Encountered a start object 'obj' operator before the end of the previous object.");
                     return false;
                 }
 
@@ -191,9 +189,7 @@
                 
                         return true;
                     }
-                
-                    // This should never happen.
-                    Debug.Assert(false, $"Encountered a '{coreTokenScanner.CurrentToken}' operator before the end of the previous object.");
+
                     return false;
                 }
 
