@@ -1,65 +1,64 @@
-﻿namespace UglyToad.PdfPig.Graphics.Operations.InlineImages
+﻿namespace UglyToad.PdfPig.Graphics.Operations.InlineImages;
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using Tokens;
+using Writer;
+
+/// <inheritdoc />
+/// <summary>
+/// Begin the image data for an inline image object. 
+/// </summary>
+public class BeginInlineImageData : IGraphicsStateOperation
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using Tokens;
-    using UglyToad.PdfPig.Writer;
+    /// <summary>
+    /// The symbol for this operation in a stream.
+    /// </summary>
+    public const string Symbol = "ID";
+        
+    /// <inheritdoc />
+    public string Operator => Symbol;
+
+    /// <summary>
+    /// The key-value pairs which specify attributes of the following image.
+    /// </summary>
+    public IReadOnlyDictionary<NameToken, IToken> Dictionary { get; }
+
+    /// <summary>
+    /// Create a new <see cref="BeginInlineImageData"/>.
+    /// </summary>
+    public BeginInlineImageData(IReadOnlyDictionary<NameToken, IToken> dictionary)
+    {
+        Dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
+    }
 
     /// <inheritdoc />
-    /// <summary>
-    /// Begin the image data for an inline image object. 
-    /// </summary>
-    public class BeginInlineImageData : IGraphicsStateOperation
+    public void Run(IOperationContext operationContext)
     {
-        /// <summary>
-        /// The symbol for this operation in a stream.
-        /// </summary>
-        public const string Symbol = "ID";
-        
-        /// <inheritdoc />
-        public string Operator => Symbol;
+        operationContext.SetInlineImageProperties(Dictionary);
+    }
 
-        /// <summary>
-        /// The key-value pairs which specify attributes of the following image.
-        /// </summary>
-        public IReadOnlyDictionary<NameToken, IToken> Dictionary { get; }
-
-        /// <summary>
-        /// Create a new <see cref="BeginInlineImageData"/>.
-        /// </summary>
-        public BeginInlineImageData(IReadOnlyDictionary<NameToken, IToken> dictionary)
+    /// <inheritdoc />
+    public void Write(Stream stream)
+    {
+        var tokenWriter = TokenWriter.Instance;
+        foreach (var item in Dictionary)
         {
-            Dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
-        }
+            var name = item.Key;
+            var value = item.Value;
 
-        /// <inheritdoc />
-        public void Run(IOperationContext operationContext)
-        {
-            operationContext.SetInlineImageProperties(Dictionary);
-        }
-
-        /// <inheritdoc />
-        public void Write(Stream stream)
-        {
-            var tokenWriter = TokenWriter.Instance;
-            foreach (var item in Dictionary)
-            {
-                var name = item.Key;
-                var value = item.Value;
-
-                stream.WriteText($"{name} ");
-                tokenWriter.WriteToken(value, stream);
-                stream.WriteNewLine();
-            }
-            stream.WriteText(Symbol);
+            stream.WriteText($"{name} ");
+            tokenWriter.WriteToken(value, stream);
             stream.WriteNewLine();
         }
+        stream.WriteText(Symbol);
+        stream.WriteNewLine();
+    }
 
-        /// <inheritdoc />
-        public override string ToString()
-        {
-            return Symbol;
-        }
+    /// <inheritdoc />
+    public override string ToString()
+    {
+        return Symbol;
     }
 }
