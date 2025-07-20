@@ -68,12 +68,20 @@
         [Fact]
         public void ReflectionGraphicsStateOperationFactoryKnowsAllOperations()
         {
-            var operationsField = typeof(ReflectionGraphicsStateOperationFactory).GetField("operations", BindingFlags.NonPublic | BindingFlags.Static);
-            var operationDictionary = operationsField.GetValue(null) as IReadOnlyDictionary<string, Type>;
-            Assert.NotNull(operationDictionary);
+            var operationsField = typeof(ReflectionGraphicsStateOperationFactory)
+                .GetField("Operations", BindingFlags.NonPublic | BindingFlags.Static);
+
+            Assert.NotNull(operationsField);
+
+            var operationDictionaryRaw = operationsField.GetValue(null) as IReadOnlyDictionary<string, Type>;
+
+            Assert.NotNull(operationDictionaryRaw);
+
+            var operationDictionary = new Dictionary<string, Type>(operationDictionaryRaw!.ToDictionary(x => x.Key, x => x.Value));
 
             var allOperations = GetOperationTypes();
-            Assert.Equal(allOperations.Count(), operationDictionary.Count);
+
+            Assert.Equal(allOperations.Count, operationDictionary.Count);
 
             var mapped = allOperations.Select(o =>
             {
@@ -84,14 +92,14 @@
             Assert.Equivalent(operationDictionary, mapped, strict: true);
         }
 
-        private static IEnumerable<Type> GetOperationTypes()
+        private static IReadOnlyList<Type> GetOperationTypes()
         {
             var assembly = Assembly.GetAssembly(typeof(IGraphicsStateOperation));
 
             var operationTypes = assembly.GetTypes().Where(x => typeof(IGraphicsStateOperation).IsAssignableFrom(x)
                                                                 && !x.IsInterface);
 
-            return operationTypes;
+            return operationTypes.ToList();
         }
 
         private static object[] GetConstructorParameters(ParameterInfo[] parameters)
