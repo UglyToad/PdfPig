@@ -3,7 +3,6 @@
     using System;
     using Content;
     using Core;
-    using CrossReference;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -16,22 +15,17 @@
         /// The root of the document's hierarchy providing access to the page tree as well as other information.
         /// </summary>
         public Catalog Catalog { get; }
-        
-        /// <summary>
-        /// The cross-reference table enables direct access to objects by number.
-        /// </summary>
-        public CrossReferenceTable CrossReferenceTable { get; }
 
         /// <summary>
         /// Provides access to tokenization capabilities for objects by object number.
         /// </summary>
         internal IPdfTokenScanner TokenScanner { get; }
 
-        internal Structure(Catalog catalog, CrossReferenceTable crossReferenceTable,
+        internal Structure(
+            Catalog catalog,
             IPdfTokenScanner scanner)
         {
             Catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
-            CrossReferenceTable = crossReferenceTable ?? throw new ArgumentNullException(nameof(crossReferenceTable));
             TokenScanner = scanner ?? throw new ArgumentNullException(nameof(scanner));
         }
 
