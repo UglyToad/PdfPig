@@ -84,7 +84,13 @@ internal static partial class FirstPassParser
         {
             if (xrefPart.Dictionary != null)
             {
-                lastTrailer = xrefPart.Dictionary;
+                // Prefer a dictionary with a root object irrespective of order.
+                if (xrefPart.Dictionary.ContainsKey(NameToken.Root)
+                    || lastTrailer == null
+                    || !lastTrailer.ContainsKey(NameToken.Root))
+                {
+                    lastTrailer = xrefPart.Dictionary;
+                }
             }
 
             foreach (var objectOffset in xrefPart.ObjectOffsets)
@@ -122,7 +128,7 @@ internal static partial class FirstPassParser
             var streamOrTable = GetXrefStreamOrTable(
                 input,
                 scanner,
-                nextLocation.Value!,
+                nextLocation.Value,
                 log);
 
             if (!visitedLocations.Add(nextLocation.Value))
@@ -135,7 +141,7 @@ internal static partial class FirstPassParser
             {
                 return [];
             }
-            
+
             if (streamOrTable is XrefTable table)
             {
                 results.Add(table);
