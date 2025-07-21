@@ -4,6 +4,7 @@ using Core;
 using Logging;
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Tokenization.Scanner;
 using Tokens;
 
@@ -36,6 +37,7 @@ internal static class XrefTableParser
             }
         }
 
+        const int objRowSentinel = -1;
         const int freeSentinel = 0;
         const int occupiedSentinel = 1;
 
@@ -49,7 +51,7 @@ internal static class XrefTableParser
         while (scanner.MoveNext())
         {
             // If we were reading entries but have no more to consume, revert to looking for subsection headers.
-            if (mode == XrefTableReadMode.Entry && expectedEntryCount == 0)
+            if (mode == XrefTableReadMode.Entry && expectedEntryCount <= 0)
             {
                 mode = XrefTableReadMode.SubsectionHeader;
             }
@@ -91,6 +93,8 @@ internal static class XrefTableParser
                     readNums.Add(freeSentinel);
                     readInLine = 0;
                     expectedEntryCount--;
+
+                    readNums.Insert(readNums.Count - 3, objRowSentinel);
                 }
                 else if (string.Equals("n", ot.Data, StringComparison.OrdinalIgnoreCase)
                          && readInLine == 3)
@@ -99,6 +103,8 @@ internal static class XrefTableParser
                     readNums.Add(occupiedSentinel);
                     readInLine = 0;
                     expectedEntryCount--;
+
+                    readNums.Insert(readNums.Count - 3, objRowSentinel);
                 }
                 else if (string.Equals(ot.Data, "trailer", StringComparison.OrdinalIgnoreCase))
                 {
@@ -106,11 +112,10 @@ internal static class XrefTableParser
                     if (scanner.TryReadToken(out DictionaryToken trailerDictionary))
                     {
                         trailer = trailerDictionary;
+                        break;
                     }
-                    else
-                    {
-                        return null;
-                    }
+
+                    return null;
                 }
                 else if (mode == XrefTableReadMode.SubsectionHeader)
                 {
@@ -137,48 +142,89 @@ internal static class XrefTableParser
             }
         }
 
+        var offsets = new Dictionary<IndirectReference, long>();
         if (readNums.Count == 0)
         {
+            if (trailer != null)
+            {
+                return new XrefTable(
+                    offset,
+                    offsets,
+                    trailer);
+            }
+
             return null;
         }
 
-        var offsets = new Dictionary<IndirectReference, long>();
+        var buff = new long[4];
+
+        var objNum = -1L;
         var ix = 0;
+
+        bool TryReadBuff(int len)
+        {
+            for (var i = 0; i < len; i++)
+            {
+                if (ix >= readNums.Count)
+                {
+                    return false;
+                }
+
+                buff[i] = readNums[ix++];
+            }
+
+            return true;
+        }
+
         do
         {
-            var firstNum = readNums[ix++];
-            if (ix >= readNums.Count)
+            if (!TryReadBuff(2))
             {
                 return null;
             }
 
-            var count = readNums[ix++];
-            
-            for (var i = 0; i < count; i++)
+            var first = buff[0];
+            var second = buff[1];
+
+            if (first != objRowSentinel)
             {
-                if (ix >= readNums.Count)
+                objNum = first;
+            }
+            else
+            {
+                if (objNum == -1)
                 {
                     return null;
                 }
 
-                var objOffset = readNums[ix++];
-                if (ix >= readNums.Count)
+                second = 1;
+                ix -= 2;
+            }
+
+            for (var i = 0; i < second; i++)
+            {
+                if (!TryReadBuff(4))
                 {
                     return null;
                 }
 
-                var objGen = readNums[ix++];
-                if (ix >= readNums.Count)
+                var sentinel = buff[0];
+                var objOffset = buff[1];
+                var gen = buff[2];
+                var type = buff[3];
+
+                if (sentinel != objRowSentinel)
                 {
                     return null;
                 }
 
-                var sentinel = readNums[ix++];
-
-                if (sentinel == occupiedSentinel)
+                if (type == occupiedSentinel)
                 {
-                    offsets[new IndirectReference(firstNum + i, (int)objGen)] = objOffset;
+                    var indirectRef = new IndirectReference(objNum, (int)gen);
+                    offsets[indirectRef] = objOffset;
                 }
+
+                objNum++;
             }
         } while (ix < readNums.Count);
 

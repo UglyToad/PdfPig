@@ -10,7 +10,7 @@ internal static partial class FirstPassParser
 {
     private static ReadOnlySpan<byte> StartXRefBytes => "startxref"u8;
 
-    private static StartXRefLocation GetFirstCrossReferenceOffset(
+    public static StartXRefLocation GetFirstCrossReferenceOffset(
         IInputBytes bytes,
         ISeekableTokenScanner scanner,
         ILog log)
@@ -87,10 +87,16 @@ internal static partial class FirstPassParser
         return null;
     }
 
-    private record StartXRefLocation(long? StartXRefOperatorToken, long? StartXRefDeclaredOffset)
+    public record StartXRefLocation(long? StartXRefOperatorToken, long? StartXRefDeclaredOffset)
     {
+        /// <summary>
+        /// The offset in the file the "startxref" we located (if any) declares the xref should be located.
+        /// </summary>
         public long? StartXRefDeclaredOffset { get; } = StartXRefDeclaredOffset;
 
+        /// <summary>
+        /// The offset in the file the "startxref" token we located (if any) starts at.
+        /// </summary>
         public long? StartXRefOperatorToken { get; } = StartXRefOperatorToken;
 
         public bool IsValidOffset(IInputBytes bytes)

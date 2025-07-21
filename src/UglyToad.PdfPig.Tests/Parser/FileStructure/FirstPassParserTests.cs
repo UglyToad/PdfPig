@@ -1,10 +1,11 @@
 ﻿namespace UglyToad.PdfPig.Tests.Parser.FileStructure;
 
+using PdfPig.Core;
 using PdfPig.Parser.FileStructure;
 using PdfPig.Tokenization.Scanner;
 using PdfPig.Tokens;
 
-public class XrefOffsetValidatorTests
+public class FirstPassParserTests
 {
     [Fact]
     public void FindsTwoXrefs()
@@ -18,7 +19,7 @@ public class XrefOffsetValidatorTests
             abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
             endstream
             endobj
-            xref0 1
+            xref7 1
             0000000000 65535 f 
             0000000500 00000 n 
             4 0 obj
@@ -36,17 +37,14 @@ public class XrefOffsetValidatorTests
             %%EOF
             """;
 
-        if (Environment.NewLine == "\n")
-        {
-            content = content.Replace("\n", "\r\n");
-        }
-
         var ib = StringBytesTestConverter.Convert(content, false);
 
-        var results = XrefOffsetValidator.BruteForceSearchForTables(ib.Bytes);
+        var results = FirstPassParser.Parse(ib.Bytes, new CoreTokenScanner(ib.Bytes, true));
 
-        Assert.Contains(144, results);
-        Assert.Contains(331, results);
+        Assert.Equal(2, results.Parts.Count);
+        Assert.NotNull(results.Trailer);
+
+        Assert.Equal(results.XrefOffsets[new IndirectReference(8, 0)], 500);
     }
 
     [Fact]
@@ -115,10 +113,13 @@ public class XrefOffsetValidatorTests
 
         var ib = StringBytesTestConverter.Convert(content, false);
 
-        var results = XrefOffsetValidator.BruteForceSearchForTables(ib.Bytes);
+        var results = FirstPassParser.Parse(ib.Bytes, new CoreTokenScanner(ib.Bytes, true));
 
-        Assert.Contains(98, results);
-        Assert.Contains(1186, results);
+        var offsets = results.Parts.Select(x => x.Offset).OrderBy(x => x).ToList();
+        
+        Assert.Equal(98, offsets[0]);
+        Assert.Equal(1186, offsets[1]);
+        Assert.NotNull(results.Trailer);
 
         ib.Bytes.Seek(98);
         var scanner = new CoreTokenScanner(ib.Bytes, false);

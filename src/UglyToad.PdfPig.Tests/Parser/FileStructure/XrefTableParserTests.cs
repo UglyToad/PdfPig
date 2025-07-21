@@ -3,7 +3,6 @@
 using Logging;
 using PdfPig.Core;
 using PdfPig.Parser.FileStructure;
-using PdfPig.Tokenization.Scanner;
 using PdfPig.Tokens;
 
 public class XrefTableParserTests
@@ -268,6 +267,314 @@ public class XrefTableParserTests
 
         Assert.Equal(39, table.ObjectOffsets.Count);
     }
+    [Fact]
+    public void ParseNewDefaultTable()
+    {
+        var input = StringBytesTestConverter.Scanner(
+            """
+            one xref
+            0 6
+            0000000003 65535 f
+            0000000090 00000 n
+            0000000081 00000 n
+            0000000000 00007 f
+            0000000331 00000 n
+            0000000409 00000 n
+
+            trailer
+            << >>
+            """);
+
+        var result = XrefTableParser.TryReadTableAtOffset(4, input.bytes, input.scanner, new TestingLog());
+
+        Assert.NotNull(result);
+        Assert.Equal(4, result.ObjectOffsets.Count);
+    }
+
+    [Fact]
+    public void OffsetNotXrefThrows()
+    {
+        var result = Parse("12 0 obj <<>> endobj xref");
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void OffsetXButNotXrefThrows()
+    {
+        var result = Parse(
+            """
+            xtable
+            trailer
+            """);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void EmptyTableReturnsEmpty()
+    {
+        var result = Parse(
+            """
+            xref
+            trailer
+            <<>>
+            """);
+
+        Assert.NotNull(result);
+        Assert.NotNull(result.Dictionary);
+        Assert.Empty(result.ObjectOffsets);
+    }
+
+    [Fact]
+    public void InvalidSubsectionDefinitionLenientSkips()
+    {
+        var result = Parse(
+            """
+            xref
+            ab 12
+            trailer
+            <<>>
+            """);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void SkipsFirstFreeLine()
+    {
+        var result = Parse(
+            """
+            xref
+            0 1
+            0000000000 65535 f
+            trailer
+            <<>>
+            """);
+
+        Assert.NotNull(result);
+        Assert.NotNull(result.Dictionary);
+        Assert.Empty(result.ObjectOffsets);
+    }
+
+    [Fact]
+    public void ReadsEntries()
+    {
+        var result = Parse(
+            """
+            xref
+            0 3
+            0000000000 65535 f
+            0000000100 00000 n
+            0000000200 00005 n
+            trailer
+            <<>>
+            """);
+
+        AssertObjectsMatch(result,
+            new Dictionary<IndirectReference, long>
+            {
+                { new IndirectReference(1, 0), 100 },
+                { new IndirectReference(2, 5), 200 },
+            });
+
+        Assert.NotNull(result.Dictionary);
+    }
+
+    [Fact]
+    public void ReadsEntriesOffsetFirstNumber()
+    {
+        var result = Parse(
+            """
+            xref
+            15 2
+            0000000190 00000 n
+            0000000250 00032 n
+            trailer
+            <<>>
+            """);
+
+        AssertObjectsMatch(result,
+            new Dictionary<IndirectReference, long>
+            {
+                { new IndirectReference(15, 0), 190 },
+                { new IndirectReference(16, 32), 250 },
+            });
+    }
+
+    [Fact]
+    public void ReadsEntriesSkippingBlankLine()
+    {
+        var result = Parse(
+            """
+            xref
+            15 2
+            0000000190 00000 n
+
+            0000000250 00032 n
+            trailer
+            <<>>
+            """);
+
+        AssertObjectsMatch(result,
+            new Dictionary<IndirectReference, long>
+            {
+                {new IndirectReference(15, 0), 190},
+                {new IndirectReference(16, 32), 250},
+            });
+    }
+
+    [Fact]
+    public void ReadsEntriesFromMultipleSubsections()
+    {
+        var result = Parse(
+            """
+            xref
+            0 4
+            0000000000 65535 f
+            0000000100 00000 n
+            0000000200 00005 n
+            0000000230 00005 n
+            15 2
+            0000000190 00007 n
+            0000000250 00032 n
+            trailer
+            <<>>
+            """);
+
+        AssertObjectsMatch(result,
+            new Dictionary<IndirectReference, long>
+            {
+                { new IndirectReference(1, 0), 100 },
+                { new IndirectReference(2, 5), 200 },
+                { new IndirectReference(3, 5), 230 },
+                { new IndirectReference(15, 7), 190 },
+                { new IndirectReference(16, 32), 250 },
+            });
+    }
+
+    [Fact]
+    public void EntryPointingAtOffsetInTableDoesNotThrow()
+    {
+        var result = Parse(
+            """
+            xref
+            0 2
+            0000000000 65535 f
+            0000000010 00000 n
+            trailer
+            <<>>
+            """);
+
+        AssertObjectsMatch(result,
+            new Dictionary<IndirectReference, long>
+            {
+                { new IndirectReference(1, 0), 10 }
+            });
+    }
+
+    [Fact]
+    public void EntryWithInvalidFormatThrows()
+    {
+        var result = Parse(
+            """
+            xref
+            0 22
+            0000000000 65535 f
+            0000aa0010 00000 n
+            trailer
+            <<>>
+            """);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void ShortLineInTableReturnsThrows()
+    {
+        var result = Parse(
+            """
+            xref
+            15 2
+            019 n
+            0000000250 00032 n
+            trailer
+            <<>>
+            """);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void SkipsBlankLinesPrecedingTrailer()
+    {
+        var result = Parse(
+            """
+            xref
+            15 2
+            0000000190 00000 n
+            0000000250 00032 n
+
+            trailer
+            <<>>
+            """);
+
+        Assert.Equal(2, result.ObjectOffsets.Count);
+    }
+
+    [Fact]
+    public void ParseEntriesAfterDeclaredCountIfLenient()
+    {
+        const string data = 
+            """
+            xref
+            0 5
+            0000000003 65535 f
+            0000000090 00000 n
+            0000000081 00000 n
+            0000000223 00000 n
+            0000000331 00000 n
+            0000000127 00000 n
+            0000000409 00000 f
+            0000000418 00000 n
+
+            trailer
+            << >>
+            """;
+
+        var result = GetTableForString(data);
+
+        Assert.Equal(6, result.ObjectOffsets.Count);
+    }
+
+    [Fact]
+    public void ParsesMissingWhitespaceAfterXref()
+    {
+        var data = 
+            """
+            xref15 2
+            0000000190 00000 n
+            0000000250 00032 n
+
+            trailer
+            <<>>
+            """;
+
+        var result = GetTableForString(data);
+
+        Assert.Equal(2, result.ObjectOffsets.Count);
+    }
+
+    private static XrefTable Parse(string str)
+    {
+        var input = StringBytesTestConverter.Scanner(str);
+
+        return XrefTableParser.TryReadTableAtOffset(
+            0,
+            input.bytes,
+            input.scanner,
+            new TestingLog());
+    }
 
     private static void AssertObjectsMatch(
         XrefTable table,
@@ -286,14 +593,13 @@ public class XrefTableParserTests
 
     private static XrefTable GetTableForString(string s)
     {
-        var ib = StringBytesTestConverter.Convert(s, false);
-        var scanner = new CoreTokenScanner(ib.Bytes, false);
+        var ib = StringBytesTestConverter.Scanner(s);
         var log = new NoOpLog();
 
         var table = XrefTableParser.TryReadTableAtOffset(
             0,
-            ib.Bytes,
-            scanner,
+            ib.bytes,
+            ib.scanner,
             log);
 
         return table;
