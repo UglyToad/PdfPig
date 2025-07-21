@@ -31,9 +31,9 @@ public class XrefTableParserTests
                 { new IndirectReference(14, 0), 576 },
             });
 
-        Assert.Equal(table.FileOffset, 0);
+        Assert.Equal(table.Offset, 0);
 
-        Assert.NotNull(table.Trailer);
+        Assert.NotNull(table.Dictionary);
     }
 
     [Fact]
@@ -57,9 +57,9 @@ public class XrefTableParserTests
                 { new IndirectReference(13, 0), 443 }
             });
 
-        Assert.Equal(table.FileOffset, 0);
+        Assert.Equal(table.Offset, 0);
 
-        Assert.NotNull(table.Trailer);
+        Assert.NotNull(table.Dictionary);
     }
 
     [Fact]
@@ -86,9 +86,9 @@ public class XrefTableParserTests
                 { new IndirectReference(21, 0), 2122},
             });
 
-        Assert.Equal(table.FileOffset, 0);
+        Assert.Equal(table.Offset, 0);
 
-        Assert.Null(table.Trailer);
+        Assert.Null(table.Dictionary);
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public class XrefTableParserTests
                 { new IndirectReference(11, 10), 13772 }
             });
 
-        Assert.Null(table.Trailer);
+        Assert.Null(table.Dictionary);
     }
 
     [Fact]
@@ -129,8 +129,8 @@ public class XrefTableParserTests
                 { new IndirectReference(12, 0), 576 },
             });
 
-        Assert.Equal(table.FileOffset, 0);
-        Assert.NotNull(table.Trailer);
+        Assert.Equal(table.Offset, 0);
+        Assert.NotNull(table.Dictionary);
     }
 
     [Fact]
@@ -161,7 +161,7 @@ public class XrefTableParserTests
                 { new IndirectReference(30, 0), 25777 },
             });
 
-        Assert.Null(table.Trailer);
+        Assert.Null(table.Dictionary);
     }
 
     [Fact]
@@ -177,8 +177,8 @@ public class XrefTableParserTests
 
         var table = GetTableForString(input);
 
-        Assert.NotNull(table.Trailer);
-        Assert.Equal(new NumericToken(123), table.Trailer.Data["Size"]);
+        Assert.NotNull(table.Dictionary);
+        Assert.Equal(new NumericToken(123), table.Dictionary.Data["Size"]);
     }
 
     [Theory]

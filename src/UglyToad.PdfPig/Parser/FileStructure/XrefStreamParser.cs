@@ -188,16 +188,28 @@ internal static class XrefStreamParser
         var startMarker = bytes.CurrentOffset;
         long? endMarker = null;
 
+        while (bytes.CurrentByte == '>' && bytes.MoveNext())
+        {
+        }
+
+        var isWhitespaceActive = ReadHelper.IsWhitespace(bytes.CurrentByte);
+
         do
         {
             // Normalize whitespace.
             if (ReadHelper.IsWhitespace(bytes.CurrentByte))
             {
                 buffer.Add((byte)' ');
+
+                if (isWhitespaceActive)
+                {
+                    startMarker = bytes.CurrentOffset;
+                }
             }
             else
             {
                 buffer.Add(bytes.CurrentByte);
+                isWhitespaceActive = false;
             }
 
             if (buffer.EndsWith("endstream "))
@@ -209,6 +221,8 @@ internal static class XrefStreamParser
             if (buffer.EndsWith("stream "))
             {
                 startMarker = bytes.CurrentOffset;
+
+                isWhitespaceActive = ReadHelper.IsWhitespace(bytes.CurrentByte);
             }
             else if (buffer.EndsWith("endobj "))
             {

@@ -122,7 +122,7 @@
 
             var version = FileHeaderParser.Parse(scanner, inputBytes, parsingOptions.UseLenientParsing, parsingOptions.Logger);
 
-            var fpp = FirstPassParser.Parse(inputBytes, scanner, parsingOptions.Logger);
+            var initialParse = FirstPassParser.Parse(inputBytes, scanner, parsingOptions.Logger);
 
             var crossReferenceOffset = FileTrailerParser.GetFirstCrossReferenceOffset(
                 inputBytes,
@@ -143,7 +143,7 @@
                 scanner);
 
             var (rootReference, rootDictionary) = ParseTrailer(
-                crossReferenceTable,
+                crossReferenceTable.Trailer,
                 parsingOptions.UseLenientParsing,
                 pdfScanner,
                 out var encryptionDictionary);
@@ -226,38 +226,38 @@
         }
 
         private static (IndirectReference, DictionaryToken) ParseTrailer(
-            CrossReferenceTable crossReferenceTable,
+            TrailerDictionary trailer,
             bool isLenientParsing,
             IPdfTokenScanner pdfTokenScanner,
             [NotNullWhen(true)] out EncryptionDictionary? encryptionDictionary)
         {
-            encryptionDictionary = GetEncryptionDictionary(crossReferenceTable, pdfTokenScanner);
+            encryptionDictionary = GetEncryptionDictionary(trailer, pdfTokenScanner);
 
-            var rootDictionary = DirectObjectFinder.Get<DictionaryToken>(crossReferenceTable.Trailer.Root, pdfTokenScanner)!;
+            var rootDictionary = DirectObjectFinder.Get<DictionaryToken>(trailer.Root, pdfTokenScanner)!;
 
             if (!rootDictionary.ContainsKey(NameToken.Type) && isLenientParsing)
             {
                 rootDictionary = rootDictionary.With(NameToken.Type, NameToken.Catalog);
             }
 
-            return (crossReferenceTable.Trailer.Root, rootDictionary);
+            return (trailer.Root, rootDictionary);
         }
 
-        private static EncryptionDictionary? GetEncryptionDictionary(CrossReferenceTable crossReferenceTable, IPdfTokenScanner pdfTokenScanner)
+        private static EncryptionDictionary? GetEncryptionDictionary(TrailerDictionary trailer, IPdfTokenScanner pdfTokenScanner)
         {
-            if (crossReferenceTable.Trailer.EncryptionToken is null)
+            if (trailer.EncryptionToken is null)
             {
                 return null;
             }
 
-            if (!DirectObjectFinder.TryGet(crossReferenceTable.Trailer.EncryptionToken, pdfTokenScanner, out DictionaryToken? encryptionDictionaryToken))
+            if (!DirectObjectFinder.TryGet(trailer.EncryptionToken, pdfTokenScanner, out DictionaryToken? encryptionDictionaryToken))
             {
-                if (DirectObjectFinder.TryGet(crossReferenceTable.Trailer.EncryptionToken, pdfTokenScanner, out NullToken? _))
+                if (DirectObjectFinder.TryGet(trailer.EncryptionToken, pdfTokenScanner, out NullToken? _))
                 {
                     return null;
                 }
 
-                throw new PdfDocumentFormatException($"Unrecognized encryption token in trailer: {crossReferenceTable.Trailer.EncryptionToken}.");
+                throw new PdfDocumentFormatException($"Unrecognized encryption token in trailer: {trailer.EncryptionToken}.");
             }
 
             var result = EncryptionDictionaryFactory.Read(encryptionDictionaryToken, pdfTokenScanner);

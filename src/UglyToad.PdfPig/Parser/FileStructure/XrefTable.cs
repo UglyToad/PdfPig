@@ -3,33 +3,33 @@
 using Core;
 using Tokens;
 
-internal sealed class XrefTable
+internal sealed class XrefTable : IXrefSection
 {
     /// <summary>
     /// The offset in the file of the "xref" operator.
     /// </summary>
-    public long FileOffset { get; }
+    public long Offset { get; }
 
     /// <summary>
     /// The corresponding byte offset for each keyed object in this document.
     /// </summary>
     public IReadOnlyDictionary<IndirectReference, long> ObjectOffsets { get; }
 
-    public DictionaryToken? Trailer { get; }
+    public DictionaryToken? Dictionary { get; }
 
     public XrefTable(
-        long fileOffset,
+        long offset,
         IReadOnlyDictionary<IndirectReference, long> objectOffsets,
         DictionaryToken? trailer)
     {
-        FileOffset = fileOffset;
+        Offset = offset;
         ObjectOffsets = objectOffsets;
-        Trailer = trailer;
+        Dictionary = trailer;
     }
 
     public long? GetPrevious()
     {
-        if (Trailer != null && Trailer.TryGet(NameToken.Prev, out NumericToken prev))
+        if (Dictionary != null && Dictionary.TryGet(NameToken.Prev, out NumericToken prev))
         {
             return prev.Long;
         }

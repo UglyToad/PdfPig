@@ -3,30 +3,30 @@
 using Core;
 using Tokens;
 
-internal sealed class XrefStream
+internal sealed class XrefStream : IXrefSection
 {
-    public long FileOffset { get; }
+    public long Offset { get; }
 
     /// <summary>
     /// The corresponding byte offset for each keyed object in this document.
     /// </summary>
     public IReadOnlyDictionary<IndirectReference, long> ObjectOffsets { get; }
 
-    public DictionaryToken StreamDictionary { get; }
+    public DictionaryToken Dictionary { get; }
 
     public XrefStream(
-        long fileOffset,
+        long offset,
         IReadOnlyDictionary<IndirectReference, long> objectOffsets,
         DictionaryToken streamDictionary)
     {
-        FileOffset = fileOffset;
+        Offset = offset;
         ObjectOffsets = objectOffsets;
-        StreamDictionary = streamDictionary;
+        Dictionary = streamDictionary;
     }
 
     public long? GetPrevious()
     {
-        if (StreamDictionary.TryGet(NameToken.Prev, out NumericToken prev))
+        if (Dictionary.TryGet(NameToken.Prev, out NumericToken prev))
         {
             return prev.Long;
         }
