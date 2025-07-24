@@ -310,6 +310,7 @@
         public static readonly NameToken Last = new NameToken("Last");
         public static readonly NameToken LastChar = new NameToken("LastChar");
         public static readonly NameToken LastModified = new NameToken("LastModified");
+        public static readonly NameToken Launch = new NameToken("Launch");
         public static readonly NameToken Lc = new NameToken("LC");
         public static readonly NameToken Le = new NameToken("LE");
         public static readonly NameToken Leading = new NameToken("Leading");
