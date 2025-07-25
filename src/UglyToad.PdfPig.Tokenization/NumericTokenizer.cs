@@ -1,195 +1,197 @@
-﻿namespace UglyToad.PdfPig.Tokenization
+﻿#nullable enable
+namespace UglyToad.PdfPig.Tokenization;
+
+using System;
+using Core;
+using Tokens;
+
+internal sealed class NumericTokenizer : ITokenizer
 {
-    using System;
-    using System.Globalization;
-    using System.Text;
-    using Core;
-    using Tokens;
+    private const byte Zero = 48;
+    private const byte Nine = 57;
+    private const byte Negative = (byte)'-';
+    private const byte Positive = (byte)'+';
+    private const byte Period = (byte)'.';
+    private const byte ExponentLower = (byte)'e';
+    private const byte ExponentUpper = (byte)'E';
 
-    internal sealed class NumericTokenizer : ITokenizer
+    public bool ReadsNextByte => true;
+
+    public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken? token)
     {
-        private const byte Zero = 48;
-        private const byte Nine = 57;
+        token = null;
 
-        public bool ReadsNextByte { get; } = true;
+        var readBytes = 0;
 
-        public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
+        // Everything before the decimal part.
+        var isNegative = false;
+        double integerPart = 0;
+
+        // Everything after the decimal point.
+        var hasFraction = false;
+        long fractionalPart = 0;
+        var fractionalCount = 0;
+
+        // Support scientific notation in some font files.
+        var hasExponent = false;
+        var isExponentNegative = false;
+        var exponentPart = 0;
+
+        do
         {
-            token = null;
-
-            using var characters = new ValueStringBuilder(stackalloc char[32]);
-
-            var initialSymbol = currentByte is (byte)'-' or (byte)'+';
-
-            if ((currentByte >= Zero && currentByte <= Nine) || currentByte == '.')
+            var b = inputBytes.CurrentByte;
+            if (b >= Zero && b <= Nine)
             {
-                characters.Append((char)currentByte);
-            }
-            else if (initialSymbol)
-            {
-                characters.Append((char) currentByte);
-            }
-            else
-            {
-                return false;
-            }
-
-            var previousSymbol = initialSymbol;
-
-            while (inputBytes.MoveNext())
-            {
-                var b = inputBytes.CurrentByte;
-
-                if (b == '+' || b == '-')
+                if (hasExponent)
                 {
-                    if (previousSymbol)
-                    {
-                        continue;
-                    }
-
-                    characters.Append((char) b);
-                    previousSymbol = true;
+                    exponentPart = (exponentPart * 10) + (b - Zero);
                 }
-                else if ((b >= Zero && b <= Nine) ||
-                         b == '.' ||
-                         b == 'E' ||
-                         b == 'e')
+                else if (hasFraction)
                 {
-                    previousSymbol = false;
-                    characters.Append((char)b);
+                    fractionalPart = (fractionalPart * 10) + (b - Zero);
+                    fractionalCount++;
                 }
                 else
                 {
-                    break;
+                    integerPart = (integerPart * 10) + (b - Zero);
                 }
             }
-
-            var str = characters.ToString();
-
-            switch (str)
+            else if (b == Positive)
             {
-                case "-1":
-                    token = NumericToken.MinusOne;
-                    return true;
-                case "-":
-                case ".":
-                case "0":
-                case "0000":
-                    token = NumericToken.Zero;
-                    return true;
-                case "1":
-                    token = NumericToken.One;
-                    return true;
-                case "2":
-                    token = NumericToken.Two;
-                    return true;
-                case "3":
-                    token = NumericToken.Three;
-                    return true;
-                case "4":
-                    token = NumericToken.Four;
-                    return true;
-                case "5":
-                    token = NumericToken.Five;
-                    return true;
-                case "6":
-                    token = NumericToken.Six;
-                    return true;
-                case "7":
-                    token = NumericToken.Seven;
-                    return true;
-                case "8":
-                    token = NumericToken.Eight;
-                    return true;
-                case "9":
-                    token = NumericToken.Nine;
-                    return true;
-                case "10":
-                    token = NumericToken.Ten;
-                    return true;
-                case "11":
-                    token = NumericToken.Eleven;
-                    return true;
-                case "12":
-                    token = NumericToken.Twelve;
-                    return true;
-                case "13":
-                    token = NumericToken.Thirteen;
-                    return true;
-                case "14":
-                    token = NumericToken.Fourteen;
-                    return true;
-                case "15":
-                    token = NumericToken.Fifteen;
-                    return true;
-                case "16":
-                    token = NumericToken.Sixteen;
-                    return true;
-                case "17":
-                    token = NumericToken.Seventeen;
-                    return true;
-                case "18":
-                    token = NumericToken.Eighteen;
-                    return true;
-                case "19":
-                    token = NumericToken.Nineteen;
-                    return true;
-                case "20":
-                    token = NumericToken.Twenty;
-                    return true;
-                case "100":
-                    token = NumericToken.OneHundred;
-                    return true;
-                case "500":
-                    token = NumericToken.FiveHundred;
-                    return true;
-                case "1000":
-                    token = NumericToken.OneThousand;
-                    return true;
-                default:
-                    if (!double.TryParse(str, NumberStyles.Any, CultureInfo.InvariantCulture, out var value))
-                    {
-                        if (TryParseInvalidNumber(str, out value))
-                        {
-                            token = new NumericToken(value);
-                            return true;
-                        }
-
-                        return false;
-                    }
-
-                    token = new NumericToken(value);
-                    return true;
-            }           
-        }
-
-        private static bool TryParseInvalidNumber(string numeric, out double result)
-        {
-            result = 0;
-
-            if (!numeric.Contains("-") && !numeric.Contains("+"))
-            {
-                return false;
+                // Has no impact
             }
-
-            var parts = numeric.Split(new string[] { "+", "-" }, StringSplitOptions.RemoveEmptyEntries);
-
-            if (parts.Length == 0)
+            else if (b == Negative)
             {
-                return false;
+                if (hasExponent)
+                {
+                    isExponentNegative = true;
+                }
+                else
+                {
+                    isNegative = true;
+                }
             }
-
-            foreach (var part in parts)
+            else if (b == Period)
             {
-                if (!double.TryParse(part, NumberStyles.Any, CultureInfo.InvariantCulture, out var partNumber))
+                if (hasExponent || hasFraction)
                 {
                     return false;
                 }
 
-                result += partNumber;
+                hasFraction = true;
+            }
+            else if (b == ExponentLower || b == ExponentUpper)
+            {
+                // Don't allow leading exponent.
+                if (readBytes == 0)
+                {
+                    return false;
+                }
+
+                if (hasExponent)
+                {
+                    return false;
+                }
+
+                hasExponent = true;
+            }
+            else
+            {
+                // No valid first character.
+                if (readBytes == 0)
+                {
+                    return false;
+                }
+
+                break;
             }
 
-            return true;
+            readBytes++;
+        } while (inputBytes.MoveNext());
+
+        if (hasExponent && !isExponentNegative)
+        {
+            // Apply the multiplication before any fraction logic to avoid loss of precision.
+            // E.g. 1.53E3 should be exactly 1,530.
+
+            // Move the whole part to the left of the decimal point.
+            var combined = integerPart * Pow10(fractionalCount) + fractionalPart;
+
+            // For 1.53E3 we changed this to 153 above, 2 fractional parts, so now we are missing (3-2) 1 additional power of 10.
+            var shift = exponentPart - fractionalCount;
+
+            if (shift >= 0)
+            {
+                integerPart = combined * Pow10(shift);
+            }
+            else
+            {
+                // Still a positive exponent, but not enough to fully shift
+                // For example 1.457E2 becomes 1,457 but shift is (2-3) -1, the outcome should be 145.7
+                integerPart = combined / Pow10(-shift);
+            }
+
+            hasFraction = false;
+            hasExponent = false;
         }
+
+        if (hasFraction && fractionalCount > 0)
+        {
+            switch (fractionalCount)
+            {
+                case 1:
+                    integerPart += fractionalPart / 10.0;
+                    break;
+                case 2:
+                    integerPart += fractionalPart / 100.0;
+                    break;
+                case 3:
+                    integerPart += fractionalPart / 1000.0;
+                    break;
+                default:
+                    integerPart += fractionalPart / Math.Pow(10, fractionalCount);
+                    break;
+            }
+        }
+
+        if (hasExponent)
+        {
+            var signedExponent = isExponentNegative ? -exponentPart : exponentPart;
+            integerPart *= Math.Pow(10, signedExponent);
+        }
+
+        if (isNegative)
+        {
+            integerPart = -integerPart;
+        }
+
+        if (integerPart == 0)
+        {
+            token = NumericToken.Zero;
+        }
+        else
+        {
+            token = new NumericToken(integerPart);
+        }
+
+        return true;
+    }
+
+    private static double Pow10(int exp)
+    {
+        return exp switch
+        {
+            0 => 1,
+            1 => 10,
+            2 => 100,
+            3 => 1000,
+            4 => 10000,
+            5 => 100000,
+            6 => 1000000,
+            7 => 10000000,
+            8 => 100000000,
+            9 => 1000000000,
+            _ => Math.Pow(10, exp)
+        };
     }
 }
