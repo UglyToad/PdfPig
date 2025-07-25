@@ -7,7 +7,6 @@
     using AcroForms;
     using Content;
     using Core;
-    using CrossReference;
     using Encryption;
     using Exceptions;
     using Filters;
@@ -70,7 +69,6 @@
         internal PdfDocument(
             IInputBytes inputBytes,
             HeaderVersion version,
-            CrossReferenceTable crossReferenceTable,
             Catalog catalog,
             DocumentInformation information,
             EncryptionDictionary? encryptionDictionary,
@@ -91,7 +89,7 @@
             Information = information ?? throw new ArgumentNullException(nameof(information));
             pages = catalog.Pages;
             namedDestinations = catalog.NamedDestinations;
-            Structure = new Structure(catalog, crossReferenceTable, pdfScanner);
+            Structure = new Structure(catalog, pdfScanner);
             Advanced = new AdvancedPdfDocumentAccess(pdfScanner, filterProvider, catalog);
             documentForm = new Lazy<AcroForm>(() => acroFormFactory.GetAcroForm(catalog)!);
         }

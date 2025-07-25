@@ -19,6 +19,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="..\pdfpig.snk" Link="pdfpig.snk" />
+		<None Include="Parser\FileStructure\FirstPassParser.StartXref.cs" />
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0">
