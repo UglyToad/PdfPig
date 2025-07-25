@@ -1,26 +1,26 @@
 ﻿
 namespace UglyToad.PdfPig.Writer
 {
+    using Actions;
+    using Content;
+    using Core;
+    using Filters;
+    using Fonts;
+    using Graphics;
+    using Logging;
+    using Outline;
+    using Outline.Destinations;
+    using Parser;
+    using Parser.Parts;
+    using PdfPig.Fonts.Standard14Fonts;
+    using PdfPig.Fonts.TrueType;
+    using PdfPig.Fonts.TrueType.Parser;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Runtime.CompilerServices;
     using System.Xml.Linq;
-    using Content;
-    using Core;
-    using Fonts;
-    using Actions;
-    using Filters;
-    using Graphics;
-    using Logging;
-    using PdfPig.Fonts.TrueType;
-    using PdfPig.Fonts.Standard14Fonts;
-    using PdfPig.Fonts.TrueType.Parser;
-    using Outline;
-    using Outline.Destinations;
-    using Parser;
-    using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -307,7 +307,6 @@ namespace UglyToad.PdfPig.Writer
         /// </summary>
         /// <param name="document">Source document.</param>
         /// <param name="pageNumber">Page to copy.</param>
-        /// <param name="options">Control how copying for the page occurs.</param>
         /// <returns>A builder for editing the page.</returns>
         public PdfPageBuilder AddPage(PdfDocument document, int pageNumber)
         {
@@ -463,7 +462,9 @@ namespace UglyToad.PdfPig.Writer
                         kvp.Value,
                         document.Structure.TokenScanner,
                         refs,
-                        options.CopyLinkFunc);
+                        page,
+                        options.CopyLinkFunc,
+                        x => links.Add(x));
 
                     copiedPageDict[NameToken.Annots] = new ArrayToken(copiedTokens);
                     continue;
@@ -571,7 +572,9 @@ namespace UglyToad.PdfPig.Writer
             IToken val,
             IPdfTokenScanner sourceScanner,
             IDictionary<IndirectReference, IndirectReferenceToken> refs,
-            Func<PdfAction, PdfAction?>? linkCopyFunc)
+            Page page,
+            Func<PdfAction, PdfAction?>? linkCopyFunc = null,
+            Action<(DictionaryToken, PdfAction)>? deferredActionUpdate = null)
         {
             var permittedLinkActionTypes = new HashSet<NameToken>
             {
@@ -630,10 +633,22 @@ namespace UglyToad.PdfPig.Writer
                     continue;
                 }
 
-                // Todo copy
-                // var copiedLogicOverride = linkCopyFunc()
+                if (linkCopyFunc != null && deferredActionUpdate != null)
+                {
+                    var action = page.annotationProvider.GetAction(annotDict);
 
-                //var link = page.annotationProvider.GetAction(tk);
+                    if (action != null)
+                    {
+                        var copiedLink = linkCopyFunc(action);
+                        if (copiedLink != action && copiedLink != null)
+                        {
+                            // defer to write links when all pages are added
+                            var copiedToken = (DictionaryToken)WriterUtil.CopyToken(context, annotDict, sourceScanner, refs);
+                            deferredActionUpdate((copiedToken, copiedLink));
+                            continue;
+                        }
+                    }
+                }
 
                 // If the link has an action then this link can point elsewhere in this document, maybe not to a page we copied?
                 if (annotDict.TryGet(NameToken.A, sourceScanner, out DictionaryToken? actionDict))
