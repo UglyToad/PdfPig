@@ -241,8 +241,8 @@
         public bool IsClosed()
         {
             var filteredCount = 0;
-            IPathCommand last = null;
-            IPathCommand first = null;
+            IPathCommand? last = null;
+            IPathCommand? first = null;
             for (int i = Commands.Count - 1; i >= 0; i--)
             {
                 var cmd = Commands[i];
@@ -376,14 +376,14 @@
         /// Gets a <see cref="PdfRectangle"/> which entirely contains the geometry of the defined path.
         /// </summary>
         /// <returns>For paths which don't define any geometry this returns <see langword="null"/>.</returns>
-        public static PdfRectangle? GetBoundingRectangle(IReadOnlyList<PdfSubpath> path)
+        public static PdfRectangle? GetBoundingRectangle(IReadOnlyList<PdfSubpath>? path)
         {
             if (path == null || path.Count == 0)
             {
                 return null;
             }
 
-            var bboxes = path.Select(x => x.GetBoundingRectangle()).Where(x => x.HasValue).Select(x => x.Value).ToList();
+            var bboxes = path.Select(x => x.GetBoundingRectangle()).Where(x => x.HasValue).Select(x => x!.Value).ToList();
             if (bboxes.Count == 0)
             {
                 return null;
@@ -433,7 +433,7 @@
             }
 
             /// <inheritdoc />
-            public override bool Equals(object obj)
+            public override bool Equals(object? obj)
             {
                 return (obj is Close);
             }
@@ -479,7 +479,7 @@
             }
 
             /// <inheritdoc />
-            public override bool Equals(object obj)
+            public override bool Equals(object? obj)
             {
                 if (obj is Move move)
                 {
@@ -545,7 +545,7 @@
             }
 
             /// <inheritdoc />
-            public override bool Equals(object obj)
+            public override bool Equals(object? obj)
             {
                 if (obj is Line line)
                 {
@@ -651,7 +651,7 @@
             }
 
             /// <inheritdoc />
-            public override bool Equals(object obj)
+            public override bool Equals(object? obj)
             {
                 if (obj is QuadraticBezierCurve curve)
                 {
@@ -809,7 +809,7 @@
             }
 
             /// <inheritdoc />
-            public override bool Equals(object obj)
+            public override bool Equals(object? obj)
             {
                 if (obj is CubicBezierCurve curve)
                 {
@@ -944,7 +944,7 @@
         /// <summary>
         /// Compares two <see cref="PdfSubpath"/>s for equality. Paths will only be considered equal if the commands which construct the paths are in the same order.
         /// </summary>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (!(obj is PdfSubpath path) || Commands.Count != path.Commands.Count)
             {

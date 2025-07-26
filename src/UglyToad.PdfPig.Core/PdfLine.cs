@@ -70,7 +70,7 @@
         /// <summary>
         /// Returns a value indicating whether this <see cref="PdfLine"/> is equal to a specified <see cref="PdfLine"/> .
         /// </summary>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is PdfLine other && Equals(other);
         }

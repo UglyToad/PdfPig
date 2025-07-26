@@ -83,7 +83,7 @@
         /// <summary>
         /// Returns a value indicating whether this <see cref="PdfPoint"/> is equal to a specified <see cref="PdfPoint"/> .
         /// </summary>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is PdfPoint other && Equals(other);
         }
