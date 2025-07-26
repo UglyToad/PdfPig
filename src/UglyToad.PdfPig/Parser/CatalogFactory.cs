@@ -19,7 +19,8 @@
                 throw new ArgumentNullException(nameof(dictionary));
             }
 
-            if (dictionary.TryGet(NameToken.Type, out var type) && !ReferenceEquals(type, NameToken.Catalog))
+            if (dictionary.TryGet(NameToken.Type, out var type) && !ReferenceEquals(type, NameToken.Catalog)
+                && !isLenientParsing)
             {
                 throw new PdfDocumentFormatException($"The type of the catalog dictionary was not Catalog: {dictionary}.");
             }
