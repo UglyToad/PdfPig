@@ -16,7 +16,7 @@
         /// <summary>
         /// Convert the string to bytes using the ISO 8859-1 encoding.
         /// </summary>
-        public static byte[] StringAsLatin1Bytes(string s)
+        public static byte[]? StringAsLatin1Bytes(string? s)
         {
             if (s == null)
             {

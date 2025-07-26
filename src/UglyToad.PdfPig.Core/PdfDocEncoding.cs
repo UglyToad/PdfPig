@@ -264,7 +264,7 @@
         /// Try to convert raw bytes to a PdfDocEncoding encoded string. If unsupported characters are encountered
         /// meaning we cannot safely round-trip the value to bytes this will instead return false.
         /// </summary>
-        public static bool TryConvertBytesToString(ReadOnlySpan<byte> bytes, out string result)
+        public static bool TryConvertBytesToString(ReadOnlySpan<byte> bytes, out string? result)
         {
             result = null;
             if (bytes.Length == 0)
