@@ -2,19 +2,11 @@
 
 # PdfPig
 
-[![Gitter](https://badges.gitter.im/pdfpig/community.svg)](https://gitter.im/pdfpig/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![nuget](https://img.shields.io/nuget/dt/PdfPig)](https://www.nuget.org/packages/PdfPig/)
-
 [![Build and test](https://github.com/UglyToad/PdfPig/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/UglyToad/PdfPig/actions/workflows/build_and_test.yml)
 [![Build and test [MacOS]](https://github.com/UglyToad/PdfPig/actions/workflows/build_and_test_macos.yml/badge.svg)](https://github.com/UglyToad/PdfPig/actions/workflows/build_and_test_macos.yml)
 
-This project allows users to read and extract text and other content from PDF files. In addition the library can be used to create simple PDF documents
-containing text and geometrical shapes.
-
-This project aims to port [PDFBox](https://github.com/apache/pdfbox) to C#.
-
-## Wiki
-Check out our [wiki](https://github.com/UglyToad/PdfPig/wiki) for more examples and detailed guides on the API.
+PdfPig supports reading text and content from PDF files. It also supports basic PDF file creation.
 
 ## Installation
 
@@ -32,29 +24,26 @@ While the version is below 1.0.0 minor versions will change the public API witho
 
 See the [wiki](https://github.com/UglyToad/PdfPig/wiki) for more examples 
 
-### Read words in a page
+### Reading text from a PDF
+
 The simplest usage at this stage is to open a document, reading the words from every page:
 
 ```cs
+// using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
+// using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
 using (PdfDocument document = PdfDocument.Open(@"C:\Documents\document.pdf"))
 {
-	foreach (Page page in document.GetPages())
-	{
-		string pageText = page.Text;
-
-		foreach (Word word in page.GetWords())
-		{
-			Console.WriteLine(word.Text);
-		}
-	}
+    foreach (Page page in document.GetPages())
+    {
+        string text = ContentOrderTextExtractor.GetText(page);
+        IEnumerable<Word> words = page.GetWords(NearestNeighbourWordExtractor.Instance);
+    }
 }
 ```
 
-An example of the output of this is shown below:
+You **should not** use `page.Text` directly, unless you know what you're doing. The `Text` property preserves the internal content order which is rarely ever the text in the order you want.
 
-![Image shows three words 'Write something in' in 2 sections, the top section is the normal PDF output, the bottom section is the same text with 3 word bounding boxes in pink and letter bounding boxes in blue-green](https://raw.githubusercontent.com/UglyToad/Pdf/master/documentation/Letters/example-text-extraction.png)
-
-Where for the PDF text ("Write something in") shown at the top the 3 words (in pink) are detected and each word contains the individual letters with glyph bounding boxes.
+These layout analysis tools should get you the text you want in most cases.
 
 ### Create PDF Document
 To create documents use the class `PdfDocumentBuilder`. The Standard 14 fonts provide a quick way to get started:
@@ -79,6 +68,12 @@ The output is a 1 page PDF document with the text "Hello World!" in Helvetica ne
 ![Image shows a PDF document in Google Chrome's PDF viewer. The text "Hello World!" is visible](https://raw.githubusercontent.com/UglyToad/Pdf/master/documentation/builder-output.png)
 
 Each font must be registered with the `PdfDocumentBuilder` prior to use enable pages to share the font resources. Only Standard 14 fonts and TrueType fonts (.ttf) are supported.
+
+Document creation supports very limited changes to existing PDF documents. However it does not support any of the following:
+
+- Editing forms
+- Copying or changing annotations, metadata or document structure data
+- Adding or removing text with existing fonts
 
 ### Advanced Document Extraction
 In this example a more advanced document extraction is performed. `PdfDocumentBuilder` is used to create a copy of the pdf with debug information (bounding boxes and reading order) added.
@@ -259,7 +254,7 @@ string title = document.Information.Title;
 
 ### Document Structure
 
-The document now has a Structure member:
+The `PdfDocument` has a Structure member:
 
     UglyToad.PdfPig.Structure structure = document.Structure;
 
@@ -283,7 +278,7 @@ PageSize size = Page.Size;
 bool isA4 = size == PageSize.A4;
 ```
 
-`Page` provides access to the text of the page:
+`Page` provides access to the text of the page but you should use `ContentOrderTextExtractor` or alternatives if indexing the text, e.g. for RAG/LLMs:
 
     string text = page.Text;
 
@@ -329,7 +324,7 @@ Retrieving annotations on each page is provided using the method:
 
     page.GetAnnotations()
 
-This call is not cached and the document must not have been disposed prior to use.
+This call is not cached and the document must not have been disposed prior to use. Annotations cannot be edited.
 
 ### Bookmarks
 
@@ -356,6 +351,8 @@ Please note the forms are readonly and values cannot be changed or added using P
 A page has a method to extract hyperlinks (annotations of link type):
 
     IReadOnlyList<UglyToad.PdfPig.Content.Hyperlink> hyperlinks = page.GetHyperlinks();
+
+Hyperlinks cannot be added or edited when building documents.
 
 ### TrueType
 
@@ -396,18 +393,17 @@ var resultFileBytes = PdfMerger.Merge(filePath1, filePath2);
 File.WriteAllBytes(@"C:\pdfs\outputfilename.pdf", resultFileBytes);
 ```
 
+## Wiki
+Check out our [wiki](https://github.com/UglyToad/PdfPig/wiki) for more examples and detailed guides on the API.
+
+## Issues
+
+Please do file an issue if you encounter a bug. See our [issue policy](https://github.com/UglyToad/PdfPig/issues/1095) and [contributing guide](https://github.com/UglyToad/PdfPig/blob/master/CONTRIBUTING.md) for details.
+
 ## API Reference
 
 If you wish to generate doxygen documentation, run `doxygen doxygen-docs` and open `docs/doxygen/html/index.html`.
 
-See also the [wiki](https://github.com/UglyToad/PdfPig/wiki) for a detailed documentation on parts of the API
-
-## Issues
-
-Please do file an issue if you encounter a bug.
-
-However in order for us to assist you, you **must** provide the file which causes your issue. Please host this in a publically available place.
-
 ## Credit
 
-This project wouldn't be possible without the work done by the [PDFBox](https://pdfbox.apache.org/) team and the Apache Foundation.
+This project started as an effort to port [PDFBox](https://github.com/apache/pdfbox) to C#. This project wouldn't be possible without the work done by the [PDFBox](https://pdfbox.apache.org/) team and the Apache Foundation.
