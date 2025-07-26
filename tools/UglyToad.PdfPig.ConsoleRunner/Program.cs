@@ -30,6 +30,9 @@ namespace UglyToad.PdfPig.ConsoleRunner
             public required string SuppliedDirectoryPath { get; init; }
         }
 
+        private const string FileSymbol = "f";
+        private const string RepeatSymbol = "r";
+
         private static IReadOnlyList<OptionalArg> GetSupportedArgs() =>
         [
             new OptionalArg
@@ -49,6 +52,18 @@ namespace UglyToad.PdfPig.ConsoleRunner
                 SupportsValue = true,
                 ShortSymbol = "l",
                 Symbol = "limit"
+            },
+            new OptionalArg
+            {
+                SupportsValue = true,
+                ShortSymbol = "f",
+                Symbol = "file"
+            },
+            new OptionalArg
+            {
+                SupportsValue = true,
+                ShortSymbol = "r",
+                Symbol = "repeats"
             }
         ];
 
@@ -151,6 +166,8 @@ namespace UglyToad.PdfPig.ConsoleRunner
             var noRecursionMode = parsed.SuppliedArgs.Any(x => x.ShortSymbol == "nr");
             var outputOpt = parsed.SuppliedArgs.SingleOrDefault(x => x.ShortSymbol == "o" && x.Value != null);
 
+            var fileOpt = parsed.SuppliedArgs.SingleOrDefault(x => x.ShortSymbol == FileSymbol && x.Value != null);
+
             var hasError = false;
             var errorBuilder = new StringBuilder();
             var fileList = Directory.GetFiles(
@@ -160,6 +177,18 @@ namespace UglyToad.PdfPig.ConsoleRunner
                 .OrderBy(x => x).ToList();
             var runningCount = 0;
 
+            if (fileOpt?.Value != null)
+            {
+                fileList = fileList.Where(x => x.EndsWith(fileOpt.Value, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
+            var repeatOpt = parsed.SuppliedArgs.SingleOrDefault(x => x.ShortSymbol == RepeatSymbol);
+
+            var repeats = 1;
+            if (repeatOpt?.Value != null && int.TryParse(repeatOpt.Value, CultureInfo.InvariantCulture, out repeats))
+            {
+            }
+
             Console.WriteLine($"Found {fileList.Count} files.");
             Console.WriteLine();
 
@@ -168,82 +197,85 @@ namespace UglyToad.PdfPig.ConsoleRunner
             var dataList = new List<DataRecord>();
 
             var sw = new Stopwatch();
-            foreach (var file in fileList)
+            for (int i = 0; i < repeats; i++)
             {
-                if (maxCount.HasValue && runningCount >= maxCount)
+                foreach (var file in fileList)
                 {
-                    break;
-                }
-
-                try
-                {
-                    var numWords = 0;
-                    var numPages = 0;
-                    long openMicros;
-                    long totalPageMicros;
-
-                    sw.Reset();
-                    sw.Start();
-
-                    using (var pdfDocument = PdfDocument.Open(file))
+                    if (maxCount.HasValue && runningCount >= maxCount)
                     {
-                        sw.Stop();
-
-                        openMicros = sw.Elapsed.Microseconds;
-
-                        sw.Start();
-
-                        foreach (var page in pdfDocument.GetPages())
-                        {
-                            numPages++;
-                            foreach (var word in page.GetWords())
-                            {
-                                if (word != null)
-                                {
-                                    numWords++;
-                                }
-                            }
-                        }
-
-                        sw.Stop();
-                        totalPageMicros = sw.Elapsed.Microseconds;
+                        break;
                     }
 
-                    var filename = Path.GetFileName(file);
-
-                    var size = new FileInfo(file);
-
-                    var item = new DataRecord
+                    try
                     {
-                        FileName = filename,
-                        OpenCostMicros = openMicros,
-                        Pages = numPages,
-                        Size = size.Length,
-                        Words = numWords,
-                        TotalCostMicros = totalPageMicros + openMicros,
-                        PerPageMicros = Math.Round(totalPageMicros / (double)Math.Max(numPages, 1), 2)
-                    };
+                        var numWords = 0;
+                        var numPages = 0;
+                        long openMicros;
+                        long totalPageMicros;
 
-                    dataList.Add(item);
+                        sw.Reset();
+                        sw.Start();
 
-                    PrintTableColumns(
-                        item.FileName,
-                        item.Size,
-                        item.Words,
-                        item.Pages,
-                        item.OpenCostMicros,
-                        item.TotalCostMicros,
-                        item.PerPageMicros);
+                        using (var pdfDocument = PdfDocument.Open(file))
+                        {
+                            sw.Stop();
+
+                            openMicros = sw.Elapsed.Microseconds;
+
+                            sw.Start();
+
+                            foreach (var page in pdfDocument.GetPages())
+                            {
+                                numPages++;
+                                foreach (var word in page.GetWords())
+                                {
+                                    if (word != null)
+                                    {
+                                        numWords++;
+                                    }
+                                }
+                            }
+
+                            sw.Stop();
+                            totalPageMicros = sw.Elapsed.Microseconds;
+                        }
+
+                        var filename = Path.GetFileName(file);
+
+                        var size = new FileInfo(file);
+
+                        var item = new DataRecord
+                        {
+                            FileName = filename,
+                            OpenCostMicros = openMicros,
+                            Pages = numPages,
+                            Size = size.Length,
+                            Words = numWords,
+                            TotalCostMicros = totalPageMicros + openMicros,
+                            PerPageMicros = Math.Round(totalPageMicros / (double)Math.Max(numPages, 1), 2)
+                        };
+
+                        dataList.Add(item);
+
+                        PrintTableColumns(
+                            item.FileName,
+                            item.Size,
+                            item.Words,
+                            item.Pages,
+                            item.OpenCostMicros,
+                            item.TotalCostMicros,
+                            item.PerPageMicros);
+                    }
+                    catch (Exception ex)
+                    {
+                        hasError = true;
+                        errorBuilder.AppendLine($"Parsing document {file} failed due to an error.")
+                            .Append(ex)
+                            .AppendLine();
+                    }
+
+                    runningCount++;
                 }
-                catch (Exception ex)
-                {
-                    hasError = true;
-                    errorBuilder.AppendLine($"Parsing document {file} failed due to an error.")
-                        .Append(ex)
-                        .AppendLine();
-                }
-
-                runningCount++;
             }
 
             if (hasError)
