@@ -128,13 +128,13 @@
                 throw new ArgumentException("The algorithm cannot be used with a document of less than 2 pages.", nameof(pagesTextBlocks));
             }
 
-            ConcurrentDictionary<int, List<TextBlock>> pageDecorations = new ConcurrentDictionary<int, List<TextBlock>>();
+            ConcurrentDictionary<int, OrderedSet<TextBlock>> pageDecorations = new ConcurrentDictionary<int, OrderedSet<TextBlock>>();
 
             ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
 
             Parallel.For(0, pagesTextBlocks.Count, parallelOptions, p =>
             {
-                if (!pageDecorations.TryAdd(p, new List<TextBlock>()))
+                if (!pageDecorations.TryAdd(p, new OrderedSet<TextBlock>()))
                 {
                     throw new ArgumentException("Cannot add element with index " + p + " in ConcurrentDictionary.");
                 }
@@ -165,7 +165,7 @@
                     var score = Score(current, previousPage, nextPage, minimumEditDistanceNormalised, similarityThreshold, n);
                     if (score >= similarityThreshold)
                     {
-                        if (!pageDecorations[p].Contains(current)) pageDecorations[p].Add(current);
+                        pageDecorations[p].TryAdd(current);
                     }
                 }
 
@@ -180,7 +180,7 @@
                     var score = Score(current, previousPage, nextPage, minimumEditDistanceNormalised, similarityThreshold, n);
                     if (score >= similarityThreshold)
                     {
-                        if (!pageDecorations[p].Contains(current)) pageDecorations[p].Add(current);
+                        pageDecorations[p].TryAdd(current);
                     }
                 }
 
@@ -195,7 +195,7 @@
                     var score = Score(current, previousPage, nextPage, minimumEditDistanceNormalised, similarityThreshold, n);
                     if (score >= similarityThreshold)
                     {
-                        if (!pageDecorations[p].Contains(current)) pageDecorations[p].Add(current);
+                        pageDecorations[p].TryAdd(current);
                     }
                 }
 
@@ -210,12 +210,12 @@
                     var score = Score(current, previousPage, nextPage, minimumEditDistanceNormalised, similarityThreshold, n);
                     if (score >= similarityThreshold)
                     {
-                        if (!pageDecorations[p].Contains(current)) pageDecorations[p].Add(current);
+                        pageDecorations[p].TryAdd(current);
                     }
                 }
             });
 
-            return pageDecorations.OrderBy(x => x.Key).Select(x => x.Value).ToList();
+            return pageDecorations.OrderBy(x => x.Key).Select(x => x.Value.GetList()).ToList();
         }
 
         /// <summary>
