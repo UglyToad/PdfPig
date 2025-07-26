@@ -33,11 +33,11 @@ The simplest usage at this stage is to open a document, reading the words from e
 // using UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor;
 using (PdfDocument document = PdfDocument.Open(@"C:\Documents\document.pdf"))
 {
-	foreach (Page page in document.GetPages())
+    foreach (Page page in document.GetPages())
 	{
         string text = ContentOrderTextExtractor.GetText(page);
         IEnumerable<Word> words = page.GetWords(NearestNeighbourWordExtractor.Instance);
-	}
+    }
 }
 ```
 
