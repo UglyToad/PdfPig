@@ -89,7 +89,7 @@ namespace UglyToad.PdfPig.Core
             /// <inheritdoc />
             public override bool TryGetSecond(out B b)
             {
-                b = default(B);
+                b = default!;
                 return false;
             }
 
@@ -135,7 +135,7 @@ namespace UglyToad.PdfPig.Core
             /// <inheritdoc />
             public override bool TryGetFirst(out A a)
             {
-                a = default(A);
+                a = default!;
                 return false;
             }
 
