@@ -51,32 +51,48 @@
 
             if (options.GroupByOrientation)
             {
-                // axis aligned
-                List<Word> words = GetWords(
-                    letters.Where(l => l.TextOrientation == TextOrientation.Horizontal).ToList(),
-                    options.MaximumDistance, options.DistanceMeasureAA, options.FilterPivot,
-                    options.Filter, options.MaxDegreeOfParallelism);
+                // Preallocate lists for each orientation to avoid multiple enumerations and allocations.
+                var horizontal = new List<Letter>();
+                var rotate270 = new List<Letter>();
+                var rotate180 = new List<Letter>();
+                var rotate90 = new List<Letter>();
+                var other = new List<Letter>();
 
-                words.AddRange(GetWords(
-                    letters.Where(l => l.TextOrientation == TextOrientation.Rotate270).ToList(),
-                    options.MaximumDistance, options.DistanceMeasureAA, options.FilterPivot,
-                    options.Filter, options.MaxDegreeOfParallelism));
+                foreach (var l in letters)
+                {
+                    switch (l.TextOrientation)
+                    {
+                        case TextOrientation.Horizontal:
+                            horizontal.Add(l);
+                            break;
+                        case TextOrientation.Rotate270:
+                            rotate270.Add(l);
+                            break;
+                        case TextOrientation.Rotate180:
+                            rotate180.Add(l);
+                            break;
+                        case TextOrientation.Rotate90:
+                            rotate90.Add(l);
+                            break;
+                        case TextOrientation.Other:
+                        default:
+                            other.Add(l);
+                            break;
+                    }
+                }
 
-                words.AddRange(GetWords(
-                    letters.Where(l => l.TextOrientation == TextOrientation.Rotate180).ToList(),
-                    options.MaximumDistance, options.DistanceMeasureAA, options.FilterPivot,
-                    options.Filter, options.MaxDegreeOfParallelism));
+                var words = new List<Word>();
 
-                words.AddRange(GetWords(
-                    letters.Where(l => l.TextOrientation == TextOrientation.Rotate90).ToList(),
-                    options.MaximumDistance, options.DistanceMeasureAA, options.FilterPivot,
-                    options.Filter, options.MaxDegreeOfParallelism));
-
-                // not axis aligned
-                words.AddRange(GetWords(
-                    letters.Where(l => l.TextOrientation == TextOrientation.Other).ToList(),
-                    options.MaximumDistance, options.DistanceMeasure, options.FilterPivot,
-                    options.Filter, options.MaxDegreeOfParallelism));
+                if (horizontal.Count > 0)
+                    words.AddRange(GetWords(horizontal, options.MaximumDistance, options.DistanceMeasureAA, options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism));
+                if (rotate270.Count > 0)
+                    words.AddRange(GetWords(rotate270, options.MaximumDistance, options.DistanceMeasureAA, options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism));
+                if (rotate180.Count > 0)
+                    words.AddRange(GetWords(rotate180, options.MaximumDistance, options.DistanceMeasureAA, options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism));
+                if (rotate90.Count > 0)
+                    words.AddRange(GetWords(rotate90, options.MaximumDistance, options.DistanceMeasureAA, options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism));
+                if (other.Count > 0)
+                    words.AddRange(GetWords(other, options.MaximumDistance, options.DistanceMeasure, options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism));
 
                 return words;
             }
