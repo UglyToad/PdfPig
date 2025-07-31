@@ -51,50 +51,49 @@
 
             if (options.GroupByOrientation)
             {
-                // Preallocate lists for each orientation to avoid multiple enumerations and allocations.
-                var horizontal = new List<Letter>();
-                var rotate270 = new List<Letter>();
-                var rotate180 = new List<Letter>();
-                var rotate90 = new List<Letter>();
-                var other = new List<Letter>();
+                var buckets = new List<Letter>[5];
+                for (int i = 0; i < buckets.Length; i++) buckets[i] = new List<Letter>();
 
                 foreach (var l in letters)
                 {
                     switch (l.TextOrientation)
                     {
-                        case TextOrientation.Horizontal:
-                            horizontal.Add(l);
-                            break;
-                        case TextOrientation.Rotate270:
-                            rotate270.Add(l);
-                            break;
-                        case TextOrientation.Rotate180:
-                            rotate180.Add(l);
-                            break;
-                        case TextOrientation.Rotate90:
-                            rotate90.Add(l);
-                            break;
-                        case TextOrientation.Other:
-                        default:
-                            other.Add(l);
-                            break;
+                        case TextOrientation.Horizontal: buckets[0].Add(l); break;
+                        case TextOrientation.Rotate270: buckets[1].Add(l); break;
+                        case TextOrientation.Rotate180: buckets[2].Add(l); break;
+                        case TextOrientation.Rotate90: buckets[3].Add(l); break;
+                        default: buckets[4].Add(l); break;
                     }
                 }
 
-                var words = new List<Word>();
+                // Use a thread-safe collection to avoid lock contention.
+                var results = new List<Word>(letters.Count); // Pre-allocate for performance
 
-                if (horizontal.Count > 0)
-                    words.AddRange(GetWords(horizontal, options.MaximumDistance, options.DistanceMeasureAA, options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism));
-                if (rotate270.Count > 0)
-                    words.AddRange(GetWords(rotate270, options.MaximumDistance, options.DistanceMeasureAA, options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism));
-                if (rotate180.Count > 0)
-                    words.AddRange(GetWords(rotate180, options.MaximumDistance, options.DistanceMeasureAA, options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism));
-                if (rotate90.Count > 0)
-                    words.AddRange(GetWords(rotate90, options.MaximumDistance, options.DistanceMeasureAA, options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism));
-                if (other.Count > 0)
-                    words.AddRange(GetWords(other, options.MaximumDistance, options.DistanceMeasure, options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism));
+                // Limit parallelism to avoid oversubscription.
+                var parallelOptions = new System.Threading.Tasks.ParallelOptions
+                {
+                    MaxDegreeOfParallelism = options.MaxDegreeOfParallelism > 0 ? options.MaxDegreeOfParallelism : Environment.ProcessorCount
+                };
 
-                return words;
+                // Use partitioner for better load balancing and avoid ConcurrentBag overhead
+                System.Threading.Tasks.Parallel.ForEach(
+                    System.Collections.Concurrent.Partitioner.Create(0, buckets.Length),
+                    parallelOptions,
+                    range =>
+                    {
+                        for (int i = range.Item1; i < range.Item2; i++)
+                        {
+                            if (buckets[i].Count == 0) continue;
+                            var measure = (i == 4) ? options.DistanceMeasure : options.DistanceMeasureAA;
+                            var words = GetWords(buckets[i], options.MaximumDistance, measure, options.FilterPivot, options.Filter, options.MaxDegreeOfParallelism);
+                            lock (results)
+                            {
+                                results.AddRange(words);
+                            }
+                        }
+                    });
+
+                return results;
             }
             else
             {
