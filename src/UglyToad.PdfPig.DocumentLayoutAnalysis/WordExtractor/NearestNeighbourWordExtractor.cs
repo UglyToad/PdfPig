@@ -92,7 +92,7 @@
                             }
                         }
                     });
-
+                results.TrimExcess();
                 return results;
             }
             else
