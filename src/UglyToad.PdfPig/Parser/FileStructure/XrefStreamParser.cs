@@ -17,6 +17,11 @@ internal static class XrefStreamParser
         ISeekableTokenScanner scanner,
         ILog log)
     {
+        if (xrefOffset >= bytes.Length || xrefOffset < 0)
+        {
+            return null;
+        }
+
         var offsetCorrectionType = XrefOffsetCorrection.None;
         var offsetCorrection = 0L;
 

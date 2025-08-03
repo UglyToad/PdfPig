@@ -16,6 +16,11 @@ internal static class XrefTableParser
         ISeekableTokenScanner scanner,
         ILog log)
     {
+        if (xrefOffset >= bytes.Length || xrefOffset < 0)
+        {
+            return null;
+        }
+
         bytes.Seek(xrefOffset);
 
         var correctionType = XrefOffsetCorrection.None;

@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "UglyToad.PdfPig.ConsoleRunner": {
-        "commandName": "Project",
-        "commandLineArgs": "\"C:\\temp\\pdfs\\archive\""
-    }
-  }
-}
