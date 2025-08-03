@@ -34,6 +34,12 @@
 
         public bool TryGetOffset(IndirectReference reference, out long offset)
         {
+            if (bruteForcedOffsets != null && bruteForcedOffsets.TryGetValue(reference, out var bfOffset))
+            {
+                offset = bfOffset;
+                return true;
+            }
+
             if (offsets.TryGetValue(reference, out offset))
             {
                 if (offset + reference.ObjectNumber == 0)
