@@ -15,7 +15,9 @@ jobs:
       - name: Set up dotnet core
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: "8.0.x"
+          dotnet-version: |
+            8.0.x
+            9.0.x
           
       - name: Restore corpus cache 0000, 0001
         id: restore-corpus
