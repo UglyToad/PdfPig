@@ -62,7 +62,6 @@ internal static class XrefStreamParser
 
         try
         {
-
             var streamData = ReadStreamTolerant(bytes);
 
             if (!streamData.to.HasValue)

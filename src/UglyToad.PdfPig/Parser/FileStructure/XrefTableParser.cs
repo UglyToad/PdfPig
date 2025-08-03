@@ -26,8 +26,7 @@ internal static class XrefTableParser
         var correctionType = XrefOffsetCorrection.None;
         var correction = 0L;
 
-        if (!scanner.TryReadToken(out OperatorToken xrefOp)
-            || !string.Equals("xref", xrefOp.Data, StringComparison.OrdinalIgnoreCase))
+        if (!TryReadXrefToken(scanner))
         {
             log.Debug($"Xref not found at {xrefOffset}, trying to recover");
             var recovered = TryRecoverOffset(fileHeaderOffset, xrefOffset, bytes, scanner);
@@ -38,7 +37,7 @@ internal static class XrefTableParser
 
             log.Debug($"Xref found at {recovered.Value.correctOffset}");
             scanner.Seek(recovered.Value.correctOffset);
-            if (!scanner.TryReadToken(out xrefOp))
+            if (!TryReadXrefToken(scanner))
             {
                 return null;
             }
@@ -46,20 +45,6 @@ internal static class XrefTableParser
             correctionType = recovered.Value.correctionType;
             correction = recovered.Value.correctOffset - xrefOffset;
             xrefOffset = recovered.Value.correctOffset;
-        }
-
-        if (!string.Equals("xref", xrefOp.Data, StringComparison.OrdinalIgnoreCase))
-        {
-            // Support xref not being followed by spaces or newlines, e.g. "xref5 0"
-            if (xrefOp.Data.StartsWith("xref", StringComparison.OrdinalIgnoreCase))
-            {
-                var backtrack = xrefOp.Data.Length - "xref".Length;
-                scanner.Seek(scanner.CurrentPosition - backtrack);
-            }
-            else
-            {
-                return null;
-            }
         }
 
         const int objRowSentinel = -1;
@@ -258,6 +243,29 @@ internal static class XrefTableParser
         return new XrefTable(xrefOffset, offsets, trailer, correctionType, correction);
     }
 
+    private static bool TryReadXrefToken(ISeekableTokenScanner scanner)
+    {
+        if (!scanner.TryReadToken(out OperatorToken xrefOp))
+        {
+            return false;
+        }
+
+        if (string.Equals("xref", xrefOp.Data, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        // Support xref not being followed by spaces or newlines, e.g. "xref5 0"
+        if (xrefOp.Data.StartsWith("xref", StringComparison.OrdinalIgnoreCase))
+        {
+            var backtrack = xrefOp.Data.Length - "xref".Length;
+            scanner.Seek(scanner.CurrentPosition - backtrack);
+            return true;
+        }
+
+        return false;
+    }
+
     /// <summary>
     /// The provided offset can frequently be close but not quite correct.
     /// The 2 most common failure modes are that the PDF content starts at some
@@ -274,8 +282,7 @@ internal static class XrefTableParser
         if (fileHeaderOffset.Value > 0)
         {
             scanner.Seek(xrefOffset + fileHeaderOffset.Value);
-            if (scanner.TryReadToken(out OperatorToken xrefOp)
-                && xrefOp.Data.Equals("xref", StringComparison.OrdinalIgnoreCase))
+            if (TryReadXrefToken(scanner))
             {
                 return (xrefOffset + fileHeaderOffset.Value, XrefOffsetCorrection.FileHeaderOffset);
             }
@@ -303,8 +310,7 @@ internal static class XrefTableParser
 
         var actualOffset = offset + xrefIx;
         scanner.Seek(actualOffset);
-        if (scanner.TryReadToken(out OperatorToken ot)
-            && string.Equals(ot.Data, "xref", StringComparison.OrdinalIgnoreCase))
+        if (TryReadXrefToken(scanner))
         {
             return (actualOffset, XrefOffsetCorrection.Random);
         }
