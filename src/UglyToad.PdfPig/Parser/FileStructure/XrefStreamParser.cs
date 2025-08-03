@@ -26,11 +26,8 @@ internal static class XrefStreamParser
         var offsetCorrection = 0L;
 
         bytes.Seek(xrefOffset);
-        if (!scanner.TryReadToken(out NumericToken _)
-            || !scanner.TryReadToken(out NumericToken _)
-            || !scanner.TryReadToken(out OperatorToken opToken)
-            || !ReferenceEquals(opToken, OperatorToken.StartObject)
-            || !scanner.TryReadToken(out DictionaryToken dictToken))
+        if (!TryReadStreamObjAt(xrefOffset, scanner, out var dictToken)
+            || dictToken == null)
         {
             log.Debug($"Did not find the stream at {xrefOffset} attempting correction");
             var recovered = TryRecoverOffset(fileHeaderOffset, xrefOffset, scanner);
@@ -241,12 +238,20 @@ internal static class XrefStreamParser
         {
         }
 
-        var isWhitespaceActive = ReadHelper.IsWhitespace(bytes.CurrentByte);
+        bool IsStreamWhitespace()
+        {
+            return bytes.CurrentByte == (byte)' '
+                   || bytes.CurrentByte == (byte)'\r'
+                   || bytes.CurrentByte == (byte)'\n';
+        }
+
+        var isWhitespaceActive = IsStreamWhitespace();
 
         do
         {
+
             // Normalize whitespace.
-            if (ReadHelper.IsWhitespace(bytes.CurrentByte))
+            if (IsStreamWhitespace())
             {
                 buffer.Add((byte)' ');
 
@@ -271,7 +276,7 @@ internal static class XrefStreamParser
             {
                 startMarker = bytes.CurrentOffset;
 
-                isWhitespaceActive = ReadHelper.IsWhitespace(bytes.CurrentByte);
+                isWhitespaceActive = IsStreamWhitespace();
             }
             else if (buffer.EndsWith("endobj "))
             {
