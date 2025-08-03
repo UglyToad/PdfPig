@@ -54,4 +54,4 @@ jobs:
         run: sudo apt-get install p7zip-full && cd archive && 7z x part1-archive.7z && 7z x part2-archive.7z && 7z x part3-archive.7z
 
       - name: Run tests
-        run: dotnet run --project tools/UglyToad.PdfPig.ConsoleRunner/UglyToad.PdfPig.ConsoleRunner.csproj "archive/"
+        run: dotnet run --roll-forward Major -c Release --project tools/UglyToad.PdfPig.ConsoleRunner/UglyToad.PdfPig.ConsoleRunner.csproj "archive/"
