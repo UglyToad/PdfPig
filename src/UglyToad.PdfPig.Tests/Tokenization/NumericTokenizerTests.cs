@@ -29,6 +29,7 @@
         public static IEnumerable<object[]> ValidNumberTestData => new []
         {
             new object[] {"0", 0},
+            new object[] {"0003", 3},
             new object[] {"1", 1},
             new object[] {"2", 2},
             new object[] {"3", 3},
@@ -55,19 +56,29 @@
             new object[] { "4.", 4},
             new object[] { "-.002", -0.002},
             new object[] { "0.0", 0},
-            new object[] {"1.57e3", 1570}
+            new object[] {"1.57e3", 1570},
+            new object[] {"1.57e-3", 0.00157, 0.0000001},
+            new object[] {"1.24e1", 12.4},
+            new object[] { "1.457E2", 145.7 }
         };
 
         [Theory]
         [MemberData(nameof(ValidNumberTestData))]
-        public void ParsesValidNumbers(string s, double expected)
+        public void ParsesValidNumbers(string s, double expected, double? tolerance = null)
         {
             var input = StringBytesTestConverter.Convert(s);
 
             var result = tokenizer.TryTokenize(input.First, input.Bytes, out var token);
 
             Assert.True(result);
-            Assert.Equal(expected, AssertNumericToken(token).Data);
+            if (tolerance.HasValue)
+            {
+                Assert.Equal(expected, AssertNumericToken(token).Data, tolerance: tolerance.Value);
+            }
+            else
+            {
+                Assert.Equal(expected, AssertNumericToken(token).Data);
+            }
         }
 
         [Fact]

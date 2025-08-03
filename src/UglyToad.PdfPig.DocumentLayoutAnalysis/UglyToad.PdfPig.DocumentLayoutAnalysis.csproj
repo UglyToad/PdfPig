@@ -1,22 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<TargetFrameworks>netstandard2.0;net462;net471;net6.0;net8.0</TargetFrameworks>
-		<LangVersion>12</LangVersion>
-		<Version>0.1.11-alpha001</Version>
-		<IsTestProject>False</IsTestProject>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<SignAssembly>true</SignAssembly>
-		<AssemblyOriginatorKeyFile>..\pdfpig.snk</AssemblyOriginatorKeyFile>
-	</PropertyGroup>
-	<ItemGroup Condition="'$(TargetFramework)'=='net462'">
-		<PackageReference Include="System.ValueTuple" Version="4.5.0" />
-	</ItemGroup>
-	<ItemGroup>
-		<None Include="..\pdfpig.snk" Link="pdfpig.snk" />
-	</ItemGroup>
-	<ItemGroup>
-		<ProjectReference Include="..\UglyToad.PdfPig.Core\UglyToad.PdfPig.Core.csproj" />
-		<ProjectReference Include="..\UglyToad.PdfPig.Fonts\UglyToad.PdfPig.Fonts.csproj" />
-		<ProjectReference Include="..\UglyToad.PdfPig\UglyToad.PdfPig.csproj" />
-	</ItemGroup>
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net462;net471;net6.0;net8.0;net9.0</TargetFrameworks>
+    <LangVersion>12</LangVersion>
+    <Version>0.1.12-alpha001</Version>
+    <IsTestProject>False</IsTestProject>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\pdfpig.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(TargetFramework)'=='net462'">
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\pdfpig.snk" Link="pdfpig.snk" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\UglyToad.PdfPig.Core\UglyToad.PdfPig.Core.csproj" />
+    <ProjectReference Include="..\UglyToad.PdfPig.Fonts\UglyToad.PdfPig.Fonts.csproj" />
+    <ProjectReference Include="..\UglyToad.PdfPig\UglyToad.PdfPig.csproj" />
+  </ItemGroup>
 </Project>

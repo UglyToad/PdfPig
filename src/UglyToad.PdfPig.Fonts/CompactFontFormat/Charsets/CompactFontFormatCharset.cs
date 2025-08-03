@@ -32,7 +32,7 @@
 
         public virtual string GetNameByStringId(int stringId)
         {
-            return GlyphIdToStringIdAndName.SingleOrDefault(x => x.Value.stringId == stringId).Value.name;
+            return GlyphIdToStringIdAndName.FirstOrDefault(x => x.Value.stringId == stringId).Value.name;
         }
 
         public virtual int GetStringIdByGlyphId(int glyphId)

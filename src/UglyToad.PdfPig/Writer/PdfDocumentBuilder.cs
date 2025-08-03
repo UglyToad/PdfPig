@@ -1,26 +1,26 @@
 ﻿
 namespace UglyToad.PdfPig.Writer
 {
+    using Actions;
+    using Content;
+    using Core;
+    using Filters;
+    using Fonts;
+    using Graphics;
+    using Logging;
+    using Outline;
+    using Outline.Destinations;
+    using Parser;
+    using Parser.Parts;
+    using PdfPig.Fonts.Standard14Fonts;
+    using PdfPig.Fonts.TrueType;
+    using PdfPig.Fonts.TrueType.Parser;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Runtime.CompilerServices;
     using System.Xml.Linq;
-    using Content;
-    using Core;
-    using Fonts;
-    using Actions;
-    using Filters;
-    using Graphics;
-    using Logging;
-    using PdfPig.Fonts.TrueType;
-    using PdfPig.Fonts.Standard14Fonts;
-    using PdfPig.Fonts.TrueType.Parser;
-    using Outline;
-    using Outline.Destinations;
-    using Parser;
-    using Parser.Parts;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -307,7 +307,6 @@ namespace UglyToad.PdfPig.Writer
         /// </summary>
         /// <param name="document">Source document.</param>
         /// <param name="pageNumber">Page to copy.</param>
-        /// <param name="options">Control how copying for the page occurs.</param>
         /// <returns>A builder for editing the page.</returns>
         public PdfPageBuilder AddPage(PdfDocument document, int pageNumber)
         {
@@ -458,72 +457,16 @@ namespace UglyToad.PdfPig.Writer
                     {
                         continue;
                     }
-                    
-                    var val = kvp.Value;
-                    if (kvp.Value is IndirectReferenceToken ir)
-                    {
-                        ObjectToken tk = document.Structure.TokenScanner.Get(ir.Data);
-                        if (tk is null)
-                        {
-                            // malformed
-                            continue;
-                        }
-                        val = tk.Data;
-                    }
 
-                    if (!(val is ArrayToken arr))
-                    {
-                        // should be array... ignore and remove bad dict
-                        continue;
-                    }
+                    var copiedTokens = CopyAnnotationsFromPageSource(
+                        kvp.Value,
+                        document.Structure.TokenScanner,
+                        refs,
+                        page,
+                        options.CopyLinkFunc,
+                        x => links.Add(x));
 
-                    // if copyLink is unset, ignore links to resolve issues with refencing non-existing pages
-                    var toAdd = new List<IToken>();
-                    foreach (var annot in arr.Data)
-                    {
-                        DictionaryToken? tk = GetRemoteDict(annot);
-                        if (tk is null)
-                        {
-                            // malformed
-                            continue;
-                        }
-
-                        if (tk.TryGet(NameToken.Subtype, out var st) && st is NameToken nm && nm == NameToken.Link)
-                        {
-                            if (options.CopyLinkFunc is null)
-                            {
-                                // ignore link if don't know how to copy
-                                continue;
-                            }
-
-                            var link = page.annotationProvider.GetAction(tk);
-                            if (link is null)
-                            {
-                                // ignore unknown link actions
-                                continue;
-                            }
-
-                            var copiedLink = options.CopyLinkFunc(link);
-                            if (copiedLink is null)
-                            {
-                                // ignore if caller wants to skip the link
-                                continue;
-                            }
-
-                            if (copiedLink != link)
-                            {
-                                // defer to write links when all pages are added
-                                var copiedToken = (DictionaryToken)WriterUtil.CopyToken(context, tk, document.Structure.TokenScanner, refs);
-                                links.Add((copiedToken, copiedLink));
-                                continue;
-                            }
-
-                            // copy as is if caller returns the same link
-                        }
-                        toAdd.Add(WriterUtil.CopyToken(context, tk, document.Structure.TokenScanner, refs));
-                    }
-                    // copy rest
-                    copiedPageDict[NameToken.Annots] = new ArrayToken(toAdd);
+                    copiedPageDict[NameToken.Annots] = new ArrayToken(copiedTokens);
                     continue;
                 }
 
@@ -623,6 +566,161 @@ namespace UglyToad.PdfPig.Writer
                 }
                 return dict;
             }
+        }
+
+        private IReadOnlyList<IToken> CopyAnnotationsFromPageSource(
+            IToken val,
+            IPdfTokenScanner sourceScanner,
+            IDictionary<IndirectReference, IndirectReferenceToken> refs,
+            Page page,
+            Func<PdfAction, PdfAction?>? linkCopyFunc = null,
+            Action<(DictionaryToken, PdfAction)>? deferredActionUpdate = null)
+        {
+            var permittedLinkActionTypes = new HashSet<NameToken>
+            {
+                // A web URI.
+                NameToken.Uri,
+                // A page in a different non-embedded document.
+                NameToken.GoToR,
+                // Launch an external application.
+                NameToken.Launch,
+            };
+
+            if (!DirectObjectFinder.TryGet(val, sourceScanner, out ArrayToken? annotationsArray))
+            {
+                return [];
+            }
+
+            var copiedAnnotations = new List<IToken>();
+            foreach (var annotEntry in annotationsArray.Data)
+            {
+                if (!DirectObjectFinder.TryGet(annotEntry, sourceScanner, out DictionaryToken? annotDict))
+                {
+                    continue;
+                }
+
+                var removedKeys = new List<NameToken>();
+
+                /*
+                 * An indirect reference to the page object with which this annotation is associated.
+                 * Note: This entry is required for screen annotations associated with rendition actions.
+                 */
+                if (annotDict.TryGet(NameToken.P, out _))
+                {
+                    // If we have a page reference we should update it when this page is written.
+                    // For now, we'll remove it. This will corrupt screen annotations as noted above.
+                    removedKeys.Add(NameToken.P);
+                }
+
+                // We don't copy the struct tree so skip this for now.
+                if (annotDict.TryGet(NameToken.StructParent, out _))
+                {
+                    removedKeys.Add(NameToken.StructParent);
+                }
+
+                // We treat non-link annotations as ok for now, we should revisit this.
+                if (!annotDict.TryGet(NameToken.Subtype, sourceScanner, out NameToken? subtype)
+                    || subtype != NameToken.Link)
+                {
+                    var copiedRef = WriterUtil.CopyToken(
+                        context,
+                        CopyWithSkippedKeys(annotDict, removedKeys),
+                        sourceScanner,
+                        refs);
+
+                    copiedAnnotations.Add(copiedRef);
+
+                    continue;
+                }
+
+                if (linkCopyFunc != null && deferredActionUpdate != null)
+                {
+                    var action = page.annotationProvider.GetAction(annotDict);
+
+                    if (action != null)
+                    {
+                        var copiedLink = linkCopyFunc(action);
+                        if (copiedLink != action && copiedLink != null)
+                        {
+                            // defer to write links when all pages are added
+                            var copiedToken = (DictionaryToken)WriterUtil.CopyToken(context, annotDict, sourceScanner, refs);
+                            deferredActionUpdate((copiedToken, copiedLink));
+                            continue;
+                        }
+                    }
+                }
+
+                // If the link has an action then this link can point elsewhere in this document, maybe not to a page we copied?
+                if (annotDict.TryGet(NameToken.A, sourceScanner, out DictionaryToken? actionDict))
+                {
+                    // If the link annotation points somewhere inside our document we can't currently maintain validity on-copy.
+                    if (!actionDict.TryGet(NameToken.S, sourceScanner, out NameToken? actionType)
+                        || !permittedLinkActionTypes.Contains(actionType))
+                    {
+                        continue;
+                    }
+
+                    var copiedRef = WriterUtil.CopyToken(
+                        context,
+                        CopyWithSkippedKeys(annotDict, removedKeys),
+                        sourceScanner,
+                        refs);
+
+                    copiedAnnotations.Add(copiedRef);
+
+                    continue;
+                }
+
+                // A dest can point elsewhere in this document, maybe not to a page we copied?
+                if (annotDict.TryGet(NameToken.Dest, out _))
+                {
+                    // Skip for now.
+                    continue;
+                }
+
+                // If neither /A nor /Dest are present then I don't really know what this link does, so it should be safe to copy:
+                var finalCopiedRef = WriterUtil.CopyToken(
+                    context,
+                    CopyWithSkippedKeys(annotDict, removedKeys),
+                    sourceScanner,
+                    refs);
+
+                copiedAnnotations.Add(finalCopiedRef);
+            }
+
+            return copiedAnnotations;
+        }
+
+        private static DictionaryToken CopyWithSkippedKeys(
+            DictionaryToken source,
+            IReadOnlyList<NameToken> skipped)
+        {
+            var dict = new Dictionary<NameToken, IToken>();
+
+            foreach (var kvp in source.Data)
+            {
+                var name = NameToken.Create(kvp.Key);
+
+                var ignore = false;
+
+                foreach (var skippedName in skipped)
+                {
+                    if (skippedName == name)
+                    {
+                        ignore = true;
+                        break;
+                    }
+                }
+
+                if (ignore)
+                {
+                    continue;
+                }
+
+                dict[name] = kvp.Value;
+            }
+
+            return new DictionaryToken(dict);
         }
 
         private void CompleteDocument()

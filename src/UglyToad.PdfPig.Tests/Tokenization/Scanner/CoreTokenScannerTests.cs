@@ -261,6 +261,47 @@ endobj";
             Assert.Equal(3, tokens.OfType<DictionaryToken>().Count());
         }
 
+        [Fact]
+        public void Document006324Test()
+        {
+            const string content =
+                """
+                q
+                    1 0 0 1 248.6304 572.546 cm
+                    0 0 m
+                        0.021 -0.007 l
+                        3 -0.003 -0.01 0 0 0 c
+                    f
+                Q
+                q
+                    1 0 0 1 2489394 57249855 cm
+                    0 0 m
+                        -0.046 -0.001 -0.609 0.029 -0.286 -0.014 c
+                        -02.61 -0.067 -0.286 -0. .61 -0 0 c
+                    f
+                Q
+                q
+                    1 0 0 1 24862464 572. .836 cm
+                    0 0 m
+                        0.936 -0.029 l
+                        0.038 -0.021 0.55 -0.014 0 0 c
+                    f
+                Q
+                """;
+
+            var tokens = new List<IToken>();
+
+            var scanner = new CoreTokenScanner(
+                StringBytesTestConverter.Convert(content, false).Bytes,
+                true,
+                isStream: true);
+
+            while (scanner.MoveNext())
+            {
+                tokens.Add(scanner.CurrentToken);
+            }
+        }
+
         private static void AssertCorrectToken<T, TData>(IToken token, TData expected) where T : IDataToken<TData>
         {
             var cast = Assert.IsType<T>(token);

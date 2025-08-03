@@ -20,7 +20,6 @@ namespace UglyToad.PdfPig.Graphics
 #endif
     using System.Collections.Generic;
     using System.Linq;
-    using System.Reflection;
     using Tokens;
 
     /// <summary>
@@ -38,7 +37,7 @@ namespace UglyToad.PdfPig.Graphics
             // private
         }
         
-        private static readonly IReadOnlyDictionary<string, Type> operations =
+        private static readonly IReadOnlyDictionary<string, Type> Operations =
             new Dictionary<string, Type>
             {
                 { SetStrokeColorAdvanced.Symbol, typeof(SetStrokeColorAdvanced) },
@@ -415,10 +414,14 @@ namespace UglyToad.PdfPig.Graphics
                     var errorMessageScn = string.Join(", ", operands.Select(x => x.ToString()));
                     throw new PdfDocumentFormatException($"Attempted to set a stroke color space (SCN) with invalid arguments: [{errorMessageScn}]");
                 case SetStrokeColorDeviceCmyk.Symbol:
-                    return new SetStrokeColorDeviceCmyk(OperandToDouble(operands[0]),
-                        OperandToDouble(operands[1]),
-                        OperandToDouble(operands[2]),
-                        OperandToDouble(operands[3]));
+                    var setStrokeColorCmykArgs = GetExpectedDoubles(SetNonStrokeColorDeviceCmyk.Symbol,
+                        operands,
+                        4);
+                    return new SetStrokeColorDeviceCmyk(
+                        setStrokeColorCmykArgs[0],
+                        setStrokeColorCmykArgs[1],
+                        setStrokeColorCmykArgs[2],
+                        setStrokeColorCmykArgs[3]);
                 case SetStrokeColorDeviceGray.Symbol:
                     return new SetStrokeColorDeviceGray(OperandToDouble(operands[0]));
                 case SetStrokeColorDeviceRgb.Symbol:
@@ -462,128 +465,64 @@ namespace UglyToad.PdfPig.Graphics
                     var array = operands.ToArray();
 
                     return new ShowTextsWithPositioning(array);
+                case BeginInlineImageData.Symbol:
+                    // Should never be encountered because it is handled by the page content parser.
+                    return null;
+                case EndInlineImage.Symbol:
+                    // Should never be encountered because it is handled by the page content parser.
+                    return null;
+                case Type3SetGlyphWidth.Symbol:
+                    var t3SetWidthArgs = GetExpectedDoubles(Type3SetGlyphWidth.Symbol, operands, 2);
+                    return new Type3SetGlyphWidth(t3SetWidthArgs[0], t3SetWidthArgs[1]);
+                case Type3SetGlyphWidthAndBoundingBox.Symbol:
+                    var t3SetWidthAndBbArgs = GetExpectedDoubles(Type3SetGlyphWidthAndBoundingBox.Symbol, operands, 6);
+                    return new Type3SetGlyphWidthAndBoundingBox(
+                        t3SetWidthAndBbArgs[0],
+                        t3SetWidthAndBbArgs[1],
+                        t3SetWidthAndBbArgs[2],
+                        t3SetWidthAndBbArgs[3],
+                        t3SetWidthAndBbArgs[4],
+                        t3SetWidthAndBbArgs[5]);
             }
 
-            if (!operations.TryGetValue(op.Data, out Type? operationType))
+            if (!Operations.TryGetValue(op.Data, out _))
             {
                 return null;
             }
 
-            var constructors = operationType.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            throw new NotImplementedException(
+                $"No support implemented for content operator {op.Data}");
+        }
 
-            if (constructors.Length == 0)
+        private static double[] GetExpectedDoubles(string operatorSymbol, IReadOnlyList<IToken> operands, int resultCount)
+        {
+            var results = new double[resultCount];
+
+            if (operands.Count < resultCount)
             {
-                throw new InvalidOperationException("No constructors to invoke were found for operation type: " + operationType.FullName);
+                throw new InvalidOperationException(
+                    $"Invalid operands for {operatorSymbol}, needed {resultCount} numbers, got: {PrintOperands(operands)}");
             }
 
-            // This only works by luck...
-            var constructor = constructors[0];
-
-            if (constructor.IsPrivate)
+            for (var i = 0; i < resultCount; i++)
             {
-                return (IGraphicsStateOperation)operationType.GetField("Value")?.GetValue(null)!;
+                var op = operands[i];
+
+                if (op is not NumericToken nt)
+                {
+                    throw new InvalidOperationException(
+                        $"Invalid operands for {operatorSymbol}, needed {resultCount} numbers, got: {PrintOperands(operands)}");
+                }
+
+                results[i] = nt.Data;
             }
 
-            var parameters = constructor.GetParameters();
+            return results;
+        }
 
-            var offset = 0;
-
-            var arguments = new List<object>();
-
-            foreach (var parameter in parameters)
-            {
-                if (offset >= operands.Count)
-                {
-                    throw new InvalidOperationException($"Fewer operands {operands.Count} found than required ({offset + 1}) for operator: {op.Data}.");
-                }
-
-                if (parameter.ParameterType == typeof(double))
-                {
-                    if (operands[offset] is NumericToken numeric)
-                    {
-                        arguments.Add(numeric.Data);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException($"Expected a double parameter for operation type {operationType.FullName}. Instead got: {operands[offset]}");
-                    }
-
-                    offset++;
-                }
-                else if (parameter.ParameterType == typeof(int))
-                {
-                    if (operands[offset] is NumericToken numeric)
-                    {
-                        arguments.Add(numeric.Int);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException($"Expected an integer parameter for operation type {operationType.FullName}. Instead got: {operands[offset]}");
-                    }
-
-                    offset++;
-                }
-                else if (parameter.ParameterType == typeof(double[]))
-                {
-                    if (operands[offset] is ArrayToken arr)
-                    {
-                        arguments.Add(arr.Data.OfType<NumericToken>().Select(x => x.Data).ToArray());
-                        offset++;
-                        continue;
-                    }
-
-                    var array = new List<double>();
-                    while (offset < operands.Count && operands[offset] is NumericToken numeric)
-                    {
-                        array.Add(numeric.Data);
-                        offset++;
-                    }
-
-                    arguments.Add(array.ToArray());
-                }
-                else if (parameter.ParameterType == typeof(NameToken))
-                {
-                    if (operands[offset] is NameToken name)
-                    {
-                        arguments.Add(name);
-                    }
-                    else if (operands[offset] is StringToken s)
-                    {
-                        arguments.Add(NameToken.Create(s.Data));
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException($"Expected a NameToken parameter for operation type {operationType.FullName}. Instead got: {operands[offset]}");
-                    }
-
-                    offset++;
-                }
-                else if (parameter.ParameterType == typeof(string))
-                {
-                    if (operands[offset] is StringToken stringToken)
-                    {
-                        arguments.Add(stringToken.Data);
-                    }
-                    else if (operands[offset] is HexToken hexToken)
-                    {
-                        arguments.Add(hexToken.Data);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException($"Expected a string parameter for operation type {operationType.FullName}. Instead got: {operands[offset]}");
-                    }
-
-                    offset++;
-                }
-                else
-                {
-                    throw new NotImplementedException($"Unsupported parameter type {parameter.ParameterType.FullName} for operation type {operationType.FullName}.");
-                }
-            }
-
-            var result = constructor.Invoke(arguments.ToArray());
-
-            return (IGraphicsStateOperation)result;
+        private static string PrintOperands(IEnumerable<IToken> operands)
+        {
+            return "[" + string.Join(", ", operands.Select(x => x.ToString())) + "]";
         }
     }
 }
