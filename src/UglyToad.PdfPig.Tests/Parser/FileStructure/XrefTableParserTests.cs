@@ -285,7 +285,8 @@ public class XrefTableParserTests
             << >>
             """);
 
-        var result = XrefTableParser.TryReadTableAtOffset(4, input.bytes, input.scanner, new TestingLog());
+        var result = XrefTableParser.TryReadTableAtOffset(
+            new FileHeaderOffset(0), 4, input.bytes, input.scanner, new TestingLog());
 
         Assert.NotNull(result);
         Assert.Equal(4, result.ObjectOffsets.Count);
@@ -570,6 +571,7 @@ public class XrefTableParserTests
         var input = StringBytesTestConverter.Scanner(str);
 
         return XrefTableParser.TryReadTableAtOffset(
+            new FileHeaderOffset(0),
             0,
             input.bytes,
             input.scanner,
@@ -597,6 +599,7 @@ public class XrefTableParserTests
         var log = new NoOpLog();
 
         var table = XrefTableParser.TryReadTableAtOffset(
+            new FileHeaderOffset(0),
             0,
             ib.bytes,
             ib.scanner,

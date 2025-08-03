@@ -39,7 +39,10 @@ public class FirstPassParserTests
 
         var ib = StringBytesTestConverter.Convert(content, false);
 
-        var results = FirstPassParser.Parse(ib.Bytes, new CoreTokenScanner(ib.Bytes, true));
+        var results = FirstPassParser.Parse(
+            new FileHeaderOffset(0),
+            ib.Bytes,
+            new CoreTokenScanner(ib.Bytes, true));
 
         Assert.Equal(2, results.Parts.Count);
         Assert.NotNull(results.Trailer);
@@ -113,7 +116,7 @@ public class FirstPassParserTests
 
         var ib = StringBytesTestConverter.Convert(content, false);
 
-        var results = FirstPassParser.Parse(ib.Bytes, new CoreTokenScanner(ib.Bytes, true));
+        var results = FirstPassParser.Parse(new FileHeaderOffset(0), ib.Bytes, new CoreTokenScanner(ib.Bytes, true));
 
         var offsets = results.Parts.Select(x => x.Offset).OrderBy(x => x).ToList();
         

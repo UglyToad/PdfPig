@@ -11,19 +11,37 @@ using Util;
 internal static class XrefStreamParser
 {
     public static XrefStream? TryReadStreamAtOffset(
-        long offset,
+        FileHeaderOffset fileHeaderOffset,
+        long xrefOffset,
         IInputBytes bytes,
         ISeekableTokenScanner scanner,
         ILog log)
     {
-        bytes.Seek(offset);
+        var offsetCorrectionType = XrefOffsetCorrection.None;
+        var offsetCorrection = 0L;
+
+        bytes.Seek(xrefOffset);
         if (!scanner.TryReadToken(out NumericToken _)
             || !scanner.TryReadToken(out NumericToken _)
             || !scanner.TryReadToken(out OperatorToken opToken)
             || !ReferenceEquals(opToken, OperatorToken.StartObject)
             || !scanner.TryReadToken(out DictionaryToken dictToken))
         {
-            return null;
+            log.Debug($"Did not find the stream at {xrefOffset} attempting correction");
+            var recovered = TryRecoverOffset(fileHeaderOffset, xrefOffset, scanner);
+
+            if (recovered == null
+                || !TryReadStreamObjAt(recovered.Value.correctOffset, scanner, out var streamDict)
+                || streamDict == null)
+            {
+                return null;
+            }
+
+            dictToken = streamDict;
+
+            offsetCorrection = recovered.Value.correctOffset - xrefOffset;
+            offsetCorrectionType = recovered.Value.correctionType;
+            xrefOffset = recovered.Value.correctOffset;
         }
 
         if (!dictToken.TryGet(NameToken.Type, out NameToken dictType)
@@ -115,16 +133,43 @@ internal static class XrefStreamParser
                 lineNumber++;
             }
 
-            return new XrefStream(offset,
+            return new XrefStream(
+                xrefOffset,
                 numbers.ToDictionary(x => new IndirectReference(x.obj, x.gen), x => (long)x.off),
-                dictToken);
+                dictToken,
+                offsetCorrectionType,
+                offsetCorrection);
         }
         catch (Exception ex)
         {
-            log.Error($"Failed to parse the XRef stream at {offset}", ex);
+            log.Error($"Failed to parse the XRef stream at {xrefOffset}", ex);
             return null;
         }
     }
+
+    /// <summary>
+    /// The provided offset can frequently be close but not quite correct.
+    /// The 2 most common failure modes are that the PDF content starts at some
+    /// non-zero offset in the file so all content is shifted by <param name="fileHeaderOffset"/> bytes
+    /// or we're within a few bytes of the offset but not directly at it.
+    /// </summary>
+    private static (long correctOffset, XrefOffsetCorrection correctionType)? TryRecoverOffset(
+        FileHeaderOffset fileHeaderOffset,
+        long xrefOffset,
+        ISeekableTokenScanner scanner)
+    {
+        // If the %PDF- version header appears at some offset in the file then treat everything as shifted.
+        if (fileHeaderOffset.Value > 0)
+        {
+            if (TryReadStreamObjAt(xrefOffset + fileHeaderOffset.Value, scanner, out _))
+            {
+                return (xrefOffset + fileHeaderOffset.Value, XrefOffsetCorrection.FileHeaderOffset);
+            }
+        }
+
+        return null;
+    }
+
     private static void ReadNextStreamObject(
         int type,
         long objectNumber,
@@ -272,6 +317,24 @@ internal static class XrefStreamParser
 #else
         return objNums.ToArray();
 #endif
+    }
+
+    private static bool TryReadStreamObjAt(long offset, ISeekableTokenScanner scanner, out DictionaryToken? dictionary)
+    {
+        dictionary = null;
+
+        scanner.Seek(offset);
+        if (scanner.TryReadToken(out NumericToken _)
+            && scanner.TryReadToken(out NumericToken _)
+            && scanner.TryReadToken(out OperatorToken opToken)
+            && ReferenceEquals(opToken, OperatorToken.StartObject)
+            && scanner.TryReadToken(out DictionaryToken dictToken))
+        {
+            dictionary = dictToken;
+            return true;
+        }
+
+        return false;
     }
 
 

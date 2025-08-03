@@ -132,6 +132,7 @@ internal static class XrefBruteForcer
 
                 var potentialTableOffset = bytes.CurrentOffset - 4;
                 var table = XrefTableParser.TryReadTableAtOffset(
+                    new FileHeaderOffset(0),
                     potentialTableOffset,
                     bytes,
                     scanner,
@@ -158,6 +159,7 @@ internal static class XrefBruteForcer
                 }
 
                 var stream = XrefStreamParser.TryReadStreamAtOffset(
+                    new FileHeaderOffset(0),
                     lastObjPosition.Value,
                     bytes,
                     scanner,

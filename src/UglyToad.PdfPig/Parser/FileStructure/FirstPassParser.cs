@@ -8,7 +8,11 @@ using Tokens;
 
 internal static partial class FirstPassParser
 {
-    public static FirstPassResults Parse(IInputBytes input, ISeekableTokenScanner scanner, ILog? log = null)
+    public static FirstPassResults Parse(
+        FileHeaderOffset fileHeaderOffset,
+        IInputBytes input,
+        ISeekableTokenScanner scanner,
+        ILog? log = null)
     {
         log ??= new NoOpLog();
 
@@ -21,6 +25,7 @@ internal static partial class FirstPassParser
 
         // 2. Read all XRef streams and tables using the offsets provided by the file.
         var streamsAndTables = GetXrefPartsDirectly(
+            fileHeaderOffset,
             input,
             scanner,
             startXrefLocation,
@@ -109,6 +114,7 @@ internal static partial class FirstPassParser
     }
 
     private static IReadOnlyList<IXrefSection> GetXrefPartsDirectly(
+        FileHeaderOffset offset,
         IInputBytes input,
         ISeekableTokenScanner scanner,
         StartXRefLocation startLocation,
@@ -126,6 +132,7 @@ internal static partial class FirstPassParser
         do
         {
             var streamOrTable = GetXrefStreamOrTable(
+                offset,
                 input,
                 scanner,
                 nextLocation.Value,
@@ -158,12 +165,14 @@ internal static partial class FirstPassParser
     }
 
     private static IXrefSection? GetXrefStreamOrTable(
+        FileHeaderOffset fileHeaderOffset,
         IInputBytes input,
         ISeekableTokenScanner scanner,
         long location,
         ILog log)
     {
         var table = XrefTableParser.TryReadTableAtOffset(
+            fileHeaderOffset,
             location,
             input,
             scanner,
@@ -174,7 +183,9 @@ internal static partial class FirstPassParser
             return table;
         }
 
-        var stream = XrefStreamParser.TryReadStreamAtOffset(location,
+        var stream = XrefStreamParser.TryReadStreamAtOffset(
+            fileHeaderOffset,
+            location,
             input,
             scanner,
             log);

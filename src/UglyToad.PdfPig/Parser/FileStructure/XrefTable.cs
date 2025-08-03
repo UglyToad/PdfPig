@@ -17,14 +17,22 @@ internal sealed class XrefTable : IXrefSection
 
     public DictionaryToken? Dictionary { get; }
 
+    public XrefOffsetCorrection CorrectionType { get; }
+
+    public long OffsetCorrection { get; }
+
     public XrefTable(
         long offset,
         IReadOnlyDictionary<IndirectReference, long> objectOffsets,
-        DictionaryToken? trailer)
+        DictionaryToken? trailer,
+        XrefOffsetCorrection correctionType,
+        long offsetCorrection)
     {
         Offset = offset;
         ObjectOffsets = objectOffsets;
         Dictionary = trailer;
+        CorrectionType = correctionType;
+        OffsetCorrection = offsetCorrection;
     }
 
     public long? GetPrevious()

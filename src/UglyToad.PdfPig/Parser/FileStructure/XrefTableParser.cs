@@ -4,23 +4,43 @@ using Core;
 using Logging;
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using Tokenization.Scanner;
 using Tokens;
 
 internal static class XrefTableParser
 {
     public static XrefTable? TryReadTableAtOffset(
-        long offset,
+        FileHeaderOffset fileHeaderOffset,
+        long xrefOffset,
         IInputBytes bytes,
         ISeekableTokenScanner scanner,
         ILog log)
     {
-        bytes.Seek(offset);
+        bytes.Seek(xrefOffset);
 
-        if (!scanner.TryReadToken(out OperatorToken xrefOp))
+        var correctionType = XrefOffsetCorrection.None;
+        var correction = 0L;
+
+        if (!scanner.TryReadToken(out OperatorToken xrefOp)
+            || !string.Equals("xref", xrefOp.Data, StringComparison.OrdinalIgnoreCase))
         {
-            return null;
+            log.Debug($"Xref not found at {xrefOffset}, trying to recover");
+            var recovered = TryRecoverOffset(fileHeaderOffset, xrefOffset, bytes, scanner);
+            if (recovered == null)
+            {
+                return null;
+            }
+
+            log.Debug($"Xref found at {recovered.Value.correctOffset}");
+            scanner.Seek(recovered.Value.correctOffset);
+            if (!scanner.TryReadToken(out xrefOp))
+            {
+                return null;
+            }
+
+            correctionType = recovered.Value.correctionType;
+            correction = recovered.Value.correctOffset - xrefOffset;
+            xrefOffset = recovered.Value.correctOffset;
         }
 
         if (!string.Equals("xref", xrefOp.Data, StringComparison.OrdinalIgnoreCase))
@@ -148,9 +168,11 @@ internal static class XrefTableParser
             if (trailer != null)
             {
                 return new XrefTable(
-                    offset,
+                    xrefOffset,
                     offsets,
-                    trailer);
+                    trailer,
+                    correctionType,
+                    correction);
             }
 
             return null;
@@ -228,13 +250,67 @@ internal static class XrefTableParser
             }
         } while (ix < readNums.Count);
 
-        return new XrefTable(offset, offsets, trailer);
+        return new XrefTable(xrefOffset, offsets, trailer, correctionType, correction);
+    }
+
+    /// <summary>
+    /// The provided offset can frequently be close but not quite correct.
+    /// The 2 most common failure modes are that the PDF content starts at some
+    /// non-zero offset in the file so all content is shifted by <param name="fileHeaderOffset"/> bytes
+    /// or we're within a few bytes of the offset but not directly at it.
+    /// </summary>
+    private static (long correctOffset, XrefOffsetCorrection correctionType)? TryRecoverOffset(
+        FileHeaderOffset fileHeaderOffset,
+        long xrefOffset,
+        IInputBytes bytes,
+        ISeekableTokenScanner scanner)
+    {
+        // If the %PDF- version header appears at some offset in the file then treat everything as shifted.
+        if (fileHeaderOffset.Value > 0)
+        {
+            scanner.Seek(xrefOffset + fileHeaderOffset.Value);
+            if (scanner.TryReadToken(out OperatorToken xrefOp)
+                && xrefOp.Data.Equals("xref", StringComparison.OrdinalIgnoreCase))
+            {
+                return (xrefOffset + fileHeaderOffset.Value, XrefOffsetCorrection.FileHeaderOffset);
+            }
+        }
+
+        // Read a +/-10 chunk around the offset to see if we're close.
+        var buffer = new byte[20];
+        var offset = Math.Max(0, xrefOffset - 10);
+        bytes.Seek(offset);
+
+        var read = bytes.Read(buffer);
+
+        if (read < buffer.Length)
+        {
+            return null;
+        }
+
+        var str = OtherEncodings.BytesAsLatin1String(buffer);
+
+        var xrefIx = str.IndexOf("xref", StringComparison.OrdinalIgnoreCase);
+        if (xrefIx < 0)
+        {
+            return null;
+        }
+
+        var actualOffset = offset + xrefIx;
+        scanner.Seek(actualOffset);
+        if (scanner.TryReadToken(out OperatorToken ot)
+            && string.Equals(ot.Data, "xref", StringComparison.OrdinalIgnoreCase))
+        {
+            return (actualOffset, XrefOffsetCorrection.Random);
+        }
+
+        return null;
     }
 
     private enum XrefTableReadMode
     {
         SubsectionHeader = 2,
         Entry = 3,
-
     }
+
 }
