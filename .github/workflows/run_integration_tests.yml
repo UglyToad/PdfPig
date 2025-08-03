@@ -15,7 +15,9 @@ jobs:
       - name: Set up dotnet core
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: "9.0.x"
+          dotnet-version: |
+            8.0.x
+            9.0.x
 
       - name: Restore cached part 1
         id: restore-cache-p1
