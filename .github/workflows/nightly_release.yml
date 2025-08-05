@@ -21,13 +21,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetch nightly-latest tag
-        run: |
-          git fetch origin nightly-latest || true
+      - name: Fetch tags
+        run: git fetch --tags
 
       - id: check
         run: |
-          latest_commit=$(git rev-parse origin/nightly-latest || echo "")
+          latest_commit=$(git rev-parse nightly-latest || echo "")
           echo "Latest published commit: $latest_commit"
           if [ "$latest_commit" = "${{ github.sha }}" ]; then
             echo "No new commit since last publish."
