@@ -9,8 +9,6 @@ permissions:
   contents: write # Grant write permission for tagging
 
 jobs:
-  tests:
-    uses: ./.github/workflows/run_integration_tests.yml
   check_publish_needed:
     runs-on: ubuntu-latest
     name: Check if this commit has already been published
@@ -35,6 +33,10 @@ jobs:
             echo "New commit detected."
             echo "should_run=true" >> $GITHUB_OUTPUT
           fi
+  tests:
+    needs: check_publish_needed
+    if: ${{ needs.check_publish_needed.outputs.should_run == 'true' }}
+    uses: ./.github/workflows/run_integration_tests.yml
 
   build_and_publish_nightly:
     needs: [check_publish_needed, tests]
