@@ -5,6 +5,9 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: write # Grant write permission for tagging
+
 jobs:
   tests:
     uses: ./.github/workflows/run_integration_tests.yml
@@ -14,10 +17,14 @@ jobs:
     outputs:
       should_run: ${{ steps.check.outputs.should_run }}
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Fetch nightly-latest tag
         run: |
           git fetch origin nightly-latest || true
+
       - id: check
         run: |
           latest_commit=$(git rev-parse origin/nightly-latest || echo "")
@@ -29,16 +36,17 @@ jobs:
             echo "New commit detected."
             echo "should_run=true" >> $GITHUB_OUTPUT
           fi
+
   build_and_publish_nightly:
     needs: [check_publish_needed, tests]
-    if: ${{ needs.check_publish_needed.outputs.should_run != 'false' }}
+    if: ${{ needs.check_publish_needed.outputs.should_run == 'true' }}
     runs-on: windows-2022
     name: build_and_publish_nightly
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v4
 
       - name: Set up dotnet core
-        uses: actions/setup-dotnet@v2
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
             2.1.x
@@ -61,8 +69,6 @@ jobs:
 
       - name: Publish Nuget to GitHub registry
         run: dotnet nuget push **/*.nupkg --api-key ${{secrets.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Tag latest nightly commit
         run: |
