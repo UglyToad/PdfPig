@@ -8,24 +8,30 @@ on:
 jobs:
   tests:
     uses: ./.github/workflows/run_integration_tests.yml
-  check_date:
+  check_publish_needed:
     runs-on: ubuntu-latest
-    name: Check latest commit
+    name: Check if this commit has already been published
     outputs:
-      should_run: ${{ steps.should_run.outputs.should_run }}
+      should_run: ${{ steps.check.outputs.should_run }}
     steps:
       - uses: actions/checkout@master
-      - name: print latest_commit
-        run: echo ${{ github.sha }}
-
-      - id: should_run
-        continue-on-error: true
-        name: check latest commit is less than a day ago
-        if: ${{ github.event_name == 'schedule' }}
-        run: test -z $(git rev-list  --after="24 hours"  ${{ github.sha }}) && echo "::set-output name=should_run::false"
+      - name: Fetch nightly-latest tag
+        run: |
+          git fetch origin nightly-latest || true
+      - id: check
+        run: |
+          latest_commit=$(git rev-parse origin/nightly-latest || echo "")
+          echo "Latest published commit: $latest_commit"
+          if [ "$latest_commit" = "${{ github.sha }}" ]; then
+            echo "No new commit since last publish."
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          else
+            echo "New commit detected."
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          fi
   build_and_publish_nightly:
-    needs: [check_date, tests]
-    if: ${{ needs.check_date.outputs.should_run != 'false' }}
+    needs: [check_publish_needed, tests]
+    if: ${{ needs.check_publish_needed.outputs.should_run != 'false' }}
     runs-on: windows-2022
     name: build_and_publish_nightly
     steps:
@@ -57,3 +63,10 @@ jobs:
         run: dotnet nuget push **/*.nupkg --api-key ${{secrets.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag latest nightly commit
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag -f nightly-latest ${{ github.sha }}
+          git push origin nightly-latest --force
