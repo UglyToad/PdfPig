@@ -112,8 +112,9 @@
             {
                 AsciiHexDecodeFilter => 0.5,
                 Ascii85Filter => 0.8,
-                FlateFilter or RunLengthFilter => 3,
+                RunLengthFilter => 1.5,
                 LzwFilter => 2,
+                FlateFilter => 10,
                 _ => 1000
             };
         }
