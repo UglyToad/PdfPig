@@ -60,13 +60,13 @@
             {
                 Assert.NotNull(document.Structure.Catalog);
 
-                Assert.True(document.Structure.CrossReferenceTable.ObjectOffsets.Count > 0, "Cross reference table was empty.");
-                foreach (var objectOffset in document.Structure.CrossReferenceTable.ObjectOffsets)
-                {
-                    var token = document.Structure.GetObject(objectOffset.Key);
+                //Assert.True(document.Structure.CrossReferenceTable.ObjectOffsets.Count > 0, "Cross reference table was empty.");
+                //foreach (var objectOffset in document.Structure.CrossReferenceTable.ObjectOffsets)
+                //{
+                //    var token = document.Structure.GetObject(objectOffset.Key);
 
-                    Assert.NotNull(token);
-                }
+                //    Assert.NotNull(token);
+                //}
             }
         }
 

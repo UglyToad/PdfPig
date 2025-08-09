@@ -44,4 +44,27 @@ public class CircularByteBufferTests
 
         Assert.True("123456"u8.SequenceEqual(buffer.AsSpan()));
     }
+
+    [Fact]
+    public void CanAddReverse()
+    {
+        var bufferLen = "startxref".Length;
+
+        const string s = "wibbly bibble startxref 2024";
+
+        var buffer = new CircularByteBuffer(bufferLen);
+
+        for (var i = s.Length - 1; i >= 0; i--)
+        {
+            var c = s[i];
+            buffer.AddReverse((byte)c);
+
+            if (i <= s.Length - bufferLen)
+            {
+                var str = s.Substring(i, bufferLen);
+
+                Assert.True(buffer.IsCurrentlyEqual(str));
+            }
+        }
+    }
 }

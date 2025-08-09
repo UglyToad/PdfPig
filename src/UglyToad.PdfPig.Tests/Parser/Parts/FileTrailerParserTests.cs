@@ -1,172 +1,216 @@
-﻿namespace UglyToad.PdfPig.Tests.Parser.Parts
+﻿namespace UglyToad.PdfPig.Tests.Parser.Parts;
+
+using PdfPig.Parser.FileStructure;
+using PdfPig.Tokenization.Scanner;
+
+public class FirstPassParserStartXrefTests
 {
-    using PdfPig.Core;
-    using PdfPig.Parser.FileStructure;
-    using PdfPig.Tokenization.Scanner;
-
-    public class FileTrailerFileTrailerParserTests
+    [Fact]
+    public void FindsCompliantStartXref()
     {
-        [Fact]
-        public void FindsCompliantStartXref()
-        {
-            var input = StringBytesTestConverter.Convert(@"sta455%r endstream
-endobj
+        var input = StringBytesTestConverter.Convert(
+            """
+            sta455%r endstream
+            endobj
 
-12 0 obj
-1234  %eof
-endobj
+            12 0 obj
+            1234  %eof
+            endobj
 
-startxref
-    456
+            startxref
+                456
 
-%%EOF", false);
+            %%EOF
+            """,
+            false);
 
-            var result = FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes, true), false);
+        var result = FirstPassParser.GetFirstCrossReferenceOffset(
+            input.Bytes,
+            new CoreTokenScanner(input.Bytes, true),
+            new TestingLog());
 
-            Assert.Equal(456, result);
-        }
+        Assert.Equal(456, result.StartXRefDeclaredOffset);
+    }
 
-        [Fact]
-        public void IncludesStartXrefFollowingEndOfFile()
-        {
-            var input = StringBytesTestConverter.Convert(@"11 0 obj
-<< /Type/Something /W[12 0 5 6] >>
-endobj
+    [Fact]
+    public void IncludesStartXrefFollowingEndOfFile()
+    {
+        var input = StringBytesTestConverter.Convert(
+            """
+            11 0 obj
+            << /Type/Something /W[12 0 5 6] >>
+            endobj
 
-12 0 obj
-1234  %eof
-endobj
+            12 0 obj
+            1234  %eof
+            endobj
 
-startxref
-    1384733
+            startxref
+                1384733
 
-%%EOF
+            %%EOF
 
-% I decided to put some nonsense here:
-% because I could hahaha
-startxref
-17", false);
+            % I decided to put some nonsense here:
+            % because I could hahaha
+            startxref
+            17
+            """,
+            false);
 
-            var result = FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes, true), false);
+        var result = FirstPassParser.GetFirstCrossReferenceOffset(
+            input.Bytes,
+            new CoreTokenScanner(input.Bytes, true),
+            new TestingLog());
 
-            Assert.Equal(17, result);
-        }
+        Assert.Equal(17, result.StartXRefDeclaredOffset);
+    }
 
-        [Fact]
-        public void MissingStartXrefThrows()
-        {
-            var input = StringBytesTestConverter.Convert(@"11 0 obj
-<< /Type/Something /W[12 0 5 6] >>
-endobj
+    [Fact]
+    public void MissingStartXrefThrows()
+    {
+        var input = StringBytesTestConverter.Convert(
+            """
+            11 0 obj
+            << /Type/Something /W[12 0 5 6] >>
+            endobj
 
-12 0 obj
-1234  %eof
-endobj
+            12 0 obj
+            1234  %eof
+            endobj
 
-startref
-    1384733
+            startref
+                1384733
 
-%%EOF
+            %%EOF
 
-% I decided to put some nonsense here:
-% because I could hahaha
-start_rexf
-17", false);
+            % I decided to put some nonsense here:
+            % because I could hahaha
+            start_rexf
+            17
+            """,
+            false);
 
-            Action action = () => FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes, true), false);
 
-            Assert.Throws<PdfDocumentFormatException>(action);
-        }
+        var result = FirstPassParser.GetFirstCrossReferenceOffset(
+            input.Bytes,
+            new CoreTokenScanner(input.Bytes, true),
+            new TestingLog());
 
-        [Fact]
-        public void NullInputBytesThrows()
-        {
-            var input = StringBytesTestConverter.Convert("11 0 obj", false);
+        Assert.Equal(1384733, result.StartXRefDeclaredOffset);
+    }
 
-            Action action = () => FileTrailerParser.GetFirstCrossReferenceOffset(null, new CoreTokenScanner(input.Bytes, true), false);
+    [Fact]
+    public void BadInputBytesReturnsNull()
+    {
+        var input = StringBytesTestConverter.Convert("11 0 obj", false);
 
-            Assert.Throws<ArgumentNullException>(action);
-        }
+        var result = FirstPassParser.GetFirstCrossReferenceOffset(
+            input.Bytes,
+            new CoreTokenScanner(input.Bytes, true),
+            new TestingLog());
 
-        [Fact]
-        public void NullScannerThrows()
-        {
-            var input = StringBytesTestConverter.Convert("11 0 obj", false);
+        Assert.Null(result.StartXRefDeclaredOffset);
+        Assert.Null(result.StartXRefOperatorToken);
+    }
 
-            Action action = () => FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, null, false);
+    [Fact]
+    public void InvalidTokensAfterStartXrefReturnsNull()
+    {
+        var input = StringBytesTestConverter.Convert(
+            """
+            11 0 obj
+                    << /Type/Font >>
+            endobj
 
-            Assert.Throws<ArgumentNullException>(action);
-        }
+            startxref 
+            << /Why (am i here?) >> 69
+            %EOF
+            """,
+            false);
 
-        [Fact]
-        public void InvalidTokensAfterStartXrefThrows()
-        {
-            var input = StringBytesTestConverter.Convert(@"11 0 obj
-        << /Type/Font >>
-endobj
+        var result = FirstPassParser.GetFirstCrossReferenceOffset(
+            input.Bytes,
+            new CoreTokenScanner(input.Bytes, true),
+            new TestingLog());
 
-startxref 
-<< /Why (am i here?) >> 69
-%EOF", false);
+        Assert.Null(result.StartXRefDeclaredOffset);
+        Assert.NotNull(result.StartXRefOperatorToken);
+    }
 
-            Action action = () => FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes, true), false);
+    [Fact]
+    public void MissingNumericAfterStartXrefReturnsNull()
+    {
+        var input = StringBytesTestConverter.Convert(
+            """
+            1 0 obj
+            << /Type/Font >>
+            endobj
 
-            Assert.Throws<PdfDocumentFormatException>(action);
-        }
+            startxref 
+            """, false);
 
-        [Fact]
-        public void MissingNumericAfterStartXrefThrows()
-        {
-            var input = StringBytesTestConverter.Convert(@"11 0 obj
-        << /Type/Font >>
-endobj
+        var result = FirstPassParser.GetFirstCrossReferenceOffset(
+            input.Bytes,
+            new CoreTokenScanner(input.Bytes, true),
+            new TestingLog());
 
-startxref 
-   ", false);
+        Assert.Null(result.StartXRefDeclaredOffset);
+        Assert.NotNull(result.StartXRefOperatorToken);
+    }
 
-            Action action = () => FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes, true), false);
+    [Fact]
+    public void TakesLastStartXrefPrecedingEndOfFile()
+    {
+        var input = StringBytesTestConverter.Convert(
+            """
+            11 0 obj
+            << /Type/Something /W[12 0 5 6] >>
+            endobj
 
-            Assert.Throws<PdfDocumentFormatException>(action);
-        }
+            12 0 obj
+            1234  %eof
+            endobj
 
-        [Fact]
-        public void TakesLastStartXrefPrecedingEndOfFile()
-        {
-            var input = StringBytesTestConverter.Convert(@"11 0 obj
-<< /Type/Something /W[12 0 5 6] >>
-endobj
+            startxref
+                1384733
 
-12 0 obj
-1234  %eof
-endobj
+            %actually I changed my mind
 
-startxref
-    1384733
+            startxref
+                     1274665676543
 
-%actually I changed my mind
+            %%EOF
+            """,
+            false);
 
-startxref
-         1274665676543
+        var result = FirstPassParser.GetFirstCrossReferenceOffset(
+            input.Bytes,
+            new CoreTokenScanner(input.Bytes, true),
+            new TestingLog());
 
-%%EOF", false);
+        Assert.Equal(1274665676543, result.StartXRefDeclaredOffset);
+        Assert.NotNull(result.StartXRefOperatorToken);
+    }
 
-            var result = FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes, true), false);
+    [Fact]
+    public void CanReadStartXrefIfCommentsPresent()
+    {
+        var input = StringBytesTestConverter.Convert(
+            """
 
-            Assert.Equal(1274665676543, result);
-        }
+            startxref %Commented here
+                57695
 
-        [Fact]
-        public void CanReadStartXrefIfCommentsPresent()
-        {
-            var input = StringBytesTestConverter.Convert(@"
-startxref %Commented here
-    57695
+            %%EOF
+            """,
+            false);
 
-%%EOF", false);
+        var result = FirstPassParser.GetFirstCrossReferenceOffset(
+            input.Bytes,
+            new CoreTokenScanner(input.Bytes, true),
+            new TestingLog());
 
-            var result = FileTrailerParser.GetFirstCrossReferenceOffset(input.Bytes, new CoreTokenScanner(input.Bytes, true), false);
-
-            Assert.Equal(57695, result);
-        }
+        Assert.Equal(57695, result.StartXRefDeclaredOffset);
+        Assert.NotNull(result.StartXRefOperatorToken);
     }
 }
