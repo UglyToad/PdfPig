@@ -724,7 +724,7 @@
 
         private ObjectToken? Get(IndirectReference reference, ref ushort searchDepth)
         {
-            if (searchDepth > 1_000)
+            if (searchDepth > 100)
             {
                 throw new PdfDocumentFormatException("Reached maximum search depth while getting indirect reference.");
             }
