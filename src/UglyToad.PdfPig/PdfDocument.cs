@@ -255,14 +255,14 @@
         /// Gets the bookmarks if this document contains some.
         /// </summary>
         /// <remarks>This will throw a <see cref="ObjectDisposedException"/> if called on a disposed <see cref="PdfDocument"/>.</remarks>
-        public bool TryGetBookmarks([NotNullWhen(true)] out Bookmarks? bookmarks)
+        public bool TryGetBookmarks([NotNullWhen(true)] out Bookmarks? bookmarks, bool allowContainerNode = false)
         {
             if (isDisposed)
             {
                 throw new ObjectDisposedException("Cannot access the bookmarks after the document is disposed.");
             }
 
-            bookmarks = bookmarksProvider.GetBookmarks(Structure.Catalog);
+            bookmarks = bookmarksProvider.GetBookmarks(Structure.Catalog, allowContainerNode);
 
             return bookmarks != null;
         }
