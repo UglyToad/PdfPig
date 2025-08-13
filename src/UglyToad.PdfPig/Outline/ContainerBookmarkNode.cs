@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Outline.Destinations;
+﻿namespace UglyToad.PdfPig.Outline;
 
 /// <summary>
 /// represents a pure container bookmark node: it has a title and child nodes but no destination or action.
