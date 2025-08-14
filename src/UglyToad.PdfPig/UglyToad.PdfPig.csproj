@@ -8,8 +8,6 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\pdfpig.snk</AssemblyOriginatorKeyFile>
     <Nullable>enable</Nullable>
-    <PackageId>UglyToad.PdfPig</PackageId>
-    <Authors>UglyToad.PdfPig</Authors>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Resources\CMap\*" />
