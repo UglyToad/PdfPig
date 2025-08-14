@@ -25,7 +25,7 @@
         /// <summary>
         /// Extract bookmarks, if any.
         /// </summary>
-        public Bookmarks? GetBookmarks(Catalog catalog)
+        public Bookmarks? GetBookmarks(Catalog catalog,bool allowContainerNode = false)
         {
             if (!catalog.CatalogDictionary.TryGet(NameToken.Outlines, pdfScanner, out DictionaryToken? outlinesDictionary))
             {
@@ -47,7 +47,7 @@
 
             while (next != null)
             {
-                ReadBookmarksRecursively(next, 0, false, seen, catalog.NamedDestinations, roots);
+                ReadBookmarksRecursively(next, 0, false, seen, catalog.NamedDestinations, roots, allowContainerNode);
 
                 if (!next.TryGet(NameToken.Next, out IndirectReferenceToken nextReference)
                     || !seen.Add(nextReference.Data))
@@ -65,8 +65,7 @@
         /// Extract bookmarks recursively.
         /// </summary>
         private void ReadBookmarksRecursively(DictionaryToken nodeDictionary, int level, bool readSiblings, HashSet<IndirectReference> seen,
-            NamedDestinations namedDestinations,
-            List<BookmarkNode> list)
+            NamedDestinations namedDestinations, List<BookmarkNode> list, bool allowContainerNode = false)
         {
             // 12.3 Document-Level Navigation
 
@@ -80,7 +79,7 @@
             var children = new List<BookmarkNode>();
             if (nodeDictionary.TryGet(NameToken.First, pdfScanner, out DictionaryToken? firstChild))
             {
-                ReadBookmarksRecursively(firstChild, level + 1, true, seen, namedDestinations, children);
+                ReadBookmarksRecursively(firstChild, level + 1, true, seen, namedDestinations, children, allowContainerNode);
             }
 
             BookmarkNode bookmark;
@@ -107,6 +106,11 @@
                 {
                     return;
                 }
+            }
+            else if(allowContainerNode)
+            {
+                bookmark = new ContainerBookmarkNode(title, level, children);
+                log.Warn($"No /Dest(ination) or /A(ction) entry found for bookmark node: {nodeDictionary}.");
             }
             else
             {
@@ -138,7 +142,7 @@
                     break;
                 }
 
-                ReadBookmarksRecursively(current, level, false, seen, namedDestinations, list);
+                ReadBookmarksRecursively(current, level, false, seen, namedDestinations, list, allowContainerNode);
             }
         }
     }

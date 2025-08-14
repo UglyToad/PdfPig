@@ -32,4 +32,18 @@ public class AccentedCharactersInBookmarksTests
             },
             nodes);
     }
+
+    [Fact]
+    public void CanReadContainerBookmarksCorrectly()
+    {
+        var path = IntegrationHelpers.GetDocumentPath("dotnet-ai.pdf");
+
+        using var document = PdfDocument.Open(path);
+        var isFound = document.TryGetBookmarks(out var bookmarks, false);
+        Assert.True(isFound);
+        Assert.True(bookmarks.Roots.Count == 3);
+        isFound = document.TryGetBookmarks(out bookmarks, true);
+        Assert.True(isFound);
+        Assert.True(bookmarks.Roots.Count > 3);
+    }
 }
