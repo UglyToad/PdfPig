@@ -208,4 +208,9 @@
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+    <PackageReference Include="Microsoft.AspNetCore.WebUtilities">
+      <Version>9.0.8</Version>
+    </PackageReference>
+  </ItemGroup>
 </Project>
