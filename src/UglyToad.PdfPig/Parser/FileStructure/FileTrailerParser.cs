@@ -78,6 +78,7 @@
         private static long GetStartXrefPosition(IInputBytes bytes, int chunkSize)
         {
             // Initialize startpos to the end to get the loop below started
+            var initialLengthRead = bytes.Length;
             var startPos = bytes.Length;
 
             do
@@ -91,13 +92,16 @@
                 startPos = Math.Max(0, endPos - chunkSize);
                 chunkSize *= 2;
 
+                // Some streams such as FileBufferingReadStream can misreport their length.
+                var isDetectedStreamEnd = endPos == initialLengthRead;
+
                 // Prepare to search this region; mark startXrefPos as "not found".
                 bytes.Seek(startPos);
                 var startXrefPos = -1L;
                 var index = 0;
 
                 // Starting scanning the file bytes.
-                while (bytes.CurrentOffset < endPos && bytes.MoveNext())
+                while ((bytes.CurrentOffset < endPos || isDetectedStreamEnd) && bytes.MoveNext())
                 {
                     if (bytes.CurrentByte == StartXRefBytes[index])
                     {
@@ -128,6 +132,7 @@
 
             } while (startPos > 0); // Keep on searching until we've read from the very start.
 
+            
             // No startxref position was found.
             throw new PdfDocumentFormatException($"Could not find the startxref");
         }
