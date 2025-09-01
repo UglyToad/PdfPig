@@ -129,9 +129,7 @@
                 {
                     return startXrefPos;
                 }
-
             } while (startPos > 0); // Keep on searching until we've read from the very start.
-
             
             // No startxref position was found.
             throw new PdfDocumentFormatException($"Could not find the startxref");
