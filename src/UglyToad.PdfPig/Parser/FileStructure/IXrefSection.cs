@@ -34,7 +34,7 @@ internal interface IXrefSection
     public long OffsetCorrection { get; }
 }
 
-internal enum XrefOffsetCorrection
+internal enum XrefOffsetCorrection : byte
 {
     /// <summary>
     /// The xref was found at exactly the specified byte offset in the file.

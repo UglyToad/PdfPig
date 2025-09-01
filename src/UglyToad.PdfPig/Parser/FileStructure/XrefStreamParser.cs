@@ -94,7 +94,7 @@ internal static class XrefStreamParser
             var objectNumbers = GetObjectNumbers(dictToken);
 
             var lineNumber = 0;
-            Span<byte> lineBuffer = fieldSizes.LineLength <= 64
+            Span<byte> lineBuffer = fieldSizes.LineLength <= 1024
                 ? stackalloc byte[fieldSizes.LineLength]
                 : new byte[fieldSizes.LineLength];
 

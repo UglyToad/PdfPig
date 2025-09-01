@@ -185,6 +185,20 @@ namespace UglyToad.PdfPig.Tests.Integration
             }
         }
 
+        [Fact]
+        public void HandleCorruptedFileOffsets()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("Single Page Broken Offsets - from google drive.pdf");
+
+            using var doc = PdfDocument.Open(path);
+
+            var page = doc.GetPage(1);
+
+            var text = page.Text;
+
+            Assert.NotEmpty(text);
+        }
+
         private static IReadOnlyList<AssertablePositionData> GetPdfBoxPositionData()
         {
             // X    Y   Width   Letter  FontSize    Font
