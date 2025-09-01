@@ -1,5 +1,9 @@
 ﻿namespace UglyToad.PdfPig.Tests.Integration
 {
+#if NET9_0_OR_GREATER
+    using Microsoft.AspNetCore.WebUtilities;
+#endif
+
     public class SinglePageLibreOfficeImages
     {
         private static string GetFilePath() => IntegrationHelpers.GetDocumentPath(@"Single Page Images - from libre office.pdf");
@@ -16,6 +20,23 @@
                 Assert.Equal(3, images.Count);
             }
         }
+
+        #if NET9_0_OR_GREATER
+        [Fact]
+        public void CanUseFileBufferingReadStream()
+        {
+            var bytes = File.ReadAllBytes(GetFilePath());
+
+            using var mem = new MemoryStream(bytes);
+            using var fbrs = new FileBufferingReadStream(mem, 256);
+
+            using var doc = PdfDocument.Open(fbrs);
+
+            var page = doc.GetPage(1);
+
+            Assert.NotEmpty(page.Text);
+        }
+        #endif
 
         [Fact]
         public void ImagesHaveCorrectDimensionsAndLocations()
