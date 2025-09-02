@@ -24,6 +24,29 @@ internal sealed class CircularByteBuffer(int size)
             start = (start + 1) % buffer.Length;
         }
     }
+    
+    /// <summary>
+    /// Adds a byte to the start of the buffer. If the buffer is full,
+    /// the byte at the end is overwritten.
+    /// </summary>
+    /// <param name="b">The byte to add.</param>
+    public void AddReverse(byte b)
+    {
+        // Move the start pointer back by one, wrapping around if necessary.
+        // This is the new position for the prepended byte.
+        start = (start - 1 + buffer.Length) % buffer.Length;
+
+        // Place the new byte at the new start position.
+        buffer[start] = b;
+
+        // If the buffer isn't full, increment the count.
+        // If it is full, the new byte effectively overwrites what was
+        // previously the last logical byte, and the count remains the same.
+        if (count < buffer.Length)
+        {
+            count++;
+        }
+    }
 
     public bool EndsWith(string s)
     {
