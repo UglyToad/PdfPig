@@ -625,7 +625,8 @@
                 {
                     if (offset < 0)
                     {
-                        var result = GetObjectFromStream(lengthReference.Data, offset);
+                        ushort searchDepth = 0;
+                        var result = GetObjectFromStream(lengthReference.Data, offset, ref searchDepth);
 
                         if (!(result.Data is NumericToken streamLengthToken))
                         {
@@ -714,9 +715,23 @@
 
             coreTokenScanner.DeregisterCustomTokenizer(tokenizer);
         }
-        
+
         public ObjectToken? Get(IndirectReference reference)
         {
+            ushort searchDepth = 0;
+            return Get(reference, ref searchDepth);
+        }
+
+        private ObjectToken? Get(IndirectReference reference, ref ushort searchDepth)
+        {
+            if (searchDepth > 100)
+            {
+                throw new PdfDocumentFormatException("Reached maximum search depth while getting indirect reference.");
+            }
+
+            searchDepth++;
+
+
             if (isDisposed)
             {
                 throw new ObjectDisposedException(nameof(PdfTokenScanner));
@@ -740,7 +755,7 @@
             // Negative offsets refer to a stream with that number.
             if (offset < 0)
             {
-                var result = GetObjectFromStream(reference, offset);
+                var result = GetObjectFromStream(reference, offset, ref searchDepth);
 
                 return result;
             }
@@ -802,11 +817,11 @@
             }
         }
 
-        private ObjectToken GetObjectFromStream(IndirectReference reference, long offset)
+        private ObjectToken GetObjectFromStream(IndirectReference reference, long offset, ref ushort searchDepth)
         {
             var streamObjectNumber = offset * -1;
 
-            var streamObject = Get(new IndirectReference(streamObjectNumber, 0));
+            var streamObject = Get(new IndirectReference(streamObjectNumber, 0), ref searchDepth);
 
             if (!(streamObject?.Data is StreamToken stream))
             {

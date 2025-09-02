@@ -19,10 +19,11 @@ jobs:
             2.1.x
             6.0.x
             8.0.x
+            9.0.x
             
       # Build the release build
       - name: Build the solution
-        run: dotnet build -c Release src/UglyToad.PdfPig.sln
+        run: dotnet build -c Release src/UglyToad.PdfPig.sln -f net8.0
 
       - name: Run the tests
-        run: dotnet test -c Release src/UglyToad.PdfPig.sln
+        run: dotnet test -c Release src/UglyToad.PdfPig.sln -f net8.0

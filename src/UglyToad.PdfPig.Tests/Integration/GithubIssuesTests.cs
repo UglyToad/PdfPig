@@ -8,6 +8,15 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue1122()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("StackOverflow_Issue_1122.pdf");
+            
+            var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }));
+            Assert.StartsWith("Reached maximum search depth while getting indirect reference.", ex.Message);
+        }
+
+        [Fact]
         public void Issue1096()
         {
             // Ensure no StackOverflowException
