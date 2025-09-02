@@ -102,6 +102,10 @@ namespace UglyToad.PdfPig.Fonts.SystemFonts
             {
                 lister = new MacSystemFontLister();
             }
+            else if (OperatingSystem.IsIOS())
+            {
+                lister = new IOSSystemFontLister();
+            }
 #endif
             else
             {
@@ -113,7 +117,7 @@ namespace UglyToad.PdfPig.Fonts.SystemFonts
 #error Missing ISystemFontLister for target framework
 #endif
 
-            AvailableFonts = new Lazy<IReadOnlyList<SystemFontRecord>>(() => lister.GetAllFonts().ToList());
+            AvailableFonts = new Lazy<IReadOnlyList<SystemFontRecord>>(() => lister.GetAllFonts().ToArray());
         }
 
         private readonly ConcurrentDictionary<string, string> nameToFileNameMap = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
