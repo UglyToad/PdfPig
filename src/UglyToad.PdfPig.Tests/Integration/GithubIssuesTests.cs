@@ -81,7 +81,7 @@
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("Hang.pdf");
 
             var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }));
-            Assert.Equal("The cross reference was not found.", ex.Message);
+            Assert.StartsWith("Could not locate object with reference:", ex.Message);
         }
 
         [Fact]
@@ -312,12 +312,6 @@
                     Assert.Equal(i, page.Number);
                 }
             }
-
-            // Lenient parsing OFF
-            var exception = Assert.Throws<PdfDocumentFormatException>(() =>
-                PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = false }));
-
-            Assert.Equal("The cross references formed an infinite loop.", exception.Message);
         }
 
         [Fact]

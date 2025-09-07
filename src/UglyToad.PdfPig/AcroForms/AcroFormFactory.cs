@@ -2,7 +2,6 @@
 {
     using Content;
     using Core;
-    using CrossReference;
     using Fields;
     using Filters;
     using Parser.Parts;
@@ -29,13 +28,16 @@
 
         private readonly IPdfTokenScanner tokenScanner;
         private readonly ILookupFilterProvider filterProvider;
-        private readonly CrossReferenceTable crossReferenceTable;
+        private readonly IReadOnlyDictionary<IndirectReference, long> objectOffsets;
 
-        public AcroFormFactory(IPdfTokenScanner tokenScanner, ILookupFilterProvider filterProvider, CrossReferenceTable crossReferenceTable)
+        public AcroFormFactory(
+            IPdfTokenScanner tokenScanner,
+            ILookupFilterProvider filterProvider,
+            IReadOnlyDictionary<IndirectReference, long> objectOffsets)
         {
             this.tokenScanner = tokenScanner ?? throw new ArgumentNullException(nameof(tokenScanner));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));
-            this.crossReferenceTable = crossReferenceTable ?? throw new ArgumentNullException(nameof(crossReferenceTable));
+            this.objectOffsets = objectOffsets;
         }
 
         /// <summary>
@@ -54,7 +56,7 @@
                 var fieldsRefs = new List<IndirectReferenceToken>();
 
                 // Invalid reference, try constructing the form from a Brute Force scan.
-                foreach (var reference in crossReferenceTable.ObjectOffsets.Keys)
+                foreach (var reference in objectOffsets.Keys)
                 {
                     var referenceToken = new IndirectReferenceToken(reference);
                     if (!DirectObjectFinder.TryGet(referenceToken, tokenScanner, out DictionaryToken? dict))
