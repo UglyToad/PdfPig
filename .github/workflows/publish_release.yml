@@ -41,7 +41,7 @@ jobs:
       - name: Increment version after release
         run: |
           $newVer = .\tools\get-next-main-version.ps1
-          .\tools\set-version.ps1 $newVer
+          .\tools\set-version.ps1 $newVer -UpdateAssemblyAndFileVersion
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git commit -am "Increment version to $newVer"
