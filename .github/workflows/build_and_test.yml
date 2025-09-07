@@ -1,4 +1,4 @@
-name: Build and test
+name: Build, test and publish draft
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v4
 
       - name: Set up dotnet core
         uses: actions/setup-dotnet@v4
@@ -29,3 +29,14 @@ jobs:
 
       - name: Run the tests
         run: dotnet test -c Release src/UglyToad.PdfPig.sln
+
+      - name: Update draft release
+        if: github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          name: "Draft release"
+          tag_name: "unreleased" # fixed tag so this one draft is updated
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
