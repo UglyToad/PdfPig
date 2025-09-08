@@ -1,0 +1,48 @@
+name: Release Publish
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build_and_publish_release:
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up dotnet core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            2.1.x
+            6.0.x
+            8.0.x
+            9.0.x
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Run tests
+        run: dotnet test -c Release src/UglyToad.PdfPig.sln
+
+      - name: Build package
+        run: dotnet pack -c Release -o package tools/UglyToad.PdfPig.Package/UglyToad.PdfPig.Package.csproj -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
+
+      - name: Publish to NuGet
+        run: dotnet nuget push **/*.nupkg --api-key ${{secrets.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json
+
+      - name: Increment version after release
+        run: |
+          $newVer = .\tools\get-next-main-version.ps1
+          .\tools\set-version.ps1 $newVer -UpdateAssemblyAndFileVersion
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git commit -am "Increment version to $newVer"
+          git push

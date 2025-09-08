@@ -5,4 +5,16 @@ $current = $xml.Project.PropertyGroup[0].Version
 $hyphenIndex = $current.IndexOf('-')
 $len = If ($hyphenIndex -lt 0) { $current.Length } Else { $hyphenIndex }
 $version = $current.Substring(0, $len)
-Write-Output $version
+
+# Split into parts
+$parts = $version.Split('.')
+
+# Increment last part (patch)
+$patch = [int]$parts[-1]
+$patch++
+
+# Build new version string
+$parts[-1] = $patch.ToString()
+$newVersion = $parts -join '.'
+
+Write-Output $newVersion
