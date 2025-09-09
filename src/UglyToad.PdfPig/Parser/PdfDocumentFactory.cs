@@ -44,9 +44,9 @@
 
         internal static PdfDocument Open(Stream stream, ParsingOptions? options)
         {
-            var initialPosition = stream.Position;
-
             var streamInput = new StreamInputBytes(stream, false);
+
+            var initialPosition = stream.Position;
 
             try
             {
