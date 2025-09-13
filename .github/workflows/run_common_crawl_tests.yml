@@ -9,6 +9,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        pair: ["0000-0001", "0002-0003", "0004-0005", "0006-0007"]
+
     steps:
       - uses: actions/checkout@v2
 
@@ -19,42 +23,35 @@ jobs:
             8.0.x
             9.0.x
           
-      - name: Restore corpus cache 0000, 0001
+      - name: Restore corpus cache
         id: restore-corpus
         uses: actions/cache@v4
         with:
           path: corpus/
-          key: ${{ runner.os }}-pdf-corpus-0000-0001
+          key: ${{ runner.os }}-pdf-corpus-${{ matrix.pair }}
 
-      - name: Download corpus if cache missed 0000, 0001
+      - name: Download corpus if cache missed
         if: steps.restore-corpus.outputs.cache-hit != 'true'
         run: |
           mkdir -p corpus/zipfiles
           cd corpus/zipfiles
-          echo "Downloading 0000.zip"
-          wget -nv https://digitalcorpora.s3.amazonaws.com/corpora/files/CC-MAIN-2021-31-PDF-UNTRUNCATED/zipfiles/0000-0999/0000.zip -O 0000.zip
-          wget -nv https://digitalcorpora.s3.amazonaws.com/corpora/files/CC-MAIN-2021-31-PDF-UNTRUNCATED/zipfiles/0000-0999/0001.zip -O 0001.zip
+          for file in $(echo "${{ matrix.pair }}" | tr '-' ' '); do
+            echo "Downloading $file.zip"
+            wget -nv "https://digitalcorpora.s3.amazonaws.com/corpora/files/CC-MAIN-2021-31-PDF-UNTRUNCATED/zipfiles/0000-0999/$file.zip" -O "$file.zip"
+          done
           cd ..
           unzip 'zipfiles/*.zip' -d extracted
           # run: rm -f zipfiles/*.zip
 
       - name: Remove unwanted test files
         run: |
-          skip_files=(
-            "corpus/extracted/0000399.pdf"
-            "corpus/extracted/0000819.pdf"
-            "corpus/extracted/0000920.pdf"
-            "corpus/extracted/0000300.pdf"
-            "corpus/extracted/0001589.pdf"
-            "corpus/extracted/0001957.pdf"
-          )
-
-          for file in "${skip_files[@]}"; do
-            if [ -f "$file" ]; then
-              echo "Removing $file"
-              rm "$file"
+          while read f; do
+            full="corpus/extracted/$f"
+            if [ -f "$full" ]; then
+              echo "Removing $full"
+              rm "$full"
             fi
-          done
+          done < tools/common-crawl-ignore.txt
 
       - name: Run tests against corpus
         run: dotnet run --project tools/UglyToad.PdfPig.ConsoleRunner/UglyToad.PdfPig.ConsoleRunner.csproj "corpus/extracted"
