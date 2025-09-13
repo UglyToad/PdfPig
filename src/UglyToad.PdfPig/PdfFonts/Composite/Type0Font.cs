@@ -126,13 +126,23 @@
             // Get the bounding box in glyph space
             var boundingBox = CidFont.GetBoundingBox(characterIdentifier);
 
-            boundingBox = CidFont.GetFontMatrix(characterIdentifier).Transform(boundingBox);
+            var fontMatrix = CidFont.GetFontMatrix(characterIdentifier);
+            boundingBox = fontMatrix.Transform(boundingBox);
 
             var width = CidFont.GetWidthFromFont(characterIdentifier);
 
-            var advanceWidth = GetFontMatrix().TransformX(width);
-            // BobLD: Not sure why we don't need CidFont.GetFontMatrix(characterCode)
-            // Might be related to https://github.com/veraPDF/veraPDF-library/issues/1010
+            double scale = fontMatrix.A;
+            if (Math.Abs(scale - 0.001) < 0.0001)
+            {
+                // BobLD: The value of scale is close enough to 0.001 to be able to use 0.001.
+                // Still not sure what is the correct logic, but this hack fixes issue #1148 (while not breaking "Old Gutnish Internet Explorer.pdf")
+                // 
+                // Based on https://martin.hoppenheit.info/blog/2018/pdfa-validation-and-inconsistent-glyph-width-information/
+                // which quotes: section 6.2.11.5 of ISO 19005-2:2011 (PDF/A-2) clarifies this issue: “For ISO 19005, consistent is defined to be a difference of no more than 1/1000 unit.”
+                scale = 0.001;
+            }
+
+            var advanceWidth = scale * width;
 
             var result = new CharacterBoundingBox(boundingBox, advanceWidth);
 

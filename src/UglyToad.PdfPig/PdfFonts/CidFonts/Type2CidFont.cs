@@ -61,9 +61,12 @@
             this.defaultWidth = defaultWidth;
             this.cidToGid = cidToGid;
 
-            // TODO: This should maybe take units per em into account?
             var scale = 1 / (double)(fontProgram?.GetFontMatrixMultiplier() ?? 1000);
             FontMatrix = TransformationMatrix.FromValues(scale, 0, 0, scale, 0, 0);
+
+            // NB: For the font matrixPdfBox always return 1/1000 with the comment '1000 upem, this is not strictly true'
+            // see https://github.com/apache/pdfbox/blob/a5379f5588ee4c98222ee61366ad3d82e0f2264e/pdfbox/src/main/java/org/apache/pdfbox/pdmodel/font/PDCIDFontType2.java#L191
+            // Always using 1/1000 breaks the 'ReadWordsFromOldGutnishPage1' test
         }
 
         public double GetWidthFromFont(int characterIdentifier)
