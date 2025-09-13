@@ -10,6 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         pair: ["0000-0001", "0002-0003", "0004-0005", "0006-0007"]
 
@@ -45,7 +46,7 @@ jobs:
 
       - name: Remove unwanted test files
         run: |
-          while read f; do
+          while read f || [ -n "$f" ]; do
             full="corpus/extracted/$f"
             if [ -f "$full" ]; then
               echo "Removing $full"
