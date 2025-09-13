@@ -203,6 +203,19 @@ l";
             Assert.Equal(4, result.Count);
         }
 
+        [Fact]
+        public void CorrectlyHandlesFile0007511CorruptInlineImage()
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Parser", "0007511-page-2.txt");
+            var content = File.ReadAllText(path);
+            var input = StringBytesTestConverter.Convert(content, false);
+
+            var lenientParser = new PageContentParser(ReflectionGraphicsStateOperationFactory.Instance, true);
+            var result = lenientParser.Parse(1, input.Bytes, log);
+
+            Assert.NotEmpty(result);
+        }
+
         private static string LineEndingsToWhiteSpace(string str)
         {
             return str.Replace("\r\n", " ").Replace('\n', ' ').Replace('\r', ' ');

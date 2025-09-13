@@ -393,6 +393,14 @@
                 prevByte = inputBytes.CurrentByte;
             }
 
+            if (useLenientParsing)
+            {
+                // Other parsers just treat end-of-file as a valid end-image. Though the image file will be messed up
+                // and invalid, and we may miss genuine page content, all tests parsers seem to work this way for file 0007511
+                // in the test corpus.
+                return imageData;
+            }
+
             throw new PdfDocumentFormatException($"No end of inline image data (EI) was found for image data at position {startsAt}.");
         }
     }
