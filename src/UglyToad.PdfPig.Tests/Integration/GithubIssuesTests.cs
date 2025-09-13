@@ -102,8 +102,10 @@
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("Hang.pdf");
 
-            var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }));
-            Assert.StartsWith("Could not locate object with reference:", ex.Message);
+            using var doc = PdfDocument.Open(path, new ParsingOptions { UseLenientParsing = true });
+
+            var ex = Assert.Throws<PdfDocumentFormatException>(() => doc.GetPage(1));
+            Assert.StartsWith("Could not find", ex.Message);
         }
 
         [Fact]
