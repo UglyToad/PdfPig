@@ -121,9 +121,9 @@
 
                 // glyf
                 builder.GlyphDataTable = GlyphDataTable.Load(data, glyphHeaderTable, builder);
-
-                OptionallyParseTables(tables, data, builder);
             }
+
+            OptionallyParseTables(tables, data, builder);
 
             return new TrueTypeFont(version, tables, builder.Build());
         }
