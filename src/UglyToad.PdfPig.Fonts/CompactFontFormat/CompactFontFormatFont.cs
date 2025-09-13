@@ -27,7 +27,7 @@
         /// <summary>
         /// The font matrix for this font.
         /// </summary>
-        public TransformationMatrix FontMatrix => TopDictionary.FontMatrix.HasValue ? TopDictionary.FontMatrix.Value : TransformationMatrix.FromValues(0.001, 0, 0, 0.001, 0, 0);
+        public TransformationMatrix FontMatrix => TopDictionary.FontMatrix ?? TransformationMatrix.FromValues(0.001, 0, 0, 0.001, 0, 0);
 
         /// <summary>
         /// The value of Weight from the top dictionary or <see langword="null"/>.
@@ -219,22 +219,26 @@
 
         public override TransformationMatrix? GetFontMatrix(string characterName)
         {
-            // BobLd: It seems PdfBox just returns TopDictionary.FontMatrix
-            // But see https://bugs.ghostscript.com/show_bug.cgi?id=690724
-            // and https://github.com/veraPDF/veraPDF-library/issues/1010
-            // TODO - We might need to multiply both matrices together
+            bool hasDictionary = TryGetFontDictionaryForCharacter(characterName, out var dictionary);
 
-            if (TopDictionary.FontMatrix is not null)
+            if (TopDictionary.FontMatrix.HasValue &&
+                hasDictionary &&
+                dictionary.FontMatrix.HasValue)
+            {
+                return TopDictionary.FontMatrix.Value.Multiply(dictionary.FontMatrix.Value);
+            }
+
+            if (TopDictionary.FontMatrix.HasValue)
             {
                 return TopDictionary.FontMatrix;
             }
 
-            if (!TryGetFontDictionaryForCharacter(characterName, out var dictionary))
+            if (hasDictionary && dictionary.FontMatrix.HasValue)
             {
-                return null;
+                return dictionary.FontMatrix;
             }
 
-            return dictionary.FontMatrix;
+            return null;
         }
 
         private bool TryGetPrivateDictionaryForCharacter(string characterName, out CompactFontFormatPrivateDictionary dictionary)
