@@ -770,7 +770,8 @@
 
             if (!MoveNext())
             {
-                return BruteForceFileToFindReference(reference);
+                TryBruteForceFileToFindReference(reference, out var bfObjectToken);
+                return bfObjectToken;
             }
 
             var found = (ObjectToken)CurrentToken!;
@@ -780,7 +781,9 @@
                 return found;
             }
 
-            return BruteForceFileToFindReference(reference);
+            TryBruteForceFileToFindReference(reference, out var bfToken);
+
+            return bfToken;
         }
 
         public void ReplaceToken(IndirectReference reference, IToken token)
@@ -790,8 +793,9 @@
             overwrittenTokens[reference] = new ObjectToken(0, reference, token);
         }
 
-        private ObjectToken BruteForceFileToFindReference(IndirectReference reference)
+        private bool TryBruteForceFileToFindReference(IndirectReference reference, [NotNullWhen(true)] out ObjectToken? result)
         {
+            result = null;
             try
             {
                 // Brute force read the entire file
@@ -806,10 +810,12 @@
 
                 if (!objectLocationProvider.TryGetCached(reference, out var objectToken))
                 {
-                    throw new PdfDocumentFormatException($"Could not locate object with reference: {reference} despite a full document search.");
+                    return false;
                 }
 
-                return objectToken;
+                result = objectToken;
+
+                return true;
             }
             finally
             {
