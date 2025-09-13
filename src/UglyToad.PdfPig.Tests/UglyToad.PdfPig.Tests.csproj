@@ -1,216 +1,216 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFrameworks>net471;net8.0;net9.0</TargetFrameworks>
-    <IsTestProject>true</IsTestProject>
-    <IsPackable>false</IsPackable>
-    <DebugType>full</DebugType>
-    <LangVersion>12</LangVersion>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\pdfpig.snk</AssemblyOriginatorKeyFile>
-    <RuntimeFrameworkVersion Condition="'$(TargetFramework)'=='netcoreapp2.1'">2.1.30</RuntimeFrameworkVersion>
-    <ImplicitUsings>enable</ImplicitUsings>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFrameworks>net471;net8.0;net9.0</TargetFrameworks>
+        <IsTestProject>true</IsTestProject>
+        <IsPackable>false</IsPackable>
+        <DebugType>full</DebugType>
+        <LangVersion>12</LangVersion>
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>..\pdfpig.snk</AssemblyOriginatorKeyFile>
+        <RuntimeFrameworkVersion Condition="'$(TargetFramework)'=='netcoreapp2.1'">2.1.30</RuntimeFrameworkVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="Fonts\TrueType\*.ttf" />
-    <None Remove="Fonts\Type1\*.pfa" />
-     <None Remove="Fonts\Type1\*.pfb" />
-    <None Remove="Integration\Documents\*" />
-    <None Remove="Integration\SpecificTestDocuments\*" />
-  </ItemGroup>
+    <ItemGroup>
+        <None Remove="Fonts\TrueType\*.ttf" />
+        <None Remove="Fonts\Type1\*.pfa" />
+        <None Remove="Fonts\Type1\*.pfb" />
+        <None Remove="Integration\Documents\*" />
+        <None Remove="Integration\SpecificTestDocuments\*" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="Fonts\TrueType\*.ttf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Fonts\Type1\*.pfa">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Fonts\Type1\*.pfb">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <Content Include="Integration\Documents\*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Integration\SpecificTestDocuments\*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="Fonts\TrueType\*.ttf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Fonts\Type1\*.pfa">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Fonts\Type1\*.pfb">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </EmbeddedResource>
+        <Content Include="Integration\Documents\*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Integration\SpecificTestDocuments\*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Remove="Fonts\TrueType\Andada-Regular.ttf" />
-    <EmbeddedResource Remove="Fonts\TrueType\google-simple-doc.ttf" />
-    <EmbeddedResource Remove="Fonts\TrueType\issue-258-corrupt-name-table.ttf" />
-    <EmbeddedResource Remove="Fonts\TrueType\PMingLiU.ttf" />
-    <EmbeddedResource Remove="Fonts\TrueType\Roboto-Regular.ttf" />
-    <EmbeddedResource Remove="Fonts\Type1\AdobeUtopia.pfa" />
-    <EmbeddedResource Remove="Fonts\Type1\CMBX10.pfa" />
-    <EmbeddedResource Remove="Fonts\Type1\CMBX12.pfa" />
-    <EmbeddedResource Remove="Fonts\Type1\CMCSC10.pfa" />
-    <EmbeddedResource Remove="Fonts\Type1\Raleway-Black.pfb" />
-  </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Remove="Fonts\TrueType\Andada-Regular.ttf" />
+        <EmbeddedResource Remove="Fonts\TrueType\google-simple-doc.ttf" />
+        <EmbeddedResource Remove="Fonts\TrueType\issue-258-corrupt-name-table.ttf" />
+        <EmbeddedResource Remove="Fonts\TrueType\PMingLiU.ttf" />
+        <EmbeddedResource Remove="Fonts\TrueType\Roboto-Regular.ttf" />
+        <EmbeddedResource Remove="Fonts\Type1\AdobeUtopia.pfa" />
+        <EmbeddedResource Remove="Fonts\Type1\CMBX10.pfa" />
+        <EmbeddedResource Remove="Fonts\Type1\CMBX12.pfa" />
+        <EmbeddedResource Remove="Fonts\Type1\CMCSC10.pfa" />
+        <EmbeddedResource Remove="Fonts\Type1\Raleway-Black.pfb" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <None Remove="Fonts\CompactFontFormat\MinionPro.bin" />
-    <None Remove="Fonts\TrueType\Roboto-Regular.GlyphData.txt" />
-    <None Remove="Parser\SimpleGoogleDocPageContent.txt" />
-  </ItemGroup>
+    <ItemGroup>
+        <None Remove="Fonts\CompactFontFormat\MinionPro.bin" />
+        <None Remove="Fonts\TrueType\Roboto-Regular.GlyphData.txt" />
+        <None Remove="Parser\SimpleGoogleDocPageContent.txt" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="Fonts\CompactFontFormat\MinionPro.bin">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Fonts\TrueType\Andada-Regular.ttf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Fonts\TrueType\google-simple-doc.ttf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Fonts\TrueType\issue-258-corrupt-name-table.ttf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Fonts\TrueType\PMingLiU.ttf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Fonts\TrueType\Roboto-Regular.GlyphData.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Fonts\TrueType\Roboto-Regular.ttf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Fonts\Type1\AdobeUtopia.pfa" />
-    <Content Include="Fonts\Type1\CMBX10.pfa" />
-    <Content Include="Fonts\Type1\CMBX12.pfa" />
-    <Content Include="Fonts\Type1\CMCSC10.pfa" />
-    <Content Include="Fonts\Type1\Raleway-Black.pfb" />
-    <Content Include="Parser\SimpleGoogleDocPageContent.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+    <ItemGroup>
+        <Content Include="Fonts\CompactFontFormat\MinionPro.bin">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Fonts\TrueType\Andada-Regular.ttf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Fonts\TrueType\google-simple-doc.ttf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Fonts\TrueType\issue-258-corrupt-name-table.ttf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Fonts\TrueType\PMingLiU.ttf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Fonts\TrueType\Roboto-Regular.GlyphData.txt">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Fonts\TrueType\Roboto-Regular.ttf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Fonts\Type1\AdobeUtopia.pfa" />
+        <Content Include="Fonts\Type1\CMBX10.pfa" />
+        <Content Include="Fonts\Type1\CMBX12.pfa" />
+        <Content Include="Fonts\Type1\CMCSC10.pfa" />
+        <Content Include="Fonts\Type1\Raleway-Black.pfb" />
+        <Content Include="Parser\*.txt">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-    <PackageReference Include="SkiaSharp" Version="2.88.9" />
-    <PackageReference Include="xunit" Version="2.7.0" />
-    <PackageReference Include="xunit.extensibility.execution" Version="2.7.0" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.7">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+        <PackageReference Include="SkiaSharp" Version="2.88.9" />
+        <PackageReference Include="xunit" Version="2.7.0" />
+        <PackageReference Include="xunit.extensibility.execution" Version="2.7.0" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.5.7">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\UglyToad.PdfPig.Core\UglyToad.PdfPig.Core.csproj" />
-    <ProjectReference Include="..\UglyToad.PdfPig.DocumentLayoutAnalysis\UglyToad.PdfPig.DocumentLayoutAnalysis.csproj" />
-    <ProjectReference Include="..\UglyToad.PdfPig.Fonts\UglyToad.PdfPig.Fonts.csproj" />
-    <ProjectReference Include="..\UglyToad.PdfPig.Tokenization\UglyToad.PdfPig.Tokenization.csproj" />
-    <ProjectReference Include="..\UglyToad.PdfPig.Tokens\UglyToad.PdfPig.Tokens.csproj" />
-    <ProjectReference Include="..\UglyToad.PdfPig\UglyToad.PdfPig.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\UglyToad.PdfPig.Core\UglyToad.PdfPig.Core.csproj" />
+        <ProjectReference Include="..\UglyToad.PdfPig.DocumentLayoutAnalysis\UglyToad.PdfPig.DocumentLayoutAnalysis.csproj" />
+        <ProjectReference Include="..\UglyToad.PdfPig.Fonts\UglyToad.PdfPig.Fonts.csproj" />
+        <ProjectReference Include="..\UglyToad.PdfPig.Tokenization\UglyToad.PdfPig.Tokenization.csproj" />
+        <ProjectReference Include="..\UglyToad.PdfPig.Tokens\UglyToad.PdfPig.Tokens.csproj" />
+        <ProjectReference Include="..\UglyToad.PdfPig\UglyToad.PdfPig.csproj" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <None Update="Dla\Documents\2559 words.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Dla\Documents\90 180 270 rotated.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Dla\Documents\complex rotated.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Dla\Documents\no horizontal distance.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Dla\Documents\no vertical distance.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Dla\Documents\no vertical horizontal distance.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Dla\Documents\Random 2 Columns Lists Hyph - Justified.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\1310ba77-4dbf-4d8d-a8f4-5ba59d1221a7.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\2cee5bb6-f845-4ac1-8156-a899075c0b46.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\33fb977a-e3da-48da-ad51-89af637ab736.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\371028e4-aea3-4e1d-b76b-47b763922e2f.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\804344c3-2c63-4e9c-b7c2-8c64a14d885b.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\82811cfb-9a70-475d-8338-f20df0acd052.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\82828826-f624-4f22-8421-f8c4adac43a3.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\8e95baf6-874e-431c-9cbc-d735ccabac0c.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\91a217c9-79bb-4a4b-934b-1362344f6b89.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\99a9ea0e-c407-4336-96a0-85023f46c231.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\9ac01df9-6623-4d14-89fd-e9934d1a6c7e.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\9d5c783a-c001-40e9-91b9-630c71804a77.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\9df64d7b-4003-4d0d-8f68-b5f88de781b7.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\a6105bfd-3ace-4d6b-b2dc-f9ce4022832b.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\b650c344-bc4d-427a-94af-cfed04136f67.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\c390b9c7-a562-42bf-a592-7a7b29819a6a.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\d6b4b35c-0ceb-47fe-aba8-4360acb49fcb.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\deff000e-a14a-40fd-bf39-88ce11745260.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\e29266a2-201a-4ad6-9725-ca1b7c22224d.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\eae2cabb-f520-4be5-932f-fb19fce5b2f2.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\eb62f062-6567-48b2-b04d-6d90de120f07.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\ed5c585f-590e-4585-9ce7-25976f589ca8.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\ef0af08b-04d1-4a3e-a9d8-7916b9826f5d.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Images\Files\Jpx\fd42e6a0-5c7a-4eb2-b0e3-474cfde067a6.jp2">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Using Include="Xunit" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
-    <PackageReference Include="Microsoft.AspNetCore.WebUtilities">
-      <Version>9.0.8</Version>
-    </PackageReference>
-  </ItemGroup>
+    <ItemGroup>
+        <None Update="Dla\Documents\2559 words.pdf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Dla\Documents\90 180 270 rotated.pdf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Dla\Documents\complex rotated.pdf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Dla\Documents\no horizontal distance.pdf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Dla\Documents\no vertical distance.pdf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Dla\Documents\no vertical horizontal distance.pdf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Dla\Documents\Random 2 Columns Lists Hyph - Justified.pdf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\1310ba77-4dbf-4d8d-a8f4-5ba59d1221a7.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\2cee5bb6-f845-4ac1-8156-a899075c0b46.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\33fb977a-e3da-48da-ad51-89af637ab736.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\371028e4-aea3-4e1d-b76b-47b763922e2f.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\804344c3-2c63-4e9c-b7c2-8c64a14d885b.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\82811cfb-9a70-475d-8338-f20df0acd052.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\82828826-f624-4f22-8421-f8c4adac43a3.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\8e95baf6-874e-431c-9cbc-d735ccabac0c.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\91a217c9-79bb-4a4b-934b-1362344f6b89.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\99a9ea0e-c407-4336-96a0-85023f46c231.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\9ac01df9-6623-4d14-89fd-e9934d1a6c7e.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\9d5c783a-c001-40e9-91b9-630c71804a77.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\9df64d7b-4003-4d0d-8f68-b5f88de781b7.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\a6105bfd-3ace-4d6b-b2dc-f9ce4022832b.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\b650c344-bc4d-427a-94af-cfed04136f67.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\c390b9c7-a562-42bf-a592-7a7b29819a6a.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\d6b4b35c-0ceb-47fe-aba8-4360acb49fcb.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\deff000e-a14a-40fd-bf39-88ce11745260.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\e29266a2-201a-4ad6-9725-ca1b7c22224d.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\eae2cabb-f520-4be5-932f-fb19fce5b2f2.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\eb62f062-6567-48b2-b04d-6d90de120f07.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\ed5c585f-590e-4585-9ce7-25976f589ca8.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\ef0af08b-04d1-4a3e-a9d8-7916b9826f5d.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+        <None Update="Images\Files\Jpx\fd42e6a0-5c7a-4eb2-b0e3-474cfde067a6.jp2">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+    <ItemGroup>
+        <Using Include="Xunit" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+        <PackageReference Include="Microsoft.AspNetCore.WebUtilities">
+            <Version>9.0.8</Version>
+        </PackageReference>
+    </ItemGroup>
 </Project>

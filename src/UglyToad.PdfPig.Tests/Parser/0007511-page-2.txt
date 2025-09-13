@@ -1,0 +1,448 @@
+/Span <</MCID 0 >>BDC
+0 0 0 rg
+1 i 
+/RelativeColorimetric ri
+BT
+/TT0 1 Tf
+-0.0303 Tc 0.0303 Tw 12 0 0 12 54 813 Tm
+(Conference Information )Tj
+-0.0172 Tc 0.0172 Tw 36.25 0 Td
+(Page )Tj
+0 Tc 0 Tw (2)Tj
+-0.0415 Tc 0.0102 Tw ( of )Tj
+0 Tc 0 Tw 3.875 0 Td
+(3 )Tj
+ET
+EMC
+/Span <</MCID 1 >>BDC
+0.502 0 0.502 rg
+BT
+/TT1 1 Tf
+-0.0051 Tc 0.0329 Tw 13.5 0 0 13.5 93 746.25 Tm
+(CEU Residence and Conference Center: )Tj
+ET
+EMC
+/P <</MCID 2 >>BDC
+0.502 0 0.502 RG
+0.75 w 10 M 1 j 1 J []0 d 
+93 744.75 m
+324 744.75 l
+S
+0 0 0 rg
+BT
+/TT1 1 Tf
+-0.0186 Tc 0.0463 Tw 13.5 0 0 13.5 327.75 746.25 Tm
+(The CEU )Tj
+-0.0024 Tc 0.0302 Tw -17.3889 -1.1111 Td
+(residential facility will available for conference )Tj
+-0.0025 Tc 0.0302 Tw 0 -1.1111 TD
+(participants. A modern facility, all rooms are air-)Tj
+0.0024 Tc 0.0184 Tw T*
+(conditioned and have private baths; some have phones )Tj
+-0.0043 Tc 0.0321 Tw T*
+(and TVs. Rates include breakfast and are $30 per night )Tj
+0 Tc 0.0227 Tw 0 -1.1111 TD
+(for singles \($60 double\) and $45 per night for room w/ )Tj
+0.0024 Tc 0.0184 Tw 0 -1.1111 TD
+(phone and TV. Guest facilities include sauna, indoor )Tj
+0.0018 Tc 0.026 Tw T*
+(swimming pool, fitness center, tennis court, and sport )Tj
+0.0046 Tc 0.0231 Tw T*
+(grounds. Contact the )Tj
+ET
+EMC
+/Span <</MCID 3 >>BDC
+0.4941 0.2824 0.8667 rg
+BT
+/TT1 1 Tf
+-0.0021 Tc 0.0299 Tw 13.5 0 0 13.5 219.75 626.25 Tm
+(CEU Residence and Conference )Tj
+ET
+EMC
+/P <</MCID 4 >>BDC
+0.6 0.4 1 RG
+219.75 624.75 m
+404.25 624.75 l
+S
+0 0 0 rg
+BT
+/TT1 1 Tf
+0 Tc 0.0092 Tw 13.5 0 0 13.5 93 611.25 Tm
+(by email \(click )Tj
+ET
+EMC
+/Span <</MCID 5 >>BDC
+0.4941 0.2824 0.8667 rg
+BT
+/TT1 1 Tf
+-0.0275 Tc 0 Tw 13.5 0 0 13.5 181.5 611.25 Tm
+(here)Tj
+ET
+EMC
+/P <</MCID 6 >>BDC
+181.5 609.75 m
+206.25 609.75 l
+S
+0 0 0 rg
+BT
+/TT1 1 Tf
+-0.0009 Tc 0.0176 Tw 13.5 0 0 13.5 206.25 611.25 Tm
+(\), phone \(00361-327-3155\) or Fax: )Tj
+-0.0028 Tc 0.0227 Tw -8.3889 -1.1111 Td
+(\(00361-327 3156\) for reservations. Major credit cards )Tj
+-0.0005 Tc 0.0283 Tw T*
+(accepted. Please note that the CEU Residential Facility )Tj
+-0.0006 Tc 0.0228 Tw T*
+(is not located near the CEU campus. Mini-bus service is )Tj
+0.0013 Tc 0.0265 Tw T*
+(available for travel to/from the meeting site but most )Tj
+0.0011 Tc 0.0266 Tw 0 -1.1111 TD
+(residents will need to use public transportation. Also, )Tj
+-0.0075 Tc 0.0284 Tw 0 -1.1111 TD
+(reservations will require a departure no later than )Tj
+0.0051 Tc 0.0227 Tw T*
+(Sunday, July 8th.\240)Tj
+ET
+EMC
+/Figure <</MCID 7 >>BDC
+q
+82.5 0 0 162.75 450 556.5 cm
+BI
+/W 110
+/H 217
+/BPC 1
+/CS /CS1
+ID
+ÿÿÿÿÿÿÿÿÿþÿÿÿüÿÿÿÿÿÿÿÿÿ÷ÿÿÿüÿÿÿÿÿÿÿÿÿîÿÿÿüÿÿÿÿÿÿÿÿÿÿýÿÿüÿÿÿÿÿÿÿÿÿ¿ûÿÿüÿÿÿÿÿÿÿÿÿþÿÿÿüÿÿÿÿÿÿ·ÿÿþÿÿÿüÿÿÿÿÿÿÿÿÿÿ¿ÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿýÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿûÿÿÿÿÿÿÿüÿ÷ÿ÷ÿÿÿÿ÷ÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿûýÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿþÿÿÿÿÿÿüÿÿÿÿþÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÙÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿýÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿ¿ÿÿÿÿÿÿÿüÿÿÿÿûÿÿÿÿÿÿÿÿüßÿÿÿÿÿÿÿÿÿÿÿÿü÷ÿÿÿßÿÿÿÿÿÿÿÿüûÿÿÿûÿÿÿÿÿÿÿÿü÷ÿÿÿÿÿÿÿ?ÿÿÿÿüÿÿÿ.D4Lÿÿÿÿÿÿüßÿ÷ÿûÿÿÿÿÿÿÿûÿÿÿÿÿÿÿÿüßûÿÿr8ÿÿüßûÿÿr8ÿ pr thanrdkr8ÿ pûÏthanrdÿýÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿßÿß_ÿÿüßûÿÿr8ÿ püßûÿÿrïßýÿÿÿÿÿüÿÿÿÿÿÿïýÿÿÿÿÿüÿÿûÿû¿ýÿÿÿýÿü÷ÿdÿýß¿ýÿÿÿÿÿü÷ÿÿÿßÿßr8ÿ pr thanrïßýÿÿÿÿóhanrýßÿßr8ÿ prhanrýûÿÿÿÿÿÿÿûÿÿÿÿÿûÿÿÿÿÿÿÿüûÿÿÿþ¿ïÿýÿÿÿÿÿüÿÿÿÿÿïÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿóÿÿÿÿÿÿüÿÿ½ÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿ÷ÿÿïÿÿÿÿÿÿÿüÿÿýr tïßüÿÿÿüÿÿ÷ÿÿÿÿÿÿÿÿÿÿüÿÿÿßßÿßr8ÿ prhaÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿ÷ÿÿÿÿÿÿÿüÿß·ÿûÿÿÿÿÿÿÿûÿÿ¿ßÿÿÿÿ÷ÿÿÿÿÿüÿÿÿÿÿïÿÿÿÿÿÿÿüÿÿÿïÿÿÿÿÿÿÿÿÿüÿüßÿ÷ÿûûüÿÿÿüÿÿýrÿÿÿÿÿÿÿÿÿÿüýÿdÿýïÿýü prhaÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿßÿìÿÿÿÿþüÿÿÿßßÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿýrÿÿøÿüÿÿÿÿÿÿÿÿ¿ÿÿÿÿÿÿÿüÿßÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿøÿüÿÿÿÿüûÿÿÿûÿ¼ÿÿÿÿÿþüÿÿïþßÿ¼ÿÿÿÿÿû{ÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿþÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿŸÿÿÿÿüÿìÿÿÿÿÿÿ¿¿ÿÿÿÿÿÿ÷ÿÿÿüÿûÿÿûÿÿÿÿÿÿÿûÿÿÿÿÿÿÿÿÿÿ÷ÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüïÿÿÿÿÿÿÿýÿÿÿÿüÿÿßÿÿÿÿÿÿÿÿÿÿüÿÿÓÿûÿÿÿÿÿÿÿûÿÿÿûûÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿýrÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿûßÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿ¿ÿÿÿÿÿÿÿÿÿÿüÿûÿÿûÿÿÿÿÿÿÿûÿÿÿßÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿ÷ÿÿÿÿ÷ÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿßÿÿÿÿÿÿÿÿüÿÿÿÿïÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿýÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿýÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿÿÿÿÿüÿÿÿÿÿÿÿÿÿ
+EI Q>>BDC
+q
+82.5- 0 0 162.757195 6156./Im0 Do
+QTj
+ET
+Pigure <</8CID 7 >82..42..8 rg
+BT
+/TT1 0.0f: )Tj
+-0.0013 T0.02813
+q
+82.5 3
+q
+61
+q
+461
+ 61Tm
+(Conferenserregisbliserv: .\240)Tj
+ET
+Sper gure <</9CID 7 >8.494113 28242..8667 rg
+BT
+/TT1 0.0f: )Tj
+38.0013 T016.02813
+q
+82.5 3
+q
+205
+q
+461
+ 61Tm
+(Ans  a dicipersidmuut regisbo lable ear onferense.\240)Tj
+ET
+Pigure <</10CID 7 >205
+q
+4590 16m
+4860 162.90 16l
+S
+BT
+/TT1 0.0f:0.0013.02813
+q
+82.5 3
+q
+4860 16261
+ 61Tm
+(. than 
+82.5rg
+ )Tj
+50.0013 T031.028-31
+q
+Tw 0 -1.1d
+(Detailed m no ialslableregisbliservtions bequvailabletiothe earprelimina\ry p.\240)Tj
+ET
+Sper gure <</-1.ID 7 >BT
+/TT1 0.0f:13
+q
+82.5 3
+q
+487.2 446
+ 61Tm
+(r.\240)Tj
+ET
+Pigure <</12.ID 7 >4860 162.90 16m
+490.162.90 16l
+S
+BT
+/TT1 0.0f:13
+q
+82.5 3
+q
+493.10
+/ 446
+ 61Tm
+(ogram than )Tj
+-6.0013 T261.028-31
+972
+Tw 0 -1.1d
+(ine earSpring. Fbleplanning purposes,e earregisbliservtfee between May 1\ and than 
+0013 T277.028T*
+(June 15theis $195 \($90 studersi\)lablel norregisbliservt\(fees are to b\arpaid ineU.S. than )Tj
+16.0013 T251.028T*
+(dollars,edirectly bleby credit card bleo ealebank converserv\). Afbo lJu\ne 15thethan )Tj
+04.0013 T281.028T*
+(only bn-sinorregisbliservtis permitted at higealefees. Regisbliservtincl\udes 4 than )Tj
+-4.0013 T251.0280
+Tw 0 -1.1D
+(lunches duringe ear onferense.\240A limited numbaleofrregisbliservtfee g\rersidions than Tj
+13.0013 T265.0280
+Tw 0 -1.1D
+(bequvailabletableattendees from designated geographicalrregionst\(see be\low\).\240than 
+0013.028T*
+([.\240)Tj
+ET
+Sper gure <</-3CID 7 >8.494113 28242..8667 rg
+BT
+/TT1 0.0f: )Tj
+60.0013 T041.02813
+q
+82.5 3
+q
+66 041
+ 61Tm
+(currensy converbo .\240)Tj
+ET
+Pigure <</14CID 7 >66 0390 16m
+1740 160390 16l
+S
+ 
+82.5rg
+BT
+/TT1 0.0f:0.0013.02813
+q
+82.5 3
+q
+1740 16041
+ 61Tm
+(] .\240)Tj
+ET
+Pigure <</15CID 7 >82..42..8 rg
+BT
+/TT1 0.0f: )Tj116.0013 T394.02813
+q
+82.5 3
+q
+61
+q
+312.Tm
+(Travel arrergemersi: than 
+82.5rg
+ )Tj
+16.0013 T294.0289.333313.0d
+(LSA's travel agers, .\240)Tj
+ET
+Sper gure <</16.ID 7 >8.494113 28242..8667 rg
+BT
+/TT1 0.0f: )Tj
+58.0013 T036.02813
+q
+82.5 3
+q
+302
+ 61312.Tm
+(PionealeValley Travel.\240)Tj
+ET
+Pigure <</17.ID 7 >302
+ 61310.16m
+427.61310.16l
+S
+ 
+82.5rg
+BT
+/TT1 0.0f:0Tj
+34.0013 T240.02813
+q
+82.5 3
+q
+427.61312.Tm
+(, haidmade than )Tj
+37.0013 T265.028-27.0 -1.Tw 0 -1.1d
+(arrergemersitiothecerbaineairlines to provide specialediscounted lises t\o travelersethan )Tj
+08.0013 T24.028T*
+(from NortheAmo ica.t\(Call PVT at 800-245-0153\). PVT cer also handletot\ealethan )Tj
+-2.0013 T253.028T*
+(arrergemersit\(carrrentals, liis  asses,ehotelrreserviservs,eetc.\)lable\those whotiosh than Tj
+12.0013 T265.028T*
+(to travel beyond Budapeut aid a deofrer extended stay. Pa dicipersidfrom\ outside than)Tj
+-5.0013 T253.0280
+Tw 0 -1.1D
+(No.eAmo ica should beut consult localrtravel agerss. .\240)Tj
+ET
+Pigure <</18CID 7 >82..42..8 rg
+BT
+/TT1 0.0f: )Tj
+95.0013 T372
+02813
+q
+82.5 3
+q
+61
+q
+2070 16Tm
+(Travel -- Hunga iar entry requiremersi:than 
+82.5rg
+ 
+0013 T277.02817.222213.0d
+( Mout travelerseto Hunga y nead bnly a than )Tj
+12.0013 T289.028-17.22221Tw 0 -1.1d
+( assportlableentry. However, visas are requiredlablesome visitors. If yo\urehome than)Tj
+39.0013 T159.0280
+Tw 0 -1.1D
+(count y is nodeone eis lisbt\(click .\240)Tj
+ET
+Sper gure <</19CID 7 >8.494113 28242..8667 rg
+BT
+/TT1 0.0f: )Tj275.0013.02813
+q
+82.5 3
+q
+24681770 16Tm
+(eale.\240)Tj
+ET
+Pigure <</20CID 7 >2468176
+ 61m
+2700 16176
+ 61l
+S
+ 
+82.5rg
+BT
+/TT1 0.0f:-)Tj
+-5.0013 T302.02813
+q
+82.5 3
+q
+2700 161770 16Tm
+(\)la visadmay beqrequired. Please confirm than )Tj
+12.0013 T29.028-15
+q
+Tw 0 -1.1d
+(entry requiremersi sufficiersly ineadvanserofr earmeeting. If you are fr\om a than)Tj
+05.0013 T273.028T*
+(count y requiringeer officialrinvitiservtfbleentry,eplease nodifyr ear.\240)Tj
+ET
+Sper gure <</21.ID 7 >8.494113 28242..8667 rg
+BT
+/TT1 0.0f: )Tj
+46.0013 T324.02813
+q
+82.5 3
+q
+447/1470 16Tm
+(LSA Executive .\240)Tj
+ET
+Pigure <</22.ID 7 >447/146
+ 61m
+532
+q
+146
+ 61l
+S
+j
+ET
+Sper gure <</23.ID 7 >BT
+/TT1 0.0f:)Tj
+02.0013 T276.02813
+q
+82.5 3
+q
+61
+q
+132
+ 16Tm
+(Office .\240)Tj
+ET
+Pigure <</24CID 7 >61
+q
+131
+ 61m
+100
+q
+131
+ 61l
+S
+ 
+82.5rg
+BT
+/TT1 0.0f:-)Tj
+09.0013 T231.02813
+q
+82.5 3
+q
+100
+q
+132
+ 16Tm
+(ofr eis requiremers.\240than9 T20513.0d
+(FblegereralrinfblmiservtrvtHunga iar Consularrand than )Tj
+1.0013 T103.028-11
+9094.Tw 0 -1.1d
+(governmental m nbo s,eclick .\240)Tj
+ET
+Sper gure <</25.ID 7 >8.494113 28242..8667 rg
+BT
+/TT1 0.0f: )Tj
+54.0013.02813
+q
+82.5 3
+q
+226
+q
+1170 16Tm
+(eale. .\240)Tj
+ET
+Pigure <</26.ID 7 >226
+q
+116
+ 61m
+25q
+116
+ 61l
+S
+j
+ET
+Pigure <</27CID 7 >82..42..8 rg
+BT
+/TT1 0.0f: )Tj
+61.0013 T039.02813
+q
+82.5 3
+q
+61
+q
+88.16Tm
+(Travel and Regisbliservtgrersithan 
+0013 T274.028(: than 
+82.5rg
+ )Tj
+13.0013 T211.02813
+6667 3.0d
+(Whiletmout  onferenseeattendees muut fund  eair than )Tj
+12.0013 T29.028-13
+6667 Tw 0 -1.1d
+(ownd a dicipeserv,  eare ions bequ limited amountrofr ravel and regisbli\tervtfee than )Tj
+04.0013 T226.028T*
+(supportlablescholars from cerbainegeographicalrregionst-- specifically,e\Lesen .\240)Tj
+ET
+Pigure <</28.ID 7 >BT
+/TT0 0.0f: )Tj338.0013.02812
+82.5 2 54.25.16Tm
+(http://www.lawandsociety.org/ann_mtg/am01/conf_infb.htm than 
+00137.02513.0d
+(40 .2j
+1..\240)Tj
+ET
