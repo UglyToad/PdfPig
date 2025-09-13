@@ -8,6 +8,28 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue1148()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("P2P-33713919.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(2);
+
+                var letters = page.Letters;
+
+                var words = NearestNeighbourWordExtractor.Instance.GetWords(letters).ToArray();
+
+                var firstTableLine = words[42];
+
+                Assert.EndsWith("C<--,:", firstTableLine.Text); // Just to make sure we are looking at the correct line. Text might change as this is not actually correct
+
+                Assert.Equal(firstTableLine.BoundingBox.BottomLeft, new PdfPoint(x: 31.890118, y: 693.035685));
+                Assert.Equal(firstTableLine.BoundingBox.BottomRight, new PdfPoint(x: 563.3851179999991, y: 693.035685));
+            }
+        }
+
+        [Fact]
         public void Issue1122()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("StackOverflow_Issue_1122.pdf");
