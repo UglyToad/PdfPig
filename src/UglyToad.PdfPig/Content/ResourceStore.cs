@@ -21,7 +21,8 @@
 
         private readonly Dictionary<IndirectReference, IFont> loadedFonts = new Dictionary<IndirectReference, IFont>();
         private readonly Dictionary<NameToken, IFont> loadedDirectFonts = new Dictionary<NameToken, IFont>();
-        private readonly StackDictionary<NameToken, IndirectReference> currentResourceState = new StackDictionary<NameToken, IndirectReference>();
+        private readonly StackDictionary<NameToken, IndirectReference> currentFontState = new StackDictionary<NameToken, IndirectReference>();
+        private readonly StackDictionary<NameToken, IndirectReference> currentXObjectState = new StackDictionary<NameToken, IndirectReference>();
 
         private readonly Dictionary<NameToken, DictionaryToken> extendedGraphicsStates = new Dictionary<NameToken, DictionaryToken>();
 
@@ -53,7 +54,8 @@
             loadedNamedColorSpaceDetails.Clear();
 
             namedColorSpaces.Push();
-            currentResourceState.Push();
+            currentFontState.Push();
+            currentXObjectState.Push();
 
             if (resourceDictionary.TryGet(NameToken.Font, out var fontBase))
             {
@@ -78,7 +80,7 @@
                         throw new InvalidOperationException($"Expected the XObject dictionary value for key /{pair.Key} to be an indirect reference, instead got: {pair.Value}.");
                     }
 
-                    currentResourceState[NameToken.Create(pair.Key)] = reference.Data;
+                    currentXObjectState[NameToken.Create(pair.Key)] = reference.Data;
                 }
             }
 
@@ -185,7 +187,8 @@
         {
             lastLoadedFont = (null, null);
             loadedNamedColorSpaceDetails.Clear();
-            currentResourceState.Pop();
+            currentFontState.Pop();
+            currentXObjectState.Pop();
             namedColorSpaces.Pop();
         }
 
@@ -199,7 +202,7 @@
                 {
                     var reference = objectKey.Data;
 
-                    currentResourceState[NameToken.Create(pair.Key)] = reference;
+                    currentFontState[NameToken.Create(pair.Key)] = reference;
 
                     if (loadedFonts.ContainsKey(reference))
                     {
@@ -245,7 +248,7 @@
             }
 
             IFont? font;
-            if (currentResourceState.TryGetValue(name, out var reference))
+            if (currentFontState.TryGetValue(name, out var reference))
             {
                 loadedFonts.TryGetValue(reference, out font);
             }
@@ -335,7 +338,7 @@
         public bool TryGetXObject(NameToken name, [NotNullWhen(true)] out StreamToken? stream)
         {
             stream = null;
-            if (!currentResourceState.TryGetValue(name, out var indirectReference))
+            if (!currentXObjectState.TryGetValue(name, out var indirectReference))
             {
                 return false;
             }
