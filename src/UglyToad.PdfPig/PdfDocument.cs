@@ -112,10 +112,14 @@
 
         /// <summary>
         /// Creates a <see cref="PdfDocument"/> for reading from the provided stream.
+        /// <para>
+        /// If the stream provided is not seekable (<see cref="Stream.CanSeek"/> is <c>false</c>), the stream will be copied into a new <see cref="MemoryStream"/>.
+        /// </para>
         /// The caller must manage disposing the stream. The created PdfDocument will not dispose the stream.
         /// </summary>
         /// <param name="stream">
         /// A stream of the file contents, this must support reading and seeking.
+        /// <para>If the stream provided is not seekable (<see cref="Stream.CanSeek"/> is <c>false</c>), the stream will be copied into a new <see cref="MemoryStream"/>.</para>
         /// The PdfDocument will not dispose of the provided stream.
         /// </param>
         /// <param name="options">Optional parameters controlling parsing.</param>
