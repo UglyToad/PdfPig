@@ -39,11 +39,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Remove="Fonts\TrueType\Andada-Regular.ttf" />
-        <EmbeddedResource Remove="Fonts\TrueType\google-simple-doc.ttf" />
-        <EmbeddedResource Remove="Fonts\TrueType\issue-258-corrupt-name-table.ttf" />
-        <EmbeddedResource Remove="Fonts\TrueType\PMingLiU.ttf" />
-        <EmbeddedResource Remove="Fonts\TrueType\Roboto-Regular.ttf" />
+        <EmbeddedResource Remove="Fonts\TrueType\*.ttf" />
         <EmbeddedResource Remove="Fonts\Type1\AdobeUtopia.pfa" />
         <EmbeddedResource Remove="Fonts\Type1\CMBX10.pfa" />
         <EmbeddedResource Remove="Fonts\Type1\CMBX12.pfa" />
@@ -61,22 +57,10 @@
         <Content Include="Fonts\CompactFontFormat\MinionPro.bin">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
-        <Content Include="Fonts\TrueType\Andada-Regular.ttf">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-        <Content Include="Fonts\TrueType\google-simple-doc.ttf">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-        <Content Include="Fonts\TrueType\issue-258-corrupt-name-table.ttf">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-        <Content Include="Fonts\TrueType\PMingLiU.ttf">
+        <Content Include="Fonts\TrueType\*.ttf">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
         <Content Include="Fonts\TrueType\Roboto-Regular.GlyphData.txt">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-        <Content Include="Fonts\TrueType\Roboto-Regular.ttf">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
         <Content Include="Fonts\Type1\AdobeUtopia.pfa" />

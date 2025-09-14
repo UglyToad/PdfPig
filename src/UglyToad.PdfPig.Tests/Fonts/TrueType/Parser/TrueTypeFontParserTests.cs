@@ -229,5 +229,19 @@ namespace UglyToad.PdfPig.Tests.Fonts.TrueType.Parser
             Assert.NotNull(font.TableRegister.NameTable);
             Assert.NotEmpty(font.TableRegister.NameTable.NameRecords);
         }
+
+        [Fact]
+        public void Parse12623CorruptFileAndGetGlyphs()
+        {
+            var bytes = TrueTypeTestHelper.GetFileBytes("corrupt-12623");
+
+            var input = new TrueTypeDataBytes(new MemoryInputBytes(bytes));
+
+            var font = TrueTypeFontParser.Parse(input);
+
+            Assert.NotNull(font);
+
+            font.TryGetPath(1, out _);
+        }
     }
 }
