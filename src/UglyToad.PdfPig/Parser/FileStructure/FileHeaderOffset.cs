@@ -4,14 +4,14 @@
 /// How many bytes precede the "%PDF-" version header in the file. In some files this 'junk' can
 /// offset all following offset bytes.
 /// </summary>
-internal readonly struct FileHeaderOffset(int value)
+internal readonly record struct FileHeaderOffset(int Value) : IEquatable<FileHeaderOffset>
 {
-    public int Value => value;
+    public override string ToString() => Value.ToString();
+    
+    public bool Equals(FileHeaderOffset other)
+    {
+        return Value == other.Value;
+    }
 
-    public override string ToString() => value.ToString();
-
-    public override bool Equals(object? obj) =>
-        obj is FileHeaderOffset other && value == other.Value;
-
-    public override int GetHashCode() => value.GetHashCode();
+    public override int GetHashCode() => Value.GetHashCode();
 }
