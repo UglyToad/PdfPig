@@ -126,12 +126,11 @@
             // Get the bounding box in glyph space
             var boundingBox = CidFont.GetBoundingBox(characterIdentifier);
 
-            var fontMatrix = CidFont.GetFontMatrix(characterIdentifier);
-            boundingBox = fontMatrix.Transform(boundingBox);
+            boundingBox = CidFont.GetFontMatrix(characterIdentifier).Transform(boundingBox);
 
             var width = CidFont.GetWidthFromFont(characterIdentifier);
 
-            var advanceWidth = fontMatrix.TransformX(width);
+            var advanceWidth = GetFontMatrix().TransformX(width);
 
             var result = new CharacterBoundingBox(boundingBox, advanceWidth);
 

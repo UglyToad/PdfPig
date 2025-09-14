@@ -8,6 +8,36 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue1156()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("felltypes-test.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+
+                var letters = page.Letters;
+
+                var words = NearestNeighbourWordExtractor.Instance.GetWords(letters).ToArray();
+
+                var wordThe = words[0];
+                Assert.Equal("THE", wordThe.Text);
+                Assert.Equal(wordThe.BoundingBox.BottomLeft, new PdfPoint(x: 242.9877, y: 684.7435));
+                Assert.Equal(wordThe.BoundingBox.BottomRight, new PdfPoint(x: 323.93999999999994, y: 684.7435));
+
+                var wordBook = words[2];
+                Assert.Equal("BOOK:", wordBook.Text);
+                Assert.Equal(wordBook.BoundingBox.BottomLeft, new PdfPoint(x: 280.4371, y: 652.0399));
+                Assert.Equal(wordBook.BoundingBox.BottomRight, new PdfPoint(x: 405.65439999999995, y: 652.0399));
+
+                var wordPremeffa = words[35];
+                Assert.Equal("preme\ue009a.", wordPremeffa.Text); // The 'ff' glyph is not properly parsed
+                Assert.Equal(wordPremeffa.BoundingBox.BottomLeft, new PdfPoint(x: 331.16020000000003, y: 515.2256999999998));
+                Assert.Equal(wordPremeffa.BoundingBox.BottomRight, new PdfPoint(x: 374.2954000000001, y: 515.2256999999998));
+            }
+        }
+
+        [Fact]
         public void Issue1148()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("P2P-33713919.pdf");
