@@ -44,9 +44,23 @@
 
         internal static PdfDocument Open(Stream stream, ParsingOptions? options)
         {
-            var streamInput = new StreamInputBytes(stream, false);
-
-            var initialPosition = stream.Position;
+            StreamInputBytes streamInput;
+            long initialPosition;
+            
+            if (stream is { CanRead: true, CanSeek: false })
+            {
+                // We need the stream to be seekable
+                var ms = new MemoryStream();
+                stream.CopyTo(ms); // Copy the non seekable stream in memory (seekable)
+                ms.Position = 0;
+                streamInput = new StreamInputBytes(ms, true); // The created memory stream will be disposed on document dispose
+                initialPosition = ms.Position;
+            }
+            else
+            {
+                streamInput = new StreamInputBytes(stream, false);
+                initialPosition = stream.Position;
+            }
 
             try
             {
