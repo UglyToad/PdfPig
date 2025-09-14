@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using Tables;
+    using UglyToad.PdfPig.Fonts.CompactFontFormat;
 
     /// <summary>
     /// Parses TrueType fonts.
@@ -59,7 +60,36 @@
 
         private static TrueTypeFont ParseTables(float version, IReadOnlyDictionary<string, TrueTypeHeaderTable> tables, TrueTypeDataBytes data)
         {
-            var isPostScript = tables.ContainsKey(TrueTypeHeaderTable.Cff);
+            bool isPostScript = false;
+            CompactFontFormatFontCollection? cffFontCollection = null;
+
+            if (tables.TryGetValue(TrueTypeHeaderTable.Cff, out var cffTable))
+            {
+                isPostScript = true;
+                try
+                {
+                    /*
+                     * The presence of a CFF (Compact Font Format) table in a TrueType font creates a hybrid situation where the font
+                     * container uses TrueType structure but contains PostScript-based glyph descriptions. According to the OpenType
+                     * specification, when a TrueType font contains a CFF table instead of a traditional glyf table, it indicates
+                     * "an OpenType font with PostScript outlines". This creates what's known as an OpenType CFF font, which uses
+                     * PostScript Type 2 charstrings for glyph descriptions rather than TrueType quadratic curves.
+                     *
+                     * This is to fix P2P-33713919.pdf
+                     * See https://github.com/BobLd/PdfPig.Rendering.Skia/issues/46
+                     * TODO - Add test coverage and need to review if the logic belongs here
+                     */
+
+                    data.Seek(cffTable.Offset);
+                    var buffer = data.ReadByteArray((int)cffTable.Length);
+                    cffFontCollection = CompactFontFormatParser.Parse(new CompactFontFormatData(buffer));
+                }
+                catch (Exception e)
+                {
+                    System.Diagnostics.Debug.WriteLine(e);
+                    // Ignore
+                }
+            }
 
             var builder = new TableRegister.Builder();
 
@@ -102,7 +132,7 @@
             {
                 builder.Os2Table = TableParser.Parse<Os2Table>(os2Table, data, builder);
             }
-            
+
             if (!isPostScript)
             {
                 if (!tables.TryGetValue(TrueTypeHeaderTable.Loca, out var indexToLocationHeaderTable))
@@ -125,7 +155,7 @@
 
             OptionallyParseTables(tables, data, builder);
 
-            return new TrueTypeFont(version, tables, builder.Build());
+            return new TrueTypeFont(version, tables, builder.Build(), cffFontCollection);
         }
 
         internal static NameTable GetNameTable(TrueTypeDataBytes data)
@@ -134,7 +164,7 @@
             {
                 throw new ArgumentNullException(nameof(data));
             }
-            
+
             // Read these data points to move to the correct data location.
             data.Read32Fixed();
             int numberOfTables = data.ReadUnsignedShort();
