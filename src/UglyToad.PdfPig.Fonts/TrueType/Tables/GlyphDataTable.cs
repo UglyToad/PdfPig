@@ -121,14 +121,23 @@
 
             for (var i = 0; i < glyphCount; i++)
             {
-                if (offsets[i + 1] <= offsets[i])
+                var offset = offsets[i];
+
+                if (offsets[i + 1] <= offset)
                 {
                     // empty glyph
                     result[i] = emptyGlyph;
                     continue;
                 }
 
-                data.Seek(offsets[i]);
+                // Invalid table, just sub in the empty glyph
+                if (offset >= data.Length)
+                {
+                    result[i] = emptyGlyph;
+                    continue;
+                }
+
+                data.Seek(offset);
 
                 var contourCount = data.ReadSignedShort();
 
