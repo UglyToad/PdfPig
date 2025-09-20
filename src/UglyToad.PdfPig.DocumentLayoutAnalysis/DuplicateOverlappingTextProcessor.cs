@@ -68,25 +68,11 @@
                     // update textSequence?
 
                     // update font details to bold
-                    var fontDetails = new FontDetails(letter.Font.Name, true, letter.Font.Weight, letter.Font.IsItalic);
-
-                    var newLetter = new Letter(letter.Value,
-                        letter.GlyphRectangle,
-                        letter.StartBaseLine,
-                        letter.EndBaseLine,
-                        letter.Width,
-                        letter.FontSize,
-                        fontDetails,
-                        letter.RenderingMode,
-                        letter.StrokeColor,
-                        letter.FillColor,
-                        letter.PointSize,
-                        letter.TextSequence);
 
                     // update markedContentStack?
 
                     // update letters
-                    cleanLetters[duplicatesOverlappingIndex] = newLetter;
+                    cleanLetters[duplicatesOverlappingIndex] = letter.AsBold();
                 }
             }
 

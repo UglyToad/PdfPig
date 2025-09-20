@@ -64,7 +64,7 @@
                         letter.EndBaseLine,
                         letter.Width,
                         letter.FontSize,
-                        letter.Font,
+                        letter.GetFont()!,
                         letter.RenderingMode,
                         letter.StrokeColor,
                         letter.FillColor,
