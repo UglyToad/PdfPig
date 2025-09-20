@@ -1069,6 +1069,7 @@
                 var letter = new Letter(
                     c.ToString(),
                     documentSpace,
+                    documentSpace,
                     advanceRect.BottomLeft,
                     advanceRect.BottomRight,
                     width,

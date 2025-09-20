@@ -144,6 +144,16 @@
             return CidFont.FontMatrix;
         }
 
+        public double GetDescent()
+        {
+            return GetFontMatrix().TransformY(CidFont.Descriptor.Descent);
+        }
+
+        public double GetAscent()
+        {
+            return GetFontMatrix().TransformY(CidFont.Descriptor.Ascent);
+        }
+
         public PdfVector GetPositionVector(int characterCode)
         {
             var characterIdentifier = CMap.ConvertToCid(characterCode);

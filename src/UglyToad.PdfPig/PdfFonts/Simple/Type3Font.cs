@@ -106,6 +106,16 @@
             return fontMatrix;
         }
 
+        public double GetDescent()
+        {
+            return 0;
+        }
+
+        public double GetAscent()
+        {
+            return fontMatrix.TransformY(boundingBox.Height);
+        }
+
         /// <summary>
         /// <inheritdoc/>
         /// <para>Type 3 fonts do not use vector paths. Always returns <c>false</c>.</para>

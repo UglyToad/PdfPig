@@ -47,6 +47,12 @@
         public PdfRectangle GlyphRectangle { get; }
 
         /// <summary>
+        /// The loose bounding box for the glyph. Contrary to the <see cref="GlyphRectangle"/>, the loose bounding box will be the same across all glyphes of the same font.
+        /// It takes in account the font Ascent and Descent.
+        /// </summary>
+        public PdfRectangle GlyphRectangleLoose { get; }
+
+        /// <summary>
         /// Size as defined in the PDF file. This is not equivalent to font size in points but is relative to other font sizes on the page.
         /// </summary>
         public double FontSize { get; }
@@ -110,6 +116,7 @@
         /// </summary>
         public Letter(string value,
             PdfRectangle glyphRectangle,
+            PdfRectangle glyphRectangleLoose,
             PdfPoint startBaseLine,
             PdfPoint endBaseLine,
             double width,
@@ -120,7 +127,7 @@
             IColor fillColor,
             double pointSize,
             int textSequence) :
-                this(value, glyphRectangle,
+                this(value, glyphRectangle, glyphRectangleLoose,
                     startBaseLine, endBaseLine,
                     width, fontSize, font.Details, font,
                     renderingMode, strokeColor, fillColor,
@@ -132,6 +139,7 @@
         /// </summary>
         public Letter(string value,
             PdfRectangle glyphRectangle,
+            PdfRectangle glyphRectangleLoose,
             PdfPoint startBaseLine,
             PdfPoint endBaseLine,
             double width,
@@ -142,14 +150,16 @@
             IColor fillColor,
             double pointSize,
             int textSequence): 
-                this(value, glyphRectangle,
+                this(value, glyphRectangle, glyphRectangleLoose,
                     startBaseLine, endBaseLine,
                     width, fontSize, fontDetails, null,
                     renderingMode, strokeColor, fillColor,
                     pointSize, textSequence)
         { }
 
-        private Letter(string value, PdfRectangle glyphRectangle,
+        private Letter(string value,
+            PdfRectangle glyphRectangle,
+            PdfRectangle glyphRectangleLoose,
             PdfPoint startBaseLine,
             PdfPoint endBaseLine,
             double width,
@@ -164,6 +174,7 @@
         {
             Value = value;
             GlyphRectangle = glyphRectangle;
+            GlyphRectangleLoose = glyphRectangleLoose;
             StartBaseLine = startBaseLine;
             EndBaseLine = endBaseLine;
             Width = width;
@@ -197,6 +208,7 @@
         {
             return new Letter(Value,
                 GlyphRectangle,
+                GlyphRectangleLoose,
                 StartBaseLine,
                 EndBaseLine,
                 Width,

@@ -19,6 +19,7 @@
         private static readonly TransformationMatrix DefaultTransformation =
             TransformationMatrix.FromValues(1 / 1000.0, 0, 0, 1 / 1000.0, 0, 0);
 
+        private readonly TransformationMatrix fontMatrix;
         private readonly AdobeFontMetrics fontMetrics;
         private readonly Encoding encoding;
         private readonly TrueTypeFont font;
@@ -45,6 +46,17 @@
 
             // Assumption is ZapfDingbats is not possible here. We need to change the behaviour if not the case
             System.Diagnostics.Debug.Assert(!(encoding is ZapfDingbatsEncoding || Details.Name.Contains("ZapfDingbats")));
+
+            // Set font matrix
+            if (this.font?.TableRegister.HeaderTable is not null)
+            {
+                var scale = (double)this.font.GetUnitsPerEm();
+                fontMatrix = TransformationMatrix.FromValues(1.0 / scale, 0, 0, 1.0 / scale, 0, 0);
+            }
+            else
+            {
+                fontMatrix = DefaultTransformation;
+            }
         }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)
@@ -127,6 +139,7 @@
 
         public TransformationMatrix GetFontMatrix()
         {
+            // TODO - Improve
             if (font?.TableRegister.HeaderTable != null)
             {
                 var scale = (double)font.GetUnitsPerEm();
@@ -135,6 +148,16 @@
             }
 
             return DefaultTransformation;
+        }
+
+        public double GetDescent()
+        {
+            return GetFontMatrix().TransformY(fontMetrics.Descender);
+        }
+
+        public double GetAscent()
+        {
+            return GetFontMatrix().TransformY(fontMetrics.Ascender);
         }
 
         /// <inheritdoc/>

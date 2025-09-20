@@ -206,7 +206,7 @@
             {
                 var first = cffFont.FirstFont;
                 string characterName;
-                if (encoding != null)
+                if (encoding is not null)
                 {
                     characterName = encoding.GetName(characterCode);
                 }
@@ -230,6 +230,16 @@
         public TransformationMatrix GetFontMatrix()
         {
             return fontMatrix;
+        }
+
+        public double GetDescent()
+        {
+            return fontMatrix.TransformY(fontDescriptor.Descent);
+        }
+
+        public double GetAscent()
+        {
+            return fontMatrix.TransformY(fontDescriptor.Ascent);
         }
 
         /// <inheritdoc/>

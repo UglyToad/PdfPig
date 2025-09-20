@@ -85,6 +85,31 @@
                         d.SaveTo(fs);
                     }
                 }
+
+                using (var picture = document.GetPage<SKPicture>(pageNo))
+                using (var image = SKImage.FromPicture(picture, size, ScaleMatrix))
+                using (var bmp = SKBitmap.FromImage(image))
+                using (var canvas = new SKCanvas(bmp))
+                {
+                    Assert.NotNull(picture);
+
+                    if (RenderGlyphRectangle)
+                    {
+                        foreach (var letter in page.Letters)
+                        {
+                            DrawRectangle(letter.GlyphRectangleLoose, canvas, redPaint, size.Height, Scale);
+                        }
+                    }
+
+                    var imageName = $"{file}_{pageNo}_loose.png";
+                    var savePath = Path.Combine(OutputPath, imageName);
+
+                    using (var fs = new FileStream(savePath, FileMode.Create))
+                    using (var d = bmp.Encode(SKEncodedImageFormat.Png, 100))
+                    {
+                        d.SaveTo(fs);
+                    }
+                }
             }
         }
 

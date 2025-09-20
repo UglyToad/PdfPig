@@ -115,6 +115,16 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
             return fontMatrix;
         }
 
+        public double GetDescent()
+        {
+            return fontMatrix.TransformY(standardFontMetrics.Descender);
+        }
+
+        public double GetAscent()
+        {
+            return fontMatrix.TransformY(standardFontMetrics.Ascender);
+        }
+
         /// <summary>
         /// <inheritdoc/>
         /// <para>Not implemented.</para>
