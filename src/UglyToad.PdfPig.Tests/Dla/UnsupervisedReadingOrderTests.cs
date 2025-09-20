@@ -1,14 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Tests.Dla
 {
-    using System;
+    using PdfFonts;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
     using UglyToad.PdfPig.Content;
+    using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.DocumentLayoutAnalysis;
     using UglyToad.PdfPig.DocumentLayoutAnalysis.ReadingOrderDetector;
-    using UglyToad.PdfPig.Core;
 
     public class UnsupervisedReadingOrderTests
     {
@@ -65,7 +63,7 @@
                 boundingBox,
                 boundingBox.BottomLeft,
                 boundingBox.BottomRight,
-                10, 1, null, TextRenderingMode.NeitherClip, null, null, 0, 0);// These don't matter
+                10, 1, (FontDetails)null, TextRenderingMode.NeitherClip, null, null, 0, 0);// These don't matter
             var leftTextBlock = new TextBlock(new[] { new TextLine(new[] { new Word(new[] { letter }) }) });
             return leftTextBlock;
         }

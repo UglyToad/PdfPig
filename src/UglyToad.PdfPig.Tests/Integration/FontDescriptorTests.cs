@@ -86,8 +86,8 @@
                     var letter = page.Letters[l];
                     var expected = DataBoldItalic[l];
                     Assert.Equal((string)expected[0], letter.Value);
-                    Assert.Equal((bool)expected[1], letter.Font.IsBold);
-                    Assert.Equal((bool)expected[2], letter.Font.IsItalic);
+                    Assert.Equal((bool)expected[1], letter.FontDetails.IsBold);
+                    Assert.Equal((bool)expected[2], letter.FontDetails.IsItalic);
                 }
             }
         }

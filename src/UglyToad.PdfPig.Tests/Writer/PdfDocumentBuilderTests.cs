@@ -1154,7 +1154,7 @@
                         {
                             location += letter.Location.X;
                             location += letter.Location.Y;
-                            location += letter.Font.Name.Length;
+                            location += letter.FontDetails.Name.Length;
                         }
                     }
                 }
