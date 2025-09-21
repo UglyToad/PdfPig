@@ -224,9 +224,18 @@
         [Pure]
         public double TransformX(double x)
         {
-            var xt = A * x + C * 0 + E;
+            return A * x + E; // + C * 0 
+        }
 
-            return xt;
+
+        /// <summary>
+        /// Transform an Y coordinate using this transformation matrix.
+        /// </summary>
+        /// <param name="y">The Y coordinate.</param>
+        /// <returns>The transformed Y coordinate.</returns>
+        public double TransformY(double y)
+        {
+            return D * y + F;
         }
 
         /// <summary>

@@ -42,6 +42,18 @@
 
         public PdfRectangle? GetCharacterBoundingBox(string characterName) => fontCollection.GetCharacterBoundingBox(characterName);
 
+        public double? GetDescent()
+        {
+            // BobLd: we don't support ascent / descent for cff for the moment
+            return null;
+        }
+
+        public double? GetAscent()
+        {
+            // BobLd: we don't support ascent / descent for cff for the moment
+            return null;
+        }
+
         public bool TryGetBoundingBox(int characterIdentifier, out PdfRectangle boundingBox)
         {
             boundingBox = new PdfRectangle(0, 0, 500, 0);

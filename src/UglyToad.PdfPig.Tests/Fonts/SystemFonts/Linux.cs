@@ -4,6 +4,7 @@ using UglyToad.PdfPig.Tests.Dla;
 namespace UglyToad.PdfPig.Tests.Fonts.SystemFonts
 {
     using PdfPig.Core;
+    using PdfPig.Geometry;
 
     public class Linux
     {
@@ -69,6 +70,9 @@ namespace UglyToad.PdfPig.Tests.Fonts.SystemFonts
                     Assert.Equal(expectedData.Width, current.GlyphRectangle.Width, 6);
                     Assert.Equal(expectedData.Height, current.GlyphRectangle.Height, 6);
                     Assert.Equal(expectedData.Rotation, current.GlyphRectangle.Rotation, 3);
+                    
+                    Assert.True(current.GlyphRectangle.IntersectsWith(current.GlyphRectangleLoose));
+                    Assert.Equal(current.GlyphRectangle.Rotation, current.GlyphRectangleLoose.Rotation, 3);
                 }
             }
         }

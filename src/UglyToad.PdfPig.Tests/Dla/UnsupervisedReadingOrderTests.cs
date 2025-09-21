@@ -61,6 +61,7 @@
         {
             var letter = new Letter("a",
                 boundingBox,
+                boundingBox,
                 boundingBox.BottomLeft,
                 boundingBox.BottomRight,
                 10, 1, (FontDetails)null, TextRenderingMode.NeitherClip, null, null, 0, 0);// These don't matter

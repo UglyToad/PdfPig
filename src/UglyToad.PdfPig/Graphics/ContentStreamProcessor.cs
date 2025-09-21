@@ -100,12 +100,6 @@ namespace UglyToad.PdfPig.Graphics
             var transformedGlyphBounds = PerformantRectangleTransformer
                 .Transform(renderingMatrix, textMatrix, transformationMatrix, characterBoundingBox.GlyphBounds);
             
-            var transformedPdfBounds = PerformantRectangleTransformer
-                .Transform(renderingMatrix,
-                    textMatrix,
-                    transformationMatrix,
-                    new PdfRectangle(0, 0, characterBoundingBox.Width, UserSpaceUnit.PointMultiples));
-
             if (ParsingOptions.ClipPaths)
             {
                 var currentClipping = currentState.CurrentClippingPath;
@@ -129,6 +123,7 @@ namespace UglyToad.PdfPig.Graphics
                     letter = new Letter(
                         newLetter,
                         attachTo.GlyphRectangle,
+                        attachTo.GlyphRectangleLoose,
                         attachTo.StartBaseLine,
                         attachTo.EndBaseLine,
                         attachTo.Width,
@@ -151,9 +146,25 @@ namespace UglyToad.PdfPig.Graphics
             // If we did not create a letter for a combined diacritic, create one here.
             if (letter is null)
             {
+                var transformedPdfBounds = PerformantRectangleTransformer
+                    .Transform(renderingMatrix,
+                        textMatrix,
+                        transformationMatrix,
+                        new PdfRectangle(0, 0, characterBoundingBox.Width, UserSpaceUnit.PointMultiples));
+
+                var looseBox = PerformantRectangleTransformer
+                    .Transform(renderingMatrix,
+                        textMatrix,
+                        transformationMatrix,
+                        new PdfRectangle(0,
+                            font.GetDescent(),
+                            characterBoundingBox.Width,
+                            font.GetAscent()));
+
                 letter = new Letter(
                     unicode,
                     isBboxValid ? transformedGlyphBounds : transformedPdfBounds,
+                    looseBox,
                     transformedPdfBounds.BottomLeft,
                     transformedPdfBounds.BottomRight,
                     transformedPdfBounds.Width,
@@ -167,7 +178,6 @@ namespace UglyToad.PdfPig.Graphics
             }
 
             letters.Add(letter);
-
             markedContentStack.AddLetter(letter);
         }
 

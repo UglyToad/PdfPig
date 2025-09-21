@@ -57,6 +57,10 @@
 
         TransformationMatrix GetFontMatrix(int characterIdentifier);
 
+        double GetDescent();
+
+        double GetAscent();
+
         /// <summary>
         /// Returns the glyph path for the given character code.
         /// </summary>

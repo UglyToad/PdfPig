@@ -19,6 +19,9 @@
         private static readonly TransformationMatrix DefaultTransformation =
             TransformationMatrix.FromValues(1 / 1000.0, 0, 0, 1 / 1000.0, 0, 0);
 
+        private readonly TransformationMatrix fontMatrix;
+        private readonly double ascent;
+        private readonly double descent;
         private readonly AdobeFontMetrics fontMetrics;
         private readonly Encoding encoding;
         private readonly TrueTypeFont font;
@@ -45,8 +48,42 @@
 
             // Assumption is ZapfDingbats is not possible here. We need to change the behaviour if not the case
             System.Diagnostics.Debug.Assert(!(encoding is ZapfDingbatsEncoding || Details.Name.Contains("ZapfDingbats")));
+
+            // Set font matrix
+            if (this.font?.TableRegister.HeaderTable is not null)
+            {
+                var scale = (double)this.font.GetUnitsPerEm();
+                fontMatrix = TransformationMatrix.FromValues(1.0 / scale, 0, 0, 1.0 / scale, 0, 0);
+            }
+            else
+            {
+                fontMatrix = DefaultTransformation;
+            }
+
+            descent = ComputeDescent();
+            ascent = ComputeAscent();
         }
 
+        private double ComputeDescent()
+        {
+            if (fontMetrics is not null)
+            {
+                return GetFontMatrix().TransformY(fontMetrics.Descender);
+            }
+
+            return GetFontMatrix().TransformY(font.TableRegister.HorizontalHeaderTable.Descent);
+        }
+
+        private double ComputeAscent()
+        {
+            if (fontMetrics is not null)
+            {
+                return GetFontMatrix().TransformY(fontMetrics.Ascender);
+            }
+
+            return GetFontMatrix().TransformY(font.TableRegister.HorizontalHeaderTable.Ascent);
+        }
+        
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)
         {
             codeLength = 1;
@@ -127,14 +164,17 @@
 
         public TransformationMatrix GetFontMatrix()
         {
-            if (font?.TableRegister.HeaderTable != null)
-            {
-                var scale = (double)font.GetUnitsPerEm();
+            return fontMatrix;
+        }
 
-                return TransformationMatrix.FromValues(1 / scale, 0, 0, 1 / scale, 0, 0);
-            }
+        public double GetDescent()
+        {
+            return descent;
+        }
 
-            return DefaultTransformation;
+        public double GetAscent()
+        {
+            return ascent;
         }
 
         /// <inheritdoc/>
