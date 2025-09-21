@@ -46,6 +46,24 @@
         TransformationMatrix GetFontMatrix();
 
         /// <summary>
+        /// Retrieves the descent value of the font, adjusted by the font matrix.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="double"/> representing the descent of the font, 
+        /// which is the distance from the baseline to the lowest point of the font's glyphs.
+        /// </returns>
+        double GetDescent();
+
+        /// <summary>
+        /// Retrieves the ascent value of the font, adjusted byt the font matrix.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="double"/> representing the ascent of the font, 
+        /// which is the distance from the baseline to the highest point of the font's glyphs.
+        /// </returns>
+        double GetAscent();
+
+        /// <summary>
         /// Returns the glyph path for the given character code.
         /// </summary>
         /// <param name="characterCode">Character code in a PDF. Not to be confused with unicode.</param>

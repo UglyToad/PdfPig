@@ -20,6 +20,10 @@
 
         bool TryGetBoundingAdvancedWidth(int characterIdentifier, out double width);
 
+        double? GetDescent();
+
+        double? GetAscent();
+
         bool TryGetPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path);
 
         bool TryGetPath(int characterCode, Func<int, int?> characterCodeToGlyphId, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path);

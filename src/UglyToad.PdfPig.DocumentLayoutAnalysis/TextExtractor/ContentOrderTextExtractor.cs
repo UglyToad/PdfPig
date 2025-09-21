@@ -60,6 +60,7 @@
                     letter = new Letter(
                         " ",
                         letter.GlyphRectangle,
+                        letter.GlyphRectangleLoose,
                         letter.StartBaseLine,
                         letter.EndBaseLine,
                         letter.Width,

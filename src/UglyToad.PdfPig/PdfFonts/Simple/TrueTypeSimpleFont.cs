@@ -33,6 +33,10 @@
 
         private readonly bool isZapfDingbats;
 
+        private readonly TransformationMatrix fontMatrix;
+        private readonly double descent;
+        private readonly double ascent;
+
 #nullable disable
         public NameToken Name { get; }
 #nullable enable
@@ -66,6 +70,37 @@
                       ?? FontDetails.GetDefault(Name?.Data);
 
             isZapfDingbats = encoding is ZapfDingbatsEncoding || Details.Name.Contains("ZapfDingbats");
+
+            // Set font matrix
+            double scale = 1000.0;
+            if (this.font?.TableRegister.HeaderTable is not null)
+            {
+                scale = this.font.GetUnitsPerEm();
+            }
+
+            fontMatrix = TransformationMatrix.FromValues(1.0 / scale, 0, 0, 1.0 / scale, 0, 0);
+            descent = ComputeDescent();
+            ascent = ComputeAscent();
+        }
+
+        private double ComputeDescent()
+        {
+            if (font is null)
+            {
+                return DefaultTransformation.TransformY(descriptor!.Descent);
+            }
+
+            return GetFontMatrix().TransformY(font.TableRegister.HorizontalHeaderTable.Descent);
+        }
+
+        private double ComputeAscent()
+        {
+            if (font is null)
+            {
+                return DefaultTransformation.TransformY(descriptor!.Ascent);
+            }
+
+            return GetFontMatrix().TransformY(font.TableRegister.HorizontalHeaderTable.Ascent);
         }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)
@@ -195,14 +230,7 @@
 
         public TransformationMatrix GetFontMatrix()
         {
-            var scale = 1000.0;
-
-            if (font?.TableRegister.HeaderTable != null)
-            {
-                scale = font.GetUnitsPerEm();
-            }
-
-            return TransformationMatrix.FromValues(1 / scale, 0, 0, 1 / scale, 0, 0);
+            return fontMatrix;
         }
 
         private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode, out bool fromFont)
@@ -336,6 +364,16 @@
             }
 
             return widths[index];
+        }
+
+        public double GetDescent()
+        {
+            return descent;
+        }
+
+        public double GetAscent()
+        {
+            return ascent;
         }
 
         /// <inheritdoc/>

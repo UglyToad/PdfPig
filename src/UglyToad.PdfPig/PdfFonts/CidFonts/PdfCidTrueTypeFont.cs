@@ -36,6 +36,16 @@
 
         public int GetFontMatrixMultiplier() => font.GetUnitsPerEm();
 
+        public double? GetDescent()
+        {
+            return font.TableRegister.HorizontalHeaderTable.Descent;
+        }
+
+        public double? GetAscent()
+        {
+            return font.TableRegister.HorizontalHeaderTable.Ascent;
+        }
+
         public bool TryGetFontMatrix(int characterCode, [NotNullWhen(true)] out TransformationMatrix? matrix)
         {
             // We don't have a matrix here

@@ -13,6 +13,8 @@
     {
         private readonly PdfRectangle boundingBox;
         private readonly TransformationMatrix fontMatrix;
+        private readonly double ascent;
+        private readonly double descent;
         private readonly Encoding encoding;
         private readonly int firstChar;
         private readonly int lastChar;
@@ -45,6 +47,18 @@
 
             // Assumption is ZapfDingbats is not possible here. We need to change the behaviour if not the case
             System.Diagnostics.Debug.Assert(!(encoding is ZapfDingbatsEncoding || Details.Name.Contains("ZapfDingbats")));
+            descent = ComputeDescent();
+            ascent = ComputeAscent();
+        }
+
+        private double ComputeDescent()
+        {
+            return 0;
+        }
+
+        private double ComputeAscent()
+        {
+            return fontMatrix.TransformY(boundingBox.Height);
         }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)
@@ -104,6 +118,16 @@
         public TransformationMatrix GetFontMatrix()
         {
             return fontMatrix;
+        }
+
+        public double GetDescent()
+        {
+            return descent;
+        }
+
+        public double GetAscent()
+        {
+            return ascent;
         }
 
         /// <summary>

@@ -36,7 +36,9 @@
         private readonly ToUnicodeCMap toUnicodeCMap;
 
         private readonly TransformationMatrix fontMatrix;
-
+        private readonly double ascent;
+        private readonly double descent;
+        
         private readonly bool isZapfDingbats;
 
         public NameToken Name { get; }
@@ -83,6 +85,60 @@
             Details = fontDescriptor?.ToDetails(name?.Data)
                       ?? FontDetails.GetDefault(name?.Data);
             isZapfDingbats = encoding is ZapfDingbatsEncoding || Details.Name.Contains("ZapfDingbats");
+            descent = ComputeDescent();
+            ascent = ComputeAscent();
+        }
+
+        private double ComputeDescent()
+        {
+            if (Math.Abs(fontDescriptor.Descent) > double.Epsilon)
+            {
+                return fontMatrix.TransformY(fontDescriptor.Descent);
+            }
+
+            /*
+               // BobLd: Should 'fontProgram' be used
+              if (fontProgram is not null)
+              {
+                  if (fontProgram.TryGetFirst(out var t1))
+                  {
+
+                  }
+
+                  if (fontProgram.TryGetSecond(out var cffCol))
+                  {
+
+                  }
+              }
+              */
+
+            return -0.25;
+        }
+
+        private double ComputeAscent()
+        {
+            if (Math.Abs(fontDescriptor.Ascent) > double.Epsilon)
+            {
+                return fontMatrix.TransformY(fontDescriptor.Ascent);
+            }
+
+            /*
+             // BobLd: Should 'fontProgram' be used
+            if (fontProgram is not null)
+            {
+                if (fontProgram.TryGetFirst(out var t1))
+                {
+
+                }
+
+                if (fontProgram.TryGetSecond(out var cffCol))
+                {
+
+                }
+            }
+            */
+
+            return 0.75;
         }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)
@@ -206,7 +262,7 @@
             {
                 var first = cffFont.FirstFont;
                 string characterName;
-                if (encoding != null)
+                if (encoding is not null)
                 {
                     characterName = encoding.GetName(characterCode);
                 }
@@ -230,6 +286,16 @@
         public TransformationMatrix GetFontMatrix()
         {
             return fontMatrix;
+        }
+
+        public double GetDescent()
+        {
+            return descent;
+        }
+
+        public double GetAscent()
+        {
+            return ascent;
         }
 
         /// <inheritdoc/>

@@ -193,6 +193,32 @@
                         d.SaveTo(fs);
                     }
                 }
+
+                using (var bitmap = SKBitmap.FromImage(image))
+                using (var graphics = new SKCanvas(bitmap))
+                {
+                    foreach (var letter in page.Letters)
+                    {
+                        DrawRectangle(letter.GlyphRectangleLoose, graphics, violetPen, imageHeight, scale);
+                    }
+
+                    graphics.Flush();
+
+                    var imageName = $"{file}_loose.jpg";
+
+                    if (!Directory.Exists(OutputPath))
+                    {
+                        Directory.CreateDirectory(OutputPath);
+                    }
+
+                    var savePath = Path.Combine(OutputPath, imageName);
+
+                    using (var fs = new FileStream(savePath, FileMode.Create))
+                    using (SKData d = bitmap.Encode(SKEncodedImageFormat.Jpeg, 100))
+                    {
+                        d.SaveTo(fs);
+                    }
+                }
             }
         }
 

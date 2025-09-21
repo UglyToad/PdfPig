@@ -148,6 +148,38 @@
             return fontProgram.TryGetFontMatrix(characterIdentifier, out var m) ? m.Value : FontMatrix;
         }
 
+        public double GetDescent()
+        {
+            if (fontProgram is null)
+            {
+                return Descriptor.Descent;
+            }
+
+            double? descent = fontProgram.GetDescent();
+            if (descent.HasValue)
+            {
+                return descent.Value;
+            }
+
+            return Descriptor.Descent;
+        }
+
+        public double GetAscent()
+        {
+            if (fontProgram is null)
+            {
+                return Descriptor.Ascent;
+            }
+
+            double? ascent = fontProgram.GetAscent();
+            if (ascent.HasValue)
+            {
+                return ascent.Value;
+            }
+
+            return Descriptor.Ascent;
+        }
+
         public bool TryGetPath(int characterCode, [NotNullWhen(true)] out IReadOnlyList<PdfSubpath>? path)
         {
             path = null;

@@ -26,6 +26,8 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
         public FontDetails Details { get; }
 
         private readonly TransformationMatrix fontMatrix = TransformationMatrix.FromValues(0.001, 0, 0, 0.001, 0, 0);
+        private readonly double ascent;
+        private readonly double descent;
 
         public Type1Standard14Font(AdobeFontMetrics standardFontMetrics, Encoding? overrideEncoding = null)
         {
@@ -40,6 +42,28 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
                 standardFontMetrics.Weight == "Bold" ? 700 : FontDetails.DefaultWeight,
                 standardFontMetrics.ItalicAngle != 0);
             isZapfDingbats = encoding is ZapfDingbatsEncoding || Details.Name.Contains("ZapfDingbats");
+            descent = ComputeDescent();
+            ascent = ComputeAscent();
+        }
+
+        private double ComputeDescent()
+        {
+            if (Math.Abs(standardFontMetrics.Descender) < double.Epsilon)
+            {
+                return -0.25;
+            }
+
+            return fontMatrix.TransformY(standardFontMetrics.Descender);
+        }
+
+        private double ComputeAscent()
+        {
+            if (Math.Abs(standardFontMetrics.Ascender) < double.Epsilon)
+            {
+                return 0.75;
+            }
+
+            return fontMatrix.TransformY(standardFontMetrics.Ascender);
         }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)
@@ -113,6 +137,16 @@ namespace UglyToad.PdfPig.PdfFonts.Simple
         public TransformationMatrix GetFontMatrix()
         {
             return fontMatrix;
+        }
+
+        public double GetDescent()
+        {
+            return descent;
+        }
+
+        public double GetAscent()
+        {
+            return ascent;
         }
 
         /// <summary>
