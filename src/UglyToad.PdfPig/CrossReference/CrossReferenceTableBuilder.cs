@@ -56,16 +56,16 @@
                 // add this and follow chain defined by 'Prev' keys
                 xrefPartToBytePositionOrder.Add(firstCrossReferenceOffset);
 
-                // Get any streams that are tied to this table.
-                var activePart = currentPart;
-                var dependents = parts.Where(x => x.TiedToXrefAtOffset == activePart.Offset);
-                foreach (var dependent in dependents)
-                {
-                    xrefPartToBytePositionOrder.Add(dependent.Offset);
-                }
-
                 while (currentPart.Dictionary != null)
                 {
+                    // Get any streams that are tied to this table.
+                    var activePart = currentPart;
+                    var dependents = parts.Where(x => x.TiedToXrefAtOffset == activePart.Offset);
+                    foreach (var dependent in dependents)
+                    {
+                        xrefPartToBytePositionOrder.Add(dependent.Offset);
+                    }
+
                     long prevBytePos = currentPart.GetPreviousOffset();
                     if (prevBytePos == -1)
                     {
