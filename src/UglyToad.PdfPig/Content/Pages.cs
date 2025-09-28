@@ -182,16 +182,15 @@
 
         public void Dispose()
         {
-            foreach (var key in pageFactoryCache.Keys)
+            foreach (var factory in pageFactoryCache.Values)
             {
-                var factory = pageFactoryCache[key];
-                pageFactoryCache.Remove(key);
-
                 if (factory is IDisposable disposable)
                 {
                     disposable.Dispose();
                 }
             }
+
+            pageFactoryCache.Clear();
         }
     }
 }
