@@ -153,6 +153,23 @@ internal static partial class FirstPassParser
             {
                 results.Add(table);
                 nextLocation = table.GetPrevious();
+
+                // Also add any optional associated Stream
+                var xRefStm = table.GetXRefStm();
+                if (xRefStm is long xRefStmValue)
+                {
+                    var stream = GetXrefStreamOrTable(
+                        offset,
+                        input,
+                        scanner,
+                        xRefStmValue,
+                        log);
+
+                    if (stream != null)
+                    {
+                        results.Add(stream);
+                    }
+                }
             }
             else if (streamOrTable is XrefStream stream)
             {
