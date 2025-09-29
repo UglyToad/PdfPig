@@ -44,4 +44,14 @@ internal sealed class XrefTable : IXrefSection
 
         return null;
     }
+
+    public long? GetXRefStm()
+    {
+        if (Dictionary != null && Dictionary.TryGet(NameToken.XrefStm, out NumericToken xRefStm))
+        {
+            return xRefStm.Long;
+        }
+
+        return null;
+    }
 }
