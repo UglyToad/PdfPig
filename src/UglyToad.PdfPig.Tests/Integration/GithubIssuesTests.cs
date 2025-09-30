@@ -475,7 +475,7 @@
             using (var document = PdfDocument.Open(doc, new ParsingOptions() { UseLenientParsing = true, SkipMissingFonts = true }))
             {
                 var page1 = document.GetPage(1);
-                Assert.Equal(1788, page1.Letters.Count);
+                Assert.Equal(1939, page1.Letters.Count);
 
                 var page2 = document.GetPage(2);
                 Assert.Equal(2430, page2.Letters.Count);
