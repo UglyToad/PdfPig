@@ -472,19 +472,13 @@
         {
             var doc = IntegrationHelpers.GetDocumentPath("ErcotFacts.pdf");
 
-            using (var document = PdfDocument.Open(doc, new ParsingOptions() { UseLenientParsing = true, SkipMissingFonts = true }))
+            using (var document = PdfDocument.Open(doc, new ParsingOptions() { UseLenientParsing = true, SkipMissingFonts = false }))
             {
                 var page1 = document.GetPage(1);
                 Assert.Equal(1939, page1.Letters.Count);
 
                 var page2 = document.GetPage(2);
                 Assert.Equal(2434, page2.Letters.Count);
-            }
-
-            using (var document = PdfDocument.Open(doc, new ParsingOptions() { UseLenientParsing = true, SkipMissingFonts = false }))
-            {
-                var ex = Assert.Throws<ArgumentNullException>(() => document.GetPage(1));
-                Assert.StartsWith("Value cannot be null.", ex.Message);
             }
         }
 
