@@ -16,6 +16,9 @@ internal static class XrefBruteForcer
     {
         var results = new List<IXrefSection>();
 
+        // Guard against circular references; only read xref at each offset once
+        var xrefOffsetSeen = new HashSet<long>();
+
         var bruteForceObjPositions = new Dictionary<IndirectReference, long>();
 
         DictionaryToken? trailer = null;
@@ -131,6 +134,14 @@ internal static class XrefBruteForcer
                 ClearQueues();
 
                 var potentialTableOffset = bytes.CurrentOffset - 4;
+
+                if (xrefOffsetSeen.Contains(potentialTableOffset))
+                {
+                    log.Debug($"Skipping circular xref reference at {potentialTableOffset}");
+                    continue;
+                }
+                xrefOffsetSeen.Add(potentialTableOffset);
+
                 var table = XrefTableParser.TryReadTableAtOffset(
                     new FileHeaderOffset(0),
                     potentialTableOffset,
@@ -152,15 +163,22 @@ internal static class XrefBruteForcer
             {
                 ClearQueues();
 
-                if (!lastObjPosition.HasValue)
+                if (lastObjPosition is not long offset)
                 {
                     log.Error("Found an /XRef without having encountered an object first");
                     continue;
                 }
 
+                if (xrefOffsetSeen.Contains(offset))
+                {
+                    log.Debug($"Skipping circular /XRef reference at {offset}");
+                    continue;
+                }
+                xrefOffsetSeen.Add(offset);
+
                 var stream = XrefStreamParser.TryReadStreamAtOffset(
                     new FileHeaderOffset(0),
-                    lastObjPosition.Value,
+                    offset,
                     bytes,
                     scanner,
                     log);
