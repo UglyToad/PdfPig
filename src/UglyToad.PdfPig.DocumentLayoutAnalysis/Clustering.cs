@@ -217,7 +217,7 @@
             }
         }
         
-        internal static List<HashSet<int>> GroupIndexes(int[] edges)
+        internal static List<List<int>> GroupIndexes(int[] edges)
         {
             // Improved thanks to https://github.com/UglyToad/PdfPig/issues/1178
             var adjacency = new List<int>[edges.Length];
@@ -238,7 +238,7 @@
                 }
             }
 
-            List<HashSet<int>> groupedIndexes = new List<HashSet<int>>();
+            List<List<int>> groupedIndexes = new List<List<int>>();
             bool[] isDone = new bool[edges.Length];
 
             for (int p = 0; p < edges.Length; p++)
@@ -251,27 +251,38 @@
             }
             return groupedIndexes;
         }
-        
+
         /// <summary>
         /// Depth-first search
         /// <para>https://en.wikipedia.org/wiki/Depth-first_search</para>
         /// </summary>
-        private static HashSet<int> DfsIterative(int s, List<int>[] adj, ref bool[] isDone)
+        private static List<int> DfsIterative(int s, List<int>[] adj, ref bool[] isDone)
         {
-            HashSet<int> group = new HashSet<int>();
-            Stack<int> S = new Stack<int>();
+            List<int> group = new List<int>();
+            Stack<int> S = new Stack<int>(4);
             S.Push(s);
 
+            isDone[s] = true;
             while (S.Count > 0)
             {
                 var u = S.Pop();
-                if (!isDone[u])
+                group.Add(u);
+
+#if NET
+                var currentAdj = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(adj[u]);
+                int count = currentAdj.Length;
+#else
+                var currentAdj = adj[u];
+                int count = currentAdj.Count;
+#endif
+                for (int i = 0; i < count; ++i)
                 {
-                    group.Add(u);
-                    isDone[u] = true;
-                    foreach (var v in adj[u])
+                    var v = currentAdj[i];
+                    ref bool done = ref isDone[v];
+                    if (!done)
                     {
                         S.Push(v);
+                        done = true;
                     }
                 }
             }
