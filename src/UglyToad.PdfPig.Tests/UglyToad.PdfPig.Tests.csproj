@@ -101,8 +101,17 @@
         <None Update="Dla\Documents\90 180 270 rotated.pdf">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Update="Dla\Documents\caly-issues-56-1.pdf">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Dla\Documents\caly-issues-58-2.pdf">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
         <None Update="Dla\Documents\complex rotated.pdf">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Dla\Documents\fseprd1102849.pdf">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Update="Dla\Documents\no horizontal distance.pdf">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
