@@ -81,11 +81,15 @@ namespace UglyToad.PdfPig.PdfFonts.Cmap
 
         public CMap Build()
         {
+#if NET
+            BaseFontCharacterMap?.TrimExcess();
+#endif
+
             return new CMap(GetCidSystemInfo(), Type, WMode, Name, Version,
                 BaseFontCharacterMap ?? new Dictionary<int, string>(),
-                CodespaceRanges ?? new CodespaceRange[0],
-                CidRanges ?? new CidRange[0],
-                CidCharacterMappings ?? new CidCharacterMapping[0]);
+                CodespaceRanges ?? Array.Empty<CodespaceRange>(),
+                CidRanges ?? Array.Empty<CidRange>(),
+                CidCharacterMappings ?? Array.Empty<CidCharacterMapping>());
         }
 
         private CharacterIdentifierSystemInfo GetCidSystemInfo()
