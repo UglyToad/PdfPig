@@ -147,6 +147,13 @@
             Run(Type3FontZeroHeight, 1255);
         }
 
+        [Fact]
+        public void test_a()
+        {
+            // Rendered glyphs are not correct, but we use the grid to assess
+            Run("test_a", 1584, 1);
+        }
+
         private static void Run(string file, int imageHeight = 792, int pageNo = 1)
         {
             var pdfFileName = GetFilename(file);
@@ -246,7 +253,11 @@
 
             pdf = pdf.Replace(".pdf", ".jpg");
 
-            return SKImage.FromEncodedData(pdf);
+            if (File.Exists(pdf))
+            {
+                return SKImage.FromEncodedData(pdf);
+            }
+            return SKImage.FromEncodedData(pdf.Replace(".jpg", ".png"));
         }
     }
 }

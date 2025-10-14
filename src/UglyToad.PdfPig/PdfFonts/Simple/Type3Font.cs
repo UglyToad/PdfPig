@@ -58,7 +58,7 @@
 
         private double ComputeAscent()
         {
-            return fontMatrix.TransformY(boundingBox.Height);
+            return fontMatrix.TransformY(boundingBox.Top);
         }
 
         public int ReadCharacterCode(IInputBytes bytes, out int codeLength)
