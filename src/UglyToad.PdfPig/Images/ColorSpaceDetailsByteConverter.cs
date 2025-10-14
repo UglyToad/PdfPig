@@ -39,7 +39,16 @@
             var strideWidth = decoded.Length / imageHeight / bytesPerPixel;
             if (strideWidth != imageWidth)
             {
-                decoded = RemoveStridePadding(decoded, strideWidth, imageWidth, imageHeight, bytesPerPixel);
+                if (bytesPerPixel > 1)
+                {
+                    // Fixed thanks to / see discussion at https://github.com/UglyToad/PdfPig/issues/1183
+                    // Unclear what should be done here, we assume we can just remove the trailing bytes
+                    decoded = decoded.Slice(0, imageWidth * imageHeight * bytesPerPixel);
+                }
+                else
+                {
+                    decoded = RemoveStridePadding(decoded, strideWidth, imageWidth, imageHeight, bytesPerPixel);
+                }
             }
 
             return details.Transform(decoded);
