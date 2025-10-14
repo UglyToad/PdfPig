@@ -257,6 +257,10 @@
                 gidToStringIdAndNameMap[gid++] = pair;
             }
 
+#if NET
+            gidToStringIdAndNameMap.TrimExcess();
+#endif
+
             glyphIdToStringIdAndName = gidToStringIdAndNameMap;
         }
 

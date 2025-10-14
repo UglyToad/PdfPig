@@ -770,6 +770,8 @@ namespace UglyToad.PdfPig.Fonts.CompactFontFormat.CharStrings
                 }
             }
 
+            values.TrimExcess();
+
             return new Type2CharStrings.CommandSequence(values, commandIdentifiers);
         }
 
