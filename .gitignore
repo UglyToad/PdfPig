@@ -249,3 +249,4 @@ _Pvt_Extensions
 
 /docs/doxygen
 /tools/UglyToad.PdfPig.ConsoleRunner/Properties/launchSettings.json
+/src/UglyToad.PdfPig.Tests/Images/Files/Pdf/indexed-png-with-mask.png
