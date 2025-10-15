@@ -2,6 +2,7 @@
 {
     using Fonts;
     using System;
+    using System.Buffers.Binary;
     using System.IO;
     using System.IO.Compression;
     using Tokens;
@@ -43,6 +44,15 @@
                 var colors = Math.Min(parameters.GetIntOrDefault(NameToken.Colors, DefaultColors), 32);
                 var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
                 var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
+
+                var length = parameters.GetIntOrDefault(NameToken.Length, -1);
+
+                if (length > 0 && length < input.Length)
+                {
+                    // Truncates final "\r\n" or "\n" from source data if any. Fixes detecting where the adler checksum is. (Zlib uses framing for this)
+                    input = input.Slice(0, length);
+                }
+
                 return Decompress(input, predictor, colors, bitsPerComponent, columns);
             }
             catch
@@ -55,29 +65,83 @@
 
         private static Memory<byte> Decompress(Memory<byte> input, int predictor, int colors, int bitsPerComponent, int columns)
         {
-            using (var memoryStream = MemoryHelper.AsReadOnlyMemoryStream(input))
+#if NET
+            using var memoryStream = MemoryHelper.AsReadOnlyMemoryStream(input);
+            try
             {
-                // The first 2 bytes are the header which DeflateStream does not support.
-                memoryStream.ReadByte();
-                memoryStream.ReadByte();
-
-                try
+                using (var zlib = new ZLibStream(memoryStream, CompressionMode.Decompress))
+                using (var output = new MemoryStream((int)(input.Length * 1.5)))
+                using (var f = PngPredictor.WrapPredictor(output, predictor, colors, bitsPerComponent, columns))
                 {
-                    using (var deflate = new DeflateStream(memoryStream, CompressionMode.Decompress))
-                    using (var output = new MemoryStream((int)(input.Length * 1.5)))
-                    using (var f = PngPredictor.WrapPredictor(output, predictor, colors, bitsPerComponent, columns))
-                    {
-                        deflate.CopyTo(f);
-                        f.Flush();
+                    zlib.CopyTo(f);
+                    f.Flush();
 
-                        return output.AsMemory();
-                    }
-                }
-                catch (InvalidDataException ex)
-                {
-                    throw new CorruptCompressedDataException("Invalid Flate compressed stream encountered", ex);
+                    return output.AsMemory();
                 }
             }
+            catch (InvalidDataException ex)
+            {
+                throw new CorruptCompressedDataException("Invalid Flate compressed stream encountered", ex);
+            }
+#else
+            // Ideally we would like to use the ZLibStream class but that is only available in .NET 5+.
+            // We look at the raw data now
+            // *  First we have 2 bytes, specifying the type of compression
+            // * Then we have the deflated data
+            // * Then we have a 4 byte checksum (Adler32)
+
+            // Would be so nice to have zlib do the framing here... but the deflate stream already reads data from the stream that we need.
+
+            using var memoryStream = MemoryHelper.AsReadOnlyMemoryStream(input.Slice(2, input.Length - 2 /* Header */ - 4 /* Checksum */));
+            // The first 2 bytes are the header which DeflateStream can't handle. After the s
+            var adlerBytes = input.Slice(input.Length - 4, 4).Span;
+            uint expected = BinaryPrimitives.ReadUInt32BigEndian(adlerBytes);
+            uint altExpected = expected;
+
+            // Sometimes the data ends with "\r\n", "\r" or "\n" and we don't know if it is part of the zlib
+            // Ideally this would have been removed by the caller from the provided length...
+            if (adlerBytes[3] == '\n' || adlerBytes[3] == '\r')
+            {
+                if (adlerBytes[3] == '\n' && adlerBytes[2] == '\r')
+                {
+                    // Now we don't know which value is the good one. The value could be ok, or padding.
+                    // Lets allow both values for now. Allowing two out of 2^32 is much better than allowing everything
+                    adlerBytes = input.Slice(input.Length - 6, 4).Span;
+                }
+                else
+                {
+                    // Same but now for just '\n' or '\r' instead of '\r\n'
+                    adlerBytes = input.Slice(input.Length - 5, 4).Span;
+                }
+
+                altExpected = BinaryPrimitives.ReadUInt32BigEndian(adlerBytes);
+            }
+
+
+            try
+            {
+                using (var deflate = new DeflateStream(memoryStream, CompressionMode.Decompress))
+                using (var adlerStream = new Adler32ChecksumStream(deflate))
+                using (var output = new MemoryStream((int)(input.Length * 1.5)))
+                using (var f = PngPredictor.WrapPredictor(output, predictor, colors, bitsPerComponent, columns))
+                {
+                    adlerStream.CopyTo(f);
+                    f.Flush();
+
+                    uint actual = adlerStream.Checksum;
+                    if (expected != actual && altExpected != actual)
+                    {
+                        throw new CorruptCompressedDataException("Flate stream has invalid checksum");
+                    }
+
+                    return output.AsMemory();
+                }
+            }
+            catch (InvalidDataException ex)
+            {
+                throw new CorruptCompressedDataException("Invalid Flate compressed stream encountered", ex);
+            }
+#endif
         }
 
         /// <inheritdoc />
@@ -95,9 +159,10 @@
 
             using (var compressStream = new MemoryStream())
             using (var compressor = new DeflateStream(compressStream, CompressionLevel.Fastest))
+            using (var adlerStream = new Adler32ChecksumStream(compressor))
             {
-                compressor.Write(data, 0, data.Length);
-                compressor.Close();
+                adlerStream.Write(data, 0, data.Length);
+                adlerStream.Close();
 
                 var compressed = compressStream.ToArray();
 
@@ -111,7 +176,7 @@
                 Array.Copy(compressed, 0, result, headerLength, compressed.Length);
 
                 // Write Checksum of raw data.
-                var checksum = Adler32Checksum.Calculate(data);
+                var checksum = adlerStream.Checksum;
 
                 var offset = headerLength + compressed.Length;
 
