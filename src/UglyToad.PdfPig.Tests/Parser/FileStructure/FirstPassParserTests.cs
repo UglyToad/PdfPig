@@ -109,10 +109,8 @@ public class FirstPassParserTests
             %%EOF
             """;
 
-        if (Environment.NewLine == "\n")
-        {
-            content = content.Replace("\n", "\r\n");
-        }
+        // Handle "\r\n" or "\n" in the sourcecode in the same way
+        content = content.Replace("\r\n", "\n").Replace("\n", "\r\n");
 
         var ib = StringBytesTestConverter.Convert(content, false);
 

@@ -132,7 +132,7 @@
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("StackOverflow_Issue_1122.pdf");
             
             var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }));
-            Assert.StartsWith("Reached maximum search depth while getting indirect reference.", ex.Message);
+            Assert.Equal("The root object in the trailer did not resolve to a readable dictionary.", ex.Message);
         }
 
         [Fact]
@@ -191,7 +191,7 @@
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("SpookyPass.pdf");
             var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }));
-            Assert.Equal("Avoiding infinite recursion in ObjectLocationProvider.TryGetOffset() as 'offset' and 'reference.ObjectNumber' have the same value and opposite signs.", ex.Message);
+            Assert.Equal("The root object in the trailer did not resolve to a readable dictionary.", ex.Message);
         }
 
         [Fact]
@@ -356,7 +356,8 @@
             using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true, SkipMissingFonts = true }))
             {
                 var page = document.GetPage(13);
-                Assert.Throws<OverflowException>(() => DocstrumBoundingBoxes.Instance.GetBlocks(page.GetWords()));
+                // This used to fail with an overflow exception when we failed to validate the zlib encoded data
+                Assert.NotNull(DocstrumBoundingBoxes.Instance.GetBlocks(page.GetWords()));
             }
         }
 

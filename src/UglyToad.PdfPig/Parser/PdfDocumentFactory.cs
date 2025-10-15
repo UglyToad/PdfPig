@@ -239,6 +239,11 @@
 
             var rootDictionary = DirectObjectFinder.Get<DictionaryToken>(trailer.Root, pdfTokenScanner)!;
 
+            if (rootDictionary is null)
+            {
+                throw new PdfDocumentFormatException($"The root object in the trailer did not resolve to a readable dictionary.");
+            }
+
             if (!rootDictionary.ContainsKey(NameToken.Type) && isLenientParsing)
             {
                 rootDictionary = rootDictionary.With(NameToken.Type, NameToken.Catalog);

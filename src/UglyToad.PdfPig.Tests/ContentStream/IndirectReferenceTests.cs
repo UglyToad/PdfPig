@@ -1,6 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Tests.ContentStream
 {
     using PdfPig.Core;
+    using System.Globalization;
 
     public class IndirectReferenceTests
     {
@@ -33,50 +34,59 @@
         [Fact]
         public void IndirectReferenceHashTest()
         {
-            var reference0 = new IndirectReference(1574, 690);
-            Assert.Equal(1574, reference0.ObjectNumber);
-            Assert.Equal(690, reference0.Generation);
+            CultureInfo lastCulture = CultureInfo.CurrentCulture;
+            CultureInfo.CurrentCulture = new CultureInfo("en-US");
+            try
+            {
+                var reference0 = new IndirectReference(1574, 690);
+                Assert.Equal(1574, reference0.ObjectNumber);
+                Assert.Equal(690, reference0.Generation);
 
-            var reference1 = new IndirectReference(-1574, 690);
-            Assert.Equal(-1574, reference1.ObjectNumber);
-            Assert.Equal(690, reference1.Generation);
+                var reference1 = new IndirectReference(-1574, 690);
+                Assert.Equal(-1574, reference1.ObjectNumber);
+                Assert.Equal(690, reference1.Generation);
 
-            var reference2 = new IndirectReference(58949797283757, 16);
-            Assert.Equal(58949797283757, reference2.ObjectNumber);
-            Assert.Equal(16, reference2.Generation);
+                var reference2 = new IndirectReference(58949797283757, 16);
+                Assert.Equal(58949797283757, reference2.ObjectNumber);
+                Assert.Equal(16, reference2.Generation);
 
-            var reference3 = new IndirectReference(-58949797283757, ushort.MaxValue);
-            Assert.Equal(-58949797283757, reference3.ObjectNumber);
-            Assert.Equal(ushort.MaxValue, reference3.Generation);
+                var reference3 = new IndirectReference(-58949797283757, ushort.MaxValue);
+                Assert.Equal(-58949797283757, reference3.ObjectNumber);
+                Assert.Equal(ushort.MaxValue, reference3.Generation);
 
-            var reference4 = new IndirectReference(140737488355327, ushort.MaxValue);
-            Assert.Equal(140737488355327, reference4.ObjectNumber);
-            Assert.Equal(ushort.MaxValue, reference4.Generation);
+                var reference4 = new IndirectReference(140737488355327, ushort.MaxValue);
+                Assert.Equal(140737488355327, reference4.ObjectNumber);
+                Assert.Equal(ushort.MaxValue, reference4.Generation);
 
-            var reference5 = new IndirectReference(-140737488355327, ushort.MaxValue);
-            Assert.Equal(-140737488355327, reference5.ObjectNumber);
-            Assert.Equal(ushort.MaxValue, reference5.Generation);
+                var reference5 = new IndirectReference(-140737488355327, ushort.MaxValue);
+                Assert.Equal(-140737488355327, reference5.ObjectNumber);
+                Assert.Equal(ushort.MaxValue, reference5.Generation);
 
-            var ex0 = Assert.Throws<ArgumentOutOfRangeException>(() => new IndirectReference(140737488355328, 0));
-            Assert.StartsWith("Object number must be between -140,737,488,355,327 and 140,737,488,355,327.", ex0.Message);
-            var ex1 = Assert.Throws<ArgumentOutOfRangeException>(() => new IndirectReference(-140737488355328, 0));
-            Assert.StartsWith("Object number must be between -140,737,488,355,327 and 140,737,488,355,327.", ex1.Message);
-            
-            var ex2 = Assert.Throws<ArgumentOutOfRangeException>(() => new IndirectReference(1574, -1));
-            Assert.StartsWith("Generation number must not be a negative value.", ex2.Message);
-            
-            // We make sure object number is still correct even if generation is not
-            var reference6 = new IndirectReference(1574, int.MaxValue);
-            Assert.Equal(1574, reference6.ObjectNumber);
-            
-            var reference7 = new IndirectReference(-1574, ushort.MaxValue + 10);
-            Assert.Equal(-1574, reference7.ObjectNumber);
+                var ex0 = Assert.Throws<ArgumentOutOfRangeException>(() => new IndirectReference(140737488355328, 0));
+                Assert.StartsWith("Object number must be between -140,737,488,355,327 and 140,737,488,355,327.", ex0.Message);
+                var ex1 = Assert.Throws<ArgumentOutOfRangeException>(() => new IndirectReference(-140737488355328, 0));
+                Assert.StartsWith("Object number must be between -140,737,488,355,327 and 140,737,488,355,327.", ex1.Message);
 
-            var reference9 = new IndirectReference(-140737488355327, ushort.MaxValue + 10);
-            Assert.Equal(-140737488355327, reference9.ObjectNumber);
+                var ex2 = Assert.Throws<ArgumentOutOfRangeException>(() => new IndirectReference(1574, -1));
+                Assert.StartsWith("Generation number must not be a negative value.", ex2.Message);
 
-            var reference10 = new IndirectReference(140737488355327, ushort.MaxValue * 10);
-            Assert.Equal(140737488355327, reference10.ObjectNumber);
+                // We make sure object number is still correct even if generation is not
+                var reference6 = new IndirectReference(1574, int.MaxValue);
+                Assert.Equal(1574, reference6.ObjectNumber);
+
+                var reference7 = new IndirectReference(-1574, ushort.MaxValue + 10);
+                Assert.Equal(-1574, reference7.ObjectNumber);
+
+                var reference9 = new IndirectReference(-140737488355327, ushort.MaxValue + 10);
+                Assert.Equal(-140737488355327, reference9.ObjectNumber);
+
+                var reference10 = new IndirectReference(140737488355327, ushort.MaxValue * 10);
+                Assert.Equal(140737488355327, reference10.ObjectNumber);
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = lastCulture;
+            }
         }
 
         [Fact]
