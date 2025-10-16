@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Globalization;
     using System.Text;
     using Core;
@@ -41,35 +42,43 @@
             do
             {
                 skip = false;
-                while (bytes.MoveNext())
+                while (bytes.Peek() is { } b)
                 {
-                    var b = bytes.CurrentByte;
                     var c = (char)b;
 
                     switch (c)
                     {
                         case '%':
+                            bytes.MoveNext();
                             comments.Add(ReadComment());
                             break;
                         case '(':
+                            bytes.MoveNext();
                             return ReadString();
                         case ')':
                             throw new InvalidOperationException("Encountered an end of string ')' outside of string.");
                         case '[':
+                            bytes.MoveNext();
                             return new Type1Token(c, Type1Token.TokenType.StartArray);
                         case ']':
+                            bytes.MoveNext();
                             return new Type1Token(c, Type1Token.TokenType.EndArray);
                         case '{':
+                            bytes.MoveNext();
                             return new Type1Token(c, Type1Token.TokenType.StartProc);
                         case '}':
+                            bytes.MoveNext();
                             return new Type1Token(c, Type1Token.TokenType.EndProc);
                         case '/':
                             {
-                                var name = ReadLiteral();
+                                bytes.MoveNext();
+                                TryReadLiteral(out var name);
+                                Debug.Assert(name != null);
                                 return new Type1Token(name, Type1Token.TokenType.Literal);
                             }
                         case '<':
                             {
+                                bytes.MoveNext();
                                 var following = bytes.Peek();
                                 if (following == '<')
                                 {
@@ -81,6 +90,7 @@
                             }
                         case '>':
                             {
+                                bytes.MoveNext();
                                 var following = bytes.Peek();
                                 if (following == '>')
                                 {
@@ -94,23 +104,24 @@
                             {
                                 if (ReadHelper.IsWhitespace(b))
                                 {
+                                    bytes.MoveNext();
                                     skip = true;
                                     break;
                                 }
 
                                 if (b == 0)
                                 {
+                                    bytes.MoveNext();
                                     skip = true;
                                     break;
                                 }
 
-                                if (TryReadNumber(c, out var number))
+                                if (TryReadNumber(out var number))
                                 {
                                     return number;
                                 }
 
-                                var name = ReadLiteral(c);
-                                if (name == null)
+                                if (!TryReadLiteral(out var name))
                                 {
                                     throw new InvalidOperationException($"The binary portion of the type 1 font was invalid at position {bytes.CurrentOffset}.");
                                 }
@@ -197,12 +208,21 @@
             return null;
         }
 
-        private bool TryReadNumber(char c, out Type1Token numberToken)
+        private bool TryReadNumber(out Type1Token numberToken)
         {
             char GetNext()
             {
                 bytes.MoveNext();
-                return (char)bytes.CurrentByte;
+                return (char)(bytes.Peek() ?? 0);
+            }
+
+            char c = (char)(bytes.Peek() ?? 0);
+
+            if (!((c >= '0' && c <= '9') || c is '+' or '-'))
+            {
+                // Easy out. Not a valid number
+                numberToken = null;
+                return false;
             }
 
             numberToken = null;
@@ -251,8 +271,6 @@
             else
             {
                 // integer
-                bytes.Seek(bytes.CurrentOffset - 1);
-
                 numberToken = new Type1Token(sb.ToString(), Type1Token.TokenType.Integer);
                 return true;
             }
@@ -309,7 +327,6 @@
                 }
             }
 
-            bytes.Seek(bytes.CurrentOffset - 1);
             if (radix != null)
             {
                 var number = Convert.ToInt32(sb.ToString(), int.Parse(radix.ToString(), CultureInfo.InvariantCulture));
@@ -323,14 +340,9 @@
             return true;
         }
 
-        private string ReadLiteral(char? previousCharacter = null)
+        private bool TryReadLiteral(out string? value)
         {
             literalBuffer.Clear();
-            if (previousCharacter.HasValue)
-            {
-                literalBuffer.Append(previousCharacter);
-            }
-
             do
             {
                 var b = bytes.Peek();
@@ -350,8 +362,16 @@
                 literalBuffer.Append(c);
             } while (bytes.MoveNext());
 
-            var literal = literalBuffer.ToString();
-            return literal.Length == 0 ? null : literal;
+            if (literalBuffer.Length > 0)
+            {
+                value = literalBuffer.ToString();
+                return true;
+            }
+            else
+            {
+                value = null;
+                return false;
+            }
         }
 
         private string ReadComment()
@@ -375,9 +395,10 @@
         private Type1DataToken ReadCharString(int length)
         {
             // Skip preceding space.
-            bytes.MoveNext();
-            // TODO: may be wrong
-           // bytes.MoveNext();
+            if (bytes.Peek() is { } ws && ReadHelper.IsWhitespace(ws))
+            {
+                bytes.MoveNext();
+            }
 
             byte[] data = new byte[length];
             for (int i = 0; i < length; i++)

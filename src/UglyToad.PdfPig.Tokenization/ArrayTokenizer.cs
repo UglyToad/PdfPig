@@ -9,7 +9,7 @@
     {
         private readonly bool usePdfDocEncoding;
 
-        public bool ReadsNextByte { get; } = false;
+        public bool ReadsNextByte => false;
 
         public ArrayTokenizer(bool usePdfDocEncoding)
         {

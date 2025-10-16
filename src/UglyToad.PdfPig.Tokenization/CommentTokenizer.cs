@@ -6,7 +6,7 @@
 
     internal sealed class CommentTokenizer : ITokenizer
     {
-        public bool ReadsNextByte { get; } = true;
+        public bool ReadsNextByte => false;
 
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
         {
@@ -17,10 +17,11 @@
                 return false;
             }
 
-            using var builder = new ValueStringBuilder();
+            using var builder = new ValueStringBuilder(stackalloc char[32]);
 
-            while (inputBytes.MoveNext() && !ReadHelper.IsEndOfLine(inputBytes.CurrentByte))
+            while (inputBytes.Peek() is { } c && !ReadHelper.IsEndOfLine(c))
             {
+                inputBytes.MoveNext();
                 builder.Append((char) inputBytes.CurrentByte);
             }
 

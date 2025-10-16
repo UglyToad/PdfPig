@@ -11,14 +11,14 @@
 
     internal sealed class NameTokenizer : ITokenizer
     {
+#if NET
         static NameTokenizer()
         {
-#if NET
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-#endif
         }
+#endif
 
-        public bool ReadsNextByte { get; } = true;
+        public bool ReadsNextByte => false;
 
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
         {
@@ -35,10 +35,8 @@
             int postEscapeRead = 0;
             Span<char> escapedChars = stackalloc char[2];
 
-            while (inputBytes.MoveNext())
+            while (inputBytes.Peek() is { } b)
             {
-                var b = inputBytes.CurrentByte;
-
                 if (b == '#')
                 {
                     escapeActive = true;
@@ -52,8 +50,9 @@
 
                         if (postEscapeRead == 2)
                         {
-                            int high = escapedChars[0] <= '9' ? escapedChars[0] - '0' : char.ToUpper(escapedChars[0]) - 'A' + 10;
-                            int low = escapedChars[1] <= '9' ? escapedChars[1] - '0' : char.ToUpper(escapedChars[1]) - 'A' + 10;
+                            // We validated that the char is hex. So assume ASCII rules apply and shortcut hex decoding
+                            int high = escapedChars[0] <= '9' ? escapedChars[0] - '0' : ((escapedChars[0] & 0xF) + 9);
+                            int low = escapedChars[1] <= '9' ? escapedChars[1] - '0' : ((escapedChars[1] & 0xF) + 9);
 
                             byte characterToWrite = (byte)(high * 16 + low);
 
@@ -100,6 +99,8 @@
                 {
                     bytes.Write(b);
                 }
+
+                inputBytes.MoveNext();
             }
 
 #if NET8_0_OR_GREATER
