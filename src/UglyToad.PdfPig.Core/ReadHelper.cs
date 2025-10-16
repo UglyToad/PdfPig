@@ -24,12 +24,17 @@
         /// </summary>
         public const byte AsciiCarriageReturn = 13;
 
+        /// <summary>
+        /// The tab '\t' character.
+        /// </summary>
+        public const byte AsciiTab = 9;
+
         private static readonly HashSet<int> EndOfNameCharacters =
         [
             ' ',
             AsciiCarriageReturn,
             AsciiLineFeed,
-            9,
+            AsciiTab,
             '>',
             '<',
             '[',
