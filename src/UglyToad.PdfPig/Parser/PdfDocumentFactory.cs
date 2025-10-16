@@ -25,9 +25,9 @@
 
     internal static class PdfDocumentFactory
     {
-        public static PdfDocument Open(byte[] fileBytes, ParsingOptions? options = null)
+        public static PdfDocument Open(ReadOnlyMemory<byte> memory, ParsingOptions? options = null)
         {
-            var inputBytes = new MemoryInputBytes(fileBytes);
+            var inputBytes = new MemoryInputBytes(memory);
 
             return Open(inputBytes, options);
         }
