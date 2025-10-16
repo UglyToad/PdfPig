@@ -103,6 +103,14 @@
         public static PdfDocument Open(byte[] fileBytes, ParsingOptions? options = null) => PdfDocumentFactory.Open(fileBytes, options);
 
         /// <summary>
+        /// Creates a <see cref="PdfDocument"/> for reading from the provided file bytes.
+        /// </summary>
+        /// <param name="memory">The bytes of the PDF file.</param>
+        /// <param name="options">Optional parameters controlling parsing.</param>
+        /// <returns>A <see cref="PdfDocument"/> providing access to the file contents.</returns>
+        public static PdfDocument Open(ReadOnlyMemory<byte> memory, ParsingOptions? options = null) => PdfDocumentFactory.Open(memory, options);
+
+        /// <summary>
         /// Opens a file and creates a <see cref="PdfDocument"/> for reading from the provided file path.
         /// </summary>
         /// <param name="filePath">The full path to the file location of the PDF file.</param>

@@ -342,14 +342,9 @@
 
                 if ((char)inputBytes.CurrentByte == '\r')
                 {
-                    if (!inputBytes.MoveNext())
+                    if (inputBytes.Peek() == '\n')
                     {
-                        return false;
-                    }
-
-                    if ((char)inputBytes.CurrentByte != '\n')
-                    {
-                        inputBytes.Seek(inputBytes.CurrentOffset - 1);
+                        inputBytes.MoveNext();
                     }
                     break;
                 }

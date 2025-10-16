@@ -11,11 +11,12 @@
     {
         private readonly Stream stream;
         private readonly bool shouldDispose;
+        private byte? peekByte;
 
         private bool isAtEnd;
 
         /// <inheritdoc />
-        public long CurrentOffset => stream.Position;
+        public long CurrentOffset => peekByte.HasValue ? stream.Position - 1 : stream.Position;
 
         /// <inheritdoc />
         public byte CurrentByte { get; private set; }
@@ -52,7 +53,8 @@
         /// <inheritdoc />
         public bool MoveNext()
         {
-            var b = stream.ReadByte();
+            var b = peekByte ?? stream.ReadByte();
+            peekByte = null;
 
             if (b == -1)
             {
@@ -68,18 +70,21 @@
         /// <inheritdoc />
         public byte? Peek()
         {
-            var current = CurrentOffset;
-
-            var b = stream.ReadByte();
-
-            stream.Seek(current, SeekOrigin.Begin);
-
-            if (b == -1)
+            if (!peekByte.HasValue)
             {
-                return null;
+                var v = stream.ReadByte();
+
+                if (v >= 0)
+                {
+                    peekByte = (byte)v;
+                }
+                else
+                {
+                    return null;
+                }
             }
 
-            return (byte)b;
+            return peekByte;
         }
 
         /// <inheritdoc />
@@ -92,6 +97,7 @@
         public void Seek(long position)
         {
             isAtEnd = false;
+            peekByte = null;
 
             if (position == 0)
             {
@@ -112,9 +118,15 @@
             {
                 return 0;
             }
+            else if (peekByte.HasValue)
+            {
+                buffer[0] = peekByte.Value;
+                peekByte = null;
+
+                return Read(buffer.Slice(1)) + 1;
+            }
 
             int read = stream.Read(buffer);
-
             if (read > 0)
             {
                 CurrentByte = buffer[read - 1];
