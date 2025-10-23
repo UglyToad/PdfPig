@@ -243,7 +243,7 @@
         /// <summary>
         /// Modify the current transformation matrix by concatenating the specified matrix.
         /// </summary>
-        void ModifyCurrentTransformationMatrix(double[] value);
+        void ModifyCurrentTransformationMatrix(TransformationMatrix value);
 
         /// <summary>
         /// Set the character spacing to a number expressed in unscaled text space units.

@@ -270,10 +270,10 @@
             GetCurrentState().FontState.WordSpacing = spacing;
         }
 
-        public void ModifyCurrentTransformationMatrix(double[] value)
+        public void ModifyCurrentTransformationMatrix(TransformationMatrix value)
         {
-            var ctm = GetCurrentState().CurrentTransformationMatrix;
-            GetCurrentState().CurrentTransformationMatrix = TransformationMatrix.FromArray(value).Multiply(ctm);
+            var state = GetCurrentState();
+            state.CurrentTransformationMatrix = value.Multiply(state.CurrentTransformationMatrix);
         }
 
         public void SetCharacterSpacing(double spacing)

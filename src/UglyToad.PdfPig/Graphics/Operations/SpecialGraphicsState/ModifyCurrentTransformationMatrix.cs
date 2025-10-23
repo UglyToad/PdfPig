@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using PdfPig.Core;
 
     /// <inheritdoc />
     /// <summary>
@@ -43,7 +44,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.ModifyCurrentTransformationMatrix(Value);
+            operationContext.ModifyCurrentTransformationMatrix(TransformationMatrix.FromArray(Value));
         }
 
         /// <inheritdoc />
