@@ -452,6 +452,7 @@ namespace UglyToad.PdfPig.Graphics
         {
             // https://github.com/apache/pdfbox/blob/f4bfe47de37f6fe69e8f98b164c3546facfd5e91/pdfbox/src/main/java/org/apache/pdfbox/contentstream/PDFStreamEngine.java#L611
             var graphicsState = GetCurrentState();
+            rectangle = graphicsState.CurrentTransformationMatrix.Transform(rectangle).Normalise();
             var clip = rectangle.ToPdfPath();
             clip.SetClipping(clippingRule);
 

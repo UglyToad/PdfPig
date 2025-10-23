@@ -564,7 +564,7 @@
             }
 
             // 2. Update current transformation matrix.
-            startState.CurrentTransformationMatrix = formMatrix.Multiply(startState.CurrentTransformationMatrix);
+            ModifyCurrentTransformationMatrix(formMatrix);
 
             var contentStream = formStream.Decode(FilterProvider, PdfScanner);
 
@@ -576,9 +576,8 @@
             if (formStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Bbox, PdfScanner, out var bboxToken))
             {
                 var points = bboxToken.Data.OfType<NumericToken>().Select(x => x.Double).ToArray();
-                PdfRectangle bbox = new PdfRectangle(points[0], points[1], points[2], points[3]);
-                PdfRectangle transformedBox = startState.CurrentTransformationMatrix.Transform(bbox).Normalise();
-                ClipToRectangle(transformedBox, FillingRule.EvenOdd); // TODO - Check that Even Odd is valid
+                PdfRectangle bbox = new PdfRectangle(points[0], points[1], points[2], points[3]).Normalise();
+                ClipToRectangle(bbox, FillingRule.EvenOdd); // TODO - Check that Even Odd is valid
             }
 
             // 4. Paint the objects.
@@ -958,10 +957,10 @@
         }
 
         /// <inheritdoc/>
-        public virtual void ModifyCurrentTransformationMatrix(double[] value)
+        public virtual void ModifyCurrentTransformationMatrix(TransformationMatrix value)
         {
-            var ctm = GetCurrentState().CurrentTransformationMatrix;
-            GetCurrentState().CurrentTransformationMatrix = TransformationMatrix.FromArray(value).Multiply(ctm);
+            var state = GetCurrentState();
+            state.CurrentTransformationMatrix = value.Multiply(state.CurrentTransformationMatrix);
         }
 
         /// <inheritdoc/>
