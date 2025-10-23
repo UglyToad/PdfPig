@@ -64,17 +64,6 @@
 
             var transform = stream.Data;
 
-            var length = stream.StreamDictionary.GetIntOrDefault(NameToken.Length, -1);
-
-            // If a length is available and it's smaller than the actual data length, use that. This trims whitespace (e.g. newlines) that might have been introduced during transport.
-            // And with that it handles some issues before individual filters have to deal with it.
-            //
-            // Do this before the first filter (to handle cases like multiple filters, etc).
-            if (length > 0 && length < transform.Length)
-            {
-                transform = transform.Slice(0, length);
-            }
-
             for (var i = 0; i < filters.Count; i++)
             {
                 var filter = filters[i];
@@ -102,17 +91,6 @@
             double totalMaxEstSize = stream.Data.Length * 100;
 
             var transform = stream.Data;
-
-            var length = stream.StreamDictionary.GetIntOrDefault(NameToken.Length, -1);
-
-            // If a length is available and it's smaller than the actual data length, use that. This trims whitespace (e.g. newlines) that might have been introduced during transport.
-            // And with that it handles some issues before individual filters have to deal with it.
-            //
-            // Do this before the first filter (to handle cases like multiple filters, etc).
-            if (length > 0 && length < transform.Length)
-            {
-                transform = transform.Slice(0, length);
-            }
 
             for (var i = 0; i < filters.Count; i++)
             {
