@@ -11,7 +11,6 @@
     using Fonts.Type1.Parser;
     using PdfPig.Parser.Parts;
     using Simple;
-    using System;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -20,17 +19,20 @@
         private readonly IPdfTokenScanner pdfScanner;
         private readonly ILookupFilterProvider filterProvider;
         private readonly IEncodingReader encodingReader;
+        private readonly CMapLocalCache cmapLocalCache;
         private readonly bool isLenientParsing;
 
         public Type1FontHandler(
             IPdfTokenScanner pdfScanner,
             ILookupFilterProvider filterProvider,
             IEncodingReader encodingReader,
+            CMapLocalCache cmapLocalCache,
             bool isLenientParsing)
         {
             this.pdfScanner = pdfScanner;
             this.filterProvider = filterProvider;
             this.encodingReader = encodingReader;
+            this.cmapLocalCache = cmapLocalCache;
             this.isLenientParsing = isLenientParsing;
         }
 
@@ -80,7 +82,7 @@
                 {
                     var metrics = Standard14.GetAdobeFontMetrics(baseFontToken.Data);
 
-                    if (metrics == null)
+                    if (metrics is null)
                     {
                         if (isLenientParsing)
                         {
@@ -112,19 +114,15 @@
             {
                 var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, pdfScanner);
 
-                if (toUnicode?.Decode(filterProvider, pdfScanner) is { } decodedUnicodeCMap)
-                {
-                    toUnicodeCMap = CMapCache.Parse(new MemoryInputBytes(decodedUnicodeCMap));
-                }
+                cmapLocalCache.TryGet(toUnicode, out toUnicodeCMap);
             }
-
 
             var fromFont = default(Encoding);
             if (font != null)
             {
                 if (font.TryGetFirst(out var t1Font))
                 {
-                    fromFont = t1Font.Encoding != null ? new BuiltInEncoding(t1Font.Encoding) : default(Encoding);
+                    fromFont = t1Font.Encoding is not null ? new BuiltInEncoding(t1Font.Encoding) : default(Encoding);
                 }
                 else if (font.TryGetSecond(out var cffFont))
                 {

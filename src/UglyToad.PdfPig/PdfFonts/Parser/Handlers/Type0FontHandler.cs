@@ -5,8 +5,6 @@
     using CidFonts;
     using Cmap;
     using Composite;
-    using Core;
-    using Filters;
     using Fonts;
     using Logging;
     using Parts;
@@ -18,20 +16,20 @@
     internal sealed class Type0FontHandler : IFontHandler
     {
         private readonly CidFontFactory cidFontFactory;
-        private readonly ILookupFilterProvider filterProvider;
         private readonly IPdfTokenScanner scanner;
         private readonly ILog logger;
+        private readonly CMapLocalCache cmapLocalCache;
         private readonly ParsingOptions parsingOptions;
 
         public Type0FontHandler(
             CidFontFactory cidFontFactory,
-            ILookupFilterProvider filterProvider,
             IPdfTokenScanner scanner,
+            CMapLocalCache cmapLocalCache,
             ParsingOptions parsingOptions)
         {
             this.cidFontFactory = cidFontFactory;
-            this.filterProvider = filterProvider;
             this.scanner = scanner;
+            this.cmapLocalCache = cmapLocalCache;
             logger = parsingOptions.Logger;
             this.parsingOptions = parsingOptions;
         }
@@ -73,17 +71,12 @@
             {
                 var toUnicodeValue = dictionary.Data[NameToken.ToUnicode];
 
-                if (DirectObjectFinder.TryGet<StreamToken>(toUnicodeValue, scanner, out var toUnicodeStream))
-                {
-                    if (toUnicodeStream?.Decode(filterProvider, scanner) is { } decodedUnicodeCMap)
-                    {
-                        toUnicodeCMap = CMapCache.Parse(new MemoryInputBytes(decodedUnicodeCMap));
-                    }
-                }
+                if (DirectObjectFinder.TryGet<StreamToken>(toUnicodeValue, scanner, out var toUnicodeStream)
+                    && cmapLocalCache.TryGet(toUnicodeStream,out toUnicodeCMap))
+                { }
                 else if (DirectObjectFinder.TryGet<NameToken>(toUnicodeValue, scanner, out var toUnicodeName)
-                && CMapCache.TryGet(toUnicodeName.Data, out toUnicodeCMap))
-                {
-                }
+                         && cmapLocalCache.TryGet(toUnicodeName.Data, out toUnicodeCMap))
+                { }
                 else
                 {
                     // Rather than throwing here, let's try returning the font anyway since
@@ -152,7 +145,7 @@
 
             if (dictionary.TryGet(NameToken.Encoding, scanner, out NameToken? encodingName))
             {
-                if (!CMapCache.TryGet(encodingName.Data, out var cmap))
+                if (!cmapLocalCache.TryGet(encodingName.Data, out var cmap))
                 {
                     throw new InvalidOperationException($"Missing CMap named {encodingName.Data}.");
                 }
@@ -163,11 +156,12 @@
             }
             else if (dictionary.TryGet(NameToken.Encoding, scanner, out StreamToken? stream))
             {
-                var decoded = stream.Decode(filterProvider, scanner);
+                if (!cmapLocalCache.TryGet(stream, out var cmap))
+                {
+                    throw new InvalidOperationException($"Could not read CMap from stream in the dictionary: {dictionary}");
+                }
 
-                var cmap = CMapCache.Parse(new MemoryInputBytes(decoded));
-
-                result = cmap ?? throw new InvalidOperationException($"Could not read CMap from stream in the dictionary: {dictionary}");
+                result = cmap;
             }
             else
             {
@@ -199,7 +193,7 @@
 
             var isChineseJapaneseOrKorean = false;
 
-            if (cidFont != null && string.Equals(cidFont.SystemInfo.Registry, "Adobe", StringComparison.OrdinalIgnoreCase))
+            if (cidFont is not null && string.Equals(cidFont.SystemInfo.Registry, "Adobe", StringComparison.OrdinalIgnoreCase))
             {
                 isChineseJapaneseOrKorean = string.Equals(cidFont.SystemInfo.Ordering, "GB1", StringComparison.OrdinalIgnoreCase)
                                                 || string.Equals(cidFont.SystemInfo.Ordering, "CNS1", StringComparison.OrdinalIgnoreCase)

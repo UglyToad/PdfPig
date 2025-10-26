@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using System.Linq;
     using Cmap;
@@ -30,12 +29,14 @@
         private readonly IEncodingReader encodingReader;
         private readonly ISystemFontFinder systemFontFinder;
         private readonly IFontHandler type1FontHandler;
+        private readonly CMapLocalCache cmapLocalCache;
 
         public TrueTypeFontHandler(
             ILog log,
             IPdfTokenScanner pdfScanner,
             ILookupFilterProvider filterProvider,
             IEncodingReader encodingReader,
+            CMapLocalCache cmapLocalCache,
             ISystemFontFinder systemFontFinder,
             IFontHandler type1FontHandler)
         {
@@ -45,6 +46,7 @@
             this.systemFontFinder = systemFontFinder;
             this.type1FontHandler = type1FontHandler;
             this.pdfScanner = pdfScanner;
+            this.cmapLocalCache = cmapLocalCache;
         }
 
         public IFont Generate(DictionaryToken dictionary)
@@ -135,10 +137,9 @@
                 try
                 {
                     var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, pdfScanner);
-
-                    if (toUnicode?.Decode(filterProvider, pdfScanner) is { } decodedUnicodeCMap)
+                    if (!cmapLocalCache.TryGet(toUnicode, out toUnicodeCMap))
                     {
-                        toUnicodeCMap = CMapCache.Parse(new MemoryInputBytes(decodedUnicodeCMap));
+                        log.Error("Failed to decode ToUnicode CMap for a TrueType font in file.");
                     }
                 }
                 catch (Exception ex)
@@ -180,7 +181,7 @@
             return new TrueTypeSimpleFont(name, descriptor, toUnicodeCMap, encoding, font, firstCharacter, widths);
         }
 
-        private TrueTypeFont? ParseTrueTypeFont(FontDescriptor descriptor, [NotNullWhen(true)] out IFontHandler? actualHandler)
+        private TrueTypeFont? ParseTrueTypeFont(FontDescriptor descriptor, out IFontHandler? actualHandler)
         {
             actualHandler = null;
 
@@ -202,8 +203,6 @@
             try
             {
                 var fontFileStream = DirectObjectFinder.Get<StreamToken>(descriptor.FontFile.ObjectKey, pdfScanner);
-
-                var fontFile = fontFileStream.Decode(filterProvider, pdfScanner);
 
                 if (descriptor.FontFile.FileType == DescriptorFontFile.FontFileType.FromSubtype)
                 {
@@ -229,7 +228,8 @@
                             $"Expected a TrueType font in the TrueType font descriptor, instead it was {descriptor.FontFile.FileType}.");
                     }
                 }
-
+                
+                var fontFile = fontFileStream.Decode(filterProvider, pdfScanner);
                 var font = TrueTypeFontParser.Parse(new TrueTypeDataBytes(new MemoryInputBytes(fontFile)));
 
                 return font;
@@ -237,7 +237,6 @@
             catch (Exception ex)
             {
                 log.Error("Could not parse the TrueType font.", ex);
-
                 return null;
             }
         }
