@@ -2,28 +2,27 @@
 {
     using Cmap;
     using Core;
-    using Filters;
     using Fonts;
     using Fonts.Encodings;
     using PdfPig.Parser.Parts;
     using Simple;
-    using System;
     using Tokenization.Scanner;
     using Tokens;
     using Util;
 
     internal class Type3FontHandler : IFontHandler
     {
-        private readonly ILookupFilterProvider filterProvider;
         private readonly IEncodingReader encodingReader;
         private readonly IPdfTokenScanner scanner;
+        private readonly CMapLocalCache cmapLocalCache;
 
-        public Type3FontHandler(IPdfTokenScanner scanner, ILookupFilterProvider filterProvider,
-            IEncodingReader encodingReader)
+        public Type3FontHandler(IPdfTokenScanner scanner,
+            IEncodingReader encodingReader,
+            CMapLocalCache cMapLocalCache)
         {
-            this.filterProvider = filterProvider;
             this.encodingReader = encodingReader;
             this.scanner = scanner;
+            this.cmapLocalCache = cMapLocalCache;
         }
 
         public IFont Generate(DictionaryToken dictionary)
@@ -48,11 +47,7 @@
             if (dictionary.TryGet(NameToken.ToUnicode, out var toUnicodeObj))
             {
                 var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, scanner);
-
-                if (toUnicode?.Decode(filterProvider, scanner) is { } decodedUnicodeCMap)
-                {
-                    toUnicodeCMap = CMapCache.Parse(new MemoryInputBytes(decodedUnicodeCMap));
-                }
+                cmapLocalCache.TryGet(toUnicode, out toUnicodeCMap);
             }
 
             var name = GetFontName(dictionary);

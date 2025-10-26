@@ -26,9 +26,7 @@
 
                 if (CMapParser.TryParseExternal(name, out result))
                 {
-
                     Cache[name] = result;
-
                     return true;
                 }
 
@@ -43,9 +41,7 @@
                 throw new ArgumentNullException(nameof(bytes));
             }
 
-            var result = CMapParser.Parse(bytes);
-
-            return result;
+            return CMapParser.Parse(bytes);
         }
     }
 }
