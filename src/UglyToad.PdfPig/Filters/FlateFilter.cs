@@ -45,14 +45,6 @@
                 var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
                 var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
 
-                var length = parameters.GetIntOrDefault(NameToken.Length, -1);
-
-                if (length > 0 && length < input.Length)
-                {
-                    // Truncates final "\r\n" or "\n" from source data if any. Fixes detecting where the adler checksum is. (Zlib uses framing for this)
-                    input = input.Slice(0, length);
-                }
-
                 return Decompress(input, predictor, colors, bitsPerComponent, columns);
             }
             catch
