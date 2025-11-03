@@ -55,4 +55,4 @@ jobs:
           done < tools/common-crawl-ignore.txt
 
       - name: Run tests against corpus
-        run: dotnet run --project tools/UglyToad.PdfPig.ConsoleRunner/UglyToad.PdfPig.ConsoleRunner.csproj "corpus/extracted"
+        run: dotnet run --project tools/UglyToad.PdfPig.ConsoleRunner/UglyToad.PdfPig.ConsoleRunner.csproj "corpus/extracted" --configuration Release

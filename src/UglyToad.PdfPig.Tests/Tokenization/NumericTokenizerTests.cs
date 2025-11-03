@@ -91,7 +91,10 @@
             Assert.True(result);
             Assert.Equal(135.6654, AssertNumericToken(token).Data);
 
-            Assert.Equal('/', (char)input.Bytes.CurrentByte);
+            if (tokenizer.ReadsNextByte)
+                Assert.Equal('/', (char)input.Bytes.CurrentByte);
+            else
+                Assert.Equal('4', (char)input.Bytes.CurrentByte);
         }
 
         [Fact]

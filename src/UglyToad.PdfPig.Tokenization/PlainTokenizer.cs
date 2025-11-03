@@ -6,7 +6,7 @@
 
     internal sealed class PlainTokenizer : ITokenizer
     {
-        public bool ReadsNextByte { get; } = true;
+        public bool ReadsNextByte => false;
 
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
         {
@@ -21,18 +21,11 @@
 
             builder.Append((char)currentByte);
             
-            while (inputBytes.MoveNext())
+            while (inputBytes.Peek() is { } b
+                && !ReadHelper.IsWhitespace(b)
+                && (char)b is not '<' and not '[' and not '/' and not ']' and not '>' and not '(' and not ')')
             {
-                if (ReadHelper.IsWhitespace(inputBytes.CurrentByte))
-                {
-                    break;
-                }
-
-                if (inputBytes.CurrentByte is (byte)'<' or (byte)'[' or (byte)'/' or (byte)']' or (byte)'>' or (byte)'(' or (byte)')')
-                {
-                    break;
-                }
-
+                inputBytes.MoveNext();
                 builder.Append((char) inputBytes.CurrentByte);
             }
 

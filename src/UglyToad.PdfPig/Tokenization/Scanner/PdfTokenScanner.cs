@@ -465,7 +465,7 @@
                 read++;
             }
 
-            long streamDataEnd = inputBytes.CurrentOffset + 1;
+            long streamDataEnd = inputBytes.CurrentOffset;
 
             if (possibleEndLocation == null)
                 return false;
