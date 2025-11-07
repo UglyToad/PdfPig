@@ -39,7 +39,7 @@
             var strideWidth = decoded.Length / imageHeight / bytesPerPixel;
             if (strideWidth != imageWidth)
             {
-                if (bytesPerPixel > 1)
+                if (bytesPerPixel > 1 && imageWidth * imageHeight * bytesPerPixel < decoded.Length)
                 {
                     // Fixed thanks to / see discussion at https://github.com/UglyToad/PdfPig/issues/1183
                     // Unclear what should be done here, we assume we can just remove the trailing bytes
