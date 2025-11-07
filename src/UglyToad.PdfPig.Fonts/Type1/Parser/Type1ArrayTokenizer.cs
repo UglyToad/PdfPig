@@ -14,7 +14,7 @@
         /// <inheritdoc />
         public bool ReadsNextByte { get; } = false;
 
-        private static readonly char[] Space = [' '];
+        private static readonly string[] Space = [" "];
 
         /// <inheritdoc />
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)

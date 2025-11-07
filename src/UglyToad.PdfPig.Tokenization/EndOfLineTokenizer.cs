@@ -9,7 +9,7 @@
     public sealed class EndOfLineTokenizer : ITokenizer
     {
         /// <inheritdoc />
-        public bool ReadsNextByte => false;
+        public bool ReadsNextByte { get; } = false;
 
         /// <inheritdoc />
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)

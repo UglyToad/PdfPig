@@ -246,7 +246,7 @@
 
                 /* 
                  * Some tokenizers need to read the symbol of the next token to know if they have ended
-                 * so we don't want to move on to the next byte, we would lose a byte, e.g.: /NameOne/NameTwo or /Name(string)
+                 * so we don't want to move on to the next byte, we would lose a byte, e.g.: /NameOne/NameTwo or /Name(string)                
                  */
                 hasBytePreRead = tokenizer.ReadsNextByte;
 
@@ -317,13 +317,12 @@
         {
             // The ID operator should be followed by a single white-space character, and the next character is interpreted
             // as the first byte of image data. 
-            if (inputBytes.Peek() is { } c
-                && !ReadHelper.IsWhitespace(c))
+            if (!ReadHelper.IsWhitespace(inputBytes.CurrentByte))
             {
                 throw new PdfDocumentFormatException($"No whitespace character following the image data (ID) operator. Position: {inputBytes.CurrentOffset}.");
             }
 
-            var startsAt = inputBytes.CurrentOffset - 1;
+            var startsAt = inputBytes.CurrentOffset - 2;
 
             return ReadUntilEndImage(startsAt);
         }

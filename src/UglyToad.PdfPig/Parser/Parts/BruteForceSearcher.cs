@@ -57,7 +57,7 @@
                     {
                         var next = bytes.Peek();
 
-                        if (next == 'n')
+                        if (next.HasValue && next == 'n')
                         {
                             if (ReadHelper.IsString(bytes, "endobj"))
                             {
