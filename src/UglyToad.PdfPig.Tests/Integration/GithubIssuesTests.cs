@@ -9,6 +9,21 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue1199()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("TrueTypeTablesGlyphDataTableReadGlyphsError.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                for (int p = 1; p <= document.NumberOfPages; p++)
+                {
+                    var page = document.GetPage(p);
+                    Assert.NotNull(page);
+                }
+            }
+        }
+
+        [Fact]
         public void Issue1183()
         {
             var path = IntegrationHelpers.GetDocumentPath("test_a.pdf");
