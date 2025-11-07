@@ -11,7 +11,7 @@
         private readonly IReadOnlyList<NameToken> requiredKeys;
         private readonly bool useLenientParsing;
 
-        public bool ReadsNextByte => false;
+        public bool ReadsNextByte { get; } = false;
 
         /// <summary>
         /// Create a new <see cref="DictionaryTokenizer"/>.

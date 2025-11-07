@@ -80,8 +80,9 @@
             }
 
             var atEnd = scanner.CurrentPosition == scanner.Length;
+            var rewind = atEnd ? 1 : 2;
 
-            var commentOffset = scanner.CurrentPosition - comment.Data.Length - 1;
+            var commentOffset = scanner.CurrentPosition - comment.Data.Length - rewind;
 
             scanner.Seek(0);
 

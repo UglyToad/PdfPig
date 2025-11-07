@@ -10,56 +10,13 @@ internal static partial class FirstPassParser
 {
     private static ReadOnlySpan<byte> StartXRefBytes => "startxref"u8;
 
-    public const long EndOfFileBufferSize = 1024;
-
     public static StartXRefLocation GetFirstCrossReferenceOffset(
         IInputBytes bytes,
         ISeekableTokenScanner scanner,
         ILog log)
     {
-        // We used to read backward through the file, but this is quite expensive for streams that directly wrap OS files.
-        // Instead we fetch the last 1024 bytes of the file and do a memory search, as cheap first attempt. This is significantly faster
-        // in practice, if there is no in-process caching of the file involved
-        // 
-        // If that fails (in practice it should never) we fall back to the old method of reading backwards.
         var fileLength = bytes.Length;
-        {
-            var fetchFrom = Math.Max(bytes.Length - EndOfFileBufferSize, 0L);
 
-            bytes.Seek(fetchFrom);
-
-            Span<byte> byteBuffer = new byte[bytes.Length - fetchFrom];   // TODO: Maybe use PoolArray?
-
-            int n = bytes.Read(byteBuffer);
-
-            if (n == byteBuffer.Length)
-            {
-                int lx = byteBuffer.LastIndexOf("startxref"u8);
-
-                if (lx < 0)
-                {
-                    // See old code. We also try a mangled version
-                    lx = byteBuffer.LastIndexOf("startref"u8);
-                }
-
-                if (lx >= 0)
-                {
-                    scanner.Seek(fetchFrom + lx);
-
-                    if (scanner.TryReadToken(out OperatorToken startXrefOp) && (startXrefOp.Data == "startxref" || startXrefOp.Data == "startref"))
-                    {
-                        var pos = GetNumericTokenFollowingCurrent(scanner);
-
-                        log.Debug($"Found startxref at {pos}");
-
-                        return new StartXRefLocation(fetchFrom + lx, pos);
-                    }
-                }
-
-            }
-        }
-
-        // Now fall through in the old code
         var buffer = new CircularByteBuffer(StartXRefBytes.Length);
 
         // Start from the end of the file

@@ -88,11 +88,6 @@
                         {
                             int offset = 0;
 
-                            while (inputBytes.Peek() is { } b && ReadHelper.IsWhitespace(b))
-                            {
-                                inputBytes.MoveNext();
-                            }
-
                             while (inputBytes.MoveNext())
                             {
                                 if (inputBytes.CurrentByte == (byte)ClearToMark[offset])

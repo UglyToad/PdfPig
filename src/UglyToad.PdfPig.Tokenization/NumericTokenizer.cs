@@ -7,7 +7,15 @@ using Tokens;
 
 internal sealed class NumericTokenizer : ITokenizer
 {
-    public bool ReadsNextByte => false;
+    private const byte Zero = 48;
+    private const byte Nine = 57;
+    private const byte Negative = (byte)'-';
+    private const byte Positive = (byte)'+';
+    private const byte Period = (byte)'.';
+    private const byte ExponentLower = (byte)'e';
+    private const byte ExponentUpper = (byte)'E';
+
+    public bool ReadsNextByte => true;
 
     public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken? token)
     {
@@ -29,50 +37,30 @@ internal sealed class NumericTokenizer : ITokenizer
         var isExponentNegative = false;
         var exponentPart = 0;
 
-        byte? firstByte = currentByte;
-        bool noRead = true;
-        bool acceptSign = true;
-        while (!inputBytes.IsAtEnd() || firstByte is { })
+        do
         {
-            if (firstByte is { } b)
+            var b = inputBytes.CurrentByte;
+            if (b >= Zero && b <= Nine)
             {
-                firstByte = null;
-            }
-            else if (noRead)
-            {
-                noRead = false;
-                b = inputBytes.Peek() ?? 0;
-            }
-            else
-            {
-                inputBytes.MoveNext();
-                b = inputBytes.Peek() ?? 0;
-            }
-
-            if (b >= '0' && b <= '9')
-            {
-                var value = b - '0';
                 if (hasExponent)
                 {
-                    exponentPart = (exponentPart * 10) + value;
+                    exponentPart = (exponentPart * 10) + (b - Zero);
                 }
                 else if (hasFraction)
                 {
-                    fractionalPart = (fractionalPart * 10) + value;
+                    fractionalPart = (fractionalPart * 10) + (b - Zero);
                     fractionalCount++;
                 }
                 else
                 {
-                    integerPart = (integerPart * 10) + value;
+                    integerPart = (integerPart * 10) + (b - Zero);
                 }
-                acceptSign = false;
             }
-            else if (b == '+' && acceptSign)
+            else if (b == Positive)
             {
                 // Has no impact
-                acceptSign = false;
             }
-            else if (b == '-' && acceptSign)
+            else if (b == Negative)
             {
                 if (hasExponent)
                 {
@@ -82,17 +70,30 @@ internal sealed class NumericTokenizer : ITokenizer
                 {
                     isNegative = true;
                 }
-                // acceptSign = false; // Somehow we have a test that expects to support "--21.72" to return -21.72
             }
-            else if (b == '.' && !hasExponent && !hasFraction)
+            else if (b == Period)
             {
+                if (hasExponent || hasFraction)
+                {
+                    return false;
+                }
+
                 hasFraction = true;
-                acceptSign = false;
             }
-            else if ((b == 'e' || b == 'E') && readBytes > 0 && !hasExponent)
+            else if (b == ExponentLower || b == ExponentUpper)
             {
+                // Don't allow leading exponent.
+                if (readBytes == 0)
+                {
+                    return false;
+                }
+
+                if (hasExponent)
+                {
+                    return false;
+                }
+
                 hasExponent = true;
-                acceptSign = true;
             }
             else
             {
@@ -106,7 +107,7 @@ internal sealed class NumericTokenizer : ITokenizer
             }
 
             readBytes++;
-        }
+        } while (inputBytes.MoveNext());
 
         if (hasExponent && !isExponentNegative)
         {

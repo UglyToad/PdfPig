@@ -96,17 +96,6 @@
         /// <inheritdoc />
         public void Seek(long position)
         {
-            var current = CurrentOffset;
-            if (position == current)
-            {
-                return;
-            }
-            else if (peekByte.HasValue && position == current + 1)
-            {
-                MoveNext();
-                return;
-            }
-
             isAtEnd = false;
             peekByte = null;
 
