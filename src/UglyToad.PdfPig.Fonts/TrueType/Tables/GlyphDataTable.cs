@@ -338,7 +338,15 @@
 
                     for (int j = 0; j < numberOfRepeats; j++)
                     {
-                        result[i + j + 1] = result[i];
+                        int p = i + j + 1;
+                        if (p >= result.Length)
+                        {
+                            // Unsure why this happens but fixes #1199
+                            // TODO - Is there a better fix?
+                            break;
+                        }
+
+                        result[p] = result[i];
                     }
 
                     i += numberOfRepeats;
