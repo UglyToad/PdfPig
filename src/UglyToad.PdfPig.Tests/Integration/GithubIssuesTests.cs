@@ -4,10 +4,43 @@
     using DocumentLayoutAnalysis.PageSegmenter;
     using DocumentLayoutAnalysis.WordExtractor;
     using PdfPig.Core;
+    using PdfPig.Tokens;
     using SkiaSharp;
 
     public class GithubIssuesTests
     {
+        [Fact]
+        public void Revert_e11dc6b()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("GHOSTSCRIPT-699488-0.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                var images = page.GetImages().ToArray();
+
+                Assert.Equal(9, images.Length);
+
+                foreach (var image in images)
+                {
+                    if (image.ImageDictionary.TryGet(NameToken.Filter, out var token) && token is NameToken nt)
+                    {
+                        if (nt.Data.Contains("DCT"))
+                        {
+                            continue;
+                        }
+                    }
+
+                    Assert.True(image.TryGetPng(out _));
+                }
+
+                var paths = page.Paths;
+                Assert.Equal(66, paths.Count);
+                var letters = page.Letters;
+                Assert.Equal(2685, letters.Count);
+            }
+        }
+
         [Fact]
         public void Issue1199()
         {
