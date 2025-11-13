@@ -61,6 +61,9 @@ internal static partial class FirstPassParser
         }
         else
         {
+            /* Code below commented to fix issue #1208, while not failing test Issue874
+             * The logic would need to be reviewed before re-enabling.
+
             // If we didn't brute force then use the previous position for ordering.
             foreach (var obj in streamsAndTables)
             {
@@ -81,6 +84,11 @@ internal static partial class FirstPassParser
                     orderedXrefs.Add(obj);
                 }
             }
+            */
+
+            orderedXrefs.AddRange(
+                streamsAndTables
+                    .OrderBy(x => x.Offset));
         }
 
         DictionaryToken? lastTrailer = null;
