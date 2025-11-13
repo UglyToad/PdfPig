@@ -30,6 +30,33 @@
         }
 
         [Fact]
+        public void Issue1209()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("MOZILLA-9176-2.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                for (int p = 1; p <= document.NumberOfPages; p++)
+                {
+                    var page = document.GetPage(p);
+                    Assert.NotNull(page);
+
+                    foreach (var image in page.GetImages())
+                    {
+                        Assert.True(image.ImageDictionary.ContainsKey(NameToken.Height)); // Was missing
+                        Assert.True(image.ImageDictionary.ContainsKey(NameToken.Width));
+
+                        if (image.ImageDictionary.TryGet<DictionaryToken>(NameToken.DecodeParms, out var decodeParms))
+                        {
+                            Assert.True(decodeParms.ContainsKey(NameToken.Columns)); // Was missing
+                            Assert.True(decodeParms.ContainsKey(NameToken.Rows));
+                        }
+                    }
+                }
+            }
+        }
+
+        [Fact]
         public void Revert_e11dc6b()
         {
             var path = IntegrationHelpers.GetDocumentPath("GHOSTSCRIPT-699488-0.pdf");
