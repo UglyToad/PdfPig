@@ -11,9 +11,9 @@
     <PackageTags>PDF;Reader;Document;Adobe;PDFBox;PdfPig;pdf-extract;pdf-to-text;pdf;file;text;C#;dotnet;.NET</PackageTags>
     <RepositoryUrl>https://github.com/UglyToad/PdfPig</RepositoryUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Version>0.1.12</Version>
-    <AssemblyVersion>0.1.12.0</AssemblyVersion>
-    <FileVersion>0.1.12.0</FileVersion>
+    <Version>0.1.13</Version>
+    <AssemblyVersion>0.1.13.0</AssemblyVersion>
+    <FileVersion>0.1.13.0</FileVersion>
     <PackageIconUrl>https://raw.githubusercontent.com/UglyToad/PdfPig/master/documentation/pdfpig.png</PackageIconUrl>
     <PackageIcon>pdfpig.png</PackageIcon>
     <Product>PdfPig</Product>
