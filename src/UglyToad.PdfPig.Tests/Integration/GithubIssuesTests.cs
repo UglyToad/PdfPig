@@ -6,9 +6,29 @@
     using PdfPig.Core;
     using PdfPig.Tokens;
     using SkiaSharp;
+    using UglyToad.PdfPig.AcroForms;
+    using UglyToad.PdfPig.AcroForms.Fields;
 
     public class GithubIssuesTests
     {
+        [Fact]
+        public void Issue1208()
+        {
+            string[] files = ["Input.visible.pdf", "Input.invisible.pdf"];
+
+            foreach (var file in files)
+            {
+                var path = IntegrationHelpers.GetSpecificTestDocumentPath(file);
+
+                using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+                {
+                    Assert.True(document.TryGetForm(out AcroForm form));
+                    Assert.Single(form.Fields);
+                    Assert.Equal(AcroFieldType.Signature, form.Fields[0].FieldType);
+                }
+            }
+        }
+
         [Fact]
         public void Revert_e11dc6b()
         {
