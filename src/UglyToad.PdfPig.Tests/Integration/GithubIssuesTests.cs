@@ -12,6 +12,21 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue1213()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("GlyphDataTableReadCompositeGlyphError.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                for (int p = 1; p <= document.NumberOfPages; p++)
+                {
+                    var page = document.GetPage(p);
+                    Assert.NotNull(page);
+                }
+            }
+        }
+
+        [Fact]
         public void Issue1208()
         {
             string[] files = ["Input.visible.pdf", "Input.invisible.pdf"];
