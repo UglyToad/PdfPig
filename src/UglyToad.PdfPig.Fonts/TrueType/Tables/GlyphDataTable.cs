@@ -240,9 +240,15 @@
                 flags = (CompositeGlyphFlags)data.ReadUnsignedShort();
                 var glyphIndex = data.ReadUnsignedShort();
 
-                var childGlyph = glyphs[glyphIndex];
+                if (glyphIndex >= glyphs.Length)
+                {
+                    // Unsure why this happens but fixes #1213
+                    continue; // TODO - Is there a better fix?
+                }
 
-                if (childGlyph == null)
+                IGlyphDescription? childGlyph = glyphs[glyphIndex];
+
+                if (childGlyph is null)
                 {
                     if (!compositeLocations.TryGetValue(glyphIndex, out var missingComposite))
                     {
@@ -319,7 +325,7 @@
                 }
             }
 
-            builderGlyph = builderGlyph ?? emptyGlyph;
+            builderGlyph ??= emptyGlyph;
 
             return new Glyph(false, builderGlyph.Instructions, builderGlyph.EndPointsOfContours, builderGlyph.Points, compositeLocation.Bounds);
         }
@@ -426,7 +432,7 @@
             }
         }
 
-        private class CompositeComponent
+        private sealed class CompositeComponent
         {
             public int Index { get; }
 
