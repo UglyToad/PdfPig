@@ -59,7 +59,10 @@ namespace UglyToad.PdfPig.Content
             switch (Type)
             {
                 case "OCG": // Optional content group dictionary
-                    // Name - Required
+                    // Name - Per spec this is required, but in practice some PDFs store layer names
+                    // at the document catalog level in OCProperties rather than in marked content Properties.
+                    // To avoid crashes, we make this optional and fall back to null or the tag name.
+
                     if (markedContentElement.Properties.TryGet(NameToken.Name, pdfTokenScanner, out NameToken? name))
                     {
                         Name = name.Data;
@@ -74,7 +77,9 @@ namespace UglyToad.PdfPig.Content
                     }
                     else
                     {
-                        throw new ArgumentException($"Cannot parse optional content's {nameof(Name)} from {nameof(markedContentElement.Properties)}. This is a required field.", nameof(markedContentElement.Properties));
+                        // Name not found in Properties - use tag as fallback or leave as null
+                        // This handles PDFs where layer names are stored at document catalog level
+                        Name = markedContentElement.Tag;
                     }
 
                     // Intent - Optional
