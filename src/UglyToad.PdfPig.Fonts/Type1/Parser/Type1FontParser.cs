@@ -18,6 +18,8 @@
 
         private const int PfbFileIndicator = 0x80;
 
+        private static readonly char[] Separators = [' '];
+
         private static readonly Type1EncryptedPortionParser EncryptedPortionParser = new Type1EncryptedPortionParser();
         
         /// <summary>
@@ -48,9 +50,9 @@
             {
                 throw new InvalidFontFormatException("The Type1 program did not start with '%!'.");
             }
-
+            
             string name;
-            var parts = comment.Data.Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries);
+            var parts = comment.Data.Split(Separators, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 3)
             {
                 name = parts[1];
@@ -60,11 +62,9 @@
                 name = "Unknown";
             }
 
-            var comments = new List<string>();
-
-            while (scanner.MoveNext() && scanner.CurrentToken is CommentToken commentToken)
+            while (scanner.MoveNext() && scanner.CurrentToken is CommentToken)
             {
-                comments.Add(commentToken.Data);
+                // We ignore comments
             }
 
             var dictionaries = new List<DictionaryToken>();
@@ -441,7 +441,7 @@
             return null;
         }
 
-        private class PreviousTokenSet
+        private sealed class PreviousTokenSet
         {
             private readonly IToken[] tokens = new IToken[3];
 
