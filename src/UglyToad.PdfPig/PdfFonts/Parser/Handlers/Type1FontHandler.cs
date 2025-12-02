@@ -21,12 +21,14 @@
         private readonly IEncodingReader encodingReader;
         private readonly CMapLocalCache cmapLocalCache;
         private readonly bool isLenientParsing;
+        private readonly StackDepthGuard stackDepthGuard;
 
         public Type1FontHandler(
             IPdfTokenScanner pdfScanner,
             ILookupFilterProvider filterProvider,
             IEncodingReader encodingReader,
             CMapLocalCache cmapLocalCache,
+            StackDepthGuard stackDepthGuard,
             bool isLenientParsing)
         {
             this.pdfScanner = pdfScanner;
@@ -34,6 +36,7 @@
             this.encodingReader = encodingReader;
             this.cmapLocalCache = cmapLocalCache;
             this.isLenientParsing = isLenientParsing;
+            this.stackDepthGuard = stackDepthGuard;
         }
 
         public IFont Generate(DictionaryToken dictionary)
@@ -172,7 +175,7 @@
                 var length1 = stream.StreamDictionary.Get<NumericToken>(NameToken.Length1, pdfScanner);
                 var length2 = stream.StreamDictionary.Get<NumericToken>(NameToken.Length2, pdfScanner);
 
-                var font = Type1FontParser.Parse(new MemoryInputBytes(bytes), length1.Int, length2.Int);
+                var font = Type1FontParser.Parse(new MemoryInputBytes(bytes), length1.Int, length2.Int, stackDepthGuard);
 
                 return Union<Type1Font, CompactFontFormatFontCollection>.One(font);
             }

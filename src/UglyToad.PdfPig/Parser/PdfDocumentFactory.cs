@@ -89,7 +89,9 @@
                 SkipMissingFonts = false
             };
 
-            var tokenScanner = new CoreTokenScanner(inputBytes, true, useLenientParsing: options.UseLenientParsing);
+            var stackDepthGuard = new StackDepthGuard(options.MaxStackDepth);
+
+            var tokenScanner = new CoreTokenScanner(inputBytes, true, stackDepthGuard, useLenientParsing: options.UseLenientParsing);
 
             var passwords = new List<string>();
 
@@ -110,7 +112,7 @@
 
             options.Passwords = passwords;
 
-            var document = OpenDocument(inputBytes, tokenScanner, options);
+            var document = OpenDocument(inputBytes, tokenScanner, options, stackDepthGuard);
 
             return document;
         }
@@ -118,7 +120,8 @@
         private static PdfDocument OpenDocument(
             IInputBytes inputBytes,
             ISeekableTokenScanner scanner,
-            ParsingOptions parsingOptions)
+            ParsingOptions parsingOptions,
+            StackDepthGuard stackDepthGuard)
         {
             var filterProvider = new FilterProviderWithLookup(parsingOptions.FilterProvider ?? DefaultFilterProvider.Instance);
 
@@ -145,7 +148,7 @@
                 initialParse.BruteForceOffsets,
                 inputBytes);
 
-            var pdfScanner = new PdfTokenScanner(inputBytes, locationProvider, filterProvider, NoOpEncryptionHandler.Instance, fileHeaderOffset, parsingOptions);
+            var pdfScanner = new PdfTokenScanner(inputBytes, locationProvider, filterProvider, NoOpEncryptionHandler.Instance, fileHeaderOffset, parsingOptions, stackDepthGuard);
 
             var (rootReference, rootDictionary) = ParseTrailer(
                 trailer,
@@ -182,6 +185,7 @@
                 filterProvider,
                 encodingReader,
                 cmapCache,
+                stackDepthGuard,
                 parsingOptions.UseLenientParsing);
 
             var trueTypeHandler = new TrueTypeFontHandler(
@@ -208,7 +212,7 @@
                 parsingOptions.UseLenientParsing);
 
             var pageFactory = new PageFactory(pdfScanner, resourceContainer, filterProvider,
-                new PageContentParser(ReflectionGraphicsStateOperationFactory.Instance, parsingOptions.UseLenientParsing), parsingOptions);
+                new PageContentParser(ReflectionGraphicsStateOperationFactory.Instance, stackDepthGuard, parsingOptions.UseLenientParsing), parsingOptions);
 
             var catalog = CatalogFactory.Create(
                 rootReference,

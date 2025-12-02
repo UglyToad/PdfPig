@@ -53,6 +53,13 @@
         public bool SkipMissingFonts { get; set; } = false;
 
         /// <summary>
+        /// Gets or sets the maximum allowed stack depth.
+        /// </summary>
+        /// <remarks>This property can be used to limit the depth of recursive or nested operations to
+        /// prevent stack overflows or excessive resource usage.</remarks>
+        public int MaxStackDepth { get; set; } = 256;
+
+        /// <summary>
         /// Filter provider to use while parsing the document. The <see cref="DefaultFilterProvider"/> will be used if set to <c>null</c>.
         /// </summary>
         public IFilterProvider? FilterProvider { get; set; } = null;
