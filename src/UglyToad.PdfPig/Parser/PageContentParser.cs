@@ -21,6 +21,7 @@
     {
         private readonly IGraphicsStateOperationFactory operationFactory;
         private readonly bool useLenientParsing;
+        private readonly StackDepthGuard stackDepthGuard;
 
         /// <summary>
         /// Initialises a new instance of the <see cref="PageContentParser"/> class.
@@ -28,12 +29,14 @@
         /// <param name="operationFactory">
         /// The factory responsible for creating graphics state operations.
         /// </param>
+        /// <param name="stackDepthGuard"></param>
         /// <param name="useLenientParsing">
         /// A value indicating whether lenient parsing should be used. Defaults to <c>false</c>.
         /// </param>
-        public PageContentParser(IGraphicsStateOperationFactory operationFactory, bool useLenientParsing = false)
+        public PageContentParser(IGraphicsStateOperationFactory operationFactory, StackDepthGuard stackDepthGuard, bool useLenientParsing = false)
         {
             this.operationFactory = operationFactory;
+            this.stackDepthGuard = stackDepthGuard;
             this.useLenientParsing = useLenientParsing;
         }
 
@@ -55,7 +58,7 @@
             IInputBytes inputBytes,
             ILog log)
         {
-            var scanner = new CoreTokenScanner(inputBytes, false, useLenientParsing: useLenientParsing);
+            var scanner = new CoreTokenScanner(inputBytes, false, stackDepthGuard, useLenientParsing: useLenientParsing);
 
             var precedingTokens = new List<IToken>();
             var graphicsStateOperations = new List<IGraphicsStateOperation>();
