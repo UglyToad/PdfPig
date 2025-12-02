@@ -347,7 +347,7 @@ namespace UglyToad.PdfPig.Writer
             }
 
             var page = document.GetPage(pageNumber);
-            var pcp = new PageContentParser(ReflectionGraphicsStateOperationFactory.Instance, true);
+            var pcp = new PageContentParser(ReflectionGraphicsStateOperationFactory.Instance, StackDepthGuard.Infinite, true);
 
             // copy content streams
             var streams = new List<PdfPageBuilder.CopiedContentStream>();

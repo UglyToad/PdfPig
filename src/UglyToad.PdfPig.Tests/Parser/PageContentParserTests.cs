@@ -15,7 +15,7 @@
 
     public class PageContentParserTests
     {
-        private readonly PageContentParser parser = new PageContentParser(ReflectionGraphicsStateOperationFactory.Instance);
+        private readonly PageContentParser parser = new PageContentParser(ReflectionGraphicsStateOperationFactory.Instance, new StackDepthGuard(256));
         private readonly ILog log = new NoOpLog();
 
         [Fact]
@@ -210,7 +210,7 @@ l";
             var content = File.ReadAllText(path);
             var input = StringBytesTestConverter.Convert(content, false);
 
-            var lenientParser = new PageContentParser(ReflectionGraphicsStateOperationFactory.Instance, true);
+            var lenientParser = new PageContentParser(ReflectionGraphicsStateOperationFactory.Instance, new StackDepthGuard(256), true);
             var result = lenientParser.Parse(1, input.Bytes, log);
 
             Assert.NotEmpty(result);

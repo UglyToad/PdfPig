@@ -24,6 +24,7 @@
         {
             var scanner = new CoreTokenScanner(inputBytes,
                 false,
+                StackDepthGuard.Infinite, // We don't check for stack overflows, we might want to change that.
                 namedDictionaryRequiredKeys: new Dictionary<NameToken, IReadOnlyList<NameToken>>
                 {
                     { NameToken.CidSystemInfo, new[] { NameToken.Registry, NameToken.Ordering, NameToken.Supplement } }
