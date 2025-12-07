@@ -3,6 +3,7 @@
     using System.Text;
     using PdfPig.Core;
     using PdfPig.Encryption;
+    using PdfPig.Parser.FileStructure;
     using PdfPig.Tokenization.Scanner;
     using PdfPig.Tokens;
 
@@ -720,8 +721,12 @@ endobj";
         {
             var input = StringBytesTestConverter.Convert(s, false);
 
-            return new PdfTokenScanner(input.Bytes, locationProvider ?? new TestObjectLocationProvider(),
-                new TestFilterProvider(), NoOpEncryptionHandler.Instance, useLenientParsing ? new ParsingOptions() : ParsingOptions.LenientParsingOff);
+            return new PdfTokenScanner(input.Bytes,
+                locationProvider ?? new TestObjectLocationProvider(),
+                new TestFilterProvider(),
+                NoOpEncryptionHandler.Instance,
+                new FileHeaderOffset(0),
+                useLenientParsing ? new ParsingOptions() : ParsingOptions.LenientParsingOff);
         }
 
         private static IReadOnlyList<ObjectToken> ReadToEnd(PdfTokenScanner scanner)

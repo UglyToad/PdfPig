@@ -11,6 +11,7 @@
     using Encryption;
     using Filters;
     using Tokens;
+    using UglyToad.PdfPig.Parser.FileStructure;
 
     internal class PdfTokenScanner : IPdfTokenScanner
     {
@@ -23,6 +24,7 @@
         private readonly ILookupFilterProvider filterProvider;
         private readonly CoreTokenScanner coreTokenScanner;
         private readonly ParsingOptions parsingOptions;
+        private readonly FileHeaderOffset fileHeaderOffset;
 
         private IEncryptionHandler encryptionHandler;
         private bool isDisposed;
@@ -54,12 +56,14 @@
             IObjectLocationProvider objectLocationProvider,
             ILookupFilterProvider filterProvider,
             IEncryptionHandler encryptionHandler,
+            FileHeaderOffset fileHeaderOffset,
             ParsingOptions parsingOptions)
         {
             this.inputBytes = inputBytes;
             this.objectLocationProvider = objectLocationProvider;
             this.filterProvider = filterProvider;
             this.encryptionHandler = encryptionHandler;
+            this.fileHeaderOffset = fileHeaderOffset;
             this.parsingOptions = parsingOptions;
             coreTokenScanner = new CoreTokenScanner(inputBytes, true, useLenientParsing: parsingOptions.UseLenientParsing);
         }
@@ -795,8 +799,8 @@
             {
                 // Brute force read the entire file
                 isBruteForcing = true;
-
-                Seek(0);
+                
+                Seek(fileHeaderOffset.Value);
 
                 while (MoveNext())
                 {
