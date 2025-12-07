@@ -124,8 +124,10 @@
 
             var version = FileHeaderParser.Parse(scanner, inputBytes, parsingOptions.UseLenientParsing, parsingOptions.Logger);
 
+            var fileHeaderOffset = new FileHeaderOffset((int)version.OffsetInFile);
+
             var initialParse = FirstPassParser.Parse(
-                new FileHeaderOffset((int)version.OffsetInFile),
+                fileHeaderOffset,
                 inputBytes,
                 scanner,
                 parsingOptions.Logger);
@@ -143,7 +145,7 @@
                 initialParse.BruteForceOffsets,
                 inputBytes);
 
-            var pdfScanner = new PdfTokenScanner(inputBytes, locationProvider, filterProvider, NoOpEncryptionHandler.Instance, parsingOptions);
+            var pdfScanner = new PdfTokenScanner(inputBytes, locationProvider, filterProvider, NoOpEncryptionHandler.Instance, fileHeaderOffset, parsingOptions);
 
             var (rootReference, rootDictionary) = ParseTrailer(
                 trailer,

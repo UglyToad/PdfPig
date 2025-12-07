@@ -12,6 +12,19 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue1223()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("23056.PMC2132516.pdf");
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                Assert.NotNull(document);
+                var firstPage = document.GetPage(1);
+                Assert.NotNull(firstPage);
+                Assert.Contains("The Rockefeller University Press", firstPage.Text);
+            }
+        }
+
+        [Fact]
         public void Issue1213()
         {
             var path = IntegrationHelpers.GetDocumentPath("GlyphDataTableReadCompositeGlyphError.pdf");
