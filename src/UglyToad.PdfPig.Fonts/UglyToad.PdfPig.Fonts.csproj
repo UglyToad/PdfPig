@@ -8,6 +8,8 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\pdfpig.snk</AssemblyOriginatorKeyFile>
     <Nullable>annotations</Nullable>
+    <AssemblyVersion>25.12.16.1218</AssemblyVersion>
+    <FileVersion>25.12.16.1218</FileVersion>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Resources\AdobeFontMetrics\*" />
