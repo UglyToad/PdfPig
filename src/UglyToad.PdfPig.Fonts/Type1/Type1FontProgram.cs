@@ -62,6 +62,11 @@
         /// </summary>
         public PdfRectangle? GetCharacterBoundingBox(string characterName)
         {
+            if (string.Equals(characterName, GlyphList.NotDefined, StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
             var glyph = GetCharacterPath(characterName);
             return PdfSubpath.GetBoundingRectangle(glyph);
         }
@@ -94,8 +99,13 @@
         /// <summary>
         /// Get the pdfpath for the character with the given name.
         /// </summary>
-        public IReadOnlyList<PdfSubpath> GetCharacterPath(string characterName)
+        public IReadOnlyList<PdfSubpath>? GetCharacterPath(string characterName)
         {
+            if (string.Equals(characterName, GlyphList.NotDefined, StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
             if (!CharStrings.TryGenerate(characterName, out var glyph))
             {
                 return null;
