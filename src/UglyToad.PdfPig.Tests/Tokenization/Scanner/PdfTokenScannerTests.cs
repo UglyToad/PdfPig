@@ -726,7 +726,8 @@ endobj";
                 new TestFilterProvider(),
                 NoOpEncryptionHandler.Instance,
                 new FileHeaderOffset(0),
-                useLenientParsing ? new ParsingOptions() : ParsingOptions.LenientParsingOff);
+                useLenientParsing ? new ParsingOptions() : ParsingOptions.LenientParsingOff,
+                new StackDepthGuard(256));
         }
 
         private static IReadOnlyList<ObjectToken> ReadToEnd(PdfTokenScanner scanner)

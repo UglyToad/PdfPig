@@ -10,6 +10,7 @@
         private readonly bool usePdfDocEncoding;
         private readonly IReadOnlyList<NameToken> requiredKeys;
         private readonly bool useLenientParsing;
+        private readonly StackDepthGuard stackDepthGuard;
 
         public bool ReadsNextByte { get; } = false;
 
@@ -19,14 +20,16 @@
         /// <param name="usePdfDocEncoding">
         /// Whether to read strings using the PdfDocEncoding.
         /// </param>
+        /// <param name="stackDepthGuard"></param>
         /// <param name="requiredKeys">
         /// Can be provided to recover from errors with missing dictionary end symbols if the
         /// set of keys expected in the dictionary are known.
         /// </param>
         /// <param name="useLenientParsing">Whether to use lenient parsing.</param>
-        public DictionaryTokenizer(bool usePdfDocEncoding, IReadOnlyList<NameToken> requiredKeys = null, bool useLenientParsing = false)
+        public DictionaryTokenizer(bool usePdfDocEncoding, StackDepthGuard stackDepthGuard, IReadOnlyList<NameToken> requiredKeys = null, bool useLenientParsing = false)
         {
             this.usePdfDocEncoding = usePdfDocEncoding;
+            this.stackDepthGuard = stackDepthGuard;
             this.requiredKeys = requiredKeys;
             this.useLenientParsing = useLenientParsing;
         }
@@ -83,7 +86,7 @@
                 return false;
             }
 
-            var coreScanner = new CoreTokenScanner(inputBytes, usePdfDocEncoding, ScannerScope.Dictionary, useLenientParsing: useLenientParsing);
+            var coreScanner = new CoreTokenScanner(inputBytes,  usePdfDocEncoding, stackDepthGuard, ScannerScope.Dictionary, useLenientParsing: useLenientParsing);
 
             var tokens = new List<IToken>();
 
