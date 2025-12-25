@@ -1295,6 +1295,78 @@
             }
         }
 
+        [Fact]
+        public void CanAddLinkToPage()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page = builder.AddPage(PageSize.A4);
+            var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+
+            var linkArea = new PdfRectangle(25, 690, 200, 720);
+            page.AddLink("https://github.com", linkArea);
+
+            var bytes = builder.Build();
+            WriteFile(nameof(CanAddLinkToPage), bytes);
+
+            using (var document = PdfDocument.Open(bytes))
+            {
+                Assert.Equal(1, document.NumberOfPages);
+                var page1 = document.GetPage(1);
+
+                var annotations = page1.GetAnnotations().ToList();
+                Assert.Single(annotations);
+
+                var linkAnnotation = annotations[0];
+                Assert.Equal(Annotations.AnnotationType.Link, linkAnnotation.Type);
+                Assert.Equal(linkArea, linkAnnotation.Rectangle);
+
+                // Verify the URI link target
+                Assert.NotNull(linkAnnotation.Action);
+                var uriAction = Assert.IsType<Actions.UriAction>(linkAnnotation.Action);
+                Assert.Equal("https://github.com", uriAction.Uri);
+            }
+        }
+
+        [Fact]
+        public void CanAddInternalLinkToPage()
+        {
+            var builder = new PdfDocumentBuilder();
+            var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+
+            var page1 = builder.AddPage(PageSize.A4);
+            var page2 = builder.AddPage(PageSize.A4);
+
+            var linkArea = new PdfRectangle(25, 690, 200, 720);
+            var coordinates = new ExplicitDestinationCoordinates(25, 750);
+            var destination = new ExplicitDestination(1, ExplicitDestinationType.XyzCoordinates, coordinates);
+            page2.AddLink(destination, linkArea);
+
+            var bytes = builder.Build();
+            WriteFile(nameof(CanAddInternalLinkToPage), bytes);
+
+            using (var document = PdfDocument.Open(bytes))
+            {
+                Assert.Equal(2, document.NumberOfPages);
+
+                var page2Doc = document.GetPage(2);
+
+                var annotations = page2Doc.GetAnnotations().ToList();
+                Assert.Single(annotations);
+
+                var linkAnnotation = annotations[0];
+                Assert.Equal(Annotations.AnnotationType.Link, linkAnnotation.Type);
+                Assert.Equal(linkArea, linkAnnotation.Rectangle);
+
+                // Verify the link destination
+                Assert.NotNull(linkAnnotation.Action);
+                var goToAction = Assert.IsType<Actions.GoToAction>(linkAnnotation.Action);
+                Assert.Equal(1, goToAction.Destination.PageNumber);
+                Assert.Equal(ExplicitDestinationType.XyzCoordinates, goToAction.Destination.Type);
+                Assert.Equal(25, goToAction.Destination.Coordinates.Left);
+                Assert.Equal(750, goToAction.Destination.Coordinates.Top);
+            }
+        }
+
         private static void WriteFile(string name, byte[] bytes, string extension = "pdf")
         {
             try
