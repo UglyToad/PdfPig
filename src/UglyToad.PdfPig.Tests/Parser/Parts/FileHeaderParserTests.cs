@@ -149,7 +149,7 @@ three %PDF-1.6";
 
             var bytes = new MemoryInputBytes(input);
 
-            var scanner = new CoreTokenScanner(bytes, true, ScannerScope.None);
+            var scanner = new CoreTokenScanner(bytes, true, new StackDepthGuard(256), ScannerScope.None);
 
             var result = FileHeaderParser.Parse(scanner, bytes, false, log);
 

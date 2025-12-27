@@ -12,6 +12,20 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue1217()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("stackoverflow_error.pdf");
+
+            var options = new ParsingOptions()
+            {
+                UseLenientParsing = true,
+                MaxStackDepth = 100
+            };
+            var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(path, options));
+            Assert.Equal($"Exceeded maximum nesting depth of {options.MaxStackDepth}.", ex.Message);
+        }
+
+        [Fact]
         public void Issue1223()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("23056.PMC2132516.pdf");

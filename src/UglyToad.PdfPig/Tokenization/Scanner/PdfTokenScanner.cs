@@ -51,13 +51,16 @@
 
         public long Length => coreTokenScanner.Length;
 
+        private readonly StackDepthGuard stackDepthGuard;
+
         public PdfTokenScanner(
             IInputBytes inputBytes,
             IObjectLocationProvider objectLocationProvider,
             ILookupFilterProvider filterProvider,
             IEncryptionHandler encryptionHandler,
             FileHeaderOffset fileHeaderOffset,
-            ParsingOptions parsingOptions)
+            ParsingOptions parsingOptions,
+            StackDepthGuard stackDepthGuard)
         {
             this.inputBytes = inputBytes;
             this.objectLocationProvider = objectLocationProvider;
@@ -65,7 +68,8 @@
             this.encryptionHandler = encryptionHandler;
             this.fileHeaderOffset = fileHeaderOffset;
             this.parsingOptions = parsingOptions;
-            coreTokenScanner = new CoreTokenScanner(inputBytes, true, useLenientParsing: parsingOptions.UseLenientParsing);
+            this.stackDepthGuard = stackDepthGuard;
+            coreTokenScanner = new CoreTokenScanner(inputBytes,  true, stackDepthGuard, useLenientParsing: parsingOptions.UseLenientParsing);
         }
 
         public void UpdateEncryptionHandler(IEncryptionHandler newHandler)
@@ -871,6 +875,7 @@
             var scanner = new CoreTokenScanner(
                 bytes,
                 true,
+                stackDepthGuard,
                 useLenientParsing: parsingOptions.UseLenientParsing,
                 isStream: true);
 

@@ -1,11 +1,12 @@
 ﻿namespace UglyToad.PdfPig.Tests.Tokenization
 {
+    using PdfPig.Core;
     using PdfPig.Tokenization;
     using PdfPig.Tokens;
 
     public class ArrayTokenizerTests
     {
-        private readonly ArrayTokenizer tokenizer = new ArrayTokenizer(true);
+        private readonly ArrayTokenizer tokenizer = new ArrayTokenizer(true, new StackDepthGuard(256));
 
         [Theory]
         [InlineData("]")]
