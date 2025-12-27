@@ -7,8 +7,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\pdfpig.snk</AssemblyOriginatorKeyFile>
-    <AssemblyVersion>25.12.27.1608</AssemblyVersion>
-    <FileVersion>25.12.27.1608</FileVersion>
+    <AssemblyVersion>25.12.27.1951</AssemblyVersion>
+    <FileVersion>25.12.27.1951</FileVersion>
   </PropertyGroup>
   <ItemGroup Condition="'$(TargetFramework)'=='net462'">
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
