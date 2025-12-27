@@ -734,7 +734,7 @@
 
             var data = new byte[png.Width * png.Height * 3];
             int pixelIndex = 0;
-          
+
             for (var rowIndex = 0; rowIndex < png.Height; rowIndex++)
             {
                 for (var colIndex = 0; colIndex < png.Width; colIndex++)
@@ -883,6 +883,19 @@
         { NameToken.DecodeParms, new DictionaryToken(decodeParms) },
         { NameToken.Length, new NumericToken(ccittG4Data.Length) }
     };
+
+            // NOTE:
+            // CCITT Fax images + DeviceGray 1bpp are inconsistently rendered by viewers
+            // if only DecodeParms/BlackIs1 is used.
+            // Explicit /Decode ensures correct polarity everywhere.
+            if (blackIs1)
+            {
+                imgDictionary[NameToken.Decode] = new ArrayToken(new IToken[]
+                {
+        new NumericToken(1),
+        new NumericToken(0)
+                });
+            }
 
             // IMPORTANT: Do NOT recompress. ccittG4Data is already compressed with CCITT Group 4.
             var reference = documentBuilder.AddImage(new DictionaryToken(imgDictionary), ccittG4Data);
@@ -1080,7 +1093,7 @@
 
                         gstateName = newName;
                     }
-                    
+
                     // According to PDF spec 32000-1:2008, section 8.4.5, ExtGState can contain both direct values and indirect references
                     if (gstate.Value is IndirectReferenceToken fontReferenceToken)
                     {

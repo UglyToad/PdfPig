@@ -9,6 +9,8 @@
     <AssemblyOriginatorKeyFile>..\pdfpig.snk</AssemblyOriginatorKeyFile>
     <Nullable>enable</Nullable>
     <WarningsAsErrors>nullable</WarningsAsErrors>
+    <AssemblyVersion>25.12.27.1608</AssemblyVersion>
+    <FileVersion>25.12.27.1608</FileVersion>
   </PropertyGroup>
   <ItemGroup Condition="'$(TargetFramework)'=='net462'">
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />

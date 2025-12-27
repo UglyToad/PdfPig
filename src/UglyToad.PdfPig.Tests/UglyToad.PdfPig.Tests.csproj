@@ -10,6 +10,8 @@
         <RuntimeFrameworkVersion Condition="'$(TargetFramework)'=='netcoreapp2.1'">2.1.30</RuntimeFrameworkVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>annotations</Nullable>
+        <AssemblyVersion>25.12.27.1645</AssemblyVersion>
+        <FileVersion>25.12.27.1645</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -74,6 +76,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="BitMiracle.LibTiff.NET" Version="2.4.660" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
         <PackageReference Include="SkiaSharp" Version="2.88.9" />
         <PackageReference Include="xunit" Version="2.7.0" />
@@ -205,5 +208,8 @@
         <PackageReference Include="Microsoft.AspNetCore.WebUtilities">
             <Version>9.0.8</Version>
         </PackageReference>
+    </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Images\Files\Tif\" />
     </ItemGroup>
 </Project>
