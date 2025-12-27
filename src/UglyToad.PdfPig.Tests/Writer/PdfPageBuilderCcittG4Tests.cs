@@ -48,6 +48,8 @@
                 pdfBytes = documentBuilder.Build();
             }
 
+            File.WriteAllBytes(@"PdfPageBuilderTests_CanAddTifCcittG4.pdf", pdfBytes);
+
             using (var document = PdfDocument.Open(pdfBytes))
             {
                 var page = document.GetPage(1);
