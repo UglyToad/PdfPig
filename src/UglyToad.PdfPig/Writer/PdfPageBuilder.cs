@@ -720,7 +720,6 @@
             }
         }
 
-
         /// <summary>
         /// Adds the PNG image represented by the input stream at the specified location.
         /// </summary>
@@ -1115,7 +1114,6 @@
             return this;
         }
 
- 
         private List<Letter> DrawLetters(NameToken? name, string text, IWritingFont font, in TransformationMatrix fontMatrix, double fontSize, TransformationMatrix textMatrix)
         {
             var horizontalScaling = 1;

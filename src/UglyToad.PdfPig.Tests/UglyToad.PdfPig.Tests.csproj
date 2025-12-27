@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFrameworks>net471;net8.0;net9.0</TargetFrameworks>
         <IsTestProject>true</IsTestProject>
