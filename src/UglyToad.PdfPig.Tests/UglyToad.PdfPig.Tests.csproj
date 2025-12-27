@@ -10,8 +10,6 @@
         <RuntimeFrameworkVersion Condition="'$(TargetFramework)'=='netcoreapp2.1'">2.1.30</RuntimeFrameworkVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>annotations</Nullable>
-        <AssemblyVersion>25.12.27.2007</AssemblyVersion>
-        <FileVersion>25.12.27.2007</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
