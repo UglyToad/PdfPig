@@ -844,7 +844,8 @@
         /// Set to true if 1 bits represent black (common for bilevel scans).
         /// If the result looks inverted, pass false.
         /// </param>
-        public AddedImage AddCcittG4(byte[] ccittG4Data, int width, int height, PdfRectangle placementRectangle = default, bool blackIs1 = true)
+        public AddedImage AddCcittG4(byte[] ccittG4Data, int width, int height, PdfRectangle placementRectangle = default, bool blackIs1 = true,
+    bool endOfBlock = true)
         {
             if (ccittG4Data is null) throw new ArgumentNullException(nameof(ccittG4Data));
             if (width <= 0) throw new ArgumentOutOfRangeException(nameof(width));
@@ -864,7 +865,8 @@
         { NameToken.Create("K"), new NumericToken(-1) },
         { NameToken.Create("Columns"), new NumericToken(width) },
         { NameToken.Create("Rows"), new NumericToken(height) },
-        { NameToken.Create("BlackIs1"), blackIs1 ? BooleanToken.True : BooleanToken.False }
+        //{ NameToken.Create("BlackIs1"), blackIs1 ? BooleanToken.True : BooleanToken.False },
+         { NameToken.Create("EndOfBlock"), endOfBlock ? BooleanToken.True : BooleanToken.False }
         // You can add these if needed for odd inputs:
         // { NameToken.Create("EndOfLine"), BooleanToken.False },
         // { NameToken.Create("EncodedByteAlign"), BooleanToken.False },
@@ -884,18 +886,19 @@
         { NameToken.Length, new NumericToken(ccittG4Data.Length) }
     };
 
-            // NOTE:
-            // CCITT Fax images + DeviceGray 1bpp are inconsistently rendered by viewers
-            // if only DecodeParms/BlackIs1 is used.
-            // Explicit /Decode ensures correct polarity everywhere.
-            if (blackIs1)
+            // FIX DEFINITIVO: per CCITT Fax va SEMPRE specificato /Decode
+            // blackIs1 = true  => 1 = nero  => Decode [1 0]
+            // blackIs1 = false => 1 = bianco => Decode [0 1]
+            //Photometric = MINISBLACK(1) ⇒ blackIs1 = true ⇒ / Decode[1 0]
+            //Photometric = MINISWHITE(0) ⇒ blackIs1 = false ⇒ / Decode[0 1]
+
+            // Polarità gestita SOLO tramite /Decode (non BlackIs1)
+            imgDictionary[NameToken.Decode] = new ArrayToken(new IToken[]
             {
-                imgDictionary[NameToken.Decode] = new ArrayToken(new IToken[]
-                {
-        new NumericToken(1),
-        new NumericToken(0)
-                });
-            }
+    blackIs1 ? new NumericToken(1) : new NumericToken(0),
+    blackIs1 ? new NumericToken(0) : new NumericToken(1)
+            });
+
 
             // IMPORTANT: Do NOT recompress. ccittG4Data is already compressed with CCITT Group 4.
             var reference = documentBuilder.AddImage(new DictionaryToken(imgDictionary), ccittG4Data);
