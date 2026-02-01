@@ -12,6 +12,20 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1238()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("6.Secrets.to.Startup.Success.PDFDrive.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(159);
+                Assert.NotNull(page);
+                Assert.StartsWith("uct. At the longer-cycle, broader end of the spectrum are identity-level", page.Text);
+                Assert.Equal(0, page.Rotation.Value);
+            }
+        }
+
+        [Fact]
         public void Issue1217()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("stackoverflow_error.pdf");
