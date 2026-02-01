@@ -855,7 +855,7 @@
         /// </summary>
         /// <param name="link">The link annotation to add</param>
         /// <returns>This page builder for method chaining</returns>
-        public PdfPageBuilder AddLink(LinkAnnotation link)
+        private PdfPageBuilder AddLink(LinkAnnotation link)
         {
             links.Add((link.ToToken(), link.Action));
             return this;
