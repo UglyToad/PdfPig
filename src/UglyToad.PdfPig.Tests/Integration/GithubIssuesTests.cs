@@ -12,6 +12,25 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1248()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("jtehm-melillo-2679746.pdf");
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                foreach (var letter in page.Letters)
+                {
+                    var font = letter.GetFont();
+
+                    if (font?.Name?.Data.Contains("TimesLT") == true)
+                    {
+                        Assert.True(font.TryGetPath(100, out _));
+                    }
+                }
+            }
+        }
+
+        [Fact]
         public void Issues1238()
         {
             var path = IntegrationHelpers.GetDocumentPath("6.Secrets.to.Startup.Success.PDFDrive.pdf");

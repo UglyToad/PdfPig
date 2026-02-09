@@ -125,7 +125,7 @@
             {
                 if (font.TryGetFirst(out var t1Font))
                 {
-                    fromFont = t1Font.Encoding is not null ? new BuiltInEncoding(t1Font.Encoding) : default(Encoding);
+                    fromFont = (t1Font.Encoding is not null && t1Font.Encoding.Count > 0) ? new BuiltInEncoding(t1Font.Encoding) : default(Encoding);
                 }
                 else if (font.TryGetSecond(out var cffFont))
                 {
@@ -135,7 +135,7 @@
 
             var encoding = encodingReader.Read(dictionary, descriptor, fromFont);
 
-            if (encoding is null && font != null && font.TryGetFirst(out var t1FontReplacement))
+            if (encoding is null && font != null && font.TryGetFirst(out var t1FontReplacement) && t1FontReplacement.Encoding?.Count > 0)
             {
                 encoding = new BuiltInEncoding(t1FontReplacement.Encoding);
             }
