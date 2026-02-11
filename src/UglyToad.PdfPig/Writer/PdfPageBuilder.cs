@@ -735,7 +735,7 @@
 
             var data = new byte[png.Width * png.Height * 3];
             int pixelIndex = 0;
-          
+
             for (var rowIndex = 0; rowIndex < png.Height; rowIndex++)
             {
                 for (var colIndex = 0; colIndex < png.Width; colIndex++)
@@ -827,6 +827,99 @@
 
             return new AddedImage(reference.Data, png.Width, png.Height);
         }
+
+
+        /// <summary>
+        /// Adds a CCITT Group 4 (fax) encoded 1bpp image stream as a PDF image XObject (CCITTFaxDecode).
+        /// This is ideal for monochrome scanned TIFF pages that are already CCITT G4 compressed.
+        /// </summary>
+        /// <param name="ccittG4Data">
+        /// Raw CCITT Group 4 (T.6) compressed bytes (NOT decoded bitmap pixels, NOT wrapped in TIFF).
+        /// </param>
+        /// <param name="width">Image width in pixels (Columns).</param>
+        /// <param name="height">Image height in pixels (Rows).</param>
+        /// <param name="placementRectangle">
+        /// Placement rectangle in user space. If default, uses (0,0,width,height).
+        /// </param>
+        /// <param name="blackIs1">
+        /// Set to true if 1 bits represent black (common for bilevel scans).
+        /// If the result looks inverted, pass false.
+        /// </param>
+        public AddedImage AddCcittG4(byte[] ccittG4Data, int width, int height, PdfRectangle placementRectangle = default, bool blackIs1 = true)
+        {
+            if (ccittG4Data is null) throw new ArgumentNullException(nameof(ccittG4Data));
+            if (width <= 0) throw new ArgumentOutOfRangeException(nameof(width));
+            if (height <= 0) throw new ArgumentOutOfRangeException(nameof(height));
+
+            if (placementRectangle.Equals(default(PdfRectangle)))
+            {
+                placementRectangle = new PdfRectangle(0, 0, width, height);
+            }
+
+            // DecodeParms for CCITTFaxDecode:
+            // K = -1 => Group 4 (T.6)
+            // Columns/Rows = image dimensions
+            // BlackIs1 controls polarity (optional but useful)
+            var decodeParms = new Dictionary<NameToken, IToken>
+    {
+        { NameToken.Create("K"), new NumericToken(-1) },
+        { NameToken.Create("Columns"), new NumericToken(width) },
+        { NameToken.Create("Rows"), new NumericToken(height) },
+        { NameToken.Create("BlackIs1"), blackIs1 ? BooleanToken.True : BooleanToken.False }
+        // You can add these if needed for odd inputs:
+        // { NameToken.Create("EndOfLine"), BooleanToken.False },
+        // { NameToken.Create("EncodedByteAlign"), BooleanToken.False },
+        // { NameToken.Create("EndOfBlock"), BooleanToken.True }
+    };
+
+            var imgDictionary = new Dictionary<NameToken, IToken>
+    {
+        { NameToken.Type, NameToken.Xobject },
+        { NameToken.Subtype, NameToken.Image },
+        { NameToken.Width, new NumericToken(width) },
+        { NameToken.Height, new NumericToken(height) },
+        { NameToken.ColorSpace, NameToken.Devicegray },
+        { NameToken.BitsPerComponent, new NumericToken(1) },
+        { NameToken.Filter, NameToken.Create("CCITTFaxDecode") },
+        { NameToken.DecodeParms, new DictionaryToken(decodeParms) },
+        { NameToken.Length, new NumericToken(ccittG4Data.Length) }
+    };
+
+            // NOTE:
+            // CCITT Fax images + DeviceGray 1bpp are inconsistently rendered by viewers
+            // if only DecodeParms/BlackIs1 is used.
+            // Explicit /Decode ensures correct polarity everywhere.
+            if (blackIs1)
+            {
+                imgDictionary[NameToken.Decode] = new ArrayToken(new IToken[]
+                {
+        new NumericToken(1),
+        new NumericToken(0)
+                });
+            }
+
+            // IMPORTANT: Do NOT recompress. ccittG4Data is already compressed with CCITT Group 4.
+            var reference = documentBuilder.AddImage(new DictionaryToken(imgDictionary), ccittG4Data);
+
+            var resources = pageDictionary.GetOrCreateDict(NameToken.Resources);
+            var xObjects = resources.GetOrCreateDict(NameToken.Xobject);
+
+            var key = NameToken.Create(xobjectsNames.NewName());
+            xObjects[key] = reference;
+
+            currentStream.Add(Push.Value);
+            currentStream.Add(new ModifyCurrentTransformationMatrix(new[]
+            {
+        placementRectangle.Width, 0,
+        0, placementRectangle.Height,
+        placementRectangle.BottomLeft.X, placementRectangle.BottomLeft.Y
+    }));
+            currentStream.Add(new InvokeNamedXObject(key));
+            currentStream.Add(Pop.Value);
+
+            return new AddedImage(reference.Data, width, height);
+        }
+
 
         /// <summary>
         /// Adds a URL link annotation to the page at the specified rectangle area.
@@ -1034,7 +1127,7 @@
 
                         gstateName = newName;
                     }
-                    
+
                     // According to PDF spec 32000-1:2008, section 8.4.5, ExtGState can contain both direct values and indirect references
                     if (gstate.Value is IndirectReferenceToken fontReferenceToken)
                     {
