@@ -15,6 +15,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Verify tag points to master
+        id: verify
+        run: |
+          TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref_name }})
+          if ! git branch -r --contains $TAG_COMMIT | grep -q 'origin/master'; then
+            echo "Tag is not on master — skipping publish"
+            exit 78  # 78 = neutral in GitHub Actions
+          fi
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
