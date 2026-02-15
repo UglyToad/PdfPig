@@ -1,0 +1,53 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build_and_publish:
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify tag points to master
+        id: verify
+        run: |
+          TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref_name }})
+          if ! git branch -r --contains $TAG_COMMIT | grep -q 'origin/master'; then
+            echo "Tag is not on master — skipping publish"
+            exit 78  # 78 = neutral in GitHub Actions
+          fi
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            2.1.x
+            6.0.x
+            8.0.x
+            9.0.x
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Run tests
+        run: dotnet test -c Release src/UglyToad.PdfPig.sln
+
+      - name: Build package
+        run: dotnet pack -c Release -o package tools/UglyToad.PdfPig.Package/UglyToad.PdfPig.Package.csproj -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
+
+      - name: Publish to NuGet
+        run: dotnet nuget push package/*.nupkg --api-key ${{secrets.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
