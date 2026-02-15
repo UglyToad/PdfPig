@@ -215,6 +215,8 @@
         /// <inheritdoc/>
         public void ShowText(IInputBytes bytes)
         {
+            TextSequence++;
+
             var currentState = GetCurrentState();
 
             var font = currentState.FontState.FromExtendedGraphicsState
