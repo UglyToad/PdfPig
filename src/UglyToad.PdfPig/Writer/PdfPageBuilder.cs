@@ -767,7 +767,7 @@
                     }
                 }
 
-                var compressedSmask = DataCompresser.CompressBytes(smaskData);
+                var compressedSmask = DataCompressor.CompressBytes(smaskData);
 
                 // Create a soft-mask.
                 var smaskDictionary = new Dictionary<NameToken, IToken>
@@ -786,7 +786,7 @@
                 smaskReference = documentBuilder.AddImage(new DictionaryToken(smaskDictionary), compressedSmask);
             }
 
-            var compressed = DataCompresser.CompressBytes(data);
+            var compressed = DataCompressor.CompressBytes(data);
 
             var imgDictionary = new Dictionary<NameToken, IToken>
             {
@@ -1218,7 +1218,7 @@
 
                     var bytes = memoryStream.ToArray();
 
-                    var stream = DataCompresser.CompressToStream(bytes);
+                    var stream = DataCompressor.CompressToStream(bytes);
 
                     return writer.WriteToken(stream);
                 }

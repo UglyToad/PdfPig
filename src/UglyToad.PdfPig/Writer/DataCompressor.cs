@@ -6,7 +6,7 @@
     using Filters;
     using Tokens;
 
-    internal static class DataCompresser
+    internal static class DataCompressor
     {
         public static byte[] CompressBytes(IReadOnlyList<byte> bytes) => CompressBytes(bytes.ToArray());
         public static byte[] CompressBytes(byte[] bytes)
@@ -15,7 +15,7 @@
             {
                 var parameters = new DictionaryToken(new Dictionary<NameToken, IToken>());
                 var flater = new FlateFilter();
-                var result = flater.Encode(memoryStream, parameters, 0);
+                var result = flater.Encode(memoryStream, parameters);
                 return result;
             }
         }
