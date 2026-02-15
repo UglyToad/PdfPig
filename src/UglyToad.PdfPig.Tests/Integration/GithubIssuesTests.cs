@@ -12,6 +12,31 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1250()
+        {
+            // Issue comes from HasFormXObjectCircularReference
+            var path = IntegrationHelpers.GetDocumentPath("SPE8EF26T0545.pdf");
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                Assert.NotNull(page);
+                Assert.NotEmpty(page.Letters);
+
+                page = document.GetPage(7);
+                Assert.NotNull(page);
+                Assert.NotEmpty(page.Letters);
+            }
+
+            // Ensure still no StackOverflowException
+            using (var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("issue_671")))
+            {
+                var page = document.GetPage(1);
+                Assert.NotNull(page);
+                Assert.NotEmpty(page.Letters);
+            }
+        }
+
+        [Fact]
         public void Issues1248()
         {
             var path = IntegrationHelpers.GetDocumentPath("jtehm-melillo-2679746.pdf");
@@ -29,7 +54,7 @@
                 }
             }
         }
-
+        
         [Fact]
         public void Issues1238()
         {

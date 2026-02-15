@@ -588,6 +588,7 @@
             {
                 if (ParsingOptions.UseLenientParsing)
                 {
+                    // TODO - We might be removing too much, good for the moment. See Issues1250() for examples
                     operations = operations.Where(o => o is not InvokeNamedXObject xo || xo.Name != xObjectName)
                         .ToArray();
                     ParsingOptions.Logger.Warn(
@@ -618,14 +619,56 @@
         /// <param name="xObjectName">The form's name.</param>
         /// <param name="operations">The form operations parsed from original form stream.</param>
         protected virtual bool HasFormXObjectCircularReference(StreamToken formStream,
-            NameToken xObjectName,
+            NameToken? xObjectName,
             IReadOnlyList<IGraphicsStateOperation> operations)
         {
-            return xObjectName != null
-                   && operations.OfType<InvokeNamedXObject>()?.Any(o => o.Name == xObjectName) ==
-                   true // operations contain another form with same name
-                   && ResourceStore.TryGetXObject(xObjectName, out var result)
-                   && result.Data.Span.SequenceEqual(formStream.Data.Span); // The form contained in the operations has identical data to current form
+            if (xObjectName is null)
+            {
+                return false;
+            }
+            
+            if (operations.OfType<InvokeNamedXObject>()?.Any(o => o.Name == xObjectName) != true)
+            {
+                return false;
+            }
+
+            if (!TryGetXObjectToken(formStream, xObjectName, PdfScanner, out var t1))
+            {
+                return false;
+            }
+
+            if (!ResourceStore.TryGetXObject(xObjectName, out var resourceStream))
+            {
+                return false;
+            }
+
+            if (!TryGetXObjectToken(resourceStream, xObjectName, PdfScanner, out var t2))
+            {
+                return false;
+            }
+            
+            if (t1 is null || t2 is null)
+            {
+                return false;
+            }
+
+            return t1.Equals(t2);
+
+            static bool TryGetXObjectToken(StreamToken streamToken, NameToken xObjectName, IPdfTokenScanner scanner, out IToken? token)
+            {
+                token = null;
+                if (!streamToken.StreamDictionary.TryGet<DictionaryToken>(NameToken.Resources, scanner, out var formResources))
+                {
+                    return false;
+                }
+
+                if (!formResources.TryGet<DictionaryToken>(NameToken.Xobject, out var xObjectBase) || !xObjectBase.TryGet(xObjectName, out token))
+                {
+                    return false;
+                }
+
+                return token is not null;
+            }
         }
 
         /// <inheritdoc/>
