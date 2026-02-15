@@ -1,0 +1,43 @@
+name: Tag Release
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  tag_if_version_changed:
+    if: startsWith(github.event.head_commit.message, 'Release ')
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect version change
+        id: versioncheck
+        run: |
+          git fetch origin master --depth=2
+
+          $diff = git diff HEAD^ HEAD -- tools/UglyToad.PdfPig.Package/UglyToad.PdfPig.Package.csproj
+
+          if ($diff -match "<Version>") {
+            $version = (Select-String -Path tools/UglyToad.PdfPig.Package/UglyToad.PdfPig.Package.csproj -Pattern "<Version>(.*)</Version>").Matches.Groups[1].Value
+            echo "version=$version" >> $env:GITHUB_OUTPUT
+            echo "create=true" >> $env:GITHUB_OUTPUT
+          } else {
+            echo "create=false" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Create tag
+        if: steps.versioncheck.outputs.create == 'true'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git tag "v${{ steps.versioncheck.outputs.version }}"
+          git push origin "v${{ steps.versioncheck.outputs.version }}"
