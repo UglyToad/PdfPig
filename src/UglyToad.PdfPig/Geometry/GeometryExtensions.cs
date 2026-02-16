@@ -222,7 +222,31 @@
                 throw new ArgumentException("MinimumAreaRectangle(): points cannot be null and must contain at least one point.", nameof(points));
             }
 
-            return ParametricPerpendicularProjection(GrahamScan(points.Distinct()).ToArray());
+            var distinctSet = new HashSet<PdfPoint>(points);
+            var distinctPoints = new PdfPoint[distinctSet.Count];
+            distinctSet.CopyTo(distinctPoints);
+
+            var hull = GrahamScan(distinctPoints);
+
+            PdfPoint[] hullArray;
+            if (hull is PdfPoint[] arr)
+            {
+                hullArray = arr;
+            }
+            else if (hull is List<PdfPoint> list)
+            {
+#if NET6_0_OR_GREATER
+                return ParametricPerpendicularProjection(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(list));
+#else
+                hullArray = list.ToArray();
+#endif
+            }
+            else
+            {
+                hullArray = hull.ToArray();
+            }
+
+            return ParametricPerpendicularProjection(hullArray);
         }
 
         /// <summary>
@@ -238,9 +262,16 @@
             }
 
             // Fitting a line through the points
-            // to find the orientation (slope)
-            double x0 = points.Average(p => p.X);
-            double y0 = points.Average(p => p.Y);
+            double sumX = 0;
+            double sumY = 0;
+            for (int i = 0; i < points.Count; i++)
+            {
+                sumX += points[i].X;
+                sumY += points[i].Y;
+            }
+            double x0 = sumX / points.Count;
+            double y0 = sumY / points.Count;
+
             double sumProduct = 0;
             double sumDiffSquaredX = 0;
 
@@ -265,11 +296,17 @@
                 sin, cos, 0,
                 0, 0, 1);
 
-            var transformedPoints = points.Select(p => inverseRotation.Transform(p)).ToArray();
-            var aabb = new PdfRectangle(transformedPoints.Min(p => p.X),
-                                        transformedPoints.Min(p => p.Y),
-                                        transformedPoints.Max(p => p.X),
-                                        transformedPoints.Max(p => p.Y));
+            var first = inverseRotation.Transform(points[0]);
+            double minX = first.X, minY = first.Y, maxX = first.X, maxY = first.Y;
+            for (int i = 1; i < points.Count; i++)
+            {
+                var tp = inverseRotation.Transform(points[i]);
+                if (tp.X < minX) minX = tp.X;
+                if (tp.Y < minY) minY = tp.Y;
+                if (tp.X > maxX) maxX = tp.X;
+                if (tp.Y > maxY) maxY = tp.Y;
+            }
+            var aabb = new PdfRectangle(minX, minY, maxX, maxY);
 
             // Rotate back the AABB to obtain to oriented bounding box (OBB)
             var rotateBack = new TransformationMatrix(
@@ -286,18 +323,7 @@
         {
             return GrahamScan(points.ToArray());
         }
-
-        private sealed class PdfPointXYComparer : IComparer<PdfPoint>
-        {
-            public static readonly PdfPointXYComparer Instance = new();
-
-            public int Compare(PdfPoint p1, PdfPoint p2)
-            {
-                int comp = p1.X.CompareTo(p2.X);
-                return comp == 0 ? p1.Y.CompareTo(p2.Y) : comp;
-            }
-        }
-
+        
         /// <summary>
         /// Algorithm to find the convex hull of the set of points with time complexity O(n log n).
         /// </summary>
@@ -320,33 +346,40 @@
                 return Math.Atan2(point2.Y - point1.Y, point2.X - point1.X) % Math.PI;
             }
 
-            Array.Sort(points, PdfPointXYComparer.Instance);
+            Array.Sort(points, (p1, p2) =>
+            {
+                int comp = p1.X.CompareTo(p2.X);
+                return comp == 0 ? p1.Y.CompareTo(p2.Y) : comp;
+            });
 
             var P0 = points[0];
             var groups = points.Skip(1).GroupBy(p => polarAngle(P0, p)).OrderBy(g => g.Key).ToArray();
 
-            var sortedPoints = ArrayPool<PdfPoint>.Shared.Rent(groups.Length);
+            PdfPoint[]? buffer = null;
+            var sortedPoints = groups.Length <= 64
+                ? stackalloc PdfPoint[groups.Length]
+                : buffer = ArrayPool<PdfPoint>.Shared.Rent(groups.Length);
 
             try
             {
                 for (int i = 0; i < groups.Length; i++)
                 {
                     var group = groups[i];
-                    if (group.Count() == 1)
+
+                    PdfPoint farthest = default;
+                    double maxDistSq = -1;
+                    foreach (var p in group)
                     {
-                        sortedPoints[i] = group.First();
-                    }
-                    else
-                    {
-                        // if more than one point has the same angle, 
-                        // remove all but the one that is farthest from P0
-                        sortedPoints[i] = group.OrderByDescending(p =>
+                        double dx = p.X - P0.X;
+                        double dy = p.Y - P0.Y;
+                        double distSq = dx * dx + dy * dy;
+                        if (distSq > maxDistSq)
                         {
-                            double dx = p.X - P0.X;
-                            double dy = p.Y - P0.Y;
-                            return dx * dx + dy * dy;
-                        }).First();
+                            maxDistSq = distSq;
+                            farthest = p;
+                        }
                     }
+                    sortedPoints[i] = farthest;
                 }
 
                 if (groups.Length < 2)
@@ -354,27 +387,32 @@
                     return [P0, sortedPoints[0]];
                 }
 
-                var stack = new Stack<PdfPoint>();
-                stack.Push(P0);
-                stack.Push(sortedPoints[0]);
-                stack.Push(sortedPoints[1]);
+                var hull = new List<PdfPoint>(groups.Length + 1);
+                hull.Add(P0);
+                hull.Add(sortedPoints[0]);
+                hull.Add(sortedPoints[1]);
 
-                for (int i = 2; i < groups.Length; i++)
+                for (int i = 2; i < groups.Length; ++i)
                 {
                     var point = sortedPoints[i];
-                    while (stack.Count > 1 && !ccw(stack.ElementAt(1), stack.Peek(), point))
+                    while (hull.Count > 1 && !ccw(hull[hull.Count - 2], hull[hull.Count - 1], point))
                     {
-                        stack.Pop();
+                        hull.RemoveAt(hull.Count - 1);
                     }
 
-                    stack.Push(point);
+                    hull.Add(point);
                 }
 
-                return stack;
+                hull.Reverse();
+
+                return hull;
             }
             finally
             {
-                ArrayPool<PdfPoint>.Shared.Return(sortedPoints);
+                if (buffer is not null)
+                {
+                    ArrayPool<PdfPoint>.Shared.Return(buffer);
+                }
             }
         }
 

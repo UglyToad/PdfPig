@@ -50,7 +50,15 @@
              *  (i,j,k) will form a group and (m,n) will form another group.
              *************************************************************************************/
 
-            int[] indexes = Enumerable.Repeat(-1, elements.Count).ToArray();
+            int[] indexes = new int[elements.Count];
+#if NET6_0_OR_GREATER
+            Array.Fill(indexes, -1);
+#else
+            for (int k = 0; k < indexes.Length; k++)
+            {
+                indexes[k] = -1;
+            }
+#endif
             KdTree<T> kdTree = new KdTree<T>(elements, candidatesPoint);
 
             ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
@@ -118,7 +126,15 @@
              *  (i,j,k) will form a group and (m,n) will form another group.
              *************************************************************************************/
 
-            int[] indexes = Enumerable.Repeat(-1, elements.Count).ToArray();
+            int[] indexes = new int[elements.Count];
+#if NET6_0_OR_GREATER
+            Array.Fill(indexes, -1);
+#else
+            for (int l = 0; l < indexes.Length; l++)
+            {
+                indexes[l] = -1;
+            }
+#endif
             KdTree<T> kdTree = new KdTree<T>(elements, candidatesPoint);
 
             ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
@@ -186,7 +202,15 @@
              *  (i,j,k) will form a group and (m,n) will form another group.
              *************************************************************************************/
 
-            int[] indexes = Enumerable.Repeat(-1, elements.Count).ToArray();
+            int[] indexes = new int[elements.Count];
+#if NET6_0_OR_GREATER
+            Array.Fill(indexes, -1);
+#else
+            for (int k = 0; k < indexes.Length; k++)
+            {
+                indexes[k] = -1;
+            }
+#endif
 
             ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
 

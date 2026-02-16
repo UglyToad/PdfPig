@@ -3,7 +3,6 @@
     using Content;
     using Core;
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
@@ -154,57 +153,72 @@
         {
             ParallelOptions parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = maxDegreeOfParallelism };
 
-            var withinLineDistList = new ConcurrentBag<double>();
-            var betweenLineDistList = new ConcurrentBag<double>();
+            var withinLineDistList = new List<double>();
+            var betweenLineDistList = new List<double>();
 
             // 1. Estimate within line and between line spacing
             KdTree<Word> kdTreeBottomLeft = new KdTree<Word>(words, w => w.BoundingBox.BottomLeft);
 
-            Parallel.For(0, words.Count, parallelOptions, i =>
-            {
-                var word = words[i];
-
-                // Within-line distance
-                // 1.1.1 Find the 2 closest neighbours words to the candidate, using euclidean distance.
-                foreach (var n in kdTreeBottomLeft.FindNearestNeighbours(word, 2, w => w.BoundingBox.BottomRight, Distances.Euclidean))
+            Parallel.For(0, words.Count, parallelOptions,
+                () => (wl: new List<double>(), bl: new List<double>()),
+                (i, _, local) =>
                 {
-                    // 1.1.2 Check if the neighbour word is within the angle of the candidate 
-                    if (wlBounds.Contains(AngleWL(word, n.Item1)))
+                    var word = words[i];
+
+                    // Within-line distance
+                    // 1.1.1 Find the 2 closest neighbours words to the candidate, using euclidean distance.
+                    foreach (var n in kdTreeBottomLeft.FindNearestNeighbours(word, 2, w => w.BoundingBox.BottomRight, Distances.Euclidean))
                     {
-                        withinLineDistList.Add(Distances.Euclidean(word.BoundingBox.BottomRight, n.Item1.BoundingBox.BottomLeft));
-                    }
-                }
-
-                // Between-line distance
-                // 1.2.1 Find the 2 closest neighbours words to the candidate, using euclidean distance.
-                foreach (var n in kdTreeBottomLeft.FindNearestNeighbours(word, 2, w => w.BoundingBox.TopLeft, Distances.Euclidean))
-                {
-                    // 1.2.2 Check if the candidate words is within the angle
-                    var angle = AngleBL(word, n.Item1);
-                    if (blBounds.Contains(angle))
-                    {
-                        // 1.2.3 Compute the vertical (between-line) distance between the candidate
-                        // and the neighbour and add it to the between-line distances list
-                        double hypotenuse = Distances.Euclidean(word.BoundingBox.Centroid, n.Item1.BoundingBox.Centroid);
-
-                        // Angle is kept within [-90, 90] 
-                        if (angle > 90)
+                        // 1.1.2 Check if the neighbour word is within the angle of the candidate
+                        if (wlBounds.Contains(AngleWL(word, n.Item1)))
                         {
-                            angle -= 180;
-                        }
-
-                        var dist = Math.Abs(hypotenuse * Math.Cos((90 - angle) * Math.PI / 180))
-                            - word.BoundingBox.Height / 2.0 - n.Item1.BoundingBox.Height / 2.0;
-
-                        // The perpendicular distance can be negative because of the subtractions.
-                        // Could occur when words are overlapping, we ignore that.
-                        if (dist >= 0)
-                        {
-                            betweenLineDistList.Add(dist);
+                            local.wl.Add(Distances.Euclidean(word.BoundingBox.BottomRight, n.Item1.BoundingBox.BottomLeft));
                         }
                     }
-                }
-            });
+
+                    // Between-line distance
+                    // 1.2.1 Find the 2 closest neighbours words to the candidate, using euclidean distance.
+                    foreach (var n in kdTreeBottomLeft.FindNearestNeighbours(word, 2, w => w.BoundingBox.TopLeft, Distances.Euclidean))
+                    {
+                        // 1.2.2 Check if the candidate words is within the angle
+                        var angle = AngleBL(word, n.Item1);
+                        if (blBounds.Contains(angle))
+                        {
+                            // 1.2.3 Compute the vertical (between-line) distance between the candidate
+                            // and the neighbour and add it to the between-line distances list
+                            double hypotenuse = Distances.Euclidean(word.BoundingBox.Centroid, n.Item1.BoundingBox.Centroid);
+
+                            // Angle is kept within [-90, 90]
+                            if (angle > 90)
+                            {
+                                angle -= 180;
+                            }
+
+                            var dist = Math.Abs(hypotenuse * Math.Cos((90 - angle) * Math.PI / 180))
+                                - word.BoundingBox.Height / 2.0 - n.Item1.BoundingBox.Height / 2.0;
+
+                            // The perpendicular distance can be negative because of the subtractions.
+                            // Could occur when words are overlapping, we ignore that.
+                            if (dist >= 0)
+                            {
+                                local.bl.Add(dist);
+                            }
+                        }
+                    }
+
+                    return local;
+                },
+                local =>
+                {
+                    lock (withinLineDistList)
+                    {
+                        withinLineDistList.AddRange(local.wl);
+                    }
+                    lock (betweenLineDistList)
+                    {
+                        betweenLineDistList.AddRange(local.bl);
+                    }
+                });
 
             // Compute average peak value of distribution
             double? withinLinePeak = GetPeakAverageDistance(withinLineDistList, wlBinSize);
@@ -221,9 +235,9 @@
         /// </summary>
         /// <param name="distances">The set of distances to average.</param>
         /// <param name="binLength"></param>
-        private static double? GetPeakAverageDistance(IEnumerable<double> distances, int binLength = 1)
+        private static double? GetPeakAverageDistance(List<double> distances, int binLength = 1)
         {
-            if (!distances.Any())
+            if (distances.Count == 0)
             {
                 return null;
             }
@@ -233,7 +247,16 @@
                 throw new ArgumentException("DocstrumBoundingBoxes: the bin length must be positive when commputing peak average distance.", nameof(binLength));
             }
 
-            double maxDbl = Math.Ceiling(distances.Max());
+            double maxDbl = distances[0];
+            for (int i = 1; i < distances.Count; i++)
+            {
+                if (distances[i] > maxDbl)
+                {
+                    maxDbl = distances[i];
+                }
+            }
+
+            maxDbl = Math.Ceiling(maxDbl);
             if (maxDbl > int.MaxValue)
             {
                 throw new OverflowException($"Error while casting maximum distance of {maxDbl} to integer.");
@@ -249,30 +272,49 @@
                 binLength = binLength > max ? max : binLength;
             }
 
-            var bins = Enumerable.Range(0, (int)Math.Ceiling(max / (double)binLength) + 1)
-                .Select(x => x * binLength)
-                .ToDictionary(x => x, _ => new List<double>());
-
-            foreach (var distance in distances)
+            int binCount = (int)Math.Ceiling(max / (double)binLength) + 1;
+            var bins = new List<double>[binCount];
+            for (int i = 0; i < binCount; i++)
             {
+                bins[i] = new List<double>();
+            }
+
+            for (int i = 0; i < distances.Count; i++)
+            {
+                var distance = distances[i];
                 int bin = (int)Math.Floor(distance / binLength);
                 if (bin < 0)
                 {
                     throw new ArgumentOutOfRangeException(nameof(bin), "DocstrumBoundingBoxes: Negative distance found while commputing peak average distance.");
                 }
-                bins[bins.Keys.ElementAt(bin)].Add(distance);
+                if (bin >= binCount)
+                {
+                    bin = binCount - 1;
+                }
+                bins[bin].Add(distance);
             }
 
-            var best = default(List<double>);
-            foreach (var bin in bins)
+            List<double> best = null;
+            for (int i = 0; i < binCount; i++)
             {
-                if (best == null || bin.Value.Count > best.Count)
+                var bin = bins[i];
+                if (best == null || bin.Count > best.Count)
                 {
-                    best = bin.Value;
+                    best = bin;
                 }
             }
 
-            return best?.Average();
+            if (best == null || best.Count == 0)
+            {
+                return null;
+            }
+
+            double sum = 0;
+            for (int i = 0; i < best.Count; i++)
+            {
+                sum += best[i];
+            }
+            return sum / best.Count;
         }
         #endregion
 
@@ -417,28 +459,7 @@
                 return double.PositiveInfinity;
             }
         }
-
-        private sealed class PdfPointXYComparer : IComparer<PdfPoint>
-        {
-            public static readonly PdfPointXYComparer Instance = new();
-
-            public int Compare(PdfPoint p1, PdfPoint p2)
-            {
-                int comp = p1.X.CompareTo(p2.X);
-                return comp == 0 ? p1.Y.CompareTo(p2.Y) : comp;
-            }
-        }
-
-        private sealed class PdfPointYComparer : IComparer<PdfPoint>
-        {
-            public static readonly PdfPointYComparer Instance = new();
-
-            public int Compare(PdfPoint p1, PdfPoint p2)
-            {
-                return p1.Y.CompareTo(p2.Y);
-            }
-        }
-
+        
         /// <summary>
         /// Get the structural blocking parameters.
         /// </summary>
@@ -486,22 +507,30 @@
 
             if (dXj != 0)
             {
-                ps.Sort(PdfPointXYComparer.Instance);
+                ps.Sort((p1, p2) =>
+                {
+                    int comp = p1.X.CompareTo(p2.X);
+                    return comp == 0 ? p1.Y.CompareTo(p2.Y) : comp;
+                });
             }
             else if (dYj != 0)
             {
-                ps.Sort(PdfPointYComparer.Instance);
+                ps.Sort((p1, p2) => p1.Y.CompareTo(p2.Y));
             }
 #else
             PdfPoint[] ps = [j.Point1, j.Point2, Aj.Value, Bj.Value];
 
             if (dXj != 0)
             {
-                Array.Sort(ps, PdfPointXYComparer.Instance);
+                Array.Sort(ps, (p1, p2) =>
+                {
+                    int comp = p1.X.CompareTo(p2.X);
+                    return comp == 0 ? p1.Y.CompareTo(p2.Y) : comp;
+                });
             }
             else if (dYj != 0)
             {
-                Array.Sort(ps, PdfPointYComparer.Instance);
+                Array.Sort(ps, (p1, p2) => p1.Y.CompareTo(p2.Y));
             }
 #endif
 

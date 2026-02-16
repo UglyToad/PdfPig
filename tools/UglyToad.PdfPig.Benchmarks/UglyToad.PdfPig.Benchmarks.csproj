@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+
+		<PdfPigVersion Condition="'$(PdfPigVersion)' == ''">Local</PdfPigVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(PdfPigVersion)' == 'Local'">
+		<ProjectReference Include="..\..\src\UglyToad.PdfPig\UglyToad.PdfPig.csproj" />
+		<ProjectReference Include="..\..\src\UglyToad.PdfPig.DocumentLayoutAnalysis\UglyToad.PdfPig.DocumentLayoutAnalysis.csproj" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(PdfPigVersion)' == 'Latest'">
+		<PackageReference Include="PdfPig" Version="0.1.14-alpha-20260216-7e370" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="fseprd1102849.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
+</Project>

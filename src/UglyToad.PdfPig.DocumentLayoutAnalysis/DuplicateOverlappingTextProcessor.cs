@@ -3,7 +3,6 @@
     using System.Collections.Generic;
     using System.Linq;
     using UglyToad.PdfPig.Content;
-    using UglyToad.PdfPig.PdfFonts;
 
     /// <summary>
     /// Checks if each letter is a duplicate and overlaps any other letter and remove the duplicate, and flag the remaining as bold.
@@ -24,18 +23,17 @@
                 return letters?.ToList();
             }
 
-            var queue = new Queue<Letter>(letters);
-            var cleanLetters = new List<Letter>() { queue.Dequeue() }; // dequeue the first letter
+            // Use a dictionary keyed by (Value, FontName) to look up candidate duplicates in O(1)
+            var duplicateIndex = new Dictionary<(string, string), List<int>>();
+            var cleanLetters = new List<Letter>();
 
-            while (queue.Count > 0)
+            foreach (var letter in letters)
             {
-                var letter = queue.Dequeue();
                 bool addLetter = true;
                 int duplicatesOverlappingIndex = -1;
 
-                var duplicates = cleanLetters.Where(l => l.Value.Equals(letter.Value) && l.FontName.Equals(letter.FontName)); // do other checks?
-
-                if (duplicates.Any())
+                var key = (letter.Value, letter.FontName);
+                if (duplicateIndex.TryGetValue(key, out var candidateIndices))
                 {
                     double tolerance = letter.GlyphRectangle.Width / (letter.Value.Length == 0 ? 1 : letter.Value.Length) / 3.0;
                     double minX = letter.GlyphRectangle.BottomLeft.X - tolerance;
@@ -43,22 +41,33 @@
                     double minY = letter.GlyphRectangle.BottomLeft.Y - tolerance;
                     double maxY = letter.GlyphRectangle.BottomLeft.Y + tolerance;
 
-                    var duplicatesOverlapping = duplicates.FirstOrDefault(l => minX <= l.GlyphRectangle.BottomLeft.X &&
-                                                                               maxX >= l.GlyphRectangle.BottomLeft.X &&
-                                                                               minY <= l.GlyphRectangle.BottomLeft.Y &&
-                                                                               maxY >= l.GlyphRectangle.BottomLeft.Y);
-
-                    if (duplicatesOverlapping != default)
+                    for (int ci = 0; ci < candidateIndices.Count; ci++)
                     {
-                        // duplicate overlapping letter was found, keeping the existing one and not adding this one.
-                        addLetter = false;
-                        duplicatesOverlappingIndex = cleanLetters.IndexOf(duplicatesOverlapping);
+                        int idx = candidateIndices[ci];
+                        var l = cleanLetters[idx];
+                        if (minX <= l.GlyphRectangle.BottomLeft.X &&
+                            maxX >= l.GlyphRectangle.BottomLeft.X &&
+                            minY <= l.GlyphRectangle.BottomLeft.Y &&
+                            maxY >= l.GlyphRectangle.BottomLeft.Y)
+                        {
+                            addLetter = false;
+                            duplicatesOverlappingIndex = idx;
+                            break;
+                        }
                     }
                 }
 
                 if (addLetter)
                 {
+                    int newIndex = cleanLetters.Count;
                     cleanLetters.Add(letter);
+
+                    if (!duplicateIndex.TryGetValue(key, out var list))
+                    {
+                        list = new List<int>();
+                        duplicateIndex[key] = list;
+                    }
+                    list.Add(newIndex);
                 }
                 else if (duplicatesOverlappingIndex != -1)
                 {
