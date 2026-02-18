@@ -9,7 +9,7 @@ namespace UglyToad.PdfPig.Writer
     /// Represents a link annotation that can be added to a PDF page.
     /// Link annotations provide clickable areas that can trigger actions such as navigating to another page or opening a URL.
     /// </summary>
-    internal sealed class LinkAnnotation
+    public sealed class LinkAnnotation
     {
         /// <summary>
         /// Gets the border style for the link annotation.
