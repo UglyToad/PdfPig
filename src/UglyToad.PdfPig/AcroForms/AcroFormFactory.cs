@@ -28,12 +28,12 @@
 
         private readonly IPdfTokenScanner tokenScanner;
         private readonly ILookupFilterProvider filterProvider;
-        private readonly IReadOnlyDictionary<IndirectReference, long> objectOffsets;
+        private readonly IReadOnlyDictionary<IndirectReference, XrefLocation> objectOffsets;
 
         public AcroFormFactory(
             IPdfTokenScanner tokenScanner,
             ILookupFilterProvider filterProvider,
-            IReadOnlyDictionary<IndirectReference, long> objectOffsets)
+            IReadOnlyDictionary<IndirectReference, XrefLocation> objectOffsets)
         {
             this.tokenScanner = tokenScanner ?? throw new ArgumentNullException(nameof(tokenScanner));
             this.filterProvider = filterProvider ?? throw new ArgumentNullException(nameof(filterProvider));

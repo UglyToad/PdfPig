@@ -15,8 +15,8 @@
             var reference1 = new IndirectReference(7, 0);
             var reference2 = new IndirectReference(9, 0);
 
-            scanner.Objects[reference1] = new ObjectToken(10, reference1, new IndirectReferenceToken(reference2));
-            scanner.Objects[reference2] = new ObjectToken(12, reference2, new NumericToken(69));
+            scanner.Objects[reference1] = new ObjectToken(XrefLocation.File(10), reference1, new IndirectReferenceToken(reference2));
+            scanner.Objects[reference2] = new ObjectToken(XrefLocation.File(12), reference2, new NumericToken(69));
 
             Assert.True(DirectObjectFinder.TryGet(new IndirectReferenceToken(reference1), scanner, out NumericToken result));
 
@@ -29,8 +29,8 @@
             var reference1 = new IndirectReference(7, 0);
             var reference2 = new IndirectReference(9, 0);
 
-            scanner.Objects[reference1] = new ObjectToken(10, reference1, new IndirectReferenceToken(reference2));
-            scanner.Objects[reference2] = new ObjectToken(12, reference2, new NumericToken(69));
+            scanner.Objects[reference1] = new ObjectToken(XrefLocation.File(10), reference1, new IndirectReferenceToken(reference2));
+            scanner.Objects[reference2] = new ObjectToken(XrefLocation.File(12), reference2, new NumericToken(69));
 
             var result = DirectObjectFinder.Get<NumericToken>(reference1, scanner);
 
@@ -43,8 +43,8 @@
             var reference1 = new IndirectReference(7, 0);
             var reference2 = new IndirectReference(9, 0);
 
-            scanner.Objects[reference1] = new ObjectToken(10, reference1, new IndirectReferenceToken(reference2));
-            scanner.Objects[reference2] = new ObjectToken(12, reference2, new NumericToken(69));
+            scanner.Objects[reference1] = new ObjectToken(XrefLocation.File(10), reference1, new IndirectReferenceToken(reference2));
+            scanner.Objects[reference2] = new ObjectToken(XrefLocation.File(12), reference2, new NumericToken(69));
 
             var result = DirectObjectFinder.Get<NumericToken>(new IndirectReferenceToken(reference1), scanner);
 
@@ -57,7 +57,7 @@
             var reference = new IndirectReference(10, 0);
 
             const string expected = "Goopy";
-            scanner.Objects[reference] = new ObjectToken(10, reference, new ArrayToken(new []
+            scanner.Objects[reference] = new ObjectToken(XrefLocation.File(10), reference, new ArrayToken(new []
             {
                 new StringToken(expected)
             }));
@@ -74,12 +74,12 @@
             var reference2 = new IndirectReference(69, 0);
 
             const string expected = "Goopy";
-            scanner.Objects[reference] = new ObjectToken(10, reference, new ArrayToken(new[]
+            scanner.Objects[reference] = new ObjectToken(XrefLocation.File(10), reference, new ArrayToken(new[]
             {
                 new IndirectReferenceToken(reference2) 
             }));
 
-            scanner.Objects[reference2] = new ObjectToken(69, reference2, new StringToken(expected));
+            scanner.Objects[reference2] = new ObjectToken(XrefLocation.File(69), reference2, new StringToken(expected));
 
             var result = DirectObjectFinder.Get<StringToken>(reference, scanner);
 
@@ -91,7 +91,7 @@
         {
             var reference = new IndirectReference(10, 0);
 
-            scanner.Objects[reference] = new ObjectToken(10, reference, new ArrayToken(new[]
+            scanner.Objects[reference] = new ObjectToken(XrefLocation.File(10), reference, new ArrayToken(new[]
             {
                 new NumericToken(5), new NumericToken(6), new NumericToken(0)   
             }));

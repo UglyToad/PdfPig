@@ -29,7 +29,7 @@ endobj";
 
             Assert.Equal("WDKAAR+CMBX12", name.Data);
 
-            Assert.StartsWith("294 0 obj", s.Substring((int)objectToken.Position));
+            Assert.StartsWith("294 0 obj", s.Substring((int)objectToken.Position.Value1));
         }
 
         [Fact]
@@ -107,7 +107,7 @@ endobj
             Assert.Equal(10383384, obj.Number.ObjectNumber);
             Assert.Equal(2, obj.Number.Generation);
 
-            Assert.StartsWith("10383384 2 obj", s.Substring((int)obj.Position));
+            Assert.StartsWith("10383384 2 obj", s.Substring((int)obj.Position.Value1));
 
             Assert.False(pdfScanner.MoveNext());
         }
@@ -140,7 +140,7 @@ endobj";
             Assert.Equal(295, obj.Number.ObjectNumber);
             Assert.Equal(0, obj.Number.Generation);
 
-            Assert.StartsWith("295 0 obj", s.Substring((int)obj.Position));
+            Assert.StartsWith("295 0 obj", s.Substring((int)obj.Position.Value1));
 
             Assert.False(pdfScanner.MoveNext());
         }
@@ -182,19 +182,19 @@ endobj";
 
             Assert.Equal(4, dictionary.Data.Count);
             Assert.Equal(274, tokens[0].Number.ObjectNumber);
-            Assert.StartsWith("274 0 obj", s.Substring((int)tokens[0].Position));
+            Assert.StartsWith("274 0 obj", s.Substring((int)tokens[0].Position.Value1));
 
             var nameObject = Assert.IsType<NameToken>(tokens[1].Data);
 
             Assert.Equal("WPXNWT+CMR9", nameObject.Data);
             Assert.Equal(310, tokens[1].Number.ObjectNumber);
-            Assert.StartsWith("310 0 obj", s.Substring((int)tokens[1].Position));
+            Assert.StartsWith("310 0 obj", s.Substring((int)tokens[1].Position.Value1));
 
             dictionary = Assert.IsType<DictionaryToken>(tokens[2].Data);
 
             Assert.Equal(7, dictionary.Data.Count);
             Assert.Equal(311, tokens[2].Number.ObjectNumber);
-            Assert.StartsWith("311 0 obj", s.Substring((int)tokens[2].Position));
+            Assert.StartsWith("311 0 obj", s.Substring((int)tokens[2].Position.Value1));
         }
 
         [Fact]
@@ -212,7 +212,7 @@ endobj";
             Assert.Equal(58949797283757L, token.Number.ObjectNumber);
             Assert.Equal("An object begins with obj and ends with endobj...", Assert.IsType<StringToken>(token.Data).Data);
 
-            Assert.StartsWith("58949797283757 0 obj", s.Substring((int)token.Position));
+            Assert.StartsWith("58949797283757 0 obj", s.Substring((int)token.Position.Value1));
         }
 
         [Fact]
@@ -240,7 +240,7 @@ A¡¬àð‰É©ˆ°‘¼›‚%¥×s³®í»š}%§X{{tøNåÝž¶ö¢ÖÞ¾�
 
             var locationProvider = new TestObjectLocationProvider();
             // Mark location of "353 0 obj"
-            locationProvider.Offsets[new IndirectReference(353, 0)] = 1643;
+            locationProvider.Offsets[new IndirectReference(353, 0)] = XrefLocation.File(1643);
 
             var scanner = GetScanner(s, locationProvider);
 
@@ -254,7 +254,7 @@ A¡¬àð‰É©ˆ°‘¼›‚%¥×s³®í»š}%§X{{tøNåÝž¶ö¢ÖÞ¾�
 
             Assert.StartsWith("H‰œUkLSgþÚh¹IÝÅl", str);
 
-            Assert.Equal(2, locationProvider.Offsets[new IndirectReference(352, 0)]);
+            Assert.Equal(2, locationProvider.Offsets[new IndirectReference(352, 0)].Value1);
         }
 
         [Fact]
@@ -275,7 +275,7 @@ endobj";
 
             var locationProvider = new TestObjectLocationProvider();
             // Mark location of "353 0 obj"
-            locationProvider.Offsets[new IndirectReference(353, 0)] = 1643;
+            locationProvider.Offsets[new IndirectReference(353, 0)] = XrefLocation.File(1643);
 
             var scanner = GetScanner(s, locationProvider);
 
@@ -292,7 +292,7 @@ endobj";
             Assert.Equal(data.Length, invalidLengthStream.Length);
             Assert.StartsWith("ABCDeeeee", str);
 
-            Assert.Equal(2, locationProvider.Offsets[new IndirectReference(352, 0)]);
+            Assert.Equal(2, locationProvider.Offsets[new IndirectReference(352, 0)].Value1);
         }
 
         [Fact]
@@ -338,7 +338,7 @@ endstream
 endobj";
             var locationProvider = new TestObjectLocationProvider();
 
-            locationProvider.Offsets[new IndirectReference(5, 0)] = 0;
+            locationProvider.Offsets[new IndirectReference(5, 0)] = XrefLocation.File(0);
 
             var scanner = GetScanner(s, locationProvider);
 

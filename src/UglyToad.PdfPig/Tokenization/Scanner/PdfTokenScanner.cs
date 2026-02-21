@@ -164,7 +164,7 @@
                         var actualReference = new IndirectReference(objectNumber.Int, generation.Int);
                         var actualToken = encryptionHandler.Decrypt(actualReference, readTokens[0]);
 
-                        CurrentToken = new ObjectToken(startPosition, actualReference, actualToken);
+                        CurrentToken = new ObjectToken(XrefLocation.File(startPosition), actualReference, actualToken);
 
                         readTokens.Clear();
                         coreTokenScanner.Seek(previousTokenPositions[0]);
@@ -191,7 +191,7 @@
                         var actualReference = new IndirectReference(objectNumber.Int, generation.Int);
                         var actualToken = encryptionHandler.Decrypt(actualReference, readTokens[0]);
                 
-                        CurrentToken = new ObjectToken(startPosition, actualReference, actualToken);
+                        CurrentToken = new ObjectToken(XrefLocation.File(startPosition), actualReference, actualToken);
                         readTokens.Clear();
                         coreTokenScanner.Seek(previousTokenPositions[2]);
                 
@@ -291,9 +291,9 @@
 
             token = encryptionHandler.Decrypt(reference, token);
 
-            CurrentToken = new ObjectToken(startPosition, reference, token);
+            CurrentToken = new ObjectToken(XrefLocation.File(startPosition), reference, token);
 
-            objectLocationProvider.UpdateOffset(reference, startPosition);
+            objectLocationProvider.UpdateOffset(reference, XrefLocation.File(startPosition));
 
             readTokens.Clear();
             return true;
@@ -626,10 +626,10 @@
                 // We can only find it if we know where it is.
                 if (objectLocationProvider.TryGetOffset(lengthReference.Data, out var offset))
                 {
-                    if (offset < 0)
+                    if (offset.Type == XrefEntryType.ObjectStream)
                     {
-                        ushort searchDepth = 0;
-                        var result = GetObjectFromStream(lengthReference.Data, offset, ref searchDepth);
+                        var navSet = new HashSet<IndirectReference>();
+                        var result = GetObjectFromStream(lengthReference.Data, offset, navSet);
 
                         if (!(result.Data is NumericToken streamLengthToken))
                         {
@@ -639,8 +639,9 @@
 
                         return streamLengthToken.Long;
                     }
+
                     // Move to the length object and read it.
-                    Seek(offset);
+                    Seek(offset.Value1);
 
                     // Keep a copy of the read tokens here since this list must be empty prior to move next.
                     var oldData = new List<IToken>(readTokens);
@@ -721,19 +722,18 @@
 
         public ObjectToken? Get(IndirectReference reference)
         {
-            ushort searchDepth = 0;
-            return Get(reference, ref searchDepth);
+            var navSet = new HashSet<IndirectReference>();
+            return Get(reference, navSet);
         }
 
-        private ObjectToken? Get(IndirectReference reference, ref ushort searchDepth)
+        private ObjectToken? Get(IndirectReference reference, HashSet<IndirectReference> navSet)
         {
-            if (searchDepth > 100)
+            if (!navSet.Add(reference))
             {
-                throw new PdfDocumentFormatException("Reached maximum search depth while getting indirect reference.");
+                var chain = string.Join(", ", navSet.Select(x => x.ToString()));
+                throw new PdfDocumentFormatException(
+                    $"Circular reference encountered when looking for object {reference}. Involved objects were: {chain}");
             }
-
-            searchDepth++;
-
 
             if (isDisposed)
             {
@@ -756,20 +756,20 @@
             }
 
             // Negative offsets refer to a stream with that number.
-            if (offset < 0)
+            if (offset.Type == XrefEntryType.ObjectStream)
             {
-                var result = GetObjectFromStream(reference, offset, ref searchDepth);
+                if (offset.Value1 == reference.ObjectNumber)
+                {
+                    throw new PdfDocumentFormatException(
+                        $"Object stream cannot contain itself, looking for object {reference} in {offset.Value1}");
+                }
+
+                var result = GetObjectFromStream(reference, offset, navSet);
 
                 return result;
             }
 
-            if (offset == 0 && reference.Generation > ushort.MaxValue)
-            {
-                // TODO - To remove as should not happen anymore
-                return new ObjectToken(offset, reference, NullToken.Instance);
-            }
-
-            Seek(offset);
+            Seek(offset.Value1);
 
             if (!MoveNext())
             {
@@ -793,7 +793,7 @@
         {
             // Using 0 position as it isn't written to stream and this value doesn't
             // seem to be used by any callers. In future may need to revisit this.
-            overwrittenTokens[reference] = new ObjectToken(0, reference, token);
+            overwrittenTokens[reference] = new ObjectToken(XrefLocation.File(0), reference, token);
         }
 
         private bool TryBruteForceFileToFindReference(IndirectReference reference, [NotNullWhen(true)] out ObjectToken? result)
@@ -826,11 +826,11 @@
             }
         }
 
-        private ObjectToken GetObjectFromStream(IndirectReference reference, long offset, ref ushort searchDepth)
+        private ObjectToken GetObjectFromStream(IndirectReference reference, XrefLocation offset, HashSet<IndirectReference> navSet)
         {
-            var streamObjectNumber = offset * -1;
+            var streamObjectNumber = offset.Value1;
 
-            var streamObject = Get(new IndirectReference(streamObjectNumber, 0), ref searchDepth);
+            var streamObject = Get(new IndirectReference(streamObjectNumber, 0), navSet);
 
             if (!(streamObject?.Data is StreamToken stream))
             {
@@ -853,7 +853,7 @@
             return result;
         }
 
-        private IReadOnlyList<ObjectToken> ParseObjectStream(StreamToken stream, long offset)
+        private IReadOnlyList<ObjectToken> ParseObjectStream(StreamToken stream, XrefLocation offset)
         {
             if (!stream.StreamDictionary.TryGet(NameToken.N, out var numberToken)
             || !(numberToken is NumericToken numberOfObjects))

@@ -16,7 +16,7 @@ internal static partial class FirstPassParser
     {
         log ??= new NoOpLog();
 
-        IReadOnlyDictionary<IndirectReference, long>? bruteForceOffsets = null;
+        IReadOnlyDictionary<IndirectReference, XrefLocation>? bruteForceOffsets = null;
         var didBruteForce = false;
         DictionaryToken? bruteForceTrailer = null;
 
@@ -92,7 +92,7 @@ internal static partial class FirstPassParser
         }
 
         DictionaryToken? lastTrailer = null;
-        var flattenedOffsets = new Dictionary<IndirectReference, long>();
+        var flattenedOffsets = new Dictionary<IndirectReference, XrefLocation>();
         foreach (var xrefPart in orderedXrefs)
         {
             if (xrefPart.Dictionary != null)
@@ -230,12 +230,12 @@ internal class FirstPassResults
     /// <summary>
     /// All offsets found if a brute-force search was applied.
     /// </summary>
-    public IReadOnlyDictionary<IndirectReference, long>? BruteForceOffsets { get; }
+    public IReadOnlyDictionary<IndirectReference, XrefLocation>? BruteForceOffsets { get; }
 
     /// <summary>
     /// All offsets found from the leaf xref.
     /// </summary>
-    public IReadOnlyDictionary<IndirectReference, long> XrefOffsets { get; }
+    public IReadOnlyDictionary<IndirectReference, XrefLocation> XrefOffsets { get; }
 
     /// <summary>
     /// The trailer dictionary of the leaf xref if we found any.
@@ -244,8 +244,8 @@ internal class FirstPassResults
 
     public FirstPassResults(
         IReadOnlyList<IXrefSection> parts,
-        IReadOnlyDictionary<IndirectReference, long>? bruteForceOffsets,
-        IReadOnlyDictionary<IndirectReference, long> xrefOffsets,
+        IReadOnlyDictionary<IndirectReference, XrefLocation>? bruteForceOffsets,
+        IReadOnlyDictionary<IndirectReference, XrefLocation> xrefOffsets,
         DictionaryToken? trailer)
     {
         Parts = parts;
