@@ -1,5 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tokenization.Scanner
 {
+    using Core;
+    using Encryption;
+    using Filters;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -7,9 +10,6 @@
     using System.Globalization;
     using System.Linq;
     using System.Text.RegularExpressions;
-    using Core;
-    using Encryption;
-    using Filters;
     using Tokens;
     using UglyToad.PdfPig.Parser.FileStructure;
 
@@ -628,8 +628,8 @@
                 {
                     if (offset.Type == XrefEntryType.ObjectStream)
                     {
-                        var navSet = new HashSet<IndirectReference>();
-                        var result = GetObjectFromStream(lengthReference.Data, offset, navSet);
+                        Span<int> stack = stackalloc int[7];
+                        var result = GetObjectFromStream(lengthReference.Data, offset, stack, 0);
 
                         if (!(result.Data is NumericToken streamLengthToken))
                         {
@@ -722,18 +722,31 @@
 
         public ObjectToken? Get(IndirectReference reference)
         {
-            var navSet = new HashSet<IndirectReference>();
-            return Get(reference, navSet);
+            Span<int> stack = stackalloc int[7];
+            return Get(reference, stack, 0);
         }
 
-        private ObjectToken? Get(IndirectReference reference, HashSet<IndirectReference> navSet)
+        private ObjectToken? Get(IndirectReference reference, Span<int> navSet, byte depth)
         {
-            if (!navSet.Add(reference))
+            if (depth >= navSet.Length)
             {
-                var chain = string.Join(", ", navSet.Select(x => x.ToString()));
-                throw new PdfDocumentFormatException(
-                    $"Circular reference encountered when looking for object {reference}. Involved objects were: {chain}");
+                var chain = string.Join(", ", navSet.ToArray());
+                throw new PdfDocumentFormatException($"Deep object chain detected when looking for {reference}: {chain}.");
             }
+
+            // Cycle detection (linear scan, but depth is tiny)
+            for (var i = 0; i < depth; i++)
+            {
+                if (navSet[i] == reference.ObjectNumber)
+                {
+                    var chain = string.Join(", ", navSet.ToArray());
+                    throw new PdfDocumentFormatException(
+                        $"Circular reference encountered when looking for object {reference}. Involved objects were: {chain}");
+                }
+            }
+
+            navSet[depth] = (int)reference.ObjectNumber;
+            depth++;
 
             if (isDisposed)
             {
@@ -764,7 +777,7 @@
                         $"Object stream cannot contain itself, looking for object {reference} in {offset.Value1}");
                 }
 
-                var result = GetObjectFromStream(reference, offset, navSet);
+                var result = GetObjectFromStream(reference, offset, navSet, depth);
 
                 return result;
             }
@@ -826,11 +839,11 @@
             }
         }
 
-        private ObjectToken GetObjectFromStream(IndirectReference reference, XrefLocation offset, HashSet<IndirectReference> navSet)
+        private ObjectToken GetObjectFromStream(IndirectReference reference, XrefLocation offset, Span<int> navSet, byte depth)
         {
             var streamObjectNumber = offset.Value1;
 
-            var streamObject = Get(new IndirectReference(streamObjectNumber, 0), navSet);
+            var streamObject = Get(new IndirectReference(streamObjectNumber, 0), navSet, depth);
 
             if (!(streamObject?.Data is StreamToken stream))
             {
