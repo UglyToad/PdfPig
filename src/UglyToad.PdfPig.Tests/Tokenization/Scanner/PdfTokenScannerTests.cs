@@ -357,7 +357,7 @@ endobj";
         [Fact]
         public void ReadsStreamWithMissingLength()
         {
-            const string s = @"
+            string s = @"
 12655 0 obj
 
 << /S 1245 >>
@@ -719,6 +719,7 @@ endobj";
 
         private static PdfTokenScanner GetScanner(string s, TestObjectLocationProvider locationProvider = null, bool useLenientParsing = false)
         {
+            s = s.Replace("\r\n", "\n").Replace("\n", "\r\n");
             var input = StringBytesTestConverter.Convert(s, false);
 
             return new PdfTokenScanner(input.Bytes,
