@@ -15,15 +15,31 @@
 
 	<ItemGroup Condition="'$(PdfPigVersion)' == 'Local'">
 		<ProjectReference Include="..\..\src\UglyToad.PdfPig\UglyToad.PdfPig.csproj" />
+		<ProjectReference Include="..\..\src\UglyToad.PdfPig.Core\UglyToad.PdfPig.Core.csproj" />
+		<ProjectReference Include="..\..\src\UglyToad.PdfPig.Fonts\UglyToad.PdfPig.Fonts.csproj" />
+		<ProjectReference Include="..\..\src\UglyToad.PdfPig.Tokenization\UglyToad.PdfPig.Tokenization.csproj" />
+		<ProjectReference Include="..\..\src\UglyToad.PdfPig.Tokens\UglyToad.PdfPig.Tokens.csproj" />
 		<ProjectReference Include="..\..\src\UglyToad.PdfPig.DocumentLayoutAnalysis\UglyToad.PdfPig.DocumentLayoutAnalysis.csproj" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(PdfPigVersion)' == 'Latest'">
-		<PackageReference Include="PdfPig" Version="0.1.14-alpha-20260216-7e370" />
+		<PackageReference Include="PdfPig" Version="0.1.14-alpha-20260219-adb57" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Update="algo.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	  <None Update="fseprd1102849.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="PDFBOX-492-4.jar-8.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Single Page Simple - from inkscape.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Single Page Simple - from open office.pdf">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>
