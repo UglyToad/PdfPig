@@ -14,7 +14,7 @@ internal interface IXrefSection
     /// <summary>
     /// The bytes offsets of the objects in this xref.
     /// </summary>
-    public IReadOnlyDictionary<IndirectReference, long> ObjectOffsets { get; }
+    public IReadOnlyDictionary<IndirectReference, XrefLocation> ObjectOffsets { get; }
 
     /// <summary>
     /// The dictionary for this xref, for the trailer xref this is the trailer dictionary, for streams the stream dictionary.

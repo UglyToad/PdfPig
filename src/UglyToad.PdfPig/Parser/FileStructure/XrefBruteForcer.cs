@@ -19,7 +19,7 @@ internal static class XrefBruteForcer
         // Guard against circular references; only read xref at each offset once
         var xrefOffsetSeen = new HashSet<long>();
 
-        var bruteForceObjPositions = new Dictionary<IndirectReference, long>();
+        var bruteForceObjPositions = new Dictionary<IndirectReference, XrefLocation>();
 
         DictionaryToken? trailer = null;
 
@@ -123,7 +123,7 @@ internal static class XrefBruteForcer
 
             if (buffer.EndsWith(" obj") && numericsQueue[0] > 0)
             {
-                bruteForceObjPositions[new IndirectReference(numericsQueue[0], (int)numericsQueue[1])] = positionsQueue[0];
+                bruteForceObjPositions[new IndirectReference(numericsQueue[0], (int)numericsQueue[1])] = XrefLocation.File(positionsQueue[0]);
 
                 lastObjPosition = positionsQueue[0];
 
@@ -208,12 +208,12 @@ internal static class XrefBruteForcer
 
     public class Result(
         IReadOnlyList<IXrefSection> xRefParts,
-        IReadOnlyDictionary<IndirectReference, long> objectOffsets,
+        IReadOnlyDictionary<IndirectReference, XrefLocation> objectOffsets,
         DictionaryToken? lastTrailer)
     {
         public IReadOnlyList<IXrefSection> XRefParts { get; } = xRefParts;
 
-        public IReadOnlyDictionary<IndirectReference, long> ObjectOffsets { get; } = objectOffsets;
+        public IReadOnlyDictionary<IndirectReference, XrefLocation> ObjectOffsets { get; } = objectOffsets;
 
         public DictionaryToken? LastTrailer { get; } = lastTrailer;
     }

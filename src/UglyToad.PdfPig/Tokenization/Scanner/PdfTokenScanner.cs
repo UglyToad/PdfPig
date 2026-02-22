@@ -1,5 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Tokenization.Scanner
 {
+    using Core;
+    using Encryption;
+    using Filters;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -7,9 +10,6 @@
     using System.Globalization;
     using System.Linq;
     using System.Text.RegularExpressions;
-    using Core;
-    using Encryption;
-    using Filters;
     using Tokens;
     using UglyToad.PdfPig.Parser.FileStructure;
 
@@ -164,7 +164,7 @@
                         var actualReference = new IndirectReference(objectNumber.Int, generation.Int);
                         var actualToken = encryptionHandler.Decrypt(actualReference, readTokens[0]);
 
-                        CurrentToken = new ObjectToken(startPosition, actualReference, actualToken);
+                        CurrentToken = new ObjectToken(XrefLocation.File(startPosition), actualReference, actualToken);
 
                         readTokens.Clear();
                         coreTokenScanner.Seek(previousTokenPositions[0]);
@@ -191,7 +191,7 @@
                         var actualReference = new IndirectReference(objectNumber.Int, generation.Int);
                         var actualToken = encryptionHandler.Decrypt(actualReference, readTokens[0]);
                 
-                        CurrentToken = new ObjectToken(startPosition, actualReference, actualToken);
+                        CurrentToken = new ObjectToken(XrefLocation.File(startPosition), actualReference, actualToken);
                         readTokens.Clear();
                         coreTokenScanner.Seek(previousTokenPositions[2]);
                 
@@ -291,9 +291,9 @@
 
             token = encryptionHandler.Decrypt(reference, token);
 
-            CurrentToken = new ObjectToken(startPosition, reference, token);
+            CurrentToken = new ObjectToken(XrefLocation.File(startPosition), reference, token);
 
-            objectLocationProvider.UpdateOffset(reference, startPosition);
+            objectLocationProvider.UpdateOffset(reference, XrefLocation.File(startPosition));
 
             readTokens.Clear();
             return true;
@@ -626,10 +626,10 @@
                 // We can only find it if we know where it is.
                 if (objectLocationProvider.TryGetOffset(lengthReference.Data, out var offset))
                 {
-                    if (offset < 0)
+                    if (offset.Type == XrefEntryType.ObjectStream)
                     {
-                        ushort searchDepth = 0;
-                        var result = GetObjectFromStream(lengthReference.Data, offset, ref searchDepth);
+                        Span<int> stack = stackalloc int[7];
+                        var result = GetObjectFromStream(lengthReference.Data, offset, stack, 0);
 
                         if (!(result.Data is NumericToken streamLengthToken))
                         {
@@ -639,8 +639,9 @@
 
                         return streamLengthToken.Long;
                     }
+
                     // Move to the length object and read it.
-                    Seek(offset);
+                    Seek(offset.Value1);
 
                     // Keep a copy of the read tokens here since this list must be empty prior to move next.
                     var oldData = new List<IToken>(readTokens);
@@ -721,19 +722,31 @@
 
         public ObjectToken? Get(IndirectReference reference)
         {
-            ushort searchDepth = 0;
-            return Get(reference, ref searchDepth);
+            Span<int> stack = stackalloc int[7];
+            return Get(reference, stack, 0);
         }
 
-        private ObjectToken? Get(IndirectReference reference, ref ushort searchDepth)
+        private ObjectToken? Get(IndirectReference reference, Span<int> navSet, byte depth)
         {
-            if (searchDepth > 100)
+            if (depth >= navSet.Length)
             {
-                throw new PdfDocumentFormatException("Reached maximum search depth while getting indirect reference.");
+                var chain = string.Join(", ", navSet.ToArray());
+                throw new PdfDocumentFormatException($"Deep object chain detected when looking for {reference}: {chain}.");
             }
 
-            searchDepth++;
+            // Cycle detection (linear scan, but depth is tiny)
+            for (var i = 0; i < depth; i++)
+            {
+                if (navSet[i] == reference.ObjectNumber)
+                {
+                    var chain = string.Join(", ", navSet.ToArray());
+                    throw new PdfDocumentFormatException(
+                        $"Circular reference encountered when looking for object {reference}. Involved objects were: {chain}");
+                }
+            }
 
+            navSet[depth] = (int)reference.ObjectNumber;
+            depth++;
 
             if (isDisposed)
             {
@@ -756,20 +769,20 @@
             }
 
             // Negative offsets refer to a stream with that number.
-            if (offset < 0)
+            if (offset.Type == XrefEntryType.ObjectStream)
             {
-                var result = GetObjectFromStream(reference, offset, ref searchDepth);
+                if (offset.Value1 == reference.ObjectNumber)
+                {
+                    throw new PdfDocumentFormatException(
+                        $"Object stream cannot contain itself, looking for object {reference} in {offset.Value1}");
+                }
+
+                var result = GetObjectFromStream(reference, offset, navSet, depth);
 
                 return result;
             }
 
-            if (offset == 0 && reference.Generation > ushort.MaxValue)
-            {
-                // TODO - To remove as should not happen anymore
-                return new ObjectToken(offset, reference, NullToken.Instance);
-            }
-
-            Seek(offset);
+            Seek(offset.Value1);
 
             if (!MoveNext())
             {
@@ -793,7 +806,7 @@
         {
             // Using 0 position as it isn't written to stream and this value doesn't
             // seem to be used by any callers. In future may need to revisit this.
-            overwrittenTokens[reference] = new ObjectToken(0, reference, token);
+            overwrittenTokens[reference] = new ObjectToken(XrefLocation.File(0), reference, token);
         }
 
         private bool TryBruteForceFileToFindReference(IndirectReference reference, [NotNullWhen(true)] out ObjectToken? result)
@@ -826,11 +839,11 @@
             }
         }
 
-        private ObjectToken GetObjectFromStream(IndirectReference reference, long offset, ref ushort searchDepth)
+        private ObjectToken GetObjectFromStream(IndirectReference reference, XrefLocation offset, Span<int> navSet, byte depth)
         {
-            var streamObjectNumber = offset * -1;
+            var streamObjectNumber = offset.Value1;
 
-            var streamObject = Get(new IndirectReference(streamObjectNumber, 0), ref searchDepth);
+            var streamObject = Get(new IndirectReference(streamObjectNumber, 0), navSet, depth);
 
             if (!(streamObject?.Data is StreamToken stream))
             {
@@ -853,7 +866,7 @@
             return result;
         }
 
-        private IReadOnlyList<ObjectToken> ParseObjectStream(StreamToken stream, long offset)
+        private IReadOnlyList<ObjectToken> ParseObjectStream(StreamToken stream, XrefLocation offset)
         {
             if (!stream.StreamDictionary.TryGet(NameToken.N, out var numberToken)
             || !(numberToken is NumericToken numberOfObjects))

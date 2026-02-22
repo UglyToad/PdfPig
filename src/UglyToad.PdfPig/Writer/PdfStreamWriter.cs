@@ -58,7 +58,7 @@
 
             var ir = ReserveObjectNumber();
             offsets.Add(ir.Data, Stream.Position);
-            var obj = new ObjectToken(Stream.Position, ir.Data, token);
+            var obj = new ObjectToken(XrefLocation.File(Stream.Position), ir.Data, token);
             TokenWriter.WriteToken(obj, Stream);
             return ir;
         }
@@ -71,7 +71,7 @@
             }
 
             offsets.Add(indirectReference.Data, Stream.Position);
-            var obj = new ObjectToken(Stream.Position, indirectReference.Data, token);
+            var obj = new ObjectToken(XrefLocation.File(Stream.Position), indirectReference.Data, token);
             TokenWriter.WriteToken(obj, Stream);
             return indirectReference;
         }
@@ -97,7 +97,6 @@
         {
             TokenWriter.WriteCrossReferenceTable(offsets, catalogReference.Data, Stream, documentInformationReference?.Data);
         }
-
 
         public void Dispose()
         {

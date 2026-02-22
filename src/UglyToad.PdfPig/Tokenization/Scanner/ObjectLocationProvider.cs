@@ -13,16 +13,16 @@
 
         private readonly IInputBytes bytes;
 
-        private IReadOnlyDictionary<IndirectReference, long>? bruteForcedOffsets;
+        private IReadOnlyDictionary<IndirectReference, XrefLocation>? bruteForcedOffsets;
 
-        private readonly Dictionary<IndirectReference, long> offsets;
+        private readonly Dictionary<IndirectReference, XrefLocation> offsets;
 
         public ObjectLocationProvider(
-            IReadOnlyDictionary<IndirectReference, long> xrefOffsets,
-            IReadOnlyDictionary<IndirectReference, long>? bruteForcedOffsets,
+            IReadOnlyDictionary<IndirectReference, XrefLocation> xrefOffsets,
+            IReadOnlyDictionary<IndirectReference, XrefLocation>? bruteForcedOffsets,
             IInputBytes bytes)
         {
-            offsets = new Dictionary<IndirectReference, long>();
+            offsets = new Dictionary<IndirectReference, XrefLocation>();
             foreach (var xrefOffset in xrefOffsets)
             {
                 offsets[xrefOffset.Key] = xrefOffset.Value;
@@ -32,7 +32,7 @@
             this.bytes = bytes;
         }
 
-        public bool TryGetOffset(IndirectReference reference, out long offset)
+        public bool TryGetOffset(IndirectReference reference, out XrefLocation offset)
         {
             if (bruteForcedOffsets != null && bruteForcedOffsets.TryGetValue(reference, out var bfOffset))
             {
@@ -42,16 +42,6 @@
 
             if (offsets.TryGetValue(reference, out offset))
             {
-                if (offset + reference.ObjectNumber == 0)
-                {
-                    // We have a case where 'offset' and
-                    // 'reference.ObjectNumber' have the same value
-                    // and opposite signs.
-                    // This results in an infinite recursion in
-                    // PdfTokenScanner.GetObjectFromStream() where 
-                    // `var streamObjectNumber = offset * -1;`
-                    throw new PdfDocumentFormatException("Avoiding infinite recursion in ObjectLocationProvider.TryGetOffset() as 'offset' and 'reference.ObjectNumber' have the same value and opposite signs.");
-                }
                 return true;
             }
 
@@ -63,7 +53,7 @@
             return bruteForcedOffsets.TryGetValue(reference, out offset);
         }
 
-        public void UpdateOffset(IndirectReference reference, long offset)
+        public void UpdateOffset(IndirectReference reference, XrefLocation offset)
         {
             offsets[reference] = offset;
         }
@@ -81,8 +71,9 @@
             }
 
             // Don't cache incorrect locations.
-            if (!force && offsets.TryGetValue(objectToken.Number, out var expected)
-                && objectToken.Position != expected)
+            if (!force
+                && offsets.TryGetValue(objectToken.Number, out var expected)
+                && (objectToken.Position.Type != expected.Type || objectToken.Position.Value1 != expected.Value1))
             {
                 return;
             }

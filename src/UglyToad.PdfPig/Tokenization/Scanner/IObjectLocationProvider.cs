@@ -6,9 +6,9 @@
 
     internal interface IObjectLocationProvider
     {
-        bool TryGetOffset(IndirectReference reference, out long offset);
+        bool TryGetOffset(IndirectReference reference, out XrefLocation offset);
 
-        void UpdateOffset(IndirectReference reference, long offset);
+        void UpdateOffset(IndirectReference reference, XrefLocation offset);
 
         bool TryGetCached(IndirectReference reference, [NotNullWhen(true)] out ObjectToken? objectToken);
 

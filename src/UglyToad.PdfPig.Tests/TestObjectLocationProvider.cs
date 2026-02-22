@@ -6,14 +6,14 @@
 
     internal class TestObjectLocationProvider : IObjectLocationProvider
     {
-        public Dictionary<IndirectReference, long> Offsets { get; } = new Dictionary<IndirectReference, long>();
+        public Dictionary<IndirectReference, XrefLocation> Offsets { get; } = new Dictionary<IndirectReference, XrefLocation>();
 
-        public bool TryGetOffset(IndirectReference reference, out long offset)
+        public bool TryGetOffset(IndirectReference reference, out XrefLocation offset)
         {
             return Offsets.TryGetValue(reference, out offset);
         }
 
-        public void UpdateOffset(IndirectReference reference, long offset)
+        public void UpdateOffset(IndirectReference reference, XrefLocation offset)
         {
             Offsets[reference] = offset;
         }

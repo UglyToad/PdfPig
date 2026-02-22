@@ -15,7 +15,7 @@
 
             var profileBytes = ProfileStreamReader.GetSRgb2014();
 
-            var compressedBytes = DataCompresser.CompressBytes(profileBytes);
+            var compressedBytes = DataCompressor.CompressBytes(profileBytes);
 
             var profileStreamDictionary = new Dictionary<NameToken, IToken>
             {

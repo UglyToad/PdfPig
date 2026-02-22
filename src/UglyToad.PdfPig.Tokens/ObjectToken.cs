@@ -12,7 +12,7 @@
         /// <summary>
         /// The offset to the start of the object number from the start of the file in bytes.
         /// </summary>
-        public long Position { get; }
+        public XrefLocation Position { get; }
 
         /// <summary>
         /// The object and generation number of the object.
@@ -30,7 +30,7 @@
         /// <param name="position">The offset in bytes from the start of the file for this object.</param>
         /// <param name="number">The identifier for this object.</param>
         /// <param name="data">The data contained in this object.</param>
-        public ObjectToken(long position, IndirectReference number, IToken data)
+        public ObjectToken(XrefLocation position, IndirectReference number, IToken data)
         {
             Position = position;
             Number = number;

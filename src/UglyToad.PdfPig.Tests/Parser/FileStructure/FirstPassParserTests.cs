@@ -47,7 +47,7 @@ public class FirstPassParserTests
         Assert.Equal(2, results.Parts.Count);
         Assert.NotNull(results.Trailer);
 
-        Assert.Equal(results.XrefOffsets[new IndirectReference(8, 0)], 500);
+        Assert.Equal(results.XrefOffsets[new IndirectReference(8, 0)].Value1, 500);
     }
 
     [Fact]
