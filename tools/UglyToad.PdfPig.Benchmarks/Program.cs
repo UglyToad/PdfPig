@@ -6,7 +6,7 @@ namespace UglyToad.PdfPig.Benchmarks
     {
         static void Main(string[] args)
         {
-            var summary = BenchmarkRunner.Run<LayoutAnalysisBenchmarks>();
+            var summary = BenchmarkRunner.Run<BruteForceBenchmarks>();
             Console.ReadKey();
         }
     }
