@@ -70,7 +70,7 @@
             this.usePdfDocEncoding = usePdfDocEncoding;
             this.stackDepthGuard = stackDepthGuard;
             this.stringTokenizer = new StringTokenizer(usePdfDocEncoding);
-            this.arrayTokenizer = new ArrayTokenizer(usePdfDocEncoding, this.stackDepthGuard);
+            this.arrayTokenizer = new ArrayTokenizer(usePdfDocEncoding, this.stackDepthGuard, useLenientParsing);
             this.dictionaryTokenizer = new DictionaryTokenizer(usePdfDocEncoding, this.stackDepthGuard, useLenientParsing: useLenientParsing);
             this.scope = scope;
             this.namedDictionaryRequiredKeys = namedDictionaryRequiredKeys;
