@@ -9,13 +9,15 @@
     {
         private readonly bool usePdfDocEncoding;
         private readonly StackDepthGuard stackDepthGuard;
+        private readonly bool useLenientParsing;
 
         public bool ReadsNextByte { get; } = false;
 
-        public ArrayTokenizer(bool usePdfDocEncoding, StackDepthGuard stackDepthGuard)
+        public ArrayTokenizer(bool usePdfDocEncoding, StackDepthGuard stackDepthGuard, bool useLenientParsing)
         {
             this.usePdfDocEncoding = usePdfDocEncoding;
             this.stackDepthGuard = stackDepthGuard;
+            this.useLenientParsing = useLenientParsing;
         }
 
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
@@ -27,7 +29,7 @@
                 return false;
             }
 
-            var scanner = new CoreTokenScanner(inputBytes, usePdfDocEncoding, stackDepthGuard, ScannerScope.Array);
+            var scanner = new CoreTokenScanner(inputBytes, usePdfDocEncoding, stackDepthGuard, ScannerScope.Array, useLenientParsing: useLenientParsing);
 
             var contents = new List<IToken>();
 
