@@ -77,6 +77,8 @@
                 "UglyToad.PdfPig.Content.DocumentInformation",
                 "UglyToad.PdfPig.Content.EmbeddedFile",
                 "UglyToad.PdfPig.Content.Hyperlink",
+                "UglyToad.PdfPig.Content.IBoundingBox",
+                "UglyToad.PdfPig.Content.ILettersBlock",
                 "UglyToad.PdfPig.Content.InlineImage",
                 "UglyToad.PdfPig.Content.IPageFactory`1",
                 "UglyToad.PdfPig.Content.IPdfImage",

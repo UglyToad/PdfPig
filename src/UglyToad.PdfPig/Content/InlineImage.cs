@@ -20,6 +20,8 @@
 
         /// <inheritdoc />
         public PdfRectangle Bounds { get; }
+        /// <inheritdoc />
+        public PdfRectangle BoundingBox => Bounds;
 
         /// <inheritdoc />
         public int WidthInSamples { get; }
