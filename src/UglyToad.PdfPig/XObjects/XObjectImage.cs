@@ -19,10 +19,12 @@
         private readonly Lazy<Memory<byte>>? memoryFactory;
 
         /// <inheritdoc />
-        public PdfRectangle Bounds { get; }
+        public PdfRectangle BoundingBox { get; }
 
         /// <inheritdoc />
-        public PdfRectangle BoundingBox => Bounds;
+
+        [Obsolete("Use BoundingBox instead.")]
+        public PdfRectangle Bounds => BoundingBox;
 
         /// <inheritdoc />
         public int WidthInSamples { get; }
@@ -88,7 +90,7 @@
             ColorSpaceDetails? colorSpaceDetails,
             IPdfImage? softMaskImage)
         {
-            Bounds = bounds;
+            BoundingBox = bounds;
             WidthInSamples = widthInSamples;
             HeightInSamples = heightInSamples;
             BitsPerComponent = bitsPerComponent;
@@ -124,7 +126,7 @@
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"XObject Image (w {Bounds.Width}, h {Bounds.Height}): {ImageDictionary}";
+            return $"XObject Image (w {BoundingBox.Width}, h {BoundingBox.Height}): {ImageDictionary}";
         }
     }
 }

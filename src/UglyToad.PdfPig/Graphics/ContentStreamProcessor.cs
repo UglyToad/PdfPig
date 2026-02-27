@@ -122,7 +122,7 @@ namespace UglyToad.PdfPig.Graphics
 
                     letter = new Letter(
                         newLetter,
-                        attachTo.GlyphRectangle,
+                        attachTo.BoundingBox,
                         attachTo.GlyphRectangleLoose,
                         attachTo.StartBaseLine,
                         attachTo.EndBaseLine,

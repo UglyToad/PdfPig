@@ -34,7 +34,7 @@ namespace UglyToad.PdfPig.Tests.Integration
             {
                 var page = document.GetPage(1);
 
-                Assert.NotEqual(0, page.Letters[0].GlyphRectangle.Height);
+                Assert.NotEqual(0, page.Letters[0].BoundingBox.Height);
             }
         }
 

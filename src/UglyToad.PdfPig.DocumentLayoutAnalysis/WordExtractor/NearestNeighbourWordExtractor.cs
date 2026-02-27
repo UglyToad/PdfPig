@@ -163,8 +163,8 @@
             public Func<Letter, Letter, double> MaximumDistance { get; set; } = (l1, l2) =>
             {
                 double maxDist = Math.Max(Math.Max(Math.Max(Math.Max(Math.Max(
-                    Math.Abs(l1.GlyphRectangle.Width),
-                    Math.Abs(l2.GlyphRectangle.Width)),
+                    Math.Abs(l1.BoundingBox.Width),
+                    Math.Abs(l2.BoundingBox.Width)),
                     Math.Abs(l1.Width)),
                     Math.Abs(l2.Width)),
                     l1.PointSize), l2.PointSize) * 0.2;

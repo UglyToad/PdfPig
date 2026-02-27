@@ -372,7 +372,7 @@
             public Func<IEnumerable<Letter>, double> DominantFontWidthFunc { get; set; } =
                 (letters) =>
                 {
-                    var widths = letters.Select(x => Math.Max(Math.Round(x.Width, 3), Math.Round(x.GlyphRectangle.Width, 3)));
+                    var widths = letters.Select(x => Math.Max(Math.Round(x.Width, 3), Math.Round(x.BoundingBox.Width, 3)));
                     var mode = widths.Mode();
                     if (double.IsNaN(mode) || mode == 0)
                     {
@@ -389,7 +389,7 @@
             public Func<IEnumerable<Letter>, double> DominantFontHeightFunc { get; set; } =
                 (letters) =>
                 {
-                    var heights = letters.Select(x => Math.Round(x.GlyphRectangle.Height, 3));
+                    var heights = letters.Select(x => Math.Round(x.BoundingBox.Height, 3));
                     var mode = heights.Mode();
                     if (double.IsNaN(mode) || mode == 0)
                     {

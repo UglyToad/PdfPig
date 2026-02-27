@@ -96,12 +96,12 @@
         {
             string fontFamily = GetFontFamily(l.FontName, out string style, out string weight);
             string rotation = "";
-            if (l.GlyphRectangle.Rotation != 0)
+            if (l.BoundingBox.Rotation != 0)
             {
-                rotation = $" transform='rotate({Math.Round(-l.GlyphRectangle.Rotation, Rounding)} {Math.Round(l.GlyphRectangle.BottomLeft.X, Rounding)},{Math.Round(height - l.GlyphRectangle.TopLeft.Y, Rounding)})'";
+                rotation = $" transform='rotate({Math.Round(-l.BoundingBox.Rotation, Rounding)} {Math.Round(l.BoundingBox.BottomLeft.X, Rounding)},{Math.Round(height - l.BoundingBox.TopLeft.Y, Rounding)})'";
             }
 
-            string fontSize = l.FontSize != 1 ? $"font-size='{l.FontSize:0}'" : $"style='font-size:{Math.Round(l.GlyphRectangle.Height, 2)}px'";
+            string fontSize = l.FontSize != 1 ? $"font-size='{l.FontSize:0}'" : $"style='font-size:{Math.Round(l.BoundingBox.Height, 2)}px'";
 
             var safeValue = XmlEscape(l, doc);
             var x = Math.Round(l.StartBaseLine.X, Rounding);

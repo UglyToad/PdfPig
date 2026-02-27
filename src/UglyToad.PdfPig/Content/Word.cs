@@ -107,15 +107,15 @@
                     blY = letter.StartBaseLine.Y;
                 }
 
-                var right = letter.StartBaseLine.X + Math.Max(letter.Width, letter.GlyphRectangle.Width);
+                var right = letter.StartBaseLine.X + Math.Max(letter.Width, letter.BoundingBox.Width);
                 if (right > trX)
                 {
                     trX = right;
                 }
 
-                if (letter.GlyphRectangle.TopLeft.Y > trY)
+                if (letter.BoundingBox.TopLeft.Y > trY)
                 {
-                    trY = letter.GlyphRectangle.TopLeft.Y;
+                    trY = letter.BoundingBox.TopLeft.Y;
                 }
             }
 
@@ -146,15 +146,15 @@
                     blY = letter.StartBaseLine.Y;
                 }
 
-                var right = letter.StartBaseLine.X - Math.Max(letter.Width, letter.GlyphRectangle.Width);
+                var right = letter.StartBaseLine.X - Math.Max(letter.Width, letter.BoundingBox.Width);
                 if (right < trX)
                 {
                     trX = right;
                 }
 
-                if (letter.GlyphRectangle.TopRight.Y < trY)
+                if (letter.BoundingBox.TopRight.Y < trY)
                 {
-                    trY = letter.GlyphRectangle.TopRight.Y;
+                    trY = letter.BoundingBox.TopRight.Y;
                 }
             }
 
@@ -185,15 +185,15 @@
                     r = letter.EndBaseLine.Y;
                 }
 
-                var right = letter.StartBaseLine.X + letter.GlyphRectangle.Height;
+                var right = letter.StartBaseLine.X + letter.BoundingBox.Height;
                 if (right > t)
                 {
                     t = right;
                 }
 
-                if (letter.GlyphRectangle.BottomLeft.Y > l)
+                if (letter.BoundingBox.BottomLeft.Y > l)
                 {
-                    l = letter.GlyphRectangle.BottomLeft.Y;
+                    l = letter.BoundingBox.BottomLeft.Y;
                 }
             }
 
@@ -226,15 +226,15 @@
                     l = letter.StartBaseLine.Y;
                 }
 
-                var right = letter.StartBaseLine.X - letter.GlyphRectangle.Height;
+                var right = letter.StartBaseLine.X - letter.BoundingBox.Height;
                 if (right < t)
                 {
                     t = right;
                 }
 
-                if (letter.GlyphRectangle.BottomRight.Y > r)
+                if (letter.BoundingBox.BottomRight.Y > r)
                 {
-                    r = letter.GlyphRectangle.BottomRight.Y;
+                    r = letter.BoundingBox.BottomRight.Y;
                 }
             }
 
@@ -253,7 +253,7 @@
 
             if (letters.Count == 1)
             {
-                return new(builder.ToString(), letters[0].GlyphRectangle);
+                return new(builder.ToString(), letters[0].BoundingBox);
             }
             else
             {
@@ -299,8 +299,8 @@
                 {
                     r.StartBaseLine,
                     r.EndBaseLine,
-                    r.GlyphRectangle.TopLeft,
-                    r.GlyphRectangle.TopRight
+                    r.BoundingBox.TopLeft,
+                    r.BoundingBox.TopRight
                 }).Distinct().Select(p => inverseRotation.Transform(p));
 
                 var aabb = new PdfRectangle(transformedPoints.Min(p => p.X),

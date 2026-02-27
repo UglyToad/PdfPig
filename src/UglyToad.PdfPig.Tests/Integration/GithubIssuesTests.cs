@@ -758,7 +758,7 @@
                 {
                     var letter = page1.Letters[l];
                     Assert.Equal(TextOrientation.Other, letter.TextOrientation);
-                    Assert.Equal(45.0, letter.GlyphRectangle.Rotation, 5);
+                    Assert.Equal(45.0, letter.BoundingBox.Rotation, 5);
                 }
 
                 var page2 = document.GetPage(2);

@@ -18,6 +18,7 @@
         /// The placement rectangle of the image in PDF coordinates.
         /// Kept so not major breaking API change. Use instead <see cref="IBoundingBox.BoundingBox"/>
         /// </summary>
+        [Obsolete("Use BoundingBox instead.")]
         PdfRectangle Bounds { get; }
 
         /// <summary>

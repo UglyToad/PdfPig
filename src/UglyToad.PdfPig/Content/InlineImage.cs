@@ -19,9 +19,11 @@
         private readonly Lazy<Memory<byte>>? memoryFactory;
 
         /// <inheritdoc />
-        public PdfRectangle Bounds { get; }
+        public PdfRectangle BoundingBox { get; }
+
         /// <inheritdoc />
-        public PdfRectangle BoundingBox => Bounds;
+        [Obsolete("Use BoundingBox instead.")]
+        public PdfRectangle Bounds => BoundingBox;
 
         /// <inheritdoc />
         public int WidthInSamples { get; }
@@ -81,7 +83,7 @@
             IPdfImage? softMaskImage)
         {
             IsInlineImage = true;
-            Bounds = bounds;
+            BoundingBox = bounds;
             WidthInSamples = widthInSamples;
             HeightInSamples = heightInSamples;
             Decode = decode;
@@ -140,7 +142,7 @@
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"Inline Image (w {Bounds.Width}, h {Bounds.Height})";
+            return $"Inline Image (w {BoundingBox.Width}, h {BoundingBox.Height})";
         }
     }
 }
