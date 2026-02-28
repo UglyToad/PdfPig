@@ -175,7 +175,7 @@
 
                     foreach (var letter in page.Letters)
                     {
-                        DrawRectangle(letter.GlyphRectangle, graphics, violetPen, imageHeight, scale);
+                        DrawRectangle(letter.BoundingBox, graphics, violetPen, imageHeight, scale);
                     }
 
                     foreach (var annotation in page.GetAnnotations())

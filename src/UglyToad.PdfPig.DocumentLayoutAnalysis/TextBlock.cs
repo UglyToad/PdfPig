@@ -9,7 +9,7 @@
     /// <summary>
     /// A block of text.
     /// </summary>
-    public class TextBlock
+    public class TextBlock: IBoundingBox
     {
         /// <summary>
         /// The separator used between lines in the block.

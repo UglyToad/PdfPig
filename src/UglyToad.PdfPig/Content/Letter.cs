@@ -7,7 +7,7 @@
     /// <summary>
     /// A glyph or combination of glyphs (characters) drawn by a PDF content stream.
     /// </summary>
-    public class Letter
+    public class Letter:IBoundingBox
     {
         /// <summary>
         /// The text for this letter or unicode character.
@@ -44,10 +44,16 @@
         /// For example letters with descenders, p, j, etc., will have a box extending below the <see cref="Location"/> they are placed at.
         /// The width of the glyph may also be more or less than the <see cref="Width"/> allocated for the character in the PDF content.
         /// </summary>
-        public PdfRectangle GlyphRectangle { get; }
+        public PdfRectangle BoundingBox { get; }
 
         /// <summary>
-        /// The loose bounding box for the glyph. Contrary to the <see cref="GlyphRectangle"/>, the loose bounding box will be the same across all glyphes of the same font.
+        /// Gets the Bounding Box: The rectangle completely containing this object.
+        /// </summary>
+        [Obsolete("Use BoundingBox instead.")]
+        public PdfRectangle GlyphRectangle => BoundingBox;
+
+        /// <summary>
+        /// The loose bounding box for the glyph. Contrary to the <see cref="BoundingBox"/>, the loose bounding box will be the same across all glyphes of the same font.
         /// It takes in account the font Ascent and Descent.
         /// </summary>
         public PdfRectangle GlyphRectangleLoose { get; }
@@ -173,7 +179,7 @@
             int textSequence)
         {
             Value = value;
-            GlyphRectangle = glyphRectangle;
+            BoundingBox = glyphRectangle;
             GlyphRectangleLoose = glyphRectangleLoose;
             StartBaseLine = startBaseLine;
             EndBaseLine = endBaseLine;
@@ -207,7 +213,7 @@
         public Letter AsBold()
         {
             return new Letter(Value,
-                GlyphRectangle,
+                BoundingBox,
                 GlyphRectangleLoose,
                 StartBaseLine,
                 EndBaseLine,
@@ -273,7 +279,7 @@
 
         private TextOrientation GetTextOrientationRot()
         {
-            double rotation = GlyphRectangle.Rotation;
+            double rotation = BoundingBox.Rotation;
             if (Math.Abs(rotation % 90) >= 10e-5)
             {
                 return TextOrientation.Other;

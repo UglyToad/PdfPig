@@ -35,20 +35,20 @@
                 var key = (letter.Value, letter.FontName);
                 if (duplicateIndex.TryGetValue(key, out var candidateIndices))
                 {
-                    double tolerance = letter.GlyphRectangle.Width / (letter.Value.Length == 0 ? 1 : letter.Value.Length) / 3.0;
-                    double minX = letter.GlyphRectangle.BottomLeft.X - tolerance;
-                    double maxX = letter.GlyphRectangle.BottomLeft.X + tolerance;
-                    double minY = letter.GlyphRectangle.BottomLeft.Y - tolerance;
-                    double maxY = letter.GlyphRectangle.BottomLeft.Y + tolerance;
+                    double tolerance = letter.BoundingBox.Width / (letter.Value.Length == 0 ? 1 : letter.Value.Length) / 3.0;
+                    double minX = letter.BoundingBox.BottomLeft.X - tolerance;
+                    double maxX = letter.BoundingBox.BottomLeft.X + tolerance;
+                    double minY = letter.BoundingBox.BottomLeft.Y - tolerance;
+                    double maxY = letter.BoundingBox.BottomLeft.Y + tolerance;
 
                     for (int ci = 0; ci < candidateIndices.Count; ci++)
                     {
                         int idx = candidateIndices[ci];
                         var l = cleanLetters[idx];
-                        if (minX <= l.GlyphRectangle.BottomLeft.X &&
-                            maxX >= l.GlyphRectangle.BottomLeft.X &&
-                            minY <= l.GlyphRectangle.BottomLeft.Y &&
-                            maxY >= l.GlyphRectangle.BottomLeft.Y)
+                        if (minX <= l.BoundingBox.BottomLeft.X &&
+                            maxX >= l.BoundingBox.BottomLeft.X &&
+                            minY <= l.BoundingBox.BottomLeft.Y &&
+                            maxY >= l.BoundingBox.BottomLeft.Y)
                         {
                             addLetter = false;
                             duplicatesOverlappingIndex = idx;

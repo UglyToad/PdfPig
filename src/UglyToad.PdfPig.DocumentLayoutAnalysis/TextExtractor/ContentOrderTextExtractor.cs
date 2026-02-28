@@ -59,7 +59,7 @@
                 {
                     letter = new Letter(
                         " ",
-                        letter.GlyphRectangle,
+                        letter.BoundingBox,
                         letter.GlyphRectangleLoose,
                         letter.StartBaseLine,
                         letter.EndBaseLine,

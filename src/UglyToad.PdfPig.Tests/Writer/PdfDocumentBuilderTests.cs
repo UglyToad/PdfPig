@@ -328,9 +328,9 @@
                     Assert.Equal(readerLetter.Value, writerLetter.Value);
                     Assert.Equal(readerLetter.Location, writerLetter.Location, pointComparer);
                     Assert.Equal(readerLetter.FontSize, writerLetter.FontSize, comparer);
-                    Assert.Equal(readerLetter.GlyphRectangle.Width, writerLetter.GlyphRectangle.Width, comparer);
-                    Assert.Equal(readerLetter.GlyphRectangle.Height, writerLetter.GlyphRectangle.Height, comparer);
-                    Assert.Equal(readerLetter.GlyphRectangle.BottomLeft, writerLetter.GlyphRectangle.BottomLeft, pointComparer);
+                    Assert.Equal(readerLetter.BoundingBox.Width, writerLetter.BoundingBox.Width, comparer);
+                    Assert.Equal(readerLetter.BoundingBox.Height, writerLetter.BoundingBox.Height, comparer);
+                    Assert.Equal(readerLetter.BoundingBox.BottomLeft, writerLetter.BoundingBox.BottomLeft, pointComparer);
                 }
             }
         }
@@ -471,9 +471,9 @@
                     Assert.Equal(readerLetter.Value, writerLetter.Value);
                     Assert.Equal(readerLetter.Location, writerLetter.Location, pointComparer);
                     Assert.Equal(readerLetter.FontSize, writerLetter.FontSize, comparer);
-                    Assert.Equal(readerLetter.GlyphRectangle.Width, writerLetter.GlyphRectangle.Width, comparer);
-                    Assert.Equal(readerLetter.GlyphRectangle.Height, writerLetter.GlyphRectangle.Height, comparer);
-                    Assert.Equal(readerLetter.GlyphRectangle.BottomLeft, writerLetter.GlyphRectangle.BottomLeft, pointComparer);
+                    Assert.Equal(readerLetter.BoundingBox.Width, writerLetter.BoundingBox.Width, comparer);
+                    Assert.Equal(readerLetter.BoundingBox.Height, writerLetter.BoundingBox.Height, comparer);
+                    Assert.Equal(readerLetter.BoundingBox.BottomLeft, writerLetter.BoundingBox.BottomLeft, pointComparer);
                 }
             }
         }
@@ -513,13 +513,13 @@
 
             var topLine = new PdfPoint(30, page1.PageSize.Height - 60);
             var letters = page1.AddText("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor", 9, topLine, font);
-            page1.AddText("incididunt ut labore et dolore magna aliqua.", 9, new PdfPoint(30, topLine.Y - letters.Max(x => x.GlyphRectangle.Height) - 5), font);
+            page1.AddText("incididunt ut labore et dolore magna aliqua.", 9, new PdfPoint(30, topLine.Y - letters.Max(x => x.BoundingBox.Height) - 5), font);
 
             var page2Letters = page2.AddText("The very hungry caterpillar ate all the apples in the garden.", 12, topLine, font);
-            var left = page2Letters[0].GlyphRectangle.Left;
-            var bottom = page2Letters.Min(x => x.GlyphRectangle.Bottom);
-            var right = page2Letters[page2Letters.Count - 1].GlyphRectangle.Right;
-            var top = page2Letters.Max(x => x.GlyphRectangle.Top);
+            var left = page2Letters[0].BoundingBox.Left;
+            var bottom = page2Letters.Min(x => x.BoundingBox.Bottom);
+            var right = page2Letters[page2Letters.Count - 1].BoundingBox.Right;
+            var top = page2Letters.Max(x => x.BoundingBox.Top);
             page2.SetStrokeColor(10, 250, 69);
             page2.DrawRectangle(new PdfPoint(left, bottom), right - left, top - bottom);
 
@@ -591,8 +591,8 @@
 
                 Assert.NotNull(image);
 
-                Assert.Equal(expectedBounds.BottomLeft, image.Bounds.BottomLeft);
-                Assert.Equal(expectedBounds.TopRight, image.Bounds.TopRight);
+                Assert.Equal(expectedBounds.BottomLeft, image.BoundingBox.BottomLeft);
+                Assert.Equal(expectedBounds.TopRight, image.BoundingBox.TopRight);
 
                 Assert.Equal(imageBytes, image.RawMemory.ToArray());
             }
@@ -637,10 +637,10 @@
                 Assert.Equal(2, page1Images.Count);
 
                 var image1 = page1Images[0];
-                Assert.Equal(expectedBounds1, image1.Bounds);
+                Assert.Equal(expectedBounds1, image1.BoundingBox);
 
                 var image2 = page1Images[1];
-                Assert.Equal(expectedBounds2, image2.Bounds);
+                Assert.Equal(expectedBounds2, image2.BoundingBox);
 
                 var page2Doc = document.GetPage(2);
 
@@ -648,7 +648,7 @@
 
                 Assert.NotNull(image3);
 
-                Assert.Equal(expectedBounds3, image3.Bounds);
+                Assert.Equal(expectedBounds3, image3.BoundingBox);
 
                 Assert.Equal(imageBytes, image1.RawMemory.ToArray());
                 Assert.Equal(imageBytes, image2.RawMemory.ToArray());
@@ -724,8 +724,8 @@
 
                 Assert.NotNull(image);
 
-                Assert.Equal(expectedBounds.BottomLeft, image.Bounds.BottomLeft);
-                Assert.Equal(expectedBounds.TopRight, image.Bounds.TopRight);
+                Assert.Equal(expectedBounds.BottomLeft, image.BoundingBox.BottomLeft);
+                Assert.Equal(expectedBounds.TopRight, image.BoundingBox.TopRight);
 
                 Assert.True(image.TryGetPng(out var png));
                 Assert.NotNull(png);
@@ -927,9 +927,9 @@
                     Assert.Equal(readerLetter.Value, writerLetter.Value);
                     Assert.Equal(readerLetter.Location, writerLetter.Location, pointComparer);
                     Assert.Equal(readerLetter.FontSize, writerLetter.FontSize, comparer);
-                    Assert.Equal(readerLetter.GlyphRectangle.Width, writerLetter.GlyphRectangle.Width, comparer);
-                    Assert.Equal(readerLetter.GlyphRectangle.Height, writerLetter.GlyphRectangle.Height, comparer);
-                    Assert.Equal(readerLetter.GlyphRectangle.BottomLeft, writerLetter.GlyphRectangle.BottomLeft, pointComparer);
+                    Assert.Equal(readerLetter.BoundingBox.Width, writerLetter.BoundingBox.Width, comparer);
+                    Assert.Equal(readerLetter.BoundingBox.Height, writerLetter.BoundingBox.Height, comparer);
+                    Assert.Equal(readerLetter.BoundingBox.BottomLeft, writerLetter.BoundingBox.BottomLeft, pointComparer);
                 }
             }
         }
