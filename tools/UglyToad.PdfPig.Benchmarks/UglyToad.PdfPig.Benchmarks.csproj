@@ -23,7 +23,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(PdfPigVersion)' == 'Latest'">
-		<PackageReference Include="PdfPig" Version="0.1.14-alpha-20260219-adb57" />
+		<PackageReference Include="PdfPig" Version="0.1.14-alpha-20260228-f3e37" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -40,6 +40,9 @@
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
 	  <None Update="Single Page Simple - from open office.pdf">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="iizieileamidagi.ARVE_2745540212.pdf">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>

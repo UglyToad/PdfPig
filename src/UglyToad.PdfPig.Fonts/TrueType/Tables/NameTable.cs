@@ -8,7 +8,7 @@
     /// <summary>
     /// A name table allows multilingual strings to be associated with the TrueType font.
     /// </summary>
-    public class NameTable : ITrueTypeTable
+    public sealed class NameTable : ITrueTypeTable
     {
         /// <inheritdoc />
         public string Tag => TrueTypeHeaderTable.Name;
@@ -34,10 +34,10 @@
         /// <summary>
         /// The name records contained in this name table.
         /// </summary>
-        public IReadOnlyList<TrueTypeNameRecord> NameRecords { get; }
+        public IReadOnlyList<TrueTypeNameRecord?> NameRecords { get; }
 
         /// <summary>
-        /// Creaye a new <see cref="NameTable"/>.
+        /// Create a new <see cref="NameTable"/>.
         /// </summary>
         public NameTable(TrueTypeHeaderTable directoryTable, 
             string fontName,
@@ -56,7 +56,7 @@
         /// Gets the PostScript name for the font if specified, preferring the Windows platform name if present.
         /// </summary>
         /// <returns>The PostScript name for the font if found or <see langword="null"/>.</returns>
-        public string GetPostscriptName()
+        public string? GetPostscriptName()
         {
             string any = null;
             foreach (var nameRecord in NameRecords)
