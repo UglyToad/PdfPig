@@ -158,7 +158,7 @@
             return new TrueTypeFont(version, tables, builder.Build(), cffFontCollection);
         }
 
-        internal static NameTable GetNameTable(TrueTypeDataBytes data)
+        internal static NameTable? GetNameTable(TrueTypeDataBytes data)
         {
             if (data == null)
             {
