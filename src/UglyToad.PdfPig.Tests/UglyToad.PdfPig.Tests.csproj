@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFrameworks>net471;net8.0;net9.0</TargetFrameworks>
         <IsTestProject>true</IsTestProject>
@@ -75,6 +74,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="BitMiracle.LibTiff.NET" Version="2.4.660" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
         <PackageReference Include="SkiaSharp" Version="2.88.9" />
         <PackageReference Include="xunit" Version="2.7.0" />
@@ -206,5 +206,8 @@
         <PackageReference Include="Microsoft.AspNetCore.WebUtilities">
             <Version>9.0.8</Version>
         </PackageReference>
+    </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Images\Files\Tif\" />
     </ItemGroup>
 </Project>
