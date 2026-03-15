@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Colors
 {
+    using System;
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Functions;
     using UglyToad.PdfPig.Tokens;
@@ -330,6 +331,11 @@
         public override PdfFunction[]? Functions { get; }
 
         /// <summary>
+        /// The decoded stream data containing descriptive data characterizing the shading's gradient fill.
+        /// </summary>
+        public Memory<byte> Data { get; }
+
+        /// <summary>
         /// Create a new <see cref="FreeFormGouraudShading"/>.
         /// </summary>
         public FreeFormGouraudShading(bool antiAlias, StreamToken shadingStream,
@@ -342,6 +348,7 @@
             BitsPerFlag = bitsPerFlag;
             Decode = decode;
             Functions = functions;
+            Data = shadingStream.Data;
         }
     }
 
@@ -393,6 +400,11 @@
         public override PdfFunction[]? Functions { get; }
 
         /// <summary>
+        /// The decoded stream data containing descriptive data characterizing the shading's gradient fill.
+        /// </summary>
+        public Memory<byte> Data { get; }
+
+        /// <summary>
         /// Create a new <see cref="LatticeFormGouraudShading"/>.
         /// </summary>
         public LatticeFormGouraudShading(bool antiAlias, StreamToken shadingStream,
@@ -405,6 +417,7 @@
             VerticesPerRow = verticesPerRow;
             Decode = decode;
             Functions = functions;
+            Data = shadingStream.Data;
         }
     }
 
@@ -458,6 +471,11 @@
         public override PdfFunction[]? Functions { get; }
 
         /// <summary>
+        /// The decoded stream data containing descriptive data characterizing the shading's gradient fill.
+        /// </summary>
+        public Memory<byte> Data { get; }
+
+        /// <summary>
         /// Create a new <see cref="CoonsPatchMeshesShading"/>.
         /// </summary>
         public CoonsPatchMeshesShading(bool antiAlias, StreamToken shadingStream,
@@ -470,6 +488,7 @@
             BitsPerFlag = bitsPerFlag;
             Decode = decode;
             Functions = functions;
+            Data = shadingStream.Data;
         }
     }
 
@@ -523,6 +542,11 @@
         public override PdfFunction[]? Functions { get; }
 
         /// <summary>
+        /// The decoded stream data containing descriptive data characterizing the shading's gradient fill.
+        /// </summary>
+        public Memory<byte> Data { get; }
+
+        /// <summary>
         /// Create a new <see cref="TensorProductPatchMeshesShading"/>.
         /// </summary>
         public TensorProductPatchMeshesShading(bool antiAlias, StreamToken shadingStream,
@@ -535,6 +559,7 @@
             BitsPerFlag = bitsPerFlag;
             Decode = decode;
             Functions = functions;
+            Data = shadingStream.Data;
         }
     }
 
