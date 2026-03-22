@@ -91,6 +91,7 @@ jobs:
         run: dotnet pack -c Release -o package tools/UglyToad.PdfPig.Package/UglyToad.PdfPig.Package.csproj -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
 
       - name: Publish to NuGet
+        shell: bash
         run: dotnet nuget push package/*.nupkg --api-key ${{secrets.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json
 
       - name: Create GitHub Release
