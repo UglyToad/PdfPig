@@ -1,3 +1,5 @@
+# This listens for the release tag on master, once detected it builds the package, runs tests, and publishes to NuGet, it also creates a GitHub release and triggers the version bump workflow.
+# The version bump generates a new PR to increment the version number in the csproj files.
 name: Publish
 
 on:
@@ -8,6 +10,7 @@ on:
 permissions:
   contents: write
   packages: write
+  actions: write
 
 jobs:
   build_and_publish:
@@ -51,3 +54,14 @@ jobs:
           tag_name: ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Trigger version bump workflow
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'bump_version.yml',
+              ref: 'master'
+            })
