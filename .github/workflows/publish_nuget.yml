@@ -62,12 +62,12 @@ jobs:
           ref: ${{ env.TAG }}
           fetch-depth: 0
 
-      # Optional: verify tag really points to master
       - name: Verify tag points to master
+        shell: bash
         run: |
-          TAG_COMMIT=$(git rev-list -n 1 ${{ env.TAG }})
-          if ! git branch -r --contains $TAG_COMMIT | grep -q 'origin/master'; then
-            echo "Tag ${{ env.TAG }} is not on master — skipping publish"
+          TAG_COMMIT=$(git rev-list -n 1 "$TAG")
+          if ! git branch -r --contains "$TAG_COMMIT" | grep -q 'origin/master'; then
+            echo "Tag $TAG is not on master — skipping publish"
             exit 78
           fi
 
