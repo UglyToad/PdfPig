@@ -1,5 +1,3 @@
-# This listens for the release tag on master, once detected it builds the package, runs tests, and publishes to NuGet, it also creates a GitHub release and triggers the version bump workflow.
-# The version bump generates a new PR to increment the version number in the csproj files.
 name: Publish
 
 on:
@@ -19,45 +17,62 @@ jobs:
     runs-on: windows-2022
 
     steps:
-      - name: Get latest tag
-        id: tag
+      # Checkout full repo with history so we can find tags
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # important: get full history and all tags
+
+      # Find the latest unpublished tag that is on master
+      - name: Find latest unpublished tag on master
+        id: find_tag
         shell: bash
         run: |
-          git fetch --tags
-          TAG=$(git describe --tags --abbrev=0)
-          echo "TAG=$TAG" >> $GITHUB_ENV
-          
-      - name: Check if release exists
-        id: check_release
-        uses: actions/github-script@v7
-        with:
-          script: |
-            try {
-              await github.rest.repos.getReleaseByTag({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                tag: process.env.TAG
-              });
-              core.setOutput("exists", "true");
-            } catch (e) {
-              core.setOutput("exists", "false");
-            }
-              
+          git fetch --tags origin
+
+          # Install GitHub CLI if not already available
+          if ! command -v gh &> /dev/null; then
+            echo "Installing GitHub CLI"
+            winget install --id GitHub.cli -e --source winget
+          fi
+
+          TAG=""
+          for T in $(git tag --sort=-creatordate); do
+            TAG_COMMIT=$(git rev-list -n 1 "$T")
+            # Ensure tag points to master
+            if git branch -r --contains "$TAG_COMMIT" | grep -q 'origin/master'; then
+              # Check if release exists
+              EXISTS=$(gh release view "$T" --repo ${{ github.repository }} --json tagName --jq '.tagName' 2>/dev/null || echo "")
+              if [ -z "$EXISTS" ]; then
+                TAG="$T"
+                echo "Found unpublished tag on master: $TAG"
+                echo "TAG=$TAG" >> $GITHUB_ENV
+                break
+              fi
+            fi
+          done
+
+          if [ -z "$TAG" ]; then
+            echo "No unpublished tags found on master — nothing to do"
+            exit 78  # neutral exit
+          fi
+
+      # Checkout the specific tag for build/publish
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.TAG }}
-          
+          fetch-depth: 0
+
+      # Optional: verify tag really points to master
       - name: Verify tag points to master
-        id: verify
         run: |
-          TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref_name }})
+          TAG_COMMIT=$(git rev-list -n 1 ${{ env.TAG }})
           if ! git branch -r --contains $TAG_COMMIT | grep -q 'origin/master'; then
-            echo "Tag is not on master — skipping publish"
-            exit 78  # 78 = neutral in GitHub Actions
+            echo "Tag ${{ env.TAG }} is not on master — skipping publish"
+            exit 78
           fi
 
+      # Set up .NET only if the tag is unpublished (it always is at this point)
       - name: Set up .NET
-        if: steps.check_release.outputs.exists != 'true'
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
@@ -73,23 +88,19 @@ jobs:
         run: dotnet test -c Release src/UglyToad.PdfPig.sln
 
       - name: Build package
-        if: steps.check_release.outputs.exists != 'true'
         run: dotnet pack -c Release -o package tools/UglyToad.PdfPig.Package/UglyToad.PdfPig.Package.csproj -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
 
       - name: Publish to NuGet
-        if: steps.check_release.outputs.exists != 'true'
         run: dotnet nuget push package/*.nupkg --api-key ${{secrets.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json
 
       - name: Create GitHub Release
-        if: steps.check_release.outputs.exists != 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ env.TAG }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
+
       - name: Trigger version bump workflow
-        if: steps.check_release.outputs.exists != 'true'
         uses: actions/github-script@v7
         with:
           script: |
