@@ -12,6 +12,50 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1274()
+        {
+            // Minimal PDF with self-referencing object: "1 0 obj 1 0 R"
+            const string pdf = "255044462d312e300a312030206f626a3c3c2f547970652f4361742e300a312030" +
+                               "206f626a2031203020523e22656e646f626a0a322030206f626a3c33203020525d" +
+                               "2f436f756e7420313e3e656e646f626a0a332030206f626a3c3c2f547970652f50" +
+                               "6167652f4d65646961426f785b30143020363132203739325d2f50617265603020" +
+                               "522f5265736f75726365733c3c2f466f6e743cc2c2c2c23030303030206e200a30" +
+                               "302030206e200a36362030c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2" +
+                               "c23c2f46312034203020523e3e3e3e2f436f6e74656e74732035203020523e3e65" +
+                               "6e646f626a0a352030206f626a3c3c2f547970652f466f6e742f53756274797065" +
+                               "2f54797065312f42617365466f6e742f48656c7665746963613e3e656e536f626a" +
+                               "0a352030206f626a3c3c2f4c656e6774682034343e3e73747265616d0a425b5b5b" +
+                               "5b5b5b5b735b5b5b5b7fff30203730302054642028486500006f2920546a204554" +
+                               "0a656e6473747265616d20656e646f626a0a787265660a3020360a303020363535" +
+                               "33352066200a3030203030303030206e200a35382030306e200a30302030206e20" +
+                               "0a36362030206e200a33332030206e200a747261696c65723c3c2f53697a652036" +
+                               "2f526f6f742031203020523e3e0a7374617274787265660a3432370a2525454f46";
+
+            var payload = FromHexString(pdf);
+
+            var options = new ParsingOptions { MaxStackDepth = 256 };
+            using var ms = new MemoryStream(payload);
+            var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(ms, options));
+            Assert.Equal($"Exceeded maximum nesting depth of {options.MaxStackDepth}.", ex.Message);
+            return;
+
+            static byte[] FromHexString(string hexString)
+            {
+                if (hexString.Length % 2 != 0)
+                {
+                    throw new ArgumentException("Hex string must have an even number of characters.", nameof(hexString));
+                }
+
+                byte[] result = new byte[hexString.Length / 2];
+                for (int i = 0; i < result.Length; i++)
+                {
+                    result[i] = Convert.ToByte(hexString.Substring(i * 2, 2), 16);
+                }
+                return result;
+            }
+        }
+
+        [Fact]
         public void Issues1250()
         {
             // Issue comes from HasFormXObjectCircularReference
