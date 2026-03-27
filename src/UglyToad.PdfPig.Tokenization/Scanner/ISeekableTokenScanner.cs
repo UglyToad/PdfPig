@@ -1,11 +1,18 @@
 ﻿namespace UglyToad.PdfPig.Tokenization.Scanner
 {
+    using UglyToad.PdfPig.Core;
+
     /// <inheritdoc />
     /// <summary>
     /// A <see cref="T:UglyToad.PdfPig.Tokenization.Scanner.ITokenScanner" /> that supports seeking in the underlying input data.
     /// </summary>
     public interface ISeekableTokenScanner : ITokenScanner
     {
+        /// <summary>
+        /// Gets the guard object used to track and limit stack depth during recursive operations.
+        /// </summary>
+        StackDepthGuard StackDepthGuard { get; }
+
         /// <summary>
         /// Move to the specified position.
         /// </summary>

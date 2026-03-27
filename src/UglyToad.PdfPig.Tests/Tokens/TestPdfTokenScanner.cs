@@ -8,7 +8,10 @@ namespace UglyToad.PdfPig.Tests.Tokens
 
     internal class TestPdfTokenScanner : IPdfTokenScanner
     {
+        public StackDepthGuard StackDepthGuard => StackDepthGuard.Infinite;
+
         public Dictionary<IndirectReference, ObjectToken> Objects { get; } = new Dictionary<IndirectReference, ObjectToken>();
+     
         public bool MoveNext()
         {
             throw new NotImplementedException();
