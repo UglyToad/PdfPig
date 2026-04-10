@@ -12,9 +12,9 @@
         [Fact]
         public void ReadsSimpleObject()
         {
-            const string s = @"294 0 obj
+            var s = @"294 0 obj
 /WDKAAR+CMBX12 
-endobj";
+endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var pdfScanner = GetScanner(s); 
 
@@ -29,16 +29,16 @@ endobj";
 
             Assert.Equal("WDKAAR+CMBX12", name.Data);
 
-            Assert.StartsWith("294 0 obj", s.Substring((int)objectToken.Position));
+            Assert.StartsWith("294 0 obj", s.Substring((int)objectToken.Position.Value1));
         }
 
         [Fact]
         public void ReadsIndirectReferenceInObject()
         {
-            const string s = @"
+            var s = @"
 15 0 obj
 12 7 R
-endobj";
+endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var scanner = GetScanner(s);
 
@@ -52,7 +52,7 @@ endobj";
         [Fact]
         public void ReadsObjectWithUndefinedIndirectReference()
         {
-            const string s = @"
+            var s = @"
 5 0 obj
 <<
 /XObject <<
@@ -66,7 +66,7 @@ endobj";
 /F3 0 0 R
 >>
 >>
-endobj";
+endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var scanner = GetScanner(s);
 
@@ -82,7 +82,7 @@ endobj";
         [Fact]
         public void ReadsNumericObjectWithComment()
         {
-            const string s = @"%PDF-1.2
+            var s = @"%PDF-1.2
 
 % I commented here too, tee hee
 10383384 2 obj
@@ -92,7 +92,7 @@ endobj";
 
 endobj
 
-%%EOF";
+%%EOF".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var pdfScanner = GetScanner(s);
 
@@ -107,7 +107,7 @@ endobj
             Assert.Equal(10383384, obj.Number.ObjectNumber);
             Assert.Equal(2, obj.Number.Generation);
 
-            Assert.StartsWith("10383384 2 obj", s.Substring((int)obj.Position));
+            Assert.StartsWith("10383384 2 obj", s.Substring((int)obj.Position.Value1));
 
             Assert.False(pdfScanner.MoveNext());
         }
@@ -115,7 +115,7 @@ endobj
         [Fact]
         public void ReadsArrayObject()
         {
-            const string s = @"
+            var s = @"
 endobj
 
 295 0 obj
@@ -123,7 +123,7 @@ endobj
 676 938 875 787 750 880 813 875 813 875 813 656 625 625 938 938 313 
 344 563 563 563 563 563 850 500 574 813 875 563 1019 1144 875 313
 ]
-endobj";
+endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var pdfScanner = GetScanner(s);
 
@@ -140,7 +140,7 @@ endobj";
             Assert.Equal(295, obj.Number.ObjectNumber);
             Assert.Equal(0, obj.Number.Generation);
 
-            Assert.StartsWith("295 0 obj", s.Substring((int)obj.Position));
+            Assert.StartsWith("295 0 obj", s.Substring((int)obj.Position.Value1));
 
             Assert.False(pdfScanner.MoveNext());
         }
@@ -148,7 +148,7 @@ endobj";
         [Fact]
         public void ReadsDictionaryObjectThenNameThenDictionary()
         {
-            const string s = @"
+            var s = @"
 
 274 0 obj
 << 
@@ -172,7 +172,7 @@ endobj 311 0 obj
 /Widths 313 0 R 
 /BaseFont 310 0 R /FontDescriptor 312 0 R 
 >> 
-endobj";
+endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var scanner = GetScanner(s);
 
@@ -182,28 +182,28 @@ endobj";
 
             Assert.Equal(4, dictionary.Data.Count);
             Assert.Equal(274, tokens[0].Number.ObjectNumber);
-            Assert.StartsWith("274 0 obj", s.Substring((int)tokens[0].Position));
+            Assert.StartsWith("274 0 obj", s.Substring((int)tokens[0].Position.Value1));
 
             var nameObject = Assert.IsType<NameToken>(tokens[1].Data);
 
             Assert.Equal("WPXNWT+CMR9", nameObject.Data);
             Assert.Equal(310, tokens[1].Number.ObjectNumber);
-            Assert.StartsWith("310 0 obj", s.Substring((int)tokens[1].Position));
+            Assert.StartsWith("310 0 obj", s.Substring((int)tokens[1].Position.Value1));
 
             dictionary = Assert.IsType<DictionaryToken>(tokens[2].Data);
 
             Assert.Equal(7, dictionary.Data.Count);
             Assert.Equal(311, tokens[2].Number.ObjectNumber);
-            Assert.StartsWith("311 0 obj", s.Substring((int)tokens[2].Position));
+            Assert.StartsWith("311 0 obj", s.Substring((int)tokens[2].Position.Value1));
         }
 
         [Fact]
         public void ReadsStringObject()
         {
-            const string s = @"
+            var s = @"
 
 58949797283757 0 obj    (An object begins with obj and ends with endobj...) endobj
-";
+".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var scanner = GetScanner(s);
 
@@ -212,13 +212,13 @@ endobj";
             Assert.Equal(58949797283757L, token.Number.ObjectNumber);
             Assert.Equal("An object begins with obj and ends with endobj...", Assert.IsType<StringToken>(token.Data).Data);
 
-            Assert.StartsWith("58949797283757 0 obj", s.Substring((int)token.Position));
+            Assert.StartsWith("58949797283757 0 obj", s.Substring((int)token.Position.Value1));
         }
 
         [Fact]
         public void ReadsStreamObject()
         {
-            const string s = @"
+            var s = @"
 352 0 obj
 << /S 1273 /Filter /FlateDecode /Length 353 0 R >> 
 stream
@@ -236,11 +236,11 @@ A¡¬àð‰É©ˆ°‘¼›‚%¥×s³®í»š}%§X{{tøNåÝž¶ö¢ÖÞ¾�
                     endobj
                 353 0 obj
                 1479
-                endobj";
+                endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var locationProvider = new TestObjectLocationProvider();
             // Mark location of "353 0 obj"
-            locationProvider.Offsets[new IndirectReference(353, 0)] = 1643;
+            locationProvider.Offsets[new IndirectReference(353, 0)] = XrefLocation.File(1643);
 
             var scanner = GetScanner(s, locationProvider);
 
@@ -254,7 +254,7 @@ A¡¬àð‰É©ˆ°‘¼›‚%¥×s³®í»š}%§X{{tøNåÝž¶ö¢ÖÞ¾�
 
             Assert.StartsWith("H‰œUkLSgþÚh¹IÝÅl", str);
 
-            Assert.Equal(2, locationProvider.Offsets[new IndirectReference(352, 0)]);
+            Assert.Equal(2, locationProvider.Offsets[new IndirectReference(352, 0)].Value1);
         }
 
         [Fact]
@@ -262,7 +262,7 @@ A¡¬àð‰É©ˆ°‘¼›‚%¥×s³®í»š}%§X{{tøNåÝž¶ö¢ÖÞ¾�
         {
             string invalidLengthStream = "ABCD" + new string('e', 3996);
 
-            string s = $@"
+            var s = $@"
 352 0 obj
 << /S 1273 /Filter /FlateDecode /Length 353 0 R >> 
 stream
@@ -271,11 +271,11 @@ endstream
 endobj
 353 0 obj
 1479
-endobj";
+endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var locationProvider = new TestObjectLocationProvider();
             // Mark location of "353 0 obj"
-            locationProvider.Offsets[new IndirectReference(353, 0)] = 1643;
+            locationProvider.Offsets[new IndirectReference(353, 0)] = XrefLocation.File(1643);
 
             var scanner = GetScanner(s, locationProvider);
 
@@ -292,20 +292,20 @@ endobj";
             Assert.Equal(data.Length, invalidLengthStream.Length);
             Assert.StartsWith("ABCDeeeee", str);
 
-            Assert.Equal(2, locationProvider.Offsets[new IndirectReference(352, 0)]);
+            Assert.Equal(2, locationProvider.Offsets[new IndirectReference(352, 0)].Value1);
         }
 
         [Fact]
         public void ReadsSimpleStreamObject()
         {
             // Length of the bytes as found by Encoding.UTF8.GetBytes is 45
-            const string s = @"
+            var s = @"
 574387 0    obj
 << /Length 45 >>
 stream
 À“Éððr¥8»P£ØêÁi½®Û(éhŽ‘ú
 endstream
-endobj";
+endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
             
             var scanner = GetScanner(s);
 
@@ -324,7 +324,7 @@ endobj";
         [Fact]
         public void ReadsStreamWithIndirectLength()
         {
-            const string s = @"5 0 obj 52 endobj
+            var s = @"5 0 obj 52 endobj
 
 
 
@@ -335,10 +335,10 @@ endobj";
 stream
 %¥×³®í»š}%§X{{tøNåÝž¶ö¢ÖÞ¾–~´¼
 endstream
-endobj";
+endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
             var locationProvider = new TestObjectLocationProvider();
 
-            locationProvider.Offsets[new IndirectReference(5, 0)] = 0;
+            locationProvider.Offsets[new IndirectReference(5, 0)] = XrefLocation.File(0);
 
             var scanner = GetScanner(s, locationProvider);
 
@@ -357,7 +357,7 @@ endobj";
         [Fact]
         public void ReadsStreamWithMissingLength()
         {
-            const string s = @"
+            var s = @"
 12655 0 obj
 
 << /S 1245 >>
@@ -365,7 +365,7 @@ endobj";
 stream
 %¥×³®í»š}%§X{{tøNåÝž¶ö¢ÖÞgrehtyyy$&%&£$££(*¾–~´¼
 endstream
-endobj";
+endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var scanner = GetScanner(s);
 
@@ -383,7 +383,7 @@ endobj";
         [Fact]
         public void ReadsStreamWithoutBreakBeforeEndstream()
         {
-            const string s = @"
+            var s = @"
 1 0 obj
 12
 endobj
@@ -398,7 +398,7 @@ endobj
 
 9 0 obj
 16
-endobj";
+endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var scanner = GetScanner(s);
 
@@ -410,7 +410,7 @@ endobj";
         [Fact]
         public void ReadsStringsWithMissingEndBracket()
         {
-            const string input = @"5 0 obj
+            var input = @"5 0 obj
 <<
 /Kids [4 0 R 12 0 R 17 0 R 20 0 R 25 0 R 28 0 R ]
 /Count 6
@@ -434,7 +434,7 @@ endobj
 /Pages 5 0 R
 /Type /Catalog
 >>
-endobj";
+endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var scanner = GetScanner(input);
 
@@ -455,7 +455,7 @@ endobj";
         [Fact]
         public void ReadsDictionaryContainingNull()
         {
-            const string input = @"14224 0 obj
+            var input = @"14224 0 obj
 <</Type /XRef
 /Root 8 0 R
 /Prev 116
@@ -466,7 +466,7 @@ endobj";
 /ID [ (ù¸7�ãA×�žòÜ4��Š•)]
 /Info 6 0 R
 /Encrypt null>>
-endobj";
+endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var scanner = GetScanner(input);
 
@@ -484,7 +484,7 @@ endobj";
         [Fact]
         public void ReadMultipleNestedDictionary()
         {
-            const string input =
+            var input =
                 @"
                 4 0 obj
                 << /Type /Font /Subtype /Type1 /Name /AF1F040+Arial /BaseFont /Arial /FirstChar 32 /LastChar 255
@@ -518,7 +518,7 @@ endobj";
                 >>
                  >>
                 endobj
-                ";
+                ".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var scanner = GetScanner(input);
 
@@ -532,11 +532,11 @@ endobj";
         [Fact]
         public void ReadsDictionaryWithoutEndObjBeforeNextObject()
         {
-            const string input = @"1 0 obj
+            var input = @"1 0 obj
 <</Type /XRef>>
 2 0 obj
 <</Length 15>>
-endobj";
+endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var scanner = GetScanner(input);
 
@@ -557,14 +557,14 @@ endobj";
         [Fact]
         public void ReadsStreamWithoutEndObjBeforeNextObject()
         {
-            const string input = @"1 0 obj
+            var input = @"1 0 obj
 <</Length 4>>
 stream
 aaaa
 endstream
 2 0 obj
 <</Length 15>>
-endobj";
+endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var scanner = GetScanner(input);
 
@@ -584,12 +584,12 @@ endobj";
         [InlineData("xref")]
         public void ReadsStreamWithoutEndObjBeforeToken(string token)
         {
-            string input = @$"1 0 obj
+            var input = @$"1 0 obj
 <</Length 4>>
 stream
 aaaa
 endstream
-{token}";
+{token}".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var scanner = GetScanner(input);
 
@@ -605,9 +605,9 @@ endstream
         [InlineData("xref")]
         public void ReadsDictionaryWithoutEndObjBeforeToken(string token)
         {
-            string input = @$"1 0 obj
+            var input = @$"1 0 obj
 <</Type /XRef>>
-{token}";
+{token}".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var scanner = GetScanner(input);
 
@@ -623,14 +623,14 @@ endstream
         [Fact]
         public void ReadsStreamWithoutEndStreamBeforeEndObj()
         {
-            const string input = @"1 0 obj
+            var input = @"1 0 obj
 <</Length 4>>
 stream
 aaaa
 endobj
 2 0 obj
 <</Length 15>>
-endobj";
+endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var scanner = GetScanner(input);
 
@@ -650,12 +650,12 @@ endobj";
         [InlineData("randomstring")]
         public void ReadsIndirectObjectsDictionaryWithContentBeforeEndObj(string addedContent)
         {
-            string input = @$"1 0 obj
+            var input = @$"1 0 obj
 <</Type /XRef>>
 {addedContent}endobj
 2 0 obj
 <</Length 15>>
-endobj";
+endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var strictScanner = GetScanner(input);
             
@@ -682,7 +682,7 @@ endobj";
         [InlineData("randomstring")]
         public void ReadsIndirectObjectsStreamWithAddedContentBeforeStream(string addedContent)
         {
-            string input = @$"1 0 obj
+            var input = @$"1 0 obj
 <</length 4>>
 {addedContent}stream
 aaaa
@@ -690,7 +690,7 @@ endstream
 endobj
 2 0 obj
 <</Length 15>>
-endobj";
+endobj".Replace("\r\n", "\n").Replace("\n", "\r\n");
 
             var strictScanner = GetScanner(input);
             

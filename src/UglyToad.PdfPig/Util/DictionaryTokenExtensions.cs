@@ -250,8 +250,9 @@
                 throw new ArgumentNullException(nameof(array));
             }
 
-            if (array.Data.Count != 4)
+            if (array.Data.Count < 4)
             {
+                // Should be exactly 4, but can be more (see issues 1238). We ignore the rest.
                 throw new PdfDocumentFormatException($"Cannot convert array to rectangle, expected 4 values instead got: {array.Data.Count}.");
             }
 

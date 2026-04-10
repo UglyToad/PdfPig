@@ -229,7 +229,7 @@
         private AltoDocument.AltoIllustration ToAltoIllustration(IPdfImage pdfImage, double height)
         {
             illustrationCount++;
-            var rectangle = pdfImage.Bounds;
+            var rectangle = pdfImage.BoundingBox;
 
             return new AltoDocument.AltoIllustration
             {
@@ -311,10 +311,10 @@
             glyphCount++;
             return new AltoDocument.AltoGlyph
             {
-                VerticalPosition = (float)Math.Round((height - letter.GlyphRectangle.Top) * scale),
-                HorizontalPosition = (float)Math.Round(letter.GlyphRectangle.Left * scale),
-                Height = (float)Math.Round(letter.GlyphRectangle.Height * scale),
-                Width = (float)Math.Round(letter.GlyphRectangle.Width * scale),
+                VerticalPosition = (float)Math.Round((height - letter.BoundingBox.Top) * scale),
+                HorizontalPosition = (float)Math.Round(letter.BoundingBox.Left * scale),
+                Height = (float)Math.Round(letter.BoundingBox.Height * scale),
+                Width = (float)Math.Round(letter.BoundingBox.Width * scale),
                 Gc = 1.0f,
                 Content = invalidCharacterHandler(letter.Value),
                 Id = "P" + pageCount + "_ST" + stringCount.ToString("#00000") + "_G" + glyphCount.ToString("#00")

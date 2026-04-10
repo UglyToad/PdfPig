@@ -102,14 +102,22 @@
         /// </summary>
         public static T Get<T>(IToken token, IPdfTokenScanner scanner) where T : class, IToken
         {
-            if (token is T result)
+            scanner.StackDepthGuard.Enter();
+            try
             {
-                return result;
-            }
+                if (token is T result)
+                {
+                    return result;
+                }
 
-            if (token is IndirectReferenceToken reference)
+                if (token is IndirectReferenceToken reference)
+                {
+                    return Get<T>(reference.Data, scanner);
+                }
+            }
+            finally
             {
-                return Get<T>(reference.Data, scanner);
+                scanner.StackDepthGuard.Exit();
             }
 
             throw new PdfDocumentFormatException($"Could not find the object {token} with type {typeof(T).Name} instead, it was found with type {token.GetType().Name}.");

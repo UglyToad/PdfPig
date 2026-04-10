@@ -185,7 +185,11 @@ namespace UglyToad.PdfPig.ConsoleRunner
                     sw.Reset();
                     sw.Start();
 
-                    using (var pdfDocument = PdfDocument.Open(file))
+                    using (var pdfDocument = PdfDocument.Open(file, new ParsingOptions
+                    {
+                        UseLenientParsing = true,
+                        SkipMissingFonts = true,
+                    }))
                     {
                         sw.Stop();
 

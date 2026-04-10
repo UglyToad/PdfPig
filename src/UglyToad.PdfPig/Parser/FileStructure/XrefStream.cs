@@ -10,7 +10,7 @@ internal sealed class XrefStream : IXrefSection
     /// <summary>
     /// The corresponding byte offset for each keyed object in this document.
     /// </summary>
-    public IReadOnlyDictionary<IndirectReference, long> ObjectOffsets { get; }
+    public IReadOnlyDictionary<IndirectReference, XrefLocation> ObjectOffsets { get; }
 
     public DictionaryToken Dictionary { get; }
 
@@ -20,7 +20,7 @@ internal sealed class XrefStream : IXrefSection
 
     public XrefStream(
         long offset,
-        IReadOnlyDictionary<IndirectReference, long> objectOffsets,
+        IReadOnlyDictionary<IndirectReference, XrefLocation> objectOffsets,
         DictionaryToken streamDictionary,
         XrefOffsetCorrection correctionType,
         long offsetCorrection)

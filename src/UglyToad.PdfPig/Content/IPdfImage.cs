@@ -12,11 +12,13 @@
     /// <summary>
     /// An image in a PDF document, may be an <see cref="InlineImage"/> or a PostScript image XObject (<see cref="XObjectImage"/>).
     /// </summary>
-    public interface IPdfImage
+    public interface IPdfImage: IBoundingBox
     {
         /// <summary>
         /// The placement rectangle of the image in PDF coordinates.
+        /// Kept so not major breaking API change. Use instead <see cref="IBoundingBox.BoundingBox"/>
         /// </summary>
+        [Obsolete("Use BoundingBox instead.")]
         PdfRectangle Bounds { get; }
 
         /// <summary>

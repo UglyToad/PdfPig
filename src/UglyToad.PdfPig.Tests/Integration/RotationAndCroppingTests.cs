@@ -12,8 +12,8 @@
                 var page = document.GetPage(1);
                 Assert.Equal(612, page.Width);  // Due to cropping
                 Assert.Equal(792, page.Height); // Due to cropping
-                var minX = page.Letters.Select(l => l.GlyphRectangle.Left).Min();
-                var maxX = page.Letters.Select(l => l.GlyphRectangle.Right).Max();
+                var minX = page.Letters.Select(l => l.BoundingBox.Left).Min();
+                var maxX = page.Letters.Select(l => l.BoundingBox.Right).Max();
                 Assert.Equal(74, minX, 0);  // If cropping is not applied correctly, these values will be off
                 Assert.Equal(540, maxX, 0); // If cropping is not applied correctly, these values will be off
                 // The page is cropped at 

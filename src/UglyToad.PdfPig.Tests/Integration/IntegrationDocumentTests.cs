@@ -28,7 +28,7 @@
                     var page = document.GetPage(i + 1);
                     foreach (var letter in page.Letters)
                     {
-                        var bbox = letter.GlyphRectangle;
+                        var bbox = letter.BoundingBox;
                         if (bbox.Height > 0)
                         {
                             if (letter.GlyphRectangleLoose.Height <= 0)

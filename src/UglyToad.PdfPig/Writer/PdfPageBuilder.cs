@@ -16,6 +16,7 @@
     using Graphics.Operations.TextPositioning;
     using Graphics.Operations.TextShowing;
     using Graphics.Operations.TextState;
+    using Outline.Destinations;
     using Images;
     using PdfFonts;
     using Tokens;
@@ -94,7 +95,7 @@
         private IPageContentStream currentStream;
 
         // links to be resolved when all page references are available
-        internal readonly List<(DictionaryToken token, PdfAction action)>? links;
+        internal readonly List<(DictionaryToken token, PdfAction action)> links = [];
 
         // maps fonts added using PdfDocumentBuilder to page font names
         private readonly Dictionary<Guid, NameToken> documentFonts = new Dictionary<Guid, NameToken>();
@@ -766,7 +767,7 @@
                     }
                 }
 
-                var compressedSmask = DataCompresser.CompressBytes(smaskData);
+                var compressedSmask = DataCompressor.CompressBytes(smaskData);
 
                 // Create a soft-mask.
                 var smaskDictionary = new Dictionary<NameToken, IToken>
@@ -785,7 +786,7 @@
                 smaskReference = documentBuilder.AddImage(new DictionaryToken(smaskDictionary), compressedSmask);
             }
 
-            var compressed = DataCompresser.CompressBytes(data);
+            var compressed = DataCompressor.CompressBytes(data);
 
             var imgDictionary = new Dictionary<NameToken, IToken>
             {
@@ -919,6 +920,39 @@
             return new AddedImage(reference.Data, width, height);
         }
 
+
+        /// <summary>
+        /// Adds a URL link annotation to the page at the specified rectangle area.
+        /// </summary>
+        /// <param name="url">The URL to link to</param>
+        /// <param name="linkArea">The rectangular area on the page that will be clickable</param>
+        /// <returns>This page builder for method chaining</returns>
+        public PdfPageBuilder AddLink(string url, PdfRectangle linkArea)
+        {
+            return AddLink(new LinkAnnotation(new UriAction(url), linkArea));
+        }
+
+        /// <summary>
+        /// Adds an internal document link annotation to the page at the specified rectangle area.
+        /// </summary>
+        /// <param name="destination">The destination within the current document to link to</param>
+        /// <param name="linkArea">The rectangular area on the page that will be clickable</param>
+        /// <returns>This page builder for method chaining</returns>
+        public PdfPageBuilder AddLink(ExplicitDestination destination, PdfRectangle linkArea)
+        {
+            return AddLink(new LinkAnnotation(new GoToAction(destination), linkArea));
+        }
+
+        /// <summary>
+        /// Adds a link annotation to the page.
+        /// </summary>
+        /// <param name="link">The link annotation to add</param>
+        /// <returns>This page builder for method chaining</returns>
+        public PdfPageBuilder AddLink(LinkAnnotation link)
+        {
+            links.Add((link.ToToken(), link.Action));
+            return this;
+        }
 
         /// <summary>
         /// Copy a page from unknown source to this page
@@ -1277,7 +1311,7 @@
 
                     var bytes = memoryStream.ToArray();
 
-                    var stream = DataCompresser.CompressToStream(bytes);
+                    var stream = DataCompressor.CompressToStream(bytes);
 
                     return writer.WriteToken(stream);
                 }

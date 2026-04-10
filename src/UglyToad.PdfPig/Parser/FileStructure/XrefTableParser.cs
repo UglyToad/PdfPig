@@ -152,7 +152,7 @@ internal static class XrefTableParser
             }
         }
 
-        var offsets = new Dictionary<IndirectReference, long>();
+        var offsets = new Dictionary<IndirectReference, XrefLocation>();
         if (readNums.Count == 0)
         {
             if (trailer != null)
@@ -233,7 +233,7 @@ internal static class XrefTableParser
                 if (type == occupiedSentinel)
                 {
                     var indirectRef = new IndirectReference(objNum, (int)gen);
-                    offsets[indirectRef] = objOffset;
+                    offsets[indirectRef] = XrefLocation.File(objOffset);
                 }
 
                 objNum++;

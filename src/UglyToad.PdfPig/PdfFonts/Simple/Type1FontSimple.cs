@@ -29,7 +29,7 @@
 
         private readonly FontDescriptor fontDescriptor;
 
-        private readonly Encoding encoding;
+        private readonly Encoding? encoding;
 
         private readonly Union<Type1Font, CompactFontFormatFontCollection>? fontProgram;
 
@@ -67,7 +67,7 @@
 
             var matrix = DefaultTransformationMatrix;
 
-            if (fontProgram != null)
+            if (fontProgram is not null)
             {
                 if (fontProgram.TryGetFirst(out var t1Font))
                 {
@@ -183,15 +183,7 @@
 
             try
             {
-                if (isZapfDingbats)
-                {
-                    value = GlyphList.ZapfDingbats.NameToUnicode(name);
-                    if (value is not null)
-                    {
-                        return true;
-                    }
-                }
-                value = GlyphList.AdobeGlyphList.NameToUnicode(name);
+                value = NameToUnicode(name);
             }
             catch
             {
@@ -199,6 +191,34 @@
             }
 
             return value is not null;
+        }
+
+        private string? NameToUnicode(string name)
+        {
+            if (isZapfDingbats)
+            {
+                string value = GlyphList.ZapfDingbats.NameToUnicode(name);
+                if (value is not null)
+                {
+                    return value;
+                }
+            }
+
+            return GlyphList.AdobeGlyphList.NameToUnicode(name);
+        }
+
+        public string UnicodeCodePointToName(int unicodeValue)
+        {
+            if (isZapfDingbats)
+            {
+                string value = GlyphList.ZapfDingbats.UnicodeCodePointToName(unicodeValue);
+                if (value is not null)
+                {
+                    return value;
+                }
+            }
+
+            return GlyphList.AdobeGlyphList.UnicodeCodePointToName(unicodeValue);
         }
 
         public CharacterBoundingBox GetBoundingBox(int characterCode)
@@ -255,7 +275,16 @@
             PdfRectangle? rect = null;
             if (fontProgram.TryGetFirst(out var t1Font))
             {
-                var name = encoding.GetName(characterCode);
+                string name;
+                if (encoding is not null)
+                {
+                    name = encoding.GetName(characterCode);
+                }
+                else
+                {
+                    name = UnicodeCodePointToName(characterCode);
+                }
+                
                 rect = t1Font.GetCharacterBoundingBox(name);
             }
             else if (fontProgram.TryGetSecond(out var cffFont))
@@ -308,21 +337,30 @@
                 return false;
             }
 
-            if (fontProgram == null)
+            if (fontProgram is null)
             {
                 return false;
             }
 
             if (fontProgram.TryGetFirst(out var t1Font))
             {
-                var name = encoding.GetName(characterCode);
+                string name;
+                if (encoding is not null)
+                {
+                    name = encoding.GetName(characterCode);
+                }
+                else
+                {
+                    name = UnicodeCodePointToName(characterCode);
+                }
+                
                 tempPath = t1Font.GetCharacterPath(name);
             }
             else if (fontProgram.TryGetSecond(out var cffFont))
             {
                 var first = cffFont.FirstFont;
                 string characterName;
-                if (encoding != null)
+                if (encoding is not null)
                 {
                     characterName = encoding.GetName(characterCode);
                 }
@@ -334,7 +372,7 @@
                 tempPath = first.GetCharacterPath(characterName);
             }
 
-            if (tempPath != null)
+            if (tempPath is not null)
             {
                 path = tempPath;
                 return true;
