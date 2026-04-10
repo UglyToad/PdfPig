@@ -51,7 +51,7 @@
             var newEncoding = new TrueTypeSubsetEncoding(characterMapping.Keys.ToList());
             var subsetBytes = TrueTypeSubsetter.Subset(fontFileBytes.ToArray(), newEncoding);
 
-            var embeddedFile = DataCompresser.CompressToStream(subsetBytes);
+            var embeddedFile = DataCompressor.CompressToStream(subsetBytes);
 
             var fileRef = writer.WriteToken(embeddedFile);
 
@@ -110,7 +110,7 @@
             var descriptor = writer.WriteToken(new DictionaryToken(descriptorDictionary));
 
             var toUnicodeCMap = ToUnicodeCMapBuilder.ConvertToCMapStream(characterMapping);
-            var toUnicodeStream = DataCompresser.CompressToStream(toUnicodeCMap);
+            var toUnicodeStream = DataCompressor.CompressToStream(toUnicodeCMap);
             var toUnicode = writer.WriteToken(toUnicodeStream);
 
             var dictionary = new Dictionary<NameToken, IToken>

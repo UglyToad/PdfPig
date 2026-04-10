@@ -1,0 +1,40 @@
+name: Bump Version
+
+on:
+  workflow_dispatch
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump_version:
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate next version
+        id: version
+        shell: pwsh
+        run: |
+          $newVer = .\tools\get-next-main-version.ps1
+          echo "NEW_VERSION=$newVer" >> $env:GITHUB_ENV
+
+          .\tools\set-version.ps1 $newVer -UpdateAssemblyAndFileVersion
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git commit -am "Bump version to $newVer"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: bump/${{ env.NEW_VERSION }}
+          base: master
+          title: "Bump version to ${{ env.NEW_VERSION }}"
+          body: "Automated version bump after release."
+          merge-method: rebase

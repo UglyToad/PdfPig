@@ -1,0 +1,34 @@
+# This workflow tags the current commit as the release and pushes that tag to master, this feeds into the publish_nuget.yml action which looks for the new tag to trigger the release.
+# AI code.
+name: Release
+
+on:
+  workflow_dispatch
+
+permissions:
+  contents: write
+
+jobs:
+  tag_release:
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get current version
+        id: version
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path tools/UglyToad.PdfPig.Package/UglyToad.PdfPig.Package.csproj -Pattern "<Version>(.*)</Version>").Matches.Groups[1].Value
+          echo "VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: Create annotated tag
+        shell: pwsh
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git tag -a "v${{ env.VERSION }}" -m "Release ${{ env.VERSION }}"
+          git push origin "v${{ env.VERSION }}"

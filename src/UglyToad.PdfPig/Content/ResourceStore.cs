@@ -24,7 +24,7 @@
         private readonly StackDictionary<NameToken, IndirectReference> currentFontState = new StackDictionary<NameToken, IndirectReference>();
         private readonly StackDictionary<NameToken, IndirectReference> currentXObjectState = new StackDictionary<NameToken, IndirectReference>();
 
-        private readonly Dictionary<NameToken, DictionaryToken> extendedGraphicsStates = new Dictionary<NameToken, DictionaryToken>();
+        private readonly StackDictionary<NameToken, DictionaryToken> extendedGraphicsStates = new StackDictionary<NameToken, DictionaryToken>();
 
         private readonly StackDictionary<NameToken, ResourceColorSpace> namedColorSpaces = new StackDictionary<NameToken, ResourceColorSpace>();
         private readonly Dictionary<NameToken, ColorSpaceDetails> loadedNamedColorSpaceDetails = new Dictionary<NameToken, ColorSpaceDetails>();
@@ -56,6 +56,7 @@
             namedColorSpaces.Push();
             currentFontState.Push();
             currentXObjectState.Push();
+            extendedGraphicsStates.Push();
 
             if (resourceDictionary.TryGet(NameToken.Font, out var fontBase))
             {
@@ -190,6 +191,7 @@
             currentFontState.Pop();
             currentXObjectState.Pop();
             namedColorSpaces.Pop();
+            extendedGraphicsStates.Pop();
         }
 
         private void LoadFontDictionary(DictionaryToken fontDictionary)
@@ -348,8 +350,13 @@
 
         public DictionaryToken? GetExtendedGraphicsStateDictionary(NameToken name)
         {
-            if (parsingOptions.UseLenientParsing && !extendedGraphicsStates.ContainsKey(name))
+            if (parsingOptions.UseLenientParsing)
             {
+                if (extendedGraphicsStates.TryGetValue(name, out var dictToken))
+                {
+                    return dictToken;
+                }
+
                 parsingOptions.Logger.Error($"The graphic state dictionary does not contain the key '{name}'.");
                 return null;
             }

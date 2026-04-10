@@ -216,6 +216,68 @@ l";
             Assert.NotEmpty(result);
         }
 
+        [Fact]
+        public void HandlesIssue953_IntOverflowContent()
+        {
+            // After ( + ) Tj operator the content stream becomes corrupt, our current parser therefore reads wrong
+            // values for operations and this results in a problem when applying the show text operations, we should safely discard or recover on BT/ET boundaries.
+            const string s =
+                """
+                BT
+                /TT6 1 Tf
+                12.007 0 0 12.007 163.2j
+                -0.19950 Tc
+                0 Tw
+                (x)Tj
+                -0.1949 1.4142 TD
+                (H)Tj
+                /TT7 1 Tf
+                12.031 0 0 12.031 157.38 85.2 Tm
+                <0077>Tj
+                -0.1945 1.4114 TD
+                <0077>Tj
+                /TT4 1 Tf
+                12.007 0 0 12.007 174.42 94.5601 Tm
+                0.0004 Tc
+                -0.0005 Tw
+                ( + )Tj
+                E9 478l)]T862.68E9 478E9 484.54 9 155l)]T862.6av9 478E9 15.2(
+                ET
+                154.386( i92 m
+                171.6 97.62 l
+                S
+                BT
+                /TT6 28 Tf
+                12.03128 T2002.0307 163.2j
+                -0.19950 DAc
+                0 Tw853Tj
+                0.1945 1.4142 om)873j
+                -0.574142 om)68.80
+                -0.5797 0 TD
+                (f)Tj
+                /TT( )7Tf
+                0.31945 1.5341 TD371.4j
+                2.82
+                8.2652 0 5.724 TD
+                0 Tc
+                -0.0001 2748.3( = 091ity )-27483
+                [(te27483
+                [(te27483
+                [(te27483
+                [(te27483
+                [(te27483
+                [(Eq.)52   \(2.1
+                ( 
+                """;
+
+            var input = StringBytesTestConverter.Convert(s, false);
+
+            var lenientParser = new PageContentParser(ReflectionGraphicsStateOperationFactory.Instance, new StackDepthGuard(256), true);
+            var result = lenientParser.Parse(1, input.Bytes, log);
+
+            Assert.NotEmpty(result);
+        }
+
         private static string LineEndingsToWhiteSpace(string str)
         {
             return str.Replace("\r\n", " ").Replace('\n', ' ').Replace('\r', ' ');

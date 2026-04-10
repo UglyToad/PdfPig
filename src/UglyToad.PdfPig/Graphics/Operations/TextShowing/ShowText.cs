@@ -64,7 +64,7 @@
             operationContext.ShowText(input);
         }
 
-        string? EscapeText(string? text)
+        private static string? EscapeText(string? text)
         {
             if (text is null) return null;
             // Fix Issue 350 from PDF Spec 1.7 (page 408) on handling 'special characters' of '(', ')' and '\'.

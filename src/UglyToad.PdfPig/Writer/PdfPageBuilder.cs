@@ -16,6 +16,7 @@
     using Graphics.Operations.TextPositioning;
     using Graphics.Operations.TextShowing;
     using Graphics.Operations.TextState;
+    using Outline.Destinations;
     using Images;
     using PdfFonts;
     using Tokens;
@@ -94,7 +95,7 @@
         private IPageContentStream currentStream;
 
         // links to be resolved when all page references are available
-        internal readonly List<(DictionaryToken token, PdfAction action)>? links;
+        internal readonly List<(DictionaryToken token, PdfAction action)> links = [];
 
         // maps fonts added using PdfDocumentBuilder to page font names
         private readonly Dictionary<Guid, NameToken> documentFonts = new Dictionary<Guid, NameToken>();
@@ -766,7 +767,7 @@
                     }
                 }
 
-                var compressedSmask = DataCompresser.CompressBytes(smaskData);
+                var compressedSmask = DataCompressor.CompressBytes(smaskData);
 
                 // Create a soft-mask.
                 var smaskDictionary = new Dictionary<NameToken, IToken>
@@ -785,7 +786,7 @@
                 smaskReference = documentBuilder.AddImage(new DictionaryToken(smaskDictionary), compressedSmask);
             }
 
-            var compressed = DataCompresser.CompressBytes(data);
+            var compressed = DataCompressor.CompressBytes(data);
 
             var imgDictionary = new Dictionary<NameToken, IToken>
             {
@@ -844,8 +845,7 @@
         /// Set to true if 1 bits represent black (common for bilevel scans).
         /// If the result looks inverted, pass false.
         /// </param>
-        public AddedImage AddCcittG4(byte[] ccittG4Data, int width, int height, PdfRectangle placementRectangle = default, bool blackIs1 = true,
-    bool endOfBlock = true)
+        public AddedImage AddCcittG4(byte[] ccittG4Data, int width, int height, PdfRectangle placementRectangle = default, bool blackIs1 = true)
         {
             if (ccittG4Data is null) throw new ArgumentNullException(nameof(ccittG4Data));
             if (width <= 0) throw new ArgumentOutOfRangeException(nameof(width));
@@ -859,45 +859,32 @@
             // DecodeParms for CCITTFaxDecode:
             // K = -1 => Group 4 (T.6)
             // Columns/Rows = image dimensions
-            // BlackIs1 controls polarity (optional but useful)
+            // BlackIs1 controls polarity via /Decode.
             var decodeParms = new Dictionary<NameToken, IToken>
-    {
-        { NameToken.Create("K"), new NumericToken(-1) },
-        { NameToken.Create("Columns"), new NumericToken(width) },
-        { NameToken.Create("Rows"), new NumericToken(height) },
-        //{ NameToken.Create("BlackIs1"), blackIs1 ? BooleanToken.True : BooleanToken.False },
-         { NameToken.Create("EndOfBlock"), endOfBlock ? BooleanToken.True : BooleanToken.False }
-        // You can add these if needed for odd inputs:
-        // { NameToken.Create("EndOfLine"), BooleanToken.False },
-        // { NameToken.Create("EncodedByteAlign"), BooleanToken.False },
-        // { NameToken.Create("EndOfBlock"), BooleanToken.True }
-    };
+            {
+                { NameToken.Create("K"), new NumericToken(-1) },
+                { NameToken.Create("Columns"), new NumericToken(width) },
+                { NameToken.Create("Rows"), new NumericToken(height) }
+            };
 
             var imgDictionary = new Dictionary<NameToken, IToken>
-    {
-        { NameToken.Type, NameToken.Xobject },
-        { NameToken.Subtype, NameToken.Image },
-        { NameToken.Width, new NumericToken(width) },
-        { NameToken.Height, new NumericToken(height) },
-        { NameToken.ColorSpace, NameToken.Devicegray },
-        { NameToken.BitsPerComponent, new NumericToken(1) },
-        { NameToken.Filter, NameToken.Create("CCITTFaxDecode") },
-        { NameToken.DecodeParms, new DictionaryToken(decodeParms) },
-        { NameToken.Length, new NumericToken(ccittG4Data.Length) }
-    };
-
-            // FIX DEFINITIVO: per CCITT Fax va SEMPRE specificato /Decode
-            // blackIs1 = true  => 1 = nero  => Decode [1 0]
-            // blackIs1 = false => 1 = bianco => Decode [0 1]
-            //Photometric = MINISBLACK(1) ⇒ blackIs1 = true ⇒ / Decode[1 0]
-            //Photometric = MINISWHITE(0) ⇒ blackIs1 = false ⇒ / Decode[0 1]
-
-            // Polarità gestita SOLO tramite /Decode (non BlackIs1)
-            imgDictionary[NameToken.Decode] = new ArrayToken(new IToken[]
             {
-    blackIs1 ? new NumericToken(1) : new NumericToken(0),
-    blackIs1 ? new NumericToken(0) : new NumericToken(1)
-            });
+                { NameToken.Type, NameToken.Xobject },
+                { NameToken.Subtype, NameToken.Image },
+                { NameToken.Width, new NumericToken(width) },
+                { NameToken.Height, new NumericToken(height) },
+                { NameToken.ColorSpace, NameToken.Devicegray },
+                { NameToken.BitsPerComponent, new NumericToken(1) },
+                { NameToken.Filter, NameToken.Create("CCITTFaxDecode") },
+                { NameToken.DecodeParms, new DictionaryToken(decodeParms) },
+                { NameToken.Length, new NumericToken(ccittG4Data.Length) }
+            };
+
+            imgDictionary[NameToken.Decode] = new ArrayToken(
+            [
+                blackIs1 ? new NumericToken(1) : new NumericToken(0),
+                blackIs1 ? new NumericToken(0) : new NumericToken(1)
+            ]);
 
 
             // IMPORTANT: Do NOT recompress. ccittG4Data is already compressed with CCITT Group 4.
@@ -910,18 +897,51 @@
             xObjects[key] = reference;
 
             currentStream.Add(Push.Value);
-            currentStream.Add(new ModifyCurrentTransformationMatrix(new[]
-            {
-        placementRectangle.Width, 0,
-        0, placementRectangle.Height,
-        placementRectangle.BottomLeft.X, placementRectangle.BottomLeft.Y
-    }));
+            currentStream.Add(new ModifyCurrentTransformationMatrix(
+            [
+                placementRectangle.Width, 0,
+                0, placementRectangle.Height,
+                placementRectangle.BottomLeft.X, placementRectangle.BottomLeft.Y
+            ]));
             currentStream.Add(new InvokeNamedXObject(key));
             currentStream.Add(Pop.Value);
 
             return new AddedImage(reference.Data, width, height);
         }
 
+
+        /// <summary>
+        /// Adds a URL link annotation to the page at the specified rectangle area.
+        /// </summary>
+        /// <param name="url">The URL to link to</param>
+        /// <param name="linkArea">The rectangular area on the page that will be clickable</param>
+        /// <returns>This page builder for method chaining</returns>
+        public PdfPageBuilder AddLink(string url, PdfRectangle linkArea)
+        {
+            return AddLink(new LinkAnnotation(new UriAction(url), linkArea));
+        }
+
+        /// <summary>
+        /// Adds an internal document link annotation to the page at the specified rectangle area.
+        /// </summary>
+        /// <param name="destination">The destination within the current document to link to</param>
+        /// <param name="linkArea">The rectangular area on the page that will be clickable</param>
+        /// <returns>This page builder for method chaining</returns>
+        public PdfPageBuilder AddLink(ExplicitDestination destination, PdfRectangle linkArea)
+        {
+            return AddLink(new LinkAnnotation(new GoToAction(destination), linkArea));
+        }
+
+        /// <summary>
+        /// Adds a link annotation to the page.
+        /// </summary>
+        /// <param name="link">The link annotation to add</param>
+        /// <returns>This page builder for method chaining</returns>
+        public PdfPageBuilder AddLink(LinkAnnotation link)
+        {
+            links.Add((link.ToToken(), link.Action));
+            return this;
+        }
 
         /// <summary>
         /// Copy a page from unknown source to this page
@@ -1280,7 +1300,7 @@
 
                     var bytes = memoryStream.ToArray();
 
-                    var stream = DataCompresser.CompressToStream(bytes);
+                    var stream = DataCompressor.CompressToStream(bytes);
 
                     return writer.WriteToken(stream);
                 }

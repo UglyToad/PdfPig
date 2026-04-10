@@ -72,7 +72,7 @@
                     {
                         foreach (var letter in page.Letters)
                         {
-                            DrawRectangle(letter.GlyphRectangle, canvas, redPaint, size.Height, Scale);
+                            DrawRectangle(letter.BoundingBox, canvas, redPaint, size.Height, Scale);
                         }
                     }
 

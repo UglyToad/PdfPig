@@ -33,7 +33,7 @@
 
                 var rect = new PdfRectangle(207, 158, 229, 168.5);
 
-                var missingChars = letters.Where(l => rect.Contains(l.GlyphRectangle)).ToArray();
+                var missingChars = letters.Where(l => rect.Contains(l.BoundingBox)).ToArray();
 
                 Assert.NotEmpty(missingChars);
                 Assert.True(missingChars.Length == 2);

@@ -589,7 +589,7 @@ public class XrefTableParserTests
         {
             Assert.True(table.ObjectOffsets.TryGetValue(offset.Key, out var actual));
 
-            Assert.Equal(offset.Value, actual);
+            Assert.Equal(offset.Value, actual.Value1);
         }
     }
 

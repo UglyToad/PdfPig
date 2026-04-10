@@ -59,7 +59,7 @@ startxref
 
             Assert.Equal(4, locations.Count);
 
-            Assert.Equal(TestDataOffsets, locations.Values);
+            Assert.Equal(TestDataOffsets, locations.Values.Select(x => x.Value1));
         }
 
         [Fact]
@@ -111,7 +111,7 @@ endobj
                 s.IndexOf("11 0 obj", StringComparison.OrdinalIgnoreCase)
             };
 
-            Assert.Equal(expectedLocations, locations.Values);
+            Assert.Equal(expectedLocations, locations.Values.Select(x => x.Value1));
         }
 
         [Fact]
@@ -142,7 +142,7 @@ endobj";
                 s.IndexOf("5 0 obj", StringComparison.OrdinalIgnoreCase)
             };
 
-            Assert.Equal(expectedLocations, locations.Values);
+            Assert.Equal(expectedLocations, locations.Values.Select(x => x.Value1));
         }
 
         [Fact]
@@ -156,17 +156,17 @@ endobj";
 
                 Assert.Equal(13, locations.Count);
 
-                Assert.Equal(6183, locations[new IndirectReference(1, 0)]);
-                Assert.Equal(244, locations[new IndirectReference(2, 0)]);
-                Assert.Equal(15, locations[new IndirectReference(3, 0)]);
-                Assert.Equal(222, locations[new IndirectReference(4, 0)]);
-                Assert.Equal(5766, locations[new IndirectReference(5, 0)]);
-                Assert.Equal(353, locations[new IndirectReference(6, 0)]);
-                Assert.Equal(581, locations[new IndirectReference(7, 0)]);
-                Assert.Equal(5068, locations[new IndirectReference(8, 0)]);
-                Assert.Equal(5091, locations[new IndirectReference(9, 0)]);
+                Assert.Equal(6183, locations[new IndirectReference(1, 0)].Value1);
+                Assert.Equal(244, locations[new IndirectReference(2, 0)].Value1);
+                Assert.Equal(15, locations[new IndirectReference(3, 0)].Value1);
+                Assert.Equal(222, locations[new IndirectReference(4, 0)].Value1);
+                Assert.Equal(5766, locations[new IndirectReference(5, 0)].Value1);
+                Assert.Equal(353, locations[new IndirectReference(6, 0)].Value1);
+                Assert.Equal(581, locations[new IndirectReference(7, 0)].Value1);
+                Assert.Equal(5068, locations[new IndirectReference(8, 0)].Value1);
+                Assert.Equal(5091, locations[new IndirectReference(9, 0)].Value1);
 
-                var s = GetStringAt(bytes, locations[new IndirectReference(3, 0)]);
+                var s = GetStringAt(bytes, locations[new IndirectReference(3, 0)].Value1);
                 Assert.StartsWith("3 0 obj", s);
             }
         }
@@ -180,17 +180,17 @@ endobj";
 
             Assert.Equal(13, locations.Count);
 
-            Assert.Equal(6183, locations[new IndirectReference(1, 0)]);
-            Assert.Equal(244, locations[new IndirectReference(2, 0)]);
-            Assert.Equal(15, locations[new IndirectReference(3, 0)]);
-            Assert.Equal(222, locations[new IndirectReference(4, 0)]);
-            Assert.Equal(5766, locations[new IndirectReference(5, 0)]);
-            Assert.Equal(353, locations[new IndirectReference(6, 0)]);
-            Assert.Equal(581, locations[new IndirectReference(7, 0)]);
-            Assert.Equal(5068, locations[new IndirectReference(8, 0)]);
-            Assert.Equal(5091, locations[new IndirectReference(9, 0)]);
+            Assert.Equal(6183, locations[new IndirectReference(1, 0)].Value1);
+            Assert.Equal(244, locations[new IndirectReference(2, 0)].Value1);
+            Assert.Equal(15, locations[new IndirectReference(3, 0)].Value1);
+            Assert.Equal(222, locations[new IndirectReference(4, 0)].Value1);
+            Assert.Equal(5766, locations[new IndirectReference(5, 0)].Value1);
+            Assert.Equal(353, locations[new IndirectReference(6, 0)].Value1);
+            Assert.Equal(581, locations[new IndirectReference(7, 0)].Value1);
+            Assert.Equal(5068, locations[new IndirectReference(8, 0)].Value1);
+            Assert.Equal(5091, locations[new IndirectReference(9, 0)].Value1);
 
-            var s = GetStringAt(bytes, locations[new IndirectReference(3, 0)]);
+            var s = GetStringAt(bytes, locations[new IndirectReference(3, 0)].Value1);
             Assert.StartsWith("3 0 obj", s);
         }
 
@@ -203,21 +203,21 @@ endobj";
 
             Assert.Equal(13, locations.Count);
 
-            Assert.Equal(17, locations[new IndirectReference(1, 0)]);
-            Assert.Equal(249, locations[new IndirectReference(2, 0)]);
-            Assert.Equal(14291, locations[new IndirectReference(3, 0)]);
-            Assert.Equal(275, locations[new IndirectReference(4, 0)]);
-            Assert.Equal(382, locations[new IndirectReference(5, 0)]);
-            Assert.Equal(13283, locations[new IndirectReference(6, 0)]);
-            Assert.Equal(13309, locations[new IndirectReference(7, 0)]);
-            Assert.Equal(13556, locations[new IndirectReference(8, 0)]);
-            Assert.Equal(13926, locations[new IndirectReference(9, 0)]);
-            Assert.Equal(14183, locations[new IndirectReference(10, 0)]);
-            Assert.Equal(14224, locations[new IndirectReference(11, 0)]);
-            Assert.Equal(14428, locations[new IndirectReference(12, 0)]);
-            Assert.Equal(14488, locations[new IndirectReference(13, 0)]);
+            Assert.Equal(17, locations[new IndirectReference(1, 0)].Value1);
+            Assert.Equal(249, locations[new IndirectReference(2, 0)].Value1);
+            Assert.Equal(14291, locations[new IndirectReference(3, 0)].Value1);
+            Assert.Equal(275, locations[new IndirectReference(4, 0)].Value1);
+            Assert.Equal(382, locations[new IndirectReference(5, 0)].Value1);
+            Assert.Equal(13283, locations[new IndirectReference(6, 0)].Value1);
+            Assert.Equal(13309, locations[new IndirectReference(7, 0)].Value1);
+            Assert.Equal(13556, locations[new IndirectReference(8, 0)].Value1);
+            Assert.Equal(13926, locations[new IndirectReference(9, 0)].Value1);
+            Assert.Equal(14183, locations[new IndirectReference(10, 0)].Value1);
+            Assert.Equal(14224, locations[new IndirectReference(11, 0)].Value1);
+            Assert.Equal(14428, locations[new IndirectReference(12, 0)].Value1);
+            Assert.Equal(14488, locations[new IndirectReference(13, 0)].Value1);
 
-            var s = GetStringAt(bytes, locations[new IndirectReference(12, 0)]);
+            var s = GetStringAt(bytes, locations[new IndirectReference(12, 0)].Value1);
             Assert.StartsWith("12 0 obj", s);
         }
 
@@ -230,7 +230,7 @@ endobj";
 
             var locations = BruteForceSearcher.GetObjectLocations(input);
 
-            Assert.Equal(TestDataOffsets, locations.Values);
+            Assert.Equal(TestDataOffsets, locations.Values.Select(x => x.Value1));
         }
 
         [Fact]
@@ -265,7 +265,7 @@ endobj
                 s.IndexOf("11 0 obj", StringComparison.OrdinalIgnoreCase)
             };
 
-            Assert.Equal(expectedLocations, locations.Values);
+            Assert.Equal(expectedLocations, locations.Values.Select(x => x.Value1));
         }
 
         private static string GetStringAt(IInputBytes bytes, long location)

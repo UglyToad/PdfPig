@@ -20,14 +20,14 @@
             // check 'm'
             var m = letters[0];
             Assert.Equal("m", m.Value);
-            Assert.Equal(new PdfPoint(253.4458, 658.431), m.GlyphRectangle.BottomLeft, pointComparer);
-            Assert.Equal(new PdfPoint(261.22659, 662.83446), m.GlyphRectangle.TopRight, pointComparer);
+            Assert.Equal(new PdfPoint(253.4458, 658.431), m.BoundingBox.BottomLeft, pointComparer);
+            Assert.Equal(new PdfPoint(261.22659, 662.83446), m.BoundingBox.TopRight, pointComparer);
 
             // check 'p'
             var p = letters[1];
             Assert.Equal("p", p.Value);
-            Assert.Equal(new PdfPoint(261.70778, 656.49825), p.GlyphRectangle.BottomLeft, pointComparer);
-            Assert.Equal(new PdfPoint(266.6193, 662.83446), p.GlyphRectangle.TopRight, pointComparer);
+            Assert.Equal(new PdfPoint(261.70778, 656.49825), p.BoundingBox.BottomLeft, pointComparer);
+            Assert.Equal(new PdfPoint(266.6193, 662.83446), p.BoundingBox.TopRight, pointComparer);
         }
     }
 }

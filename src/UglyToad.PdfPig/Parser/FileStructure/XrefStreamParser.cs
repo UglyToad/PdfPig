@@ -98,7 +98,7 @@ internal static class XrefStreamParser
                 ? stackalloc byte[fieldSizes.LineLength]
                 : new byte[fieldSizes.LineLength];
 
-            var numbers = new List<(long obj, int gen, int off)>();
+            var numbers = new List<(long obj, int gen, XrefLocation location)>();
 
             foreach (var objectNumber in objectNumbers)
             {
@@ -136,7 +136,7 @@ internal static class XrefStreamParser
 
             return new XrefStream(
                 xrefOffset,
-                numbers.ToDictionary(x => new IndirectReference(x.obj, x.gen), x => (long)x.off),
+                numbers.ToDictionary(x => new IndirectReference(x.obj, x.gen), x => x.location),
                 dictToken,
                 offsetCorrectionType,
                 offsetCorrection);
@@ -175,7 +175,7 @@ internal static class XrefStreamParser
         int type,
         long objectNumber,
         XrefFieldSize fieldSizes,
-        List<(long, int, int)> results,
+        List<(long, int, XrefLocation)> results,
         ReadOnlySpan<byte> lineBuffer)
     {
         switch (type)
@@ -184,19 +184,23 @@ internal static class XrefStreamParser
                 // Ignore free objects.
                 break;
             case 1:
-                // Non object stream entries.
-                var offset = 0;
-                for (var i = 0; i < fieldSizes.Field2Size; i++)
-                {
-                    offset += (lineBuffer[i + fieldSizes.Field1Size] & 0x00ff) << ((fieldSizes.Field2Size - i - 1) * 8);
-                }
-                var genNum = 0;
-                for (var i = 0; i < fieldSizes.Field3Size; i++)
-                {
-                    genNum += (lineBuffer[i + fieldSizes.Field1Size + fieldSizes.Field2Size] & 0x00ff) << ((fieldSizes.Field3Size - i - 1) * 8);
+                var offset = ReadUnsigned(
+                    lineBuffer,
+                    fieldSizes.Field1Size,
+                    fieldSizes.Field2Size);
+
+                var genNum = ReadUnsigned(
+                    lineBuffer,
+                    fieldSizes.Field1Size + fieldSizes.Field2Size,
+                    fieldSizes.Field3Size);
+
+                if (offset < 0)
+                { 
+                    throw new PdfDocumentFormatException(
+                        $"Location with negative offset {offset} found for object {objectNumber}");
                 }
 
-                results.Add((objectNumber, genNum, offset));
+                results.Add((objectNumber, (int)genNum, XrefLocation.File(offset)));
 
                 break;
             case 2:
@@ -205,26 +209,47 @@ internal static class XrefStreamParser
                  * 2nd argument is object number of object stream
                  * 3rd argument is index of object within object stream
                  * 
-                 * For sequential PDFParser we do not need this information
-                 * because
-                 * These objects are handled by the dereferenceObjects() method
-                 * since they're only pointing to object numbers
-                 * 
-                 * However for XRef aware parsers we have to know which objects contain
-                 * object streams. We will store this information in normal xref mapping
-                 * table but add object stream number with minus sign in order to
-                 * distinguish from file offsets
                  */
-                var objstmObjNr = 0;
-                for (var i = 0; i < fieldSizes.Field2Size; i++)
+            
+                var objectStreamNumber = ReadUnsigned(
+                    lineBuffer,
+                    fieldSizes.Field1Size,
+                    fieldSizes.Field2Size);
+
+                var streamIndex = ReadUnsigned(
+                    lineBuffer,
+                    fieldSizes.Field1Size + fieldSizes.Field2Size,
+                    fieldSizes.Field3Size);
+
+                if (objectStreamNumber < 0)
                 {
-                    objstmObjNr += (lineBuffer[i + fieldSizes.Field1Size] & 0x00ff) << ((fieldSizes.Field2Size - i - 1) * 8);
+                    throw new PdfDocumentFormatException(
+                        $"Location with negative or zero object stream number {objectStreamNumber} found for object {objectNumber}");
                 }
 
-                results.Add((objectNumber, 0, -objstmObjNr));
+                if (streamIndex < 0)
+                {
+                    throw new PdfDocumentFormatException(
+                        $"Location with negative stream index {streamIndex} found for object {objectNumber} in stream {objectStreamNumber}");
+                }
+
+                results.Add((objectNumber, 0, XrefLocation.Stream(objectStreamNumber, (int)streamIndex)));
 
                 break;
         }
+    }
+
+    private static long ReadUnsigned(ReadOnlySpan<byte> buffer, int start, int width)
+    {
+        long value = 0;
+
+        for (int i = 0; i < width; i++)
+        {
+            value <<= 8;
+            value |= buffer[start + i];
+        }
+
+        return value;
     }
 
     private static (long from, long? to) ReadStreamTolerant(IInputBytes bytes)
