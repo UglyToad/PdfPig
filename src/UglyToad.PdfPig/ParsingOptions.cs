@@ -63,5 +63,15 @@
         /// Filter provider to use while parsing the document. The <see cref="DefaultFilterProvider"/> will be used if set to <c>null</c>.
         /// </summary>
         public IFilterProvider? FilterProvider { get; set; } = null;
+
+        /// <summary>
+        /// Whether to load image byte data when enumerating images on a page.
+        /// When <see langword="true"/> (the default), image bytes are available via <see cref="Content.IPdfImage.RawMemory"/>
+        /// and <see cref="Content.IPdfImage.TryGetBytesAsMemory(out System.Memory{byte})"/>.
+        /// When <see langword="false"/>, image metadata (width, height, bounding box, color space, etc.)
+        /// is still available but image byte data is not retained, reducing memory usage
+        /// for documents with large or numerous images.
+        /// </summary>
+        public bool EagerlyLoadImageBytes { get; set; } = true;
     }
 }

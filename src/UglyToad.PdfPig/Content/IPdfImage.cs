@@ -38,13 +38,22 @@
 
         /// <summary>
         /// The encoded memory of the image with all filters still applied.
+        /// Accesing this property may trigger loading of the image bytes from the PDF stream.
         /// </summary>
         Memory<byte> RawMemory { get; }
 
         /// <summary>
         /// The encoded memory span of the image with all filters still applied.
+        /// Accesing this property may trigger loading of the image bytes from the PDF stream.
         /// </summary>
         Span<byte> RawBytes { get; }
+
+        /// <summary>
+        /// Whether the image byte data is available. Returns <see langword="false"/> when
+        /// <see cref="ParsingOptions.EagerlyLoadImageBytes"/> is <see langword="false"/>.
+        /// Image metadata (dimensions, color space, bounding box) is available regardless.
+        /// </summary>
+        bool HasLoadedBytes { get; }
 
         /// <summary>
         /// The color rendering intent to be used when rendering the image.

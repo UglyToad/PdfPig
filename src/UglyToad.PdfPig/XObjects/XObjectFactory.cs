@@ -109,12 +109,17 @@
                     if (dictionary.TryGet(NameToken.BitsPerComponent, out NumericToken? bitsPerComponentToken))
                     {
                         bitsPerComponent = bitsPerComponentToken.Int;
-                        System.Diagnostics.Debug.Assert(bitsPerComponent == Jpeg2000Helper.GetBitsPerComponent(xObject.Stream.Data.Span));
+                        System.Diagnostics.Debug.Assert(xObject.Stream.Data.IsEmpty || bitsPerComponent == Jpeg2000Helper.GetBitsPerComponent(xObject.Stream.Data.Span));
                     }
-                    else
+                    else if (!xObject.Stream.Data.IsEmpty)
                     {
                         bitsPerComponent = Jpeg2000Helper.GetBitsPerComponent(xObject.Stream.Data.Span);
                         System.Diagnostics.Debug.Assert(new int[] { 1, 2, 4, 8, 16 }.Contains(bitsPerComponent));
+                    }
+                    else
+                    {
+                        // Image bytes not available, default to 8 bpc for JPX
+                        bitsPerComponent = 8;
                     }
                 }
                 else
@@ -148,8 +153,10 @@
                 }
             }
             
+            var rawBytes = new Lazy<Memory<byte>>(() => xObject.Stream.Data);
             var streamToken = new StreamToken(dictionary, xObject.Stream.Data); // Needed as Resolve(pdfScanner) was called on the dictionary
-            var decodedBytes = supportsFilters ? new Lazy<Memory<byte>>(() => streamToken.Decode(filterProvider, pdfScanner))
+            var decodedBytes = supportsFilters && !xObject.Stream.Data.IsEmpty
+                ? new Lazy<Memory<byte>>(() => streamToken.Decode(filterProvider, pdfScanner))
                 : null;
 
             var decode = Array.Empty<double>();
@@ -193,7 +200,8 @@
                 interpolate,
                 decode,
                 dictionary,
-                xObject.Stream.Data,
+                rawBytes,
+                !xObject.Stream.Data.IsEmpty,
                 decodedBytes,
                 details,
                 softMaskImage);

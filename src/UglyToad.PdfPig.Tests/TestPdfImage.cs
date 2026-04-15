@@ -38,6 +38,8 @@
 
         public Memory<byte> DecodedBytes { get; set; }
 
+        public bool HasLoadedBytes => !RawMemory.IsEmpty;
+
         public IPdfImage? MaskImage { get; }
 
         public bool TryGetBytesAsMemory(out Memory<byte> bytes)

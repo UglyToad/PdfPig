@@ -435,8 +435,16 @@
             }
             else if (subType.Equals(NameToken.Image))
             {
+                var imageStream = xObjectStream;
+                if (!ParsingOptions.EagerlyLoadImageBytes)
+                {
+                    // Replace the stream data with empty bytes so we dont hold image data in memory.
+                    // The dictionary is kept for metadata (width, height, etc).
+                    imageStream = new StreamToken(xObjectStream.StreamDictionary, Memory<byte>.Empty);
+                }
+
                 var contentRecord = new XObjectContentRecord(XObjectType.Image,
-                    xObjectStream,
+                    imageStream,
                     matrix,
                     state.RenderingIntent,
                     state.ColorSpaceContext?.CurrentStrokingColorSpace ?? DeviceRgbColorSpaceDetails.Instance);
@@ -887,7 +895,7 @@
                 return;
             }
 
-            InlineImageBuilder.Bytes = bytes;
+            InlineImageBuilder.Bytes = ParsingOptions.EagerlyLoadImageBytes ? bytes : Memory<byte>.Empty;
 
             var image = InlineImageBuilder.CreateInlineImage(CurrentTransformationMatrix,
                 FilterProvider,
