@@ -107,6 +107,24 @@
         }
 
         [Fact]
+        public void InlineImageMetadataAvailableWithoutBytes()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("inline-image-2x2.pdf");
+            var options = new ParsingOptions { EagerlyLoadImageBytes = false };
+            using (var document = PdfDocument.Open(path, options))
+            {
+                var page = document.GetPage(1);
+                var image = Assert.Single(page.GetImages());
+
+                Assert.True(image.IsInlineImage);
+                Assert.Equal(2, image.WidthInSamples);
+                Assert.Equal(2, image.HeightInSamples);
+                Assert.False(image.HasLoadedBytes);
+                Assert.True(image.RawMemory.IsEmpty);
+            }
+        }
+
+        [Fact]
         public void CanAccessImageBytesExceptUnsupported()
         {
             using (var document = PdfDocument.Open(GetFilePath(), ParsingOptions.LenientParsingOff))
