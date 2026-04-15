@@ -84,6 +84,29 @@
         }
 
         [Fact]
+        public void CanGetImageMetadataWithoutLoadingBytes()
+        {
+            var options = new ParsingOptions { EagerlyLoadImageBytes = false };
+            using (var document = PdfDocument.Open(GetFilePath(), options))
+            {
+                var page = document.GetPage(1);
+                var images = page.GetImages().ToList();
+
+                Assert.Equal(3, images.Count);
+
+                foreach (var image in images)
+                {
+                    Assert.True(image.WidthInSamples > 0);
+                    Assert.True(image.HeightInSamples > 0);
+                    Assert.False(image.HasLoadedBytes);
+                    Assert.True(image.RawMemory.IsEmpty);
+                    Assert.False(image.TryGetBytesAsMemory(out _));
+                    Assert.False(image.TryGetPng(out _));
+                }
+            }
+        }
+
+        [Fact]
         public void CanAccessImageBytesExceptUnsupported()
         {
             using (var document = PdfDocument.Open(GetFilePath(), ParsingOptions.LenientParsingOff))
