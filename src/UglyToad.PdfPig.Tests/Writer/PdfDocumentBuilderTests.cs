@@ -599,6 +599,41 @@
         }
 
         [Fact]
+        public void CanGetJpegMetadataWithoutLoadingBytes()
+        {
+            var builder = new PdfDocumentBuilder();
+            var page = builder.AddPage(PageSize.A4);
+
+            var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+
+            page.AddText("Smile", 12, new PdfPoint(25, page.PageSize.Height - 52), font);
+
+            var img = IntegrationHelpers.GetDocumentPath("smile-250-by-160.jpg", false);
+
+            var expectedBounds = new PdfRectangle(25, page.PageSize.Height - 300, 200, page.PageSize.Height - 200);
+
+            page.AddJpeg(File.ReadAllBytes(img), expectedBounds);
+
+            var pdfBytes = builder.Build();
+
+            using (var document = PdfDocument.Open(pdfBytes, new ParsingOptions { EagerlyLoadImageBytes = false }))
+            {
+                var page1 = document.GetPage(1);
+
+                Assert.Equal("Smile", page1.Text);
+
+                var image = Assert.Single(page1.GetImages());
+
+                Assert.Equal(expectedBounds.BottomLeft, image.BoundingBox.BottomLeft);
+                Assert.Equal(expectedBounds.TopRight, image.BoundingBox.TopRight);
+                Assert.Equal(250, image.WidthInSamples);
+                Assert.Equal(160, image.HeightInSamples);
+                Assert.False(image.HasLoadedBytes);
+                Assert.True(image.RawMemory.IsEmpty);
+            }
+        }
+
+        [Fact]
         public void CanWrite2PagesSharingJpeg()
         {
             var builder = new PdfDocumentBuilder();
