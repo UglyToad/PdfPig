@@ -74,5 +74,12 @@
         /// Defaults to <see langword="false"/> for backwards compatibility.
         /// </summary>
         public bool LazyLoading { get; set; } = false;
+
+        /// <summary>
+        /// Controls which content types are extracted when processing pages.
+        /// Defaults to <see cref="PdfCapabilities.All"/>.
+        /// Set to e.g. <see cref="PdfCapabilities.Text"/> to skip images and paths.
+        /// </summary>
+        public PdfCapabilities Capabilities { get; set; } = PdfCapabilities.All;
     }
 }

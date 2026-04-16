@@ -120,6 +120,32 @@
         }
 
         [Fact]
+        public void TextOnlyCapabilitySkipsImages()
+        {
+            var options = new ParsingOptions { Capabilities = PdfCapabilities.Text };
+            using (var document = PdfDocument.Open(GetFilePath(), options))
+            {
+                var page = document.GetPage(1);
+
+                Assert.Equal("Oink oink", page.Text);
+                Assert.Empty(page.GetImages());
+            }
+        }
+
+        [Fact]
+        public void ImagesOnlyCapabilitySkipsPaths()
+        {
+            var options = new ParsingOptions { Capabilities = PdfCapabilities.Images };
+            using (var document = PdfDocument.Open(GetFilePath(), options))
+            {
+                var page = document.GetPage(1);
+
+                Assert.Empty(page.Text);
+                Assert.Equal(3, page.GetImages().Count());
+            }
+        }
+
+        [Fact]
         public void CanAccessImageBytesExceptUnsupported()
         {
             using (var document = PdfDocument.Open(GetFilePath(), ParsingOptions.LenientParsingOff))

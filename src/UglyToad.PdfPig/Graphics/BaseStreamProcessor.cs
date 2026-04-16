@@ -215,6 +215,11 @@
         /// <inheritdoc/>
         public void ShowText(IInputBytes bytes)
         {
+            if ((ParsingOptions.Capabilities & PdfCapabilities.Text) == 0)
+            {
+                return;
+            }
+
             TextSequence++;
 
             var currentState = GetCurrentState();
@@ -435,6 +440,11 @@
             }
             else if (subType.Equals(NameToken.Image))
             {
+                if ((ParsingOptions.Capabilities & PdfCapabilities.Images) == 0)
+                {
+                    return;
+                }
+
                 var contentRecord = new XObjectContentRecord(XObjectType.Image,
                     xObjectStream,
                     matrix,
@@ -884,6 +894,12 @@
             {
                 ParsingOptions.Logger.Error(
                     "End inline image (EI) command encountered without a corresponding begin inline image (BI) command.");
+                return;
+            }
+
+            if ((ParsingOptions.Capabilities & PdfCapabilities.Images) == 0)
+            {
+                InlineImageBuilder = null;
                 return;
             }
 
