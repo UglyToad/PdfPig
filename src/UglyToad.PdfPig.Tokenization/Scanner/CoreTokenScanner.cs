@@ -52,7 +52,8 @@
         /// </remarks>
         private readonly bool isStream;
 
-        private readonly StackDepthGuard stackDepthGuard;
+        /// <inheritdoc/>
+        public StackDepthGuard StackDepthGuard { get; }
 
         /// <summary>
         /// Create a new <see cref="CoreTokenScanner"/> from the input.
@@ -68,10 +69,10 @@
         {
             this.inputBytes = inputBytes ?? throw new ArgumentNullException(nameof(inputBytes));
             this.usePdfDocEncoding = usePdfDocEncoding;
-            this.stackDepthGuard = stackDepthGuard;
+            this.StackDepthGuard = stackDepthGuard;
             this.stringTokenizer = new StringTokenizer(usePdfDocEncoding);
-            this.arrayTokenizer = new ArrayTokenizer(usePdfDocEncoding, this.stackDepthGuard, useLenientParsing);
-            this.dictionaryTokenizer = new DictionaryTokenizer(usePdfDocEncoding, this.stackDepthGuard, useLenientParsing: useLenientParsing);
+            this.arrayTokenizer = new ArrayTokenizer(usePdfDocEncoding, this.StackDepthGuard, useLenientParsing);
+            this.dictionaryTokenizer = new DictionaryTokenizer(usePdfDocEncoding, this.StackDepthGuard, useLenientParsing: useLenientParsing);
             this.scope = scope;
             this.namedDictionaryRequiredKeys = namedDictionaryRequiredKeys;
             this.useLenientParsing = useLenientParsing;
@@ -106,14 +107,14 @@
         /// <inheritdoc />
         public bool MoveNext()
         {
-            stackDepthGuard.Enter();
+            StackDepthGuard.Enter();
             try
             {
                 return MoveNextInternal();
             }
             finally
             {
-                stackDepthGuard.Exit();
+                StackDepthGuard.Exit();
             }
         }
 
@@ -186,7 +187,7 @@
                                     && CurrentToken is NameToken name
                                     && namedDictionaryRequiredKeys.TryGetValue(name, out var requiredKeys))
                                 {
-                                    tokenizer = new DictionaryTokenizer(usePdfDocEncoding, stackDepthGuard, requiredKeys, useLenientParsing);
+                                    tokenizer = new DictionaryTokenizer(usePdfDocEncoding, StackDepthGuard, requiredKeys, useLenientParsing);
                                 }
                             }
                             else

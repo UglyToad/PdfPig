@@ -1,29 +1,77 @@
 name: Publish
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Release"]
+    types:
+      - completed
 
 permissions:
   contents: write
   packages: write
+  actions: write
 
 jobs:
   build_and_publish:
     runs-on: windows-2022
 
     steps:
+      # Checkout full repo with history so we can find tags
       - uses: actions/checkout@v4
-      - name: Verify tag points to master
-        id: verify
+        with:
+          fetch-depth: 0  # important: get full history and all tags
+
+      # Find the latest unpublished tag that is on master
+      - name: Find latest unpublished tag on master
+        id: find_tag
+        shell: bash
         run: |
-          TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref_name }})
-          if ! git branch -r --contains $TAG_COMMIT | grep -q 'origin/master'; then
-            echo "Tag is not on master — skipping publish"
-            exit 78  # 78 = neutral in GitHub Actions
+          git fetch --tags origin
+
+          # Install GitHub CLI if not already available
+          if ! command -v gh &> /dev/null; then
+            echo "Installing GitHub CLI"
+            winget install --id GitHub.cli -e --source winget
           fi
 
+          TAG=""
+          for T in $(git tag --sort=-creatordate); do
+            TAG_COMMIT=$(git rev-list -n 1 "$T")
+            # Ensure tag points to master
+            if git branch -r --contains "$TAG_COMMIT" | grep -q 'origin/master'; then
+              # Check if release exists
+              EXISTS=$(gh release view "$T" --repo ${{ github.repository }} --json tagName --jq '.tagName' 2>/dev/null || echo "")
+              if [ -z "$EXISTS" ]; then
+                TAG="$T"
+                echo "Found unpublished tag on master: $TAG"
+                echo "TAG=$TAG" >> $GITHUB_ENV
+                break
+              fi
+            fi
+          done
+
+          if [ -z "$TAG" ]; then
+            echo "No unpublished tags found on master — nothing to do"
+            exit 78  # neutral exit
+          fi
+
+      # Checkout the specific tag for build/publish
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+          fetch-depth: 0
+
+      - name: Verify tag points to master
+        shell: bash
+        run: |
+          TAG_COMMIT=$(git rev-list -n 1 "$TAG")
+          if ! git branch -r --contains "$TAG_COMMIT" | grep -q 'origin/master'; then
+            echo "Tag $TAG is not on master — skipping publish"
+            exit 78
+          fi
+
+      # Set up .NET only if the tag is unpublished (it always is at this point)
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -43,11 +91,23 @@ jobs:
         run: dotnet pack -c Release -o package tools/UglyToad.PdfPig.Package/UglyToad.PdfPig.Package.csproj -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
 
       - name: Publish to NuGet
+        shell: bash
         run: dotnet nuget push package/*.nupkg --api-key ${{secrets.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ env.TAG }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger version bump workflow
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'bump_version.yml',
+              ref: 'master'
+            })
