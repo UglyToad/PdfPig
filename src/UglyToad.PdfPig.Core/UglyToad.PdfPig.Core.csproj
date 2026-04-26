@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net462;net471;net6.0;net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net462;net471;net6.0;net8.0;net9.0</TargetFrameworks>
     <LangVersion>12</LangVersion>
     <Version>0.1.15</Version>
     <IsTestProject>False</IsTestProject>
@@ -13,7 +13,7 @@
   <ItemGroup Condition="'$(TargetFramework)'=='net462'">
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0' or '$(TargetFramework)'=='net462' OR '$(TargetFramework)'=='net471'">
+  <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0' or '$(TargetFramework)'=='netstandard2.1' or '$(TargetFramework)'=='net462' OR '$(TargetFramework)'=='net471'">
     <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0' or '$(TargetFramework)'=='net462' or '$(TargetFramework)'=='net471'">
