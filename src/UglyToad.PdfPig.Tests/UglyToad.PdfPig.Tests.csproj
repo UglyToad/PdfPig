@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFrameworks>net471;net8.0;net9.0</TargetFrameworks>
         <IsTestProject>true</IsTestProject>
@@ -198,6 +197,12 @@
         <None Update="Images\Files\Jpx\fd42e6a0-5c7a-4eb2-b0e3-474cfde067a6.jp2">
             <CopyToOutputDirectory>Never</CopyToOutputDirectory>
         </None>
+        <Content Include="Images\Files\Tif\TiffCcittG4.fixture.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Images\Files\Tif\TiffCcittG4.ccitt.base64">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
     <ItemGroup>
         <Using Include="Xunit" />
