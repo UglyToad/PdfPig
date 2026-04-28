@@ -84,6 +84,68 @@
         }
 
         [Fact]
+        public void CanGetImageMetadataWithLazyLoading()
+        {
+            var options = new ParsingOptions { LazyLoading = true };
+            using (var document = PdfDocument.Open(GetFilePath(), options))
+            {
+                var page = document.GetPage(1);
+                var images = page.GetImages().ToList();
+
+                Assert.Equal(3, images.Count);
+
+                foreach (var image in images)
+                {
+                    Assert.True(image.WidthInSamples > 0);
+                    Assert.True(image.HeightInSamples > 0);
+                    Assert.True(image.HasLoadedBytes);
+                }
+            }
+        }
+
+        [Fact]
+        public void InlineImageMetadataAvailableWithLazyLoading()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("inline-image-2x2.pdf");
+            var options = new ParsingOptions { LazyLoading = true };
+            using (var document = PdfDocument.Open(path, options))
+            {
+                var page = document.GetPage(1);
+                var image = Assert.Single(page.GetImages());
+
+                Assert.True(image.IsInlineImage);
+                Assert.Equal(2, image.WidthInSamples);
+                Assert.Equal(2, image.HeightInSamples);
+            }
+        }
+
+        [Fact]
+        public void TextOnlyCapabilitySkipsImages()
+        {
+            var options = new ParsingOptions { Capabilities = PdfCapabilities.Text };
+            using (var document = PdfDocument.Open(GetFilePath(), options))
+            {
+                var page = document.GetPage(1);
+
+                Assert.Equal("Oink oink", page.Text);
+                Assert.Empty(page.GetImages());
+            }
+        }
+
+        [Fact]
+        public void ImagesOnlyCapabilitySkipsPaths()
+        {
+            var options = new ParsingOptions { Capabilities = PdfCapabilities.Images };
+            using (var document = PdfDocument.Open(GetFilePath(), options))
+            {
+                var page = document.GetPage(1);
+
+                Assert.Empty(page.Text);
+                Assert.Equal(3, page.GetImages().Count());
+            }
+        }
+
+        [Fact]
         public void CanAccessImageBytesExceptUnsupported()
         {
             using (var document = PdfDocument.Open(GetFilePath(), ParsingOptions.LenientParsingOff))

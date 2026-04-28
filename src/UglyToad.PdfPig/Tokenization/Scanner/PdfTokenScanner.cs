@@ -375,9 +375,42 @@
             const string streamPart = "stream";
             const string objPart = "obj";
 
-            if (TryReadUsingLength(inputBytes, length, startDataOffset, out var streamData))
+            if (TryValidateStreamLength(inputBytes, length, startDataOffset, out var validatedLength))
             {
-                stream = new StreamToken(streamDictionaryToken, streamData);
+                // TryValidateStreamLength leaves inputBytes positioned just past 'endstream'.
+                // Save this position so we can restore it after reading data in the eager path.
+                var positionAfterEndstream = inputBytes.CurrentOffset;
+
+                if (parsingOptions.LazyLoading)
+                {
+                    var capturedOffset = startDataOffset;
+                    var capturedLength = (int)validatedLength;
+                    stream = new StreamToken(streamDictionaryToken, () =>
+                    {
+                        var saved = inputBytes.CurrentOffset;
+                        inputBytes.Seek(capturedOffset);
+                        var buf = new byte[capturedLength];
+                        var bytesRead = inputBytes.Read(buf);
+                        inputBytes.Seek(saved);
+                        if (bytesRead != capturedLength)
+                        {
+                            throw new InvalidOperationException(
+                                $"Deferred stream read failed. Wanted {capturedLength}, got {bytesRead} at {capturedOffset}.");
+                        }
+
+                        return (Memory<byte>)buf;
+                    });
+                }
+                else
+                {
+                    inputBytes.Seek(startDataOffset);
+                    var eagerData = new byte[(int)validatedLength];
+                    inputBytes.Read(eagerData);
+                    // Restore position past 'endstream' so the scanner can find 'endobj'.
+                    inputBytes.Seek(positionAfterEndstream);
+                    stream = new StreamToken(streamDictionaryToken, eagerData);
+                }
+
                 return true;
             }
 
@@ -508,9 +541,9 @@
             return true;
         }
 
-        private static bool TryReadUsingLength(IInputBytes inputBytes, long? length, long startDataOffset, [NotNullWhen(true)] out byte[]? data)
+        private static bool TryValidateStreamLength(IInputBytes inputBytes, long? length, long startDataOffset, out long validatedLength)
         {
-            data = null;
+            validatedLength = 0;
 
             if (!length.HasValue || length.Value + startDataOffset >= inputBytes.Length)
             {
@@ -555,30 +588,12 @@
                 }
             }
 
-            inputBytes.Seek(startDataOffset);
+            validatedLength = length.Value;
 
-            data = new byte[(int)length.Value];
-
-            var countRead = inputBytes.Read(data);
-
-            if (countRead != data.Length)
-            {
-                throw new InvalidOperationException($"Reading using the stream length failed to read as many bytes as the stream specified. Wanted {length.Value}, got {countRead} at {startDataOffset + 1}.");
-            }
-
-            inputBytes.Read(readBuffer);
-            // Skip for the line break before 'endstream'.
-            for (var i = 0; i < newlineCount; i++)
-            {
-                var read = inputBytes.MoveNext();
-                if (!read)
-                {
-                    inputBytes.Seek(startDataOffset);
-                    return false;
-                }
-            }
-
-            // 1 skip to move past the 'm' in 'endstream'
+            // Position the stream identically to the original TryReadUsingLength:
+            // After data read (length bytes) + readBuffer read (9 bytes) + newlineCount MoveNext + 1 MoveNext
+            // = startDataOffset + length + 9 + newlineCount + 1
+            inputBytes.Seek(startDataOffset + length.Value + EndstreamBytes.Length + newlineCount);
             inputBytes.MoveNext();
 
             return true;

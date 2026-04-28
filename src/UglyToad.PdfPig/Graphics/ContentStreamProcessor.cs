@@ -190,6 +190,11 @@ namespace UglyToad.PdfPig.Graphics
 
         public override void BeginSubpath()
         {
+            if ((ParsingOptions.Capabilities & PdfCapabilities.Paths) == 0)
+            {
+                return;
+            }
+
             if (CurrentPath is null)
             {
                 CurrentPath = new PdfPath();
@@ -347,6 +352,11 @@ namespace UglyToad.PdfPig.Graphics
         public override void Rectangle(double x, double y, double width, double height)
         {
             BeginSubpath();
+            if (CurrentSubpath is null)
+            {
+                return;
+            }
+
             var lowerLeft = CurrentTransformationMatrix.Transform(new PdfPoint(x, y));
             var upperRight = CurrentTransformationMatrix.Transform(new PdfPoint(x + width, y + height));
 

@@ -271,6 +271,7 @@
                 "UglyToad.PdfPig.Parser.IPageContentParser",
                 "UglyToad.PdfPig.Parser.PageContentParser",
                 "UglyToad.PdfPig.Parser.Parts.DirectObjectFinder",
+                "UglyToad.PdfPig.PdfCapabilities",
                 "UglyToad.PdfPig.PdfDocument",
                 "UglyToad.PdfPig.PdfExtensions",
                 "UglyToad.PdfPig.Rendering.IPageImageRenderer",
