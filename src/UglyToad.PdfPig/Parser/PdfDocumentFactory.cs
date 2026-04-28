@@ -40,6 +40,14 @@
                 throw new InvalidOperationException("No file exists at: " + filename);
             }
 
+            if (options?.LazyLoading == true)
+            {
+                var stream = new StreamInputBytes(
+                    File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read),
+                    true);
+                return Open(stream, options);
+            }
+
             return Open(File.ReadAllBytes(filename), options);
         }
 

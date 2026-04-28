@@ -16,6 +16,7 @@
     /// </summary>
     public class InlineImage : IPdfImage
     {
+        private readonly Memory<byte> rawMemory;
         private readonly Lazy<Memory<byte>>? memoryFactory;
 
         /// <inheritdoc />
@@ -53,10 +54,13 @@
         public bool Interpolate { get; }
 
         /// <inheritdoc />
-        public Memory<byte> RawMemory { get; }
+        public Memory<byte> RawMemory => rawMemory;
 
         /// <inheritdoc />
         public Span<byte> RawBytes => RawMemory.Span;
+
+        /// <inheritdoc />
+        public bool HasLoadedBytes => !rawMemory.IsEmpty;
 
         /// <inheritdoc />
         public ColorSpaceDetails ColorSpaceDetails { get; }
@@ -92,32 +96,35 @@
             RenderingIntent = renderingIntent;
             Interpolate = interpolate;
             ImageDictionary = streamDictionary;
-            RawMemory = rawMemory;
+            this.rawMemory = rawMemory;
             ColorSpaceDetails = colorSpaceDetails;
 
-            var filters = filterProvider.GetNamedFilters(filterNames);
-            
-            var supportsFilters = true;
-            foreach (var filter in filters)
+            if (!rawMemory.IsEmpty)
             {
-                if (!filter.IsSupported)
+                var filters = filterProvider.GetNamedFilters(filterNames);
+
+                var supportsFilters = true;
+                foreach (var filter in filters)
                 {
-                    supportsFilters = false;
-                    break;
+                    if (!filter.IsSupported)
+                    {
+                        supportsFilters = false;
+                        break;
+                    }
                 }
+
+                memoryFactory = supportsFilters ? new Lazy<Memory<byte>>(() =>
+                {
+                    var b = RawMemory;
+                    for (var i = 0; i < filters.Count; i++)
+                    {
+                        var filter = filters[i];
+                        b = filter.Decode(b, streamDictionary, filterProvider, i);
+                    }
+
+                    return b;
+                }) : null;
             }
-
-            memoryFactory = supportsFilters ? new Lazy<Memory<byte>>(() =>
-            {
-                var b = RawMemory;
-                for (var i = 0; i < filters.Count; i++)
-                {
-                    var filter = filters[i];
-                    b = filter.Decode(b, streamDictionary, filterProvider, i);
-                }
-
-                return b;
-            }) : null;
 
             MaskImage = softMaskImage;
         }
