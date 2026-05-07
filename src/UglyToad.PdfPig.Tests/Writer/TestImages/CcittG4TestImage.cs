@@ -28,8 +28,7 @@ namespace UglyToad.PdfPig.Tests.Writer.TestImages
 
         /// <summary>
         /// Loads the CCITT Group 4 sample payload relative to the test output directory.
-        /// The payload is already raw CCITT data; width, height and polarity come from the generated metadata
-        /// derived from the original TIFF using the same extraction logic as the external converter.
+        /// The payload is already raw CCITT data and the metadata stores the dimensions and polarity needed by the tests.
         /// </summary>
         public static CcittG4TestImage Load()
         {
