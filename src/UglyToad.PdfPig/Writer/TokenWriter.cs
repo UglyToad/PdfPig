@@ -144,10 +144,12 @@
         }
 
         /// <inheritdoc cref="ITokenWriter.WriteCrossReferenceTable" />
-        public void WriteCrossReferenceTable(IReadOnlyDictionary<IndirectReference, long> objectOffsets,
+        public void WriteCrossReferenceTable(
+            IReadOnlyDictionary<IndirectReference, long> objectOffsets,
             IndirectReference catalogToken,
             Stream outputStream,
-            IndirectReference? documentInformationReference)
+            IndirectReference? documentInformationReference,
+            long? prevXrefTableLocation)
         {
             if (objectOffsets.Count == 0)
             {
@@ -261,6 +263,11 @@
             if (documentInformationReference.HasValue)
             {
                 trailerDictionaryData[NameToken.Info] = new IndirectReferenceToken(documentInformationReference.Value);
+            }
+
+            if (prevXrefTableLocation.HasValue)
+            {
+                trailerDictionaryData[NameToken.Prev] = new NumericToken(prevXrefTableLocation.Value);
             }
 
             var trailerDictionary = new DictionaryToken(trailerDictionaryData);

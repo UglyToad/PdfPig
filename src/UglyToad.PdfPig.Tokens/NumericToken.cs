@@ -166,6 +166,15 @@
         {
             Data = value;
         }
+        
+        /// <summary>
+        /// Create a <see cref="NumericToken"/>.
+        /// </summary>
+        /// <param name="value">The number to represent.</param>
+        public NumericToken(long value)
+        {
+            Data = value;
+        }
 
         /// <summary>
         /// Create a <see cref="NumericToken"/>.
