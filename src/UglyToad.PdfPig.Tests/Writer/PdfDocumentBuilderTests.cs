@@ -1404,10 +1404,12 @@
             Objects++;
         }
 
-        public void WriteCrossReferenceTable(IReadOnlyDictionary<IndirectReference, long> objectOffsets,
+        public void WriteCrossReferenceTable(
+            IReadOnlyDictionary<IndirectReference, long> objectOffsets,
             IndirectReference catalogToken,
             Stream outputStream,
-            IndirectReference? documentInformationReference)
+            IndirectReference? documentInformationReference,
+            long? prevTableLocation)
         {
             WroteCrossReferenceTable = true;
         }
