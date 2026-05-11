@@ -3,6 +3,7 @@
     using System;
     using Content;
     using Core;
+    using CrossReference;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -15,6 +16,16 @@
         /// The root of the document's hierarchy providing access to the page tree as well as other information.
         /// </summary>
         public Catalog Catalog { get; }
+        
+        /// <summary>
+        /// The xref table of the document. Contains objects from all parsed xref tables.
+        /// </summary>
+        public CrossReferenceTable XrefTable { get; }
+        
+        /// <summary>
+        /// The trailer dictionary of the document. Contains most bottom trailer
+        /// </summary>
+        public TrailerDictionary Trailer { get; }
 
         /// <summary>
         /// Provides access to tokenization capabilities for objects by object number.
@@ -23,10 +34,14 @@
 
         internal Structure(
             Catalog catalog,
-            IPdfTokenScanner scanner)
+            IPdfTokenScanner scanner,
+            TrailerDictionary trailer,
+            CrossReferenceTable xrefTable)
         {
+            Trailer = trailer ?? throw new ArgumentNullException(nameof(trailer));
             Catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             TokenScanner = scanner ?? throw new ArgumentNullException(nameof(scanner));
+            XrefTable = xrefTable ?? throw new ArgumentNullException(nameof(xrefTable));
         }
 
         /// <summary>

@@ -169,7 +169,7 @@
                 parsingOptions.Logger,
                 pdfScanner,
                 filterProvider);
-
+            
             var encodingReader = new EncodingReader(pdfScanner);
 
             var cmapCache = new CMapLocalCache(filterProvider, pdfScanner);
@@ -238,7 +238,8 @@
                 filterProvider,
                 acroFormFactory,
                 bookmarksProvider,
-                parsingOptions);
+                parsingOptions,
+                trailer);
         }
 
         private static (IndirectReference, DictionaryToken) ParseTrailer(
