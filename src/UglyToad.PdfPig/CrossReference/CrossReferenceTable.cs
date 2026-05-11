@@ -28,6 +28,7 @@
         /// <summary>
         /// The trailer dictionary.
         /// </summary>
+        [Obsolete("Use trailer dictionary from PdfDocument property instead")]
         public TrailerDictionary Trailer { get; }
 
         /// <summary>
@@ -36,7 +37,9 @@
         /// </summary>
         public IReadOnlyList<CrossReferenceOffset> CrossReferenceOffsets { get; }
 
-        internal CrossReferenceTable(CrossReferenceType type, IReadOnlyDictionary<IndirectReference, long> objectOffsets, 
+        internal CrossReferenceTable(
+            CrossReferenceType type, 
+            IReadOnlyDictionary<IndirectReference, long> objectOffsets, 
             TrailerDictionary trailer,
             IReadOnlyList<CrossReferenceOffset> crossReferenceOffsets)
         {
