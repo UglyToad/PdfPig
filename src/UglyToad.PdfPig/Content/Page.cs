@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Content
+namespace UglyToad.PdfPig.Content
 {
     using System;
     using System.Collections.Generic;
@@ -93,6 +93,11 @@
         /// </summary>
         [Obsolete("Use methods and properties directly at Page level.")]
         public Experimental ExperimentalAccess { get; }
+
+        /// <summary>
+        /// The PDF token scanner for resolving indirect references in this page's dictionary.
+        /// </summary>
+        public IPdfTokenScanner PdfScanner => pdfScanner;
 
         internal Page(int number, DictionaryToken dictionary, MediaBox mediaBox, CropBox cropBox, PageRotationDegrees rotation,
             PageContent content,
