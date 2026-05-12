@@ -96,6 +96,7 @@
                 "UglyToad.PdfPig.Content.TextOrientation",
                 "UglyToad.PdfPig.Content.XmpMetadata",
                 "UglyToad.PdfPig.CrossReference.CrossReferenceTable",
+                "UglyToad.PdfPig.CrossReference.CrossReferenceTablePart",
                 "UglyToad.PdfPig.CrossReference.CrossReferenceType",
                 "UglyToad.PdfPig.CrossReference.TrailerDictionary",
                 "UglyToad.PdfPig.Exceptions.PdfDocumentEncryptedException",
