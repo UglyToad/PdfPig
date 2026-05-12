@@ -28,16 +28,26 @@ public class AdvancedMerge
         // Assume, we have only 1 page in here
         if (!pagesObj.TryGet(NameToken.Kids, out ArrayToken kids) || kids.Length != 1)
             throw new ArgumentException("Invalid catalog dictionary");
-        
-        if (ResolveIndirect(pdf, kids.Data[0]) is not DictionaryToken pageObj)
+
+        var kidReference = kids.Data[0] as IndirectReferenceToken;
+        if (ResolveIndirect(pdf, kidReference) is not DictionaryToken pageObj)
             throw new ArgumentException("Invalid catalog dictionary");
+        
+        // Here you can extract page content and save bind it in output page document
+        if (pageObj.TryGet<IndirectReferenceToken>(NameToken.Contents, out var contentObj))
+        {
+            var reference = new IndirectReference(0, 0);
+            var xrefLocation = XrefLocation.File(output.Position);
+            var newPageObject = new ObjectToken(xrefLocation, reference, pageObj.With(NameToken.Contents, contentObj));
+            TokenWriter.Instance.WriteToken(newPageObject, output);
+        }
         
         // Skip all pdf meta structure objects 
         var skippedRefs = new HashSet<IndirectReference>
         {
             pages.Data,  // Pages
+            kidReference!.Data,  // Page
             pdf.Structure.Trailer.Root,  // Catalog
-            (kids.Data[0] as IndirectReferenceToken)!.Data,  // Page
         };
         
         // Skip all refs from "skippedRefs" and order it by object number
