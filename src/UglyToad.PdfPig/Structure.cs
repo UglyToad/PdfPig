@@ -20,7 +20,7 @@
         /// <summary>
         /// The xref table of the document. Contains objects from all parsed xref tables.
         /// </summary>
-        public CrossReferenceTable XrefTable { get; }
+        public CrossReferenceTable CrossReferenceTable { get; }
         
         /// <summary>
         /// The trailer dictionary of the document. Contains most bottom trailer
@@ -41,7 +41,7 @@
             Trailer = trailer ?? throw new ArgumentNullException(nameof(trailer));
             Catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             TokenScanner = scanner ?? throw new ArgumentNullException(nameof(scanner));
-            XrefTable = xrefTable ?? throw new ArgumentNullException(nameof(xrefTable));
+            CrossReferenceTable = xrefTable ?? throw new ArgumentNullException(nameof(xrefTable));
         }
 
         /// <summary>

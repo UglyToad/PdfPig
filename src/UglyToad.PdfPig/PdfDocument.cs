@@ -78,6 +78,7 @@
             AcroFormFactory acroFormFactory,
             BookmarksProvider bookmarksProvider,
             ParsingOptions parsingOptions,
+            CrossReferenceTable crossReferenceTable,
             TrailerDictionary trailer)
         {
             this.inputBytes = inputBytes;
@@ -91,7 +92,7 @@
             Information = information ?? throw new ArgumentNullException(nameof(information));
             pages = catalog.Pages;
             namedDestinations = catalog.NamedDestinations;
-            Structure = new Structure(catalog, pdfScanner, trailer, null);
+            Structure = new Structure(catalog, pdfScanner, trailer, crossReferenceTable);
             Advanced = new AdvancedPdfDocumentAccess(pdfScanner, filterProvider, catalog);
             documentForm = new Lazy<AcroForm>(() => acroFormFactory.GetAcroForm(catalog)!);
         }

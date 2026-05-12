@@ -161,6 +161,15 @@
         {
             return new DictionaryToken(data ?? throw new ArgumentNullException(nameof(data)));
         }
+        
+        /// <summary>
+        /// Creates empty DictionaryToken instance
+        /// </summary>
+        /// <returns>A new empty <see cref="DictionaryToken"/></returns>
+        public static DictionaryToken Empty()
+        {
+            return new DictionaryToken(new Dictionary<string, IToken>());
+        }
 
         /// <inheritdoc />
         public bool Equals(IToken obj)

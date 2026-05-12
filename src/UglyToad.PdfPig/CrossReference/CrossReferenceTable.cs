@@ -3,6 +3,8 @@
     using System;
     using System.Collections.Generic;
     using Core;
+    using Parser.FileStructure;
+    using System.Linq;
 
     /// <summary>
     /// The cross-reference table contains information that enables random access to PDF objects within the file by object number
@@ -13,52 +15,67 @@
     /// </summary>
     public class CrossReferenceTable
     {
-        private readonly Dictionary<IndirectReference, long> objectOffsets;
+        private readonly List<CrossReferenceTablePart> parts;
+        private readonly Dictionary<IndirectReference, XrefLocation> objectOffsets;
 
         /// <summary>
         /// The corresponding byte offset for each keyed object in this document.
         /// </summary>
-        public IReadOnlyDictionary<IndirectReference, long> ObjectOffsets => objectOffsets;
+        public IReadOnlyDictionary<IndirectReference, XrefLocation> ObjectOffsets => objectOffsets;
+        
+        /// <summary>
+        /// List of all xref tables parts, added during all incremental updates
+        /// </summary>
+        public IReadOnlyList<CrossReferenceTablePart> Parts => parts;
 
         /// <summary>
         /// The type of the first cross-reference table located in this document.
         /// </summary>
+        [Obsolete("Useless property. Use each CrossReferenceTablePart.Type instead.")]
         public CrossReferenceType Type { get; }
 
         /// <summary>
         /// The trailer dictionary.
         /// </summary>
-        [Obsolete("Use trailer dictionary from PdfDocument property instead")]
+        [Obsolete("Use trailer dictionary from PdfDocument.Structure property instead")]
         public TrailerDictionary Trailer { get; }
 
         /// <summary>
         /// The byte offsets of each cross-reference table or stream in this document and the previous
         /// table or stream they link to if applicable.
         /// </summary>
+        [Obsolete("Useless property. Use each CrossReferenceTablePart.Offset/Prev instead")]
         public IReadOnlyList<CrossReferenceOffset> CrossReferenceOffsets { get; }
 
         internal CrossReferenceTable(
-            CrossReferenceType type, 
-            IReadOnlyDictionary<IndirectReference, long> objectOffsets, 
-            TrailerDictionary trailer,
-            IReadOnlyList<CrossReferenceOffset> crossReferenceOffsets)
+            IReadOnlyList<IXrefSection> sections,
+            IReadOnlyDictionary<IndirectReference, XrefLocation> objectOffsets, 
+            TrailerDictionary trailer)
         {
             if (objectOffsets is null)
             {
                 throw new ArgumentNullException(nameof(objectOffsets));
             }
 
-            Type = type;
-            Trailer = trailer ?? throw new ArgumentNullException(nameof(trailer));
-            CrossReferenceOffsets = crossReferenceOffsets ?? throw new ArgumentNullException(nameof(crossReferenceOffsets));
-
-            var result = new Dictionary<IndirectReference, long>(capacity: objectOffsets.Count);
-            foreach (var objectOffset in objectOffsets)
+            if (sections is null)
             {
-                result[objectOffset.Key] = objectOffset.Value;
+                throw new ArgumentNullException(nameof(sections));
             }
-
-            this.objectOffsets = result;
+            
+            parts = sections
+                .Select(CrossReferenceTablePart.FromXrefSection)
+                .ToList();
+            
+            Type = parts.FirstOrDefault()?.Type ?? CrossReferenceType.Table;
+            Trailer = trailer ?? throw new ArgumentNullException(nameof(trailer));
+            this.objectOffsets = objectOffsets.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            
+            var result = new List<CrossReferenceOffset>();
+            for (var i = 1; i < parts.Count; i++)
+            {
+                result.Add(new CrossReferenceOffset(parts[i].Offset, parts[i - 1].Previous));
+            }
+            CrossReferenceOffsets = result;
         }
 
         /// <summary>

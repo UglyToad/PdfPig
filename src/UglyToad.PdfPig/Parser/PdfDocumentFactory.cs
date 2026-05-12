@@ -165,6 +165,11 @@
 
             pdfScanner.UpdateEncryptionHandler(encryptionHandler);
 
+            var crossReferenceTable = new CrossReferenceTable(
+                initialParse.Parts,
+                initialParse.XrefOffsets,
+                trailer);
+
             var cidFontFactory = new CidFontFactory(
                 parsingOptions.Logger,
                 pdfScanner,
@@ -239,6 +244,7 @@
                 acroFormFactory,
                 bookmarksProvider,
                 parsingOptions,
+                crossReferenceTable,
                 trailer);
         }
 
