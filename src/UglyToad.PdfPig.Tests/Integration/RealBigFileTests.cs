@@ -8,17 +8,10 @@ namespace UglyToad.PdfPig.Tests.Integration
     /// <summary>
     /// A class for testing files which are not checked in to source control.
     /// </summary>
-    public class LocalTests
+    public class RealBigFileTests(ITestOutputHelper output)
     {
-        private readonly ITestOutputHelper output;
-
-        public LocalTests(ITestOutputHelper output)
-        {
-            this.output = output;
-        }
-
-        [Fact]
-        public void CanCreateAndReadPdfLargerThanTwoGigabytes()
+        [Fact(Skip = "Local opt-in repro: creates a PDF larger than 2 GiB and is too expensive for normal test runs.")]
+        public void CanCreateAndReadRealPdfLargerThanTwoGigabytes()
         {
             var tempDirectory = Path.Combine(Path.GetTempPath(), "PdfPigTests", Guid.NewGuid().ToString("N"));
             var outputPath = Path.Combine(tempDirectory, "three-gb-noise.pdf");
@@ -109,13 +102,9 @@ namespace UglyToad.PdfPig.Tests.Integration
             "seekable stream path",
         };
 
-        private static readonly SKPaint OverlayPaint = new SKPaint
-        {
-            Color = new SKColor(12, 16, 24, 210),
-            IsAntialias = true,
-        };
+        private static readonly SKPaint OverlayPaint = new() { Color = new SKColor(12, 16, 24, 210), IsAntialias = true, };
 
-        private static readonly SKPaint TextPaint = new SKPaint
+        private static readonly SKPaint TextPaint = new()
         {
             Color = SKColors.White,
             IsAntialias = true,
@@ -123,7 +112,7 @@ namespace UglyToad.PdfPig.Tests.Integration
             Typeface = SKTypeface.FromFamilyName("Consolas") ?? SKTypeface.Default,
         };
 
-        private static readonly SKPaint AccentPaint = new SKPaint
+        private static readonly SKPaint AccentPaint = new()
         {
             Color = new SKColor(0, 184, 148, 235),
             IsAntialias = true,
@@ -197,11 +186,10 @@ namespace UglyToad.PdfPig.Tests.Integration
                 DrawPageChrome(canvas, imageWidth, imageHeight, pageNumber);
                 document.EndPage();
 
-                if (pageNumber % pagesPerProgressUpdate == 0)
-                {
-                    stream.Flush();
-                    progress?.Invoke($"{pageNumber:N0} pages written, {file.Length / 1024d / 1024d:N1} MiB, {file.Length * 100d / targetBytes:N1}%.");
-                }
+                if (pageNumber % pagesPerProgressUpdate != 0) { continue; }
+
+                stream.Flush();
+                progress?.Invoke($"{pageNumber:N0} pages written, {file.Length / 1024d / 1024d:N1} MiB, {file.Length * 100d / targetBytes:N1}%.");
             }
 
             progress?.Invoke("Closing SKDocument.");
@@ -222,9 +210,7 @@ namespace UglyToad.PdfPig.Tests.Integration
             var panel = new SKRect(48, 48, width - 48, 218);
             canvas.DrawRoundRect(panel, 12, 12, OverlayPaint);
 
-            var heading = pageNumber == SentinelPageNumber
-                ? SentinelPageText
-                : $"PdfPig large-file fixture - page {pageNumber:N0}";
+            var heading = pageNumber == SentinelPageNumber ? SentinelPageText : $"PdfPig large-file fixture - page {pageNumber:N0}";
 
             canvas.DrawText(heading, 72, 104, TextPaint);
             canvas.DrawText(CreateOverlayText(pageNumber), 72, 154, AccentPaint);
