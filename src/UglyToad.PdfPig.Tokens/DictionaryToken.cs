@@ -14,6 +14,11 @@
         /// The key value pairs in this dictionary.
         /// </summary>
         public IReadOnlyDictionary<string, IToken> Data { get; }
+        
+        /// <summary>
+        /// Empty DictionaryToken instance
+        /// </summary>
+        public static readonly DictionaryToken Empty = new(new Dictionary<string, IToken>());
 
         /// <summary>
         /// Create a new <see cref="DictionaryToken"/>.
@@ -160,15 +165,6 @@
         public static DictionaryToken With(IReadOnlyDictionary<string, IToken> data)
         {
             return new DictionaryToken(data ?? throw new ArgumentNullException(nameof(data)));
-        }
-        
-        /// <summary>
-        /// Creates empty DictionaryToken instance
-        /// </summary>
-        /// <returns>A new empty <see cref="DictionaryToken"/></returns>
-        public static DictionaryToken Empty()
-        {
-            return new DictionaryToken(new Dictionary<string, IToken>());
         }
 
         /// <inheritdoc />

@@ -15,7 +15,7 @@
     /// </summary>
     public class CrossReferenceTable
     {
-        private readonly List<CrossReferenceTablePart> parts;
+        private readonly CrossReferenceTablePart[] parts;
         private readonly Dictionary<IndirectReference, XrefLocation> objectOffsets;
 
         /// <summary>
@@ -64,18 +64,15 @@
             
             parts = sections
                 .Select(CrossReferenceTablePart.FromXrefSection)
-                .ToList();
+                .ToArray();
+
+            CrossReferenceOffsets = parts
+                .Select(p => new CrossReferenceOffset(p.Offset, p.Previous))
+                .ToArray();
             
             Type = parts.FirstOrDefault()?.Type ?? CrossReferenceType.Table;
             Trailer = trailer ?? throw new ArgumentNullException(nameof(trailer));
             this.objectOffsets = objectOffsets.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-            
-            var result = new List<CrossReferenceOffset>();
-            for (var i = 1; i < parts.Count; i++)
-            {
-                result.Add(new CrossReferenceOffset(parts[i].Offset, parts[i - 1].Previous));
-            }
-            CrossReferenceOffsets = result;
         }
 
         /// <summary>
