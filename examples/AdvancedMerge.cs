@@ -11,9 +11,9 @@ namespace UglyToad.Examples;
 
 public class AdvancedMerge
 {
-    public static void Run(Stream input, Stream output)
+    public static void Run(Stream input1, Stream output)
     {
-        using var pdf = PdfDocument.Open(input);
+        using var pdf = PdfDocument.Open(input1);
         var pdfObjects = pdf.Structure
             .CrossReferenceTable
             .ObjectOffsets
@@ -33,15 +33,7 @@ public class AdvancedMerge
         if (ResolveIndirect(pdf, kidReference) is not DictionaryToken pageObj)
             throw new ArgumentException("Invalid catalog dictionary");
         
-        // Here you can extract page content and save bind it in output page document
-        if (pageObj.TryGet<IndirectReferenceToken>(NameToken.Contents, out var contentObj))
-        {
-            var reference = new IndirectReference(0, 0);
-            var xrefLocation = XrefLocation.File(output.Position);
-            var newPageObject = new ObjectToken(xrefLocation, reference, pageObj.With(NameToken.Contents, contentObj));
-            TokenWriter.Instance.WriteToken(newPageObject, output);
-        }
-        
+                
         // Skip all pdf meta structure objects 
         var skippedRefs = new HashSet<IndirectReference>
         {
@@ -65,6 +57,31 @@ public class AdvancedMerge
             refMap[oldRef] = newRef;
         }
         
+        // Here you can extract page content and bind it in output page document
+        IndirectReference? root = null;
+        if (pageObj.TryGet<IndirectReferenceToken>(NameToken.Contents, out var contentObj))
+        {
+            using var outputPdf = PdfDocument.Open(output);
+            var lastPageRef = FindLastPage(outputPdf);
+            
+            if (ResolveIndirect(outputPdf, lastPageRef) is not DictionaryToken outputPage)
+                throw new ArgumentException("Invalid catalog dictionary");
+            root = outputPdf.Structure.Trailer.Root;
+
+            IReadOnlyList<IToken> newContents = [new IndirectReferenceToken(refMap[contentObj.Data])];
+
+            if (outputPage.TryGet<ArrayToken>(NameToken.Contents, out var oldContents))
+                newContents = newContents.Concat(oldContents.Data).ToList();
+            
+            output.Seek(0, SeekOrigin.End);
+            
+            var xrefLocation = XrefLocation.File(output.Position);
+            var newPageObject = outputPage.With(NameToken.Contents, new ArrayToken(newContents));
+            TokenWriter.Instance.WriteToken(new ObjectToken(xrefLocation, lastPageRef.Data, newPageObject), output);
+            
+            pdfObjects[lastPageRef.Data] = xrefLocation;
+        }
+        
         foreach (var oldRef in oldRefs)
         {
             var newObjRef = refMap[oldRef];
@@ -73,15 +90,17 @@ public class AdvancedMerge
             var updatedToken = ReplaceReferences(token, refMap);
             
             pdfObjects[newObjRef] = newXref;
+            output.Seek(0, SeekOrigin.End);
             TokenWriter.Instance.WriteToken(new ObjectToken(newXref, newObjRef, updatedToken), output);
         }
         
         // Writer new xref table
+        output.Seek(0, SeekOrigin.End);
         TokenWriter.Instance.WriteCrossReferenceTable(
             pdfObjects.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Value1),
-            pdf.Structure.Trailer.Root,
+            root ?? pdf.Structure.Trailer.Root,
             output,
-            (pdf.Structure.Trailer.Info as IndirectReferenceToken)?.Data,
+            null,
             pdf.Structure.Trailer.PreviousCrossReferenceOffset);
     }
     
@@ -129,9 +148,18 @@ public class AdvancedMerge
     
     private const int MaxIndirectResolutionDepth = 32;
 
-    private static IndirectReferenceToken FindLastPage(PdfDocument pdf, DictionaryToken pageTree)
+    private static IndirectReferenceToken FindLastPage(PdfDocument pdf)
     {
-        return FindLastPage(pdf, (pageTree.Data[NameToken.Kids] as ArrayToken)!);
+        if (!pdf.Structure.Catalog.CatalogDictionary.TryGet<IndirectReferenceToken>(NameToken.Pages, out var pagesRef))
+            throw new ArgumentException("No pages were found in the input document.");
+        
+        if (ResolveIndirect(pdf, pagesRef) is not DictionaryToken pages)
+            throw new ArgumentException("No pages were found in the input file.");
+        
+        if (!pages.TryGet<ArrayToken>(NameToken.Kids, out var kids))
+            throw new ArgumentException("No pages were found in the input document.");
+        
+        return FindLastPage(pdf, kids);
     }
 
     private static IndirectReferenceToken FindLastPage(PdfDocument pdf, ArrayToken pageTree)
