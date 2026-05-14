@@ -40,7 +40,18 @@
                 throw new InvalidOperationException("No file exists at: " + filename);
             }
 
-            return Open(File.ReadAllBytes(filename), options);
+            var stream = File.OpenRead(filename);
+            var inputBytes = new StreamInputBytes(stream, true);
+
+            try
+            {
+                return Open(inputBytes, options);
+            }
+            catch
+            {
+                inputBytes.Dispose();
+                throw;
+            }
         }
 
         internal static PdfDocument Open(Stream stream, ParsingOptions? options)
@@ -127,7 +138,7 @@
 
             var version = FileHeaderParser.Parse(scanner, inputBytes, parsingOptions.UseLenientParsing, parsingOptions.Logger);
 
-            var fileHeaderOffset = new FileHeaderOffset((int)version.OffsetInFile);
+            var fileHeaderOffset = new FileHeaderOffset(version.OffsetInFile);
 
             var initialParse = FirstPassParser.Parse(
                 fileHeaderOffset,

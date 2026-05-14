@@ -4,7 +4,7 @@
 /// How many bytes precede the "%PDF-" version header in the file. In some files this 'junk' can
 /// offset all following offset bytes.
 /// </summary>
-internal readonly record struct FileHeaderOffset(int Value) : IEquatable<FileHeaderOffset>
+internal readonly record struct FileHeaderOffset(long Value) : IEquatable<FileHeaderOffset>
 {
     public override string ToString() => Value.ToString();
     
