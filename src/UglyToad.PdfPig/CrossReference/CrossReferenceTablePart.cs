@@ -27,11 +27,11 @@
     {
         public IReadOnlyDictionary<IndirectReference, XrefLocation> ObjectOffsets { get; }
 
-        public long Offset { get; private set; }
+        public long Offset { get; }
 
         public long? Previous { get; }
 
-        public DictionaryToken Dictionary { get; private set; }
+        public DictionaryToken Dictionary { get; }
 
         public CrossReferenceType Type { get; }
 
@@ -75,7 +75,7 @@
                 xrefSection.ObjectOffsets,
                 xrefSection.Offset,
                 xrefSection.GetPrevious(),
-                xrefSection.Dictionary ?? DictionaryToken.Empty(),
+                xrefSection.Dictionary ?? DictionaryToken.Empty,
                 partType,
                 tiedToXrefAtOffset);
         }
