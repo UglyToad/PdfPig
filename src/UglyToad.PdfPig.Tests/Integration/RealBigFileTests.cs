@@ -25,8 +25,9 @@ namespace UglyToad.PdfPig.Tests.Integration
 
                 Assert.True(result.Bytes > int.MaxValue, $"Expected local test PDF to be larger than {int.MaxValue} bytes.");
 
-                WriteProgress("Opening generated PDF with PdfDocument.Open(path).");
-                using var document = PdfDocument.Open(outputPath, ParsingOptions.LenientParsingOff);
+                WriteProgress("Opening generated PDF with PdfDocument.Open(Stream).");
+                using var fileStream = File.OpenRead(outputPath);
+                using var document = PdfDocument.Open(fileStream, ParsingOptions.LenientParsingOff);
                 WriteProgress($"Opened {Path.GetFileName(outputPath)} ({result.Bytes:N0} bytes), pages: {document.NumberOfPages}.");
                 Assert.True(document.NumberOfPages >= LargePdfTestDocumentGenerator.SentinelPageNumber);
 

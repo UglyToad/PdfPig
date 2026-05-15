@@ -145,7 +145,8 @@
                     Skip.If(true, $"Could not create a temporary sparse large PDF in this environment: {ex.Message}");
                 }
 
-                using var document = PdfDocument.Open(path, ParsingOptions.LenientParsingOff);
+                using var fileStream = File.OpenRead(path);
+                using var document = PdfDocument.Open(fileStream, ParsingOptions.LenientParsingOff);
 
                 Assert.Equal(200, document.NumberOfPages);
 
