@@ -9,7 +9,7 @@
     using Fonts.Encodings;
     using Tokens;
 
-    internal class Type3Font : IFont
+    internal class Type3Font : IType3Font
     {
         private readonly PdfRectangle boundingBox;
         private readonly TransformationMatrix fontMatrix;
@@ -20,6 +20,7 @@
         private readonly int lastChar;
         private readonly double[] widths;
         private readonly ToUnicodeCMap toUnicodeCMap;
+        private readonly IReadOnlyDictionary<string, StreamToken>? charProcs;
 
         /// <summary>
         /// Type 3 fonts are usually unnamed.
@@ -30,9 +31,13 @@
 
         public FontDetails Details { get; }
 
+        /// <inheritdoc/>
+        public DictionaryToken? Type3Resources { get; }
+
         public Type3Font(NameToken name, PdfRectangle boundingBox, TransformationMatrix fontMatrix,
             Encoding encoding, int firstChar, int lastChar, double[] widths,
-            CMap toUnicodeCMap)
+            CMap toUnicodeCMap, IReadOnlyDictionary<string, StreamToken>? charProcs,
+            DictionaryToken? resources)
         {
             Name = name;
 
@@ -43,6 +48,8 @@
             this.lastChar = lastChar;
             this.widths = widths;
             this.toUnicodeCMap = new ToUnicodeCMap(toUnicodeCMap);
+            this.charProcs = charProcs;
+            Type3Resources = resources;
             Details = FontDetails.GetDefault(name?.Data);
 
             // Assumption is ZapfDingbats is not possible here. We need to change the behaviour if not the case
@@ -138,6 +145,33 @@
         {
             path = null;
             return false;
+        }
+
+        /// <inheritdoc/>
+        public bool TryGetCharProc(int characterCode, [NotNullWhen(true)] out StreamToken? charProcStream)
+        {
+            charProcStream = null;
+            if (charProcs is null || encoding is null)
+            {
+                return false;
+            }
+
+            string name;
+            try
+            {
+                name = encoding.GetName(characterCode);
+            }
+            catch
+            {
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(name))
+            {
+                return false;
+            }
+
+            return charProcs.TryGetValue(name, out charProcStream);
         }
 
         /// <summary>
