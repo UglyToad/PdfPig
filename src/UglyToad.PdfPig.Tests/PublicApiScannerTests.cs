@@ -123,6 +123,7 @@
                 "UglyToad.PdfPig.PdfFonts.FontDetails",
                 "UglyToad.PdfPig.PdfFonts.FontStretch",
                 "UglyToad.PdfPig.PdfFonts.IFont",
+                "UglyToad.PdfPig.PdfFonts.IType3Font",
                 "UglyToad.PdfPig.Geometry.GeometryExtensions",
                 "UglyToad.PdfPig.Geometry.UserSpaceUnit",
                 "UglyToad.PdfPig.Graphics.BaseStreamProcessor`1",
