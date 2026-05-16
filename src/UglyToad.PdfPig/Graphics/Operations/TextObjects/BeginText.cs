@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics.Operations.TextObjects
 {
     using System.IO;
-    using PdfPig.Core;
 
     /// <inheritdoc />
     /// <summary>
@@ -29,8 +28,7 @@
         /// <inheritdoc />
         public void Run(IOperationContext operationContext)
         {
-            operationContext.TextMatrices.TextMatrix = TransformationMatrix.Identity;
-            operationContext.TextMatrices.TextLineMatrix = TransformationMatrix.Identity;
+            operationContext.BeginText();
         }
 
         /// <inheritdoc />

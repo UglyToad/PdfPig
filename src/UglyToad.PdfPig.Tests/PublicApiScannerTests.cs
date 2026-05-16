@@ -170,6 +170,7 @@
                 "UglyToad.PdfPig.Graphics.Core.LineDashPattern",
                 "UglyToad.PdfPig.Graphics.Core.LineJoinStyle",
                 "UglyToad.PdfPig.Graphics.Core.RenderingIntent",
+                "UglyToad.PdfPig.Graphics.Core.RenderingModeExtensions",
                 "UglyToad.PdfPig.Graphics.CurrentFontState",
                 "UglyToad.PdfPig.Graphics.CurrentGraphicsState",
                 "UglyToad.PdfPig.Graphics.IColorSpaceContext",
