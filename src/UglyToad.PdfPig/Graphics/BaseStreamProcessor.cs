@@ -213,6 +213,20 @@
         }
 
         /// <inheritdoc/>
+        public virtual void BeginText()
+        {
+            TextMatrices.TextMatrix = TransformationMatrix.Identity;
+            TextMatrices.TextLineMatrix = TransformationMatrix.Identity;
+        }
+
+        /// <inheritdoc/>
+        public virtual void EndText()
+        {
+            TextMatrices.TextMatrix = TransformationMatrix.Identity;
+            TextMatrices.TextLineMatrix = TransformationMatrix.Identity;
+        }
+
+        /// <inheritdoc/>
         public void ShowText(IInputBytes bytes)
         {
             TextSequence++;
@@ -324,7 +338,7 @@
         /// Render glyph implement.
         /// </summary>
         public abstract void RenderGlyph(IFont font,
-            CurrentGraphicsState currentState, 
+            CurrentGraphicsState currentState,
             double fontSize,
             double pointSize,
             int code,
@@ -626,7 +640,7 @@
             {
                 return false;
             }
-            
+
             if (operations.OfType<InvokeNamedXObject>()?.Any(o => o.Name == xObjectName) != true)
             {
                 return false;
@@ -646,7 +660,7 @@
             {
                 return false;
             }
-            
+
             if (t1 is null || t2 is null)
             {
                 return false;
