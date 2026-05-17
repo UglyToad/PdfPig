@@ -159,7 +159,7 @@
         /// <summary>
         /// Process the <see cref="IGraphicsStateOperation"/>s.
         /// </summary>
-        protected void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
+        protected virtual void ProcessOperations(IReadOnlyList<IGraphicsStateOperation> operations)
         {
             foreach (var stateOperation in operations)
             {
@@ -489,140 +489,148 @@
              * 5. Restore the saved graphics state, as if by invoking the Q operator.
              */
 
+            bool resourcesLoaded = false;
             if (formStream.StreamDictionary.TryGet<DictionaryToken>(NameToken.Resources,
                     PdfScanner,
                     out var formResources))
             {
                 ResourceStore.LoadResourceDictionary(formResources);
+                resourcesLoaded = true;
             }
 
             // 1. Save current state.
             PushState();
 
-            var startState = GetCurrentState();
-
-            // Transparency Group XObjects
-            if (formStream.StreamDictionary.TryGet(NameToken.Group, PdfScanner, out DictionaryToken? formGroupToken))
+            try
             {
-                if (!formGroupToken.TryGet<NameToken>(NameToken.S, PdfScanner, out var sToken) ||
-                    sToken != NameToken.Transparency)
+                var startState = GetCurrentState();
+
+                // Transparency Group XObjects
+                if (formStream.StreamDictionary.TryGet(NameToken.Group, PdfScanner, out DictionaryToken? formGroupToken))
                 {
-                    throw new InvalidOperationException(
-                        $"Invalid Transparency Group XObject, '{NameToken.S}' token is not set or not equal to '{NameToken.Transparency}'.");
+                    if (!formGroupToken.TryGet<NameToken>(NameToken.S, PdfScanner, out var sToken) ||
+                        sToken != NameToken.Transparency)
+                    {
+                        throw new InvalidOperationException(
+                            $"Invalid Transparency Group XObject, '{NameToken.S}' token is not set or not equal to '{NameToken.Transparency}'.");
+                    }
+
+                    // Blend mode
+                    // A conforming reader shall implicitly reset this parameter to its initial value at the beginning of execution of a
+                    // transparency group XObject (see 11.6.6, "Transparency Group XObjects"). Initial value: Normal.
+                    startState.BlendMode = BlendMode.Normal;
+
+                    // Soft mask
+                    // A conforming reader shall implicitly reset this parameter implicitly reset to its initial value at the beginning
+                    // of execution of a transparency group XObject (see 11.6.6, "Transparency Group XObjects"). Initial value: None.
+                    startState.SoftMask = null;
+
+                    // Alpha constant
+                    // A conforming reader shall implicitly reset this parameter to its initial value at the beginning of execution of a
+                    // transparency group XObject (see 11.6.6, "Transparency Group XObjects"). Initial value: 1.0.
+                    startState.AlphaConstantNonStroking = 1.0;
+                    startState.AlphaConstantStroking = 1.0;
+
+                    // TODO: the /CS colorspace of the transparency group should not affect the main colorspace, only the transparent imaging model.
+                    if (formGroupToken.TryGet(NameToken.Cs, PdfScanner, out NameToken? csNameToken))
+                    {
+                        // startState.ColorSpaceContext!.SetNonStrokingColorspace(csNameToken);
+                    }
+                    else if (formGroupToken.TryGet(NameToken.Cs, PdfScanner, out ArrayToken? csArrayToken)
+                             && csArrayToken.Length > 0)
+                    {
+                        //if (csArrayToken.Data[0] is NameToken firstColorSpaceName)
+                        //{
+                        //    startState.ColorSpaceContext!.SetNonStrokingColorspace(firstColorSpaceName, formGroupToken);
+                        //}
+                        //else
+                        //{
+                        //    throw new InvalidOperationException("Invalid color space in Transparency Group XObjects.");
+                        //}
+                    }
+
+                    bool isolated = false;
+                    if (formGroupToken.TryGet(NameToken.I, PdfScanner, out BooleanToken? isolatedToken))
+                    {
+                        /*
+                         * (Optional) A flag specifying whether the transparency group is isolated (see “Isolated Groups”).
+                         * If this flag is true, objects within the group shall be composited against a fully transparent
+                         * initial backdrop; if false, they shall be composited against the group’s backdrop.
+                         * Default value: false.
+                         */
+                        isolated = isolatedToken.Data;
+                    }
+
+                    bool knockout = false;
+                    if (formGroupToken.TryGet(NameToken.K, PdfScanner, out BooleanToken? knockoutToken))
+                    {
+                        /*
+                         * (Optional) A flag specifying whether the transparency group is a knockout group (see “Knockout Groups”).
+                         * If this flag is false, later objects within the group shall be composited with earlier ones with which
+                         * they overlap; if true, they shall be composited with the group’s initial backdrop and shall overwrite
+                         * (“knock out”) any earlier overlapping objects.
+                         * Default value: false.
+                         */
+                        knockout = knockoutToken.Data;
+                    }
                 }
 
-                // Blend mode
-                // A conforming reader shall implicitly reset this parameter to its initial value at the beginning of execution of a
-                // transparency group XObject (see 11.6.6, "Transparency Group XObjects"). Initial value: Normal.
-                startState.BlendMode = BlendMode.Normal;
-
-                // Soft mask
-                // A conforming reader shall implicitly reset this parameter implicitly reset to its initial value at the beginning
-                // of execution of a transparency group XObject (see 11.6.6, "Transparency Group XObjects"). Initial value: None.
-                startState.SoftMask = null;
-
-                // Alpha constant
-                // A conforming reader shall implicitly reset this parameter to its initial value at the beginning of execution of a
-                // transparency group XObject (see 11.6.6, "Transparency Group XObjects"). Initial value: 1.0.
-                startState.AlphaConstantNonStroking = 1.0;
-                startState.AlphaConstantStroking = 1.0;
-
-                // TODO: the /CS colorspace of the transparency group should not affect the main colorspace, only the transparent imaging model.
-                if (formGroupToken.TryGet(NameToken.Cs, PdfScanner, out NameToken? csNameToken))
+                var formMatrix = TransformationMatrix.Identity;
+                if (formStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Matrix, PdfScanner, out var formMatrixToken))
                 {
-                    // startState.ColorSpaceContext!.SetNonStrokingColorspace(csNameToken);
-                }
-                else if (formGroupToken.TryGet(NameToken.Cs, PdfScanner, out ArrayToken? csArrayToken)
-                         && csArrayToken.Length > 0)
-                {
-                    //if (csArrayToken.Data[0] is NameToken firstColorSpaceName)
-                    //{
-                    //    startState.ColorSpaceContext!.SetNonStrokingColorspace(firstColorSpaceName, formGroupToken);
-                    //}
-                    //else
-                    //{
-                    //    throw new InvalidOperationException("Invalid color space in Transparency Group XObjects.");
-                    //}
+                    formMatrix =
+                        TransformationMatrix.FromArray(formMatrixToken.Data.OfType<NumericToken>().Select(x => x.Double)
+                            .ToArray());
                 }
 
-                bool isolated = false;
-                if (formGroupToken.TryGet(NameToken.I, PdfScanner, out BooleanToken? isolatedToken))
+                // 2. Update current transformation matrix.
+                ModifyCurrentTransformationMatrix(formMatrix);
+
+                var contentStream = formStream.Decode(FilterProvider, PdfScanner);
+
+                var operations = PageContentParser.Parse(PageNumber,
+                    new MemoryInputBytes(contentStream),
+                    ParsingOptions.Logger);
+
+                // 3. Clip according to the form dictionary's BBox entry.
+                if (formStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Bbox, PdfScanner, out var bboxToken))
                 {
-                    /*
-                     * (Optional) A flag specifying whether the transparency group is isolated (see “Isolated Groups”).
-                     * If this flag is true, objects within the group shall be composited against a fully transparent
-                     * initial backdrop; if false, they shall be composited against the group’s backdrop.
-                     * Default value: false.
-                     */
-                    isolated = isolatedToken.Data;
+                    var points = bboxToken.Data.OfType<NumericToken>().Select(x => x.Double).ToArray();
+                    PdfRectangle bbox = new PdfRectangle(points[0], points[1], points[2], points[3]).Normalise();
+                    ClipToRectangle(bbox, FillingRule.EvenOdd); // TODO - Check that Even Odd is valid
                 }
 
-                bool knockout = false;
-                if (formGroupToken.TryGet(NameToken.K, PdfScanner, out BooleanToken? knockoutToken))
+                // 4. Paint the objects.
+                bool hasCircularReference = HasFormXObjectCircularReference(formStream, xObjectName, operations);
+                if (hasCircularReference)
                 {
-                    /*
-                     * (Optional) A flag specifying whether the transparency group is a knockout group (see “Knockout Groups”).
-                     * If this flag is false, later objects within the group shall be composited with earlier ones with which
-                     * they overlap; if true, they shall be composited with the group’s initial backdrop and shall overwrite
-                     * (“knock out”) any earlier overlapping objects.
-                     * Default value: false.
-                     */
-                    knockout = knockoutToken.Data;
+                    if (ParsingOptions.UseLenientParsing)
+                    {
+                        // TODO - We might be removing too much, good for the moment. See Issues1250() for examples
+                        operations = operations.Where(o => o is not InvokeNamedXObject xo || xo.Name != xObjectName)
+                            .ToArray();
+                        ParsingOptions.Logger.Warn(
+                            $"An XObject form named '{xObjectName}' is referencing itself which can cause unexpected behaviour. The self reference was removed from the operations before further processing.");
+                    }
+                    else
+                    {
+                        throw new PdfDocumentFormatException(
+                            $"An XObject form named '{xObjectName}' is referencing itself which can cause unexpected behaviour.");
+                    }
                 }
+
+                ProcessOperations(operations);
+
             }
-
-            var formMatrix = TransformationMatrix.Identity;
-            if (formStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Matrix, PdfScanner, out var formMatrixToken))
+            finally
             {
-                formMatrix =
-                    TransformationMatrix.FromArray(formMatrixToken.Data.OfType<NumericToken>().Select(x => x.Double)
-                        .ToArray());
-            }
+                // 5. Restore saved state.
+                PopState();
 
-            // 2. Update current transformation matrix.
-            ModifyCurrentTransformationMatrix(formMatrix);
-
-            var contentStream = formStream.Decode(FilterProvider, PdfScanner);
-
-            var operations = PageContentParser.Parse(PageNumber,
-                new MemoryInputBytes(contentStream),
-                ParsingOptions.Logger);
-
-            // 3. Clip according to the form dictionary's BBox entry.
-            if (formStream.StreamDictionary.TryGet<ArrayToken>(NameToken.Bbox, PdfScanner, out var bboxToken))
-            {
-                var points = bboxToken.Data.OfType<NumericToken>().Select(x => x.Double).ToArray();
-                PdfRectangle bbox = new PdfRectangle(points[0], points[1], points[2], points[3]).Normalise();
-                ClipToRectangle(bbox, FillingRule.EvenOdd); // TODO - Check that Even Odd is valid
-            }
-
-            // 4. Paint the objects.
-            bool hasCircularReference = HasFormXObjectCircularReference(formStream, xObjectName, operations);
-            if (hasCircularReference)
-            {
-                if (ParsingOptions.UseLenientParsing)
+                if (resourcesLoaded)
                 {
-                    // TODO - We might be removing too much, good for the moment. See Issues1250() for examples
-                    operations = operations.Where(o => o is not InvokeNamedXObject xo || xo.Name != xObjectName)
-                        .ToArray();
-                    ParsingOptions.Logger.Warn(
-                        $"An XObject form named '{xObjectName}' is referencing itself which can cause unexpected behaviour. The self reference was removed from the operations before further processing.");
+                    ResourceStore.UnloadResourceDictionary();
                 }
-                else
-                {
-                    throw new PdfDocumentFormatException(
-                        $"An XObject form named '{xObjectName}' is referencing itself which can cause unexpected behaviour.");
-                }
-            }
-
-            ProcessOperations(operations);
-
-            // 5. Restore saved state.
-            PopState();
-
-            if (formResources != null) // has resources
-            {
-                ResourceStore.UnloadResourceDictionary();
             }
         }
 
