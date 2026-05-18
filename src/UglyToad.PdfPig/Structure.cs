@@ -4,6 +4,7 @@
     using Content;
     using Core;
     using CrossReference;
+    using System.Linq;
     using Tokenization.Scanner;
     using Tokens;
 
@@ -26,6 +27,8 @@
         /// The trailer dictionary of the document. Contains most bottom trailer
         /// </summary>
         public TrailerDictionary Trailer { get; }
+        
+        public long XrefOffset { get; }
 
         /// <summary>
         /// Provides access to tokenization capabilities for objects by object number.
@@ -42,6 +45,7 @@
             Catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             TokenScanner = scanner ?? throw new ArgumentNullException(nameof(scanner));
             CrossReferenceTable = xrefTable ?? throw new ArgumentNullException(nameof(xrefTable));
+            XrefOffset = CrossReferenceTable.Parts.Count > 0 ? CrossReferenceTable.Parts.Last().Offset : 0;
         }
 
         /// <summary>
