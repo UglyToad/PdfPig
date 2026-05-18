@@ -57,10 +57,7 @@ public class AdvancedMerge
         output.Seek(0, SeekOrigin.End);
         output.WriteByte((byte)'\n');  // without endline pdf wouldn't render in some readers
         
-        var newPdfObjects = outputPdf.Structure
-            .CrossReferenceTable
-            .ObjectOffsets
-            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+        var newPdfObjects = new Dictionary<IndirectReference, XrefLocation>();
         
         foreach (var oldRef in oldRefs)
         {
@@ -102,7 +99,7 @@ public class AdvancedMerge
             outputPdf.Structure.Trailer.Root,
             output,
             null,
-            pdf.Structure.Trailer.PreviousCrossReferenceOffset);
+            outputPdf.Structure.XrefOffset);
     }
     
     /// <summary>
