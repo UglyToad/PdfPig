@@ -28,6 +28,9 @@
         /// </summary>
         public TrailerDictionary Trailer { get; }
         
+        /// <summary>
+        /// The offset of the xref table/object stream
+        /// </summary>
         public long XrefOffset { get; }
 
         /// <summary>
