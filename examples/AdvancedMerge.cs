@@ -14,10 +14,6 @@ public class AdvancedMerge
     public static void Run(Stream input1, Stream output)
     {
         using var pdf = PdfDocument.Open(input1);
-        var pdfObjects = pdf.Structure
-            .CrossReferenceTable
-            .ObjectOffsets
-            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
         if (!pdf.Structure.Catalog.CatalogDictionary.TryGet<IndirectReferenceToken>(NameToken.Pages, out var pages))
             throw new ArgumentException("No pages reference were found");
@@ -33,7 +29,6 @@ public class AdvancedMerge
         if (ResolveIndirect(pdf, kidReference) is not DictionaryToken pageObj)
             throw new ArgumentException("Invalid catalog dictionary");
         
-                
         // Skip all pdf meta structure objects 
         var skippedRefs = new HashSet<IndirectReference>
         {
@@ -47,40 +42,25 @@ public class AdvancedMerge
             .Where(k => !skippedRefs.Contains(k))
             .OrderBy(k => k.ObjectNumber)
             .ToList();
+            
+        using var outputPdf = PdfDocument.Open(output);
         
         // Building refs map, to rebind old objects to their new values
         var refMap = new Dictionary<IndirectReference, IndirectReference>();
-        var currentObjectNumber = pdf.Structure.Trailer.Size;
+        var currentObjectNumber = outputPdf.Structure.Trailer.Size;
         foreach (var oldRef in oldRefs)
         {
             var newRef = new IndirectReference(currentObjectNumber++, 0);
             refMap[oldRef] = newRef;
         }
         
-        // Here you can extract page content and bind it in output page document
-        IndirectReference? root = null;
-        if (pageObj.TryGet<IndirectReferenceToken>(NameToken.Contents, out var contentObj))
-        {
-            using var outputPdf = PdfDocument.Open(output);
-            var lastPageRef = FindLastPage(outputPdf);
-            
-            if (ResolveIndirect(outputPdf, lastPageRef) is not DictionaryToken outputPage)
-                throw new ArgumentException("Invalid catalog dictionary");
-            root = outputPdf.Structure.Trailer.Root;
-
-            IReadOnlyList<IToken> newContents = [new IndirectReferenceToken(refMap[contentObj.Data])];
-
-            if (outputPage.TryGet<ArrayToken>(NameToken.Contents, out var oldContents))
-                newContents = newContents.Concat(oldContents.Data).ToList();
-            
-            output.Seek(0, SeekOrigin.End);
-            
-            var xrefLocation = XrefLocation.File(output.Position);
-            var newPageObject = outputPage.With(NameToken.Contents, new ArrayToken(newContents));
-            TokenWriter.Instance.WriteToken(new ObjectToken(xrefLocation, lastPageRef.Data, newPageObject), output);
-            
-            pdfObjects[lastPageRef.Data] = xrefLocation;
-        }
+        output.Seek(0, SeekOrigin.End);
+        output.WriteByte((byte)'\n');  // without endline pdf wouldn't render in some readers
+        
+        var newPdfObjects = outputPdf.Structure
+            .CrossReferenceTable
+            .ObjectOffsets
+            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         
         foreach (var oldRef in oldRefs)
         {
@@ -89,16 +69,37 @@ public class AdvancedMerge
             var token = ResolveIndirect(pdf, oldRef);
             var updatedToken = ReplaceReferences(token, refMap);
             
-            pdfObjects[newObjRef] = newXref;
+            newPdfObjects[newObjRef] = newXref;
             output.Seek(0, SeekOrigin.End);
             TokenWriter.Instance.WriteToken(new ObjectToken(newXref, newObjRef, updatedToken), output);
         }
         
-        // Writer new xref table
+        // Bind input content to the last output page
+        var lastPageRef = FindLastPage(outputPdf);
+        
+        if (ResolveIndirect(outputPdf, lastPageRef) is not DictionaryToken outputPage)
+            throw new ArgumentException("Invalid catalog dictionary");
+        
+        if (!pageObj.TryGet<IndirectReferenceToken>(NameToken.Contents, out var contentObj))
+            throw new ArgumentException("Invalid catalog dictionary");
+        
+        // Assume we have resources needed for content to render
+        if (!pageObj.TryGet<IndirectReferenceToken>(NameToken.Resources, out var resources))
+            throw new ArgumentException("Invalid page object");
+        
         output.Seek(0, SeekOrigin.End);
+        var xrefLocation = XrefLocation.File(output.Position);
+        var newPageObject = outputPage
+            .With(NameToken.Contents, new IndirectReferenceToken(refMap[contentObj.Data]))
+            .With(NameToken.Resources, new IndirectReferenceToken(refMap[resources.Data]));
+        TokenWriter.Instance.WriteToken(new ObjectToken(xrefLocation, lastPageRef.Data, newPageObject), output);
+        
+        newPdfObjects[lastPageRef.Data] = xrefLocation;
+        
+        // Writer new xref table
         TokenWriter.Instance.WriteCrossReferenceTable(
-            pdfObjects.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Value1),
-            root ?? pdf.Structure.Trailer.Root,
+            newPdfObjects.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Value1),
+            outputPdf.Structure.Trailer.Root,
             output,
             null,
             pdf.Structure.Trailer.PreviousCrossReferenceOffset);
