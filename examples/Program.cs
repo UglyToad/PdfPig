@@ -55,11 +55,11 @@
                     ("Advanced pdf merge, using low level pdf tools, like trailer dictionary and xref table",
                     () =>
                     {
+                        using var output = new FileStream("AdvancedMergeResult.pdf", FileMode.Create);
                         using var input2 = File.Open(Path.Combine(filesDirectory, "EmptyPdf.pdf"), FileMode.Open);
-                        using var output = new FileStream(Path.Combine(filesDirectory, "AdvancedMergeResult.pdf"), FileMode.Create);
-                        using var input = File.Open(Path.Combine(filesDirectory, "Single Page Simple - from google drive.pdf"), FileMode.Open);
+                        using var input = File.Open(Path.Combine(filesDirectory, "Various Content Types.pdf"), FileMode.Open);
 
-                        input2.CopyToAsync(output);
+                        input2.CopyTo(output);
                         output.Seek(0, SeekOrigin.Begin);
                         AdvancedMerge.Run(input, output);
                     })
