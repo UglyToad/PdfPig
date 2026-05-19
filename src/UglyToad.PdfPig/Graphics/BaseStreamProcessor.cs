@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
-
+    
     using Colors;
     using Content;
     using Core;
@@ -12,6 +12,7 @@
     using Geometry;
     using Operations;
     using Operations.TextPositioning;
+    using Operations.TextState;
     using Parser;
     using PdfFonts;
     using PdfPig.Core;
@@ -107,6 +108,15 @@
                 { XObjectType.Image, new List<XObjectContentRecord>() },
                 { XObjectType.PostScript, new List<XObjectContentRecord>() }
             };
+
+        /// <summary>
+        /// Cache of Type 3 glyph bounding boxes (from the CharProc's d1 operator),
+        /// keyed by font instance + character code. A <c>null</c> value means the
+        /// CharProc was parsed and either had no d1 or could not be retrieved, so
+        /// the fallback rect should be used. Avoids re-decoding and re-parsing the
+        /// same CharProc stream once per occurrence of the glyph.
+        /// </summary>
+        private readonly Dictionary<(IType3Font Font, int Code), PdfRectangle?> _type3GlyphBoxCache = new();
 
         /// <summary>
         /// Abstract stream processor constructor.
@@ -308,6 +318,16 @@
 
                 var boundingBox = font.GetBoundingBox(code);
 
+                if (font is IType3Font type3Font)
+                {
+                    // Special case for type 3 where we can get better bbox from procs
+                    var bbox = GetOrComputeType3GlyphBoundingBox(type3Font, code);
+                    if (bbox.HasValue)
+                    {
+                        boundingBox = new CharacterBoundingBox(bbox.Value, boundingBox.Width);
+                    }
+                }
+
                 RenderGlyph(font,
                     currentState,
                     fontSize,
@@ -336,6 +356,41 @@
 
                 TextMatrices.TextMatrix = TextMatrices.TextMatrix.Translate(tx, ty);
             }
+        }
+
+        private PdfRectangle? GetOrComputeType3GlyphBoundingBox(IType3Font type3Font, int code)
+        {
+            var key = (type3Font, code);
+            if (_type3GlyphBoxCache.TryGetValue(key, out var cached))
+            {
+                return cached;
+            }
+
+            PdfRectangle? result = null;
+            if (type3Font.TryGetCharProc(code, out var charProcStream))
+            {
+                var contentBytes = charProcStream.Decode(FilterProvider, PdfScanner);
+                var operations = PageContentParser.Parse(PageNumber,
+                    new MemoryInputBytes(contentBytes),
+                    ParsingOptions.Logger);
+
+                for (int i = 0; i < operations.Count; ++i)
+                {
+                    if (operations[i] is Type3SetGlyphWidthAndBoundingBox d1)
+                    {
+                        double left = Math.Min(d1.LowerLeftX, d1.UpperRightX);
+                        double right = Math.Max(d1.LowerLeftX, d1.UpperRightX);
+                        double top = Math.Max(d1.LowerLeftY, d1.UpperRightY);
+                        double bottom = Math.Min(d1.LowerLeftY, d1.UpperRightY);
+                        result = type3Font.GetFontMatrix()
+                            .Transform(new PdfRectangle(left, top, right, bottom));
+                        break;
+                    }
+                }
+            }
+
+            _type3GlyphBoxCache[key] = result;
+            return result;
         }
 
         /// <summary>
