@@ -8,8 +8,8 @@
         public void DetectPageContents()
         {
             var file = IntegrationHelpers.GetDocumentPath("Various Content Types");
-
-            using (var document = PdfDocument.Open(file, ParsingOptions.LenientParsingOff))
+            using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read))
+            using (var document = PdfDocument.Open(fs, ParsingOptions.LenientParsingOff))
             {
                 var page = document.GetPage(1);
                 var letters = page.Letters;

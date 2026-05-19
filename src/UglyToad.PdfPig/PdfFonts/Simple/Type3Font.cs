@@ -21,6 +21,7 @@
         private readonly double[] widths;
         private readonly ToUnicodeCMap toUnicodeCMap;
         private readonly IReadOnlyDictionary<string, StreamToken>? charProcs;
+        private readonly Dictionary<int, CharacterBoundingBox> boundingBoxCache = new();
 
         /// <summary>
         /// Type 3 fonts are usually unnamed.
@@ -103,13 +104,20 @@
 
         public CharacterBoundingBox GetBoundingBox(int characterCode)
         {
+            if (boundingBoxCache.TryGetValue(characterCode, out var cached))
+            {
+                return cached;
+            }
+
             var characterBoundingBox = GetBoundingBoxInGlyphSpace(characterCode);
 
             characterBoundingBox = fontMatrix.Transform(characterBoundingBox);
 
             var width = fontMatrix.TransformX(widths[characterCode - firstChar]);
 
-            return new CharacterBoundingBox(characterBoundingBox, width);
+            var result = new CharacterBoundingBox(characterBoundingBox, width);
+            boundingBoxCache[characterCode] = result;
+            return result;
         }
 
         private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
@@ -119,7 +127,29 @@
                 throw new InvalidFontFormatException($"The character code was not contained in the widths array: {characterCode}.");
             }
 
-            return new PdfRectangle(0, 0, widths[characterCode - firstChar], boundingBox.Height);
+            // The CharProc's d1 operator would declare a precise per-glyph
+            // bbox, but parsing it requires running the CharProc stream which
+            // this class does not do. Use the font-level FontBBox as the
+            // upper bound for any glyph in this font.
+            double width = widths[characterCode - firstChar];
+
+            double left = boundingBox.Left;
+            double right = boundingBox.Right;
+
+            // If the advance width exceeds the FontBBox right edge (common
+            // for d0 charprocs that only declare an advance), widen the
+            // rectangle so paint up to the advance edge is covered.
+            if (width > right)
+            {
+                right = width;
+            }
+
+            if (left > 0)
+            {
+                left = 0;
+            }
+
+            return new PdfRectangle(left, boundingBox.Bottom, right, boundingBox.Top);
         }
 
         public TransformationMatrix GetFontMatrix()
