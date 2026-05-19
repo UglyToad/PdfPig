@@ -230,7 +230,11 @@
         public void ShowText(IInputBytes bytes)
         {
             TextSequence++;
+            ShowTextInternal(bytes);
+        }
 
+        private void ShowTextInternal(IInputBytes bytes)
+        {
             var currentState = GetCurrentState();
 
             var font = currentState.FontState.FromExtendedGraphicsState
@@ -411,7 +415,7 @@
                         bytes = ((StringToken)token).GetBytes();
                     }
 
-                    ShowText(new MemoryInputBytes(bytes));
+                    ShowTextInternal(new MemoryInputBytes(bytes));
                 }
             }
         }
