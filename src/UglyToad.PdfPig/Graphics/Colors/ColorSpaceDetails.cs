@@ -51,6 +51,16 @@
         public abstract IColor GetColor(params double[] values);
 
         /// <summary>
+        /// Get the color as an unboxed RGB triple. Avoids allocating an <see cref="IColor"/> and bypasses the
+        /// virtual dispatch through <see cref="IColor.ToRGBValues"/>. Each component is in [0, 1].
+        /// </summary>
+        /// <param name="values">The component values, in this colour space.</param>
+        /// <param name="r">The red component, in [0, 1].</param>
+        /// <param name="g">The green component, in [0, 1].</param>
+        /// <param name="b">The blue component, in [0, 1].</param>
+        public abstract void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b);
+
+        /// <summary>
         /// Get the color, without check and caching.
         /// </summary>
         internal abstract double[] Process(params double[] values);
@@ -72,6 +82,29 @@
         {
             var rounded = Math.Round(componentValue * 255, MidpointRounding.AwayFromZero);
             return (byte)rounded;
+        }
+
+        /// <summary>
+        /// Evaluate <paramref name="tintInput"/> through a tint <paramref name="tint"/> function whose output values
+        /// are then mapped to RGB by <paramref name="alternate"/>'s <see cref="GetRgb"/>. Allocation-free for the
+        /// typical case where the alternate colour space has at most 8 components.
+        /// </summary>
+        private protected static void GetRgbViaTint(PdfFunction tint, ColorSpaceDetails alternate,
+            ReadOnlySpan<double> tintInput, out double r, out double g, out double b)
+        {
+            int alternateComponents = alternate.NumberOfColorComponents;
+            int tintMax = tint.MaxOutputComponentCount;
+            int max = tintMax > alternateComponents ? tintMax : alternateComponents;
+            Span<double> buffer = max <= 16 ? stackalloc double[max] : new double[max];
+            int written = tint.Eval(tintInput, buffer);
+            if (written < alternateComponents)
+            {
+                // A buggy tint function under-filled the buffer. Zero the trailing slots so the alternate
+                // space's GetRgb call doesn't read uninitialised stack memory.
+                buffer.Slice(written, alternateComponents - written).Clear();
+                written = alternateComponents;
+            }
+            alternate.GetRgb(buffer.Slice(0, written), out r, out g, out b);
         }
     }
 
@@ -114,20 +147,28 @@
             {
                 return GrayColor.Black;
             }
-            else if (gray == 1)
+            
+            if (gray == 1)
             {
                 return GrayColor.White;
             }
-            else
-            {
-                return new GrayColor(gray);
-            }
+
+            return new GrayColor(gray);
         }
 
         /// <inheritdoc/>
         public override IColor GetInitializeColor()
         {
             return GrayColor.Black;
+        }
+
+        /// <inheritdoc/>
+        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        {
+            double gray = values[0];
+            r = gray;
+            g = gray;
+            b = gray;
         }
 
         /// <inheritdoc/>
@@ -178,7 +219,8 @@
             {
                 return RGBColor.Black;
             }
-            else if (r == 1 && g == 1 && b == 1)
+            
+            if (r == 1 && g == 1 && b == 1)
             {
                 return RGBColor.White;
             }
@@ -190,6 +232,14 @@
         public override IColor GetInitializeColor()
         {
             return RGBColor.Black;
+        }
+
+        /// <inheritdoc/>
+        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        {
+            r = values[0];
+            g = values[1];
+            b = values[2];
         }
 
         /// <inheritdoc/>
@@ -253,6 +303,19 @@
         public override IColor GetInitializeColor()
         {
             return CMYKColor.Black;
+        }
+
+        /// <inheritdoc/>
+        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        {
+            double c = values[0];
+            double m = values[1];
+            double y = values[2];
+            double k = values[3];
+            double oneMinusK = 1.0 - k;
+            r = (1.0 - c) * oneMinusK;
+            g = (1.0 - m) * oneMinusK;
+            b = (1.0 - y) * oneMinusK;
         }
 
         /// <inheritdoc/>
@@ -446,6 +509,77 @@
             return GetColor(0);
         }
 
+        /// <inheritdoc/>
+        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        {
+            // Look up the index into the colour table and dispatch to the base colour space.
+            // Base color spaces have at most 4 components for our supported types.
+            byte index = (byte)values[0];
+            Span<double> buffer = stackalloc double[4];
+            int components;
+            switch (BaseType)
+            {
+                case ColorSpace.DeviceRGB:
+                case ColorSpace.CalRGB:
+                case ColorSpace.Lab:
+                    components = 3;
+                    for (int j = 0; j < 3; j++)
+                    {
+                        buffer[j] = colorTable[index * 3 + j] / 255.0;
+                    }
+
+                    break;
+                case ColorSpace.DeviceCMYK:
+                    components = 4;
+                    for (int j = 0; j < 4; j++)
+                    {
+                        buffer[j] = colorTable[index * 4 + j] / 255.0;
+                    }
+
+                    break;
+                case ColorSpace.DeviceGray:
+                case ColorSpace.CalGray:
+                case ColorSpace.Separation:
+                    components = 1;
+                    buffer[0] = colorTable[index] / 255.0;
+                    break;
+                case ColorSpace.DeviceN:
+                case ColorSpace.ICCBased:
+                    components = BaseColorSpace.NumberOfColorComponents;
+                    if (components == 1)
+                    {
+                        buffer[0] = colorTable[index] / 255.0;
+                    }
+                    else
+                    {
+                        if (components > buffer.Length)
+                        {
+                            Span<double> big = components <= 128 ? stackalloc double[components] : new double[components];
+                            for (int j = 0; j < components; j++)
+                            {
+                                big[j] = colorTable[index * components + j] / 255.0;
+                            }
+
+                            BaseColorSpace.GetRgb(big, out r, out g, out b);
+                            return;
+                        }
+
+                        for (int j = 0; j < components; j++)
+                        {
+                            buffer[j] = colorTable[index * components + j] / 255.0;
+                        }
+                    }
+
+                    break;
+                default:
+                    components = 1;
+                    buffer[0] = values[0];
+                    break;
+            }
+
+            BaseColorSpace.GetRgb(buffer.Slice(0, components), out r, out g, out b);
+        }
+
         /// <summary>
         /// <inheritdoc/>
         /// <para>
@@ -589,6 +723,12 @@
             // shall be given an initial value of 1.0. The SCN and scn operators respectively shall set the current
             // stroking and nonstroking colour.
             return GetColor(Enumerable.Repeat(1.0, NumberOfColorComponents).ToArray());
+        }
+
+        /// <inheritdoc/>
+        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        {
+            GetRgbViaTint(TintFunction, AlternateColorSpace, values, out r, out g, out b);
         }
 
         /// <summary>
@@ -758,6 +898,12 @@
             // The initial value for both the stroking and nonstroking colour in the graphics state shall be 1.0.
             return GetColor(1.0);
         }
+
+        /// <inheritdoc/>
+        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        {
+            GetRgbViaTint(TintFunction, AlternateColorSpace, values.Slice(0, 1), out r, out g, out b);
+        }
     }
 
     /// <summary>
@@ -829,28 +975,18 @@
                 };
         }
 
-        /// <summary>
-        /// Transforms the supplied A color to grayscale RGB (sRGB) using the properties of this
-        /// <see cref="CalGrayColorSpaceDetails"/> in the transformation process.
-        /// A represents the gray component of a calibrated gray space. The component must be in the range 0.0 to 1.0.
-        /// </summary>
-        private RGBColor TransformToRGB(double colorA)
-        {
-            var (R, G, B) = colorSpaceTransformer.TransformToRGB((colorA, colorA, colorA));
-            return new RGBColor(R, G, B);
-        }
-
         /// <inheritdoc/>
         internal override Span<byte> Transform(Span<byte> decoded)
         {
             var transformed = new byte[decoded.Length];
+            Span<double> input = stackalloc double[1];
 
             for (var i = 0; i < decoded.Length; i++)
             {
-                var component = decoded[i] / 255.0;
-                var rgbPixel = Process(component);
-                // We only need one component here 
-                transformed[i] = ConvertToByte(rgbPixel[0]);
+                input[0] = decoded[i] / 255.0;
+                GetRgb(input, out double r, out _, out _);
+                // We only need one component here
+                transformed[i] = ConvertToByte(r);
             }
 
             return transformed;
@@ -859,8 +995,8 @@
         /// <inheritdoc/>
         internal override double[] Process(params double[] values)
         {
-            var (R, _, _) = colorSpaceTransformer.TransformToRGB((values[0], values[0], values[0]));
-            return [R];
+            GetRgb(values, out double r, out _, out _);
+            return [r];
         }
 
         /// <inheritdoc/>
@@ -871,7 +1007,8 @@
                 throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
             }
 
-            return TransformToRGB(values[0]);
+            GetRgb(values, out double r, out double g, out double b);
+            return new RGBColor(r, g, b);
         }
 
         /// <inheritdoc/>
@@ -882,6 +1019,13 @@
             // values for a given component does not include 0.0, in which case the nearest valid value shall
             // be substituted.)
             return GetColor(0);
+        }
+
+        /// <inheritdoc/>
+        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        {
+            double a = values[0];
+            (r, g, b) = colorSpaceTransformer.TransformToRGB((a, a, a));
         }
     }
 
@@ -971,29 +1115,22 @@
                 };
         }
 
-        /// <summary>
-        /// Transforms the supplied ABC color to RGB (sRGB) using the properties of this <see cref="CalRGBColorSpaceDetails"/>
-        /// in the transformation process.
-        /// A, B and C represent red, green and blue calibrated color values in the range 0.0 to 1.0.
-        /// </summary>
-        private RGBColor TransformToRGB((double A, double B, double C) colorAbc)
-        {
-            var (R, G, B) = colorSpaceTransformer.TransformToRGB((colorAbc.A, colorAbc.B, colorAbc.C));
-            return new RGBColor(R, G, B);
-        }
-
         /// <inheritdoc/>
         internal override Span<byte> Transform(Span<byte> decoded)
         {
             var transformed = new byte[decoded.Length];
             int index = 0;
+            Span<double> input = stackalloc double[3];
 
             for (var i = 0; i < decoded.Length; i += 3)
             {
-                var rgbPixel = Process(decoded[i] / 255.0, decoded[i + 1] / 255.0, decoded[i + 2] / 255.0);
-                transformed[index++] = ConvertToByte(rgbPixel[0]);
-                transformed[index++] = ConvertToByte(rgbPixel[1]);
-                transformed[index++] = ConvertToByte(rgbPixel[2]);
+                input[0] = decoded[i] / 255.0;
+                input[1] = decoded[i + 1] / 255.0;
+                input[2] = decoded[i + 2] / 255.0;
+                GetRgb(input, out double r, out double g, out double b);
+                transformed[index++] = ConvertToByte(r);
+                transformed[index++] = ConvertToByte(g);
+                transformed[index++] = ConvertToByte(b);
             }
 
             return transformed;
@@ -1002,8 +1139,8 @@
         /// <inheritdoc/>
         internal override double[] Process(params double[] values)
         {
-            var (R, G, B) = colorSpaceTransformer.TransformToRGB((values[0], values[1], values[2]));
-            return [R, G, B];
+            GetRgb(values, out double r, out double g, out double b);
+            return [r, g, b];
         }
 
         /// <inheritdoc/>
@@ -1014,7 +1151,8 @@
                 throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
             }
 
-            return TransformToRGB((values[0], values[1], values[2]));
+            GetRgb(values, out double r, out double g, out double b);
+            return new RGBColor(r, g, b);
         }
 
         /// <inheritdoc/>
@@ -1024,7 +1162,15 @@
             // initialize all components of the corresponding current colour to 0.0 (unless the range of valid
             // values for a given component does not include 0.0, in which case the nearest valid value shall
             // be substituted.)
-            return TransformToRGB((0, 0, 0));
+            Span<double> zero = stackalloc double[3];
+            GetRgb(zero, out double r, out double g, out double b);
+            return new RGBColor(r, g, b);
+        }
+
+        /// <inheritdoc/>
+        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        {
+            (r, g, b) = colorSpaceTransformer.TransformToRGB((values[0], values[1], values[2]));
         }
     }
 
@@ -1098,24 +1244,22 @@
         /// component shall be 0 to 100; the ranges of the second and third (a* and b*) components shall be defined by
         /// the Range entry in the colour space dictionary
         /// </summary>
-        private RGBColor TransformToRGB((double A, double B, double C) colorAbc)
-        {
-            var rgb = Process(colorAbc.A, colorAbc.B, colorAbc.C);
-            return new RGBColor(rgb[0], rgb[1], rgb[2]);
-        }
-
         /// <inheritdoc/>
         internal override Span<byte> Transform(Span<byte> decoded)
         {
             var transformed = new byte[decoded.Length];
             int index = 0;
+            Span<double> input = stackalloc double[3];
 
             for (var i = 0; i < decoded.Length; i += 3)
             {
-                var rgbPixel = Process(decoded[i] / 255.0, decoded[i + 1] / 255.0, decoded[i + 2] / 255.0);
-                transformed[index++] = ConvertToByte(rgbPixel[0]);
-                transformed[index++] = ConvertToByte(rgbPixel[1]);
-                transformed[index++] = ConvertToByte(rgbPixel[2]);
+                input[0] = decoded[i] / 255.0;
+                input[1] = decoded[i + 1] / 255.0;
+                input[2] = decoded[i + 2] / 255.0;
+                GetRgb(input, out double r, out double g, out double b);
+                transformed[index++] = ConvertToByte(r);
+                transformed[index++] = ConvertToByte(g);
+                transformed[index++] = ConvertToByte(b);
             }
 
             return transformed;
@@ -1133,20 +1277,8 @@
         /// <inheritdoc/>
         internal override double[] Process(params double[] values)
         {
-            // Component Ranges: L*: [0 100]; a* and b*: [−128 127]
-            double b = PdfFunction.ClipToRange(values[1], Matrix[0], Matrix[1]);
-            double c = PdfFunction.ClipToRange(values[2], Matrix[2], Matrix[3]);
-
-            double M = (values[0] + 16.0) / 116.0;
-            double L = M + (b / 500.0);
-            double N = M - (c / 200.0);
-
-            double X = WhitePoint[0] * g(L);
-            double Y = WhitePoint[1] * g(M);
-            double Z = WhitePoint[2] * g(N);
-
-            var (R, G, B) = colorSpaceTransformer.TransformToRGB((X, Y, Z));
-            return [R, G, B];
+            GetRgb(values, out double r, out double g, out double b);
+            return [r, g, b];
         }
 
         /// <inheritdoc/>
@@ -1157,7 +1289,8 @@
                 throw new ArgumentException($"Invalid number of inputs, expecting {NumberOfColorComponents} but got {values?.Length ?? 0}", nameof(values));
             }
 
-            return TransformToRGB((values[0], values[1], values[2]));
+            GetRgb(values, out double r, out double g, out double b);
+            return new RGBColor(r, g, b);
         }
 
         /// <inheritdoc/>
@@ -1169,7 +1302,27 @@
             // be substituted.)
             double b = PdfFunction.ClipToRange(0, Matrix[0], Matrix[1]);
             double c = PdfFunction.ClipToRange(0, Matrix[2], Matrix[3]);
-            return TransformToRGB((0, b, c));
+            Span<double> init = stackalloc double[3] { 0, b, c };
+            GetRgb(init, out double rr, out double gg, out double bb);
+            return new RGBColor(rr, gg, bb);
+        }
+
+        /// <inheritdoc/>
+        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        {
+            // Component Ranges: L*: [0 100]; a* and b*: [-128 127]
+            double bClip = PdfFunction.ClipToRange(values[1], Matrix[0], Matrix[1]);
+            double cClip = PdfFunction.ClipToRange(values[2], Matrix[2], Matrix[3]);
+
+            double M = (values[0] + 16.0) / 116.0;
+            double L = M + (bClip / 500.0);
+            double N = M - (cClip / 200.0);
+
+            double X = WhitePoint[0] * LabColorSpaceDetails.g(L);
+            double Y = WhitePoint[1] * LabColorSpaceDetails.g(M);
+            double Z = WhitePoint[2] * LabColorSpaceDetails.g(N);
+
+            (r, g, b) = colorSpaceTransformer.TransformToRGB((X, Y, Z));
         }
     }
 
@@ -1292,6 +1445,33 @@
         }
 
         /// <inheritdoc/>
+        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        {
+            // TODO - use ICC profile
+            int n = NumberOfColorComponents;
+            if (n <= 4)
+            {
+                Span<double> clipped = stackalloc double[4];
+                for (int c = 0; c < n; c++)
+                {
+                    int i = 2 * c;
+                    clipped[c] = PdfFunction.ClipToRange(values[c], Range[i], Range[i + 1]);
+                }
+                AlternateColorSpace.GetRgb(clipped.Slice(0, n), out r, out g, out b);
+            }
+            else
+            {
+                double[] clipped = new double[n];
+                for (int c = 0; c < n; c++)
+                {
+                    int i = 2 * c;
+                    clipped[c] = PdfFunction.ClipToRange(values[c], Range[i], Range[i + 1]);
+                }
+                AlternateColorSpace.GetRgb(clipped, out r, out g, out b);
+            }
+        }
+
+        /// <inheritdoc/>
         internal override Span<byte> Transform(Span<byte> decoded)
         {
             // TODO - use ICC profile
@@ -1375,6 +1555,12 @@
             throw new InvalidOperationException("PatternColorSpaceDetails");
         }
 
+        /// <inheritdoc/>
+        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
+        {
+            throw new InvalidOperationException("PatternColorSpaceDetails");
+        }
+
         /// <summary>
         /// <inheritdoc/>
         /// </summary>
@@ -1434,6 +1620,12 @@
 
         /// <inheritdoc/>
         public override IColor GetColor(params double[] values)
+        {
+            throw new InvalidOperationException("UnsupportedColorSpaceDetails");
+        }
+
+        /// <inheritdoc/>
+        public override void GetRgb(ReadOnlySpan<double> values, out double r, out double g, out double b)
         {
             throw new InvalidOperationException("UnsupportedColorSpaceDetails");
         }

@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Functions
+namespace UglyToad.PdfPig.Functions
 {
     using System;
     using System.Collections.Generic;
@@ -13,6 +13,7 @@
     internal sealed class PdfFunctionType3 : PdfFunction
     {
         private readonly double[] boundsValues;
+        private readonly double[] encodeValuesCache;
 
         /// <summary>
         /// Stitching function
@@ -28,6 +29,7 @@
             Bounds = bounds;
             Encode = encode;
             boundsValues = Bounds.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
+            encodeValuesCache = Encode.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
         }
 
         /// <summary>
@@ -44,17 +46,29 @@
             Bounds = bounds;
             Encode = encode;
             boundsValues = Bounds.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
+            encodeValuesCache = Encode.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
         }
 
-        public override FunctionTypes FunctionType
+        public override FunctionTypes FunctionType => FunctionTypes.Stitching;
+
+        protected internal override int MaxOutputComponentCount
         {
             get
             {
-                return FunctionTypes.Stitching;
+                int max = NumberOfOutputParameters;
+                for (int i = 0; i < FunctionsArray.Count; i++)
+                {
+                    int sub = FunctionsArray[i].MaxOutputComponentCount;
+                    if (sub > max)
+                    {
+                        max = sub;
+                    }
+                }
+                return max > 0 ? max : 1;
             }
         }
 
-        public override double[] Eval(params double[] input)
+        public override int Eval(ReadOnlySpan<double> input, Span<double> output)
         {
             // This function is known as a "stitching" function. Based on the input, it decides which child function to call.
             // All functions in the array are 1-value-input functions
@@ -69,28 +83,24 @@
             {
                 // This doesn't make sense but it may happen...
                 function = FunctionsArray[0];
-                PdfRange encRange = GetEncodeForParameter(0);
+                PdfRange encRange = GetEncodeRangeFor(0);
                 x = Interpolate(x, domain.Min, domain.Max, encRange.Min, encRange.Max);
             }
             else
             {
                 int boundsSize = boundsValues.Length;
-                // create a combined array containing the domain and the bounds values
-                // domain.min, bounds[0], bounds[1], ...., bounds[boundsSize-1], domain.max
-                var partitionValues = new double[boundsSize + 2];
-                int partitionValuesSize = partitionValues.Length;
-                partitionValues[0] = domain.Min;
-                partitionValues[partitionValuesSize - 1] = domain.Max;
-                Array.Copy(boundsValues, 0, partitionValues, 1, boundsSize); // System.arraycopy(boundsValues, 0, partitionValues, 1, boundsSize);
-                // find the partition 
-                for (int i = 0; i < partitionValuesSize - 1; i++)
+                // Inline the partition lookup: for index i, the partition is [partition_i, partition_{i+1}]
+                // where partition_0 = domain.Min, partition_{boundsSize+1} = domain.Max, and partition_k = boundsValues[k-1] otherwise.
+                int last = boundsSize; // last index in the "partition" sequence corresponds to the closing boundary
+                for (int i = 0; i <= boundsSize; i++)
                 {
-                    if (x >= partitionValues[i] &&
-                            (x < partitionValues[i + 1] || (i == partitionValuesSize - 2 && x == partitionValues[i + 1])))
+                    double left = i == 0 ? domain.Min : boundsValues[i - 1];
+                    double right = i == boundsSize ? domain.Max : boundsValues[i];
+                    if (x >= left && (x < right || (i == last && x == right)))
                     {
                         function = FunctionsArray[i];
-                        PdfRange encRange = GetEncodeForParameter(i);
-                        x = Interpolate(x, partitionValues[i], partitionValues[i + 1], encRange.Min, encRange.Max);
+                        PdfRange encRange = GetEncodeRangeFor(i);
+                        x = Interpolate(x, left, right, encRange.Min, encRange.Max);
                         break;
                     }
                 }
@@ -99,11 +109,12 @@
             {
                 throw new IOException("partition not found in type 3 function");
             }
-            var functionValues = new double[] { x };
-            // calculate the output values using the chosen function
-            double[] functionResult = function.Eval(functionValues);
+            Span<double> inputBuffer = stackalloc double[1];
+            inputBuffer[0] = x;
+            int written = function.Eval(inputBuffer, output);
             // clip to range if available
-            return ClipToRange(functionResult);
+            ClipToRange(output.Slice(0, written));
+            return written;
         }
 
         /// <summary>
@@ -124,14 +135,13 @@
         public ArrayToken Encode { get; }
 
         /// <summary>
-        /// Get the encode for the input parameter.
+        /// Get the encode range for the input parameter.
         /// </summary>
         /// <param name="n">The function parameter number.</param>
         /// <returns>The encode parameter range or null if none is set.</returns>
-        private PdfRange GetEncodeForParameter(int n)
+        private PdfRange GetEncodeRangeFor(int n)
         {
-            ArrayToken encodeValues = Encode;
-            return new PdfRange(encodeValues.Data.OfType<NumericToken>().Select(t => t.Double), n);
+            return new PdfRange(encodeValuesCache, n);
         }
     }
 }

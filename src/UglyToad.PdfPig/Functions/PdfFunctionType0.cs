@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Functions
+namespace UglyToad.PdfPig.Functions
 {
     using System;
     using System.Collections;
@@ -15,6 +15,13 @@
         private int[][]? samples;
 
         /// <summary>
+        /// Cached numeric values for Size, Encode and Decode entries (parsed once at construction).
+        /// </summary>
+        private readonly double[] sizeValues;
+        private readonly double[] encodeValuesCache;
+        private readonly double[] decodeValuesCache;
+
+        /// <summary>
         /// Stitching function
         /// </summary>
         internal PdfFunctionType0(DictionaryToken function, ArrayToken domain, ArrayToken range, ArrayToken size, int bitsPerSample, int order, ArrayToken encode, ArrayToken decode)
@@ -25,6 +32,9 @@
             Order = order;
             EncodeValues = encode;
             DecodeValues = decode;
+            sizeValues = size.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
+            encodeValuesCache = encode.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
+            decodeValuesCache = decode.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
         }
 
         /// <summary>
@@ -38,15 +48,12 @@
             Order = order;
             EncodeValues = encode;
             DecodeValues = decode;
+            sizeValues = size.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
+            encodeValuesCache = encode.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
+            decodeValuesCache = decode.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
         }
 
-        public override FunctionTypes FunctionType
-        {
-            get
-            {
-                return FunctionTypes.Sampled;
-            }
-        }
+        public override FunctionTypes FunctionType => FunctionTypes.Sampled;
 
         /// <summary>
         /// The "Size" entry, which is the number of samples in each input dimension of the sample table.
@@ -70,18 +77,18 @@
         public int Order { get; }
 
         /// <summary>
-        /// An array of 2 x m numbers specifying the linear mapping of input values 
+        /// An array of 2 x m numbers specifying the linear mapping of input values
         /// into the domain of the function's sample table. Default value: [ 0 (Size0
         /// - 1) 0 (Size1 - 1) ...].
         /// </summary>
-        private ArrayToken EncodeValues { get; }
+        private ArrayToken? EncodeValues { get; }
 
         /// <summary>
         /// An array of 2 x n numbers specifying the linear mapping of sample values
         /// into the range appropriate for the function's output values. Default
         /// value: same as the value of Range.
         /// </summary>
-        private ArrayToken DecodeValues { get; }
+        private ArrayToken? DecodeValues { get; }
 
         /// <summary>
         /// Get the encode for the input parameter.
@@ -90,10 +97,10 @@
         /// <returns>The encode parameter range or null if none is set.</returns>
         public PdfRange? GetEncodeForParameter(int paramNum)
         {
-            ArrayToken encodeValues = EncodeValues;
-            if (encodeValues != null && encodeValues.Length >= paramNum * 2 + 1)
+            ArrayToken? encodeValues = EncodeValues;
+            if (encodeValues is not null && encodeValues.Length >= paramNum * 2 + 1)
             {
-                return new PdfRange(encodeValues.Data.OfType<NumericToken>().Select(t => t.Double), paramNum);
+                return new PdfRange(encodeValuesCache, paramNum);
             }
             return null;
         }
@@ -105,10 +112,10 @@
         /// <returns>The decode parameter range or null if none is set.</returns>
         public PdfRange? GetDecodeForParameter(int paramNum)
         {
-            ArrayToken decodeValues = DecodeValues;
-            if (decodeValues != null && decodeValues.Length >= paramNum * 2 + 1)
+            ArrayToken? decodeValues = DecodeValues;
+            if (decodeValues is not null && decodeValues.Length >= paramNum * 2 + 1)
             {
-                return new PdfRange(decodeValues.Data.OfType<NumericToken>().Select(t => t.Double), paramNum);
+                return new PdfRange(decodeValuesCache, paramNum);
             }
             return null;
         }
@@ -121,62 +128,59 @@
         /// and <see href="https://en.wikipedia.org/wiki/Trilinear_interpolation"/> for trilinear interpolation.
         /// </para>
         /// </summary>
-        internal class RInterpol
+        private readonly ref struct RInterpol
         {
             // coordinate that is to be interpolated
-            private readonly double[] in_;
+            private readonly ReadOnlySpan<double> in_;
             // coordinate of the "ceil" point
-            private readonly int[] inPrev;
+            private readonly ReadOnlySpan<int> inPrev;
             // coordinate of the "floor" point
-            private readonly int[] inNext;
+            private readonly ReadOnlySpan<int> inNext;
             private readonly int numberOfInputValues;
             private readonly int numberOfOutputValues;
-            private readonly ArrayToken size;
+            private readonly ReadOnlySpan<double> sizeValues;
 
             private readonly int[][] samples;
 
             /// <summary>
             /// Constructor.
             /// </summary>
-            /// <param name="input">the input coordinates</param>
-            /// <param name="inputPrev">coordinate of the "ceil" point</param>
-            /// <param name="inputNext">coordinate of the "floor" point</param>
-            /// <param name="numberOfOutputValues"></param>
-            /// <param name="size"></param>
-            /// <param name="samples"></param>
-            internal RInterpol(double[] input, int[] inputPrev, int[] inputNext, int numberOfOutputValues, ArrayToken size, int[][] samples)
+            internal RInterpol(ReadOnlySpan<double> input,
+                ReadOnlySpan<int> inputPrev,
+                ReadOnlySpan<int> inputNext,
+                int numberOfOutputValues,
+                ReadOnlySpan<double> sizeValues,
+                int[][] samples)
             {
                 in_ = input;
                 inPrev = inputPrev;
                 inNext = inputNext;
                 numberOfInputValues = input.Length;
                 this.numberOfOutputValues = numberOfOutputValues;
-                this.size = size;
+                this.sizeValues = sizeValues;
                 this.samples = samples;
             }
 
             /// <summary>
-            /// Calculate the interpolation.
+            /// Calculate the interpolation. Writes <see cref="numberOfOutputValues"/> doubles into
+            /// <paramref name="result"/>. Uses <paramref name="buffer"/> as working space across the
+            /// recursion (must hold <c>2 * numberOfInputValues * numberOfOutputValues</c> doubles).
             /// </summary>
-            /// <returns>interpolated result sample</returns>
-            internal double[] RInterpolate()
+            internal void RInterpolate(Span<double> result, Span<double> buffer, Span<int> coord)
             {
-                return InternalRInterpol(new int[numberOfInputValues], 0);
+                coord.Clear();
+                InternalRInterpol(coord, 0, result, buffer);
             }
 
             /// <summary>
             /// Do a linear interpolation if the two coordinates can be known, or
-            /// call itself recursively twice.
+            /// call itself recursively twice. Writes the interpolated sample into <paramref name="result"/>.
+            /// At each branching level, the first two output-sized slots of <paramref name="buffer"/> hold
+            /// sample1 and sample2 for the current level; the remainder is forwarded to deeper levels.
             /// </summary>
-            /// <param name="coord">partially set coordinate (not set from step
-            /// upwards); gets fully filled in the last call ("leaf"), where it is
-            /// used to get the correct sample</param>
-            /// <param name="step">between 0 (first call) and dimension - 1</param>
-            /// <returns>interpolated result sample</returns>
-            private double[] InternalRInterpol(int[] coord, int step)
+            private void InternalRInterpol(Span<int> coord, int step, Span<double> result, Span<double> buffer)
             {
-                double[] resultSample = new double[numberOfOutputValues];
-                if (step == in_.Length - 1)
+                if (step == numberOfInputValues - 1)
                 {
                     // leaf
                     if (inPrev[step] == inNext[step])
@@ -185,50 +189,50 @@
                         int[] tmpSample = samples[CalcSampleIndex(coord)];
                         for (int i = 0; i < numberOfOutputValues; ++i)
                         {
-                            resultSample[i] = tmpSample[i];
+                            result[i] = tmpSample[i];
                         }
-                        return resultSample;
+                        return;
                     }
                     coord[step] = inPrev[step];
-                    int[] sample1 = samples[CalcSampleIndex(coord)];
+                    int[] sample1Leaf = samples[CalcSampleIndex(coord)];
                     coord[step] = inNext[step];
-                    int[] sample2 = samples[CalcSampleIndex(coord)];
+                    int[] sample2Leaf = samples[CalcSampleIndex(coord)];
                     for (int i = 0; i < numberOfOutputValues; ++i)
                     {
-                        resultSample[i] = Interpolate(in_[step], inPrev[step], inNext[step], sample1[i], sample2[i]);
+                        result[i] = Interpolate(in_[step], inPrev[step], inNext[step], sample1Leaf[i], sample2Leaf[i]);
                     }
-                    return resultSample;
+                    return;
                 }
-                else
+
+                // branch
+                if (inPrev[step] == inNext[step])
                 {
-                    // branch
-                    if (inPrev[step] == inNext[step])
-                    {
-                        coord[step] = inPrev[step];
-                        return InternalRInterpol(coord, step + 1);
-                    }
                     coord[step] = inPrev[step];
-                    double[] sample1 = InternalRInterpol(coord, step + 1);
-                    coord[step] = inNext[step];
-                    double[] sample2 = InternalRInterpol(coord, step + 1);
-                    for (int i = 0; i < numberOfOutputValues; ++i)
-                    {
-                        resultSample[i] = Interpolate(in_[step], inPrev[step], inNext[step], sample1[i], sample2[i]);
-                    }
-                    return resultSample;
+                    InternalRInterpol(coord, step + 1, result, buffer);
+                    return;
+                }
+
+                // Carve sample1/sample2 slots out of buffer; forward the remainder to deeper levels.
+                Span<double> sample1 = buffer.Slice(0, numberOfOutputValues);
+                Span<double> sample2 = buffer.Slice(numberOfOutputValues, numberOfOutputValues);
+                Span<double> deeperBuffer = buffer.Slice(2 * numberOfOutputValues);
+
+                coord[step] = inPrev[step];
+                InternalRInterpol(coord, step + 1, sample1, deeperBuffer);
+                coord[step] = inNext[step];
+                InternalRInterpol(coord, step + 1, sample2, deeperBuffer);
+
+                for (int i = 0; i < numberOfOutputValues; ++i)
+                {
+                    result[i] = Interpolate(in_[step], inPrev[step], inNext[step], sample1[i], sample2[i]);
                 }
             }
 
             /// <summary>
             /// calculate array index (structure described in p.171 PDF spec 1.7) in multiple dimensions.
             /// </summary>
-            /// <param name="vector">with coordinates</param>
-            /// <returns>index in flat array</returns>
-            private int CalcSampleIndex(int[] vector)
+            private int CalcSampleIndex(ReadOnlySpan<int> vector)
             {
-                // inspiration: http://stackoverflow.com/a/12113479/535646
-                // but used in reverse
-                double[] sizeValues = size.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
                 int index = 0;
                 int sizeProduct = 1;
                 int dimension = vector.Length;
@@ -259,19 +263,18 @@
                 int arraySize = 1;
                 int nIn = NumberOfInputParameters;
                 int nOut = NumberOfOutputParameters;
-                ArrayToken sizes = Size;
                 for (int i = 0; i < nIn; i++)
                 {
-                    arraySize *= ((NumericToken)sizes[i]).Int;
+                    arraySize *= (int)sizeValues[i];
                 }
                 samples = new int[arraySize][];
                 int bitsPerSample = BitsPerSample;
 
                 // PDF spec 1.7 p.171:
-                // Each sample value is represented as a sequence of BitsPerSample bits. 
+                // Each sample value is represented as a sequence of BitsPerSample bits.
                 // Successive values are adjacent in the bit stream; there is no padding at byte boundaries.
                 var bits = new BitArray(FunctionStream!.Data.ToArray());
-
+                
                 for (int i = 0; i < arraySize; i++)
                 {
                     samples[i] = new int[nOut];
@@ -293,33 +296,40 @@
             return samples;
         }
 
-        public override double[] Eval(params double[] input)
+        public override int Eval(ReadOnlySpan<double> input, Span<double> output)
         {
             //This involves linear interpolation based on a set of sample points.
             //Theoretically it's not that difficult ... see section 3.9.1 of the PDF Reference.
 
-            double[] sizeValues = Size.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
             int bitsPerSample = BitsPerSample;
             double maxSample = Math.Pow(2, bitsPerSample) - 1.0;
             int numberOfInputValues = input.Length;
             int numberOfOutputValues = NumberOfOutputParameters;
 
-            int[] inputPrev = new int[numberOfInputValues];
-            int[] inputNext = new int[numberOfInputValues];
-            input = input.ToArray(); // PDFBOX-4461
+            Span<double> workInput = numberOfInputValues <= 16 ? stackalloc double[numberOfInputValues] : new double[numberOfInputValues];
+            Span<int> inputPrev = numberOfInputValues <= 16 ? stackalloc int[numberOfInputValues] : new int[numberOfInputValues];
+            Span<int> inputNext = numberOfInputValues <= 16 ? stackalloc int[numberOfInputValues] : new int[numberOfInputValues];
+
 
             for (int i = 0; i < numberOfInputValues; i++)
             {
                 PdfRange domain = GetDomainForInput(i);
                 PdfRange encodeValues = GetEncodeForParameter(i)!.Value;
-                input[i] = ClipToRange(input[i], domain.Min, domain.Max);
-                input[i] = Interpolate(input[i], domain.Min, domain.Max, encodeValues.Min, encodeValues.Max);
-                input[i] = ClipToRange(input[i], 0, sizeValues[i] - 1);
-                inputPrev[i] = (int)Math.Floor(input[i]);
-                inputNext[i] = (int)Math.Ceiling(input[i]);
+                double v = ClipToRange(input[i], domain.Min, domain.Max);
+                v = Interpolate(v, domain.Min, domain.Max, encodeValues.Min, encodeValues.Max);
+                v = ClipToRange(v, 0, sizeValues[i] - 1);
+                workInput[i] = v;
+                inputPrev[i] = (int)Math.Floor(v);
+                inputNext[i] = (int)Math.Ceiling(v);
             }
+            
+            Span<double> interpolated = numberOfOutputValues <= 128 ? stackalloc double[numberOfOutputValues] : new double[numberOfOutputValues];
+            int bufferDoubleSize = 2 * numberOfInputValues * numberOfOutputValues;
+            Span<double> rInterpolBuffer = bufferDoubleSize <= 128 ? stackalloc double[bufferDoubleSize] : new double[bufferDoubleSize];
+            Span<int> coord = numberOfInputValues <= 16 ? stackalloc int[numberOfInputValues] : new int[numberOfInputValues];
 
-            double[] outputValues = new RInterpol(input, inputPrev, inputNext, numberOfOutputValues, Size, GetSamples()).RInterpolate();
+            new RInterpol(workInput, inputPrev, inputNext, numberOfOutputValues, sizeValues, GetSamples())
+                .RInterpolate(interpolated, rInterpolBuffer, coord);
 
             for (int i = 0; i < numberOfOutputValues; i++)
             {
@@ -329,11 +339,11 @@
                 {
                     throw new IOException("Range missing in function /Decode entry");
                 }
-                outputValues[i] = Interpolate(outputValues[i], 0, maxSample, decodeValues.Value.Min, decodeValues.Value.Max);
-                outputValues[i] = ClipToRange(outputValues[i], range.Min, range.Max);
+                double v = Interpolate(interpolated[i], 0, maxSample, decodeValues.Value.Min, decodeValues.Value.Max);
+                output[i] = ClipToRange(v, range.Min, range.Max);
             }
 
-            return outputValues;
+            return numberOfOutputValues;
         }
     }
 }

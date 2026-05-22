@@ -83,29 +83,78 @@
         /// </summary>
         public double[] Eval(params double[] input)
         {
-            if (Functions is null || Functions.Length == 0)
+            PdfFunction[]? functions = Functions;
+            if (functions is null || functions.Length == 0)
             {
+                // No functions: caller-owned input values are returned unchanged (matches legacy behaviour).
+                Clamp(input);
                 return input;
             }
-            else if (Functions.Length == 1)
-            {
-                return Clamp(Functions[0].Eval(input));
-            }
 
-            double[] returnValues = new double[Functions.Length];
-            for (int i = 0; i < Functions.Length; i++)
+            int outputLength = functions.Length == 1 ? functions[0].MaxOutputComponentCount : functions.Length;
+            double[] result = new double[outputLength];
+            int written = Eval(input, result);
+            if (written == result.Length)
             {
-                double[] newValue = Functions[i].Eval(input);
-                returnValues[i] = newValue[0]; // 1-out functions
+                return result;
             }
-            return Clamp(returnValues);
+            double[] trimmed = new double[written];
+            Array.Copy(result, trimmed, written);
+            return trimmed;
         }
 
-        private static double[] Clamp(double[] input)
+        /// <summary>
+        /// Convert the input values using the functions of the shading, writing the result
+        /// into the supplied output buffer. Allocation-free for the typical 1-function and
+        /// multi-function fan-out paths.
+        /// </summary>
+        /// <param name="input">The function input values.</param>
+        /// <param name="output">The output buffer. Must be at least as large as the number of values written.</param>
+        /// <returns>The number of output values written.</returns>
+        public int Eval(ReadOnlySpan<double> input, Span<double> output)
         {
-            // From the PDF spec:
-            // "If the value returned by the function for a given colour component 
-            // is out of range, it shall be adjusted to the nearest valid value."
+            PdfFunction[]? functions = Functions;
+            if (functions is null || functions.Length == 0)
+            {
+                input.CopyTo(output);
+                Clamp(output.Slice(0, input.Length));
+                return input.Length;
+            }
+            if (functions.Length == 1)
+            {
+                int written = functions[0].Eval(input, output);
+                Clamp(output.Slice(0, written));
+                return written;
+            }
+
+            // Multi-function fan-out: each function is 1-out, we take the first value of each.
+            // Use a small stackalloc buffer reused across function calls.
+            Span<double> buffer = stackalloc double[8];
+            for (int i = 0; i < functions.Length; i++)
+            {
+                int outLen = functions[i].MaxOutputComponentCount;
+                if (outLen > buffer.Length)
+                {
+                    // Pathological case — fall back to a heap allocation just for this function.
+                    double[] big = new double[outLen];
+                    functions[i].Eval(input, big);
+                    output[i] = big[0];
+                }
+                else
+                {
+                    functions[i].Eval(input, buffer);
+                    output[i] = buffer[0];
+                }
+            }
+            Clamp(output.Slice(0, functions.Length));
+            return functions.Length;
+        }
+
+        // From the PDF spec:
+        // "If the value returned by the function for a given colour component
+        // is out of range, it shall be adjusted to the nearest valid value."
+        private static void Clamp(Span<double> input)
+        {
             for (int i = 0; i < input.Length; ++i)
             {
                 if (input[i] < 0)
@@ -117,7 +166,6 @@
                     input[i] = 1;
                 }
             }
-            return input;
         }
     }
 
