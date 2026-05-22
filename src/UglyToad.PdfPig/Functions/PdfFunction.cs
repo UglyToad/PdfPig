@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Functions
 {
+    using System;
     using System.Linq;
     using UglyToad.PdfPig.Core;
     using UglyToad.PdfPig.Tokens;
@@ -21,6 +22,8 @@
 
         private int numberOfInputValues = -1;
         private int numberOfOutputValues = -1;
+        private double[]? rangeValuesCache;
+        private double[]? domainValuesCache;
 
         /// <summary>
         /// This class represents a function in a PDF document.
@@ -106,7 +109,8 @@
         /// <returns>The range for this component.</returns>
         public PdfRange GetRangeForOutput(int n)
         {
-            return new PdfRange(RangeValues!.Data.OfType<NumericToken>().Select(t => t.Double), n);
+            double[] cached = GetCachedRangeValues() ?? throw new InvalidOperationException("Range entry is missing.");
+            return new PdfRange(cached, n);
         }
 
         /// <summary>
@@ -136,8 +140,15 @@
         /// <returns>The domain range for this component.</returns>
         public PdfRange GetDomainForInput(int n)
         {
-            ArrayToken domainValues = DomainValues;
-            return new PdfRange(domainValues.Data.OfType<NumericToken>().Select(t => t.Double), n);
+            return new PdfRange(GetCachedDomainValues(), n);
+        }
+
+        /// <summary>
+        /// Returns the cached domain values as a double array (parsed once on first access).
+        /// </summary>
+        private protected double[] GetCachedDomainValues()
+        {
+            return domainValuesCache ??= DomainValues.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
         }
 
         /// <summary>
@@ -148,7 +159,43 @@
         /// In many cases will be an array of a single value, but not always.</param>
         /// <returns>The of outputs the function returns based on those inputs.
         /// In many cases will be an array of a single value, but not always.</returns>
-        public abstract double[] Eval(params double[] input);
+        public virtual double[] Eval(params double[] input)
+        {
+            int maxOutputs = MaxOutputComponentCount;
+            var buffer = new double[maxOutputs];
+            int written = Eval(input, buffer);
+            if (written == buffer.Length)
+            {
+                return buffer;
+            }
+            var trimmed = new double[written];
+            Array.Copy(buffer, trimmed, written);
+            return trimmed;
+        }
+
+        /// <summary>
+        /// An upper bound on the number of output values <see cref="Eval(ReadOnlySpan{double}, Span{double})"/>
+        /// will write for this function. Subclasses override this when they can produce more values than the
+        /// declared <see cref="NumberOfOutputParameters"/> (which can be zero if the Range entry is missing).
+        /// </summary>
+        protected internal virtual int MaxOutputComponentCount
+        {
+            get
+            {
+                int n = NumberOfOutputParameters;
+                return n > 0 ? n : 1;
+            }
+        }
+
+        /// <summary>
+        /// Evaluates the function at the given input, writing results into the supplied output buffer.
+        /// ReturnValue = f(input)
+        /// </summary>
+        /// <param name="input">The input values for the function.</param>
+        /// <param name="output">A caller-supplied buffer that will receive the output values. Must be at least as large as
+        /// the number of values the function will write.</param>
+        /// <returns>The number of output values written to <paramref name="output"/>.</returns>
+        public abstract int Eval(ReadOnlySpan<double> input, Span<double> output);
 
         /// <summary>
         /// Returns all ranges for the output values as <see cref="ArrayToken"/>. Required for type 0 and type 4 functions.
@@ -163,30 +210,41 @@
         private ArrayToken DomainValues { get; }
 
         /// <summary>
-        /// Clip the given input values to the ranges.
+        /// Returns the cached range values as a double array, or null if no ranges are specified.
         /// </summary>
-        /// <param name="inputValues">inputValues the input values</param>
-        /// <returns>the clipped values</returns>
-        protected double[] ClipToRange(double[] inputValues)
+        private protected double[]? GetCachedRangeValues()
         {
-            ArrayToken rangesArray = RangeValues!;
-            double[] result;
-            if (rangesArray != null && rangesArray.Length > 0)
+            if (rangeValuesCache is null)
             {
-                double[] rangeValues = rangesArray.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
-                int numberOfRanges = rangeValues.Length / 2;
-                result = new double[numberOfRanges];
-                for (int i = 0; i < numberOfRanges; i++)
+                ArrayToken? rangesArray = RangeValues;
+                if (rangesArray is not null && rangesArray.Length > 0)
                 {
-                    int index = i << 1;
-                    result[i] = ClipToRange(inputValues[i], rangeValues[index], rangeValues[index + 1]);
+                    rangeValuesCache = rangesArray.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
                 }
             }
-            else
+            return rangeValuesCache;
+        }
+
+        /// <summary>
+        /// Clip the given values to the ranges in place.
+        /// </summary>
+        /// <param name="values">The values to clip. Modified in place if a range is defined.</param>
+        /// <returns>The number of values that were considered (the smaller of the slice length and the number of declared ranges).</returns>
+        protected int ClipToRange(Span<double> values)
+        {
+            double[]? rangeValues = GetCachedRangeValues();
+            if (rangeValues is null)
             {
-                result = inputValues;
+                return values.Length;
             }
-            return result;
+            int numberOfRanges = rangeValues.Length / 2;
+            int upper = numberOfRanges < values.Length ? numberOfRanges : values.Length;
+            for (int i = 0; i < upper; i++)
+            {
+                int index = i << 1;
+                values[i] = ClipToRange(values[i], rangeValues[index], rangeValues[index + 1]);
+            }
+            return upper;
         }
 
         /// <summary>

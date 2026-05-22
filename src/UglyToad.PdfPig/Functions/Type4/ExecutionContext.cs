@@ -1,9 +1,7 @@
 ﻿namespace UglyToad.PdfPig.Functions.Type4
 {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
-    using System.Linq;
 
     internal sealed class ExecutionContext
     {
@@ -25,10 +23,12 @@
 
         internal void AddAllToStack(IEnumerable<object> values)
         {
-            var valuesList = values.ToList();
-            valuesList.AddRange(Stack);
-            valuesList.Reverse();
-            this.Stack = new Stack<object>(valuesList);
+            // Push in reverse so the first item of values ends up on top of the stack
+            var list = values as IList<object> ?? new List<object>(values);
+            for (int i = list.Count - 1; i >= 0; i--)
+            {
+                Stack.Push(list[i]);
+            }
         }
 
         /// <summary>

@@ -1,6 +1,7 @@
-﻿namespace UglyToad.PdfPig.Functions
+namespace UglyToad.PdfPig.Functions
 {
     using System;
+    using System.Linq;
     using UglyToad.PdfPig.Tokens;
 
     /// <summary>
@@ -8,6 +9,10 @@
     /// </summary>
     internal sealed class PdfFunctionType2 : PdfFunction
     {
+        private readonly double[] c0Values;
+        private readonly double[] c1Values;
+        private readonly int componentCount;
+
         /// <summary>
         /// Exponential interpolation function
         /// </summary>
@@ -17,6 +22,9 @@
             C0 = c0;
             C1 = c1;
             N = n;
+            c0Values = c0.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
+            c1Values = c1.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
+            componentCount = Math.Min(c0Values.Length, c1Values.Length);
         }
 
         internal PdfFunctionType2(StreamToken function, ArrayToken domain, ArrayToken? range, ArrayToken c0, ArrayToken c1, double n)
@@ -25,30 +33,30 @@
             C0 = c0;
             C1 = c1;
             N = n;
+            c0Values = c0.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
+            c1Values = c1.Data.OfType<NumericToken>().Select(t => t.Double).ToArray();
+            componentCount = Math.Min(c0Values.Length, c1Values.Length);
         }
 
-        public override FunctionTypes FunctionType
-        {
-            get
-            {
-                return FunctionTypes.Exponential;
-            }
-        }
+        public override FunctionTypes FunctionType => FunctionTypes.Exponential;
 
-        public override double[] Eval(params double[] input)
+        protected internal override int MaxOutputComponentCount => componentCount;
+
+        public override int Eval(ReadOnlySpan<double> input, Span<double> output)
         {
             // exponential interpolation
             double xToN = Math.Pow(input[0], N); // x^exponent
 
-            var result = new double[Math.Min(C0.Length, C1.Length)];
-            for (int j = 0; j < result.Length; j++)
+            int count = componentCount;
+            double[] c0 = c0Values;
+            double[] c1 = c1Values;
+            for (int j = 0; j < count; j++)
             {
-                double c0j = ((NumericToken)C0[j]).Double;
-                double c1j = ((NumericToken)C1[j]).Double;
-                result[j] = c0j + xToN * (c1j - c0j);
+                output[j] = c0[j] + xToN * (c1[j] - c0[j]);
             }
 
-            return ClipToRange(result);
+            ClipToRange(output.Slice(0, count));
+            return count;
         }
 
         /// <summary>
