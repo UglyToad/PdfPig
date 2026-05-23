@@ -55,7 +55,7 @@
 
             // Lenient Parsing Off -> throws
             var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(path, ParsingOptions.LenientParsingOff));
-            Assert.Equal("Pages entry is null", ex.Message);
+            Assert.Equal("Pages entry is null.", ex.Message);
         }
         
         [Fact]
