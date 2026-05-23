@@ -3,6 +3,7 @@
     using Content;
     using Graphics.Colors;
     using System;
+    using System.Collections.Generic;
 
     /// <summary>
     /// Utility for working with the bytes in <see cref="IPdfImage"/>s and converting according to their <see cref="ColorSpaceDetails"/>.s
@@ -17,6 +18,22 @@
         /// </summary>
         public static Span<byte> Convert(ColorSpaceDetails details, Span<byte> decoded, int bitsPerComponent, int imageWidth, int imageHeight)
         {
+            return Convert(details, decoded, bitsPerComponent, imageWidth, imageHeight, null);
+        }
+
+        /// <summary>
+        /// Converts the output bytes (if available) of <see cref="IPdfImage.TryGetBytesAsMemory"/>
+        /// to actual pixel values using the <see cref="IPdfImage.ColorSpaceDetails"/>, applying the image's
+        /// <paramref name="decode"/> array before the colour space transform.
+        /// </summary>
+        /// <remarks>
+        /// The Decode array (PDF 2.0, 8.9.5.10) maps each raw sample value to a value in the colour-space range
+        /// before the colour space transform is applied. An empty or null <paramref name="decode"/> means "use the
+        /// colour space default" (which is a no-op for the common case). For <see cref="ColorSpace.Indexed"/> the
+        /// sample is itself an index so the byte-level Decode applied here is skipped.
+        /// </remarks>
+        public static Span<byte> Convert(ColorSpaceDetails details, Span<byte> decoded, int bitsPerComponent, int imageWidth, int imageHeight, IReadOnlyList<double>? decode)
+        {
             if (decoded.IsEmpty)
             {
                 return [];
@@ -27,11 +44,10 @@
                 return decoded;
             }
 
-
             if (bitsPerComponent != 8)
             {
                 // Unpack components such that they occupy one byte each
-                decoded = UnpackComponents(decoded, bitsPerComponent, details.Type);
+                decoded = UnpackComponents(decoded, bitsPerComponent);
             }
 
             // Remove padding bytes when the stride width differs from the image width
@@ -51,10 +67,91 @@
                 }
             }
 
+            ApplyDecode(decoded, details, decode, bitsPerComponent);
+
             return details.Transform(decoded);
         }
 
-        private static Span<byte> UnpackComponents(Span<byte> input, int bitsPerComponent, ColorSpace colorSpace)
+        private static void ApplyDecode(Span<byte> samples, ColorSpaceDetails details, IReadOnlyList<double>? decode, int bitsPerComponent)
+        {
+            if (bitsPerComponent == 16)
+            {
+                // bpc passed to ApplyDecode reflects the *post-unpack* sample range:
+                //   - 16bpc is reduced to its 8-bit high-byte equivalent inside UnpackComponents.
+                //   - sub-8bpc samples remain in [0, 2^bpc - 1] after unpacking.
+                bitsPerComponent = 8;
+            }
+
+            int components = details.NumberOfColorComponents;
+            int sampleMax = (1 << bitsPerComponent) - 1;
+            if (sampleMax <= 0)
+            {
+                return;
+            }
+
+            // Per-component output range:
+            //   - Indexed: byte stores a palette INDEX in [0, 2^bpc - 1]; default Decode is [0, 2^bpc - 1]
+            //              (identity), the subsequent palette lookup in Transform produces the actual colour.
+            //   - Non-Indexed: byte stores a colour-space VALUE in [0, 1] scaled to [0, 255]; default Decode
+            //                  is [0, 1].
+            bool isIndexed = details.Type == ColorSpace.Indexed;
+            double defaultDMax = isIndexed ? sampleMax : 1.0;
+            double outputScale = isIndexed ? 1.0 : 255.0;
+            int outputMax = isIndexed ? sampleMax : 255;
+
+            bool hasDecode = decode is not null && decode.Count >= components * 2;
+
+            // Fast-path: skip the loop when the per-byte transform would be the identity.
+            //   - Indexed: default Decode is identity for any bpc (S → S).
+            //   - Non-Indexed 8bpc: default Decode yields S / 255 * 255 = S.
+            // For non-Indexed sub-8bpc the default Decode still needs to stretch samples to bytes.
+            if (!hasDecode || IsDefaultDecode(decode!, components, defaultDMax))
+            {
+                if (isIndexed || bitsPerComponent == 8)
+                {
+                    return;
+                }
+            }
+
+            // Per PDF 2.0 8.9.5.10, for each component c with raw sample S in [0, sampleMax]:
+            //     x_c = Dmin_c + S * (Dmax_c - Dmin_c) / sampleMax
+            // For non-Indexed x_c is a colour-space value (typically [0, 1]) re-scaled to a byte.
+            // For Indexed x_c is the post-Decode palette index, kept in [0, sampleMax].
+            // The result is clamped if the Decode range pushes the output beyond the valid byte range.
+            for (int i = 0; i < samples.Length; i++)
+            {
+                int c = i % components;
+                double dMin = hasDecode ? decode![c * 2] : 0.0;
+                double dMax = hasDecode ? decode![c * 2 + 1] : defaultDMax;
+                double x = dMin + samples[i] * (dMax - dMin) / sampleMax;
+                int rounded = (int)Math.Round(x * outputScale, MidpointRounding.AwayFromZero);
+                if (rounded < 0)
+                {
+                    rounded = 0;
+                }
+                else if (rounded > outputMax)
+                {
+                    rounded = outputMax;
+                }
+
+                samples[i] = (byte)rounded;
+            }
+        }
+
+        private static bool IsDefaultDecode(IReadOnlyList<double> decode, int components, double defaultDMax)
+        {
+            for (int c = 0; c < components; c++)
+            {
+                if (decode[c * 2] != 0.0 || decode[c * 2 + 1] != defaultDMax)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static Span<byte> UnpackComponents(Span<byte> input, int bitsPerComponent)
         {
             if (bitsPerComponent == 16) // Example with MOZILLA-3136-0.pdf (page 3)
             {
@@ -78,27 +175,8 @@
             int right = (int)Math.Pow(2, bitsPerComponent) - 1;
 
             int u = 0;
-
-            // TODO - 1bpc + DeviceGray is required for JBIG2 but needs to be investigated
-            // Why is this required? This does not belong here imo
-            if (bitsPerComponent == 1 && colorSpace != ColorSpace.Indexed)
-            {
-                foreach (byte b in input)
-                {
-                    // Enumerate bits in bitsPerComponent-sized chunks from MSB to LSB, masking on the appropriate bits
-                    for (int i = end; i >= 0; --i)
-                    {
-                        unpacked[u++] = (byte)((b >> i) & right) == 1 ? byte.MaxValue : byte.MinValue;
-                    }
-                }
-
-                return unpacked;
-            }
-
-            // Default method
             foreach (byte b in input)
             {
-                // Enumerate bits in bitsPerComponent-sized chunks from MSB to LSB, masking on the appropriate bits
                 for (int i = end; i >= 0; i -= bitsPerComponent)
                 {
                     unpacked[u++] = (byte)((b >> i) & right);
