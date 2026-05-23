@@ -102,6 +102,18 @@
             return value is not null;
         }
 
+        private double GetWidth(int characterCode)
+        {
+            var widthIndex = characterCode - firstChar;
+
+            if (widthIndex >= 0 && widthIndex < widths.Length)
+            {
+                return widths[widthIndex];
+            }
+            
+            return boundingBox.Width;
+        }
+
         public CharacterBoundingBox GetBoundingBox(int characterCode)
         {
             if (boundingBoxCache.TryGetValue(characterCode, out var cached))
@@ -113,7 +125,7 @@
 
             characterBoundingBox = fontMatrix.Transform(characterBoundingBox);
 
-            var width = fontMatrix.TransformX(widths[characterCode - firstChar]);
+            var width = fontMatrix.TransformX(GetWidth(characterCode));
 
             var result = new CharacterBoundingBox(characterBoundingBox, width);
             boundingBoxCache[characterCode] = result;
@@ -131,7 +143,7 @@
             // bbox, but parsing it requires running the CharProc stream which
             // this class does not do. Use the font-level FontBBox as the
             // upper bound for any glyph in this font.
-            double width = widths[characterCode - firstChar];
+            double width = GetWidth(characterCode);
 
             double left = boundingBox.Left;
             double right = boundingBox.Right;

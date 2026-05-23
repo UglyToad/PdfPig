@@ -96,11 +96,10 @@
             throw new PdfDocumentFormatException($"Could not find the object number {reference} with type {typeof(T).Name} instead, it was found with type {temp.GetType().Name}.");
         }
 
-#nullable disable
         /// <summary>
         /// Get the token value, using the <see cref="IPdfTokenScanner"/> if it is a <see cref="IndirectReferenceToken"/>.
         /// </summary>
-        public static T Get<T>(IToken token, IPdfTokenScanner scanner) where T : class, IToken
+        public static T? Get<T>(IToken token, IPdfTokenScanner scanner) where T : class, IToken
         {
             scanner.StackDepthGuard.Enter();
             try
@@ -122,6 +121,5 @@
 
             throw new PdfDocumentFormatException($"Could not find the object {token} with type {typeof(T).Name} instead, it was found with type {token.GetType().Name}.");
         }
-#nullable enable
     }
 }
