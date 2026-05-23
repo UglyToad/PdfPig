@@ -9,7 +9,7 @@ public class AdvanceMergeTests
     [Fact]
     public void TestAdvanceMerge()
     {
-        using var inputFile = File.Open(IntegrationHelpers.GetDocumentPath("Various Content Types.pdf"), FileMode.Open, FileAccess.Read);
+        using var inputFile = File.Open(IntegrationHelpers.GetSpecificTestDocumentPath("Various Content Types_merge.pdf"), FileMode.Open, FileAccess.Read);
         using var input = new MemoryStream();
         inputFile.CopyTo(input);
         input.Seek(0, SeekOrigin.Begin);
