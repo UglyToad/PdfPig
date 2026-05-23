@@ -74,11 +74,13 @@
             if (dictionary.TryGet(NameToken.BaseFont, out var nameBase))
             {
                 var name = DirectObjectFinder.Get<NameToken>(nameBase, pdfScanner);
-
-                return name;
+                if (name is not null)
+                {
+                    return name;
+                }
             }
 
-            if (descriptor.FontName != null)
+            if (descriptor.FontName is not null)
             {
                 return descriptor.FontName;
             }

@@ -48,7 +48,10 @@
             if (dictionary.TryGet(NameToken.ToUnicode, out var toUnicodeObj))
             {
                 var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, scanner);
-                cmapLocalCache.TryGet(toUnicode, out toUnicodeCMap);
+                if (toUnicode is not null)
+                {
+                    cmapLocalCache.TryGet(toUnicode, out toUnicodeCMap);
+                }
             }
 
             var name = GetFontName(dictionary);
@@ -97,7 +100,11 @@
             }
 
             var matrixArray = DirectObjectFinder.Get<ArrayToken>(matrixObject, scanner);
-            
+            if (matrixArray is null)
+            {
+                throw new InvalidFontFormatException($"Invalid font matrix found: {dictionary} (token: {matrixObject}).");
+            }
+
             return TransformationMatrix.FromValues(matrixArray.GetNumeric(0).Double, matrixArray.GetNumeric(1).Double,
                 matrixArray.GetNumeric(2).Double, matrixArray.GetNumeric(3).Double, matrixArray.GetNumeric(4).Double,
                 matrixArray.GetNumeric(5).Double);

@@ -137,7 +137,7 @@
                 try
                 {
                     var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, pdfScanner);
-                    if (!cmapLocalCache.TryGet(toUnicode, out toUnicodeCMap))
+                    if (toUnicode is null || !cmapLocalCache.TryGet(toUnicode, out toUnicodeCMap))
                     {
                         log.Error("Failed to decode ToUnicode CMap for a TrueType font in file.");
                     }

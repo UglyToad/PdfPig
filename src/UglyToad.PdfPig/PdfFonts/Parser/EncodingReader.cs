@@ -51,14 +51,14 @@
                 }
             }
 
-            DictionaryToken encodingDictionary = DirectObjectFinder.Get<DictionaryToken>(baseEncodingObject, pdfScanner);
+            DictionaryToken? encodingDictionary = DirectObjectFinder.Get<DictionaryToken>(baseEncodingObject, pdfScanner);
 
             var encoding = ReadEncodingDictionary(encodingDictionary, fontEncoding);
 
             return encoding;
         }
 
-        private Encoding? ReadEncodingDictionary(DictionaryToken encodingDictionary, Encoding? fontEncoding)
+        private Encoding? ReadEncodingDictionary(DictionaryToken? encodingDictionary, Encoding? fontEncoding)
         {
             if (encodingDictionary is null)
             {
@@ -93,11 +93,11 @@
             return newEncoding;
         }
 
-        private static IReadOnlyList<(int, string)> ProcessDifferences(ArrayToken differenceArray)
+        private static IReadOnlyList<(int, string)> ProcessDifferences(ArrayToken? differenceArray)
         {
             var differences = new List<(int, string)>();
 
-            if (differenceArray.Length == 0)
+            if (differenceArray is null || differenceArray.Length == 0)
             {
                 return differences;
             }
