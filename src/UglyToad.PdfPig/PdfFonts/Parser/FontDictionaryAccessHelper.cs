@@ -36,7 +36,11 @@
             }
 
             var widthArray = DirectObjectFinder.Get<ArrayToken>(token, pdfScanner);
-
+            if (widthArray is null)
+            {
+                return [];
+            }
+            
             var result = new double[widthArray.Data.Count];
             for (int i = 0; i < widthArray.Data.Count; i++)
             {
