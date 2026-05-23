@@ -3,6 +3,7 @@
     using PdfPig.Core;
     using SkiaSharp;
     using System.IO;
+    using UglyToad.PdfPig.Fonts.SystemFonts;
     using UglyToad.PdfPig.Tests.Integration.VisualVerification.SkiaHelpers;
 
     public class GenerateLetterGlyphImages
@@ -216,9 +217,11 @@
             Run("FontMatrix-raw");
         }
 
-        [Fact]
+        [SkippableFact]
         public void JudgementDocument()
         {
+            var font = SystemFontFinder.Instance.GetTrueTypeFont("TimesNewRomanPSMT");
+            Skip.If(font is null, "Skipped because the font TimesNewRomanPSMT could not be found in the execution environment.");
             Run("Judgement Document");
         }
 
@@ -444,9 +447,11 @@
             Run("pop-bugzilla37292");
         }
 
-        [Fact]
+        [SkippableFact]
         public void MultiPageMortalityStatistics()
         {
+            var font = SystemFontFinder.Instance.GetTrueTypeFont("TimesNewRomanPSMT");
+            Skip.If(font is null, "Skipped because the font TimesNewRomanPSMT could not be found in the execution environment.");
             Run("Multiple Page - from Mortality Statistics");
         }
 
