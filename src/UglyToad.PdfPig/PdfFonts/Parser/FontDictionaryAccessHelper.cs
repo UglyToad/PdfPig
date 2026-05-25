@@ -54,7 +54,7 @@
                     }
                     else
                     {
-                        throw new InvalidFontFormatException(...);
+                        throw new InvalidFontFormatException($"Token which was not a number found in the widths array: {arrayToken}.");
                     }
                 }
 
