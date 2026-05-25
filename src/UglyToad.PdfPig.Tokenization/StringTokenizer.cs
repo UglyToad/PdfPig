@@ -160,7 +160,7 @@ namespace UglyToad.PdfPig.Tokenization
                 if (builder[0] == 0xFE && builder[1] == 0xFF)
                 {
                     var rawBytes = OtherEncodings.StringAsLatin1Bytes(builder.ToString());
-                    originalRawBytes = (byte[])rawBytes.Clone();
+                    originalRawBytes = rawBytes;
 
                     tokenStr = Encoding.BigEndianUnicode.GetString(rawBytes).Substring(1);
 
@@ -169,7 +169,7 @@ namespace UglyToad.PdfPig.Tokenization
                 else if (builder[0] == 0xFF && builder[1] == 0xFE)
                 {
                     var rawBytes = OtherEncodings.StringAsLatin1Bytes(builder.ToString());
-                    originalRawBytes = (byte[])rawBytes.Clone();
+                    originalRawBytes = rawBytes;
 
                     tokenStr = Encoding.Unicode.GetString(rawBytes).Substring(1);
 
