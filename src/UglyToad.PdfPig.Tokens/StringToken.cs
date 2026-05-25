@@ -51,7 +51,12 @@ namespace UglyToad.PdfPig.Tokens
                 }
                 case Encoding.Utf16:
                 {
-                    return System.Text.Encoding.Unicode.GetBytes(Data);
+                    var data = System.Text.Encoding.Unicode.GetBytes(Data);
+                    var result = new byte[data.Length + 2];
+                    result[0] = 0xFF;
+                    result[1] = 0xFE;
+                    Array.Copy(data, 0, result, 2, data.Length);
+                    return result;
                 }
                 case Encoding.PdfDocEncoding:
                     return PdfDocEncoding.StringToBytes(Data);
