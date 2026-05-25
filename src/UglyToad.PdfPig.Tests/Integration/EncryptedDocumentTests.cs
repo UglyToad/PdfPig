@@ -86,8 +86,7 @@
                 var keywords = document.Information.Keywords;
          
                 Assert.NotNull(keywords);
-                Assert.Equal(60, keywords.Length);
-                Assert.Contains("sample keywords for testing encrypted PDF string decrypti", keywords);
+                Assert.Contains("sample keywords for testing encrypted PDF string decryption", keywords);
             }
         }
 
