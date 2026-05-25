@@ -48,7 +48,14 @@
 
                 if (!(arrayToken is NumericToken number))
                 {
-                    throw new InvalidFontFormatException($"Token which was not a number found in the widths array: {arrayToken}.");
+                    if (DirectObjectFinder.TryGet<NumericToken>(arrayToken, pdfScanner, out var resolved))
+                    {
+                        number = resolved;
+                    }
+                    else
+                    {
+                        throw new InvalidFontFormatException($"Token which was not a number found in the widths array: {arrayToken}.");
+                    }
                 }
 
                 result[i] = number.Double;
