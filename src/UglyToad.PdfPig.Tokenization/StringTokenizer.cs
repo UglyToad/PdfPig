@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Tokenization
+namespace UglyToad.PdfPig.Tokenization
 {
     using System.Text;
     using Core;
@@ -154,11 +154,13 @@
 
             StringToken.Encoding encodedWith;
             string tokenStr;
+            byte[] originalRawBytes = null;
             if (builder.Length >= 2)
             {
                 if (builder[0] == 0xFE && builder[1] == 0xFF)
                 {
                     var rawBytes = OtherEncodings.StringAsLatin1Bytes(builder.ToString());
+                    originalRawBytes = (byte[])rawBytes.Clone();
 
                     tokenStr = Encoding.BigEndianUnicode.GetString(rawBytes).Substring(1);
 
@@ -167,6 +169,7 @@
                 else if (builder[0] == 0xFF && builder[1] == 0xFE)
                 {
                     var rawBytes = OtherEncodings.StringAsLatin1Bytes(builder.ToString());
+                    originalRawBytes = (byte[])rawBytes.Clone();
 
                     tokenStr = Encoding.Unicode.GetString(rawBytes).Substring(1);
 
@@ -218,7 +221,9 @@
 
             builder.Clear();
 
-            token = new StringToken(tokenStr, encodedWith);
+            token = originalRawBytes != null
+                ? new StringToken(tokenStr, encodedWith, originalRawBytes)
+                : new StringToken(tokenStr, encodedWith);
 
             return true;
         }
