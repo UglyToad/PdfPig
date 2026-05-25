@@ -8,6 +8,8 @@ namespace UglyToad.PdfPig.Tokens
     /// </summary>
     public class StringToken : IDataToken<string>
     {
+        private readonly byte[] rawBytes;
+
         /// <summary>
         /// The string in the token.
         /// </summary>
@@ -31,10 +33,28 @@ namespace UglyToad.PdfPig.Tokens
         }
 
         /// <summary>
+        /// Create a new <see cref="StringToken"/> with preserved raw bytes.
+        /// </summary>
+        /// <param name="data">The string data for the token to contain.</param>
+        /// <param name="encodedWith">The encoding used to generate the <see cref="Data"/>.</param>
+        /// <param name="rawBytes">The original raw bytes from the PDF file.</param>
+        public StringToken(string data, Encoding encodedWith, byte[] rawBytes)
+        {
+            Data = data ?? throw new ArgumentNullException(nameof(data));
+            EncodedWith = encodedWith;
+            this.rawBytes = rawBytes;
+        }
+
+        /// <summary>
         /// Convert the <see langword="string"/> in <see cref="Data"/> back to bytes.
         /// </summary>
         public byte[] GetBytes()
         {
+            if (rawBytes != null)
+            {
+                return rawBytes;
+            }
+
             switch (EncodedWith)
             {
                 case Encoding.Utf16BE:
