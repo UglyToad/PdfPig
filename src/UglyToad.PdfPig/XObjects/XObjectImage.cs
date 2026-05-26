@@ -17,6 +17,8 @@
     public class XObjectImage : IPdfImage
     {
         private readonly Lazy<Memory<byte>>? memoryFactory;
+        private readonly Lazy<Memory<byte>> rawMemoryFactory;
+        private readonly bool hasBytesAvailable;
 
         /// <inheritdoc />
         public PdfRectangle BoundingBox { get; }
@@ -61,10 +63,13 @@
         public DictionaryToken ImageDictionary { get; }
 
         /// <inheritdoc />
-        public Memory<byte> RawMemory { get; }
+        public Memory<byte> RawMemory => rawMemoryFactory.Value;
 
         /// <inheritdoc />
         public Span<byte> RawBytes => RawMemory.Span;
+
+        /// <inheritdoc />
+        public bool HasLoadedBytes => hasBytesAvailable;
 
         /// <inheritdoc />
         public ColorSpaceDetails? ColorSpaceDetails { get; }
@@ -85,7 +90,8 @@
             bool interpolate,
             IReadOnlyList<double> decode,
             DictionaryToken imageDictionary,
-            Memory<byte> rawMemory,
+            Lazy<Memory<byte>> rawMemory,
+            bool hasBytesAvailable,
             Lazy<Memory<byte>>? bytes,
             ColorSpaceDetails? colorSpaceDetails,
             IPdfImage? softMaskImage)
@@ -100,7 +106,8 @@
             Interpolate = interpolate;
             Decode = decode;
             ImageDictionary = imageDictionary ?? throw new ArgumentNullException(nameof(imageDictionary));
-            RawMemory = rawMemory;
+            rawMemoryFactory = rawMemory ?? throw new ArgumentNullException(nameof(rawMemory));
+            this.hasBytesAvailable = hasBytesAvailable;
             ColorSpaceDetails = colorSpaceDetails;
             memoryFactory = bytes;
             MaskImage = softMaskImage;

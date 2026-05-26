@@ -105,11 +105,14 @@
             {
                 if (isJpxDecode)
                 {
-                    // Optional for JPX
                     if (dictionary.TryGet(NameToken.BitsPerComponent, out NumericToken? bitsPerComponentToken))
                     {
                         bitsPerComponent = bitsPerComponentToken.Int;
-                        System.Diagnostics.Debug.Assert(bitsPerComponent == Jpeg2000Helper.GetBitsPerComponent(xObject.Stream.Data.Span));
+                    }
+                    else if (!xObject.Stream.IsDataLoaded)
+                    {
+                        // Stream data not yet loaded (lazy loading), default to 8 bpc for JPX
+                        bitsPerComponent = 8;
                     }
                     else
                     {
@@ -148,8 +151,10 @@
                 }
             }
             
-            var streamToken = new StreamToken(dictionary, xObject.Stream.Data); // Needed as Resolve(pdfScanner) was called on the dictionary
-            var decodedBytes = supportsFilters ? new Lazy<Memory<byte>>(() => streamToken.Decode(filterProvider, pdfScanner))
+            var rawBytes = new Lazy<Memory<byte>>(() => xObject.Stream.Data);
+            var streamToken = new Lazy<StreamToken>(() => new StreamToken(dictionary, xObject.Stream.Data));
+            var decodedBytes = supportsFilters
+                ? new Lazy<Memory<byte>>(() => streamToken.Value.Decode(filterProvider, pdfScanner))
                 : null;
 
             var decode = Array.Empty<double>();
@@ -193,7 +198,8 @@
                 interpolate,
                 decode,
                 dictionary,
-                xObject.Stream.Data,
+                rawBytes,
+                true,
                 decodedBytes,
                 details,
                 softMaskImage);

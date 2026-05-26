@@ -8,6 +8,8 @@
     /// </summary>
     public sealed class StreamToken : IDataToken<Memory<byte>>
     {
+        private readonly Lazy<Memory<byte>> lazyData;
+
         /// <summary>
         /// The dictionary specifying the length of the stream, any applied compression filters and additional information.
         /// </summary>
@@ -16,7 +18,7 @@
         /// <summary>
         /// The compressed byte data of the stream.
         /// </summary>
-        public Memory<byte> Data { get; }
+        public Memory<byte> Data => lazyData.Value;
 
         /// <summary>
         /// Create a new <see cref="StreamToken"/>.
@@ -26,7 +28,12 @@
         public StreamToken(DictionaryToken streamDictionary, byte[] data)
         {
             StreamDictionary = streamDictionary ?? throw new ArgumentNullException(nameof(streamDictionary));
-            Data = data ?? throw new ArgumentNullException(nameof(data));
+            if (data is null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
+            lazyData = new Lazy<Memory<byte>>(() => (Memory<byte>)data);
         }
 
         /// <summary>
@@ -37,8 +44,31 @@
         public StreamToken(DictionaryToken streamDictionary, Memory<byte> data)
         {
             StreamDictionary = streamDictionary ?? throw new ArgumentNullException(nameof(streamDictionary));
-            Data = data;
+            lazyData = new Lazy<Memory<byte>>(() => data);
         }
+
+        /// <summary>
+        /// Create a new <see cref="StreamToken"/> with deferred data loading.
+        /// </summary>
+        /// <param name="streamDictionary">The stream dictionary.</param>
+        /// <param name="dataFactory">A factory function that produces the stream data on first access.</param>
+        internal StreamToken(DictionaryToken streamDictionary, Func<Memory<byte>> dataFactory)
+        {
+            StreamDictionary = streamDictionary ?? throw new ArgumentNullException(nameof(streamDictionary));
+            if (dataFactory is null)
+            {
+                throw new ArgumentNullException(nameof(dataFactory));
+            }
+
+            lazyData = new Lazy<Memory<byte>>(dataFactory);
+        }
+
+        /// <summary>
+        /// Whether the stream byte data has been loaded into memory.
+        /// Returns <see langword="false"/> when the stream was created with deferred loading
+        /// and the data has not yet been accessed.
+        /// </summary>
+        internal bool IsDataLoaded => lazyData.IsValueCreated;
 
         /// <inheritdoc />
         public bool Equals(IToken obj)
@@ -64,6 +94,11 @@
         /// <inheritdoc />
         public override string ToString()
         {
+            if (!lazyData.IsValueCreated)
+            {
+                return $"Length: deferred, Dictionary: {StreamDictionary}";
+            }
+
             return $"Length: {Data.Length}, Dictionary: {StreamDictionary}";
         }
     }

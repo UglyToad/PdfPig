@@ -63,5 +63,16 @@
         /// Filter provider to use while parsing the document. The <see cref="DefaultFilterProvider"/> will be used if set to <c>null</c>.
         /// </summary>
         public IFilterProvider? FilterProvider { get; set; } = null;
+
+        /// <summary>
+        /// Whether to defer loading stream byte data until it is first accessed.
+        /// When <see langword="true"/>, stream data (images, fonts, etc.) is not read from
+        /// the PDF file during initial parsing but loaded on demand when accessed. This can
+        /// reduce memory usage for large documents where not all pages or images are needed.
+        /// Requires the underlying PDF stream to remain open and seekable for the lifetime
+        /// of the <see cref="PdfDocument"/>.
+        /// Defaults to <see langword="false"/> for backwards compatibility.
+        /// </summary>
+        public bool LazyLoading { get; set; } = false;
     }
 }

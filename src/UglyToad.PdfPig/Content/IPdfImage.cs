@@ -47,6 +47,14 @@
         Span<byte> RawBytes { get; }
 
         /// <summary>
+        /// Whether the image byte data is available. Returns <see langword="false"/> when
+        /// <see cref="ParsingOptions.LazyLoading"/> is <see langword="true"/> and the bytes
+        /// have not yet been accessed.
+        /// Image metadata (dimensions, color space, bounding box) is available regardless.
+        /// </summary>
+        bool HasLoadedBytes { get; }
+
+        /// <summary>
         /// The color rendering intent to be used when rendering the image.
         /// </summary>
         RenderingIntent RenderingIntent { get; }

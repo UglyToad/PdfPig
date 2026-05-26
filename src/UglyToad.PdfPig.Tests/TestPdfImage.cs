@@ -22,6 +22,8 @@
 
         public Span<byte> RawBytes => RawMemory.Span;
 
+        public bool HasLoadedBytes => !RawMemory.IsEmpty;
+
         public RenderingIntent RenderingIntent { get; set; } = RenderingIntent.RelativeColorimetric;
 
         public bool IsImageMask { get; set; }
