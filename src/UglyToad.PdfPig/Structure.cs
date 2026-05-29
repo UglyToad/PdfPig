@@ -35,8 +35,9 @@
 
         /// <summary>
         /// Provides access to tokenization capabilities for objects by object number.
+        /// This is the document-level token scanner used to dereference indirect object references.
         /// </summary>
-        internal IPdfTokenScanner TokenScanner { get; }
+        public IPdfTokenScanner TokenScanner { get; }
 
         internal Structure(
             Catalog catalog,
