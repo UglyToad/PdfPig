@@ -76,7 +76,17 @@ namespace UglyToad.PdfPig.PdfFonts.Cmap
         {
             var code = GetCodeFromArray(bytes);
 
-            BaseFontCharacterMap[code] = value;
+            // Some malformed CMaps define the same code multiple times with different destinations.
+            // The first mapping encountered takes precedence, (see GitHub issue #1309).
+
+#if NET
+            BaseFontCharacterMap.TryAdd(code, value);
+#else
+            if (!BaseFontCharacterMap.ContainsKey(code))
+            {
+                BaseFontCharacterMap[code] = value;
+            }
+#endif
         }
 
         public CMap Build()
