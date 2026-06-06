@@ -12,6 +12,23 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1309()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("LKR824191.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true, UseActualText = true }))
+            {
+                var page = document.GetPage(1);
+                var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
+                var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
+                Assert.Equal(23, blocks.Count);
+
+                var text = blocks[13].Text;
+                Assert.Equal("-5,15 -5,15 -1,24 -6,39", text);
+            }
+        }
+
+        [Fact]
         public void Issues1297_1()
         {
             var path = IntegrationHelpers.GetDocumentPath("soundandvision.pdf");
