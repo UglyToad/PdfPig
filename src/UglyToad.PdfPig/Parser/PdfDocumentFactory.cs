@@ -127,7 +127,7 @@
 
             var version = FileHeaderParser.Parse(scanner, inputBytes, parsingOptions.UseLenientParsing, parsingOptions.Logger);
 
-            var fileHeaderOffset = new FileHeaderOffset((int)version.OffsetInFile);
+            var fileHeaderOffset = new FileHeaderOffset(version.OffsetInFile);
 
             var initialParse = FirstPassParser.Parse(
                 fileHeaderOffset,
