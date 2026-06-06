@@ -9,7 +9,7 @@
     using Fonts.Encodings;
     using Tokens;
 
-    internal class Type3Font : IFont
+    internal class Type3Font : IType3Font
     {
         private readonly PdfRectangle boundingBox;
         private readonly TransformationMatrix fontMatrix;
@@ -20,6 +20,8 @@
         private readonly int lastChar;
         private readonly double[] widths;
         private readonly ToUnicodeCMap toUnicodeCMap;
+        private readonly IReadOnlyDictionary<string, StreamToken>? charProcs;
+        private readonly Dictionary<int, CharacterBoundingBox> boundingBoxCache = new();
 
         /// <summary>
         /// Type 3 fonts are usually unnamed.
@@ -30,9 +32,13 @@
 
         public FontDetails Details { get; }
 
+        /// <inheritdoc/>
+        public DictionaryToken? Type3Resources { get; }
+
         public Type3Font(NameToken name, PdfRectangle boundingBox, TransformationMatrix fontMatrix,
             Encoding encoding, int firstChar, int lastChar, double[] widths,
-            CMap toUnicodeCMap)
+            CMap toUnicodeCMap, IReadOnlyDictionary<string, StreamToken>? charProcs,
+            DictionaryToken? resources)
         {
             Name = name;
 
@@ -43,6 +49,8 @@
             this.lastChar = lastChar;
             this.widths = widths;
             this.toUnicodeCMap = new ToUnicodeCMap(toUnicodeCMap);
+            this.charProcs = charProcs;
+            Type3Resources = resources;
             Details = FontDetails.GetDefault(name?.Data);
 
             // Assumption is ZapfDingbats is not possible here. We need to change the behaviour if not the case
@@ -94,15 +102,34 @@
             return value is not null;
         }
 
+        private double GetWidth(int characterCode)
+        {
+            var widthIndex = characterCode - firstChar;
+
+            if (widthIndex >= 0 && widthIndex < widths.Length)
+            {
+                return widths[widthIndex];
+            }
+            
+            return boundingBox.Width;
+        }
+
         public CharacterBoundingBox GetBoundingBox(int characterCode)
         {
+            if (boundingBoxCache.TryGetValue(characterCode, out var cached))
+            {
+                return cached;
+            }
+
             var characterBoundingBox = GetBoundingBoxInGlyphSpace(characterCode);
 
             characterBoundingBox = fontMatrix.Transform(characterBoundingBox);
 
-            var width = fontMatrix.TransformX(widths[characterCode - firstChar]);
+            var width = fontMatrix.TransformX(GetWidth(characterCode));
 
-            return new CharacterBoundingBox(characterBoundingBox, width);
+            var result = new CharacterBoundingBox(characterBoundingBox, width);
+            boundingBoxCache[characterCode] = result;
+            return result;
         }
 
         private PdfRectangle GetBoundingBoxInGlyphSpace(int characterCode)
@@ -112,7 +139,29 @@
                 throw new InvalidFontFormatException($"The character code was not contained in the widths array: {characterCode}.");
             }
 
-            return new PdfRectangle(0, 0, widths[characterCode - firstChar], boundingBox.Height);
+            // The CharProc's d1 operator would declare a precise per-glyph
+            // bbox, but parsing it requires running the CharProc stream which
+            // this class does not do. Use the font-level FontBBox as the
+            // upper bound for any glyph in this font.
+            double width = GetWidth(characterCode);
+
+            double left = boundingBox.Left;
+            double right = boundingBox.Right;
+
+            // If the advance width exceeds the FontBBox right edge (common
+            // for d0 charprocs that only declare an advance), widen the
+            // rectangle so paint up to the advance edge is covered.
+            if (width > right)
+            {
+                right = width;
+            }
+
+            if (left > 0)
+            {
+                left = 0;
+            }
+
+            return new PdfRectangle(left, boundingBox.Bottom, right, boundingBox.Top);
         }
 
         public TransformationMatrix GetFontMatrix()
@@ -138,6 +187,33 @@
         {
             path = null;
             return false;
+        }
+
+        /// <inheritdoc/>
+        public bool TryGetCharProc(int characterCode, [NotNullWhen(true)] out StreamToken? charProcStream)
+        {
+            charProcStream = null;
+            if (charProcs is null || encoding is null)
+            {
+                return false;
+            }
+
+            string name;
+            try
+            {
+                name = encoding.GetName(characterCode);
+            }
+            catch
+            {
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(name))
+            {
+                return false;
+            }
+
+            return charProcs.TryGetValue(name, out charProcStream);
         }
 
         /// <summary>

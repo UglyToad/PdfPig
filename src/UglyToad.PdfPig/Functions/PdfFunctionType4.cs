@@ -1,4 +1,4 @@
-﻿namespace UglyToad.PdfPig.Functions
+namespace UglyToad.PdfPig.Functions
 {
     using System;
     using System.Text;
@@ -13,7 +13,7 @@
     {
         private readonly Operators operators = new Operators();
         private readonly InstructionSequence instructions;
-
+        
         /// <summary>
         /// PostScript calculator function
         /// </summary>
@@ -24,15 +24,9 @@
             this.instructions = InstructionSequenceBuilder.Parse(str);
         }
 
-        public override FunctionTypes FunctionType
-        {
-            get
-            {
-                return FunctionTypes.PostScript;
-            }
-        }
+        public override FunctionTypes FunctionType => FunctionTypes.PostScript;
 
-        public override double[] Eval(params double[] input)
+        public override int Eval(ReadOnlySpan<double> input, Span<double> output)
         {
             //Setup the input values
             ExecutionContext context = new ExecutionContext(operators);
@@ -56,16 +50,14 @@
                         + " values but the Range entry indicates that "
                         + numberOfOutputValues + " values be returned.");
             }
-            double[] outputValues = new double[numberOfOutputValues];
             for (int i = numberOfOutputValues - 1; i >= 0; i--)
             {
                 PdfRange range = GetRangeForOutput(i);
-                outputValues[i] = context.PopReal();
-                outputValues[i] = ClipToRange(outputValues[i], range.Min, range.Max);
+                double v = context.PopReal();
+                output[i] = ClipToRange(v, range.Min, range.Max);
             }
 
-            //Return the resulting array
-            return outputValues;
+            return numberOfOutputValues;
         }
     }
 }

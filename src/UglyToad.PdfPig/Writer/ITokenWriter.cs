@@ -33,10 +33,13 @@
         /// <param name="catalogToken">The object representing the catalog dictionary which is referenced from the trailer dictionary.</param>
         /// <param name="outputStream">The output stream to write to.</param>
         /// <param name="documentInformationReference">The object reference for the document information dictionary if present.</param>
+        /// <param name="prevTableLocation">The offset to the previous xref table if present</param>
         void WriteCrossReferenceTable(
             IReadOnlyDictionary<IndirectReference, long> objectOffsets,
-            IndirectReference catalogToken, Stream outputStream,
-            IndirectReference? documentInformationReference);
+            IndirectReference catalogToken, 
+            Stream outputStream,
+            IndirectReference? documentInformationReference,
+            long? prevTableLocation);
 
         /// <summary>
         /// Hints to the token writer that we are currently writing page contents.

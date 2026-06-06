@@ -62,6 +62,18 @@
             StateStack.Push(StateStack.Peek().DeepClone());
         }
 
+        public void BeginText()
+        {
+            TextMatrices.TextMatrix = TransformationMatrix.Identity;
+            TextMatrices.TextLineMatrix = TransformationMatrix.Identity;
+        }
+
+        public void EndText()
+        {
+            TextMatrices.TextMatrix = TransformationMatrix.Identity;
+            TextMatrices.TextLineMatrix = TransformationMatrix.Identity;
+        }
+
         public void ShowText(IInputBytes bytes)
         {
         }

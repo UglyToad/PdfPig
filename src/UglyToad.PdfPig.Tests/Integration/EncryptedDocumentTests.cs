@@ -72,6 +72,24 @@
             }
         }
 
+        [Fact]
+        public void CanDecryptStringWhenCiphertextStartsWithBom()
+        {
+            // The Keywords string in this PDF has ciphertext bytes starting with FF FE (UTF-16 LE BOM).
+            // Without the fix, StringTokenizer detects the BOM on encrypted bytes, strips 2 bytes,
+            // and the subsequent RC4 decryption produces garbage.
+            using (var document = PdfDocument.Open(
+                IntegrationHelpers.GetSpecificTestDocumentPath("test-bom-encrypted.pdf")))
+            {
+                Assert.True(document.IsEncrypted);
+         
+                var keywords = document.Information.Keywords;
+         
+                Assert.NotNull(keywords);
+                Assert.Contains("sample keywords for testing encrypted PDF string decryption", keywords);
+            }
+        }
+
         private static string GetPath() => IntegrationHelpers.GetSpecificTestDocumentPath(FileName);
     }
 }

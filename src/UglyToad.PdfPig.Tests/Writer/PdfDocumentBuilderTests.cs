@@ -174,12 +174,12 @@
 
                 Assert.NotNull(document.Structure.Catalog);
 
-                //foreach (var offset in document.Structure.CrossReferenceTable.ObjectOffsets)
-                //{
-                //    var obj = document.Structure.GetObject(offset.Key);
-
-                //    Assert.NotNull(obj);
-                //}
+                foreach (var offset in document.Structure.CrossReferenceTable.ObjectOffsets)
+                {
+                    var obj = document.Structure.GetObject(offset.Key);
+                
+                    Assert.NotNull(obj);
+                }
             }
         }
 
@@ -988,8 +988,8 @@
                 using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
                 {
                     Assert.Equal(2, document.NumberOfPages);
-                    // Assert.True(document.Structure.CrossReferenceTable.ObjectOffsets.Count <= 29,
-                    //  "Expected object count to be lower than 30"); // 45 objects with duplicates, 29 with correct re-use
+                    Assert.True(document.Structure.CrossReferenceTable.ObjectOffsets.Count <= 29,
+                     "Expected object count to be lower than 30"); // 45 objects with duplicates, 29 with correct re-use
                 }
             }
         }
@@ -1010,8 +1010,8 @@
                 using (var document = PdfDocument.Open(result, ParsingOptions.LenientParsingOff))
                 {
                     Assert.Equal(2, document.NumberOfPages);
-                    // Assert.True(document.Structure.CrossReferenceTable.ObjectOffsets.Count <= 29,
-                       // "Expected object count to be lower than 30"); // 45 objects with duplicates, 29 with correct re-use
+                    Assert.True(document.Structure.CrossReferenceTable.ObjectOffsets.Count <= 29,
+                       "Expected object count to be lower than 30"); // 45 objects with duplicates, 29 with correct re-use
                 }
             }
         }
@@ -1404,10 +1404,12 @@
             Objects++;
         }
 
-        public void WriteCrossReferenceTable(IReadOnlyDictionary<IndirectReference, long> objectOffsets,
+        public void WriteCrossReferenceTable(
+            IReadOnlyDictionary<IndirectReference, long> objectOffsets,
             IndirectReference catalogToken,
             Stream outputStream,
-            IndirectReference? documentInformationReference)
+            IndirectReference? documentInformationReference,
+            long? prevTableLocation)
         {
             WroteCrossReferenceTable = true;
         }

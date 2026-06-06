@@ -42,6 +42,20 @@
         void PushState();
 
         /// <summary>
+        /// Begin a text object (BT). Initialises the text matrix and text line matrix to the
+        /// identity, and gives the renderer an opportunity to start accumulating a text clipping
+        /// path (PDF 1.7 §9.3.1, §9.3.6 — text rendering modes 4–7 affect the clipping path on ET).
+        /// </summary>
+        void BeginText();
+
+        /// <summary>
+        /// End the current text object (ET). Resets the text matrices and gives the renderer an
+        /// opportunity to apply any text clipping path that has been accumulated for rendering
+        /// modes 4–7 (PDF 1.7 §9.3.6).
+        /// </summary>
+        void EndText();
+
+        /// <summary>
         /// Shows the text represented by the provided bytes using the current graphics state.
         /// </summary>
         /// <param name="bytes">The bytes of the text.</param>

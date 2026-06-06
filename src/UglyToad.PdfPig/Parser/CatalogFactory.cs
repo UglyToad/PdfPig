@@ -30,7 +30,7 @@
                 throw new PdfDocumentFormatException($"No pages entry was found in the catalog dictionary: {dictionary}.");
             }
 
-            DictionaryToken pagesDictionary;
+            DictionaryToken? pagesDictionary;
             var pagesReference = rootReference;
 
             if (value is IndirectReferenceToken pagesRef)
@@ -47,7 +47,7 @@
                 pagesDictionary = DirectObjectFinder.Get<DictionaryToken>(value, scanner);
             }
 
-            if (pagesDictionary == null)
+            if (pagesDictionary is null)
             {
                 if (isLenientParsing)
                 {
@@ -55,7 +55,7 @@
                 }
                 else
                 {
-                    throw new PdfDocumentFormatException($"Pages entry is null");
+                    throw new PdfDocumentFormatException("Pages entry is null.");
                 }
             }
 

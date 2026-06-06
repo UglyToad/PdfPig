@@ -36,7 +36,11 @@
             }
 
             var widthArray = DirectObjectFinder.Get<ArrayToken>(token, pdfScanner);
-
+            if (widthArray is null)
+            {
+                return [];
+            }
+            
             var result = new double[widthArray.Data.Count];
             for (int i = 0; i < widthArray.Data.Count; i++)
             {
@@ -44,7 +48,14 @@
 
                 if (!(arrayToken is NumericToken number))
                 {
-                    throw new InvalidFontFormatException($"Token which was not a number found in the widths array: {arrayToken}.");
+                    if (DirectObjectFinder.TryGet<NumericToken>(arrayToken, pdfScanner, out var resolved))
+                    {
+                        number = resolved;
+                    }
+                    else
+                    {
+                        throw new InvalidFontFormatException($"Token which was not a number found in the widths array: {arrayToken}.");
+                    }
                 }
 
                 result[i] = number.Double;
@@ -70,11 +81,13 @@
             if (dictionary.TryGet(NameToken.BaseFont, out var nameBase))
             {
                 var name = DirectObjectFinder.Get<NameToken>(nameBase, pdfScanner);
-
-                return name;
+                if (name is not null)
+                {
+                    return name;
+                }
             }
 
-            if (descriptor.FontName != null)
+            if (descriptor.FontName is not null)
             {
                 return descriptor.FontName;
             }

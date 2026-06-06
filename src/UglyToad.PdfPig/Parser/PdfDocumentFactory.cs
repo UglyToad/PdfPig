@@ -165,11 +165,16 @@
 
             pdfScanner.UpdateEncryptionHandler(encryptionHandler);
 
+            var crossReferenceTable = new CrossReferenceTable(
+                initialParse.Parts,
+                initialParse.XrefOffsets,
+                trailer);
+
             var cidFontFactory = new CidFontFactory(
                 parsingOptions.Logger,
                 pdfScanner,
                 filterProvider);
-
+            
             var encodingReader = new EncodingReader(pdfScanner);
 
             var cmapCache = new CMapLocalCache(filterProvider, pdfScanner);
@@ -238,7 +243,9 @@
                 filterProvider,
                 acroFormFactory,
                 bookmarksProvider,
-                parsingOptions);
+                parsingOptions,
+                crossReferenceTable,
+                trailer);
         }
 
         private static (IndirectReference, DictionaryToken) ParseTrailer(

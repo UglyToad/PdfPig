@@ -41,7 +41,7 @@
             if (++depth > maxStackDepth)
             {
                 depth--; // Decrement so Exit remains balanced if someone catches this
-                throw new PdfDocumentFormatException($"Exceeded maximum nesting depth of {maxStackDepth}.");
+                throw new PdfDocumentStackDepthException(maxStackDepth);
             }
         }
 

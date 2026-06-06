@@ -7,6 +7,7 @@
     using AcroForms;
     using Content;
     using Core;
+    using CrossReference;
     using Encryption;
     using Exceptions;
     using Filters;
@@ -76,7 +77,9 @@
             ILookupFilterProvider filterProvider,
             AcroFormFactory acroFormFactory,
             BookmarksProvider bookmarksProvider,
-            ParsingOptions parsingOptions)
+            ParsingOptions parsingOptions,
+            CrossReferenceTable crossReferenceTable,
+            TrailerDictionary trailer)
         {
             this.inputBytes = inputBytes;
             this.version = version ?? throw new ArgumentNullException(nameof(version));
@@ -89,7 +92,7 @@
             Information = information ?? throw new ArgumentNullException(nameof(information));
             pages = catalog.Pages;
             namedDestinations = catalog.NamedDestinations;
-            Structure = new Structure(catalog, pdfScanner);
+            Structure = new Structure(catalog, pdfScanner, trailer, crossReferenceTable);
             Advanced = new AdvancedPdfDocumentAccess(pdfScanner, filterProvider, catalog);
             documentForm = new Lazy<AcroForm>(() => acroFormFactory.GetAcroForm(catalog)!);
         }

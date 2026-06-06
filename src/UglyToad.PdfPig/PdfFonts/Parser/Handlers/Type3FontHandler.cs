@@ -1,5 +1,6 @@
 ﻿namespace UglyToad.PdfPig.PdfFonts.Parser.Handlers
 {
+    using System.Collections.Generic;
     using Cmap;
     using Core;
     using Fonts;
@@ -47,14 +48,38 @@
             if (dictionary.TryGet(NameToken.ToUnicode, out var toUnicodeObj))
             {
                 var toUnicode = DirectObjectFinder.Get<StreamToken>(toUnicodeObj, scanner);
-                cmapLocalCache.TryGet(toUnicode, out toUnicodeCMap);
+                if (toUnicode is not null)
+                {
+                    cmapLocalCache.TryGet(toUnicode, out toUnicodeCMap);
+                }
             }
 
             var name = GetFontName(dictionary);
 
+            var charProcs = ReadCharProcs(dictionary);
+            dictionary.TryGet(NameToken.Resources, scanner, out DictionaryToken? resources);
+
             return new Type3Font(name, boundingBox, fontMatrix, encoding!,
                 firstCharacter,
-                lastCharacter, widths, toUnicodeCMap!);
+                lastCharacter, widths, toUnicodeCMap!, charProcs, resources);
+        }
+
+        private IReadOnlyDictionary<string, StreamToken>? ReadCharProcs(DictionaryToken dictionary)
+        {
+            if (!dictionary.TryGet(NameToken.CharProcs, scanner, out DictionaryToken? charProcsDictionary))
+            {
+                return null;
+            }
+
+            var result = new Dictionary<string, StreamToken>(charProcsDictionary.Data.Count);
+            foreach (var entry in charProcsDictionary.Data)
+            {
+                if (DirectObjectFinder.TryGet(entry.Value, scanner, out StreamToken? charProcStream))
+                {
+                    result[entry.Key] = charProcStream;
+                }
+            }
+            return result;
         }
 
         private NameToken GetFontName(DictionaryToken dictionary)
@@ -75,7 +100,11 @@
             }
 
             var matrixArray = DirectObjectFinder.Get<ArrayToken>(matrixObject, scanner);
-            
+            if (matrixArray is null)
+            {
+                throw new InvalidFontFormatException($"Invalid font matrix found: {dictionary} (token: {matrixObject}).");
+            }
+
             return TransformationMatrix.FromValues(matrixArray.GetNumeric(0).Double, matrixArray.GetNumeric(1).Double,
                 matrixArray.GetNumeric(2).Double, matrixArray.GetNumeric(3).Double, matrixArray.GetNumeric(4).Double,
                 matrixArray.GetNumeric(5).Double);

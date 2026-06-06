@@ -3,6 +3,7 @@
     using PdfPig.Core;
     using SkiaSharp;
     using System.IO;
+    using UglyToad.PdfPig.Fonts.SystemFonts;
     using UglyToad.PdfPig.Tests.Integration.VisualVerification.SkiaHelpers;
 
     public class GenerateLetterGlyphImages
@@ -23,12 +24,13 @@
         private const string MOZILLA_3136_0 = "MOZILLA-3136-0";
 
         private const string OutputPath = "ImagesGlyphs";
-
+        
         private const float Scale = 10f;
 
         private static readonly SKMatrix ScaleMatrix = SKMatrix.CreateScale(Scale, Scale);
 
         private static readonly SKPaint redPaint = new SKPaint() { Color = SKColors.Crimson, StrokeWidth = 1 };
+        private static readonly SKPaint bluePaint = new SKPaint() { Color = SKColors.Blue, StrokeWidth = 5 };
 
         public GenerateLetterGlyphImages()
         {
@@ -38,9 +40,9 @@
             }
         }
 
-        private static string GetFilename(string name)
+        private static string GetFilename(string name, string folder)
         {
-            var documentFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Integration", "Documents"));
+            var documentFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", folder, "Documents"));
 
             if (!name.EndsWith(".pdf"))
             {
@@ -50,9 +52,18 @@
             return Path.Combine(documentFolder, name);
         }
 
-        private static void Run(string file, int pageNo = 1)
+        private static string GetExpectedImageFilename(string name)
         {
-            var pdfFileName = GetFilename(file);
+            var documentFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Integration", "VisualVerification", "ExpectedGlyphs"));
+            return Path.Combine(documentFolder, name);
+        }
+
+        private static void Run(string file, int pageNo = 1, string folder = "Integration")
+        {
+            var pdfFileName = GetFilename(file, folder);
+
+            var imageName = $"{file}_{pageNo}.png";
+            var imageLooseName = $"{file}_{pageNo}_loose.png";
 
             using (var document = PdfDocument.Open(pdfFileName))
             {
@@ -73,10 +84,10 @@
                         foreach (var letter in page.Letters)
                         {
                             DrawRectangle(letter.BoundingBox, canvas, redPaint, size.Height, Scale);
+                            DrawPoint(letter.StartBaseLine, canvas, bluePaint, size.Height, Scale);
                         }
                     }
 
-                    var imageName = $"{file}_{pageNo}.png";
                     var savePath = Path.Combine(OutputPath, imageName);
 
                     using (var fs = new FileStream(savePath, FileMode.Create))
@@ -98,11 +109,11 @@
                         foreach (var letter in page.Letters)
                         {
                             DrawRectangle(letter.GlyphRectangleLoose, canvas, redPaint, size.Height, Scale);
+                            DrawPoint(letter.StartBaseLine, canvas, bluePaint, size.Height, Scale);
                         }
                     }
 
-                    var imageName = $"{file}_{pageNo}_loose.png";
-                    var savePath = Path.Combine(OutputPath, imageName);
+                    var savePath = Path.Combine(OutputPath, imageLooseName);
 
                     using (var fs = new FileStream(savePath, FileMode.Create))
                     using (var d = bmp.Encode(SKEncodedImageFormat.Png, 100))
@@ -111,9 +122,33 @@
                     }
                 }
             }
+
+            // Check output image against expected for any change.
+            // These checks should be seen as regression tests:
+            // The current expected image might not be perfect and might be improved.
+
+            using (SKBitmap actual = SKBitmap.Decode(Path.Combine(OutputPath, imageName)))
+            using (SKBitmap expected = SKBitmap.Decode(GetExpectedImageFilename(imageName)))
+            {
+                Assert.NotNull(actual);
+                Assert.NotNull(expected);
+                Assert.True(actual.GetPixelSpan().SequenceEqual(expected.GetPixelSpan()));
+            }
+            
+            using (SKBitmap actual = SKBitmap.Decode(Path.Combine(OutputPath, imageLooseName)))
+            using (SKBitmap expected = SKBitmap.Decode(GetExpectedImageFilename(imageLooseName)))
+            {
+                Assert.NotNull(actual);
+                Assert.NotNull(expected);
+                Assert.True(actual.GetPixelSpan().SequenceEqual(expected.GetPixelSpan()));
+            }
         }
 
-        private static void DrawRectangle(PdfRectangle rectangle, SKCanvas graphics, SKPaint pen, int imageHeight, double scale)
+        private static void DrawRectangle(PdfRectangle rectangle,
+            SKCanvas graphics,
+            SKPaint pen,
+            int imageHeight,
+            double scale)
         {
             int GetY(PdfPoint p)
             {
@@ -129,6 +164,38 @@
             graphics.DrawLine(GetPoint(rectangle.BottomRight), GetPoint(rectangle.TopRight), pen);
             graphics.DrawLine(GetPoint(rectangle.TopRight), GetPoint(rectangle.TopLeft), pen);
             graphics.DrawLine(GetPoint(rectangle.TopLeft), GetPoint(rectangle.BottomLeft), pen);
+        }
+
+        private static void DrawPoint(PdfPoint point,
+            SKCanvas graphics,
+            SKPaint pen,
+            int imageHeight,
+            double scale)
+        {
+            int GetY(PdfPoint p)
+            {
+                return imageHeight - (int)(p.Y * scale);
+            }
+
+            SKPoint GetPoint(PdfPoint p)
+            {
+                return new SKPoint((int)(p.X * scale), GetY(p));
+            }
+
+            graphics.DrawPoint(GetPoint(point), pen);
+        }
+
+        [Fact]
+        public void caly_issues_56_1()
+        {
+            Run("caly-issues-56-1.pdf", folder: "Dla");
+        }
+
+
+        [Fact]
+        public void Grapheme_clusters_emoji()
+        {
+            Run("Grapheme clusters emoji");
         }
 
         // veraPDF_Issue1010_x -> https://github.com/veraPDF/veraPDF-library/issues/1010
@@ -150,9 +217,11 @@
             Run("FontMatrix-raw");
         }
 
-        [Fact]
+        [SkippableFact]
         public void JudgementDocument()
         {
+            var font = SystemFontFinder.Instance.GetTrueTypeFont("TimesNewRomanPSMT");
+            Skip.If(font is null, "Skipped because the font TimesNewRomanPSMT could not be found in the execution environment.");
             Run("Judgement Document");
         }
 
@@ -378,9 +447,11 @@
             Run("pop-bugzilla37292");
         }
 
-        [Fact]
+        [SkippableFact]
         public void MultiPageMortalityStatistics()
         {
+            var font = SystemFontFinder.Instance.GetTrueTypeFont("TimesNewRomanPSMT");
+            Skip.If(font is null, "Skipped because the font TimesNewRomanPSMT could not be found in the execution environment.");
             Run("Multiple Page - from Mortality Statistics");
         }
 

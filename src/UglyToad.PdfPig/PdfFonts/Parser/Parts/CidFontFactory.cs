@@ -264,12 +264,16 @@
         {
             if (!dictionary.TryGet(NameToken.CidSystemInfo, out var cidEntry))
             {
-                throw new InvalidFontFormatException($"No CID System Info was found in the CID Font dictionary: {dictionary}");
+                throw new InvalidFontFormatException($"No CID System Info was found in the CID Font dictionary: {dictionary}.");
             }
 
             if (!(cidEntry is DictionaryToken cidDictionary))
             {
-                cidDictionary = DirectObjectFinder.Get<DictionaryToken>(cidEntry, pdfScanner);
+                cidDictionary = DirectObjectFinder.Get<DictionaryToken>(cidEntry, pdfScanner)!;
+                if (cidDictionary is null)
+                {
+                    throw new InvalidFontFormatException($"Invalid CID System Info was found in the CID Font dictionary: {dictionary} (token: {cidEntry}).");
+                }
             }
 
             var registry = SafeKeyAccess(cidDictionary, NameToken.Registry);

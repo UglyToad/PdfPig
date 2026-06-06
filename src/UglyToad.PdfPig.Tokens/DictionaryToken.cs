@@ -14,6 +14,11 @@
         /// The key value pairs in this dictionary.
         /// </summary>
         public IReadOnlyDictionary<string, IToken> Data { get; }
+        
+        /// <summary>
+        /// Empty DictionaryToken instance
+        /// </summary>
+        public static readonly DictionaryToken Empty = new(new Dictionary<string, IToken>());
 
         /// <summary>
         /// Create a new <see cref="DictionaryToken"/>.

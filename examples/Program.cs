@@ -47,12 +47,24 @@
                     ("Advance text extraction using layout analysis algorithms",
                     () => AdvancedTextExtraction.Run(Path.Combine(filesDirectory, "ICML03-081.pdf")))                
                 },
-                {
-                8,
+                {8,
                     ("Extract Words with newline detection (example with algorithm). Issue 512",
                     () => OpenDocumentAndExtractWords.Run(Path.Combine(filesDirectory, "OPEN.RABBIT.ENGLISH.LOP.pdf")))
-                } 
-        };
+                } ,
+                {9,
+                    ("Advanced pdf merge, using low level pdf tools, like trailer dictionary and xref table",
+                    () =>
+                    {
+                        using var output = new FileStream("AdvancedMergeResult.pdf", FileMode.Create);
+                        using var input2 = File.Open(Path.Combine(filesDirectory, "EmptyPdf.pdf"), FileMode.Open);
+                        using var input = File.Open(Path.Combine(filesDirectory, "Various Content Types.pdf"), FileMode.Open);
+
+                        input2.CopyTo(output);
+                        output.Seek(0, SeekOrigin.Begin);
+                        AdvancedMerge.Run(input, output);
+                    })
+                }
+            };
 
             var choices = string.Join(Environment.NewLine, examples.Select(x => $"{x.Key}: {x.Value.name}"));
 
