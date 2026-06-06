@@ -173,7 +173,7 @@
                 return cached;
             }
 
-            var fontMatrix = GetFontMatrix();
+            var fontMatrixL = GetFontMatrix();
 
             var boundingBox = GetBoundingBoxInGlyphSpace(characterCode, out var fromFont);
 
@@ -181,7 +181,7 @@
 
             if (fromFont)
             {
-                boundingBox = fontMatrix.Transform(boundingBox);
+                boundingBox = fontMatrixL.Transform(boundingBox);
             }
             else
             {
@@ -191,12 +191,12 @@
             double width;
 
             var index = characterCode - firstCharacter;
-            if (widths != null && index >= 0 && index < widths.Length)
+            if (widths is not null && index >= 0 && index < widths.Length)
             {
                 fromFont = false;
                 width = widths[index];
             }
-            else if (font != null)
+            else if (font is not null)
             {
                 if (!font.TryGetAdvanceWidth(characterCode, out width))
                 {
@@ -209,12 +209,12 @@
             }
             else
             {
-                throw new InvalidOperationException($"Could not retrieve width for character code: {characterCode} in font {Name}.");
+                width = boundingBoxPreTransform;
             }
 
             if (fromFont)
             {
-                width = fontMatrix.TransformX(width);
+                width = fontMatrixL.TransformX(width);
             }
             else
             {
