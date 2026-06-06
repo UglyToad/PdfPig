@@ -62,5 +62,25 @@
                 " targeting resources to those areas most likely to contribute directly to the creation of transformational technologies that can create the businesses and jobs of the future.",
                 text);
         }
+
+        [Fact]
+        public void ReadWordsFromTikka1552Page8_ActualText()
+        {
+            var file = IntegrationHelpers.GetDocumentPath("TIKA-1552-0.pdf");
+
+            using var pdf = PdfDocument.Open(file, new ParsingOptions() { UseActualText = true });
+
+            var page = pdf.GetPage(8);
+
+            var words = page.GetWords();
+
+            var text = string.Join(" ", words.Select(x => x.Text));
+
+            Assert.StartsWith(
+                "2 The Budget Message of the President Administration’s SelectUSA initiative to help draw businesses and investment from around the world to our shores." +
+                " If we want to make the best products, we also have to invest in the best ideas. That is why the Budget maintains a world-class commitment to science and research," +
+                " targeting resources to those areas most likely to contribute directly to the creation of transformational technologies that can create the businesses and jobs of the future.",
+                text);
+        }
     }
 }

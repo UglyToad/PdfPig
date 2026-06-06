@@ -40,6 +40,20 @@ namespace UglyToad.PdfPig.Graphics
 
         private readonly MarkedContentStack markedContentStack = new MarkedContentStack();
 
+        /// <summary>
+        /// The replacement text (/ActualText) of the marked-content sequence currently being
+        /// processed, or <see langword="null"/> when none is active. See the PDF specification,
+        /// 14.9.4 "Replacement text".
+        /// </summary>
+        private string actualText;
+
+        /// <summary>
+        /// Whether the next glyph rendered is the first one within the active <see cref="actualText"/>
+        /// sequence. The replacement text applies to the whole sequence, so it is assigned to the first
+        /// glyph and the remaining glyphs in the sequence receive an empty value.
+        /// </summary>
+        private bool isFirstActualTextGlyph;
+
         public PdfSubpath CurrentSubpath { get; private set; }
 
         public PdfPath CurrentPath { get; private set; }
@@ -97,6 +111,15 @@ namespace UglyToad.PdfPig.Graphics
             in TransformationMatrix transformationMatrix,
             CharacterBoundingBox characterBoundingBox)
         {
+            if (actualText is not null)
+            {
+                // The active marked-content sequence specifies replacement text (/ActualText) for
+                // extraction. It applies to the whole sequence, so assign it to the first glyph and
+                // give the remaining glyphs an empty value to avoid duplicating the replaced text.
+                unicode = isFirstActualTextGlyph ? actualText : string.Empty;
+                isFirstActualTextGlyph = false;
+            }
+
             var transformedGlyphBounds = PerformantRectangleTransformer
                 .Transform(renderingMatrix, textMatrix, transformationMatrix, characterBoundingBox.GlyphBounds);
             
@@ -489,10 +512,30 @@ namespace UglyToad.PdfPig.Graphics
             }
 
             markedContentStack.Push(name, properties);
+
+            // A marked-content sequence may provide replacement text for extraction via /ActualText
+            // (PDF spec, 14.9.4 "Replacement text"). When opted in via ParsingOptions.UseActualText,
+            // honour it so that content with no usable mapping in the font.
+            if (ParsingOptions.UseActualText
+                && properties is not null
+                && properties.TryGet(NameToken.ActualText, PdfScanner, out IDataToken<string> actualTextToken))
+            {
+                // Strip soft hyphens (U+00AD): in replacement text these are conditional hyphens
+                // marking potential line-break points and are meant to be invisible when not broken.
+                // Keeping them would inject invisible characters mid-word and corrupt extracted text.
+                actualText = actualTextToken.Data?.Replace("\u00ad", string.Empty);
+                isFirstActualTextGlyph = true;
+            }
+            else
+            {
+                actualText = null;
+            }
         }
 
         public override void EndMarkedContent()
         {
+            actualText = null;
+
             if (markedContentStack.CanPop)
             {
                 var mc = markedContentStack.Pop(PdfScanner);

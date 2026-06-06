@@ -63,5 +63,14 @@
         /// Filter provider to use while parsing the document. The <see cref="DefaultFilterProvider"/> will be used if set to <c>null</c>.
         /// </summary>
         public IFilterProvider? FilterProvider { get; set; } = null;
+
+        /// <summary>
+        /// Should the parser use the replacement text specified by marked-content <c>/ActualText</c> entries
+        /// when extracting text. When enabled, content enclosed by an <c>/ActualText</c> sequence is extracted
+        /// using that replacement text (see the PDF specification, 14.9.4 "Replacement text") instead of the
+        /// enclosed glyphs' own Unicode values.
+        /// Defaults to <see langword="false"/>.
+        /// </summary>
+        public bool UseActualText { get; set; } = false;
     }
 }
