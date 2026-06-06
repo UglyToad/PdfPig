@@ -12,6 +12,66 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1297_1()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("soundandvision.pdf");
+
+            // UseActualText = true
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true, UseActualText = true }))
+            {
+                var page = document.GetPage(1);
+                var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
+                var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
+                Assert.Equal(24, blocks.Count);
+
+                var text = blocks[18].Text;
+                Assert.Equal("Subtotal:\nTax:\nTotal (EUR):\nReceived:\nTo be paid (EUR):", text);
+            }
+
+            // UseActualText = false
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true, UseActualText = false }))
+            {
+                var page = document.GetPage(1);
+                var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
+                var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
+                Assert.Equal(24, blocks.Count);
+
+                var text = blocks[18].Text;
+                Assert.Equal("Subtotal:\nTax:\nTotal EUR\nReceived:\nTo be paid EUR", text);
+            }
+        }
+
+        [Fact]
+        public void Issues1297_2()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("Arve.nr.1615.17.04.2026.pdf");
+
+            // UseActualText = true
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true, UseActualText = true }))
+            {
+                var page = document.GetPage(1);
+                var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
+                var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
+                Assert.Equal(11, blocks.Count);
+
+                var text = blocks[6].Text;
+                Assert.Equal("Kogus\nÜhik\n1\nkmpl\nVahesumma:\nSoodustus (10%):\nSumma käibemaksuta:\nKäibemaks (24%):\nKokku (EUR):", text);
+            }
+
+            // UseActualText = false
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true, UseActualText = false }))
+            {
+                var page = document.GetPage(1);
+                var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
+                var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
+                Assert.Equal(11, blocks.Count);
+
+                var text = blocks[6].Text;
+                Assert.Equal("Kogus\nÜhik\n1\nkmpl\nVahesumma:\nSoodustus 10%\nSumma käibemaksuta:\nKäibemaks 24%\nKokku EUR", text);
+            }
+        }
+
+        [Fact]
         public void Issues1274()
         {
             // Minimal PDF with self-referencing object: "1 0 obj 1 0 R"
