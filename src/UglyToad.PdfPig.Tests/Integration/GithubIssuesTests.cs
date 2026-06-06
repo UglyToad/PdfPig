@@ -35,7 +35,7 @@
 
             var options = new ParsingOptions { MaxStackDepth = 256 };
             using var ms = new MemoryStream(payload);
-            var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(ms, options));
+            var ex = Assert.Throws<PdfDocumentStackDepthException>(() => PdfDocument.Open(ms, options));
             Assert.Equal($"Exceeded maximum nesting depth of {options.MaxStackDepth}.", ex.Message);
             return;
 
@@ -120,10 +120,9 @@
 
             var options = new ParsingOptions()
             {
-                UseLenientParsing = true,
-                MaxStackDepth = 100
+                UseLenientParsing = true
             };
-            var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(path, options));
+            var ex = Assert.Throws<PdfDocumentStackDepthException>(() => PdfDocument.Open(path, options));
             Assert.Equal($"Exceeded maximum nesting depth of {options.MaxStackDepth}.", ex.Message);
         }
 
