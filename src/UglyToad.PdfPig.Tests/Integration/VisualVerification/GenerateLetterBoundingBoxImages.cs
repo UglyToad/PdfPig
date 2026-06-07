@@ -113,6 +113,18 @@
         }
 
         [Fact]
+        public void issues_1176()
+        {
+            Run("issues-1176.pdf", 543);
+        }
+
+        [Fact]
+        public void issues_1176_1()
+        {
+            Run("issues-1176-1.pdf", 1024);
+        }
+
+        [Fact]
         public void MotorInsuranceClaimForm()
         {
             Run(MotorInsuranceClaim, 841);
