@@ -8,6 +8,14 @@
 
     public class GenerateLetterGlyphImages
     {
+        /*
+         * NOTE about Type 3 Fonts: The loose bounding boxes are not reliable (because of ascent/descent).
+         * This is not fixed for the moment. One possible approach would be to take the union of all bbox
+         * for a given font. Also (unrelated), some bounding boxes are upside down. It seems to be expected.
+         *
+         * In the output images, we draw the top and bottom bbox points.
+         */
+        
         private const bool RenderGlyphRectangle = true;
 
         private const string NonLatinAcrobatDistiller = "Single Page Non Latin - from acrobat distiller";
@@ -29,8 +37,10 @@
 
         private static readonly SKMatrix ScaleMatrix = SKMatrix.CreateScale(Scale, Scale);
 
-        private static readonly SKPaint redPaint = new SKPaint() { Color = SKColors.Crimson, StrokeWidth = 1 };
+        private static readonly SKPaint redPaint = new SKPaint() { Color = SKColors.Crimson.WithAlpha(150), StrokeWidth = 1, Style = SKPaintStyle.StrokeAndFill };
         private static readonly SKPaint bluePaint = new SKPaint() { Color = SKColors.Blue, StrokeWidth = 5 };
+        private static readonly SKPaint yellowPaint = new SKPaint() { Color = SKColors.Yellow, StrokeWidth = 5 };
+        private static readonly SKPaint greenPaint = new SKPaint() { Color = SKColors.Green, StrokeWidth = 5 };
 
         public GenerateLetterGlyphImages()
         {
@@ -85,6 +95,9 @@
                         {
                             DrawRectangle(letter.BoundingBox, canvas, redPaint, size.Height, Scale);
                             DrawPoint(letter.StartBaseLine, canvas, bluePaint, size.Height, Scale);
+
+                            DrawPoint(letter.BoundingBox.BottomLeft, canvas, yellowPaint, size.Height, Scale);
+                            DrawPoint(letter.BoundingBox.TopLeft, canvas, greenPaint, size.Height, Scale);
                         }
                     }
 
@@ -160,10 +173,14 @@
                 return new SKPoint((int)(p.X * scale), GetY(p));
             }
 
-            graphics.DrawLine(GetPoint(rectangle.BottomLeft), GetPoint(rectangle.BottomRight), pen);
-            graphics.DrawLine(GetPoint(rectangle.BottomRight), GetPoint(rectangle.TopRight), pen);
-            graphics.DrawLine(GetPoint(rectangle.TopRight), GetPoint(rectangle.TopLeft), pen);
-            graphics.DrawLine(GetPoint(rectangle.TopLeft), GetPoint(rectangle.BottomLeft), pen);
+            using SKPath path = new SKPath();
+            path.MoveTo(GetPoint(rectangle.BottomLeft));
+            path.LineTo(GetPoint(rectangle.BottomRight));
+            path.LineTo(GetPoint(rectangle.TopRight));
+            path.LineTo(GetPoint(rectangle.TopLeft));
+            path.Close();
+            
+            graphics.DrawPath(path, pen);
         }
 
         private static void DrawPoint(PdfPoint point,
@@ -191,6 +208,41 @@
             Run("caly-issues-56-1.pdf", folder: "Dla");
         }
 
+        [Fact]
+        public void GHOSTSCRIPT_692564_0()
+        {
+            Run("GHOSTSCRIPT-692564-0.pdf");
+        }
+
+        [Fact]
+        public void GHOSTSCRIPT_695513_0()
+        {
+            Run("GHOSTSCRIPT-695513-0.pdf");
+        }
+
+        [Fact]
+        public void GHOSTSCRIPT_697234_0()
+        {
+            Run("GHOSTSCRIPT-697234-0.pdf");
+        }
+
+        [Fact]
+        public void GHOSTSCRIPT_697984_3()
+        {
+            Run("GHOSTSCRIPT-697984-3.pdf");
+        }
+
+        [Fact]
+        public void GHOSTSCRIPT_700288_1()
+        {
+            Run("GHOSTSCRIPT-700288-1.pdf");
+        }
+
+        [Fact]
+        public void test_a_5()
+        {
+            Run("test_a-5.pdf");
+        }
 
         [Fact]
         public void Grapheme_clusters_emoji()

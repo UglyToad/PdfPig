@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
-    
+
     using Colors;
     using Content;
     using Core;
@@ -383,7 +383,7 @@
                         double top = Math.Max(d1.LowerLeftY, d1.UpperRightY);
                         double bottom = Math.Min(d1.LowerLeftY, d1.UpperRightY);
                         result = type3Font.GetFontMatrix()
-                            .Transform(new PdfRectangle(left, top, right, bottom));
+                            .Transform(new PdfRectangle(left, bottom, right, top));
                         break;
                     }
                 }
@@ -392,7 +392,7 @@
             _type3GlyphBoxCache[key] = result;
             return result;
         }
-
+        
         /// <summary>
         /// Render glyph implement.
         /// </summary>

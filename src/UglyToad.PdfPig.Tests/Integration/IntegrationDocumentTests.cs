@@ -12,7 +12,9 @@
             "issue_671.pdf",
             "GHOSTSCRIPT-698363-0.pdf",
             "ErcotFacts.pdf",
-            "cmap-parsing-exception.pdf"
+            "cmap-parsing-exception.pdf",
+            "GHOSTSCRIPT-697984-3.pdf", // Fails on CheckGlyphLooseBoundingBoxes
+            "GHOSTSCRIPT-695513-0.pdf" // Fails on CheckGlyphLooseBoundingBoxes
         ];
 
 
