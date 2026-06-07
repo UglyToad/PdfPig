@@ -221,7 +221,7 @@
             return new Glyph(true, instructions, endPointsOfContours, points, bounds);
         }
 
-        private static IGlyphDescription ReadCompositeGlyph(TrueTypeDataBytes data, TemporaryCompositeLocation compositeLocation, Dictionary<int, TemporaryCompositeLocation> compositeLocations, IGlyphDescription[] glyphs,
+        private static IGlyphDescription ReadCompositeGlyph(TrueTypeDataBytes data, TemporaryCompositeLocation compositeLocation, Dictionary<int, TemporaryCompositeLocation> compositeLocations, IGlyphDescription?[] glyphs,
             IGlyphDescription emptyGlyph)
         {
             bool HasFlag(CompositeGlyphFlags value, CompositeGlyphFlags target)
@@ -255,9 +255,17 @@
                         throw new InvalidOperationException($"The composite glyph required a contour at index {glyphIndex} but there was no simple or composite glyph at this location.");
                     }
 
-                    var position = data.Position;
-                    childGlyph = ReadCompositeGlyph(data, missingComposite, compositeLocations, glyphs, emptyGlyph);
-                    data.Seek(position);
+                    if (missingComposite.Position + 4 == data.Position) // 4 = read unsigned short x 2
+                    {
+                        // Will go at same position in recursion
+                        childGlyph = emptyGlyph;
+                    }
+                    else
+                    {
+                        var position = data.Position;
+                        childGlyph = ReadCompositeGlyph(data, missingComposite, compositeLocations, glyphs, emptyGlyph);
+                        data.Seek(position);
+                    }
 
                     glyphs[glyphIndex] = childGlyph;
                 }
