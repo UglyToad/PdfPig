@@ -40,6 +40,25 @@
         }
 
         [Fact]
+        public void GHOSTSCRIPT_695513_0()
+        {
+            Run("GHOSTSCRIPT-695513-0.pdf", 1024);
+        }
+
+        [Fact]
+        public void GHOSTSCRIPT_697234_0()
+        {
+            // Loose bbox are wrong, but pdf is broken
+            Run("GHOSTSCRIPT-697234-0.pdf", 1024);
+        }
+
+        [Fact]
+        public void test_a_5()
+        {
+            Run("test_a-5.pdf", 1024);
+        }
+
+        [Fact]
         public void SinglePageWithType1Content()
         {
             Run(SinglePageType1Content);
