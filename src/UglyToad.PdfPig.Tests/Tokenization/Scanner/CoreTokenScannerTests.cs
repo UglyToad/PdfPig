@@ -302,6 +302,34 @@ endobj";
             }
         }
 
+        [Fact]
+        public void ScansGbkEncodedNamesAsDictionaryKeysAndValues()
+        {
+            // The GBK/GB18030 name decoding (issue #1266) lives in the NameTokenizer, so it applies to
+            // every name regardless of context - not just font /BaseFont names. This scans a dictionary
+            // whose key and values are CJK names written as raw GBK (codepage 936) bytes:
+            //   << /黑体 /宋体 /Color /仿宋 >>
+            var bytes = new List<byte>();
+            void Ascii(string s) => bytes.AddRange(System.Text.Encoding.ASCII.GetBytes(s));
+
+            Ascii("<< /");
+            bytes.AddRange(new byte[] { 0xBA, 0xDA, 0xCC, 0xE5 });   // 黑体 (key)
+            Ascii(" /");
+            bytes.AddRange(new byte[] { 0xCB, 0xCE, 0xCC, 0xE5 });   // 宋体 (value)
+            Ascii(" /Color /");
+            bytes.AddRange(new byte[] { 0xB7, 0xC2, 0xCB, 0xCE });   // 仿宋 (value)
+            Ascii(" >>");
+
+            var scanner = scannerFactory(new MemoryInputBytes(bytes.ToArray()));
+
+            Assert.True(scanner.MoveNext());
+            var dictionary = Assert.IsType<DictionaryToken>(scanner.CurrentToken);
+
+            Assert.True(dictionary.Data.ContainsKey("黑体"));
+            AssertCorrectToken<NameToken, string>(dictionary.Data["黑体"], "宋体");
+            AssertCorrectToken<NameToken, string>(dictionary.Data["Color"], "仿宋");
+        }
+
         private static void AssertCorrectToken<T, TData>(IToken token, TData expected) where T : IDataToken<TData>
         {
             var cast = Assert.IsType<T>(token);

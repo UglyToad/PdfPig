@@ -12,19 +12,39 @@
     public class GithubIssuesTests
     {
         [Fact]
-        public void Issues1309()
+        public void Issues1266()
         {
-            var path = IntegrationHelpers.GetDocumentPath("LKR824191.pdf");
+            var path = IntegrationHelpers.GetDocumentPath("issues-1266.pdf");
 
             using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true, UseActualText = true }))
             {
-                var page = document.GetPage(1);
-                var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
-                var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
-                Assert.Equal(23, blocks.Count);
+                // The /BaseFont names of the embedded CJK fonts are written as raw GBK (codepage 936)
+                // bytes, which were previously decoded as windows-1252 and produced mojibake
+                // (e.g. "ABCDEE+ºÚÌå"). They should now be decoded correctly as Chinese. See issue #1266.
+                var fontNames = document.GetPages()
+                    .SelectMany(p => p.Letters)
+                    .Select(l => l.FontName)
+                    .Distinct()
+                    .OrderBy(n => n, System.StringComparer.Ordinal)
+                    .ToArray();
 
-                var text = blocks[13].Text;
-                Assert.Equal("-5,15 -5,15 -1,24 -6,39", text);
+                Assert.Equal(new[]
+                {
+                    "ABCDEE+Angsana New",
+                    "ABCDEE+Arial Narrow",
+                    "ABCDEE+Calibri",
+                    "ABCDEE+仿宋",            // FangSong
+                    "ABCDEE+宋体",            // SimSun
+                    "ABCDEE+微软雅黑",        // Microsoft YaHei
+                    "ABCDEE+微软雅黑,Bold",
+                    "ABCDEE+黑体",            // SimHei
+                    "ABCEEE+MingLiU",
+                    "Arial",
+                    "Arial,Bold",
+                    "Times New Roman",
+                    "Times New Roman,Bold",
+                    "Times New Roman,Italic",
+                }, fontNames);
             }
         }
 

@@ -307,14 +307,13 @@
 #else
             try
             {
-                var d = Encoding.UTF8.GetDecoder();
-
-                var charLength = d.GetCharCount(input, 0, input.Length);
-                var chars = new char[charLength];
-                d.Convert(input, 0, input.Length, chars, 0, charLength, true, out _, out _, out _);
+                // A throwing decoder is required: the default UTF-8 decoder silently replaces invalid
+                // bytes with U+FFFD instead of failing, which would make every input look "valid".
+                var throwingUtf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+                _ = throwingUtf8.GetCharCount(input, 0, input.Length);
                 return true;
             }
-            catch (Exception)
+            catch (DecoderFallbackException)
             {
                 return false;
             }
