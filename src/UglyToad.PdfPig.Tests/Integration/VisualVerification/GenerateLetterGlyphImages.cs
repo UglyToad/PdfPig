@@ -392,7 +392,6 @@
         [Fact]
         public void InstallingMuAndPygameZero()
         {
-            // Still an issue with some of the glyphs
             Run("GHOSTSCRIPT-700139-0");
         }
 
