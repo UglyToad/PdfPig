@@ -11,7 +11,7 @@ namespace UglyToad.PdfPig.PdfFonts.Cmap
     /// <summary>
     /// A mutable class used when parsing and generating a <see cref="CMap"/>.
     /// </summary>
-    internal class CharacterMapBuilder
+    internal sealed class CharacterMapBuilder
     {
         /// <summary>
         ///  Defines the character collection associated CIDFont/s for this CMap.
@@ -62,7 +62,7 @@ namespace UglyToad.PdfPig.PdfFonts.Cmap
 
         public IReadOnlyList<CidCharacterMapping> CidCharacterMappings { get; set; }
 
-        private List<CidRange> cidRanges = new List<CidRange>();
+        private readonly List<CidRange> cidRanges = new List<CidRange>();
         public IReadOnlyList<CidRange> CidRanges => cidRanges;
 
         public Dictionary<int, string> BaseFontCharacterMap { get; } = new Dictionary<int, string>();
@@ -76,17 +76,35 @@ namespace UglyToad.PdfPig.PdfFonts.Cmap
         {
             var code = GetCodeFromArray(bytes);
 
-            // Some malformed CMaps define the same code multiple times with different destinations.
-            // The first mapping encountered takes precedence, (see GitHub issue #1309).
+            // Some (malformed) CMaps define the same code multiple times with different destinations.
+            // Mirror PdfBox semantics, which key the ToUnicode mappings by code byte-length:
+            //  - A shorter code wins over a longer one that collapses to the same integer key. This is
+            //    the GHOSTSCRIPT-699178-0 case where the 2-byte <0020> -> 'X' must not override the
+            //    1-byte <20> -> ' ' (otherwise an 'X' is rendered for every space on the page).
+            //  - For codes of equal byte-length the first mapping encountered takes precedence
+            //    (see GitHub issue #1309).
+            //
+            // NOTE: We could also store the byte lengths, but the code below works with the 2 caveats:
+            // - Two genuine duplicates of the same length with no leading zero (e.g. <4142> defined twice) → stateless gives last-wins (matches pdfbox) instead of first-wins.
+            // - Two padded codes of different lengths colliding (e.g. <0020> vs <000020>) → stateless keeps the first rather than the strictly-shortest.
 
-#if NET
-            BaseFontCharacterMap.TryAdd(code, value);
-#else
-            if (!BaseFontCharacterMap.ContainsKey(code))
+            if (bytes.Length > 1 && bytes[0] == 0) // zero padded
             {
+                // Longer / leading-zero code: keep whatever is already mapped, only fill if absent.
+#if NET || NETSTANDARD2_1_OR_GREATER
+                BaseFontCharacterMap.TryAdd(code, value);
+#else
+                if (!BaseFontCharacterMap.ContainsKey(code))
+                {
+                    BaseFontCharacterMap[code] = value;
+                }
+#endif
+            }
+            else
+            {
+                // Shortest representation of the value: it wins.
                 BaseFontCharacterMap[code] = value;
             }
-#endif
         }
 
         public CMap Build()
@@ -104,7 +122,7 @@ namespace UglyToad.PdfPig.PdfFonts.Cmap
 
         private CharacterIdentifierSystemInfo GetCidSystemInfo()
         {
-            if (CharacterIdentifierSystemInfo.Registry != null)
+            if (CharacterIdentifierSystemInfo.Registry is not null)
             {
                 return CharacterIdentifierSystemInfo;
             }
@@ -123,7 +141,7 @@ namespace UglyToad.PdfPig.PdfFonts.Cmap
             CidCharacterMappings = Combine(CidCharacterMappings, other.CidCharacterMappings.Values.ToList());
             cidRanges.AddRange(other.CidRanges);
 
-            if (other.BaseFontCharacterMap != null)
+            if (other.BaseFontCharacterMap is not null)
             {
                 foreach (var keyValuePair in other.BaseFontCharacterMap)
                 {
@@ -136,7 +154,7 @@ namespace UglyToad.PdfPig.PdfFonts.Cmap
         {
             if (a is null && b is null)
             {
-                return new T[0];
+                return Array.Empty<T>();
             }
 
             if (a is null)
@@ -152,7 +170,7 @@ namespace UglyToad.PdfPig.PdfFonts.Cmap
             return [.. a, .. b];
         }
 
-        private int GetCodeFromArray(ReadOnlySpan<byte> data)
+        private static int GetCodeFromArray(ReadOnlySpan<byte> data)
         {
             int code = 0;
             for (int i = 0; i < data.Length; i++)
