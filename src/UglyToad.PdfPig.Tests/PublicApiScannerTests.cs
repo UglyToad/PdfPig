@@ -276,8 +276,6 @@
                 "UglyToad.PdfPig.Parser.Parts.DirectObjectFinder",
                 "UglyToad.PdfPig.PdfDocument",
                 "UglyToad.PdfPig.PdfExtensions",
-                "UglyToad.PdfPig.Rendering.IPageImageRenderer",
-                "UglyToad.PdfPig.Rendering.PdfRendererImageFormat",
                 "UglyToad.PdfPig.Structure",
                 "UglyToad.PdfPig.Tokenization.Scanner.IPdfTokenScanner",
                 "UglyToad.PdfPig.Util.Adler32Checksum",
