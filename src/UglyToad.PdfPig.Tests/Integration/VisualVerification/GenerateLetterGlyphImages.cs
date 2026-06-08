@@ -203,6 +203,24 @@
         }
 
         [Fact]
+        public void P2P_33713919()
+        {
+            Run("P2P-33713919.pdf", 2);
+        }
+
+        [Fact]
+        public void GHOSTSCRIPT_699178_0_1()
+        {
+            Run("GHOSTSCRIPT-699178-0.pdf", 1);
+        }
+
+        [Fact]
+        public void GHOSTSCRIPT_699178_0_2()
+        {
+            Run("GHOSTSCRIPT-699178-0.pdf", 2);
+        }
+
+        [Fact]
         public void caly_issues_56_1()
         {
             Run("caly-issues-56-1.pdf", folder: "Dla");

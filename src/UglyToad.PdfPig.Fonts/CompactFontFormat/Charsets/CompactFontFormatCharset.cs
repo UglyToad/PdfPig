@@ -27,7 +27,7 @@
 
         public virtual string GetNameByGlyphId(int glyphId)
         {
-            return GlyphIdToStringIdAndName.TryGetValue(glyphId, out var strings) ? strings.name : null;
+            return GlyphIdToStringIdAndName.TryGetValue(glyphId, out var strings) ? strings.name : ".notdef";
         }
 
         public virtual string GetNameByStringId(int stringId)
