@@ -138,18 +138,15 @@
                      * This is to fix P2P-33713919.pdf
                      * See https://github.com/BobLd/PdfPig.Rendering.Skia/issues/46
                      *
-                     * A CFF that carries its own encoding selects glyphs from the character code
-                     * directly. Without an encoding (e.g. an OpenType/CFF embedded as a CIDFont) the
-                     * CID must first be mapped to a glyph index via the CIDToGIDMap (Identity when none),
-                     * then looked up by glyph id in the charset.
+                     * When used as a CIDFont the CID is first mapped to a glyph index via the supplied
+                     * mapping (the CIDToGIDMap, or Identity when none), then resolved by glyph id in the
+                     * embedded CFF (see CompactFontFormatFont.GetCharacterName).
                      *
                      * See https://github.com/UglyToad/PdfPig/issues/1320
                      */
 
                     var cffFont = cffFontCollection.FirstFont;
-                    int cffGlyphId = cffFont.Encoding is null
-                        ? (characterCodeToGlyphId?.Invoke(characterCode) ?? characterCode)
-                        : characterCode;
+                    int cffGlyphId = characterCodeToGlyphId?.Invoke(characterCode) ?? characterCode;
                     var name = cffFont.GetCharacterName(cffGlyphId, true);
                     if (string.IsNullOrEmpty(name))
                     {
@@ -212,18 +209,15 @@
                      * This is to fix P2P-33713919.pdf
                      * See https://github.com/BobLd/PdfPig.Rendering.Skia/issues/46
                      *
-                     * A CFF that carries its own encoding selects glyphs from the character code
-                     * directly. Without an encoding (e.g. an OpenType/CFF embedded as a CIDFont) the
-                     * CID must first be mapped to a glyph index via the CIDToGIDMap (Identity when none),
-                     * then looked up by glyph id in the charset.
+                     * When used as a CIDFont the CID is first mapped to a glyph index via the supplied
+                     * mapping (the CIDToGIDMap, or Identity when none), then resolved by glyph id in the
+                     * embedded CFF (see CompactFontFormatFont.GetCharacterName).
                      *
                      * See https://github.com/UglyToad/PdfPig/issues/1320
                      */
 
                     var cffFont = cffFontCollection.FirstFont;
-                    int cffGlyphId = cffFont.Encoding is null
-                        ? (characterCodeToGlyphId?.Invoke(characterCode) ?? characterCode)
-                        : characterCode;
+                    int cffGlyphId = characterCodeToGlyphId?.Invoke(characterCode) ?? characterCode;
                     var name = cffFont.GetCharacterName(cffGlyphId, true);
                     if (string.IsNullOrEmpty(name))
                     {

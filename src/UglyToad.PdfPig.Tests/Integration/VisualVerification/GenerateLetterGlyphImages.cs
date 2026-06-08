@@ -203,6 +203,12 @@
         }
 
         [Fact]
+        public void issues_1176_1()
+        {
+            Run("issues-1176-1.pdf");
+        }
+        
+        [Fact]
         public void P2P_33713919()
         {
             Run("P2P-33713919.pdf", 2);

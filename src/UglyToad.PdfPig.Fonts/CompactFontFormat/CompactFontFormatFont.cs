@@ -55,16 +55,6 @@
         /// </summary>
         public string GetCharacterName(int characterCode, bool isCid)
         {
-            if (Encoding is not null)
-            {
-                return Encoding.GetName(characterCode);
-            }
-
-            if (Charset.IsCidCharset)
-            {
-                return Charset.GetNameByStringId(characterCode);
-            }
-
             if (isCid)
             {
                 if (this is not CompactFontFormatCidFont && !Charset.IsCidCharset)
@@ -72,6 +62,16 @@
                     return Charset.GetNameByGlyphId(characterCode);
                 }
 
+                return Charset.GetNameByStringId(characterCode);
+            }
+
+            if (Encoding is not null)
+            {
+                return Encoding.GetName(characterCode);
+            }
+
+            if (Charset.IsCidCharset)
+            {
                 return Charset.GetNameByStringId(characterCode);
             }
 
