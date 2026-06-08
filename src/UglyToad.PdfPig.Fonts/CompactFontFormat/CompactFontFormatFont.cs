@@ -22,7 +22,7 @@
         /// <summary>
         /// The encoding for this font.
         /// </summary>
-        public Encoding Encoding { get; }
+        public Encoding? Encoding { get; }
 
         /// <summary>
         /// The font matrix for this font.
@@ -55,14 +55,24 @@
         /// </summary>
         public string GetCharacterName(int characterCode, bool isCid)
         {
-            if (Encoding != null)
+            if (isCid)
+            {
+                if (this is not CompactFontFormatCidFont && !Charset.IsCidCharset)
+                {
+                    return Charset.GetNameByGlyphId(characterCode);
+                }
+
+                return Charset.GetNameByStringId(characterCode);
+            }
+
+            if (Encoding is not null)
             {
                 return Encoding.GetName(characterCode);
             }
 
-            if (Charset.IsCidCharset || isCid)
+            if (Charset.IsCidCharset)
             {
-                return Charset?.GetNameByStringId(characterCode);
+                return Charset.GetNameByStringId(characterCode);
             }
 
             string characterName = GlyphList.AdobeGlyphList.UnicodeCodePointToName(characterCode);
