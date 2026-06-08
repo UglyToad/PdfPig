@@ -91,7 +91,7 @@
 
             var code = CMap.ReadCode(bytes, useLenientParsing);
 
-            codeLength = (int)(bytes.CurrentOffset - current);
+            codeLength = (int)(bytes.CurrentOffset - current) + 1;
 
             return code;
         }
