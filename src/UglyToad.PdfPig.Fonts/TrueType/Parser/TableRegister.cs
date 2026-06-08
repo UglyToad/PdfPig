@@ -16,7 +16,7 @@
         /// <summary>
         /// This table contains the data that defines the appearance of the glyphs in the font.
         /// </summary>
-        internal GlyphDataTable GlyphTable { get; }
+        internal GlyphDataTable? GlyphTable { get; }
 
         /// <summary>
         /// This table contains information needed to layout fonts whose characters are written horizontally.
