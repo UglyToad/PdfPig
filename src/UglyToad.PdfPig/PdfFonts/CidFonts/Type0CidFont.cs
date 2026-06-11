@@ -17,7 +17,7 @@
     {
         private readonly ICidFontProgram fontProgram;
         private readonly VerticalWritingMetrics verticalWritingMetrics;
-        private readonly double? defaultWidth;
+        private readonly double defaultWidth;
         private readonly double scale;
         private readonly CharacterIdentifierToGlyphIndexMap cidToGid;
 
@@ -49,7 +49,7 @@
             FontDescriptor descriptor,
             VerticalWritingMetrics verticalWritingMetrics,
             IReadOnlyDictionary<int, double> widths,
-            double? defaultWidth,
+            double defaultWidth,
             CharacterIdentifierToGlyphIndexMap cidToGid)
         {
             this.fontProgram = fontProgram;
@@ -85,17 +85,7 @@
                 return width;
             }
 
-            if (defaultWidth.HasValue)
-            {
-                return defaultWidth.Value;
-            }
-
-            if (Descriptor is null)
-            {
-                return 1000;
-            }
-
-            return Descriptor.MissingWidth;
+            return defaultWidth;
         }
 
         public PdfRectangle GetBoundingBox(int characterIdentifier)
@@ -121,12 +111,7 @@
                 return new PdfRectangle(0, 0, width, 1.0 / scale);
             }
 
-            if (defaultWidth.HasValue)
-            {
-                return new PdfRectangle(0, 0, defaultWidth.Value, 1.0 / scale);
-            }
-
-            return new PdfRectangle(0, 0, 1000, 1.0 / scale);
+            return new PdfRectangle(0, 0, defaultWidth, 1.0 / scale);
         }
 
         public PdfVector GetPositionVector(int characterIdentifier)

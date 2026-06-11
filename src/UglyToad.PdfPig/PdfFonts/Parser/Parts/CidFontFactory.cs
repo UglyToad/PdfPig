@@ -40,7 +40,7 @@
 
             var widths = ReadWidths(dictionary);
 
-            var defaultWidth = default(double?);
+            double defaultWidth = 1000;
             if (dictionary.TryGet(NameToken.Dw, pdfScanner, out NumericToken? defaultWidthToken))
             {
                 defaultWidth = defaultWidthToken.Double;
