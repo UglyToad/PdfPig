@@ -203,6 +203,12 @@
         }
 
         [Fact]
+        public void Rotation_45()
+        {
+            Run("Rotation 45.pdf");
+        }
+
+        [Fact]
         public void issues_1176_1()
         {
             Run("issues-1176-1.pdf");

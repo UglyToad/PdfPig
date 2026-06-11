@@ -9,9 +9,9 @@
     internal readonly struct VerticalVectorComponents
     {
         /// <summary>
-        /// The default value of <see cref="VerticalVectorComponents"/> if not defined by a font.
+        /// The default value ([880  -1000]) of <see cref="VerticalVectorComponents"/> if not defined by a font.
         /// </summary>
-        public static readonly VerticalVectorComponents Default = new VerticalVectorComponents(800, -1000);
+        public static readonly VerticalVectorComponents Default = new VerticalVectorComponents(880, -1000);
 
         /// <summary>
         /// The vertical component of the position vector.

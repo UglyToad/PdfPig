@@ -18,7 +18,7 @@
         private readonly ICidFontProgram? fontProgram;
         private readonly VerticalWritingMetrics verticalWritingMetrics;
         private readonly IReadOnlyDictionary<int, double> widths;
-        private readonly double? defaultWidth;
+        private readonly double defaultWidth;
         private readonly CharacterIdentifierToGlyphIndexMap cidToGid;
 
         public NameToken Type { get; }
@@ -47,7 +47,7 @@
             ICidFontProgram? fontProgram,
             VerticalWritingMetrics verticalWritingMetrics,
             IReadOnlyDictionary<int, double> widths,
-            double? defaultWidth,
+            double defaultWidth,
             CharacterIdentifierToGlyphIndexMap cidToGid)
         {
             Type = type;
@@ -92,12 +92,8 @@
                 return width;
             }
 
-            if (defaultWidth.HasValue)
-            {
-                return defaultWidth.Value;
-            }
 
-            return Descriptor?.MissingWidth ?? 1000;
+            return defaultWidth;
         }
 
         public PdfRectangle GetBoundingBox(int characterIdentifier)
