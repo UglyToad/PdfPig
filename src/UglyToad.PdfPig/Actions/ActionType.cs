@@ -76,6 +76,14 @@
         /// <summary>
         /// (PDF 1.6) Set the current view of a 3D annotation
         /// </summary>
-        GoTo3DView
+        GoTo3DView,
+        /// <summary>
+        /// (PDF 2.0) Go to a document part in the current document.
+        /// </summary>
+        GoToDp,
+        /// <summary>
+        /// (PDF 2.0) Send a command to a rich-media annotation’s handler.
+        /// </summary>
+        RichMediaExecute
     }
 }

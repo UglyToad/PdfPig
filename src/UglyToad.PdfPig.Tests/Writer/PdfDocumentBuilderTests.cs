@@ -2,6 +2,7 @@
 {
     using Content;
     using Integration;
+    using PdfPig.Actions;
     using PdfPig.Core;
     using PdfPig.Fonts.Standard14Fonts;
     using PdfPig.Tokens;
@@ -1322,7 +1323,7 @@
 
                 // Verify the URI link target
                 Assert.NotNull(linkAnnotation.Action);
-                var uriAction = Assert.IsType<Actions.UriAction>(linkAnnotation.Action);
+                var uriAction = Assert.IsType<UriAction>(linkAnnotation.Action);
                 Assert.Equal("https://github.com", uriAction.Uri);
             }
         }
@@ -1359,7 +1360,7 @@
 
                 // Verify the link destination
                 Assert.NotNull(linkAnnotation.Action);
-                var goToAction = Assert.IsType<Actions.GoToAction>(linkAnnotation.Action);
+                var goToAction = Assert.IsType<GoToAction>(linkAnnotation.Action);
                 Assert.Equal(1, goToAction.Destination.PageNumber);
                 Assert.Equal(ExplicitDestinationType.XyzCoordinates, goToAction.Destination.Type);
                 Assert.Equal(25, goToAction.Destination.Coordinates.Left);
