@@ -23,8 +23,10 @@
         public static readonly NameToken Alt = new NameToken("Alt");
         public static readonly NameToken Alpha = new NameToken("Alpha");
         public static readonly NameToken Alternate = new NameToken("Alternate");
+        public static readonly NameToken AN = new NameToken("AN");
         public static readonly NameToken Annotation3D = new NameToken("3D");
         public static readonly NameToken Annot = new NameToken("Annot");
+        public static readonly NameToken Annotation = new NameToken("Annotation");
         public static readonly NameToken Annots = new NameToken("Annots");
         public static readonly NameToken AntiAlias = new NameToken("AntiAlias");
         public static readonly NameToken Ap = new NameToken("AP");
@@ -92,6 +94,7 @@
         public static readonly NameToken CenterWindow = new NameToken("CenterWindow");
         public static readonly NameToken Cf = new NameToken("CF");
         public static readonly NameToken Cfm = new NameToken("CFM");
+        public static readonly NameToken Cmd = new NameToken("CMD");
         //** Acro form field type for choice fields.
         public static readonly NameToken Ch = new NameToken("Ch");
         public static readonly NameToken CharProcs = new NameToken("CharProcs");
@@ -177,6 +180,13 @@
         public static readonly NameToken Domain = new NameToken("Domain");
         public static readonly NameToken Dos = new NameToken("DOS");
         public static readonly NameToken Dp = new NameToken("DP");
+        /// <summary>
+        /// Disambiguation with <see cref="Dp"/>.
+        /// <para>
+        /// This maps to '<c>Dp</c>'. <see cref="Dp"/> maps to '<c>DP</c>'.
+        /// </para>
+        /// </summary>
+        public static readonly NameToken DpLower = new NameToken("Dp");
         public static readonly NameToken Dr = new NameToken("DR");
         public static readonly NameToken Ds = new NameToken("DS");
         public static readonly NameToken Duplex = new NameToken("Duplex");
@@ -255,6 +265,8 @@
         public static readonly NameToken G = new NameToken("G");
         public static readonly NameToken Gamma = new NameToken("Gamma");
         public static readonly NameToken GoTo = new NameToken("GoTo");
+        public static readonly NameToken GoTo3DView = new NameToken("GoTo3DView");
+        public static readonly NameToken GoToDp = new NameToken("GoToDp");
         public static readonly NameToken GoToE = new NameToken("GoToE");
         public static readonly NameToken GoToR = new NameToken("GoToR");
         public static readonly NameToken Group = new NameToken("Group");
@@ -263,6 +275,7 @@
         public static readonly NameToken H = new NameToken("H");
         public static readonly NameToken HardLight = new NameToken("HardLight");
         public static readonly NameToken Height = new NameToken("Height");
+        public static readonly NameToken Hide = new NameToken("Hide");
         public static readonly NameToken HideMenubar = new NameToken("HideMenubar");
         public static readonly NameToken HideToolbar = new NameToken("HideToolbar");
         public static readonly NameToken HideWindowui = new NameToken("HideWindowUI");
@@ -283,6 +296,7 @@
         public static readonly NameToken ImageC = new NameToken("ImageC");
         public static readonly NameToken ImageI = new NameToken("ImageI");
         public static readonly NameToken ImageMask = new NameToken("ImageMask");
+        public static readonly NameToken ImportData = new NameToken("ImportData");
         public static readonly NameToken Index = new NameToken("Index");
         public static readonly NameToken Indexed = new NameToken("Indexed");
         public static readonly NameToken Info = new NameToken("Info");
@@ -361,8 +375,10 @@
         // N
         public static readonly NameToken N = new NameToken("N");
         public static readonly NameToken Name = new NameToken("Name");
+        public static readonly NameToken Named = new NameToken("Named");
         public static readonly NameToken Names = new NameToken("Names");
         public static readonly NameToken NeedAppearances = new NameToken("NeedAppearances");
+        public static readonly NameToken NewWindow = new NameToken("NewWindow");
         public static readonly NameToken Next = new NameToken("Next");
         public static readonly NameToken Nm = new NameToken("NM");
         public static readonly NameToken NonEfontNoWarn = new NameToken("NonEFontNoWarn");
@@ -395,6 +411,7 @@
         public static readonly NameToken OpNs = new NameToken("op");
         public static readonly NameToken OpenAction = new NameToken("OpenAction");
         public static readonly NameToken OpenType = new NameToken("OpenType");
+        public static readonly NameToken Operation = new NameToken("Operation");
         public static readonly NameToken Opm = new NameToken("OPM");
         public static readonly NameToken Opt = new NameToken("Opt");
         public static readonly NameToken Order = new NameToken("Order");
@@ -421,6 +438,7 @@
         public static readonly NameToken ParentTreeNextKey = new NameToken("ParentTreeNextKey");
         public static readonly NameToken Pattern = new NameToken("Pattern");
         public static readonly NameToken PatternType = new NameToken("PatternType");
+        public static readonly NameToken Pause = new NameToken("Pause");
         public static readonly NameToken PdfDocEncoding = new NameToken("PDFDocEncoding");
         public static readonly NameToken Perms = new NameToken("Perms");
         public static readonly NameToken Pg = new NameToken("Pg");
@@ -429,6 +447,7 @@
         public static readonly NameToken Popup = new NameToken("Popup");
         public static readonly NameToken PreRelease = new NameToken("PreRelease");
         public static readonly NameToken Predictor = new NameToken("Predictor");
+        public static readonly NameToken PreserveRB = new NameToken("PreserveRB");
         public static readonly NameToken Prev = new NameToken("Prev");
         public static readonly NameToken PrintArea = new NameToken("PrintArea");
         public static readonly NameToken PrintClip = new NameToken("PrintClip");
@@ -451,15 +470,19 @@
         public static readonly NameToken Rd = new NameToken("RD");
         public static readonly NameToken Reason = new NameToken("Reason");
         public static readonly NameToken Reasons = new NameToken("Reasons");
+        public static readonly NameToken Rendition = new NameToken("Rendition");
         public static readonly NameToken Repeat = new NameToken("Repeat");
         public static readonly NameToken Recipients = new NameToken("Recipients");
         public static readonly NameToken Rect = new NameToken("Rect");
         public static readonly NameToken Registry = new NameToken("Registry");
         public static readonly NameToken RegistryName = new NameToken("RegistryName");
         public static readonly NameToken Rename = new NameToken("Rename");
+        public static readonly NameToken ResetForm = new NameToken("ResetForm");
         public static readonly NameToken Resources = new NameToken("Resources");
+        public static readonly NameToken Resume = new NameToken("Resume");
         public static readonly NameToken Rgb = new NameToken("RGB");
         public static readonly NameToken Ri = new NameToken("RI");
+        public static readonly NameToken RichMediaExecute = new NameToken("RichMediaExecute");
         public static readonly NameToken Right = new NameToken("Right");
         public static readonly NameToken RoleMap = new NameToken("RoleMap");
         public static readonly NameToken Root = new NameToken("Root");
@@ -476,6 +499,7 @@
         public static readonly NameToken Separation = new NameToken("Separation");
         public static readonly NameToken SetF = new NameToken("SetF");
         public static readonly NameToken SetFf = new NameToken("SetFf");
+        public static readonly NameToken SetOCGState = new NameToken("SetOCGState");
         public static readonly NameToken Shading = new NameToken("Shading");
         public static readonly NameToken ShadingType = new NameToken("ShadingType");
         public static readonly NameToken Sig = new NameToken("Sig");
@@ -498,6 +522,7 @@
         public static readonly NameToken StemH = new NameToken("StemH");
         public static readonly NameToken StemV = new NameToken("StemV");
         public static readonly NameToken StmF = new NameToken("StmF");
+        public static readonly NameToken Stop = new NameToken("Stop");
         public static readonly NameToken StrF = new NameToken("StrF");
         public static readonly NameToken StrikeOut = new NameToken("StrikeOut");
         public static readonly NameToken StructParent = new NameToken("StructParent");
@@ -507,6 +532,7 @@
         public static readonly NameToken SubFilter = new NameToken("SubFilter");
         public static readonly NameToken Subj = new NameToken("Subj");
         public static readonly NameToken Subject = new NameToken("Subject");
+        public static readonly NameToken SubmitForm = new NameToken("SubmitForm");
         public static readonly NameToken Subtype = new NameToken("Subtype");
         public static readonly NameToken Supplement = new NameToken("Supplement");
         public static readonly NameToken Sv = new NameToken("SV");
@@ -515,9 +541,11 @@
         public static readonly NameToken Synchronous = new NameToken("Synchronous");
         // T
         public static readonly NameToken T = new NameToken("T");
+        public static readonly NameToken TA = new NameToken("TA");
         public static readonly NameToken Target = new NameToken("Target");
         public static readonly NameToken Templates = new NameToken("Templates");
         public static readonly NameToken Text = new NameToken("Text");
+        public static readonly NameToken Thread = new NameToken("Thread");
         public static readonly NameToken Threads = new NameToken("Threads");
         public static readonly NameToken Thumb = new NameToken("Thumb");
         public static readonly NameToken Ti = new NameToken("TI");
@@ -526,6 +554,7 @@
         public static readonly NameToken Title = new NameToken("Title");
         public static readonly NameToken Tk = new NameToken("TK");
         public static readonly NameToken Tm = new NameToken("TM");
+        public static readonly NameToken Toggle = new NameToken("Toggle");
         public static readonly NameToken Top = new NameToken("Top");
         public static readonly NameToken ToUnicode = new NameToken("ToUnicode");
         public static readonly NameToken Tr = new NameToken("TR");

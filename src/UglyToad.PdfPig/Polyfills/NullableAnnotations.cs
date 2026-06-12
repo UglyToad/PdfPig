@@ -8,11 +8,13 @@ namespace System.Diagnostics.CodeAnalysis;
 #if !NET
 internal sealed class DoesNotReturnAttribute : Attribute { }
 
+#if !NETSTANDARD2_1_OR_GREATER
 [AttributeUsage(AttributeTargets.Parameter, Inherited = false)]
 internal sealed class NotNullWhenAttribute(bool returnValue) : Attribute
 {
     public bool ReturnValue { get; } = returnValue;
 }
+#endif
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, Inherited = false)]
 internal sealed class AllowNullAttribute : Attribute { }
