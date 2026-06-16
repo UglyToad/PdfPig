@@ -12,6 +12,25 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1328()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("testPdf-1.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page1 = document.GetPage(1);
+                var images1 = page1.GetImages().ToArray();
+                Assert.Single(images1);
+                Assert.Equal(293179, images1[0].RawBytes.Length);
+
+                var page2 = document.GetPage(2);
+                var images2 = page2.GetImages().ToArray();
+                Assert.Single(images2);
+                Assert.Equal(187334, images2[0].RawBytes.Length);
+            }
+        }
+
+        [Fact]
         public void Issues1237()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("issues-1237.pdf");

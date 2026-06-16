@@ -349,16 +349,22 @@
         {
             const byte lastPlainText = 127;
             const byte space = 32;
+            Span<byte> buffer = stackalloc byte[6];
 
             var imageData = new List<byte>();
             byte prevByte = 0;
             while (inputBytes.MoveNext())
             {
-                if (inputBytes.CurrentByte == 'I' && prevByte == 'E')
-                {
-                    // Check for EI appearing in binary data.
-                    var buffer = new byte[6];
+                var currentByte = inputBytes.CurrentByte;
 
+                // The EI operator that terminates an inline image data must be delimited by white-space
+                // (ISO 32000-2, 8.9.7), i.e. rejects the many "EI" byte pairs that occur naturally inside
+                // binary or ASCII-encoded (e.g. ASCII85) image data.
+                if (currentByte == 'I' && prevByte == 'E' &&
+                    imageData.Count >= 2 && ReadHelper.IsWhitespace(imageData[imageData.Count - 2]))
+                {
+                    // Confirm "EI" really ends the image rather than appearing within the data by
+                    // checking the following bytes look like content (plain text including white-space).
                     var currentOffset = inputBytes.CurrentOffset;
 
                     var read = inputBytes.Read(buffer);
@@ -406,9 +412,9 @@
                     }
                 }
 
-                imageData.Add(inputBytes.CurrentByte);
+                imageData.Add(currentByte);
 
-                prevByte = inputBytes.CurrentByte;
+                prevByte = currentByte;
             }
 
             if (useLenientParsing)
