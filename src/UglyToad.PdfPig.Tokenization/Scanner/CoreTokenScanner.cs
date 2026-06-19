@@ -104,6 +104,17 @@
             inputBytes.Seek(position);
         }
 
+        /// <summary>
+        /// Discards any byte that was read ahead of the current token (see <see cref="ITokenizer.ReadsNextByte"/>).
+        /// This must be called after seeking to an absolute position where the next <see cref="MoveNext"/> is
+        /// expected to read the byte at that position, otherwise the stale pre-read byte from the previous
+        /// location is reused and tokenization starts one byte too late.
+        /// </summary>
+        public void ClearPreReadByte()
+        {
+            hasBytePreRead = false;
+        }
+
         /// <inheritdoc />
         public bool MoveNext()
         {

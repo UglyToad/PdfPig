@@ -785,6 +785,8 @@
 
             Seek(offset.Value1);
 
+            coreTokenScanner.ClearPreReadByte();
+
             if (!MoveNext())
             {
                 TryBruteForceFileToFindReference(reference, out var bfObjectToken);
@@ -817,8 +819,10 @@
             {
                 // Brute force read the entire file
                 isBruteForcing = true;
-                
+
                 Seek(fileHeaderOffset.Value);
+
+                coreTokenScanner.ClearPreReadByte();
 
                 while (MoveNext())
                 {

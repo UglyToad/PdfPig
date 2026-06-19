@@ -12,6 +12,20 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1332_1()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("0012156.pdf");
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                foreach (var page in document.GetPages())
+                {
+                    Assert.NotNull(page);
+                    Assert.NotEmpty(page.Paths);
+                }
+            }
+        }
+
+        [Fact]
         public void Issues1332()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("color_icc_based.pdf");
