@@ -6,7 +6,7 @@
 
     internal sealed class PlainTokenizer : ITokenizer
     {
-        public bool ReadsNextByte { get; } = true;
+        public bool ReadsNextByte => true;
 
         public bool TryTokenize(byte currentByte, IInputBytes inputBytes, out IToken token)
         {
@@ -20,7 +20,7 @@
             using var builder = new ValueStringBuilder(stackalloc char[16]);
 
             builder.Append((char)currentByte);
-            
+
             while (inputBytes.MoveNext())
             {
                 if (ReadHelper.IsWhitespace(inputBytes.CurrentByte))
@@ -28,12 +28,12 @@
                     break;
                 }
 
-                if (inputBytes.CurrentByte is (byte)'<' or (byte)'[' or (byte)'/' or (byte)']' or (byte)'>' or (byte)'(' or (byte)')')
+                if (inputBytes.CurrentByte is (byte)'<' or (byte)'[' or (byte)'/' or (byte)']' or (byte)'>' or (byte)'(' or (byte)')' or (byte)'%')
                 {
                     break;
                 }
 
-                builder.Append((char) inputBytes.CurrentByte);
+                builder.Append((char)inputBytes.CurrentByte);
             }
 
             var text = builder.AsSpan();
