@@ -12,6 +12,18 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1332()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("color_icc_based.pdf");
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                Assert.NotNull(page);
+                Assert.NotEmpty(page.Paths);
+            }
+        }
+
+        [Fact]
         public void Issues1328()
         {
             var path = IntegrationHelpers.GetDocumentPath("testPdf-1.pdf");
@@ -29,7 +41,7 @@
                 Assert.Equal(187334, images2[0].RawBytes.Length);
             }
         }
-
+        
         [Fact]
         public void Issues1237()
         {
