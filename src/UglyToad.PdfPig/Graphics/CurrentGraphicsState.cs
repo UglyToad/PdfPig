@@ -6,6 +6,7 @@ namespace UglyToad.PdfPig.Graphics
     using Colors;
     using Core;
     using PdfPig.Core;
+    using UglyToad.PdfPig.Graphics.Colors.Icc;
 
     /// <summary>
     /// The state of the current graphics control parameters set by operations in the content stream.
@@ -54,6 +55,19 @@ namespace UglyToad.PdfPig.Graphics
         /// The rendering intent to use when converting CIE-based colors to device colors.
         /// </summary>
         public RenderingIntent RenderingIntent { get; set; } = RenderingIntent.RelativeColorimetric;
+
+        /// <summary>
+        /// The output intent in effect for this graphics state (see 14.11.5, "Output intents"), or
+        /// <see langword="null"/> when device colours shall not be colour-managed through an output intent.
+        /// <para>
+        /// Seeded on the root state with the page's effective output intent (a page-level <c>/OutputIntents</c>
+        /// overriding the document catalog's), it is part of the graphics state so it is naturally page-scoped
+        /// and propagates to nested states. It is set to <see langword="null"/> while rendering an
+        /// alpha/luminosity group (a soft mask), where converting device black through the output device would
+        /// change its luminosity and corrupt the mask.
+        /// </para>
+        /// </summary>
+        public OutputIntent OutputIntent { get; set; } = null;
 
         /// <summary>
         /// Should a correction for rasterization effects be applied?
@@ -145,6 +159,7 @@ namespace UglyToad.PdfPig.Graphics
             {
                 FontState = FontState?.DeepClone(),
                 RenderingIntent = RenderingIntent,
+                OutputIntent = OutputIntent,
                 LineDashPattern = LineDashPattern,
                 CurrentTransformationMatrix = CurrentTransformationMatrix,
                 LineWidth = LineWidth,

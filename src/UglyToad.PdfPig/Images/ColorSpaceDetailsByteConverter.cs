@@ -4,6 +4,7 @@
     using Graphics.Colors;
     using System;
     using System.Collections.Generic;
+    using UglyToad.PdfPig.Graphics.Core;
 
     /// <summary>
     /// Utility for working with the bytes in <see cref="IPdfImage"/>s and converting according to their <see cref="ColorSpaceDetails"/>.s
@@ -12,19 +13,18 @@
     {
         /// <summary>
         /// Converts the output bytes (if available) of <see cref="IPdfImage.TryGetBytesAsMemory"/>
-        /// to actual pixel values using the <see cref="IPdfImage.ColorSpaceDetails"/>. For most images this doesn't
-        /// change the data but for <see cref="ColorSpace.Indexed"/> it will convert the bytes which are indexes into the
+        /// to actual pixel values using the <see cref="IPdfImage.ColorSpaceDetails"/> with intent = <see cref="RenderingIntent.RelativeColorimetric"/>.
+        /// For most images this doesn't change the data but for <see cref="ColorSpace.Indexed"/> it will convert the bytes which are indexes into the
         /// real pixel data into the real pixel data.
         /// </summary>
         public static Span<byte> Convert(ColorSpaceDetails details, Span<byte> decoded, int bitsPerComponent, int imageWidth, int imageHeight)
-        {
-            return Convert(details, decoded, bitsPerComponent, imageWidth, imageHeight, null);
-        }
+            => Convert(details, decoded, bitsPerComponent, imageWidth, imageHeight, null, RenderingIntent.RelativeColorimetric);
 
         /// <summary>
         /// Converts the output bytes (if available) of <see cref="IPdfImage.TryGetBytesAsMemory"/>
         /// to actual pixel values using the <see cref="IPdfImage.ColorSpaceDetails"/>, applying the image's
-        /// <paramref name="decode"/> array before the colour space transform.
+        /// <paramref name="decode"/> array before the colour space transform. Intent is only consulted for
+        /// <see cref="ICCBasedColorSpaceDetails"/>; other color spaces ignore it.
         /// </summary>
         /// <remarks>
         /// The Decode array (PDF 2.0, 8.9.5.10) maps each raw sample value to a value in the colour-space range
@@ -32,7 +32,8 @@
         /// colour space default" (which is a no-op for the common case). For <see cref="ColorSpace.Indexed"/> the
         /// sample is itself an index so the byte-level Decode applied here is skipped.
         /// </remarks>
-        public static Span<byte> Convert(ColorSpaceDetails details, Span<byte> decoded, int bitsPerComponent, int imageWidth, int imageHeight, IReadOnlyList<double>? decode)
+        public static Span<byte> Convert(ColorSpaceDetails details, Span<byte> decoded, int bitsPerComponent, int imageWidth, int imageHeight,
+            IReadOnlyList<double>? decode, RenderingIntent intent)
         {
             if (decoded.IsEmpty)
             {
@@ -69,7 +70,7 @@
 
             ApplyDecode(decoded, details, decode, bitsPerComponent);
 
-            return details.Transform(decoded);
+            return details.Transform(decoded, intent);
         }
 
         private static void ApplyDecode(Span<byte> samples, ColorSpaceDetails details, IReadOnlyList<double>? decode, int bitsPerComponent)

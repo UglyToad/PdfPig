@@ -40,33 +40,31 @@
                 return;
             }
 
-            if (patternName != null && CurrentStrokingColorSpace.Type == ColorSpace.Pattern)
+            var state = currentStateFunc();
+            if (patternName is not null && CurrentStrokingColorSpace.Type == ColorSpace.Pattern)
             {
-                currentStateFunc().CurrentStrokingColor = ((PatternColorSpaceDetails)CurrentStrokingColorSpace).GetColor(patternName);
+                state.CurrentStrokingColor = ((PatternColorSpaceDetails)CurrentStrokingColorSpace).GetColor(patternName);
                 // TODO - use operands values for Uncoloured Tiling Patterns
             }
             else
             {
-                currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(operands.ToArray());
+                state.CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(operands.ToArray(), state.RenderingIntent);
             }
         }
 
         public void SetStrokingColorGray(double gray)
         {
-            CurrentStrokingColorSpace = DeviceGrayColorSpaceDetails.Instance;
-            currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(gray);
+            SetDeviceColor(ColorSpace.DeviceGray, [gray], stroking: true);
         }
 
         public void SetStrokingColorRgb(double r, double g, double b)
         {
-            CurrentStrokingColorSpace = DeviceRgbColorSpaceDetails.Instance;
-            currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(r, g, b);
+            SetDeviceColor(ColorSpace.DeviceRGB, [r, g, b], stroking: true);
         }
 
         public void SetStrokingColorCmyk(double c, double m, double y, double k)
         {
-            CurrentStrokingColorSpace = DeviceCmykColorSpaceDetails.Instance;
-            currentStateFunc().CurrentStrokingColor = CurrentStrokingColorSpace.GetColor(c, m, y, k);
+            SetDeviceColor(ColorSpace.DeviceCMYK, [c, m, y, k], stroking: true);
         }
 
         public void SetNonStrokingColorspace(NameToken colorspace, DictionaryToken? dictionary = null)
@@ -87,33 +85,56 @@
                 return;
             }
 
-            if (patternName != null && CurrentNonStrokingColorSpace.Type == ColorSpace.Pattern)
+            var state = currentStateFunc();
+            if (patternName is not null && CurrentNonStrokingColorSpace.Type == ColorSpace.Pattern)
             {
-                currentStateFunc().CurrentNonStrokingColor = ((PatternColorSpaceDetails)CurrentNonStrokingColorSpace).GetColor(patternName);
+                state.CurrentNonStrokingColor = ((PatternColorSpaceDetails)CurrentNonStrokingColorSpace).GetColor(patternName);
                 // TODO - use operands values for Uncoloured Tiling Patterns
             }
             else
             {
-                currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(operands.ToArray());
+                state.CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(operands.ToArray(), state.RenderingIntent);
             }
         }
 
         public void SetNonStrokingColorGray(double gray)
         {
-            CurrentNonStrokingColorSpace = DeviceGrayColorSpaceDetails.Instance;
-            currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(gray);
+            SetDeviceColor(ColorSpace.DeviceGray, [gray], stroking: false);
         }
 
         public void SetNonStrokingColorRgb(double r, double g, double b)
         {
-            CurrentNonStrokingColorSpace = DeviceRgbColorSpaceDetails.Instance;
-            currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(r, g, b);
+            SetDeviceColor(ColorSpace.DeviceRGB, [r, g, b], stroking: false);
         }
 
         public void SetNonStrokingColorCmyk(double c, double m, double y, double k)
         {
-            CurrentNonStrokingColorSpace = DeviceCmykColorSpaceDetails.Instance;
-            currentStateFunc().CurrentNonStrokingColor = CurrentNonStrokingColorSpace.GetColor(c, m, y, k);
+            SetDeviceColor(ColorSpace.DeviceCMYK, [c, m, y, k], stroking: false);
+        }
+
+        /// <summary>
+        /// Set a colour selected directly through a device colour operator (<c>g</c>/<c>rg</c>/<c>k</c>
+        /// and their stroking variants). Per 8.6.5.6, "Default colour spaces", the device colour space is
+        /// first remapped to the corresponding <c>DefaultGray</c>/<c>DefaultRGB</c>/<c>DefaultCMYK</c> space
+        /// when one is defined in the current resource dictionary; otherwise the device space is used as-is.
+        /// </summary>
+        private void SetDeviceColor(ColorSpace deviceColorSpace, ReadOnlySpan<double> values, bool stroking)
+        {
+            var colorSpace = resourceStore.GetDeviceColorSpaceDetails(deviceColorSpace);
+            var state = currentStateFunc();
+
+            IColor color = colorSpace.GetColor(values.ToArray(), state.RenderingIntent);
+
+            if (stroking)
+            {
+                CurrentStrokingColorSpace = colorSpace;
+                state.CurrentStrokingColor = color;
+            }
+            else
+            {
+                CurrentNonStrokingColorSpace = colorSpace;
+                state.CurrentNonStrokingColor = color;
+            }
         }
 
         public IColorSpaceContext DeepClone()

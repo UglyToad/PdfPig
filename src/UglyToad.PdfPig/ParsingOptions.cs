@@ -3,6 +3,7 @@
     using Filters;
     using System.Collections.Generic;
     using Logging;
+    using UglyToad.PdfPig.Graphics.Colors.Icc;
 
     /// <summary>
     /// Configures options used by the parser when reading PDF documents.
@@ -72,5 +73,34 @@
         /// Defaults to <see langword="false"/>.
         /// </summary>
         public bool UseActualText { get; set; } = false;
+
+        /// <summary>
+        /// Service used to convert <c>/ICCBased</c> color space samples to sRGB.
+        /// When <c>null</c> (default), ICC-based color spaces fall back silently
+        /// to their declared alternate color space.
+        /// </summary>
+        public IIccProfileService? IccProfileService { get; set; } = null;
+
+        /// <summary>
+        /// Should the parser colour-manage device colour spaces (DeviceGray, DeviceRGB, DeviceCMYK)
+        /// through the document's (or page's) output intent <c>/DestOutputProfile</c> when one is present?
+        /// <para>
+        /// Per the PDF specification (14.11.5, "Output intents") the data in an output intent dictionary
+        /// "shall be for informational purposes only, and PDF processors are free to disregard it", and
+        /// there is "no expectation" that device colours are automatically converted to the target space
+        /// (such conversion is "undesirable" in some workflows). Enabling this treats the output intent as
+        /// the calibration of the device's native colour space for preview/proofing (see 8.6.5.7,
+        /// "Implicit conversion of CIE-based colour spaces"); disabling it leaves device colours to their
+        /// built-in conversion.
+        /// </para>
+        /// <para>
+        /// Defaults to <see langword="false"/>: the specification sets "no expectation" that device colours
+        /// are automatically converted to the output-intent target and notes such conversion is
+        /// "undesirable" in some workflows, so it is opt-in. A previewing/proofing consumer (such as a
+        /// renderer) can enable it. Requires <see cref="IccProfileService"/> to be set (the output intent
+        /// profile is parsed through it).
+        /// </para>
+        /// </summary>
+        public bool UseOutputIntentColorManagement { get; set; } = false;
     }
 }

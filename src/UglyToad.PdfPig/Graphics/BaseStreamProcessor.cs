@@ -18,6 +18,8 @@
     using PdfPig.Core;
     using Tokenization.Scanner;
     using Tokens;
+    using UglyToad.PdfPig.Graphics.Colors.Icc;
+    using Util;
     using XObjects;
 
     /// <summary>
@@ -131,7 +133,8 @@
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
             in TransformationMatrix initialMatrix,
-            ParsingOptions parsingOptions)
+            ParsingOptions parsingOptions,
+            DictionaryToken? pageDictionary = null)
         {
             this.PageNumber = pageNumber;
             this.ResourceStore = resourceStore;
@@ -146,8 +149,21 @@
             {
                 CurrentTransformationMatrix = initialMatrix,
                 CurrentClippingPath = GetInitialClipping(cropBox),
-                ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore)
+                ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore),
+                OutputIntent = ResolvePageOutputIntent(pageDictionary)
             });
+        }
+
+        private OutputIntent? ResolvePageOutputIntent(DictionaryToken? pageDictionary)
+        {
+            if (!ParsingOptions.UseOutputIntentColorManagement || pageDictionary is null)
+            {
+                return null;
+            }
+
+            var pageLevel = OutputIntentParser.Create(pageDictionary, PdfScanner, FilterProvider,
+                ResourceStore.IccProfileService);
+            return pageLevel ?? ResourceStore.OutputIntent;
         }
 
         /// <summary>
@@ -887,6 +903,14 @@
                 // (Optional) A flag specifying whether to apply automatic stroke adjustment
                 // (see Section 6.5.4, “Automatic Stroke Adjustment”).
                 currentGraphicsState.StrokeAdjustment = saToken.Data;
+            }
+
+            if (state.TryGet(NameToken.Ri, PdfScanner, out NameToken? riToken))
+            {
+                // (Optional; PDF 1.3) The name of the rendering intent (see 8.6.5.8, "Rendering
+                // intents"). This is equivalent to setting it with the ri operator. An unrecognised
+                // name maps to RelativeColorimetric (handled by ToRenderingIntent).
+                currentGraphicsState.RenderingIntent = riToken.Data.ToRenderingIntent();
             }
 
             // (PDF 1.4, array is deprecated in PDF 2.0) The current blend mode that shall be
