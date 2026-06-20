@@ -889,6 +889,14 @@
                 currentGraphicsState.StrokeAdjustment = saToken.Data;
             }
 
+            if (state.TryGet(NameToken.Ri, PdfScanner, out NameToken? riToken))
+            {
+                // (Optional; PDF 1.3) The name of the rendering intent (see 8.6.5.8, "Rendering
+                // intents"). This is equivalent to setting it with the ri operator. An unrecognised
+                // name maps to RelativeColorimetric (handled by ToRenderingIntent).
+                currentGraphicsState.RenderingIntent = riToken.Data.ToRenderingIntent();
+            }
+
             // (PDF 1.4, array is deprecated in PDF 2.0) The current blend mode that shall be
             // used in the transparent imaging model (see 11.3.5, "Blend mode"). A PDF reader
             // shall implicitly reset this parameter to its initial value at the (array is
