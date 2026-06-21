@@ -12,6 +12,18 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1331()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("issue_1331.pdf");
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                Assert.NotNull(page);
+                Assert.Contains("Müügihind", page.Text);
+            }
+        }
+
+        [Fact]
         public void Issues1332_1()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("0012156.pdf");

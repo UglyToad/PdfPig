@@ -28,7 +28,9 @@
                 namedDictionaryRequiredKeys: new Dictionary<NameToken, IReadOnlyList<NameToken>>
                 {
                     { NameToken.CidSystemInfo, new[] { NameToken.Registry, NameToken.Ordering, NameToken.Supplement } }
-                });
+                },
+                // Malformed CMaps may omit the whitespace mandated between tokens (see #1331 and PDFBOX-2035).
+                isCMapParser: true);
 
             var builder = new CharacterMapBuilder();
 
