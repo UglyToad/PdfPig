@@ -12,7 +12,7 @@
     using Filters;
     using Util;
 
-    internal class ResourceStore : IResourceStore
+    internal sealed class ResourceStore : IResourceStore
     {
         private readonly IPdfTokenScanner scanner;
         private readonly IFontFactory fontFactory;
@@ -307,10 +307,14 @@
                 return ColorSpaceDetailsParser.GetColorSpaceDetails(null, dictionary, scanner, this, filterProvider);
             }
 
-            if (name.TryMapToColorSpace(out ColorSpace colorspaceActual))
+            if (name.TryMapToColorSpace(out ColorSpace colorSpaceActual))
             {
-                // TODO - We need to find a way to store profile that have an actual dictionary, e.g. ICC profiles - without parsing them again
-                return ColorSpaceDetailsParser.GetColorSpaceDetails(colorspaceActual, dictionary, scanner, this, filterProvider);
+                if (TryGetDefaultSubstitute(colorSpaceActual, out NameToken? substituteName))
+                {
+                    return GetColorSpaceDetails(substituteName, dictionary);
+                }
+                
+                return ColorSpaceDetailsParser.GetColorSpaceDetails(colorSpaceActual, dictionary, scanner, this, filterProvider);
             }
 
             // Named color spaces
@@ -326,7 +330,8 @@
                 {
                     return ColorSpaceDetailsParser.GetColorSpaceDetails(mapped, dictionary, scanner, this, filterProvider);
                 }
-                else if (namedColorSpace.Data is ArrayToken array)
+                
+                if (namedColorSpace.Data is ArrayToken array)
                 {
                     var csd = ColorSpaceDetailsParser.GetColorSpaceDetails(mapped, dictionary.With(NameToken.ColorSpace, array), scanner, this, filterProvider);
                     loadedNamedColorSpaceDetails[name] = csd;
@@ -335,6 +340,56 @@
             }
 
             throw new InvalidOperationException($"Could not find color space for token '{name}'.");
+        }
+
+        public ColorSpaceDetails GetDeviceColorSpaceDetails(ColorSpace deviceColorSpace)
+        {
+            // 8.6.5.6: a directly selected device colour space is remapped to its DefaultGray/RGB/CMYK
+            // substitute when one is present in the current resources. Otherwise return the device
+            // space singleton.
+            // Any colour space other than a Lab, Indexed, or Pattern colour space may be used as a default
+            // colour space and it should be compatible with the original device colour space.
+            // We reject those families up-front from the substitute's own definition, before resolving its
+            // details. Besides being cheaper, this prevents infinite recursion for a self-referential default
+            // such as /DefaultRGB defined as [ /Indexed /DeviceRGB ... ], whose base would otherwise resolve
+            // this same device colour space again.
+            if (TryGetDefaultSubstitute(deviceColorSpace, out NameToken? substituteName) &&
+                TryGetNamedColorSpace(substituteName, out ResourceColorSpace substitute) &&
+                substitute.Name.TryMapToColorSpace(out ColorSpace substituteColorSpace) &&
+                substituteColorSpace is not ColorSpace.Lab and not ColorSpace.Indexed and not ColorSpace.Pattern)
+            {
+                return GetColorSpaceDetails(substituteName, null);
+            }
+
+            return deviceColorSpace switch
+            {
+                ColorSpace.DeviceGray => DeviceGrayColorSpaceDetails.Instance,
+                ColorSpace.DeviceRGB => DeviceRgbColorSpaceDetails.Instance,
+                ColorSpace.DeviceCMYK => DeviceCmykColorSpaceDetails.Instance,
+                _ => throw new ArgumentOutOfRangeException(nameof(deviceColorSpace),
+                    deviceColorSpace,
+                    "Expected a device colour space (DeviceGray, DeviceRGB or DeviceCMYK).")
+            };
+        }
+
+        private bool TryGetDefaultSubstitute(ColorSpace requested, [NotNullWhen(true)] out NameToken? substituteName)
+        {
+            NameToken? candidate = requested switch
+            {
+                ColorSpace.DeviceGray => NameToken.DefaultGray,
+                ColorSpace.DeviceRGB => NameToken.DefaultRgb,
+                ColorSpace.DeviceCMYK => NameToken.DefaultCmyk,
+                _ => null
+            };
+
+            if (candidate is not null && namedColorSpaces.TryGetValue(candidate, out _))
+            {
+                substituteName = candidate;
+                return true;
+            }
+
+            substituteName = null;
+            return false;
         }
 
         public bool TryGetXObject(NameToken name, [NotNullWhen(true)] out StreamToken? stream)
