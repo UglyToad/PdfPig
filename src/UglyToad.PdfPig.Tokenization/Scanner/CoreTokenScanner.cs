@@ -14,8 +14,10 @@
         private static readonly HexTokenizer HexTokenizer = new HexTokenizer();
         private static readonly NameTokenizer NameTokenizer = new NameTokenizer();
         private static readonly PlainTokenizer PlainTokenizer = new PlainTokenizer();
+        private static readonly PlainTokenizer PlainTokenizerSplitOnDigit = new PlainTokenizer(splitOnDigit: true);
         private static readonly NumericTokenizer NumericTokenizer = new NumericTokenizer();
 
+        private readonly PlainTokenizer plainTokenizer;
         private readonly StringTokenizer stringTokenizer;
         private readonly ArrayTokenizer arrayTokenizer;
         private readonly DictionaryTokenizer dictionaryTokenizer;
@@ -65,11 +67,13 @@
             ScannerScope scope = ScannerScope.None,
             IReadOnlyDictionary<NameToken, IReadOnlyList<NameToken>> namedDictionaryRequiredKeys = null,
             bool useLenientParsing = false,
-            bool isStream = false)
+            bool isStream = false,
+            bool isCMapParser = false)
         {
             this.inputBytes = inputBytes ?? throw new ArgumentNullException(nameof(inputBytes));
             this.usePdfDocEncoding = usePdfDocEncoding;
             this.StackDepthGuard = stackDepthGuard;
+            this.plainTokenizer = isCMapParser ? PlainTokenizerSplitOnDigit : PlainTokenizer;
             this.stringTokenizer = new StringTokenizer(usePdfDocEncoding);
             this.arrayTokenizer = new ArrayTokenizer(usePdfDocEncoding, this.StackDepthGuard, useLenientParsing);
             this.dictionaryTokenizer = new DictionaryTokenizer(usePdfDocEncoding, this.StackDepthGuard, useLenientParsing: useLenientParsing);
@@ -240,7 +244,7 @@
                             tokenizer = NumericTokenizer;
                             break;
                         default:
-                            tokenizer = PlainTokenizer;
+                            tokenizer = plainTokenizer;
                             break;
                     }
                 }
