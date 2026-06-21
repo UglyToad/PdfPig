@@ -38,7 +38,9 @@
                     maskMemory.Span,
                     mask.BitsPerComponent,
                     mask.WidthInSamples,
-                    mask.HeightInSamples);
+                    mask.HeightInSamples,
+                    null,
+                    mask.RenderingIntent);
 
                 return IsCorrectlySized(mask, maskBytes);
             }
@@ -86,7 +88,8 @@
             try
             {
                 bytesPure = ColorSpaceDetailsByteConverter.Convert(image.ColorSpaceDetails!, bytesPure,
-                    image.BitsPerComponent, image.WidthInSamples, image.HeightInSamples, image.Decode);
+                    image.BitsPerComponent, image.WidthInSamples, image.HeightInSamples, image.Decode,
+                    image.RenderingIntent);
 
                 var numberOfComponents = image.ColorSpaceDetails!.BaseNumberOfColorComponents;
 

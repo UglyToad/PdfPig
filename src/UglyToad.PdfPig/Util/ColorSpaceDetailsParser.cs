@@ -254,7 +254,24 @@
                             metadata = new XmpMetadata(metadataStream, filterProvider, scanner);
                         }
 
-                        return new ICCBasedColorSpaceDetails(numeric.Int, alternateColorSpaceDetails, range, metadata);
+                        Memory<byte> profileBytes = Memory<byte>.Empty;
+                        if (resourceStore.IccProfileService is not null)
+                        {
+                            try
+                            {
+                                profileBytes = streamToken.Decode(filterProvider, scanner);
+                            }
+                            catch
+                            { /* Ignore */ }
+                        }
+
+                        return new ICCBasedColorSpaceDetails(
+                            numeric.Int,
+                            alternateColorSpaceDetails,
+                            range,
+                            metadata,
+                            profileBytes,
+                            resourceStore.IccProfileService);
                     }
                 case ColorSpace.Indexed:
                     {
@@ -482,6 +499,15 @@
             if (DirectObjectFinder.TryGet(csToken, scanner, out NameToken? alternateNameToken)
                 && ColorSpaceMapper.TryMap(alternateNameToken, resourceStore, out var baseColorSpaceName))
             {
+                // 8.6.5.6: when a special colour space is based on an underlying device colour space, the
+                // DefaultGray/DefaultRGB/DefaultCMYK substitution shall be used in place of that device
+                // space. This applies to the base of an Indexed space, the alternate of a Separation/DeviceN
+                // space and the underlying space of a Pattern - all of which are resolved here.
+                if (baseColorSpaceName is ColorSpace.DeviceGray or ColorSpace.DeviceRGB or ColorSpace.DeviceCMYK)
+                {
+                    return resourceStore.GetDeviceColorSpaceDetails(baseColorSpaceName);
+                }
+
                 return GetColorSpaceDetails(
                     baseColorSpaceName,
                     dictionary,

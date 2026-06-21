@@ -68,7 +68,8 @@ namespace UglyToad.PdfPig.Graphics
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
             TransformationMatrix initialMatrix,
-            ParsingOptions parsingOptions)
+            ParsingOptions parsingOptions,
+            DictionaryToken pageDictionary = null)
             : base(pageNumber,
                 resourceStore,
                 pdfScanner,
@@ -78,7 +79,8 @@ namespace UglyToad.PdfPig.Graphics
                 userSpaceUnit,
                 rotation,
                 initialMatrix,
-                parsingOptions)
+                parsingOptions,
+                pageDictionary)
         {
         }
 

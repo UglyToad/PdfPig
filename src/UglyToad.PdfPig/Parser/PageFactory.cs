@@ -73,7 +73,8 @@
                 userSpaceUnit,
                 rotation,
                 initialMatrix,
-                ParsingOptions);
+                ParsingOptions,
+                dictionary);
 
             PageContent content = context.Process(pageNumber, operations);
 

@@ -11,8 +11,9 @@
     using Tokens;
     using Filters;
     using Util;
+    using UglyToad.PdfPig.Graphics.Colors.Icc;
 
-    internal class ResourceStore : IResourceStore
+    internal sealed class ResourceStore : IResourceStore
     {
         private readonly IPdfTokenScanner scanner;
         private readonly IFontFactory fontFactory;
@@ -37,15 +38,21 @@
 
         private (NameToken? name, IFont? font) lastLoadedFont;
 
+        public IIccProfileService? IccProfileService => parsingOptions.IccProfileService;
+
+        public OutputIntent? OutputIntent { get; }
+
         public ResourceStore(IPdfTokenScanner scanner,
             IFontFactory fontFactory,
             ILookupFilterProvider filterProvider,
-            ParsingOptions parsingOptions)
+            ParsingOptions parsingOptions,
+            OutputIntent? outputIntent = null)
         {
             this.scanner = scanner;
             this.fontFactory = fontFactory;
             this.filterProvider = filterProvider;
             this.parsingOptions = parsingOptions;
+            OutputIntent = outputIntent;
         }
 
         public void LoadResourceDictionary(DictionaryToken resourceDictionary)
@@ -307,10 +314,14 @@
                 return ColorSpaceDetailsParser.GetColorSpaceDetails(null, dictionary, scanner, this, filterProvider);
             }
 
-            if (name.TryMapToColorSpace(out ColorSpace colorspaceActual))
+            if (name.TryMapToColorSpace(out ColorSpace colorSpaceActual))
             {
-                // TODO - We need to find a way to store profile that have an actual dictionary, e.g. ICC profiles - without parsing them again
-                return ColorSpaceDetailsParser.GetColorSpaceDetails(colorspaceActual, dictionary, scanner, this, filterProvider);
+                if (TryGetDefaultSubstitute(colorSpaceActual, out NameToken? substituteName))
+                {
+                    return GetColorSpaceDetails(substituteName, dictionary);
+                }
+
+                return ColorSpaceDetailsParser.GetColorSpaceDetails(colorSpaceActual, dictionary, scanner, this, filterProvider);
             }
 
             // Named color spaces
@@ -335,6 +346,46 @@
             }
 
             throw new InvalidOperationException($"Could not find color space for token '{name}'.");
+        }
+
+        public ColorSpaceDetails GetDeviceColorSpaceDetails(ColorSpace deviceColorSpace)
+        {
+            // 8.6.5.6: a directly selected device colour space is remapped to its DefaultGray/RGB/CMYK
+            // substitute when one is present in the current resources. Otherwise return the device
+            // space singleton (allocation-free for the common no-default case).
+            if (TryGetDefaultSubstitute(deviceColorSpace, out NameToken? substituteName))
+            {
+                return GetColorSpaceDetails(substituteName, null);
+            }
+
+            return deviceColorSpace switch
+            {
+                ColorSpace.DeviceGray => DeviceGrayColorSpaceDetails.Instance,
+                ColorSpace.DeviceRGB => DeviceRgbColorSpaceDetails.Instance,
+                ColorSpace.DeviceCMYK => DeviceCmykColorSpaceDetails.Instance,
+                _ => throw new ArgumentOutOfRangeException(nameof(deviceColorSpace), deviceColorSpace,
+                    "Expected a device colour space (DeviceGray, DeviceRGB or DeviceCMYK).")
+            };
+        }
+
+        private bool TryGetDefaultSubstitute(ColorSpace requested, [NotNullWhen(true)] out NameToken? substituteName)
+        {
+            NameToken? candidate = requested switch
+            {
+                ColorSpace.DeviceGray => NameToken.DefaultGray,
+                ColorSpace.DeviceRGB => NameToken.DefaultRgb,
+                ColorSpace.DeviceCMYK => NameToken.DefaultCmyk,
+                _ => null
+            };
+
+            if (candidate is not null && namedColorSpaces.TryGetValue(candidate, out _))
+            {
+                substituteName = candidate;
+                return true;
+            }
+
+            substituteName = null;
+            return false;
         }
 
         public bool TryGetXObject(NameToken name, [NotNullWhen(true)] out StreamToken? stream)

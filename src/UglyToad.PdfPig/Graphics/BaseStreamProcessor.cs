@@ -18,6 +18,8 @@
     using PdfPig.Core;
     using Tokenization.Scanner;
     using Tokens;
+    using UglyToad.PdfPig.Graphics.Colors.Icc;
+    using Util;
     using XObjects;
 
     /// <summary>
@@ -131,7 +133,8 @@
             UserSpaceUnit userSpaceUnit,
             PageRotationDegrees rotation,
             in TransformationMatrix initialMatrix,
-            ParsingOptions parsingOptions)
+            ParsingOptions parsingOptions,
+            DictionaryToken? pageDictionary = null)
         {
             this.PageNumber = pageNumber;
             this.ResourceStore = resourceStore;
@@ -146,8 +149,21 @@
             {
                 CurrentTransformationMatrix = initialMatrix,
                 CurrentClippingPath = GetInitialClipping(cropBox),
-                ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore)
+                ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore),
+                OutputIntent = ResolvePageOutputIntent(pageDictionary)
             });
+        }
+
+        private OutputIntent? ResolvePageOutputIntent(DictionaryToken? pageDictionary)
+        {
+            if (!ParsingOptions.UseOutputIntentColorManagement || pageDictionary is null)
+            {
+                return null;
+            }
+
+            var pageLevel = OutputIntentParser.Create(pageDictionary, PdfScanner, FilterProvider,
+                ResourceStore.IccProfileService);
+            return pageLevel ?? ResourceStore.OutputIntent;
         }
 
         /// <summary>
