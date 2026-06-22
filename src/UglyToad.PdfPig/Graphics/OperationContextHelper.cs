@@ -1,7 +1,6 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
     using System;
-    using System.Linq;
     using Content;
     using Geometry;
     using Logging;
@@ -16,20 +15,18 @@
         /// Get the initial transformation matrix.
         /// </summary>
         /// <param name="userSpaceUnit">User space unit.</param>
-        /// <param name="mediaBox">The Media box as define in the document, without any applied transform.</param>
-        /// <param name="cropBox">The Crop box as define in the document, without any applied transform.</param>
+        /// <param name="cropBox">The effective crop box (already clipped to the media box), without any applied transform.</param>
         /// <param name="rotation">The page rotation.</param>
         /// <param name="log"></param>
         [System.Diagnostics.Contracts.Pure]
         internal static TransformationMatrix GetInitialMatrix(UserSpaceUnit userSpaceUnit,
-            MediaBox mediaBox,
             CropBox cropBox,
             PageRotationDegrees rotation,
             ILog log)
         {
-            // Cater for scenario where the cropbox is larger than the mediabox.
-            // If there is no intersection (method returns null), fall back to the cropbox.
-            var viewBox = mediaBox.Bounds.Intersect(cropBox.Bounds) ?? cropBox.Bounds;
+            // The crop box has already been clipped to the media box (ISO 32000-2:2020, 14.11.2),
+            // so it directly defines the visible region.
+            var viewBox = cropBox.Bounds;
 
             if (rotation.Value == 0
                 && viewBox.Left == 0

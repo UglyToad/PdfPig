@@ -145,18 +145,18 @@
             GraphicsStack.Push(new CurrentGraphicsState()
             {
                 CurrentTransformationMatrix = initialMatrix,
-                CurrentClippingPath = GetInitialClipping(cropBox),
+                CurrentClippingPath = GetInitialClipping(cropBox, rotation),
                 ColorSpaceContext = new ColorSpaceContext(GetCurrentState, resourceStore)
             });
         }
 
         /// <summary>
-        /// Get the initial clipping path using the crop box and the initial transformation matrix.
+        /// Get the initial clipping path from the crop box, accounting for the page rotation.
         /// </summary>
-        protected static PdfPath GetInitialClipping(CropBox cropBox)
+        protected static PdfPath GetInitialClipping(CropBox cropBox, PageRotationDegrees rotation)
         {
             // Initiate CurrentClippingPath to cropBox
-            var clippingPath = cropBox.Bounds.ToPdfPath();
+            var clippingPath = cropBox.GetVisibleBounds(rotation).ToPdfPath();
             clippingPath.SetClipping(FillingRule.EvenOdd);
             return clippingPath;
         }
@@ -887,6 +887,14 @@
                 // (Optional) A flag specifying whether to apply automatic stroke adjustment
                 // (see Section 6.5.4, “Automatic Stroke Adjustment”).
                 currentGraphicsState.StrokeAdjustment = saToken.Data;
+            }
+
+            if (state.TryGet(NameToken.Ri, PdfScanner, out NameToken? riToken))
+            {
+                // (Optional; PDF 1.3) The name of the rendering intent (see 8.6.5.8, "Rendering
+                // intents"). This is equivalent to setting it with the ri operator. An unrecognised
+                // name maps to RelativeColorimetric (handled by ToRenderingIntent).
+                currentGraphicsState.RenderingIntent = riToken.Data.ToRenderingIntent();
             }
 
             // (PDF 1.4, array is deprecated in PDF 2.0) The current blend mode that shall be

@@ -14,8 +14,10 @@
         private static readonly HexTokenizer HexTokenizer = new HexTokenizer();
         private static readonly NameTokenizer NameTokenizer = new NameTokenizer();
         private static readonly PlainTokenizer PlainTokenizer = new PlainTokenizer();
+        private static readonly PlainTokenizer PlainTokenizerSplitOnDigit = new PlainTokenizer(splitOnDigit: true);
         private static readonly NumericTokenizer NumericTokenizer = new NumericTokenizer();
 
+        private readonly PlainTokenizer plainTokenizer;
         private readonly StringTokenizer stringTokenizer;
         private readonly ArrayTokenizer arrayTokenizer;
         private readonly DictionaryTokenizer dictionaryTokenizer;
@@ -65,11 +67,13 @@
             ScannerScope scope = ScannerScope.None,
             IReadOnlyDictionary<NameToken, IReadOnlyList<NameToken>> namedDictionaryRequiredKeys = null,
             bool useLenientParsing = false,
-            bool isStream = false)
+            bool isStream = false,
+            bool isCMapParser = false)
         {
             this.inputBytes = inputBytes ?? throw new ArgumentNullException(nameof(inputBytes));
             this.usePdfDocEncoding = usePdfDocEncoding;
             this.StackDepthGuard = stackDepthGuard;
+            this.plainTokenizer = isCMapParser ? PlainTokenizerSplitOnDigit : PlainTokenizer;
             this.stringTokenizer = new StringTokenizer(usePdfDocEncoding);
             this.arrayTokenizer = new ArrayTokenizer(usePdfDocEncoding, this.StackDepthGuard, useLenientParsing);
             this.dictionaryTokenizer = new DictionaryTokenizer(usePdfDocEncoding, this.StackDepthGuard, useLenientParsing: useLenientParsing);
@@ -102,6 +106,17 @@
         public void Seek(long position)
         {
             inputBytes.Seek(position);
+        }
+
+        /// <summary>
+        /// Discards any byte that was read ahead of the current token (see <see cref="ITokenizer.ReadsNextByte"/>).
+        /// This must be called after seeking to an absolute position where the next <see cref="MoveNext"/> is
+        /// expected to read the byte at that position, otherwise the stale pre-read byte from the previous
+        /// location is reused and tokenization starts one byte too late.
+        /// </summary>
+        public void ClearPreReadByte()
+        {
+            hasBytePreRead = false;
         }
 
         /// <inheritdoc />
@@ -229,7 +244,7 @@
                             tokenizer = NumericTokenizer;
                             break;
                         default:
-                            tokenizer = PlainTokenizer;
+                            tokenizer = plainTokenizer;
                             break;
                     }
                 }
@@ -349,16 +364,22 @@
         {
             const byte lastPlainText = 127;
             const byte space = 32;
+            Span<byte> buffer = stackalloc byte[6];
 
             var imageData = new List<byte>();
             byte prevByte = 0;
             while (inputBytes.MoveNext())
             {
-                if (inputBytes.CurrentByte == 'I' && prevByte == 'E')
-                {
-                    // Check for EI appearing in binary data.
-                    var buffer = new byte[6];
+                var currentByte = inputBytes.CurrentByte;
 
+                // The EI operator that terminates an inline image data must be delimited by white-space
+                // (ISO 32000-2, 8.9.7), i.e. rejects the many "EI" byte pairs that occur naturally inside
+                // binary or ASCII-encoded (e.g. ASCII85) image data.
+                if (currentByte == 'I' && prevByte == 'E' &&
+                    imageData.Count >= 2 && ReadHelper.IsWhitespace(imageData[imageData.Count - 2]))
+                {
+                    // Confirm "EI" really ends the image rather than appearing within the data by
+                    // checking the following bytes look like content (plain text including white-space).
                     var currentOffset = inputBytes.CurrentOffset;
 
                     var read = inputBytes.Read(buffer);
@@ -406,9 +427,9 @@
                     }
                 }
 
-                imageData.Add(inputBytes.CurrentByte);
+                imageData.Add(currentByte);
 
-                prevByte = inputBytes.CurrentByte;
+                prevByte = currentByte;
             }
 
             if (useLenientParsing)

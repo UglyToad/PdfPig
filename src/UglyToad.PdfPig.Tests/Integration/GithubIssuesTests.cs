@@ -12,6 +12,85 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1330()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("issue_1330.pdf");
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                var cropBox = page.CropBox.Bounds;
+                Assert.Equal(new PdfPoint(10, 10), cropBox.BottomLeft);
+                Assert.Equal(new PdfPoint(90, 90), cropBox.TopRight);
+                Assert.Equal(0, cropBox.Rotation);
+
+                var mediaBox = page.MediaBox.Bounds;
+                Assert.Equal(new PdfPoint(0, 0), mediaBox.BottomLeft);
+                Assert.Equal(new PdfPoint(100, 100), mediaBox.TopRight);
+                Assert.Equal(0, mediaBox.Rotation);
+
+                Assert.Equal(80, page.Width);
+                Assert.Equal(80, page.Height);
+            }
+        }
+
+        [Fact]
+        public void Issues1331()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("issue_1331.pdf");
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                Assert.NotNull(page);
+                Assert.Contains("Müügihind", page.Text);
+            }
+        }
+
+        [Fact]
+        public void Issues1332_1()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("0012156.pdf");
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                foreach (var page in document.GetPages())
+                {
+                    Assert.NotNull(page);
+                    Assert.NotEmpty(page.Paths);
+                }
+            }
+        }
+
+        [Fact]
+        public void Issues1332()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("color_icc_based.pdf");
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                Assert.NotNull(page);
+                Assert.NotEmpty(page.Paths);
+            }
+        }
+
+        [Fact]
+        public void Issues1328()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("testPdf-1.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page1 = document.GetPage(1);
+                var images1 = page1.GetImages().ToArray();
+                Assert.Single(images1);
+                Assert.Equal(293179, images1[0].RawBytes.Length);
+
+                var page2 = document.GetPage(2);
+                var images2 = page2.GetImages().ToArray();
+                Assert.Single(images2);
+                Assert.Equal(187334, images2[0].RawBytes.Length);
+            }
+        }
+        
+        [Fact]
         public void Issues1237()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("issues-1237.pdf");

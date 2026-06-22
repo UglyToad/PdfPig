@@ -203,6 +203,12 @@
         }
 
         [Fact]
+        public void SmallCropbox()
+        {
+            Run("SmallCropbox.pdf");
+        }
+
+        [Fact]
         public void Rotation_45()
         {
             Run("Rotation 45.pdf");
