@@ -9,7 +9,7 @@
     /// <remarks>
     /// See table 3.27 from the PDF specification version 1.7.
     /// </remarks>
-    public class MediaBox
+    public sealed class MediaBox
     {
         ///<summary>
         /// User space units per inch.
@@ -67,7 +67,7 @@
         public static readonly MediaBox A6 = new MediaBox(new PdfRectangle(0, 0, 105 * PointsPerMm, 148 * PointsPerMm));
 
         /// <summary>
-        /// A rectangle, expressed in default user space units, that defines the boundaries of the physical medium on which the page shall be displayed or printed.
+        /// A rectangle, expressed in unrotated default user space units, that defines the boundaries of the physical medium on which the page shall be displayed or printed.
         /// </summary>
         public PdfRectangle Bounds { get; }
 

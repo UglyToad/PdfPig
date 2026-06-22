@@ -5,7 +5,6 @@
     using System.Text;
     using System.Linq;
     using Annotations;
-    using Geometry;
     using Graphics.Operations;
     using Tokens;
     using Util;
@@ -118,12 +117,12 @@
             Content = content;
             textLazy = new Lazy<string>(() => GetText(Content));
 
-            // Special case where cropbox is outside mediabox: use cropbox instead of intersection
-            var viewBox = mediaBox.Bounds.Intersect(cropBox.Bounds) ?? cropBox.Bounds;
+            // The crop box has already been clipped to the media box (ISO 32000-2:2020, 14.11.2).
+            var visibleBounds = cropBox.GetVisibleBounds(rotation);
+            Width = visibleBounds.Width;
+            Height = visibleBounds.Height;
 
-            Width = viewBox.Width;
-            Height = viewBox.Height;
-            Size = viewBox.GetPageSize();
+            Size = cropBox.Bounds.GetPageSize();
 
             ExperimentalAccess = new Experimental(this);
             this.annotationProvider = annotationProvider;

@@ -105,9 +105,7 @@
             MediaBox mediaBox = GetMediaBox(number, dictionary, pageTreeMembers);
             CropBox cropBox = GetCropBox(dictionary, pageTreeMembers, mediaBox);
 
-            var initialMatrix = OperationContextHelper.GetInitialMatrix(userSpaceUnit, mediaBox, cropBox, rotation, ParsingOptions.Logger);
-
-            ApplyTransformNormalise(initialMatrix, ref mediaBox, ref cropBox);
+            var initialMatrix = OperationContextHelper.GetInitialMatrix(userSpaceUnit, cropBox, rotation, ParsingOptions.Logger);
 
             TPage page;
 
@@ -254,9 +252,7 @@
                     ParsingOptions.Logger.Error(
                         $"The CropBox was the wrong length in the dictionary: {dictionary}. Array was: {cropBoxArray}. Using MediaBox.");
 
-                    cropBox = new CropBox(mediaBox.Bounds);
-
-                    return cropBox;
+                    return new CropBox(mediaBox.Bounds);
                 }
 
                 cropBox = new CropBox(cropBoxArray.ToRectangle(PdfScanner));
@@ -264,6 +260,16 @@
             else
             {
                 cropBox = pageTreeMembers.GetCropBox() ?? new CropBox(mediaBox.Bounds);
+            }
+
+            // PDF 2.0 (ISO 32000-2:2020), 14.11.2 "Page boundaries": if the bounds of the crop box
+            // extend outside of the bounds of the media box, a processor shall treat the crop box as
+            // its intersection with the media box. When the two do not intersect at all (malformed
+            // input), fall back to the declared crop box.
+            var intersection = mediaBox.Bounds.Intersect(cropBox.Bounds);
+            if (intersection.HasValue)
+            {
+                cropBox = new CropBox(intersection.Value);
             }
 
             return cropBox;
@@ -305,23 +311,6 @@
             }
 
             return mediaBox;
-        }
-
-        /// <summary>
-        /// Apply the matrix transform to the media box and crop box.
-        /// Then Normalise() in order to obtain rectangles with rotation=0
-        /// and width and height as viewed on screen.
-        /// </summary>
-        /// <param name="transformationMatrix"></param>
-        /// <param name="mediaBox"></param>
-        /// <param name="cropBox"></param>
-        protected static void ApplyTransformNormalise(in TransformationMatrix transformationMatrix, ref MediaBox mediaBox, ref CropBox cropBox)
-        {
-            if (transformationMatrix != TransformationMatrix.Identity)
-            {
-                mediaBox = new MediaBox(transformationMatrix.Transform(mediaBox.Bounds).Normalise());
-                cropBox = new CropBox(transformationMatrix.Transform(cropBox.Bounds).Normalise());
-            }
         }
     }
 }
